@@ -1,4 +1,4 @@
-/* $Id: Ini.java,v 1.1.2.1 2014/04/01 11:56:55 juanjo Exp $
+/* $Id: Ini.java,v 1.2 2014/01/10 11:19:08 juanjo Exp $
 
 (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
 Permission to modify and use for internal purposes granted.   	
@@ -198,4 +198,4 @@ public final class Ini {
 }
 
 // ===========================================================================
-// End of $Id: Ini.java,v 1.1.2.1 2014/04/01 11:56:55 juanjo Exp $
+// End of $Id: Ini.java,v 1.2 2014/01/10 11:19:08 juanjo Exp $

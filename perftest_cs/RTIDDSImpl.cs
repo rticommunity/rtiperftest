@@ -1,11 +1,22 @@
-/* $Id: RTIDDSImpl.cs,v 1.2.2.1 2014/04/01 11:56:52 juanjo Exp $
+/* $Id: RTIDDSImpl.cs,v 1.22 2015/05/09 18:06:06 jmorales Exp $
 
- (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
- Permission to modify and use for internal purposes granted.   	
+ (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ Permission to modify and use for internal purposes granted.
  This software is provided "as is", without warranty, express or implied.
 
  modification history
  --------------------
+ 5.2.0,09may15,jm  PERFTEST-86 Readers max instances not modified now, set to 
+                   DDS_LENGTH_UNLIMITED via perftest.xml.
+ 5.2.0,27apr15,jm  PERFTEST-86 Removing .ini support.
+ 5.1.0,22sep14,jm  PERFTEST-75 Fixed LargeData + Turbo-Mode. Changing max size to
+                   131072.
+ 5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-65 Large data support 
+                   added for perftest.
+ 5.1.0,02sep14,jm  PERF-37 Fixed issue when topic is inconsistent.
+ 5.1.0,27aug14,jm  Fixed 3 warnings.
+ 5.1.0,11aug14,jm  PERFTEST-68 Added -keyed command line option.
+ 5.1.0,16jul14,jmc Fixing usage string format
  5.1.0.9,27mar14,jmc PERFTEST-27 Fixing resource limits when using
                      Turbo Mode
  5.1.0,19dec13,jmc PERFTEST-3 Added autothrottle and turbomode
@@ -55,7 +66,7 @@ using System.Threading;
 
 namespace PerformanceTest
 {
-    class RTIDDSImpl : IMessaging
+    class RTIDDSImpl<T> : IMessaging where T : class, DDS.ICopyable<T>
     {
 
         /*********************************************************
@@ -113,21 +124,21 @@ namespace PerformanceTest
             const string usage_string =
             /**************************************************************************/
             "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n" +
-	        "\t                          queue, default 50\n" +
+            "\t                          queue, default 50\n" +
             "\t-domain <ID>            - RTI DDS Domain, default 1\n      " +
             "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles,\n" +
             "\t                          default perftest.xml\n" +
             "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>,\n" +
-	        "\t                          If unspecificed, use all available interfaces\n" +
+            "\t                          If unspecificed, use all available interfaces\n" +
             "\t-multicast              - Use multicast to send data, default not to\n"+
             "\t                          use multicast\n"+
             "\t-nomulticast            - Do not use multicast to send data (default)\n"+
             "\t-multicastAddress <ipaddr> - Multicast address to use for receiving\n" +
             "\t                          latency/announcement (pub) or \n" +
             "\t                          throughtput (sub) data.\n" +
-	        "\t                          If unspecified: latency 239.255.1.2,\n" +
-	        "\t                          announcement 239.255.1.100,\n" +
-	        "\t                          throughput 239.255.1.1\n" +
+            "\t                          If unspecified: latency 239.255.1.2,\n" +
+            "\t                          announcement 239.255.1.100,\n" +
+            "\t                          throughput 239.255.1.1\n" +
             "\t-bestEffort             - Run test in best effort mode,\n"+
             "\t                          default reliable\n" +
             "\t-batchSize <bytes>      - Size in bytes of batched message, default 0\n" +
@@ -137,11 +148,11 @@ namespace PerformanceTest
             "\t-keepDurationUsec <usec> - Minimum time (us) to keep samples when\n" +
             "\t                          positive acks are disabled, default 1000 us\n" +
             "\t-enableSharedMemory     - Enable use of shared memory transport and,\n" +
-            "\t                          disable all the other transports, default\n" + 
+            "\t                          disable all the other transports, default\n" +
             "\t                          shared memory not enabled\n" +
             "\t-enableTcpOnly          - Enable use of tcp transport and disable all\n" +
-	        "\t                          the other transports, default do not use\n" +
-	        "\t                          tcp transport\n" +
+            "\t                          the other transports, default do not use\n" +
+            "\t                          tcp transport\n" +
             "\t-heartbeatPeriod <sec>:<nanosec>     - Sets the regular heartbeat\n" +
             "\t                          period for throughput DataWriter,\n" +
             "\t                          default 0:0 (use XML QoS Profile value)\n" +
@@ -154,21 +165,21 @@ namespace PerformanceTest
             "\t-noDirectCommunication  - Use brokered mode for persistent durability\n" +
             "\t-instanceHashBuckets <#count> - Number of hash buckets for instances.\n" +
             "\t                          If unspecified, same as number of\n" +
-	        "\t                          instances\n" +
+            "\t                          instances\n" +
             "\t-waitsetDelayUsec <usec>   - UseReadThread related. Allows you to\n" +
             "\t                          process incoming data in groups, based on the\n" +
             "\t                          time rather than individually. It can be used\n" +
             "\t                          combined with -waitsetEventCount,\n" +
-	        "\t                          default 100 usec\n" +
+            "\t                          default 100 usec\n" +
             "\t-waitsetEventCount <count> - UseReadThread related. Allows you to\n" +
             "\t                          process incoming data in groups, based on the\n" +
             "\t                          number of samples rather than individually.\n" +
             "\t                          It can be used combined with\n" +
-	        "\t                          -waitsetDelayUsec, default 5\n" + 
-    		"\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n" +
-			"\t                          throughput DataWriter (pub)\n" +
-		    "\t-enableTurboMode        - Enables the TurboMode feature in the throughput\n" +
-			"\t                          DataWriter (pub)\n"
+            "\t                          -waitsetDelayUsec, default 5\n" +
+            "\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n" +
+            "\t                          throughput DataWriter (pub)\n" +
+            "\t-enableTurboMode        - Enables the TurboMode feature in the\n" +
+            "\t                          throughput DataWriter (pub)\n"
             ;
 
             Console.Error.Write(usage_string);
@@ -179,89 +190,12 @@ namespace PerformanceTest
          */
         bool ParseConfig(int argc, string[] argv)
         {
-            // first scan for configFile
             for (int i = 0; i < argc; ++i)
             {
-                if ("-configFile".StartsWith(argv[i], true, null))
+                if ("-scan".StartsWith(argv[i], true, null))
                 {
-                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
-                    {
-                        Console.Error.Write("Missing <fileName> after -configFile\n");
-                        return false;
-                    }
-                    _ConfigFile = argv[i];
-                }
-            }
-
-            // now load configuration values from config file
-            if (_ConfigFile.Length > 0)
-            {
-                Nini.Config.IConfig config;
-                Nini.Config.IniConfigSource configSource = new Nini.Config.IniConfigSource();
-
-                try
-                {
-                    configSource.Load(_ConfigFile);
-                }
-                catch (System.IO.IOException e)
-                {
-                    Console.Error.Write("Problem loading configuration file.\n");
-                    Console.Error.WriteLine(e.Message);
-                    return false;
-                }
-
-                configSource.CaseSensitive = false;
-
-                // parse generic section                
-                config = configSource.Configs["perftest"];
-
-                if (config == null)
-                {
-                    Console.Error.Write("Could not find section [perftest] in file " + _ConfigFile + ".\n");
-                    return false;
-                }
-
-                _DataLen = config.GetInt("data length", _DataLen);
-                _InstanceCount  = config.GetInt("instances", _InstanceCount);
-                _LatencyTest = config.GetBoolean("run latency test", _LatencyTest);
-                _IsDebug = config.GetBoolean("is debug", _IsDebug);
-
-                // parse specific section
-                config = configSource.Configs["RTIImpl"];
-
-                if (config == null)
-                {
-                    Console.Error.Write("Could not find section [RTIImpl] in file " + _ConfigFile + ".\n");
-                    return false;
-                }
-
-                _SendQueueSize = config.GetInt("send queue size", _SendQueueSize);
-                _DomainID = config.GetInt("domain", _DomainID);
-                _ProfileFile = config.Get("qos profile file", _ProfileFile);
-                _Nic = config.Get("interface", _Nic);
-                _IsMulticast = config.GetBoolean("is multicast", _IsMulticast);
-                _IsReliable = config.GetBoolean("is reliable", _IsReliable);
-                _BatchSize = config.GetInt("batch size", _BatchSize);
-                _KeepDurationUsec = (uint)config.GetInt("keep duration usec", (int)_KeepDurationUsec);
-                _UsePositiveAcks = config.GetBoolean("use positive acks", _UsePositiveAcks);
-                _UseSharedMemory = config.GetBoolean("enable shared memory", _UseSharedMemory);
-                _UseTcpOnly = config.GetBoolean("enable tcp only", _UseTcpOnly);
-                _WaitsetEventCount = config.GetInt("waitset event count", _WaitsetEventCount);
-                _WaitsetDelayUsec = (uint)config.GetInt("waitset delay usec", (int)_WaitsetDelayUsec);
-                _Durability = config.GetInt("durability", _Durability);
-                _DirectCommunication = config.GetBoolean("direct communication", _DirectCommunication);
-                _HeartbeatPeriod.sec = config.GetInt("heartbeat period sec", _HeartbeatPeriod.sec);
-                _HeartbeatPeriod.nanosec = (uint)config.GetInt("heartbeat period nanosec", (int)_HeartbeatPeriod.nanosec);
-                _FastHeartbeatPeriod.sec = config.GetInt("fast heartbeat period sec", _FastHeartbeatPeriod.sec);
-                _FastHeartbeatPeriod.nanosec = (uint)config.GetInt("fast heartbeat period nanosec", (int)_FastHeartbeatPeriod.nanosec);
-		_InstanceHashBuckets = config.GetInt(
-		    "instance hash buckets", _InstanceHashBuckets);
-            }
-
-            // now load everything else, command line params override config file
-            for (int i = 0; i < argc; ++i)
-            {
-                if ("-dataLen".StartsWith(argv[i], true, null))
+                    _isScan = true;
+                } else if ("-dataLen".StartsWith(argv[i], true, null))
                 {
                     if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
                     {
@@ -320,14 +254,14 @@ namespace PerformanceTest
                         return false;
                     }
                 } else if ("-fastHeartbeatPeriod".StartsWith(argv[i],true,null))
-                {  
+                {
                     if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
                     {
                         Console.Error.Write("Missing <period> after -fastHeartbeatPeriod\n");
                         return false;
                     }
                     try
-                    {   
+                    {
                         String[] st = argv[i].Split(':');
                         _FastHeartbeatPeriod.sec = int.Parse(st[0]);
                         _FastHeartbeatPeriod.nanosec = uint.Parse(st[1]);
@@ -337,7 +271,7 @@ namespace PerformanceTest
                         Console.Error.Write("Bad fastHeartbeatPeriod\n");
                         return false;
                     }
-                } 
+                }
                 else if ("-domain".StartsWith(argv[i], true, null))
                 {
                     if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
@@ -414,7 +348,7 @@ namespace PerformanceTest
                 else if ("-noDirectCommunication".StartsWith(argv[i], true, null))
                 {
                     _DirectCommunication = false;
-                }                
+                }
                 else if ("-instances".StartsWith(argv[i], true, null))
                 {
                     if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
@@ -427,6 +361,7 @@ namespace PerformanceTest
                         Console.Error.Write("Bad count for number of instances\n");
                         return false;
                     }
+                    _InstanceMaxCountReader = _InstanceCount;
                     if (_InstanceCount <= 0)
                     {
                         Console.Error.Write("instance count cannot be negative or null\n");
@@ -540,7 +475,7 @@ namespace PerformanceTest
                         Console.Error.Write(" waitset event count cannot be negative or null\n");
                         return false;
                     }
-                } 
+                }
                 else if ("-latencyTest".StartsWith(argv[i], true, null))
                 {
                     _LatencyTest = true;
@@ -554,14 +489,33 @@ namespace PerformanceTest
                 {
                     _TurboMode = true;
                 }
-                else if ("-configFile".StartsWith(argv[i], true, null)) {
-                    /* Ignore config file */
-                    ++i;
-                }
                 else {
                     Console.Error.Write(argv[i] + ": not recognized\n");
                     return false;
                 }
+            }
+
+            if (_DataLen > TestMessage.MAX_SYNCHRONOUS_SIZE)
+            {
+                if (_isScan)
+                {
+                    Console.Error.WriteLine("DataLen will be ignored since -scan is present.");
+                }
+                else
+                {
+                    Console.Error.WriteLine("Large data settings enabled (-dataLen < " + MAX_BINDATA_SIZE.VALUE + ").");
+                    _isLargeData = true;
+                }
+            }
+            if (_isLargeData && _BatchSize > 0)
+            {
+                Console.Error.WriteLine("Batch cannot be enabled if using large data");
+                return false;
+            }
+            if (_isLargeData && _TurboMode)
+            {
+                Console.Error.WriteLine("Turbo Mode cannot be used with asynchronous writing. It will be ignored.");
+                _TurboMode = false;
             }
             return true;
         }
@@ -576,7 +530,7 @@ namespace PerformanceTest
                 DDS.Topic topic,
                 ref DDS.InconsistentTopicStatus status)
             {
-                Console.Error.WriteLine("Found inconsistent topic " +
+                Console.Error.WriteLine("Found inconsistent topic. Expecting " +
                     topic.get_name() + " of type " + topic.get_type_name());
             }
 
@@ -603,33 +557,32 @@ namespace PerformanceTest
         /*********************************************************
          * RTIPublisher
          */
-        class RTIPublisher : IMessagingWriter
+        class RTIPublisher<Type> : IMessagingWriter where Type : class, DDS.ICopyable<Type>
         {
-            private TestData_tDataWriter _writer = null;
-            private TestData_t _data = new TestData_t();
+            private DDS.DataWriter _writer = null;
+            private ITypeHelper<Type> _DataType = null;
 
             private int _num_instances;
             private long _instance_counter;
             DDS.InstanceHandle_t[] _instance_handles;
             private Semaphore _pongSemaphore = null;
 
-            public RTIPublisher(DDS.DataWriter writer, int num_instances, Semaphore pongSemaphore)
+            public RTIPublisher(DDS.DataWriter writer, int num_instances, Semaphore pongSemaphore, ITypeHelper<Type> DataType)
             {
-                _writer = (TestData_tDataWriter)writer;
-                _data.bin_data.maximum = 0;
+                _writer = writer;
+                _DataType = DataType;
 
                 _num_instances = num_instances;
                 _instance_counter = 0;
                 _instance_handles = new DDS.InstanceHandle_t[num_instances];
                 _pongSemaphore = pongSemaphore;
 
-                for(int i=0; i<_num_instances; ++i) {
-                    _data.key[0] = (byte) (i);
-                    _data.key[1] = (byte) (i >> 8);
-                    _data.key[2] = (byte) (i >> 16);
-                    _data.key[3] = (byte) (i >> 24);
+                _DataType.getBindata().maximum = 0;
 
-                    _instance_handles[i] = _writer.register_instance(_data);                       
+                for (int i = 0; i < _num_instances; ++i)
+                {
+                    _DataType.fillKey(i);
+                    _instance_handles[i] = writer.register_instance_untyped(_DataType.getData());
                 }
 
             }
@@ -642,35 +595,26 @@ namespace PerformanceTest
             public bool Send(TestMessage message)
             {
                 int key = 0;
-                _data.entity_id = message.entity_id;
-                _data.seq_num = message.seq_num;
-                _data.timestamp_sec = message.timestamp_sec;
-                _data.timestamp_usec = message.timestamp_usec;
-                _data.latency_ping = message.latency_ping;
-                _data.bin_data.loan(message.data, message.size);
+                _DataType.copyFromMessage(message);
 
                 if (_num_instances > 1) {
                     key = (int) (_instance_counter++ % _num_instances);
-
-                    _data.key[0] = (byte) (key);
-                    _data.key[1] = (byte) (key >> 8);
-                    _data.key[2] = (byte) (key >> 16);
-                    _data.key[3] = (byte) (key >> 24);
+                    _DataType.fillKey(key);
                 }
 
                 try
                 {
-                    _writer.write(_data, ref _instance_handles[key]);
+                    _writer.write_untyped(_DataType.getData(), ref _instance_handles[key]);
                 }
                 catch (DDS.Exception ex)
                 {
                     Console.Error.Write("Write error {0}\n", ex);
-                    _data.bin_data.unloan();
+                    _DataType.getBindata().unloan();
                     return false;
                 }
                 finally
                 {
-                    _data.bin_data.unloan();
+                    _DataType.getBindata().unloan();
                 }
 
                 return true;
@@ -701,7 +645,7 @@ namespace PerformanceTest
                         Console.Error.WriteLine("Exception occured: " + ex.Message);
                         return false;
                     }
-                    
+
                 }
                 return true;
             }
@@ -711,7 +655,7 @@ namespace PerformanceTest
                 if (_pongSemaphore != null)
                 {
                     try {
-                        _pongSemaphore.WaitOne();    
+                        _pongSemaphore.WaitOne();
                     } catch ( System.Exception ex ) {
                         Console.Error.WriteLine("Exception occured: " + ex.Message);
                         return false;
@@ -725,7 +669,7 @@ namespace PerformanceTest
                 if (_pongSemaphore != null)
                 {
                     try {
-                        _pongSemaphore.WaitOne(timeout, false);    
+                        _pongSemaphore.WaitOne(timeout, false);
                     } catch ( System.Exception ex ) {
                         Console.Error.WriteLine("Exception occured: " + ex.Message);
                         return false;
@@ -739,42 +683,35 @@ namespace PerformanceTest
         /*********************************************************
          * ReceiverListener
          */
-        class ReceiverListener : DDS.DataReaderListener
+        class ReceiverListener<Type> : DDS.DataReaderListener where Type : class, DDS.ICopyable<Type>
         {
-            private TestData_tSeq     _data_seq = new TestData_tSeq();
+            private DDS.LoanableSequence<Type> _data_seq = null;
             private DDS.SampleInfoSeq _info_seq = new DDS.SampleInfoSeq();
             private TestMessage       _message = new TestMessage();
             private IMessagingCB      _callback;
+            private ITypeHelper<Type> _DataType = null;
 
-            public ReceiverListener(IMessagingCB callback)
+            public ReceiverListener(IMessagingCB callback, ITypeHelper<Type> DataType)
             {
                 _callback = callback;
+                _DataType = DataType;
+                _data_seq = _DataType.createSequence();
                 _message.data = new byte[MAX_BINDATA_SIZE.VALUE];
             }
 
             public override void on_data_available(DDS.DataReader reader)
             {
-                TestData_tDataReader datareader;
 
                 int i;
-                TestData_t message;
                 int seqLen;
-
-                datareader = (TestData_tDataReader) reader;
-                if (datareader == null)
-                {
-                    Console.Error.Write("DataReader narrow error\n");
-                    return;
-                }
 
                 try
                 {
-                    datareader.take(
-                        _data_seq, _info_seq,
+                    reader.take_untyped( _data_seq, _info_seq,
                         DDS.ResourceLimitsQosPolicy.LENGTH_UNLIMITED,
-                        DDS.SampleStateKind.ANY_SAMPLE_STATE,
-                        DDS.ViewStateKind.ANY_VIEW_STATE,
-                        DDS.InstanceStateKind.ANY_INSTANCE_STATE);
+                         DDS.SampleStateKind.ANY_SAMPLE_STATE,
+                         DDS.ViewStateKind.ANY_VIEW_STATE,
+                         DDS.InstanceStateKind.ANY_INSTANCE_STATE);
                 }
                 catch (DDS.Retcode_NoData)
                 {
@@ -794,16 +731,7 @@ namespace PerformanceTest
                     {
                         if (_info_seq.get_at(i).valid_data)
                         {
-                            message = _data_seq.get_at(i);
-
-                            _message.entity_id = message.entity_id;
-                            _message.seq_num = message.seq_num;
-                            _message.timestamp_sec = message.timestamp_sec;
-                            _message.timestamp_usec = message.timestamp_usec;
-                            _message.latency_ping = message.latency_ping;
-                            _message.size = message.bin_data.length;
-                            _message.data = message.bin_data.buffer;
-
+                            _message = _DataType.copyFromSeqToMessage(_data_seq, i);
                             _callback.ProcessMessage(_message);
                         }
                     }
@@ -817,7 +745,7 @@ namespace PerformanceTest
                 {
                     try
                     {
-                        datareader.return_loan(_data_seq, _info_seq);
+                        reader.return_loan_untyped(_data_seq, _info_seq);
                     }
                     catch (System.Exception ex)
                     {
@@ -830,10 +758,11 @@ namespace PerformanceTest
         /*********************************************************
          * RTISubscriber
          */
-        class RTISubscriber : IMessagingReader
+        class RTISubscriber<Type> : IMessagingReader where Type : class, DDS.ICopyable<Type>
         {
-            private TestData_tDataReader _reader = null;
-            private TestData_tSeq      _data_seq = new TestData_tSeq();
+            private ITypeHelper<Type> _DataType = null;
+            private DDS.DataReader     _reader = null;
+            private DDS.LoanableSequence<Type> _data_seq = null;
             private DDS.SampleInfoSeq  _info_seq = new DDS.SampleInfoSeq();
             private TestMessage         _message = new TestMessage();
             private DDS.WaitSet         _waitset = null;
@@ -842,9 +771,11 @@ namespace PerformanceTest
             private int      _data_idx = 0;
             private bool      _no_data = true;
 
-            public RTISubscriber(DDS.DataReader reader)
+            public RTISubscriber(DDS.DataReader reader, ITypeHelper<Type> DataType)
             {
-                _reader = (TestData_tDataReader) reader;
+                _reader = reader;
+                _DataType = DataType;
+                _data_seq = _DataType.createSequence();
                 _message.data = new byte[MAX_BINDATA_SIZE.VALUE];
 
                 // null listener means using receive thread
@@ -869,12 +800,11 @@ namespace PerformanceTest
             public void Shutdown()
             {
                 // loan may be outstanding during shutdown
-                _reader.return_loan(_data_seq, _info_seq);
+                _reader.return_loan_untyped(_data_seq, _info_seq);
             }
 
             public TestMessage ReceiveMessage()
             {
-                TestData_t message;
 
                 while (true) {
                     // no outstanding reads
@@ -891,8 +821,7 @@ namespace PerformanceTest
 
                         try
                         {
-                            _reader.take(
-                                _data_seq, _info_seq,
+                            _reader.take_untyped(_data_seq, _info_seq,
                                 DDS.ResourceLimitsQosPolicy.LENGTH_UNLIMITED,
                                 DDS.SampleStateKind.ANY_SAMPLE_STATE,
                                 DDS.ViewStateKind.ANY_VIEW_STATE,
@@ -916,28 +845,20 @@ namespace PerformanceTest
                     // check to see if hit end condition
                     if (_data_idx == seq_length)
                     {
-                        _reader.return_loan(_data_seq, _info_seq);
+                        _reader.return_loan_untyped(_data_seq, _info_seq);
                         _no_data = true;
                         // for some reason, woke up, only got meta-data messages
                         continue;
                     }
 
                     // skip non-valid data
-                    while ( (!_info_seq.get_at(_data_idx).valid_data) && 
+                    while ( (!_info_seq.get_at(_data_idx).valid_data) &&
                             (++_data_idx < seq_length));
 
                     // may have hit end condition
                     if (_data_idx == seq_length) { continue; }
 
-                    message = _data_seq.get_at(_data_idx);
-
-                    _message.entity_id = message.entity_id;
-                    _message.seq_num = message.seq_num;
-                    _message.timestamp_sec = message.timestamp_sec;
-                    _message.timestamp_usec = message.timestamp_usec;
-                    _message.latency_ping = message.latency_ping;
-                    _message.size = message.bin_data.length;
-                    _message.data = message.bin_data.buffer;                   
+                    _message = _DataType.copyFromSeqToMessage(_data_seq, _data_idx);
 
                     ++_data_idx;
 
@@ -948,7 +869,7 @@ namespace PerformanceTest
             public void WaitForWriters(int numPublishers)
             {
                 DDS.SubscriptionMatchedStatus status = new DDS.SubscriptionMatchedStatus();
-                
+
                 while (true)
                 {
                     _reader.get_subscription_matched_status(ref status);
@@ -961,12 +882,21 @@ namespace PerformanceTest
             }
         }
 
+        /*********************************************************
+         * Constructor
+         */
+        public RTIDDSImpl(ITypeHelper<T> myDataTypeHelper)
+        {
+            _DataTypeHelper = myDataTypeHelper;
+        }
 
         /*********************************************************
          * Initialize
          */
         public bool Initialize(int argc, string[] argv)
         {
+            _typename = _DataTypeHelper.getTypeSupport().get_type_name_untyped();
+
             DDS.DomainParticipantQos qos = new DDS.DomainParticipantQos();
             DDS.DomainParticipantFactoryQos factory_qos = new DDS.DomainParticipantFactoryQos();
             DomainListener listener = new DomainListener();
@@ -977,7 +907,7 @@ namespace PerformanceTest
             {
                 return false;
             }
-            
+
             if (_LatencyTest)
             {
                 _pongSemaphore = new Semaphore(0, 1);
@@ -989,7 +919,7 @@ namespace PerformanceTest
             factory_qos.profile.url_profile.set_at(0, _ProfileFile);
             _factory.set_qos(factory_qos);
 
-            
+
             try
             {
                 _factory.reload_profiles();
@@ -1083,8 +1013,7 @@ namespace PerformanceTest
             }
 
             // Register the types and create the topics
-            TestData_tTypeSupport.register_type(
-                _participant, _typename);
+            _DataTypeHelper.getTypeSupport().register_type_untyped(_participant, _typename);
 
             // Create the Publisher and Subscriber
             {
@@ -1180,10 +1109,17 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (_UsePositiveAcks) 
+            if (_UsePositiveAcks)
             {
                 dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (int)_KeepDurationUsec/1000000;
                 dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = _KeepDurationUsec%1000000;
+            }
+
+            if (_isLargeData)
+            {
+                Console.Error.Write("Using asynchronous write for " + topic_name + ".\n");
+                dw_qos.publish_mode.kind = DDS.PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
+                dw_qos.publish_mode.flow_controller_name = "dds.flow_controller.token_bucket.fast_flow";
             }
 
             // only force reliability on throughput/latency topics
@@ -1260,7 +1196,7 @@ namespace PerformanceTest
                 dw_qos.resource_limits.initial_samples = _SendQueueSize;
                 dw_qos.resource_limits.max_samples_per_instance
                     = dw_qos.resource_limits.max_samples;
-                
+
                 dw_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
                 dw_qos.durability.direct_communication = _DirectCommunication;
 
@@ -1268,7 +1204,7 @@ namespace PerformanceTest
 
                 dw_qos.protocol.rtps_reliable_writer.low_watermark = _SendQueueSize * 1 / 10;
                 dw_qos.protocol.rtps_reliable_writer.high_watermark = _SendQueueSize * 9 / 10;
-                
+
                 dw_qos.protocol.rtps_reliable_writer.max_send_window_size =
                     _SendQueueSize;
                 dw_qos.protocol.rtps_reliable_writer.min_send_window_size =
@@ -1307,7 +1243,7 @@ namespace PerformanceTest
                 return null;
             }
 
-            RTIPublisher pub = new RTIPublisher(writer,_InstanceCount,_pongSemaphore);
+            RTIPublisher<T> pub = new RTIPublisher<T>(writer,_InstanceCount,_pongSemaphore,_DataTypeHelper.clone());
 
             return pub;
         }
@@ -1318,7 +1254,7 @@ namespace PerformanceTest
          */
         public IMessagingReader CreateReader(string topic_name, IMessagingCB callback)
         {
-            ReceiverListener reader_listener = null;
+            ReceiverListener<T> reader_listener = null;
             DDS.DataReader reader = null;
             DDS.DataReaderQos dr_qos = new DDS.DataReaderQos();
             string qos_profile = null;
@@ -1409,9 +1345,9 @@ namespace PerformanceTest
                 dr_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
                 dr_qos.durability.direct_communication = _DirectCommunication;
             }
-           
+
             dr_qos.resource_limits.initial_instances = _InstanceCount;
-            dr_qos.resource_limits.max_instances = _InstanceCount;
+            dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
 
             if (_InstanceCount > 1) {
                 if (_InstanceHashBuckets > 0) {
@@ -1453,7 +1389,7 @@ namespace PerformanceTest
 
             if (callback != null)
             {
-                reader_listener = new ReceiverListener(callback);
+                reader_listener = new ReceiverListener<T>(callback, _DataTypeHelper.clone());
                 reader = _subscriber.create_datareader(
                     topic, dr_qos, reader_listener, (DDS.StatusMask)DDS.StatusKind.DATA_AVAILABLE_STATUS);
             }
@@ -1475,7 +1411,7 @@ namespace PerformanceTest
                 _reader = reader;
             }
 
-            IMessagingReader sub = new RTISubscriber(reader);
+            IMessagingReader sub = new RTISubscriber<T>(reader,_DataTypeHelper.clone());
             return sub;
         }
 
@@ -1484,13 +1420,13 @@ namespace PerformanceTest
         private int    _DomainID = 1;
         private string _Nic = "";
         private string _ProfileFile = "perftest.xml";
-        private string _ConfigFile = "perftest.ini";
         private bool   _IsReliable = true;
         private bool   _IsMulticast = false;
         private bool   _AutoThrottle = false;
         private bool   _TurboMode = false;
         private int    _BatchSize = 0;
         private int    _InstanceCount = 1;
+        private int    _InstanceMaxCountReader = -1;
         private int     _InstanceHashBuckets = -1;
         private int     _Durability = 0;
         private bool    _DirectCommunication = true;
@@ -1500,6 +1436,9 @@ namespace PerformanceTest
         private bool    _LatencyTest = false;
         private bool   _UseTcpOnly = false;
         private bool   _IsDebug = false;
+        private bool   _isLargeData = false;
+        private bool   _isScan = false;
+
 
         private DDS.Duration_t _HeartbeatPeriod = DDS.Duration_t.DURATION_ZERO;     /* this means, use the perftest.xml QoS file value*/
         private DDS.Duration_t _FastHeartbeatPeriod = DDS.Duration_t.DURATION_ZERO; /* this means, use the perftest.xml QoS file value*/
@@ -1517,7 +1456,8 @@ namespace PerformanceTest
         private DDS.Subscriber               _subscriber = null;
         private DDS.Publisher                _publisher = null;
         private DDS.DataReader               _reader = null;
-        private string _typename = TestData_tTypeSupport.get_type_name();
+        private string                       _typename = null;
+        private ITypeHelper<T>                  _DataTypeHelper = null;
 
         private Semaphore _pongSemaphore = null;
     }

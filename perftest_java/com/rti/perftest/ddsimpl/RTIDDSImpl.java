@@ -1,11 +1,19 @@
-/* $Id: RTIDDSImpl.java,v 1.2.2.1 2014/04/01 11:56:54 juanjo Exp $
+/* $Id: RTIDDSImpl.java,v 1.17 2015/05/09 18:06:06 jmorales Exp $
 
 (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
 Permission to modify and use for internal purposes granted.   	
 This software is provided "as is", without warranty, express or implied.
 
 modification history:
--------------------- 
+--------------------
+5.2.0,09may15,jm  PERFTEST-86 Reader's max instances not modified now, set to 
+                  DDS_LENGTH_UNLIMITED via perftest.xml.
+5.2.0,27apr14,jm  PERFTEST-86 Removing .ini support. Fixing warnings.
+5.1.0,22sep14,jm  PERFTEST-75 Fixed LargeData + Turbo-Mode. Changing max size to
+                  131072.
+5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-66 Large data support 
+                  added for perftest.
+5.1.0,11aug14,jm PERFTEST-69 Added -keyed command line option.
 5.1.0.9,27mar14,jmc PERFTEST-27 Fixing resource limits when using
                     Turbo Mode
 5.1.0,19dec13,jmc PERFTEST-3 Added autothrottle and turbomode
@@ -56,8 +64,6 @@ modification history:
 
 package com.rti.perftest.ddsimpl;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.StringTokenizer;
@@ -68,24 +74,20 @@ import com.rti.dds.domain.DomainParticipantFactoryQos;
 import com.rti.dds.domain.DomainParticipantListener;
 import com.rti.dds.domain.DomainParticipantQos;
 import com.rti.dds.infrastructure.Duration_t;
-import com.rti.dds.infrastructure.HistoryQosPolicyKind;
 import com.rti.dds.infrastructure.PropertyQosPolicyHelper;
+import com.rti.dds.infrastructure.PublishModeQosPolicyKind;
 import com.rti.dds.infrastructure.ReliabilityQosPolicyKind;
 import com.rti.dds.infrastructure.ResourceLimitsQosPolicy;
 import com.rti.dds.infrastructure.StatusKind;
 import com.rti.dds.infrastructure.TransportBuiltinKind;
 import com.rti.dds.infrastructure.TransportMulticastSettings_t;
 import com.rti.dds.infrastructure.DurabilityQosPolicyKind;
-import com.rti.dds.infrastructure.PresentationQosPolicyAccessScopeKind;
-import com.rti.dds.infrastructure.DiscoveryConfigBuiltinPluginKind;
 import com.rti.dds.publication.DataWriter;
 import com.rti.dds.publication.DataWriterQos;
 import com.rti.dds.publication.Publisher;
-import com.rti.dds.publication.PublisherQos;
 import com.rti.dds.subscription.DataReader;
 import com.rti.dds.subscription.DataReaderQos;
 import com.rti.dds.subscription.Subscriber;
-import com.rti.dds.subscription.SubscriberQos;
 import com.rti.dds.topic.Topic;
 import com.rti.ndds.config.LogCategory;
 import com.rti.ndds.config.LogVerbosity;
@@ -95,10 +97,8 @@ import com.rti.perftest.IMessagingCB;
 import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.IMessagingWriter;
 import com.rti.perftest.TestMessage;
-import com.rti.perftest.gen.TestData_tTypeSupport;
 import com.rti.perftest.gen.MAX_BINDATA_SIZE;
 import com.rti.perftest.harness.PerfTest;
-import com.rti.perftest.ini.Ini;
 
 
 // ===========================================================================
@@ -107,7 +107,7 @@ import com.rti.perftest.ini.Ini;
  * An implementation of the IMessaging interface based on RTI Data
  * Distribution Service.
  */
-public final class RTIDDSImpl implements IMessaging {
+public final class RTIDDSImpl<T> implements IMessaging {
     // -----------------------------------------------------------------------
     // Package Fields
     // -----------------------------------------------------------------------
@@ -132,13 +132,13 @@ public final class RTIDDSImpl implements IMessaging {
     private int     _domainID = 1;
     private String  _nic = "";
     private String  _profileFile = "perftest.xml";
-    private File    _configFile = new File("perftest.ini");
     private boolean _isReliable = true;
     private boolean _isMulticast = false;
     private boolean _AutoThrottle = false;
     private boolean _TurboMode = false;
     private boolean _UseTcpOnly = false;
     private int     _instanceCount = 1;
+    private int     _instanceMaxCountReader = -1;
     private int     _instanceHashBuckets = -1;
     private int     _durability = 0;
     private boolean _directCommunication = true;
@@ -148,21 +148,28 @@ public final class RTIDDSImpl implements IMessaging {
     private boolean _useSharedMemory = false;
     private boolean _isDebug = false;
     private boolean _latencyTest = false;
+    private boolean _isLargeData = false;
+    private boolean _isScan = false;
 
     private DomainParticipantFactory _factory = null;
     private DomainParticipant        _participant = null;
     private Subscriber               _subscriber = null;
     private Publisher                _publisher = null;
     private DataReader               _reader = null;
-    private String _typename = TestData_tTypeSupport.get_type_name();
+    private String _typename = null;
 
-
+    private TypeHelper<T> _myDataType = null;
 
     // -----------------------------------------------------------------------
     // Public Methods
     // -----------------------------------------------------------------------
 
     // --- From IMessaging: --------------------------------------------------
+
+    public RTIDDSImpl(TypeHelper<T> typeHelper) {
+        _myDataType = typeHelper;
+    }
+
 
     public void dispose() {
         shutdown();
@@ -269,6 +276,9 @@ public final class RTIDDSImpl implements IMessaging {
 
 
     public boolean initialize(int argc, String[] argv) {
+        
+        _typename = _myDataType.getTypeSupport().get_type_nameI();
+        
         _factory = DomainParticipantFactory.get_instance();
 
         if (!parseConfig(argc, argv)) {
@@ -365,7 +375,7 @@ public final class RTIDDSImpl implements IMessaging {
         }
 
         // Register the types and create the topics
-        TestData_tTypeSupport.register_type(
+         _myDataType.getTypeSupport().register_typeI(
             _participant, _typename);
 
         // Create the Publisher and Subscriber
@@ -450,7 +460,7 @@ public final class RTIDDSImpl implements IMessaging {
             return null;
         }
 
-        RTIPublisher pub = new RTIPublisher(writer,_instanceCount);
+        RTIPublisher<T> pub = new RTIPublisher<T>(writer,_instanceCount, _myDataType.clone());
 
         return pub;
     }
@@ -506,7 +516,7 @@ public final class RTIDDSImpl implements IMessaging {
 
         DataReader reader;
         if (callback != null) {
-            ReceiverListener readerListener = new ReceiverListener(callback);
+            ReceiverListener<T> readerListener = new ReceiverListener<T>(callback,_myDataType.clone());
             reader = _subscriber.create_datareader(
                 topic,
                 drQos,
@@ -528,7 +538,7 @@ public final class RTIDDSImpl implements IMessaging {
             _reader = reader;
         }
 
-        IMessagingReader sub = new RTISubscriber(reader);
+        IMessagingReader sub = new RTISubscriber<T>(reader,_myDataType.clone());
         return sub;
     }
 
@@ -544,6 +554,13 @@ public final class RTIDDSImpl implements IMessaging {
         if (_usePositiveAcks) {
             dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (_keepDurationUsec * 1000) / 1000000000;
             dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = (_keepDurationUsec * 1000) % 1000000000;
+        }
+
+        if ( (_isLargeData) && (!_isScan) )
+        {
+            System.err.println("Using asynchronous write for " + topicName + ".");
+            dwQos.publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
+            dwQos.publish_mode.flow_controller_name = "dds.flow_controller.token_bucket.fast_flow";
         }
 
         // Configure reliability
@@ -709,7 +726,7 @@ public final class RTIDDSImpl implements IMessaging {
         }
            
         drQos.resource_limits.initial_instances = _instanceCount;
-        drQos.resource_limits.max_instances = _instanceCount;
+        drQos.resource_limits.max_instances = _instanceMaxCountReader;
 
         if (_instanceCount > 1) {
             if (_instanceHashBuckets > 0) {
@@ -751,84 +768,12 @@ public final class RTIDDSImpl implements IMessaging {
 
     private boolean parseConfig(int argc, String[] argv) {
 
-        // first scan for configFile
         for (int i = 0; i < argc; ++i) {
-            if ("-configFile".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.print("Missing <fileName> after -configFile\n");
-                    return false;
-                }
-                _configFile = new File(argv[i]);
-            }
-        }
 
-        // now load configuration values from config file
-        if (_configFile.isFile()) {
-            Ini configSource;
-            try {
-                configSource = Ini.load(
-                        _configFile, false /*case-sensitive*/);
-            } catch (IOException e) {
-                System.err.print("Problem loading configuration file.\n");
-                System.err.println(e.getMessage());
-                return false;
-            }
-
-            // parse generic section                
-            Ini.Section config = configSource.section("perftest");
-            if (config == null) {
-                System.err.println(
-                        "Could not find section [perftest] in file " +
-                        _configFile +
-                        ".");
-                return false;
-            }
-
-            _dataLen = config.getInt("data length", _dataLen);
-            _instanceCount = config.getInt("instances", _instanceCount);
-            _latencyTest = config.getBoolean("run latency test", _latencyTest);
-            _isDebug = config.getBoolean("is debug", _isDebug);
-
-            // parse specific section
-            config = configSource.section("RTIImpl");
-            if (config == null)
+            if ("-scan".toLowerCase().startsWith(argv[i].toLowerCase())) 
             {
-                System.err.println(
-                        "Could not find section [RTIImpl] in file " +
-                        _configFile +
-                        ".");
-                return false;
-            }
-
-            _sendQueueSize = config.getInt("send queue size", _sendQueueSize);
-            _domainID = config.getInt("domain", _domainID);
-            _profileFile = config.get("qos profile file", _profileFile);
-            _nic = config.get("interface", _nic);
-            _isMulticast = config.getBoolean("is multicast", _isMulticast);
-            _isReliable = config.getBoolean("is reliable", _isReliable);
-            _batchSize = config.getInt("batch size", _batchSize);
-            _keepDurationUsec = config.getInt("keep duration usec", _keepDurationUsec);
-            _usePositiveAcks = config.getBoolean("use positive acks", _usePositiveAcks);
-            _useSharedMemory = config.getBoolean("enable shared memory", _useSharedMemory);
-            _UseTcpOnly = config.getBoolean("enable tcp only", _UseTcpOnly);
-            waitsetEventCount = config.getInt("waitset event count", waitsetEventCount);
-            waitsetDelayUsec = config.getInt("waitset delay usec", waitsetDelayUsec);
-            _durability = config.getInt("durability", _durability);
-            _directCommunication = config.getBoolean("direct communication", _directCommunication);
-            _heartbeatPeriod.sec = config.getInt("heartbeat period sec", _heartbeatPeriod.sec);
-            _heartbeatPeriod.nanosec = config.getInt("heartbeat period nanosec", (int)_heartbeatPeriod.nanosec);
-            _fastHeartbeatPeriod.sec = config.getInt("fast heartbeat period sec", _fastHeartbeatPeriod.sec);
-            _fastHeartbeatPeriod.nanosec = config.getInt("fast heartbeat period nanosec",(int) _fastHeartbeatPeriod.nanosec);
-            _instanceHashBuckets = config.getInt("instance hash buckets", _instanceHashBuckets);
-
-        } else {
-            System.err.println(
-                    "Warning: config file doesn't exist: " + _configFile);
-        }
-
-        // now load everything else, command line params override config file
-        for (int i = 0; i < argc; ++i) {
-            if ("-dataLen".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _isScan = true;
+            } else if ("-dataLen".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
                     System.err.print("Missing <length> after -dataLen\n");
                     return false;
@@ -847,6 +792,7 @@ public final class RTIDDSImpl implements IMessaging {
                     System.err.println("dataLen must be <= " + TestMessage.MAX_DATA_SIZE);
                     return false;
                 }
+
                 if (_dataLen > MAX_BINDATA_SIZE.VALUE) {
                     System.err.println("dataLen must be <= " + MAX_BINDATA_SIZE.VALUE);
                     return false;
@@ -911,7 +857,7 @@ public final class RTIDDSImpl implements IMessaging {
                 _profileFile = argv[i];
             } else if ("-nomulticast".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isMulticast = false;
-		    } else if ("-multicast".toLowerCase().startsWith(argv[i].toLowerCase())) {
+            } else if ("-multicast".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isMulticast = true;
             } else if ("-multicastAddress".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
@@ -960,6 +906,7 @@ public final class RTIDDSImpl implements IMessaging {
                 }
                 try {
                     _instanceCount = Integer.parseInt(argv[i]);
+                    _instanceMaxCountReader = _instanceCount;
                 } catch (NumberFormatException nfx) {
                     System.err.print("Bad <count> for instances\n");
                     return false;
@@ -1062,17 +1009,34 @@ public final class RTIDDSImpl implements IMessaging {
                     return false;
                 }
             } else if ("-enableAutoThrottle".toLowerCase().startsWith(argv[i].toLowerCase())) {
-            	System.err.print("Auto Throttling enabled. Automatically adjusting the DataWriter\'s writing rate\n");
-		_AutoThrottle = true;
+                System.err.print("Auto Throttling enabled. Automatically adjusting the DataWriter\'s writing rate\n");
+                _AutoThrottle = true;
             } else if ("-enableTurboMode".toLowerCase().startsWith(argv[i].toLowerCase())) {
-            	_TurboMode = true;
-            } else if ("-configFile".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                /* Ignore config file */
-                ++i;
+                _TurboMode = true;
             } else {
                 System.err.print(argv[i] + ": not recognized\n");
                 return false;
             }
+        }
+
+        if (_dataLen > TestMessage.MAX_SYNCHRONOUS_SIZE) {
+            if (_isScan) {
+                System.err.println("DataLen will be ignored since -scan is "
+                        + "present"); 
+
+            } else {
+                System.err.println("Large data settings enabled (-dataLen > " 
+                                    + TestMessage.MAX_SYNCHRONOUS_SIZE + ").");
+                _isLargeData = true;
+            }
+        }
+        if (_isLargeData && _batchSize>0) {
+            System.err.println("Batch cannot be enabled if using large data.");
+            return false;
+        }
+        if (_isLargeData && _TurboMode) {
+            System.err.println("Turbo Mode cannot be used with asynchronous writing. It will be ignored.");
+            _TurboMode = false;
         }
         return true;
     }
@@ -1080,4 +1044,4 @@ public final class RTIDDSImpl implements IMessaging {
 }
 
 // ===========================================================================
-// End of $Id: RTIDDSImpl.java,v 1.2.2.1 2014/04/01 11:56:54 juanjo Exp $
+// End of $Id: RTIDDSImpl.java,v 1.17 2015/05/09 18:06:06 jmorales Exp $

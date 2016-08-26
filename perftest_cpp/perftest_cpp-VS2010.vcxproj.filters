@@ -7,9 +7,6 @@
     <ClCompile Include="..\DDSTypes\testSupport.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Property.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="RTIDDSImpl.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -25,9 +22,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="perftest_cpp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Property.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RTIDDSImpl.h">

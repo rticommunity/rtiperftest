@@ -147,7 +147,6 @@
 				EnableCOMDATFolding="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				TargetMachine="17`"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -185,10 +184,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Property.cxx"
-				>
-			</File>
-			<File
 				RelativePath=".\RTIDDSImpl.cxx"
 				>
 			</File>
@@ -219,10 +214,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Property.h"
-				>
-			</File>
-			<File
 				RelativePath=".\RTIDDSImpl.h"
 				>
 			</File>
@@ -245,26 +236,6 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
-		<File
-			RelativePath="..\perftest.ini"
-			>
-			<FileConfiguration
-				Name="Debug|x64"
-				ExcludedFromBuild="true"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|x64"
-				ExcludedFromBuild="true"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-				/>
-			</FileConfiguration>
-		</File>
 		<File
 			RelativePath="..\perftest.xml"
 			>
@@ -294,7 +265,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Regeneration type support plugin from $(InputFileName) $(RTIDDSGEN_PREPROCESSOR)"
-					CommandLine="&quot;$(NDDSHOME)/scripts/rtiddsgen&quot; -replace -language C++ -d ../DDSTypes $(RTIDDSGEN_PREPROCESSOR) ../idl/$(InputFileName)&#x0D;&#x0A;"
+					CommandLine="&quot;$(NDDSHOME)/bin/rtiddsgen&quot; -replace -language C++ -d ../DDSTypes $(RTIDDSGEN_PREPROCESSOR) ../idl/$(InputFileName)&#x0D;&#x0A;"
 					Outputs="../DDSTypes/test.h;../DDSTypes/test.cxx;../DDSTypes/testPlugin.h;../DDSTypes/testPlugin.cxx;../DDSTypes/testSupport.h;../DDSTypes/testSupport.cxx"
 				/>
 			</FileConfiguration>
@@ -304,7 +275,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Regeneration type support plugin from $(InputFileName) $(RTIDDSGEN_PREPROCESSOR)"
-					CommandLine="&quot;$(NDDSHOME)/scripts/rtiddsgen&quot; -replace -language C++ -d ../DDSTypes $(RTIDDSGEN_PREPROCESSOR) ../idl/$(InputFileName)&#x0D;&#x0A;"
+					CommandLine="&quot;$(NDDSHOME)/bin/rtiddsgen&quot; -replace -language C++ -d ../DDSTypes $(RTIDDSGEN_PREPROCESSOR) ../idl/$(InputFileName)&#x0D;&#x0A;"
 					Outputs="../DDSTypes/test.h;../DDSTypes/test.cxx;../DDSTypes/testPlugin.h;../DDSTypes/testPlugin.cxx;../DDSTypes/testSupport.h;../DDSTypes/testSupport.cxx"
 				/>
 			</FileConfiguration>

@@ -1,4 +1,4 @@
-/* $Id: RTIDDSImpl.cxx,v 1.3.2.1 2014/04/01 11:56:52 juanjo Exp $
+/* $Id: RTIDDSImpl.cxx,v 1.23 2015/05/09 18:06:06 jmorales Exp $
 
  (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
  Permission to modify and use for internal purposes granted.   	
@@ -6,6 +6,20 @@
 
  Modification History
  --------------------
+ 5.2.0,09may15,jm  PERFTEST-86 Reader's max instances not modified now, set to
+                   DDS_LENGTH_UNLIMITED via perftest.xml.
+ 5.2.0,27apr14,jm  PERFTEST-86 Removing .ini support. Fixing warnings.
+ 5.1.0,22sep14,jm  PERFTEST-75 Fixed LargeData + Turbo-Mode. Changing max size to
+                   131072.
+ 5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-64 Large data support 
+                   added for perftest.
+ 5.1.0,02sep14,jm  PERF-37 Fixed issue when topic is inconsistent.
+ 5.1.0,28aug14,jm  PERFTEST-64 Reverting changes, since they causes issues in
+                   Java with the allocated heap.
+ 5.1.0,28aug14,jm  PERFTEST-64 Added support for large data.
+ 5.1.0,22aug14,jmc Added options to the config file
+ 5.1.0,11aug14,jm  PERFTEST-57 Added -keyed command line option.
+ 5.1.0,16jul14,jmc Fixing usage string format
  5.1.0.9,27mar14,jmc PERFTEST-27 Fixing resource limits when using
                      Turbo Mode
  5.1.0,19dec13,jmc PERFTEST-3 Added autothrottle and turbomode
@@ -60,8 +74,6 @@
 
 #include "RTIDDSImpl.h"
 
-#include "Property.h"
-
 
 #ifdef RTI_WIN32
 #pragma warning(push)
@@ -72,14 +84,22 @@
 #endif
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 
-int          RTIDDSImpl::_WaitsetEventCount;
-unsigned int RTIDDSImpl::_WaitsetDelayUsec;
+
+template class RTIDDSImpl<TestDataKeyed_t>;
+template class RTIDDSImpl<TestData_t>;
+
+
+template <typename T>
+int RTIDDSImpl<T>::_WaitsetEventCount;
+template <typename T>
+unsigned int RTIDDSImpl<T>::_WaitsetDelayUsec;
 
 
 /*********************************************************
  * Shutdown
  */
-void RTIDDSImpl::Shutdown()
+template <typename T>
+void RTIDDSImpl<T>::Shutdown()
 {
     if (_participant != NULL) {
         perftest_cpp::MilliSleep(2000);
@@ -107,11 +127,12 @@ void RTIDDSImpl::Shutdown()
 /*********************************************************
  * PrintCmdLineHelp
  */
-void RTIDDSImpl::PrintCmdLineHelp()
+template <typename T>
+void RTIDDSImpl<T>::PrintCmdLineHelp()
 {
    const char *usage_string =
         /**************************************************************************/
-		"\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n"
+        "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n"
         "\t                          queue, default 50\n"
         "\t-domain <ID>            - RTI DDS Domain, default 1\n"
         "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles, \n"
@@ -120,13 +141,13 @@ void RTIDDSImpl::PrintCmdLineHelp()
         "\t                          If unspecificed, use all available interfaces\n"
         "\t-multicast              - Use multicast to send data, default not to\n"
         "\t                          use multicast\n"
-		"\t-nomulticast            - Do not use multicast to send data (default)\n"
+        "\t-nomulticast            - Do not use multicast to send data (default)\n"
         "\t-multicastAddress <ipaddr>   - Multicast address to use for receiving \n"
         "\t                          latency/announcement (pub) or \n"
         "\t                          throughtput(sub) data.\n"
         "\t                          If unspecified: latency 239.255.1.2,\n"
         "\t                                          announcement 239.255.1.100,\n"
-	    "\t                                          throughput 239.255.1.1\n"
+        "\t                                          throughput 239.255.1.1\n"
         "\t-bestEffort             - Run test in best effort mode, default reliable\n"
         "\t-batchSize <bytes>      - Size in bytes of batched message, default 0\n"
         "\t                          (no batching)\n"
@@ -135,7 +156,7 @@ void RTIDDSImpl::PrintCmdLineHelp()
         "\t-keepDurationUsec <usec> - Minimum time (us) to keep samples when\n"
         "\t                          positive acks are disabled, default 1000 us\n"
         "\t-enableSharedMemory     - Enable use of shared memory transport and \n"
-		"\t                          disable all the other transports, default\n"
+        "\t                          disable all the other transports, default\n"
         "\t                          shared memory not enabled\n"
         "\t-enableTcpOnly          - Enable use of TCP transport and disable all\n"
         "\t                          the other transports, default do not use\n"
@@ -163,97 +184,32 @@ void RTIDDSImpl::PrintCmdLineHelp()
         "\t                          number of samples rather than individually. It\n"
         "\t                          can be used combined with -waitsetDelayUsec,\n"
         "\t                          default 5\n"
-		"\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n"
-		"\t                          throughput DataWriter (pub)\n"
-	    "\t-enableTurboMode        - Enables the TurboMode feature in the throughput\n"
-		"\t                          DataWriter (pub)\n"
+        "\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n"
+        "\t                          throughput DataWriter (pub)\n"
+        "\t-enableTurboMode        - Enables the TurboMode feature in the\n"
+        "\t                          throughput DataWriter (pub)\n"
         ;
 
-    fprintf(stderr, usage_string);
+    fprintf(stderr, "%s", usage_string);
 }
 
 
 /*********************************************************
  * ParseConfig
  */
-bool RTIDDSImpl::ParseConfig(int argc, char *argv[])
+template <typename T>
+bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 {
     int i;
     int sec = 0;
     unsigned int nanosec = 0;
-    // first scan for configFile
 
-    for (i = 1; i < argc; ++i) {
-        if (IS_OPTION(argv[i], "-configFile")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <fileName> after -configFile\n");
-                return false;
-            }
-            _ConfigFile = argv[i];
-        }
-    }
-
-    // now load configuration values from config file
-    if (_ConfigFile != NULL) {
-        QosDictionary *configSource;
-
-        try {
-            configSource = new QosDictionary(_ConfigFile);
-        } catch (std::logic_error e) {
-            fprintf(stderr, "Problem loading configuration file.\n");
-            fprintf(stderr, "%s\n", e.what());
-            return false;
-        }
-
-        QosProfile* config = configSource->get("perftest");
-        
-        if (config == NULL) {
-            fprintf(stderr, "Could not find section [perftest] in file %s\n", _ConfigFile);
-            return false;
-        }
-
-        _DataLen        = config->get_int("data length", _DataLen);
-        _InstanceCount  = config->get_int("instances", _InstanceCount);
-	    _LatencyTest = config->get_bool("run latency test", _LatencyTest);
-        _IsDebug = config->get_bool("is debug", _IsDebug);
-
-        config = configSource->get("RTIImpl");
-        
-        if (config == NULL) {
-            fprintf(stderr, "Could not find section [RTIImpl] in file %s\n", _ConfigFile);
-            return false;
-        }
-
-        _SendQueueSize = config->get_int("send queue size", _SendQueueSize);
-        _DomainID = config->get_int("domain", _DomainID);
-        _ProfileFile = config->get_string("qos profile file", _ProfileFile);
-        _Nic = config->get_string("interface", _Nic);
-        _IsMulticast = config->get_bool("is multicast", _IsMulticast);
-        _IsReliable = config->get_bool("is reliable", _IsReliable);
-        _BatchSize = config->get_int("batch size", _BatchSize);
-        _KeepDurationUsec = (unsigned int)config->get_int("keep duration usec", (int)_KeepDurationUsec);
-        _UsePositiveAcks = config->get_bool("use positive acks", _UsePositiveAcks);
-        _UseSharedMemory = config->get_bool("enable shared memory", _UseSharedMemory);
-        _UseTcpOnly = config->get_bool("enable tcp only", _UseTcpOnly);
-        _WaitsetEventCount = config->get_int("waitset event count", _WaitsetEventCount);
-        _WaitsetDelayUsec = (unsigned int)config->get_int("waitset delay usec", (int)_WaitsetDelayUsec);
-        _Durability = config->get_int("durability", _Durability);
-        _DirectCommunication = config->get_bool("direct communication", _DirectCommunication);
-        _HeartbeatPeriod.sec = config->get_int(
-            "heartbeat period sec", _HeartbeatPeriod.sec);
-        _HeartbeatPeriod.nanosec = config->get_int(
-            "heartbeat period nanosec", _HeartbeatPeriod.nanosec);
-        _FastHeartbeatPeriod.sec = config->get_int(
-            "fast heartbeat period sec", _FastHeartbeatPeriod.sec);
-        _FastHeartbeatPeriod.nanosec = config->get_int(
-            "fast heartbeat period nanosec", _FastHeartbeatPeriod.nanosec);
-        _InstanceHashBuckets = config->get_int(
-            "instance hash buckets", _InstanceHashBuckets);
-    }
-
-    // now load everything else, command line params override config file
+    // Command line params
     for (i = 0; i < argc; ++i) {
-        if (IS_OPTION(argv[i], "-dataLen")) {
+        if (IS_OPTION(argv[i], "-scan")) {
+            _isScan = true;
+
+        } else if (IS_OPTION(argv[i], "-dataLen")) {
 
             if ((i == (argc-1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <length> after -dataLen\n");
@@ -277,13 +233,13 @@ bool RTIDDSImpl::ParseConfig(int argc, char *argv[])
                 return false;
             }
         } else if (IS_OPTION(argv[i], "-sendQueueSize")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
+            if ((i == (argc - 1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <count> after -sendQueueSize\n");
                 return false;
             }
             _SendQueueSize = strtol(argv[i], NULL, 10);
         } else if (IS_OPTION(argv[i], "-heartbeatPeriod")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
+            if ((i == (argc - 1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <period> after -heartbeatPeriod\n");
                 return false;
             }
@@ -371,6 +327,7 @@ bool RTIDDSImpl::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _InstanceCount = strtol(argv[i], NULL, 10);
+            _InstanceMaxCountReader = _InstanceCount;
 
             if (_InstanceCount <= 0) {
                 fprintf(stderr, "instance count cannot be negative or zero\n");
@@ -388,6 +345,7 @@ bool RTIDDSImpl::ParseConfig(int argc, char *argv[])
                 return false;
             }
         } else if (IS_OPTION(argv[i], "-batchSize")) {
+
             if ((i == (argc-1)) || *argv[++i] == '-') 
             {
                 fprintf(stderr, "Missing <#bytes> after -batchSize\n");
@@ -453,29 +411,45 @@ bool RTIDDSImpl::ParseConfig(int argc, char *argv[])
                 return false;
             }
         } 
-	    else if (IS_OPTION(argv[i], "-latencyTest")) 
+        else if (IS_OPTION(argv[i], "-latencyTest"))
         {
             _LatencyTest = true;
         }
-	else if (IS_OPTION(argv[i], "-enableAutoThrottle"))
-	{
-	    fprintf(stderr, "Auto Throttling enabled. Automatically adjusting the DataWriter\'s writing rate\n");
+        else if (IS_OPTION(argv[i], "-enableAutoThrottle"))
+        {
+            fprintf(stderr, "Auto Throttling enabled. Automatically adjusting the DataWriter\'s writing rate\n");
             _AutoThrottle = true;
-	}
-	else if (IS_OPTION(argv[i], "-enableTurboMode") )
-	{
-	    _TurboMode = true;
-	}
-        else if (IS_OPTION(argv[i], "-configFile")) {
-            /* Ignore config file */
-            ++i;
-        } 
-		else {
+        }
+        else if (IS_OPTION(argv[i], "-enableTurboMode") )
+        {
+            _TurboMode = true;
+        }
+        else {
             if (i > 0) {
                 fprintf(stderr, "%s: not recognized\n", argv[i]);
                 return false;
             }
         }
+    }
+
+    if (_DataLen > TestMessage::MAX_SYNCHRONOUS_SIZE) {
+        if (_isScan) {
+            fprintf(stderr,"DataLen will be ignored since -scan is present.\n");
+        } else {
+            fprintf(stderr,
+                    "Large data settings enabled (-dataLen > %d).\n",
+                    TestMessage::MAX_SYNCHRONOUS_SIZE);
+            _isLargeData = true;
+        }
+    }
+    if (_isLargeData && _BatchSize > 0) {
+        fprintf(stderr, "Batch cannot be enabled if using large data\n");
+        return false;
+    }
+
+    if (_isLargeData && _TurboMode) {
+        fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing. It will be ignored.\n");
+        _TurboMode = false;
     }
 
     return true;
@@ -491,7 +465,7 @@ class DomainListener : public DDSDomainParticipantListener
         DDSTopic *topic,
         const DDS_InconsistentTopicStatus& /*status*/)
     {
-        fprintf(stderr,"Found inconsistent topic %s of type %s.\n",
+        fprintf(stderr,"Found inconsistent topic. Expecting %s of type %s.\n",
                topic->get_name(), topic->get_type_name());
         fflush(stderr);
     }
@@ -518,11 +492,12 @@ class DomainListener : public DDSDomainParticipantListener
 /*********************************************************
  * RTIPublisher
  */
+template<typename T>
 class RTIPublisher : public IMessagingWriter
 {
   private:
-    TestData_tDataWriter *_writer;
-    TestData_t data;
+    typename T::DataWriter *_writer;
+    T data;
     int _num_instances;
     unsigned long _instance_counter;
     DDS_InstanceHandle_t *_instance_handles;
@@ -531,7 +506,7 @@ class RTIPublisher : public IMessagingWriter
  public:
     RTIPublisher(DDSDataWriter *writer, int num_instances, RTIOsapiSemaphore * pongSemaphore)
     {
-        _writer = TestData_tDataWriter::narrow(writer);
+        _writer = T::DataWriter::narrow(writer);
         data.bin_data.maximum(0);
         _num_instances = num_instances;
         _instance_counter = 0;
@@ -650,11 +625,12 @@ class RTIPublisher : public IMessagingWriter
 /*********************************************************
  * ReceiverListener
  */
+template <typename T>
 class ReceiverListener : public DDSDataReaderListener
 {
   private:
 
-    TestData_tSeq     _data_seq;
+    typename T::Seq     _data_seq;
     DDS_SampleInfoSeq _info_seq;
     TestMessage       _message;
     IMessagingCB     *_callback;
@@ -668,20 +644,17 @@ class ReceiverListener : public DDSDataReaderListener
 
     void on_data_available(DDSDataReader *reader)
     {
-        TestData_tDataReader *datareader;
 
-        DDS_ReturnCode_t retcode;
-        int i;
-        int seq_length;
+        typename T::DataReader *datareader;
 
-        datareader = TestData_tDataReader::narrow(reader);
+        datareader = T::DataReader::narrow(reader);
         if (datareader == NULL)
         {
             fprintf(stderr,"DataReader narrow error.\n");
             return;
         }
 
-        
+        DDS_ReturnCode_t retcode;
         retcode = datareader->take(
             _data_seq, _info_seq,
             DDS_LENGTH_UNLIMITED,
@@ -699,6 +672,9 @@ class ReceiverListener : public DDSDataReaderListener
             fprintf(stderr,"Error during taking data %d\n", retcode);
             return;
         }
+
+        int i;
+        int seq_length;
 
         seq_length = _data_seq.length();
         for (i = 0; i < seq_length; ++i)
@@ -732,11 +708,12 @@ class ReceiverListener : public DDSDataReaderListener
 /*********************************************************
  * RTISubscriber
  */
+template <typename T>
 class RTISubscriber : public IMessagingReader
 {
   private:
-    TestData_tDataReader *_reader;
-    TestData_tSeq         _data_seq;
+    typename T::DataReader *_reader;
+    typename T::Seq         _data_seq;
     DDS_SampleInfoSeq     _info_seq;
     TestMessage           _message;
     DDSWaitSet           *_waitset;
@@ -749,14 +726,14 @@ class RTISubscriber : public IMessagingReader
 
     RTISubscriber(DDSDataReader *reader)
     {
-        _reader = TestData_tDataReader::narrow(reader);
+        _reader = T::DataReader::narrow(reader);
 
         // null listener means using receive thread
         if (_reader->get_listener() == NULL) {
             DDS_WaitSetProperty_t property;
-            property.max_event_count         = RTIDDSImpl::_WaitsetEventCount;
-            property.max_event_delay.sec     = (int)RTIDDSImpl::_WaitsetDelayUsec / 1000000;
-            property.max_event_delay.nanosec = (RTIDDSImpl::_WaitsetDelayUsec % 1000000) * 1000;
+            property.max_event_count         = RTIDDSImpl<T>::_WaitsetEventCount;
+            property.max_event_delay.sec     = (int)RTIDDSImpl<T>::_WaitsetDelayUsec / 1000000;
+            property.max_event_delay.nanosec = (RTIDDSImpl<T>::_WaitsetDelayUsec % 1000000) * 1000;
 
             _waitset = new DDSWaitSet(property);
            
@@ -824,7 +801,9 @@ class RTISubscriber : public IMessagingReader
 
             // skip non-valid data
             while ( (_info_seq[_data_idx].valid_data == false) && 
-                    (++_data_idx < seq_length));
+                    (++_data_idx < seq_length)){
+                //No operation required
+            }
 
              // may have hit end condition
              if (_data_idx == seq_length) { continue; }
@@ -864,7 +843,8 @@ class RTISubscriber : public IMessagingReader
 /*********************************************************
  * Initialize
  */
-bool RTIDDSImpl::Initialize(int argc, char *argv[])
+template <typename T>
+bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 {
     DDS_DomainParticipantQos qos; 
     DDS_DomainParticipantFactoryQos factory_qos;
@@ -960,7 +940,7 @@ bool RTIDDSImpl::Initialize(int argc, char *argv[])
     }
 
     // Register the types and create the topics
-    TestData_tTypeSupport::register_type(_participant, _typename);
+    T::TypeSupport::register_type(_participant, _typename);
 
     // Create the DDSPublisher and DDSSubscriber
     {       
@@ -987,11 +967,12 @@ bool RTIDDSImpl::Initialize(int argc, char *argv[])
 /*********************************************************
  * CreateWriter
  */
-IMessagingWriter *RTIDDSImpl::CreateWriter(const char *topic_name)
+template <typename T>
+IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 {
     DDSDataWriter *writer = NULL;
     DDS_DataWriterQos dw_qos;
-    char *qos_profile = NULL;
+    std::string qos_profile;
 
     DDSTopic *topic = _participant->create_topic(
                        topic_name, _typename,
@@ -1033,16 +1014,24 @@ IMessagingWriter *RTIDDSImpl::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (_factory->get_datawriter_qos_from_profile(dw_qos, _ProfileLibraryName, qos_profile)
+    if (_factory->get_datawriter_qos_from_profile(dw_qos, _ProfileLibraryName,
+            qos_profile.c_str())
         != DDS_RETCODE_OK) {
         fprintf(stderr,"No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
-                qos_profile, _ProfileLibraryName, _ProfileFile);
+                qos_profile.c_str(), _ProfileLibraryName, _ProfileFile);
         return NULL;
     }
     
     if (_UsePositiveAcks) {
         dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (int)_KeepDurationUsec/1000000;
         dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = _KeepDurationUsec%1000000;
+    }
+
+    if ((_isLargeData) && (!_isScan)) {
+        fprintf(stderr, "Using asynchronous write for %s\n", topic_name);
+        dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+        dw_qos.publish_mode.flow_controller_name =
+                DDS_String_dup("dds.flow_controller.token_bucket.fast_flow");
     }
 
     // only force reliability on throughput/latency topics
@@ -1056,8 +1045,8 @@ IMessagingWriter *RTIDDSImpl::CreateWriter(const char *topic_name)
     }
 
     // These QOS's are only set for the Throughput datawriter
-    if ((strcmp(qos_profile,"ThroughputQos") == 0) ||
-        (strcmp(qos_profile,"NoAckThroughputQos") == 0))
+    if (qos_profile == "ThroughputQos" ||
+        qos_profile =="NoAckThroughputQos")
     {
         if (_BatchSize > 0) {
             dw_qos.batch.enable = true;
@@ -1082,19 +1071,19 @@ IMessagingWriter *RTIDDSImpl::CreateWriter(const char *topic_name)
             dw_qos.protocol.rtps_reliable_writer.fast_heartbeat_period =
                 _FastHeartbeatPeriod;
         }
-        
-        if (_AutoThrottle) {
-			DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
-			"dds.data_writer.auto_throttle.enable", "true", false);
-		}
 
-		if (_TurboMode) {
-			DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
-				"dds.data_writer.enable_turbo_mode", "true", false);
-			dw_qos.batch.enable = false;
+        if (_AutoThrottle) {
+            DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
+                    "dds.data_writer.auto_throttle.enable", "true", false);
+        }
+
+        if (_TurboMode) {
+            DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
+                    "dds.data_writer.enable_turbo_mode", "true", false);
+            dw_qos.batch.enable = false;
             dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
             dw_qos.writer_resource_limits.max_batches = _SendQueueSize;
-		}
+        }
 
         dw_qos.resource_limits.initial_samples = _SendQueueSize;
         dw_qos.resource_limits.max_samples_per_instance
@@ -1112,8 +1101,8 @@ IMessagingWriter *RTIDDSImpl::CreateWriter(const char *topic_name)
         dw_qos.protocol.rtps_reliable_writer.min_send_window_size = _SendQueueSize;
     }
 
-    if (((strcmp(qos_profile,"LatencyQos") == 0) || 
-        (strcmp(qos_profile,"NoAckLatencyQos") == 0)) &&
+    if ((qos_profile == "LatencyQos" ||
+        qos_profile == "NoAckLatencyQos") &&
         !_DirectCommunication && 
         (_Durability == DDS_TRANSIENT_DURABILITY_QOS ||
          _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
@@ -1143,7 +1132,7 @@ IMessagingWriter *RTIDDSImpl::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    RTIPublisher *pub = new RTIPublisher(writer, _InstanceCount, _pongSemaphore);
+    RTIPublisher<T> *pub = new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore);
 
     return pub;
 }
@@ -1151,10 +1140,11 @@ IMessagingWriter *RTIDDSImpl::CreateWriter(const char *topic_name)
 /*********************************************************
  * CreateReader
  */
-IMessagingReader *RTIDDSImpl::CreateReader(const char *topic_name, 
+template <typename T>
+IMessagingReader *RTIDDSImpl<T>::CreateReader(const char *topic_name,
                                            IMessagingCB *callback)
 {
-    ReceiverListener *reader_listener = NULL;
+    ReceiverListener<T> *reader_listener = NULL;
     DDSDataReader *reader = NULL;
     DDS_DataReaderQos dr_qos;
     const char *qos_profile = NULL;
@@ -1243,7 +1233,7 @@ IMessagingReader *RTIDDSImpl::CreateReader(const char *topic_name,
     }
 
     dr_qos.resource_limits.initial_instances = _InstanceCount;
-    dr_qos.resource_limits.max_instances = _InstanceCount;
+    dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
     
     if (_InstanceCount > 1) {
         if (_InstanceHashBuckets > 0) {
@@ -1257,23 +1247,19 @@ IMessagingReader *RTIDDSImpl::CreateReader(const char *topic_name,
     if (!_UseTcpOnly && _IsMulticast) {
             const char *multicast_addr;
 
-		if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0)
-		{
-			multicast_addr = THROUGHPUT_MULTICAST_ADDR;
-		}
-		else  if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0)
-		{
-			multicast_addr = LATENCY_MULTICAST_ADDR;
-		}
-		else 
-		{
-			multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
-		}
+        if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0) {
+            multicast_addr = THROUGHPUT_MULTICAST_ADDR;
+        } else if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0) {
+            multicast_addr = LATENCY_MULTICAST_ADDR;
+        } else {
+            multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
+        }
 
-		dr_qos.multicast.value.ensure_length(1,1);
-		dr_qos.multicast.value[0].receive_address = DDS_String_dup(multicast_addr);
-		dr_qos.multicast.value[0].receive_port = 0;
-		dr_qos.multicast.value[0].transports.length(0);
+        dr_qos.multicast.value.ensure_length(1, 1);
+        dr_qos.multicast.value[0].receive_address = DDS_String_dup(
+                multicast_addr);
+        dr_qos.multicast.value[0].receive_port = 0;
+        dr_qos.multicast.value[0].transports.length(0);
     }
 
 
@@ -1282,7 +1268,7 @@ IMessagingReader *RTIDDSImpl::CreateReader(const char *topic_name,
        /*  NDDSConfigLogger::get_instance()->
         set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API, 
                                   NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);*/
-        reader_listener = new ReceiverListener(callback);
+        reader_listener = new ReceiverListener<T>(callback);
         reader = _subscriber->create_datareader(
             topic, dr_qos, reader_listener, DDS_DATA_AVAILABLE_STATUS);
     }
@@ -1303,9 +1289,11 @@ IMessagingReader *RTIDDSImpl::CreateReader(const char *topic_name,
         _reader = reader;
     }
 
-    IMessagingReader *sub = new RTISubscriber(reader);
+    IMessagingReader *sub = new RTISubscriber<T>(reader);
     return sub;
 }
+
+
 
 #ifdef RTI_WIN32
 #pragma warning(pop)

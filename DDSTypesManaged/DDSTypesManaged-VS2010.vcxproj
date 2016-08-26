@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -40,11 +40,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
-    <ReferencePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NDDSHOME)/lib/i86Win32dotnet4.0;$(ReferencePath)</ReferencePath>
+    <ReferencePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NDDSHOME)/lib/i86Win32VS2010;$(ReferencePath)</ReferencePath>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)\bin\i86Win32VS2010\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">obj\i86Win32VS2010\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
-    <ReferencePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NDDSHOME)/lib/i86Win32dotnet4.0;$(ReferencePath)</ReferencePath>
+    <ReferencePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NDDSHOME)/lib/i86Win32VS2010;$(ReferencePath)</ReferencePath>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)\bin\i86Win32VS2010\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">obj\i86Win32VS2010\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
@@ -124,11 +124,11 @@
   <ItemGroup>
     <CustomBuild Include="..\idl\test.idl">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Regenerating type support plugin from %(Filename)%(Extension) $(RTIDDSGEN_PREPROCESSOR)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(NDDSHOME)\scripts\rtiddsgen" -replace -language C++/CLI -d ../DDSTypesManaged $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(NDDSHOME)\bin\rtiddsgen" -replace -language C++/CLI -d ../DDSTypesManaged $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../DDSTypesManaged/test.h;../DDSTypesManaged/test.cpp;../DDSTypesManaged/testPlugin.h;../DDSTypesManaged/testPlugin.cpp;../DDSTypesManaged/testSupport.h;../DDSTypesManaged/testSupport.cpp;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Regenerating type support plugin from %(Filename)%(Extension) $(RTIDDSGEN_PREPROCESSOR)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(NDDSHOME)/scripts/rtiddsgen" -replace -language C++/CLI -d ../DDSTypesManaged $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(NDDSHOME)/bin/rtiddsgen" -replace -language C++/CLI -d ../DDSTypesManaged $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../DDSTypesManaged/test.h;../DDSTypesManaged/test.cpp;../DDSTypesManaged/testPlugin.h;../DDSTypesManaged/testPlugin.cpp;../DDSTypesManaged/testSupport.h;../DDSTypesManaged/testSupport.cpp;%(Outputs)</Outputs>
     </CustomBuild>

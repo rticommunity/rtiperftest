@@ -1,4 +1,4 @@
-/* $Id: LatencyListener.java,v 1.1.2.1 2014/04/01 11:56:54 juanjo Exp $
+/* $Id: LatencyListener.java,v 1.4 2014/06/27 15:23:02 juanjo Exp $
 
 (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
 Permission to modify and use for internal purposes granted.   	
@@ -6,6 +6,7 @@ This software is provided "as is", without warranty, express or implied.
 
 modification history:
 --------------------
+5.1.0,19may2014,jmc PERFTEST-49 Added 99.9999% latency
 09jul10,jsr Fixing LatencyListener constructor
 03may10,jsr Adapted for new Latencytest option
 02oct08,eys Added 99.99% latency
@@ -144,7 +145,7 @@ import com.rti.perftest.TestMessage;
                                 (latency_ave * latency_ave)));
                 System.out.printf(
                         "Length: %1$5d  Latency: Ave %2$6.0f us  Std %3$6.1f us  " +
-                        "Min %4$6d us  Max %5$6d us  50%% %6$6d us  90%% %7$6d us  99%% %8$6d us 99.99%% %9$6d us\n",
+                        "Min %4$6d us  Max %5$6d us  50%% %6$6d us  90%% %7$6d us  99%% %8$6d us  99.99%% %9$6d us  99.9999%% %10$6d us\n",
                         _lastDataLength + PerfTest.OVERHEAD_BYTES,
                         latency_ave,
                         latency_std,
@@ -153,7 +154,8 @@ import com.rti.perftest.TestMessage;
                         _latencyHistory[(int)(_count * 50/(double)100)],
                         _latencyHistory[(int)(_count * 90/(double)100)],
                         _latencyHistory[(int)(_count * 99/(double)100)],
-                        _latencyHistory[(int)(_count * (9999.0/(double)10000))]);
+                        _latencyHistory[(int)(_count * (9999.0/(double)10000))],
+                        _latencyHistory[(int)(_count * (999999.0/(double)1000000))]);
                 System.out.flush();
                 _latencySum = 0;
                 _latencySumSquare = 0;
@@ -249,4 +251,4 @@ import com.rti.perftest.TestMessage;
 }
 
 // ===========================================================================
-// End of $Id: LatencyListener.java,v 1.1.2.1 2014/04/01 11:56:54 juanjo Exp $
+// End of $Id: LatencyListener.java,v 1.4 2014/06/27 15:23:02 juanjo Exp $

@@ -1,4 +1,4 @@
-/* $Id: RTISubscriber.java,v 1.1.2.1 2014/04/01 11:56:54 juanjo Exp $
+/* $Id: RTISubscriber.java,v 1.4 2014/08/12 10:21:28 jmorales Exp $
 
 (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
 Permission to modify and use for internal purposes granted.   	
@@ -6,6 +6,7 @@ This software is provided "as is", without warranty, express or implied.
 
 modification history:
 --------------------
+5.1.0,11aug14,jm PERFTEST-69 Added -keyed command line option.
 04may08,hhw Added WaitForWriters()
 02apr08,rbw Fixed syntax error in printf() calls
 01apr08,rbw Follow Java naming conventions
@@ -30,17 +31,15 @@ import com.rti.dds.subscription.SampleInfo;
 import com.rti.dds.subscription.SampleInfoSeq;
 import com.rti.dds.subscription.SampleStateKind;
 import com.rti.dds.subscription.ViewStateKind;
+import com.rti.dds.util.AbstractSequence;
 import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.TestMessage;
 import com.rti.perftest.gen.MAX_BINDATA_SIZE;
-import com.rti.perftest.gen.TestData_t;
-import com.rti.perftest.gen.TestData_tDataReader;
-import com.rti.perftest.gen.TestData_tSeq;
 
 
 // ===========================================================================
 
-/*package*/ final class RTISubscriber implements IMessagingReader {
+/*package*/ final class RTISubscriber<T> implements IMessagingReader {
     // -----------------------------------------------------------------------
     // Private Fields
     // -----------------------------------------------------------------------
@@ -49,9 +48,11 @@ import com.rti.perftest.gen.TestData_tSeq;
             Duration_t.DURATION_INFINITE_SEC,
             Duration_t.DURATION_INFINITE_NSEC);
 
-    private TestData_tDataReader _reader;
-    private TestData_tSeq _dataSeq = new TestData_tSeq();
+    private DataReader _reader;
+    private AbstractSequence _dataSeq = null;
     private SampleInfoSeq _infoSeq = new SampleInfoSeq();
+    private TypeHelper<T> _myDataType = null;
+    
     private TestMessage _message = new TestMessage();
     {
         _message.data = new byte[MAX_BINDATA_SIZE.VALUE];
@@ -70,8 +71,10 @@ import com.rti.perftest.gen.TestData_tSeq;
 
     // --- Constructors: -----------------------------------------------------
 
-    public RTISubscriber(DataReader reader) {
-        _reader = (TestData_tDataReader) reader;
+    public RTISubscriber(DataReader reader, TypeHelper<T> myDatatype) {
+        _reader = reader;
+        _myDataType = myDatatype;
+        _dataSeq =_myDataType.createSequence();
 
         // null listener means using receive thread
         if (_reader.get_listener() == null) {
@@ -96,7 +99,7 @@ import com.rti.perftest.gen.TestData_tSeq;
 
     public void shutdown() {
         // loan may be outstanding during shutdown
-        _reader.return_loan(_dataSeq, _infoSeq);
+        _reader.return_loan_untyped(_dataSeq, _infoSeq);
     }
 
 
@@ -113,7 +116,7 @@ import com.rti.perftest.gen.TestData_tSeq;
                 }
 
                 try {
-                    _reader.take(
+                    _reader.take_untyped(
                             _dataSeq, _infoSeq,
                             ResourceLimitsQosPolicy.LENGTH_UNLIMITED,
                             SampleStateKind.ANY_SAMPLE_STATE,
@@ -137,7 +140,7 @@ import com.rti.perftest.gen.TestData_tSeq;
             int seq_size = _dataSeq.size();
             // check to see if hit end condition
             if (_dataIdx == seq_size) {
-                _reader.return_loan(_dataSeq, _infoSeq);
+                _reader.return_loan_untyped(_dataSeq, _infoSeq);
                 _noData = true;
                 // for some reason, woke up, only got meta-data messages
                 continue;
@@ -154,14 +157,7 @@ import com.rti.perftest.gen.TestData_tSeq;
                 continue;
             }
 
-            TestData_t msg = (TestData_t) _dataSeq.get(_dataIdx);
-            _message.entity_id = msg.entity_id;
-            _message.seq_num = msg.seq_num;
-            _message.timestamp_sec = msg.timestamp_sec;
-            _message.timestamp_usec = msg.timestamp_usec;
-            _message.latency_ping = msg.latency_ping;
-            _message.size = msg.bin_data.size();
-            _message.data = (byte[]) msg.bin_data.getPrimitiveArray();
+            _message = _myDataType.copyFromSeqToMessage(_dataSeq,_dataIdx);
 
             ++_dataIdx;
 
@@ -188,4 +184,4 @@ import com.rti.perftest.gen.TestData_tSeq;
 }
 
 // ===========================================================================
-// End of $Id: RTISubscriber.java,v 1.1.2.1 2014/04/01 11:56:54 juanjo Exp $
+// End of $Id: RTISubscriber.java,v 1.4 2014/08/12 10:21:28 jmorales Exp $

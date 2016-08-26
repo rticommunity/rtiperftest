@@ -1,3 +1,3 @@
-# RTI Perftest 5.1.0
+# RTI Perftest 5.2.0
 
-Find the documentation built as a `.pdf` document under [`rtiperftest/doc`](doc/RTI_ConnextDDS_PerformanceTest_GettingStarted_5.1.0.pdf).
+Find the documentation built as a `.pdf` document under [`rtiperftest/doc`](doc/RTI_ConnextDDS_PerformanceTest_GettingStarted.pdf).

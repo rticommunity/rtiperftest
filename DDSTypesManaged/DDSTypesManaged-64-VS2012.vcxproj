@@ -42,11 +42,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <ReferencePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NDDSHOME)/lib/x64Win64dotnet4.5;$(ReferencePath)</ReferencePath>
+    <ReferencePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NDDSHOME)/lib/x64Win64VS2012;$(ReferencePath)</ReferencePath>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)\bin\x64Win64VS2012\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)\bin\x64Win64VS2012\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
-    <ReferencePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NDDSHOME)/lib/x64Win64dotnet4.5;$(ReferencePath)</ReferencePath>
+    <ReferencePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NDDSHOME)/lib/x64Win64VS2012;$(ReferencePath)</ReferencePath>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)\bin\x64Win64VS2012\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)\bin\x64Win64VS2012\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
@@ -95,7 +95,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <Reference Include="nddsdotnet45">
-      <HintPath>$(NDDSHOME)\x64Win64dotnet4.5\nddsdotnet45.dll</HintPath>
+      <HintPath>$(NDDSHOME)\x64Win64VS2012\nddsdotnet45.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
@@ -124,11 +124,11 @@
   <ItemGroup>
     <CustomBuild Include="..\idl\test.idl">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Regenerating type support plugin from %(Filename)%(Extension) $(RTIDDSGEN_PREPROCESSOR)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(NDDSHOME)\scripts\rtiddsgen" -replace -language C++/CLI -d ../DDSTypesManaged $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(NDDSHOME)\bin\rtiddsgen" -replace -language C++/CLI -d ../DDSTypesManaged $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../DDSTypesManaged/test.h;../DDSTypesManaged/test.cpp;../DDSTypesManaged/testPlugin.h;../DDSTypesManaged/testPlugin.cpp;../DDSTypesManaged/testSupport.h;../DDSTypesManaged/testSupport.cpp;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Regenerating type support plugin from %(Filename)%(Extension) $(RTIDDSGEN_PREPROCESSOR)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(NDDSHOME)/scripts/rtiddsgen" -replace -language C++/CLI -d ../DDSTypesManaged $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(NDDSHOME)/bin/rtiddsgen" -replace -language C++/CLI -d ../DDSTypesManaged $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../DDSTypesManaged/test.h;../DDSTypesManaged/test.cpp;../DDSTypesManaged/testPlugin.h;../DDSTypesManaged/testPlugin.cpp;../DDSTypesManaged/testSupport.h;../DDSTypesManaged/testSupport.cpp;%(Outputs)</Outputs>
     </CustomBuild>

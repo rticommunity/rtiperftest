@@ -1,11 +1,24 @@
-/* $Id: perftest_cs.cs,v 1.1.2.1 2014/04/01 11:56:53 juanjo Exp $
+/* $Id: perftest_cs.cs,v 1.15 2015/04/29 14:28:49 jmorales Exp $
 
-(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
-Permission to modify and use for internal purposes granted.   	
+(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+Permission to modify and use for internal purposes granted.
 This software is provided "as is", without warranty, express or implied.
 
 modification history
 --------------------
+5.2.0,27apr14,jm  PERFTEST-86 Removing .ini support.
+5.2.0,31oct14.jmc PERFTEST-76 Fixed segfault in ProcessMessage
+5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-65 Large data support 
+                  added for perftest.
+5.1.0,27aug14,jmc PERFTEST-62 Added -executionTime command line option
+5.1.0,27aug14,jm  Fixes for PERFTEST-71 and PERFTEST-72.
+5.1.0,26aug14,jm  Added support for -pubRate and -keyed option in perftest.ini
+                  Added logic for checking -pubRate bounds.
+5.1.0,11aug14,jm  PERFTEST-68 Added -keyed command line option.
+5.1.0,16jul14,jmc PERFTEST-52 Added -pubRate to -h
+5.1.0,15jul14,jmc PERFTEST-52 Added -pubRate command-line option.
+                  Also modifying _SpinLoopCount to be ulong
+5.1.0,19may2014,jmc PERFTEST-48 Added 99.9999% latency
 1.0a,13jul10,jsr Added WaitForPingResponse with timeout
 1.0a,09jul10,jsr Fixed LatencyListener constructor
 1.0a,08jul10,jsr Fixed LatencyListener constructor calls
@@ -40,10 +53,182 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices; // for DllImport]
 using System.Threading;
 using System.Text;
-
+using System.Timers;
 
 namespace PerformanceTest {
 
+    /*********************************************************
+     * DataTypeHelper (non keyed)
+     */
+    class DataTypeHelper : ITypeHelper<TestData_t>
+    {
+
+        TestData_t _myData;
+
+        public DataTypeHelper()
+        {
+            _myData = new TestData_t();
+        }
+
+        public DataTypeHelper(TestData_t myData)
+        {
+                _myData = myData;
+        }
+
+        public void fillKey(int value)
+        {
+
+            _myData.key[0] = (byte)(value);
+            _myData.key[1] = (byte)(value >> 8);
+            _myData.key[2] = (byte)(value >> 16);
+            _myData.key[3] = (byte)(value >> 24);
+
+        }
+
+        public void copyFromMessage(TestMessage message)
+        {
+
+            _myData.entity_id = message.entity_id;
+            _myData.seq_num = message.seq_num;
+            _myData.timestamp_sec = message.timestamp_sec;
+            _myData.timestamp_usec = message.timestamp_usec;
+            _myData.latency_ping = message.latency_ping;
+            _myData.bin_data.loan(message.data, message.size);
+
+        }
+
+        public TestMessage copyFromSeqToMessage(Object data_sequence, int index)
+        {
+
+            TestData_t msg = ((TestData_tSeq)data_sequence).get_at(index);
+            TestMessage message = new TestMessage();
+
+            message.entity_id = msg.entity_id;
+            message.seq_num = msg.seq_num;
+            message.timestamp_sec = msg.timestamp_sec;
+            message.timestamp_usec = msg.timestamp_usec;
+            message.latency_ping = msg.latency_ping;
+            message.size = msg.bin_data.length;
+            message.data = msg.bin_data.buffer;
+
+            return message;
+        }
+
+        public TestData_t getData()
+        {
+            return _myData;
+        }
+
+        public DDS.ByteSeq getBindata()
+        {
+            return _myData.bin_data;
+        }
+
+        public DDS.TypedTypeSupport<TestData_t> getTypeSupport()
+        {
+            return TestData_tTypeSupport.get_instance();
+        }
+
+        public ITypeHelper<TestData_t> clone()
+        {
+            return new DataTypeHelper(_myData);
+        }
+
+        public DDS.LoanableSequence<TestData_t> createSequence()
+        {
+            return new TestData_tSeq();
+        }
+
+    }
+
+    /*********************************************************
+     * DataTypeKeyedHelper
+     */
+    class DataTypeKeyedHelper : ITypeHelper<TestDataKeyed_t>
+    {
+
+        TestDataKeyed_t _myData;
+
+        public DataTypeKeyedHelper()
+        {
+            _myData = new TestDataKeyed_t();
+        }
+
+        public DataTypeKeyedHelper(TestDataKeyed_t myData)
+        {
+            _myData = myData;
+        }
+
+        public void fillKey(int value)
+        {
+
+            _myData.key[0] = (byte)(value);
+            _myData.key[1] = (byte)(value >> 8);
+            _myData.key[2] = (byte)(value >> 16);
+            _myData.key[3] = (byte)(value >> 24);
+
+        }
+
+        public void copyFromMessage(TestMessage message)
+        {
+
+            _myData.entity_id = message.entity_id;
+            _myData.seq_num = message.seq_num;
+            _myData.timestamp_sec = message.timestamp_sec;
+            _myData.timestamp_usec = message.timestamp_usec;
+            _myData.latency_ping = message.latency_ping;
+            _myData.bin_data.loan(message.data, message.size);
+
+        }
+
+        public TestMessage copyFromSeqToMessage(Object data_sequence, int index)
+        {
+
+            TestDataKeyed_t msg = ((TestDataKeyed_tSeq)data_sequence).get_at(index);
+            TestMessage message = new TestMessage();
+
+            message.entity_id = msg.entity_id;
+            message.seq_num = msg.seq_num;
+            message.timestamp_sec = msg.timestamp_sec;
+            message.timestamp_usec = msg.timestamp_usec;
+            message.latency_ping = msg.latency_ping;
+            message.size = msg.bin_data.length;
+            message.data = msg.bin_data.buffer;
+
+            return message;
+        }
+
+        public TestDataKeyed_t getData()
+        {
+            return _myData;
+        }
+
+        public DDS.ByteSeq getBindata()
+        {
+            return _myData.bin_data;
+        }
+
+        public DDS.TypedTypeSupport<TestDataKeyed_t> getTypeSupport()
+        {
+            return TestDataKeyed_tTypeSupport.get_instance();
+        }
+
+        public ITypeHelper<TestDataKeyed_t> clone()
+        {
+            return new DataTypeKeyedHelper(_myData);
+        }
+
+        public DDS.LoanableSequence<TestDataKeyed_t> createSequence()
+        {
+            return new TestDataKeyed_tSeq();
+        }
+
+    }
+
+
+    /*********************************************************
+     * perftest_cs
+     */
     public class perftest_cs : IDisposable
     {
 
@@ -53,22 +238,30 @@ namespace PerformanceTest {
         static void Main(string[] argv)
         {
             perftest_cs app = new perftest_cs();
-           
+
             app.Run(argv);
 
             app.Dispose();
         }
-        
+
         void Run(string[] argv)
         {
-            _MessagingImpl = new RTIDDSImpl();
-
-            if ( !ParseConfig(argv) )
+            if (!ParseConfig(argv))
             {
                 return;
             }
 
-            if (!_MessagingImpl.Initialize(_MessagingArgc, _MessagingArgv)) 
+            if (_isKeyed)
+            {
+                Console.Error.Write("Using keyed Data.\n");
+                _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>(new DataTypeKeyedHelper());
+            }
+            else {
+                Console.Error.Write("Using unkeyed Data.\n");
+                _MessagingImpl = new RTIDDSImpl<TestData_t>(new DataTypeHelper());
+            }
+
+            if (!_MessagingImpl.Initialize(_MessagingArgc, _MessagingArgv))
             {
                 return;
             }
@@ -95,29 +288,32 @@ namespace PerformanceTest {
         /*********************************************************
          * Destructor
          */
-        public void Dispose() 
+        public void Dispose()
         {
-            _MessagingImpl.Shutdown();
+            if (_MessagingImpl != null)
+            {
+                _MessagingImpl.Shutdown();
+            }
             Console.Error.Write("Test ended.\n");
             Console.Out.Flush();
         }
 
         /*********************************************************
-         * Constructor 
+         * Constructor
          */
-        perftest_cs() 
+        perftest_cs()
         {
             QueryPerformanceFrequency(ref _ClockFrequency);
         }
 
         /*********************************************************
         * ParseConfig
-        */   
+        */
         bool ParseConfig(string[] argv)
         {
             _MessagingArgv = new String [argv.Length];
 
-            string usage_string = 
+            string usage_string =
                 /**************************************************************************/
                 "Usage:\n" +
                 "       perftest_cs [options]\n" +
@@ -130,18 +326,16 @@ namespace PerformanceTest {
                 "\t-pidMultiPubTest <id>   - Set id of the publisher in a multi-publisher\n" +
                 "\t                          test, default 0. Only publisher 0 sends\n" +
                 "\t                          latency pings.\n" +
-                "\t-configFile <ilename>   - Set the name of the .ini configuration file,\n" +
-                "\t                          default perftest.ini\n"  +
                 "\t-dataLen <bytes>        - Set length of payload for each send,\n" +
                 "\t                          default 100\n"  +
                 "\t-numIter <count>        - Set number of messages to send,\n" +
-		"\t                          default 0 (infinite)\n" +
-		"\t-instances <#instance>  - set the number of instances (keys) to iterate\n" +
-		"\t                          over when publishing, default 1\n" +
 
+                "\t                          default 100000000. See -executionTime.\n" +
+                "\t-instances <#instance>  - set the number of instances (keys) to iterate\n" +
+                "\t                          over when publishing, default 1\n" +
                 "\t-sleep <millisec>       - Time to sleep between each send, default 0\n" +
                 "\t-spin <count>           - Number of times to run in spin loop between\n" +
-                "\t                          each send, default 0\n" +
+                "\t                          each send, default 0 (deprecated)\n" +
                 "\t-latencyCount <count>   - Number samples (or batches) to send before a\n" +
                 "\t                          latency ping packet is sent, default\n" +
                 "\t                          10000 if -latencyTest is not specified,\n" +
@@ -157,81 +351,40 @@ namespace PerformanceTest {
                 "\t-useReadThread          - Use separate thread instead of callback to\n"+
                 "\t                          read data\n" +
                 "\t-latencyTest            - Run a latency test consisting of a ping-pong \n" +
-	        "\t                          synchronous communication\n" +
-                "\t-debug                  - Run in debug mode\n";
-            
+                "\t                          synchronous communication\n" +
+                "\t-debug                  - Run in debug mode\n"+
+                "\t-pubRate <samples/s>    - Limit the throughput to the specified number\n"+
+                "\t                          of samples/s, default 0 (don't limit)\n"+
+                "\t-keyed                  - Use keyed data (default: unkeyed)\n"+
+                "\t-executionTime <sec>    - Set a maximum duration for the test. The\n"+
+                "\t                          first condition triggered will finish the\n"+
+                "\t                          test: number of samples or execution time.\n"+
+                "\t                          Default 0 (don't set execution time)\n";
+
 
             int argc = argv.Length;
-            
+
             if (argc < 0)
             {
                 Console.Error.Write(usage_string);
+                _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>(new DataTypeKeyedHelper());
                 _MessagingImpl.PrintCmdLineHelp();
                 return false;
             }
-                
 
-            // first scan for configFile
-            for (int i = 0; i < argc; ++i) 
+
+            for (int i = 0; i < argc; ++i)
             {
-                if ( "-help".StartsWith(argv[i], true, null) ) 
+                if ( "-help".StartsWith(argv[i], true, null) )
                 {
                     Console.Error.Write(usage_string);
+                    _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>(new DataTypeKeyedHelper());
                     _MessagingImpl.PrintCmdLineHelp();
                     return false;
                 }
-                else if ("-configFile".StartsWith(argv[i], true, null))
-                {
-                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
-                    {
-                        Console.Error.Write("Missing <fileName> after -configFile\n");
-                        return false;
-                    }
-                    _ConfigFile = argv[i];
-                }
             }
 
-            // now load configuration values from config file
-            if (_ConfigFile.Length > 0) 
-            {
-                Nini.Config.IniConfigSource configSource = new Nini.Config.IniConfigSource();
-
-                try
-                {
-                    configSource.Load(_ConfigFile);
-                } catch (System.IO.IOException e) {
-                    Console.Error.Write("Problem loading configuration file.\n");
-                    Console.Error.WriteLine(e.Message);
-                    return false;
-                }
-                configSource.CaseSensitive = false;
-
-                Nini.Config.IConfig config = configSource.Configs["perftest"];
-
-                if (config == null)
-                {
-                    Console.Error.Write("Could not find section [perftest] in file " + _ConfigFile + ".\n");
-                    return false;
-                }
-                _NumIter        = config.GetInt("num iter", _NumIter);
-                _DataLen        = config.GetInt("data length", _DataLen);
-                _SpinLoopCount  = config.GetInt("spin loop count", _SpinLoopCount);
-                _SleepMillisec  = config.GetInt("sleep millisec", _SleepMillisec);
-                _LatencyCount   = config.GetInt("latency count", _LatencyCount);
-                _NumSubscribers = config.GetInt("num subscribers", _NumSubscribers);
-                _NumPublishers  = config.GetInt("num publishers", _NumPublishers);
-                _IsScan         = config.GetBoolean("scan", _IsScan);
-                _PrintIntervals = config.GetBoolean("print intervals", _PrintIntervals);
-                _UseReadThread  = config.GetBoolean("use read thread", _UseReadThread);
-                _IsDebug        = config.GetBoolean("is debug", _IsDebug);
-                _InstanceCount  = config.GetInt("instances", _InstanceCount);
-                _LatencyTest = config.GetBoolean("run latency test", _LatencyTest);
-                _isReliable = config.GetBoolean("is reliable", _isReliable);
-            }
-
-
-            // now load everything else, command line params override config file
-            for (int i = 0; i < argc; ++i) 
+            for (int i = 0; i < argc; ++i)
             {
                 if ("-pub".StartsWith(argv[i], true, null))
                 {
@@ -274,10 +427,21 @@ namespace PerformanceTest {
                         Console.Error.Write("Missing <iter> after -numIter\n");
                         return false;
                     }
-                    if (!Int32.TryParse(argv[i], out _NumIter))
+
+                    if (!UInt64.TryParse(argv[i], out _NumIter))
                     {
                         Console.Error.Write("Bad numIter\n");
                         return false;
+                    }
+
+                    if (_NumIter < 1)
+
+                    {
+
+                        Console.Error.Write("-numIter must be > 0\n");
+
+                        return false;
+
                     }
                 }
                 else if ("-dataLen".StartsWith(argv[i], true, null))
@@ -307,17 +471,27 @@ namespace PerformanceTest {
                         Console.Error.WriteLine("dataLen must be <= " + TestMessage.MAX_DATA_SIZE);
                         return false;
                     }
-                } 
+                }
                 else if ( "-spin".StartsWith(argv[i], true, null) ) {
+                    Console.Error.Write("-spin option is deprecated. It will be removed "+
+                        "in upcoming releases.\n");
                     if (( i == (argc-1)) || argv[++i].StartsWith("-") ) {
                         Console.Error.Write("Missing <count> after -spin\n");
                         return false;
                     }
-                    if ( !Int32.TryParse(argv[i], out _SpinLoopCount) ) {
-                        Console.Error.Write("Bad spin count\n");
-                        return false;
+
+                    if (_pubRate > 0) {
+                        Console.Error.Write("-spin is not compatible with -pubRate. " +
+                            "Spin value will be set by -pubRate.\n");
+                    } else {
+                        /* We only want to use the spin value set by -spin if
+                           -pubRate is not used (default value = 0) */
+                        if ( !UInt64.TryParse(argv[i], out _SpinLoopCount) ) {
+                            Console.Error.Write("Bad spin count\n");
+                            return false;
+                        }
                     }
-                } 
+                }
                 else if ( "-sleep".StartsWith(argv[i], true, null) ) {
                     if (( i == (argc-1)) || argv[++i].StartsWith("-") ) {
                         Console.Error.Write("Missing <millisec> after -sleep\n");
@@ -327,7 +501,7 @@ namespace PerformanceTest {
                         Console.Error.Write("Bad sleep millisec\n");
                         return false;
                     }
-                } 
+                }
                 else if ( "-latencyCount".StartsWith(argv[i], true, null) ) {
                     if (( i == (argc-1)) || argv[++i].StartsWith("-") ) {
                         Console.Error.Write("Missing <count> after -latencyCount\n");
@@ -367,6 +541,10 @@ namespace PerformanceTest {
                 else if ("-scan".StartsWith(argv[i], true, null))
                 {
                     _IsScan = true;
+                }
+                else if ("-keyed".StartsWith(argv[i], true, null))
+                {
+                    _isKeyed = true;
                 }
                 else if ("-noPrintIntervals".StartsWith(argv[i], true, null))
                 {
@@ -441,6 +619,52 @@ namespace PerformanceTest {
 
                     _MessagingArgc++;
                 }
+                else if ("-pubRate".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing <rate> after -pubRate\n");
+                        return false;
+                    }
+
+                    if (!UInt64.TryParse(argv[i], out _pubRate))
+                    {
+                        Console.Error.Write("Bad number for -pubRate\n");
+                        return false;
+                    }
+
+                    if (_pubRate > 10000000)
+                    {
+                        Console.Error.Write("-pubRate cannot be greater than 10000000.\n");
+                        return false;
+                    }
+                    else if (_pubRate < 0)
+                    {
+                        Console.Error.Write("-pubRate cannot be smaller than 0 (set 0 for unlimited).\n");
+                        return false;
+                    }
+                    if (_SpinLoopCount > 0)
+                    {
+                        /* Print a message since we already set the spin by using
+                           -spin */
+                        Console.Error.Write("-spin is not compatible with -pubRate. "+
+                        "Spin value will be set by -pubRate.\n");
+                    }
+                }
+                else if ("-executionTime".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing <seconds> after -executionTime\n");
+                        return false;
+                    }
+
+                    if (!UInt64.TryParse(argv[i], out _executionTime))
+                    {
+                        Console.Error.Write("Bad number for -executionTime\n");
+                        return false;
+                    }
+                }
                 else {
                     _MessagingArgv[_MessagingArgc++] = argv[i];
                 }
@@ -461,18 +685,18 @@ namespace PerformanceTest {
                 }
             }
 
-	    if (_LatencyCount == -1)
-	    {
-		_LatencyCount = 10000;
-	    }
+            if (_LatencyCount == -1)
+            {
+            _LatencyCount = 10000;
+            }
 
-            if (_IsScan && _NumPublishers > 1) 
+            if (_IsScan && _NumPublishers > 1)
             {
                 Console.Error.Write("_IsScan is not supported with more than one publisher\n");
                 return false;
             }
 
-            if ((_NumIter > 0) && (_NumIter < _LatencyCount))
+            if ((_NumIter > 0) && (_NumIter < (ulong)_LatencyCount))
             {
                 Console.Error.Write("numIter ({0}) must be greater than latencyCount ({1}).\n",
                               _NumIter, _LatencyCount);
@@ -502,7 +726,7 @@ namespace PerformanceTest {
             public ulong interval_bytes_received = 0;
             public ulong interval_missing_packets = 0;
             public ulong interval_time = 0, begin_time = 0;
-            
+
             private IMessagingWriter _writer = null;
             private IMessagingReader _reader = null;
             private ulong[] _last_seq_num = null;
@@ -527,16 +751,22 @@ namespace PerformanceTest {
                 _last_seq_num = new ulong[numPublishers];
                 _num_publishers = numPublishers;
             }
-            
-            public void ProcessMessage(TestMessage message) 
+
+            public void ProcessMessage(TestMessage message)
             {
+                if (message.entity_id >= _num_publishers ||
+                    message.entity_id < 0)
+                {
+                    Console.Write("ProcessMessage: message content no valid. message.entity_id out of bounds\n");
+                    return;
+                }
                 // Check for test initialization messages
                 if (message.size == INITIALIZE_SIZE)
                 {
                     _writer.Send(message);
                     _writer.Flush();
                     return;
-                } 
+                }
                 else if (message.size == FINISHED_SIZE)
                 {
                     // only respond to publisher id 0
@@ -629,7 +859,7 @@ namespace PerformanceTest {
                                       interval_missing_packets);
                         Console.Out.Flush();
                     }
-                    
+
                     packets_received = 0;
                     bytes_received = 0;
                     missing_packets = 0;
@@ -639,7 +869,7 @@ namespace PerformanceTest {
                     begin_time = now;
                     return;
                 }
-                
+
                 // case where not running a scan
                 if (message.size != last_data_length)
                 {
@@ -664,7 +894,7 @@ namespace PerformanceTest {
                 last_data_length = message.size;
                 ++packets_received;
                 bytes_received += (ulong) (message.size + OVERHEAD_BYTES);
-                
+
                 // detect missing packets
                 if (_last_seq_num[message.entity_id] == 0) {
                     _last_seq_num[message.entity_id] = message.seq_num;
@@ -743,10 +973,10 @@ namespace PerformanceTest {
                 Thread thread = new Thread(new ThreadStart(reader_listener.ReadThread));
                 thread.Start();
             }
-            
+
             // Create announcement writer
             announcement_writer = _MessagingImpl.CreateWriter(_AnnouncementTopicName);
-            
+
             if (announcement_writer == null) {
                 Console.Error.Write("Problem creating announcement writer.\n");
                 return;
@@ -756,7 +986,7 @@ namespace PerformanceTest {
             Console.Error.Write("Waiting to discover {0} publishers ...\n", _NumPublishers);
             reader.WaitForWriters(_NumPublishers);
             announcement_writer.WaitForReaders(_NumPublishers);
-            
+
             // Send announcement message
             TestMessage message = new TestMessage();
             message.entity_id = _SubID;
@@ -766,7 +996,7 @@ namespace PerformanceTest {
             announcement_writer.Flush();
 
             Console.Error.Write("Waiting for data...\n");
-            
+
             // wait for data
             ulong  now, prev_time, delta;
             ulong  prev_count = 0;
@@ -779,7 +1009,7 @@ namespace PerformanceTest {
 
 
             now = GetTimeUsec();
-            while (true) { 
+            while (true) {
                 prev_time = now;
                 System.Threading.Thread.Sleep(1000);
                 now = GetTimeUsec();
@@ -816,7 +1046,7 @@ namespace PerformanceTest {
                     bps_ave = bps_ave + (double)(bps - bps_ave) / (double)ave_count;
                     mps_ave = mps_ave + (double)(mps - mps_ave) / (double)ave_count;
 
-                    if (last_msgs > 0) 
+                    if (last_msgs > 0)
                     {
                         Console.Write("Packets: {0,8}  Packets/s: {1,7}  Packets/s(ave): {2,7:F0}  " +
                                      "Mbps: {3,7:F1}  Mbps(ave): {4,7:F1}  Lost: {5}\n",
@@ -843,27 +1073,27 @@ namespace PerformanceTest {
          * Receives an announcement message from a Subscriber once
          * the subscriber has discovered every Publisher.
          */
-        class AnnouncementListener : IMessagingCB 
+        class AnnouncementListener : IMessagingCB
         {
             public int announced_subscribers;
 
             public AnnouncementListener() {
                 announced_subscribers = 0;
             }
-            
+
             public void ProcessMessage(TestMessage message)
             {
                 announced_subscribers++;
             }
         }
-        
+
         /*********************************************************
          * Data listener for the Publisher side.
          *
          * Receives latency ping from Subscriber and does
          * round trip latency calculations
          */
-        class LatencyListener : IMessagingCB 
+        class LatencyListener : IMessagingCB
         {
             private ulong latency_sum = 0;
             private ulong latency_sum_square = 0;
@@ -879,7 +1109,7 @@ namespace PerformanceTest {
             private IMessagingReader _reader = null;
             private IMessagingWriter _writer = null;
 
-            public LatencyListener(IMessagingWriter writer, uint num_latency) 
+            public LatencyListener(IMessagingWriter writer, uint num_latency)
             {
                 if (num_latency > 0)
                 {
@@ -897,7 +1127,7 @@ namespace PerformanceTest {
                     _num_latency = num_latency;
                 }
                 _reader = reader;
-		_writer = writer;
+                _writer = writer;
             }
 
             public void ProcessMessage(TestMessage message)
@@ -911,7 +1141,7 @@ namespace PerformanceTest {
 
                 now = GetTimeUsec();
 
-                
+
                 switch (message.size)
                 {
                     // Initializing message, don't process
@@ -948,12 +1178,13 @@ namespace PerformanceTest {
                         latency_ave = latency_sum / count;
                         latency_std = System.Math.Sqrt(latency_sum_square / count - (latency_ave * latency_ave));
                         Console.Write("Length: {0,5}  Latency: Ave {1,6:F0} us  Std {2,6:F1} us  " +
-                                      "Min {3,6} us  Max {4,6} us  50% {5,6} us  90% {6,6} us  99% {7,6} us  99.99% {8,6} us\n",
+                                      "Min {3,6} us  Max {4,6} us  50% {5,6} us  90% {6,6} us  99% {7,6} us  99.99% {8,6} us  99.9999% {9,6} us\n",
                                       last_data_length + OVERHEAD_BYTES, latency_ave, latency_std, latency_min, latency_max,
                                       _latency_history[count*50/100],
                                       _latency_history[count*90/100],
                                       _latency_history[count*99/100],
-                                      _latency_history[(int)(count*(9999.0/10000))]);
+                                      _latency_history[(int)(count*(9999.0/10000))],
+                                      _latency_history[(int)(count*(999999.0/1000000))]);
                         Console.Out.Flush();
                         latency_sum = 0;
                         latency_sum_square = 0;
@@ -972,14 +1203,14 @@ namespace PerformanceTest {
                 usec = message.timestamp_usec;
                 sentTime = ((ulong)sec << 32) | (ulong)usec;
 
-                if (now >= sentTime) 
+                if (now >= sentTime)
                 {
                     latency = (uint)(now - sentTime);
 
                     // keep track of one-way latency
                     latency /= 2;
-                } 
-                else 
+                }
+                else
                 {
                     Console.Error.Write("Clock skew suspected: received time {0} usec, sent time {1} usec",
                                     now, sentTime);
@@ -995,7 +1226,7 @@ namespace PerformanceTest {
                         Console.Error.Write("Too many latency pongs received.  Do you have more than 1 app with -pidMultiPubTest = 0 or -sidMultiSubTest = 0?\n");
                         return;
                     }
-                    else 
+                    else
                     {
                         _latency_history[count] = latency;
                     }
@@ -1069,7 +1300,7 @@ namespace PerformanceTest {
                 }
             }
         }
-        
+
         /*********************************************************
          * Publisher
          */
@@ -1099,7 +1330,15 @@ namespace PerformanceTest {
             }
             else
             {
-                num_latency = (uint)((_NumIter/_SamplesPerBatch) / _LatencyCount);
+                num_latency = (uint)((_NumIter/(ulong)_SamplesPerBatch) / (ulong)_LatencyCount);
+
+                if ((num_latency / (ulong)_SamplesPerBatch) % (ulong)_LatencyCount > 0)
+
+                {
+
+                    num_latency++;
+
+                }
             }
 
             // in batch mode, might have to send another ping
@@ -1108,7 +1347,7 @@ namespace PerformanceTest {
             }
 
             // Only publisher with ID 0 will send/receive pings
-            if (_PubID == 0) 
+            if (_PubID == 0)
             {
                 // Check if using callbacks or read thread
                 if (!_UseReadThread)
@@ -1131,16 +1370,16 @@ namespace PerformanceTest {
                         return;
                     }
                     reader_listener = new LatencyListener(reader, _LatencyTest?writer:null, num_latency);
-                    
+
                     Thread thread = new Thread(new ThreadStart(reader_listener.ReadThread));
                     thread.Start();
                 }
             }
-            else 
+            else
             {
                 reader = null;
             }
-                
+
             /* Create Announcement reader
              * A Subscriber will send a message on this channel once it discovers
              * every Publisher
@@ -1154,6 +1393,20 @@ namespace PerformanceTest {
                 return;
             }
 
+            ulong spinPerUsec = 0;
+
+            if (_pubRate > 0) {
+
+                spinPerUsec = NDDS.Utility.get_spin_per_microsecond();
+                /* A return value of 0 means accuracy not assured */
+                if (spinPerUsec == 0) {
+                    Console.Error.Write("Error initializing spin per microsecond. "+
+                        "-pubRate cannot be used\n"+"Exiting.\n");
+                    return;
+                }
+                _SpinLoopCount = (1000000*spinPerUsec)/_pubRate;
+            }
+
             Console.Error.Write("Waiting to discover {0} subscribers...\n", _NumSubscribers);
             writer.WaitForReaders(_NumSubscribers);
 
@@ -1163,7 +1416,7 @@ namespace PerformanceTest {
             while (_NumSubscribers > announcement_reader_listener.announced_subscribers) {
                 System.Threading.Thread.Sleep(1000);
             }
-            
+
             // Allocate data and set size
             TestMessage message = new TestMessage();
             message.entity_id = _PubID;
@@ -1197,23 +1450,59 @@ namespace PerformanceTest {
             int ping_index_in_batch = 0;
             bool sentPing = false;
 
+            ulong time_now = 0, time_last_check = 0, time_delta = 0;
+            ulong spin_sample_period = 1;
+            ulong rate = 0;
+
+            time_last_check = GetTimeUsec();
+
+            /* Minimum value for spin_sample_period will be 1 so we execute 100 times
+               the control loop every second, or every sample if we want to send less
+               than 100 samples per second */
+            if (_pubRate > 100) {
+                spin_sample_period = _pubRate / 100;
+            }
+
+            if (_executionTime > 0)
+            {
+                setTimeout(_executionTime);
+            }
             /********************
              *  Main sending loop
              */
-            for ( ulong loop=0; (_NumIter == 0)||(loop<(ulong)_NumIter); ++loop ) 
-            {      
+
+            for (ulong loop = 0; ((_IsScan) || (loop < _NumIter)) &&
+                                 (!_testCompleted); ++loop)
+            {
                 if ( _SleepMillisec > 0 ) {
                     System.Threading.Thread.Sleep(_SleepMillisec);
                 }
-                
-                if ( _SpinLoopCount > 0 ) {
-                    // spin, spin, spin
-                    for (int m=0; m<_SpinLoopCount; ++m) {
-                        double a, b, c;
-                        a = 1.1;
-                        b = 3.1415;
-                        c = a/b*m;
+
+                if ((_pubRate > 0) &&
+                (loop > 0) &&
+                (loop % spin_sample_period == 0)) {
+
+                    time_now = GetTimeUsec();
+
+                    time_delta = time_now - time_last_check;
+                    time_last_check = time_now;
+                    rate = (spin_sample_period*1000000)/time_delta;
+
+                    if (rate > _pubRate) {
+                        _SpinLoopCount += spinPerUsec;
                     }
+                    else if (rate < _pubRate && _SpinLoopCount > spinPerUsec)
+                    {
+                        _SpinLoopCount -= spinPerUsec;
+                    }
+                    else if (rate < _pubRate && _SpinLoopCount <= spinPerUsec)
+                    {
+                        _SpinLoopCount = 0;
+                    }
+                }
+
+                if ( _SpinLoopCount > 0 ) {
+                    NDDS.Utility.spin(_SpinLoopCount);
                 }
 
                 pingID = -1;
@@ -1221,7 +1510,7 @@ namespace PerformanceTest {
 
                 // only send latency pings if is publisher with ID 0
                 // In batch mode, latency pings are sent once every LatencyCount batches
-                if ( (_PubID == 0) && (((loop/(ulong)_SamplesPerBatch) % (ulong)_LatencyCount) == 0) ) 
+                if ( (_PubID == 0) && (((loop/(ulong)_SamplesPerBatch) % (ulong)_LatencyCount) == 0) )
                 {
 
                     /* In batch mode only send a single ping in a batch.
@@ -1231,11 +1520,11 @@ namespace PerformanceTest {
                      * current sample is within the batch, and which position
                      * within the batch should contain the ping. Only send the ping
                      * when both are equal.
-                     * 
+                     *
                      * Note when not in batch mode, current_index_in_batch = ping_index_in_batch
                      * always.  And the if() is always true.
                      */
-                    if ( current_index_in_batch == ping_index_in_batch && !sentPing ) 
+                    if ( current_index_in_batch == ping_index_in_batch && !sentPing )
                     {
 
                         // If running in scan mode, dataLen under test is changed
@@ -1247,27 +1536,28 @@ namespace PerformanceTest {
                             if ((num_pings % NUM_LATENCY_PINGS_PER_DATA_SIZE == 0))
                             {
                                 int new_size;
-                                
+
                                 // flush anything that was previously sent
                                 writer.Flush();
 
                                 if (last_scan)
-                                {   
+                                {
                                 // end of scan test
                                     break;
                                 }
 
                                 new_size = (1 << (++scan_number)) - OVERHEAD_BYTES;
-                                
+
                                 if (scan_number == 17)
-                                {   
+                                {
                                 // end of scan test
                                     break;
                                 }
 
-                                if(new_size > _MaxBinDataSize) {
+                                if (new_size > TestMessage.MAX_SYNCHRONOUS_SIZE)
+                                {
                                     // last scan
-                                    new_size = _MaxBinDataSize - OVERHEAD_BYTES;
+                                    new_size = TestMessage.MAX_SYNCHRONOUS_SIZE - OVERHEAD_BYTES;
                                     last_scan = true;
                                 }
 
@@ -1275,16 +1565,16 @@ namespace PerformanceTest {
                                 // for larger data sizes because the time to send
                                 // the same number of messages for a given size
                                 // increases with the data size.
-                                // 
+                                //
                                 // If we don't do this, the time to run a complete
                                 // scan would be in the hours
-                                switch (scan_number) 
+                                switch (scan_number)
                                 {
                                   case 16:
-                                    new_size = TestMessage.MAX_DATA_SIZE - OVERHEAD_BYTES;
+                                        new_size = TestMessage.MAX_SYNCHRONOUS_SIZE - OVERHEAD_BYTES;
                                     _LatencyCount /= 2;
                                     break;
-                                    
+
                                   case 9:
                                   case 11:
                                   case 13:
@@ -1294,13 +1584,13 @@ namespace PerformanceTest {
                                     break;
                                   default:
                                     break;
-                                }  
-                                
+                                }
+
                                 if (_LatencyCount == 0)
                                 {
                                     _LatencyCount = 1;
                                 }
-                                
+
                                 message.size = LENGTH_CHANGED_SIZE;
                                 // must set latency_ping so that a subscriber sends us
                                 // back the LENGTH_CHANGED_SIZE message
@@ -1310,20 +1600,20 @@ namespace PerformanceTest {
                                     writer.Send(message);
                                     writer.Flush();
                                 }
-                      
+
                                 // sleep to allow packet to be pinged back
                                 System.Threading.Thread.Sleep(1000);
-                                
+
                                 message.size = new_size;
                                 /* Reset _SamplePerBatch */
-                                if (_BatchSize != 0) 
+                                if (_BatchSize != 0)
                                 {
                                     _SamplesPerBatch = _BatchSize/(message.size + OVERHEAD_BYTES);
                                     if (_SamplesPerBatch == 0) {
                                         _SamplesPerBatch = 1;
                                     }
                                 }
-                                else 
+                                else
                                 {
                                     _SamplesPerBatch = 1;
                                 }
@@ -1356,7 +1646,7 @@ namespace PerformanceTest {
                         writer.WaitForPingResponse();
                     }
                     else {
-			/* time out in milliseconds */
+                        /* time out in milliseconds */
                         writer.WaitForPingResponse(200);
                     }
                 }
@@ -1386,7 +1676,14 @@ namespace PerformanceTest {
             }
 
             System.Threading.Thread.Sleep(1000);
-            Console.Error.Write("Finishing test...\n");
+            if (_testCompleted)
+            {
+                Console.Error.Write("Finishing test due to timer...\n");
+            }
+            else
+            {
+                Console.Error.Write("Finishing test...\n");
+            }
             Console.Out.Flush();
             return;
         }
@@ -1394,39 +1691,58 @@ namespace PerformanceTest {
         [DllImport("kernel32.dll")]
         extern static short QueryPerformanceCounter(ref long x);
         [DllImport("kernel32.dll")]
-        extern static short QueryPerformanceFrequency(ref long x); 
-        
-        public static ulong GetTimeUsec() 
+        extern static short QueryPerformanceFrequency(ref long x);
+
+        public static ulong GetTimeUsec()
         {
             long current_count = 0;
             QueryPerformanceCounter(ref current_count);
             return (ulong) ((current_count * 1000000 / _ClockFrequency));
         }
 
+        private static void Timeout(object source, ElapsedEventArgs e)
+        {
+            _testCompleted = true;
+        }
+
+        private void setTimeout(ulong executionTime)
+        {
+            timer = new System.Timers.Timer();
+            timer.Elapsed += new ElapsedEventHandler(Timeout);
+            timer.Interval = executionTime*1000;
+            Console.Error.WriteLine("Setting timeout to " + executionTime + " seconds.");
+            timer.Enabled = true;
+        }
+
         private int  _DataLen = 100;
         private int  _BatchSize = 0;
         private int  _MaxBinDataSize = TestMessage.MAX_DATA_SIZE;
         private int  _SamplesPerBatch = 1;
-        private int  _NumIter = 0;
+
+        private ulong _NumIter = 100000000;
         private bool _IsPub = false;
         private bool _IsScan = false;
         private bool  _UseReadThread = false;
-        private int  _SpinLoopCount = 0;
+        private ulong  _SpinLoopCount = 0;
         private int  _SleepMillisec = 0;
         private int  _LatencyCount = -1;
         private int  _NumSubscribers = 1;
         private int  _NumPublishers  = 1;
         private int  _InstanceCount = 1;
         private IMessaging _MessagingImpl = null;
-        private string _ConfigFile = "perftest.ini";
         private bool _LatencyTest = false;
         private bool _isReliable = true;
+        private ulong _pubRate = 0;
+        private bool _isKeyed = false;
+        private ulong _executionTime = 0;
+        private System.Timers.Timer timer = null;
 
         private static int  _SubID = 0;
         private static int  _PubID = 0;
         private static bool _PrintIntervals = true;
         private static bool _IsDebug = false;
         private static long _ClockFrequency = 0;
+        private static bool _testCompleted = false;
         public const string _LatencyTopicName = "Latency";
         public const string _ThroughputTopicName = "Throughput";
         public const string _AnnouncementTopicName = "Announcement";
@@ -1438,7 +1754,7 @@ namespace PerformanceTest {
         public const int OVERHEAD_BYTES = 28;
 
         // When running a scan, this determines the number of
-        // latency pings that will be sent before increasing the 
+        // latency pings that will be sent before increasing the
         // data size
         private const int NUM_LATENCY_PINGS_PER_DATA_SIZE = 1000;
 
@@ -1452,5 +1768,3 @@ namespace PerformanceTest {
     }
 
 } // namespace
-
-

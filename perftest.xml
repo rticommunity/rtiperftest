@@ -8,6 +8,9 @@ This file contains Qos for the entities of the application
 
 Modification history
 - - - - - - - - - - -
+5.2.0,27jul15,jmc PERFTEST-94 Removed the send_blocking property from UDPv4.
+5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-64 PERFTEST-65 PERFTEST-66 Large data
+                  support added for perftest.
 1.1b,29aug13,jmc CORE-5919 Moved hardcoded QoS to XML file when possible
 1.1b,29aug13,jmc CORE-5338 initial_samples to 10000 in throughputqos.datareaderqos
 1.0a,05may08,hhw synchronized many to 1 changes et. al. across all languages
@@ -129,10 +132,6 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
               <name>dds.transport.UDPv4.builtin.recv_socket_buffer_size</name>
               <value>2097152</value>
             </element>
-            <element>
-              <name>dds.transport.UDPv4.builtin.send_blocking</name>
-              <value>0</value>
-            </element>
 
             <!-- 
             Specifies the configuration to be used with the SHMEM built-in transport.
@@ -189,6 +188,28 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
             <element>
               <name>dds.transport.TCPv4.tcp1.parent.message_size_max</name>
               <value>65536</value>
+            </element>
+
+            <!-- Defining flow controller. This will not enable it. -->
+            <element>
+              <name>dds.flow_controller.token_bucket.fast_flow.token_bucket.max_tokens</name>
+              <value>30</value>
+            </element>
+            <element>
+              <name>dds.flow_controller.token_bucket.fast_flow.token_bucket.tokens_added_per_period</name>
+              <value>20</value>
+            </element>
+            <element>
+              <name>dds.flow_controller.token_bucket.fast_flow.token_bucket.bytes_per_token</name>
+              <value>65536</value>
+            </element>
+            <element>
+              <name>dds.flow_controller.token_bucket.fast_flow.token_bucket.period.sec</name>
+              <value>0</value>
+            </element>
+            <element>
+              <name>dds.flow_controller.token_bucket.fast_flow.token_bucket.period.nanosec</name>
+              <value>10000000</value>
             </element>
 
           </value>
@@ -333,10 +354,11 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           for more information. 
           
           Important: This settings are configured automatically within the source code.
-          The default value of _InstanceCount is 1. The default value of 
-          _InstanceHashBuckets is -1.
+          The default value of _InstanceCount is 1.
+          The default value of _InstanceMaxCountReader is -1.
+          The default value of _InstanceHashBuckets is -1.
           
-          <max_instances>_InstanceCount</max_instances>
+          <max_instances>_InstanceMaxCountReader</max_instances>
           <initial_instances>_InstanceCount</initial_instances>
           
           if _InstanceCount is greater than 1 and 
@@ -707,7 +729,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           the middleware to allocate the difference dynamically as needed.
           -->
           <max_samples>10000</max_samples>
-          <initial_samples>10000</initial_samples>
+          <initial_samples>5000</initial_samples>
           
           <!--
           The maximum number of samples that can be stored for a single

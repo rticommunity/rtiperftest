@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- $Id: build.xml,v 1.2.2.1 2014/04/01 11:56:53 juanjo Exp $
+<!-- $Id: build.xml,v 1.4 2014/11/08 05:24:50 fgarcia Exp $
 
 (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
 Permission to modify and use for internal purposes granted.   	
@@ -109,7 +109,7 @@ modification history:
         <property name="rtidds.home"
                   location="${env.NDDSHOME}"/>
         <property name="rtidds.jar"
-                  location="${rtidds.home}/class/nddsjava.jar"/>
+                  location="${rtidds.home}/lib/java/nddsjava.jar"/>
 
         <property name="env.RTIDDSGEN_PREPROCESSOR" value=""/>
 
@@ -117,10 +117,10 @@ modification history:
             <os family="Windows"/>
         </condition>
         <property name="rtidds.rtiddsgen"
-                  location="${rtidds.home}/scripts/rtiddsgen${script.suffix}"/>
+                  location="${rtidds.home}/bin/rtiddsgen${script.suffix}"/>
     </target>
 
 </project>
 
 <!-- ===================================================================== -->
-<!-- End of $Id: build.xml,v 1.2.2.1 2014/04/01 11:56:53 juanjo Exp $ -->
+<!-- End of $Id: build.xml,v 1.4 2014/11/08 05:24:50 fgarcia Exp $ -->

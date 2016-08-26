@@ -1,11 +1,16 @@
-/* $Id: MessagingIF.cs,v 1.1.2.1 2014/04/01 11:56:52 juanjo Exp $
+/* $Id: MessagingIF.cs,v 1.7 2014/09/22 16:28:50 jmorales Exp $
 
- (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
- Permission to modify and use for internal purposes granted.   	
+ (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ Permission to modify and use for internal purposes granted.
  This software is provided "as is", without warranty, express or implied.
 
  Modification History
  --------------------
+ 5.1.0,22sep14,jm  PERFTEST-75 Fixed LargeData + Turbo-Mode. Changing max size to
+                   131072.
+ 5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-65 Large data support 
+                   added for perftest.
+ 5.1.0,11aug14,jm  PERFTEST-68 Added -keyed command line option.
  1.0a,13jul10,jsr Added WaitForPingResponse with timeout
  1.0a,07jul10,jsr Fixed NotifyPingResponse and WaitForPingResponse to
                   return bool instead of void
@@ -25,14 +30,15 @@ namespace PerformanceTest
     public class TestMessage
     {
         public byte[] data;
-        public int    size; 
+        public int    size;
         public byte[] key = new byte[4];
         public int    entity_id;
         public uint   seq_num;
         public int    timestamp_sec;
         public uint   timestamp_usec;
         public int    latency_ping;
-        public const int MAX_DATA_SIZE = 63000;
+        public const int MAX_SYNCHRONOUS_SIZE = 63000;
+        public const int MAX_DATA_SIZE = 131072;
     }
 
     public interface IMessagingCB
@@ -81,9 +87,30 @@ namespace PerformanceTest
         int GetMaxBinDataSize();
 
         IMessagingWriter CreateWriter(string topic_name);
-        
+
         // Pass null for callback if using IMessagingReader.ReceiveMessage()
         // to get data
         IMessagingReader CreateReader(string topic_name, IMessagingCB callback);
+    }
+
+
+    public interface ITypeHelper<T> where T : class, DDS.ICopyable<T>
+    {
+        void fillKey(int value);
+
+        void copyFromMessage(TestMessage message);
+
+        TestMessage copyFromSeqToMessage(Object data_sequence,int index);
+
+        T getData();
+
+        DDS.ByteSeq getBindata();
+
+        DDS.TypedTypeSupport<T> getTypeSupport();
+
+        DDS.LoanableSequence<T> createSequence();
+
+        ITypeHelper<T> clone();
+
     }
 }

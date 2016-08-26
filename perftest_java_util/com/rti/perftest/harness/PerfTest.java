@@ -1,4 +1,4 @@
-/* $Id: PerfTest.java,v 1.1.2.1 2014/04/01 11:56:54 juanjo Exp $
+/* $Id: PerfTest.java,v 1.13 2015/04/27 20:43:56 jmorales Exp $
 
 (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
 Permission to modify and use for internal purposes granted.   	
@@ -6,6 +6,18 @@ This software is provided "as is", without warranty, express or implied.
 
 modification history:
 --------------------
+5.2.0,27apr14,jm  PERFTEST-86 Removing .ini support. Fixing warnings.
+5.1.0,23sep14,jmc get_spin_per_microsecond was commented out. Fixed
+5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-66 Large data support 
+                  added for perftest.
+5.1.0,27aug14,jmc PERFTEST-63 Added -executionTime command line option
+                  Also modified _numIter to long
+5.1.0,26aug14,jm Added support for -pubRate in perftest.ini and 
+                 implemented checks for pubRate bounds.
+5.1.0,11aug14,jm PERFTEST-69 Fixed issue that was making jms to fail.
+5.1.0,11aug14,jm PERFTEST-69 Added -keyed command line option.
+5.1.0,16jul14,jm PERFTEST-53 Added -pubRate command-line option.
+                 _spinLoopCount modified to be a long. Deprecating -spin.
 09jul10,jsr Added new waitForPingResponse for best effort mode
 08jul10,jsr Fixing LatencyListener constructor calls
 07jul10,eys Cleanup perftest parameters
@@ -54,14 +66,12 @@ modification history:
 
 package com.rti.perftest.harness;
 
-import java.io.File;
-import java.io.IOException;
-
 import com.rti.perftest.IMessaging;
 import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.IMessagingWriter;
 import com.rti.perftest.TestMessage;
-import com.rti.perftest.ini.Ini;
+import com.rti.perftest.harness.PerftestTimerTask;
+import com.rti.ndds.Utility;
 
 import java.util.concurrent.TimeUnit;
 
@@ -107,8 +117,6 @@ public final class PerfTest {
 
     /*package*/ static boolean printIntervals = true;
     
-    
-    
     // -----------------------------------------------------------------------
     // Private Fields
     // -----------------------------------------------------------------------
@@ -124,31 +132,35 @@ public final class PerfTest {
     private int     _batchSize = 0;
     private int     _maxBinDataSize = TestMessage.MAX_DATA_SIZE;
     private int     _samplesPerBatch = 1;
-    private int     _numIter = 0;
+    private long    _numIter = 100000000;
     private boolean _isPub = false;
     private boolean _isScan = false;
     private boolean _useReadThread = false;
-    private int     _spinLoopCount = 0;
+    private long     _spinLoopCount = 0;
     private int     _sleepMillisec = 0;
     private int     _latencyCount = -1;
     private int     _numSubscribers = 1;
     private int     _numPublishers  = 1;
     private int     _instanceCount = 1;
     private IMessaging _messagingImpl = null;
-    private File    _configFile = new File("perftest.ini");
     private String[] _messagingArgv = null;
     private int      _messagingArgc = 0;
     private boolean  _latencyTest = false;
     private boolean  _isReliable = true;
-
+    private long     _pubRate = 0;
+    private long     _executionTime = 0;
+    private PerftestTimerTask timertask = new PerftestTimerTask(this);
+    /* Indicates when the test should exit due to timeout */
+    private boolean testCompleted = false;
+    
+    
     // -----------------------------------------------------------------------
     // Public Methods
     // -----------------------------------------------------------------------
-
-    public static void runTest(Class<? extends IMessaging> defaultImplClass,
+    public static void runTest(IMessaging messagingImpl,
                                String[] argv) {
         PerfTest app = new PerfTest();
-        app.run(defaultImplClass, argv);
+        app.run(messagingImpl, argv);
         app.dispose();
     }
 
@@ -158,7 +170,9 @@ public final class PerfTest {
         System.err.print("Test ended.\n");
     }
 
-
+    public void finishTest() {
+        testCompleted = true;
+    }
 
     // -----------------------------------------------------------------------
     // Package Methods
@@ -181,24 +195,11 @@ public final class PerfTest {
     // Private Methods
     // -----------------------------------------------------------------------
 
-    /**
-     * Reflectively find and instantiate a test implementation.
-     */
-    private IMessaging newInstance(Class<?> implClass) {
-        try {
-            return (IMessaging) implClass.newInstance();
-        } catch (RuntimeException rex) {
-            throw rex;
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex.getMessage(), ex);
-        }
-    }
-
-
-    private void run(Class<? extends IMessaging> implClass,
+    private void run(IMessaging messagingImpl,
                      String[] argv) {
-        _messagingImpl = newInstance(implClass);
 
+        _messagingImpl = messagingImpl;
+        
         if ( !parseConfig(argv) ) {
             return;
         }
@@ -239,26 +240,24 @@ public final class PerfTest {
             "\t-help                   - Print this usage message and exit\n" +
             "\t-pub                    - Set test to be a publisher\n" +
             "\t-sub                    - Set test to be a subscriber (default)\n" +
-            "\t-sidMultiSubTest <id>   - Set id of the subscriber in a multi-subscriber\n" +
-            "\t                          test, default 0\n" +
+            "\t-sidMultiSubTest <id>   - Set id of the subscriber in a\n" +
+            "\t                          multi-subscriber test, default 0\n" +
             "\t-pidMultiPubTest <id>   - Set id of the publisher in a multi-publisher\n" +
             "\t                          test, default 0. Only publisher 0 sends\n" +
             "\t                          latency pings\n" +
-            "\t-configFile <filename>  - Set the name of the .ini configuration file,\n" +
-            "\t                          default perftest.ini\n" +
             "\t-dataLen <bytes>        - Set length of payload for each send,\n" +
-	    "\t                          default 100\n" +
+            "\t                          default 100\n" +
             "\t-numIter <count>        - Set number of messages to send,\n" +
-	    "\t                          default 0 (infinite)\n" +
+            "\t                          default 100000000. See -executionTime.\n" +
             "\t-instances <#instance>  - set the number of instances (keys) to iterate\n" +
-	    "\t                          over when publishing, default 1\n" +
+            "\t                          over when publishing, default 1\n" +
             "\t-sleep <millisec>       - Time to sleep between each send, default 0\n" +
             "\t-spin <count>           - Number of times to run in spin loop between\n"+
-            "\t                          each send, default 0\n" +
+            "\t                          each send, default 0 (Deprecated)\n" +
             "\t-latencyCount <count>   - Number samples (or batches) to send before\n" +
             "\t                          a latency ping packet is sent, default\n" +
-	    "\t                          10000 if -latencyTest is not specified,\n" +
-	    "\t                          1 if -latencyTest is specified\n" +
+            "\t                          10000 if -latencyTest is not specified,\n" +
+            "\t                          1 if -latencyTest is specified.\n" +
             "\t-numSubscribers <count> - Number of subscribers running in test,\n" +
             "\t                          default 1\n" +
             "\t-numPublishers <count>  - Number of publishers running in test,\n"+
@@ -271,7 +270,15 @@ public final class PerfTest {
             "\t                          read data\n" +
             "\t-latencyTest            - Run a latency test consisting of a ping-pong \n" +
             "\t                          synchronous communication \n" +
-            "\t-debug                  - Run in debug mode\n";
+            "\t-debug                  - Run in debug mode\n" +
+            "\t-pubRate <samples/s>    - Limit the throughput to the specified number\n" +
+            "\t                          of samples/s, default 0 (don't limit)\n" +
+            "\t-keyed                  - Use keyed data (default: unkeyed)\n"+
+            "\t-executionTime <sec>    - Set a maximum duration for the test. The\n"+
+            "\t                          first condition triggered will finish the\n"+
+            "\t                          test: number of samples or execution time.\n"+
+            "\t                          Default 0 (don't set execution time)\n";
+
 
 
         int argc = argv.length;
@@ -281,66 +288,6 @@ public final class PerfTest {
             return false;
         }
 
-
-        // first scan for configFile
-        for (int i = 0; i < argc; ++i) {
-            if ( "-help".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                System.err.print(usage_string);
-                _messagingImpl.printCmdLineHelp();
-                return false;
-            }
-            if ("-configFile".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                if ((i == (argc - 1)) || argv[++i].startsWith("-"))
-                {
-                    System.err.print("Missing <fileName> after -configFile\n");
-                    return false;
-                }
-                _configFile = new File(argv[i]);
-            }
-        }
-
-        // now load configuration values from config file
-        if (_configFile.isFile()) {
-            Ini configSource;
-            try {
-                configSource = Ini.load(
-                        _configFile, false /*case-sensitive*/);
-            } catch (IOException e) {
-                System.err.print("Problem loading configuration file.\n");
-                System.err.println(e.getMessage());
-                return false;
-            }
-
-            Ini.Section config = configSource.section("perftest");
-            if (config == null) {
-                System.err.println(
-                        "Could not find section [perftest] in file " +
-                        _configFile +
-                        ".");
-                return false;
-            }
-
-            _numIter        = config.getInt("num iter", _numIter);
-            _dataLen        = config.getInt("data length", _dataLen);
-            _spinLoopCount  = config.getInt("spin loop count", _spinLoopCount);
-            _sleepMillisec  = config.getInt("sleep millisec", _sleepMillisec);
-            _latencyCount   = config.getInt("latency count", _latencyCount);
-            _numSubscribers = config.getInt("num subscribers", _numSubscribers);
-            _numPublishers = config.getInt("num publishers", _numPublishers);
-            _isScan         = config.getBoolean("scan", _isScan);
-            printIntervals  = config.getBoolean("print intervals", printIntervals);
-            _useReadThread  = config.getBoolean("use read thread", _useReadThread);
-            _isDebug        = config.getBoolean("is debug", _isDebug);
-            _instanceCount  = config.getInt("instances", _instanceCount);
-            _latencyTest	= config.getBoolean("run latency test", _latencyTest);
-            _isReliable = config.getBoolean("is reliable", _isReliable);
-        } else {
-            System.err.println(
-                    "Warning: config file doesn't exist: " + _configFile);
-        }
-
-
-        // now load everything else, command line params override config file
         for (int i = 0; i < argc; ++i) 
         {
             if ("-pub".toLowerCase().startsWith(argv[i].toLowerCase())) {
@@ -384,9 +331,13 @@ public final class PerfTest {
                     return false;
                 }
                 try {
-                    _numIter = Integer.parseInt(argv[i]);
+                    _numIter = (long)Integer.parseInt(argv[i]);
                 } catch (NumberFormatException nfx) {
                     System.err.print("Bad numIter\n");
+                    return false;
+                }
+                if (_numIter < 1) {
+                    System.err.print("-numIter must be > 0");
                     return false;
                 }
             }
@@ -419,15 +370,22 @@ public final class PerfTest {
             } 
             else if ( "-spin".toLowerCase().startsWith(argv[i].toLowerCase())) 
             {
+                System.err.println("-spin option is deprecated. It will be removed "
+                        +"in upcoming releases.");
                 if (( i == (argc-1)) || argv[++i].startsWith("-") ) {
                     System.err.print("Missing <count> after -spin\n");
                     return false;
                 }
-                try {
-                    _spinLoopCount = Integer.parseInt(argv[i]);
-                } catch (NumberFormatException nfx) {
-                    System.err.print("Bad spin count\n");
-                    return false;
+                if (_pubRate > 0) {
+                    System.err.println("-spin is not compatible with -pubRate. "
+                            +"Spin value will be set by -pubRate.");
+                } else {
+                    try {
+                        _spinLoopCount = Long.parseLong(argv[i]);
+                    } catch (NumberFormatException nfx) {
+                        System.err.println("Bad spin count");
+                        return false;
+                    }
                 }
             } 
             else if ( "-sleep".toLowerCase().startsWith(argv[i].toLowerCase())) 
@@ -487,6 +445,7 @@ public final class PerfTest {
             else if ("-scan".toLowerCase().startsWith(argv[i].toLowerCase())) 
             {
                 _isScan = true;
+                _messagingArgv[_messagingArgc++] = argv[i];
             }
             else if ("-noPrintIntervals".toLowerCase().startsWith(argv[i].toLowerCase())) 
             {
@@ -500,6 +459,11 @@ public final class PerfTest {
             {
                 _latencyTest = true;
                 _messagingArgv[_messagingArgc++] = argv[i];
+            }
+            else if ("-keyed".toLowerCase().startsWith(argv[i].toLowerCase())) 
+            {
+                // Do nothing, the keyed option has already been parsed, but we still
+                // need to account it as a valid option.
             }
             else if ("-bestEffort".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isReliable = false;
@@ -532,6 +496,44 @@ public final class PerfTest {
                 _isDebug = true;
                 _messagingArgv[_messagingArgc++] = argv[i];
             }
+            else if ( "-pubRate".toLowerCase().startsWith(argv[i].toLowerCase())) 
+            {
+                if (( i == (argc-1)) || argv[++i].startsWith("-") ) {
+                    System.err.println("Missing <rate> after -pubRate");
+                    return false;
+                }
+                try {
+                    _pubRate = Long.parseLong(argv[i]);
+                } catch (NumberFormatException nfx) {
+                    System.err.println("Bad pubRate rate");
+                    return false;
+                }
+                if (_pubRate > 10000000) {
+                    System.err.println("-pubRate cannot be greater than 10000000.");
+                    return false;
+                } else if (_pubRate < 0) {
+                    System.err.println("-pubRate cannot be smaller than 0 (set 0 for unlimited).");
+                    return false;
+                }
+                if (_spinLoopCount > 0) {
+                    System.err.println("-spin is not compatible with -pubRate. "
+                            +"Spin value will be set by -pubRate.");
+                }
+            }
+            else if ("-executionTime".toLowerCase().startsWith(argv[i].toLowerCase()))
+            {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-"))
+                {
+                    System.err.print("Missing <seconds> after -executionTime\n");
+                    return false;
+                }
+                try {
+                    _executionTime = (long)Integer.parseInt(argv[i]);
+                } catch (NumberFormatException nfx) {
+                    System.err.print("Bad executionTime\n");
+                    return false;
+                }
+            }
             else {
                 _messagingArgv[_messagingArgc++] = argv[i];
             }
@@ -543,7 +545,7 @@ public final class PerfTest {
             return false;
         }
 
-        if(_latencyTest) {		
+        if(_latencyTest) {
             if(pubID != 0) {
                 System.err.printf("Only the publisher with ID = 0 can run the latency test\n");
                 return false;
@@ -552,13 +554,13 @@ public final class PerfTest {
             if(_latencyCount == -1) {
                 _latencyCount = 1;
             }
-	}  
+        }  
 
-	if(_latencyCount == -1) {
-	    _latencyCount = 10000;
-	}
+        if(_latencyCount == -1) {
+            _latencyCount = 10000;
+        }
 
-        if ((_numIter > 0) && (_numIter < _latencyCount)) {
+        if (_numIter < _latencyCount) {
             System.err.printf(
                 "numIter (%1$d) must be greater than latencyCount (%2$d).\n",
                 _numIter,
@@ -730,7 +732,10 @@ public final class PerfTest {
         if (_isScan) {
             num_latency = NUM_LATENCY_PINGS_PER_DATA_SIZE;
         } else {
-            num_latency = ((_numIter/_samplesPerBatch) / _latencyCount);
+            num_latency = (((int)_numIter/_samplesPerBatch) / _latencyCount);
+            if ((num_latency/_samplesPerBatch) % _latencyCount > 0) {
+                num_latency++;
+            }
         }
 
         // in batch mode, might have to send another ping
@@ -788,6 +793,20 @@ public final class PerfTest {
             return ;
         }
 
+        long spinPerUsec = 0;
+
+        if (_pubRate > 0) {
+            spinPerUsec = Utility.get_spin_per_microsecond();
+            /* A return value of 0 means accuracy not assured */
+            if (spinPerUsec == 0) {
+                System.err.println("Error initializing spin per microsecond. "
+                    + "-pubRate cannot be used\n"
+                        +"Exiting...");
+                return;
+            }
+            _spinLoopCount = 1000000*spinPerUsec/_pubRate;
+        }
+
         System.err.printf("Waiting to discover %1$d subscriber(s)...\n", _numSubscribers);
         writer.waitForReaders(_numSubscribers);
 
@@ -839,25 +858,57 @@ public final class PerfTest {
         int ping_index_in_batch = 0;
         boolean sentPing = false;
 
+        long time_now = 0, time_last_check = 0, time_delta = 0;
+        long spin_sample_period = 1;
+        long rate = 0;
+
+        time_last_check = getTimeUsec();
+
+        /* Minimum value for spin_sample_period will be 1 so we execute 100 times
+           the control loop every second, or every sample if we want to send less
+           than 100 samples per second */
+        if (_pubRate > 100) {
+            spin_sample_period = _pubRate / 100;
+        }
+
+        if (_executionTime > 0) {
+          timertask.setTimeout(_executionTime);
+        }
+        
         /********************
          *  Main sending loop
          */
-        for (long loop=0; _numIter == 0 || loop < _numIter; ++loop ) 
-        {
+        for (long loop=0; ((_isScan) || (loop < _numIter)) &&
+                           (!testCompleted) ; ++loop ) {
             if ( _sleepMillisec > 0 ) {
                 sleep(_sleepMillisec);
             }
 
-            if ( _spinLoopCount > 0 ) {
-                // spin, spin, spin
-                for (int m = 0; m < _spinLoopCount; ++m) {
-                    double a, b, c;
-                    a = 1.1;
-                    b = 3.1415;
-                    c = a/b*m;
-                    a = c;
+            /* This if has been included to perform the control loop
+               that modifies the publication rate according to -pubRate */
+            if ((_pubRate > 0) &&
+                    (loop > 0) &&
+                    (loop % spin_sample_period == 0)) {
+
+                time_now = getTimeUsec();
+
+                time_delta = time_now - time_last_check;
+                time_last_check = time_now;
+                rate = (spin_sample_period*1000000)/time_delta;
+
+                if (rate > _pubRate) {
+                    _spinLoopCount += spinPerUsec;
+                } else if (rate < _pubRate && _spinLoopCount > spinPerUsec) {
+                    _spinLoopCount -= spinPerUsec;
+                } else if (rate < _pubRate && _spinLoopCount <= spinPerUsec) {
+                    _spinLoopCount = 0;
                 }
             }
+
+            if ( _spinLoopCount > 0 ) {
+                Utility.spin(_spinLoopCount);
+            }
+
 
             pingID = -1;
 
@@ -906,9 +957,9 @@ public final class PerfTest {
                                 break;
                             }
 
-                            if (new_size > _maxBinDataSize) {
+                            if (new_size > TestMessage.MAX_SYNCHRONOUS_SIZE) {
                                 // last scan
-                                new_size = _maxBinDataSize - OVERHEAD_BYTES;
+                                new_size = TestMessage.MAX_SYNCHRONOUS_SIZE - OVERHEAD_BYTES;
                                 last_scan = true;
                             }
 
@@ -922,7 +973,7 @@ public final class PerfTest {
                             switch (scan_number) 
                             {
                               case 16:
-                                new_size = TestMessage.MAX_DATA_SIZE - OVERHEAD_BYTES;
+                                new_size = TestMessage.MAX_SYNCHRONOUS_SIZE - OVERHEAD_BYTES;
                                 _latencyCount /= 2;
                                 break;
                                 
@@ -1036,8 +1087,11 @@ public final class PerfTest {
         }
 
         sleep(1000);
-        System.err.print("Finishing test...\n");
-
+        if (testCompleted) {
+            System.err.println("Finishing test due to timer...");
+        } else {
+            System.err.println("Finishing test...");
+        }
         return;
     }
 
@@ -1054,4 +1108,4 @@ public final class PerfTest {
 }
 
 // ===========================================================================
-// End of $Id: PerfTest.java,v 1.1.2.1 2014/04/01 11:56:54 juanjo Exp $
+// End of $Id: PerfTest.java,v 1.13 2015/04/27 20:43:56 jmorales Exp $

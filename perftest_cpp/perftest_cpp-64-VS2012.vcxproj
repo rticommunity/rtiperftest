@@ -95,7 +95,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="perftest_cpp.cxx" />
-    <ClCompile Include="Property.cxx" />
     <ClCompile Include="RTIDDSImpl.cxx" />
     <ClCompile Include="..\DDSTypes\test.cxx" />
     <ClCompile Include="..\DDSTypes\testPlugin.cxx" />
@@ -104,7 +103,6 @@
   <ItemGroup>
     <ClInclude Include="MessagingIF.h" />
     <ClInclude Include="perftest_cpp.h" />
-    <ClInclude Include="Property.h" />
     <ClInclude Include="RTIDDSImpl.h" />
     <ClInclude Include="..\DDSTypes\test.h" />
     <ClInclude Include="..\DDSTypes\testPlugin.h" />
@@ -124,11 +122,11 @@
   <ItemGroup>
     <CustomBuild Include="..\idl\test.idl">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Regeneration type support plugin from %(Filename)%(Extension) $(RTIDDSGEN_PREPROCESSOR)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(NDDSHOME)/scripts/rtiddsgen" -replace -language C++ -d ../DDSTypes $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(NDDSHOME)/bin/rtiddsgen" -replace -language C++ -d ../DDSTypes $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../DDSTypes/test.h;../DDSTypes/test.cxx;../DDSTypes/testPlugin.h;../DDSTypes/testPlugin.cxx;../DDSTypes/testSupport.h;../DDSTypes/testSupport.cxx;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Regeneration type support plugin from %(Filename)%(Extension) $(RTIDDSGEN_PREPROCESSOR)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(NDDSHOME)/scripts/rtiddsgen" -replace -language C++ -d ../DDSTypes $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(NDDSHOME)/bin/rtiddsgen" -replace -language C++ -d ../DDSTypes $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../DDSTypes/test.h;../DDSTypes/test.cxx;../DDSTypes/testPlugin.h;../DDSTypes/testPlugin.cxx;../DDSTypes/testSupport.h;../DDSTypes/testSupport.cxx;%(Outputs)</Outputs>
     </CustomBuild>
