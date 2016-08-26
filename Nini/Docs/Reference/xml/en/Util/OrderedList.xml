@@ -1,0 +1,164 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="OrderedList">
+	<docs>
+		<summary>
+			A collection of ordered objects. 
+		</summary>
+		<remarks>
+			This class combines the 
+			retrieval speed of a Hashtable with the ordered nature of an
+			ArrayList while using just a bit more memory in the process.
+		</remarks>
+	</docs>
+
+	<Property name="Count">
+		<docs>
+			<summary>Returns the number of objects in the collection.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="IsReadOnly">
+		<docs>
+			<summary>
+				Returns true if the list is read only.  Always
+				returns false.
+			</summary>
+		</docs>
+	</Property>
+	
+	<Property name="IsSynchronized">
+		<docs>
+			<summary>
+				Returns true if the collection is synchronized.
+				This value is always false.
+			</summary>
+		</docs>
+	</Property>
+	
+	<Property name="IsFixedSize">
+		<docs>
+			<summary>
+				Returns true if the collection is of a fixed size.
+				This value is always false.
+			</summary>
+		</docs>
+	</Property>
+	
+	<Property name="ItemIndex">
+		<docs>
+			<summary>Returns the object at the given index.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="ItemKey">
+		<docs>
+			<summary>Returns the object at the given key.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="Keys">
+		<docs>
+			<summary>
+				Returns a list of the collection keys.
+			</summary>
+		</docs>
+	</Property>
+	
+	<Property name="Values">
+		<docs>
+			<summary>Returns a list of the collection values.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="SyncRoot">
+		<docs>
+			<summary>Returns the synchronized object.</summary>
+		</docs>
+	</Property>
+	
+	<Method name="Add">
+		<docs>
+			<summary>Adds a new obctje to the collection.</summary>
+			<param name="key">The key for the object.</param>
+			<param name="value">The value of the object.</param>
+		</docs>
+	</Method>
+
+	<Method name="Clear">
+		<docs>
+			<summary>Clears all object from the collection.</summary>
+		</docs>
+	</Method>
+	
+	<Method name="CopyTo">
+		<docs>
+			<summary>Copies the collection to an array.</summary>
+			<param name="array">Array to copy the results.</param>
+			<param name="index">Index of the array to start copying.</param>
+		</docs>
+	</Method>
+	
+	<Method name="CopyToStrong">
+		<docs>
+			<summary>Copies the collection to a strongly-typed array.</summary>
+			<param name="array">
+				The DictionaryEntry array to copy the results.
+			</param>
+			<param name="index">Index of the array to start copying.</param>
+		</docs>
+	</Method>
+	
+	<Method name="Contains">
+		<docs>
+			<summary>Returns true if the key exists in the collection.</summary>
+			<param name="key">The key to search for.</param>
+		</docs>
+	</Method>
+
+	<Method name="Insert">
+		<docs>
+			<summary>
+				Inserts an object into the collection based on an index.
+			</summary>
+			<param name="index">Index in which to insert.</param>
+			<param name="key">Key of the object.</param>
+			<param name="value">Value of the object.</param>
+		</docs>
+	</Method>
+	
+	<Method name="Remove">
+		<docs>
+			<summary>Removes an item from the collection by key name.</summary>
+			<param name="key">Key to search for.</param>
+		</docs>
+	</Method>
+	
+	<Method name="RemoveAt">
+		<docs>
+			<summary>Removes a key at the given index.</summary>
+			<param name="index">The index from which to remove the key.</param>
+		</docs>
+	</Method>
+
+	<Method name="GetEnumerator">
+		<docs>
+			<summary>Returns the enumerator object.</summary>
+		</docs>
+	</Method>
+	
+	<Method name="GetDictionaryEnumerator">
+		<docs>
+			<summary>Returns the dictionary enumerator object.</summary>
+		</docs>
+	</Method>
+	
+	<Method name="GetIEnumerator">
+		<docs>
+			<summary>Returns the IEnumerator object.</summary>
+		</docs>
+	</Method>
+</Class>
+
+</NiniDocs>

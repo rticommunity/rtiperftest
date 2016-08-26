@@ -1,0 +1,234 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="IniWriter">
+	<docs>
+		<summary>INI writer class.</summary>
+		<example>
+			<code>
+IniWriter writer = new IniWriter ("test.ini");
+
+writer.WriteEmpty ("This is a comment");
+writer.WriteSection ("My Section");
+writer.Indentation = 2;
+writer.WriteKey ("key 1", "value 1", "Comment 1");
+writer.WriteKey ("key 2", "value 2");
+writer.Close ();
+			</code>
+			The output of <c>test.ini</c> would be this:
+			<code>
+; This is a comment
+[My Section]
+  key 1 = value 1 ; Comment 1
+  key 2 = value 2
+			</code>
+		</example>
+	</docs>
+
+	<Enum name="IniWriteState">
+		<docs>
+			<summary>The state of the writer.</summary>
+		</docs>
+		<Value name="Start">
+			<docs>
+				<summary>
+					The writer has not started writing.
+				</summary>
+			</docs>
+		</Value>
+		<Value name="BeforeFirstSection">
+			<docs>
+				<summary>
+					An empty line has been written but no sections.
+					</summary>
+			</docs>
+		</Value>
+		<Value name="Section">
+			<docs>
+				<summary>
+					A section has been written.
+				</summary>
+			</docs>
+		</Value>
+		<Value name="Closed">
+			<docs>
+				<summary>
+					The writer is closed.
+				</summary>
+			</docs>
+		</Value>
+	</Enum>
+
+	<Constructor name="ConstructorPath">
+		<docs>
+			<summary>Initializes a new instance of the class with the supplied file.</summary>
+			<param name="filePath">The path to the INI file.</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorTextWriter">
+		<docs>
+			<summary>
+				Initializes a new instance of the class using a TextWriter.
+			</summary>
+			<param name="writer">The TextWriter.</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorStream">
+		<docs>
+			<summary>
+				Initializes a new instance of the class using a Stream.
+			</summary>
+			<param name="stream">The Stream.</param>
+		</docs>
+	</Constructor>
+	
+	<Property name="Indentation">
+		<docs>
+			<summary>Number of spaces in front of each line.</summary>
+			<remarks>
+				The default value is zero (0).
+			</remarks>
+		</docs>
+	</Property>
+
+	<Property name="UseValueQuotes">
+		<docs>
+			<summary>Whether or not quotes should surround each entry.</summary>
+			<remarks>
+				The default value is <b>false</b>.
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Property name="WriteState">
+		<docs>
+			<summary>Gets the state of the reader.</summary>
+		</docs>
+	</Property>
+
+	<Property name="CommentDelimiter">
+		<docs>
+			<summary>What type of comment type is used.</summary>
+			<remarks>
+				The default value is a semicolon (';').  
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Property name="BaseStream">
+		<docs>
+			<summary>Returns the writer base stream.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="AssignDelimiter">
+		<docs>
+			<summary>Assign delimiter to search for when parsing.</summary>
+			<remarks>
+				The default value is an equals sign ('=').
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Method name="ToString">
+		<docs>
+			<summary>Returns the string version of the current written text.</summary>
+		</docs>
+	</Method>
+
+	<Method name="WriteSection">
+		<docs>
+			<summary>Writes an INI section.</summary>
+			<param name="section">Section name.</param>
+			<exception cref="IniException">
+				A WriteState error occurred or the document was closed.
+			</exception>
+		</docs>
+	</Method>
+
+	<Method name="WriteSectionComment">
+		<docs>
+			<summary>Writes a section with a comment.</summary>
+			<param name="section">Section name.</param>
+			<param name="comment">Comment text.</param>
+			<exception cref="IniException">
+				A WriteState error occurred or the document was closed.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="WriteKey">
+		<docs>
+			<summary>Writes a key to a section.</summary>
+			<param name="key">Key name.</param>
+			<param name="value">Key value.</param>
+			<exception cref="IniException">
+				A WriteState error occurred or the document was closed.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="WriteKeyComment">
+		<docs>
+			<summary>Writes a key to a section with a comment.</summary>
+			<param name="key">Key name</param>
+			<param name="value">Key value.</param>
+			<param name="comment">Comment text.</param>
+			<exception cref="IniException">
+				A WriteState error occurred or the document was closed.
+			</exception>
+		</docs>
+	</Method>
+
+	<Method name="WriteEmpty">
+		<docs>
+			<summary>Writes an empty line.</summary>
+		</docs>
+	</Method>
+
+	<Method name="WriteEmptyComment">
+		<docs>
+			<summary>Writes an empty line with a comment.</summary>
+			<param name="comment">Comment text.</param>
+			<exception cref="IniException">
+				A WriteState error occurred or the document was closed.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="Close">
+		<docs>
+			<summary>Closes the current writer and frees the resources.</summary>
+		</docs>
+	</Method>
+	
+	<Method name="Flush">
+		<docs>
+			<summary>Flushes the current writer and frees the resources.</summary>
+		</docs>
+	</Method>
+	
+	<Method name="Dispose">
+		<docs>
+			<summary>
+				Cleans up all managed and unmanaged resources for the instance.
+			</summary>
+		</docs>
+	</Method>
+	
+	<Method name="DisposeBoolean">
+		<docs>
+			<summary>
+				Cleans up all unmanaged resources for the instance and 
+				optionally the managed resouces as well.
+			</summary>
+			<param name="disposing">
+				If true then this will clean up managed resources as well.
+			</param>
+		</docs>
+	</Method>
+</Class>
+
+</NiniDocs>

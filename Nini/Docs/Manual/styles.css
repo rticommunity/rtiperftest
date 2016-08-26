@@ -1,0 +1,68 @@
+
+/*---------------------
+  General
+ */
+
+body {
+  font-family: verdana,tahoma,arial,helvetica;
+  margin: 10;
+  background-color: #ffffff;
+  color: #000000;
+  font-size: 12pt;
+}
+
+a:link, a:visited {
+	text-decoration: underline;
+}
+a:hover {
+	color: #fff; background-color: #333; text-decoration: none;
+}
+a.attention:link, a.attention:visited {
+	color: #900;
+}
+a.attention:hover {
+	color: #fff;
+}
+
+pre {
+  background: #EEEEEE;
+  margin-top: 1em; margin-bottom:1em; margin-left:0px;
+  margin-left: 10px;
+  margin-right: 10px;
+  padding: 5pt;
+  border: 1px dotted #000;
+  font-size: 12pt;
+}
+
+
+/*---------------------
+  Main
+ */
+
+div#header h2 {
+  background-color: #D6DFE8;
+  margin: 0;
+  padding: 5px;
+}
+
+div#nav {
+  font-size: 10pt;
+  padding: 10px;
+  text-align: center;
+}
+
+div.csharp {
+    display: block;
+}
+
+div.vbdotnet {
+    display: block;
+}
+
+div#footer {
+	padding: 10px;
+	text-align: center;
+	font-size: 11px;
+	margin: 0;
+	border-top: 1px solid #ccc;
+}

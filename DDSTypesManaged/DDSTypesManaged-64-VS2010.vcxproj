@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>DDSTypesManaged-64-VS2010</ProjectName>
+    <ProjectGuid>{02F70308-1E4F-413C-B7B7-FCFECB116D64}</ProjectGuid>
+    <RootNamespace>DDSTypesManaged</RootNamespace>
+    <Keyword>ManagedCProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <CLRSupport>true</CLRSupport>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <CLRSupport>true</CLRSupport>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <ReferencePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NDDSHOME)/lib/x64Win64dotnet4.0;$(ReferencePath)</ReferencePath>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)\bin\x64Win64VS2010\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)\bin\x64Win64VS2010\$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <ReferencePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NDDSHOME)/lib/x64Win64dotnet4.0;$(ReferencePath)</ReferencePath>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)\bin\x64Win64VS2010\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)\bin\x64Win64VS2010\$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(NDDSHOME)/include;$(NDDSHOME)/include/ndds;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;RTI_WIN32;NDDS_DLL_VARIABLE;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>nddscppd.lib;nddscd.lib;nddscored.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(NDDSHOME)/lib/x64Win64VS2010;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AssemblyDebug>true</AssemblyDebug>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(NDDSHOME)/include;$(NDDSHOME)/include/ndds;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;RTI_WIN32;NDDS_DLL_VARIABLE;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>nddscpp.lib;nddsc.lib;nddscore.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(NDDSHOME)/lib/x64Win64VS2010;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Reference Include="System">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+    <Reference Include="System.Data">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+    <Reference Include="System.Xml">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+    <Reference Include="nddsdotnet40, Culture=neutral, PublicKeyToken=f319a9351e41fb68">
+      <HintPath>$(NDDSHOME)\lib\x64Win64dotnet4.0\nddsdotnet40.dll</HintPath>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AssemblyInfo.cpp" />
+    <ClCompile Include="test.cpp" />
+    <ClCompile Include="testPlugin.cpp" />
+    <ClCompile Include="testSupport.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="test.h" />
+    <ClInclude Include="testPlugin.h" />
+    <ClInclude Include="testSupport.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\idl\test.idl">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Regenerating type support plugin from %(Filename)%(Extension) $(RTIDDSGEN_PREPROCESSOR)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(NDDSHOME)\scripts\rtiddsgen" -replace -language C++/CLI -d ../DDSTypesManaged $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
+</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../DDSTypesManaged/test.h;../DDSTypesManaged/test.cpp;../DDSTypesManaged/testPlugin.h;../DDSTypesManaged/testPlugin.cpp;../DDSTypesManaged/testSupport.h;../DDSTypesManaged/testSupport.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Regenerating type support plugin from %(Filename)%(Extension) $(RTIDDSGEN_PREPROCESSOR)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(NDDSHOME)/scripts/rtiddsgen" -replace -language C++/CLI -d ../DDSTypesManaged $(RTIDDSGEN_PREPROCESSOR) ../idl/%(Filename)%(Extension)
+</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../DDSTypesManaged/test.h;../DDSTypesManaged/test.cpp;../DDSTypesManaged/testPlugin.h;../DDSTypesManaged/testPlugin.cpp;../DDSTypesManaged/testSupport.h;../DDSTypesManaged/testSupport.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

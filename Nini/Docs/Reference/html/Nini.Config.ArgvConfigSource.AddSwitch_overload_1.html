@@ -1,0 +1,81 @@
+<html dir="LTR">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=Windows-1252" />
+    <meta name="vs_targetSchema" content="http://schemas.microsoft.com/intellisense/ie5" />
+    <title>ArgvConfigSource.AddSwitch Method (String, String)</title>
+    <xml>
+    </xml>
+    <link rel="stylesheet" type="text/css" href="MSDN.css" />
+  </head>
+  <body id="bodyID" class="dtBODY">
+    <div id="nsbanner">
+      <div id="bannerrow1">
+        <table class="bannerparthead" cellspacing="0">
+          <tr id="hdr">
+            <td class="runninghead">Nini Library API Reference - http://nini.sourceforge.net/</td>
+            <td class="product">
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div id="TitleRow">
+        <h1 class="dtH1">ArgvConfigSource.AddSwitch Method (String, String)</h1>
+      </div>
+    </div>
+    <div id="nstext">
+      <p> Adds a command line switch. </p>
+      <div class="syntax">public <a href="ms-help://MS.NETFrameworkSDKv1.1/cpref/html/frlrfSystemVoidClassTopic.htm">void</a> AddSwitch(<br />   <a href="ms-help://MS.NETFrameworkSDKv1.1/cpref/html/frlrfSystemStringClassTopic.htm">string</a> <i>configName</i>,<br />   <a href="ms-help://MS.NETFrameworkSDKv1.1/cpref/html/frlrfSystemStringClassTopic.htm">string</a> <i>longName</i><br />);</div>
+      <h4 class="dtH4">Parameters</h4>
+      <dl>
+        <dt>
+          <i>configName</i>
+        </dt>
+        <dd> The configuration (IConfig) name to add the value to if it is found. </dd>
+        <dt>
+          <i>longName</i>
+        </dt>
+        <dd> The long switch name (without the "-", "--", or "/"). </dd>
+      </dl>
+      <h4 class="dtH4">Remarks</h4>
+      <p> Calling this will cause Nini to search the arguments for the matching switch. </p>
+      <h4 class="dtH4">Example</h4>
+      <p>
+				<pre class="code">public static int Main (string[] args)
+{
+   ArgvConfigSource source = new ArgvConfigSource (args);
+
+   source.AddSwitch ("Logging", "file-name", "f");
+   source.AddSwitch ("Logging", "columns", "c");
+   source.AddSwitch ("Logging", "max-file-size", "m");
+
+   if (args.Length &gt; 0)
+   {
+      string fileName = config.Configs["Logging"].Get ("file-name");
+      int columns = config.Configs["Logging"].GetInt ("columns");
+      long fileSize = config.Configs["Logging"].GetLong ("max-file-size");
+   }
+}
+                </pre>
+			</p>
+      <h4 class="dtH4">See Also</h4>
+      <p>
+        <a href="Nini.Config.ArgvConfigSource.html">ArgvConfigSource Class</a> | <a href="Nini.Config.html">Nini.Config Namespace</a> | <a href="Nini.Config.ArgvConfigSource.AddSwitch_overloads.html">ArgvConfigSource.AddSwitch Overload List</a></p>
+      <object type="application/x-oleobject" classid="clsid:1e2a7bd0-dab9-11d0-b93a-00c04fc99f9e" viewastext="true" style="display: none;">
+        <param name="Keyword" value="AddSwitch method">
+        </param>
+        <param name="Keyword" value="AddSwitch method, ArgvConfigSource class">
+        </param>
+        <param name="Keyword" value="ArgvConfigSource.AddSwitch method">
+        </param>
+      </object>
+      <hr />
+      <div id="footer">
+        <p>
+          <a>Copyright (c) 2006 Brent R. Matzelle</a>
+        </p>
+        <p>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

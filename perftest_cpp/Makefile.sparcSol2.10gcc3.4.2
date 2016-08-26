@@ -1,0 +1,18 @@
+#
+# A makefile for the i86Linux2.6gcc3.4.3 architecture, which
+# corresponds to RedHat Enterprise Linux 4.
+#
+
+ARCH         := sparcSol2.10gcc3.4.2
+DEBUG_FLAG   := -O4
+#DEBUG_FLAG   := -g
+DEFINES_ARCH_SPECIFIC := -DRTI_SOL2 -DRTI_SOL210 -DSolaris2
+
+cxx_cc       := g++
+cxx_cc_flags := -m32
+
+cxx_ld       := g++ 
+cxx_ld_flags := -L/opt/sfw/lib -lgcc -ldl -lnsl -lsocket -lgen -lposix4 -lpthread -lm -lc 
+#-m32 -static-libgcc -ldl -lnsl -lm -L/usr/lib/nptl -lpthread -lrt -lsocket -lgen -lposix4 -lc
+
+include common.mk

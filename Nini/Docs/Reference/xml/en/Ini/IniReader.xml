@@ -1,0 +1,288 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="IniReader">
+	<docs>
+		<summary>Fast forward only INI parser class.</summary>
+		<remarks>
+			<para>
+			An INI is a file is a simple file format for storing configuration 
+			information.  These files are line based.  Each line can be one of 
+			three types: empty, section, or key/value pair.  All of these formats 
+			allow for comments.  Comments are delimited by hash mark ('#') or a 
+			semi-colon (';').  
+			</para>	
+			
+			<para>
+			</para>
+			
+		</remarks>
+		<example><code>
+IniReader reader = new IniReader ("test.ini");
+string comment;
+while (reader.Read ())
+{
+	comment = (reader.Comment.Length > 0) ? " ; " + reader.Comment : "";
+
+	switch (reader.IniType)
+	{
+	case IniType.Empty:
+		Console.WriteLine (comment);
+		break;
+	case IniType.Section:
+		Console.WriteLine ("[" + reader.Name + "]") + comment;
+		break;
+	case IniType.Key:
+		Console.WriteLine (reader.Name + " = " + reader.Value + comment);
+		break;
+	}
+}
+reader.Close ();
+		</code></example>
+		<seealso href="ms-help://MS.NETFrameworkSDK/cpref/html/frlrfsystemmathclasstopic.htm">The System.Math class</seealso>
+	</docs>
+
+	<Enum name="IniReadState">
+		<docs>
+			<summary>The state of the reader.</summary>
+		</docs>
+		<Value name="Closed"><docs><summary>The reader is closed.</summary></docs></Value>
+		<Value name="EndOfFile"><docs><summary>The reader has reached the end of the file.</summary></docs></Value>
+		<Value name="Error"><docs><summary>An error has occurred while parsing.</summary></docs></Value>
+		<Value name="Initial"><docs><summary>The reader has not yet begun parsing.</summary></docs></Value>
+		<Value name="Interactive"><docs><summary>No root was found. The function may not cross the y-axis in a continous manner.</summary></docs></Value>
+	</Enum>
+
+	<Enum name="IniType">
+		<docs>
+			<summary>The INI line type.</summary>
+		</docs>
+		<Value name="Section"><docs><summary>INI section (e.g. <c>[My Section]</c>)</summary></docs></Value>
+		<Value name="Key"><docs><summary>An INI key value pair (e.g. <c>my_key = value</c>)</summary></docs></Value>
+		<Value name="Empty"><docs><summary>No INI data.  Comments may be present.</summary></docs></Value>
+	</Enum>
+
+	<Constructor name="ConstructorPath">
+		<docs>
+			<summary>Initializes a new instance of the class with the supplied file.</summary>
+			<param name="filePath">The path to the INI file.</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorTextReader">
+		<docs>
+			<summary>
+				Initializes a new instance of the class using a TextReader.
+			</summary>
+			<param name="reader">The TextReader.</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorStream">
+		<docs>
+			<summary>
+				Initializes a new instance of the class using a Stream.
+			</summary>
+			<param name="stream">The Stream.</param>
+		</docs>
+	</Constructor>
+	
+	<Property name="Name">
+		<docs>
+			<summary>Gets the name of the current INI line.</summary>
+			<remarks>
+				For sections this is the name of the section. <br/>
+				For keys this is the name of the key.<br/>
+				For emtpy lines this is an empty string.
+			</remarks>
+		</docs>
+	</Property>
+
+	<Property name="Value">
+		<docs>
+			<summary>Gets the value of the current INI line.</summary>
+			<remarks>
+				For sections this is an empty string. <br/>
+				For keys this is the key value.<br/>
+				For emtpy lines this is an empty string.
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Property name="Type">
+		<docs>
+			<summary>Gets the type of the current INI line.</summary>
+		</docs>
+	</Property>
+
+	<Property name="Comment">
+		<docs>
+			<summary>Gets the comment text for the current INI line.</summary>
+			<remarks>All types may contain comments.</remarks>
+		</docs>
+	</Property>
+
+	<Property name="LineNumber">
+		<docs>
+			<summary>Gets the current line number.</summary>
+		</docs>
+	</Property>
+
+	<Property name="LinePosition">
+		<docs>
+			<summary>Gets the current line position (column).</summary>
+		</docs>
+	</Property>
+	
+	<Property name="IgnoreComments">
+		<docs>
+			<summary>
+				Gets or sets whether comments should be collected while parsing. 
+			</summary>
+		</docs>
+	</Property>
+
+	<Property name="ReadState">
+		<docs>
+			<summary>Gets the state of the reader.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="LineContinuation">
+		<docs>
+			<summary>Gets or sets whether to accept line continuations.</summary>
+			<remarks>
+				Line continuations are triggered by a slash ('\') character
+				at the end of a key value line.
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Property name="AcceptCommentAfterKey">
+		<docs>
+			<summary>Gets or sets whether accept comments after keys.</summary>
+			<remarks>
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Property name="AcceptNoAssignmentOperator">
+		<docs>
+			<summary>
+				Gets or sets whether to accept no assignment operator after a key. 
+			</summary>
+			<remarks>
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Property name="ConsumeAllKeyText">
+		<docs>
+			<summary>
+				Gets or sets whether or not all key text should be consumed.  This means
+				that even double quotes (") and commments (;) will be consumed from 
+				keys.  
+			</summary>
+			<remarks>
+				This was added to similate the behavior of the Win32 API 
+				GetProfileString method.
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Method name="GetCommentDelimiters">
+		<docs>
+			<summary>Returns the comment delimiters.</summary>
+			<remarks>
+				The default value is a semicolon (';').
+			</remarks>
+		</docs>
+	</Method>
+
+	<Method name="SetCommentDelimiters">
+		<docs>
+			<summary>Sets the comment delimiters.</summary>
+			<param name="delimiters">
+				The array of comment delimiters.
+			</param>
+			<remarks>
+				The default value is a semicolon (';').
+			</remarks>
+		</docs>
+	</Method>
+	
+	<Method name="GetAssignDelimiters">
+		<docs>
+			<summary>Returns the assign delimiters.</summary>
+			<remarks>
+				The default value is an equals operator ('=').
+			</remarks>
+		</docs>
+	</Method>
+
+	<Method name="SetAssignDelimiters">
+		<docs>
+			<summary>Sets the assign delimiters.</summary>
+			<param name="delimiters">
+				The array of assign delimiters.
+			</param>
+			<remarks>
+				The default value is an equals operator ('=').
+			</remarks>
+		</docs>
+	</Method>
+	
+	<Method name="Read">
+		<docs>
+			<summary>Moves the reader to the next line.</summary>
+			<returns><b>true</b> if the reader successfully read another line.</returns>
+			<exception cref="IniException">An error occurred while parsing.</exception>
+		</docs>
+	</Method>
+
+	<Method name="MoveToNextSection">
+		<docs>
+			<summary>Moves the reader to the next section.</summary>
+			<returns><b>true</b> if the reader successfully found another section.</returns>
+		</docs>
+	</Method>
+
+	<Method name="MoveToNextKey">
+		<docs>
+			<summary>Moves the reader to the next line.</summary>
+			<returns>
+				<b>true</b> if the reader successfully read another key. It 
+				returns <b>false</b> if it is at the end of the file or it 
+				found a section before the next key.
+			</returns>
+		</docs>
+	</Method>
+	
+	<Method name="Close">
+		<docs>
+			<summary>Closes the current reader and frees the resources.</summary>
+		</docs>
+	</Method>
+	
+	<Method name="Dispose">
+		<docs>
+			<summary>
+				Cleans up all managed and unmanaged resources for the instance.
+			</summary>
+		</docs>
+	</Method>
+	
+	<Method name="DisposeBoolean">
+		<docs>
+			<summary>
+				Cleans up all unmanaged resources for the instance and 
+				optionally the managed resouces as well.
+			</summary>
+			<param name="disposing">
+				If true then this will clean up managed resources as well.
+			</param>
+		</docs>
+	</Method>
+</Class>
+
+</NiniDocs>

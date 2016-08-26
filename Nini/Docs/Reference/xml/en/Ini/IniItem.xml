@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="IniItem">
+	<docs>
+		<summary>INI item class.</summary>
+	</docs>
+
+	<Property name="Comment">
+		<docs>
+			<summary>Item comment.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="Type">
+		<docs>
+			<summary>Item type.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="Value">
+		<docs>
+			<summary>Item value.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="Name">
+		<docs>
+			<summary>Item name.</summary>
+		</docs>
+	</Property>
+	
+	<Constructor name="Constructor">
+		<docs>
+			<summary>Creates a new item.</summary>
+			<param name="name">Item name.</param>
+			<param name="value">Item value.</param>
+			<param name="type">Item type.</param>
+			<param name="comment">Item comment.</param>
+		</docs>
+	</Constructor>
+</Class>
+
+</NiniDocs>

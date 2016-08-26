@@ -1,0 +1,202 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Interface name="IConfigSource">
+	<docs>
+		<summary>
+			Container for IConfig objects.
+		</summary>
+		<remarks>
+			TODO.
+		</remarks>
+	</docs>
+	
+	<Property name="Configs">
+		<docs>
+			<summary>Returns the collection of IConfig objects.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="Alias">
+		<docs>
+			<summary>
+				Gets the global <see cref="AliasText"/> for all IConfigs
+				in this source.
+			</summary>
+		</docs>
+	</Property>
+
+	<Property name="AutoSave">
+		<docs>
+			<summary>
+				Gets or sets whether the source will be automatically 
+				saved.
+			</summary>
+			<remarks>
+				This save process occurs each time the the 
+				<code>IConfig.Set</code> method
+				is called.  Take a look at the <code>Save</code> method of 
+				each configuration source to determine when this method can 
+				be activated.
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Method name="GetExpanded">
+		<docs>
+			<summary>
+				Returns the expanded string value.  This method does not replace 
+				the other key values in the IConfigSource. 
+			</summary>
+			<param name="config">Config to load the expanded value.</param>
+			<param name="key">Configuration key.</param>
+		</docs>
+	</Method>
+	
+	<Method name="Save">
+		<docs>
+			<summary>
+				Saves all configuration values.  
+			</summary>
+			<remarks>
+				Look at the class that implements this interface to determine
+				when this can be called.
+			</remarks>
+			<exception cref="Exception">
+				An error occurred.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="Reload">
+		<docs>
+			<summary>
+				Reloads all configuration values.  
+			</summary>
+			<remarks>
+				This can only be called if the document can be reloaded 
+				from it's source, such as if it was loaded from a file
+				or from the Windows Registry.
+				If other documents were merged (with Merge) then they 
+				will be lost.
+			</remarks>
+			<exception cref="Exception">
+				An error occurred.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="Merge">
+		<docs>
+			<summary>
+				Merges all IConfigs from another IConfigSource into the 
+				Configs collection.
+			</summary>
+			<param name="source">
+				The IConfigSource to merge.
+			</param>
+			<remarks>
+				TODO.
+			</remarks>
+			<exception cref="Exception">
+				If the IConfigSource has already been merged. 
+				If the IConfigSource is <b>this</b>.
+				If an IConfig of the same name already exists.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="AddConfig">
+		<docs>
+			<summary>
+				Adds a new IConfig.
+			</summary>
+			<remarks>
+				This creates a new IConfig and adds it to the 
+				<see cref="Configs"/> collection.
+			</remarks>
+			<param name="name">
+				The name of the new IConfig.
+			</param>
+			<returns>
+				The new IConfig.
+			</returns>
+			<exception cref="Exception">
+				If an IConfig of the same name already exists.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="ExpandKeyValues">
+		<docs>
+			<summary>
+				Expands all key values.  
+			</summary>
+			<remarks>
+				Calling this method expands all key values with the values
+				of other keys.  See the example below for more information.
+			</remarks>
+			<example>
+				In many cases you will find that your key values are dependent 
+				on the values of other keys. For instance you have a root path 
+				configuration value and several values for files that use this 
+				path like in this example:
+				<code>
+[File Path]
+RootPath = C:\Program Files\My Program
+Logging = MyApp.log
+WebPage = index.html
+				</code>
+				Without Nini if you wanted to combine the value of "RootPath" 
+				with "Logging" and "WebPage" then you would have to perform 
+				ugly string concatenations to get 
+				"C:\Program Files\My Program\index.html". In Nini you do not 
+				need to do this:
+				<code>
+[File Path]
+RootPath = C:\Program Files\My Program
+Logging = ${RootPath}\MyApp.log
+WebPage = ${RootPath}\index.html
+				</code>
+				This can save you a lot of trouble concatenating them yourself 
+				and make your code a lot cleaner. If you want to grab a value 
+				from a different section you can do the same above but add the 
+				section name followed by a bar ("|") like so: ${section|key}.
+			</example>
+		</docs>
+	</Method>
+	
+	<Method name="ReplaceKeyValues">
+		<docs>
+			<summary>
+				This method is deprecated.  Use <see cref="ExpandKeyValues"/>
+				from now on. 
+			</summary>
+		</docs>
+	</Method>
+	
+	<Event name="Reloaded">
+		<docs>
+			<summary>
+				Occurs when the config source is reloaded.  
+			</summary>
+			<remarks>
+				This event occurs when the <see cref="Reload"/> 
+				method is called.  
+			</remarks>
+		</docs>
+	</Event>
+	
+	<Event name="Saved">
+		<docs>
+			<summary>
+				Occurs when the config soucre is saved.    
+			</summary>
+			<remarks>
+				This event occurs when a <see cref="Save"/> method is called.  
+			</remarks>
+		</docs>
+	</Event>
+</Interface>
+
+</NiniDocs>

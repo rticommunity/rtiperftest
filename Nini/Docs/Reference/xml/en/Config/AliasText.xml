@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="AliasText">
+	<docs>
+		<summary>Class for defining alias text values.</summary>
+	</docs>
+
+	<Constructor name="AliasText">
+		<docs>
+			<summary>Class constructor.</summary>
+		</docs>
+	</Constructor>
+	
+	<Method name="AddAliasInt">
+		<docs>
+			<summary>Adds a new integer alias.</summary>
+			<param name="key">Alias key.</param>
+			<param name="alias">Alias name.</param>
+			<param name="value">Alias value.</param>
+		</docs>
+	</Method>
+	
+	<Method name="AddAliasBoolean">
+		<docs>
+			<summary>Adds a new Boolean alias.</summary>
+			<param name="alias">Alias name.</param>
+			<param name="value">Alias value.</param>
+		</docs>
+	</Method>
+	
+	<Method name="AddAliasEnum">
+		<docs>
+			<summary>Adds a new alias using the items in an enumeration.</summary>
+			<param name="key">Config key.</param>
+			<param name="enumAlias">An enum instance.</param>
+			<remarks>
+				This method is not available for the .NET Compact Framework
+				version of Nini.
+			</remarks>
+		</docs>
+	</Method>
+
+	<Method name="GetBoolean">
+		<docs>
+			<summary>Returns the alias value for a specified key. </summary>
+			<param name="key">Alias key.</param>
+		</docs>
+	</Method>
+	
+	<Method name="GetInt">
+		<docs>
+			<summary>Returns the int value of a config value.</summary>
+			<param name="key">Config key.</param>
+			<param name="alias">Config alias.</param>
+		</docs>
+	</Method>
+	
+	<Method name="ContainsBoolean">
+		<docs>
+			<summary>
+				Returns true if the Boolean value exists.
+			</summary>
+			<param name="key">Alias key.</param>
+		</docs>
+	</Method>
+	
+	<Method name="ContainsInt">
+		<docs>
+			<summary>
+				Returns true if the integer value exists.
+			</summary>
+			<param name="key">Config key.</param>
+			<param name="alias">Config alias.</param>
+		</docs>
+	</Method>
+
+</Class>
+
+</NiniDocs>

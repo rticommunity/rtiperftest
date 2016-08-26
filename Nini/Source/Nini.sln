@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nini", "Nini.csproj", "{9B920C90-08EF-4123-A6B7-5F25CF0F94EC}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiniTest", "Test\NiniTest.csproj", "{BF80879B-3F0D-44A8-87FF-00143FDD3D16}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{9B920C90-08EF-4123-A6B7-5F25CF0F94EC}.Debug.ActiveCfg = Debug|.NET
+		{9B920C90-08EF-4123-A6B7-5F25CF0F94EC}.Debug.Build.0 = Debug|.NET
+		{9B920C90-08EF-4123-A6B7-5F25CF0F94EC}.Release.ActiveCfg = Release|.NET
+		{9B920C90-08EF-4123-A6B7-5F25CF0F94EC}.Release.Build.0 = Release|.NET
+		{BF80879B-3F0D-44A8-87FF-00143FDD3D16}.Debug.ActiveCfg = Debug|.NET
+		{BF80879B-3F0D-44A8-87FF-00143FDD3D16}.Debug.Build.0 = Debug|.NET
+		{BF80879B-3F0D-44A8-87FF-00143FDD3D16}.Release.ActiveCfg = Release|.NET
+		{BF80879B-3F0D-44A8-87FF-00143FDD3D16}.Release.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

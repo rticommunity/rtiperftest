@@ -1,0 +1,34 @@
+#!/bin/ksh
+
+# $Id: perftest_java,v 1.1.2.1 2014/04/01 11:56:55 juanjo Exp $
+#
+# (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
+# Permission to modify and use for internal purposes granted.   	
+# This software is provided "as is", without warranty, express or implied.
+#
+# modification history
+# --------------------
+# 11apr09,jsr Added RTI_PERFTEST_ARCH variable for arch flexibility
+# 22oct08,rbw Fixed JAR file name
+# 07oct08,rbw Refactored launcher class
+# 08apr08,rbw Increased max heap size
+# 04apr08,rbw Created
+# =====================================================================
+
+# You can override the following settings with the correct location of Java
+JAVA=`which java`
+
+# Make sure JAVA and NDDSHOME are set correctly
+test -z "$JAVA" && echo "java not found" && exit 0
+test -z "$NDDSHOME" && echo "NDDSHOME environment variable not set!" && exit 0
+#test -z "$RTI_PERFTEST_ARCH" && echo "RTI_PERFTEST_ARCH environment variable not set!" && exit 0
+
+# Attempt to set LD_LIBRARY_PATH from which to load native libraries.
+# If RTI_PERFTEST_ARCH is set (e.g. to i86Linux2.6gcc4.1.1jdk), you don't
+# have to separately set the LD_LIBRARY_PATH.
+export LD_LIBRARY_PATH=${NDDSHOME}/lib/${RTI_PERFTEST_ARCH}:${LD_LIBRARY_PATH}
+
+java -Xmx1500m \
+     -cp bin/Release/perftestdds.jar:$NDDSHOME/class/nddsjava.jar \
+     com.rti.perftest.ddsimpl.PerfTestLauncher \
+     $@

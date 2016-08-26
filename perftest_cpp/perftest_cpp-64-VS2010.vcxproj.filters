@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Property.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="perftest_cpp.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RTIDDSImpl.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\DDSTypes\test.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\DDSTypes\testPlugin.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\DDSTypes\testSupport.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="MessagingIF.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="perftest_cpp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Property.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RTIDDSImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\DDSTypes\test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\DDSTypes\testPlugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\DDSTypes\testSupport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{793217cc-7a15-4894-83a4-7e234bec546d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{91458d88-dada-4a75-8f38-0e3272aa51de}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\idl\test.idl">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

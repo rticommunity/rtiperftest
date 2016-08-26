@@ -1,0 +1,83 @@
+----------------------
+Nini Project ChangeLog
+----------------------
+
+This contains a listing of all changes between versions of Nini.
+
+Version 1.1.0 (Wed, Mar 22 2006)
+--------------------------------
+* Very much improved INI load and save support
+* Added Load methods to all INI and XML based classes
+* Added MySQL INI support
+* Added Windows INI (Win32 API GetPrivateProfileString) support
+* Added GetExpanded method to expand key values without replacing
+* Added Registry config saving and key remove support
+* Added a CaseSensitive property for the IniConfigSource class
+* Fixed multiple long-standing bugs
+* Split up the manual into a table of contents and 5 chapters
+* Updated build with .NET 2.0 support
+* Updated all projects files to Visual Studio 2003
+
+Version 1.0.0 (Mon, Jul 25 2005)
+--------------------------------
+* Added event delegates for Saved, Reloaded, KeySet, KeyRemoved, etc
+* Added a signed Mono build
+* Added IConfig.Contains method
+* Added Save to Stream to all IConfigSource classes
+* Added rename IConfig support
+* Added much improved error messages
+* Fixed a couple elusive crashing bugs
+
+Version 0.9.2 (Mon, Mar 14 2005)
+--------------------------------
+* .NET Compact Framework support
+* Improved INI compatibility (Bug 1105692)
+* VB.NET examples added to manual
+* Fixed a few small bugs
+
+Version 0.9.1 (Sun, Jan 09 2005)
+--------------------------------
+* Added ToString override to Xml, Ini, and DotNet sources
+* Added Reload method to all IConfigSource classes
+* Added GetValues method to IConfig
+* ConfigCollection class now implements IList (RemoveAt, Contains, etc)
+* Added Tips/Tricks section to the manual
+* Added empty constructor for creating configs in memory to all sources
+* Added verbose switch (-v) to Nini Editor
+* Added create new file switch (-n) to Nini Editor
+* Added "Using Nini Effectively" section to the manual
+* Fixed several Save method bugs among others
+
+Version 0.9.0 (Sun, Nov 14 2004)
+--------------------------------
+* Made engine faster and more CLS compliant (FxCop).
+* Enhanced INI support for loading Samba smb.conf and Python files
+* Several bug fixes and documentation additions
+* The IConfigSource GlobalAlias property has been changed to Alias
+* The '#' comment is no longer valid for the default INI file type
+
+Version 0.8.0 (Sat, Oct 02 2004)
+--------------------------------
+* Added key value replacement, add, remove, and command line configuration
+* Enhanced merging support
+* Added a new Examples directory
+* Added the Nini Editor, which is a command-line configuration file editor 
+
+Version 0.7.1 (Thu, Jul 15 2004)
+--------------------------------
+* Fixed a major bug with the IniReader that caused an infinite loop 
+
+Version 0.7.0 (Tue, Jul 13 2004)
+--------------------------------
+* Added XML and Windows Registry configuration sources.
+* Added new Merge method has been added
+
+Version 0.6.0 (Tue, Jun 22 2004)
+--------------------------------
+* Added setting and saving of configuration values
+* The INI classes have been optimized for speedy retrieval
+* Several bugs have been fixed
+
+Version 0.5.0 (Sun, Jun 06 2004)
+---------------------------------
+* First public release. 

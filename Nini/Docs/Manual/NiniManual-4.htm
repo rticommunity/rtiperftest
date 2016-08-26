@@ -1,0 +1,304 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=iso-8859-1" />
+	<title>Configuration Types - Nini Manual</title>
+	<link rel="stylesheet" href="styles.css" type="text/css" media="screen" />
+	<meta name="description" content="" />
+</head>
+
+<body>
+
+<div id="container">
+
+  <div id="header">
+    <h2>Nini Manual</h2>
+  </div>
+  
+  <div id="nav">
+    <a href="NiniManual-3.htm"><< Previous</a> | 
+    <a href="NiniManual.htm">Table of Contents</a> |
+    <a href="NiniManual-5.htm">Next >></a>
+  </div>
+  
+  <div id="content">
+
+    <h2>4. Configuration Types</h2>
+    
+    <a name="IniFiles" id="IniFiles"></a>
+    <h3>4.1 Ini Files</h3>
+    <p>Nini has a built in INI parser written in 100% C#.  This means that unlike
+      other INI parsers it will run on any .NET platform, not just those running
+      Windows.  In addition the parser is written for flexibility, that is why
+      it has support for multiple INI file types.  The currently supported
+      file types are as follows:
+      
+      <ul>
+        <li><a href="http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/getprivateprofilestring.asp">Windows style</a> (Win32 API GetPrivateProfileString)</li>
+        <li><a href="http://dev.mysql.com/doc/refman/5.0/en/mysql-cluster-config-example.html">MySQL style</a></li>
+        <li><a href="http://www.python.org/doc/current/lib/module-ConfigParser.html">Python Style</a></li>
+        <li><a href="http://www.samba.org/samba/docs/man/manpages-3/smb.conf.5.html">Samba style</a></li>
+        <li>Nini standard</li>
+      </ul>
+    </p>
+    
+    <h4>Case Sensitivity</h4>
+    <p>The IniConfigSource class has a property that allows values to be 
+      case insensitive.  This might be desirable for people upgrading their
+      software from systems using the old Win32 API GetPrivateProfileString
+      function which was not case sensitive.  Here is an example of how to use it:
+    </p>
+    
+    <pre>
+; Note the Load method is just an alternative to passing the file name
+; to the constructor. 
+IConfigSource source = <b>new</b> IniConfigSource();
+source.Load(&quot;MyApp.ini&quot;);
+source.CaseSensitive = <b>false</b>;</pre>
+    </div>
+    
+    <a name="XmlFiles" id="XmlConfiguration"></a>
+    <h3>4.2 XML Files</h3>
+    <p>Nini has it's own XML configuration file structure. It provides more flexibility 
+      than does the .NET configuration file format. It's main advantages are that 
+      you can have more than one XML configuration file and that the format is much 
+      more concise. Here is an example of the format. You will notice that it resembles 
+      an INI file quite closely. The configuration values are the same as the INI 
+      in the previous examples:</p>
+    <pre>
+&lt;!-- MyApp.xml --&gt;
+&lt;Nini&gt;
+    &lt;Section Name=&quot;Logging&quot;&gt;
+        &lt;Key Name=&quot;File Name&quot; Value=&quot;MyApp.log&quot; /&gt;
+        &lt;Key Name=&quot;MessageColumns&quot; Value=&quot;5&quot; /&gt;
+        &lt;Key Name=&quot;MaxFileSize&quot; Value=&quot;40000000000000&quot; /&gt;
+    &lt;/Section&gt;
+&lt;/Nini&gt;</pre>
+
+<p>To load the file is very simple:</p>
+
+<div class="csharp">
+<pre>
+// Loads the XML file
+XmlConfigSource source = <b>new</b> XmlConfigSource("MyApp.xml");
+// Retrieves a value
+<b>long</b> maxFileSize = source.Configs["Logging"].GetLong("MaxFileSize");</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    Here is the example in VB:
+    
+    <pre>
+' Loads the XML file
+<b>Dim</b> source <b>As New</b> XmlConfigSource("MyApp.xml")
+' Retrieves a value
+<b>Dim</b> maxFileSize <b>As</b> Long = source.Configs("Logging").GetLong("MaxFileSize")</pre>
+    </div>
+    
+    <a name="WindowsRegistryConfiguration"></a>
+    <h3>4.3 Windows Registry Configuration</h3>
+    
+    If you are using one of the many Microsoft Windows operating systems then you 
+    can access data from the <a href="http://tinyurl.com/c8tpz">Windows 
+    Registry</a>. Here is an example key path for a registry item: 
+    <pre>
+HKEY_LOCAL_MACHINE\Sofware\MyApp\Logging
+&quot;File Name&quot;       "MyApp.log"  REG_SZ
+&quot;MessageColumns&quot;  "5"          REG_DWORD
+&quot;MaxFileSize&quot;     "40000000"   REG_DWORD</pre>
+    <p>
+      To access this code the method is a bit more complex than others. You must 
+      create a mapping to a registry entry. This functionality will also give you 
+      the ability to merge many registry keys into a single IConfigSource. Here is 
+      some example code to access it.
+    </p>
+    
+    <div class="csharp">
+    Here is an example in C#:
+    
+    <pre>
+<b>using</b> Microsoft.Win32;
+RegistryConfigSource source = <b>new</b> RegistryConfigSource();
+// Loads the registry tree
+source.AddMapping(Registry.LocalMachine, "Software\\MyApp\\Logging");
+// Retrieves a value
+<b>long</b> maxFileSize = source.Configs["Logging"].GetLong("MaxFileSize");</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    Here is the example in VB:
+    
+    <pre>
+<b>Imports</b> Microsoft.Win32
+<b>Dim</b> source <b>As New</b> RegistryConfigSource()
+' Loads the registry tree
+source.AddMapping(Registry.LocalMachine, "Software\\MyApp\\Logging")
+' Retrieves a value
+<b>Dim</b> maxFileSize <b>As</b> Long = source.Configs("Logging").GetLong("MaxFileSize")</pre>
+    </div>
+    
+    <p>
+      If you'd like to recursively retrieve all data under a specified registry key 
+      there is a method to accomplish this as well.
+    </p>
+    
+    If you want to get all subkeys underneath a key with a flat name you can do this:
+    
+    <div class="csharp">
+    <pre>
+<b>using</b> Microsoft.Win32;
+// Loads the registry tree and all nodes beneath it without 
+RegistryConfigSource source = <b>new</b> RegistryConfigSource();
+source.AddMapping(Registry.LocalMachine, "Software\\MyApp", RegistryRecurse.Flattened);
+
+<b>string</b> maxFileSize = source.Configs["MyApp"].GetString("SomeConfig");
+<b>long</b> maxFileSize = source.Configs["Logging"].GetLong("MaxFileSize");</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    Here is the example in VB:
+    
+    <pre>
+<b>Imports</b> Microsoft.Win32
+' Loads the registry tree and all nodes beneath it without 
+<b>Dim</b> source <b>As New</b> RegistryConfigSource()
+source.AddMapping(Registry.LocalMachine, "Software\\MyApp", RegistryRecurse.Flattened)
+
+<b>Dim</b> maxFileSize <b>As</b> String = source.Configs("MyApp").GetString("SomeConfig");
+<b>Dim</b> maxFileSize <b>As</b> Long = source.Configs("Logging").GetLong("MaxFileSize")</pre>
+    </div>
+    
+    <a name="NETCOnfiguration"></a>
+    
+    <h3>4.4 .NET Configuration Files</h3>
+    <p>
+      The .NET Framework has it's own configuration file mechanism that uses a specific 
+      <a href="http://tinyurl.com/38sn4">XML 
+      format</a>. You may be familiar with them in ASP.NET as <strong>web.config</strong> 
+      files. If you are using them with Windows Forms, console applications, or services 
+      you will know them as <strong>[APP NAME].exe.config</strong> files. To support 
+      users that still use this configuration file format in their applications Nini 
+      has support for these files as well. 
+    </p>
+      
+      
+    <pre>
+&lt;!-- ExampleApp.exe.config --&gt;
+&lt;configuration&gt;
+    &lt;configSections&gt;
+        &lt;section name=&quot;Logging&quot; type=&quot;System.Configuration.NameValueSectionHandler&quot; /&gt;
+    &lt;/configSections&gt;
+    &lt;Logging&gt;
+        &lt;add key=&quot;File Name&quot; value=&quot;MyApp.log&quot; /&gt;
+        &lt;add key=&quot;MessageColumns&quot; value=&quot;5&quot; /&gt;
+        &lt;add key=&quot;MaxFileSize&quot; value=&quot;40000000000000&quot; /&gt;
+    &lt;/Logging&gt;
+&lt;/configuration&gt;</pre>
+    
+    Accessing the data is very similar to loading an INI or XML file:
+    
+    <div class="csharp">
+    <pre>
+IConfigSource source = <b>new</b> DotNetConfigSource(DotNetConfigSource.GetFullConfigPath());
+
+<b>string</b> fileName = source.Configs[&quot;Logging&quot;].Get(&quot;File Name&quot;);
+<b>int</b> columns = source.Configs[&quot;Logging&quot;].GetInt(&quot;MessageColumns&quot;);
+<b>long</b> fileSize = source.Configs[&quot;Logging&quot;].GetLong(&quot;MaxFileSize&quot;);</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    Here is the example in VB:
+    
+    <pre>
+<b>Dim</b> source <b>As New</b> DotNetConfigSource(DotNetConfigSource.GetFullConfigPath())
+
+<b>Dim</b> fileName <b>As</b> String = source.Configs(&quot;Logging&quot;).Get(&quot;File Name&quot;)
+<b>Dim</b> columns <b>As</b> Integer = source.Configs(&quot;Logging&quot;).GetInt(&quot;MessageColumns&quot;)
+<b>Dim</b> fileSize <b>As</b> Long = source.Configs(&quot;Logging&quot;).GetLong(&quot;MaxFileSize&quot;)</pre>
+    </div>
+    
+    <a name="ArgvConfiguration"></a>
+    
+    <h3>4.5 Command Line (Argv) Configuration</h3>
+    <p>
+      Since the beginning of programming applications have had the capability to 
+      accept command line switches. These switches are simply strings passed into 
+      the application when it is first started. The Windows program Xcopy has many 
+      command line 
+      <a href="http://tinyurl.com/a7e3q">switches</a> 
+      and the excellent downloading application wget has it's own 
+      <a href="http://linux.about.com/library/cmd/blcmdl1_wget.htm">switches</a> 
+      as well. If you want to read a little more about how command line parameters 
+      work in .NET 
+      <a href="http://tinyurl.com/clmy4">click 
+      here</a>. Our first example is very similar to the others you have seen so far. 
+      The difference is that the 
+      <a href="../Reference/html/Nini.Config.IConfig.AddSwitch_overloads.html">AddSwitch</a> 
+      method needs to be called for each configuration key. There is a short key and 
+      a long key that both can be used to fetch configuration data.
+    </p>
+    
+    <div class="csharp">
+    Here is an example in C#:
+    
+    <pre>
+<b>public static int</b> Main(<b>string</b>[] args)
+{
+   ArgvConfigSource source = <b>new</b> ArgvConfigSource(args);
+
+   source.AddSwitch("Logging", "file-name", "f");
+   source.AddSwitch("Logging", "columns", "c");
+   source.AddSwitch("Logging", "max-file-size", "m");
+
+   <b>if</b>(args.Length > 0)
+   {
+      <b>string</b> fileName = source.Configs[&quot;Logging&quot;].Get(&quot;file-name&quot;);
+      <b>int</b> columns = source.Configs[&quot;Logging&quot;].GetInt(&quot;columns&quot;);
+      <b>long</b> fileSize = source.Configs[&quot;Logging&quot;].GetLong(&quot;max-file-size&quot;);
+   }
+}</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    Here is the example in VB:
+    
+    <pre>
+<b>Public Static Function</b> Main(args() <b>As</b> String) <b>As</b> Integer
+   <b>Dim</b> source <b>As New</b> ArgvConfigSource(args)
+
+   source.AddSwitch("Logging", "file-name", "f")
+   source.AddSwitch("Logging", "columns", "c")
+   source.AddSwitch("Logging", "max-file-size", "m")
+
+   <b>If</b> (args.Length > 0) <b>Then</b>
+      <b>Dim</b> fileName <b>As</b> String = source.Configs(&quot;Logging&quot;).Get(&quot;file-name&quot;)
+      <b>Dim</b> columns <b>As</b> Integer = source.Configs(&quot;Logging&quot;).GetInt(&quot;columns&quot;)
+      <b>Dim</b> fileSize <b>As</b> Long = source.Configs(&quot;Logging&quot;).GetLong(&quot;max-file-size&quot;)
+   <b>End If</b>
+<b>End Function</b></pre>
+    </div>
+
+  <!-- end content -->
+  </div>
+
+  <div id="nav">
+    <a href="NiniManual-3.htm"><< Previous</a> | 
+    <a href="NiniManual.htm">Table of Contents</a> |
+    <a href="NiniManual-5.htm">Next >></a>
+  </div>
+
+
+  <div id="footer">
+    Copyright &copy; 2006 Brent R. Matzelle. All rights reserved.   
+  </div>
+
+<!-- end container -->
+</div>
+
+</body>
+
+</html>

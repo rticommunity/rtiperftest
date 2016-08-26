@@ -1,0 +1,268 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=iso-8859-1" />
+	<title>Advanced Topics - Nini Manual</title>
+	<link rel="stylesheet" href="styles.css" type="text/css" media="screen" />
+	<meta name="description" content="" />
+</head>
+
+<body>
+
+<div id="container">
+
+  <div id="header">
+    <h2>Nini Manual</h2>
+  </div>
+  
+  <div id="nav">
+    <a href="NiniManual-2.htm"><< Previous</a> | 
+    <a href="NiniManual.htm">Table of Contents</a> |
+    <a href="NiniManual-4.htm">Next >></a>
+  </div>
+  
+  <div id="content">
+
+    <h2>3. Advanced Topics</h2>
+  
+    <a name="Merging"></a>
+    <h3>3.1 Merging</h3>
+    
+    <p>
+      Merging is a very powerful functionality that allows developers to combine 
+      together the configuration data from multiple sources into a single object. 
+      You can potentially combine together an infinite number of different configuration 
+      types into a single IConfigSource! You could add multiple INI, XML, and Registry 
+      files into the same object. Pretty cool don't you think? Here is an example 
+      of how to combine an INI file with an XML file.
+    </p>
+    
+    <div class="csharp">
+    Here is an example in C#:
+    
+    <pre>
+IConfigSource mainSource = <b>new</b> IniConfigSource("MyApp.ini");
+IConfigSource xmlSource = <b>new</b> XmlConfigSource("MyApp.xml");
+mainSource.Merge(xmlSource);
+
+// Now you can access any IConfig from mainSource and xmlSource
+<b>string</b> xmlValue = mainSource.Configs["SomeXmlSection"].Get("AnOption");</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    Here is the example in VB:
+    
+    <pre>
+<b>Dim</b> mainSource <b>As New</b> IniConfigSource("MyApp.ini")
+<b>Dim</b> xmlSource <b>As New</b> XmlConfigSource("MyApp.xml")
+mainSource.Merge(xmlSource)
+
+' Now you can access any IConfig from mainSource and xmlSource
+<b>Dim</b> xmlValue <b>As</b> String = mainSource.Configs("SomeXmlSection").Get("AnOption")</pre>
+    </div>
+    
+    <p>
+      When the data is merged between files any IConfigs of the same name or containing 
+      the same keys the file being merged in will overwrite the previous ones. This 
+      is very important for those of you with clients that have different configuration 
+      needs. You can create your default configuration settings in one file and have 
+      a client specific file that will override the settings of the main file if needed. 
+      This will save you tons of work. It did for me. 
+    </p>
+    
+    <a name="ValueAliases"></a>
+    <h3>3.2 Value Aliases</h3>
+    <p>
+      Many configuration files have options that are clear to programmers but very 
+      confusing to non-programmers. In order to help make a configuration file easier 
+      for non-programmers to understand a common practice is to make the keys and 
+      values read more like common human dialog.  Lets see an example of how you might 
+      return a Boolean value by using a string value that’s easier for humans to understand.  
+      First, let’s start with the AliasExample INI file:
+    </p>
+    
+    <pre>; AliasExample.ini
+<b>[Web Browser]</b>
+Block Popups = ON
+Check For Default Browser = Off
+Error Level = warn</pre>
+    
+    <p>
+      As you can see rather than using a value like &quot;1&quot; or &quot;true&quot; 
+      for the value of each key I have used &quot;On&quot; and &quot;Off&quot;, which 
+      hopefully are easier for users to understand. You will also notice that the 
+      case between each value is not entirely uppercase or lowercase. I did this on 
+      purpose to make a point. It is difficult enough to users to remember what value 
+      to place in a particular key value so to make it a bit easier on them do <strong>not</strong> 
+      make them remember what case to use as well! The problem with ignoring case 
+      is that your code would look pretty ugly as in the following example:
+    </p>
+    
+    <pre>
+<b>bool</b> blockPopUps = (config.Get(&quot;Block Popups&quot;).ToLower() == &quot;on&quot;);</pre>
+    
+    <p>
+      Let's define some rules to this file to make them We want the values of the 
+      <strong>BlockPopUps</strong> section to return a <a href="http://tinyurl.com/cg6ga">Boolean</a> 
+      value of <strong>true</strong> when the value is set to &quot;On&quot; and a 
+      value of <strong>false</strong> when the value is set to &quot;Off&quot;. Furthermore, 
+      I'd like the <strong>Error Level</strong> to return the integer value of 100 
+      when it is set to &quot;Warn&quot; and a value of 200 when the value is set 
+      to &quot;Error&quot;. The following code shows how to add rules to the Alias 
+      property of the IConfigSource that defines the rules that I just defined in 
+      the previous paragraph.
+    </p>
+    
+    <div class="csharp">
+    Here is an example in C#:
+    
+    <pre>
+IConfigSource source = <b>new</b> IniConfigSource(&quot;AliasExample.ini&quot;);
+    
+// Creates two Boolean aliases.
+source.Alias.AddAlias(&quot;On&quot;, <b>true</b>);
+source.Alias.AddAlias(&quot;Off&quot;, <b>false</b>);
+
+// Sets two integer aliases.
+source.Alias.AddAlias(&quot;Error Level&quot;, &quot;Warn&quot;,  100);
+source.Alias.AddAlias(&quot;Error Level&quot;, &quot;Error&quot;, 200);
+
+IConfig config = source.Configs[&quot;Web Browser&quot;];
+<b>bool</b> blockPopUps = config.GetBoolean(&quot;BlockPopUps&quot;);
+<b>int</b> errorCode = config.GetInt(&quot;Error Code&quot;, <b>true</b>);</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    Here is the example in VB:
+    
+    <pre>
+<b>Dim</b> source <b>As New</b> IniConfigSource(&quot;AliasExample.ini&quot;)
+    
+' Creates two Boolean aliases.
+source.Alias.AddAlias(&quot;On&quot;, <b>True</b>)
+source.Alias.AddAlias(&quot;Off&quot;, <b>False</b>)
+
+' Sets two integer aliases.
+source.Alias.AddAlias(&quot;Error Level&quot;, &quot;Warn&quot;,  100)
+source.Alias.AddAlias(&quot;Error Level&quot;, &quot;Error&quot;, 200)
+
+<b>Dim</b> config <b>As</b> IConfig = source.Configs(&quot;Web Browser&quot;)
+<b>Dim</b> blockPopUps = config.GetBoolean(&quot;BlockPopUps&quot;)
+<b>int</b> errorCode = config.GetInt(&quot;Error Code&quot;, <b>True</b>)</pre>
+    </div>
+    
+    <p>
+      The first two calls to <a href="../Reference/html/Nini.Config.IConfig.AddAlias_overloads.html">AddAlias</a> 
+      add Boolean values to the text “On” and “Off”.  The next two calls to this method 
+      add alias text to the “Error Level” configuration with the text of “Warn” and 
+      “Error” along with the numeric values of 100 and 200, respectively.  Next I 
+      fetched the key data.  The GetInt method is overloaded so that if the parameter 
+      is set to <strong>true</strong> then it loads the data as an alias rather than 
+      as a literal integer value.
+    </p>
+    
+    <a name="KeyValueLists"></a>
+    <h3>3.3 Key Value Lists</h3>
+    
+    <p>
+      Nini does not have a specialized method for returning lists of information. 
+      This is because there already is way to do this using a little trick with the 
+      <a href="http://tinyurl.com/4uz5z">String.Split</a> 
+      method of the .NET Framework. Here is an INI file with a list of servers separated 
+      by the vertical line ("|") delimeter: 
+    </p>
+    <pre>
+<b>[MailServers]</b>
+ServerList = "http://mail.yahoo.com/|http://www.hotmail.com/|http://www.mail.com/"</pre>
+    
+    Now using the Split method we will return the list of servers as an array of strings:
+    
+    <div class="csharp">
+    <pre>
+<b>string</b>[] serverList = source.Configs["MailServers"].Get("ServerList").Split('|');</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    Here is the example in VB:
+    
+    <pre>
+<b>Dim serverList() As String</b> = source.Configs("MailServers").Get("ServerList").Split('|')</pre>
+    </div>
+    
+    You can use any number of delimeters with the Split method. Be creative.  Just pick a 
+    delimeter that you will not be using as a key value.
+    
+    <a name="Events"></a>
+    <h3>3.4 Events</h3>
+    
+    <p>
+      Nini makes things easy by allowing developers to perform operations in a
+      disconnected fashion.  A first object can usually just use an IConfig without
+      having to worry about how other objects are using it.  However, there are times
+      when it is useful to know when the configuration data has been changed.  Nini
+      has added many events to help deal with these situations. 
+    </p>
+    
+    <p>
+      In the following scenario a class wants notification when an IConfigSource 
+      has been saved.  
+    </p>
+    
+    <div class="csharp">
+    Here is a C# example:
+    
+    <pre>
+<b>void</b> SourceLoad()
+{
+  source = <b>new</b> IniConfigSource();
+  source.Saved += <b>new</b> EventHandler(this.source_Saved);
+}
+
+<b>void</b> source_Saved(<b>object</b> sender, EventArgs e)
+{
+  // perform save actions here
+}</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    Here is a VB example:
+    
+    <pre>
+<b>Sub</b> SourceLoad()
+{
+  source = New IniConfigSource()
+  source.Saved += New EventHandler(Me.source_Saved)
+}
+
+<b>Sub</b> source_Saved(sender <b>As</b> object, e <b>As</b> EventArgs) Handles source.Saved
+{
+  ' perform save actions here
+}</pre>
+    </div>
+    
+    There are more events such as Load, KeySet, KeyRemoved, ConfigAdded, and ConfigRemoved.  
+    
+  <!-- end content -->
+  </div>
+  
+  <div id="nav">
+    <a href="NiniManual-2.htm"><< Previous</a> | 
+    <a href="NiniManual.htm">Table of Contents</a> |
+    <a href="NiniManual-4.htm">Next >></a>
+  </div>
+
+
+  <div id="footer">
+    Copyright &copy; 2006 Brent R. Matzelle. All rights reserved.   
+  </div>
+
+<!-- end container -->
+</div>
+
+</body>
+
+</html>

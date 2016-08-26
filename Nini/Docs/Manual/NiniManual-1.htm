@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=iso-8859-1" />
+	<title>Introduction - Nini Manual</title>
+	<link rel="stylesheet" href="styles.css" type="text/css" media="screen" />
+	<meta name="description" content="" />
+</head>
+
+<body>
+
+<div id="container">
+
+  <div id="header">
+    <h2>Nini Manual</h2>
+  </div>
+  
+  <div id="nav">
+    <a href="NiniManual.htm"><< Previous</a> | 
+    <a href="NiniManual.htm">Table of Contents</a> |
+    <a href="NiniManual-2.htm">Next >></a>
+  </div>
+  
+  <div id="content">
+
+    <h2>1. Introduction</h2>
+    <a name="WhatIsApplicationConfigurationData"></a>
+    <h3>1.1 What is Application Configuration Data?</h3>
+    
+    <p>
+      As a developer you deal with application configuration data all of the time.  
+      Common examples of this are <a href="http://webopedia.com/TERM/_/_INI_file.html">INI</a> 
+      files, <a href="http://webopedia.com/TERM/X/XML.html">XML</a> files, 
+      <a href="http://tinyurl.com/38sn4">.NET 
+      configuration files</a> (aka “.config”), the <a href="http://www.systweak.com/winreg/winreg.htm">Windows 
+      registry</a>, and command line (argv) arguments.  The advantages of configuration 
+      files are that they load quickly, do not take up a lot of space, and are easy 
+      to edit.  
+    </p>
+    
+    <a name="TheProblem"></a>
+    <h3>1.2 The Problem</h3>
+    
+    <p>
+      Attempts to create configuration file access schemes do not satisfy the needs 
+      of either programmers or end-users.  To give a real life scenario I worked for 
+      an organization that configured their original programs using the Windows registry 
+      API (Application Programming Interface).  Later on they developed their own ASP 
+      configuration class.  At about the same time another group developed an API that 
+      fetched the data from a database.   Then when ASP.NET came along they started 
+      to use Web.config.  In a matter of several years the number of configuration data 
+      sources grew from one to four!  Needless to say getting configuration data often 
+      became a grueling task.  Here are the three major areas where configuration management 
+      can be improved: 
+    </p>
+    
+    <ul>
+    <li><p><b>API</b><br/>
+        Developers use a configuration file format that gets their application running 
+        in the shortest time possible.   However the API for accessing this data is 
+        commonly added as an afterthought resulting in an inflexible API.  In very small 
+        applications this might not be a problem but as a program’s codebase grows the 
+        configuration information will often find itself littered throughout the application 
+        code.
+      </p>
+     </li>
+    <li><p><b>End Users<br/>
+      </b>Configuration files are usually not written with the end user in mind.  
+      Often the configuration options are terse programming terms that only the bravest 
+      users dare to change them.  This leads to developers having to write complicated 
+      configuration file editors or worse, entirely redesigning their original APIs.  
+    </p>
+    
+    </li>
+    <li>
+    <p>
+    <b>Multiple Configuration Sources</b>
+    <br/>
+      As your software matures it is not uncommon for more application configuration 
+      types to be added (such as the example I gave you earlier).  This often occurs 
+      because of merging code from other projects, new improved formats, and moving 
+      to different programming platforms.    This forces programmers to learn multiple 
+      APIs.  The end result is code that is neither consistent nor friendly to new 
+      programmers.  The old configuration files aren't replaced because programmers 
+      and their managers are not comfortable with altering mature code. Users that 
+      edit the files are resistant to this change because they would prefer not to 
+      learn a new file format.</p>
+    
+    </li>
+    </ul>
+    
+    <a name="IntroducingNini"></a>
+    <h3>1.3 Introducing Nini</h3>
+    <p>
+      Nini is an uncommonly powerful 
+      <a href="http://msdn.microsoft.com/netframework/">.NET</a> configuration 
+      <a href="http://en.wikipedia.org/wiki/Code_library">library</a> designed 
+      to help build highly configurable applications quickly. Nini provides a solution that 
+      attempts to eliminate the above problems. It provides a large feature set that 
+      gives you functionality that you will use in every phase of your project, from 
+      concept to mature product.  This is accomplished through a simple, yet flexible, 
+      API that provides an abstraction over the underlying configuration sources.  
+      It solves all of the problems that I described above.  We’ll see how this is 
+      done in the examples below.
+    </p>
+    
+  <!-- end content -->
+  </div>
+  
+  <div id="nav">
+    <a href="NiniManual.htm"><< Previous</a> | 
+    <a href="NiniManual.htm">Table of Contents</a> |
+    <a href="NiniManual-2.htm">Next >></a>
+  </div>
+
+
+  <div id="footer">
+    Copyright &copy; 2006 Brent R. Matzelle. All rights reserved.   
+  </div>
+
+<!-- end container -->
+</div>
+
+</body>
+
+</html>
