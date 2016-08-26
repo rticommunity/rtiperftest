@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="IniSectionCollection">
+	<docs>
+		<summary>A collection of section objects.</summary>
+	</docs>
+
+	<Property name="Count">
+		<docs>
+			<summary>Returns the number of sections in the collection.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="ItemIndex">
+		<docs>
+			<summary>Returns the section at the specified index.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="IsSynchronized">
+		<docs>
+			<summary>
+				Returns true if the collection is synchronized.
+				This always returns false.
+			</summary>
+		</docs>
+	</Property>
+	
+	<Property name="SyncRoot">
+		<docs>
+			<summary>Returns the synchronization object.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="ItemName">
+		<docs>
+			<summary>Returns the section by name.</summary>
+		</docs>
+	</Property>
+	
+	<Method name="Add">
+		<docs>
+			<summary>Adds a new section to the collection.</summary>
+			<param name="section">The section to add.</param>
+		</docs>
+	</Method>
+	
+	<Method name="Remove">
+		<docs>
+			<summary>Removes a section from the collection.</summary>
+			<param name="config">Section name.</param>
+		</docs>
+	</Method>
+
+	<Method name="GetEnumerator">
+		<docs>
+			<summary>Returns the enumerator object.</summary>
+		</docs>
+	</Method>
+	
+	<Method name="CopyTo">
+		<docs>
+			<summary>Copies the collection to an array.</summary>
+			<param name="array">Array to copy the results.</param>
+			<param name="index">Index of the array to start copying.</param>
+		</docs>
+	</Method>
+	
+	<Method name="CopyToStrong">
+		<docs>
+			<summary>Copies the collection to a strongly-typed array.</summary>
+			<param name="array">
+				The IniSection array to copy the results.
+			</param>
+			<param name="index">Index of the array to start copying.</param>
+		</docs>
+	</Method>
+</Class>
+
+</NiniDocs>

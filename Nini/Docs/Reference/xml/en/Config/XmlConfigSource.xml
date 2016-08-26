@@ -1,0 +1,182 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="XmlConfigSource">
+	<docs>
+		<summary>
+			Class for configuring an XML source.
+		</summary>
+		<remarks>
+			Provides users with the ability to load more than one XML 
+			configuration file.  Unlike DotNetConfigSource which forces
+			users to use on file and have the name the same as the 
+			application.
+		</remarks>
+		<example>
+			The following is an example of an XML document for this type:
+			<code>
+&lt;Nini&gt;
+	&lt;Section Name=&quot;MySection&quot;&gt;
+		&lt;Key Name=&quot;SomeName&quot; Value=&quot;Some Value&quot; /&gt;
+		&lt;Key Name=&quot;SomeInteger&quot; Value=&quot;5652&quot; /&gt;
+	&lt;/Section&gt;
+
+	&lt;Section Name=&quot;AnotherSection&quot;&gt;
+		&lt;Key Name=&quot;Another Name&quot; Value=&quot;Another Value&quot; /&gt;
+	&lt;/Section&gt;
+&lt;/Nini&gt;
+			</code>
+		</example>
+	</docs>
+	
+	<Constructor name="Constructor">
+		<docs>
+			<summary>Constructor.  Loads an empty XML source.</summary>
+			<remarks>
+				This constructor is useful if you want to create an XML source
+				programmatically.  You can then call one of the <see cref="Save"/>
+				methods to save it to a file or object.  
+			</remarks>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorPath">
+		<docs>
+			<summary>
+				Creates a new object from the specified XML file.
+			</summary>
+			<remarks>
+				This instance type is not read only.  
+			</remarks>
+			<param name="path">
+				Path to the XML file.
+			</param>
+		</docs>
+	</Constructor>
+
+	<Constructor name="ConstructorXmlReader">
+		<docs>
+			<summary>
+				Creates a new instance of the XML configuration source.
+			</summary>
+			<remarks>
+				This instance type is read only.
+			</remarks>
+			<param name="reader">
+				An XmlReader instance.
+			</param>
+		</docs>
+	</Constructor>
+	
+	<Property name="SavePath">
+		<docs>
+			<summary>
+				The path where the document will be saved.
+			</summary>
+			<remarks>
+				This path is set when the class is loaded with a path or 
+				saved with a path (using the Save (string) method).  Otherwise
+				the value will be <code>null</code>.  If it is <code>null</code>
+				then calling save will cause an exception to be thrown. 
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Method name="LoadPath">
+		<docs>
+			<summary>
+				Loads a new object from the specified XML file.
+			</summary>
+			<remarks>
+				This instance type is not read only.  
+			</remarks>
+			<param name="path">
+				Path to the XML file.
+			</param>
+		</docs>
+	</Method>
+
+	<Method name="LoadXmlReader">
+		<docs>
+			<summary>
+				Loads a new instance of the XML configuration source.
+			</summary>
+			<remarks>
+				This instance type is read only.
+			</remarks>
+			<param name="reader">
+				An XmlReader instance.
+			</param>
+		</docs>
+	</Method>
+	
+	<Method name="Save">
+		<docs>
+			<summary>
+				Saves all configuration values.  
+			</summary>
+			<remarks>
+				If the <see cref="SavePath"/> is <code>null</code> then this 
+				will throw an exception.
+			</remarks>
+			<exception cref="Exception">
+				The <see cref="SavePath"/> is <code>null</code>.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="SavePath">
+		<docs>
+			<summary>
+				Saves all configuration values to a path.  
+			</summary>
+			<remarks>
+				This sets the <see cref="SavePath"/> to <code>path</code>. 
+			</remarks>
+			<param name="path">
+				Path to save the file.
+			</param>
+			<exception cref="Exception">
+				An error has occurred.
+			</exception>
+		</docs>
+	</Method>
+
+	<Method name="SaveTextWriter">
+		<docs>
+			<summary>
+				Saves all configuration values to a <b>TextWriter</b>.  
+			</summary>
+			<remarks>
+				This sets the <see cref="SavePath"/> to <code>null</code>. 
+			</remarks>
+			<param name="writer">
+				The TextWriter to save the document.
+			</param>
+			<exception cref="Exception">
+				An error has occurred.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="SaveStream">
+		<docs>
+			<summary>Writes the XML data to a Stream.</summary>
+			<param name="stream">Stream object</param>
+		</docs>
+	</Method>
+	
+	<Method name="ToString">
+		<docs>
+			<summary>
+				Returns all characters in the document.  
+			</summary>
+			<remarks>
+				It returns the XML string of the document.
+			</remarks>
+		</docs>
+	</Method>
+	
+</Class>
+
+</NiniDocs>

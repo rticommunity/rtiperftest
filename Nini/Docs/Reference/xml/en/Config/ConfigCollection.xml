@@ -1,0 +1,198 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="ConfigCollection">
+	<docs>
+		<summary>A collection of IConfig objects.</summary>
+	</docs>
+
+	<Property name="Count">
+		<docs>
+			<summary>Returns the number of IConfigs in the collection.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="ItemIndex">
+		<docs>
+			<summary>Returns the IConfig at the specified index.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="IsSynchronized">
+		<docs>
+			<summary>
+				Returns true if the collection is synchronized.
+				This always returns false.
+			</summary>
+		</docs>
+	</Property>
+	
+	<Property name="IsFixedSize">
+		<docs>
+			<summary>
+				Returns true if the collection is of a fixed size.
+			</summary>
+			<remarks>
+				This aways returns false.
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Property name="IsReadOnly">
+		<docs>
+			<summary>
+				Returns true if the collection is read only.
+			</summary>
+			<remarks>
+				This aways returns false.
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Property name="SyncRoot">
+		<docs>
+			<summary>Returns the synchronization object.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="ItemName">
+		<docs>
+			<summary>Returns the IConfig by name.</summary>
+		</docs>
+	</Property>
+	
+	<Method name="Add">
+		<docs>
+			<summary>Adds a new IConfig to the collection.</summary>
+			<param name="config">The IConfig to add.</param>
+		</docs>
+	</Method>
+
+	<Method name="AddName">
+		<docs>
+			<summary>Adds a new IConfig to the collection.</summary>
+			<param name="name">The name of the IConfig to add.</param>
+		</docs>
+	</Method>
+	
+	<Method name="Insert">
+		<docs>
+			<summary>Inserts a new IConfig to the collection.</summary>
+			<param name="index">
+				The index of the collection to insert the IConfig.
+			</param>
+			<param name="config">The IConfig to insert.</param>
+		</docs>
+	</Method>
+	
+	<Method name="Remove">
+		<docs>
+			<summary>Removes an IConfig from the collection.</summary>
+			<param name="config">The IConfig to remove.</param>
+		</docs>
+	</Method>
+	
+	<Method name="RemoveAt">
+		<docs>
+			<summary>Removes an IConfig from the index.</summary>
+			<param name="index">The index of the IConfig.</param>
+		</docs>
+	</Method>
+	
+	<Method name="Clear">
+		<docs>
+			<summary>Removes all IConfigs from the collection.</summary>
+		</docs>
+	</Method>
+
+	<Method name="Contains">
+		<docs>
+			<summary>
+				Returns true if the collection contains the IConfig.
+			</summary>
+			<param name="config">The IConfig to search for.</param>
+		</docs>
+	</Method>
+	
+	<Method name="IndexOf">
+		<docs>
+			<summary>
+				Returns the index of an IConfig in the collection.
+			</summary>
+			<remarks>
+				It returns -1 if the IConfig was not found.
+			</remarks>
+			<param name="config">The IConfig to search for.</param>
+		</docs>
+	</Method>
+
+	<Method name="GetEnumerator">
+		<docs>
+			<summary>Returns the enumerator object.</summary>
+		</docs>
+	</Method>
+	
+	<Method name="CopyTo">
+		<docs>
+			<summary>Copies the collection to an array.</summary>
+			<param name="array">Array to copy the results.</param>
+			<param name="index">Index of the array to start copying.</param>
+		</docs>
+	</Method>
+	
+	<Method name="CopyToStrong">
+		<docs>
+			<summary>Copies the collection to a strongly-typed array.</summary>
+			<param name="array">
+				The IConfig array to copy the results.
+			</param>
+			<param name="index">Index of the array to start copying.</param>
+		</docs>
+	</Method>
+	
+	<Method name="OnConfigAdded">
+		<docs>
+			<summary>
+				Raises the <see cref="ConfigAdded"/> event.  
+			</summary>
+			<remarks>
+				Raising an event invokes the event handler through a delegate. 
+			</remarks>
+			<param name="e">
+				The EventArgs object that contains all event data. 
+			</param>
+		</docs>
+	</Method>
+	
+	<Method name="OnConfigRemoved">
+		<docs>
+			<summary>
+				Raises the <see cref="ConfigRemoved"/> event.  
+			</summary>
+			<remarks>
+				Raising an event invokes the event handler through a delegate. 
+			</remarks>
+			<param name="e">
+				The EventArgs object that contains all event data. 
+			</param>
+		</docs>
+	</Method>
+	
+	<Event name="ConfigAdded">
+		<docs>
+			<summary>
+				Occurs when a config is added. 
+			</summary>
+		</docs>
+	</Event>
+	
+	<Event name="ConfigRemoved">
+		<docs>
+			<summary>
+				Occurs when a config is removed. 
+			</summary>
+		</docs>
+	</Event>
+</Class>
+
+</NiniDocs>

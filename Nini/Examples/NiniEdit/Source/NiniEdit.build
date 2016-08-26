@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<!-- NAnt Build Script (http://nant.sf.net/) -->
+<project name="NiniEdit" default="build" basedir=".">
+	<description>Nini Editor project build script</description>
+	<property name="debug" value="false" />
+	<property name="project.name" value="niniedit"/>
+	<property name="project.bin" value="..\Bin"/>
+	<property name="project.src" value="."/>
+
+	<target name="clean">
+		<delete dir="${project.bin}\DotNet" failonerror="false" />
+		<delete dir="${project.bin}\Mono" failonerror="false" />
+	</target>
+	
+	<target name="build">
+		<call target="build-dotnet-1.0" />
+	</target>
+	
+	<target name="build-dotnet-1.0">
+		<property name="current.runtime.version" value="1.0" />
+		<call target="build-dotnet" />
+	</target>
+
+	<target name="build-dotnet-1.1">
+		<property name="current.runtime.version" value="1.1" />
+		<call target="build-dotnet" />
+	</target>
+
+	<target name="build-dotnet">
+		<property name="current.runtime.config" value="net" />
+		<property name="runtime-name" value="DotNet" />
+		<property name="nant.settings.currentframework" 
+				value="${current.runtime.config}-${current.runtime.version}" />
+		<copy file="..\..\..\Bin\${runtime-name}\${current.runtime.version}\Release\Nini.dll" 
+			  tofile="..\Bin\${runtime-name}\Release\Nini.dll" />
+		
+		<call target="run-build" />		
+	</target>
+
+	<target name="build-mono">
+		<property name="current.runtime.config" value="mono" />
+		<property name="current.runtime.version" value="1.0" />
+		<property name="runtime-name" value="Mono" />
+		<copy file="..\..\..\Bin\${runtime-name}\${current.runtime.version}\Release\Nini.dll" 
+			  tofile="..\Bin\${runtime-name}\Release\Nini.dll" />
+		<call target="run-mono-build" />
+	</target>
+	
+	<target name="run-mono-build">
+		<mkdir dir="${project.bin}\Mono\Release" />
+		<property name="build.bin" value="${project.bin}\Mono\Release" />
+
+		<exec program="mcs.bat">
+			<arg value="-target:exe"/>
+			<arg value="-out:${build.bin}\${project.name}.exe"/>
+			<arg value="-reference:System.dll"/>
+			<arg value="-reference:System.Xml.dll"/>
+			<arg value="-reference:${build.bin}\Nini.dll"/>
+
+			<arg value="${project.src}\AssemblyInfo.cs" />
+			<arg value="${project.src}\Editor.cs" />
+			<arg value="${project.src}\MainApp.cs" />
+		</exec>
+	</target>
+	
+	<target name="run-build">
+		<mkdir dir="${project.bin}\${runtime-name}\Release" />
+		
+		<property name="debug" value="false" />
+		<property name="build.bin" value="${project.bin}\${runtime-name}\Release" />
+		<call target="build-version" />
+	</target>
+	
+	<target name="build-version" description="Compiles the project">
+		<csc target="exe"  
+			output="${build.bin}\${project.name}.exe" debug="${debug}">
+			<sources>
+				<includes name="${project.src}\*.cs" />
+			</sources>
+			<references>
+				<includes asis="true" name="System.dll"/>
+				<includes asis="true" name="System.Xml.dll"/>
+				<includes asis="true" name="${build.bin}\Nini.dll"/>
+			</references>
+		</csc>
+	</target>
+</project>

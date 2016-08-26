@@ -1,0 +1,234 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="DotNetConfigSource">
+	<docs>
+		<summary>
+			Represents a Microsoft XML .NET configuration file.
+		</summary>
+		<remarks>
+			.NET configuration section names are 
+			<a href="http://msdn.microsoft.com/library/default.asp?url=/library/en-us/cpref/html/frlrfsystemxmlxmldocumentclasscreateelementtopic.asp">
+			element nodes</a> they cannot contain certain characters such as
+			whitespace.
+		</remarks>
+	</docs>
+	
+	<Constructor name="Constructor">
+		<docs>
+			<summary>Constructor.  Loads an empty .NET config source.</summary>
+			<remarks>
+				This constructor is useful if you want to create a .NET config source
+				programmatically.  You can then call one of the <see cref="Save"/>
+				methods to save it to a file or object.  
+			</remarks>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorFile">
+		<docs>
+			<summary>
+				Creates a new instance of the XML configuration source.
+			</summary>
+			<remarks>
+				This instance type is not read only.  It changes the value of 
+				the configuration file for the executable.  For instance, if the 
+				name of the executable is "MyApp.exe" then it will load the 
+				data from the "MyApp.exe.config" file.
+			</remarks>
+		</docs>
+	</Constructor>
+
+	<Constructor name="ConstructorWeb">
+		<docs>
+			<summary>
+				Creates a new instance of the XML configuration source.
+			</summary>
+			<remarks>
+				Instantiating this way does not currently allow for saving 
+				configuration changes because the <see cref="SavePath"/>
+				will be null.  Use this for configuration ASP.NET 
+				web sites that use the Web.config file.
+				
+				This method is not supported by the .NET Compact Framework.
+			</remarks>
+			<param name="sections">
+				Array of sections contained in the XML file.  These cannout 
+				be determined programmatically so you will have to supply 
+				them at load time.
+			</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorPath">
+		<docs>
+			<summary>
+				Creates a new instance of the XML configuration source.
+			</summary>
+			<remarks>
+				Use this if you either know where the configuration file is 
+				located.  You can do this with the  
+				<a href="http://msdn.microsoft.com/library/default.asp?url=/library/en-us/cpref/html/frlrfSystemWebUIPageClassMapPathTopic.asp">
+				Page.MapPath</a> method for <b>web.config</b> files.
+			</remarks>
+			<param name="path">
+				Path to the configuration file.
+			</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorXmlReader">
+		<docs>
+			<summary>
+				Creates a new instance of the XML configuration source.
+			</summary>
+			<remarks>
+			</remarks>
+			<param name="reader">
+				The XML reader configuration document.
+			</param>
+		</docs>
+	</Constructor>
+	
+	<Property name="SavePath">
+		<docs>
+			<summary>
+				The path where the document will be saved.
+			</summary>
+			<remarks>
+				This path is set when the class is loaded with a path or 
+				saved with a path (using the Save (string) method).  Otherwise
+				the value will be <code>null</code>.  If it is <code>null</code>
+				then calling save will cause an exception to be thrown. 
+			</remarks>
+		</docs>
+	</Property>
+
+	<Method name="LoadFile">
+		<docs>
+			<summary>
+				Loads a new instance of the XML configuration source.
+			</summary>
+			<remarks>
+				This instance type is not read only.  It changes the value of 
+				the configuration file for the executable.  For instance, if the 
+				name of the executable is "MyApp.exe" then it will load the 
+				data from the "MyApp.exe.config" file.
+			</remarks>
+		</docs>
+	</Method>
+	
+	<Method name="LoadPath">
+		<docs>
+			<summary>
+				Loads a new instance of the XML configuration source.
+			</summary>
+			<remarks>
+				Use this if you either know where the configuration file is 
+				located.  You can do this with the  
+				<a href="http://msdn.microsoft.com/library/default.asp?url=/library/en-us/cpref/html/frlrfSystemWebUIPageClassMapPathTopic.asp">
+				Page.MapPath</a> method for <b>web.config</b> files.
+			</remarks>
+			<param name="path">
+				Path to the configuration file.
+			</param>
+		</docs>
+	</Method>
+	
+	<Method name="LoadXmlReader">
+		<docs>
+			<summary>
+				Loads a new instance of the XML configuration source.
+			</summary>
+			<remarks>
+			</remarks>
+			<param name="reader">
+				The XML reader configuration document.
+			</param>
+		</docs>
+	</Method>
+		
+	<Method name="Save">
+		<docs>
+			<summary>
+				Saves all configuration values.  
+			</summary>
+			<remarks>
+				If the <see cref="SavePath"/> is <code>null</code> then this 
+				will throw an exception.
+			</remarks>
+			<exception cref="Exception">
+				The <see cref="SavePath"/> is <code>null</code>.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="SavePath">
+		<docs>
+			<summary>
+				Saves all configuration values to a path.  
+			</summary>
+			<remarks>
+				This sets the <see cref="SavePath"/> to <code>path</code>. 
+			</remarks>
+			<param name="path">
+				Path to save the file.
+			</param>
+			<exception cref="Exception">
+				An error has occurred.
+			</exception>
+		</docs>
+	</Method>
+
+	<Method name="SaveTextWriter">
+		<docs>
+			<summary>
+				Saves all configuration values to a <b>TextWriter</b>.  
+			</summary>
+			<remarks>
+				This sets the <see cref="SavePath"/> to <code>null</code>. 
+			</remarks>
+			<param name="writer">
+				The TextWriter to save the document.
+			</param>
+			<exception cref="Exception">
+				An error has occurred.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="SaveStream">
+		<docs>
+			<summary>Writes the XML data to a Stream.</summary>
+			<param name="stream">Stream object</param>
+		</docs>
+	</Method>
+	
+	<Method name="GetFullConfigPath">
+		<docs>
+			<summary>
+				Returns the full path to the configuration file
+			</summary>
+			<remarks>
+				This is a file with the extension of the application:
+				MyApp.exe would be C:\Path_To_Program\MyApp.exe.config.
+				
+				This method is not supported by the .NET Compact Framework.
+			</remarks>
+		</docs>
+	</Method>
+	
+	<Method name="ToString">
+		<docs>
+			<summary>
+				Returns all characters in the document.  
+			</summary>
+			<remarks>
+				It returns the XML string of the document.
+			</remarks>
+		</docs>
+	</Method>
+	
+</Class>
+
+</NiniDocs>

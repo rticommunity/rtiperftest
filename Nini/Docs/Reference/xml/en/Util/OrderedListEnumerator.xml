@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="OrderedListEnumerator">
+	<docs>
+		<summary>Enumerator class for OrderedLists.</summary>
+	</docs>
+	
+	<Property name="Current">
+		<docs>
+			<summary>Returns the current object in the enumeration.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="CurrentStrong">
+		<docs>
+			<summary>
+				Returns the strongly-typed current object in the enumeration.
+			</summary>
+		</docs>
+	</Property>
+	
+	<Property name="Entry">
+		<docs>
+			<summary>Returns the current DictionaryEntry.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="Key">
+		<docs>
+			<summary>Returns the current key.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="Value">
+		<docs>
+			<summary>Returns the current value.</summary>
+		</docs>
+	</Property>
+
+	<Method name="MoveNext">
+		<docs>
+			<summary>
+				Moves the enumeration to the next set.
+			</summary>
+		</docs>
+	</Method>
+	
+	<Method name="Reset">
+		<docs>
+			<summary>
+				Resets the enumerator back to the beginning.
+			</summary>
+		</docs>
+	</Method>
+</Class>
+
+</NiniDocs>

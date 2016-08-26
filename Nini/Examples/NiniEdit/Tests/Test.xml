@@ -1,0 +1,10 @@
+<Nini>
+  <Section Name="Logging">
+    <Key Name="File Name" Value="MyApp.log" />
+    <Key Name="MaxFileSize" Value="40000000000000" />
+  </Section>
+  <Section Name="User">
+    <Key Name="Email" Value="jane@mail.com" />
+    <Key Name="Name" Value="Jane Andrews" />
+  </Section>
+</Nini>

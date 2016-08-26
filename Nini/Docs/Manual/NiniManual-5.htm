@@ -1,0 +1,295 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=iso-8859-1" />
+	<title>Using Nini Effectively - Nini Manual</title>
+	<link rel="stylesheet" href="styles.css" type="text/css" media="screen" />
+	<meta name="description" content="" />
+</head>
+
+<body>
+
+<div id="container">
+
+  <div id="header">
+    <h2>Nini Manual</h2>
+  </div>
+  
+  <div id="nav">
+    <a href="NiniManual-4.htm"><< Previous</a> | 
+    <a href="NiniManual.htm">Table of Contents</a> |
+    <a href="NiniManual-5.htm">Next >></a>
+  </div>
+  
+  <div id="content">
+
+    <h2>5. Using Nini Effectively</h2>
+    
+    <a name="MultipleUsers"></a>
+    <h3>5.1 Handling configuration for multiple users</h3>
+    
+    <p>
+      You might notice that the ConfigurationSettings class for .NET 1.0 and 1.1 
+      only provides means of retrieving configuration values.  This is because it 
+      is normally a bad idea for programmers to change configuration values for an 
+      entire application programmatically.  The way the application should be 
+      globally configured is by an administrator.  For this reason, I recommend 
+      that you do not change application level settings.  
+    </p>
+    
+    <p>
+      However, it is essential that you allow users to configure the application 
+      according to their own personal preferences.  Nini allows you to create 
+      many different configuration file sources so all that you need to do is 
+      place a configuration file in the right directory.  The standard for 
+      Windows programs is the application data directory:
+    </p>
+    
+    <p>
+      <b>C:\Documents and Settings\[username]\Local Settings\Application Data\[Application Name]\Settings.ini</b>
+    </b>
+    
+    <p>
+      You can get this path programatically with the following path:
+    </p>
+    
+    <pre>
+<b>string</b> folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);</pre>
+    
+    <a name="Database"></a>
+    <h3>5.2 Storing configuration data in a database</h3>
+    
+    <p>
+      If you are running an ASP.NET application then you probably have multiple 
+      users in each system.  You will probably also have a bunch of user 
+      settings to edit.  Most web applications are entirely configured with a 
+      database so the following is an example of using Nini along with your database.
+    </p>
+    
+    <p>
+      Here's a very simple example with a SQL Server table.  This can easily 
+      be adapted to any other database.  Here is the structure of the database table:
+    </p>
+    
+    <pre>
+<b>CREATE TABLE</b> UserSettings
+(
+   UserId ID,
+   Settings TEXT
+);</pre>
+    
+    <p>
+    The ConfigSettings field stores a Nini configuration value.  Now you can 
+    load a Nini configuration values like this:
+    </p>
+    
+    <pre>
+<b>string</b> userId = GetUserId(); // retrieve the user id somehow
+
+SqlCommand command = <b>new</b> SqlCommand("SELECT Settings FROM UserSettings WHERE ID = "
+                                     + userId, connection);
+
+connection.Open();
+
+SqlDataReader reader = command.ExecuteReader();
+
+<b>if</b>(reader.HasRows) {
+    reader.Read();
+    IConfigSource source = <b>new</b> XmlConfigSource(<b>new</b> StringReader(reader.GetString(0)));
+}
+
+reader.Close();
+connection.Close();</pre>
+    
+    <a name="AutomatingWithNiniEdit"></a>
+    <h3>5.3 Automating configuration file creation</h3>
+    
+    <p>
+      Being able to create builds automatically is essential for any development 
+      project.  There are several tools to accomplish this such as batch (.bat) 
+      scripts, but the most popular choice for the .NET Framework is probably 
+      <a href="http://nant.sourceforge.net/">NAnt</a>.  You may find yourself needing to 
+      create a configuration file with your build managment system.  To make 
+      these duties easier the Nini project has NiniEdit, the Nini command-line 
+      configuration editor.  With this application you can create and edit any 
+      file-based configuration data.  The NiniEditor is included with each Nini 
+      release in the Examples directory.    
+    </p>
+    
+    <p>
+      Let's add an example of how to use NiniEdit in your build.  Let's assume 
+      that your build is a batch file in the first example and you need to create 
+      the following INI file programmatically:
+    </p>
+    
+    <pre>
+<b>[General]</b>
+Debug = false
+Logging = On
+<b>[Logging]</b>
+FilePath = C:\temp\MyApp.log</pre>
+    
+    <p>
+      The following calls will create the configuration file automatically:
+    </p>
+    
+    <pre>
+:: Create the new configuration file
+niniedit --new --set-type=ini MyApp.ini
+niniedit --add=General MyApp.ini
+niniedit --add=Logging MyApp.ini
+niniedit --config=General --set-key=Debug,false MyApp.ini
+niniedit --config=General --set-key=Logging,On MyApp.ini
+niniedit --config=Logging --set-key=FilePath,C:\temp\MyApp.log MyApp.ini</pre>
+    
+    <p>
+      If you were performing the same thing in NAnt you would do this:
+    </p>
+    
+    <pre>
+&lt;exec program="niniedit" commandline="-n -s INI MyApp.ini" /&gt;
+&lt;exec program="niniedit" commandline="-a General MyApp.ini" /&gt;
+&lt;exec program="niniedit" commandline="-a Logging MyApp.ini" /&gt;
+&lt;exec program="niniedit" commandline="-c General -k Debug,false MyApp.ini" /&gt;
+&lt;exec program="niniedit" commandline="-c General -k Logging,On MyApp.ini" /&gt;
+&lt;exec program="niniedit" commandline="-c Logging -k FilePath,C:\temp\MyApp.log MyApp.ini" /&gt;</pre>
+    
+    <p>
+      That's all there is to it.  NiniEdit has other functions such as the 
+      ability to list configs, keys, key values, and remove keys.  If nothing 
+      else then use NiniEdit as an example of how to write your own 
+      command-line applications with Nini.
+    </p>
+    
+    <a name="Progammatically"></a>
+    <h3>5.4 Creating configuration files programmatically</h3>
+    
+    <p>
+      On occassion it might be useful to create your configuration files 
+      programmatically with your application.  Doing this with Nini is very easy.  
+    </p>
+    
+    <p>
+      Let's say that you want to create the same INI file that you created 
+      in the either example:
+    </p>
+    
+    <pre>
+<b>[General]</b>
+Debug = false
+Logging = On
+<b>[Logging]</b>
+FilePath = C:\temp\MyApp.log</pre>
+    
+    <p>
+      Here's how you would create it in code:
+    </p>
+    
+    <pre>
+IniConfigSource source = <b>new</b> IniConfigSource();
+
+IConfig config = source.AddConfig("General");
+config.Set("Debug", "false");
+config.Set("Logging", "On");
+
+config = source.AddConfig("Logging");
+config.Set("FilePath", "C:\\temp\\MyApp.log");
+
+source.Save("MyApp.ini");</pre>
+    
+    <a name="Choosing"></a>
+    <h3>5.5 Choosing the right configuration file type for your application</h3>
+    
+    <p>
+      Nini was written to make all configuration file types first-class 
+      citizens.  This is because each configuration file type has it's own 
+      strengths and weaknesses.  The list below contains some basic guidelines:
+    </p>
+    
+    <h4>INI</h4>
+    <ul>
+      <li>Speed - The file type is parsed very quickly so it is likely to load 
+      and save faster than other types.
+      <li>Readibility - Of the configuration types this is probably the least 
+      scary to users.  If you are going to have users alter this configuration 
+      file manually then I greatly recommend this format.  
+      <li>Installers - INI files are supported by many types of installers 
+      (Wise, NSIS, to name a couple).  If you need your build to edit these 
+      files than this is definitely the way to go.
+    </ul>
+    
+    <h4>XML</h4>
+    <ul>
+      <li>Speed - The XML parser has a lot of information to load so this is 
+      probably the slowest.
+      <li>Readibility - This format is a bit scary for beginning users to understand.
+      <li>Support - This is supported by all programming languages so if other 
+      applications are accessing data then this is a good type.
+      <li>Installers - Since there is no standard XML format for configuration 
+      files this is not often supported by installers.  
+    </ul>
+    
+    <h4>.NET Configuration File</h4>
+    <ul>
+      <li>Speed - The XML parser has a lot of information to load so this is 
+      probably the slowest.
+      <li>Readibility - This format is a bit scary for beginning users to understand.
+      <li>Installers - The .NET Framework uses these configuration files for 
+      other configurations.  I would recommend not using it if it mixes up .NET 
+      configurations and your own application configuration options. 
+    </ul>
+    
+    <h4>Windows Registry</h4>
+    <ul>
+      <li>Speed - Retrieves configuration data quickly.  The retrieval speed 
+      does become slower as the registry becomes increasingly filled with data.  
+      This is cited as one of the reasons why periodically re-installing Windows 
+      can make a computer run faster.
+      <li>Readibility - You should use this type if you really do not want users 
+      to be able to configure the application.  Touching the Registry can cause 
+      serious problems so it is recommended that you do not use it unless necessary.  
+      However, know that your support staff will have the same problems as users 
+      if they need users to tweak configuration settings.  Other than that, the 
+      configuration file editor is pretty well known and mature.  
+      <li>Installers - Most installers support reading and editing registry keys 
+      so this is a good choice.  
+    </ul>
+    
+    <p>
+      There is no perfect configuration type because each one has it's own benefits.  
+      If you end up choosing a configuration file type that turns out to not right 
+      for your situation then do not be alarmed.  Nini abstracts what type of file 
+      you are accessing so the amount of code that you will have to change should 
+      be minimal.
+    </p>
+    
+    <p>
+      That's it for this tutorial. I hope that you found it helpful! If you have any 
+      questions or suggestions for improving this manual then go to the Nini home 
+      page and use the forums, bug tracker, or feature request tools to make 
+      yourself heard.
+    </p>
+    
+  <!-- end content -->
+  </div>
+  
+  <div id="nav">
+    <a href="NiniManual-4.htm"><< Previous</a> | 
+    <a href="NiniManual.htm">Table of Contents</a> |
+    <a href="NiniManual-5.htm">Next >></a>
+  </div>
+
+  <div id="footer">
+    Copyright &copy; 2006 Brent R. Matzelle. All rights reserved.   
+  </div>
+
+<!-- end container -->
+</div>
+
+</body>
+
+</html>

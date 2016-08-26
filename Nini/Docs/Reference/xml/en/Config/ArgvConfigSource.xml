@@ -1,0 +1,172 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="ArgvConfigSource">
+	<docs>
+		<summary>
+			Configuration class for loading command line arguments.
+		</summary>
+		<remarks>
+			Provides a method to parse command line parameters and collect 
+			them into a <see cref="ConfigCollection"/>.  The arguments allowed 
+			are the Windows style ("/key:value", "-key") or Unix style 
+			("--key=value" and "-key value").
+		</remarks>
+		<example>
+			This is an example that sends in Windows arguments: 
+			<code>
+MyApp.exe -debug /file:log.txt
+			</code>
+			
+			This is an example that sends in Unix arguments: 
+			<code>
+MyApp.exe -D --file log.txt --debug=yes
+			</code>
+		</example>
+	</docs>
+	
+	<Constructor name="Constructor">
+		<docs>
+			<summary>
+				Constructor.  Loads the command line parameters.
+			</summary>
+			<remarks>
+				See the examples below. 
+			</remarks>
+			<param name="arguments">
+				The arguments as passed in by the main application.
+			</param>
+			<example>
+				This is an example that sends in Windows arguments: 
+				<code>
+MyApp.exe -debug /file:log.txt
+				</code>
+				
+				This is an example that sends in Unix arguments: 
+				<code>
+MyApp.exe -D --file log.txt --debug=yes
+				</code>
+			</example>
+		</docs>
+	</Constructor>
+
+	<Method name="AddSwitch">
+		<docs>
+			<summary>
+				Adds a command line switch.
+			</summary>
+			<remarks>
+				Calling this will cause Nini to search the arguments for the 
+				matching switch.
+			</remarks>
+			<param name="configName">
+				The configuration (IConfig) name to add the value to if it
+				is found.
+			</param>
+			<param name="longName">
+				The long switch name (without the "-", "--", or "/").
+			</param>
+			<example>
+				<code>
+public static int Main (string[] args)
+{
+   ArgvConfigSource source = new ArgvConfigSource (args);
+
+   source.AddSwitch ("Logging", "file-name", "f");
+   source.AddSwitch ("Logging", "columns", "c");
+   source.AddSwitch ("Logging", "max-file-size", "m");
+
+   if (args.Length > 0)
+   {
+	  string fileName = config.Configs["Logging"].Get ("file-name");
+	  int columns = config.Configs["Logging"].GetInt ("columns");
+	  long fileSize = config.Configs["Logging"].GetLong ("max-file-size");
+   }
+}
+				</code>
+			</example>
+		</docs>
+	</Method>
+	
+	<Method name="AddSwitchShort">
+		<docs>
+			<summary>
+				Adds a command line switch including a short switch.
+			</summary>
+			<remarks>
+				Calling this will cause Nini to search the arguments for the 
+				matching switch.
+			</remarks>
+			<param name="configName">
+				The configuration (IConfig) name to add the value to if it
+				is found.
+			</param>
+			<param name="shortName">
+				The short switch name (without the "-", "--", or "/").
+			</param>
+			<param name="longName">
+				The long switch name (without the "-", "--", or "/").
+			</param>
+			<example>
+				<code>
+public static int Main (string[] args)
+{
+   ArgvConfigSource source = new ArgvConfigSource (args);
+
+   source.AddSwitch ("Logging", "file-name", "f");
+   source.AddSwitch ("Logging", "columns", "c");
+   source.AddSwitch ("Logging", "max-file-size", "m");
+
+   if (args.Length > 0)
+   {
+	  string fileName = config.Configs["Logging"].Get ("file-name");
+	  int columns = config.Configs["Logging"].GetInt ("columns");
+	  long fileSize = config.Configs["Logging"].GetLong ("max-file-size");
+   }
+}
+				</code>
+			</example>
+		</docs>
+	</Method>
+	
+	<Method name="GetArguments">
+		<docs>
+			<summary>
+				Returns a copy of the arguments input list.
+			</summary>
+		</docs>
+	</Method>
+	
+	<Method name="Save">
+		<docs>
+			<summary>
+				Saves all configuration values.  
+			</summary>
+			<remarks>
+				This method will always throw an exception because you 
+				will never be able to save it.
+			</remarks>
+			<exception cref="ArgumentException">
+				This will always throw an exception.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="Reload">
+		<docs>
+			<summary>
+				Reloads all configuration values.  
+			</summary>
+			<remarks>
+				This class cannot be reloaded so it will always
+				throw an exception.
+			</remarks>
+			<exception cref="ArgumentException">
+				This will always throw an exception.
+			</exception>
+		</docs>
+	</Method>
+	
+</Class>
+
+</NiniDocs>

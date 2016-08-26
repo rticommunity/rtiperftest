@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="IniException">
+	<docs>
+		<summary>Returns information about the last INI exception.</summary>
+	</docs>
+	<Property name="LinePosition">
+		<docs>
+			<summary>Returns the line position where the exception occurred.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="LineNumber">
+		<docs>
+			<summary>Returns the line number where the exception occurred.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="Message">
+		<docs>
+			<summary>Returns the exception message.</summary>
+		</docs>
+	</Property>
+	
+	<Constructor name="Constructor">
+		<docs>
+			<summary>Initializes an INI exception instance </summary>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorException">
+		<docs>
+			<summary>Initializes an INI exception instance </summary>
+			<param name="message">
+				The exception message.
+			</param>
+			<param name="exception">
+				The Exception that threw this exception
+			</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorSerialize">
+		<docs>
+			<summary>Initializes an INI exception instance </summary>
+			<param name="info">
+				The serialization information for this exception.
+			</param>
+			<param name="context">
+				The object containing the context information for this
+				exception.
+			</param>
+		</docs>
+	</Constructor>
+
+	<Constructor name="ConstructorMessage">
+		<docs>
+			<summary>Initializes an INI exception instance </summary>
+			<param name="message">The exception message.</param>
+		</docs>
+	</Constructor>
+
+	<Constructor name="ConstructorTextReader">
+		<docs>
+			<summary>Initializes a new instance of the class with the IniReader.</summary>
+			<param name="reader">The IniReader.</param>
+			<param name="message">The exception message.</param>
+		</docs>
+	</Constructor>
+	
+	<Method name="GetObjectData">
+		<docs>
+			<summary>ISerializable GetObjectData method.</summary>
+			<remarks>
+			</remarks>
+			<param name="info">The serialized object data.</param>
+			<param name="context">The context of the source or destination.</param>
+		</docs>
+	</Method>
+</Class>
+
+</NiniDocs>

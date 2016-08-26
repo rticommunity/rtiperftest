@@ -1,0 +1,213 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="IniConfigSource">
+	<docs>
+		<summary>Class for loading an INI file.</summary>
+	</docs>
+
+	<Constructor name="Constructor">
+		<docs>
+			<summary>Constructor.  Loads an empty INI source.</summary>
+			<remarks>
+				This constructor is useful if you want to create an INI source
+				programmatically.  You can then call one of the <see cref="Save"/>
+				methods to save it to a file or object.  
+			</remarks>
+		</docs>
+	</Constructor>
+
+	<Constructor name="ConstructorPath">
+		<docs>
+			<summary>Constructor.  Loads an INI file source.</summary>
+			<remarks>
+				Loads this up from a file.
+			</remarks>
+			<param name="filePath">
+				Path to the file to load.
+			</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorTextReader">
+		<docs>
+			<summary>Constructor.  Loads an INI file source.</summary>
+			<remarks>
+				This is a non-savable source unless you call one of the
+				overloaded <see cref="Save"/> methods.
+			</remarks>
+			<param name="reader">
+				TextReader to load.
+			</param>
+		</docs>
+	</Constructor>
+
+	<Constructor name="ConstructorStream">
+		<docs>
+			<summary>Constructor.  Loads an INI file source.</summary>
+			<remarks>
+				This is a non-savable source unless you call one of the
+				overloaded <see cref="Save"/> methods.
+			</remarks>
+			<param name="stream">
+				Stream to load.
+			</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorIniDocument">
+		<docs>
+			<summary>Constructor.  Loads an INI file source.</summary>
+			<remarks>
+				This is a non-savable source unless you call one of the
+				overloaded <see cref="Save"/> methods.
+			</remarks>
+			<param name="document">
+				The IniDocument.
+			</param>
+		</docs>
+	</Constructor>
+	
+	<Property name="CaseSensitive">
+		<docs>
+			<summary>
+				Gets or sets whether key values will be accessed ignoring case.  
+			</summary>
+		</docs>
+	</Property>
+	
+	<Property name="SavePath">
+		<docs>
+			<summary>
+				The path where the document will be saved.
+			</summary>
+			<remarks>
+				This path is set when the class is loaded with a path or 
+				saved with a path (using the Save (string) method).  Otherwise
+				the value will be <code>null</code>.  If it is <code>null</code>
+				then calling save will cause an exception to be thrown. 
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Method name="LoadPath">
+		<docs>
+			<summary>Loads an INI file source.</summary>
+			<remarks>
+				Loads this up from a file.
+			</remarks>
+			<param name="filePath">
+				Path to the file to load.
+			</param>
+		</docs>
+	</Method>
+	
+	<Method name="LoadTextReader">
+		<docs>
+			<summary>Loads an INI file source.</summary>
+			<remarks>
+				This is a non-savable source unless you call one of the
+				overloaded <see cref="Save"/> methods.
+			</remarks>
+			<param name="reader">
+				TextReader to load.
+			</param>
+		</docs>
+	</Method>
+
+	<Method name="LoadStream">
+		<docs>
+			<summary>Loads an INI file source.</summary>
+			<remarks>
+				This is a non-savable source unless you call one of the
+				overloaded <see cref="Save"/> methods.
+			</remarks>
+			<param name="stream">
+				Stream to load.
+			</param>
+		</docs>
+	</Method>
+	
+	<Method name="LoadIniDocument">
+		<docs>
+			<summary>Loads an INI file source.</summary>
+			<remarks>
+				This is a non-savable source unless you call one of the
+				overloaded <see cref="Save"/> methods.
+			</remarks>
+			<param name="document">
+				The IniDocument.
+			</param>
+		</docs>
+	</Method>
+	
+	<Method name="Save">
+		<docs>
+			<summary>
+				Saves all configuration values.  
+			</summary>
+			<remarks>
+				If the <see cref="SavePath"/> is <code>null</code> then this 
+				will throw an exception.
+			</remarks>
+			<exception cref="Exception">
+				The <see cref="SavePath"/> is <code>null</code>.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="SavePath">
+		<docs>
+			<summary>
+				Saves all configuration values to a path.  
+			</summary>
+			<remarks>
+				This sets the <see cref="SavePath"/> to <code>path</code>. 
+			</remarks>
+			<param name="path">
+				Path to save the file.
+			</param>
+			<exception cref="Exception">
+				An error has occurred.
+			</exception>
+		</docs>
+	</Method>
+
+	<Method name="SaveTextWriter">
+		<docs>
+			<summary>
+				Saves all configuration values to a <b>TextWriter</b>.  
+			</summary>
+			<remarks>
+				This sets the <see cref="SavePath"/> to <code>null</code>. 
+			</remarks>
+			<param name="writer">
+				The TextWriter to save the document.
+			</param>
+			<exception cref="Exception">
+				An error has occurred.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="SaveStream">
+		<docs>
+			<summary>Writes the INI data to a Stream.</summary>
+			<param name="stream">Stream object</param>
+		</docs>
+	</Method>
+	
+	<Method name="ToString">
+		<docs>
+			<summary>
+				Returns all characters in the document.  
+			</summary>
+			<remarks>
+				It returns the INI string of the document.
+			</remarks>
+		</docs>
+	</Method>
+
+</Class>
+
+</NiniDocs>

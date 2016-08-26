@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="RegistryConfigSource">
+	<docs>
+		<summary>
+			Class for loading Windows Registry data.
+		</summary>
+		<remarks>
+			This class allows users to read and write Windows Registry 
+			configurations. Be careful writing code with this program 
+			that writes to the registry. If coded incorrectly you 
+			can corrupt your Registry.
+			
+			This class is not available for the .NET Compact Framework
+			version of Nini.
+		</remarks>
+	</docs>
+	
+	<Enum name="RegistryRecurse">
+		<docs>
+			<summary>Enumeration of Registry recursion types.</summary>
+		</docs>
+		<Value name="None">
+			<docs>
+				<summary>Does not specify an recursion.</summary>
+			</docs>
+		</Value>
+		<Value name="Flattened">
+			<docs>
+				<summary>
+					Indicates that Registry namespacing should be 
+					removed.  If the base key is "Software\MyApp" then 
+					the keys recieved should be "Software" and "MyApp".
+				</summary>
+			</docs>
+		</Value>
+		<Value name="Namespacing">
+			<docs>
+				<summary>
+					Indicatates that Registry namespacing should not be
+					removed.  If the base key is "Software\MyApp" then 
+					the keys recieved should be "Software" and "Software\MyApp".
+				</summary>
+			</docs>
+		</Value>
+	</Enum>
+	
+	<Property name="DefaultKey">
+		<docs>
+			<summary>
+				Gets or sets the default RegistryKey to use if the AddConfig
+				method is called.
+			</summary>
+			<remarks>
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Method name="AddConfig">
+		<docs>
+			<summary>
+				Adds a config and will map itself to the DefaultKey property. 
+			</summary>
+			<param name="name">
+				Name of the config. 
+			</param>
+		</docs>
+	</Method>
+	
+	<Method name="AddConfigKey">
+		<docs>
+			<summary>
+				Adds a config and will map itself to the given registry key. 
+			</summary>
+			<param name="name">Name of the config. </param>
+			<param name="key">RegistryKey to map to. </param>
+		</docs>
+	</Method>
+	
+	<Method name="AddMapping">
+		<docs>
+			<summary>
+				Maps a single registry key to an IConfig. 
+			</summary>
+			<remarks>
+				TODO.
+			</remarks>
+			<param name="registryKey">
+				The root Registry key to load (e.g. Registry.LocalMachine).
+			</param>
+			<param name="path">
+				The registry path to load off of the the registryKey.
+			</param>
+		</docs>
+	</Method>
+
+	<Method name="AddMappingRecurse">
+		<docs>
+			<summary>
+				Maps a single registry key to an IConfig. 
+			</summary>
+			<remarks>
+				If recurse is set to Namespacing or Flattened then it 
+				will recursively load all Registry subkeys into 
+				IConfigs as well.
+			</remarks>
+			<param name="registryKey">
+				The root Registry key to load (e.g. Registry.LocalMachine).
+			</param>
+			<param name="path">
+				The registry path to load off of the the registryKey.
+			</param>
+			<param name="recurse">
+				The registry path to load off of the the registryKey.
+			</param>
+		</docs>
+	</Method>
+	
+</Class>
+
+</NiniDocs>

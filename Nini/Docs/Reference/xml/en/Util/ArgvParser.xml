@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="ArgvParser">
+	<docs>
+		<summary>Class for parsing command line options</summary>
+	</docs>
+
+	<Constructor name="Constructor">
+		<docs>
+			<summary>Loads and parses all command line options.</summary>
+			<remarks>
+				All options are parsed upon load.
+			</remarks>
+			<param name="args">
+				The command line string array to parse.
+			</param>
+		</docs>
+	</Constructor>
+	
+	<Property name="this">
+		<docs>
+			<summary>
+				Returns the value of the command line switch.
+			</summary>
+			<remarks>
+				This returns <code>null</code> if the option was not
+				parsed.
+			</remarks>
+		</docs>
+	</Property>
+	
+</Class>
+
+</NiniDocs>

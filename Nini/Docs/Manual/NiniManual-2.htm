@@ -1,0 +1,291 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=iso-8859-1" />
+	<title>Getting Started - Nini Manual</title>
+	<link rel="stylesheet" href="styles.css" type="text/css" media="screen" />
+	<meta name="description" content="" />
+</head>
+
+<body>
+
+<div id="container">
+
+  <div id="header">
+    <h2>Nini Manual</h2>
+  </div>
+  
+  <div id="nav">
+    <a href="NiniManual-1.htm"><< Previous</a> | 
+    <a href="NiniManual.htm">Table of Contents</a> |
+    <a href="NiniManual-3.htm">Next >></a>
+  </div>
+  
+  <div id="content">
+
+    <h2>2. Getting Started</h2>
+    
+    <a name="ASimpleExample"></a>
+    <h3>2.1 A Simple Example</h3>
+    <p>In order to show you how Nini solves these problems let’s go over an example.  
+      First, let’s take an example configuration file.  I will choose the 
+      <a href="http://webopedia.com/TERM/_/_INI_file.html">INI 
+      format</a> for most of the examples in this manual. INI files are a tried and 
+      true configuration file type used in well known open source projects such as 
+      <a href="http://www.mysql.com/">MySQL</a>, <a href="http://www.php.net/">PHP</a>, 
+      and <a href="http://www.samba.org/">Samba</a>. In fact, Nini has support for 
+      several INI file types. They are very simple and easy to edit so they remain 
+      a very popular choice. Nini contains it's own INI parser class (
+      <a href="http://nini.sourceforge.net/Reference/html/Nini.Ini.IniDocument.html">IniDocument</a>) 
+      which is written entirely in C# with no 
+      <a href="http://tinyurl.com/3ruev">Windows 
+      API</a> code so it's cross platform. Here is the text of MyApp.ini for this 
+      example:</p>
+    
+    <pre>
+; MyApp.ini
+<b>[Logging]</b>
+File Name = MyApp.log
+MessageColumns = 5
+MaxFileSize = 40000000000000</pre>
+    
+    <div class="csharp">
+    <p>Below is a C# example piece of code that describes how to access the configuration 
+      data from the INI file from the file above: </p>
+    
+    <pre>
+<b>using</b> Nini.Config;
+IConfigSource source = <b>new</b> IniConfigSource(&quot;MyApp.ini&quot;);
+
+<b>string</b> fileName = source.Configs[&quot;Logging&quot;].Get(&quot;File Name&quot;);
+<b>int</b> columns = source.Configs[&quot;Logging&quot;].GetInt(&quot;MessageColumns&quot;);
+<b>long</b> fileSize = source.Configs[&quot;Logging&quot;].GetLong(&quot;MaxFileSize&quot;);</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    <p>Here is the example in VB: </p>
+    
+    <pre><b>Imports</b> Nini.Config
+
+<b>Dim</b> source <b>As New</b> IniConfigSource(&quot;MyApp.ini&quot;)
+
+<b>Dim</b> fileName <b>As</b> String = source.Configs(&quot;Logging&quot;).Get(&quot;File Name&quot;)
+<b>Dim</b> columns <b>As</b> Integer = source.Configs(&quot;Logging&quot;).GetInt(&quot;MessageColumns&quot;)
+<b>Dim</b> fileSize <b>As</b> Long = source.Configs(&quot;Logging&quot;).GetLong(&quot;MaxFileSize&quot;)</pre>
+    </div>
+    
+    <p>Okay, that example threw a few things at you. First, we include Nini's configuration 
+      namespace to the imaginary app with <strong>using Nini.Config</strong>. Next 
+      we load up the INI file with the <a href="../Reference/html/Nini.Config.IniConfigSource.html">IniConfigSource</a> 
+      class. In Nini, each configuration file type has it's own &quot;Source&quot; 
+      class. This class knows how to load and save the file. Each of these classes 
+      implements the <a href="../Reference/html/Nini.Config.IConfigSource.html">IConfigSource</a> 
+      interface so that you abstractly work with multiple configuration types more 
+      easily. When a file is loaded all sections (in this case the [Logging] section) 
+      are converted to the interface <a href="../Reference/html/Nini.Config.IConfig.html">IConfig</a> 
+      and added to a collection on the Source class. The IConfig class provides very 
+      fast access to retrieve, add, or remove configuration keys (like &quot;File 
+      Name&quot; in the above INI file). The methods of the IConfig class include 
+      <a href="../Reference/html/Nini.Config.IConfig.Get_overloads.html">Get</a>, 
+      <a href="../Reference/html/Nini.Config.IConfig.GetString_overloads.html"> GetString</a>, 
+      <a href="../Reference/html/Nini.Config.IConfig.GetInt_overloads.html">GetInt</a>, 
+      <a href="../Reference/html/Nini.Config.IConfig.GetFloat_overloads.html">GetFloat</a>, 
+      <a href="../Reference/html/Nini.Config.IConfig.GetDouble_overloads.html">GetDouble</a>, 
+      and <a href="../Reference/html/Nini.Config.IConfig.GetLong_overloads.html">GetLong</a> 
+      methods. All of the methods prefixed with &quot;Get&quot; are overloaded to 
+      provide more data. The next couple sections describe how to use these overloads. 
+    </p>
+      
+    <a name="DefaultValues"></a>
+    <h3>2.2 Default Values</h3>
+    <p>Sometimes an option will not be present in a configuration file.  This might 
+      be because it hasn’t been added to the project’s main build or because it should 
+      remain secret to users.  For these cases Nini provides provides overloaded methods 
+      that allow a programmer to define default values.  </p>
+    
+    <div class="csharp">
+    Here’s an example in C#:
+      
+    <pre>// Sets missing to the default value, &quot;Default result&quot;.
+<b>string</b> missing = config.Get(&quot;Missing Config&quot;, &quot;Default result&quot;);
+
+// Sets smallNumber to the default value, 50.
+<b>int</b> smallNumber = config.GetInt(&quot;Not Present&quot;, 50);</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    Here is the same example in VB:
+    
+    <pre>' Sets missing to the default value, &quot;Default result&quot;.
+<b>Dim</b> missing <b>As String</b> = config.Get(&quot;Missing Config&quot;, &quot;Default result&quot;)
+
+' Sets smallNumber to the default value, 50.
+<b>Dim</b> smallNumber <b>As Integer</b> = config.GetInt(&quot;Not Present&quot;, 50)</pre>
+    </div>
+    
+    <a name="SettingSavingRemoving"></a>
+    <h3>2.3 Setting, Saving, and Removing Keys</h3>
+    <p>It is also possible to set and save new values into the configuration file. 
+      Calling the Set method will change an existing value or if it does not exist 
+      add it. Here is an example:</p>
+    <pre>
+config.Set(&quot;File Name&quot;, &quot;MyNewFile.log&quot;);
+config.Set(&quot;MessageColumns&quot;, 45);
+config.Remove(&quot;File Name&quot;);
+    
+source.Save();</pre>
+    
+    <p>It is necessary to call the Save method to save a file, h0wever, you can also 
+      set the AutoSave property on an IConfigSource and that will automatically save 
+      the file each time the Set method is called. If you want to save a document 
+      to a different path or a different object then the <a href="../Reference/html/Nini.Config.IniConfigSource.html">IniConfigSource</a>, 
+      <a href="../Reference/html/Nini.Config.XmlConfigSource.html">XmlConfigSource</a>, 
+      and <a href="../Reference/html/Nini.Config.DotNetConfigSource.html">DotNetConfigSource</a> 
+      classes all save overloaded <strong>Save</strong> methods that allow you to 
+      save to either a new path or a <a href="http://tinyurl.com/dnaew">TextWriter</a>:</p>
+    
+    <div class="csharp">
+    Here is an example in C#:
+    
+    <pre><b>using</b> System.IO;
+    
+IniConfigSource source = <b>new</b> IniConfigSource(&quot;Test.ini&quot;);
+StringWriter writer = <b>new</b> StringWriter();
+source.Save(writer); // Save to StringWriter(TextWriter)
+
+source.Save("some/new/path.ini"); // Save to new path</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    Here is the example in VB:
+    
+    <pre><b>Imports</b> System.IO
+    
+<b>Dim</b> source <b>As</b> IniConfigSource = <b>new</b> IniConfigSource(&quot;Test.ini&quot;)
+<b>Dim</b> writer <b>As New</b> StringWriter()
+source.Save(writer) ' Save to StringWriter(TextWriter)
+
+source.Save("some/new/path.ini") ' Save to new path</pre>
+    </div>
+    
+    <a name="AddingRemovingConfigs"></a>
+    
+    <h3>2.4 Adding and Removing Configs</h3>
+    
+    <p>
+      On occassion you will want to add and remove IConfigs yourself. Nini has a 
+      simple means to accomplish both of these actions. Here is an example where I 
+      create a new config and then immediately remove it.
+    </p>
+    
+    <div class="csharp">
+    Here is an example in C#:
+    
+    <pre>
+IConfig newConfig = source.AddConfig("NewConfig");
+
+source.Configs.Remove(newConfig);</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    Here is the example in VB:
+    
+    <pre>
+<b>Dim</b> newConfig <b>As</b> IConfig = source.AddConfig("NewConfig")
+    
+source.Configs.Remove(newConfig)</pre>
+    </div>
+    
+    <a name="KeyValueExpanding"></a>
+    <h3>2.5 Key Value Expanding</h3>
+    <p>
+      In many cases you will find that your key values are dependent on the values 
+      of other keys. For instance you have a root path configuration value and several 
+      values for files that use this path like in this example:
+    </p>
+      
+    <pre>
+<b>[File Path]</b>
+RootPath = C:\Program Files\My Program
+Logging = MyApp.log
+WebPage = index.html</pre>
+    
+    <p>
+      Without Nini if you wanted to combine the value of &quot;RootPath&quot; with 
+      &quot;Logging&quot; and &quot;WebPage&quot; then you would have to perform ugly 
+      string concatenations to get &quot;C:\Program Files\My Program\index.html&quot;. 
+      In Nini you do not need to do this:
+    </p>
+    
+    <pre>
+<b>[File Path]</b>
+RootPath = C:\Program Files\My Program
+Logging = <strong>${RootPath}</strong>\MyApp.log
+WebPage = <strong>${RootPath}</strong>\index.html</pre>
+    
+    <p>
+      This can save you a lot of trouble concatenating them yourself and make your 
+      code a lot cleaner. If you want to grab a value from a different section you 
+      can do the same above but add the section name followed by a bar (&quot;|&quot;) 
+      like so: <strong>${section|key}</strong>.  When you are ready to perform 
+      the replacement call ExpandKeyValues (Note: This used to be called ReplaceKeyValues)
+    </p>
+    
+    <div class="csharp">
+    Here is an example in C#:
+    
+    <pre>
+IConfigSource source = <b>new</b> IniConfigSource(&quot;MyApp.ini&quot;);
+source.ExpandKeyValues();</pre>
+    </div>
+    
+    <div class="vbdotnet">
+    Here is the example in VB:
+    
+    <pre>
+<b>Dim</b> source <b>As New</b> IConfigSource(&quot;MyApp.ini&quot;)
+source.ExpandKeyValues()</pre>
+    </div>
+    
+    <p>
+      When you call ExpandKeyValues it changes all of the keys in your configuration 
+      file all at once.  This makes the code execution faster because it does not 
+      need to replace the key values on every Get/GetString/GetInt/etc call.  
+      However, this means that if you were to save the configuration file with
+      the <a href="NiniManual-2.htm#SettingSavingRemoving"Save method</a> that 
+      it would overwrite your previous values with the expand values.  If you 
+      do not want this to happen then you can use the <b>GetExpanded</b> method. 
+    </p>
+    
+    <pre>
+; This sets logging to "C:\Program Files\My Program\MyApp.log"
+IConfigSource source = <b>new</b> IniConfigSource(&quot;MyApp.ini&quot;);
+<b>string</b> logging = source.Configs["FIle Path"].GetExpanded("Logging");</pre>
+    </div>
+    
+    <p>That’s how easy it is to create your first Nini configured application.  The 
+      following sections will explain some more advanced features of Nini. </p>
+
+    <!-- end content -->
+  </div>
+  
+  <div id="nav">
+    <a href="NiniManual-1.htm"><< Previous</a> | 
+    <a href="NiniManual.htm">Table of Contents</a> |
+    <a href="NiniManual-3.htm">Next >></a>
+  </div>
+
+  <div id="footer">
+    Copyright &copy; 2006 Brent R. Matzelle. All rights reserved.   
+  </div>
+
+<!-- end container -->
+</div>
+
+</body>
+
+</html>

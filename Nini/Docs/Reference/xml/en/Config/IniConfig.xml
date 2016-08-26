@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="IniConfig">
+	<docs>
+		<summary>IConfig class for IniConfigSource sections.</summary>
+	</docs>
+
+	<Constructor name="Constructor">
+		<docs>
+			<summary>Constructor.</summary>
+			<param name="name">Config name.</param>
+			<param name="source">Config parent IConfigSource.</param>
+		</docs>
+	</Constructor>
+
+	<Method name="Get">
+		<docs>
+			<summary>
+				Returns a key value.  If the parent IniConfigSource has CaseSensitive
+				turned on then this will return the value ignoring the case of the key name. 
+			</summary>
+		</docs>
+		<param name="key">The key name.</param>
+	</Method>
+	
+	<Method name="Set">
+		<docs>
+			<summary>
+				Sets a key value.  If the parent IniConfigSource has CaseSensitive
+				turned on then this will set the value ignoring the case of the key name. 
+			</summary>
+			<param name="key">The key name.</param>
+			<param name="value">The key value</param>
+		</docs>
+	</Method>
+	
+	<Method name="Remove">
+		<docs>
+			<summary>
+				Removes a key.  If the parent IniConfigSource has CaseSensitive
+				turned on then this will remove the key ignoring the case of the key name. 
+			</summary>
+			<param name="key">The key name.</param>
+		</docs>
+	</Method>
+
+</Class>
+
+</NiniDocs>

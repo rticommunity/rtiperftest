@@ -1,0 +1,367 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="IniDocument">
+	<Enum name="IniFileType">
+		<docs>
+			<summary>Represents a type of INI file.</summary>
+			<remarks>
+				INI files are not officially a standard.  Thus there are several
+				different types of INI files floating around.  
+			</remarks>
+		</docs>
+		<Value name="Standard">
+			<docs>
+				<summary>Standard INI type (Windows)</summary>
+				<remarks>
+				This refers to the Windows INI type which has the following 
+				properties:
+				<ul>
+					<li>Accepts only ';' as a comment delimiter.</li>
+					<li>Allows for comments after key values</li>
+				</ul>
+				</remarks>
+			</docs>
+		</Value>
+		<Value name="PythonStyle">
+			<docs>
+				<summary>Python language INI type</summary>
+				<remarks>
+				This refers to the Python programming language configuration
+				file type.  It has the following properties:
+				<ul>
+					<li>Accepts ';' and '#' as comment delimiters.</li>
+					<li>The assign operator is ':' rather than '='</li>
+				</ul>
+				</remarks>
+			</docs>
+		</Value>
+		<Value name="SambaStyle">
+			<docs>
+				<summary>Samba program INI type.</summary>
+				<remarks>
+				This refers to the Samba programming language configuration
+				file type.  It has the following properties:
+				<ul>
+					<li>Accepts ';' and '#' as comment delimiters.</li>
+					<li>
+						Accepts line continuation with the use of a slash
+						('\') at the end of a line. 
+					</li>
+				</ul>
+				</remarks>
+			</docs>
+		</Value>
+
+		<Value name="MysqlStyle">
+			<docs>
+				<summary>MySQL program INI type.</summary>
+				<remarks>
+				This refers to the MySQL server configuration
+				file type.  It has the following properties:
+				<ul>
+					<li>Accepts '#' as comment delimiters.</li>
+					<li>Accepts ';' and '=' as assign operators.</li>
+					<li>Accepts keys with no values.</li>
+					<li>Does not accept comments after keys.</li>
+				</ul>
+				</remarks>
+			</docs>
+		</Value>
+		
+		<Value name="WindowsStyle">
+			<docs>
+				<summary>Windows INI type.</summary>
+				<remarks>
+				This refers to the Windows INI format like that used by 
+				the GetPrivateProfileString Win32 API function.  
+				<ul>
+					<li>Accepts ';' as comment delimiter.</li>
+					<li>Accepts '=' as assign operator.</li>
+					<li>Reads quotes and comments in key values as normal text.</li>
+				</ul>
+				</remarks>
+			</docs>
+		</Value>
+	</Enum>
+
+	<docs>
+		<summary>High level INI document access class.</summary>
+		<example>
+			Here's an example of accessing the following document, 
+			<c>test.ini</c>.
+			<code>
+; This is a comment
+[My Section]
+  key 1 = value 1 ; Comment 1
+  key 2 = value 2
+[Pets]
+  dog = rover
+  cat = muffy
+			</code>
+			Here is code for accessing it.
+			<code>
+IniDocument doc = new IniDocument ("test.ini");
+Console.WriteLine ("Key: " + doc.Get ("My Section", "key 1"));
+Console.WriteLine ("Key: " + doc.Get ("Pets", "dog"));
+doc.SetSection ("Movies");
+doc.SetKey ("Movies", "horror", "Scream");
+doc.SetKey ("Movies", "comedy", "Dumb and Dumber");
+doc.RemoveSection ("My Section");
+doc.RemoveKey ("Pets", "dog");
+
+StringWriter writer = new StringWriter ();
+doc.Save (writer);
+Console.WriteLine ("New INI document:");
+Console.WriteLine (writer.ToString ());
+			</code>
+			This prints out the following response:
+			<code>
+Key: value 1
+Key: rover
+New INI document:
+[Pets]
+cat = muffy
+[Movies]
+horror = Scream
+comedy = Dumb and Dumber
+		</code>
+		</example>
+	</docs>
+	
+	<Property name="FileType">
+		<docs>
+			<summary>
+				Gets or sets the INI file type
+			</summary>
+			<remarks>
+			</remarks>
+		</docs>
+	</Property>
+
+	<Constructor name="Constructor">
+		<docs>
+			<summary>Initializes an empty INI class instance.</summary>
+		</docs>
+	</Constructor>
+
+	<Constructor name="ConstructorPath">
+		<docs>
+			<summary>Initializes a new instance of the class with the supplied file.</summary>
+			<param name="filePath">The path to the INI file.</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorPathType">
+		<docs>
+			<summary>
+				Initializes a new instance of the class with the supplied 
+				file and the INI type.
+			</summary>
+			<param name="filePath">The path to the INI file.</param>
+			<param name="type">The INI file type.</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorTextReader">
+		<docs>
+			<summary>
+				Initializes a new instance of the class using a TextReader.
+			</summary>
+			<param name="reader">The TextReader.</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorTextReaderType">
+		<docs>
+			<summary>
+				Initializes a new instance of the class using a TextReader
+				and the INI type.
+			</summary>
+			<param name="reader">The TextReader.</param>
+			<param name="type">The INI file type.</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorStream">
+		<docs>
+			<summary>
+				Initializes a new instance of the class using a Stream.
+			</summary>
+			<param name="stream">The Stream.</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorStreamType">
+		<docs>
+			<summary>
+				Initializes a new instance of the class using a Stream 
+				and the INI type.
+			</summary>
+			<param name="stream">The Stream.</param>
+			<param name="type">The INI file type.</param>
+		</docs>
+	</Constructor>
+	
+	<Constructor name="ConstructorIniReader">
+		<docs>
+			<summary>
+				Initializes a new instance of the class using an IniReader.
+			</summary>
+			<param name="reader">The IniReader.</param>
+		</docs>
+	</Constructor>
+	
+	<Method name="Get">
+		<docs>
+			<summary>Returns the string version of the section key.</summary>
+			<remarks>Returns null if the key does not exist</remarks>
+			<param name="section">Section name.</param>
+			<param name="key">Section key.</param>
+		</docs>
+	</Method>
+
+	<Method name="GetSections">
+		<docs>
+			<summary>Returns a list of sections.</summary>
+			<remarks>
+				Does not return the sections necessarily in the order 
+				that they were loaded.
+			</remarks>
+		</docs>
+	</Method>
+
+	<Method name="GetKeys">
+		<docs>
+			<summary>Returns a list of keys.</summary>
+			<remarks>
+				Does not return the keys necessarily in the order 
+				that they were loaded.
+			</remarks>
+			<param name="section">Section name.</param>
+		</docs>
+	</Method>
+	
+	<Method name="ContainsSection">
+		<docs>
+			<summary>
+				Returns <b>true</b> if the section exists; <b>false</b> if  
+				it does not.
+			</summary>
+			<param name="section">Section name.</param>
+		</docs>
+	</Method>
+	
+	<Method name="ContainsKey">
+		<docs>
+			<summary>
+				Returns <b>true</b> if the key exists; <b>false</b> if  
+				it does not.
+			</summary>
+			<param name="section">Section name.</param>
+			<param name="key">Key value.</param>
+		</docs>
+	</Method>
+
+	<Method name="SetSection">
+		<docs>
+			<summary>
+				Sets a section if that section does not already exist.
+			</summary>
+			<param name="section">Section name.</param>
+		</docs>
+	</Method>
+
+	<Method name="SetKey">
+		<docs>
+			<summary>
+				Adds a new key if the key does not exist.  Sets a new value 
+				to an existing key if the key does exist.
+			</summary>
+			<param name="section">Section name.</param>
+			<param name="key">Key value.</param>
+			<param name="value">Key value.</param>
+			<exception cref="ArgumentException">
+				The section does not exist.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="RemoveSection">
+		<docs>
+			<summary>Removes a given section.</summary>
+			<param name="section">Section name.</param>
+			<exception cref="ArgumentException">
+				The section does not exist.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="RemoveKey">
+		<docs>
+			<summary>Flushes the current writer and frees the resources.</summary>
+			<param name="section">Section name.</param>
+			<param name="key">Key name.</param>
+			<exception cref="ArgumentException">
+				The section or key does not exist.
+			</exception>
+		</docs>
+	</Method>
+	
+	<Method name="LoadPath">
+		<docs>
+			<summary>Loads the instance with the supplied file.</summary>
+			<param name="filePath">The path to the INI file.</param>
+		</docs>
+	</Method>
+	
+	<Method name="LoadTextReader">
+		<docs>
+			<summary>
+				Loads the instance using a TextReader.
+			</summary>
+			<param name="reader">The TextReader.</param>
+		</docs>
+	</Method>
+	
+	<Method name="LoadStream">
+		<docs>
+			<summary>
+				Loads the instance using a Stream.
+			</summary>
+			<param name="stream">The Stream.</param>
+		</docs>
+	</Method>
+	
+	<Method name="LoadIniReader">
+		<docs>
+			<summary>
+				Loads the instance using an IniReader.
+			</summary>
+			<param name="reader">The IniReader.</param>
+		</docs>
+	</Method>
+	
+	<Method name="SavePath">
+		<docs>
+			<summary>Writes the INI data to a file.</summary>
+			<param name="filePath">File path.</param>
+		</docs>
+	</Method>
+	
+	<Method name="SaveTextWriter">
+		<docs>
+			<summary>Writes the INI data to a writer.</summary>
+			<param name="textWriter">TextWriter object</param>
+		</docs>
+	</Method>
+	
+	<Method name="SaveStream">
+		<docs>
+			<summary>Writes the INI data to a Stream.</summary>
+			<param name="stream">Stream object</param>
+		</docs>
+	</Method>
+</Class>
+
+</NiniDocs>

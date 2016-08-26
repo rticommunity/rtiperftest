@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<NiniDocs>
+
+<Class name="IniSection">
+	<docs>
+		<summary>INI section class.</summary>
+	</docs>
+
+	<Constructor name="Constructor">
+		<docs>
+			<summary>Creates a new section.</summary>
+			<param name="name">Section name.</param>
+		</docs>
+	</Constructor>
+
+	<Constructor name="ConstructorComment">
+		<docs>
+			<summary>Creates a new section with a comment.</summary>
+			<param name="name">Section name.</param>
+			<param name="comment">Comment text.</param>
+		</docs>
+	</Constructor>
+	
+	<Property name="Name">
+		<docs>
+			<summary>Gets the name of the section.</summary>
+		</docs>
+	</Property>
+	
+	<Property name="Comment">
+		<docs>
+			<summary>Gets the section comment.</summary>
+			<remarks>
+				Returns null if there is no comment.
+			</remarks>
+		</docs>
+	</Property>
+	
+	<Property name="ItemCount">
+		<docs>
+			<summary>
+				Returns the number of items in the section.  This includes
+				keys, comments, and empty lines.
+			</summary>
+		</docs>
+	</Property>
+	
+	<Method name="GetValue">
+		<docs>
+			<summary>Returns the value of the given key.</summary>
+			<remarks>Returns null if the key does not exist</remarks>
+			<param name="key">Section key.</param>
+		</docs>
+	</Method>
+
+	<Method name="GetItem">
+		<docs>
+			<summary>Returns the IniItem at the given index.</summary>
+			<param name="index">Key index.</param>
+		</docs>
+	</Method>
+
+	<Method name="GetKeys">
+		<docs>
+			<summary>Returns the list of section keys.</summary>
+		</docs>
+	</Method>
+	
+	<Method name="Contains">
+		<docs>
+			<summary>
+				Returns <b>true</b> if the key exists; <b>false</b> if  
+				it does not.
+			</summary>
+			<param name="key">Section key.</param>
+		</docs>
+	</Method>
+	
+	<Method name="SetKeyComment">
+		<docs>
+			<summary>
+				Sets a key value and a comment.
+			</summary>
+			<param name="key">Key name.</param>
+			<param name="value">Key value.</param>
+			<param name="comment">Comment text.</param>
+		</docs>
+	</Method>
+
+	<Method name="SetKey">
+		<docs>
+			<summary>
+				Sets a key and value.
+			</summary>
+			<param name="key">Key name.</param>
+			<param name="value">Key value.</param>
+		</docs>
+	</Method>
+
+	<Method name="SetComment">
+		<docs>
+			<summary>
+				Sets a section comment.
+			</summary>
+			<param name="comment">Comment text.</param>
+		</docs>
+	</Method>
+	
+	<Method name="SetNoComment">
+		<docs>
+			<summary>Creates an empty line in the section.</summary>
+		</docs>
+	</Method>
+	
+	<Method name="Remove">
+		<docs>
+			<summary>Removes the supplied key.</summary>
+			<param name="key">Key name.</param>
+		</docs>
+	</Method>
+</Class>
+
+</NiniDocs>
