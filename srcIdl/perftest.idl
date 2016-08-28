@@ -1,0 +1,25 @@
+const long MAX_BINDATA_SIZE = 131072;
+const long KEY_SIZE = 4;
+
+struct TestData_t {
+    octet key[KEY_SIZE];
+
+    long entity_id;
+    unsigned long seq_num;
+    long timestamp_sec;
+    unsigned long timestamp_usec;
+    long latency_ping;
+    sequence<octet, MAX_BINDATA_SIZE> bin_data;
+}; //@Extensibility FINAL_EXTENSIBILITY
+
+
+struct TestDataKeyed_t {
+    octet key[KEY_SIZE]; //@key
+
+    long entity_id;
+    unsigned long seq_num;
+    long timestamp_sec;
+    unsigned long timestamp_usec;
+    long latency_ping;
+    sequence<octet, MAX_BINDATA_SIZE> bin_data;
+}; //@Extensibility FINAL_EXTENSIBILITY

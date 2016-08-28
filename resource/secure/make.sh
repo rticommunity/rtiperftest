@@ -1,4 +1,6 @@
-export OPENSSL_EXE=openssl
+export OPENSSL_EXE=/Users/jmorales/RTI/buildtools/Mac/local/preship/openssl/openssl-1.0.2g/x64Darwin15/release/bin/openssl
+export DYLD_LIBRARY_PATH=/Users/jmorales/RTI/buildtools/Mac/local/preship/openssl/openssl-1.0.2g/x64Darwin15/release/lib
+
 
 rm *.xml *.csr *.pem demoCA/* demoCA/private/*
 

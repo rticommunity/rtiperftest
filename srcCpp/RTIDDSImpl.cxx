@@ -1,0 +1,1673 @@
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
+
+#include "ndds/ndds_cpp.h"
+#include "perftest.h"
+#include "perftestPlugin.h"
+#include "perftestSupport.h"
+#include "MessagingIF.h"
+#include "perftest_cpp.h"
+#include "RTIDDSImpl.h"
+
+#ifdef RTI_SECURE_PERFTEST
+#include "security/security_default.h"
+#endif
+
+#if defined(RTI_WIN32)
+  #pragma warning(push)
+  #pragma warning(disable : 4996)
+  #define STRNCASECMP _strnicmp
+#elif defined(RTI_VXWORKS)
+  #define STRNCASECMP strncmp
+#else
+  #define STRNCASECMP strncasecmp
+#endif
+#define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
+
+
+template class RTIDDSImpl<TestDataKeyed_t>;
+template class RTIDDSImpl<TestData_t>;
+
+template <typename T>
+int RTIDDSImpl<T>::_WaitsetEventCount;
+template <typename T>
+unsigned int RTIDDSImpl<T>::_WaitsetDelayUsec;
+
+#ifdef RTI_SECURE_PERFTEST
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_PRIVATEKEY_FILE_PUB =
+        "./resource/secure/pubkey.pem";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_PRIVATEKEY_FILE_SUB =
+        "./resource/secure/subkey.pem";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_CERTIFICATE_FILE_PUB =
+        "./resource/secure/pub.pem";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_CERTIFICATE_FILE_SUB =
+        "./resource/secure/sub.pem";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_CERTAUTHORITY_FILE =
+        "./resource/secure/cacert.pem";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_PERMISION_FILE_PUB =
+        "./resource/secure/signed_PerftestPermissionsPub.xml";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_PERMISION_FILE_SUB =
+        "./resource/secure/signed_PerftestPermissionsSub.xml";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME = "nddssecurity";
+#endif
+
+/*********************************************************
+ * Shutdown
+ */
+template <typename T>
+void RTIDDSImpl<T>::Shutdown()
+{
+    if (_participant != NULL) {
+        perftest_cpp::MilliSleep(2000);
+
+        if (_reader != NULL) {
+            _subscriber->delete_datareader(_reader);
+        }
+
+        perftest_cpp::MilliSleep(4000);
+
+        _participant->delete_contained_entities();
+        DDSTheParticipantFactory->delete_participant(_participant);
+    }
+
+    if(_pongSemaphore != NULL) {
+		RTIOsapiSemaphore_delete(_pongSemaphore);
+		_pongSemaphore = NULL;
+    }
+
+    DDSDomainParticipantFactory::finalize_instance();
+}
+
+
+/*********************************************************
+ * PrintCmdLineHelp
+ */
+template <typename T>
+void RTIDDSImpl<T>::PrintCmdLineHelp()
+{
+   const char *usage_string =
+        /**************************************************************************/
+        "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n"
+        "\t                          queue, default 50\n"
+        "\t-domain <ID>            - RTI DDS Domain, default 1\n"
+        "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles, \n"
+        "\t                          default perftest_qos_profiles.xml\n"
+        "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>.\n"
+        "\t                          If unspecificed, use all available interfaces\n"
+        "\t-multicast              - Use multicast to send data, default not to\n"
+        "\t                          use multicast\n"
+        "\t-nomulticast            - Do not use multicast to send data (default)\n"
+        "\t-multicastAddress <ipaddr>   - Multicast address to use for receiving \n"
+        "\t                          latency/announcement (pub) or \n"
+        "\t                          throughtput(sub) data.\n"
+        "\t                          If unspecified: latency 239.255.1.2,\n"
+        "\t                                          announcement 239.255.1.100,\n"
+        "\t                                          throughput 239.255.1.1\n"
+        "\t-bestEffort             - Run test in best effort mode, default reliable\n"
+        "\t-batchSize <bytes>      - Size in bytes of batched message, default 0\n"
+        "\t                          (no batching)\n"
+        "\t-noPositiveAcks         - Disable use of positive acks in reliable \n"
+        "\t                          protocol, default use positive acks\n"
+        "\t-keepDurationUsec <usec> - Minimum time (us) to keep samples when\n"
+        "\t                          positive acks are disabled, default 1000 us\n"
+        "\t-enableSharedMemory     - Enable use of shared memory transport and \n"
+        "\t                          disable all the other transports, default\n"
+        "\t                          shared memory not enabled\n"
+        "\t-enableUdpv6            - Enable use of the Udpv6 transport and \n"
+        "\t                          disable all the other transports, default\n"
+        "\t                          udpv6 not enabled\n"
+        "\t-enableTcpOnly          - Enable use of TCP transport and disable all\n"
+        "\t                          the other transports, default do not use\n"
+        "\t                          tcp transport\n"
+        "\t-heartbeatPeriod <sec>:<nanosec>     - Sets the regular heartbeat period\n"
+        "\t                          for throughput DataWriter, default 0:0\n"
+        "\t                          (use XML QoS Profile value)\n"
+        "\t-fastHeartbeatPeriod <sec>:<nanosec> - Sets the fast heartbeat period\n"
+        "\t                          for the throughput DataWriter, default 0:0\n"
+        "\t                          (use XML QoS Profile value)\n"
+        "\t-durability <0|1|2|3>   - Set durability QOS, 0 - volatile,\n"
+        "\t                          1 - transient local, 2 - transient, \n"
+        "\t                          3 - persistent, default 0\n"
+        "\t-noDirectCommunication  - Use brokered mode for persistent durability\n"
+        "\t-instanceHashBuckets <#count> - Number of hash buckets for instances.\n"
+        "\t                          If unspecified, same as number of\n"
+        "\t                          instances.\n"
+        "\t-waitsetDelayUsec <usec>  - UseReadThread related. Allows you to\n"
+        "\t                          process incoming data in groups, based on the\n"
+        "\t                          time rather than individually. It can be used\n"
+        "\t                          combined with -waitsetEventCount,\n"
+        "\t                          default 100 usec\n"
+        "\t-waitsetEventCount <count> - UseReadThread related. Allows you to\n"
+        "\t                          process incoming data in groups, based on the\n"
+        "\t                          number of samples rather than individually. It\n"
+        "\t                          can be used combined with -waitsetDelayUsec,\n"
+        "\t                          default 5\n"
+        "\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n"
+        "\t                          throughput DataWriter (pub)\n"
+        "\t-enableTurboMode        - Enables the TurboMode feature in the\n"
+        "\t                          throughput DataWriter (pub)\n"
+      #ifdef RTI_SECURE_PERFTEST
+        "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n"
+        "\t-secureSign                   - Sign (HMAC) discovery and user data\n"
+        "\t-secureEncryptData            - Encrypt topic (user) data\n"
+        "\t-secureEncryptSM              - Encrypt RTPS submessages\n"
+        "\t-secureGovernanceFile <file>  - Governance file. If specified, the authentication,\n"
+        "\t                                signing, and encryption arguments are ignored. The\n"
+        "\t                                governance document configuration will be used instead\n"
+        "\t                                Default: built using the secure options.\n"
+        "\t-securePermissionsFile <file> - Permissions file <optional>\n"
+        "\t                                Default: \"./resource/secure/signed_PerftestPermissionsSub.xml\"\n"
+        "\t-secureCertAuthority <file>   - Certificate authority file <optional>\n"
+        "\t                                Default: \"./resource/secure/cacert.pem\"\n"
+        "\t-secureCertFile <file>        - Certificate file <optional>\n"
+        "\t                                Default: \"./resource/secure/sub.pem\"\n"
+        "\t-securePrivateKey <file>      - Private key file <optional>\n"
+        "\t                                Default: \"./resource/secure/subkey.pem\"\n"
+      #endif
+        ;
+
+    fprintf(stderr, "%s", usage_string);
+}
+
+
+/*********************************************************
+ * ParseConfig
+ */
+template <typename T>
+bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
+{
+    int i;
+    int sec = 0;
+    unsigned int nanosec = 0;
+
+    // Command line params
+    for (i = 0; i < argc; ++i) {
+        if (IS_OPTION(argv[i], "-pub")) {
+            _isPublisher = true;
+        } else if (IS_OPTION(argv[i], "-scan")) {
+            _isScan = true;
+
+        } else if (IS_OPTION(argv[i], "-dataLen")) {
+
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <length> after -dataLen\n");
+                return false;
+            }
+
+            _DataLen = strtol(argv[i], NULL, 10);
+
+            if (_DataLen < perftest_cpp::OVERHEAD_BYTES) {
+                fprintf(stderr, "-dataLen must be >= %d\n", perftest_cpp::OVERHEAD_BYTES);
+                return false;
+            }
+
+            if (_DataLen > TestMessage::MAX_DATA_SIZE) {
+                fprintf(stderr, "-dataLen must be <= %d\n", TestMessage::MAX_DATA_SIZE);
+                return false;
+            }
+
+            if (_DataLen > MAX_BINDATA_SIZE) {
+                fprintf(stderr, "-dataLen must be <= %d\n", MAX_BINDATA_SIZE);
+                return false;
+            }
+        } else if (IS_OPTION(argv[i], "-sendQueueSize")) {
+            if ((i == (argc - 1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <count> after -sendQueueSize\n");
+                return false;
+            }
+            _SendQueueSize = strtol(argv[i], NULL, 10);
+        } else if (IS_OPTION(argv[i], "-heartbeatPeriod")) {
+            if ((i == (argc - 1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <period> after -heartbeatPeriod\n");
+                return false;
+            }
+
+            sec = 0;
+            nanosec = 0;
+
+            if (sscanf(argv[i],"%d:%d",&sec,&nanosec) != 2) {
+                fprintf(stderr, "-heartbeatPeriod value must have the format <sec>:<nanosec>\n");
+                return false;
+            }
+
+            if (sec > 0 || nanosec > 0) {
+                _HeartbeatPeriod.sec = sec;
+                _HeartbeatPeriod.nanosec = nanosec;
+            }
+        } else if (IS_OPTION(argv[i], "-fastHeartbeatPeriod")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <period> after -fastHeartbeatPeriod\n");
+                return false;
+            }
+
+            sec = 0;
+            nanosec = 0;
+
+            if (sscanf(argv[i],"%d:%d",&sec,&nanosec) != 2) {
+                fprintf(stderr, "-fastHeartbeatPeriod value must have the format <sec>:<nanosec>\n");
+                return false;
+            }
+
+            if (sec > 0 || nanosec > 0) {
+                _FastHeartbeatPeriod.sec = sec;
+                _FastHeartbeatPeriod.nanosec = nanosec;
+            }
+        } else if (IS_OPTION(argv[i], "-domain")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <id> after -domain\n");
+                return false;
+            }
+            _DomainID = strtol(argv[i], NULL, 10);
+        } else if (IS_OPTION(argv[i], "-qosprofile")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') 
+            {
+                fprintf(stderr, "Missing <filename> after -qosprofile\n");
+                return false;
+            }
+            _ProfileFile = argv[i];
+        } else if (IS_OPTION(argv[i], "-multicast")) {
+            _IsMulticast = true;
+        } else if (IS_OPTION(argv[i], "-nomulticast")) {
+            _IsMulticast = false;
+        } else if (IS_OPTION(argv[i], "-multicastAddress")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <multicast address> after -multicastAddress\n");
+                return false;
+            }
+            THROUGHPUT_MULTICAST_ADDR = argv[i];
+            LATENCY_MULTICAST_ADDR = argv[i];
+            ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
+        } else if (IS_OPTION(argv[i], "-nic")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') 
+            {
+                fprintf(stderr, "Missing <address> after -nic\n");
+                return false;
+            }
+            _Nic = argv[i];
+        } else if (IS_OPTION(argv[i], "-bestEffort")) {
+            _IsReliable = false;
+        } else if (IS_OPTION(argv[i], "-durability")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <kind> after -durability\n");
+                return false;
+            }       
+            _Durability = strtol(argv[i], NULL, 10);
+
+            if ((_Durability < 0) || (_Durability > 3)) {
+                fprintf(stderr, "durability kind must be 0(volatile), 1(transient local), 2(transient), or 3(persistent) \n");
+                return false;
+            }
+        } else if (IS_OPTION(argv[i], "-noDirectCommunication")) {
+            _DirectCommunication = false;
+        } else if (IS_OPTION(argv[i], "-instances")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <count> after -instances\n");
+                return false;
+            }
+            _InstanceCount = strtol(argv[i], NULL, 10);
+            _InstanceMaxCountReader = _InstanceCount;
+
+            if (_InstanceCount <= 0) {
+                fprintf(stderr, "instance count cannot be negative or zero\n");
+                return false;
+            }
+        } else if (IS_OPTION(argv[i], "-instanceHashBuckets")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <count> after -instanceHashBuckets\n");
+                return false;
+            }
+            _InstanceHashBuckets = strtol(argv[i], NULL, 10);
+
+            if (_InstanceHashBuckets <= 0 && _InstanceHashBuckets != -1) {
+                fprintf(stderr, "instance hash buckets cannot be negative or zero\n");
+                return false;
+            }
+        } else if (IS_OPTION(argv[i], "-batchSize")) {
+
+            if ((i == (argc-1)) || *argv[++i] == '-') 
+            {
+                fprintf(stderr, "Missing <#bytes> after -batchSize\n");
+                return false;
+            }
+            _BatchSize = strtol(argv[i], NULL, 10);
+
+            if (_BatchSize < 0) 
+            {
+                fprintf(stderr, "batch size cannot be negative\n");
+                return false;
+            }
+        } else if (IS_OPTION(argv[i], "-keepDurationUsec")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <usec> after -keepDurationUsec\n");
+                return false;
+            }
+            _KeepDurationUsec = strtol(argv[i], NULL, 10);
+            if (_KeepDurationUsec < 0) {
+                fprintf(stderr, "keep duration usec cannot be negative\n");
+                return false;
+            }
+        } else if (IS_OPTION(argv[i], "-noPositiveAcks")) {
+            _UsePositiveAcks = false;
+        }
+        else if (IS_OPTION(argv[i], "-enableSharedMemory"))
+        {
+            if (_UseUdpv6) {
+                fprintf(stderr, "-useUdpv6 was already set, ignoring -enableSharedMemory\n");
+            } else if (_UseTcpOnly) {
+                fprintf(stderr, "-enableTcpOnly was already set, ignoring -enableSharedMemory\n");
+            } else {
+                _UseSharedMemory = true;
+            }
+        }
+        else if (IS_OPTION(argv[i], "-enableUdpv6"))
+        {
+            if (_UseSharedMemory) {
+                fprintf(stderr, "-enableSharedMemory was already set, ignoring -enableUdpv6\n");
+            } else if (_UseTcpOnly) {
+                fprintf(stderr, "-enableTcpOnly was already set, ignoring -enableUdpv6\n");
+            } else {
+                _UseUdpv6 = true;
+            }
+        }
+        else if (IS_OPTION(argv[i], "-enableTcpOnly") )
+        {
+            if (_UseSharedMemory) {
+                fprintf(stderr, "-enableSharedMemory was already set, ignoring -enableTcpOnly\n");
+            } else if (_UseUdpv6) {
+                fprintf(stderr, "-useUdpv6 was already set, ignoring -enableTcpOnly\n");
+            } else {
+                _UseTcpOnly = true;
+            }
+        }
+        else if (IS_OPTION(argv[i], "-debug")) 
+        {
+            NDDSConfigLogger::get_instance()->
+                set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+        }
+        else if (IS_OPTION(argv[i], "-waitsetDelayUsec")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') 
+            {
+                fprintf(stderr, "Missing <usec> after -waitsetDelayUsec\n");
+                return false;
+            }
+            _WaitsetDelayUsec = (unsigned int) strtol (argv[i], NULL, 10);
+            if (_WaitsetDelayUsec < 0) 
+            {
+                fprintf(stderr, "waitset delay usec cannot be negative\n");
+                return false;
+            }
+        }
+        else if (IS_OPTION(argv[i], "-waitsetEventCount")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') 
+            {
+                fprintf(stderr, "Missing <count> after -waitsetEventCount\n");
+                return false;
+            }
+            _WaitsetEventCount = strtol (argv[i], NULL, 10);
+            if (_WaitsetEventCount < 0) 
+            {
+                fprintf(stderr, "waitset event count cannot be negative\n");
+                return false;
+            }
+        } 
+        else if (IS_OPTION(argv[i], "-latencyTest"))
+        {
+            _LatencyTest = true;
+        }
+        else if (IS_OPTION(argv[i], "-enableAutoThrottle"))
+        {
+            fprintf(stderr, "Auto Throttling enabled. Automatically adjusting the DataWriter\'s writing rate\n");
+            _AutoThrottle = true;
+        }
+        else if (IS_OPTION(argv[i], "-enableTurboMode") )
+        {
+            _TurboMode = true;
+        }
+      #ifdef RTI_SECURE_PERFTEST
+        else if (IS_OPTION(argv[i], "-secureSign")) {
+            _secureIsSigned = true;
+            _secureUseSecure = true;
+        }
+        else if (IS_OPTION(argv[i], "-secureEncryptBoth")) {
+            _secureIsDataEncrypted = true;
+            _secureIsSMEncrypted = true;
+            _secureUseSecure = true;
+        }
+        else if (IS_OPTION(argv[i], "-secureEncryptData")) {
+            _secureIsDataEncrypted = true;
+            _secureUseSecure = true;
+        }
+        else if (IS_OPTION(argv[i], "-secureEncryptSM")) {
+            _secureIsSMEncrypted = true;
+            _secureUseSecure = true;
+        }
+        else if (IS_OPTION(argv[i], "-secureEncryptDiscovery")) {
+            _secureIsDiscoveryEncrypted = true;
+            _secureUseSecure = true;
+        }
+        else if (IS_OPTION(argv[i], "-secureGovernanceFile")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+               fprintf(stderr, "Missing <file> after -secureGovernanceFile\n");
+               return false;
+            }
+            _secureGovernanceFile = argv[i];
+            fprintf(stdout, "Warning -- authentication, encryption, signing arguments "
+                    "will be ignored, and the values specified by the Governance file will "
+                    "be used instead\n");
+            _secureUseSecure = true;
+        }
+        else if (IS_OPTION(argv[i], "-securePermissionsFile")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <file> after -securePermissionsFile\n");
+                return false;
+            }
+            _securePermissionsFile = argv[i];
+            _secureUseSecure = true;
+        }
+        else if (IS_OPTION(argv[i], "-secureCertAuthority")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <file> after -secureCertAuthority\n");
+                return false;
+            }
+            _secureCertAuthorityFile = argv[i];
+            _secureUseSecure = true;
+        }
+        else if (IS_OPTION(argv[i], "-secureCertFile")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <file> after -secureCertFile\n");
+                return false;
+            }
+            _secureCertificateFile = argv[i];
+            _secureUseSecure = true;
+        }
+        else if (IS_OPTION(argv[i], "-securePrivateKey")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <file> after -securePrivateKey\n");
+                return false;
+            }
+            _securePrivateKeyFile = argv[i];
+            _secureUseSecure = true;
+        }
+        else if (IS_OPTION(argv[i], "-secureLibrary")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <file> after -secureLibrary\n");
+                return false;
+            }
+            _secureLibrary = argv[i];
+        }
+        else if (IS_OPTION(argv[i], "-secureDebug")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <level> after -secureDebug\n");
+                 return false;
+            }
+            _secureDebugLevel = strtol(argv[i], NULL, 10);
+        }
+      #endif
+        else {
+            if (i > 0) {
+                fprintf(stderr, "%s: not recognized\n", argv[i]);
+                return false;
+            }
+        }
+    }
+
+    if (_DataLen > TestMessage::MAX_SYNCHRONOUS_SIZE) {
+        if (_isScan) {
+            fprintf(stderr,"DataLen will be ignored since -scan is present.\n");
+        } else {
+            fprintf(stderr,
+                    "Large data settings enabled (-dataLen > %d).\n",
+                    TestMessage::MAX_SYNCHRONOUS_SIZE);
+            _isLargeData = true;
+        }
+    }
+    if (_isLargeData && _BatchSize > 0) {
+        fprintf(stderr, "Batch cannot be enabled if using large data\n");
+        return false;
+    }
+
+    if (_isLargeData && _TurboMode) {
+        fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing. It will be ignored.\n");
+        _TurboMode = false;
+    }
+
+    return true;
+}
+
+
+/*********************************************************
+ * DomainListener
+ */
+class DomainListener : public DDSDomainParticipantListener
+{
+    virtual void on_inconsistent_topic(
+        DDSTopic *topic,
+        const DDS_InconsistentTopicStatus& /*status*/)
+    {
+        fprintf(stderr,"Found inconsistent topic. Expecting %s of type %s.\n",
+               topic->get_name(), topic->get_type_name());
+        fflush(stderr);
+    }
+
+    virtual void on_offered_incompatible_qos(
+        DDSDataWriter *writer,
+        const DDS_OfferedIncompatibleQosStatus &status)
+    {
+        fprintf(stderr,"Found incompatible reader for writer %s QoS is %d.\n",
+               writer->get_topic()->get_name(), status.last_policy_id);
+        fflush(stderr);
+    }
+
+    virtual void on_requested_incompatible_qos(
+        DDSDataReader *reader,
+        const DDS_RequestedIncompatibleQosStatus &status)
+    {
+        fprintf(stderr,"Found incompatible writer for reader %s QoS is %d.\n",
+               reader->get_topicdescription()->get_name(), status.last_policy_id);
+        fflush(stderr);
+    }
+};
+
+/*********************************************************
+ * RTIPublisher
+ */
+template<typename T>
+class RTIPublisher : public IMessagingWriter
+{
+  private:
+    typename T::DataWriter *_writer;
+    T data;
+    int _num_instances;
+    unsigned long _instance_counter;
+    DDS_InstanceHandle_t *_instance_handles;
+    RTIOsapiSemaphore *_pongSemaphore;
+
+ public:
+    RTIPublisher(DDSDataWriter *writer, int num_instances, RTIOsapiSemaphore * pongSemaphore)
+    {
+        _writer = T::DataWriter::narrow(writer);
+        data.bin_data.maximum(0);
+        _num_instances = num_instances;
+        _instance_counter = 0;
+        _instance_handles = 
+            (DDS_InstanceHandle_t *) malloc(sizeof(DDS_InstanceHandle_t)*num_instances);
+	    _pongSemaphore = pongSemaphore;
+
+        for (int i=0; i<_num_instances; ++i)
+        {
+            data.key[0] = (char) (i);
+            data.key[1] = (char) (i >> 8);
+            data.key[2] = (char) (i >> 16);
+            data.key[3] = (char) (i >> 24);
+
+            _instance_handles[i] = _writer->register_instance(data);
+        }
+    }
+
+    void Flush()
+    {
+        _writer->flush();
+    }
+
+    bool Send(TestMessage &message)
+    {
+        DDS_ReturnCode_t retcode;
+        int key = 0;
+
+        data.entity_id = message.entity_id;
+        data.seq_num = message.seq_num;
+        data.timestamp_sec = message.timestamp_sec;
+        data.timestamp_usec = message.timestamp_usec;
+        data.latency_ping = message.latency_ping;
+        data.bin_data.loan_contiguous((DDS_Octet*)message.data, message.size, message.size);
+
+        if (_num_instances > 1) {
+            key = _instance_counter++ % _num_instances;
+            data.key[0] = (char) (key);
+            data.key[1] = (char) (key >> 8);
+            data.key[2] = (char) (key >> 16);
+            data.key[3] = (char) (key >> 24);
+        }
+
+        retcode = _writer->write(data, _instance_handles[key]);
+
+        data.bin_data.unloan();
+
+        if (retcode != DDS_RETCODE_OK)
+        {
+            fprintf(stderr,"Write error %d.\n", retcode);
+            return false;
+        }
+
+        return true;
+    }
+
+    void WaitForReaders(int numSubscribers)
+    {
+        DDS_PublicationMatchedStatus status;
+
+        while (true)
+        {
+            _writer->get_publication_matched_status(status);
+            if (status.current_count >= numSubscribers)
+            {
+                break;
+            }
+            perftest_cpp::MilliSleep(1000);
+        }
+    }
+
+    bool waitForPingResponse() 
+    {
+	if(_pongSemaphore != NULL) 
+	{
+	    if(!RTIOsapiSemaphore_take(_pongSemaphore, NULL)) 
+	    {
+		fprintf(stderr,"Unexpected error taking semaphore\n");
+		return false;
+	    }
+	}
+	return true;
+    }
+
+    /* time out in milliseconds */
+    bool waitForPingResponse(int timeout) 
+    {
+        struct RTINtpTime blockDurationIn;
+        RTINtpTime_packFromMillisec(blockDurationIn, 0, timeout);
+
+	if(_pongSemaphore != NULL) 
+	{
+	    if(!RTIOsapiSemaphore_take(_pongSemaphore, &blockDurationIn)) 
+	    {
+		fprintf(stderr,"Unexpected error taking semaphore\n");
+		return false;
+	    }
+	}
+	return true;
+    }    
+
+    bool notifyPingResponse() 
+    {
+	if(_pongSemaphore != NULL) 
+	{
+	    if(!RTIOsapiSemaphore_give(_pongSemaphore)) 
+	    {
+		fprintf(stderr,"Unexpected error giving semaphore\n");
+		return false;
+	    }
+	}
+	return true;
+    }
+};
+
+/*********************************************************
+ * ReceiverListener
+ */
+template <typename T>
+class ReceiverListener : public DDSDataReaderListener
+{
+  private:
+
+    typename T::Seq     _data_seq;
+    DDS_SampleInfoSeq _info_seq;
+    TestMessage       _message;
+    IMessagingCB     *_callback;
+
+  public:
+
+    ReceiverListener(IMessagingCB *callback)
+    {
+        _callback = callback;
+    }
+
+    void on_data_available(DDSDataReader *reader)
+    {
+
+        typename T::DataReader *datareader;
+
+        datareader = T::DataReader::narrow(reader);
+        if (datareader == NULL)
+        {
+            fprintf(stderr,"DataReader narrow error.\n");
+            return;
+        }
+
+        DDS_ReturnCode_t retcode = datareader->take(
+                _data_seq, _info_seq,
+                DDS_LENGTH_UNLIMITED,
+                DDS_ANY_SAMPLE_STATE,
+                DDS_ANY_VIEW_STATE,
+                DDS_ANY_INSTANCE_STATE);
+
+        if (retcode == DDS_RETCODE_NO_DATA)
+        {
+            fprintf(stderr,"called back no data\n");
+            return;
+        }
+        else if (retcode != DDS_RETCODE_OK)
+        {
+            fprintf(stderr,"Error during taking data %d\n", retcode);
+            return;
+        }
+
+        int seq_length = _data_seq.length();
+        for (int i = 0; i < seq_length; ++i)
+        {
+            if (_info_seq[i].valid_data)
+            {
+                _message.entity_id = _data_seq[i].entity_id;
+                _message.seq_num = _data_seq[i].seq_num;
+                _message.timestamp_sec = _data_seq[i].timestamp_sec;
+                _message.timestamp_usec = _data_seq[i].timestamp_usec;
+                _message.latency_ping = _data_seq[i].latency_ping;
+                _message.size = _data_seq[i].bin_data.length();
+                _message.data = (char *)_data_seq[i].bin_data.get_contiguous_bufferI();
+
+                _callback->ProcessMessage(_message);
+
+            }
+        }
+
+        retcode = datareader->return_loan(_data_seq, _info_seq);
+        if (retcode != DDS_RETCODE_OK)
+        {
+            fprintf(stderr,"Error during return loan %d.\n", retcode);
+            fflush(stderr);
+        }
+	
+    }
+
+};
+
+/*********************************************************
+ * RTISubscriber
+ */
+template <typename T>
+class RTISubscriber : public IMessagingReader
+{
+  private:
+    typename T::DataReader *_reader;
+    typename T::Seq         _data_seq;
+    DDS_SampleInfoSeq     _info_seq;
+    TestMessage           _message;
+    DDSWaitSet           *_waitset;
+    DDSConditionSeq       _active_conditions;
+
+    int      _data_idx;
+    bool      _no_data;
+
+  public:
+
+    RTISubscriber(DDSDataReader *reader)
+    {
+        _reader = T::DataReader::narrow(reader);
+
+        // null listener means using receive thread
+        if (_reader->get_listener() == NULL) {
+            DDS_WaitSetProperty_t property;
+            property.max_event_count         = RTIDDSImpl<T>::_WaitsetEventCount;
+            property.max_event_delay.sec     = (int)RTIDDSImpl<T>::_WaitsetDelayUsec / 1000000;
+            property.max_event_delay.nanosec = (RTIDDSImpl<T>::_WaitsetDelayUsec % 1000000) * 1000;
+
+            _waitset = new DDSWaitSet(property);
+           
+            DDSStatusCondition *reader_status;
+            reader_status = reader->get_statuscondition();
+            reader_status->set_enabled_statuses(DDS_DATA_AVAILABLE_STATUS);
+            _waitset->attach_condition(reader_status);
+        }
+    }
+
+    virtual void Shutdown()
+    {
+        // loan may be outstanding during shutdown
+        _reader->return_loan(_data_seq, _info_seq);
+    }
+
+    TestMessage *ReceiveMessage()
+    {
+        DDS_ReturnCode_t retcode;
+        int seq_length;
+
+        while (true) {
+            // no outstanding reads
+            if (_no_data)
+            {
+                _waitset->wait(_active_conditions, DDS_DURATION_INFINITE);
+
+                if (_active_conditions.length() == 0)
+                {
+                    //printf("Read thread woke up but no data\n.");
+                    //return NULL;
+                    continue;
+                }   
+
+                retcode = _reader->take(
+                    _data_seq, _info_seq,
+                    DDS_LENGTH_UNLIMITED,
+                    DDS_ANY_SAMPLE_STATE,
+                    DDS_ANY_VIEW_STATE,
+                    DDS_ANY_INSTANCE_STATE);
+                if (retcode == DDS_RETCODE_NO_DATA)
+                {
+                    //printf("Called back no data.\n");
+                    //return NULL;
+                    continue;
+                }
+                else if (retcode != DDS_RETCODE_OK)
+                {
+                    fprintf(stderr,"Error during taking data %d.\n", retcode);
+                    return NULL;
+                }
+
+                _data_idx = 0;
+                _no_data = false;
+            }
+
+            seq_length = _data_seq.length();
+            // check to see if hit end condition
+            if (_data_idx == seq_length)
+            {
+                _reader->return_loan(_data_seq, _info_seq);
+                _no_data = true;
+                continue;
+            }
+
+            // skip non-valid data
+            while ( (_info_seq[_data_idx].valid_data == false) && 
+                    (++_data_idx < seq_length)){
+                //No operation required
+            }
+
+             // may have hit end condition
+             if (_data_idx == seq_length) { continue; }
+
+            _message.entity_id = _data_seq[_data_idx].entity_id;
+            _message.seq_num = _data_seq[_data_idx].seq_num;
+            _message.timestamp_sec = _data_seq[_data_idx].timestamp_sec;
+            _message.timestamp_usec = _data_seq[_data_idx].timestamp_usec;
+            _message.latency_ping = _data_seq[_data_idx].latency_ping;
+            _message.size = _data_seq[_data_idx].bin_data.length();
+            _message.data = (char *)_data_seq[_data_idx].bin_data.get_contiguous_bufferI();
+
+            ++_data_idx;
+
+            return &_message;
+        }
+    }
+
+    void WaitForWriters(int numPublishers)
+    {
+        DDS_SubscriptionMatchedStatus status;
+
+        while (true)
+        {
+            _reader->get_subscription_matched_status(status);
+
+            if (status.current_count >= numPublishers)
+            {
+                break;
+            }
+            perftest_cpp::MilliSleep(1000);
+        }
+    }
+};
+
+#ifdef RTI_SECURE_PERFTEST
+
+template<typename T>
+bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
+    // configure use of security plugins, based on provided arguments
+
+    DDS_ReturnCode_t retcode;
+    // print arguments
+    printSecureArgs();
+
+    // load plugin
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.load_plugin",
+            "com.rti.serv.secure",
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property com.rti.serv.load_plugin\n");
+        return false;
+    }
+
+  #ifdef RTI_PERFTEST_DYNAMIC_LINKING
+
+    retcode = DDSPropertyQosPolicyHelper::assert_property(
+            dpQos.property,
+            "com.rti.serv.secure.create_function",
+            "RTI_Security_PluginSuite_create",
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property com.rti.serv.secure.create_function\n");
+        return false;
+    }
+
+
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.secure.library",
+            _secureLibrary.c_str(),
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property com.rti.serv.secure.library\n");
+        return false;
+    }
+
+  #else // Static library linking
+
+    retcode = DDSPropertyQosPolicyHelper::assert_pointer_property(
+            dpQos.property,
+            "com.rti.serv.secure.create_function_ptr",
+            (void *) RTI_Security_PluginSuite_create);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add pointer_property "
+                "com.rti.serv.secure.create_function_ptr\n");
+        return false;
+    }
+
+  #endif
+
+
+    // check if governance file provided
+    if (_secureGovernanceFile.empty()) {
+        // choose a pre-built governance file
+        std::string file = "resource/secure/signed_PerftestGovernance_";
+        if (_secureIsDiscoveryEncrypted) {
+            file += "Discovery";
+        }
+
+        if (_secureIsSigned) {
+            file += "Sign";
+        }
+
+        if (_secureIsDataEncrypted && _secureIsSMEncrypted) {
+            file += "EncryptBoth";
+        } else if (_secureIsDataEncrypted) {
+            file += "EncryptData";
+        } else if (_secureIsSMEncrypted) {
+            file += "EncryptSubmessage";
+        }
+
+        file = file + ".xml";
+
+        fprintf(
+                stdout,
+                "Secure: using pre-built governance file: %s\n",
+                file.c_str());
+        retcode = DDSPropertyQosPolicyHelper::add_property(
+                dpQos.property,
+                "com.rti.serv.secure.access_control.governance_file",
+                file.c_str(),
+                false);
+    } else {
+        retcode = DDSPropertyQosPolicyHelper::add_property(
+                dpQos.property,
+                "com.rti.serv.secure.access_control.governance_file",
+                _secureGovernanceFile.c_str(),
+                false);
+    }
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property "
+                "com.rti.serv.secure.access_control.governance_file\n");
+        return false;
+    }
+
+    // permissions file
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.secure.access_control.permissions_file",
+            _securePermissionsFile.c_str(),
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property "
+                "com.rti.serv.secure.access_control.permissions_file\n");
+        return false;
+    }
+
+    // permissions authority file
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.secure.access_control.permissions_authority_file",
+            _secureCertAuthorityFile.c_str(),
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property "
+                "com.rti.serv.secure.access_control.permissions_authority_file\n");
+        return false;
+    }
+
+    // certificate authority
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.secure.authentication.ca_file",
+            _secureCertAuthorityFile.c_str(),
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property "
+                "com.rti.serv.secure.authentication.ca_file\n");
+        return false;
+    }
+
+    // public key
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.secure.authentication.certificate_file",
+            _secureCertificateFile.c_str(),
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property "
+                "com.rti.serv.secure.authentication.certificate_file\n");
+        return false;
+    }
+
+    // private key
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.secure.authentication.private_key_file",
+            _securePrivateKeyFile.c_str(),
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property "
+                "com.rti.serv.secure.authentication.private_key_file\n");
+        return false;
+    }
+
+    if (_secureDebugLevel != -1) {
+        char buf[16];
+        sprintf(buf, "%d", _secureDebugLevel);
+        retcode = DDSPropertyQosPolicyHelper::add_property(
+                dpQos.property,
+                "com.rti.serv.secure.logging.log_level",
+                buf,
+                false);
+        if (retcode != DDS_RETCODE_OK) {
+            printf("Failed to add property "
+                    "com.rti.serv.secure.logging.log_level\n");
+            return false;
+        }
+    }
+
+    return true;
+}
+
+template <typename T>
+bool RTIDDSImpl<T>::validateSecureArgs()
+{
+    if (_secureUseSecure) {
+        if (_securePrivateKeyFile.empty()) {
+            if (_isPublisher) {
+                _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_PUB;
+            } else {
+                _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_SUB;
+            }
+        }
+
+        if (_secureCertificateFile.empty()) {
+            if (_isPublisher) {
+                _secureCertificateFile = SECURE_CERTIFICATE_FILE_PUB;
+            } else {
+                _secureCertificateFile = SECURE_CERTIFICATE_FILE_SUB;
+            }
+        }
+
+        if (_secureCertAuthorityFile.empty()) {
+            _secureCertAuthorityFile = SECURE_CERTAUTHORITY_FILE;
+        }
+
+        if (_securePermissionsFile.empty()) {
+            if (_isPublisher) {
+                _securePermissionsFile = SECURE_PERMISION_FILE_PUB;
+            } else {
+                _securePermissionsFile = SECURE_PERMISION_FILE_SUB;
+            }
+        }
+
+      #ifdef RTI_PERFTEST_DYNAMIC_LINKING
+        if (_secureLibrary.empty()) {
+            _secureLibrary = SECURE_LIBRARY_NAME;
+        }
+      #endif
+
+    }
+
+    return true;
+}
+
+template <typename T>
+void RTIDDSImpl<T>::printSecureArgs()
+{
+    printf("Secure Arguments:\n");
+
+    printf("\t encrypt discovery: %s\n",
+            _secureIsDiscoveryEncrypted ? "true" : "false");
+
+    printf("\t encrypt topic (user) data: %s\n",
+            _secureIsDataEncrypted ? "true" : "false");
+
+    printf("\t encrypt submessage: %s\n",
+            _secureIsSMEncrypted ? "true" : "false");
+
+    printf("\t sign data: %s\n",
+            _secureIsSigned ? "true" : "false");
+
+    printf("\t governance file: %s\n",
+            _secureGovernanceFile.empty() ?
+                    "not specified" : _secureGovernanceFile.c_str());
+
+    printf("\t permissions file: %s\n",
+            _securePermissionsFile.empty() ?
+                    "not specified" : _securePermissionsFile.c_str());
+
+    printf("\t private key file: %s\n",
+            _securePrivateKeyFile.empty() ?
+                    "not specified" : _securePrivateKeyFile.c_str());
+
+    printf("\t certificate file: %s\n",
+            _secureCertificateFile.empty() ?
+                    "not specified" : _secureCertificateFile.c_str());
+
+    printf("\t certificate authority file: %s\n",
+            _secureCertAuthorityFile.empty() ?
+                    "not specified" : _secureCertAuthorityFile.c_str());
+
+    printf("\t plugin library : %s\n",
+            _secureLibrary.empty() ? "not specified" : _secureLibrary.c_str());
+
+    if( _secureDebugLevel != -1 ){
+        printf("\t debug level: %d\n", _secureDebugLevel);
+    }
+
+}
+
+#endif
+
+/*********************************************************
+ * Initialize
+ */
+template <typename T>
+bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
+{
+    DDS_DomainParticipantQos qos; 
+    DDS_DomainParticipantFactoryQos factory_qos;
+    DomainListener *listener = new DomainListener();
+
+    _factory = DDSDomainParticipantFactory::get_instance();
+
+    if (!ParseConfig(argc, argv))
+    {
+        return false;
+    }
+
+
+    // only if we run the latency test we need to wait 
+    // for pongs after sending pings
+    _pongSemaphore = _LatencyTest ?
+	RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL) :
+	NULL;
+
+    // setup the QOS profile file to be loaded
+    _factory->get_qos(factory_qos);
+    factory_qos.profile.url_profile.ensure_length(1, 1);
+    factory_qos.profile.url_profile[0] = DDS_String_dup(_ProfileFile);
+    _factory->set_qos(factory_qos);
+
+    if (_factory->reload_profiles() != DDS_RETCODE_OK) 
+    {
+        fprintf(stderr,"Problem opening QOS profiles file %s.\n", _ProfileFile);
+        return false;
+    }
+
+
+    if (_factory->set_default_library(_ProfileLibraryName) != DDS_RETCODE_OK) 
+    {
+        fprintf(stderr,"No QOS Library named \"%s\" found in %s.\n",
+               _ProfileLibraryName, _ProfileFile);
+        return false;
+    }
+
+    // Configure DDSDomainParticipant QOS
+    _factory->get_participant_qos_from_profile(qos, "PerftestQosLibrary", "BaseProfileQos");
+
+  #ifdef RTI_SECURE_PERFTEST
+    if (_secureUseSecure) {
+        // validate arguments
+        if (!validateSecureArgs()) {
+            fprintf(stderr, "failed to configure security plugins\n");
+            return false;
+        }
+        // configure
+        if (!configureSecurePlugin(qos)) {
+            fprintf(stderr, "failed to configure security plugins\n");
+            return false;
+        }
+    }
+  #endif
+
+    // set transports to use
+    qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;
+    if (_UseTcpOnly) {
+        qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
+        DDSPropertyQosPolicyHelper::add_property(
+                qos.property,
+                "dds.transport.load_plugins",
+                "dds.transport.TCPv4.tcp1",
+                false);
+    } else if (_UseSharedMemory) {
+        qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_SHMEM;
+    } else if (_UseUdpv6) {
+        qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv6;
+    }
+
+    if (_AutoThrottle) {
+		DDSPropertyQosPolicyHelper::add_property(qos.property,
+			 "dds.domain_participant.auto_throttle.enable", "true", false);
+	}
+
+    if (!_UseTcpOnly) {
+    
+        char buf[64];
+
+        if ((_Nic != NULL) && (strlen(_Nic) >= 0)) {
+            DDSPropertyQosPolicyHelper::add_property(qos.property,
+                                                     "dds.transport.UDPv4.builtin.parent.allow_interfaces", _Nic, false);
+        }
+
+        // Shem transport properties
+        int received_message_count_max = 1024 * 1024 * 2 / _DataLen;
+
+        if (received_message_count_max < 1) {
+            received_message_count_max = 1;
+        }
+
+        sprintf(buf,"%d", received_message_count_max);
+        DDSPropertyQosPolicyHelper::add_property(qos.property,
+                                                 "dds.transport.shmem.builtin.received_message_count_max", buf, false);
+    }
+
+    // Creates the participant
+    _participant = _factory->create_participant(
+        _DomainID, qos, listener,
+        DDS_INCONSISTENT_TOPIC_STATUS |
+        DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
+        DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
+
+    if (_participant == NULL)
+    {
+        fprintf(stderr,"Problem creating participant.\n");
+        return false;
+    }
+
+    // Register the types and create the topics
+    T::TypeSupport::register_type(_participant, _typename);
+
+    // Create the DDSPublisher and DDSSubscriber
+    {       
+        _publisher = _participant->create_publisher_with_profile(
+            "PerftestQosLibrary", "BaseProfileQos", NULL, DDS_STATUS_MASK_NONE);
+        if (_publisher == NULL)
+        {
+            fprintf(stderr,"Problem creating publisher.\n");
+            return false;
+        }
+
+        _subscriber = _participant->create_subscriber_with_profile(
+            "PerftestQosLibrary", "BaseProfileQos", NULL, DDS_STATUS_MASK_NONE);
+        if (_subscriber == NULL)
+        {
+            fprintf(stderr,"Problem creating subscriber.\n");
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*********************************************************
+ * CreateWriter
+ */
+template <typename T>
+IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
+{
+    DDSDataWriter *writer = NULL;
+    DDS_DataWriterQos dw_qos;
+    std::string qos_profile;
+
+    DDSTopic *topic = _participant->create_topic(
+                       topic_name, _typename,
+                       DDS_TOPIC_QOS_DEFAULT, NULL,
+                       DDS_STATUS_MASK_NONE);
+
+    if (topic == NULL)
+    {
+        fprintf(stderr,"Problem creating topic %s.\n", topic_name);
+        return NULL;
+    }
+
+    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0)
+    {
+        if (_UsePositiveAcks)
+        {
+            qos_profile = "ThroughputQos";
+        }
+        else
+        {
+            qos_profile = "NoAckThroughputQos";
+        }
+    } else if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0) {
+        if (_UsePositiveAcks)
+        {
+            qos_profile = "LatencyQos";
+        }
+        else
+        {
+            qos_profile = "NoAckLatencyQos";
+        }
+    } else if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) == 0)
+    {
+        qos_profile = "AnnouncementQos";
+    } else {
+        fprintf(stderr,"topic name must either be %s or %s or %s.\n",
+               perftest_cpp::_ThroughputTopicName, perftest_cpp::_LatencyTopicName,
+               perftest_cpp::_AnnouncementTopicName);
+        return NULL;
+    }
+
+    if (_factory->get_datawriter_qos_from_profile(dw_qos, _ProfileLibraryName,
+            qos_profile.c_str())
+        != DDS_RETCODE_OK) {
+        fprintf(stderr,"No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
+                qos_profile.c_str(), _ProfileLibraryName, _ProfileFile);
+        return NULL;
+    }
+    
+    if (_UsePositiveAcks) {
+        dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (int)_KeepDurationUsec/1000000;
+        dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = _KeepDurationUsec%1000000;
+    }
+
+    if ((_isLargeData) && (!_isScan)) {
+        fprintf(stderr, "Using asynchronous write for %s\n", topic_name);
+        dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+        dw_qos.publish_mode.flow_controller_name =
+                DDS_String_dup("dds.flow_controller.token_bucket.fast_flow");
+    }
+
+    // only force reliability on throughput/latency topics
+    if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) != 0) {
+        if (_IsReliable) {
+            dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
+        }
+        else {
+            dw_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
+        }
+    }
+
+    // These QOS's are only set for the Throughput datawriter
+    if (qos_profile == "ThroughputQos" ||
+        qos_profile =="NoAckThroughputQos")
+    {
+        if (_BatchSize > 0) {
+            dw_qos.batch.enable = true;
+            dw_qos.batch.max_data_bytes = _BatchSize;
+            dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
+            dw_qos.writer_resource_limits.max_batches = _SendQueueSize;
+        } else {
+            dw_qos.resource_limits.max_samples = _SendQueueSize;
+        }
+
+        if (_HeartbeatPeriod.sec > 0 || _HeartbeatPeriod.nanosec > 0) {
+            // set the heartbeat_period
+            dw_qos.protocol.rtps_reliable_writer.heartbeat_period =
+                _HeartbeatPeriod;
+            // make the late joiner heartbeat compatible
+            dw_qos.protocol.rtps_reliable_writer.late_joiner_heartbeat_period =
+                _HeartbeatPeriod;
+        }
+
+        if (_FastHeartbeatPeriod.sec > 0 || _FastHeartbeatPeriod.nanosec > 0) {
+            // set the fast_heartbeat_period
+            dw_qos.protocol.rtps_reliable_writer.fast_heartbeat_period =
+                _FastHeartbeatPeriod;
+        }
+
+        if (_AutoThrottle) {
+            DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
+                    "dds.data_writer.auto_throttle.enable", "true", false);
+        }
+
+        if (_TurboMode) {
+            DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
+                    "dds.data_writer.enable_turbo_mode", "true", false);
+            dw_qos.batch.enable = false;
+            dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
+            dw_qos.writer_resource_limits.max_batches = _SendQueueSize;
+        }
+
+        dw_qos.resource_limits.initial_samples = _SendQueueSize;
+        dw_qos.resource_limits.max_samples_per_instance
+            = dw_qos.resource_limits.max_samples;
+
+        dw_qos.durability.kind = (DDS_DurabilityQosPolicyKind)_Durability;
+        dw_qos.durability.direct_communication = _DirectCommunication;
+
+        dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples = _SendQueueSize / 10;
+
+        dw_qos.protocol.rtps_reliable_writer.low_watermark = _SendQueueSize * 1 / 10;
+        dw_qos.protocol.rtps_reliable_writer.high_watermark = _SendQueueSize * 9 / 10;
+
+        dw_qos.protocol.rtps_reliable_writer.max_send_window_size = _SendQueueSize;
+        dw_qos.protocol.rtps_reliable_writer.min_send_window_size = _SendQueueSize;
+    }
+
+    if ((qos_profile == "LatencyQos" ||
+        qos_profile == "NoAckLatencyQos") &&
+        !_DirectCommunication && 
+        (_Durability == DDS_TRANSIENT_DURABILITY_QOS ||
+         _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
+        dw_qos.durability.kind = (DDS_DurabilityQosPolicyKind)_Durability;
+        dw_qos.durability.direct_communication = _DirectCommunication;
+    }
+
+    dw_qos.resource_limits.max_instances = _InstanceCount;
+    dw_qos.resource_limits.initial_instances = _InstanceCount;
+
+    if (_InstanceCount > 1) {
+        if (_InstanceHashBuckets > 0) {
+            dw_qos.resource_limits.instance_hash_buckets =
+                _InstanceHashBuckets;
+        } else {
+            dw_qos.resource_limits.instance_hash_buckets = _InstanceCount;
+        }
+    }
+
+    writer = _publisher->create_datawriter(
+        topic, dw_qos, NULL,
+        DDS_STATUS_MASK_NONE);
+    
+    if (writer == NULL)
+    {
+        fprintf(stderr,"Problem creating writer.\n");
+        return NULL;
+    }
+
+    RTIPublisher<T> *pub = new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore);
+
+    return pub;
+}
+    
+/*********************************************************
+ * CreateReader
+ */
+template <typename T>
+IMessagingReader *RTIDDSImpl<T>::CreateReader(const char *topic_name,
+                                           IMessagingCB *callback)
+{
+    ReceiverListener<T> *reader_listener = NULL;
+    DDSDataReader *reader = NULL;
+    DDS_DataReaderQos dr_qos;
+    std::string qos_profile;
+
+    DDSTopic *topic = _participant->create_topic(
+                       topic_name, _typename,
+                       DDS_TOPIC_QOS_DEFAULT, NULL,
+                       DDS_STATUS_MASK_NONE);
+
+    if (topic == NULL)
+    {
+        fprintf(stderr,"Problem creating topic %s.\n", topic_name);
+        return NULL;
+    }
+
+    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0)
+    {
+        if (_UsePositiveAcks)
+        {
+            qos_profile = "ThroughputQos";
+        }
+        else
+        {
+            qos_profile = "NoAckThroughputQos";
+        }
+    }
+    else if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0)
+    {
+        if (_UsePositiveAcks)
+        {
+            qos_profile = "LatencyQos";
+        }
+        else
+        {
+            qos_profile = "NoAckLatencyQos";
+        }
+    }
+    else if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) == 0)
+    {
+        qos_profile = "AnnouncementQos";
+    }
+    else
+    {
+        fprintf(stderr,"topic name must either be %s or %s or %s.\n",
+               perftest_cpp::_ThroughputTopicName, perftest_cpp::_LatencyTopicName,
+               perftest_cpp::_AnnouncementTopicName);
+        return NULL;
+    }
+
+    if (_factory->get_datareader_qos_from_profile(dr_qos, _ProfileLibraryName, qos_profile.c_str())
+        != DDS_RETCODE_OK)
+    {
+        fprintf(stderr,"No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
+                qos_profile.c_str(), _ProfileLibraryName, _ProfileFile);
+        return NULL;
+    }
+
+    // only force reliability on throughput/latency topics
+    if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) != 0)
+    {
+        if (_IsReliable)
+        {
+            dr_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
+        }
+        else
+        {
+            dr_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
+        }
+    }
+
+    // only apply durability on Throughput datareader
+    if (qos_profile == "ThroughputQos" || qos_profile == "NoAckThroughputQos")
+    {
+        dr_qos.durability.kind = (DDS_DurabilityQosPolicyKind)_Durability;
+        dr_qos.durability.direct_communication = _DirectCommunication;
+    }
+
+    if ((qos_profile == "LatencyQos" || qos_profile == "NoAckLatencyQos")
+            && !_DirectCommunication
+            && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
+                    || _Durability == DDS_PERSISTENT_DURABILITY_QOS))
+    {
+        dr_qos.durability.kind = (DDS_DurabilityQosPolicyKind) _Durability;
+        dr_qos.durability.direct_communication = _DirectCommunication;
+    }
+
+    dr_qos.resource_limits.initial_instances = _InstanceCount;
+    dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
+    
+    if (_InstanceCount > 1) {
+        if (_InstanceHashBuckets > 0) {
+            dr_qos.resource_limits.instance_hash_buckets =
+                _InstanceHashBuckets;
+        } else {
+            dr_qos.resource_limits.instance_hash_buckets = _InstanceCount;
+        }
+    }
+
+    if (!_UseTcpOnly && _IsMulticast) {
+            const char *multicast_addr;
+
+        if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0) {
+            multicast_addr = THROUGHPUT_MULTICAST_ADDR;
+        } else if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0) {
+            multicast_addr = LATENCY_MULTICAST_ADDR;
+        } else {
+            multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
+        }
+
+        dr_qos.multicast.value.ensure_length(1, 1);
+        dr_qos.multicast.value[0].receive_address = DDS_String_dup(
+                multicast_addr);
+        dr_qos.multicast.value[0].receive_port = 0;
+        dr_qos.multicast.value[0].transports.length(0);
+    }
+
+
+    if (callback != NULL)
+    {
+       /*  NDDSConfigLogger::get_instance()->
+        set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API, 
+                                  NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);*/
+        reader_listener = new ReceiverListener<T>(callback);
+        reader = _subscriber->create_datareader(
+            topic, dr_qos, reader_listener, DDS_DATA_AVAILABLE_STATUS);
+    }
+    else
+    {
+        reader = _subscriber->create_datareader(
+            topic, dr_qos, NULL, DDS_STATUS_MASK_NONE);
+    }
+
+    if (reader == NULL)
+    {
+        fprintf(stderr,"Problem creating reader.\n");
+        return NULL;
+    }
+
+    if (!strcmp(topic_name, perftest_cpp::_ThroughputTopicName) ||
+        !strcmp(topic_name, perftest_cpp::_LatencyTopicName)) {
+        _reader = reader;
+    }
+
+    IMessagingReader *sub = new RTISubscriber<T>(reader);
+    return sub;
+}
+
+
+
+#ifdef RTI_WIN32
+  #pragma warning(pop)
+#endif

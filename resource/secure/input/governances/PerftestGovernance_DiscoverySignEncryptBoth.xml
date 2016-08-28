@@ -23,7 +23,11 @@
      -->
     <domain_access_rules>
       <domain_rule>
-        <domain_id>*</domain_id>
+        <domains>
+          <id_range>
+            <min>0</min>
+          </id_range>
+        </domains>
         <allow_unauthenticated_join>FALSE</allow_unauthenticated_join>
         <enable_join_access_control>TRUE</enable_join_access_control>
         <discovery_protection_kind>ENCRYPT</discovery_protection_kind>
