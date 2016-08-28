@@ -1,0 +1,17 @@
+/srcC*/perftest.*
+/srcC*/perftestPlugin.*
+/srcC*/perftestSupport.*
+/srcC*/perftest_subscriber.*
+/srcC*/makefile_*
+/srcC*/objs
+/srcC*/*.vcxproj*
+/srcC*/*.vcproj*
+/srcC*/*.csproj
+/srcC*/*.sln
+/srcC*/*.sdf
+/srcC*/perftestImplPlugin.*
+/srcC*/perftestImpl.*
+/srcJava/class
+/srcJava/jar
+/srcJava/com/rti/perftest/gen
+/bin
