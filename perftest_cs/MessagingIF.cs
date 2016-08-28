@@ -1,25 +1,8 @@
-/* $Id: MessagingIF.cs,v 1.7 2014/09/22 16:28:50 jmorales Exp $
-
- (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.
- Permission to modify and use for internal purposes granted.
- This software is provided "as is", without warranty, express or implied.
-
- Modification History
- --------------------
- 5.1.0,22sep14,jm  PERFTEST-75 Fixed LargeData + Turbo-Mode. Changing max size to
-                   131072.
- 5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-65 Large data support 
-                   added for perftest.
- 5.1.0,11aug14,jm  PERFTEST-68 Added -keyed command line option.
- 1.0a,13jul10,jsr Added WaitForPingResponse with timeout
- 1.0a,07jul10,jsr Fixed NotifyPingResponse and WaitForPingResponse to
-                  return bool instead of void
- 1.0a,14may10,jsr Added NotifyPingResponse and WaitForPingResponse
- 1.0a,29may09,jsr Added detection of wrong command line parameter
- 1.0a,04may08,hhw Added entity_id, WaitForReaders();.
- 1.0a,02may08,hhw Added GetBatchSize().
- 1.0a,19mar08,hhw Created.
-===================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 using System;
 using System.Collections.Generic;

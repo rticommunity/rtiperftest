@@ -1,0 +1,79 @@
+MIME-Version: 1.0
+Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg="sha-256"; boundary="----30434C92F6E42C8602D771F7F73241F5"
+
+This is an S/MIME signed message
+
+------30434C92F6E42C8602D771F7F73241F5
+Content-Type: text/plain
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<permissions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="dds_security_permissions.xsd">
+
+    <grant name="ParticipantA">
+        <subject_name>/C=US/ST=CA/O=Real Time Innovations/CN=perftest/emailAddress=sub@rti.com</subject_name>
+        <validity>
+            <!-- Format is YYYYMMDDHH in GMT -->
+            <not_before>2013060113</not_before>
+            <not_after>2023060113</not_after>
+        </validity>
+        <allow_rule>
+            <domain_id>1</domain_id>
+            <publish>
+                <topic>Latency</topic>
+            </publish>
+            <publish>
+                <topic>Announcement</topic>
+            </publish>
+            <subscribe>
+                <topic>Throughput</topic>
+            </subscribe>
+            <subscribe>
+                <topic>Announcement</topic>
+            </subscribe>
+        </allow_rule>
+        <default>DENY</default>
+    </grant>
+</permissions>
+------30434C92F6E42C8602D771F7F73241F5
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+
+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
+
+------30434C92F6E42C8602D771F7F73241F5--
+

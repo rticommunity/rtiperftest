@@ -1,52 +1,8 @@
-/* $Id: perftest_cs.cs,v 1.15 2015/04/29 14:28:49 jmorales Exp $
-
-(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.
-Permission to modify and use for internal purposes granted.
-This software is provided "as is", without warranty, express or implied.
-
-modification history
---------------------
-5.2.0,27apr14,jm  PERFTEST-86 Removing .ini support.
-5.2.0,31oct14.jmc PERFTEST-76 Fixed segfault in ProcessMessage
-5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-65 Large data support 
-                  added for perftest.
-5.1.0,27aug14,jmc PERFTEST-62 Added -executionTime command line option
-5.1.0,27aug14,jm  Fixes for PERFTEST-71 and PERFTEST-72.
-5.1.0,26aug14,jm  Added support for -pubRate and -keyed option in perftest.ini
-                  Added logic for checking -pubRate bounds.
-5.1.0,11aug14,jm  PERFTEST-68 Added -keyed command line option.
-5.1.0,16jul14,jmc PERFTEST-52 Added -pubRate to -h
-5.1.0,15jul14,jmc PERFTEST-52 Added -pubRate command-line option.
-                  Also modifying _SpinLoopCount to be ulong
-5.1.0,19may2014,jmc PERFTEST-48 Added 99.9999% latency
-1.0a,13jul10,jsr Added WaitForPingResponse with timeout
-1.0a,09jul10,jsr Fixed LatencyListener constructor
-1.0a,08jul10,jsr Fixed LatencyListener constructor calls
-1.0a,07jul10,jsr Fixed _LatencyCount option default value
-1.0a,11may10,jsr Added LatencyTest option
-1.0a,14may09,fcs Added instances to INI
-1.0a,14may09,fcs Fixed command-line arguments processing
-1.0a,14may09,fcs Fixed output in scan mode
-1.0a,29may09,jsr Added detection of wrong command line parameter
-1.0a,23apr09,jsr Changed to stderr the error and status messages
-1.0a,21apr09,jsr Reformat the help menu
-1.0a,02oct08,eys Added 99.99% latency
-1.0a,22aug08,eys Flush after every send when initializing the channel
-1.0a,22aug08,eys decrease checking interval on subscriber to gather latency
-                 numbers
-1.0a,20aug08,eys initialize channel by writing InstanceCount initially
-1.0a,14aug08,ch  changed key to be 4 bytes long -> overhead change
-1.0a,13aug08,ch  added check to not exceed MAX_BINDATA_SIZE
-1.0a,12may08,hhw Fixed some length checks to accommodate 32 byte overhead.
-1.0a,09may08,ch  Changed OVERHEAD bytes
-1.0a,04may08,hhw Modified batch processing for sending latency count.
-                 Synchronized to perftest.cxx changes.
-1.0a,22apr08,fcs Fixed lost count
-1.0a,21apr08,ch  Added median to the ouput
-1.0a,21apr08,fcs Changed OVERHEAD bytes
-1.0a,07apr08,hhw Now printing end of test in listener to avoid race condition.
-1.0a,18mar08,hhw Created.
-===================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 using System;
 using System.Collections.Generic;
@@ -371,8 +327,6 @@ namespace PerformanceTest {
                 _MessagingImpl.PrintCmdLineHelp();
                 return false;
             }
-
-
             for (int i = 0; i < argc; ++i)
             {
                 if ( "-help".StartsWith(argv[i], true, null) )
@@ -389,6 +343,7 @@ namespace PerformanceTest {
                 if ("-pub".StartsWith(argv[i], true, null))
                 {
                     _IsPub = true;
+                    _MessagingArgv[_MessagingArgc++] = argv[i];
                 }
                 else if ("-sub".StartsWith(argv[i], true, null))
                 {

@@ -1,0 +1,16 @@
+#
+# A makefile for the x64Linux3gcc4.8.2 architecture.
+#
+
+ARCH         := x64Linux3gcc4.8.2
+DEBUG_FLAG   := -O4
+#DEBUG_FLAG   := -g
+DEFINES_ARCH_SPECIFIC := -DRTI_UNIX -DRTI_LINUX -DRTI_64BIT
+
+cxx_cc       := g++
+cxx_cc_flags := -m64
+
+cxx_ld       := g++
+cxx_ld_flags := -m64 -static-libgcc -Wl,--no-as-needed -ldl -lnsl -lm -lpthread -lrt
+
+include common.mk

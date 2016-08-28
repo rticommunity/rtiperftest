@@ -1,14 +1,8 @@
-/* ===================================================================
- (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.
- Permission to modify and use for internal purposes granted.
- This software is provided "as is", without warranty, express or implied.
-
- Modification History
- --------------------
- 5.2.0,21jul15,jm  PERF-53 Changes for CR-789.
- 5.2.0,03nov14,jm  PERF-53 Created. Using ../perftest_cpp as template for the
-                   Product behavior.
-===================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 #ifndef __RTIDDSIMPL_H__
 #define __RTIDDSIMPL_H__
@@ -17,9 +11,12 @@
 #include <vector>
 #include "test.hpp"
 #include "MessagingIF.h"
+#ifdef RTI_SECURE_PERFTEST
+#include "security/security_default.h"
+#include <sstream>
+#endif
 #include "rti/config/Logger.hpp"
 #include <dds/dds.hpp>
-
 
 template <typename T>
 class RTIDDSImpl : public IMessaging
@@ -52,6 +49,7 @@ class RTIDDSImpl : public IMessaging
     }
 
     IMessagingWriter *CreateWriter(const char *topic_name);
+
     // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
     // to get data
     IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
@@ -82,6 +80,32 @@ class RTIDDSImpl : public IMessaging
     bool         _IsDebug;
     bool         _isLargeData;
     bool         _isScan;
+    bool         _isPublisher;
+
+  #ifdef RTI_SECURE_PERFTEST
+    bool _secureUseSecure;
+    bool _secureIsSigned;
+    bool _secureIsDataEncrypted; // user data
+    bool _secureIsSMEncrypted;   // submessage
+    bool _secureIsDiscoveryEncrypted;
+    std::string _secureCertAuthorityFile;
+    std::string _secureCertificateFile;
+    std::string _securePrivateKeyFile;
+    std::string _secureGovernanceFile;
+    std::string _securePermissionsFile;
+    std::string _secureLibrary;
+    int  _secureDebugLevel;
+
+    static const std::string SECURE_PRIVATEKEY_FILE_PUB;
+    static const std::string SECURE_PRIVATEKEY_FILE_SUB;
+    static const std::string SECURE_CERTIFICATE_FILE_PUB;
+    static const std::string SECURE_CERTIFICATE_FILE_SUB;
+    static const std::string SECURE_CERTAUTHORITY_FILE;
+    static const std::string SECURE_PERMISION_FILE_PUB;
+    static const std::string SECURE_PERMISION_FILE_SUB;
+    static const std::string SECURE_LIBRARY_NAME;
+  #endif
+
     int          _WaitsetEventCount;
     unsigned int _WaitsetDelayUsec;
 
@@ -99,6 +123,12 @@ class RTIDDSImpl : public IMessaging
     dds::sub::DataReader<T> _reader;
 
     rti::core::Semaphore _pongSemaphore;
+
+  #ifdef RTI_SECURE_PERFTEST
+    void configureSecurePlugin(std::map<std::string, std::string> &dpQosProperties);
+    void printSecureArgs();
+    void validateSecureArgs();
+  #endif
 
 };
 

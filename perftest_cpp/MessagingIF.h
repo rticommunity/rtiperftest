@@ -1,30 +1,11 @@
 #ifndef __MESSAGINGIF_H__
 #define __MESSAGINGIF_H__
 
-/* $Id: MessagingIF.h,v 1.6 2014/09/22 16:28:49 jmorales Exp $
-
- (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
- Permission to modify and use for internal purposes granted.   	
- This software is provided "as is", without warranty, express or implied.
-
- Modification History
- --------------------
- 5.1.0,22sep14,jm  PERFTEST-75 Fixed LargeData + Turbo-Mode. Changing max size to
-                   131072.
- 5.1.0,16sep14,jm  PERFTEST-75 Fixed LargeData + Turbo-Mode. Changing max size to
-                   131072.
- 5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-64 Large data support 
-                   added for perftest.
- 5.1.0,28aug14,jm  PERFTEST-64 Reverting changes, since they causes issues in
-                   Java with the allocated heap.
- 5.1.0,28aug14,jm  PERFTEST-64 Added support for large data.
- 1.0a,13jul10,jsr Added waitForPingResponse with timeout
- 1.0a,02may08,hhw Added GetBatchSize().
- 1.0a,15apr08,fcs Added entity_id and WaitForWriters
- 1.0a,19mar08,hhw Created.
-===================================================================== */
-
-
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 class TestMessage
 {

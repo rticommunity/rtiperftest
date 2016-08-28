@@ -1,68 +1,8 @@
-/* $Id: PerfTest.java,v 1.13 2015/04/27 20:43:56 jmorales Exp $
-
-(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
-Permission to modify and use for internal purposes granted.   	
-This software is provided "as is", without warranty, express or implied.
-
-modification history:
---------------------
-5.2.0,27apr14,jm  PERFTEST-86 Removing .ini support. Fixing warnings.
-5.1.0,23sep14,jmc get_spin_per_microsecond was commented out. Fixed
-5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-66 Large data support 
-                  added for perftest.
-5.1.0,27aug14,jmc PERFTEST-63 Added -executionTime command line option
-                  Also modified _numIter to long
-5.1.0,26aug14,jm Added support for -pubRate in perftest.ini and 
-                 implemented checks for pubRate bounds.
-5.1.0,11aug14,jm PERFTEST-69 Fixed issue that was making jms to fail.
-5.1.0,11aug14,jm PERFTEST-69 Added -keyed command line option.
-5.1.0,16jul14,jm PERFTEST-53 Added -pubRate command-line option.
-                 _spinLoopCount modified to be a long. Deprecating -spin.
-09jul10,jsr Added new waitForPingResponse for best effort mode
-08jul10,jsr Fixing LatencyListener constructor calls
-07jul10,eys Cleanup perftest parameters
-03may10,jsr Adapted for the new Latencytest option
-21may09,fcs Fixed channel initialization
-14may09,fcs Fixed scan output
-14may09,fcs Added instances to INI
-14may09,fcs Fixed command-line arguments processing
-29may09,jsr Added detection of wrong command line parameter
-23apr09,jsr Changed to stderr the error and status messages
-21apr09,jsr Reformat the help menu
-24oct08,rbw If next size in scan is too big, do the best we can
-23oct08,rbw Fail test if send() fails
-08oct08,rbw Refactored DDS dependencies to
-            com.rti.perftest.impl.PerfTestLauncher
-22aug08,eys Flush after every send when initializing the channel
-22aug08,eys decrease checking interval on subscriber to gather latency
-            numbers
-20aug08,eys initialize channel by writing InstanceCount initially
-14aug08,ch  changed key to be 4 bytes long -> overhead change
-13aug08,ch  added check to not exceed MAX_BINDATA_SIZE
-09aug08,ch  increased sleep after FINISHED_MESSAGE send to make sure
-            it gets through in the multi-instance case
-11jun08,rbw Enable reflective test implementation loading
-12may08,hhw Fixed some length checks to accommodate 32 byte overhead.
-09may08,ch  Changed OVERHEAD
-04may08,hhw Modified batch processing.
-            Synchronized to perftest.cxx changes.
-22apr08,fcs Removed yield from spinning
-21apr08,ch  Output modifications for automation
-21apr08,fcs Changed OVERHEAD
-08apr08,rbw Fixed compile errors
-07apr08,hhw Now printing end of test in listener to avoid race condition. 
-04apr08,rbw Reverted some of yesterday's summary calculation changes
-03apr08,rbw Improved summary output
-03apr08,rbw Improvements to time calculations
-03apr08,rbw More printf() fixes
-02apr08,rbw Improved config file checking; fixed syntax error in printf()
-            calls; minor stylistic improvements
-02apr08,rbw Moved to package com.rti.perftest.harness to distinguish between
-            (1) RTI-specific test implementation and (2) generic test harness
-02apr08,rbw Implemented *.ini file parsing
-01apr08,rbw Follow Java naming conventions
-01apr08,rbw Created
-=========================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 package com.rti.perftest.harness;
 
@@ -195,8 +135,7 @@ public final class PerfTest {
     // Private Methods
     // -----------------------------------------------------------------------
 
-    private void run(IMessaging messagingImpl,
-                     String[] argv) {
+    private void run(IMessaging messagingImpl, String[] argv) {
 
         _messagingImpl = messagingImpl;
         
@@ -204,7 +143,7 @@ public final class PerfTest {
             return;
         }
 
-        if ( !_messagingImpl.initialize(_messagingArgc, _messagingArgv) ) {
+        if (!_messagingImpl.initialize(_messagingArgc, _messagingArgv)) {
             return;
         }
         _batchSize = _messagingImpl.getBatchSize();
@@ -292,6 +231,7 @@ public final class PerfTest {
         {
             if ("-pub".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isPub = true;
+                _messagingArgv[_messagingArgc++] = argv[i];
             }
             else if ("-sub".toLowerCase().startsWith(argv[i].toLowerCase())) 
             {
@@ -1108,4 +1048,4 @@ public final class PerfTest {
 }
 
 // ===========================================================================
-// End of $Id: PerfTest.java,v 1.13 2015/04/27 20:43:56 jmorales Exp $
+// End of $Id$

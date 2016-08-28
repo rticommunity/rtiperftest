@@ -1,0 +1,17 @@
+#
+# A makefile for the x64Darwin12clang4.1 architecture, which
+# corresponds to Mac OSX Mountain Lion.
+#
+
+ARCH         := x64Darwin15clang7.0
+DEBUG_FLAG   := -O3
+#DEBUG_FLAG   := -g
+DEFINES_ARCH_SPECIFIC := -DRTI_UNIX -DRTI_64BIT -DRTI_DARWIN -Wno-return-type-c-linkage
+
+cxx_cc       := clang++
+cxx_cc_flags := -m64
+
+cxx_ld       := clang++
+cxx_ld_flags := -m64 -ldl -lm -lpthread
+
+include common.mk

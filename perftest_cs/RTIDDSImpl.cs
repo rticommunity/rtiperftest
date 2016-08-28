@@ -1,63 +1,8 @@
-/* $Id: RTIDDSImpl.cs,v 1.22 2015/05/09 18:06:06 jmorales Exp $
-
- (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.
- Permission to modify and use for internal purposes granted.
- This software is provided "as is", without warranty, express or implied.
-
- modification history
- --------------------
- 5.2.0,09may15,jm  PERFTEST-86 Readers max instances not modified now, set to 
-                   DDS_LENGTH_UNLIMITED via perftest.xml.
- 5.2.0,27apr15,jm  PERFTEST-86 Removing .ini support.
- 5.1.0,22sep14,jm  PERFTEST-75 Fixed LargeData + Turbo-Mode. Changing max size to
-                   131072.
- 5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-65 Large data support 
-                   added for perftest.
- 5.1.0,02sep14,jm  PERF-37 Fixed issue when topic is inconsistent.
- 5.1.0,27aug14,jm  Fixed 3 warnings.
- 5.1.0,11aug14,jm  PERFTEST-68 Added -keyed command line option.
- 5.1.0,16jul14,jmc Fixing usage string format
- 5.1.0.9,27mar14,jmc PERFTEST-27 Fixing resource limits when using
-                     Turbo Mode
- 5.1.0,19dec13,jmc PERFTEST-3 Added autothrottle and turbomode
- 5.1.0,19dec13,jmc PERFTEST-2 window size in batching path and
-                   domain id now is 1
- 1.1b,29aug13,jmc CORE-5854 multicast disabled by default
- 1.1b,29aug13,jmc CORE-5919 Moved hardcoded QoS to XML file when
-                  possible
- 1.1b,29aug13,jmc CORE-5867 transport builtin mask to only shmem
- 1.0a,13jul10,jsr Added WaitForPingResponse with timeout
- 1.0a,07jul10,jsr Fixed NotifyPingResponse and WaitForPingResponse to
-                  return bool instead of void
- 1.0a,29jun10,jsr Fix heartbeat and fastheartbeat for windows
- 1.0a,14may10,jsr Added LatencyTest option
- 1.0a,10mar10,gn  Ported tcp related changes form c++
- 1.0a,26may09,fcs Fixed test finalization for keyed topics
- 1.0a,21may09,fcs Optimized send op for unkeyed topics
- 1.0a,14may09,fcs Added instances to INI
- 1.0a,14may09,fcs Fixed command-line arguments processing
- 1.0a,08may09,jsr Fixed default profile names
- 1.0a,29apr09,jsr Added detection of wrong command line parameter
- 1.0b,23apr09,jsr Changed to stderr the error and status messages
- 1.0b,21apr09,jsr Reformat the help menu
- 1.0b,17apr09,jsr Fixed #12322, added -waitsetDelayUsec and -waitsetEventCount
-                  command line option
- 1.0b,16apr09,jsr Fixing send method
- 1.0b,23jan09,jsr Added heartbeat period and fastheartbeat period option
- 1.0a,20aug08,eys Move InstanceCount to perftest.h
- 1.0c,11aug08,ch  Durability
- 1.0b,13may08,rbw Updated error handling code
- 1.0c,14aug08,ch  optimized changing the key value before write
- 1.0c,11aug08,ch  Key support, multi-instances, durability
- 1.0c,17jun08,rbw Fixed presentation QoS policy bug introduced earlier
- 1.0c,30may08,rbw Updated to reflect .Net API changes
- 1.0a,13may08,hhw Now using topic presentation scope.
- 1.0a,01may08,hhw Removed singleCore option.
-                  Increased shared memory buffer for shm tests
-                  KEEP_ALL is used for both reliable/unreliable.
- 1.0a,22apr08,fcs Fixed batching/best_effort scenario
- 1.0a,18mar08,hhw Created.
-===================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 using System;
 using System.Collections.Generic;
@@ -179,7 +124,23 @@ namespace PerformanceTest
             "\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n" +
             "\t                          throughput DataWriter (pub)\n" +
             "\t-enableTurboMode        - Enables the TurboMode feature in the\n" +
-            "\t                          throughput DataWriter (pub)\n"
+            "\t                          throughput DataWriter (pub)\n" +
+            "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n" +
+            "\t-secureSign                   - Sign (HMAC) discovery and user data\n" +
+            "\t-secureEncryptData            - Encrypt topic (user) data\n" +
+            "\t-secureEncryptSM              - Encrypt RTPS submessages\n" +
+            "\t-secureGovernanceFile <file>  - Governance file. If specified, the authentication,\n" +
+            "\t                                signing, and encryption arguments are ignored. The\n" +
+            "\t                                governance document configuration will be used instead\n" +
+            "\t                                Default: built using the secure options.\n" +
+            "\t-securePermissionsFile <file> - Permissions file <optional>\n" +
+            "\t                                Default: \"./resource/secure/signed_PerftestPermissionsSub.xml\"\n" +
+            "\t-secureCertAuthority <file>   - Certificate authority file <optional>\n" +
+            "\t                                Default: \"./resource/secure/cacert.pem\"\n" +
+            "\t-secureCertFile <file>        - Certificate file <optional>\n" +
+            "\t                                Default: \"./resource/secure/sub.pem\"\n" +
+            "\t-securePrivateKey <file>      - Private key file <optional>\n" +
+            "\t                                Default: \"./resource/secure/subkey.pem\"\n"
             ;
 
             Console.Error.Write(usage_string);
@@ -192,7 +153,11 @@ namespace PerformanceTest
         {
             for (int i = 0; i < argc; ++i)
             {
-                if ("-scan".StartsWith(argv[i], true, null))
+                if ("-pub".StartsWith(argv[i], true, null))
+                {
+                    _isPublisher = true;
+                }
+                else if ("-scan".StartsWith(argv[i], true, null))
                 {
                     _isScan = true;
                 } else if ("-dataLen".StartsWith(argv[i], true, null))
@@ -483,13 +448,115 @@ namespace PerformanceTest
                 else if ("-enableAutoThrottle".StartsWith(argv[i], true, null))
                 {
                     Console.Error.Write("Auto Throttling enabled. Automatically adjusting the DataWriter\'s writing rate\n");
-		    _AutoThrottle = true;
+                    _AutoThrottle = true;
                 }
                 else if ("-enableTurboMode".StartsWith(argv[i], true, null))
                 {
                     _TurboMode = true;
                 }
-                else {
+                else if ("-secureSign".StartsWith(argv[i], true, null)) 
+                {
+                    _secureIsSigned = true;
+                    _secureUseSecure = true;
+                }
+                else if ("-secureEncryptBoth".StartsWith(argv[i], true, null))
+                {
+                    _secureIsDataEncrypted = true;
+                    _secureIsSMEncrypted = true;
+                    _secureUseSecure = true;
+                }
+                else if ("-secureEncryptData".StartsWith(argv[i], true, null))
+                {
+                    _secureIsDataEncrypted = true;
+                    _secureUseSecure = true;
+                }
+                else if ("-secureEncryptSM".StartsWith(argv[i], true, null))
+                {
+                    _secureIsSMEncrypted = true;
+                    _secureUseSecure = true;
+                }
+                else if ("-secureEncryptDiscovery".StartsWith(argv[i], true, null))
+                {
+                    _secureIsDiscoveryEncrypted = true;
+                    _secureUseSecure = true;
+                } else if ("-secureGovernanceFile".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing <file> after -secure:governanceFile\n");
+                        return false;
+                    }
+                    _secureGovernanceFile  = argv[i];
+                    Console.Error.Write("Warning -- authentication, encryption, signing arguments " +
+                             "will be ignored, and the values specified by the Governance file will " +
+                             "be used instead\n");
+                    _secureUseSecure = true;
+                }
+                else if ("-securePermissionsFile".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing <file> after -secure:permissionsFile\n");
+                        return false;
+                    }
+                    _securePermissionsFile  = argv[i];
+                    _secureUseSecure = true;
+                }
+                else if ("-secureCertAuthority".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing <file> after -secure:certAuthority\n");
+                        return false;
+                    }
+                    _secureCertAuthorityFile = argv[i];
+                    _secureUseSecure = true;
+                }
+                else if ("-secureCertFile".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing <file> after -secure:certFile\n");
+                        return false;
+                    }
+                    _secureCertificateFile = argv[i];
+                    _secureUseSecure = true;
+                }
+                else if ("-securePrivateKey".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing <file> after -secure:privateKey\n");
+                        return false;
+                    }
+                    _securePrivateKeyFile = argv[i];
+                    _secureUseSecure = true;
+                }
+                else if ("-secureLibrary".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing <library> after -secure:privateKey\n");
+                        return false;
+                    }
+                    _secureLibrary = argv[i];
+                    _secureUseSecure = true;
+                }
+                else if ("-secureDebug".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing <count> after -secureDebug\n");
+                        return false;
+                    }
+                    if (!Int32.TryParse(argv[i], out _secureDebugLevel))
+                    {
+                        Console.Error.Write("Bad value for -secureDebug\n");
+                        return false;
+                    }
+                }
+                else
+                {
                     Console.Error.Write(argv[i] + ": not recognized\n");
                     return false;
                 }
@@ -946,6 +1013,15 @@ namespace PerformanceTest
             // Configure DDSDomainParticipant QOS
             _factory.get_participant_qos_from_profile(qos, "PerftestQosLibrary", "BaseProfileQos");
 
+            if (_secureUseSecure) {
+                // validate arguments
+                if (!ValidateSecureArgs()) {
+                    Console.Error.WriteLine("Failure validating arguments");
+                    return false;
+                }
+                ConfigureSecurePlugin(qos);
+            }
+
             // set transports to use
             qos.transport_builtin.mask = (int)DDS.TransportBuiltinKind.TRANSPORTBUILTIN_UDPv4;
             if (_UseTcpOnly)
@@ -1041,6 +1117,248 @@ namespace PerformanceTest
             return true;
         }
 
+        /*********************************************************
+         * ValidateSecureArgs
+         */
+        private bool ValidateSecureArgs()
+        {
+            if (_secureUseSecure) {
+                if (_securePrivateKeyFile == null) {
+                    if (_isPublisher) {
+                        _securePrivateKeyFile = SECUREPRIVATEKEYFILEPUB;
+                    } else {
+                        _securePrivateKeyFile = SECUREPRIVATEKEYFILESUB;
+                    }
+                }
+
+                if (_secureCertificateFile == null) {
+                    if (_isPublisher) {
+                        _secureCertificateFile = SECURECERTIFICATEFILEPUB;
+                    } else {
+                        _secureCertificateFile = SECURECERTIFICATEFILESUB;
+                    }
+                }
+
+                if (_secureCertAuthorityFile == null) {
+                    _secureCertAuthorityFile = SECURECERTAUTHORITYFILE;
+                }
+
+                if (_securePermissionsFile == null) {
+                    if (_isPublisher) {
+                        _securePermissionsFile = SECUREPERMISIONFILEPUB;
+                    } else {
+                        _securePermissionsFile = SECUREPERMISIONFILESUB;
+                    }
+                }
+
+                if (_secureLibrary == null) {
+                    _secureLibrary = SECURELIBRARYNAME;
+                }
+            }
+
+            return true;
+        }
+
+        /*********************************************************
+         * printSecureArgs
+         */
+        private void PrintSecureArgs()
+        {
+
+            string secure_arguments_string =
+                    "Secure Arguments:\n" +
+                    "\t encrypt discovery: " + _secureIsDiscoveryEncrypted + "\n" +
+                    "\t encrypt topic (user) data: " + _secureIsDataEncrypted + "\n" +
+                    "\t encrypt submessage: " + _secureIsSMEncrypted + "\n" +
+                    "\t sign data: " + _secureIsSigned + "\n";
+
+            if (_secureGovernanceFile != null)
+            {
+                secure_arguments_string += "\t governance file: " + _secureGovernanceFile
+                        + "\n";
+            }
+            else
+            {
+                secure_arguments_string += "\t governance file: Not specified\n";
+            }
+
+            if (_securePermissionsFile != null)
+            {
+                secure_arguments_string += "\t permissions file: " + _securePermissionsFile
+                        + "\n";
+            }
+            else
+            {
+                secure_arguments_string += "\t permissions file: Not specified\n";
+            }
+
+            if (_securePrivateKeyFile != null)
+            {
+                secure_arguments_string += "\t private key file: " + _securePrivateKeyFile
+                        + "\n";
+            }
+            else
+            {
+                secure_arguments_string += "\t private key file: Not specified\n";
+            }
+
+            if (_secureCertificateFile != null)
+            {
+                secure_arguments_string += "\t certificate file: " + _secureCertificateFile
+                        + "\n";
+            }
+            else
+            {
+                secure_arguments_string += "\t certificate file: Not specified\n";
+            }
+
+            if (_secureCertAuthorityFile != null)
+            {
+                secure_arguments_string += "\t certificate authority file: "
+                        + _secureCertAuthorityFile + "\n";
+            }
+            else
+            {
+                secure_arguments_string += "\t certificate authority file: Not specified\n";
+            }
+
+            if (_secureLibrary != null)
+            {
+                secure_arguments_string += "\t plugin library: " + _secureLibrary + "\n";
+            }
+            else
+            {
+                secure_arguments_string += "\t plugin library: Not specified\n";
+            }
+
+            if (_secureDebugLevel != -1)
+            {
+                secure_arguments_string += "\t debug level: " + _secureDebugLevel + "\n";
+            }
+            Console.Error.Write(secure_arguments_string);
+        }
+
+        /*********************************************************
+         * ConfigureSecurePlugin
+         */
+        private void ConfigureSecurePlugin(DDS.DomainParticipantQos dpQos)
+        {
+            // configure use of security plugins, based on provided arguments
+
+            // print arguments
+            PrintSecureArgs();
+
+            // load plugin
+            DDS.PropertyQosPolicyHelper.add_property(
+                    dpQos.property_qos,
+                    "com.rti.serv.load_plugin",
+                    "com.rti.serv.secure",
+                    false);
+
+            DDS.PropertyQosPolicyHelper.add_property(
+                    dpQos.property_qos,
+                    "com.rti.serv.secure.create_function",
+                    "RTI_Security_PluginSuite_create",
+                    false);
+
+            DDS.PropertyQosPolicyHelper.add_property(
+                    dpQos.property_qos,
+                    "com.rti.serv.secure.library",
+                    _secureLibrary,
+                    false);
+
+            // check if governance file provided
+            if (_secureGovernanceFile == null)
+            {
+                // choose a pre-built governance file
+                StringBuilder file = new StringBuilder("resource/secure/signed_PerftestGovernance_");
+
+                if (_secureIsDiscoveryEncrypted)
+                {
+                    file.Append("Discovery");
+                }
+
+                if (_secureIsSigned)
+                {
+                    file.Append("Sign");
+                }
+
+                if (_secureIsDataEncrypted && _secureIsSMEncrypted)
+                {
+                    file.Append("EncryptBoth");
+                }
+                else if (_secureIsDataEncrypted)
+                {
+                    file.Append("EncryptData");
+                }
+                else if (_secureIsSMEncrypted)
+                {
+                    file.Append("EncryptSubmessage");
+                }
+
+                file.Append(".xml");
+
+                Console.Error.WriteLine("Secure: using pre-built governance file:" +
+                        file.ToString());
+                DDS.PropertyQosPolicyHelper.add_property(
+                        dpQos.property_qos,
+                        "com.rti.serv.secure.access_control.governance_file",
+                        file.ToString(),
+                        false);
+            }
+            else
+            {
+                DDS.PropertyQosPolicyHelper.add_property(
+                        dpQos.property_qos,
+                        "com.rti.serv.secure.access_control.governance_file",
+                        _secureGovernanceFile,
+                        false);
+            }
+
+            // permissions file
+            DDS.PropertyQosPolicyHelper.add_property(
+                    dpQos.property_qos,
+                    "com.rti.serv.secure.access_control.permissions_file",
+                    _securePermissionsFile,
+                    false);
+
+            // permissions authority file
+            DDS.PropertyQosPolicyHelper.add_property(
+                    dpQos.property_qos,
+                    "com.rti.serv.secure.access_control.permissions_authority_file",
+                    _secureCertAuthorityFile,
+                    false);
+
+            // certificate authority
+            DDS.PropertyQosPolicyHelper.add_property(
+                    dpQos.property_qos,
+                    "com.rti.serv.secure.authentication.ca_file",
+                    _secureCertAuthorityFile,
+                    false);
+
+            // public key
+            DDS.PropertyQosPolicyHelper.add_property(
+                    dpQos.property_qos,
+                    "com.rti.serv.secure.authentication.certificate_file",
+                    _secureCertificateFile,
+                    false);
+
+            // private key
+            DDS.PropertyQosPolicyHelper.add_property(
+                    dpQos.property_qos,
+                    "com.rti.serv.secure.authentication.private_key_file",
+                    _securePrivateKeyFile,
+                    false);
+
+            if (_secureDebugLevel != -1)
+            {
+                DDS.PropertyQosPolicyHelper.add_property(
+                        dpQos.property_qos,
+                        "com.rti.serv.secure.logging.log_level",
+                        _secureDebugLevel.ToString(),
+                        false);
+            }
+        }
 
         /*********************************************************
           * CreateWriter
@@ -1248,7 +1566,6 @@ namespace PerformanceTest
             return pub;
         }
 
-
         /*********************************************************
          * CreateReader
          */
@@ -1438,6 +1755,26 @@ namespace PerformanceTest
         private bool   _IsDebug = false;
         private bool   _isLargeData = false;
         private bool   _isScan = false;
+        private bool   _isPublisher = false;
+
+        /* Security related variables */
+        private bool _secureUseSecure = false;
+        private bool _secureIsSigned = false;
+        private bool _secureIsDataEncrypted = false; // User Data
+        private bool _secureIsSMEncrypted = false; // Sub-message
+        private bool _secureIsDiscoveryEncrypted = false;
+        private string _secureCertAuthorityFile = null;
+        private string _secureCertificateFile = null;
+        private string _securePrivateKeyFile = null;
+
+        /*
+         * if _GovernanceFile is specified, overrides the options for
+         * signing, encrypting, and authentication.
+         */
+        private string _secureGovernanceFile = null;
+        private string _securePermissionsFile = null;
+        private string _secureLibrary = null;
+        private int _secureDebugLevel = -1;
 
 
         private DDS.Duration_t _HeartbeatPeriod = DDS.Duration_t.DURATION_ZERO;     /* this means, use the perftest.xml QoS file value*/
@@ -1449,6 +1786,14 @@ namespace PerformanceTest
         private static string THROUGHPUT_MULTICAST_ADDR = "239.255.1.1";
         private static string LATENCY_MULTICAST_ADDR = "239.255.1.2";
         private static string ANNOUNCEMENT_MULTICAST_ADDR = "239.255.1.100";
+        private static string SECUREPRIVATEKEYFILEPUB = "./resource/secure/pubkey.pem";
+        private static string SECUREPRIVATEKEYFILESUB = "./resource/secure/subkey.pem";
+        private static string SECURECERTIFICATEFILEPUB = "./resource/secure/pub.pem";
+        private static string SECURECERTIFICATEFILESUB = "./resource/secure/sub.pem";
+        private static string SECURECERTAUTHORITYFILE = "./resource/secure/cacert.pem";
+        private static string SECUREPERMISIONFILEPUB = "./resource/secure/signed_PerftestPermissionsPub.xml";
+        private static string SECUREPERMISIONFILESUB = "./resource/secure/signed_PerftestPermissionsSub.xml";
+        private static string SECURELIBRARYNAME = "nddssecurity";
         private const string _ProfileLibraryName = "PerftestQosLibrary";
 
         private DDS.DomainParticipantFactory _factory = null;

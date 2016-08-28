@@ -6,7 +6,7 @@
 ARCH         := x64Darwin14clang6.0
 DEBUG_FLAG   := -O3
 #DEBUG_FLAG   := -g
-DEFINES_ARCH_SPECIFIC := -DRTI_UNIX -DRTI_64BIT -DRTI_DARWIN -DRTI_DARWIN10 -Wno-return-type-c-linkage
+DEFINES_ARCH_SPECIFIC := -DRTI_UNIX -DRTI_64BIT -DRTI_DARWIN -Wno-return-type-c-linkage
 
 cxx_cc       := clang++
 cxx_cc_flags := -m64

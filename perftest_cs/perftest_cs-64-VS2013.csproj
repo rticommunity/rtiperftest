@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>perftest_cs</RootNamespace>
     <AssemblyName>perftest_cs</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>2.0</OldToolsVersion>
@@ -56,7 +56,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\DDSTypesManaged\bin\x64Win64VS2013\Debug\DDSTypesManaged-64-VS2013.dll</HintPath>
     </Reference>
-    <Reference Include="nddsdotnet45, Version=4.3.1.36219, Culture=neutral, processorArchitecture=x64">
+    <Reference Include="nddsdotnet451, Version=4.3.1.36219, Culture=neutral, processorArchitecture=x64">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(NDDSHOME)\lib\x64Win64VS2013\nddsdotnet451.dll</HintPath>
       <Private>True</Private>

@@ -1,71 +1,8 @@
-/* $Id: perftest_cpp.cxx,v 1.23 2015/07/22 22:17:26 jmorales Exp $
-
- (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.
- Permission to modify and use for internal purposes granted.
- This software is provided "as is", without warranty, express or implied.
-
- Modification History
- --------------------
- 5.2.0,22jul15,jm  PERFTEST-90 The getTime function uses now our high precision clock.
- 5.2.0,09may15,jm  PERF-35 Modified std::cerr to fprintf to unify criteria.
- 5.2.0,27apr14,jm  PERFTEST-86 Removing .ini support. Fixing warnings.
- 5.2.0,31oct14,jmc PERFTEST-76 Fixed segfault in ProcessMessage
- 5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-64 Large data support 
-                   added for perftest.
- 5.1.0,28aug14,jm  PERFTEST-64 Reverting changes, since they causes issues in
-                   Java with the allocated heap.
- 5.1.0,28aug14,jm  PERFTEST-64 Added support for large data.
- 5.1.0,26aug14,jm  Added support for -pubRate and -keyed option in perftest.ini
-                   Added logic for checking -pubRate bounds.
- 5.1.0,22aug14,jmc PERFTEST-72 Fixed _latency_history length
- 5.1.0,22aug14,jmc PERFTEST-58 Added interval checking for -pubRate
- 5.1.0,22aug14,jmc PERFTEST-71 Changed default value of _NumIter
- 5.1.0,20aug14,jmc PERFTEST-61 Added -executionTime command line option
- 5.1.0,20aug14,jm  Changes in the implementation for -keyed using std:cerr instead
-                   of the previous fprintf(stderr....). This change will need to
-                   be done for everything else (since this Standard cpp).
- 5.1.0,11aug14,jm  PERFTEST-57 Added -keyed command line option.
- 5.1.0,16jul14,jmc PERFTEST-51 Added -pubRate to -h and fixed format of -h
- 5.1.0,15jul14,jmc Modifying _SpinLoopCount to be unsigned long long
- 5.1.0,15jul14,jmc PERFTEST-51 Added -pubRate command-line option
- 5.1.0,19may2014,jmc PERFTEST-47 Added 99.9999% latency
- 1.0b,24jul10,jsr Added MAX_BINDATA_SIZE check
- 1.0b,13jul10,jsr Removed goto to keep consistency through languages, only
-                  release semaphore when it is a latency pong
- 1.0b,13jul10,jsr Added waitForPingResponse with timeout
- 1.0b,07jul10,jsr Fixing end loop
- 1.0b,07jul10,eys Cleanup perftest parameters
- 1.0b,19apr10,acr Added latencyTest
- 1.0b,06apr10,jsr Fixed RTIOsapiThread_new
- 1.0a,14may09,fcs Added instances to INI
- 1.0a,14may09,fcs Fixed command-line arguments processing
- 1.0a,14may09,fcs Fixed output in scan mode
- 1.0a,30apr09,jsr Added fflush to ensure the correct output
- 1.0a,29apr09,jsr Added detection of wrong command line parameter
- 1.0a,23apr09,jsr Changed to stderr the error and status messages
- 1.0a,21apr09,jsr Reformat the help menu
- 1.0a,03dec08,jsr Added -HeartbeatPeriod and -FastHeartbeatPeriod options
- 1.0a,02oct08,eys Added 99.99% latency
- 1.0a,22aug08,eys Flush after every send when initializing the channel
- 1.0a,22aug08,eys decrease checking interval on subscriber to gather latency
-                  numbers
- 1.0a,20aug08,eys initialize channel by writing InstanceCount initially
- 1.0a,13aug08,ch  added check to not exceed MAX_BINDATA_SIZE
- 1.0a,09aug08,ch  increased sleep after FINISHED_MESSAGE send to make sure
-                  it gets through in the multi-instance case
- 1.0a,10jun07,fcs Fixed _last_seq_num allocation
- 1.0a,12may08,hhw Fixed some length checks to accommodate 32 byte overhead.
- 1.0a,09may08,ch  Added keyed type support
- 1.0a,04may08,hhw Modified batch processing.
- 1.0a,22apr08,fcs Removed sleep from spinning
- 1.0a,22apr08,fcs Fixed lost count
- 1.0a,21apr08,ch  Output modifications for automation
- 1.0a,21apr08,fcs Support for multiple publishers
- 1.0a,12apr08,fcs Fixed batch ping
- 1.0a,07apr08,hhw Now printing end of test in listener to avoid race condition.
- 1.0a,19mar08,hhw Created.
-
-===================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 #include "perftest_cpp.h"
 #include "RTIDDSImpl.h"
@@ -81,7 +18,13 @@ int  perftest_cpp::_SubID = 0;
 int  perftest_cpp::_PubID = 0;
 bool perftest_cpp::_PrintIntervals = true;
 bool perftest_cpp::_IsDebug = false;
-struct RTIClock* perftest_cpp::clock = RTIHighResolutionClock_new();
+
+/* Clock related variables */
+struct RTIClock* perftest_cpp::_Clock = RTIHighResolutionClock_new();
+struct RTINtpTime perftest_cpp::_ClockTime_aux = RTI_NTP_TIME_ZERO;
+RTI_UINT64 perftest_cpp::_Clock_sec = 0;
+RTI_UINT64 perftest_cpp::_Clock_usec = 0;
+
 bool perftest_cpp::_testCompleted = false;
 const char *perftest_cpp::_LatencyTopicName = "Latency";
 const char *perftest_cpp::_AnnouncementTopicName = "Announcement";
@@ -149,8 +92,8 @@ int perftest_cpp::Run(int argc, char *argv[])
  */
 perftest_cpp::~perftest_cpp()
 {
-    if (perftest_cpp::clock != NULL) {
-        RTIHighResolutionClock_delete(perftest_cpp::clock);
+    if (perftest_cpp::_Clock != NULL) {
+        RTIHighResolutionClock_delete(perftest_cpp::_Clock);
     }
     
     for (int i = 0; i< _MessagingArgc; ++i) {
@@ -303,6 +246,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         if (IS_OPTION(argv[i], "-pub"))
         {
             _IsPub = true;
+            _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
+            _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-sub"))
         {
@@ -350,12 +295,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         else if (IS_OPTION(argv[i], "-dataLen"))
         {
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
             _MessagingArgc++;
 
             if ((i == (argc-1)) || *argv[++i] == '-')
@@ -365,12 +304,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             }
 
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
             _MessagingArgc++;
 
             _DataLen = strtol(argv[i], NULL, 10);
@@ -459,12 +392,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             _IsReliable = false;
 
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
             _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-latencyTest"))
@@ -472,23 +399,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             _LatencyTest = true;
 
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
             _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-instances"))
         {
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
             _MessagingArgc++;
 
             if ((i == (argc-1)) || *argv[++i] == '-')
@@ -498,12 +413,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             }
 
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
             _MessagingArgc++;
 
             _InstanceCount = strtol(argv[i], NULL, 10);
@@ -519,12 +428,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             _IsDebug = true;
 
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
             _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-pubRate")) {
@@ -565,12 +468,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
         } else {
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
             _MessagingArgc++;
         }
     }
@@ -709,9 +606,7 @@ class ThroughputListener : public IMessagingCB
                 }
 
                 // store the info for this interval
-                struct RTINtpTime _StartTime;
-                RTINtpTime_setZero(&_StartTime);
-                unsigned long long now = perftest_cpp::GetTimeUsec(&_StartTime);
+                unsigned long long now = perftest_cpp::GetTimeUsec();
 
                 interval_time = now - begin_time;
                 interval_packets_received = packets_received;
@@ -749,9 +644,7 @@ class ThroughputListener : public IMessagingCB
         if (message.size == perftest_cpp::LENGTH_CHANGED_SIZE)
         {
             // store the info for this interval
-            struct RTINtpTime _StartTime;
-            RTINtpTime_setZero(&_StartTime);
-            unsigned long long now = perftest_cpp::GetTimeUsec(&_StartTime);
+            unsigned long long now = perftest_cpp::GetTimeUsec();
 
             // may have many length changed packets to support best effort
             if (interval_data_length != last_data_length)
@@ -803,9 +696,7 @@ class ThroughputListener : public IMessagingCB
                 _last_seq_num[i] = 0;
             }
 
-            struct RTINtpTime _StartTime;
-            RTINtpTime_setZero(&_StartTime);
-            begin_time = perftest_cpp::GetTimeUsec(&_StartTime);
+            begin_time = perftest_cpp::GetTimeUsec();
 
             if (perftest_cpp::_PrintIntervals) {
                 printf("\n\n********** New data length is %d\n",
@@ -924,7 +815,7 @@ int perftest_cpp::Subscriber()
     // Send announcement message
     TestMessage message;
     message.entity_id = _SubID;
-    message.data = "";
+    message.data = NULL;
     message.size = 0;
     announcement_writer->Send(message);
     announcement_writer->Flush();
@@ -943,15 +834,12 @@ int perftest_cpp::Subscriber()
     double mps_ave = 0.0, bps_ave = 0.0;
     unsigned long long msgsent, bytes, last_msgs, last_bytes;
 
-    struct RTINtpTime _StartTime;
-    RTINtpTime_setZero(&_StartTime);
-
-    now = GetTimeUsec(&_StartTime);
+    now = GetTimeUsec();
 
     while (true) {
         prev_time = now;
         MilliSleep(1000);
-        now = GetTimeUsec(&_StartTime);
+        now = GetTimeUsec();
 
         if (reader_listener->end_test)
         {
@@ -1090,10 +978,8 @@ class LatencyListener : public IMessagingCB
         unsigned int usec;
         double latency_ave;
         double latency_std;
-        struct RTINtpTime _StartTime;
-        RTINtpTime_setZero(&_StartTime);
 
-        now = perftest_cpp::GetTimeUsec(&_StartTime);
+        now = perftest_cpp::GetTimeUsec();
 
         switch (message.size)
         {
@@ -1292,8 +1178,6 @@ int perftest_cpp::Publisher()
     IMessagingReader *announcement_reader;
     unsigned long num_latency;
     int initializeSampleCount = 50;
-    struct RTINtpTime _StartTime;
-    RTINtpTime_setZero(&_StartTime);
 
     // create throughput/ping writer
     writer = _MessagingImpl->CreateWriter(_ThroughputTopicName);
@@ -1446,8 +1330,7 @@ int perftest_cpp::Publisher()
     unsigned long long spin_sample_period = 1;
     unsigned long long rate = 0;
 
-    RTINtpTime_setZero(&_StartTime);
-    time_last_check = perftest_cpp::GetTimeUsec(&_StartTime);
+    time_last_check = perftest_cpp::GetTimeUsec();
 
     /* Minimum value for spin_sample_period will be 1 so we execute 100 times
        the control loop every second, or every sample if we want to send less
@@ -1474,8 +1357,7 @@ int perftest_cpp::Publisher()
                 (loop > 0) &&
                 (loop % spin_sample_period == 0)) {
 
-            RTINtpTime_setZero(&_StartTime);
-            time_now = perftest_cpp::GetTimeUsec(&_StartTime);
+            time_now = perftest_cpp::GetTimeUsec();
 
             time_delta = time_now - time_last_check;
             time_last_check = time_now;
@@ -1612,7 +1494,7 @@ int perftest_cpp::Publisher()
 
                 // Each time ask a different subscriber to echo back
                 pingID = num_pings % _NumSubscribers;
-                unsigned long long now = GetTimeUsec(&_StartTime);
+                unsigned long long now = GetTimeUsec();
                 message.timestamp_sec = (int)((now >> 32) & 0xFFFFFFFF);
                 message.timestamp_usec = (unsigned int)(now & 0xFFFFFFFF);
 
@@ -1692,13 +1574,15 @@ inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds) {
   #endif
 }
 
-inline unsigned long long perftest_cpp::GetTimeUsec(struct RTINtpTime *now)
-{    
-    RTI_INT32 sec = 0;
-    RTI_UINT32 usec = 0;
-    perftest_cpp::clock->getTime(perftest_cpp::clock, now);
-    RTINtpTime_unpackToMicrosec(sec, usec, *now);
-    return (RTI_UINT64)usec + 1000000*(RTI_UINT64)sec;
+inline unsigned long long perftest_cpp::GetTimeUsec() {
+    perftest_cpp::_Clock->getTime(
+            perftest_cpp::_Clock,
+            &perftest_cpp::_ClockTime_aux);
+    RTINtpTime_unpackToMicrosec(
+            perftest_cpp::_Clock_sec,
+            perftest_cpp::_Clock_usec,
+            perftest_cpp::_ClockTime_aux);
+    return perftest_cpp::_Clock_usec + 1000000 * perftest_cpp::_Clock_sec;
 }
 
 #ifdef RTI_WIN32
@@ -1715,13 +1599,7 @@ inline void perftest_cpp::Timeout(int sign) {
 
 char * perftest_cpp::StringDup(const char * str)
 {
-    char * result = NULL;
-
-    result = new char[strlen(str) + 1];
-
-    if (result != NULL) {
-        strcpy(result, str);
-    }
-
+    char * result = new char[strlen(str) + 1];
+    strcpy(result, str);
     return result;
 }

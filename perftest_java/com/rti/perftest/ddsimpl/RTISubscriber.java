@@ -1,17 +1,8 @@
-/* $Id: RTISubscriber.java,v 1.4 2014/08/12 10:21:28 jmorales Exp $
-
-(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
-Permission to modify and use for internal purposes granted.   	
-This software is provided "as is", without warranty, express or implied.
-
-modification history:
---------------------
-5.1.0,11aug14,jm PERFTEST-69 Added -keyed command line option.
-04may08,hhw Added WaitForWriters()
-02apr08,rbw Fixed syntax error in printf() calls
-01apr08,rbw Follow Java naming conventions
-01apr08,rbw Created
-=========================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 package com.rti.perftest.ddsimpl;
 
@@ -184,4 +175,4 @@ import com.rti.perftest.gen.MAX_BINDATA_SIZE;
 }
 
 // ===========================================================================
-// End of $Id: RTISubscriber.java,v 1.4 2014/08/12 10:21:28 jmorales Exp $
+// End of $Id$

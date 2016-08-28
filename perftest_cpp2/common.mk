@@ -10,8 +10,14 @@ cxx_ld_flags += $(DEBUG_FLAG)
 syslibs      += -ldl -lm -lpthread
 
 DEFINES_ARCH_SPECIFIC += -DRTI_UNIX
+ifdef RTI_SECURE_PERFTEST
+DEFINES_CUSTOM += -DRTI_SECURE_PERFTEST
+endif
+ifdef RTI_PERFTEST_DYNAMIC_LINKING
+DEFINES_CUSTOM += -DRTI_PERFTEST_DYNAMIC_LINKING
+endif
 
-DEFINES       = $(DEFINES_ARCH_SPECIFIC)
+DEFINES = $(DEFINES_ARCH_SPECIFIC) $(DEFINES_CUSTOM)
 
 ifneq ($(findstring -g, $(DEBUG_FLAG)),)
   # debug
@@ -38,13 +44,28 @@ INCLUDES      = -I. \
 
 
 LIBS          = -L$(NDDSHOME)/lib/$(ARCH)
-ifneq ($(findstring -g, $(DEBUG_FLAG)),)
-  # debug
-  LIBS       += -lnddscpp2zd -lnddscppzd -lnddsczd -lnddscorezd
-else
-  # not debug
-  LIBS       += -lnddscpp2z -lnddscppz  -lnddscz  -lnddscorez
+
+ifndef RTI_PERFTEST_DYNAMIC_LINKING
+	STATICLIBSUFFIX = z
 endif
+
+ifneq ($(findstring -g, $(DEBUG_FLAG)),)
+	OPENSSLLIBDIR = debug
+	DEBUGLIBSUFFIX = d
+else
+	OPENSSLLIBDIR = release
+endif
+
+LIBSUFFIX = $(STATICLIBSUFFIX)$(DEBUGLIBSUFFIX)
+
+LIBS       += -lnddscpp2$(STATICLIBSUFFIX) -lnddsc$(STATICLIBSUFFIX) -lnddscore$(STATICLIBSUFFIX)
+ifdef RTI_SECURE_PERFTEST
+  ifndef RTI_PERFTEST_DYNAMIC_LINKING
+    LIBS       += -lnddssecurity$(STATICLIBSUFFIX)
+    LIBS       += -L$(RTI_OPENSSLHOME)/$(OPENSSLLIBDIR)/lib -lssl$(STATICLIBSUFFIX) -lcrypto$(STATICLIBSUFFIX)
+  endif
+endif
+
 LIBS         += $(syslibs)
 
 EXEC         := perftest_cpp2

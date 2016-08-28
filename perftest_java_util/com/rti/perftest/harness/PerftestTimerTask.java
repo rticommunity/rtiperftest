@@ -1,13 +1,8 @@
-/* $Id: PerftestTimerTask.java,v 1.1 2014/08/27 11:35:57 juanjo Exp $
-
-(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
-Permission to modify and use for internal purposes granted.   	
-This software is provided "as is", without warranty, express or implied.
-
-modification history:
---------------------
-5.1.0,27aug14,jmc PERFTEST-63 Created.
-=========================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 package com.rti.perftest.harness;
 
@@ -44,4 +39,4 @@ public class PerftestTimerTask extends TimerTask {
 
 }
 // ===========================================================================
-// End of $Id: PerftestTimerTask.java,v 1.1 2014/08/27 11:35:57 juanjo Exp $
+// End of $Id$

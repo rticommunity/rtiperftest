@@ -1,26 +1,8 @@
-/* $Id: ThroughputListener.java,v 1.3 2014/10/31 12:04:31 juanjo Exp $
-
-(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
-Permission to modify and use for internal purposes granted.   	
-This software is provided "as is", without warranty, express or implied.
-
-modification history:
---------------------
-5.2.0,31oct14 jmc PERFTEST-76 Fixed segfault in processMessage
-14may09,fcs Fixed scan output
-23oct08,rbw Fail test if send() fails
-12may08,hhw Fixed some length checks to accommodate 32 byte overhead.
-02may08,hhw Augmented for N to 1 tests.
-22apr08,fcs Fixed missing packets count
-21apr08,ch  Output modifications for automation
-08apr08,rbw Fixed compile errors; eliminated duplicate _beginTime init
-07apr08,hhw Now printing end of test in listener to avoid race condition.
-03apr08,rbw Fixed initialization of test's beginning time
-02apr08,rbw Moved to package com.rti.perftest.harness to distinguish between
-            (1) RTI-specific test implementation and (2) generic test harness
-01apr08,rbw Follow Java naming conventions
-01apr08,rbw Created
-=========================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 package com.rti.perftest.harness;
 
@@ -282,4 +264,4 @@ import com.rti.perftest.TestMessage;
 }
 
 // ===========================================================================
-// End of $Id: ThroughputListener.java,v 1.3 2014/10/31 12:04:31 juanjo Exp $
+// End of $Id$

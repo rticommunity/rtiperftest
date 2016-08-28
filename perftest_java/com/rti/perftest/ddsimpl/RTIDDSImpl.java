@@ -1,66 +1,8 @@
-/* $Id: RTIDDSImpl.java,v 1.17 2015/05/09 18:06:06 jmorales Exp $
-
-(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
-Permission to modify and use for internal purposes granted.   	
-This software is provided "as is", without warranty, express or implied.
-
-modification history:
---------------------
-5.2.0,09may15,jm  PERFTEST-86 Reader's max instances not modified now, set to 
-                  DDS_LENGTH_UNLIMITED via perftest.xml.
-5.2.0,27apr14,jm  PERFTEST-86 Removing .ini support. Fixing warnings.
-5.1.0,22sep14,jm  PERFTEST-75 Fixed LargeData + Turbo-Mode. Changing max size to
-                  131072.
-5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-66 Large data support 
-                  added for perftest.
-5.1.0,11aug14,jm PERFTEST-69 Added -keyed command line option.
-5.1.0.9,27mar14,jmc PERFTEST-27 Fixing resource limits when using
-                    Turbo Mode
-5.1.0,19dec13,jmc PERFTEST-3 Added autothrottle and turbomode
-5.1.0,19dec13,jmc PERFTEST-2 window size in batching path and
-                   domain id now is 1
-29aug13,jmc CORE-5854 multicast disabled by default
-29aug13,jmc CORE-5919 Moved hardcoded QoS to XML file when
-                      possible
-29aug13,jmc CORE-5867 transport builtin mask to only shmem
-07jul10,eys Cleanup perftest parameters
-07jul10,jsr Fixed keepDurationUsec help
-29jun10,jsr Fix heartbeat and fastheartbeat for windows
-01may10,jsr Added latencyTest option
-10mar10,gn  Ported tcp implementation from c++
-26may09,fcs Fixed test finalization for keyed topics
-14may09,fcs Added instances to INI
-14may09,fcs Fixed command-line arguments processing
-08may09,jsr Fixed default profile names
-29apr09,jsr Added detection of wrong command line parameter
-23apr09,jsr Changed to stderr the error and status messages
-21apr09,jsr Reformat the help menu
-17apr09,jsr Fixed #12322, added -waitsetDelayUsec and -waitsetEventCount 
-            command line option
-17apr09,jsr Fixed #12656, -keepDurationUsec command line option and 
-            resolution
-22jan09,jsr Added EDS support
-08dec08,jsr Added heartbeat_period and fastHeartbeat_period parameters
-04sep08,rbw Fixed key logic. Conformed fields to Java naming conventions.
-            Refactored endpoint QoS configuration.
-20aug08,eys Move InstanceCount to perftest.java
-15aug08,ch  added PresentationQosPolicyAccessScopeKind.TOPIC_PRESENTATION_QOS
-09aug08,ch  Key support, multi-instances, durability
-11jun08,rbw Follow Java naming conventions. Fixed compiler warnings.
-01may08,hhw Removed singleCore option.
-            Increased shared memory buffer for shm tests
-            KEEP_ALL is used for both reliable/unreliable.
-            Added announcement msg support.
-28apr08,rbw Fixed string comparison bug
-02apr08,rbw Improved config file checking; minor stylistic improvements
-02apr08,rbw Moved PerfTest to package com.rti.perftest.harness to distinguish
-            between (1) RTI-specific test implementation and (2) generic test
-            harness
-02apr08,rbw Implemented *.ini file parsing
-01apr08,rbw Fixed string comparisons
-01apr08,rbw Follow Java naming conventions
-01apr08,rbw Created
-=========================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 package com.rti.perftest.ddsimpl;
 
@@ -124,6 +66,14 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private static String LATENCY_MULTICAST_ADDR = "239.255.1.2";
     private static String ANNOUNCEMENT_MULTICAST_ADDR = "239.255.1.100";
     private static String PROFILE_LIBRARY_NAME = "PerftestQosLibrary";
+    private static String SECUREPRIVATEKEYFILEPUB = "./resource/secure/pubkey.pem";
+    private static String SECUREPRIVATEKEYFILESUB = "./resource/secure/subkey.pem";
+    private static String SECURECERTIFICATEFILEPUB = "./resource/secure/pub.pem";
+    private static String SECURECERTIFICATEFILESUB = "./resource/secure/sub.pem";
+    private static String SECURECERTAUTHORITYFILE = "./resource/secure/cacert.pem";
+    private static String SECUREPERMISIONFILEPUB = "./resource/secure/signed_PerftestPermissionsPub.xml";
+    private static String SECUREPERMISIONFILESUB = "./resource/secure/signed_PerftestPermissionsSub.xml";
+    private static String SECURELIBRARYNAME = "nddssecurity";
 
     private int     _sendQueueSize = 50;
     private Duration_t _heartbeatPeriod = new Duration_t(0,0);
@@ -150,6 +100,25 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean _latencyTest = false;
     private boolean _isLargeData = false;
     private boolean _isScan = false;
+    private boolean _isPublisher = false;
+
+    private boolean _secureUseSecure = false;
+    private boolean _secureIsSigned = false;
+    private boolean _secureIsDataEncrypted = false; // User Data
+    private boolean _secureIsSMEncrypted = false; // Sub-message
+    private boolean _secureIsDiscoveryEncrypted = false;
+    private String _secureCertAuthorityFile = null;
+    private String _secureCertificateFile = null;
+    private String _securePrivateKeyFile = null;
+    
+    /*
+     * if _GovernanceFile is specified, overrides the options for
+     * signing, encrypting, and authentication.
+     */
+    private String _governanceFile = null;
+    private String _securePermissionsFile = null;
+    private String _secureLibrary = null;
+    private int _secyreDebugLevel = -1;
 
     private DomainParticipantFactory _factory = null;
     private DomainParticipant        _participant = null;
@@ -170,11 +139,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
         _myDataType = typeHelper;
     }
 
-
     public void dispose() {
         shutdown();
     }
-
 
     public void shutdown() {
         if (_participant != null) {
@@ -202,7 +169,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
     }
 
-
     public int getBatchSize() {
         return _batchSize;
     }
@@ -215,13 +181,13 @@ public final class RTIDDSImpl<T> implements IMessaging {
         String usage_string =
             /**************************************************************************/
             "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n" +
-	        "\t                          queue, default 50\n" +
+            "\t                          queue, default 50\n" +
             "\t-domain <ID>            - RTI DDS Domain, default 1\n" +
             "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles, default\n" +
             "\t                          perftest.xml\n" +
             "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>.\n" +
-	        "\t                          If unspecified, use all available interfaces\n" +
-			"\t-multicast              - Use multicast to send data, default not to\n"+
+            "\t                          If unspecified, use all available interfaces\n" +
+            "\t-multicast              - Use multicast to send data, default not to\n"+
             "\t                          use multicast\n" + 
             "\t-nomulticast            - Do not use multicast to send data (default),\n" +
             "\t-multicastAddress <ipaddr> - Multicast address to use for receiving \n" +
@@ -229,20 +195,20 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t                          throughtput (sub) data. \n" +
             "\t                          If unspecified: latency 239.255.1.2,\n" +
             "\t                          announcement 239.255.1.100,\n" +
-	        "\t                          throughput 239.255.1.1\n" +
+            "\t                          throughput 239.255.1.1\n" +
             "\t-bestEffort             - Run test in best effort mode, default reliable\n" +
             "\t-batchSize <bytes>      - Size in bytes of batched message,\n" +
-	        "\t                          default 0 (no batching)\n" +
+            "\t                          default 0 (no batching)\n" +
             "\t-noPositiveAcks         - Disable use of positive acks in reliable\n" +
             "\t                          protocol, default use positive acks\n" +
             "\t-keepDurationUsec <usec> - Minimum time (us) to keep samples when\n" +
             "\t                          positive acks are disabled, default 1000 us\n" +
             "\t-enableSharedMemory     - Enable use of shared memory transport and\n" +
             "\t                          disable all the other transports, default\n"+
-            "\t                			 shared memory not enabled\n" +
+            "\t                             shared memory not enabled\n" +
             "\t-enableTcpOnly          - Enable use of tcp transport and disable all\n"+
-	        "\t                          the other transports, default do not use\n" +
-	        "\t                          tcp transport\n" +
+            "\t                          the other transports, default do not use\n" +
+            "\t                          tcp transport\n" +
             "\t-heartbeatPeriod <sec>:<nanosec>     - Sets the regular heartbeat period\n" +
             "\t                          for the throughput DataWriter, default 0:0\n" +
             "\t                          (use XML QoS Profile value)\n" +
@@ -255,7 +221,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t-noDirectCommunication  - Use brokered mode for persistent durability\n" +
             "\t-instanceHashBuckets <#count> - Number of hash buckets for instances.\n" +
             "\t                          If unspecified, same as number of\n" +
-	        "\t                          instances.\n" +
+            "\t                          instances.\n" +
             "\t-waitsetDelayUsec <usec>   - UseReadThread related. Allows you to\n" +
             "\t                          process incoming data in groups, based on the\n" +
             "\t                          time rather than individually. It can be used \n" +
@@ -266,14 +232,30 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t                          number of samples rather than individually. It\n" +
             "\t                          can be used combined with -waitsetDelayUsec,\n" +
             "\t                          default 5\n" +
-    		"\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n"+
-    		"\t                          throughput DataWriter (pub)\n"+
-    	    "\t-enableTurboMode        - Enables the TurboMode feature in the throughput\n"+
-    		"\t                          DataWriter (pub)\n"
+            "\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n"+
+            "\t                          throughput DataWriter (pub)\n"+
+            "\t-enableTurboMode        - Enables the TurboMode feature in the throughput\n"+
+            "\t                          DataWriter (pub)\n" +
+            "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n" +
+            "\t-secureSign                   - Sign (HMAC) discovery and user data\n" +
+            "\t-secureEncryptData            - Encrypt topic (user) data\n" +
+            "\t-secureEncryptSM              - Encrypt RTPS submessages\n" +
+            "\t-secureGovernanceFile <file>  - Governance file. If specified, the authentication,\n" +
+            "\t                                signing, and encryption arguments are ignored. The\n" +
+            "\t                                governance document configuration will be used instead\n" +
+            "\t                                Default: built using the secure options.\n" +
+            "\t-securePermissionsFile <file> - Permissions file <optional>\n" +
+            "\t                                Default: \"./resource/secure/signed_PerftestPermissionsSub.xml\"\n" +
+            "\t-secureCertAuthority <file>   - Certificate authority file <optional>\n" +
+            "\t                                Default: \"./resource/secure/cacert.pem\"\n" +
+            "\t-secureCertFile <file>        - Certificate file <optional>\n" +
+            "\t                                Default: \"./resource/secure/sub.pem\"\n" +
+            "\t-securePrivateKey <file>      - Private key file <optional>\n" +
+            "\t                                Default: \"./resource/secure/subkey.pem\"\n"
             ;
+
         System.err.print(usage_string);
     }
-
 
     public boolean initialize(int argc, String[] argv) {
         
@@ -317,16 +299,25 @@ public final class RTIDDSImpl<T> implements IMessaging {
         DomainParticipantQos qos = new DomainParticipantQos();
         _factory.get_participant_qos_from_profile(qos, "PerftestQosLibrary" , "BaseProfileQos");
 
-        // set participant to be able to receive and process packets up to 64K
+        if (_secureUseSecure) {
+            // validate arguments
+            if (!validateSecureArgs()) {
+                System.err.println("Failure validating arguments");
+                return false;
+            }
+            configureSecurePlugin(qos);
+        }
 
         qos.transport_builtin.mask = TransportBuiltinKind.UDPv4;
         
         // set transports to use
         if (_UseTcpOnly) {
             qos.transport_builtin.mask = TransportBuiltinKind.MASK_NONE;
-			PropertyQosPolicyHelper.add_property(qos.property,
-                                                 "dds.transport.load_plugins", "dds.transport.TCPv4.tcp1",
-                                                 false);
+            PropertyQosPolicyHelper.add_property(
+                    qos.property,
+                    "dds.transport.load_plugins",
+                    "dds.transport.TCPv4.tcp1",
+                    false);
         }
         else{
             if (_useSharedMemory)
@@ -336,10 +327,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
         
         if (_AutoThrottle) {
-        	PropertyQosPolicyHelper.add_property(qos.property,
-        			"dds.domain_participant.auto_throttle.enable", "true",
+            PropertyQosPolicyHelper.add_property(qos.property,
+                    "dds.domain_participant.auto_throttle.enable", "true",
                     false);
-    	}
+        }
         
         if (!_UseTcpOnly) {
         
@@ -399,7 +390,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         return true;
     }
-
 
     public IMessagingWriter createWriter(String topicName) {
         DataWriter writer = null;
@@ -464,7 +454,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         return pub;
     }
-
 
     public IMessagingReader createReader(String topicName,
                                          IMessagingCB callback) {
@@ -542,11 +531,210 @@ public final class RTIDDSImpl<T> implements IMessaging {
         return sub;
     }
 
-
-
     // -----------------------------------------------------------------------
     // Private Methods
     // -----------------------------------------------------------------------
+    private boolean validateSecureArgs() {
+        if (_secureUseSecure) {
+
+            if (_securePrivateKeyFile == null) {
+                if (_isPublisher) {
+                    _securePrivateKeyFile = SECUREPRIVATEKEYFILEPUB;
+                } else {
+                    _securePrivateKeyFile = SECUREPRIVATEKEYFILESUB;
+                }
+            }
+
+            if (_secureCertificateFile == null) {
+                if (_isPublisher) {
+                    _secureCertificateFile = SECURECERTIFICATEFILEPUB;
+                } else {
+                    _secureCertificateFile = SECURECERTIFICATEFILESUB;
+                }
+            }
+
+            if (_secureCertAuthorityFile == null) {
+                _secureCertAuthorityFile = SECURECERTAUTHORITYFILE;
+            }
+
+            if (_securePermissionsFile == null) {
+                if (_isPublisher) {
+                    _securePermissionsFile = SECUREPERMISIONFILEPUB;
+                } else {
+                    _securePermissionsFile = SECUREPERMISIONFILESUB;
+                }
+            }
+
+            if (_secureLibrary == null) {
+                _secureLibrary = SECURELIBRARYNAME;
+            }
+        }
+
+        return true;
+    }
+
+    private void printSecureArgs() {
+
+        String secure_arguments_string =
+                "Secure Arguments:\n" +
+                "\t encrypt discovery: " + _secureIsDiscoveryEncrypted + "\n" +
+                "\t encrypt topic (user) data: " + _secureIsDataEncrypted + "\n" +
+                "\t encrypt submessage: " + _secureIsSMEncrypted + "\n" +
+                "\t sign data: " +_secureIsSigned + "\n";
+
+        if (_governanceFile != null) {
+            secure_arguments_string += "\t governance file: " + _governanceFile
+                    + "\n";
+        } else {
+            secure_arguments_string += "\t governance file: Not specified\n";
+        }
+
+        if (_securePermissionsFile != null) {
+            secure_arguments_string += "\t permissions file: " + _securePermissionsFile
+                    + "\n";
+        } else {
+            secure_arguments_string += "\t permissions file: Not specified\n";
+        }
+
+        if (_securePrivateKeyFile != null) {
+            secure_arguments_string += "\t private key file: " + _securePrivateKeyFile
+                    + "\n";
+        } else {
+            secure_arguments_string += "\t private key file: Not specified\n";
+        }
+
+        if (_secureCertificateFile != null) {
+            secure_arguments_string += "\t certificate file: " + _secureCertificateFile
+                    + "\n";
+        } else {
+            secure_arguments_string += "\t certificate file: Not specified\n";
+        }
+
+        if (_secureCertAuthorityFile != null) {
+            secure_arguments_string += "\t certificate authority file: "
+                    + _secureCertAuthorityFile + "\n";
+        } else {
+            secure_arguments_string += "\t certificate authority file: Not specified\n";
+        }
+
+        if (_secureLibrary != null) {
+            secure_arguments_string += "\t plugin library: " + _secureLibrary + "\n";
+        } else {
+            secure_arguments_string += "\t plugin library: Not specified\n";
+        }
+
+        if( _secyreDebugLevel != -1 ){
+            secure_arguments_string += "\t debug level: " + _secyreDebugLevel + "\n";
+        }
+        System.out.print(secure_arguments_string);
+    }
+
+    private void configureSecurePlugin(DomainParticipantQos dpQos) {
+        // configure use of security plugins, based on provided arguments
+
+        // print arguments
+        printSecureArgs();
+
+        // load plugin
+        PropertyQosPolicyHelper.add_property(
+                dpQos.property,
+                "com.rti.serv.load_plugin",
+                "com.rti.serv.secure",
+                false);
+
+        PropertyQosPolicyHelper.add_property(
+                dpQos.property,
+                "com.rti.serv.secure.create_function",
+                "RTI_Security_PluginSuite_create",
+                false);
+
+        PropertyQosPolicyHelper.add_property(
+                dpQos.property,
+                "com.rti.serv.secure.library",
+                _secureLibrary,
+                false);
+
+        // check if governance file provided
+        if (_governanceFile == null) {
+            // choose a pre-built governance file
+            String file = "resource/secure/signed_PerftestGovernance_";
+
+            if (_secureIsDiscoveryEncrypted) {
+                file += "Discovery";
+            }
+
+            if (_secureIsSigned) {
+                file += "Sign";
+            }
+
+            if (_secureIsDataEncrypted && _secureIsSMEncrypted) {
+                file += "EncryptBoth";
+            } else if (_secureIsDataEncrypted) {
+                file += "EncryptData";
+            } else if (_secureIsSMEncrypted) {
+                file += "EncryptSubmessage";
+            }
+
+            file = file + ".xml";
+
+            System.out.println("Secure: using pre-built governance file:" + 
+                    file);
+            PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.access_control.governance_file",
+                    file,
+                    false);
+        } else {
+            PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.access_control.governance_file",
+                    _governanceFile,
+                    false);
+        }
+
+        // permissions file
+        PropertyQosPolicyHelper.add_property(
+                dpQos.property,
+                "com.rti.serv.secure.access_control.permissions_file",
+                _securePermissionsFile,
+                false);
+
+        // permissions authority file
+        PropertyQosPolicyHelper.add_property(
+                dpQos.property,
+                "com.rti.serv.secure.access_control.permissions_authority_file",
+                _secureCertAuthorityFile,
+                false);
+
+        // certificate authority
+        PropertyQosPolicyHelper.add_property(
+                dpQos.property,
+                "com.rti.serv.secure.authentication.ca_file",
+                _secureCertAuthorityFile,
+                false);
+
+        // public key
+        PropertyQosPolicyHelper.add_property(
+                dpQos.property,
+                "com.rti.serv.secure.authentication.certificate_file",
+                _secureCertificateFile,
+                false);
+
+        // private key
+        PropertyQosPolicyHelper.add_property(
+                dpQos.property,
+                "com.rti.serv.secure.authentication.private_key_file",
+                _securePrivateKeyFile,
+                false);
+
+        if (_secyreDebugLevel != -1) {
+            PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.logging.log_level",
+                    (new Integer(_secyreDebugLevel)).toString(),
+                    false);
+        }
+    }
 
     private void configureWriterQos(
             String topicName, String qosProfile, DataWriterQos dwQos) {
@@ -580,13 +768,13 @@ public final class RTIDDSImpl<T> implements IMessaging {
             if (_batchSize > 0) {
                 dwQos.batch.enable = true;
                 dwQos.batch.max_data_bytes = _batchSize;
-				dwQos.resource_limits.max_samples = ResourceLimitsQosPolicy.LENGTH_UNLIMITED;
+                dwQos.resource_limits.max_samples = ResourceLimitsQosPolicy.LENGTH_UNLIMITED;
                 dwQos.writer_resource_limits.max_batches = _sendQueueSize;
                 
             } else {
                 dwQos.resource_limits.max_samples = _sendQueueSize;
             }
-			
+
             if (_heartbeatPeriod.sec > 0 || _heartbeatPeriod.nanosec > 0) {
                 // set the heartbeat_period
                 dwQos.protocol.rtps_reliable_writer.heartbeat_period.sec = _heartbeatPeriod.sec;
@@ -600,23 +788,22 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 dwQos.protocol.rtps_reliable_writer.fast_heartbeat_period.sec = _fastHeartbeatPeriod.sec;
                 dwQos.protocol.rtps_reliable_writer.fast_heartbeat_period.nanosec = _fastHeartbeatPeriod.nanosec;
             }
-			
+
             if (_AutoThrottle) {
-            	PropertyQosPolicyHelper.add_property(
-            			dwQos.property, "dds.data_writer.auto_throttle.enable",
+                PropertyQosPolicyHelper.add_property(
+                        dwQos.property, "dds.data_writer.auto_throttle.enable",
                         "true", false);
             }
-            
+
             if (_TurboMode) {
-            	PropertyQosPolicyHelper.add_property(
-            			dwQos.property, "dds.data_writer.enable_turbo_mode",
+                PropertyQosPolicyHelper.add_property(
+                        dwQos.property, "dds.data_writer.enable_turbo_mode",
                         "true", false);
-            	dwQos.batch.enable = false;
+                dwQos.batch.enable = false;
                 dwQos.resource_limits.max_samples = ResourceLimitsQosPolicy.LENGTH_UNLIMITED;
                 dwQos.writer_resource_limits.max_batches = _sendQueueSize;
             }
-            
-            
+
             dwQos.resource_limits.initial_samples = _sendQueueSize;
             dwQos.resource_limits.max_samples_per_instance
                 = dwQos.resource_limits.max_samples;
@@ -637,16 +824,16 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
 
             dwQos.durability.direct_communication = _directCommunication;
-         
+
             dwQos.protocol.rtps_reliable_writer.heartbeats_per_max_samples = _sendQueueSize / 10;
-			
+            
             dwQos.protocol.rtps_reliable_writer.low_watermark = _sendQueueSize * 1 / 10;
             dwQos.protocol.rtps_reliable_writer.high_watermark = _sendQueueSize * 9 / 10;
 
             dwQos.protocol.rtps_reliable_writer.max_send_window_size = 
-            		_sendQueueSize;
+                    _sendQueueSize;
             dwQos.protocol.rtps_reliable_writer.min_send_window_size = 
-            		_sendQueueSize;
+                    _sendQueueSize;
 
             
         }
@@ -677,7 +864,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
         }
     }
-
 
     private void configureReaderQos(
             String topicName, String qosProfile, DataReaderQos drQos) {
@@ -765,7 +951,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
     }
 
-
     private boolean parseConfig(int argc, String[] argv) {
 
         for (int i = 0; i < argc; ++i) {
@@ -773,7 +958,11 @@ public final class RTIDDSImpl<T> implements IMessaging {
             if ("-scan".toLowerCase().startsWith(argv[i].toLowerCase())) 
             {
                 _isScan = true;
-            } else if ("-dataLen".toLowerCase().startsWith(argv[i].toLowerCase())) {
+            }
+            else if ("-pub".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _isPublisher = true;
+            }
+            else if ("-dataLen".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
                     System.err.print("Missing <length> after -dataLen\n");
                     return false;
@@ -1013,6 +1202,77 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _AutoThrottle = true;
             } else if ("-enableTurboMode".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _TurboMode = true;
+            } else if ("-secureSign".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _secureIsSigned = true;
+                _secureUseSecure = true;
+            } else if ("-secureEncryptBoth".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _secureIsDataEncrypted = true;
+                _secureIsSMEncrypted = true;
+                _secureUseSecure = true;
+            } else if ("-secureEncryptData".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _secureIsDataEncrypted = true;
+                _secureUseSecure = true;
+            } else if ("-secureEncryptSM".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _secureIsSMEncrypted = true;
+                _secureUseSecure = true;
+            } else if ("-secureEncryptDiscovery".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _secureIsDiscoveryEncrypted = true;
+                _secureUseSecure = true;
+            } else if ("-secureGovernanceFile".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <file> after -secureGovernanceFile\n");
+                    return false;
+                }
+                _governanceFile  = argv[i];
+                System.out.println("Warning -- authentication, encryption, signing arguments " +
+                         "will be ignored, and the values specified by the Governance file will " +
+                         "be used instead");
+                 _secureUseSecure = true;
+            } else if ("-securePermissionsFile".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <file> after -securePermissionsFile\n");
+                    return false;
+                }
+                _securePermissionsFile  = argv[i];
+                _secureUseSecure = true;
+            } else if ("-secureCertAuthority".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <file> after -secureCertAuthority\n");
+                    return false;
+                }
+                _secureCertAuthorityFile = argv[i];
+                _secureUseSecure = true;
+            } else if ("-secureCertFile".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <file> after -secureCertAuthority\n");
+                    return false;
+                }
+                _secureCertificateFile = argv[i];
+                _secureUseSecure = true;
+            } else if ("-securePrivateKey".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <file> after -securePrivateKey\n");
+                    return false;
+                }
+                _securePrivateKeyFile = argv[i];
+                _secureUseSecure = true;
+            } else if ("-secureLibrary".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <file> after -secureLibrary\n");
+                    return false;
+                }
+                _secureLibrary = argv[i];
+            } else if ("-secureDebug".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <level> after -secureDebug\n");
+                     return false;
+                }
+                try {
+                    _secyreDebugLevel = Integer.parseInt(argv[i]);
+                } catch (NumberFormatException nfx) {
+                    System.err.print("Bad value for -secureDebug\n");
+                    return false;
+                }
             } else {
                 System.err.print(argv[i] + ": not recognized\n");
                 return false;
@@ -1044,4 +1304,5 @@ public final class RTIDDSImpl<T> implements IMessaging {
 }
 
 // ===========================================================================
-// End of $Id: RTIDDSImpl.java,v 1.17 2015/05/09 18:06:06 jmorales Exp $
+
+// End of $Id$

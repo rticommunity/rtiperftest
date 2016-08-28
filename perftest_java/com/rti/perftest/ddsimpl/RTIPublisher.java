@@ -1,25 +1,8 @@
-/* $Id: RTIPublisher.java,v 1.4 2014/08/12 10:21:28 jmorales Exp $
-
-(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
-Permission to modify and use for internal purposes granted.   	
-This software is provided "as is", without warranty, express or implied.
-
-modification history:
---------------------
-5.1.0,11aug14,jm PERFTEST-69 Added -keyed command line option.
-09jul10,jsr Added new waitForPingResponse with timeout
-07jul10,eys Fixed return value for wiatForPingResponse and notifyPingResponse
-03may10,jsr Added waitForPingResponse and notifyPingResponse
-21may09,fcs Optimized send for unkeyed topics
-14aug08,ch  optimized changing the key value before write
-09aug08,ch  Key support, multi-instances, durability
-01may08,hhw Removed singleCore option.
-18apr08,eys Added loan() and unloan() feature to octet sequence
-03apr08,rbw Fixed byte copy
-02apr08,rbw Fixed syntax error in printf() calls
-01apr08,rbw Follow Java naming conventions
-01apr08,rbw Created
-=========================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 package com.rti.perftest.ddsimpl;
 
@@ -167,4 +150,4 @@ import java.util.concurrent.TimeUnit;
 }
 
 // ===========================================================================
-// End of $Id: RTIPublisher.java,v 1.4 2014/08/12 10:21:28 jmorales Exp $
+// End of $Id$

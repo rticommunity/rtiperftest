@@ -41,7 +41,7 @@
     <Reference Include="DDSTypesManaged-VS2013">
       <HintPath>..\bin\i86Win32VS2013\Release\DDSTypesManaged-VS2013.dll</HintPath>
     </Reference>
-    <Reference Include="nddsdotnet45, Culture=neutral, processorArchitecture=x86">
+    <Reference Include="nddsdotnet451, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(NDDSHOME)\lib\i86Win32VS2013\nddsdotnet451.dll</HintPath>
       <Private>True</Private>

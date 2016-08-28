@@ -1270,7 +1270,7 @@
     <xs:simpleType name="WireProtocolQosPolicyAutoKind">
         <xs:annotation>
             <xs:documentation>
-                &lt;RTPS_AUTO_ID_FROM_IP|RTPS_AUTO_ID_FROM_MAC&gt;
+                &lt;RTPS_AUTO_ID_FROM_IP|RTPS_AUTO_ID_FROM_MAC|RTPS_AUTO_ID_FROM_UUID&gt;
             </xs:documentation>
         </xs:annotation>
         <xs:restriction base="xs:string">
@@ -1278,6 +1278,7 @@
 
             <xs:enumeration value="RTPS_AUTO_ID_FROM_IP"/>
             <xs:enumeration value="RTPS_AUTO_ID_FROM_MAC"/>
+            <xs:enumeration value="RTPS_AUTO_ID_FROM_UUID"/>
         </xs:restriction>
     </xs:simpleType>
 

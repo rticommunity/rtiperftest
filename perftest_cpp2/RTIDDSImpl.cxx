@@ -1,17 +1,8 @@
-/* ===================================================================
- (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.
- Permission to modify and use for internal purposes granted.
- This software is provided "as is", without warranty, express or implied.
-
- Modification History
- --------------------
- 5.2.0,21jul15,jm  PERF-53 Changes for CR-789.
- 5.2.0,09may15,jm  PERFTEST-86 Reader's max instances not modified now, set to
-                   DDS_LENGTH_UNLIMITED via perftest.xml.
- 5.2.0,27apr14,jm  PERFTEST-86 Removing .ini support. Fixing warnings.
- 5.2.0,03nov14,jm  PERF-53 Created. Using ../perftest_cpp as template for the
-                   Product behavior.
-===================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 #include "RTIDDSImpl.h"
 #include "perftest_cpp.h"
@@ -25,6 +16,32 @@
 #define STRNCASECMP     strncasecmp
 #endif
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
+
+#ifdef RTI_SECURE_PERFTEST
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_PRIVATEKEY_FILE_PUB =
+        "./resource/secure/pubkey.pem";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_PRIVATEKEY_FILE_SUB =
+        "./resource/secure/subkey.pem";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_CERTIFICATE_FILE_PUB =
+        "./resource/secure/pub.pem";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_CERTIFICATE_FILE_SUB =
+        "./resource/secure/sub.pem";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_CERTAUTHORITY_FILE =
+        "./resource/secure/cacert.pem";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_PERMISION_FILE_PUB =
+        "./resource/secure/signed_PerftestPermissionsPub.xml";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_PERMISION_FILE_SUB =
+        "./resource/secure/signed_PerftestPermissionsSub.xml";
+template <typename T>
+const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME = "nddssecurity";
+#endif
 
 template <typename T>
 RTIDDSImpl<T>::RTIDDSImpl():
@@ -51,6 +68,15 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _IsDebug(false),
         _isLargeData(false),
         _isScan(false),
+        _isPublisher(false),
+      #ifdef RTI_SECURE_PERFTEST
+        _secureUseSecure(false),
+        _secureIsSigned(false),
+        _secureIsDataEncrypted(false),
+        _secureIsSMEncrypted(false),
+        _secureIsDiscoveryEncrypted(false),
+        _secureDebugLevel(-1),
+      #endif
         _WaitsetEventCount(5),
         _WaitsetDelayUsec(100),
         _HeartbeatPeriod(dds::core::Duration::zero()),
@@ -65,8 +91,6 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _reader(dds::core::null),
         _pongSemaphore(RTI_OSAPI_SEMAPHORE_KIND_BINARY,NULL)
     {}
-
-
 
 /*********************************************************
  * Shutdown
@@ -143,7 +167,26 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
     "\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n"
     "\t                          throughput DataWriter (pub)\n"
     "\t-enableTurboMode        - Enables the TurboMode feature in the\n"
-    "\t                          throughput DataWriter (pub)\n";
+    "\t                          throughput DataWriter (pub)\n"
+  #ifdef RTI_SECURE_PERFTEST
+    "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n"
+    "\t-secureSign                   - Sign (HMAC) discovery and user data\n"
+    "\t-secureEncryptData            - Encrypt topic (user) data\n"
+    "\t-secureEncryptSM              - Encrypt RTPS submessages\n"
+    "\t-secureGovernanceFile <file>  - Governance file. If specified, the authentication,\n"
+    "\t                                signing, and encryption arguments are ignored. The\n"
+    "\t                                governance document configuration will be used instead\n"
+    "\t                                Default: built using the secure options.\n"
+    "\t-securePermissionsFile <file> - Permissions file <optional>\n"
+    "\t                                Default: \"./resource/secure/signed_PerftestPermissionsSub.xml\"\n"
+    "\t-secureCertAuthority <file>   - Certificate authority file <optional>\n"
+    "\t                                Default: \"./resource/secure/cacert.pem\"\n"
+    "\t-secureCertFile <file>        - Certificate file <optional>\n"
+    "\t                                Default: \"./resource/secure/sub.pem\"\n"
+    "\t-securePrivateKey <file>      - Private key file <optional>\n"
+    "\t                                Default: \"./resource/secure/subkey.pem\"\n"
+  #endif
+    ;
 
     std::cerr << usage_string << std::endl;
 }
@@ -162,9 +205,10 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 
     // now load everything else, command line params override config file
     for (i = 0; i < argc; ++i) {
-        if (IS_OPTION(argv[i], "-scan")) {
+        if (IS_OPTION(argv[i], "-pub")) {
+            _isPublisher = true;
+        } else if (IS_OPTION(argv[i], "-scan")) {
             _isScan = true;
-
         } else if (IS_OPTION(argv[i], "-dataLen")) {
 
             if ((i == (argc - 1)) || *argv[++i] == '-') {
@@ -391,9 +435,83 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _AutoThrottle = true;
         } else if (IS_OPTION(argv[i], "-enableTurboMode")) {
             _TurboMode = true;
-        } else if (IS_OPTION(argv[i], "-configFile")) {
-            /* Ignore config file */
-            ++i;
+      #ifdef RTI_SECURE_PERFTEST
+        } else if (IS_OPTION(argv[i], "-secureSign")) {
+            _secureIsSigned = true;
+            _secureUseSecure = true;
+        } else if (IS_OPTION(argv[i], "-secureEncryptBoth")) {
+            _secureIsDataEncrypted = true;
+            _secureIsSMEncrypted = true;
+            _secureUseSecure = true;
+        } else if (IS_OPTION(argv[i], "-secureEncryptData")) {
+            _secureIsDataEncrypted = true;
+            _secureUseSecure = true;
+        } else if (IS_OPTION(argv[i], "-secureEncryptSM")) {
+            _secureIsSMEncrypted = true;
+            _secureUseSecure = true;
+        } else if (IS_OPTION(argv[i], "-secureEncryptDiscovery")) {
+            _secureIsDiscoveryEncrypted = true;
+            _secureUseSecure = true;
+        } else if (IS_OPTION(argv[i], "-secureGovernanceFile")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                std::cerr << "[Error] Missing <file> after -secureGovernanceFile"
+                          << std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            _secureGovernanceFile = argv[i];
+            std::cout << "[INFO] Authentication, encryption, signing arguments "
+                         "will be ignored, and the values specified by the "
+                         "Governance file will be used instead"
+                      << std::endl;
+            _secureUseSecure = true;
+        } else if (IS_OPTION(argv[i], "-securePermissionsFile")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                std::cerr << "[Error] Missing <file> after -securePermissionsFile"
+                          << std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            _securePermissionsFile = argv[i];
+            _secureUseSecure = true;
+        } else if (IS_OPTION(argv[i], "-secureCertAuthority")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                std::cerr << "Missing <file> after -secureCertAuthority"
+                          << std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            _secureCertAuthorityFile = argv[i];
+            _secureUseSecure = true;
+        } else if (IS_OPTION(argv[i], "-secureCertFile")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                std::cerr << "Missing <file> after -secureCertFile"
+                          << std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            _secureCertificateFile = argv[i];
+            _secureUseSecure = true;
+        } else if (IS_OPTION(argv[i], "-securePrivateKey")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                std::cerr << "Missing <file> after -securePrivateKey"
+                          << std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            _securePrivateKeyFile = argv[i];
+            _secureUseSecure = true;
+        } else if (IS_OPTION(argv[i], "-secureLibrary")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                std::cerr << "Missing <file> after -secureLibrary"
+                          << std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            _secureLibrary = argv[i];
+        } else if (IS_OPTION(argv[i], "-secureDebug")) {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                std::cerr << "Missing <level> after -secureDebug"
+                          << std::endl;
+
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            _secureDebugLevel = strtol(argv[i], NULL, 10);
+      #endif
         } else {
             if (i > 0) {
                 std::cerr << argv[i] << " not recognized" << std::endl;
@@ -701,6 +819,169 @@ public:
     }
 };
 
+
+#ifdef RTI_SECURE_PERFTEST
+
+template<typename T>
+void RTIDDSImpl<T>::configureSecurePlugin(
+        std::map<std::string, std::string> &dpQosProperties) {
+
+    // print arguments
+    printSecureArgs();
+
+    // load plugin
+    dpQosProperties["com.rti.serv.load_plugin"] = "com.rti.serv.secure";
+
+  #ifdef RTI_PERFTEST_DYNAMIC_LINKING
+
+    dpQosProperties["com.rti.serv.secure.create_function"] =
+            "RTI_Security_PluginSuite_create";
+
+    dpQosProperties["com.rti.serv.secure.library"] = _secureLibrary;
+
+  #else // Static library linking
+
+    void *pPtr = (void *) RTI_Security_PluginSuite_create;
+    dpQosProperties["com.rti.serv.secure.create_function_ptr"] =
+            rti::util::ptr_to_str(pPtr);
+
+  #endif
+
+    // check if governance file provided
+    if (_secureGovernanceFile.empty()) {
+        // choose a pre-built governance file
+        std::string governance_file = "./resource/secure/signed_PerftestGovernance_";
+        if (_secureIsDiscoveryEncrypted) {
+            governance_file += "Discovery";
+        }
+
+        if (_secureIsSigned) {
+            governance_file += "Sign";
+        }
+
+        if (_secureIsDataEncrypted && _secureIsSMEncrypted) {
+            governance_file += "EncryptBoth";
+        } else if (_secureIsDataEncrypted) {
+            governance_file += "EncryptData";
+        } else if (_secureIsSMEncrypted) {
+            governance_file += "EncryptSubmessage";
+        }
+
+        governance_file = governance_file + ".xml";
+
+        std::cout << "[Info] Secure: using pre-built governance file: "
+                  << governance_file
+                  << std::endl;
+        dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
+                governance_file;
+    } else {
+        dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
+                _secureGovernanceFile;
+    }
+
+    // permissions file
+    dpQosProperties["com.rti.serv.secure.access_control.permissions_file"] =
+            _securePermissionsFile;
+
+    // permissions authority file
+    dpQosProperties["com.rti.serv.secure.access_control.permissions_authority_file"] =
+            _secureCertAuthorityFile;
+
+    // certificate authority
+    dpQosProperties["com.rti.serv.secure.authentication.ca_file"] =
+            _secureCertAuthorityFile;
+
+    // public key
+    dpQosProperties["com.rti.serv.secure.authentication.certificate_file"] =
+            _secureCertificateFile;
+
+    // private key
+    dpQosProperties["com.rti.serv.secure.authentication.private_key_file"] =
+            _securePrivateKeyFile;
+
+    if (_secureDebugLevel != -1) {
+        std::ostringstream string_stream_object;
+        string_stream_object << _secureDebugLevel;
+        dpQosProperties["com.rti.serv.secure.logging.log_level"] =
+                string_stream_object.str();
+    }
+}
+
+template <typename T>
+void RTIDDSImpl<T>::validateSecureArgs()
+{
+    if (_secureUseSecure) {
+        if (_securePrivateKeyFile.empty()) {
+            if (_isPublisher) {
+                _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_PUB;
+            } else {
+                _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_SUB;
+            }
+        }
+
+        if (_secureCertificateFile.empty()) {
+            if (_isPublisher) {
+                _secureCertificateFile = SECURE_CERTIFICATE_FILE_PUB;
+            } else {
+                _secureCertificateFile = SECURE_CERTIFICATE_FILE_SUB;
+            }
+        }
+
+        if (_secureCertAuthorityFile.empty()) {
+            _secureCertAuthorityFile = SECURE_CERTAUTHORITY_FILE;
+        }
+
+        if (_securePermissionsFile.empty()) {
+            if (_isPublisher) {
+                _securePermissionsFile = SECURE_PERMISION_FILE_PUB;
+            } else {
+                _securePermissionsFile = SECURE_PERMISION_FILE_SUB;
+            }
+        }
+
+      #ifdef RTI_PERFTEST_DYNAMIC_LINKING
+        if (_secureLibrary.empty()) {
+            _secureLibrary = SECURE_LIBRARY_NAME;
+        }
+      #endif
+    }
+}
+
+template <typename T>
+void RTIDDSImpl<T>::printSecureArgs()
+{
+    std::cout << "[Info] Secure Arguments:\n"
+              << "\t encrypt discovery: "
+              << (_secureIsDiscoveryEncrypted ? "true\n" : "false\n")
+              << "\t encrypt topic (user) data: "
+              << (_secureIsDataEncrypted ? "true\n" : "false\n")
+              << "\t encrypt submessage: "
+              << (_secureIsSMEncrypted ? "true\n" : "false\n")
+              << "\t sign data: "
+              << (_secureIsSigned ? "true\n" : "false\n")
+              << "\t governance file: "
+              << (_secureGovernanceFile.empty() ? "not specified" : _secureGovernanceFile)
+              << "\n\t permissions file: "
+              << (_securePermissionsFile.empty() ? "not specified" : _securePermissionsFile)
+              << "\n\t private key file: "
+              << (_securePrivateKeyFile.empty() ? "not specified" : _securePrivateKeyFile)
+              << "\n\t certificate file: "
+              << (_secureCertificateFile.empty() ? "not specified" : _secureCertificateFile)
+              << "\n\t certificate authority file: "
+              << (_secureCertAuthorityFile.empty() ? "not specified" : _secureCertAuthorityFile)
+              << "\n\t plugin library: "
+              << (_secureLibrary.empty() ? "not specified" : _secureLibrary)
+              << std::endl;
+    if( _secureDebugLevel != -1 ){
+        std::cout << "\t debug level: "
+                  << _secureDebugLevel
+                  << std::endl;
+    }
+}
+
+#endif
+
+
 /*********************************************************
  * Initialize
  */
@@ -714,7 +995,15 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     dds::core::QosProvider qos_provider(_ProfileFile, "PerftestQosLibrary::BaseProfileQos");
     dds::domain::qos::DomainParticipantQos qos = qos_provider.participant_qos();
 
-    std::map<std::string, std::string> properties = qos.policy<Property>().get_all();
+    std::map<std::string, std::string> properties =
+            qos.policy<Property>().get_all();
+
+  #ifdef RTI_SECURE_PERFTEST
+    if (_secureUseSecure) {
+        validateSecureArgs();
+        configureSecurePlugin(properties);
+    }
+  #endif
 
     // set transports to use
     qos << rti::core::policy::TransportBuiltin(TransportBuiltinMask::udpv4());
@@ -745,7 +1034,10 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     //We have to copy the properties to the participant_qos object
-    qos << rti::core::policy::Property(properties.begin(),properties.end(), true);
+    qos << rti::core::policy::Property(
+            properties.begin(),
+            properties.end(),
+            true);
 
     DomainListener *listener = new DomainListener;
 

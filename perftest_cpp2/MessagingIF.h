@@ -1,14 +1,8 @@
-/* ===================================================================
- (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.
- Permission to modify and use for internal purposes granted.
- This software is provided "as is", without warranty, express or implied.
-
- Modification History
- --------------------
- 5.2.0,21jul15,jm  PERF-53 Changes for CR-789.
- 5.2.0,03nov14,jm  PERF-53 Created. Using ../perftest_cpp as template for the
-                   Product behavior.
-===================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 #ifndef __MESSAGINGIF_H__
 #define __MESSAGINGIF_H__

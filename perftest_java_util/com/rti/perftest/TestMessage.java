@@ -1,19 +1,8 @@
-/* $Id: TestMessage.java,v 1.4 2014/09/22 16:28:50 jmorales Exp $
-
-(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
-Permission to modify and use for internal purposes granted.   	
-This software is provided "as is", without warranty, express or implied.
-
-modification history:
---------------------
-5.1.0,22sep14,jm  PERFTEST-75 Fixed LargeData + Turbo-Mode. Changing max size to
-                  131072.
-5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-66 Large data support 
-                  added for perftest.
-04may08,hhw Added entity_id.
-01apr08,rbw Created
-=========================================================================== */
-
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 package com.rti.perftest;
 
@@ -38,4 +27,4 @@ public class TestMessage {
 }
 
 // ===========================================================================
-// End of $Id: TestMessage.java,v 1.4 2014/09/22 16:28:50 jmorales Exp $
+// End of $Id$

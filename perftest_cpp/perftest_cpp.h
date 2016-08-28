@@ -1,30 +1,11 @@
 #ifndef __PERFTEST_CPP_H__
 #define __PERFTEST_CPP_H__
 
-/* $Id: perftest_cpp.h,v 1.12 2015/07/22 22:17:26 jmorales Exp $
-
- (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
- Permission to modify and use for internal purposes granted.   	
- This software is provided "as is", without warranty, express or implied.
-
- Modification History
- --------------------
- 5.2.0,22jul15,jm  PERFTEST-90 The getTime function uses now our high precision clock.
- 5.2.0,27apr14,jm  PERFTEST-86 Removing .ini support. Fixing warnings.
- 5.1.0,20aug14,jmc PERFTEST-61 Added -executionTime command line option
- 5.1.0,11aug14,jm  PERFTEST-57 Added -keyed command line option.
- 5.1.0,15jul14,jmc Modifying _SpinLoopCount to be unsigned long long
- 5.1.0,15jul14,jmc PERFTEST-51 Added _pubRate
- 1.0a,13jul10,jsr Added _isReliable field for the latnecy option and
-                  bestEffort mode
- 1.0a,13may09,fcs Removed InitDDS & Added StringDup
- 1.0a,29may09,jsr Added detection of wrong command line parameter
- 1.0a,14aug08,ch  changed key to be 4 bytes long -> overhead change
- 1.0a,08may08,ch  Added keyed type support (overhead changed) 
- 1.0a,15apr08,fcs Added _BatchSize, _SamplesPerBatch, _NumPublishers 
-                  and _PubID
- 1.0a,19mar08,hhw Created.
-===================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -119,7 +100,12 @@ class perftest_cpp
     static int  _PubID;
     static bool _PrintIntervals;
     static bool _IsDebug;
-    static struct RTIClock *clock;
+
+    static struct RTIClock *_Clock;
+    static struct RTINtpTime _ClockTime_aux;
+    static RTI_UINT64 _Clock_sec;
+    static RTI_UINT64 _Clock_usec;
+
     static const char *_LatencyTopicName;
     static const char *_ThroughputTopicName;
     static const char *_AnnouncementTopicName;
@@ -144,7 +130,7 @@ class perftest_cpp
     static const int LENGTH_CHANGED_SIZE = 1236;
 
    public:
-    static unsigned long long GetTimeUsec(struct RTINtpTime *now);
+    static unsigned long long GetTimeUsec();
 
   #ifdef RTI_WIN32
     static VOID CALLBACK Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired);

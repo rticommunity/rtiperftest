@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(NDDSHOME)/include;$(NDDSHOME)/include/ndds;$(NDDSHOME)/include/ndds/hpp;../DDSTypes2"
-				PreprocessorDefinitions="WIN32;_DEBUG;RTI_WIN32;NDDS_DLL_VARIABLE;WIN32_LEAN_AND_MEAN"
+				PreprocessorDefinitions="WIN32;_DEBUG;RTI_WIN32;RTI_SECURE_PERFTEST;RTI_PERFTEST_DYNAMIC_LINKING;NDDS_DLL_VARIABLE;WIN32_LEAN_AND_MEAN"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -119,7 +119,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(NDDSHOME)/include;$(NDDSHOME)/include/ndds;$(NDDSHOME)/include/ndds/hpp;../DDSTypes2"
-				PreprocessorDefinitions="WIN32;RTI_WIN32;NDDS_DLL_VARIABLE;WIN32_LEAN_AND_MEAN"
+				PreprocessorDefinitions="WIN32;RTI_WIN32;RTI_SECURE_PERFTEST;RTI_PERFTEST_DYNAMIC_LINKING;NDDS_DLL_VARIABLE;WIN32_LEAN_AND_MEAN"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"

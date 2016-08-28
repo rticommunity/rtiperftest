@@ -1,10 +1,8 @@
 /*
-
-modification history:
---------------------
- 5.1.0,11aug14,jm PERFTEST-69 Added -keyed command line option.
-
-*/
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 package com.rti.perftest.ddsimpl;
 

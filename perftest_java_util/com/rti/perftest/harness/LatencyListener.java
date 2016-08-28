@@ -1,26 +1,8 @@
-/* $Id: LatencyListener.java,v 1.4 2014/06/27 15:23:02 juanjo Exp $
-
-(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
-Permission to modify and use for internal purposes granted.   	
-This software is provided "as is", without warranty, express or implied.
-
-modification history:
---------------------
-5.1.0,19may2014,jmc PERFTEST-49 Added 99.9999% latency
-09jul10,jsr Fixing LatencyListener constructor
-03may10,jsr Adapted for new Latencytest option
-02oct08,eys Added 99.99% latency
-04may08,hhw Minor mods.
-21apr08,ch  Output modifications for automation
-03apr08,rbw More improvements to time calculations; more readable summaries
-03apr08,rbw Improvements to time calculations
-03apr08,rbw More printf() fixes
-02apr08,rbw Fixed syntax error in printf() call
-02apr08,rbw Moved to package com.rti.perftest.harness to distinguish between
-            (1) RTI-specific test implementation and (2) generic test harness
-01apr08,rbw Follow Java naming conventions
-01apr08,rbw Created
-=========================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 package com.rti.perftest.harness;
 
@@ -251,4 +233,4 @@ import com.rti.perftest.TestMessage;
 }
 
 // ===========================================================================
-// End of $Id: LatencyListener.java,v 1.4 2014/06/27 15:23:02 juanjo Exp $
+// End of $Id$

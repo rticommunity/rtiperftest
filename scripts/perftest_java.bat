@@ -1,24 +1,6 @@
-@REM $Id: perftest_java.bat,v 1.3 2015/04/30 11:25:24 juanjo Exp $
-@REM
-@REM (c) Copyright, Real-Time Innovations, 2005.
-@REM All rights reserved.
-@REM
-@REM No duplications, whole or partial, manual or electronic, may be made
-@REM without express written permission.  Any such copies, or
-@REM revisions thereof, must display this notice unaltered.
-@REM This code contains trade secrets of Real-Time Innovations, Inc.
-@REM
-@REM modification history
-@REM --------------------
-@REM 30apr15,jmc PERFTEST-88 Changed \class to \lib\java in the classpath
-@REM 11apr09,jsr Added RTI_PERFTEST_ARCH variable for arch flexibility
-@REM 22oct08,rbw Fixed JAR file name
-@REM 07oct08,rbw Refactored launcher class
-@REM 04apr08,rbw Harmonized output paths with other architectures
-@REM 02apr08,rbw Increase heap size; get 'java' from path; use release libs
-@REM 02apr08,rbw Created
-
-@REM =====================================================================
+@REM (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+@REM Permission to modify and use for internal purposes granted.
+@REM This software is provided "as is", without warranty, express or implied.
 
 @echo off
 

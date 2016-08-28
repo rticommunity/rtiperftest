@@ -1,14 +1,8 @@
-/* $Id: DomainListener.java,v 1.3 2014/09/02 13:53:33 jmorales Exp $
-
-(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
-Permission to modify and use for internal purposes granted.   	
-This software is provided "as is", without warranty, express or implied.
-
-modification history:
---------------------
-5.1.0,28sep02,jm  PERF-37 Fixed issue when topic is inconsistent.
-01apr08,rbw Created
-=========================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 package com.rti.perftest.ddsimpl;
 
@@ -67,4 +61,4 @@ import com.rti.dds.topic.Topic;
 }
 
 // ===========================================================================
-// End of $Id: DomainListener.java,v 1.3 2014/09/02 13:53:33 jmorales Exp $
+// End of $Id$

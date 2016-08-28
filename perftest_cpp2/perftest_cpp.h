@@ -1,16 +1,8 @@
-/* ===================================================================
- (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.
- Permission to modify and use for internal purposes granted.
- This software is provided "as is", without warranty, express or implied.
-
- Modification History
- --------------------
- 5.2.0,22jul15,jm  PERFTEST-90 The getTime function uses now our high precision clock.
- 5.2.0,21jul15,jm  PERF-53 Changes for CR-789.
- 5.2.0,27apr14,jm  PERFTEST-86 Removing .ini support. Fixing warnings.
- 5.2.0,03nov14,jm  PERF-53 Created. Using ../perftest_cpp as template for the
-                   Product behavior.
-===================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 #ifndef __PERFTEST_CPP_H__
 #define __PERFTEST_CPP_H__

@@ -1,16 +1,8 @@
-/* ===================================================================
- (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.
- Permission to modify and use for internal purposes granted.
- This software is provided "as is", without warranty, express or implied.
-
- Modification History
- --------------------
- 5.2.0,22jul15,jm  PERFTEST-90 The getTime function uses now our high precision clock.
- 5.2.0,21jul15,jm  PERF-53 Changes for CR-789.
- 5.2.0,27apr14,jm  PERFTEST-86 Removing .ini support. Fixing warnings.
- 5.2.0,03nov14,jm  PERF-53 Created. Using ../perftest_cpp as template for the
-                   Product behavior.
-===================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 #include "perftest_cpp.h"
 
@@ -176,8 +168,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t-pidMultiPubTest <id>   - Set id of the publisher in a multi-publisher \n"
         "\t                          test, default 0. Only publisher 0 sends \n"
         "\t                          latency pings\n"
-        "\t-configFile <filename>  - Set the name of the .ini configuration file, \n"
-        "\t                          default perftest.ini\n"
         "\t-dataLen <bytes>        - Set length of payload for each send\n"
         "\t                          default 100.\n"
         "\t-numIter <count>        - Set number of messages to send,\n"
@@ -232,6 +222,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     for (i = 0; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-pub")) {
             _IsPub = true;
+            _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
+            _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-sub")) {
             _IsPub = false;
@@ -277,13 +269,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         else if (IS_OPTION(argv[i], "-dataLen"))
         {
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                std::cerr << "[Error] Problem allocating memory" << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-
-            }
-
             _MessagingArgc++;
 
             if ((i == (argc-1)) || *argv[++i] == '-')
@@ -294,13 +279,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             }
 
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                std::cerr << "[Error] Problem allocating memory" << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-
-            }
-
             _MessagingArgc++;
 
             _DataLen = strtol(argv[i], NULL, 10);
@@ -396,13 +374,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             _IsReliable = false;
 
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                std::cerr << "Problem allocating memory" << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-
-            }
-
             _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-latencyTest"))
@@ -410,25 +381,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             _LatencyTest = true;
 
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                std::cerr << "[Error] Problem allocating memory" << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-
-            }
-
             _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-instances"))
         {
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                std::cerr << "[Error] Problem allocating memory" << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-
-            }
-
             _MessagingArgc++;
 
             if ((i == (argc-1)) || *argv[++i] == '-')
@@ -439,13 +396,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             }
 
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                std::cerr << "[Error] Problem allocating memory" << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-
-            }
-
             _MessagingArgc++;
 
             _InstanceCount = strtol(argv[i], NULL, 10);
@@ -462,13 +412,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             _IsDebug = true;
 
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                std::cerr << "[Error] Problem allocating memory" << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-
-            }
-
             _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-pubRate")) {
@@ -511,13 +454,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
         } else {
             _MessagingArgv[_MessagingArgc] = StringDup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                std::cerr << "[Error] Problem allocating memory" << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-
-            }
-
             _MessagingArgc++;
         }
     }
@@ -1593,13 +1529,7 @@ inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds) {
 
 char * perftest_cpp::StringDup(const char * str)
 {
-    char * result = NULL;
-
-    result = new char[strlen(str) + 1];
-
-    if (result != NULL) {
-        strcpy(result, str);
-    }
-
+    char *result = new char[strlen(str) + 1];
+    strcpy(result, str);
     return result;
 }

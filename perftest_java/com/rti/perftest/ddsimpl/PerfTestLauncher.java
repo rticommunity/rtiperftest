@@ -1,16 +1,8 @@
-/* $Id: PerfTestLauncher.java,v 1.7 2015/05/09 12:59:22 jmorales Exp $
-
-(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
-Permission to modify and use for internal purposes granted.   	
-This software is provided "as is", without warranty, express or implied.
-
-modification history:
---------------------
-5.2.0,09may14,jm PERFTEST-86 Removing support for .ini file config.
-5.1.0,26aug14,jm Added support for read the iskeyed option in perftest.ini.
-5.1.0,11aug14,jm PERFTEST-69 Changes in the implementation.
-08oct08,rbw Created
-=========================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 package com.rti.perftest.ddsimpl;
 
@@ -78,4 +70,4 @@ public final class PerfTestLauncher {
 }
 
 // ===========================================================================
-// End of $Id: PerfTestLauncher.java,v 1.7 2015/05/09 12:59:22 jmorales Exp $
+// End of $Id$

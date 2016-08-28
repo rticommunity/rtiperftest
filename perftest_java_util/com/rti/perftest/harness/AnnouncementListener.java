@@ -1,13 +1,8 @@
-/* $Id: AnnouncementListener.java,v 1.2 2014/01/10 11:19:08 juanjo Exp $
-
-(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
-Permission to modify and use for internal purposes granted.   	
-This software is provided "as is", without warranty, express or implied.
-
- modification history:
- --------------------
- 04may08,hhw Created.
-=========================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 package com.rti.perftest.harness;
 
@@ -49,4 +44,4 @@ import com.rti.perftest.TestMessage;
 }
 
 // ===========================================================================
-// End of $Id: AnnouncementListener.java,v 1.2 2014/01/10 11:19:08 juanjo Exp $
+// End of $Id$

@@ -1,36 +1,11 @@
 #ifndef __RTIDDSIMPL_H__
 #define __RTIDDSIMPL_H__
 
-/* $Id: RTIDDSImpl.h,v 1.13 2015/05/09 18:06:06 jmorales Exp $
-
- (c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
- Permission to modify and use for internal purposes granted.   	
- This software is provided "as is", without warranty, express or implied.
-
- Modification History
- --------------------
- 5.2.0,27apr14,jm  PERFTEST-86 Removing .ini support. Fixing warnings.
- 5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-64 Large data support 
-                   added for perftest.
- 5.1.0,28aug14,jm  PERFTEST-64 Reverting changes, since they causes issues in
-                   Java with the allocated heap.
- 5.1.0,28aug14,jm  PERFTEST-64 Added support for large data.
- 5.1.0,11aug14,jm  PERFTEST-57 Added -keyed command line option.
- 5.1.0,19dec13,jmc PERFTEST-3 Added autothrottle and turbomode
- 5.1.0,19dec13,jmc PERFTEST-2 window size in batching path and
-                   domain id now is 1
- 1.0a,07apr10,acr Added latency test
- 1.0a,10mar10,gn  Added tcp feature
- 1.0a,26may09,fcs Added _reader
- 1.0a,08may09,jsr Fixed default profile name
- 1.0a,03dec08,jsr Added HearbeatPeriod and FastHeartbeatPeriod
- 1.0a,02aug08,eys Added instanceHashBuckets parameter
- 1.0a,09may08,ch  Support for multiple instances and durability
- 1.0a,01may08,hhw Removed singleCore option.
- 1.0a,26apr08,fcs Changed ANNOUNCEMENT_MULTICAST_ADDR
- 1.0a,11apr08,fcs Added ANNOUNCEMENT_MULTICAST_ADDR
- 1.0a,19mar08,hhw Created.
-===================================================================== */
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
+ * Permission to modify and use for internal purposes granted.
+ * This software is provided "as is", without warranty, express or implied.
+ */
 
 #include <string>
 #include "MessagingIF.h"
@@ -61,11 +36,21 @@ class RTIDDSImpl : public IMessaging
         _KeepDurationUsec = 1000;
         _UsePositiveAcks = true;
         _UseSharedMemory = false;
-         _LatencyTest = false;
+        _LatencyTest = false;
         _UseTcpOnly = false;
         _IsDebug = false;
         _isLargeData = false;
         _isScan = false;
+        _isPublisher = false;
+
+      #ifdef RTI_SECURE_PERFTEST
+        _secureUseSecure = false;
+        _secureIsSigned = false;
+        _secureIsDataEncrypted = false;
+        _secureIsSMEncrypted = false;
+        _secureIsDiscoveryEncrypted = false;
+        _secureDebugLevel = -1;
+       #endif
 
         _HeartbeatPeriod.sec = 0;
         _HeartbeatPeriod.nanosec = 0;
@@ -77,6 +62,8 @@ class RTIDDSImpl : public IMessaging
         THROUGHPUT_MULTICAST_ADDR = "239.255.1.1";
         LATENCY_MULTICAST_ADDR = "239.255.1.2";
         ANNOUNCEMENT_MULTICAST_ADDR = "239.255.1.100";
+
+
         _ProfileLibraryName = "PerftestQosLibrary";
 
         _factory = NULL;
@@ -89,7 +76,7 @@ class RTIDDSImpl : public IMessaging
 	_pongSemaphore = NULL;
     }
 
-    ~RTIDDSImpl() 
+    ~RTIDDSImpl()
     {
         Shutdown();
     }
@@ -116,6 +103,12 @@ class RTIDDSImpl : public IMessaging
 
   private:
 
+  #ifdef RTI_SECURE_PERFTEST
+    bool configureSecurePlugin(DDS_DomainParticipantQos& dpQos);
+    void printSecureArgs();
+    bool validateSecureArgs();
+  #endif
+
     int          _SendQueueSize;
     int          _DataLen;
     int          _DomainID;
@@ -139,6 +132,31 @@ class RTIDDSImpl : public IMessaging
     bool         _IsDebug;
     bool         _isLargeData;
     bool         _isScan;
+    bool         _isPublisher;
+
+  #ifdef RTI_SECURE_PERFTEST
+    bool _secureUseSecure;
+    bool _secureIsSigned;
+    bool _secureIsDataEncrypted; // user data
+    bool _secureIsSMEncrypted;   // submessage
+    bool _secureIsDiscoveryEncrypted;
+    std::string _secureCertAuthorityFile;
+    std::string _secureCertificateFile;
+    std::string _securePrivateKeyFile;
+    std::string _secureGovernanceFile;
+    std::string _securePermissionsFile;
+    std::string _secureLibrary;
+    int  _secureDebugLevel;
+
+    static const std::string SECURE_PRIVATEKEY_FILE_PUB;
+    static const std::string SECURE_PRIVATEKEY_FILE_SUB;
+    static const std::string SECURE_CERTIFICATE_FILE_PUB;
+    static const std::string SECURE_CERTIFICATE_FILE_SUB;
+    static const std::string SECURE_CERTAUTHORITY_FILE;
+    static const std::string SECURE_PERMISION_FILE_PUB;
+    static const std::string SECURE_PERMISION_FILE_SUB;
+    static const std::string SECURE_LIBRARY_NAME;
+  #endif
 
     DDS_Duration_t   _HeartbeatPeriod;
     DDS_Duration_t   _FastHeartbeatPeriod;
@@ -155,7 +173,7 @@ class RTIDDSImpl : public IMessaging
     DDSDataReader               *_reader;
     const char                  *_typename;
 
-    RTIOsapiSemaphore		*_pongSemaphore;
+    RTIOsapiSemaphore *_pongSemaphore;
 
   public:
 
@@ -165,4 +183,3 @@ class RTIDDSImpl : public IMessaging
 
 
 #endif // __RTIDDSIMPL_H__
-
