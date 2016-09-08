@@ -36,7 +36,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 -->
 
 <dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-       xsi:noNamespaceSchemaLocation="./xsd/rti_dds_qos_profiles.xsd">
+       xsi:noNamespaceSchemaLocation="https://community.rti.com/schema/5.2.3/rti_dds_profiles.xsd">
  
   <qos_library name="PerftestQosLibrary">
 
