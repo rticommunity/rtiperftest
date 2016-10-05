@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
-
 <!--
-Copyright 2016 - Real Time innovations
+(c) 2005-2012  Copyright, Real-Time Innovations, Inc.  All rights reserved.    	
+Permission to modify and use for internal purposes granted.   	
+This software is provided "as is", without warranty, express or implied.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+This file contains Qos for the entities of the application
 
-    http://www.apache.org/licenses/LICENSE-2.0
+Modification history
+- - - - - - - - - - -
+5.1.0,16sep14,jm  PERFTEST-60 PERFTEST-64 PERFTEST-65 PERFTEST-66 Large data
+                  support added for perftest.
+1.1b,29aug13,jmc CORE-5919 Moved hardcoded QoS to XML file when possible
+1.1b,29aug13,jmc CORE-5338 initial_samples to 10000 in throughputqos.datareaderqos
+1.0a,05may08,hhw synchronized many to 1 changes et. al. across all languages
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
 -->
 
 <!--
@@ -23,6 +23,7 @@ throughput levels.
 
 The format of this file is described in the RTI Connext Core Libraries
 and Utilities User's Manual in the chapter titled "Configuring QoS with XML."
+
 -->
 
 <!--
@@ -33,7 +34,12 @@ _SendQueueSize variable name corresponds to the command-line option -sendQueueSi
 _InstanceCount variable name corresponds to the command-line option -instances
 _InstanceHashBuckets variable name corresponds to the command-line option -instanceHashBuckets
 _KeepDurationUsec variable name corresponds to the command-line option -keepDurationUsec
+
 -->
+
+<!--
+<dds>
+  -->
 
 <dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
        xsi:noNamespaceSchemaLocation="https://community.rti.com/schema/5.2.3/rti_dds_profiles.xsd">

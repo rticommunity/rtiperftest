@@ -1,4 +1,4 @@
-# RTI Perftest (master) [<img alt="Gitter" src="https://img.shields.io/badge/license-Apache-blue.svg?style=flat" align="right" />](https://www.apache.org/licenses/LICENSE-2.0.html)
+# RTI Perftest (master)
 
 Find all the information about RTI Perftest in the following documents:
 
