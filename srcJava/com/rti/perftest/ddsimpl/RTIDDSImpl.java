@@ -222,6 +222,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t-durability <0|1|2|3>   - Set durability QOS, 0 - volatile,\n" +
             "\t                          1 - transient local, 2 - transient,\n" +
             "\t                          3 - persistent, default 0\n" +
+            "\t-dynamicData            - Makes use of the Dynamic Data APIs instead\n" +
+            "\t                          of using the generated types.\n" +
             "\t-noDirectCommunication  - Use brokered mode for persistent durability\n" +
             "\t-instanceHashBuckets <#count> - Number of hash buckets for instances.\n" +
             "\t                          If unspecified, same as number of\n" +
@@ -329,13 +331,15 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         if (_AutoThrottle) {
-        	PropertyQosPolicyHelper.add_property(qos.property,
-        			"dds.domain_participant.auto_throttle.enable", "true",
+            PropertyQosPolicyHelper.add_property(
+                    qos.property,
+                    "dds.domain_participant.auto_throttle.enable",
+                    "true",
                     false);
-    	}
-        
+        }
+
         if (!_useTcpOnly) {
-        
+
             if (_nic.length() > 0) {
                 PropertyQosPolicyHelper.add_property(
                     qos.property,
@@ -398,7 +402,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     }
 
     public IMessagingWriter createWriter(String topicName) {
-        DataWriter writer = null;
+
         DataWriterQos dwQos = new DataWriterQos();
         String qosProfile = null;
 
@@ -447,18 +451,18 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         configureWriterQos(topicName, qosProfile, dwQos);
 
-        writer = _publisher.create_datawriter(
-            topic, dwQos, null,
-            StatusKind.STATUS_MASK_NONE);
+        DataWriter writer = _publisher.create_datawriter(
+                topic,
+                dwQos,
+                null,
+                StatusKind.STATUS_MASK_NONE);
 
         if (writer == null) {
             System.err.print("Problem creating writer.\n");
             return null;
         }
 
-        RTIPublisher<T> pub = new RTIPublisher<T>(writer,_instanceCount, _myDataType.clone());
-
-        return pub;
+        return new RTIPublisher<T>(writer,_instanceCount, _myDataType.clone());
     }
 
     public IMessagingReader createReader(String topicName,
@@ -509,19 +513,21 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         configureReaderQos(topicName, qosProfile, drQos);
 
-        DataReader reader;
+        ReceiverListener<T> readerListener = null;
+        int statusFlag = StatusKind.STATUS_MASK_NONE;
+
         if (callback != null) {
-            ReceiverListener<T> readerListener = new ReceiverListener<T>(callback,_myDataType.clone());
-            reader = _subscriber.create_datareader(
-                topic,
-                drQos,
-                readerListener,
-                StatusKind.DATA_AVAILABLE_STATUS);
-        } else {
-            reader = _subscriber.create_datareader(
-                topic, drQos, null, StatusKind.STATUS_MASK_NONE);
+            readerListener = new ReceiverListener<T>(
+                    callback,
+                    _myDataType.clone());
+            statusFlag = StatusKind.DATA_AVAILABLE_STATUS;
         }
 
+        DataReader reader = _subscriber.create_datareader(
+                topic, 
+                drQos, 
+                readerListener, 
+                statusFlag);
 
         if (reader == null) {
             System.err.print("Problem creating reader.\n");
@@ -533,8 +539,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             _reader = reader;
         }
 
-        IMessagingReader sub = new RTISubscriber<T>(reader,_myDataType.clone());
-        return sub;
+        return new RTISubscriber<T>(reader,_myDataType.clone());
     }
 
     // -----------------------------------------------------------------------
@@ -968,6 +973,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
             else if ("-pub".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isPublisher = true;
             }
+            else if ("-dynamicData".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                // Using Dynamic data, we need to check here this, since the
+                // previous place does not remove it from the list.
+            }
             else if ("-dataLen".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
                     System.err.print("Missing <length> after -dataLen\n");
@@ -1330,4 +1339,3 @@ public final class RTIDDSImpl<T> implements IMessaging {
 }
 
 // ===========================================================================
-// End of $Id: RTIDDSImpl.java,v 1.17 2015/05/09 18:06:06 jmorales Exp $

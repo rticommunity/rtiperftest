@@ -4,6 +4,7 @@
  * This software is provided "as is", without warranty, express or implied.
  */
 
+using DDS;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -107,6 +108,8 @@ namespace PerformanceTest
             "\t-fastHeartbeatPeriod <sec>:<nanosec> - Sets the fast heartbeat period\n" +
             "\t                          for the throughput DataWriter,\n" +
             "\t                          default 0:0 (use XML QoS Profile value)\n" +
+            "\t-dynamicData            - Makes use of the Dynamic Data APIs instead\n" +
+            "\t                          of using the generated types.\n" +
             "\t-durability <0|1|2|3>   - Set durability QOS,\n"+
             "\t                          0 - volatile, 1 - transient local,\n"+
             "\t                          2 - transient, 3 - persistent, default 0\n" +
@@ -642,21 +645,23 @@ namespace PerformanceTest
             }
         }
 
-
         /*********************************************************
          * RTIPublisher
          */
-        class RTIPublisher<Type> : IMessagingWriter where Type : class, DDS.ICopyable<Type>
+        public class RTIPublisher<Type> : IMessagingWriter where Type : class, DDS.ICopyable<Type>
         {
-            private DDS.DataWriter _writer = null;
-            private ITypeHelper<Type> _DataType = null;
+            protected DataWriter _writer = null;
+            protected ITypeHelper<Type> _DataType = null;
+            protected int _num_instances;
+            protected long _instance_counter;
+            protected InstanceHandle_t[] _instance_handles;
+            protected Semaphore _pongSemaphore = null;
 
-            private int _num_instances;
-            private long _instance_counter;
-            DDS.InstanceHandle_t[] _instance_handles;
-            private Semaphore _pongSemaphore = null;
-
-            public RTIPublisher(DDS.DataWriter writer, int num_instances, Semaphore pongSemaphore, ITypeHelper<Type> DataType)
+            public RTIPublisher(
+                    DataWriter writer,
+                    int num_instances,
+                    Semaphore pongSemaphore,
+                    ITypeHelper<Type> DataType)
             {
                 _writer = writer;
                 _DataType = DataType;
@@ -666,12 +671,13 @@ namespace PerformanceTest
                 _instance_handles = new DDS.InstanceHandle_t[num_instances];
                 _pongSemaphore = pongSemaphore;
 
-                _DataType.getBindata().maximum = 0;
+                _DataType.setBinDataMax(0);
 
                 for (int i = 0; i < _num_instances; ++i)
                 {
                     _DataType.fillKey(i);
-                    _instance_handles[i] = writer.register_instance_untyped(_DataType.getData());
+                    _instance_handles[i] = writer.register_instance_untyped(
+                            _DataType.getData());
                 }
 
             }
@@ -681,7 +687,7 @@ namespace PerformanceTest
                 _writer.flush();
             }
 
-            public bool Send(TestMessage message)
+            public virtual bool Send(TestMessage message)
             {
                 int key = 0;
                 _DataType.copyFromMessage(message);
@@ -698,12 +704,12 @@ namespace PerformanceTest
                 catch (DDS.Exception ex)
                 {
                     Console.Error.Write("Write error {0}\n", ex);
-                    _DataType.getBindata().unloan();
+                    _DataType.binDataUnloan();
                     return false;
                 }
                 finally
                 {
-                    _DataType.getBindata().unloan();
+                    _DataType.binDataUnloan();
                 }
 
                 return true;
@@ -767,6 +773,51 @@ namespace PerformanceTest
                 return true;
             }
 
+        }
+
+        /*********************************************************
+         * RTIDynamicDataPublisher
+         */
+        class RTIDynamicDataPublisher : RTIPublisher<DynamicData>
+        {
+            public RTIDynamicDataPublisher(
+                    DataWriter writer,
+                    int num_instances,
+                    Semaphore pongSemaphore,
+                    ITypeHelper<DynamicData> DataType)
+                : base(writer, num_instances, pongSemaphore, DataType) {}
+
+
+            public override bool Send(TestMessage message)
+            {
+                int key = 0;
+                _DataType.copyFromMessage(message);
+
+                if (_num_instances > 1)
+                {
+                    key = (int)(_instance_counter++ % _num_instances);
+                    _DataType.fillKey(key);
+                }
+
+                try
+                {
+                    ((DynamicDataWriter)_writer).write(
+                            (DynamicData)_DataType.getData(),
+                            ref _instance_handles[key]);
+                }
+                catch (DDS.Exception ex)
+                {
+                    Console.Error.Write("Write error {0}\n", ex);
+                    _DataType.binDataUnloan();
+                    return false;
+                }
+                finally
+                {
+                    _DataType.binDataUnloan();
+                }
+
+                return true;
+            }
         }
 
         /*********************************************************
@@ -1399,7 +1450,6 @@ namespace PerformanceTest
           */
         public IMessagingWriter CreateWriter(string topic_name)
         {
-            DDS.DataWriter writer = null;
             DDS.DataWriterQos dw_qos = new DDS.DataWriterQos();
             string qos_profile = null;
 
@@ -1585,9 +1635,12 @@ namespace PerformanceTest
                 }
             }
 
-            writer = _publisher.create_datawriter(
-                topic, dw_qos, null,
-                DDS.StatusMask.STATUS_MASK_NONE);
+
+            DataWriter writer = _publisher.create_datawriter(
+                    topic,
+                    dw_qos, 
+                    null,
+                    StatusMask.STATUS_MASK_NONE);
 
             if (writer == null)
             {
@@ -1595,9 +1648,22 @@ namespace PerformanceTest
                 return null;
             }
 
-            RTIPublisher<T> pub = new RTIPublisher<T>(writer,_InstanceCount,_pongSemaphore,_DataTypeHelper.clone());
-
-            return pub;
+            if (new DynamicData() is T)
+            {
+                return new RTIDynamicDataPublisher(
+                    (DynamicDataWriter)writer,
+                    _InstanceCount,
+                    _pongSemaphore,
+                    (DynamicDataTypeHelper)_DataTypeHelper.clone());
+            }
+            else
+            {
+                return new RTIPublisher<T>(
+                    writer,
+                    _InstanceCount,
+                    _pongSemaphore,
+                    _DataTypeHelper.clone());
+            }
         }
 
         /*********************************************************
@@ -1605,8 +1671,6 @@ namespace PerformanceTest
          */
         public IMessagingReader CreateReader(string topic_name, IMessagingCB callback)
         {
-            ReceiverListener<T> reader_listener = null;
-            DDS.DataReader reader = null;
             DDS.DataReaderQos dr_qos = new DDS.DataReaderQos();
             string qos_profile = null;
 
@@ -1737,19 +1801,22 @@ namespace PerformanceTest
                 }
             }
 
-
+            DDS.DataReader reader = null;
+            ReceiverListener<T> reader_listener = null;
+            StatusMask statusMask = StatusMask.STATUS_MASK_NONE;
+            
             if (callback != null)
             {
                 reader_listener = new ReceiverListener<T>(callback, _DataTypeHelper.clone());
-                reader = _subscriber.create_datareader(
-                    topic, dr_qos, reader_listener, (DDS.StatusMask)DDS.StatusKind.DATA_AVAILABLE_STATUS);
-            }
-            else
-            {
-                reader = _subscriber.create_datareader(
-                    topic, dr_qos, null, DDS.StatusMask.STATUS_MASK_NONE);
+                statusMask = (DDS.StatusMask)DDS.StatusKind.DATA_AVAILABLE_STATUS;
+
             }
 
+            reader = _subscriber.create_datareader(
+                    topic,
+                    dr_qos,
+                    reader_listener,
+                    statusMask);
 
             if (reader == null)
             {
@@ -1757,13 +1824,7 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (topic_name == perftest_cs._LatencyTopicName ||
-                topic_name == perftest_cs._ThroughputTopicName) {
-                _reader = reader;
-            }
-
-            IMessagingReader sub = new RTISubscriber<T>(reader,_DataTypeHelper.clone());
-            return sub;
+            return new RTISubscriber<T>(reader, _DataTypeHelper.clone());
         }
 
         private int    _SendQueueSize = 50;

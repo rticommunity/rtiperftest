@@ -10,6 +10,7 @@ using System.Runtime.InteropServices; // for DllImport]
 using System.Threading;
 using System.Text;
 using System.Timers;
+using DDS;
 
 namespace PerformanceTest {
 
@@ -53,7 +54,7 @@ namespace PerformanceTest {
 
         }
 
-        public TestMessage copyFromSeqToMessage(Object data_sequence, int index)
+        public TestMessage copyFromSeqToMessage(LoanableSequence<TestData_t> data_sequence, int index)
         {
 
             TestData_t msg = ((TestData_tSeq)data_sequence).get_at(index);
@@ -75,12 +76,17 @@ namespace PerformanceTest {
             return _myData;
         }
 
-        public DDS.ByteSeq getBindata()
+        public void setBinDataMax(int newMax)
         {
-            return _myData.bin_data;
+            _myData.bin_data.maximum = newMax;
         }
 
-        public DDS.TypedTypeSupport<TestData_t> getTypeSupport()
+        public void binDataUnloan()
+        {
+            _myData.bin_data.unloan();
+        }
+
+        public DDS.AbstractTypedTypeSupport<TestData_t> getTypeSupport()
         {
             return TestData_tTypeSupport.get_instance();
         }
@@ -137,7 +143,7 @@ namespace PerformanceTest {
 
         }
 
-        public TestMessage copyFromSeqToMessage(Object data_sequence, int index)
+        public TestMessage copyFromSeqToMessage(LoanableSequence<TestDataKeyed_t> data_sequence, int index)
         {
 
             TestDataKeyed_t msg = ((TestDataKeyed_tSeq)data_sequence).get_at(index);
@@ -159,12 +165,17 @@ namespace PerformanceTest {
             return _myData;
         }
 
-        public DDS.ByteSeq getBindata()
+        public void setBinDataMax(int newMax)
         {
-            return _myData.bin_data;
+            _myData.bin_data.maximum = newMax;
         }
 
-        public DDS.TypedTypeSupport<TestDataKeyed_t> getTypeSupport()
+        public void binDataUnloan()
+        {
+            _myData.bin_data.unloan();
+        }
+
+        public DDS.AbstractTypedTypeSupport<TestDataKeyed_t> getTypeSupport()
         {
             return TestDataKeyed_tTypeSupport.get_instance();
         }
@@ -181,6 +192,115 @@ namespace PerformanceTest {
 
     }
 
+    class DynamicDataTypeHelper : ITypeHelper<DynamicData>
+    {
+
+        bool _isKeyed;
+        DynamicData _myData;
+
+        public DynamicDataTypeHelper(DDS.TypeCode typeCode, bool isKeyed)
+        {
+            _isKeyed = isKeyed;
+            _myData = new DynamicData(typeCode, DynamicData.DYNAMIC_DATA_PROPERTY_DEFAULT);
+        }
+
+        public DynamicDataTypeHelper(DynamicData myData)
+        {
+            _myData = myData;
+        }
+
+        public void fillKey(int value)
+        {
+            Byte[] byteArray = new Byte[4];
+            byteArray[0] = (byte)(value);
+            byteArray[1] = (byte)(value >> 8);
+            byteArray[2] = (byte)(value >> 16);
+            byteArray[3] = (byte)(value >> 24);
+            _myData.set_byte_array("key", 1, byteArray);
+        }
+
+        public void copyFromMessage(TestMessage message)
+        {
+
+            ByteSeq my_byteSeq = new ByteSeq();
+            my_byteSeq.ensure_length(message.size, message.size);
+
+            _myData.set_int("entity_id", 2, message.entity_id);
+            _myData.set_uint("seq_num", 3, message.seq_num);
+            _myData.set_int("timestamp_sec", 4, message.timestamp_sec);
+            _myData.set_uint("timestamp_usec", 5, message.timestamp_usec);
+            _myData.set_int("latency_ping", 6, message.latency_ping);
+            _myData.set_byte_seq("bin_data", 7, my_byteSeq);
+        }
+
+        public TestMessage copyFromSeqToMessage(LoanableSequence<DynamicData> data_sequence, int index)
+        {
+
+            DynamicData msg = ((DynamicDataSeq)data_sequence).get_at(index);
+            TestMessage message = new TestMessage();
+
+            message.entity_id = msg.get_int("entity_id", 2);
+            message.seq_num = msg.get_uint("seq_num", 3);
+            message.timestamp_sec = msg.get_int("timestamp_sec", 4);
+            message.timestamp_usec = msg.get_uint("timestamp_usec", 5);
+            message.latency_ping = msg.get_int("latency_ping", 6);
+
+            ByteSeq bin_data = new ByteSeq();
+            msg.get_byte_seq(bin_data, "bin_data", 7);
+            message.data = new byte[bin_data.length];
+            bin_data.to_array(message.data);
+            message.size = bin_data.length;
+
+            return message;
+        }
+
+        public DynamicData getData()
+        {
+            return _myData;
+        }
+
+        public void bindataUnloan()
+        {
+        }
+
+        public AbstractTypedTypeSupport<DynamicData> getTypeSupport()
+        {
+
+            if (!_isKeyed)
+            {
+                return new DynamicDataTypeSupport(
+                        TestData_tTypeSupport.get_typecode(),
+                        DynamicDataTypeProperty_t.DYNAMIC_DATA_TYPE_PROPERTY_DEFAULT);
+            }
+            else
+            {
+                return new DynamicDataTypeSupport(
+                        TestDataKeyed_tTypeSupport.get_typecode(),
+                        DynamicDataTypeProperty_t.DYNAMIC_DATA_TYPE_PROPERTY_DEFAULT);
+            }
+        }
+
+        public ITypeHelper<DynamicData> clone()
+        {
+            return new DynamicDataTypeHelper(_myData);
+        }
+
+        public LoanableSequence<DynamicData> createSequence()
+        {
+            return new DynamicDataSeq();
+        }
+
+        public void setBinDataMax(int newMax)
+        {
+            ByteSeq bin_data = new ByteSeq();
+            _myData.get_byte_seq(bin_data, "bin_data", 7);
+            bin_data.maximum = newMax;
+        }
+
+        public void binDataUnloan()
+        {
+        }
+    }
 
     /*********************************************************
      * perftest_cs
@@ -210,11 +330,27 @@ namespace PerformanceTest {
             if (_isKeyed)
             {
                 Console.Error.Write("Using keyed Data.\n");
-                _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>(new DataTypeKeyedHelper());
+                if (_isDynamicData)
+                {
+                    Console.Error.Write("Using Dynamic Data.\n");
+                    _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyed_t.get_typecode(),_isKeyed));
+                }
+                else
+                {
+                    _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>(new DataTypeKeyedHelper());
+                }
             }
             else {
                 Console.Error.Write("Using unkeyed Data.\n");
-                _MessagingImpl = new RTIDDSImpl<TestData_t>(new DataTypeHelper());
+                if (_isDynamicData)
+                {
+                    Console.Error.Write("Using Dynamic Data.\n");
+                    _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyed_t.get_typecode(), _isKeyed));
+                }
+                else
+                {
+                    _MessagingImpl = new RTIDDSImpl<TestData_t>(new DataTypeHelper());
+                }
             }
 
             if (!_MessagingImpl.Initialize(_MessagingArgc, _MessagingArgv))
@@ -500,6 +636,10 @@ namespace PerformanceTest {
                         Console.Error.Write("Bad num publishers\n");
                         return false;
                     }
+                }
+                else if ("-dynamicData".StartsWith(argv[i], true, null))
+                {
+                    _isDynamicData = true;
                 }
                 else if ("-scan".StartsWith(argv[i], true, null))
                 {
@@ -1707,6 +1847,7 @@ namespace PerformanceTest {
         private bool _isReliable = true;
         private ulong _pubRate = 0;
         private bool _isKeyed = false;
+        private bool _isDynamicData = false;
         private ulong _executionTime = 0;
         private System.Timers.Timer timer = null;
 

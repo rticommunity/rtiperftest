@@ -43,6 +43,7 @@ class RTIDDSImpl : public IMessaging
         _isLargeData = false;
         _isScan = false;
         _isPublisher = false;
+        _isDynamicData = false;
 
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure = false;
@@ -93,7 +94,7 @@ class RTIDDSImpl : public IMessaging
     int GetMaxBinDataSize() { return MAX_BINDATA_SIZE; }
 
     IMessagingWriter *CreateWriter(const char *topic_name);
-    
+
     // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
     // to get data
     IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
@@ -133,6 +134,7 @@ class RTIDDSImpl : public IMessaging
     bool         _isLargeData;
     bool         _isScan;
     bool         _isPublisher;
+    bool         _isDynamicData;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

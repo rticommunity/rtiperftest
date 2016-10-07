@@ -4,6 +4,7 @@
  * This software is provided "as is", without warranty, express or implied.
  */
 
+using DDS;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -83,15 +84,17 @@ namespace PerformanceTest
 
         void copyFromMessage(TestMessage message);
 
-        TestMessage copyFromSeqToMessage(Object data_sequence,int index);
+        TestMessage copyFromSeqToMessage(LoanableSequence<T> data_sequence,int index);
 
         T getData();
 
-        DDS.ByteSeq getBindata();
+        void setBinDataMax(int newMax);
 
-        DDS.TypedTypeSupport<T> getTypeSupport();
+        void binDataUnloan();
 
-        DDS.LoanableSequence<T> createSequence();
+        AbstractTypedTypeSupport<T> getTypeSupport();
+
+        LoanableSequence<T> createSequence();
 
         ITypeHelper<T> clone();
 

@@ -23,6 +23,20 @@ class TestMessage
 
     static const int MAX_SYNCHRONOUS_SIZE = 63000;
     static const int MAX_DATA_SIZE = 131072;
+
+    TestMessage():
+        size(0),
+        entity_id(0),
+        seq_num(0),
+        timestamp_sec(0),
+        timestamp_usec(0),
+        latency_ping(0)
+    {
+    	key[0]=0;
+    	key[1]=0;
+    	key[2]=0;
+    	key[3]=0;
+    }
 };
 
 class IMessagingCB
@@ -53,8 +67,8 @@ class IMessagingWriter
   public:
     virtual ~IMessagingWriter() {}
     virtual void waitForReaders(int numSubscribers) = 0;
-    virtual bool Send(TestMessage &message) = 0;
-    virtual void Flush() = 0;
+    virtual bool send(TestMessage &message) = 0;
+    virtual void flush() = 0;
     virtual void waitForPingResponse() {
 	// Implementation required only if
 	// support for LatencyTest is desired.
@@ -93,11 +107,13 @@ class IMessaging
     // exceeds this during a scan, the test will stop.
     virtual int GetMaxBinDataSize() = 0;
 
-    virtual IMessagingWriter *CreateWriter(const std::string topic_name) = 0;
+    virtual IMessagingWriter *CreateWriter(const std::string &topic_name) = 0;
 
     // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
     // to get data
-    virtual IMessagingReader *CreateReader(const std::string topic_name, IMessagingCB *callback) = 0;
+    virtual IMessagingReader *CreateReader(
+            const std::string &topic_name,
+            IMessagingCB *callback) = 0;
 };
 
 

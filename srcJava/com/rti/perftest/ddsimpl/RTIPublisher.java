@@ -20,7 +20,8 @@ import java.util.concurrent.TimeUnit;
 
 // ===========================================================================
 
-/*package*/ final class RTIPublisher<T> implements IMessagingWriter {
+final class RTIPublisher<T> implements IMessagingWriter {
+
     // -----------------------------------------------------------------------
     // Private Fields
     // -----------------------------------------------------------------------
@@ -44,7 +45,7 @@ import java.util.concurrent.TimeUnit;
         _writer = writer;
         _numInstances = num_instances;
         _instanceHandles = new InstanceHandle_t[num_instances];
-        _typeHelper.getBindata().setMaximum(0);
+        _typeHelper.setBinDataMax(0);
 
         for (int i = 0; i < _numInstances; ++i) {
             _typeHelper.fillKey(i);
@@ -79,7 +80,7 @@ import java.util.concurrent.TimeUnit;
             System.out.println("Write error: " + err.getMessage());
             return false;
         } finally {
-            _typeHelper.getBindata().unloan();
+            _typeHelper.bindataUnloan();
         }
 
         return true;
@@ -150,4 +151,3 @@ import java.util.concurrent.TimeUnit;
 }
 
 // ===========================================================================
-// End of $Id: RTIPublisher.java,v 1.4 2014/08/12 10:21:28 jmorales Exp $

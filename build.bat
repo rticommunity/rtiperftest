@@ -25,7 +25,7 @@ set RELEASE_DEBUG=release
 set STATIC_DYNAMIC=static
 set USE_SECURE_LIBS=0
 
-# Needed when compiling statically using security
+@REM # Needed when compiling statically using security
 set RTI_OPENSSLHOME=""
 
 ::------------------------------------------------------------------------------
@@ -399,35 +399,35 @@ GOTO:EOF
 	echo[
 	echo This scripts accepts the following parameters:
 	echo[
-	echo.	--platform your_arch		 Platform for which build.sh is going to compile
-	echo.								 RTI Perftest.
-	echo.	--nddshome path			  Path to the *RTI Connext DDS installation*. If
-	echo.								 this parameter is not present, the \$NDDSHOME
-	echo.								 variable should be set.
-	echo.	--skip-java-build			Avoid Java ByteCode generation creation.
-	echo.	--skip-cpp-build			 Avoid C++ code generation and compilation.
-	echo.	--skip-cpp03-build		   Avoid C++ New PSM code generation and
-	echo.								 compilation.
-	echo.	--skip-cs-build			  Avoid C Sharp code generation and compilation.
-	echo.	--make  path				 Path to the GNU make executable. If this
-	echo.								 parameter is not present, GNU make variable
-	echo.								 should be available from your \$PATH variable.
-	echo.	--java-home path			 Path to the Java JDK home folder. If this
-	echo.								 parameter is not present, javac, jar and java
-	echo.								 executables should be available from your
-	echo.								 \$PATH variable.
-	echo.	--debug					  Compile against the RTI Connext Debug
-	echo.								 libraries. Default is against release ones.
-	echo.	--dynamic					Compile against the RTI Connext Dynamic
-	echo.								 libraries. Default is against static ones.
-	echo.	--secure					 Enable the security options for compilation.
-	echo.								 Default is not enabled.
-	echo.	--openssl-home path		  Path to the openssl home. This will be used
-	echo.								 when compiling statically and using security
-	echo.	--clean					  If this option is present, the build.sh script
-	echo.								 will clean all the generated code and binaries
-	echo.								 from previous executions.
-	echo.	--help -h					Display this message.
+	echo.    --platform your_arch   Platform for which build.sh is going to compile
+	echo.                           RTI Perftest.
+	echo.    --nddshome path        Path to the *RTI Connext DDS installation*. If
+	echo.                           this parameter is not present, the $NDDSHOME
+	echo.                           variable should be set.
+	echo.    --skip-java-build      Avoid Java ByteCode generation creation.
+	echo.    --skip-cpp-build       Avoid C++ code generation and compilation.
+	echo.    --skip-cpp03-build     Avoid C++ New PSM code generation and
+	echo.                           compilation.
+	echo.    --skip-cs-build        Avoid C Sharp code generation and compilation.
+	echo.    --make  path           Path to the GNU make executable. If this
+	echo.                           parameter is not present, GNU make variable
+	echo.                           should be available from your $PATH variable.
+	echo.    --java-home path       Path to the Java JDK home folder. If this
+	echo.                           parameter is not present, javac, jar and java
+	echo.                           executables should be available from your
+	echo.                           $PATH variable.
+	echo.    --debug                Compile against the RTI Connext Debug
+	echo.                           libraries. Default is against release ones.
+	echo.    --dynamic              Compile against the RTI Connext Dynamic
+	echo.                           libraries. Default is against static ones.
+	echo.    --secure               Enable the security options for compilation.
+	echo.                           Default is not enabled.
+	echo.    --openssl-home path    Path to the openssl home. This will be used
+	echo.                           when compiling statically and using security
+	echo.    --clean                If this option is present, the build.sh script
+	echo.                           will clean all the generated code and binaries
+	echo.                           from previous executions.
+	echo.    --help -h              Display this message.
 	echo[
 	echo ================================================================================
 GOTO:EOF

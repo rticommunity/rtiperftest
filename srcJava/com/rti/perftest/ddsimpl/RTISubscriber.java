@@ -22,15 +22,17 @@ import com.rti.dds.subscription.SampleInfo;
 import com.rti.dds.subscription.SampleInfoSeq;
 import com.rti.dds.subscription.SampleStateKind;
 import com.rti.dds.subscription.ViewStateKind;
-import com.rti.dds.util.AbstractSequence;
 import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.TestMessage;
 import com.rti.perftest.gen.MAX_BINDATA_SIZE;
 
+import java.util.List;
+
 
 // ===========================================================================
 
-/*package*/ final class RTISubscriber<T> implements IMessagingReader {
+final class RTISubscriber<T> implements IMessagingReader {
+
     // -----------------------------------------------------------------------
     // Private Fields
     // -----------------------------------------------------------------------
@@ -40,7 +42,8 @@ import com.rti.perftest.gen.MAX_BINDATA_SIZE;
             Duration_t.DURATION_INFINITE_NSEC);
 
     private DataReader _reader;
-    private AbstractSequence _dataSeq = null;
+    @SuppressWarnings("rawtypes")
+    private List _dataSeq = null;
     private SampleInfoSeq _infoSeq = new SampleInfoSeq();
     private TypeHelper<T> _myDataType = null;
     
@@ -53,19 +56,19 @@ import com.rti.perftest.gen.MAX_BINDATA_SIZE;
 
     private int _dataIdx = 0;
     private boolean _noData = true;
-
-
-
+    
+    
     // -----------------------------------------------------------------------
     // Public Methods
     // -----------------------------------------------------------------------
 
     // --- Constructors: -----------------------------------------------------
 
+    @SuppressWarnings("rawtypes")
     public RTISubscriber(DataReader reader, TypeHelper<T> myDatatype) {
         _reader = reader;
         _myDataType = myDatatype;
-        _dataSeq =_myDataType.createSequence();
+        _dataSeq =(List)_myDataType.createSequence();
 
         // null listener means using receive thread
         if (_reader.get_listener() == null) {
@@ -85,13 +88,13 @@ import com.rti.perftest.gen.MAX_BINDATA_SIZE;
         }
     }
 
-
     // --- From IMessagingReader: --------------------------------------------
 
     public void shutdown() {
         // loan may be outstanding during shutdown
         _reader.return_loan_untyped(_dataSeq, _infoSeq);
     }
+
 
 
     public TestMessage receiveMessage() {
@@ -175,4 +178,3 @@ import com.rti.perftest.gen.MAX_BINDATA_SIZE;
 }
 
 // ===========================================================================
-// End of $Id: RTISubscriber.java,v 1.4 2014/08/12 10:21:28 jmorales Exp $

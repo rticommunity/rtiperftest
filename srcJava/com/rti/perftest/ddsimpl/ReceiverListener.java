@@ -6,6 +6,8 @@
 
 package com.rti.perftest.ddsimpl;
 
+import java.util.List;
+
 import com.rti.dds.infrastructure.RETCODE_ERROR;
 import com.rti.dds.infrastructure.RETCODE_NO_DATA;
 import com.rti.dds.infrastructure.ResourceLimitsQosPolicy;
@@ -32,7 +34,8 @@ import com.rti.perftest.gen.MAX_BINDATA_SIZE;
     // Private Fields
     // -----------------------------------------------------------------------
 
-    private AbstractSequence _dataSeq = null;
+    @SuppressWarnings("rawtypes")
+    private List _dataSeq = null;
     private SampleInfoSeq _infoSeq = new SampleInfoSeq();
     private TestMessage   _message  = new TestMessage();
     {
@@ -41,18 +44,17 @@ import com.rti.perftest.gen.MAX_BINDATA_SIZE;
     private IMessagingCB _callback;
     private TypeHelper<T> _myDataType = null;
 
-
-
     // -----------------------------------------------------------------------
     // Public Methods
     // -----------------------------------------------------------------------
 
     // --- Constructors: -----------------------------------------------------
 
+    @SuppressWarnings("rawtypes")
     public ReceiverListener(IMessagingCB callback, TypeHelper<T> myDatatype) {
         _callback = callback;
         _myDataType = myDatatype;
-        _dataSeq =_myDataType.createSequence();
+        _dataSeq =(List)_myDataType.createSequence();
     }
 
 
@@ -84,7 +86,7 @@ import com.rti.perftest.gen.MAX_BINDATA_SIZE;
                     _message = _myDataType.copyFromSeqToMessage(_dataSeq, i);
                     _callback.processMessage(_message);
                 }
-    }
+            }
         } finally {
             try {
                 reader.return_loan_untyped(_dataSeq, _infoSeq);
@@ -97,4 +99,3 @@ import com.rti.perftest.gen.MAX_BINDATA_SIZE;
 }
 
 // ===========================================================================
-// End of $Id: ReceiverListener.java,v 1.4 2014/08/12 10:21:28 jmorales Exp $

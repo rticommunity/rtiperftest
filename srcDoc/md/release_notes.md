@@ -1,5 +1,11 @@
 # Release Notes
 
+## RTI Perftest 5.2.5 Compatibility
+
+*RTI Perftest* 5.2.5 is designed to compile and work against the *RTI Connext DDS* 5.2.5 release.
+
+In addition, it is also compatible with *RTI Connext DDS* 5.2.3 and 5.2.4 releases. However, since the build scripts make use of certain specific parameters in *Rtiddsgen* the `--secure` and `--openssl-home` parameters will not work.
+
 ## What's New in 5.2.5
 
 ### Platform support and build system
@@ -32,6 +38,10 @@ Added command line parameter to force communication via UDPv6. By specifying `-e
 
 The use of this feature will imply setting the `NDDS_DISCOVERY_PEERS` environment variable to (at least) one valid IPv6 address.
 
+### Support for Dynamic data
+
+Added command line parameter to specify the use of the Dynamic Data API instead of the regular *Rtiddsgen* generated code use.
+
 ### Simplified execution in VxWorks kernel mode
 
 The execution in *VxWorks OS kernel mode* has been simplified for the user. Now the user can make use of `subscriber_main()` and `publisher_main()` and modify its content with all the parameters required for the tests.
@@ -58,7 +68,7 @@ In the previous release, if you did not set the maximum number of instances on t
 
 The new default maximum number of instances on the subscriber side has been changed from one to `DDS_LENGTH_UNLIMITED`. You can change this limit manually by setting the parameter `-instances <number>`.
 
-### Incorrect set for received_message_count_max for big sample sizes when using shared memory
+### Error when using Shared Memory and Large Samples
 
 When using *RTI Perftest* with large samples and enabling shared memory we could get into the following error:
 
@@ -67,8 +77,6 @@ Large data settings enabled (-dataLen > 63000).
 [D0001|ENABLE]NDDS_Transport_Shmem_Property_verify:received_message_count_max < 1
 [D0001|ENABLE]NDDS_Transport_Shmem_newI:Invalid transport properties.
 ```
-
-This problem has been fixed so `received_message_count_max` is now `1` in such case.
 
 ## Known Issues
 

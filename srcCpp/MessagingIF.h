@@ -21,6 +21,28 @@ class TestMessage
 
     static const int MAX_SYNCHRONOUS_SIZE = 63000;
     static const int MAX_DATA_SIZE = 131072;
+
+    TestMessage():
+        data(NULL),
+        size(0),
+        entity_id(0),
+        seq_num(0),
+        timestamp_sec(0),
+        timestamp_usec(0),
+        latency_ping(0)
+    {
+    	key[0]=0;
+    	key[1]=0;
+    	key[2]=0;
+    	key[3]=0;
+    }
+
+    ~TestMessage()
+    {
+        if (data != NULL) {
+            delete data;
+        }
+    }
 };
 
 class IMessagingCB
@@ -53,7 +75,7 @@ class IMessagingWriter
   public:
     virtual ~IMessagingWriter() {}
     virtual void WaitForReaders(int numSubscribers) = 0;
-    virtual bool Send(TestMessage &message) = 0;
+    virtual bool Send(const TestMessage &message) = 0;
     virtual void Flush() = 0;
     
     virtual bool waitForPingResponse() {

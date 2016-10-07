@@ -158,34 +158,35 @@ perftest_cpp::perftest_cpp() :
  */
 perftest_cpp::~perftest_cpp() {
 
-	if (perftest_cpp::_Clock != NULL) {
-        RTIHighResolutionClock_delete(perftest_cpp::_Clock);
-    }
-
     try {
         for (int i = 0; i < _MessagingArgc; ++i) {
-                if (_MessagingArgv[i] != NULL) {
-                    DDS_String_free(_MessagingArgv[i]);
-                }
+            if (_MessagingArgv[i] != NULL) {
+                DDS_String_free(_MessagingArgv[i]);
             }
+        }
 
-            if (_MessagingArgv != NULL) {
-                delete[] _MessagingArgv;
-            }
+        if (_MessagingArgv != NULL) {
+            delete[] _MessagingArgv;
+        }
 
-            if (_MessagingImpl != NULL) {
-                delete _MessagingImpl;
-            }
-            #ifdef RTI_WIN32
-                if (_hTimerQueue != NULL) {
-                    DeleteTimerQueue(_hTimerQueue);
-                }
-            #endif
+        if (_MessagingImpl != NULL) {
+            delete _MessagingImpl;
+        }
+      #ifdef RTI_WIN32
+        if (_hTimerQueue != NULL) {
+            DeleteTimerQueue(_hTimerQueue);
+        }
+      #endif
 
-      } catch (const std::exception& ex) {
-          // This will catch DDS exceptions
-          std::cerr << "[Error] Exception in perftest_cpp::~perftest_cpp(): " << ex.what() << "\n";
-      }
+        if (perftest_cpp::_Clock != NULL) {
+            RTIHighResolutionClock_delete(perftest_cpp::_Clock);
+        }
+
+    } catch (const std::exception& ex) {
+        // This will catch DDS exceptions
+        std::cerr << "[Error] Exception in perftest_cpp::~perftest_cpp(): "
+                << ex.what() << "\n";
+    }
 
     std::cerr << "[Info] Test ended." << std::endl;
 }
@@ -686,8 +687,8 @@ public:
         }
         // Check for test initialization messages
         if (size == perftest_cpp::INITIALIZE_SIZE) {
-            _writer->Send(message);
-            _writer->Flush();
+            _writer->send(message);
+            _writer->flush();
             return;
 
         } else if (size == perftest_cpp::FINISHED_SIZE) {
@@ -736,8 +737,8 @@ public:
                 end_test = true;
             }
 
-            _writer->Send(message);
-            _writer->Flush();
+            _writer->send(message);
+            _writer->flush();
 
             if (_finished_publishers.size() >= (unsigned int)_num_publishers)
             {
@@ -755,8 +756,8 @@ public:
 
         // Send back a packet if this is a ping
         if (message.latency_ping == perftest_cpp::_SubID) {
-            _writer->Send(message);
-            _writer->Flush();
+            _writer->send(message);
+            _writer->flush();
         }
 
         // Always check if need to reset internals
@@ -850,8 +851,7 @@ public:
  */
 static void *ThroughputReadThread(void *arg) {
 
-    //TODO
-    ThroughputListener *listener = (ThroughputListener *) arg;
+    ThroughputListener *listener = static_cast<ThroughputListener *>(arg);
     listener->_reader->ReceiveAndProccess(listener);
 
     return NULL;
@@ -914,8 +914,8 @@ int perftest_cpp::RunSubscriber()
     TestMessage message;
     message.entity_id = _SubID;
     message.size = 0;
-    announcement_writer->Send(message);
-    announcement_writer->Flush();
+    announcement_writer->send(message);
+    announcement_writer->flush();
     std::cerr << "[Info] Waiting for data..." << std::endl;
 
     // wait for data
@@ -1044,7 +1044,6 @@ class LatencyListener : public IMessagingCB
     unsigned int       _num_latency;
     IMessagingWriter *_writer;
  public:
-    bool               end_test;
     IMessagingReader *_reader;
 
   public:
@@ -1254,7 +1253,7 @@ class LatencyListener : public IMessagingCB
  */
 static void *LatencyReadThread(void *arg)
 {
-    LatencyListener *listener = (LatencyListener *) arg;
+    LatencyListener *listener = static_cast<LatencyListener *>(arg);
     TestMessage *message;
 
     while (!listener->end_test)
@@ -1406,9 +1405,9 @@ int perftest_cpp::RunPublisher()
     //message.data.resize(message.size);
     for (int i = 0; i < initializeSampleCount; i++) {
         // Send test initialization message
-        writer->Send(message);
+        writer->send(message);
     }
-    writer->Flush();
+    writer->flush();
 
     // Set data size, account for other bytes in message
     message.size = _DataLen - OVERHEAD_BYTES;
@@ -1505,7 +1504,7 @@ int perftest_cpp::RunPublisher()
                         int new_size;
 
                         // flush anything that was previously sent
-                        writer->Flush();
+                        writer->flush();
 
                         if (last_scan)
                         {
@@ -1566,8 +1565,8 @@ int perftest_cpp::RunPublisher()
 
                         for (int i=0; i<30; ++i) {
                             // sleep to allow packet to be pinged back
-                            writer->Send(message);
-                            writer->Flush();
+                            writer->send(message);
+                            writer->flush();
                         }
 
                         // sleep to allow packet to be pinged back
@@ -1608,7 +1607,7 @@ int perftest_cpp::RunPublisher()
 
         message.seq_num = (unsigned long) loop;
         message.latency_ping = pingID;
-        writer->Send(message);
+        writer->send(message);
         if(_LatencyTest && sentPing) {
             if (_IsReliable) {
                 writer->waitForPingResponse();
@@ -1628,7 +1627,7 @@ int perftest_cpp::RunPublisher()
     }
 
     // In case of batching, flush
-    writer->Flush();
+    writer->flush();
 
     // Test has finished, send end of test message, send multiple
     // times in case of best effort
@@ -1640,8 +1639,8 @@ int perftest_cpp::RunPublisher()
     //message.data.resize(message.size);
     for (int j = 0; j<30; ++j)
     {
-        writer->Send(message);
-        writer->Flush();
+        writer->send(message);
+        writer->flush();
     }
 
 
@@ -1695,7 +1694,7 @@ inline unsigned long long perftest_cpp::GetTimeUsec() {
 }
 
 inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds) {
-    std::cerr <<  "Setting timeout to " << executionTimeInSeconds << 
+    std::cerr <<  "[Info] Setting timeout to " << executionTimeInSeconds <<
         " seconds." << std::endl;
   #ifdef RTI_WIN32
     CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout,

@@ -126,9 +126,6 @@ int perftest_cpp::Run(int argc, char *argv[])
  */
 perftest_cpp::~perftest_cpp()
 {
-    if (perftest_cpp::_Clock != NULL) {
-        RTIHighResolutionClock_delete(perftest_cpp::_Clock);
-    }
 
     for (int i = 0; i< _MessagingArgc; ++i) {
         if (_MessagingArgv[i] != NULL) {
@@ -142,6 +139,10 @@ perftest_cpp::~perftest_cpp()
 
     if(_MessagingImpl != NULL){
         delete _MessagingImpl;
+    }
+
+    if (perftest_cpp::_Clock != NULL) {
+        RTIHighResolutionClock_delete(perftest_cpp::_Clock);
     }
 
   #ifdef RTI_WIN32
@@ -716,7 +717,7 @@ class ThroughputListener : public IMessagingCB
                     if (message.seq_num > _last_seq_num[message.entity_id])
                     {
                         missing_packets +=
-                            message.seq_num - _last_seq_num[message.entity_id];
+                        message.seq_num - _last_seq_num[message.entity_id];
                     }
                 }
 
@@ -847,8 +848,8 @@ class ThroughputListener : public IMessagingCB
  */
 static void *ThroughputReadThread(void *arg)
 {
-    ThroughputListener *listener = (ThroughputListener *) arg;
-    TestMessage *message;
+    ThroughputListener *listener = static_cast<ThroughputListener *>(arg);
+    TestMessage *message = NULL;
 
     while (!listener->end_test)
     {
@@ -930,8 +931,6 @@ int perftest_cpp::Subscriber()
     // Send announcement message
     TestMessage message;
     message.entity_id = _SubID;
-    message.data = NULL;
-    message.size = 0;
     announcement_writer->Send(message);
     announcement_writer->Flush();
 
@@ -1055,7 +1054,6 @@ class LatencyListener : public IMessagingCB
     unsigned int       _num_latency;
     IMessagingWriter *_writer;
  public:
-    bool               end_test;
     IMessagingReader *_reader;
 
   public:
@@ -1272,8 +1270,8 @@ class LatencyListener : public IMessagingCB
  */
 static void *LatencyReadThread(void *arg)
 {
-    LatencyListener *listener = (LatencyListener *) arg;
-    TestMessage *message;
+    LatencyListener *listener = static_cast<LatencyListener *>(arg);
+    TestMessage *message = NULL;
 
     while (!listener->end_test)
     {
@@ -1304,16 +1302,13 @@ static void *LatencyReadThread(void *arg)
  */
 int perftest_cpp::Publisher()
 {
-    LatencyListener  *reader_listener = NULL;
-    IMessagingReader *reader;
-    IMessagingWriter *writer;
     AnnouncementListener  *announcement_reader_listener = NULL;
     IMessagingReader *announcement_reader;
     unsigned long num_latency;
     int initializeSampleCount = 50;
 
     // create throughput/ping writer
-    writer = _MessagingImpl->CreateWriter(_ThroughputTopicName);
+    IMessagingWriter *writer = _MessagingImpl->CreateWriter(_ThroughputTopicName);
 
     if (writer == NULL)
     {
@@ -1339,6 +1334,7 @@ int perftest_cpp::Publisher()
         ++num_latency;
     }
 
+    IMessagingReader *reader;
     // Only publisher with ID 0 will send/receive pings
     if (_PubID == 0)
     {
@@ -1347,9 +1343,13 @@ int perftest_cpp::Publisher()
         {
             // create latency pong reader
             // the writer is passed for ping-pong notification in LatencyTest
-            reader_listener = new LatencyListener(num_latency, NULL,
-            _LatencyTest ? writer : NULL);
-            reader = _MessagingImpl->CreateReader(_LatencyTopicName, reader_listener);
+            LatencyListener  *reader_listener = new LatencyListener(
+                    num_latency,
+                    NULL,
+                    _LatencyTest ? writer : NULL);
+            reader = _MessagingImpl->CreateReader(
+                    _LatencyTopicName,
+                    reader_listener);
             if (reader == NULL)
             {
                 fprintf(stderr,"Problem creating latency reader.\n");
@@ -1364,8 +1364,10 @@ int perftest_cpp::Publisher()
                 fprintf(stderr,"Problem creating latency reader.\n");
                 return -1;
             }
-            reader_listener = new LatencyListener(num_latency, reader,
-            _LatencyTest ? writer : NULL);
+            LatencyListener  *reader_listener = new LatencyListener(
+                    num_latency,
+                    reader,
+                    _LatencyTest ? writer : NULL);
 
             RTIOsapiThread_new("ReceiverThread",
                                 RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
@@ -1697,7 +1699,7 @@ int perftest_cpp::Publisher()
  */
 
 inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds) {
-    fprintf(stderr,"Setting timeout to %d seconds\n", executionTimeInSeconds);
+    fprintf(stderr,"Setting timeout to %u seconds\n", executionTimeInSeconds);
   #ifdef RTI_WIN32
     CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout,
         NULL , executionTimeInSeconds*1000, 0, 0);

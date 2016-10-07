@@ -6,11 +6,11 @@
 
 package com.rti.perftest.ddsimpl;
 
-import java.io.File;
-import java.io.IOException;
-
+import com.rti.dds.dynamicdata.DynamicData;
 import com.rti.perftest.gen.TestDataKeyed_t;
+import com.rti.perftest.gen.TestDataKeyed_tTypeCode;
 import com.rti.perftest.gen.TestData_t;
+import com.rti.perftest.gen.TestData_tTypeCode;
 import com.rti.perftest.harness.PerfTest;
 
 
@@ -31,12 +31,37 @@ public final class PerfTestLauncher {
 
         if (_isKeyed) {
             System.err.println("Using keyed Data.");
-            PerfTest.runTest(new RTIDDSImpl<TestDataKeyed_t>(
-                    new DataTypeKeyedHelper()), argv);
+
+            if (_isDynamicData) {
+                System.err.println("Using Dynamic Data.");
+                PerfTest.runTest(
+                        new RTIDDSImpl<DynamicData>(
+                                new DynamicDataTypeHelper(
+                                        TestDataKeyed_tTypeCode.VALUE,
+                                        _isKeyed)),
+                        argv);
+            } else {
+                PerfTest.runTest(
+                        new RTIDDSImpl<TestDataKeyed_t>(
+                                new DataTypeKeyedHelper()),
+                        argv);
+            }
         } else {
             System.err.println("Using unkeyed Data.");
-            PerfTest.runTest(new RTIDDSImpl<TestData_t>(new DataTypeHelper()),
-                    argv);
+
+            if (_isDynamicData) {
+                System.err.println("Using Dynamic Data.");
+                PerfTest.runTest(
+                        new RTIDDSImpl<DynamicData>(
+                                new DynamicDataTypeHelper(
+                                        TestData_tTypeCode.VALUE,
+                                        _isKeyed)),
+                        argv);
+            } else {
+                PerfTest.runTest(
+                        new RTIDDSImpl<TestData_t>(new DataTypeHelper()),
+                        argv);
+            }
         }
 
     }
@@ -61,13 +86,17 @@ public final class PerfTestLauncher {
                 // We can return here since we were just looking for this.
                 _isKeyed = true;
             }
+            if ("-dynamicData".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                // We can return here since we were just looking for this.
+                _isDynamicData = true;
+            }
         }
         return true;
     }
 
     private static boolean _isKeyed = false;
+    private static boolean _isDynamicData = false;
 
 }
 
 // ===========================================================================
-// End of $Id: PerfTestLauncher.java,v 1.7 2015/05/09 12:59:22 jmorales Exp $

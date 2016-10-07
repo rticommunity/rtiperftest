@@ -17,10 +17,12 @@ import com.rti.dds.topic.Topic;
 
 // ===========================================================================
 
-/**
+/*
  * Logs callbacks that come to a participant.
  */
-/*package*/ final class DomainListener extends DomainParticipantAdapter {
+
+final class DomainListener extends DomainParticipantAdapter {
+
     // --- From DomainParticipantListener: -----------------------------------
 
     @Override
@@ -61,4 +63,3 @@ import com.rti.dds.topic.Topic;
 }
 
 // ===========================================================================
-// End of $Id: DomainListener.java,v 1.3 2014/09/02 13:53:33 jmorales Exp $

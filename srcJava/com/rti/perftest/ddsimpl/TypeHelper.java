@@ -6,9 +6,9 @@
 
 package com.rti.perftest.ddsimpl;
 
-import com.rti.dds.infrastructure.ByteSeq;
+import java.util.List;
+
 import com.rti.dds.topic.TypeSupportImpl;
-import com.rti.dds.util.AbstractSequence;
 import com.rti.perftest.TestMessage;
 
 public interface TypeHelper<T> {
@@ -17,16 +17,20 @@ public interface TypeHelper<T> {
 
     public void copyFromMessage(TestMessage message);
 
-    public TestMessage copyFromSeqToMessage(AbstractSequence dataSeq, int i);
+    @SuppressWarnings("rawtypes")
+    public TestMessage copyFromSeqToMessage(List dataSeq, int i);
 
     public T getData();
 
-    public ByteSeq getBindata();
-    
+    public void setBinDataMax(int size);
+
+    public void bindataUnloan();
+
     public TypeSupportImpl getTypeSupport();
 
     public TypeHelper<T> clone();
 
-    public AbstractSequence createSequence();
+    @SuppressWarnings("rawtypes")
+    public List createSequence();
 
 }

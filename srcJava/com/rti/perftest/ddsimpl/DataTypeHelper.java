@@ -7,9 +7,8 @@
 
 package com.rti.perftest.ddsimpl;
 
-import com.rti.dds.infrastructure.ByteSeq;
+import java.util.List;
 import com.rti.dds.topic.TypeSupportImpl;
-import com.rti.dds.util.AbstractSequence;
 import com.rti.perftest.TestMessage;
 import com.rti.perftest.gen.TestData_t;
 import com.rti.perftest.gen.TestData_tSeq;
@@ -46,9 +45,10 @@ public class DataTypeHelper implements TypeHelper<TestData_t> {
 
     }
 
-    public TestMessage copyFromSeqToMessage(AbstractSequence dataSeq, int index) {
+    @SuppressWarnings("rawtypes") 
+    public TestMessage copyFromSeqToMessage(List dataSeq, int index) {
 
-        TestData_t msg = (TestData_t)dataSeq.get(index);
+        TestData_t msg = (TestData_t)((List)dataSeq).get(index);
         TestMessage message = new TestMessage();
 
         message.entity_id = msg.entity_id;
@@ -66,8 +66,13 @@ public class DataTypeHelper implements TypeHelper<TestData_t> {
         return _myData;
     }
 
-    public ByteSeq getBindata() {
-        return _myData.bin_data;
+    public void setBinDataMax(int newSize) {
+        _myData.bin_data.setMaximum(newSize);
+        _myData.bin_data.setSize(newSize);
+    }
+
+    public void bindataUnloan() {
+        _myData.bin_data.unloan();
     }
 
     public TypeSupportImpl getTypeSupport() {
@@ -78,10 +83,11 @@ public class DataTypeHelper implements TypeHelper<TestData_t> {
         return new DataTypeHelper(_myData);
     }
 
-    public AbstractSequence createSequence() {
+    @SuppressWarnings("rawtypes")
+    public List createSequence() {
         return new TestData_tSeq();
     }
-    
+
     private TestData_t _myData;
 
 }

@@ -29,7 +29,7 @@
             <min>0</min>
           </id_range>
         </domains>
-        <allow_unauthenticated_join>TRUE</allow_unauthenticated_join>
+        <allow_unauthenticated_participants>TRUE</allow_unauthenticated_participants>
         <enable_join_access_control>FALSE</enable_join_access_control>
         <discovery_protection_kind>NONE</discovery_protection_kind>
         <liveliness_protection_kind>NONE</liveliness_protection_kind>

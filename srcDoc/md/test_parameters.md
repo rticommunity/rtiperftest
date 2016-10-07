@@ -48,6 +48,12 @@ For additional information on setting the parameters, see sections:
 
     **Default:** false
     
+-   `-dynamicData`
+
+    Run using the Dynamic Data API functions instead of the *rtiddsgen* generated calls.
+
+    **Default:** false
+
 -   `-durability <0|1|2|3>`
 
     Sets the Durability kind:

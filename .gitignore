@@ -15,3 +15,5 @@
 /srcJava/jar
 /srcJava/com/rti/perftest/gen
 /bin
+.cproject
+.project

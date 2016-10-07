@@ -89,7 +89,6 @@ void RTIDDSImpl<T>::Shutdown()
     DDSDomainParticipantFactory::finalize_instance();
 }
 
-
 /*********************************************************
  * PrintCmdLineHelp
  */
@@ -139,6 +138,8 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
         "\t-durability <0|1|2|3>   - Set durability QOS, 0 - volatile,\n"
         "\t                          1 - transient local, 2 - transient, \n"
         "\t                          3 - persistent, default 0\n"
+        "\t-dynamicData            - Makes use of the Dynamic Data APIs instead\n"
+        "\t                          of using the generated types.\n"
         "\t-noDirectCommunication  - Use brokered mode for persistent durability\n"
         "\t-instanceHashBuckets <#count> - Number of hash buckets for instances.\n"
         "\t                          If unspecified, same as number of\n"
@@ -179,7 +180,6 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
 
     fprintf(stderr, "%s", usage_string);
 }
-
 
 /*********************************************************
  * ParseConfig
@@ -236,7 +236,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             sec = 0;
             nanosec = 0;
 
-            if (sscanf(argv[i],"%d:%d",&sec,&nanosec) != 2) {
+            if (sscanf(argv[i],"%d:%u",&sec,&nanosec) != 2) {
                 fprintf(stderr, "-heartbeatPeriod value must have the format <sec>:<nanosec>\n");
                 return false;
             }
@@ -254,7 +254,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             sec = 0;
             nanosec = 0;
 
-            if (sscanf(argv[i],"%d:%d",&sec,&nanosec) != 2) {
+            if (sscanf(argv[i],"%d:%u",&sec,&nanosec) != 2) {
                 fprintf(stderr, "-fastHeartbeatPeriod value must have the format <sec>:<nanosec>\n");
                 return false;
             }
@@ -308,6 +308,9 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 fprintf(stderr, "durability kind must be 0(volatile), 1(transient local), 2(transient), or 3(persistent) \n");
                 return false;
             }
+        } else if (IS_OPTION(argv[i], "-dynamicData")) {
+            _isDynamicData = true;
+            fprintf(stderr, "Using Dynamic Data.\n");
         } else if (IS_OPTION(argv[i], "-noDirectCommunication")) {
             _DirectCommunication = false;
         } else if (IS_OPTION(argv[i], "-instances")) {
@@ -353,10 +356,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _KeepDurationUsec = strtol(argv[i], NULL, 10);
-            if (_KeepDurationUsec < 0) {
-                fprintf(stderr, "keep duration usec cannot be negative\n");
-                return false;
-            }
         } else if (IS_OPTION(argv[i], "-noPositiveAcks")) {
             _UsePositiveAcks = false;
         }
@@ -402,11 +401,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _WaitsetDelayUsec = (unsigned int) strtol (argv[i], NULL, 10);
-            if (_WaitsetDelayUsec < 0) 
-            {
-                fprintf(stderr, "waitset delay usec cannot be negative\n");
-                return false;
-            }
         }
         else if (IS_OPTION(argv[i], "-waitsetEventCount")) {
             if ((i == (argc-1)) || *argv[++i] == '-') 
@@ -545,7 +539,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     return true;
 }
 
-
 /*********************************************************
  * DomainListener
  */
@@ -620,7 +613,7 @@ class RTIPublisher : public IMessagingWriter
         _writer->flush();
     }
 
-    bool Send(TestMessage &message)
+    bool Send(const TestMessage &message)
     {
         DDS_ReturnCode_t retcode;
         int key = 0;
@@ -712,6 +705,195 @@ class RTIPublisher : public IMessagingWriter
     }
 };
 
+/* Dynamic Data equivalent function from RTIPublisher */
+class RTIDynamicDataPublisher : public IMessagingWriter
+{
+  private:
+    DDSDynamicDataWriter *_writer;
+    DDS_DynamicData data;
+    int _num_instances;
+    unsigned long _instance_counter;
+    DDS_InstanceHandle_t *_instance_handles;
+    RTIOsapiSemaphore *_pongSemaphore;
+
+public:
+    RTIDynamicDataPublisher(
+            DDSDataWriter *writer,
+            int num_instances,
+            RTIOsapiSemaphore *pongSemaphore,
+            DDS_TypeCode *typeCode) :
+            data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT)
+
+    {
+        _writer = DDSDynamicDataWriter::narrow(writer);
+        DDS_OctetSeq octetSeq;
+        DDS_ReturnCode_t retcode;
+
+        _num_instances = num_instances;
+        _instance_counter = 0;
+        _instance_handles = (DDS_InstanceHandle_t *) malloc(
+                sizeof(DDS_InstanceHandle_t) * num_instances);
+        if (_instance_handles == NULL) {
+            fprintf(stderr, "_instance_handles malloc failed.\n");
+        }
+        _pongSemaphore = pongSemaphore;
+
+        for (int i = 0; i < _num_instances; ++i) {
+            DDS_Octet key_octets[4];
+            key_octets[0] = (char) (i);
+            key_octets[1] = (char) (i >> 8);
+            key_octets[2] = (char) (i >> 16);
+            key_octets[3] = (char) (i >> 24);
+            retcode = data.set_octet_array("key",
+            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED, 4, key_octets);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
+            }
+
+            _instance_handles[i] = _writer->register_instance(data);
+        }
+    }
+
+    void Flush()
+    {
+        _writer->flush();
+    }
+
+    bool Send(const TestMessage &message)
+    {
+        DDS_ReturnCode_t retcode;
+        int key = 0;
+
+        retcode = data.set_long(
+                "entity_id",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                message.entity_id);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_long(entity_id) failed: %d.\n", retcode);
+        }
+        retcode = data.set_ulong(
+                "seq_num",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                message.seq_num);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_ulong(seq_num) failed: %d.\n", retcode);
+        }
+        retcode = data.set_long(
+                "timestamp_sec",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                message.timestamp_sec);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_long(timestamp_sec) failed: %d.\n", retcode);
+        }
+        retcode = data.set_ulong(
+                "timestamp_usec",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                message.timestamp_usec);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_ulong(timestamp_usec) failed: %d.\n", retcode);
+        }
+        retcode = data.set_long(
+                "latency_ping",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                message.latency_ping);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_long(latency_ping) failed: %d.\n", retcode);
+        }
+        DDS_OctetSeq octetSeq;
+        bool succeeded = octetSeq.from_array(
+                (DDS_Octet *) message.data,
+                message.size);
+        if (!succeeded) {
+            fprintf(stderr, "from_array() failed.\n");
+        }
+        retcode = data.set_octet_seq(
+                "bin_data",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                octetSeq);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
+        }
+
+        if (_num_instances > 1) {
+            key = _instance_counter++ % _num_instances;
+            DDS_Octet key_octets[4];
+            key_octets[0] = (char) (key);
+            key_octets[1] = (char) (key >> 8);
+            key_octets[2] = (char) (key >> 16);
+            key_octets[3] = (char) (key >> 24);
+            retcode = data.set_octet_array(
+                    "key",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                    4,
+                    key_octets);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
+            }
+        }
+
+        retcode = _writer->write(data, _instance_handles[key]);
+
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "Write error %d.\n", retcode);
+            return false;
+        }
+
+        return true;
+    }
+
+    void WaitForReaders(int numSubscribers) {
+        DDS_PublicationMatchedStatus status;
+
+        while (true) {
+            DDS_ReturnCode_t retcode = _writer->get_publication_matched_status(status);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "WaitForReaders _writer->get_publication_matched_status "
+                        "failed: %d.\n",
+                        retcode);
+            }
+            if (status.current_count >= numSubscribers) {
+                break;
+            }
+            perftest_cpp::MilliSleep(1000);
+        }
+    }
+
+    bool waitForPingResponse() {
+        if (_pongSemaphore != NULL) {
+            if (!RTIOsapiSemaphore_take(_pongSemaphore, NULL)) {
+                fprintf(stderr, "Unexpected error taking semaphore\n");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /* time out in milliseconds */
+    bool waitForPingResponse(int timeout) {
+        struct RTINtpTime blockDuration;
+        RTINtpTime_packFromMillisec(blockDuration, 0, timeout);
+
+        if (_pongSemaphore != NULL) {
+            if (!RTIOsapiSemaphore_take(_pongSemaphore, &blockDuration)) {
+                fprintf(stderr, "Unexpected error taking semaphore\n");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool notifyPingResponse() {
+        if (_pongSemaphore != NULL) {
+            if (!RTIOsapiSemaphore_give(_pongSemaphore)) {
+                fprintf(stderr, "Unexpected error giving semaphore\n");
+                return false;
+            }
+        }
+        return true;
+    }
+};
+
 /*********************************************************
  * ReceiverListener
  */
@@ -727,7 +909,7 @@ class ReceiverListener : public DDSDataReaderListener
 
   public:
 
-    ReceiverListener(IMessagingCB *callback)
+    ReceiverListener(IMessagingCB *callback): _message()
     {
         _callback = callback;
     }
@@ -786,9 +968,132 @@ class ReceiverListener : public DDSDataReaderListener
             fprintf(stderr,"Error during return loan %d.\n", retcode);
             fflush(stderr);
         }
-	
+
     }
 
+};
+
+/* Dynamic Data equivalent function from ReceiverListener */
+class DynamicDataReceiverListener : public DDSDataReaderListener
+{
+  private:
+
+    DDS_DynamicDataSeq _data_seq;
+    DDS_SampleInfoSeq _info_seq;
+    TestMessage _message;
+    IMessagingCB *_callback;
+
+  public:
+
+    DynamicDataReceiverListener(IMessagingCB *callback): _message()
+    {
+        _callback = callback;
+    }
+
+    void on_data_available(DDSDataReader *reader)
+    {
+        DDSDynamicDataReader *datareader = DDSDynamicDataReader::narrow(reader);
+        if (datareader == NULL) {
+            fprintf(stderr, "DataReader narrow error.\n");
+            return;
+        }
+
+        DDS_ReturnCode_t retcode = datareader->take(
+                _data_seq, _info_seq,
+                DDS_LENGTH_UNLIMITED,
+                DDS_ANY_SAMPLE_STATE,
+                DDS_ANY_VIEW_STATE,
+                DDS_ANY_INSTANCE_STATE);
+
+        if (retcode == DDS_RETCODE_NO_DATA) {
+            fprintf(stderr, "No data received\n");
+            return;
+        } else if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "Error while taking data %d\n", retcode);
+            return;
+        }
+
+        int seq_length = _data_seq.length();
+        DDS_OctetSeq octetSeq;
+        for (int i = 0; i < seq_length; ++i) {
+            if (_info_seq[i].valid_data) {
+                retcode = _data_seq[i].get_long(
+                        _message.entity_id,
+                        "entity_id",
+                        2);
+                if (retcode != DDS_RETCODE_OK) {
+                    fprintf(stderr,
+                            "on_data_available() get_long(entity_id) failed: %d.\n",
+                            retcode);
+                    _message.entity_id = 0;
+                }
+                retcode = _data_seq[i].get_ulong(
+                        _message.seq_num,
+                        "seq_num",
+                        3);
+                if (retcode != DDS_RETCODE_OK)
+                {
+                    fprintf(stderr,
+                            "on_data_available() get_ulong(seq_num) failed: %d.\n",
+                            retcode);
+                    _message.seq_num = 0;
+                }
+                retcode = _data_seq[i].get_long(
+                        _message.timestamp_sec,
+                        "timestamp_sec",
+                        4);
+                if (retcode != DDS_RETCODE_OK)
+                {
+                    fprintf(stderr,
+                            "on_data_available() get_long(timestamp_sec) failed: %d.\n",
+                            retcode);
+                    _message.timestamp_sec = 0;
+                }
+                retcode = _data_seq[i].get_ulong(
+                        _message.timestamp_usec,
+                        "timestamp_usec",
+                        5);
+                if (retcode != DDS_RETCODE_OK)
+                {
+                    fprintf(stderr,
+                            "on_data_available() get_ulong(timestamp_usec) failed: %d.\n",
+                            retcode);
+                    _message.timestamp_usec = 0;
+                }
+                retcode = _data_seq[i].get_long(
+                        _message.latency_ping,
+                        "latency_ping",
+                        6);
+                if (retcode != DDS_RETCODE_OK)
+                {
+                    fprintf(stderr,
+                            "on_data_available() get_long(latency_ping) failed: %d.\n",
+                            retcode);
+                    _message.latency_ping = 0;
+                }
+                retcode = _data_seq[i].get_octet_seq(
+                        octetSeq,
+                        "bin_data",
+                        7);
+                if (retcode != DDS_RETCODE_OK)
+                {
+                    fprintf(stderr,
+                            "on_data_available() get_octet_seq(bin_data) failed: %d.\n",
+                            retcode);
+                }
+                _message.size = octetSeq.length();
+                _message.data = (char *)octetSeq.get_contiguous_buffer();
+
+                _callback->ProcessMessage(_message);
+            }
+        }
+
+        retcode = datareader->return_loan(_data_seq, _info_seq);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "Error during return loan %d.\n", retcode);
+            fflush(stderr);
+        }
+    }
 };
 
 /*********************************************************
@@ -810,9 +1115,11 @@ class RTISubscriber : public IMessagingReader
 
   public:
 
-    RTISubscriber(DDSDataReader *reader)
+    RTISubscriber(DDSDataReader *reader): _message()
     {
         _reader = T::DataReader::narrow(reader);
+        _data_idx = 0;
+        _no_data = false;
 
         // null listener means using receive thread
         if (_reader->get_listener() == NULL) {
@@ -918,6 +1225,204 @@ class RTISubscriber : public IMessagingReader
 
             if (status.current_count >= numPublishers)
             {
+                break;
+            }
+            perftest_cpp::MilliSleep(1000);
+        }
+    }
+};
+
+/* Dynamic Data equivalent function from RTISubscriber */
+template <typename T>
+class RTIDynamicDataSubscriber : public IMessagingReader
+{
+  private:
+    DDSDynamicDataReader *_reader;
+    DDS_DynamicDataSeq _data_seq;
+    DDS_SampleInfoSeq _info_seq;
+    TestMessage _message;
+    DDSWaitSet *_waitset;
+    DDSConditionSeq _active_conditions;
+
+    int _data_idx;
+    bool _no_data;
+
+  public:
+
+    RTIDynamicDataSubscriber(DDSDataReader *reader): _message()
+    {
+        _reader = DDSDynamicDataReader::narrow(reader);
+        if (_reader == NULL) {
+            fprintf(stderr,"DDSDynamicDataReader::narrow(reader) error.\n");
+        }
+        _data_idx = 0;
+        _no_data = false;
+
+        // null listener means using receive thread
+        if (_reader->get_listener() == NULL) {
+
+            DDS_WaitSetProperty_t property;
+            property.max_event_count = RTIDDSImpl<T>::_WaitsetEventCount;
+            property.max_event_delay.sec =
+                    (int) RTIDDSImpl<T>::_WaitsetDelayUsec / 1000000;
+            property.max_event_delay.nanosec = (RTIDDSImpl<T>::_WaitsetDelayUsec
+                    % 1000000) * 1000;
+
+            _waitset = new DDSWaitSet(property);
+
+            DDSStatusCondition *reader_status;
+            reader_status = reader->get_statuscondition();
+            reader_status->set_enabled_statuses(DDS_DATA_AVAILABLE_STATUS);
+            _waitset->attach_condition(reader_status);
+        }
+    }
+
+    virtual void Shutdown()
+    {
+        // loan may be outstanding during shutdown
+        _reader->return_loan(_data_seq, _info_seq);
+    }
+
+    TestMessage *ReceiveMessage()
+    {
+        DDS_ReturnCode_t retcode;
+        int seq_length;
+
+        while (true) {
+            // no outstanding reads
+            if (_no_data)
+            {
+                _waitset->wait(_active_conditions, DDS_DURATION_INFINITE);
+
+                if (_active_conditions.length() == 0)
+                {
+                    continue;
+                }
+
+                retcode = _reader->take(
+                    _data_seq, _info_seq,
+                    DDS_LENGTH_UNLIMITED,
+                    DDS_ANY_SAMPLE_STATE,
+                    DDS_ANY_VIEW_STATE,
+                    DDS_ANY_INSTANCE_STATE);
+                if (retcode == DDS_RETCODE_NO_DATA)
+                {
+                    //printf("Called back no data.\n");
+                    //return NULL;
+                    continue;
+                }
+                else if (retcode != DDS_RETCODE_OK)
+                {
+                    fprintf(stderr,"Error during taking data %d.\n", retcode);
+                    return NULL;
+                }
+
+                _data_idx = 0;
+                _no_data = false;
+            }
+
+            seq_length = _data_seq.length();
+            // check to see if hit end condition
+            if (_data_idx == seq_length)
+            {
+                _reader->return_loan(_data_seq, _info_seq);
+                _no_data = true;
+                continue;
+            }
+
+            // skip non-valid data
+            while ( (_info_seq[_data_idx].valid_data == false) &&
+                    (++_data_idx < seq_length)){
+                //No operation required
+            }
+
+             // may have hit end condition
+             if (_data_idx == seq_length) { continue; }
+
+
+             retcode = _data_seq[_data_idx].get_long(
+                     _message.entity_id,
+                     "entity_id",
+                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+             if (retcode != DDS_RETCODE_OK)
+             {
+                 fprintf(stderr,
+                         "ReceiveMessage() get_long(entity_id) failed: %d.\n",
+                         retcode);
+                 _message.entity_id = 0;
+             }
+             retcode = _data_seq[_data_idx].get_ulong(
+                     _message.seq_num,
+                     "seq_num",
+                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+             if (retcode != DDS_RETCODE_OK)
+             {
+                 fprintf(stderr,
+                         "ReceiveMessage() get_ulong(seq_num) failed: %d.\n",
+                         retcode);
+                 _message.seq_num = 0;
+             }
+             retcode = _data_seq[_data_idx].get_long(
+                     _message.timestamp_sec,
+                     "timestamp_sec",
+                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);;
+             if (retcode != DDS_RETCODE_OK)
+             {
+                 fprintf(stderr,
+                         "ReceiveMessage() get_long(timestamp_sec) failed: %d.\n",
+                         retcode);
+                 _message.timestamp_sec = 0;
+             }
+             retcode = _data_seq[_data_idx].get_ulong(
+                     _message.timestamp_usec,
+                     "timestamp_usec",
+                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);;
+             if (retcode != DDS_RETCODE_OK)
+             {
+                 fprintf(stderr,
+                         "ReceiveMessage() get_ulong(timestamp_usec) failed: %d.\n",
+                         retcode);
+                 _message.timestamp_usec = 0;
+             }
+             retcode = _data_seq[_data_idx].get_long(
+                     _message.latency_ping,
+                     "latency_ping",
+                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);;
+             if (retcode != DDS_RETCODE_OK)
+             {
+                 fprintf(stderr,
+                         "ReceiveMessage() get_long(latency_ping) failed: %d.\n",
+                         retcode);
+                 _message.latency_ping = 0;
+             }
+             DDS_OctetSeq octetSeq;
+             retcode = _data_seq[_data_idx].get_octet_seq(
+                     octetSeq,
+                     "bin_data",
+                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+             if (retcode != DDS_RETCODE_OK)
+             {
+                 fprintf(stderr,
+                         "ReceiveMessage() get_octet_seq(bin_data) failed: %d.\n",
+                         retcode);
+             }
+             _message.size = octetSeq.length();
+             _message.data = (char *)octetSeq.get_contiguous_buffer();
+
+            ++_data_idx;
+
+            return &_message;
+        }
+    }
+
+    void WaitForWriters(int numPublishers)
+    {
+        DDS_SubscriptionMatchedStatus status;
+
+        while (true) {
+            _reader->get_subscription_matched_status(status);
+
+            if (status.current_count >= numPublishers) {
                 break;
             }
             perftest_cpp::MilliSleep(1000);
@@ -1218,8 +1723,8 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     // only if we run the latency test we need to wait 
     // for pongs after sending pings
     _pongSemaphore = _LatencyTest ?
-	RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL) :
-	NULL;
+        RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL) :
+        NULL;
 
     // setup the QOS profile file to be loaded
     _factory->get_qos(factory_qos);
@@ -1275,17 +1780,20 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     if (_AutoThrottle) {
-		DDSPropertyQosPolicyHelper::add_property(qos.property,
-			 "dds.domain_participant.auto_throttle.enable", "true", false);
-	}
+        DDSPropertyQosPolicyHelper::add_property(qos.property,
+                "dds.domain_participant.auto_throttle.enable", "true", false);
+    }
 
     if (!_UseTcpOnly) {
-    
+
         char buf[64];
 
         if ((_Nic != NULL) && (strlen(_Nic) >= 0)) {
-            DDSPropertyQosPolicyHelper::add_property(qos.property,
-                                                     "dds.transport.UDPv4.builtin.parent.allow_interfaces", _Nic, false);
+            DDSPropertyQosPolicyHelper::add_property(
+                    qos.property,
+                    "dds.transport.UDPv4.builtin.parent.allow_interfaces",
+                    _Nic,
+                    false);
         }
 
         // Shem transport properties
@@ -1314,25 +1822,31 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     // Register the types and create the topics
-    T::TypeSupport::register_type(_participant, _typename);
+    if (!_isDynamicData) {
+        T::TypeSupport::register_type(_participant, _typename);
+    } else {
+        DDSDynamicDataTypeSupport* dynamicDataTypeSupportObject =
+                new DDSDynamicDataTypeSupport(
+                        T::TypeSupport::get_typecode(),
+                        DDS_DYNAMIC_DATA_TYPE_PROPERTY_DEFAULT);
+        dynamicDataTypeSupportObject->register_type(_participant, _typename);
+    }
 
     // Create the DDSPublisher and DDSSubscriber
-    {       
-        _publisher = _participant->create_publisher_with_profile(
-            "PerftestQosLibrary", "BaseProfileQos", NULL, DDS_STATUS_MASK_NONE);
-        if (_publisher == NULL)
-        {
-            fprintf(stderr,"Problem creating publisher.\n");
-            return false;
-        }
+    _publisher = _participant->create_publisher_with_profile(
+        "PerftestQosLibrary", "BaseProfileQos", NULL, DDS_STATUS_MASK_NONE);
+    if (_publisher == NULL)
+    {
+        fprintf(stderr,"Problem creating publisher.\n");
+        return false;
+    }
 
-        _subscriber = _participant->create_subscriber_with_profile(
-            "PerftestQosLibrary", "BaseProfileQos", NULL, DDS_STATUS_MASK_NONE);
-        if (_subscriber == NULL)
-        {
-            fprintf(stderr,"Problem creating subscriber.\n");
-            return false;
-        }
+    _subscriber = _participant->create_subscriber_with_profile(
+        "PerftestQosLibrary", "BaseProfileQos", NULL, DDS_STATUS_MASK_NONE);
+    if (_subscriber == NULL)
+    {
+        fprintf(stderr,"Problem creating subscriber.\n");
+        return false;
     }
 
     return true;
@@ -1349,8 +1863,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     std::string qos_profile;
 
     DDSTopic *topic = _participant->create_topic(
-                       topic_name, _typename,
-                       DDS_TOPIC_QOS_DEFAULT, NULL,
+                       topic_name,
+                       _typename,
+                       DDS_TOPIC_QOS_DEFAULT,
+                       NULL,
                        DDS_STATUS_MASK_NONE);
 
     if (topic == NULL)
@@ -1499,18 +2015,21 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     writer = _publisher->create_datawriter(
         topic, dw_qos, NULL,
         DDS_STATUS_MASK_NONE);
-    
+
     if (writer == NULL)
     {
         fprintf(stderr,"Problem creating writer.\n");
         return NULL;
     }
 
-    RTIPublisher<T> *pub = new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore);
+    if (!_isDynamicData) {
+        return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore);
+    } else {
+        return new RTIDynamicDataPublisher(writer, _InstanceCount, _pongSemaphore, T::TypeSupport::get_typecode());
+    }
 
-    return pub;
 }
-    
+
 /*********************************************************
  * CreateReader
  */
@@ -1518,7 +2037,6 @@ template <typename T>
 IMessagingReader *RTIDDSImpl<T>::CreateReader(const char *topic_name,
                                            IMessagingCB *callback)
 {
-    ReceiverListener<T> *reader_listener = NULL;
     DDSDataReader *reader = NULL;
     DDS_DataReaderQos dr_qos;
     std::string qos_profile;
@@ -1636,19 +2154,32 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(const char *topic_name,
     }
 
 
-    if (callback != NULL)
-    {
+    if (callback != NULL) {
+
        /*  NDDSConfigLogger::get_instance()->
         set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API, 
                                   NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);*/
-        reader_listener = new ReceiverListener<T>(callback);
+
+        if (!_isDynamicData) {
+            reader = _subscriber->create_datareader(
+                    topic,
+                    dr_qos,
+                    new ReceiverListener<T>(callback),
+                    DDS_DATA_AVAILABLE_STATUS);
+        } else {
+            reader = _subscriber->create_datareader(
+                    topic,
+                    dr_qos,
+                    new DynamicDataReceiverListener(callback),
+                    DDS_DATA_AVAILABLE_STATUS);
+        }
+
+    } else {
         reader = _subscriber->create_datareader(
-            topic, dr_qos, reader_listener, DDS_DATA_AVAILABLE_STATUS);
-    }
-    else
-    {
-        reader = _subscriber->create_datareader(
-            topic, dr_qos, NULL, DDS_STATUS_MASK_NONE);
+                topic,
+                dr_qos,
+                NULL,
+                DDS_STATUS_MASK_NONE);
     }
 
     if (reader == NULL)
@@ -1662,8 +2193,11 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(const char *topic_name,
         _reader = reader;
     }
 
-    IMessagingReader *sub = new RTISubscriber<T>(reader);
-    return sub;
+    if (!_isDynamicData) {
+        return new RTISubscriber<T>(reader);
+    } else {
+        return new RTIDynamicDataSubscriber<T>(reader);
+    }
 }
 
 

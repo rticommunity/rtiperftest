@@ -7,6 +7,7 @@
 #include "RTIDDSImpl.h"
 #include "perftest_cpp.h"
 
+using dds::core::xtypes::DynamicData;
 
 #if defined(RTI_WIN32)
   #pragma warning(push)
@@ -72,6 +73,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _isLargeData(false),
         _isScan(false),
         _isPublisher(false),
+        _isDynamicData(false),
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure(false),
         _secureIsSigned(false),
@@ -91,7 +93,6 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _participant(dds::core::null),
         _subscriber(dds::core::null),
         _publisher(dds::core::null),
-        _reader(dds::core::null),
         _pongSemaphore(RTI_OSAPI_SEMAPHORE_KIND_BINARY,NULL)
     {}
 
@@ -156,6 +157,8 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
     "\t-durability <0|1|2|3>   - Set durability QOS, 0 - volatile,\n"
     "\t                          1 - transient local, 2 - transient, \n"
     "\t                          3 - persistent, default 0\n"
+    "\t-dynamicData            - Makes use of the Dynamic Data APIs instead\n"
+    "\t                          of using the generated types.\n"
     "\t-noDirectCommunication  - Use brokered mode for persistent durability\n"
     "\t-instanceHashBuckets <#count> - Number of hash buckets for instances.\n"
     "\t                          If unspecified, same as number of\n"
@@ -207,8 +210,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     int sec = 0;
     unsigned int nanosec = 0;
 
-    // TODO IMPLEMENT CONFIGFILE
-
     // now load everything else, command line params override config file
     for (i = 0; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-pub")) {
@@ -259,7 +260,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             sec = 0;
             nanosec = 0;
 
-            if (sscanf(argv[i], "%d:%d", &sec, &nanosec) != 2) {
+            if (sscanf(argv[i], "%d:%u", &sec, &nanosec) != 2) {
                 std::cerr
                         << "[Error] -heartbeatPeriod value must have the format <sec>:<nanosec>"
                         << std::endl;
@@ -280,7 +281,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             sec = 0;
             nanosec = 0;
 
-            if (sscanf(argv[i], "%d:%d", &sec, &nanosec) != 2) {
+            if (sscanf(argv[i], "%d:%u", &sec, &nanosec) != 2) {
                 std::cerr
                         << "[Error] -fastHeartbeatPeriod value must have the format <sec>:<nanosec>"
                         << std::endl;
@@ -340,6 +341,9 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                         << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
+        } else if (IS_OPTION(argv[i], "-dynamicData")) {
+            _isDynamicData = true;
+            std::cerr << "[Info] Using Dynamic Data." << std::endl;
         } else if (IS_OPTION(argv[i], "-noDirectCommunication")) {
             _DirectCommunication = false;
         } else if (IS_OPTION(argv[i], "-instances")) {
@@ -392,11 +396,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 throw std::logic_error("[Error] Error parsing commands");
             }
             _KeepDurationUsec = strtol(argv[i], NULL, 10);
-            if (_KeepDurationUsec < 0) {
-                std::cerr << "[Error] Keep duration usec cannot be negative"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
         } else if (IS_OPTION(argv[i], "-noPositiveAcks")) {
             _UsePositiveAcks = false;
         } else if (IS_OPTION(argv[i], "-enableSharedMemory")) {
@@ -447,11 +446,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 throw std::logic_error("[Error] Error parsing commands");
             }
             _WaitsetDelayUsec = (unsigned int) strtol(argv[i], NULL, 10);
-            if (_WaitsetDelayUsec < 0) {
-                std::cerr << "waitset delay usec cannot be negative"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
         } else if (IS_OPTION(argv[i], "-waitsetEventCount")) {
             if ((i == (argc - 1)) || *argv[++i] == '-') {
                 std::cerr << "Missing <count> after -waitsetEventCount"
@@ -610,14 +604,15 @@ public:
     }
 };
 
-/*********************************************************
- * RTIPublisher
- */
+/******************************************************************************/
+
+/* RTIPublisher */
+
 template<typename T>
-class RTIPublisher: public IMessagingWriter {
-private:
+class RTIPublisherBase: public IMessagingWriter {
+
+protected:
     dds::pub::DataWriter<T> _writer;
-    T data;
     int _num_instances;
     unsigned long _instance_counter;
     dds::core::InstanceHandleSeq _instance_handles;
@@ -625,46 +620,20 @@ private:
     rti::core::Semaphore& _pongSemaphore;
 
 public:
-    RTIPublisher(dds::pub::DataWriter<T> writer, int num_instances,
-            rti::core::Semaphore& pongSemaphore, bool useSemaphore) :
-            _writer(writer), _num_instances(num_instances), _instance_counter(
-                    0), _useSemaphore(useSemaphore), _pongSemaphore(
-                    pongSemaphore) {
+    RTIPublisherBase(
+            dds::pub::DataWriter<T> writer,
+            int num_instances,
+            rti::core::Semaphore& pongSemaphore,
+            bool useSemaphore)
+          :
+            _writer(writer),
+            _num_instances(num_instances),
+            _instance_counter(0),
+            _useSemaphore(useSemaphore),
+            _pongSemaphore(pongSemaphore) {}
 
-        for (int i = 0; i < _num_instances; ++i) {
-            data.key()[0] = (char) (i);
-            data.key()[1] = (char) (i >> 8);
-            data.key()[2] = (char) (i >> 16);
-            data.key()[3] = (char) (i >> 24);
-
-            _instance_handles.push_back(_writer.register_instance(data));
-        }
-    }
-
-    void Flush() {
+    void flush() {
         _writer->flush();
-    }
-
-    bool Send(TestMessage &message) {
-        data.entity_id(message.entity_id);
-        data.seq_num(message.seq_num);
-        data.timestamp_sec(message.timestamp_sec);
-        data.timestamp_usec(message.timestamp_usec);
-        data.latency_ping(message.latency_ping);
-
-        data.bin_data().resize(message.size);
-        //data.bin_data(message.data);
-
-        int key = 0;
-        if (_num_instances > 1) {
-            key = _instance_counter++ % _num_instances;
-            data.key()[0] = (char) (key);
-            data.key()[1] = (char) (key >> 8);
-            data.key()[2] = (char) (key >> 16);
-            data.key()[3] = (char) (key >> 24);
-        }
-        _writer.write(data, _instance_handles[key]);
-        return true;
     }
 
     void waitForReaders(int numSubscribers) {
@@ -698,88 +667,279 @@ public:
     }
 };
 
-/*********************************************************
- * ReceiverListener
- */
 template<typename T>
-class ReceiverListener: public dds::sub::NoOpDataReaderListener<T> {
-private:
+class RTIPublisher: public RTIPublisherBase<T> {
+
+protected:
+    T data;
+
+public:
+    RTIPublisher(
+            dds::pub::DataWriter<T> writer,
+            int num_instances,
+            rti::core::Semaphore& pongSemaphore,
+            bool useSemaphore)
+          :
+            RTIPublisherBase<T>(
+                    writer,
+                    num_instances,
+                    pongSemaphore,
+                    useSemaphore)
+    {
+
+        for (int i = 0; i < this->_num_instances; ++i) {
+            this->data.key()[0] = (char) (i);
+            this->data.key()[1] = (char) (i >> 8);
+            this->data.key()[2] = (char) (i >> 16);
+            this->data.key()[3] = (char) (i >> 24);
+
+            this->_instance_handles.push_back(
+                    this->_writer.register_instance(this->data));
+        }
+    }
+
+    inline bool send(TestMessage &message) {
+
+        this->data.entity_id(message.entity_id);
+        this->data.seq_num(message.seq_num);
+        this->data.timestamp_sec(message.timestamp_sec);
+        this->data.timestamp_usec(message.timestamp_usec);
+        this->data.latency_ping(message.latency_ping);
+
+        this->data.bin_data().resize(message.size);
+        //data.bin_data(message.data);
+
+        int key = 0;
+        if (this->_num_instances > 1) {
+            key = this->_instance_counter++ % this->_num_instances;
+            this->data.key()[0] = (char) (key);
+            this->data.key()[1] = (char) (key >> 8);
+            this->data.key()[2] = (char) (key >> 16);
+            this->data.key()[3] = (char) (key >> 24);
+        }
+
+        this->_writer.write(this->data, this->_instance_handles[key]);
+        return true;
+    }
+};
+
+class RTIDynamicDataPublisher: public RTIPublisherBase<DynamicData> {
+
+protected:
+    DynamicData data;
+
+public:
+    RTIDynamicDataPublisher(
+            dds::pub::DataWriter<DynamicData> writer,
+            int num_instances,
+            rti::core::Semaphore& pongSemaphore,
+            bool useSemaphore,
+            const dds::core::xtypes::StructType& typeCode)
+          :
+            RTIPublisherBase<DynamicData>(
+                    writer,
+                    num_instances,
+                    pongSemaphore,
+                    useSemaphore),
+            data(typeCode)
+    {
+
+        for (int i = 0; i < this->_num_instances; ++i) {
+            std::vector<uint8_t> key_octets;
+            key_octets.push_back((uint8_t) (i));
+            key_octets.push_back((uint8_t) (i >> 8));
+            key_octets.push_back((uint8_t) (i >> 16));
+            key_octets.push_back((uint8_t) (i >> 24));
+            this->data.set_values("key",key_octets);
+
+            this->_instance_handles.push_back(this->_writer.register_instance(this->data));
+        }
+    }
+
+    inline bool send(TestMessage &message) {
+
+        this->data.value("entity_id", message.entity_id);
+        this->data.value("seq_num", message.seq_num);
+        this->data.value("timestamp_sec", message.timestamp_sec);
+        this->data.value("timestamp_usec", message.timestamp_usec);
+        this->data.value("latency_ping", message.latency_ping);
+
+        std::vector<uint8_t> octec_seq;
+        octec_seq.resize(message.size);
+        this->data.set_values("bin_data", octec_seq);
+
+        int key = 0;
+        if (this->_num_instances > 1) {
+            std::vector<uint8_t> key_octets;
+            key = this->_instance_counter++ % this->_num_instances;
+            key_octets.push_back((uint8_t) (key));
+            key_octets.push_back((uint8_t) (key >> 8));
+            key_octets.push_back((uint8_t) (key >> 16));
+            key_octets.push_back((uint8_t) (key >> 24));
+            this->data.set_values("key", key_octets);
+        }
+        this->_writer.write(this->data, this->_instance_handles[key]);
+        return true;
+    }
+};
+
+/******************************************************************************/
+
+/* ReceiverListener */
+
+template<typename T>
+class ReceiverListenerBase: public dds::sub::NoOpDataReaderListener<T> {
+
+protected:
     TestMessage _message;
     IMessagingCB *_callback;
     dds::sub::LoanedSamples<T> samples;
-public:
 
-    ReceiverListener(IMessagingCB *callback) :
+public:
+    ReceiverListenerBase(IMessagingCB *callback) :
+            _message(),
             _callback(callback) {
+    }
+};
+
+template<typename T>
+class ReceiverListener: public ReceiverListenerBase<T> {
+
+public:
+    ReceiverListener(IMessagingCB *callback) :
+        ReceiverListenerBase<T>(callback) {
     }
 
     void on_data_available(dds::sub::DataReader<T> &reader) {
-        samples = reader.take();
 
-        for (unsigned int i = 0; i < samples.length(); ++i) {
-            if (samples[i].info().valid()) {
-                const T & sample = samples[i].data();
-                _message.entity_id = sample.entity_id();
-                _message.seq_num = sample.seq_num();
-                _message.timestamp_sec = sample.timestamp_sec();
-                _message.timestamp_usec = sample.timestamp_usec();
-                _message.latency_ping = sample.latency_ping();
-                _message.size = (int) sample.bin_data().size();
-                //_message.data = sample.bin_data();
-                _callback->ProcessMessage(_message);
+        this->samples = reader.take();
+
+        for (unsigned int i = 0; i < this->samples.length(); ++i) {
+            if (this->samples[i].info().valid()) {
+                const T & sample = this->samples[i].data();
+                this->_message.entity_id = sample.entity_id();
+                this->_message.seq_num = sample.seq_num();
+                this->_message.timestamp_sec = sample.timestamp_sec();
+                this->_message.timestamp_usec = sample.timestamp_usec();
+                this->_message.latency_ping = sample.latency_ping();
+                this->_message.size = (int) sample.bin_data().size();
+                //this->_message.data = sample.bin_data();
+                this->_callback->ProcessMessage(this->_message);
             }
         }
     }
 };
 
-/*********************************************************
- * RTISubscriber
- */
+class DynamicDataReceiverListener: public ReceiverListenerBase<DynamicData> {
+
+public:
+    DynamicDataReceiverListener(IMessagingCB *callback) :
+        ReceiverListenerBase<DynamicData>(callback) {
+    }
+
+    void on_data_available(dds::sub::DataReader<DynamicData> &reader) {
+
+        this->samples = reader.take();
+
+        for (unsigned int i = 0; i < this->samples.length(); ++i) {
+            if (this->samples[i].info().valid()) {
+                DynamicData& sample =
+                        const_cast<DynamicData&>(this->samples[i].data());
+                this->_message.entity_id =
+                        sample.value<int32_t>("entity_id");
+                this->_message.seq_num =
+                        sample.value<uint32_t>("seq_num");
+                this->_message.timestamp_sec =
+                        sample.value<int32_t>("timestamp_sec");
+                this->_message.timestamp_usec =
+                        sample.value<uint32_t>("timestamp_usec");
+                this->_message.latency_ping =
+                        sample.value<int32_t>("latency_ping");
+                this->_message.size =
+                        (sample.get_values<uint8_t>("bin_data")).size();
+
+                //_message.data = sample.bin_data();
+                _callback->ProcessMessage(this->_message);
+            }
+        }
+    }
+};
+
+/******************************************************************************/
+
+/* RTISubscriber */
+
 template<typename T>
-class RTISubscriber: public IMessagingReader {
-private:
+class RTISubscriberBase: public IMessagingReader {
+
+protected:
     dds::sub::DataReader<T> _reader;
-    ReceiverListener<T> *_readerListener;
+    ReceiverListenerBase<T> *_readerListener;
     TestMessage _message;
     dds::core::cond::WaitSet _waitset;
     int _data_idx;
     bool _no_data;
 
 public:
+    RTISubscriberBase(
+            dds::sub::DataReader<T> reader,
+            ReceiverListenerBase<T> *readerListener,
+            int _WaitsetEventCount,
+            unsigned int _WaitsetDelayUsec) :
+            _reader(reader),
+            _readerListener(readerListener),
+            _waitset(rti::core::cond::WaitSetProperty(_WaitsetEventCount,
+                    dds::core::Duration::from_microsecs(_WaitsetDelayUsec))) {
+        // null listener means using receive thread
+        if (_reader.listener() == NULL) {
 
-	RTISubscriber(dds::sub::DataReader<T> reader,
-			ReceiverListener<T> *readerListener, int _WaitsetEventCount,
-			unsigned int _WaitsetDelayUsec) :
-			_reader(reader),
-			_readerListener(readerListener),
-			_waitset(rti::core::cond::WaitSetProperty(_WaitsetEventCount,
-					dds::core::Duration::from_microsecs(_WaitsetDelayUsec))) {
-		// null listener means using receive thread
-		if (_reader.listener() == NULL) {
+            // Using status conditions:
+            dds::core::cond::StatusCondition reader_status(_reader);
+            reader_status.enabled_statuses(
+                    dds::core::status::StatusMask::data_available());
+            _waitset += reader_status;
 
-			// Using status conditions:
-			dds::core::cond::StatusCondition reader_status(_reader);
-			reader_status.enabled_statuses(
-					dds::core::status::StatusMask::data_available());
-			_waitset += reader_status;
+            /* Uncomment these lines and comment previous ones to use Read
+             * conditions instead of status conditions
+             *
+             * dds::sub::cond::ReadCondition read_condition(_reader,
+             * dds::sub::status::DataState::any_data());
+             * _waitset += read_condition; */
+        }
 
-			/* Uncomment these lines and comment previous ones to use Read
-			 * conditions instead of status conditions
-			 *
-			 * dds::sub::cond::ReadCondition read_condition(_reader,
-			 * dds::sub::status::DataState::any_data());
-			 * _waitset += read_condition; */
-		}
-
-		_no_data = true;
-		_data_idx = 0;
-	}
+        _no_data = true;
+        _data_idx = 0;
+    }
 
     void Shutdown() {
-    	if (_readerListener != NULL) {
-    		delete(_readerListener);
-    	}
+        if (_readerListener != NULL) {
+            delete(_readerListener);
+        }
     }
+
+    void waitForWriters(int numPublishers) {
+        while (_reader.subscription_matched_status().current_count() < numPublishers) {
+            perftest_cpp::MilliSleep(1000);
+        }
+    }
+};
+
+template<typename T>
+class RTISubscriber: public RTISubscriberBase<T> {
+
+public:
+    RTISubscriber(
+            dds::sub::DataReader<T> reader,
+            ReceiverListener<T> *readerListener,
+            int _WaitsetEventCount,
+            unsigned int _WaitsetDelayUsec)
+          :
+            RTISubscriberBase<T>(
+                    reader,
+                    readerListener,
+                    _WaitsetEventCount,
+                    _WaitsetDelayUsec)
+    {}
 
     TestMessage *ReceiveMessage() {
 
@@ -787,42 +947,124 @@ public:
 
         while (true) {
 
-            if (_no_data) {
-                _waitset.wait(dds::core::Duration::infinite());
+            if (this->_no_data) {
+                this->_waitset.wait(dds::core::Duration::infinite());
 
             }
-            dds::sub::LoanedSamples<T> samples = _reader.take();
+            dds::sub::LoanedSamples<T> samples = this->_reader.take();
 
-            _data_idx = 0;
-            _no_data = false;
+            this->_data_idx = 0;
+            this->_no_data = false;
 
             seq_length = samples.length();
-            if (_data_idx == seq_length) {
-                _no_data = true;
+            if (this->_data_idx == seq_length) {
+                this->_no_data = true;
                 continue;
             }
 
             // skip non-valid data
-            while ((!samples[_data_idx].info().valid())
-                    && (++_data_idx < seq_length))
+            while ((!samples[this->_data_idx].info().valid())
+                    && (++(this->_data_idx) < seq_length))
                 ;
 
             // may have hit end condition
-            if (_data_idx == seq_length) {
+            if (this->_data_idx == seq_length) {
                 continue;
             }
 
-            const T& data = samples[_data_idx].data();
-            _message.entity_id = data.entity_id();
-            _message.seq_num = data.seq_num();
-            _message.timestamp_sec = data.timestamp_sec();
-            _message.timestamp_usec = data.timestamp_usec();
-            _message.latency_ping = data.latency_ping();
-            _message.size = (int) data.bin_data().size();
+            const T& data = samples[this->_data_idx].data();
+            this->_message.entity_id = data.entity_id();
+            this->_message.seq_num = data.seq_num();
+            this->_message.timestamp_sec = data.timestamp_sec();
+            this->_message.timestamp_usec = data.timestamp_usec();
+            this->_message.latency_ping = data.latency_ping();
+            this->_message.size = (int) data.bin_data().size();
             //_message.data = samples[_data_idx].data().bin_data();
 
-            ++_data_idx;
+            ++(this->_data_idx);
 
+            return &(this->_message);
+        }
+        return NULL;
+    }
+
+    void ReceiveAndProccess(IMessagingCB *listener) {
+        while (!listener->end_test) {
+
+            this->_waitset.dispatch(dds::core::Duration::infinite());
+            dds::sub::LoanedSamples<T> samples = this->_reader.take();
+
+            for (unsigned int i = 0; i < samples.length(); ++i) {
+                if (samples[i].info().valid()) {
+                    const T & sample = samples[i].data();
+                    this->_message.entity_id = sample.entity_id();
+                    this->_message.seq_num = sample.seq_num();
+                    this->_message.timestamp_sec = sample.timestamp_sec();
+                    this->_message.timestamp_usec = sample.timestamp_usec();
+                    this->_message.latency_ping = sample.latency_ping();
+                    this->_message.size = (int) sample.bin_data().size();
+                    //_message.data = sample.bin_data();
+                    listener->ProcessMessage(this->_message);
+                }
+            }
+        }
+    }
+};
+
+class RTIDynamicDataSubscriber: public RTISubscriberBase<DynamicData> {
+
+
+public:
+    RTIDynamicDataSubscriber(
+            dds::sub::DataReader<DynamicData> reader,
+            DynamicDataReceiverListener *readerListener,
+            int _WaitsetEventCount,
+            unsigned int _WaitsetDelayUsec)
+          :
+            RTISubscriberBase<DynamicData>(reader,readerListener,_WaitsetEventCount,_WaitsetDelayUsec)
+    {}
+
+    TestMessage *ReceiveMessage() {
+
+        int seq_length;
+
+        while (true) {
+
+            if (this->_no_data) {
+                this->_waitset.wait(dds::core::Duration::infinite());
+            }
+
+            dds::sub::LoanedSamples<DynamicData> samples =
+                    this->_reader.take();
+            this->_data_idx = 0;
+            this->_no_data = false;
+
+            seq_length = samples.length();
+            if (this->_data_idx == seq_length) {
+                this->_no_data = true;
+                continue;
+            }
+
+            // skip non-valid data
+            while ((!samples[this->_data_idx].info().valid())
+                    && (++(this->_data_idx) < seq_length));
+
+            // may have hit end condition
+            if (this->_data_idx == seq_length) {
+                continue;
+            }
+
+            DynamicData& sample =
+                    const_cast<DynamicData&>(
+                            samples[this->_data_idx].data());
+            this->_message.entity_id = sample.value<int32_t>("entity_id");
+            this->_message.seq_num = sample.value<uint32_t>("seq_num");
+            this->_message.timestamp_sec = sample.value<int32_t>("timestamp_sec");
+            this->_message.timestamp_usec = sample.value<uint32_t>("timestamp_usec");
+            this->_message.latency_ping = sample.value<int32_t>("latency_ping");
+            this->_message.size = (sample.get_values<uint8_t>("bin_data")).size();
+
+            ++(this->_data_idx);
             return &_message;
         }
         return NULL;
@@ -831,36 +1073,34 @@ public:
     void ReceiveAndProccess(IMessagingCB *listener) {
         while (!listener->end_test) {
 
-            _waitset.dispatch(dds::core::Duration::infinite());
-            dds::sub::LoanedSamples<T> samples = _reader.take();
+            this->_waitset.dispatch(dds::core::Duration::infinite());
+            dds::sub::LoanedSamples<DynamicData> samples =
+                    this->_reader.take();
 
             for (unsigned int i = 0; i < samples.length(); ++i) {
                 if (samples[i].info().valid()) {
-                    const T & sample = samples[i].data();
-                    _message.entity_id = sample.entity_id();
-                    _message.seq_num = sample.seq_num();
-                    _message.timestamp_sec = sample.timestamp_sec();
-                    _message.timestamp_usec = sample.timestamp_usec();
-                    _message.latency_ping = sample.latency_ping();
-                    _message.size = (int) sample.bin_data().size();
+                    DynamicData& sample =
+                            const_cast<DynamicData&>(
+                                    samples[i].data());
+                    this->_message.entity_id = sample.value<int32_t>("entity_id");
+                    this->_message.seq_num = sample.value<uint32_t>("seq_num");
+                    this->_message.timestamp_sec =
+                            sample.value<int32_t>("timestamp_sec");
+                    this->_message.timestamp_usec =
+                            sample.value<uint32_t>("timestamp_usec");
+                    this->_message.latency_ping =
+                            sample.value<int32_t>("latency_ping");
+                    this->_message.size =
+                            (sample.get_values<uint8_t>("bin_data")).size();
                     //_message.data = sample.bin_data();
-                    listener->ProcessMessage(_message);
+                    listener->ProcessMessage(this->_message);
                 }
             }
         }
     }
-
-    void waitForWriters(int numPublishers) {
-
-        while (true) {
-            if (_reader.subscription_matched_status().current_count() >= numPublishers) {
-                break;
-            }
-            perftest_cpp::MilliSleep(1000);
-        }
-    }
 };
 
+/******************************************************************************/
 
 #ifdef RTI_SECURE_PERFTEST
 
@@ -1023,7 +1263,6 @@ void RTIDDSImpl<T>::printSecureArgs()
 
 #endif
 
-
 /*********************************************************
  * Initialize
  */
@@ -1106,12 +1345,10 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
  * CreateWriter
  */
 template <typename T>
-IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string topic_name)
+IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
 {
     using namespace dds::core::policy;
     using namespace rti::core::policy;
-
-    dds::topic::Topic<T> topic(_participant, topic_name);
 
     std::string qos_profile = "";
     if (topic_name == perftest_cpp::_ThroughputTopicName) {
@@ -1265,21 +1502,45 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string topic_name)
     dw_qos << dw_DataWriterProtocol;
     dw_qos << Property(properties.begin(), properties.end(), true);
 
-    dds::pub::DataWriter<T> writer(_publisher, topic, dw_qos);
+    if (!_isDynamicData) {
+        dds::topic::Topic<T> topic(_participant, topic_name);
+        dds::pub::DataWriter<T> writer(_publisher, topic, dw_qos);
+        return new RTIPublisher<T>(
+                writer,
+                _InstanceCount,
+                _pongSemaphore,
+                _LatencyTest);
 
-    return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore, _LatencyTest);
+    } else {
+
+        const dds::core::xtypes::StructType& type =
+                rti::topic::dynamic_type<T>::get();
+        dds::topic::Topic<DynamicData> topic(
+                _participant,
+                topic_name,
+                type);
+        dds::pub::DataWriter<DynamicData> writer(
+                _publisher,
+                topic,
+                dw_qos);
+        return new RTIDynamicDataPublisher(
+                writer,
+                _InstanceCount,
+                _pongSemaphore,
+                _LatencyTest,
+                type);
+    }
 }
 
 /*********************************************************
  * CreateReader
  */
 template <typename T>
-IMessagingReader *RTIDDSImpl<T>::CreateReader(const std::string topic_name,
-                                           IMessagingCB *callback)
+IMessagingReader *RTIDDSImpl<T>::CreateReader(
+        const std::string &topic_name,
+        IMessagingCB *callback)
 {
     using namespace dds::core::policy;
-
-    dds::topic::Topic<T> topic(_participant, topic_name);
 
     std::string qos_profile;
     if (topic_name == perftest_cpp::_ThroughputTopicName) {
@@ -1390,22 +1651,62 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(const std::string topic_name,
     dr_qos << qos_resource_limits;
     dr_qos << qos_durability;
 
-    dds::sub::DataReader<T> reader(dds::core::null);
-    ReceiverListener<T> *reader_listener = NULL;
-    if (callback != NULL) {
-        reader_listener = new ReceiverListener<T>(callback);
-        reader = dds::sub::DataReader<T>(_subscriber, topic, dr_qos,
-                reader_listener, dds::core::status::StatusMask::data_available());
+    if (!_isDynamicData) {
+        dds::topic::Topic<T> topic(_participant, topic_name);
+        dds::sub::DataReader<T> reader(dds::core::null);
+        ReceiverListener<T> *reader_listener = NULL;
+        if (callback != NULL) {
+            reader_listener = new ReceiverListener<T>(callback);
+            reader = dds::sub::DataReader<T>(
+                    _subscriber,
+                    topic,
+                    dr_qos,
+                    reader_listener,
+                    dds::core::status::StatusMask::data_available());
+        } else {
+            reader = dds::sub::DataReader<T>(_subscriber, topic, dr_qos);
+        }
+
+        return new RTISubscriber<T>(
+                reader,
+                reader_listener,
+                _WaitsetEventCount,
+                _WaitsetDelayUsec);
+
     } else {
-        reader = dds::sub::DataReader<T>(_subscriber, topic, dr_qos);
-    }
 
-    if (topic_name == perftest_cpp::_ThroughputTopicName ||
-        topic_name == perftest_cpp::_LatencyTopicName) {
-        _reader = reader;
-    }
+        const dds::core::xtypes::StructType& type =
+                rti::topic::dynamic_type<T>::get();
+        dds::topic::Topic<DynamicData> topic(
+                _participant,
+                topic_name,
+                type);
+        dds::sub::DataReader<DynamicData> reader(
+                dds::core::null);
+        DynamicDataReceiverListener *dynamic_data_reader_listener = NULL;
 
-    return new RTISubscriber<T>(reader,reader_listener,_WaitsetEventCount, _WaitsetDelayUsec);
+        if (callback != NULL) {
+            dynamic_data_reader_listener =
+                    new DynamicDataReceiverListener(callback);
+            reader = dds::sub::DataReader<DynamicData>(
+                    _subscriber,
+                    topic,
+                    dr_qos,
+                    dynamic_data_reader_listener,
+                    dds::core::status::StatusMask::data_available());
+        } else {
+            reader = dds::sub::DataReader<DynamicData>(
+                    _subscriber,
+                    topic,
+                    dr_qos);
+        }
+
+        return new RTIDynamicDataSubscriber(
+                reader,
+                dynamic_data_reader_listener,
+                _WaitsetEventCount,
+                _WaitsetDelayUsec);
+    }
 }
 
 template class RTIDDSImpl<TestDataKeyed_t>;

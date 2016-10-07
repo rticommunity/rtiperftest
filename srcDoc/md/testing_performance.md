@@ -8,7 +8,7 @@ The test measures what is sometimes called loaded latency -- latency at a given 
 
 - When my network is heavily loaded, what latency can I expect?
 
-For a given configuration, what is the best-case latency with no other traffic on the network?
+- For a given configuration, what is the best-case latency with no other traffic on the network?
 
 For examples of specific configurations, see See Example Command Lines for Running the Performance Test.
 

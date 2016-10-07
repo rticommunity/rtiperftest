@@ -49,10 +49,10 @@ class RTIDDSImpl : public IMessaging
         return MAX_BINDATA_SIZE;
     }
 
-    IMessagingWriter *CreateWriter(const std::string topic_name);
+    IMessagingWriter *CreateWriter(const std::string &topic_name);
     // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
     // to get data
-    IMessagingReader *CreateReader(const std::string topic_name, IMessagingCB *callback);
+    IMessagingReader *CreateReader(const std::string &topic_name, IMessagingCB *callback);
 
 
   private:
@@ -82,6 +82,7 @@ class RTIDDSImpl : public IMessaging
     bool         _isLargeData;
     bool         _isScan;
     bool         _isPublisher;
+    bool         _isDynamicData;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;
@@ -121,7 +122,6 @@ class RTIDDSImpl : public IMessaging
     dds::domain::DomainParticipant _participant;
     dds::sub::Subscriber _subscriber;
     dds::pub::Publisher _publisher;
-    dds::sub::DataReader<T> _reader;
 
     rti::core::Semaphore _pongSemaphore;
 
