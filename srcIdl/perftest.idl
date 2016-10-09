@@ -1,3 +1,8 @@
+/*
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
+ */
+
 const long MAX_BINDATA_SIZE = 131072;
 const long KEY_SIZE = 4;
 

@@ -1,7 +1,6 @@
 /*
- * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
- * Permission to modify and use for internal purposes granted.
- * This software is provided "as is", without warranty, express or implied.
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
 package com.rti.perftest.harness;
@@ -39,4 +38,3 @@ public class PerftestTimerTask extends TimerTask {
 
 }
 // ===========================================================================
-// End of $Id: PerftestTimerTask.java,v 1.1 2014/08/27 11:35:57 juanjo Exp $

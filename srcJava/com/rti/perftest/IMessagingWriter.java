@@ -1,7 +1,6 @@
 /*
- * (c) 2005-2016  Copyright, Real-Time Innovations, Inc.  All rights reserved.
- * Permission to modify and use for internal purposes granted.
- * This software is provided "as is", without warranty, express or implied.
+ * (c) 2005-2016  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
 package com.rti.perftest;
@@ -27,4 +26,4 @@ public interface IMessagingWriter {
 }
 
 // ===========================================================================
-// End of $Id: IMessagingWriter.java,v 1.2 2014/01/10 11:19:08 juanjo Exp $
+
