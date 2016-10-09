@@ -1,4 +1,4 @@
-# RTI Perftest (master)
+# RTI Perftest (master) [<img alt="License" src="https://img.shields.io/badge/License-EPL%201.0-red.svg" align="right" />](https://opensource.org/licenses/EPL-1.0)
 
 Find all the information about RTI Perftest in the following documents:
 
