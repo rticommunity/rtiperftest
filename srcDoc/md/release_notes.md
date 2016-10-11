@@ -18,6 +18,7 @@ Therefore, all the already generated makefiles and *Visual Studio* solutions hav
 
 Certain platforms will compile with the out of-the-box code and configurations, but further tuning could be needed in order to make the application run in the specific platform. The reason is usually the memory consumption of the application or the lack of support of the platform for certain features (like a file system).
 
+
 ### Improved directory structure
 
 *RTI Perftest 5.2.5* directory structure has been cleaned up, having now a much more compact and consistent schema.

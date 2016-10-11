@@ -9,8 +9,8 @@ When running the test, keep in mind that a throughput test will necessarily plac
 The C++ and C# executables are in these directories:
 
 ```
-<installation directory>/bin/<architecture>/Release
-<installation directory>/bin/<architecture>/Debug
+<installation directory>/bin/<architecture>/release
+<installation directory>/bin/<architecture>/debug
 ```
 
 Where `<architecture>` depends on your architecture, such as `i86Linux3gcc4.8.2` or `i86Win32VS2012`.
@@ -22,15 +22,19 @@ The test uses an XML configuration file and locates this file based on paths rel
 Traditional C++:
 
 ```
-bin/<architecture>/Release/perftest_cpp <-pub|-sub> [parameters] or
-bin/<architecture>/Debug/perftest_cpp <-pub|-sub> [parameters]
+bin/<architecture>/<release or debug>/perftest_cpp <-pub | -sub (default)> [parameters]
 ```
 
 Modern C++:
 
 ```
-bin/<architecture>/Release/perftest_cpp03 <-pub|-sub> [parameters] or
-bin/<architecture>/Debug/perftest_cpp03 <-pub|-sub> [parameters]
+bin/<architecture>/<release or debug>/perftest_cpp03 <-pub | -sub (default)> [parameters]
+```
+
+C#:
+
+```
+bin/<architecture>/<release or debug>/perftest_cs <-pub | -sub (default)> [parameters]
 ```
 
 ### When using dynamic linking
@@ -56,34 +60,37 @@ In such case, add the *OpenSSL* libraries in `$OPENSSLHOME/<debug or release>/li
 - `bin/<debug or release>/perftest_java.sh` for UNIX-based systems.
 - `bin/<debug or release>/perftest_java.bat` for Windows systems.
 
-Since the linking in Java is dynamic, add the `$NDDSHOME/lib/<architecture>` folder to:
-
-- The `$LD_LIBRARY_PATH` variable if you are on Linux systems.
-- The `$DYLD_LIBRARY_PATH` variable if you are on OSX. 
-- The `%PATH%` variable (if you are on Windows).
-
-Alternatively, when using the *RTI Perftest* scripts, you can set the environment variable `$RTI_PERFTEST_ARCH` to your specific architecture and let the script set `$LD_LIBRARY_PATH` or `%PATH%` for you. You also need to set the `$NDDSHOME` environment variable.
+When using the *RTI Perftest* scripts, you will need to set the environment variable `$RTI_PERFTEST_ARCH` to your specific architecture as well as your `$NDDSHOME`.
 
 **For example**:
-If you are using a Windows 32-bit architecture:
+If you are using a Windows 32-bit architecture and the *Visual Studio 2012* libraries:
 
 ```
-set RTI_PERFTEST_ARCH=i86Win32VS2010
-```
-
-If you are using a Windows 64-bit architecture:
-
-```
-set RTI_PERFTEST_ARCH=x64Win64jdk
+set NDDSHOME=<path to your RTI Connext DDS installation>
+set RTI_PERFTEST_ARCH=i86Win32VS2012
 ```
 
 If you are using the Linux i86Linux3gcc4.8.2 architecture:
 
 ```
+export NDDSHOME=<path to your RTI Connext DDS installation>
 export RTI_PERFTEST_ARCH=i86Linux3gcc4.8.2
 ```
  
-Make sure `java` is in your path before running the java example run script.
+Make sure the correct `java` executable is in your path before running the script.
+
+Alternatively, you can directly run the Java `jar` files:
+
+```
+java -cp "<RTI Perftest Path>/bin/<release or debug>/perftest_java.jar:<NDDSHOME>/lib/java/<nddsjava.jar or nddsjava.jar>" com.rti.perftest.ddsimpl.PerfTestLauncher
+```
+
+In such case, add the `$NDDSHOME/lib/<architecture>` and the `$NDDSHOME/lib/java` folders to:
+
+- The `$LD_LIBRARY_PATH` variable if you are on Linux systems.
+- The `$DYLD_LIBRARY_PATH` variable if you are on OSX. 
+- The `%PATH%` variable (if you are on Windows).
+
 
 ### When using Java on UNIX-based systems with RTI Secure DDS
 
@@ -104,26 +111,22 @@ Ideally, you should run the test for at least 180 seconds.
 ### C++ Traditional API
 
 ```
-bin/<architecture>/release/perftest_cpp <-pub|-sub> [parameters] or
-bin/<architecture>/debug/perftest_cpp <-pub|-sub> [parameters]
+bin/<architecture>/<release or debug>/perftest_cpp <-pub | -sub (default)> [parameters]
 ```
 
 ### C++ Modern API
 ```
-bin/<architecture>/release/perftest_cpp03 <-pub|-sub> [parameters] or
-bin/<architecture>/debug/perftest_cpp03 <-pub|-sub> [parameters]
+bin/<architecture>/<release or debug>/perftest_cpp03 <-pub | -sub (default)> [parameters]
 ```
 
 ### C# API 
 ```
-bin/<architecture>/release/perftest_cs <-pub|-sub> [parameters] or
-bin/<architecture>/debug/perftest_cs <-pub|-sub> [parameters]
+bin/<architecture>/<release or debug>/perftest_cs <-pub | -sub (default)> [parameters]
 ```
  
 ### Java API
 ```
-bin/release/perftest_java <-pub|-sub> [parameters]
-bin/debug/perftest_java <-pub|-sub> [parameters]
+bin/<release or debug>/perftest_java <-pub | -sub (default)> [parameters]
 ```
 
 where `<architecture>` depends on your architecture, such as `x64Linux3gcc4.8.2` or `i86Win32VS2012`.

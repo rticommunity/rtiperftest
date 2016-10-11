@@ -16,7 +16,7 @@ Length: 64 Latency: Ave 399 us Std 53.1 us Min 88 us Max 1062 us 50% 403 us 90% 
 * Subscriber
 
 ```
-> bin/i86Linux2.6gcc3.4.3/Release/perftest_cpp -sub -noPrint -domain 27
+> bin/i86Linux2.6gcc3.4.3/release/perftest_cpp -sub -noPrint -domain 27
 Waiting to discover 1 publishers ...
 Waiting for data...
 Length: 32 Packets: 10000000 Packets/s(ave): 47913 Mbps(ave): 12.3 Lost: 0
