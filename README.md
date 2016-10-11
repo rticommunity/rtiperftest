@@ -14,4 +14,4 @@ Find all the information about RTI Perftest in the following documents:
 10. [Command-Line Examples](srcDoc/md/command_line_examples.md)
 11. [Output Example](srcDoc/md/output_example.md)
 12. [Secure Certificates, Governance and Permission Files](srcDoc/md/secure.md)
-13. [Optimizing Your OS for Network Performance](srcDoc/md/secure.md)
+13. [Optimizing Your OS for Network Performance](srcDoc/md/optimizing.md)
