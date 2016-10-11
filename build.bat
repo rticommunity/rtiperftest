@@ -300,7 +300,7 @@ if	%BUILD_JAVA% == 1 (
 
 	echo[
 	echo [INFO]: Doing javac
-	call "%JAVAC_EXE%" -d "%java_folder%"/class -cp !rti_ndds_java_jar!^
+	call "%JAVAC_EXE%" -d "%java_folder%"/class -cp "!rti_ndds_java_jar!"^
 	"%java_folder%"/com/rti/perftest/*.java^
 	"%java_folder%"/com/rti/perftest/ddsimpl/*.java^
 	"%java_folder%"/com/rti/perftest/gen/*.java^
