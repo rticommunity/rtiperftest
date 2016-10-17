@@ -2,6 +2,8 @@
 
 RTI Perftest is a command-line application that measures the Latency and Throughput of very configurable scenarios that use RTI Connext DDS middleware to send messages.
 
+**Download** the latest stable releases [here](https://github.com/rticommunity/rtiperftest/releases).
+
 Find all the information about RTI Perftest in the following documents:
 
 1.  [Testing Performance](srcDoc/md/testing_performance.md)
