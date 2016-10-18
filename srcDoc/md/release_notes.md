@@ -1,16 +1,19 @@
 # Release Notes
 
-## RTI Perftest 5.2.5 Compatibility
+## RTI Perftest 2.0 Compatibility
 
-*RTI Perftest* 5.2.5 is designed to compile and work against the *RTI Connext DDS* 5.2.5 release.
+*RTI Perftest* 2.0 is designed to compile and work against the *RTI Connext DDS* 5.2.x releases.
 
-In addition, it is also compatible with *RTI Connext DDS* 5.2.3 and 5.2.4 releases. However, since the build scripts make use of certain specific parameters in *Rtiddsgen* the `--secure` and `--openssl-home` parameters will not work.
+However, certain features are not compatible with all the *RTI Connext DDS* versions, since the build scripts make use of certain specific parameters in *Rtiddsgen* that might change or not be present between releases:
 
-## What's New in 5.2.5
+- The `--secure` and `--openssl-home` parameters will not work for versions previous to *RTI Connext DDS* 5.2.5.
+- The C# code generation against *RTI Connext DDS 5.2.0.x* is not supported. Users can disable its compilation by adding the `--skip-cs-build` flag.
+
+## What's New in 2.0
 
 ### Platform support and build system
 
-*RTI Perftest 5.2.5* makes use of the *RTI Connext DDS* *Rtiddsgen* tool in order to generate part of its code and also the makefile/project files used to compile that code.
+*RTI Perftest 2.0* makes use of the *RTI Connext DDS* *Rtiddsgen* tool in order to generate part of its code and also the makefile/project files used to compile that code.
 
 Therefore, all the already generated makefiles and *Visual Studio* solutions have been removed and now the build system depends on 2 scripts: `build.sh` for Unix-based systems and `build.bat` for Windows systems.
 
@@ -21,13 +24,19 @@ Certain platforms will compile with the out of-the-box code and configurations, 
 
 ### Improved directory structure
 
-*RTI Perftest 5.2.5* directory structure has been cleaned up, having now a much more compact and consistent schema.
+*RTI Perftest 2.0* directory structure has been cleaned up, having now a much more compact and consistent schema.
 
 ### Github
 
 *RTI Perftest* development has been moved to a *GitHub* project. This will allow more frequently updates and code contributions.
 
 The URL of the project is the following: [github.com/rticommunity/rtiperftest](github.com/rticommunity/rtiperftest).
+
+### Numeration schema
+
+*RTI Perftest* development and releases are now decoupled from *RTI Connext DDS* ones, therefore, and to avoid future numeration conflicts, *RTI Perftest* moved to a different numeration schema.
+
+The compatibility between *RTI Perftest* versions and *RTI Connext DDS* ones will be clearly stated in the release notes of every *RTI Perftest* release, as well as in the top level `README.md` file.
 
 ### Documentation
 
@@ -51,7 +60,7 @@ The execution in *VxWorks OS kernel mode* has been simplified for the user. Now 
 
 The default number of iterations (samples sent by the performance test publisher side) when performing a latency test has been updated. Before, the default value was `100,000,000`. This value was used to internally allocate certain buffers, which imposed large memory requirements. The new value is `10,000,000` (10 times less).
 
-## What's Fixed in 5.2.5
+## What's Fixed in 2.0
 
 ### RTI Perftest behavior when using multiple publishers
 
@@ -81,10 +90,6 @@ Large data settings enabled (-dataLen > 63000).
 
 ## Known Issues
 
-### RTI Perftest 5.2.5 version compatibility
-
-*RTI Perftest 5.2.5* build system makes use of specific features from *RTI Connext DDS 5.2.5 Code Generator (rtiddsgen)* in order to generate the makefile/project files used to compile. This implies the break of compatibility with previous *RTI Connext DDS* releases. 
-
 ### Compiling manually on Windows when using the *RTI Security* plugin
 
 *rtiddsgen* generated solutions for Windows allow 4 different configurations: 
@@ -94,14 +99,4 @@ Large data settings enabled (-dataLen > 63000).
 * Release
 * Release DLL
 
-However, *RTI Perftest 5.2.5* new build system is focused to only compile one of those modes at a time when using the `-secure` option. You can still select which one will be used by using the `-debug` and `-dynamic` flags.
-
-
-
-
-
-
-
-
-
-
+However, *RTI Perftest 2.0* new build system is focused to only compile one of those modes at a time. Choosing the compilation mode should be done via the `-debug` and `-dynamic` flags.
