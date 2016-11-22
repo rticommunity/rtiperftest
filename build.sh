@@ -448,6 +448,8 @@ while [ "$1" != "" ]; do
     shift
 done
 
+executable_checking
+
 rtiddsgen_executable="$NDDSHOME/bin/rtiddsgen"
 
 classic_cpp_lang_string=C++
