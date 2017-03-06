@@ -93,6 +93,7 @@ class perftest_cpp
     int _pubRate;
     bool _isKeyed;
     unsigned int _executionTime;
+    bool _displayWriterStats;
 
   private:
     static void SetTimeout(unsigned int executionTimeInSeconds);
@@ -109,7 +110,6 @@ class perftest_cpp
     static int  _SubID;
     static int  _PubID;
     static bool _PrintIntervals;
-    static bool _IsDebug;
 
     static struct RTIClock *_Clock;
     static struct RTINtpTime _ClockTime_aux;

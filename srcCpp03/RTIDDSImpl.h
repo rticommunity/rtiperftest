@@ -62,6 +62,7 @@ class RTIDDSImpl : public IMessaging
     const char  *_Nic;
     const char  *_ProfileFile;
     bool         _TurboMode;
+    bool         _UseXmlQos;
     bool         _AutoThrottle;
     bool         _IsReliable;
     bool         _IsMulticast;
@@ -121,6 +122,7 @@ class RTIDDSImpl : public IMessaging
     dds::domain::DomainParticipant _participant;
     dds::sub::Subscriber _subscriber;
     dds::pub::Publisher _publisher;
+    dds::core::QosProvider _qosProvider;
 
     rti::core::Semaphore _pongSemaphore;
 

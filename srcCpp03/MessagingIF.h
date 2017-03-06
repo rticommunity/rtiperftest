@@ -31,10 +31,10 @@ class TestMessage
         timestamp_usec(0),
         latency_ping(0)
     {
-    	key[0]=0;
-    	key[1]=0;
-    	key[2]=0;
-    	key[3]=0;
+        key[0]=0;
+        key[1]=0;
+        key[2]=0;
+        key[3]=0;
     }
 };
 
@@ -69,22 +69,25 @@ class IMessagingWriter
     virtual bool send(TestMessage &message) = 0;
     virtual void flush() = 0;
     virtual void waitForPingResponse() {
-	// Implementation required only if
-	// support for LatencyTest is desired.
-	// The implementation may consist of just
-	// a binary semaphore TAKE operation
+        // Implementation required only if
+        // support for LatencyTest is desired.
+        // The implementation may consist of just
+        // a binary semaphore TAKE operation
     };
     virtual void waitForPingResponse(int timeout) {
-    // Implementation required only if
-	// support for LatencyTest is desired.
-	// The implementation may consist of just
-	// a binary semaphore TAKE time out operation
+        // Implementation required only if
+        // support for LatencyTest is desired.
+        // The implementation may consist of just
+        // a binary semaphore TAKE time out operation
     };
     virtual void notifyPingResponse() {
-	// Implementation required only if
-	// support for LatencyTest is desired.
-	// The implementation may consist of just
-	// a binary semaphore GIVE operation
+        // Implementation required only if
+        // support for LatencyTest is desired.
+        // The implementation may consist of just
+        // a binary semaphore GIVE operation
+    };
+    virtual unsigned int getPulledSampleCount() {
+        return -1;
     };
 };
 

@@ -49,6 +49,7 @@ namespace PerformanceTest
         bool NotifyPingResponse();
         bool WaitForPingResponse();
         bool WaitForPingResponse(int timeout);
+        long getPulledSampleCount();
     }
 
     public interface IMessaging : IDisposable

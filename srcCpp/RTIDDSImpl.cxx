@@ -10,6 +10,7 @@
 #include "MessagingIF.h"
 #include "perftest_cpp.h"
 #include "RTIDDSImpl.h"
+#include "qos_string.h"
 
 #ifdef RTI_SECURE_PERFTEST
 #include "security/security_default.h"
@@ -157,6 +158,8 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
         "\t                          throughput DataWriter (pub)\n"
         "\t-enableTurboMode        - Enables the TurboMode feature in the\n"
         "\t                          throughput DataWriter (pub)\n"
+        "\t-noXmlQos               - Skip loading the qos profiles from the xml\n"
+        "\t                          profile\n"
       #ifdef RTI_SECURE_PERFTEST
         "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n"
         "\t-secureSign                   - Sign (HMAC) discovery and user data\n"
@@ -388,10 +391,38 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 _UseTcpOnly = true;
             }
         }
-        else if (IS_OPTION(argv[i], "-debug")) 
+        else if (IS_OPTION(argv[i], "-verbosity"))
         {
-            NDDSConfigLogger::get_instance()->
-                set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+            errno = 0;
+            int verbosityLevel = strtol(argv[++i], NULL, 10);
+
+            if (errno) {
+                fprintf(stderr, "Unexpected value after -verbosity\n");
+                return false;
+            }
+
+            switch (verbosityLevel) {
+                case 0: NDDSConfigLogger::get_instance()->
+                            set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_SILENT);
+                        fprintf(stderr, "Setting verbosity to SILENT\n");
+                        break;
+                case 1: NDDSConfigLogger::get_instance()->
+                            set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_ERROR);
+                        fprintf(stderr, "Setting verbosity to ERROR\n");
+                        break;
+                case 2: NDDSConfigLogger::get_instance()->
+                            set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_WARNING);
+                        fprintf(stderr, "Setting verbosity to WARNING\n");
+                        break;
+                case 3: NDDSConfigLogger::get_instance()->
+                            set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+                        fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
+                        break;
+                default: fprintf(stderr,
+                            "Invalid value for the verbosity parameter. Setting verbosity to ERROR (1)\n");
+                        verbosityLevel = 1;
+                        break;
+            }
         }
         else if (IS_OPTION(argv[i], "-waitsetDelayUsec")) {
             if ((i == (argc-1)) || *argv[++i] == '-') 
@@ -426,6 +457,10 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         else if (IS_OPTION(argv[i], "-enableTurboMode") )
         {
             _TurboMode = true;
+        }
+        else if (IS_OPTION(argv[i], "-noXmlQos") )
+        {
+            _UseXmlQos = false;
         }
       #ifdef RTI_SECURE_PERFTEST
         else if (IS_OPTION(argv[i], "-secureSign")) {
@@ -702,6 +737,12 @@ class RTIPublisher : public IMessagingWriter
 	}
 	return true;
     }
+
+    unsigned int getPulledSampleCount() {
+        DDS_DataWriterProtocolStatus status;
+        _writer->get_datawriter_protocol_status(status);
+        return (unsigned int)status.pulled_sample_count;
+    };
 };
 
 /* Dynamic Data equivalent function from RTIPublisher */
@@ -891,6 +932,12 @@ public:
         }
         return true;
     }
+
+    unsigned int getPulledSampleCount() {
+        DDS_DataWriterProtocolStatus status;
+        _writer->get_datawriter_protocol_status(status);
+        return (unsigned int)status.pulled_sample_count;
+    };
 };
 
 /*********************************************************
@@ -1727,8 +1774,15 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // setup the QOS profile file to be loaded
     _factory->get_qos(factory_qos);
-    factory_qos.profile.url_profile.ensure_length(1, 1);
-    factory_qos.profile.url_profile[0] = DDS_String_dup(_ProfileFile);
+    if (_UseXmlQos) {
+        factory_qos.profile.url_profile.ensure_length(1, 1);
+        factory_qos.profile.url_profile[0] = DDS_String_dup(_ProfileFile);
+    } else {
+        fprintf(stderr,"Not using xml file for QoS.\n");
+        factory_qos.profile.string_profile.from_array(
+                PERFTEST_QOS_STRING,
+                PERFTEST_QOS_STRING_SIZE);
+    }
     _factory->set_qos(factory_qos);
 
     if (_factory->reload_profiles() != DDS_RETCODE_OK) 
@@ -1937,6 +1991,12 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     if (qos_profile == "ThroughputQos" ||
         qos_profile =="NoAckThroughputQos")
     {
+
+        if (_IsMulticast) {
+            dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
+                    RTI_TRUE;
+        }
+
         if (_BatchSize > 0) {
             dw_qos.batch.enable = true;
             dw_qos.batch.max_data_bytes = _BatchSize;
@@ -1985,6 +2045,17 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 
         dw_qos.protocol.rtps_reliable_writer.low_watermark = _SendQueueSize * 1 / 10;
         dw_qos.protocol.rtps_reliable_writer.high_watermark = _SendQueueSize * 9 / 10;
+
+        /*
+         * If _SendQueueSize is 1 low watermark and high watermark would both be
+         * 0, which would cause the middleware to fail. So instead we set the
+         * high watermark to the low watermark + 1 in such case.
+         */
+        if (dw_qos.protocol.rtps_reliable_writer.high_watermark
+            == dw_qos.protocol.rtps_reliable_writer.low_watermark) {
+            dw_qos.protocol.rtps_reliable_writer.high_watermark =
+                    dw_qos.protocol.rtps_reliable_writer.low_watermark + 1;
+        }
 
         dw_qos.protocol.rtps_reliable_writer.max_send_window_size = _SendQueueSize;
         dw_qos.protocol.rtps_reliable_writer.min_send_window_size = _SendQueueSize;

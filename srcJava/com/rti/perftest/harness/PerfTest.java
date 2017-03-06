@@ -69,7 +69,7 @@ public final class PerfTest {
     // Private Fields
     // -----------------------------------------------------------------------
 
-    private static boolean _isDebug = false;
+    //private static boolean _isDebug = false;
 
     // When running a scan, this determines the number of
     // latency pings that will be sent before increasing the
@@ -78,7 +78,7 @@ public final class PerfTest {
 
     private int     _dataLen = 100;
     private int     _batchSize = 0;
-    private int     _maxBinDataSize = TestMessage.MAX_DATA_SIZE;
+    //private int     _maxBinDataSize = TestMessage.MAX_DATA_SIZE;
     private int     _samplesPerBatch = 1;
     private long    _numIter = 100000000;
     private boolean _isPub = false;
@@ -97,6 +97,7 @@ public final class PerfTest {
     private boolean  _isReliable = true;
     private long     _pubRate = 0;
     private long     _executionTime = 0;
+    private boolean  _displayWriterStats = false;
     private PerftestTimerTask timertask = new PerftestTimerTask(this);
     /* Indicates when the test should exit due to timeout */
     private boolean testCompleted = false;
@@ -156,7 +157,7 @@ public final class PerfTest {
             return;
         }
         _batchSize = _messagingImpl.getBatchSize();
-        _maxBinDataSize = _messagingImpl.getMaxBinDataSize();
+        //_maxBinDataSize = _messagingImpl.getMaxBinDataSize();
 
         if (_batchSize != 0) {
             _samplesPerBatch = _batchSize/_dataLen;
@@ -219,16 +220,19 @@ public final class PerfTest {
             "\t                          read data\n" +
             "\t-latencyTest            - Run a latency test consisting of a ping-pong \n" +
             "\t                          synchronous communication \n" +
-            "\t-debug                  - Run in debug mode\n" +
+            "\t-verbosity <level>      - Run with different levels of verbosity:\n" +
+            "\t                          0 - SILENT, 1 - ERROR, 2 - WARNING,\n" +
+            "\t                          3 - ALL. Default: 1\n" +
             "\t-pubRate <samples/s>    - Limit the throughput to the specified number\n" +
             "\t                          of samples/s, default 0 (don't limit)\n" +
             "\t-keyed                  - Use keyed data (default: unkeyed)\n"+
             "\t-executionTime <sec>    - Set a maximum duration for the test. The\n"+
             "\t                          first condition triggered will finish the\n"+
             "\t                          test: number of samples or execution time.\n"+
-            "\t                          Default 0 (don't set execution time)\n";
-
-
+            "\t                          Default 0 (don't set execution time)\n"+
+            "\t-writerStats            - Display the Pulled Sample count stats for\n"+
+            "\t                          reliable protocol debugging purposes.\n"+
+            "\t                          Default: Not set\n";
 
         int argc = argv.length;
         if (argc < 0) {
@@ -457,10 +461,19 @@ public final class PerfTest {
                     return false;
                 }
             }
-            else if ("-debug".toLowerCase().startsWith(argv[i].toLowerCase()))
+            else if ("-verbosity".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
-                _isDebug = true;
                 _messagingArgv[_messagingArgc++] = argv[i];
+
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <level> after -verbosity\n");
+                    return false;
+                }
+                _messagingArgv[_messagingArgc++] = argv[i];
+            }
+            else if ("-writerStats".toLowerCase().startsWith(argv[i].toLowerCase()))
+            {
+                _displayWriterStats = true;
             }
             else if ( "-pubRate".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
@@ -1016,6 +1029,12 @@ public final class PerfTest {
                     ++num_pings;
                     ping_index_in_batch = (ping_index_in_batch + 1) % _samplesPerBatch;
                     sentPing = true;
+
+                    if (_displayWriterStats && printIntervals) {
+                        System.out.printf(
+                                "Pulled samples: %1$7d\n",
+                                writer.getPulledSampleCount());
+                    }
                 }
             }
 
@@ -1064,6 +1083,13 @@ public final class PerfTest {
         }
 
         sleep(1000);
+
+        if (_displayWriterStats) {
+            System.out.printf(
+                    "Pulled samples: %1$7d\n",
+                    writer.getPulledSampleCount());
+        }
+
         if (testCompleted) {
             System.err.println("Finishing test due to timer...");
         } else {

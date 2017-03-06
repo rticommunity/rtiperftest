@@ -5,6 +5,7 @@
 
 #include "RTIDDSImpl.h"
 #include "perftest_cpp.h"
+#include "qos_string.h"
 
 using dds::core::xtypes::DynamicData;
 
@@ -53,6 +54,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _Nic(""),
         _ProfileFile("perftest_qos_profiles.xml"),
         _TurboMode(false),
+        _UseXmlQos(true),
         _AutoThrottle(false),
         _IsReliable(true),
         _IsMulticast(false),
@@ -92,6 +94,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _participant(dds::core::null),
         _subscriber(dds::core::null),
         _publisher(dds::core::null),
+        _qosProvider(dds::core::null),
         _pongSemaphore(RTI_OSAPI_SEMAPHORE_KIND_BINARY,NULL)
     {}
 
@@ -434,9 +437,41 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 _UseTcpOnly = true;
             }
         }
-        else if (IS_OPTION(argv[i], "-debug")) {
-            rti::config::Logger::instance().verbosity(
-                    rti::config::Verbosity::STATUS_ALL);
+        else if (IS_OPTION(argv[i], "-verbosity")) {
+            errno = 0;
+            int verbosityLevel = strtol(argv[++i], NULL, 10);
+
+            if (errno) {
+                fprintf(stderr, "Unexpected value after -verbosity\n");
+                return false;
+            }
+
+            switch (verbosityLevel) {
+                case 0: rti::config::Logger::instance().verbosity(
+                            rti::config::Verbosity::SILENT);
+                        std::cerr << "[Info]: Setting verbosity to SILENT"
+                                  << std::endl;
+                        break;
+                case 1: rti::config::Logger::instance().verbosity(
+                            rti::config::Verbosity::ERRORY);
+                        std::cerr << "[Info]: Setting verbosity to EXCEPTION"
+                                  << std::endl;
+                        break;
+                case 2: rti::config::Logger::instance().verbosity(
+                            rti::config::Verbosity::WARNING);
+                        std::cerr << "[Info]: Setting verbosity to WARNING"
+                                  << std::endl;
+                        break;
+                case 3: rti::config::Logger::instance().verbosity(
+                            rti::config::Verbosity::STATUS_ALL);
+                        std::cerr << "[Info]: Setting verbosity to STATUS_ALL"
+                                  << std::endl;
+                        break;
+                default: std::cerr << "[Info]: Invalid value for the verbosity"
+                                   << " parameter. Using default value (1)"
+                                   << std::endl;
+                        break;
+            }
         } else if (IS_OPTION(argv[i], "-waitsetDelayUsec")) {
             if ((i == (argc - 1)) || *argv[++i] == '-') {
                 std::cerr << "Missing <usec> after -waitsetDelayUsec"
@@ -465,6 +500,8 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _AutoThrottle = true;
         } else if (IS_OPTION(argv[i], "-enableTurboMode")) {
             _TurboMode = true;
+        } else if (IS_OPTION(argv[i], "-noXmlQos") ) {
+            _UseXmlQos = false;
       #ifdef RTI_SECURE_PERFTEST
         } else if (IS_OPTION(argv[i], "-secureSign")) {
             _secureIsSigned = true;
@@ -664,6 +701,10 @@ public:
             _pongSemaphore.give();
         }
     }
+
+    unsigned int getPulledSampleCount() {
+        return _writer->datawriter_protocol_status().pulled_sample_count().total();
+    };
 };
 
 template<typename T>
@@ -1269,11 +1310,29 @@ template <typename T>
 bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 {
     using namespace rti::core::policy;
+    using dds::core::QosProvider;
     ParseConfig(argc, argv);
 
-    // setup the QOS profile file to be loaded
-    dds::core::QosProvider qos_provider(_ProfileFile, "PerftestQosLibrary::BaseProfileQos");
-    dds::domain::qos::DomainParticipantQos qos = qos_provider.participant_qos();
+    if (_UseXmlQos) {
+        _qosProvider = dds::core::QosProvider(
+                _ProfileFile,
+                "PerftestQosLibrary::BaseProfileQos");
+    }
+    else {
+        std::cerr << "[Info] Not using xml file for QoS." << std::endl;
+        rti::core::QosProviderParams perftestQosProviderParams;
+        dds::core::StringSeq perftestStringProfile(
+               PERFTEST_QOS_STRING,
+               PERFTEST_QOS_STRING + PERFTEST_QOS_STRING_SIZE);
+        perftestQosProviderParams.string_profile(perftestStringProfile);
+
+        _qosProvider = QosProvider::Default();
+        _qosProvider->provider_params(perftestQosProviderParams);
+        _qosProvider->default_library("PerftestQosLibrary");
+        _qosProvider->default_profile("BaseProfileQos");
+    }
+
+    dds::domain::qos::DomainParticipantQos qos = _qosProvider.participant_qos();
 
     std::map<std::string, std::string> properties =
             qos.policy<Property>().get_all();
@@ -1332,9 +1391,9 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
             dds::core::status::StatusMask::requested_incompatible_qos() );
 
     // Create the _publisher and _subscriber
-    _publisher = dds::pub::Publisher(_participant, qos_provider.publisher_qos());
+    _publisher = dds::pub::Publisher(_participant, _qosProvider.publisher_qos());
 
-    _subscriber = dds::sub::Subscriber(_participant, qos_provider.subscriber_qos());
+    _subscriber = dds::sub::Subscriber(_participant, _qosProvider.subscriber_qos());
 
     return true;
 
@@ -1374,8 +1433,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
 
     std::string lib_name(_ProfileLibraryName);
     std::string profile_name = lib_name + "::" + qos_profile;
-    dds::core::QosProvider qos_provider(_ProfileFile, profile_name);
-    dds::pub::qos::DataWriterQos dw_qos = qos_provider.datawriter_qos();
+    dds::pub::qos::DataWriterQos dw_qos = _qosProvider.datawriter_qos();
 
     Reliability qos_reliability = dw_qos.policy<Reliability>();
     ResourceLimits qos_resource_limits = dw_qos.policy<ResourceLimits>();
@@ -1383,6 +1441,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
             dw_qos.policy<DataWriterResourceLimits>();
     Durability qos_durability = dw_qos.policy<Durability>();
     PublishMode dwPublishMode= dw_qos.policy<PublishMode>();
+    Batch dwBatch = dw_qos.policy<Batch>();
     rti::core::policy::DataWriterProtocol dw_DataWriterProtocol =
             dw_qos.policy<rti::core::policy::DataWriterProtocol>();
     RtpsReliableWriterProtocol dw_reliableWriterProtocol =
@@ -1418,8 +1477,14 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     if (qos_profile == "ThroughputQos" ||
         qos_profile == "NoAckThroughputQos")
     {
+
+        if (_IsMulticast) {
+            dw_reliableWriterProtocol.enable_multicast_periodic_heartbeat(true);
+        }
+
         if (_BatchSize > 0) {
-            dw_qos << Batch::EnabledWithMaxDataBytes(_BatchSize);
+            dwBatch.enable(true);
+            dwBatch.max_data_bytes(_BatchSize);
             qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
             qos_dw_resource_limits.max_batches(_SendQueueSize);
         } else {
@@ -1444,8 +1509,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
 
         if (_TurboMode) {
             properties["dds.data_writer.enable_turbo_mode.enable"] = "true";
-
-            dw_qos << Batch::Disabled();
+            dwBatch.enable(false);
             qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
             qos_dw_resource_limits.max_batches(_SendQueueSize);
         }
@@ -1465,6 +1529,18 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         dw_reliableWriterProtocol.heartbeats_per_max_samples(_SendQueueSize / 10);
         dw_reliableWriterProtocol.low_watermark(_SendQueueSize * 1 / 10);
         dw_reliableWriterProtocol.high_watermark(_SendQueueSize * 9 / 10);
+
+        /*
+         * If _SendQueueSize is 1 low watermark and high watermark would both be
+         * 0, which would cause the middleware to fail. So instead we set the
+         * high watermark to the low watermark + 1 in such case.
+         */
+        if (dw_reliableWriterProtocol.high_watermark()
+            == dw_reliableWriterProtocol.high_watermark()) {
+            dw_reliableWriterProtocol.high_watermark(
+                    dw_reliableWriterProtocol.high_watermark() + 1);
+        }
+
         dw_reliableWriterProtocol.max_send_window_size(_SendQueueSize);
         dw_reliableWriterProtocol.min_send_window_size(_SendQueueSize);
     }
@@ -1497,6 +1573,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     dw_qos << qos_dw_resource_limits;
     dw_qos << qos_durability;
     dw_qos << dwPublishMode;
+    dw_qos << dwBatch;
     dw_DataWriterProtocol.rtps_reliable_writer(dw_reliableWriterProtocol);
     dw_qos << dw_DataWriterProtocol;
     dw_qos << Property(properties.begin(), properties.end(), true);
@@ -1566,8 +1643,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
     std::string lib_name(_ProfileLibraryName);
     std::string profile_name = lib_name + "::" + qos_profile;
-    dds::core::QosProvider qos_provider(_ProfileFile, profile_name);
-    dds::sub::qos::DataReaderQos dr_qos = qos_provider.datareader_qos();
+    dds::sub::qos::DataReaderQos dr_qos = _qosProvider.datareader_qos();
 
 
     Reliability qos_reliability = dr_qos.policy<Reliability>();

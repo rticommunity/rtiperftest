@@ -216,7 +216,7 @@ namespace PerformanceTest
                     try {
                         String[] st = argv[i].Split(':');
                         _HeartbeatPeriod.sec = int.Parse(st[0]);
-                        _HeartbeatPeriod.nanosec = uint.Parse(st[1]);
+                        _HeartbeatPeriod.nanosec = UInt32.Parse(st[1]);
                     }
                     catch (ArgumentNullException)
                     {
@@ -234,7 +234,7 @@ namespace PerformanceTest
                     {
                         String[] st = argv[i].Split(':');
                         _FastHeartbeatPeriod.sec = int.Parse(st[0]);
-                        _FastHeartbeatPeriod.nanosec = uint.Parse(st[1]);
+                        _FastHeartbeatPeriod.nanosec = UInt32.Parse(st[1]);
                     }
                     catch (ArgumentNullException)
                     {
@@ -423,11 +423,37 @@ namespace PerformanceTest
                         _UseTcpOnly = true;
                     }
                 }
-                else if ("-debug".StartsWith(argv[i], true, null))
+                else if ("-verbosity".StartsWith(argv[i], true, null))
                 {
-                    NDDS.ConfigLogger.get_instance().set_verbosity_by_category(
-                        NDDS.LogCategory.NDDS_CONFIG_LOG_CATEGORY_API,
-                        NDDS.LogVerbosity.NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+                    int verbosityLevel = 0;
+                    if (!Int32.TryParse(argv[++i], out verbosityLevel))
+                    {
+                        Console.Error.Write("Unexpected value after -verbosity\n");
+                        return false;
+                    }
+
+                    switch (verbosityLevel) {
+                        case 0: NDDS.ConfigLogger.get_instance().set_verbosity(
+                                    NDDS.LogVerbosity.NDDS_CONFIG_LOG_VERBOSITY_SILENT);
+                                Console.Error.Write("Setting verbosity to SILENT\n");
+                                break;
+                        case 1: NDDS.ConfigLogger.get_instance().set_verbosity(
+                                    NDDS.LogVerbosity.NDDS_CONFIG_LOG_VERBOSITY_ERROR);
+                                Console.Error.Write("Setting verbosity to ERROR\n");
+                                break;
+                        case 2: NDDS.ConfigLogger.get_instance().set_verbosity(
+                                    NDDS.LogVerbosity.NDDS_CONFIG_LOG_VERBOSITY_WARNING);
+                                Console.Error.Write("Setting verbosity to WARNING\n");
+                                break;
+                        case 3: NDDS.ConfigLogger.get_instance().set_verbosity(
+                                    NDDS.LogVerbosity.NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+                                Console.Error.Write("Setting verbosity to STATUS_ALL\n");
+                                break;
+                        default: Console.Error.Write(
+                                        "Invalid value for the verbosity parameter." +
+                                        " Setting verbosity to ERROR (1)\n");
+                                break;
+                    }
                 }
                 else if ("-waitsetDelayUsec".StartsWith(argv[i], true, null))
                 {
@@ -770,6 +796,13 @@ namespace PerformanceTest
                     }
                 }
                 return true;
+            }
+
+            public long getPulledSampleCount()
+            {
+                DataWriterProtocolStatus status = new DataWriterProtocolStatus();
+                _writer.get_datawriter_protocol_status(ref status);
+                return status.pulled_sample_count;
             }
 
         }
@@ -1539,6 +1572,11 @@ namespace PerformanceTest
             // These QOS's are only set for the Throughput datawriter
             if ((qos_profile == "ThroughputQos") || (qos_profile == "NoAckThroughputQos"))
             {
+
+                if (_IsMulticast) {
+                    dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat = true;
+                }
+
                 if (_BatchSize > 0)
                 {
                     dw_qos.batch.enable = true;
@@ -1605,6 +1643,17 @@ namespace PerformanceTest
 
                 dw_qos.protocol.rtps_reliable_writer.low_watermark = _SendQueueSize * 1 / 10;
                 dw_qos.protocol.rtps_reliable_writer.high_watermark = _SendQueueSize * 9 / 10;
+
+                /*
+                 * If _SendQueueSize is 1 low watermark and high watermark would both be
+                 * 0, which would cause the middleware to fail. So instead we set the
+                 * high watermark to the low watermark + 1 in such case.
+                 */
+                if (dw_qos.protocol.rtps_reliable_writer.high_watermark
+                    == dw_qos.protocol.rtps_reliable_writer.low_watermark) {
+                    dw_qos.protocol.rtps_reliable_writer.high_watermark =
+                            dw_qos.protocol.rtps_reliable_writer.low_watermark + 1;
+                }
 
                 dw_qos.protocol.rtps_reliable_writer.max_send_window_size =
                     _SendQueueSize;

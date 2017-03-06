@@ -18,7 +18,6 @@
 int  perftest_cpp::_SubID = 0;
 int  perftest_cpp::_PubID = 0;
 bool perftest_cpp::_PrintIntervals = true;
-bool perftest_cpp::_IsDebug = false;
 
 /* Clock related variables */
 struct RTIClock* perftest_cpp::_Clock = RTIHighResolutionClock_new();
@@ -181,6 +180,7 @@ perftest_cpp::perftest_cpp()
     _pubRate = 0;
     _isKeyed = false;
     _executionTime = 0;
+    _displayWriterStats = false;
 
 #ifdef RTI_WIN32
     if (_hTimerQueue == NULL) {
@@ -247,14 +247,19 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                          read data\n"
         "\t-latencyTest            - Run a latency test consisting of a ping-pong \n"
         "\t                          synchronous communication\n"
-        "\t-debug                  - Run in debug mode\n"
+        "\t-verbosity <level>      - Run with different levels of verbosity:\n"
+        "\t                          0 - SILENT, 1 - ERROR, 2 - WARNING,\n"
+        "\t                          3 - ALL. Default: 1\n"
         "\t-pubRate <samples/s>    - Limit the throughput to the specified number\n"
         "\t                          of samples/s, default 0 (don't limit)\n"
         "\t-keyed                  - Use keyed data (default: unkeyed)\n"
         "\t-executionTime <sec>    - Set a maximum duration for the test. The\n"
         "\t                          first condition triggered will finish the\n"
         "\t                          test: number of samples or execution time.\n"
-        "\t                          Default 0 (don't set execution time)\n";
+        "\t                          Default 0 (don't set execution time)\n"
+        "\t-writerStats            - Display the Pulled Sample count stats for\n"
+        "\t                          reliable protocol debugging purposes.\n"
+        "\t                          Default: Not set\n";
 
     if (argc < 1)
     {
@@ -505,17 +510,26 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 return false;
             }
         }
-        else if (IS_OPTION(argv[i], "-debug"))
+        else if (IS_OPTION(argv[i], "-verbosity"))
         {
-            _IsDebug = true;
-
             _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
             if (_MessagingArgv[_MessagingArgc] == NULL) {
                 fprintf(stderr, "Problem allocating memory\n");
                 return false;
             }
+            _MessagingArgc++;
 
+            if ((i == (argc-1)) || *argv[++i] == '-')
+            {
+                fprintf(stderr, "Missing <level> after -verbosity\n");
+                return false;
+            }
+
+            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
+            if (_MessagingArgv[_MessagingArgc] == NULL) {
+                fprintf(stderr, "Problem allocating memory\n");
+                return false;
+            }
             _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-pubRate")) {
@@ -544,6 +558,9 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-keyed")) {
             _isKeyed = true;
+        }
+        else if (IS_OPTION(argv[i], "-writerStats")) {
+            _displayWriterStats = true;
         }
         else if (IS_OPTION(argv[i], "-executionTime"))
         {
@@ -1635,6 +1652,10 @@ int perftest_cpp::Publisher()
                 ++num_pings;
                 ping_index_in_batch = (ping_index_in_batch + 1) % _SamplesPerBatch;
                 sentPing = true;
+
+                if (_displayWriterStats && _PrintIntervals) {
+                    printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
+                }
             }
         }
         current_index_in_batch = (current_index_in_batch + 1) % _SamplesPerBatch;
@@ -1682,6 +1703,11 @@ int perftest_cpp::Publisher()
     }
 
     perftest_cpp::MilliSleep(1000);
+
+    if (_displayWriterStats) {
+        printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
+    }
+
     if (_testCompleted) {
         fprintf(stderr,"Finishing test due to timer...\n");
     } else {

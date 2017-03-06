@@ -443,14 +443,19 @@ namespace PerformanceTest {
                 "\t                          read data\n" +
                 "\t-latencyTest            - Run a latency test consisting of a ping-pong \n" +
                 "\t                          synchronous communication\n" +
-                "\t-debug                  - Run in debug mode: Increase RTIDDS verbosity\n"+
+                "\t-verbosity <level>      - Run with different levels of verbosity:\n" +
+                "\t                          0 - SILENT, 1 - ERROR, 2 - WARNING,\n" +
+                "\t                          3 - ALL. Default: 1\n" +
                 "\t-pubRate <samples/s>    - Limit the throughput to the specified number\n"+
                 "\t                          of samples/s, default 0 (don't limit)\n"+
                 "\t-keyed                  - Use keyed data (default: unkeyed)\n"+
                 "\t-executionTime <sec>    - Set a maximum duration for the test. The\n"+
                 "\t                          first condition triggered will finish the\n"+
                 "\t                          test: number of samples or execution time.\n"+
-                "\t                          Default 0 (don't set execution time)\n";
+                "\t                          Default 0 (don't set execution time)\n" +
+                "\t-writerStats            - Display the Pulled Sample count stats for\n" +
+                "\t                          reliable protocol debugging purposes.\n" +
+                "\t                          Default: Not set\n";
 
 
             int argc = argv.Length;
@@ -683,6 +688,20 @@ namespace PerformanceTest {
                     }
 
                     _MessagingArgc++;
+                }
+                else if ("-writerStats".StartsWith(argv[i], true, null))
+                {
+                    _displayWriterStats = false;
+                }
+                else if ("-verbosity".StartsWith(argv[i], true, null))
+                {
+                    _MessagingArgv[_MessagingArgc++] = argv[i];
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing <level> after -verbosity\n");
+                        return false;
+                    }
+                    _MessagingArgv[_MessagingArgc++] = argv[i];
                 }
                 else if ("-instances".StartsWith(argv[i], true, null))
                 {
@@ -1743,6 +1762,10 @@ namespace PerformanceTest {
                         ++num_pings;
                         ping_index_in_batch = (ping_index_in_batch + 1) % _SamplesPerBatch;
                         sentPing = true;
+
+                        if (_displayWriterStats && _PrintIntervals) {
+                            Console.Write("Pulled samples: {0,7}\n", writer.getPulledSampleCount());
+                        }
                     }
                 }
 
@@ -1788,6 +1811,12 @@ namespace PerformanceTest {
             }
 
             System.Threading.Thread.Sleep(1000);
+
+            if (_displayWriterStats)
+            {
+                Console.Write("Pulled samples: {0,7}\n", writer.getPulledSampleCount());
+            }
+
             if (_testCompleted)
             {
                 Console.Error.Write("Finishing test due to timer...\n");
@@ -1848,6 +1877,7 @@ namespace PerformanceTest {
         private bool _isKeyed = false;
         private bool _isDynamicData = false;
         private ulong _executionTime = 0;
+        private bool _displayWriterStats = false;
         private System.Timers.Timer timer = null;
 
         private static int  _SubID = 0;

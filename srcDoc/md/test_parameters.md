@@ -42,12 +42,15 @@ For additional information on setting the parameters, see sections:
 
     If See `-scan` is specified, this value is ignored.
 
--   `-debug`
+-   `-verbosity`
 
-    Run in debug mode (generates more verbose logging messages, which are useful to RTI support personnel).
+    Run with different levels of verbosity for RTI Connext DDS.
 
-    **Default:** false
-    
+    `0` - `SILENT`  
+    `1` - `ERROR` (default)  
+    `2` - `WARNING`  
+    `3` - `ALL`
+
 -   `-dynamicData`
 
     Run using the Dynamic Data API functions instead of the *rtiddsgen* generated calls.
@@ -125,7 +128,7 @@ For additional information on setting the parameters, see sections:
 
 -   `-multicast`
 
-    Use multicast to receive data.
+    Use multicast to receive data. In addition, the Datawriter heartbeats will be sent using multicast instead of unicast.
 
     **Default:** do not use multicast.
 
@@ -184,7 +187,7 @@ For additional information on setting the parameters, see sections:
     Path to the XML file containing DDS QoS profiles.
 
     **Default:** `perftest_qos_profiles.xml`
-    
+
     The default file contains these QoS profiles:  
     The `ThroughputQos`, `LatencyQos`, and `AnnouncementQos` profiles are used by default.  
     The `NoAckThroughputQos` and `NoAckLatencyQos` profiles are used if you specify `-noPositiveAcks`.
@@ -192,6 +195,16 @@ For additional information on setting the parameters, see sections:
     **Note:** some QoS values are ‘hard-coded’ in the application, therefore setting them in the XML file has no effect; see the See Note:.
 
     See comments in `perftest_qos_profiles.xml`, as well as **Configuring QoS with XML, Chapter 17** in the *RTI Connext DDS Core Libraries* User’s Manual.
+
+-   `-noXmlQos`
+
+    Avoid loading the QoS from the xml profile, instead, they will be loaded from a string in code.
+
+    This implies that changes in the XML profile will not be used.
+
+    This option is recommended for OS without a file-system.
+
+    **Noste:** This option is only present in `C++` traditional and new PSM.
 
 -   `-useReadThread`
 
@@ -369,6 +382,16 @@ For additional information on setting the parameters, see sections:
 
     **Default:** `0`  
     **Range:** `0` or higher
+
+-   `-writerStats`
+
+    Enable extra messages showing the Pulled Sample Count of the Writer in the
+    Publisher side.
+
+    The frequency of these log messages will be determined by the `-latencyCount`
+    since the message is only shown after a *latency ping*.
+
+    **Default:** `Not enabled`
 
 ## Test Parameters Only for Subscribing Applications <a id="params-sub"></a>
 

@@ -115,6 +115,13 @@ function executable_checking()
         exit -1
     fi
 
+    # Is platform specified?
+    if [ -z ${platform} ]; then
+        echo -e "${ERROR_TAG} The platform argument is missing"
+        usage
+        exit -1
+    fi
+
     # Is MAKE in the path?
     if [ "${BUILD_CPP}" -eq "1" ]; then
         if [ -z `which "${MAKE_EXE}"` ]
@@ -198,7 +205,7 @@ function build_cpp()
     ##############################################################################
     # Generate files for srcCpp
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h\" -additionalSourceFiles RTIDDSImpl.cxx -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h\" -additionalSourceFiles RTIDDSImpl.cxx -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${classic_cpp_lang_string}."
@@ -252,7 +259,7 @@ function build_cpp03()
     ##############################################################################
     # Generate files for srcCpp03
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h\" -additionalSourceFiles RTIDDSImpl.cxx -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h\" -additionalSourceFiles RTIDDSImpl.cxx -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${modern_cpp_lang_string}."

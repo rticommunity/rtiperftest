@@ -24,6 +24,7 @@ class RTIDDSImpl : public IMessaging
         _ProfileFile = "perftest_qos_profiles.xml";
         _AutoThrottle = false;
         _TurboMode = false;
+        _UseXmlQos = true;
         _IsReliable = true;
         _IsMulticast = false;
         _BatchSize = 0;
@@ -114,6 +115,7 @@ class RTIDDSImpl : public IMessaging
     const char  *_Nic;
     const char  *_ProfileFile;
     bool         _TurboMode;
+    bool         _UseXmlQos;
     bool         _AutoThrottle;
     bool         _IsReliable;
     bool         _IsMulticast;

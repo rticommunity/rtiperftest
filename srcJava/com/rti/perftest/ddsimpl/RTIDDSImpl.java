@@ -350,7 +350,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             // Shmem transport properties
             int receivedMessageCountMax = 2 * 1024 * 1024 / _dataLen;
 
-            if (receivedMessageCountMax > 1) {
+            if (receivedMessageCountMax < 1) {
                 receivedMessageCountMax = 1;
             }
 
@@ -775,6 +775,11 @@ public final class RTIDDSImpl<T> implements IMessaging {
         // These QOS's are only set for the Throughput datawriter
         if ("ThroughputQos".equals(qosProfile) ||
             "NoAckThroughputQos".equals(qosProfile)) {
+
+            if (_isMulticast) {
+                dwQos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat = true;
+            }
+
             if (_batchSize > 0) {
                 dwQos.batch.enable = true;
                 dwQos.batch.max_data_bytes = _batchSize;
@@ -822,7 +827,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             case 0:
                 dwQos.durability.kind = DurabilityQosPolicyKind.VOLATILE_DURABILITY_QOS;
                 break;
-            case 1:                               
+            case 1:
                 dwQos.durability.kind = DurabilityQosPolicyKind.TRANSIENT_LOCAL_DURABILITY_QOS;
                 break;
             case 2:
@@ -840,12 +845,21 @@ public final class RTIDDSImpl<T> implements IMessaging {
             dwQos.protocol.rtps_reliable_writer.low_watermark = _sendQueueSize * 1 / 10;
             dwQos.protocol.rtps_reliable_writer.high_watermark = _sendQueueSize * 9 / 10;
 
+            /*
+             * If _SendQueueSize is 1 low watermark and high watermark would both be
+             * 0, which would cause the middleware to fail. So instead we set the
+             * high watermark to the low watermark + 1 in such case.
+             */
+            if (dwQos.protocol.rtps_reliable_writer.high_watermark
+                == dwQos.protocol.rtps_reliable_writer.high_watermark) {
+                dwQos.protocol.rtps_reliable_writer.high_watermark =
+                        dwQos.protocol.rtps_reliable_writer.high_watermark + 1;
+            }
+
             dwQos.protocol.rtps_reliable_writer.max_send_window_size = 
                     _sendQueueSize;
             dwQos.protocol.rtps_reliable_writer.min_send_window_size = 
                     _sendQueueSize;
-
-            
         }
 
         if (("LatencyQos".equals(qosProfile) ||
@@ -1195,10 +1209,35 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 } else {
                     _useUdpv6 = true;
                 }
-            } else if ("-debug".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                Logger.get_instance().set_verbosity_by_category(
-                    LogCategory.NDDS_CONFIG_LOG_CATEGORY_API,
-                    LogVerbosity.NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+            } else if ("-verbosity".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                try {
+                    int verbosityLevel = Integer.parseInt(argv[++i]);
+                    switch (verbosityLevel) {
+                        case 0: Logger.get_instance().set_verbosity(
+                                    LogVerbosity.NDDS_CONFIG_LOG_VERBOSITY_SILENT);
+                                System.err.print("Setting verbosity to SILENT\n");
+                                break;
+                        case 1: Logger.get_instance().set_verbosity(
+                                    LogVerbosity.NDDS_CONFIG_LOG_VERBOSITY_ERROR);
+                                System.err.print("Setting verbosity to ERROR\n");
+                                break;
+                        case 2: Logger.get_instance().set_verbosity(
+                                    LogVerbosity.NDDS_CONFIG_LOG_VERBOSITY_WARNING);
+                                System.err.print("Setting verbosity to WARNING\n");
+                                break;
+                        case 3: Logger.get_instance().set_verbosity(
+                                    LogVerbosity.NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+                                System.err.print("Setting verbosity to STATUS_ALL\n");
+                                break;
+                        default: System.err.print(
+                                    "Invalid value for the verbosity parameter." +
+                                    " Setting verbosity to ERROR (1)\n");
+                                break;
+                    }
+                } catch (NumberFormatException nfx) {
+                    System.err.print("Unexpected value after -verbosity\n");
+                    return false;
+                }
             } else if ("-waitsetDelayUsec".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-"))
                 {

@@ -10,10 +10,10 @@ import com.rti.dds.infrastructure.InstanceHandle_t;
 import com.rti.dds.infrastructure.RETCODE_ERROR;
 import com.rti.dds.infrastructure.RETCODE_NO_DATA;
 import com.rti.dds.publication.DataWriter;
+import com.rti.dds.publication.DataWriterProtocolStatus;
 import com.rti.dds.publication.PublicationMatchedStatus;
 import com.rti.perftest.IMessagingWriter;
 import com.rti.perftest.TestMessage;
-
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -145,6 +145,13 @@ final class RTIPublisher<T> implements IMessagingWriter {
             }
         }
         return true;
+    }
+
+    public long getPulledSampleCount()
+    {
+        DataWriterProtocolStatus status = new DataWriterProtocolStatus();
+        this._writer.get_datawriter_protocol_status(status);
+        return status.pulled_sample_count;
     }
 
 }

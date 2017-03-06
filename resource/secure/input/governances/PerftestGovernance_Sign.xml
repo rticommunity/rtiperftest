@@ -19,7 +19,7 @@
      data_protection_kind = NONE is not compatible with DataReader with
      metadata_protection_kind != NONE or data_protection_kind != NONE.
      discovery_protection_kind is ineffective. If a topic sets
-     enable_discovery_protection = TRUE, then its discovery is encrypted.
+     enable_discovery_protection = true, then its discovery is encrypted.
      -->
     <domain_access_rules>
       <domain_rule>
@@ -28,17 +28,17 @@
             <min>0</min>
           </id_range>
         </domains>
-        <allow_unauthenticated_participants>TRUE</allow_unauthenticated_participants>
-        <enable_join_access_control>FALSE</enable_join_access_control>
+        <allow_unauthenticated_participants>true</allow_unauthenticated_participants>
+        <enable_join_access_control>false</enable_join_access_control>
         <discovery_protection_kind>NONE</discovery_protection_kind>
         <liveliness_protection_kind>NONE</liveliness_protection_kind>
         <rtps_protection_kind>SIGN</rtps_protection_kind>
         <topic_access_rules>
           <topic_rule>
             <topic_expression>*</topic_expression>
-            <enable_discovery_protection>FALSE</enable_discovery_protection>
-            <enable_read_access_control>FALSE</enable_read_access_control>
-            <enable_write_access_control>FALSE</enable_write_access_control>
+            <enable_discovery_protection>false</enable_discovery_protection>
+            <enable_read_access_control>false</enable_read_access_control>
+            <enable_write_access_control>false</enable_write_access_control>
             <metadata_protection_kind>NONE</metadata_protection_kind>
             <data_protection_kind>NONE</data_protection_kind>
           </topic_rule>

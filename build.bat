@@ -25,6 +25,9 @@ set RELEASE_DEBUG=release
 set STATIC_DYNAMIC=static
 set USE_SECURE_LIBS=0
 
+@REM Starting with 5.2.6 (rtiddsgen 2.3.6) the name of the solutions is different
+set /a rtiddsgen_version_number_new_solution_name=236
+
 @REM # Needed when compiling statically using security
 set RTI_OPENSSLHOME=""
 
@@ -81,7 +84,7 @@ if NOT "%1"=="" (
 				SET "RTI_OPENSSLHOME=%2"
 				SHIFT
 		) ELSE if "%1"=="--nddshome" (
-				SET "=%2"
+				SET "NDDSHOME=%2"
 				SHIFT
 		) ELSE (
 				echo [ERROR]: Unknown argument "%1"
@@ -166,7 +169,7 @@ if !BUILD_CPP! == 1 (
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -replace^
 	-create typefiles -create makefiles -platform %architecture%^
-	-additionalHeaderFiles "MessagingIF.h RTIDDSImpl.h perftest_cpp.h"^
+	-additionalHeaderFiles "MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h"^
 	-additionalSourceFiles "RTIDDSImpl.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
 	!rtiddsgen_extra_options!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
@@ -215,7 +218,7 @@ if !BUILD_CPP03! == 1 (
 	echo [INFO]: Generating types and makefiles for %modern_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %modern_cpp_lang_string% -replace^
 	-create typefiles -create makefiles -platform %architecture%^
-	-additionalHeaderFiles "MessagingIF.h RTIDDSImpl.h perftest_cpp.h"^
+	-additionalHeaderFiles "MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h"^
 	-additionalSourceFiles "RTIDDSImpl.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
@@ -345,6 +348,19 @@ GOTO:EOF
 @REM #FUNCTIONS:
 
 :get_solution_name
+
+	@REM #The name of the solution will depend on the rtiddsgen version
+	for /F "delims=" %%i in ('"%NDDSHOME%\bin\rtiddsgen.bat" -version ^| findstr /R /C:rtiddsgen') do (
+		set version_line=%%i
+	)
+	set version_string=%version_line:~49,6%
+
+	for /F "tokens=1,2,3 delims=." %%a in ("%version_string%") do (
+		set Major=%%a
+		set Minor=%%b
+		set Revision=%%c
+	)
+
 	if not x%architecture:x64=%==x%architecture% (
 		set begin_sol=perftest_publisher-64-
 		set begin_sol_cs=perftest-64-
@@ -373,9 +389,18 @@ GOTO:EOF
 		set end_sol=vs2015
 		set extension=.vcxproj
 	)
-	set solution_name_cpp=%begin_sol%%end_sol%%extension%
-	set solution_name_cs=%begin_sol_cs%csharp.sln
+
+	set /a version_number=%Major%%Minor%%Revision%
+
+	if %version_number% GEQ %rtiddsgen_version_number_new_solution_name% (
+		set solution_name_cpp=perftest_publisher-%architecture%%extension%
+		set solution_name_cs=perftest-%architecture%.sln
+	) else (
+		set solution_name_cpp=%begin_sol%%end_sol%%extension%
+		set solution_name_cs=%begin_sol_cs%csharp.sln
+	)
 	set cs_bin_path=bin\%cs_64%!RELEASE_DEBUG!-%end_sol%
+
 GOTO:EOF
 
 :solution_compilation_flag_calculation
