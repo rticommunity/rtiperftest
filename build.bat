@@ -303,7 +303,7 @@ if	%BUILD_JAVA% == 1 (
 
 	echo[
 	echo [INFO]: Doing javac
-	call "%JAVAC_EXE%" -d "%java_folder%"/class -cp "!rti_ndds_java_jar!"^
+	call !JAVAC_EXE! -d "%java_folder%"/class -cp "!rti_ndds_java_jar!"^
 	"%java_folder%"/com/rti/perftest/*.java^
 	"%java_folder%"/com/rti/perftest/ddsimpl/*.java^
 	"%java_folder%"/com/rti/perftest/gen/*.java^
@@ -314,7 +314,7 @@ if	%BUILD_JAVA% == 1 (
 	)
 
 	echo [INFO]: Generating jar
-	"%JAR_EXE%" cf "%java_folder%"\jar\!RELEASE_DEBUG!\perftest_java.jar^
+	!JAR_EXE! cf "%java_folder%"\jar\!RELEASE_DEBUG!\perftest_java.jar^
 	-C "%java_folder%"\class .
 
 	echo [INFO]: Copying files
@@ -326,7 +326,7 @@ if	%BUILD_JAVA% == 1 (
 	echo[
 	echo [INFO]: You can run the java .jar file by using the following command:
 	echo[
-	echo "%JAVA_EXE%" -Xmx1500m -cp "%bin_folder%\!RELEASE_DEBUG!\perftest_java.jar;%NDDSHOME%\lib\java\nddsjava.jar" com.rti.perftest.ddsimpl.PerfTestLauncher
+	echo "!JAVA_EXE!" -Xmx1500m -cp "%bin_folder%\!RELEASE_DEBUG!\perftest_java.jar;%NDDSHOME%\lib\java\nddsjava.jar" com.rti.perftest.ddsimpl.PerfTestLauncher
 	echo[
 	echo You will need to set the PATH variable for this script.
 	echo[
