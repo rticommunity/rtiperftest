@@ -53,6 +53,9 @@ class RTIDDSImpl : public IMessaging
     // to get data
     IMessagingReader *CreateReader(const std::string &topic_name, IMessagingCB *callback);
 
+    dds::core::QosProvider getQosProviderForProfile(
+            const std::string &library_name,
+            const std::string &profile_name);
 
   private:
 
@@ -122,7 +125,6 @@ class RTIDDSImpl : public IMessaging
     dds::domain::DomainParticipant _participant;
     dds::sub::Subscriber _subscriber;
     dds::pub::Publisher _publisher;
-    dds::core::QosProvider _qosProvider;
 
     rti::core::Semaphore _pongSemaphore;
 

@@ -94,7 +94,6 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _participant(dds::core::null),
         _subscriber(dds::core::null),
         _publisher(dds::core::null),
-        _qosProvider(dds::core::null),
         _pongSemaphore(RTI_OSAPI_SEMAPHORE_KIND_BINARY,NULL)
     {}
 
@@ -502,6 +501,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _TurboMode = true;
         } else if (IS_OPTION(argv[i], "-noXmlQos") ) {
             _UseXmlQos = false;
+            std::cerr << "[Info] Not using xml file for QoS." << std::endl;
       #ifdef RTI_SECURE_PERFTEST
         } else if (IS_OPTION(argv[i], "-secureSign")) {
             _secureIsSigned = true;
@@ -704,7 +704,7 @@ public:
 
     unsigned int getPulledSampleCount() {
         return _writer->datawriter_protocol_status().pulled_sample_count().total();
-    };
+    }
 };
 
 template<typename T>
@@ -1303,6 +1303,35 @@ void RTIDDSImpl<T>::printSecureArgs()
 
 #endif
 
+template <typename T>
+dds::core::QosProvider RTIDDSImpl<T>::getQosProviderForProfile(
+        const std::string &library_name,
+        const std::string &profile_name)
+{
+    using dds::core::QosProvider;
+
+    QosProvider qosProvider(dds::core::null);
+
+    if (_UseXmlQos) {
+        qosProvider = dds::core::QosProvider(
+                _ProfileFile,
+                library_name + "::" + profile_name);
+    } else {
+        rti::core::QosProviderParams perftestQosProviderParams;
+        dds::core::StringSeq perftestStringProfile(
+               PERFTEST_QOS_STRING,
+               PERFTEST_QOS_STRING + PERFTEST_QOS_STRING_SIZE);
+        perftestQosProviderParams.string_profile(perftestStringProfile);
+
+        qosProvider = QosProvider::Default();
+        qosProvider->provider_params(perftestQosProviderParams);
+        qosProvider->default_library(library_name);
+        qosProvider->default_profile(profile_name);
+    }
+
+    return qosProvider;
+}
+
 /*********************************************************
  * Initialize
  */
@@ -1310,29 +1339,12 @@ template <typename T>
 bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 {
     using namespace rti::core::policy;
-    using dds::core::QosProvider;
     ParseConfig(argc, argv);
 
-    if (_UseXmlQos) {
-        _qosProvider = dds::core::QosProvider(
-                _ProfileFile,
-                "PerftestQosLibrary::BaseProfileQos");
-    }
-    else {
-        std::cerr << "[Info] Not using xml file for QoS." << std::endl;
-        rti::core::QosProviderParams perftestQosProviderParams;
-        dds::core::StringSeq perftestStringProfile(
-               PERFTEST_QOS_STRING,
-               PERFTEST_QOS_STRING + PERFTEST_QOS_STRING_SIZE);
-        perftestQosProviderParams.string_profile(perftestStringProfile);
-
-        _qosProvider = QosProvider::Default();
-        _qosProvider->provider_params(perftestQosProviderParams);
-        _qosProvider->default_library("PerftestQosLibrary");
-        _qosProvider->default_profile("BaseProfileQos");
-    }
-
-    dds::domain::qos::DomainParticipantQos qos = _qosProvider.participant_qos();
+    // setup the QOS profile file to be loaded
+    dds::core::QosProvider qos_provider =
+        getQosProviderForProfile("PerftestQosLibrary","BaseProfileQos");
+    dds::domain::qos::DomainParticipantQos qos = qos_provider.participant_qos();
 
     std::map<std::string, std::string> properties =
             qos.policy<Property>().get_all();
@@ -1391,9 +1403,9 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
             dds::core::status::StatusMask::requested_incompatible_qos() );
 
     // Create the _publisher and _subscriber
-    _publisher = dds::pub::Publisher(_participant, _qosProvider.publisher_qos());
+    _publisher = dds::pub::Publisher(_participant, qos_provider.publisher_qos());
 
-    _subscriber = dds::sub::Subscriber(_participant, _qosProvider.subscriber_qos());
+    _subscriber = dds::sub::Subscriber(_participant, qos_provider.subscriber_qos());
 
     return true;
 
@@ -1432,8 +1444,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     }
 
     std::string lib_name(_ProfileLibraryName);
-    std::string profile_name = lib_name + "::" + qos_profile;
-    dds::pub::qos::DataWriterQos dw_qos = _qosProvider.datawriter_qos();
+    dds::core::QosProvider qos_provider =
+        getQosProviderForProfile(lib_name, qos_profile);
+    dds::pub::qos::DataWriterQos dw_qos = qos_provider.datawriter_qos();
 
     Reliability qos_reliability = dw_qos.policy<Reliability>();
     ResourceLimits qos_resource_limits = dw_qos.policy<ResourceLimits>();
@@ -1642,8 +1655,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     std::string lib_name(_ProfileLibraryName);
-    std::string profile_name = lib_name + "::" + qos_profile;
-    dds::sub::qos::DataReaderQos dr_qos = _qosProvider.datareader_qos();
+    dds::core::QosProvider qos_provider =
+        getQosProviderForProfile(lib_name, qos_profile);
+    dds::sub::qos::DataReaderQos dr_qos = qos_provider.datareader_qos();
 
 
     Reliability qos_reliability = dr_qos.policy<Reliability>();
