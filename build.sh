@@ -109,14 +109,14 @@ function clean()
 function executable_checking()
 {
     # Is NDDSHOME set?
-    if [ -z ${NDDSHOME} ]; then
+    if [ -z "${NDDSHOME}" ]; then
         echo -e "${ERROR_TAG} The NDDSHOME variable is not set"
         usage
         exit -1
     fi
 
     # Is platform specified?
-    if [ -z ${platform} ]; then
+    if [ -z "${platform}" ]; then
         echo -e "${ERROR_TAG} The platform argument is missing"
         usage
         exit -1
@@ -430,7 +430,7 @@ while [ "$1" != "" ]; do
             shift
             ;;
         --nddshome)
-            NDDSHOME=$2
+            export NDDSHOME=$2
             shift
             ;;
         --debug)
