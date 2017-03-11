@@ -1841,7 +1841,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
         char buf[64];
 
-        if ((_Nic != NULL) && (strlen(_Nic) >= 0)) {
+        if ((_Nic != NULL) && (strlen(_Nic) > 0)) {
             DDSPropertyQosPolicyHelper::add_property(
                     qos.property,
                     "dds.transport.UDPv4.builtin.parent.allow_interfaces",

@@ -1372,7 +1372,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     if (!_UseTcpOnly) {
-        if ((_Nic != NULL) && (strlen(_Nic) >= 0)) {
+        if ((_Nic != NULL) && (strlen(_Nic) > 0)) {
             properties["dds.transport.UDPv4.builtin.parent.allow_interfaces"] = _Nic;
         }
 
