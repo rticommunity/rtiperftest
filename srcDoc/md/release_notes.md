@@ -33,6 +33,16 @@ This option is only present for the Modern and Traditional C++ PSM API code.
 
 Note that changes in the `xml` will be ignored if this option is present.
 
+### Updated Secure Certificates, Governance and Permission Files
+
+Governance and Permission files have been updated to be compatible with the latest release for *RTI Connext DDS*, and are compatible with *RTI Connext DDS* 5.2.6 and greater.
+
+If you are compiling *RTI Perftest* against 5.2.5, you will need to get the certificates from the `release/2.0` branch. You can do that by using the following git command from the top level directory of your repository:
+
+```
+git checkout release/2.0 -- resource/secure
+```
+
 ## What's Fixed in Master
 
 ### "--nddshome" Command-Line Option did not Work in `build.bat` Script -- Windows Systems Only
