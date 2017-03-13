@@ -9,7 +9,7 @@ However, certain features are not compatible with all the *RTI Connext DDS* vers
 - The `--secure` and `--openssl-home` parameters will not work for versions previous to *RTI Connext DDS* 5.2.5.
 - The C# code generation against *RTI Connext DDS 5.2.0.x* is not supported. Users can disable its compilation by adding the `--skip-cs-build` flag.
 
-## What's New in Master
+## What's New in 2.1
 
 ### Multicast Periodic Heartbeats when the `-multicast` Command-Line Parameter is present
 
@@ -43,7 +43,7 @@ If you are compiling *RTI Perftest* against 5.2.5, you will need to get the cert
 git checkout release/2.0 -- resource/secure
 ```
 
-## What's Fixed in Master
+## What's Fixed in 2.1
 
 ### "--nddshome" Command-Line Option did not Work in `build.bat` Script -- Windows Systems Only
 
