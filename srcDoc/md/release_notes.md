@@ -1,5 +1,15 @@
 # Release Notes
 
+## RTI Perftest 2.1 Compatibility
+
+Governance and Permission files have been updated to be compatible with the latest release for *RTI Connext DDS*, and are compatible with *RTI Connext DDS* 5.2.6 and greater.
+
+If you are compiling *RTI Perftest* against 5.2.5, you will need to get the certificates from the `release/2.0` branch. You can do that by using the following git command from the top level directory of your repository:
+
+```
+git checkout release/2.0 -- resource/secure
+```
+
 ## RTI Perftest 2.0 Compatibility
 
 *RTI Perftest* 2.0 is designed to compile and work against the *RTI Connext DDS* 5.2.x releases.
@@ -32,16 +42,6 @@ If the `-noXmlQos` option is provided to *RTI Perftest* it will not try to load 
 This option is only present for the Modern and Traditional C++ PSM API code.
 
 Note that changes in the `xml` will be ignored if this option is present.
-
-### Updated Secure Certificates, Governance and Permission Files
-
-Governance and Permission files have been updated to be compatible with the latest release for *RTI Connext DDS*, and are compatible with *RTI Connext DDS* 5.2.6 and greater.
-
-If you are compiling *RTI Perftest* against 5.2.5, you will need to get the certificates from the `release/2.0` branch. You can do that by using the following git command from the top level directory of your repository:
-
-```
-git checkout release/2.0 -- resource/secure
-```
 
 ## What's Fixed in 2.1
 
