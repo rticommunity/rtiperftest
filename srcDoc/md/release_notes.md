@@ -1,8 +1,8 @@
 # Release Notes
 
-## RTI Perftest 2.0 Compatibility
+## RTI Perftest 2.1 Compatibility
 
-*RTI Perftest* 2.0 is designed to compile and work against the *RTI Connext DDS* 5.2.x releases.
+*RTI Perftest* 2.1 is designed to compile and work against the *RTI Connext DDS* 5.2.x releases.
 
 However, certain features are not compatible with all the *RTI Connext DDS* versions, since the build scripts make use of certain specific parameters in *Rtiddsgen* that might change or not be present between releases:
 
