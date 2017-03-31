@@ -1,15 +1,15 @@
 # Release Notes
 
-## RTI Perftest 2.1 Compatibility
+## RTI Perftest 2.0 Compatibility
 
-*RTI Perftest* 2.1 is designed to compile and work against the *RTI Connext DDS* 5.2.x releases.
+*RTI Perftest* 2.0 is designed to compile and work against the *RTI Connext DDS* 5.2.x releases.
 
 However, certain features are not compatible with all the *RTI Connext DDS* versions, since the build scripts make use of certain specific parameters in *Rtiddsgen* that might change or not be present between releases:
 
 - The `--secure` and `--openssl-home` parameters will not work for versions previous to *RTI Connext DDS* 5.2.5.
 - The C# code generation against *RTI Connext DDS 5.2.0.x* is not supported. Users can disable its compilation by adding the `--skip-cs-build` flag.
 
-## What's New in Master
+## What's New in 2.1
 
 ### Multicast Periodic Heartbeats when the `-multicast` Command-Line Parameter is present
 
@@ -44,6 +44,12 @@ git checkout release/2.0 -- resource/secure
 ```
 
 ## What's Fixed in Master
+
+### Batching is disabled when the size of the sample is equal or greater than the Batch size
+
+In previous releases the Batching Parameters were set unconditionally, now the Batching QoS will be only applied if the Batch size is strictly greater than the sample size.
+
+## What's Fixed in 2.1
 
 ### "--nddshome" Command-Line Option did not Work in `build.bat` Script -- Windows Systems Only
 

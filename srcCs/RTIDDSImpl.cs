@@ -634,6 +634,18 @@ namespace PerformanceTest
                 Console.Error.WriteLine("Turbo Mode cannot be used with asynchronous writing. It will be ignored.");
                 _TurboMode = false;
             }
+            /*
+             * We don't want to use batching if the sample is the same size as the batch
+             * nor if the sample is bigger (in this case we avoid the checking in the
+             * middleware).
+             */
+            if (_BatchSize > 0 && _BatchSize <= _DataLen)
+            {
+                Console.Error.WriteLine("Batching dissabled: BatchSize (" + _BatchSize
+                        + ") is equal or smaller than the sample size (" + _DataLen
+                        + ").");
+                _BatchSize = 0;
+            }
             return true;
         }
 

@@ -1371,6 +1371,17 @@ public final class RTIDDSImpl<T> implements IMessaging {
             System.err.println("Turbo Mode cannot be used with asynchronous writing. It will be ignored.");
             _TurboMode = false;
         }
+        /*
+         * We don't want to use batching if the sample is the same size as the batch
+         * nor if the sample is bigger (in this case we avoid the checking in the
+         * middleware).
+         */
+        if (_batchSize > 0 && _batchSize <= _dataLen) {
+            System.err.println("Batching dissabled: BatchSize (" + _batchSize
+                    + ") is equal or smaller than the sample size (" + _dataLen
+                    + ").");
+            _batchSize = 0;
+        }
         return true;
     }
 

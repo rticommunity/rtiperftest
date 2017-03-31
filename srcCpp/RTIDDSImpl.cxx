@@ -570,6 +570,20 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         _TurboMode = false;
     }
 
+    /*
+     * We don't want to use batching if the sample is the same size as the batch
+     * nor if the sample is bigger (in this case we avoid the checking in the
+     * middleware).
+     */
+    if (_BatchSize > 0 && _BatchSize <= _DataLen) {
+        fprintf(stderr,
+                "Batching dissabled: BatchSize (%d) is equal or smaller "
+                "than the sample size (%d).\n",
+                _BatchSize,
+                _DataLen);
+        _BatchSize = 0;
+    }
+
     return true;
 }
 

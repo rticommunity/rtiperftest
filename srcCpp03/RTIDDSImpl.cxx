@@ -609,6 +609,18 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         throw std::logic_error("[Error] Error parsing commands");
     }
 
+    /*
+     * We don't want to use batching if the sample is the same size as the batch
+     * nor if the sample is bigger (in this case we avoid the checking in the
+     * middleware).
+     */
+     if (_BatchSize > 0 && _BatchSize <= _DataLen) {
+         std::cerr << "[Info] Batching dissabled: BatchSize (" << _BatchSize
+                   << ") is equal or smaller than the sample size (" << _DataLen
+                   << ")."  << std::endl;
+         _BatchSize = 0;
+     }
+
     return true;
 }
 
