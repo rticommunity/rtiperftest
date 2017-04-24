@@ -93,7 +93,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         UDPv6.
 
         Important: transport_builtin.mask is configured automatically within the 
-        source code. Also, it can be modified with the input commands "-enableTcpOnly"
+        source code. Also, it can be modified with the input commands "-enableTcp"
         and "-enableSharedMemory".
           
         Value set in the source code:

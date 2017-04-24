@@ -209,7 +209,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t-enableUdpv6            - Enable use of the Udpv6 transport and \n" +
             "\t                          disable all the other transports, default\n" +
             "\t                          udpv6 not enabled\n" +
-            "\t-enableTcpOnly          - Enable use of tcp transport and disable all\n"+
+            "\t-enableTcp              - Enable use of tcp transport and disable all\n"+
             "\t                          the other transports, default do not use\n" +
             "\t                          tcp transport\n" +
             "\t-heartbeatPeriod <sec>:<nanosec>     - Sets the regular heartbeat period\n" +
@@ -1185,11 +1185,11 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
             else if ("-noPositiveAcks".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _usePositiveAcks = false;
-            } else if ("-enableTcpOnly".toLowerCase().startsWith(argv[i].toLowerCase())) {
+            } else if ("-enableTcp".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if (_useSharedMemory) {
-                    System.err.print("-enableSharedMemory was already set, ignoring -enableTcpOnly\n");
+                    System.err.print("-enableSharedMemory was already set, ignoring -enableTcp\n");
                 } else if (_useUdpv6) {
-                    System.err.print("-useUdpv6 was already set, ignoring -enableTcpOnly\n");
+                    System.err.print("-useUdpv6 was already set, ignoring -enableTcp\n");
                 } else {
                     _useTcpOnly = true;
                 }
@@ -1197,7 +1197,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 if (_useUdpv6) {
                     System.err.print("-useUdpv6 was already set, ignoring -enableSharedMemory\n");
                 } else if (_useTcpOnly) {
-                    System.err.print("-enableTcpOnly was already set, ignoring -enableSharedMemory\n");
+                    System.err.print("-enableTcp was already set, ignoring -enableSharedMemory\n");
                 } else {
                     _useSharedMemory = true;
                 }
@@ -1205,7 +1205,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 if (_useSharedMemory) {
                     System.err.print("-enableSharedMemory was already set, ignoring -enableUdpv6\n");
                 } else if (_useTcpOnly) {
-                    System.err.print("-enableTcpOnly was already set, ignoring -enableUdpv6\n");
+                    System.err.print("-enableTcp was already set, ignoring -enableUdpv6\n");
                 } else {
                     _useUdpv6 = true;
                 }

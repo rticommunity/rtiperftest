@@ -146,7 +146,7 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
     "\t-enableUdpv6            - Enable use of the Udpv6 transport and \n"
     "\t                          disable all the other transports, default\n"
     "\t                          udpv6 not enabled\n"
-    "\t-enableTcpOnly          - Enable use of TCP transport and disable all\n"
+    "\t-enableTcp              - Enable use of TCP transport and disable all\n"
     "\t                          the other transports, default do not use\n"
     "\t                          tcp transport\n"
     "\t-heartbeatPeriod <sec>:<nanosec>     - Sets the regular heartbeat period\n"
@@ -405,7 +405,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                           << "ignoring -enableSharedMemory"
                           << std::endl;
             } else if (_UseTcpOnly) {
-                std::cerr << "[Info] -enableTcpOnly was already set, "
+                std::cerr << "[Info] -enableTcp was already set, "
                           << "ignoring -enableSharedMemory"
                           << std::endl;
             } else {
@@ -417,20 +417,20 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                           << "ignoring -enableUdpv6"
                           << std::endl;
             } else if (_UseTcpOnly) {
-                std::cerr << "[Info] -enableTcpOnly was already set, "
+                std::cerr << "[Info] -enableTcp was already set, "
                           << "ignoring -enableUdpv6"
                           << std::endl;
             } else {
                 _UseUdpv6 = true;
             }
-        } else if (IS_OPTION(argv[i], "-enableTcpOnly")) {
+        } else if (IS_OPTION(argv[i], "-enableTcp")) {
             if (_UseSharedMemory) {
                 std::cerr << "[Info] -enableSharedMemory was already set, "
-                          << "ignoring -enableTcpOnly"
+                          << "ignoring -enableTcp"
                           << std::endl;
             } else if (_UseUdpv6) {
                 std::cerr << "[Info] -useUdpv6 was already set, "
-                          << "ignoring -enableTcpOnly"
+                          << "ignoring -enableTcp"
                           << std::endl;
             } else {
                 _UseTcpOnly = true;

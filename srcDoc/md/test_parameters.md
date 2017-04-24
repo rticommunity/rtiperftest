@@ -85,7 +85,7 @@ For additional information on setting the parameters, see sections:
 
     **Default:** shared memory transport is disabled
 
--   `-enableTcpOnly`
+-   `-enableTcp`
 
     Disable all the other transports and use only TCP transport for communication.
 

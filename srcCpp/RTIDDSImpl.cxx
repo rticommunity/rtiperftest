@@ -126,7 +126,7 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
         "\t-enableUdpv6            - Enable use of the Udpv6 transport and \n"
         "\t                          disable all the other transports, default\n"
         "\t                          udpv6 not enabled\n"
-        "\t-enableTcpOnly          - Enable use of TCP transport and disable all\n"
+        "\t-enableTcp              - Enable use of TCP transport and disable all\n"
         "\t                          the other transports, default do not use\n"
         "\t                          tcp transport\n"
         "\t-heartbeatPeriod <sec>:<nanosec>     - Sets the regular heartbeat period\n"
@@ -366,7 +366,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             if (_UseUdpv6) {
                 fprintf(stderr, "-useUdpv6 was already set, ignoring -enableSharedMemory\n");
             } else if (_UseTcpOnly) {
-                fprintf(stderr, "-enableTcpOnly was already set, ignoring -enableSharedMemory\n");
+                fprintf(stderr, "-enableTcp was already set, ignoring -enableSharedMemory\n");
             } else {
                 _UseSharedMemory = true;
             }
@@ -376,17 +376,17 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             if (_UseSharedMemory) {
                 fprintf(stderr, "-enableSharedMemory was already set, ignoring -enableUdpv6\n");
             } else if (_UseTcpOnly) {
-                fprintf(stderr, "-enableTcpOnly was already set, ignoring -enableUdpv6\n");
+                fprintf(stderr, "-enableTcp was already set, ignoring -enableUdpv6\n");
             } else {
                 _UseUdpv6 = true;
             }
         }
-        else if (IS_OPTION(argv[i], "-enableTcpOnly") )
+        else if (IS_OPTION(argv[i], "-enableTcp") )
         {
             if (_UseSharedMemory) {
-                fprintf(stderr, "-enableSharedMemory was already set, ignoring -enableTcpOnly\n");
+                fprintf(stderr, "-enableSharedMemory was already set, ignoring -enableTcp\n");
             } else if (_UseUdpv6) {
-                fprintf(stderr, "-useUdpv6 was already set, ignoring -enableTcpOnly\n");
+                fprintf(stderr, "-useUdpv6 was already set, ignoring -enableTcp\n");
             } else {
                 _UseTcpOnly = true;
             }

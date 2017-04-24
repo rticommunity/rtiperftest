@@ -98,7 +98,7 @@ namespace PerformanceTest
             "\t-enableUdpv6            - Enable use of the Udpv6 transport and \n" +
             "\t                          disable all the other transports, default\n" +
             "\t                          udpv6 not enabled\n" +
-            "\t-enableTcpOnly          - Enable use of tcp transport and disable all\n" +
+            "\t-enableTcp              - Enable use of tcp transport and disable all\n" +
             "\t                          the other transports, default do not use\n" +
             "\t                          tcp transport\n" +
             "\t-heartbeatPeriod <sec>:<nanosec>     - Sets the regular heartbeat\n" +
@@ -400,7 +400,7 @@ namespace PerformanceTest
                     if (_UseUdpv6) {
                         Console.Error.Write("-useUdpv6 was already set, ignoring -enableSharedMemory\n");
                     } else if (_UseTcpOnly) {
-                        Console.Error.Write("-enableTcpOnly was already set, ignoring -enableSharedMemory\n");
+                        Console.Error.Write("-enableTcp was already set, ignoring -enableSharedMemory\n");
                     } else {
                         _UseSharedMemory = true;
                     }
@@ -409,16 +409,16 @@ namespace PerformanceTest
                     if (_UseSharedMemory) {
                         Console.Error.Write("-enableSharedMemory was already set, ignoring -enableUdpv6\n");
                     } else if (_UseTcpOnly) {
-                        Console.Error.Write("-enableTcpOnly was already set, ignoring -enableUdpv6\n");
+                        Console.Error.Write("-enableTcp was already set, ignoring -enableUdpv6\n");
                     } else {
                         _UseUdpv6 = true;
                     }
                 }
-                else if ("-enableTcpOnly".StartsWith(argv[i], true, null)) {
+                else if ("-enableTcp".StartsWith(argv[i], true, null)) {
                     if (_UseSharedMemory) {
-                        Console.Error.Write("-enableSharedMemory was already set, ignoring -enableTcpOnly\n");
+                        Console.Error.Write("-enableSharedMemory was already set, ignoring -enableTcp\n");
                     } else if (_UseUdpv6) {
-                        Console.Error.Write("-useUdpv6 was already set, ignoring -enableTcpOnly\n");
+                        Console.Error.Write("-useUdpv6 was already set, ignoring -enableTcp\n");
                     } else {
                         _UseTcpOnly = true;
                     }

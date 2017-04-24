@@ -49,6 +49,10 @@ git checkout release/2.0 -- resource/secure
 
 In previous releases the Batching Parameters were set unconditionally, now the Batching QoS will be only applied if the Batch size is strictly greater than the sample size.
 
+### Changed name of the "-enableTcp" option
+
+In previous releases the command-line option to use TCP for the communication was named as `-enableTcpOnly`. This is was inconsistent with other transport options, so the name of the command has been modified to `-enableTcp`.
+
 ## What's Fixed in 2.1
 
 ### "--nddshome" Command-Line Option did not Work in `build.bat` Script -- Windows Systems Only
