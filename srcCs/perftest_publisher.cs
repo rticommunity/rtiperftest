@@ -20,18 +20,18 @@ namespace PerformanceTest {
     {
 
         TestData_t _myData;
-        int _MAX_PERFTEST_SAMPLE_SIZE = perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS;
+        ulong _maxPerftestSampleSize = perftest_cs.getMaxPerftestSampleSizeCS();
 
-        public DataTypeHelper(int MAX_PERFTEST_SAMPLE_SIZE)
+        public DataTypeHelper(ulong maxPerftestSampleSize)
         {
             _myData = new TestData_t();
-            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+            _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
-        public DataTypeHelper(TestData_t myData, int MAX_PERFTEST_SAMPLE_SIZE)
+        public DataTypeHelper(TestData_t myData, ulong maxPerftestSampleSize)
         {
                 _myData = myData;
-                _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+                _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
         public void fillKey(int value)
@@ -95,7 +95,7 @@ namespace PerformanceTest {
 
         public ITypeHelper<TestData_t> clone()
         {
-            return new DataTypeHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
+            return new DataTypeHelper(_myData, _maxPerftestSampleSize);
         }
 
         public DDS.LoanableSequence<TestData_t> createSequence()
@@ -103,8 +103,8 @@ namespace PerformanceTest {
             return new TestData_tSeq();
         }
 
-        public int getMAX_PERFTEST_SAMPLE_SIZE() {
-            return _MAX_PERFTEST_SAMPLE_SIZE;
+        public ulong getMaxPerftestSampleSize() {
+            return _maxPerftestSampleSize;
         }
 
     }
@@ -116,18 +116,18 @@ namespace PerformanceTest {
     {
 
         TestDataLarge_t _myData;
-        int _MAX_PERFTEST_SAMPLE_SIZE = perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS;
+        ulong _maxPerftestSampleSize = perftest_cs.getMaxPerftestSampleSizeCS();
 
-        public DataTypeLargeHelper(int MAX_PERFTEST_SAMPLE_SIZE)
+        public DataTypeLargeHelper(ulong maxPerftestSampleSize)
         {
             _myData = new TestDataLarge_t();
-            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+            _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
-        public DataTypeLargeHelper(TestDataLarge_t myData, int MAX_PERFTEST_SAMPLE_SIZE)
+        public DataTypeLargeHelper(TestDataLarge_t myData, ulong maxPerftestSampleSize)
         {
                 _myData = myData;
-                _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+                _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
         public void fillKey(int value)
@@ -191,7 +191,7 @@ namespace PerformanceTest {
 
         public ITypeHelper<TestDataLarge_t> clone()
         {
-            return new DataTypeLargeHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
+            return new DataTypeLargeHelper(_myData, _maxPerftestSampleSize);
         }
 
         public DDS.LoanableSequence<TestDataLarge_t> createSequence()
@@ -199,8 +199,8 @@ namespace PerformanceTest {
             return new TestDataLarge_tSeq();
         }
 
-        public int getMAX_PERFTEST_SAMPLE_SIZE() {
-            return _MAX_PERFTEST_SAMPLE_SIZE;
+        public ulong getMaxPerftestSampleSize() {
+            return _maxPerftestSampleSize;
         }
 
     }
@@ -213,18 +213,18 @@ namespace PerformanceTest {
     {
 
         TestDataKeyed_t _myData;
-        int _MAX_PERFTEST_SAMPLE_SIZE = perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS;
+        ulong _maxPerftestSampleSize = perftest_cs.getMaxPerftestSampleSizeCS();
 
-        public DataTypeKeyedHelper(int MAX_PERFTEST_SAMPLE_SIZE)
+        public DataTypeKeyedHelper(ulong maxPerftestSampleSize)
         {
             _myData = new TestDataKeyed_t();
-            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+            _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
-        public DataTypeKeyedHelper(TestDataKeyed_t myData, int MAX_PERFTEST_SAMPLE_SIZE)
+        public DataTypeKeyedHelper(TestDataKeyed_t myData, ulong maxPerftestSampleSize)
         {
             _myData = myData;
-            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+            _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
         public void fillKey(int value)
@@ -288,7 +288,7 @@ namespace PerformanceTest {
 
         public ITypeHelper<TestDataKeyed_t> clone()
         {
-            return new DataTypeKeyedHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
+            return new DataTypeKeyedHelper(_myData, _maxPerftestSampleSize);
         }
 
         public DDS.LoanableSequence<TestDataKeyed_t> createSequence()
@@ -296,8 +296,8 @@ namespace PerformanceTest {
             return new TestDataKeyed_tSeq();
         }
 
-        public int getMAX_PERFTEST_SAMPLE_SIZE() {
-            return _MAX_PERFTEST_SAMPLE_SIZE;
+        public ulong getMaxPerftestSampleSize() {
+            return _maxPerftestSampleSize;
         }
 
     }
@@ -309,18 +309,18 @@ namespace PerformanceTest {
     {
 
         TestDataKeyedLarge_t _myData;
-        int _MAX_PERFTEST_SAMPLE_SIZE = perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS;
+        ulong _maxPerftestSampleSize = perftest_cs.getMaxPerftestSampleSizeCS();
 
-        public DataTypeKeyedLargeHelper(int MAX_PERFTEST_SAMPLE_SIZE)
+        public DataTypeKeyedLargeHelper(ulong maxPerftestSampleSize)
         {
             _myData = new TestDataKeyedLarge_t();
-            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+            _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
-        public DataTypeKeyedLargeHelper(TestDataKeyedLarge_t myData, int MAX_PERFTEST_SAMPLE_SIZE)
+        public DataTypeKeyedLargeHelper(TestDataKeyedLarge_t myData, ulong maxPerftestSampleSize)
         {
             _myData = myData;
-            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+            _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
         public void fillKey(int value)
@@ -384,7 +384,7 @@ namespace PerformanceTest {
 
         public ITypeHelper<TestDataKeyedLarge_t> clone()
         {
-            return new DataTypeKeyedLargeHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
+            return new DataTypeKeyedLargeHelper(_myData, _maxPerftestSampleSize);
         }
 
         public DDS.LoanableSequence<TestDataKeyedLarge_t> createSequence()
@@ -392,8 +392,8 @@ namespace PerformanceTest {
             return new TestDataKeyedLarge_tSeq();
         }
 
-        public int getMAX_PERFTEST_SAMPLE_SIZE() {
-            return _MAX_PERFTEST_SAMPLE_SIZE;
+        public ulong getMaxPerftestSampleSize() {
+            return _maxPerftestSampleSize;
         }
 
     }
@@ -403,19 +403,19 @@ namespace PerformanceTest {
 
         bool _isKeyed;
         DynamicData _myData;
-        int _MAX_PERFTEST_SAMPLE_SIZE = perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS;
+        ulong _maxPerftestSampleSize = perftest_cs.getMaxPerftestSampleSizeCS();
 
-        public DynamicDataTypeHelper(DDS.TypeCode typeCode, bool isKeyed, int MAX_PERFTEST_SAMPLE_SIZE)
+        public DynamicDataTypeHelper(DDS.TypeCode typeCode, bool isKeyed, ulong maxPerftestSampleSize)
         {
             _isKeyed = isKeyed;
             _myData = new DynamicData(typeCode, DynamicData.DYNAMIC_DATA_PROPERTY_DEFAULT);
-            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+            _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
-        public DynamicDataTypeHelper(DynamicData myData, int MAX_PERFTEST_SAMPLE_SIZE)
+        public DynamicDataTypeHelper(DynamicData myData, ulong maxPerftestSampleSize)
         {
             _myData = myData;
-            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+            _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
         public void fillKey(int value)
@@ -491,7 +491,7 @@ namespace PerformanceTest {
 
         public ITypeHelper<DynamicData> clone()
         {
-            return new DynamicDataTypeHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
+            return new DynamicDataTypeHelper(_myData, _maxPerftestSampleSize);
         }
 
         public LoanableSequence<DynamicData> createSequence()
@@ -510,8 +510,8 @@ namespace PerformanceTest {
         {
         }
 
-        public int getMAX_PERFTEST_SAMPLE_SIZE() {
-            return _MAX_PERFTEST_SAMPLE_SIZE;
+        public ulong getMaxPerftestSampleSize() {
+            return _maxPerftestSampleSize;
         }
     }
 
@@ -539,20 +539,20 @@ namespace PerformanceTest {
             {
                 return;
             }
-            int _MAX_PERFTEST_SAMPLE_SIZE = Math.Max(_DataLen,LENGTH_CHANGED_SIZE);
-            if(_useUnbounded > 0) {
-                Console.Error.Write("Using unbounded sequences.\n");
+            ulong _maxPerftestSampleSize = Math.Max(_DataLen,LENGTH_CHANGED_SIZE);
+            if (_useUnbounded > 0) {
+                Console.Write("Using unbounded Sequences, memory_manager " + _useUnbounded.ToString() + ".\n");
                 if (_isKeyed)
                 {
                     Console.Error.Write("Using keyed Data.\n");
                     if (_isDynamicData)
                     {
                         Console.Error.Write("Using Dynamic Data.\n");
-                        _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyedLarge_t.get_typecode(),_isKeyed,_MAX_PERFTEST_SAMPLE_SIZE));
+                        _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyedLarge_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
                     {
-                        _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>(new DataTypeKeyedLargeHelper(_MAX_PERFTEST_SAMPLE_SIZE));
+                        _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>(new DataTypeKeyedLargeHelper(_maxPerftestSampleSize));
                     }
                 }
                 else {
@@ -560,11 +560,11 @@ namespace PerformanceTest {
                     if (_isDynamicData)
                     {
                         Console.Error.Write("Using Dynamic Data.\n");
-                        _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataLarge_t.get_typecode(),_isKeyed,_MAX_PERFTEST_SAMPLE_SIZE));
+                        _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataLarge_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
                     {
-                        _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>(new DataTypeLargeHelper(_MAX_PERFTEST_SAMPLE_SIZE));
+                        _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>(new DataTypeLargeHelper(_maxPerftestSampleSize));
                     }
                 }
             } else {
@@ -574,11 +574,11 @@ namespace PerformanceTest {
                     if (_isDynamicData)
                     {
                         Console.Error.Write("Using Dynamic Data.\n");
-                        _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyed_t.get_typecode(),_isKeyed,_MAX_PERFTEST_SAMPLE_SIZE));
+                        _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyed_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
                     {
-                        _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>(new DataTypeKeyedHelper(_MAX_PERFTEST_SAMPLE_SIZE));
+                        _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>(new DataTypeKeyedHelper(_maxPerftestSampleSize));
                     }
                 }
                 else {
@@ -586,11 +586,11 @@ namespace PerformanceTest {
                     if (_isDynamicData)
                     {
                         Console.Error.Write("Using Dynamic Data.\n");
-                        _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestData_t.get_typecode(),_isKeyed,_MAX_PERFTEST_SAMPLE_SIZE));
+                        _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestData_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
                     {
-                        _MessagingImpl = new RTIDDSImpl<TestData_t>(new DataTypeHelper(_MAX_PERFTEST_SAMPLE_SIZE));
+                        _MessagingImpl = new RTIDDSImpl<TestData_t>(new DataTypeHelper(_maxPerftestSampleSize));
                     }
                 }
             }
@@ -603,7 +603,7 @@ namespace PerformanceTest {
             _BatchSize = _MessagingImpl.GetBatchSize();
 
             if (_BatchSize != 0) {
-                _SamplesPerBatch = _BatchSize/_DataLen;
+                _SamplesPerBatch = _BatchSize/(int)_DataLen;
                 if (_SamplesPerBatch == 0) {
                    _SamplesPerBatch = 1;
                 }
@@ -681,7 +681,7 @@ namespace PerformanceTest {
                 "\t-numPublishers <count>  - Number of publishers running in test,\n" +
                 "\t                          default 1\n" +
                 "\t-scan                   - Run test in scan mode, traversing a range of\n"+
-                "\t                          data sizes, 32 - " + MAX_PERFTEST_SAMPLE_SIZE_CS + "\n" +
+                "\t                          data sizes, 32 - " + getMaxPerftestSampleSizeCS() + "\n" +
                 "\t-noPrintIntervals       - Don't print statistics at intervals during\n"+
                 "\t                          test\n" +
                 "\t-useReadThread          - Use separate thread instead of callback to\n"+
@@ -813,7 +813,7 @@ namespace PerformanceTest {
 
                     _MessagingArgv[_MessagingArgc++] = argv[i];
 
-                    if (!Int32.TryParse(argv[i], out _DataLen))
+                    if (!UInt64.TryParse(argv[i], out _DataLen))
                     {
                         Console.Error.Write("Bad dataLen\n");
                         return false;
@@ -823,13 +823,13 @@ namespace PerformanceTest {
                         Console.Error.WriteLine("dataLen must be >= " + OVERHEAD_BYTES);
                         return false;
                     }
-                    if (_DataLen > MAX_PERFTEST_SAMPLE_SIZE_CS)
+                    if (_DataLen > getMaxPerftestSampleSizeCS())
                     {
-                        Console.Error.WriteLine("dataLen must be <= " + MAX_PERFTEST_SAMPLE_SIZE_CS);
+                        Console.Error.WriteLine("dataLen must be <= " + getMaxPerftestSampleSizeCS());
                         return false;
                     }
-                    if (_useUnbounded < 0 && _DataLen > MAX_BOUNDED_SEQ_SIZE.VALUE){
-                        _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                    if (_useUnbounded == 0 && (int)_DataLen > MAX_BOUNDED_SEQ_SIZE.VALUE) {
+                        _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
                     }
                 }
                 else if ("-unbounded".StartsWith(argv[i], true, null))
@@ -838,11 +838,11 @@ namespace PerformanceTest {
 
                     if ((i == (argc - 1)) || argv[i+1].StartsWith("-"))
                     {
-                        _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                        _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
                     } else {
                         ++i;
                         _MessagingArgv[_MessagingArgc++] = argv[i];
-                        if (!Int32.TryParse(argv[i], out _DataLen))
+                        if (!UInt64.TryParse(argv[i], out _useUnbounded))
                         {
                             Console.Error.Write("Bad managerMemory value\n");
                             return false;
@@ -854,9 +854,9 @@ namespace PerformanceTest {
                         Console.Error.WriteLine("_useUnbounded must be >= " + OVERHEAD_BYTES);
                         return false;
                     }
-                    if (_useUnbounded > MAX_PERFTEST_SAMPLE_SIZE_CS)
+                    if (_useUnbounded > getMaxPerftestSampleSizeCS())
                     {
-                        Console.Error.WriteLine("_useUnbounded must be <= " + MAX_PERFTEST_SAMPLE_SIZE_CS);
+                        Console.Error.WriteLine("_useUnbounded must be <= " + getMaxPerftestSampleSizeCS());
                         return false;
                     }
                 }
@@ -1912,7 +1912,7 @@ namespace PerformanceTest {
             writer.Flush();
 
             // Set data size, account for other bytes in message
-            message.size = _DataLen - OVERHEAD_BYTES;
+            message.size = (int)_DataLen - OVERHEAD_BYTES;
 
             // Sleep 1 second, then begin test
             System.Threading.Thread.Sleep(1000);
@@ -2208,8 +2208,8 @@ namespace PerformanceTest {
             timer.Enabled = true;
         }
 
-        private int  _DataLen = 100;
-        private int     _useUnbounded = -1;
+        private ulong  _DataLen = 100;
+        private ulong _useUnbounded = 0;
         private int  _BatchSize = 0;
         private int  _SamplesPerBatch = 1;
 
@@ -2272,9 +2272,13 @@ namespace PerformanceTest {
         // Flag used to indicate end of test
         public const int LENGTH_CHANGED_SIZE = 1236;
 
-        // MAX_PERFTEST_SAMPLE_SIZE for java (2GB-5B)
-        public const int MAX_PERFTEST_SAMPLE_SIZE_CS = 2147483591;
-
+        static public ulong getMaxPerftestSampleSizeCS(){
+            if (MAX_PERFTEST_SAMPLE_SIZE.VALUE > 2147483591){
+                return 2147483591; //max value for a buffer in C#
+            }else {
+                return (ulong) MAX_PERFTEST_SAMPLE_SIZE.VALUE;
+            }
+        }
     }
 
 } // namespace

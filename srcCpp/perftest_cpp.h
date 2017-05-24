@@ -71,7 +71,7 @@ class perftest_cpp
     }
 
   private:
-    int  _DataLen;
+    unsigned long  _DataLen;
     int  _BatchSize;
     int  _SamplesPerBatch;
     unsigned long long _NumIter;
@@ -92,7 +92,7 @@ class perftest_cpp
     int _pubRate;
     bool _pubRateMethodSpin;
     bool _isKeyed;
-    int _useUnbounded;
+    unsigned long _useUnbounded;
     unsigned int _executionTime;
     bool _displayWriterStats;
 

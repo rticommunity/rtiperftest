@@ -230,7 +230,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 fprintf(stderr, "-dataLen must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
                 return false;
             }
-            if (_useUnbounded < 0 &&_DataLen > MAX_BOUNDED_SEQ_SIZE) {
+            if (_useUnbounded == 0 && _DataLen > MAX_BOUNDED_SEQ_SIZE) {
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
             }
         }
@@ -631,10 +631,10 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
      * nor if the sample is bigger (in this case we avoid the checking in the
      * middleware).
      */
-    if (_BatchSize > 0 && _BatchSize <= _DataLen) {
+    if (_BatchSize > 0 && (unsigned)_BatchSize <= _DataLen) {
         fprintf(stderr,
                 "Batching dissabled: BatchSize (%d) is equal or smaller "
-                "than the sample size (%d).\n",
+                "than the sample size (%lu).\n",
                 _BatchSize,
                 _DataLen);
         _BatchSize = 0;
@@ -1920,7 +1920,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         }
 
         // Shem transport properties
-        int received_message_count_max = 1024 * 1024 * 2 / _DataLen;
+        int received_message_count_max = 1024 * 1024 * 2 / (int)_DataLen;
 
         if (received_message_count_max < 1) {
             received_message_count_max = 1;
@@ -2147,11 +2147,11 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     dw_qos.resource_limits.initial_instances = _InstanceCount;
 
     if (_useUnbounded > 0) {
-        printf("Unbounded data_writer, memory_manager %s\n",
-                std::to_string(_useUnbounded).c_str());
+        char buf[10];
+        sprintf(buf, "%lu", _useUnbounded);
         DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
-               std::to_string(_useUnbounded).c_str(), false);
+               buf, false);
     }
 
     if (_InstanceCount > 1) {
@@ -2305,11 +2305,11 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(const char *topic_name,
     }
 
     if (_useUnbounded > 0) {
-        printf("Unbounded data_reader, memory_manager %s\n",
-                std::to_string(_useUnbounded).c_str());
-            DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
-                    "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
-                    std::to_string(_useUnbounded).c_str(), false);
+        char buf[10];
+        sprintf(buf, "%lu", _useUnbounded);
+        DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
+                "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
+                buf, false);
     }
 
     if (callback != NULL) {

@@ -50,7 +50,10 @@ import com.rti.perftest.harness.PerfTest;
     public ReceiverListener(IMessagingCB callback, TypeHelper<T> myDatatype) {
         _callback = callback;
         _myDataType = myDatatype;
-        _message.data = new byte[_myDataType.getMAX_PERFTEST_SAMPLE_SIZE()];
+        // We will avoid allocating this member of _message, since we won't
+        // make use of it. This will not have any impact with regards to the
+        // behavior of the test, but will allow us to test bigger sample sizes.
+        // _message.data = new byte[_myDataType.getMaxPerftestSampleSize()];
         _dataSeq =(List)_myDataType.createSequence();
     }
 

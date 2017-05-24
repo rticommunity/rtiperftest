@@ -89,8 +89,8 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
-    if (_useUnbounded < 0) { //unbounded is not set
-        if (_isKeyed) {
+    if (_useUnbounded == 0) { //unbounded is not set
+        if (_isKeyed){
             fprintf(stderr, "Using Keyed Data.\n");
             _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
         } else {
@@ -98,7 +98,7 @@ int perftest_cpp::Run(int argc, char *argv[])
             _MessagingImpl = new RTIDDSImpl<TestData_t>();
         }
     } else {
-        fprintf(stderr, "Using Unbounded Sequences.\n");
+        fprintf(stderr, "Using unbounded Sequences, memory_manager %lu.\n",_useUnbounded);
         if (_isKeyed) {
             fprintf(stderr, "Using Keyed Data.\n");
             _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
@@ -116,7 +116,7 @@ int perftest_cpp::Run(int argc, char *argv[])
     _BatchSize = _MessagingImpl->GetBatchSize();
 
     if (_BatchSize != 0) {
-        _SamplesPerBatch = _BatchSize/_DataLen;
+        _SamplesPerBatch = _BatchSize/(int)_DataLen;
         if (_SamplesPerBatch == 0) {
             _SamplesPerBatch = 1;
         }
@@ -190,7 +190,7 @@ perftest_cpp::perftest_cpp()
     _IsReliable = true;
     _pubRate = 0;
     _isKeyed = false;
-    _useUnbounded = -1;
+    _useUnbounded = 0;
     _executionTime = 0;
     _displayWriterStats = false;
     _pubRateMethodSpin = true;
@@ -403,7 +403,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 return false;
             }
 
-            if (_useUnbounded < 0 &&_DataLen > MAX_BOUNDED_SEQ_SIZE) {
+            if (_useUnbounded == 0 && _DataLen > MAX_BOUNDED_SEQ_SIZE) {
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
             }
         }
@@ -1573,7 +1573,7 @@ int perftest_cpp::Publisher()
     // Allocate data and set size
     TestMessage message;
     message.entity_id = _PubID;
-    message.data = new char[(std::max)(_DataLen,LENGTH_CHANGED_SIZE)];
+    message.data = new char[(std::max)((int)_DataLen,LENGTH_CHANGED_SIZE)];
 
     fprintf(stderr,"Publishing data...\n");
     fflush(stderr);
@@ -1600,7 +1600,7 @@ int perftest_cpp::Publisher()
     writer->Flush();
 
     // Set data size, account for other bytes in message
-    message.size = _DataLen - OVERHEAD_BYTES;
+    message.size = (int)_DataLen - OVERHEAD_BYTES;
 
     // Sleep 1 second, then begin test
     MilliSleep(1000);

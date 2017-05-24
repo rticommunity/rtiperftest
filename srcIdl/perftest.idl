@@ -5,7 +5,7 @@
 
 const long MAX_SYNCHRONOUS_SIZE = 63000;
 const long MAX_BOUNDED_SEQ_SIZE = 63000;
-const long MAX_PERFTEST_SAMPLE_SIZE = 2147483647;
+const long MAX_PERFTEST_SAMPLE_SIZE = 2147483128; // 2GB-512B-8B (RTPS Header)
 const long KEY_SIZE = 4;
 
 struct TestData_t {

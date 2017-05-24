@@ -91,7 +91,7 @@ namespace PerformanceTest
 
         ITypeHelper<T> clone();
 
-        int getMAX_PERFTEST_SAMPLE_SIZE();
+        ulong getMaxPerftestSampleSize();
 
     }
 }

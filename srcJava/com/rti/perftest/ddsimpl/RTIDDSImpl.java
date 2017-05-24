@@ -78,8 +78,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private int     _sendQueueSize = 50;
     private Duration_t _heartbeatPeriod = new Duration_t(0,0);
     private Duration_t _fastHeartbeatPeriod = new Duration_t (0,0);
-    private int     _dataLen = 100;
-    private int     _useUnbounded = -1;
+    private long     _dataLen = 100;
+    private long     _useUnbounded = 0;
     private int     _domainID = 1;
     private String  _nic = "";
     private String  _profileFile = "perftest_qos_profiles.xml";
@@ -358,7 +358,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
 
             // Shmem transport properties
-            int receivedMessageCountMax = 2 * 1024 * 1024 / _dataLen;
+            int receivedMessageCountMax = 2 * 1024 * 1024 / (int)_dataLen;
 
             if (receivedMessageCountMax < 1) {
                 receivedMessageCountMax = 1;
@@ -765,13 +765,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         if (_useUnbounded > 0) {
-            System.err.println("Unbounded data_writer, memory_manager " + Integer.toString(_useUnbounded) + ".");
             PropertyQosPolicyHelper.add_property(
                     dwQos.property, "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
-                    Integer.toString(_useUnbounded), false);
+                    Long.toString(_useUnbounded), false);
             PropertyQosPolicyHelper.add_property(
                     dwQos.property, "dds.data_writer.history.memory_manager.java_stream.min_size",
-                    Integer.toString(_useUnbounded), false);
+                    Long.toString(_useUnbounded), false);
             PropertyQosPolicyHelper.add_property(
                     dwQos.property, "dds.data_writer.history.memory_manager.java_stream.trim_to_size",
                     "1", false);
@@ -927,13 +926,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         if (_useUnbounded > 0) {
-            System.err.println("Unbounded data_reader, memory_manager " + Integer.toString(_useUnbounded) + ".");
             PropertyQosPolicyHelper.add_property(
                     drQos.property, "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
-                    Integer.toString(_useUnbounded), false);
+                    Long.toString(_useUnbounded), false);
             PropertyQosPolicyHelper.add_property(
                     drQos.property, "dds.data_reader.history.memory_manager.java_stream.min_size",
-                    Integer.toString(_useUnbounded), false);
+                    Long.toString(_useUnbounded), false);
             PropertyQosPolicyHelper.add_property(
                     drQos.property, "dds.data_reader.history.memory_manager.java_stream.trim_to_size",
                     "1", false);
@@ -1035,7 +1033,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     return false;
                 }
                 try {
-                    _dataLen = Integer.parseInt(argv[i]);
+                    _dataLen = Long.parseLong(argv[i]);
                 } catch (NumberFormatException nfx) {
                     System.err.print("Bad dataLen\n");
                     return false;
@@ -1044,11 +1042,11 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     System.err.println("dataLen must be >= " + PerfTest.OVERHEAD_BYTES);
                     return false;
                 }
-                if (_dataLen > PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA) {
-                    System.err.println("dataLen must be <= " + PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA);
+                if (_dataLen > PerfTest.getMaxPerftestSampleSizeJava()) {
+                    System.err.println("dataLen must be <= " + PerfTest.getMaxPerftestSampleSizeJava());
                     return false;
                 }
-                if (_useUnbounded < 0 && _dataLen > MAX_BOUNDED_SEQ_SIZE.VALUE){
+                if (_useUnbounded == 0 && _dataLen > MAX_BOUNDED_SEQ_SIZE.VALUE) {
                     _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
                 }
             }else if ("-unbounded".toLowerCase().startsWith(argv[i].toLowerCase())) {
@@ -1057,7 +1055,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 } else {
                     ++i;
                     try {
-                        _useUnbounded = Integer.parseInt(argv[i]);
+                        _useUnbounded = Long.parseLong(argv[i]);
                     } catch (NumberFormatException nfx) {
                         System.err.print("Bad managerMemory value.\n");
                         return false;
@@ -1068,8 +1066,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     System.err.println("unbounded must be >= " + PerfTest.OVERHEAD_BYTES);
                     return false;
                 }
-                if (_useUnbounded > PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA) {
-                    System.err.println("unbounded must be <= " + PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA);
+                if (_useUnbounded > PerfTest.getMaxPerftestSampleSizeJava()) {
+                    System.err.println("unbounded must be <= " + PerfTest.getMaxPerftestSampleSizeJava());
                     return false;
                 }
             } else if ("-sendQueueSize".toLowerCase().startsWith(argv[i].toLowerCase())) {

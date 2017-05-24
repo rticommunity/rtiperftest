@@ -32,11 +32,11 @@ public final class PerfTestLauncher {
     public static void main(String[] argv) {
 
         parseConfig(argv);
-        int MAX_PERFTEST_SAMPLE_SIZE = Math.max(_dataLen,
+        int MAX_PERFTEST_SAMPLE_SIZE = Math.max((int)_dataLen,
                 PerfTest.LENGTH_CHANGED_SIZE);
 
         if(_useUnbounded > 0) {
-            System.err.println("Using unbounded Data.");
+            System.err.println("Using unbounded Sequences, memory_manager " + Long.toString(_useUnbounded) + ".");
             if (_isKeyed) {
                 System.err.println("Using keyed Data.");
 
@@ -148,7 +148,7 @@ public final class PerfTestLauncher {
                     return false;
                 }
                 try {
-                    _dataLen = Integer.parseInt(argv[i]);
+                    _dataLen = Long.parseLong(argv[i]);
                 } catch (NumberFormatException nfx) {
                     System.err.print("Bad dataLen\n");
                     return false;
@@ -157,11 +157,11 @@ public final class PerfTestLauncher {
                     System.err.println("dataLen must be >= " + PerfTest.OVERHEAD_BYTES);
                     return false;
                 }
-                if (_dataLen > PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA) {
-                    System.err.println("dataLen must be <= " + PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA);
+                if (_dataLen > PerfTest.getMaxPerftestSampleSizeJava()) {
+                    System.err.println("dataLen must be <= " + PerfTest.getMaxPerftestSampleSizeJava());
                     return false;
                 }
-                if (_useUnbounded < 0 && _dataLen > MAX_BOUNDED_SEQ_SIZE.VALUE){
+                if (_useUnbounded == 0 && _dataLen > MAX_BOUNDED_SEQ_SIZE.VALUE) {
                     _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
                 }
             }else if ("-unbounded".toLowerCase().startsWith(argv[i].toLowerCase())) {
@@ -170,18 +170,18 @@ public final class PerfTestLauncher {
                 } else {
                     ++i;
                     try {
-                        _useUnbounded = Integer.parseInt(argv[i]);
+                        _useUnbounded = Long.parseLong(argv[i]);
                     } catch (NumberFormatException nfx) {
                         System.err.print("Bad managerMemory value.\n");
                         return false;
                     }
                 }
                 if (_useUnbounded < PerfTest.OVERHEAD_BYTES) {
-                    System.err.println("unbounded must be >= " + PerfTest.OVERHEAD_BYTES);
+                    System.err.println("-unbounded <value> must be >= " + PerfTest.OVERHEAD_BYTES);
                     return false;
                 }
-                if (_useUnbounded > PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA) {
-                    System.err.println("unbounded must be <= " + PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA);
+                if (_useUnbounded > PerfTest.getMaxPerftestSampleSizeJava()) {
+                    System.err.println("-unbounded <value> must be <= " + PerfTest.getMaxPerftestSampleSizeJava());
                     return false;
                 }
             }
@@ -191,8 +191,8 @@ public final class PerfTestLauncher {
 
     private static boolean _isKeyed = false;
     private static boolean _isDynamicData = false;
-    private static int _useUnbounded = -1;
-    private static int _dataLen = 100;
+    private static long _useUnbounded = 0;
+    private static long _dataLen = 100;
 }
 
 // ===========================================================================
