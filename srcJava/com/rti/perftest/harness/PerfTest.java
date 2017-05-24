@@ -85,7 +85,7 @@ public final class PerfTest {
     private boolean _isScan = false;
     private boolean _useReadThread = false;
     private long     _spinLoopCount = 0;
-    private int     _sleepMillisec = 0;
+    private long    _sleepNanosec = 0;
     private int     _latencyCount = -1;
     private int     _numSubscribers = 1;
     private int     _numPublishers  = 1;
@@ -96,6 +96,7 @@ public final class PerfTest {
     private boolean  _latencyTest = false;
     private boolean  _isReliable = true;
     private long     _pubRate = 0;
+    private boolean _pubRateMethodSpin = true;
     private long     _executionTime = 0;
     private boolean  _displayWriterStats = false;
     private PerftestTimerTask timertask = new PerftestTimerTask(this);
@@ -223,8 +224,11 @@ public final class PerfTest {
             "\t-verbosity <level>      - Run with different levels of verbosity:\n" +
             "\t                          0 - SILENT, 1 - ERROR, 2 - WARNING,\n" +
             "\t                          3 - ALL. Default: 1\n" +
-            "\t-pubRate <samples/s>    - Limit the throughput to the specified number\n" +
-            "\t                          of samples/s, default 0 (don't limit)\n" +
+            "\t-pubRate <samples/s> <method>    - Limit the throughput to the specified number\n" +
+            "\t                                   of samples/s, default 0 (don't limit)\n" +
+            "\t                                   [OPTIONAL] Method to control the throughput can be:\n" +
+            "\t                                 'spin' or 'sleep'\n" +
+            "\t                                 Default method: spin\n" +
             "\t-keyed                  - Use keyed data (default: unkeyed)\n"+
             "\t-executionTime <sec>    - Set a maximum duration for the test. The\n"+
             "\t                          first condition triggered will finish the\n"+
@@ -346,16 +350,11 @@ public final class PerfTest {
                     System.err.print("Missing <count> after -spin\n");
                     return false;
                 }
-                if (_pubRate > 0) {
-                    System.err.println("-spin is not compatible with -pubRate. "
-                            +"Spin value will be set by -pubRate.");
-                } else {
-                    try {
-                        _spinLoopCount = Long.parseLong(argv[i]);
-                    } catch (NumberFormatException nfx) {
-                        System.err.println("Bad spin count");
-                        return false;
-                    }
+                try {
+                    _spinLoopCount = Long.parseLong(argv[i]);
+                } catch (NumberFormatException nfx) {
+                    System.err.println("Bad spin count");
+                    return false;
                 }
             }
             else if ( "-sleep".toLowerCase().startsWith(argv[i].toLowerCase()))
@@ -365,7 +364,8 @@ public final class PerfTest {
                     return false;
                 }
                 try {
-                    _sleepMillisec = Integer.parseInt(argv[i]);
+                    _sleepNanosec = Integer.parseInt(argv[i]);
+                    _sleepNanosec *= 1000000;
                 } catch (NumberFormatException nfx) {
                     System.err.print("Bad sleep millisec\n");
                     return false;
@@ -494,9 +494,20 @@ public final class PerfTest {
                     System.err.println("-pubRate cannot be smaller than 0 (set 0 for unlimited).");
                     return false;
                 }
-                if (_spinLoopCount > 0) {
-                    System.err.println("-spin is not compatible with -pubRate. "
-                            +"Spin value will be set by -pubRate.");
+                if ((i == (argc-1)) || argv[i+1].startsWith("-")){
+                    System.err.println("-pubRate method: spin (default)");
+                } else {
+                    ++i;
+                    //validate pubRate method> spin or sleep
+                    if ("spin".toLowerCase().equals(argv[i].toLowerCase())){
+                        System.err.println("-pubRate method: spin.");
+                    } else if ("sleep".toLowerCase().equals(argv[i].toLowerCase())){
+                        _pubRateMethodSpin = false;
+                        System.err.println("-pubRate method: sleep.");
+                    } else {
+                        System.err.println("<method> for pubRate '" + argv[i] + "' is not valid. It must be 'spin' or 'sleep'.");
+                        return false;
+                    }
                 }
             }
             else if ("-executionTime".toLowerCase().startsWith(argv[i].toLowerCase()))
@@ -556,6 +567,20 @@ public final class PerfTest {
                 _numIter,
                 _latencyCount);
             return false;
+        }
+
+        //manage the parameter: -pubRate -sleep -spin
+        if (_isPub && _pubRate >0) {
+            if (_spinLoopCount > 0) {
+                System.err.printf( "'-spin' is not compatible with -pubRate. " +
+                    "Spin/Sleep value will be set by -pubRate.");
+                _spinLoopCount = 0;
+            }
+            if (_sleepNanosec > 0) {
+                System.err.printf("'-sleep' is not compatible with -pubRate. " +
+                    "Spin/Sleep value will be set by -pubRate.");
+                _sleepNanosec = 0;
+            }
         }
 
         return true;
@@ -784,17 +809,21 @@ public final class PerfTest {
         }
 
         long spinPerUsec = 0;
-
+        long sleepUsec = 1000;
         if (_pubRate > 0) {
-            spinPerUsec = Utility.get_spin_per_microsecond();
-            /* A return value of 0 means accuracy not assured */
-            if (spinPerUsec == 0) {
-                System.err.println("Error initializing spin per microsecond. "
-                    + "-pubRate cannot be used\n"
-                        +"Exiting...");
-                return;
+            if ( _pubRateMethodSpin) {
+                spinPerUsec = Utility.get_spin_per_microsecond();
+                /* A return value of 0 means accuracy not assured */
+                if (spinPerUsec == 0) {
+                    System.err.println("Error initializing spin per microsecond. "
+                        + "-pubRate cannot be used\n"
+                            +"Exiting...");
+                    return;
+                }
+                _spinLoopCount = 1000000*spinPerUsec/_pubRate;
+            } else {
+                _sleepNanosec =1000000000/_pubRate;
             }
-            _spinLoopCount = 1000000*spinPerUsec/_pubRate;
         }
 
         System.err.printf("Waiting to discover %1$d subscriber(s)...\n", _numSubscribers);
@@ -849,16 +878,16 @@ public final class PerfTest {
         boolean sentPing = false;
 
         long time_now = 0, time_last_check = 0, time_delta = 0;
-        long spin_sample_period = 1;
+        long pubRate_sample_period = 1;
         long rate = 0;
 
         time_last_check = getTimeUsec();
 
-        /* Minimum value for spin_sample_period will be 1 so we execute 100 times
+        /* Minimum value for pubRate_sample_period will be 1 so we execute 100 times
            the control loop every second, or every sample if we want to send less
            than 100 samples per second */
         if (_pubRate > 100) {
-            spin_sample_period = _pubRate / 100;
+            pubRate_sample_period = _pubRate / 100;
         }
 
         if (_executionTime > 0) {
@@ -870,33 +899,48 @@ public final class PerfTest {
          */
         for (long loop=0; ((_isScan) || (loop < _numIter)) &&
                            (!testCompleted) ; ++loop ) {
-            if ( _sleepMillisec > 0 ) {
-                sleep(_sleepMillisec);
-            }
 
             /* This if has been included to perform the control loop
                that modifies the publication rate according to -pubRate */
             if ((_pubRate > 0) &&
                     (loop > 0) &&
-                    (loop % spin_sample_period == 0)) {
+                    (loop % pubRate_sample_period == 0)) {
 
                 time_now = getTimeUsec();
 
                 time_delta = time_now - time_last_check;
                 time_last_check = time_now;
-                rate = (spin_sample_period*1000000)/time_delta;
-
-                if (rate > _pubRate) {
-                    _spinLoopCount += spinPerUsec;
-                } else if (rate < _pubRate && _spinLoopCount > spinPerUsec) {
-                    _spinLoopCount -= spinPerUsec;
-                } else if (rate < _pubRate && _spinLoopCount <= spinPerUsec) {
-                    _spinLoopCount = 0;
+                rate = (pubRate_sample_period*1000000)/time_delta;
+                if ( _pubRateMethodSpin) {
+                    if (rate > _pubRate) {
+                        _spinLoopCount += spinPerUsec;
+                    } else if (rate < _pubRate && _spinLoopCount > spinPerUsec) {
+                        _spinLoopCount -= spinPerUsec;
+                    } else if (rate < _pubRate && _spinLoopCount <= spinPerUsec) {
+                        _spinLoopCount = 0;
+                    }
+                } else { //sleep
+                    if (rate > _pubRate) {
+                        _sleepNanosec += sleepUsec; //plus 1 MicroSec
+                    } else if (rate < _pubRate && _sleepNanosec > sleepUsec) {
+                        _sleepNanosec -=  sleepUsec; //less 1 MicroSec
+                    } else if (rate < _pubRate && _sleepNanosec <= sleepUsec) {
+                       _sleepNanosec = 0;
+                    }
                 }
             }
 
             if ( _spinLoopCount > 0 ) {
                 Utility.spin(_spinLoopCount);
+            }
+
+            if ( _sleepNanosec > 0 ) {
+                try {
+                    TimeUnit.NANOSECONDS.sleep(_sleepNanosec);
+                } catch (InterruptedException interrupted) {
+                    System.err.println("Sleep NanoSec does not work.");
+                    return;
+                }
             }
 
 

@@ -357,12 +357,21 @@ For additional information on setting the parameters, see sections:
 
     **Default:** `-sub`
 
--   `-pubRate`
+-   `-pubRate <samples> <method>`
 
     Limit the throughput to the specified number of samples per second.
+    The method to control the throughput rate can be: 'spin' or 'sleep'.
 
-    **Default:** `0` (no limit)  
-    **Range:** `1 to 10000000`
+    If the method selected is 'sleep', RTI Perftest will control the rate by calling the sleep() function between writing samples.
+    If the method selected is 'spin', RTI Perftest will control the rate by calling the spin() function (active wait) between writing samples.
+
+    Note: The resolution provided by using 'spin' is generally better than the 'sleep' one, specially for fast sending rates (where the time needed to spend between sending samples is very small). However this will also result in a higher CPU consumption.
+
+    **Default samples:** `0` (no limit)  
+    **Range samples:** `1 to 10000000`
+    
+    **Default method:** `spin`  
+    **Values method:** `spin or sleep`
 
 -   `-scan`
 

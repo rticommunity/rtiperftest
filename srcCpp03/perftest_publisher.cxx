@@ -128,7 +128,7 @@ perftest_cpp::perftest_cpp() :
         _IsScan(false),
         _UseReadThread(false),
         _SpinLoopCount(0),
-        _SleepMillisec(0),
+        _SleepNanosec(0),
         _LatencyCount(-1),
         _NumSubscribers(1),
         _NumPublishers(1),
@@ -139,6 +139,7 @@ perftest_cpp::perftest_cpp() :
         _LatencyTest(false),
         _IsReliable(true),
         _pubRate(0),
+        _pubRateMethodSpin(true),
         _isKeyed(false),
         _executionTime(0),
         _displayWriterStats(false)
@@ -250,8 +251,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t-verbosity <level>      - Run with different levels of verbosity:\n"
         "\t                          0 - SILENT, 1 - ERROR, 2 - WARNING,\n"
         "\t                          3 - ALL. Default: 1\n"
-        "\t-pubRate <samples/s>    - Limit the throughput to the specified number\n"
-        "\t                          of samples/s, default 0 (don't limit)\n"
+        "\t-pubRate <samples/s> <method>    - Limit the throughput to the specified number\n"
+        "\t                                   of samples/s, default 0 (don't limit)\n"
+        "\t                                   [OPTION] Method to control the throughput can be:\n"
+        "\t                                   'spin' or 'sleep'\n"
+        "\t                                   Default method: spin\n"
         "\t-keyed                  - Use keyed data (default: unkeyed)\n"
         "\t-executionTime <sec>    - Set a maximum duration for the test. The\n"
         "\t                          first condition triggered will finish the\n"
@@ -385,16 +389,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             {
                 std::cerr << "[Error] Missing <count> after -spin" << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
-
             }
-            if (_pubRate > 0) {
-                std::cerr << "[Error] -spin is not compatible with -pubRate. "
-                    "Spin value will be set by -pubRate." << std::endl;
-            } else {
-                /* We only want to use the spin value set by -spin if
-                   -pubRate is not used (default value = 0) */
-                _SpinLoopCount = strtol(argv[i], NULL, 10);
-            }
+            _SpinLoopCount = strtol(argv[i], NULL, 10);
         }
         else if (IS_OPTION(argv[i], "-sleep"))
         {
@@ -404,7 +400,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 throw std::logic_error("[Error] Error parsing commands");
 
             }
-            _SleepMillisec = strtol(argv[i], NULL, 10);
+            _SleepNanosec = strtol(argv[i], NULL, 10);
+            _SleepNanosec *= 1000000;
         }
         else if (IS_OPTION(argv[i], "-latencyCount"))
         {
@@ -556,11 +553,21 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
             }
 
-            if (_SpinLoopCount > 0) {
-                /* Print a message since we already set the spin by using
-                   -spin */
-                std::cerr << "[Error] -spin is not compatible with -pubRate. "
-                    "Spin value will be set by -pubRate." << std::endl;
+            if ((i == (argc-1)) || *argv[i+1] == '-')
+            {
+                std::cerr << "-pubRate method: spin (default)" << std::endl;
+            } else {
+                ++i;
+                //validate pubRate method> spin or sleep
+                if (IS_OPTION(argv[i], "spin")) {
+                    std::cerr << "-pubRate method: spin."<< std::endl;
+                } else if (IS_OPTION(argv[i], "sleep")) {
+                    _pubRateMethodSpin = false;
+                    std::cerr << "-pubRate method: sleep."<< std::endl;
+                } else {
+                    std::cerr << "<method> for pubRate '" << argv[i] <<"' is not valid. It must be 'spin' or 'sleep'." << std::endl;
+                    throw std::logic_error("[Error] Error parsing commands");
+                }
             }
         }
         else if (IS_OPTION(argv[i], "-keyed")) {
@@ -631,6 +638,20 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 << _LatencyCount << std::endl;
         throw std::logic_error("[Error] Error parsing commands");
 
+    }
+
+    //manage the parameter: -pubRate -sleep -spin
+    if (_IsPub && _pubRate >0) {
+        if (_SpinLoopCount > 0) {
+            std::cerr << "'-spin' is not compatible with -pubRate. "
+                "Spin/Sleep value will be set by -pubRate." << std::endl;
+            _SpinLoopCount = 0;
+        }
+        if (_SleepNanosec > 0) {
+            std::cerr << "'-sleep' is not compatible with -pubRate. "
+                "Spin/Sleep value will be set by -pubRate." << std::endl;
+            _SleepNanosec = 0;
+        }
     }
 
     return true;
@@ -1376,16 +1397,20 @@ int perftest_cpp::RunPublisher()
     }
 
     unsigned long long spinPerUsec = 0;
-
+    unsigned long long sleepUsec = 1000;
     if (_pubRate > 0) {
-        spinPerUsec = rti::util::spin_per_microsecond();
-        /* A return value of 0 means accuracy not assured */
-        if (spinPerUsec == 0) {
-            std::cerr << "[Error] Error initializing spin per microsecond. -pubRate cannot be used\n" <<
-                    "Exiting..." << std::endl;
-            return -1;
+        if ( _pubRateMethodSpin) {
+            spinPerUsec = rti::util::spin_per_microsecond();
+            /* A return value of 0 means accuracy not assured */
+            if (spinPerUsec == 0) {
+                std::cerr << "[Error] Error initializing spin per microsecond. -pubRate cannot be used\n" <<
+                        "Exiting..." << std::endl;
+                return -1;
+            }
+            _SpinLoopCount = 1000000*spinPerUsec/_pubRate;
+        } else { // sleep count
+            _SleepNanosec =(unsigned long long) 1000000000/_pubRate;
         }
-        _SpinLoopCount = 1000000*spinPerUsec/_pubRate;
     }
 
     std::cerr << "[Info] Waiting to discover " << _NumSubscribers << " subscribers..." << std::endl;
@@ -1440,7 +1465,7 @@ int perftest_cpp::RunPublisher()
     bool sentPing = false;
 
     unsigned long long time_now = 0, time_last_check = 0, time_delta = 0;
-    unsigned long long spin_sample_period = 1;
+    unsigned long long pubRate_sample_period = 1;
     unsigned long long rate = 0;
 
     time_last_check = perftest_cpp::GetTimeUsec();
@@ -1449,7 +1474,7 @@ int perftest_cpp::RunPublisher()
        the control loop every second, or every sample if we want to send less
        than 100 samples per second */
     if (_pubRate > 100) {
-        spin_sample_period = (unsigned long long)(_pubRate / 100);
+        pubRate_sample_period = (unsigned long long)(_pubRate / 100);
     }
 
     if (_executionTime > 0) {
@@ -1460,33 +1485,44 @@ int perftest_cpp::RunPublisher()
      */
     for ( unsigned long long loop = 0; ((_IsScan) || (loop < _NumIter)) &&
                                      (!_testCompleted) ; ++loop ) {
-        if ( _SleepMillisec > 0 ) {
-            MilliSleep(_SleepMillisec);
-        }
 
         /* This if has been included to perform the control loop
            that modifies the publication rate according to -pubRate */
         if ((_pubRate > 0) &&
                 (loop > 0) &&
-                (loop % spin_sample_period == 0)) {
+                (loop % pubRate_sample_period == 0)) {
 
             time_now = perftest_cpp::GetTimeUsec();
 
             time_delta = time_now - time_last_check;
             time_last_check = time_now;
-            rate = (spin_sample_period*1000000)/time_delta;
+            rate = (pubRate_sample_period*1000000)/time_delta;
 
-            if (rate > (unsigned long long)_pubRate) {
-                _SpinLoopCount += spinPerUsec;
-            } else if (rate < (unsigned long long)_pubRate && _SpinLoopCount > spinPerUsec) {
-                _SpinLoopCount -= spinPerUsec;
-            } else if (rate < (unsigned long long)_pubRate && _SpinLoopCount <= spinPerUsec) {
-                _SpinLoopCount = 0;
+            if ( _pubRateMethodSpin) {
+                if (rate > (unsigned long long)_pubRate) {
+                    _SpinLoopCount += spinPerUsec;
+                } else if (rate < (unsigned long long)_pubRate && _SpinLoopCount > spinPerUsec) {
+                    _SpinLoopCount -= spinPerUsec;
+                } else if (rate < (unsigned long long)_pubRate && _SpinLoopCount <= spinPerUsec) {
+                    _SpinLoopCount = 0;
+                }
+            } else { // sleep
+                if (rate > (unsigned long long)_pubRate) {
+                    _SleepNanosec += sleepUsec; //plus 1 MicroSec
+                } else if (rate < (unsigned long long)_pubRate && _SleepNanosec > sleepUsec) {
+                    _SleepNanosec -=  sleepUsec; //less 1 MicroSec
+                } else if (rate < (unsigned long long)_pubRate && _SleepNanosec <= sleepUsec) {
+                    _SleepNanosec = 0;
+                }
             }
         }
 
         if ( _SpinLoopCount > 0 ) {
             rti::util::spin(_SpinLoopCount);
+        }
+
+        if ( _SleepNanosec > 0 ) {
+            rti::util::sleep(dds::core::Duration(0,_SleepNanosec));
         }
 
         pingID = -1;
