@@ -66,8 +66,8 @@ namespace PerformanceTest
          */
         public void PrintCmdLineHelp()
         {
-            const string usage_string =
-            /**************************************************************************/
+            string usage_string =
+                /**************************************************************************/
             "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n" +
             "\t                          queue, default 50\n" +
             "\t-domain <ID>            - RTI DDS Domain, default 1\n      " +
@@ -75,16 +75,16 @@ namespace PerformanceTest
             "\t                          default perftest_qos_profiles.xml\n" +
             "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>,\n" +
             "\t                          If unspecificed, use all available interfaces\n" +
-            "\t-multicast              - Use multicast to send data, default not to\n"+
-            "\t                          use multicast\n"+
-            "\t-nomulticast            - Do not use multicast to send data (default)\n"+
+            "\t-multicast              - Use multicast to send data, default not to\n" +
+            "\t                          use multicast\n" +
+            "\t-nomulticast            - Do not use multicast to send data (default)\n" +
             "\t-multicastAddress <ipaddr> - Multicast address to use for receiving\n" +
             "\t                          latency/announcement (pub) or \n" +
             "\t                          throughtput (sub) data.\n" +
             "\t                          If unspecified: latency 239.255.1.2,\n" +
             "\t                          announcement 239.255.1.100,\n" +
             "\t                          throughput 239.255.1.1\n" +
-            "\t-bestEffort             - Run test in best effort mode,\n"+
+            "\t-bestEffort             - Run test in best effort mode,\n" +
             "\t                          default reliable\n" +
             "\t-batchSize <bytes>      - Size in bytes of batched message, default 0\n" +
             "\t                          (no batching)\n" +
@@ -109,8 +109,8 @@ namespace PerformanceTest
             "\t                          default 0:0 (use XML QoS Profile value)\n" +
             "\t-dynamicData            - Makes use of the Dynamic Data APIs instead\n" +
             "\t                          of using the generated types.\n" +
-            "\t-durability <0|1|2|3>   - Set durability QOS,\n"+
-            "\t                          0 - volatile, 1 - transient local,\n"+
+            "\t-durability <0|1|2|3>   - Set durability QOS,\n" +
+            "\t                          0 - volatile, 1 - transient local,\n" +
             "\t                          2 - transient, 3 - persistent, default 0\n" +
             "\t-noDirectCommunication  - Use brokered mode for persistent durability\n" +
             "\t-instanceHashBuckets <#count> - Number of hash buckets for instances.\n" +
@@ -130,6 +130,16 @@ namespace PerformanceTest
             "\t                          throughput DataWriter (pub)\n" +
             "\t-enableTurboMode        - Enables the TurboMode feature in the\n" +
             "\t                          throughput DataWriter (pub)\n" +
+            "\t-asynchronous           - Use asynchronous writer\n" +
+            "\t                          Default: Not set\n" +
+            "\t-flowController <flow>  - In the case asynchronous writer use a specific flow controller.\n" +
+            "\t                          There are several flow controller predefined:\n" +
+            "\t                          ";
+            foreach (string flow in valid_flow_controller)
+            {
+                usage_string += flow + "  ";
+            }
+            usage_string += "\n\t                          Default: set default\n" +
             "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n" +
             "\t-secureSign                   - Sign (HMAC) discovery and user data\n" +
             "\t-secureEncryptData            - Encrypt topic (user) data\n" +
@@ -145,8 +155,7 @@ namespace PerformanceTest
             "\t-secureCertFile <file>        - Certificate file <optional>\n" +
             "\t                                Default: \"./resource/secure/sub.pem\"\n" +
             "\t-securePrivateKey <file>      - Private key file <optional>\n" +
-            "\t                                Default: \"./resource/secure/subkey.pem\"\n"
-            ;
+            "\t                                Default: \"./resource/secure/subkey.pem\"\n";
 
             Console.Error.Write(usage_string);
         }
@@ -603,6 +612,35 @@ namespace PerformanceTest
                     {
                         Console.Error.Write("Bad value for -secureDebug\n");
                         return false;
+                    }
+                }
+                else if ("-asynchronous".StartsWith(argv[i], true, null))
+                {
+                    _IsAsynchronous = true;
+                }
+                else if ("-flowController".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing <flow Controller Name> after -flowController\n");
+                        return false;
+                    }
+                    _FlowControllerCustom = argv[i].ToString();
+
+                    // verify if the flow controller name is correct, else use "default"
+                    bool valid_flow_control = false;
+                    foreach (string flow in valid_flow_controller)
+                    {
+                        if (_FlowControllerCustom.Equals(flow))
+                        {
+                            valid_flow_control = true;
+                        }
+                    }
+
+                    if (!valid_flow_control)
+                    {
+                        Console.Error.Write("Bad <flow> '" + _FlowControllerCustom + "' for custom flow controller\n");
+                        _FlowControllerCustom = "default";
                     }
                 }
                 else
@@ -1561,11 +1599,15 @@ namespace PerformanceTest
                 dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = _KeepDurationUsec%1000000;
             }
 
-            if (_isLargeData)
+            if (_isLargeData || _IsAsynchronous)
             {
                 Console.Error.Write("Using asynchronous write for " + topic_name + ".\n");
                 dw_qos.publish_mode.kind = DDS.PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
-                dw_qos.publish_mode.flow_controller_name = "dds.flow_controller.token_bucket.fast_flow";
+                if (!_FlowControllerCustom.StartsWith("default", true, null))
+                {
+                    dw_qos.publish_mode.flow_controller_name = "dds.flow_controller.token_bucket." + _FlowControllerCustom;
+                }
+                Console.Error.Write("Using flow controller " + _FlowControllerCustom + ".\n");
             }
 
             // only force reliability on throughput/latency topics
@@ -1911,6 +1953,9 @@ namespace PerformanceTest
         private bool   _isLargeData = false;
         private bool   _isScan = false;
         private bool   _isPublisher = false;
+        private bool _IsAsynchronous = false;
+        private string _FlowControllerCustom = "default";
+        string[] valid_flow_controller = { "default", "1Gbps", "10Gbps" };
 
         /* Security related variables */
         private bool _secureUseSecure = false;

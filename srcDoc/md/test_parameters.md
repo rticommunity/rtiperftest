@@ -232,8 +232,26 @@ For additional information on setting the parameters, see sections:
 
     See See WaitSet Event Count and Delay.
 
-    **Default:** `5`
+    **Default:** `5`  
     **Range:** `>= 1`
+
+-   `-asynchronous`
+
+    Enable asynchronous publishing in the DataWriter QoS.
+
+    **Default:** `Not set`
+
+-   `-flowController <flow>`
+
+    Specify the name of the flow controller that will be used by the DataWriters.
+    This will only have effect if the DataWriter uses Asynchronous Publishing either because it is using samples greater than 63000 Bytes or because the `-asynchronous` option is present.
+
+    There are several flow controllers predefined:
+
+    ['default','10Gbps','1Gbps'].
+
+    **Default:** `default`  
+    **Values:** `['default','10Gbps','1Gbps']`
 
 ## Test Parameters Only for Publishing Applications <a id="params-pub"></a>
 

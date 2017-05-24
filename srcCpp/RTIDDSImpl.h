@@ -44,6 +44,8 @@ class RTIDDSImpl : public IMessaging
         _isScan = false;
         _isPublisher = false;
         _isDynamicData = false;
+        _IsAsynchronous = false;
+        _FlowControllerCustom = "default";
 
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure = false;
@@ -59,8 +61,6 @@ class RTIDDSImpl : public IMessaging
         _FastHeartbeatPeriod.sec = 0;
         _FastHeartbeatPeriod.nanosec = 0;
 
-        _WaitsetEventCount = 5;
-        _WaitsetDelayUsec = 100;
         THROUGHPUT_MULTICAST_ADDR = "239.255.1.1";
         LATENCY_MULTICAST_ADDR = "239.255.1.2";
         ANNOUNCEMENT_MULTICAST_ADDR = "239.255.1.100";
@@ -136,6 +136,8 @@ class RTIDDSImpl : public IMessaging
     bool         _isScan;
     bool         _isPublisher;
     bool         _isDynamicData;
+    bool         _IsAsynchronous;
+    std::string  _FlowControllerCustom;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

@@ -46,6 +46,8 @@ template <typename T>
 const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME = "nddssecurity";
 #endif
 
+std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
+
 template <typename T>
 RTIDDSImpl<T>::RTIDDSImpl():
         _SendQueueSize(50),
@@ -75,6 +77,8 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _isScan(false),
         _isPublisher(false),
         _isDynamicData(false),
+        _IsAsynchronous(false),
+        _FlowControllerCustom("default"),
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure(false),
         _secureIsSigned(false),
@@ -117,86 +121,98 @@ void RTIDDSImpl<T>::Shutdown()
 template <typename T>
 void RTIDDSImpl<T>::PrintCmdLineHelp() {
     std::string usage_string =
-    "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n"
-    "\t                          queue, default 50\n"
-    "\t-domain <ID>            - RTI DDS Domain, default 1\n"
-    "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles, \n"
-    "\t                          default perftest_qos_profiles.xml\n"
-    "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>.\n"
-    "\t                          If unspecificed, use all available interfaces\n"
-    "\t-multicast              - Use multicast to send data, default not to\n"
-    "\t                          use multicast\n"
-    "\t-nomulticast            - Do not use multicast to send data (default)\n"
-    "\t-multicastAddress <ipaddr>   - Multicast address to use for receiving \n"
-    "\t                          latency/announcement (pub) or \n"
-    "\t                          throughtput(sub) data.\n"
-    "\t                          If unspecified: latency 239.255.1.2,\n"
-    "\t                                          announcement 239.255.1.100,\n"
-    "\t                                          throughput 239.255.1.1\n"
-    "\t-bestEffort             - Run test in best effort mode, default reliable\n"
-    "\t-batchSize <bytes>      - Size in bytes of batched message, default 0\n"
-    "\t                          (no batching)\n"
-    "\t-noPositiveAcks         - Disable use of positive acks in reliable \n"
-    "\t                          protocol, default use positive acks\n"
-    "\t-keepDurationUsec <usec> - Minimum time (us) to keep samples when\n"
-    "\t                          positive acks are disabled, default 1000 us\n"
-    "\t-enableSharedMemory     - Enable use of shared memory transport and \n"
-    "\t                          disable all the other transports, default\n"
-    "\t                          shared memory not enabled\n"
-    "\t-enableUdpv6            - Enable use of the Udpv6 transport and \n"
-    "\t                          disable all the other transports, default\n"
-    "\t                          udpv6 not enabled\n"
-    "\t-enableTcp              - Enable use of TCP transport and disable all\n"
-    "\t                          the other transports, default do not use\n"
-    "\t                          tcp transport\n"
-    "\t-heartbeatPeriod <sec>:<nanosec>     - Sets the regular heartbeat period\n"
-    "\t                          for throughput DataWriter, default 0:0\n"
-    "\t                          (use XML QoS Profile value)\n"
-    "\t-fastHeartbeatPeriod <sec>:<nanosec> - Sets the fast heartbeat period\n"
-    "\t                          for the throughput DataWriter, default 0:0\n"
-    "\t                          (use XML QoS Profile value)\n"
-    "\t-durability <0|1|2|3>   - Set durability QOS, 0 - volatile,\n"
-    "\t                          1 - transient local, 2 - transient, \n"
-    "\t                          3 - persistent, default 0\n"
-    "\t-dynamicData            - Makes use of the Dynamic Data APIs instead\n"
-    "\t                          of using the generated types.\n"
-    "\t-noDirectCommunication  - Use brokered mode for persistent durability\n"
-    "\t-instanceHashBuckets <#count> - Number of hash buckets for instances.\n"
-    "\t                          If unspecified, same as number of\n"
-    "\t                          instances.\n"
-    "\t-waitsetDelayUsec <usec>  - UseReadThread related. Allows you to\n"
-    "\t                          process incoming data in groups, based on the\n"
-    "\t                          time rather than individually. It can be used\n"
-    "\t                          combined with -waitsetEventCount,\n"
-    "\t                          default 100 usec\n"
-    "\t-waitsetEventCount <count> - UseReadThread related. Allows you to\n"
-    "\t                          process incoming data in groups, based on the\n"
-    "\t                          number of samples rather than individually. It\n"
-    "\t                          can be used combined with -waitsetDelayUsec,\n"
-    "\t                          default 5\n"
-    "\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n"
-    "\t                          throughput DataWriter (pub)\n"
-    "\t-enableTurboMode        - Enables the TurboMode feature in the\n"
-    "\t                          throughput DataWriter (pub)\n"
-  #ifdef RTI_SECURE_PERFTEST
-    "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n"
-    "\t-secureSign                   - Sign (HMAC) discovery and user data\n"
-    "\t-secureEncryptData            - Encrypt topic (user) data\n"
-    "\t-secureEncryptSM              - Encrypt RTPS submessages\n"
-    "\t-secureGovernanceFile <file>  - Governance file. If specified, the authentication,\n"
-    "\t                                signing, and encryption arguments are ignored. The\n"
-    "\t                                governance document configuration will be used instead\n"
-    "\t                                Default: built using the secure options.\n"
-    "\t-securePermissionsFile <file> - Permissions file <optional>\n"
-    "\t                                Default: \"./resource/secure/signed_PerftestPermissionsSub.xml\"\n"
-    "\t-secureCertAuthority <file>   - Certificate authority file <optional>\n"
-    "\t                                Default: \"./resource/secure/cacert.pem\"\n"
-    "\t-secureCertFile <file>        - Certificate file <optional>\n"
-    "\t                                Default: \"./resource/secure/sub.pem\"\n"
-    "\t-securePrivateKey <file>      - Private key file <optional>\n"
-    "\t                                Default: \"./resource/secure/subkey.pem\"\n"
-  #endif
-    ;
+            "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n"
+            "\t                          queue, default 50\n"
+            "\t-domain <ID>            - RTI DDS Domain, default 1\n"
+            "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles, \n"
+            "\t                          default perftest_qos_profiles.xml\n"
+            "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>.\n"
+            "\t                          If unspecificed, use all available interfaces\n"
+            "\t-multicast              - Use multicast to send data, default not to\n"
+            "\t                          use multicast\n"
+            "\t-nomulticast            - Do not use multicast to send data (default)\n"
+            "\t-multicastAddress <ipaddr>   - Multicast address to use for receiving \n"
+            "\t                          latency/announcement (pub) or \n"
+            "\t                          throughtput(sub) data.\n"
+            "\t                          If unspecified: latency 239.255.1.2,\n"
+            "\t                                          announcement 239.255.1.100,\n"
+            "\t                                          throughput 239.255.1.1\n"
+            "\t-bestEffort             - Run test in best effort mode, default reliable\n"
+            "\t-batchSize <bytes>      - Size in bytes of batched message, default 0\n"
+            "\t                          (no batching)\n"
+            "\t-noPositiveAcks         - Disable use of positive acks in reliable \n"
+            "\t                          protocol, default use positive acks\n"
+            "\t-keepDurationUsec <usec> - Minimum time (us) to keep samples when\n"
+            "\t                          positive acks are disabled, default 1000 us\n"
+            "\t-enableSharedMemory     - Enable use of shared memory transport and \n"
+            "\t                          disable all the other transports, default\n"
+            "\t                          shared memory not enabled\n"
+            "\t-enableUdpv6            - Enable use of the Udpv6 transport and \n"
+            "\t                          disable all the other transports, default\n"
+            "\t                          udpv6 not enabled\n"
+            "\t-enableTcp              - Enable use of TCP transport and disable all\n"
+            "\t                          the other transports, default do not use\n"
+            "\t                          tcp transport\n"
+            "\t-heartbeatPeriod <sec>:<nanosec>     - Sets the regular heartbeat period\n"
+            "\t                          for throughput DataWriter, default 0:0\n"
+            "\t                          (use XML QoS Profile value)\n"
+            "\t-fastHeartbeatPeriod <sec>:<nanosec> - Sets the fast heartbeat period\n"
+            "\t                          for the throughput DataWriter, default 0:0\n"
+            "\t                          (use XML QoS Profile value)\n"
+            "\t-durability <0|1|2|3>   - Set durability QOS, 0 - volatile,\n"
+            "\t                          1 - transient local, 2 - transient, \n"
+            "\t                          3 - persistent, default 0\n"
+            "\t-dynamicData            - Makes use of the Dynamic Data APIs instead\n"
+            "\t                          of using the generated types.\n"
+            "\t-noDirectCommunication  - Use brokered mode for persistent durability\n"
+            "\t-instanceHashBuckets <#count> - Number of hash buckets for instances.\n"
+            "\t                          If unspecified, same as number of\n"
+            "\t                          instances.\n"
+            "\t-waitsetDelayUsec <usec>  - UseReadThread related. Allows you to\n"
+            "\t                          process incoming data in groups, based on the\n"
+            "\t                          time rather than individually. It can be used\n"
+            "\t                          combined with -waitsetEventCount,\n"
+            "\t                          default 100 usec\n"
+            "\t-waitsetEventCount <count> - UseReadThread related. Allows you to\n"
+            "\t                          process incoming data in groups, based on the\n"
+            "\t                          number of samples rather than individually. It\n"
+            "\t                          can be used combined with -waitsetDelayUsec,\n"
+            "\t                          default 5\n"
+            "\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n"
+            "\t                          throughput DataWriter (pub)\n"
+            "\t-enableTurboMode        - Enables the TurboMode feature in the\n"
+            "\t                          throughput DataWriter (pub)\n"
+            "\t-noXmlQos               - Skip loading the qos profiles from the xml\n"
+            "\t                          profile\n"
+            "\t-asynchronous           - Use asynchronous writer\n"
+            "\t                          Default: Not set\n"
+            "\t-flowController <flow>  - In the case asynchronous writer use a specific flow controller.\n"
+            "\t                          There are several flow controller predefined:\n"
+            "\t                          ";
+    for(int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
+        usage_string+=valid_flow_controller[i] + " ";
+    }
+    usage_string += "\n"
+                    "\t                          Default: set default\n";
+#ifdef RTI_SECURE_PERFTEST
+    usage_string +=
+            "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n"
+            "\t-secureSign                   - Sign (HMAC) discovery and user data\n"
+            "\t-secureEncryptData            - Encrypt topic (user) data\n"
+            "\t-secureEncryptSM              - Encrypt RTPS submessages\n"
+            "\t-secureGovernanceFile <file>  - Governance file. If specified, the authentication,\n"
+            "\t                                signing, and encryption arguments are ignored. The\n"
+            "\t                                governance document configuration will be used instead\n"
+            "\t                                Default: built using the secure options.\n"
+            "\t-securePermissionsFile <file> - Permissions file <optional>\n"
+            "\t                                Default: \"./resource/secure/signed_PerftestPermissionsSub.xml\"\n"
+            "\t-secureCertAuthority <file>   - Certificate authority file <optional>\n"
+            "\t                                Default: \"./resource/secure/cacert.pem\"\n"
+            "\t-secureCertFile <file>        - Certificate file <optional>\n"
+            "\t                                Default: \"./resource/secure/sub.pem\"\n"
+            "\t-securePrivateKey <file>      - Private key file <optional>\n"
+            "\t                                Default: \"./resource/secure/subkey.pem\"\n";
+#endif
 
     std::cerr << usage_string << std::endl;
 }
@@ -502,6 +518,33 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-noXmlQos") ) {
             _UseXmlQos = false;
             std::cerr << "[Info] Not using xml file for QoS." << std::endl;
+        }
+        else if (IS_OPTION(argv[i], "-asynchronous") )
+        {
+            _IsAsynchronous = true;
+        }
+        else if (IS_OPTION(argv[i], "-flowController"))
+        {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                std::cerr << "Missing <flow Controller Name> after -flowController"
+                        << std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            _FlowControllerCustom = argv[i];
+
+            // verify if the flow controller name is correct, else use "default"
+            bool valid_flow_control = false;
+            for(int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
+                if (_FlowControllerCustom == valid_flow_controller[i]) {
+                    valid_flow_control = true;
+                }
+            }
+
+            if (!valid_flow_control)
+            {
+                std::cerr <<"Bad <flow> "<<_FlowControllerCustom <<" for custom flow controller"<< std::endl;
+                _FlowControllerCustom = "default";// used default
+            }
       #ifdef RTI_SECURE_PERFTEST
         } else if (IS_OPTION(argv[i], "-secureSign")) {
             _secureIsSigned = true;
@@ -1482,12 +1525,19 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
                         _KeepDurationUsec % 1000000));
     }
 
-    if ((_isLargeData) && (!_isScan)) {
+    if (((_isLargeData) && (!_isScan)) || _IsAsynchronous) {
         std::cerr << "[Info] Using asynchronous write for "
                   << topic_name << std::endl;
-        dwPublishMode = PublishMode::Asynchronous(
-                "dds.flow_controller.token_bucket.fast_flow");
-    }
+
+       if (_FlowControllerCustom!= "default") {
+           dwPublishMode = PublishMode::Asynchronous(
+               "dds.flow_controller.token_bucket."+_FlowControllerCustom);
+       } else{
+           dwPublishMode = PublishMode::Asynchronous();
+       }
+       std::cerr << "[Info] Using flow controller "
+                 << _FlowControllerCustom << std::endl;
+   }
 
     // only force reliability on throughput/latency topics
     if (topic_name != perftest_cpp::_AnnouncementTopicName) {
