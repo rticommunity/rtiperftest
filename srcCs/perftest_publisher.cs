@@ -446,8 +446,11 @@ namespace PerformanceTest {
                 "\t-verbosity <level>      - Run with different levels of verbosity:\n" +
                 "\t                          0 - SILENT, 1 - ERROR, 2 - WARNING,\n" +
                 "\t                          3 - ALL. Default: 1\n" +
-                "\t-pubRate <samples/s>    - Limit the throughput to the specified number\n"+
-                "\t                          of samples/s, default 0 (don't limit)\n"+
+                "\t-pubRate <samples/s> <method>    - Limit the throughput to the specified number\n" +
+                "\t                                   of samples/s, default 0 (don't limit)\n" +
+                "\t                                   [OPTIONAL] Method to control the throughput can be:\n" +
+                "\t                                   'spin' or 'sleep'\n" +
+                "\t                                   Default method: spin\n" +
                 "\t-keyed                  - Use keyed data (default: unkeyed)\n"+
                 "\t-executionTime <sec>    - Set a maximum duration for the test. The\n"+
                 "\t                          first condition triggered will finish the\n"+
@@ -582,17 +585,9 @@ namespace PerformanceTest {
                         Console.Error.Write("Missing <count> after -spin\n");
                         return false;
                     }
-
-                    if (_pubRate > 0) {
-                        Console.Error.Write("-spin is not compatible with -pubRate. " +
-                            "Spin value will be set by -pubRate.\n");
-                    } else {
-                        /* We only want to use the spin value set by -spin if
-                           -pubRate is not used (default value = 0) */
-                        if ( !UInt64.TryParse(argv[i], out _SpinLoopCount) ) {
-                            Console.Error.Write("Bad spin count\n");
-                            return false;
-                        }
+                    if ( !UInt64.TryParse(argv[i], out _SpinLoopCount) ) {
+                        Console.Error.Write("Bad spin count\n");
+                        return false;
                     }
                 }
                 else if ( "-sleep".StartsWith(argv[i], true, null) ) {
@@ -600,10 +595,11 @@ namespace PerformanceTest {
                         Console.Error.Write("Missing <millisec> after -sleep\n");
                         return false;
                     }
-                    if ( !Int32.TryParse(argv[i], out _SleepMillisec) ) {
+                    if ( !UInt64.TryParse(argv[i], out _SleepNanosec) ) {
                         Console.Error.Write("Bad sleep millisec\n");
                         return false;
                     }
+                    _SleepNanosec *= 1000000;
                 }
                 else if ( "-latencyCount".StartsWith(argv[i], true, null) ) {
                     if (( i == (argc-1)) || argv[++i].StartsWith("-") ) {
@@ -750,12 +746,20 @@ namespace PerformanceTest {
                         Console.Error.Write("-pubRate cannot be smaller than 0 (set 0 for unlimited).\n");
                         return false;
                     }
-                    if (_SpinLoopCount > 0)
-                    {
-                        /* Print a message since we already set the spin by using
-                           -spin */
-                        Console.Error.Write("-spin is not compatible with -pubRate. "+
-                        "Spin value will be set by -pubRate.\n");
+                    if ((i == (argc-1)) || argv[i+1].StartsWith("-")){
+                        Console.Error.Write("-pubRate method: spin (default)");
+                    } else {
+                        ++i;
+                        //validate pubRate method> spin or sleep
+                        if ("spin".Equals(argv[i])){
+                            Console.Error.Write("-pubRate method: spin.");
+                        } else if ("sleep".Equals(argv[i])){
+                            _pubRateMethodSpin = false;
+                            Console.Error.Write("-pubRate method: sleep.");
+                        } else {
+                            Console.Error.Write("<method> for pubRate '" + argv[i] + "' is not valid. It must be 'spin' or 'sleep'.");
+                            return false;
+                        }
                     }
                 }
                 else if ("-executionTime".StartsWith(argv[i], true, null))
@@ -821,6 +825,20 @@ namespace PerformanceTest {
                 Console.Error.Write("numIter ({0}) must be greater than latencyCount ({1}).\n",
                               _NumIter, _LatencyCount);
                 return false;
+            }
+
+            //manage the parameter: -pubRate -sleep -spin
+            if (_IsPub && _pubRate >0) {
+                if (_SpinLoopCount > 0) {
+                    Console.Error.Write( "'-spin' is not compatible with -pubRate. " +
+                        "Spin/Sleep value will be set by -pubRate.");
+                    _SpinLoopCount = 0;
+                }
+                if (_SleepNanosec > 0) {
+                    Console.Error.Write("'-sleep' is not compatible with -pubRate. " +
+                        "Spin/Sleep value will be set by -pubRate.");
+                    _SleepNanosec = 0;
+                }
             }
 
             return true;
@@ -1525,17 +1543,20 @@ namespace PerformanceTest {
             }
 
             ulong spinPerUsec = 0;
-
+            ulong sleepUsec = 1000;
             if (_pubRate > 0) {
-
-                spinPerUsec = NDDS.Utility.get_spin_per_microsecond();
-                /* A return value of 0 means accuracy not assured */
-                if (spinPerUsec == 0) {
-                    Console.Error.Write("Error initializing spin per microsecond. "+
-                        "-pubRate cannot be used\n"+"Exiting.\n");
-                    return;
+                if (_pubRateMethodSpin) {
+                    spinPerUsec = NDDS.Utility.get_spin_per_microsecond();
+                    /* A return value of 0 means accuracy not assured */
+                    if (spinPerUsec == 0) {
+                        Console.Error.Write("Error initializing spin per microsecond. "+
+                            "-pubRate cannot be used\n"+"Exiting.\n");
+                        return;
+                    }
+                    _SpinLoopCount = (1000000*spinPerUsec)/_pubRate;
+                } else {
+                    _SleepNanosec =1000000000/_pubRate;
                 }
-                _SpinLoopCount = (1000000*spinPerUsec)/_pubRate;
             }
 
             Console.Error.Write("Waiting to discover {0} subscribers...\n", _NumSubscribers);
@@ -1582,16 +1603,16 @@ namespace PerformanceTest {
             bool sentPing = false;
 
             ulong time_now = 0, time_last_check = 0, time_delta = 0;
-            ulong spin_sample_period = 1;
+            ulong pubRate_sample_period = 1;
             ulong rate = 0;
 
             time_last_check = GetTimeUsec();
 
-            /* Minimum value for spin_sample_period will be 1 so we execute 100 times
+            /* Minimum value for pubRate_sample_period will be 1 so we execute 100 times
                the control loop every second, or every sample if we want to send less
                than 100 samples per second */
             if (_pubRate > 100) {
-                spin_sample_period = _pubRate / 100;
+                pubRate_sample_period = _pubRate / 100;
             }
 
             if (_executionTime > 0)
@@ -1605,35 +1626,44 @@ namespace PerformanceTest {
             for (ulong loop = 0; ((_IsScan) || (loop < _NumIter)) &&
                                  (!_testCompleted); ++loop)
             {
-                if ( _SleepMillisec > 0 ) {
-                    System.Threading.Thread.Sleep(_SleepMillisec);
-                }
 
                 if ((_pubRate > 0) &&
                 (loop > 0) &&
-                (loop % spin_sample_period == 0)) {
+                (loop % pubRate_sample_period == 0)) {
 
                     time_now = GetTimeUsec();
 
                     time_delta = time_now - time_last_check;
                     time_last_check = time_now;
-                    rate = (spin_sample_period*1000000)/time_delta;
+                    rate = (pubRate_sample_period*1000000)/time_delta;
 
-                    if (rate > _pubRate) {
-                        _SpinLoopCount += spinPerUsec;
-                    }
-                    else if (rate < _pubRate && _SpinLoopCount > spinPerUsec)
-                    {
-                        _SpinLoopCount -= spinPerUsec;
-                    }
-                    else if (rate < _pubRate && _SpinLoopCount <= spinPerUsec)
-                    {
-                        _SpinLoopCount = 0;
+                    if ( _pubRateMethodSpin) {
+                        if (rate > _pubRate) {
+                            _SpinLoopCount += spinPerUsec;
+                        } else if (rate < _pubRate && _SpinLoopCount > spinPerUsec)
+                        {
+                            _SpinLoopCount -= spinPerUsec;
+                        } else if (rate < _pubRate && _SpinLoopCount <= spinPerUsec)
+                        {
+                            _SpinLoopCount = 0;
+                        }
+                    } else {
+                        if (rate > _pubRate) {
+                           _SleepNanosec += sleepUsec; //plus 1 MicroSec
+                        } else if (rate < _pubRate && _SleepNanosec > sleepUsec) {
+                            _SleepNanosec -=  sleepUsec; //less 1 MicroSec
+                        } else if (rate < _pubRate && _SleepNanosec <= sleepUsec) {
+                            _SleepNanosec = 0;
+                        }
                     }
                 }
 
                 if ( _SpinLoopCount > 0 ) {
                     NDDS.Utility.spin(_SpinLoopCount);
+                }
+
+                if ( _SleepNanosec > 0 ) {//sleep Milisec
+                    System.Threading.Thread.Sleep((int)_SleepNanosec/1000000);
                 }
 
                 pingID = -1;
@@ -1865,7 +1895,7 @@ namespace PerformanceTest {
         private bool _IsScan = false;
         private bool  _UseReadThread = false;
         private ulong  _SpinLoopCount = 0;
-        private int  _SleepMillisec = 0;
+        private ulong  _SleepNanosec = 0;
         private int  _LatencyCount = -1;
         private int  _NumSubscribers = 1;
         private int  _NumPublishers  = 1;
@@ -1874,6 +1904,7 @@ namespace PerformanceTest {
         private bool _LatencyTest = false;
         private bool _isReliable = true;
         private ulong _pubRate = 0;
+        private bool _pubRateMethodSpin = true;
         private bool _isKeyed = false;
         private bool _isDynamicData = false;
         private ulong _executionTime = 0;

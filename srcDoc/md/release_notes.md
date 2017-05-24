@@ -59,6 +59,10 @@ In previous releases Asynchronous Publishing was only enabled for the DataWriter
 
 This behavior has been modified: Starting from this release, Asynchronous Publishing will be activated if the samples to send are bigger than 63000 Bytes or if the `-asynchronous` Command-Line Parameter is used. In that case, RTI Perftest will use the `Default` flow controller, however this behavior now can be changed by specifying the `-flowController` option, which allows to specify if using the default flow controller, a 1Gbps flow controller or a 10Gbps one.
 
+### Improved "-pubRate" Command-Line Parameter capabilities
+
+In previous relesases the "-pubRate" command-line option would only use the `spin` function to control the publication rate, that could have negative effects related with high CPU consumption for certain scenarios. Starting from this release, a new modifier has been added to this option so it is possible to use the both "spin" and "sleep" as a way to control the publication rate.
+
 ## What's Fixed in 2.1
 
 ### "--nddshome" Command-Line Option did not Work in `build.bat` Script -- Windows Systems Only

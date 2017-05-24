@@ -80,7 +80,7 @@ class perftest_cpp
     bool _IsScan;
     bool _UseReadThread;
     unsigned long long _SpinLoopCount;
-    int  _SleepMillisec;
+    unsigned long long _SleepNanosec;
     int  _LatencyCount;
     int  _NumSubscribers;
     int  _NumPublishers;
@@ -91,6 +91,7 @@ class perftest_cpp
     bool _LatencyTest;
     bool _IsReliable;
     int _pubRate;
+    bool _pubRateMethodSpin;
     bool _isKeyed;
     unsigned int _executionTime;
     bool _displayWriterStats;
