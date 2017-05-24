@@ -3,7 +3,9 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-const long MAX_BINDATA_SIZE = 131072;
+const long MAX_SYNCHRONOUS_SIZE = 63000;
+const long MAX_BOUNDED_SEQ_SIZE = 63000;
+const long MAX_PERFTEST_SAMPLE_SIZE = 2147483647;
 const long KEY_SIZE = 4;
 
 struct TestData_t {
@@ -14,7 +16,7 @@ struct TestData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, MAX_BINDATA_SIZE> bin_data;
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
 }; //@Extensibility FINAL_EXTENSIBILITY
 
 
@@ -26,5 +28,28 @@ struct TestDataKeyed_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, MAX_BINDATA_SIZE> bin_data;
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
 }; //@Extensibility FINAL_EXTENSIBILITY
+
+struct TestDataLarge_t {
+    octet key[KEY_SIZE];
+
+    long entity_id;
+    unsigned long seq_num;
+    long timestamp_sec;
+    unsigned long timestamp_usec;
+    long latency_ping;
+    sequence<octet> bin_data;
+}; //@Extensibility FINAL_EXTENSIBILITY
+
+struct TestDataKeyedLarge_t {
+    octet key[KEY_SIZE]; //@key
+
+    long entity_id;
+    unsigned long seq_num;
+    long timestamp_sec;
+    unsigned long timestamp_usec;
+    long latency_ping;
+    sequence<octet> bin_data;
+}; //@Extensibility FINAL_EXTENSIBILITY
+

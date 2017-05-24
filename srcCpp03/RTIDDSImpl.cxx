@@ -79,6 +79,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _isDynamicData(false),
         _IsAsynchronous(false),
         _FlowControllerCustom("default"),
+        _useUnbounded(-1),
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure(false),
         _secureIsSigned(false),
@@ -189,7 +190,7 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
             "\t-flowController <flow>  - In the case asynchronous writer use a specific flow controller.\n"
             "\t                          There are several flow controller predefined:\n"
             "\t                          ";
-    for(int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
+    for(unsigned int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
         usage_string+=valid_flow_controller[i] + " ";
     }
     usage_string += "\n"
@@ -249,16 +250,35 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 throw std::logic_error("[Error] Error parsing commands");
             }
 
-            if (_DataLen > TestMessage::MAX_DATA_SIZE) {
+            if (_DataLen > MAX_PERFTEST_SAMPLE_SIZE) {
                 std::cerr << "[Error] -dataLen must be <= "
-                        << TestMessage::MAX_DATA_SIZE << std::endl;
+                        << MAX_PERFTEST_SAMPLE_SIZE << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
+            if (_useUnbounded < 0 &&_DataLen > MAX_BOUNDED_SEQ_SIZE) {
+                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+            }
+        }
+        else if (IS_OPTION(argv[i], "-unbounded")) {
+            if ((i == (argc-1)) || *argv[i+1] == '-')
+            {
+                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+            } else {
+                ++i;
+                _useUnbounded = strtol(argv[i], NULL, 10);
 
-            if (_DataLen > MAX_BINDATA_SIZE) {
-                std::cerr << "[Error] -dataLen must be <= " << MAX_BINDATA_SIZE
-                << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
+                if (_useUnbounded <  perftest_cpp::OVERHEAD_BYTES)
+                {
+                    std::cerr << "[Error] -unbounded <managerMemory> must be >="
+                        << perftest_cpp::OVERHEAD_BYTES << std::endl;
+                    throw std::logic_error("[Error] Error parsing commands");
+                }
+                if (_useUnbounded > MAX_PERFTEST_SAMPLE_SIZE)
+                {
+                    std::cerr << "[Error] -unbounded <managerMemory> must be <="
+                        << MAX_PERFTEST_SAMPLE_SIZE << std::endl;
+                    throw std::logic_error("[Error] Error parsing commands");
+                }
             }
         } else if (IS_OPTION(argv[i], "-sendQueueSize")) {
             if ((i == (argc - 1)) || *argv[++i] == '-') {
@@ -534,7 +554,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 
             // verify if the flow controller name is correct, else use "default"
             bool valid_flow_control = false;
-            for(int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
+            for(unsigned int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
                 if (_FlowControllerCustom == valid_flow_controller[i]) {
                     valid_flow_control = true;
                 }
@@ -630,13 +650,13 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_DataLen > TestMessage::MAX_SYNCHRONOUS_SIZE) {
+    if (_DataLen > MAX_SYNCHRONOUS_SIZE) {
         if (_isScan) {
             std::cerr << "[Info] DataLen will be ignored since -scan is present."
                     << std::endl;
         } else {
             std::cerr << "[Info] Large data settings enabled (-dataLen > "
-                    << TestMessage::MAX_SYNCHRONOUS_SIZE << ")." << std::endl;
+                    << MAX_SYNCHRONOUS_SIZE << ")." << std::endl;
             _isLargeData = true;
         }
     }
@@ -758,7 +778,7 @@ public:
     }
 
     unsigned int getPulledSampleCount() {
-        return _writer->datawriter_protocol_status().pulled_sample_count().total();
+        return (unsigned int)_writer->datawriter_protocol_status().pulled_sample_count().total();
     }
 };
 
@@ -951,7 +971,7 @@ public:
                 this->_message.latency_ping =
                         sample.value<int32_t>("latency_ping");
                 this->_message.size =
-                        (sample.get_values<uint8_t>("bin_data")).size();
+                        (int)(sample.get_values<uint8_t>("bin_data")).size();
 
                 //_message.data = sample.bin_data();
                 _callback->ProcessMessage(this->_message);
@@ -1157,7 +1177,7 @@ public:
             this->_message.timestamp_sec = sample.value<int32_t>("timestamp_sec");
             this->_message.timestamp_usec = sample.value<uint32_t>("timestamp_usec");
             this->_message.latency_ping = sample.value<int32_t>("latency_ping");
-            this->_message.size = (sample.get_values<uint8_t>("bin_data")).size();
+            this->_message.size = (int)(sample.get_values<uint8_t>("bin_data")).size();
 
             ++(this->_data_idx);
             return &_message;
@@ -1186,7 +1206,7 @@ public:
                     this->_message.latency_ping =
                             sample.value<int32_t>("latency_ping");
                     this->_message.size =
-                            (sample.get_values<uint8_t>("bin_data")).size();
+                            (int)(sample.get_values<uint8_t>("bin_data")).size();
                     //_message.data = sample.bin_data();
                     listener->ProcessMessage(this->_message);
                 }
@@ -1517,7 +1537,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
 
 
     // This will allow us to load some properties.
-    std::map<std::string, std::string> properties;
+    std::map<std::string, std::string> properties =
+            dw_qos.policy<Property>().get_all();
 
     if (_UsePositiveAcks) {
         dw_reliableWriterProtocol.disable_positive_acks_min_sample_keep_duration(
@@ -1643,6 +1664,11 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         }
     }
 
+    if (_useUnbounded > 0) {
+        std::cerr << "Unbounded data_writer, memory_manager "<< std::to_string(_useUnbounded) << std::endl;
+        properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] = std::to_string(_useUnbounded).c_str();
+    }
+
     dw_qos << qos_reliability;
     dw_qos << qos_resource_limits;
     dw_qos << qos_dw_resource_limits;
@@ -1692,6 +1718,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         IMessagingCB *callback)
 {
     using namespace dds::core::policy;
+    using namespace rti::core::policy;
 
     std::string qos_profile;
     if (topic_name == perftest_cpp::_ThroughputTopicName) {
@@ -1726,6 +1753,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     ResourceLimits qos_resource_limits = dr_qos.policy<ResourceLimits>();
     Durability qos_durability = dr_qos.policy<Durability>();
 
+    // This will allow us to load some properties.
+    std::map<std::string, std::string> properties =
+            dr_qos.policy<Property>().get_all();
 
     // only force reliability on throughput/latency topics
     if (topic_name != perftest_cpp::_AnnouncementTopicName) {
@@ -1798,9 +1828,15 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 rti::core::policy::TransportMulticastKind::AUTOMATIC);
     }
 
+    if (_useUnbounded > 0) {
+        std::cerr << "Unbounded data_reader, memory_manager "<< std::to_string(_useUnbounded) << std::endl;
+        properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = std::to_string(_useUnbounded).c_str();
+    }
+
     dr_qos << qos_reliability;
     dr_qos << qos_resource_limits;
     dr_qos << qos_durability;
+    dr_qos << Property(properties.begin(), properties.end(), true);
 
     if (!_isDynamicData) {
         dds::topic::Topic<T> topic(_participant, topic_name);
@@ -1862,8 +1898,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
 template class RTIDDSImpl<TestDataKeyed_t>;
 template class RTIDDSImpl<TestData_t>;
+template class RTIDDSImpl<TestDataKeyedLarge_t>;
+template class RTIDDSImpl<TestDataLarge_t>;
 
 #ifdef RTI_WIN32
   #pragma warning(pop)
 #endif
-

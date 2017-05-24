@@ -10,10 +10,11 @@ import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.IMessagingWriter;
 import com.rti.perftest.TestMessage;
 import com.rti.perftest.harness.PerftestTimerTask;
+import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
+import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 import com.rti.ndds.Utility;
 
 import java.util.concurrent.TimeUnit;
-
 
 // ===========================================================================
 
@@ -33,6 +34,9 @@ public final class PerfTest {
 
     // Number of bytes sent in messages besides user data
     public static final int OVERHEAD_BYTES = 28;
+
+    // MAX_PERFTEST_SAMPLE_SIZE for java (2GB-5B)
+    public static final int MAX_PERFTEST_SAMPLE_SIZE_JAVA = 2147483642;
 
     /*
      * PERFTEST-108
@@ -56,7 +60,7 @@ public final class PerfTest {
     /*package*/ static final int FINISHED_SIZE = 1235;
 
     // Flag used to indicate end of test
-    /*package*/ static final int LENGTH_CHANGED_SIZE = 1236;
+    public static final int LENGTH_CHANGED_SIZE = 1236;
 
 
     /*package*/ static int subID = 0;
@@ -64,6 +68,8 @@ public final class PerfTest {
     /*package*/ static int pubID = 0;
 
     /*package*/ static boolean printIntervals = true;
+
+    /*package*/ static boolean _showCpu = false;
 
     // -----------------------------------------------------------------------
     // Private Fields
@@ -78,7 +84,6 @@ public final class PerfTest {
 
     private int     _dataLen = 100;
     private int     _batchSize = 0;
-    //private int     _maxBinDataSize = TestMessage.MAX_DATA_SIZE;
     private int     _samplesPerBatch = 1;
     private long    _numIter = 100000000;
     private boolean _isPub = false;
@@ -158,7 +163,6 @@ public final class PerfTest {
             return;
         }
         _batchSize = _messagingImpl.getBatchSize();
-        //_maxBinDataSize = _messagingImpl.getMaxBinDataSize();
 
         if (_batchSize != 0) {
             _samplesPerBatch = _batchSize/_dataLen;
@@ -197,6 +201,9 @@ public final class PerfTest {
             "\t                          latency pings\n" +
             "\t-dataLen <bytes>        - Set length of payload for each send,\n" +
             "\t                          default 100\n" +
+            "\t-unbounded <managerMemory> - Use unbounded Sequences\n" +
+            "\t                             default if bounded,  managerMemory not set.\n" +
+            "\t                             default if unbounded, managerMemory is "+ MAX_BOUNDED_SEQ_SIZE.VALUE +".\n" +
             "\t-numIter <count>        - Set number of messages to send, default is\n" +
             "\t                          100000000 for Throughput tests or 10000000\n" +
             "\t                          for Latency tests. See -executionTime.\n" +
@@ -214,7 +221,7 @@ public final class PerfTest {
             "\t-numPublishers <count>  - Number of publishers running in test,\n"+
             "\t                          default 1\n" +
             "\t-scan                   - Run test in scan mode, traversing a range of\n" +
-            "\t                          data sizes, 32 - " + TestMessage.MAX_DATA_SIZE + "\n" +
+            "\t                          data sizes, 32 - " + MAX_PERFTEST_SAMPLE_SIZE_JAVA + "\n" +
             "\t-noPrintIntervals       - Don't print statistics at intervals during\n" +
             "\t                          test\n" +
             "\t-useReadThread          - Use separate thread instead of callback to\n"+
@@ -236,6 +243,8 @@ public final class PerfTest {
             "\t                          Default 0 (don't set execution time)\n"+
             "\t-writerStats            - Display the Pulled Sample count stats for\n"+
             "\t                          reliable protocol debugging purposes.\n"+
+            "\t                          Default: Not set\n" +
+            "\t-cpu                   - Display the cpu percent use by the process\n" +
             "\t                          Default: Not set\n";
 
         int argc = argv.length;
@@ -337,9 +346,18 @@ public final class PerfTest {
                     System.err.println("dataLen must be >= " + OVERHEAD_BYTES);
                     return false;
                 }
-                if (_dataLen > TestMessage.MAX_DATA_SIZE) {
-                    System.err.println("dataLen must be <= " + TestMessage.MAX_DATA_SIZE);
+                if (_dataLen > MAX_PERFTEST_SAMPLE_SIZE_JAVA) {
+                    System.err.println("dataLen must be <= " + MAX_PERFTEST_SAMPLE_SIZE_JAVA);
                     return false;
+                }
+            }else if ("-unbounded".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _messagingArgv[_messagingArgc++] = argv[i];
+
+                if ((i == (argc - 1)) || argv[i+1].startsWith("-")) {
+                    //It if not necessary on that class, just the validation and parse
+                } else {
+                    ++i;
+                    _messagingArgv[_messagingArgc++] = argv[i];
                 }
             }
             else if ( "-spin".toLowerCase().startsWith(argv[i].toLowerCase()))
@@ -524,6 +542,10 @@ public final class PerfTest {
                     return false;
                 }
             }
+            else if ("-cpu".toLowerCase().startsWith(argv[i].toLowerCase()))
+            {
+                _showCpu = true;
+            }
             else {
                 _messagingArgv[_messagingArgc++] = argv[i];
             }
@@ -676,7 +698,10 @@ public final class PerfTest {
             if (reader_listener.endTest) {
                 break;
             }
-
+            String outputCpu = "";
+            if (PerfTest._showCpu) {
+                outputCpu = reader_listener.CpuMonitor.get_cpu_instant();
+            }
             if (printIntervals) {
                 if (last_data_length != reader_listener.lastDataLength) {
                     last_data_length = reader_listener.lastDataLength;
@@ -706,10 +731,11 @@ public final class PerfTest {
                 if (last_msgs > 0) {
                     System.out.printf(
                             "Packets: %1$8d  Packets/s: %2$7d  Packets/s(ave): %3$7.0f  " +
-                            "Mbps: %4$7.1f  Mbps(ave): %5$7.1f  Lost: %6$d\n",
+                            "Mbps: %4$7.1f  Mbps(ave): %5$7.1f  Lost: %6$d " + outputCpu + "\n",
                             last_msgs, mps, mps_ave,
                             bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
-                            reader_listener.missingPackets);
+                            reader_listener.missingPackets
+                    );
                 }
             }
         }
@@ -839,7 +865,7 @@ public final class PerfTest {
         // Allocate data and set size
         TestMessage message = new TestMessage();
         message.entity_id = pubID;
-        message.data = new byte[TestMessage.MAX_DATA_SIZE];
+        message.data = new byte[Math.max(_dataLen,LENGTH_CHANGED_SIZE)];
 
         System.err.print("Publishing data...\n");
 
@@ -991,9 +1017,9 @@ public final class PerfTest {
                                 break;
                             }
 
-                            if (new_size > TestMessage.MAX_SYNCHRONOUS_SIZE) {
+                            if (new_size > MAX_SYNCHRONOUS_SIZE.VALUE) {
                                 // last scan
-                                new_size = TestMessage.MAX_SYNCHRONOUS_SIZE - OVERHEAD_BYTES;
+                                new_size = MAX_SYNCHRONOUS_SIZE.VALUE - OVERHEAD_BYTES;
                                 last_scan = true;
                             }
 
@@ -1007,7 +1033,7 @@ public final class PerfTest {
                             switch (scan_number)
                             {
                               case 16:
-                                new_size = TestMessage.MAX_SYNCHRONOUS_SIZE - OVERHEAD_BYTES;
+                                new_size =MAX_SYNCHRONOUS_SIZE.VALUE - OVERHEAD_BYTES;
                                 _latencyCount /= 2;
                                 break;
 

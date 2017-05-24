@@ -23,7 +23,7 @@ import com.rti.dds.subscription.SampleStateKind;
 import com.rti.dds.subscription.ViewStateKind;
 import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.TestMessage;
-import com.rti.perftest.gen.MAX_BINDATA_SIZE;
+import com.rti.perftest.harness.PerfTest;
 
 import java.util.List;
 
@@ -47,9 +47,6 @@ final class RTISubscriber<T> implements IMessagingReader {
     private TypeHelper<T> _myDataType = null;
     
     private TestMessage _message = new TestMessage();
-    {
-        _message.data = new byte[MAX_BINDATA_SIZE.VALUE];
-    }
     private WaitSet _waitset = null;
     private ConditionSeq _activeConditions = new ConditionSeq();
 
@@ -67,6 +64,7 @@ final class RTISubscriber<T> implements IMessagingReader {
     public RTISubscriber(DataReader reader, TypeHelper<T> myDatatype) {
         _reader = reader;
         _myDataType = myDatatype;
+        _message.data = new byte[_myDataType.getMAX_PERFTEST_SAMPLE_SIZE()];
         _dataSeq =(List)_myDataType.createSequence();
 
         // null listener means using receive thread

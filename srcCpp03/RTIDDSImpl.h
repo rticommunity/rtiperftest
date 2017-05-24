@@ -43,11 +43,6 @@ class RTIDDSImpl : public IMessaging
         return _BatchSize;
     }
 
-    int GetMaxBinDataSize()
-    {
-        return MAX_BINDATA_SIZE;
-    }
-
     IMessagingWriter *CreateWriter(const std::string &topic_name);
     // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
     // to get data
@@ -88,6 +83,7 @@ class RTIDDSImpl : public IMessaging
     bool         _isDynamicData;
     bool         _IsAsynchronous;
     std::string  _FlowControllerCustom;
+    int          _useUnbounded;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

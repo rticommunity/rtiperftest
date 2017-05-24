@@ -5,6 +5,7 @@
 
 #include "RTIDDSImpl.h"
 #include "perftest_cpp.h"
+#include "CpuMonitor.h"
 
 #if defined(RTI_WIN32)
   #define STRNCASECMP _strnicmp
@@ -18,6 +19,7 @@
 int  perftest_cpp::_SubID = 0;
 int  perftest_cpp::_PubID = 0;
 bool perftest_cpp::_PrintIntervals = true;
+bool perftest_cpp::_showCpu = false;
 
 /* Clock related variables */
 struct RTIClock* perftest_cpp::_Clock = RTIHighResolutionClock_new();
@@ -87,12 +89,23 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
-    if (_isKeyed){
-        fprintf(stderr, "Using keyed Data.\n");
-        _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
+    if (_useUnbounded < 0) { //unbounded is not set
+        if (_isKeyed) {
+            fprintf(stderr, "Using Keyed Data.\n");
+            _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
+        } else {
+            fprintf(stderr, "Using Unkeyed Data.\n");
+            _MessagingImpl = new RTIDDSImpl<TestData_t>();
+        }
     } else {
-        fprintf(stderr, "Using unkeyed Data.\n");
-        _MessagingImpl = new RTIDDSImpl<TestData_t>();
+        fprintf(stderr, "Using Unbounded Sequences.\n");
+        if (_isKeyed) {
+            fprintf(stderr, "Using Keyed Data.\n");
+            _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
+        } else {
+            fprintf(stderr, "Using Unkeyed Data.\n");
+            _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
+        }
     }
 
     if ( !_MessagingImpl->Initialize(_MessagingArgc, _MessagingArgv) )
@@ -101,7 +114,6 @@ int perftest_cpp::Run(int argc, char *argv[])
     }
 
     _BatchSize = _MessagingImpl->GetBatchSize();
-    _maxBinDataSize = _MessagingImpl->GetMaxBinDataSize();
 
     if (_BatchSize != 0) {
         _SamplesPerBatch = _BatchSize/_DataLen;
@@ -160,7 +172,6 @@ perftest_cpp::perftest_cpp()
 {
     _DataLen = 100;
     _BatchSize = 0;
-    _maxBinDataSize = TestMessage::MAX_DATA_SIZE;
     _SamplesPerBatch = 1;
     _NumIter = 100000000;
     _IsPub = false;
@@ -179,6 +190,7 @@ perftest_cpp::perftest_cpp()
     _IsReliable = true;
     _pubRate = 0;
     _isKeyed = false;
+    _useUnbounded = -1;
     _executionTime = 0;
     _displayWriterStats = false;
     _pubRateMethodSpin = true;
@@ -224,6 +236,9 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                          latency pings\n"
         "\t-dataLen <bytes>        - Set length of payload for each send\n"
         "\t                          default 100.\n"
+        "\t-unbounded <managerMemory> - Use unbounded Sequences\n"
+        "\t                             default if bounded,  managerMemory not set.\n"
+        "\t                             default if unbounded, managerMemory is 63000.\n"
         "\t-numIter <count>        - Set number of messages to send, default is\n"
         "\t                          100000000 for Throughput tests or 10000000\n"
         "\t                          for Latency tests. See -executionTime.\n"
@@ -263,6 +278,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                          Default 0 (don't set execution time)\n"
         "\t-writerStats            - Display the Pulled Sample count stats for\n"
         "\t                          reliable protocol debugging purposes.\n"
+        "\t                          Default: Not set\n"
+        "\t-cpu                   - Display the cpu percent use by the process\n"
         "\t                          Default: Not set\n";
 
     if (argc < 1)
@@ -380,10 +397,52 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 fprintf(stderr, "-dataLen must be >= %d\n", OVERHEAD_BYTES);
                 return false;
             }
-            if (_DataLen > TestMessage::MAX_DATA_SIZE)
+            if (_DataLen > MAX_PERFTEST_SAMPLE_SIZE)
             {
-                fprintf(stderr,"-dataLen must be <= %d\n", TestMessage::MAX_DATA_SIZE);
+                fprintf(stderr,"-dataLen must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
                 return false;
+            }
+
+            if (_useUnbounded < 0 &&_DataLen > MAX_BOUNDED_SEQ_SIZE) {
+                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+            }
+        }
+        else if (IS_OPTION(argv[i], "-unbounded")) {
+            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
+
+            if (_MessagingArgv[_MessagingArgc] == NULL) {
+                fprintf(stderr, "Problem allocating memory\n");
+                return false;
+            }
+
+            _MessagingArgc++;
+
+            if ((i == (argc-1)) || *argv[i+1] == '-')
+            {
+                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+            } else {
+                ++i;
+                _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
+
+                if (_MessagingArgv[_MessagingArgc] == NULL) {
+                    fprintf(stderr, "Problem allocating memory\n");
+                    return false;
+                }
+
+                _MessagingArgc++;
+
+                _useUnbounded = strtol(argv[i], NULL, 10);
+
+                if (_useUnbounded < OVERHEAD_BYTES)
+                {
+                    fprintf(stderr, "-unbounded <managerMemory> must be >= %d\n", OVERHEAD_BYTES);
+                    return false;
+                }
+                if (_useUnbounded > MAX_PERFTEST_SAMPLE_SIZE)
+                {
+                    fprintf(stderr,"-unbounded <managerMemory> must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
+                    return false;
+                }
             }
         }
         else if (IS_OPTION(argv[i], "-spin"))
@@ -579,7 +638,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             }
             _executionTime = (unsigned int) strtol(argv[i], NULL, 10);
 
-        } else {
+        } else if (IS_OPTION(argv[i], "-cpu"))
+        {
+            _showCpu = true;
+        } else
+        {
             _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
 
             if (_MessagingArgv[_MessagingArgc] == NULL) {
@@ -674,6 +737,7 @@ class ThroughputListener : public IMessagingCB
 
     int _num_publishers;
     std::vector<int> _finished_publishers;
+    CpuMonitor cpu;
 
   public:
 
@@ -775,13 +839,19 @@ class ThroughputListener : public IMessagingCB
 
             if (_finished_publishers.size() >= (unsigned int)_num_publishers)
             {
+                std::string outputCpu = "";
+                if (perftest_cpp::_showCpu) {
+                    outputCpu = cpu.get_cpu_average();
+                }
                 printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
-                       "Mbps(ave): %7.1lf  Lost: %llu\n",
+                       "Mbps(ave): %7.1lf  Lost: %llu %s\n",
                        interval_data_length + perftest_cpp::OVERHEAD_BYTES,
                        interval_packets_received,
                        interval_packets_received*1000000/interval_time,
                        interval_bytes_received*1000000.0/interval_time*8.0/1000.0/1000.0,
-                       interval_missing_packets);
+                       interval_missing_packets,
+                       outputCpu.c_str()
+                );
                 fflush(stdout);
             }
             return;
@@ -819,13 +889,19 @@ class ThroughputListener : public IMessagingCB
                 interval_missing_packets = missing_packets;
                 interval_data_length = last_data_length;
 
+                std::string outputCpu = "";
+                if (perftest_cpp::_showCpu) {
+                    outputCpu = cpu.get_cpu_average();
+                }
                 printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
-                       "Mbps(ave): %7.1lf  Lost: %llu\n",
+                       "Mbps(ave): %7.1lf  Lost: %llu %s\n",
                        interval_data_length + perftest_cpp::OVERHEAD_BYTES,
                        interval_packets_received,
                        interval_packets_received*1000000/interval_time,
                        interval_bytes_received*1000000.0/interval_time*8.0/1000.0/1000.0,
-                       interval_missing_packets);
+                       interval_missing_packets,
+                       outputCpu.c_str()
+                );
                 fflush(stdout);
             }
 
@@ -986,6 +1062,10 @@ int perftest_cpp::Subscriber()
     double mps_ave = 0.0, bps_ave = 0.0;
     unsigned long long msgsent, bytes, last_msgs, last_bytes;
 
+    if (perftest_cpp::_showCpu) {
+         reader_listener->cpu.initialize();
+    }
+
     now = GetTimeUsec();
 
     while (true) {
@@ -1027,14 +1107,19 @@ int perftest_cpp::Subscriber()
             mps_ave = mps_ave + (double)(mps - mps_ave) / (double)ave_count;
 
             if (last_msgs > 0) {
+                std::string outputCpu = "";
+                if (perftest_cpp::_showCpu) {
+                    outputCpu = reader_listener->cpu.get_cpu_instant();
+                }
                 printf("Packets: %8llu  Packets/s: %7llu  Packets/s(ave): %7.0lf  "
-                       "Mbps: %7.1lf  Mbps(ave): %7.1lf  Lost: %llu\n",
+                       "Mbps: %7.1lf  Mbps(ave): %7.1lf  Lost: %llu %s\n",
                         last_msgs, mps, mps_ave,
                         bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
-                        reader_listener->missing_packets);
+                        reader_listener->missing_packets,
+                        outputCpu.c_str()
+                );
                 fflush(stdout);
             }
-
         }
     }
 
@@ -1093,6 +1178,7 @@ class LatencyListener : public IMessagingCB
     IMessagingWriter *_writer;
  public:
     IMessagingReader *_reader;
+    CpuMonitor cpu;
 
   public:
 
@@ -1147,6 +1233,7 @@ class LatencyListener : public IMessagingCB
         unsigned int usec;
         double latency_ave;
         double latency_std;
+        std::string outputCpu = "";
 
         now = perftest_cpp::GetTimeUsec();
 
@@ -1186,16 +1273,24 @@ class LatencyListener : public IMessagingCB
                 std::sort(_latency_history, _latency_history+count);
                 latency_ave = (double)latency_sum / count;
                 latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
+
+                if (perftest_cpp::_showCpu) {
+                    outputCpu = cpu.get_cpu_average();
+                }
+
                 printf("Length: %5d  Latency: Ave %6.0lf us  Std %6.1lf us  "
-                       "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us  99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us\n",
+                       "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us  99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
                        last_data_length + perftest_cpp::OVERHEAD_BYTES,
                        latency_ave, latency_std, latency_min, latency_max,
                        _latency_history[count*50/100],
                        _latency_history[count*90/100],
                        _latency_history[count*99/100],
                        _latency_history[(int)(count*(9999.0/10000))],
-                       _latency_history[(int)(count*(999999.0/1000000))]);
+                       _latency_history[(int)(count*(999999.0/1000000))],
+                       outputCpu.c_str()
+                );
                 fflush(stdout);
+
                 latency_sum = 0;
                 latency_sum_square = 0;
                 latency_min = 0;
@@ -1291,8 +1386,17 @@ class LatencyListener : public IMessagingCB
                 latency_std = sqrt(
                     (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-                printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us  Min %6lu us  Max %6lu\n",
-                       latency, latency_ave, latency_std, latency_min, latency_max);
+                if (perftest_cpp::_showCpu) {
+                    outputCpu = cpu.get_cpu_instant();
+                }
+                printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us  Min %6lu us  Max %6lu %s\n",
+                       latency,
+                       latency_ave,
+                       latency_std,
+                       latency_min,
+                       latency_max,
+                       outputCpu.c_str()
+                );
             }
         }
 
@@ -1340,6 +1444,7 @@ static void *LatencyReadThread(void *arg)
  */
 int perftest_cpp::Publisher()
 {
+    LatencyListener *reader_listener = NULL;
     AnnouncementListener  *announcement_reader_listener = NULL;
     IMessagingReader *announcement_reader;
     unsigned long num_latency;
@@ -1381,7 +1486,7 @@ int perftest_cpp::Publisher()
         {
             // create latency pong reader
             // the writer is passed for ping-pong notification in LatencyTest
-            LatencyListener  *reader_listener = new LatencyListener(
+            reader_listener = new LatencyListener(
                     num_latency,
                     NULL,
                     _LatencyTest ? writer : NULL);
@@ -1402,7 +1507,7 @@ int perftest_cpp::Publisher()
                 fprintf(stderr,"Problem creating latency reader.\n");
                 return -1;
             }
-            LatencyListener  *reader_listener = new LatencyListener(
+            reader_listener = new LatencyListener(
                     num_latency,
                     reader,
                     _LatencyTest ? writer : NULL);
@@ -1468,18 +1573,21 @@ int perftest_cpp::Publisher()
     // Allocate data and set size
     TestMessage message;
     message.entity_id = _PubID;
-    message.data = new char[TestMessage::MAX_DATA_SIZE];
+    message.data = new char[(std::max)(_DataLen,LENGTH_CHANGED_SIZE)];
 
     fprintf(stderr,"Publishing data...\n");
     fflush(stderr);
 
+    if ( perftest_cpp::_showCpu && _PubID == 0) {
+        reader_listener->cpu.initialize();
+    }
     // initialize data pathways by sending some initial pings
     if (_InstanceCount > initializeSampleCount) {
         initializeSampleCount = _InstanceCount;
     }
 
-    if (INITIALIZE_SIZE > MAX_BINDATA_SIZE) {
-        fprintf(stderr,"Error: INITIALIZE_SIZE > MAX_BINDATA_SIZE\n");
+    if (INITIALIZE_SIZE > MAX_PERFTEST_SAMPLE_SIZE) {
+        fprintf(stderr,"Error: INITIALIZE_SIZE > MAX_PERFTEST_SAMPLE_SIZE\n");
         return -1;
     }
 
@@ -1612,9 +1720,9 @@ int perftest_cpp::Publisher()
                             break;
                         }
 
-                        if(new_size > TestMessage::MAX_SYNCHRONOUS_SIZE) {
+                        if (new_size > MAX_SYNCHRONOUS_SIZE) {
                             // last scan
-                            new_size = TestMessage::MAX_SYNCHRONOUS_SIZE - OVERHEAD_BYTES;
+                            new_size = MAX_SYNCHRONOUS_SIZE - OVERHEAD_BYTES;
                             last_scan = true;
                         }
 
@@ -1628,8 +1736,7 @@ int perftest_cpp::Publisher()
                         switch (scan_number)
                         {
                             case 16:
-                                new_size = TestMessage::MAX_SYNCHRONOUS_SIZE
-                                           - OVERHEAD_BYTES;
+                                new_size = MAX_SYNCHRONOUS_SIZE - OVERHEAD_BYTES;
                                 _LatencyCount /= 2;
                              break;
 
@@ -1687,7 +1794,6 @@ int perftest_cpp::Publisher()
                 unsigned long long now = GetTimeUsec();
                 message.timestamp_sec = (int)((now >> 32) & 0xFFFFFFFF);
                 message.timestamp_usec = (unsigned int)(now & 0xFFFFFFFF);
-
                 ++num_pings;
                 ping_index_in_batch = (ping_index_in_batch + 1) % _SamplesPerBatch;
                 sentPing = true;
@@ -1702,6 +1808,7 @@ int perftest_cpp::Publisher()
         message.seq_num = (unsigned long) loop;
         message.latency_ping = pingID;
         writer->Send(message);
+
         if(_LatencyTest && sentPing) {
             if (_IsReliable) {
                 writer->waitForPingResponse();
@@ -1725,8 +1832,8 @@ int perftest_cpp::Publisher()
 
     // Test has finished, send end of test message, send multiple
     // times in case of best effort
-    if (FINISHED_SIZE > MAX_BINDATA_SIZE) {
-        fprintf(stderr,"Error: FINISHED_SIZE < MAX_BINDATA_SIZE\n");
+    if (FINISHED_SIZE > MAX_PERFTEST_SAMPLE_SIZE) {
+        fprintf(stderr,"Error: FINISHED_SIZE < MAX_PERFTEST_SAMPLE_SIZE\n");
         return -1;
     }
     message.size = FINISHED_SIZE;

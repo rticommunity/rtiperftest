@@ -20,9 +20,6 @@ class TestMessage
     unsigned int timestamp_usec;
     int          latency_ping;
 
-    static const int MAX_SYNCHRONOUS_SIZE = 63000;
-    static const int MAX_DATA_SIZE = 131072;
-
     TestMessage():
         size(0),
         entity_id(0),
@@ -104,10 +101,6 @@ class IMessaging
     // in bytes
     virtual int GetBatchSize() = 0;
 
-    // Used only for scan mode.
-    // The maximum size of a message's binary payload. If the size
-    // exceeds this during a scan, the test will stop.
-    virtual int GetMaxBinDataSize() = 0;
 
     virtual IMessagingWriter *CreateWriter(const std::string &topic_name) = 0;
 

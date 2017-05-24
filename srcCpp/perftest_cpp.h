@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <iostream>
-
+#include <string>
 #include <vector>
 // STL needed for sorting
 #include <algorithm>
@@ -42,10 +42,10 @@ class perftest_cpp
   public:
     perftest_cpp();
     ~perftest_cpp();
-    
+
     int Run(int argc, char *argv[]);
     bool ParseConfig(int argc, char *argv[]);
-    
+
   private:
     int Publisher();
     int Subscriber();
@@ -73,7 +73,6 @@ class perftest_cpp
   private:
     int  _DataLen;
     int  _BatchSize;
-    int  _maxBinDataSize;
     int  _SamplesPerBatch;
     unsigned long long _NumIter;
     bool _IsPub;
@@ -93,6 +92,7 @@ class perftest_cpp
     int _pubRate;
     bool _pubRateMethodSpin;
     bool _isKeyed;
+    int _useUnbounded;
     unsigned int _executionTime;
     bool _displayWriterStats;
 
@@ -111,6 +111,7 @@ class perftest_cpp
     static int  _SubID;
     static int  _PubID;
     static bool _PrintIntervals;
+    static bool _showCpu;
 
     static struct RTIClock *_Clock;
     static struct RTINtpTime _ClockTime_aux;
@@ -124,15 +125,15 @@ class perftest_cpp
   #ifdef RTI_WIN32
     static LARGE_INTEGER _ClockFrequency;
   #endif
-    
+
     // Number of bytes sent in messages besides user data
     static const int OVERHEAD_BYTES = 28;
-    
+
     // When running a scan, this determines the number of
-    // latency pings that will be sent before increasing the 
+    // latency pings that will be sent before increasing the
     // data size
     static const int NUM_LATENCY_PINGS_PER_DATA_SIZE = 1000;
-    
+
     // Flag used to indicate message is used for initialization only
     static const int INITIALIZE_SIZE = 1234;
     // Flag used to indicate end of test

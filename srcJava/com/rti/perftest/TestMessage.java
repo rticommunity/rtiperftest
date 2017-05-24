@@ -12,8 +12,6 @@ package com.rti.perftest;
  * Message class.
  */
 public class TestMessage {
-    public static final int MAX_SYNCHRONOUS_SIZE = 63000;
-    public static final int MAX_DATA_SIZE = 131072;
     
     public byte[] data;
     public int    size;

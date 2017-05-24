@@ -16,16 +16,19 @@ import com.rti.dds.typecode.TypeCode;
 import com.rti.perftest.TestMessage;
 import com.rti.perftest.gen.TestDataKeyed_tTypeSupport;
 import com.rti.perftest.gen.TestData_tTypeSupport;
+import com.rti.perftest.harness.PerfTest;
 
 public class DynamicDataTypeHelper implements TypeHelper<DynamicData> {
 
-    public DynamicDataTypeHelper(TypeCode typeCode, boolean isKeyed) {
+    public DynamicDataTypeHelper(TypeCode typeCode, boolean isKeyed, int MAX_PERFTEST_SAMPLE_SIZE) {
         _isKeyed = isKeyed;
         _myData = new DynamicData(typeCode, DynamicData.PROPERTY_DEFAULT);
+        _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
     }
 
-    public DynamicDataTypeHelper(DynamicData myData) {
+    public DynamicDataTypeHelper(DynamicData myData,int MAX_PERFTEST_SAMPLE_SIZE) {
         _myData = myData;
+        _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
     }
 
     public void fillKey(int value) {
@@ -103,7 +106,7 @@ public class DynamicDataTypeHelper implements TypeHelper<DynamicData> {
     }
 
     public TypeHelper<DynamicData> clone() {
-        return new DynamicDataTypeHelper(_myData);
+        return new DynamicDataTypeHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
     }
 
     @SuppressWarnings("rawtypes")
@@ -111,6 +114,12 @@ public class DynamicDataTypeHelper implements TypeHelper<DynamicData> {
         return new DynamicDataSeq();
     }
 
+    @SuppressWarnings("rawtypes")
+    public int getMAX_PERFTEST_SAMPLE_SIZE() {
+        return _MAX_PERFTEST_SAMPLE_SIZE;
+    }
+
+    private int _MAX_PERFTEST_SAMPLE_SIZE = PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA;
     private DynamicData _myData;
     private boolean _isKeyed;
 

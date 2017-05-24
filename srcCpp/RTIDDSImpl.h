@@ -7,6 +7,7 @@
  */
 
 #include <string>
+#include <algorithm>
 #include "MessagingIF.h"
 #include "perftestSupport.h"
 
@@ -46,6 +47,7 @@ class RTIDDSImpl : public IMessaging
         _isDynamicData = false;
         _IsAsynchronous = false;
         _FlowControllerCustom = "default";
+        _useUnbounded = -1;
 
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure = false;
@@ -90,8 +92,6 @@ class RTIDDSImpl : public IMessaging
     void Shutdown();
 
     int GetBatchSize() { return _BatchSize; }
-
-    int GetMaxBinDataSize() { return MAX_BINDATA_SIZE; }
 
     IMessagingWriter *CreateWriter(const char *topic_name);
 
@@ -138,6 +138,7 @@ class RTIDDSImpl : public IMessaging
     bool         _isDynamicData;
     bool         _IsAsynchronous;
     std::string  _FlowControllerCustom;
+    int _useUnbounded;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

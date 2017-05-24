@@ -205,7 +205,7 @@ function build_cpp()
     ##############################################################################
     # Generate files for srcCpp
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h\" -additionalSourceFiles RTIDDSImpl.cxx -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h\" -additionalSourceFiles  \"RTIDDSImpl.cxx CpuMonitor.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${classic_cpp_lang_string}."
@@ -259,7 +259,7 @@ function build_cpp03()
     ##############################################################################
     # Generate files for srcCpp03
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h\" -additionalSourceFiles RTIDDSImpl.cxx -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h  CpuMonitor.h\" -additionalSourceFiles \"RTIDDSImpl.cxx CpuMonitor.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${modern_cpp_lang_string}."
@@ -322,7 +322,7 @@ function build_java()
     ##############################################################################
     # Generate files for srcJava
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${java_lang_string} -replace -package com.rti.perftest.gen -d \"${java_folder}\" \"${idl_location}/perftest.idl\""
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${java_lang_string} -unboundedSupport -replace -package com.rti.perftest.gen -d \"${java_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${java_lang_string}."

@@ -63,6 +63,10 @@ This behavior has been modified: Starting from this release, Asynchronous Publis
 
 In previous relesases the "-pubRate" command-line option would only use the `spin` function to control the publication rate, that could have negative effects related with high CPU consumption for certain scenarios. Starting from this release, a new modifier has been added to this option so it is possible to use the both "spin" and "sleep" as a way to control the publication rate.
 
+### Add command line option to get the CPU consumption of the process
+
+Starting in this release, it is possible to display the *CPU consumption* of the *RTI Perftest* process by adding the Command-Line Parameter `-cpu` using a Monitor.
+
 ## What's Fixed in 2.1
 
 ### "--nddshome" Command-Line Option did not Work in `build.bat` Script -- Windows Systems Only

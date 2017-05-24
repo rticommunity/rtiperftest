@@ -253,6 +253,12 @@ For additional information on setting the parameters, see sections:
     **Default:** `default`  
     **Values:** `['default','10Gbps','1Gbps']`
 
+-   `-cpu`
+
+    Display the `cpu` used by the *RTI Perftest* process.
+
+    **Default:** `not set`  
+
 ## Test Parameters Only for Publishing Applications <a id="params-pub"></a>
 
 - `-batchSize <bytes>`

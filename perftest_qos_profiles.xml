@@ -342,7 +342,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
             </disable_positive_acks_min_sample_keep_duration>
           </rtps_reliable_writer>
         </protocol>
-        
+
       </datawriter_qos>
 
       <!-- === DataReader Configuration: ================================= -->

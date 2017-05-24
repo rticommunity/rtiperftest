@@ -11,16 +11,21 @@ import com.rti.perftest.TestMessage;
 import com.rti.perftest.gen.TestData_t;
 import com.rti.perftest.gen.TestData_tSeq;
 import com.rti.perftest.gen.TestData_tTypeSupport;
+import com.rti.perftest.harness.PerfTest;
+
 
 public class DataTypeHelper implements TypeHelper<TestData_t> {
 
-    public DataTypeHelper() {
-            _myData = new TestData_t();
+    public DataTypeHelper(int MAX_PERFTEST_SAMPLE_SIZE) {
+        _myData = new TestData_t();
+        _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+
     }
 
 
-    public DataTypeHelper(TestData_t myData) {
+    public DataTypeHelper(TestData_t myData, int MAX_PERFTEST_SAMPLE_SIZE) {
         _myData = myData;
+        _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
     }
 
     public void fillKey(int value) {
@@ -43,7 +48,7 @@ public class DataTypeHelper implements TypeHelper<TestData_t> {
 
     }
 
-    @SuppressWarnings("rawtypes") 
+    @SuppressWarnings("rawtypes")
     public TestMessage copyFromSeqToMessage(List dataSeq, int index) {
 
         TestData_t msg = (TestData_t)((List)dataSeq).get(index);
@@ -78,7 +83,7 @@ public class DataTypeHelper implements TypeHelper<TestData_t> {
     }
 
     public TypeHelper<TestData_t> clone() {
-        return new DataTypeHelper(_myData);
+        return new DataTypeHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
     }
 
     @SuppressWarnings("rawtypes")
@@ -86,6 +91,12 @@ public class DataTypeHelper implements TypeHelper<TestData_t> {
         return new TestData_tSeq();
     }
 
+    @SuppressWarnings("rawtypes")
+    public int getMAX_PERFTEST_SAMPLE_SIZE() {
+        return _MAX_PERFTEST_SAMPLE_SIZE;
+    }
+
+    private int _MAX_PERFTEST_SAMPLE_SIZE = PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA;
     private TestData_t _myData;
 
 }
