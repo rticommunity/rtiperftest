@@ -79,7 +79,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _isDynamicData(false),
         _IsAsynchronous(false),
         _FlowControllerCustom("default"),
-        _useUnbounded(-1),
+        _useUnbounded(0),
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure(false),
         _secureIsSigned(false),
@@ -255,7 +255,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                         << MAX_PERFTEST_SAMPLE_SIZE << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
-            if (_useUnbounded < 0 &&_DataLen > MAX_BOUNDED_SEQ_SIZE) {
+            if (_useUnbounded == 0 && _DataLen > MAX_BOUNDED_SEQ_SIZE) {
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
             }
         }
@@ -677,7 +677,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
      * nor if the sample is bigger (in this case we avoid the checking in the
      * middleware).
      */
-     if (_BatchSize > 0 && _BatchSize <= _DataLen) {
+     if (_BatchSize > 0 && (unsigned)_BatchSize <= _DataLen) {
          std::cerr << "[Info] Batching dissabled: BatchSize (" << _BatchSize
                    << ") is equal or smaller than the sample size (" << _DataLen
                    << ")."  << std::endl;
@@ -1452,7 +1452,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         }
 
         // Shem transport properties
-        int received_message_count_max = 1024 * 1024 * 2 / _DataLen;
+        int received_message_count_max = 1024 * 1024 * 2 / (int)_DataLen;
 
         if (received_message_count_max < 1) {
             received_message_count_max = 1;
@@ -1665,8 +1665,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     }
 
     if (_useUnbounded > 0) {
-        std::cerr << "Unbounded data_writer, memory_manager "<< std::to_string(_useUnbounded) << std::endl;
-        properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] = std::to_string(_useUnbounded).c_str();
+        char buf[10];
+        sprintf(buf, "%lu", _useUnbounded);
+        properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] = buf;
     }
 
     dw_qos << qos_reliability;
@@ -1829,8 +1830,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     if (_useUnbounded > 0) {
-        std::cerr << "Unbounded data_reader, memory_manager "<< std::to_string(_useUnbounded) << std::endl;
-        properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = std::to_string(_useUnbounded).c_str();
+        char buf[10];
+        sprintf(buf, "%lu", _useUnbounded);
+        properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = buf;
     }
 
     dr_qos << qos_reliability;

@@ -47,7 +47,7 @@ class RTIDDSImpl : public IMessaging
         _isDynamicData = false;
         _IsAsynchronous = false;
         _FlowControllerCustom = "default";
-        _useUnbounded = -1;
+        _useUnbounded = 0;
 
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure = false;
@@ -110,7 +110,7 @@ class RTIDDSImpl : public IMessaging
   #endif
 
     int          _SendQueueSize;
-    int          _DataLen;
+    unsigned long _DataLen;
     int          _DomainID;
     const char  *_Nic;
     const char  *_ProfileFile;
@@ -138,7 +138,7 @@ class RTIDDSImpl : public IMessaging
     bool         _isDynamicData;
     bool         _IsAsynchronous;
     std::string  _FlowControllerCustom;
-    int _useUnbounded;
+    unsigned long _useUnbounded;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

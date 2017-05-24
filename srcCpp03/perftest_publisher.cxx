@@ -88,7 +88,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
         return -1;
     }
 
-    if (_useUnbounded < 0) { //unbounded is not set
+    if (_useUnbounded == 0) { //unbounded is not set
         if (_isKeyed) {
             std::cerr << "[Info] Using keyed Data." << std::endl;
             _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
@@ -97,7 +97,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
             _MessagingImpl = new RTIDDSImpl<TestData_t>();
         }
     } else {
-        std::cerr << "[Info] Using Unbounded Sequences." << std::endl;
+        std::cerr << "[Info] Using unbounded Sequences, memory_manager" << _useUnbounded << "." << std::endl;
         if (_isKeyed) {
             std::cerr << "[Info] Using keyed Data." << std::endl;
             _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
@@ -112,7 +112,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
     _BatchSize = _MessagingImpl->GetBatchSize();
 
     if (_BatchSize != 0) {
-        _SamplesPerBatch = _BatchSize / _DataLen;
+        _SamplesPerBatch = _BatchSize / (int)_DataLen;
         if (_SamplesPerBatch == 0) {
             _SamplesPerBatch = 1;
         }
@@ -152,7 +152,7 @@ perftest_cpp::perftest_cpp() :
         _pubRate(0),
         _pubRateMethodSpin(true),
         _isKeyed(false),
-        _useUnbounded(-1),
+        _useUnbounded(0),
         _executionTime(0),
         _displayWriterStats(false)
 {
@@ -393,7 +393,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 std::cerr << "[Error] -dataLen must be <= " << MAX_PERFTEST_SAMPLE_SIZE << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
-            if (_useUnbounded < 0 &&_DataLen > MAX_BOUNDED_SEQ_SIZE) {
+            if (_useUnbounded == 0 && _DataLen > MAX_BOUNDED_SEQ_SIZE) {
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
             }
         }
@@ -1553,7 +1553,7 @@ int perftest_cpp::RunPublisher()
     writer->flush();
 
     // Set data size, account for other bytes in message
-    message.size = _DataLen - OVERHEAD_BYTES;
+    message.size = (int)_DataLen - OVERHEAD_BYTES;
     //message.data.resize(message.size);
 
     // Sleep 1 second, then begin test

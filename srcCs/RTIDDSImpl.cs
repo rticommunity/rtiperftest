@@ -173,7 +173,7 @@ namespace PerformanceTest
                         Console.Error.Write("Missing <length> after -dataLen\n");
                         return false;
                     }
-                    if (!Int32.TryParse(argv[i], out _DataLen))
+                    if (!UInt64.TryParse(argv[i], out _DataLen))
                     {
                         Console.Error.Write("Bad dataLen\n");
                         return false;
@@ -183,13 +183,13 @@ namespace PerformanceTest
                         Console.Error.WriteLine("dataLen must be >= " + perftest_cs.OVERHEAD_BYTES);
                         return false;
                     }
-                    if (_DataLen > perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS)
+                    if (_DataLen > perftest_cs.getMaxPerftestSampleSizeCS())
                     {
-                        Console.Error.WriteLine("dataLen must be <= " + perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS);
+                        Console.Error.WriteLine("dataLen must be <= " + perftest_cs.getMaxPerftestSampleSizeCS());
                         return false;
                     }
-                    if (_useUnbounded < 0 && _DataLen > MAX_BOUNDED_SEQ_SIZE.VALUE){
-                        _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                    if (_useUnbounded == 0 && (int)_DataLen > MAX_BOUNDED_SEQ_SIZE.VALUE) {
+                        _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
                     }
                 }
                 else if ("-unbounded".StartsWith(argv[i], true, null))
@@ -197,10 +197,10 @@ namespace PerformanceTest
 
                     if ((i == (argc - 1)) || argv[i+1].StartsWith("-"))
                     {
-                        _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                        _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
                     } else {
                         ++i;
-                        if (!Int32.TryParse(argv[i], out _DataLen))
+                        if (!UInt64.TryParse(argv[i], out _useUnbounded))
                         {
                             Console.Error.Write("Bad managerMemory value\n");
                             return false;
@@ -212,9 +212,9 @@ namespace PerformanceTest
                         Console.Error.WriteLine("_useUnbounded must be >= " + perftest_cs.OVERHEAD_BYTES);
                         return false;
                     }
-                    if (_useUnbounded > perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS)
+                    if (_useUnbounded > perftest_cs.getMaxPerftestSampleSizeCS())
                     {
-                        Console.Error.WriteLine("_useUnbounded must be <= " + perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS);
+                        Console.Error.WriteLine("_useUnbounded must be <= " + perftest_cs.getMaxPerftestSampleSizeCS());
                         return false;
                     }
                 }
@@ -666,7 +666,7 @@ namespace PerformanceTest
                 }
             }
 
-            if (_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE)
+            if ((int)_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE)
             {
                 if (_isScan)
                 {
@@ -674,7 +674,7 @@ namespace PerformanceTest
                 }
                 else
                 {
-                    Console.Error.WriteLine("Large data settings enabled (-dataLen < " + perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS + ").");
+                    Console.Error.WriteLine("Large data settings enabled (-dataLen < " + MAX_SYNCHRONOUS_SIZE.VALUE + ").");
                     _isLargeData = true;
                 }
             }
@@ -693,7 +693,7 @@ namespace PerformanceTest
              * nor if the sample is bigger (in this case we avoid the checking in the
              * middleware).
              */
-            if (_BatchSize > 0 && _BatchSize <= _DataLen)
+            if (_BatchSize > 0 && _BatchSize <= (int)_DataLen)
             {
                 Console.Error.WriteLine("Batching dissabled: BatchSize (" + _BatchSize
                         + ") is equal or smaller than the sample size (" + _DataLen
@@ -934,7 +934,7 @@ namespace PerformanceTest
                 _callback = callback;
                 _DataType = DataType;
                 _data_seq = _DataType.createSequence();
-                _message.data = new byte[_DataType.getMAX_PERFTEST_SAMPLE_SIZE()];
+                _message.data = new byte[_DataType.getMaxPerftestSampleSize()];
             }
 
             public override void on_data_available(DDS.DataReader reader)
@@ -1014,7 +1014,7 @@ namespace PerformanceTest
                 _reader = reader;
                 _DataType = DataType;
                 _data_seq = _DataType.createSequence();
-                _message.data = new byte[_DataType.getMAX_PERFTEST_SAMPLE_SIZE()];
+                _message.data = new byte[_DataType.getMaxPerftestSampleSize()];
 
                 // null listener means using receive thread
                 if (_reader.get_listener() == null)
@@ -1247,7 +1247,7 @@ namespace PerformanceTest
                         "dds.transport.UDPv4.builtin.parent.allow_interfaces", _Nic, false);
                 }
 
-                int received_message_count_max = 1024*1024*2 / _DataLen;
+                int received_message_count_max = 1024*1024*2 / (int)_DataLen;
 
                 if (received_message_count_max < 1) {
                     received_message_count_max = 1;
@@ -1754,7 +1754,6 @@ namespace PerformanceTest
             }
 
             if (_useUnbounded > 0) {
-                Console.Write("Unbounded data_writer, memory_manager " + _useUnbounded.ToString() + ".\n");
                 DDS.PropertyQosPolicyHelper.add_property(dw_qos.property_qos,
                         "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
                         _useUnbounded.ToString(), false);
@@ -1937,7 +1936,6 @@ namespace PerformanceTest
             }
 
             if (_useUnbounded > 0) {
-                Console.Write("Unbounded data_reader, memory_manager " + _useUnbounded.ToString() + ".\n");
                 DDS.PropertyQosPolicyHelper.add_property(dr_qos.property_qos,
                         "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                         _useUnbounded.ToString(), false);
@@ -1959,8 +1957,8 @@ namespace PerformanceTest
         }
 
         private int    _SendQueueSize = 50;
-        private int    _DataLen = 100;
-        private int     _useUnbounded = -1;
+        private ulong    _DataLen = 100;
+        private ulong     _useUnbounded = 0;
         private int    _DomainID = 1;
         private string _Nic = "";
         private string _ProfileFile = "perftest_qos_profiles.xml";

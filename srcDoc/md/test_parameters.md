@@ -40,6 +40,7 @@ For additional information on setting the parameters, see sections:
 
     The lower limit is the number of "overhead" bytes in the message (i.e., the timestamp, sequence number, and other meta-data used by the test); the upper limit ensures that, when the overhead of the wire protocol is added, it doesn't overflow the UDP maximum datagram size of 64KB.
 
+    If `<bytes>` is bigger than 63000 *RTI Perftest* will enable the use of *Asynchronous Publishing* and *Unbounded Sequences*.
     If See `-scan` is specified, this value is ignored.
 
 -   `-verbosity`
@@ -258,6 +259,13 @@ For additional information on setting the parameters, see sections:
     Display the `cpu` used by the *RTI Perftest* process.
 
     **Default:** `not set`  
+
+-   `-unbounded <managerMemory>`
+
+    Use *Unbounded Sequences* and set the Qos `dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size`.
+
+    **Default:** `63000 bytes.`<br>
+    **Range:** `28 - 2147483128 bytes`
 
 ## Test Parameters Only for Publishing Applications <a id="params-pub"></a>
 

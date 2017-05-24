@@ -16,16 +16,15 @@ import com.rti.perftest.harness.PerfTest;
 
 public class DataTypeHelper implements TypeHelper<TestData_t> {
 
-    public DataTypeHelper(int MAX_PERFTEST_SAMPLE_SIZE) {
+    public DataTypeHelper(int maxPerftestSampleSize) {
         _myData = new TestData_t();
-        _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
-
+        _maxPerftestSampleSize = maxPerftestSampleSize;
     }
 
 
-    public DataTypeHelper(TestData_t myData, int MAX_PERFTEST_SAMPLE_SIZE) {
+    public DataTypeHelper(TestData_t myData, int maxPerftestSampleSize) {
         _myData = myData;
-        _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+        _maxPerftestSampleSize = maxPerftestSampleSize;
     }
 
     public void fillKey(int value) {
@@ -83,7 +82,7 @@ public class DataTypeHelper implements TypeHelper<TestData_t> {
     }
 
     public TypeHelper<TestData_t> clone() {
-        return new DataTypeHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
+        return new DataTypeHelper(_myData, _maxPerftestSampleSize);
     }
 
     @SuppressWarnings("rawtypes")
@@ -92,11 +91,11 @@ public class DataTypeHelper implements TypeHelper<TestData_t> {
     }
 
     @SuppressWarnings("rawtypes")
-    public int getMAX_PERFTEST_SAMPLE_SIZE() {
-        return _MAX_PERFTEST_SAMPLE_SIZE;
+    public int getMaxPerftestSampleSize() {
+        return _maxPerftestSampleSize;
     }
 
-    private int _MAX_PERFTEST_SAMPLE_SIZE = PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA;
+    private int _maxPerftestSampleSize = PerfTest.getMaxPerftestSampleSizeJava();
     private TestData_t _myData;
 
 }

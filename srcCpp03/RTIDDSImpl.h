@@ -55,7 +55,7 @@ class RTIDDSImpl : public IMessaging
   private:
 
     int          _SendQueueSize;
-    int          _DataLen;
+    unsigned long _DataLen;
     int          _DomainID;
     const char  *_Nic;
     const char  *_ProfileFile;
@@ -83,7 +83,7 @@ class RTIDDSImpl : public IMessaging
     bool         _isDynamicData;
     bool         _IsAsynchronous;
     std::string  _FlowControllerCustom;
-    int          _useUnbounded;
+    unsigned long _useUnbounded;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

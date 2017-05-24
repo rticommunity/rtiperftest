@@ -12,6 +12,7 @@ import com.rti.perftest.TestMessage;
 import com.rti.perftest.harness.PerftestTimerTask;
 import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
+import com.rti.perftest.gen.MAX_PERFTEST_SAMPLE_SIZE;
 import com.rti.ndds.Utility;
 
 import java.util.concurrent.TimeUnit;
@@ -82,7 +83,7 @@ public final class PerfTest {
     // data size
     private static final int NUM_LATENCY_PINGS_PER_DATA_SIZE = 1000;
 
-    private int     _dataLen = 100;
+    private long     _dataLen = 100;
     private int     _batchSize = 0;
     private int     _samplesPerBatch = 1;
     private long    _numIter = 100000000;
@@ -129,6 +130,14 @@ public final class PerfTest {
         testCompleted = true;
     }
 
+    static public int getMaxPerftestSampleSizeJava(){
+        if (MAX_PERFTEST_SAMPLE_SIZE.VALUE > 2147483642){
+            return 2147483642; //max value for a buffer in Java
+        }else {
+            return MAX_PERFTEST_SAMPLE_SIZE.VALUE;
+        }
+    }
+
     // -----------------------------------------------------------------------
     // Package Methods
     // -----------------------------------------------------------------------
@@ -165,7 +174,7 @@ public final class PerfTest {
         _batchSize = _messagingImpl.getBatchSize();
 
         if (_batchSize != 0) {
-            _samplesPerBatch = _batchSize/_dataLen;
+            _samplesPerBatch = _batchSize/(int)_dataLen;
             if (_samplesPerBatch == 0) {
                 _samplesPerBatch = 1;
             }
@@ -221,7 +230,7 @@ public final class PerfTest {
             "\t-numPublishers <count>  - Number of publishers running in test,\n"+
             "\t                          default 1\n" +
             "\t-scan                   - Run test in scan mode, traversing a range of\n" +
-            "\t                          data sizes, 32 - " + MAX_PERFTEST_SAMPLE_SIZE_JAVA + "\n" +
+            "\t                          data sizes, 32 - " + getMaxPerftestSampleSizeJava() + "\n" +
             "\t-noPrintIntervals       - Don't print statistics at intervals during\n" +
             "\t                          test\n" +
             "\t-useReadThread          - Use separate thread instead of callback to\n"+
@@ -337,7 +346,7 @@ public final class PerfTest {
                 _messagingArgv[_messagingArgc++] = argv[i];
 
                 try {
-                    _dataLen = Integer.parseInt(argv[i]);
+                    _dataLen = Long.parseLong(argv[i]);
                 } catch (NumberFormatException nfx) {
                     System.err.print("Bad dataLen\n");
                     return false;
@@ -346,8 +355,8 @@ public final class PerfTest {
                     System.err.println("dataLen must be >= " + OVERHEAD_BYTES);
                     return false;
                 }
-                if (_dataLen > MAX_PERFTEST_SAMPLE_SIZE_JAVA) {
-                    System.err.println("dataLen must be <= " + MAX_PERFTEST_SAMPLE_SIZE_JAVA);
+                if (_dataLen > getMaxPerftestSampleSizeJava()) {
+                    System.err.println("dataLen must be <= " + getMaxPerftestSampleSizeJava());
                     return false;
                 }
             }else if ("-unbounded".toLowerCase().startsWith(argv[i].toLowerCase())) {
@@ -865,7 +874,7 @@ public final class PerfTest {
         // Allocate data and set size
         TestMessage message = new TestMessage();
         message.entity_id = pubID;
-        message.data = new byte[Math.max(_dataLen,LENGTH_CHANGED_SIZE)];
+        message.data = new byte[Math.max((int)_dataLen,LENGTH_CHANGED_SIZE)];
 
         System.err.print("Publishing data...\n");
 
@@ -890,7 +899,7 @@ public final class PerfTest {
         writer.flush();
 
         // Set data size, account for other bytes in message
-        message.size = _dataLen - OVERHEAD_BYTES;
+        message.size = (int)_dataLen - OVERHEAD_BYTES;
 
         // Sleep 1 second, then begin test
         sleep(1000);

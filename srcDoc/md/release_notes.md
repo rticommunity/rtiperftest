@@ -67,6 +67,15 @@ In previous relesases the "-pubRate" command-line option would only use the `spi
 
 Starting in this release, it is possible to display the *CPU consumption* of the *RTI Perftest* process by adding the Command-Line Parameter `-cpu` using a Monitor.
 
+### Support Large Data samples
+
+Prior to this release, the maximum sample size allowed by *RTI Perftest* was set to 131072 Bytes. The use of bigger sizes would imply changes in the `perftest.idl` file and source code files.
+Starting from this release, the maximum data length that *RTI Perftest* allows has increased to 2,147,483,135 Bytes, which corresponds to 2 GBytes - 512 Bytes - 8 Bytes, the maximum data length that *RTI Connext DDS* can send.
+
+The sample size can be set via the `-dataLen <bytes>` Command-Line Parameter, if such value is larger than 63,000 Bytes *RTI Perftest* will enable the use of *Asynchronous Publishing* and *Unbounded Sequences*.
+
+It is also possible to enable the use of *Unbounded Sequences* or *Asynchronous Publishing* independently of the sample size by specifying the Command-Line Parameters `unbounded <managerMemory>` and `-asynchronous`.
+
 ## What's Fixed in 2.1
 
 ### "--nddshome" Command-Line Option did not Work in `build.bat` Script -- Windows Systems Only
