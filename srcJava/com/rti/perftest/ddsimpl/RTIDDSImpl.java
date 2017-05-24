@@ -101,6 +101,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean _isLargeData = false;
     private boolean _isScan = false;
     private boolean _isPublisher = false;
+    private boolean _IsAsynchronous = false;
+    private String  _FlowControllerCustom = "default";
+    String[] valid_flow_controller = {"default", "1Gbps", "10Gbps"};
 
     private boolean _secureUseSecure = false;
     private boolean _secureIsSigned = false;
@@ -178,8 +181,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
     }
 
     public void printCmdLineHelp() {
+        /**************************************************************************/
         String usage_string =
-            /**************************************************************************/
             "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n" +
             "\t                          queue, default 50\n" +
             "\t-domain <ID>            - RTI DDS Domain, default 1\n" +
@@ -241,6 +244,16 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t                          throughput DataWriter (pub)\n"+
             "\t-enableTurboMode        - Enables the TurboMode feature in the throughput\n"+
             "\t                          DataWriter (pub)\n" +
+            "\t-asynchronous           - Use asynchronous writer\n" +
+            "\t                          Default: Not set\n" +
+            "\t-flowController <flow>  - In the case asynchronous writer use a specific flow controller.\n" +
+            "\t                          There are several flow controller predefined:\n" +
+            "\t                          ";
+            for (String flow : valid_flow_controller)
+            {
+                usage_string += flow + "  ";
+            }
+            usage_string += "\n\t                          Default: set default\n" +
             "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n" +
             "\t-secureSign                   - Sign (HMAC) discovery and user data\n" +
             "\t-secureEncryptData            - Encrypt topic (user) data\n" +
@@ -256,8 +269,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t-secureCertFile <file>        - Certificate file <optional>\n" +
             "\t                                Default: \"./resource/secure/sub.pem\"\n" +
             "\t-securePrivateKey <file>      - Private key file <optional>\n" +
-            "\t                                Default: \"./resource/secure/subkey.pem\"\n"
-            ;
+            "\t                                Default: \"./resource/secure/subkey.pem\"\n";
 
         System.err.print(usage_string);
     }
@@ -754,11 +766,14 @@ public final class RTIDDSImpl<T> implements IMessaging {
             dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = (_keepDurationUsec * 1000) % 1000000000;
         }
 
-        if ( (_isLargeData) && (!_isScan) )
+        if ((_isLargeData) && (!_isScan) || _IsAsynchronous)
         {
             System.err.println("Using asynchronous write for " + topicName + ".");
             dwQos.publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
-            dwQos.publish_mode.flow_controller_name = "dds.flow_controller.token_bucket.fast_flow";
+            if (!_FlowControllerCustom.toLowerCase().startsWith("default".toLowerCase())) {
+                dwQos.publish_mode.flow_controller_name = "dds.flow_controller.token_bucket."+_FlowControllerCustom;
+            }
+            System.err.println("Using flow controller " + _FlowControllerCustom + ".");
         }
 
         // Configure reliability
@@ -1345,6 +1360,27 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 } catch (NumberFormatException nfx) {
                     System.err.print("Bad value for -secureDebug\n");
                     return false;
+                }
+            } else if ("-asynchronous".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _IsAsynchronous = true;
+            } else if ("-flowController".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <flow Controller Name> after -flowController\n");
+                    return false;
+                }
+                _FlowControllerCustom = argv[i];
+
+                // verify if the flow controller name is correct, else use "default"
+                boolean valid_flow_control = false;
+                for (String flow : valid_flow_controller) {
+                    if (_FlowControllerCustom.equals(flow)) {
+                        valid_flow_control = true;
+                    }
+                }
+
+                if (!valid_flow_control) {
+                    System.err.print("Bad <flow> '"+_FlowControllerCustom+"' for custom flow controller\n");
+                    _FlowControllerCustom = "default";
                 }
             } else {
                 System.err.print(argv[i] + ": not recognized\n");

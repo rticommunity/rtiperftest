@@ -53,6 +53,12 @@ In previous releases the Batching Parameters were set unconditionally, now the B
 
 In previous releases the command-line option to use TCP for the communication was named as `-enableTcpOnly`. This is was inconsistent with other transport options, so the name of the command has been modified to `-enableTcp`.
 
+### Added Command-Line Parameter  "-asynchronous" and "-flowController `<`flow`>`"
+
+In previous releases Asynchronous Publishing was only enabled for the DataWriters when the samples are greater than 63000 Bytes and in such chase, RTI Perftest would only use a custom flow controller defined for 1Gbps Networks.
+
+This behavior has been modified: Starting from this release, Asynchronous Publishing will be activated if the samples to send are bigger than 63000 Bytes or if the `-asynchronous` Command-Line Parameter is used. In that case, RTI Perftest will use the `Default` flow controller, however this behavior now can be changed by specifying the `-flowController` option, which allows to specify if using the default flow controller, a 1Gbps flow controller or a 10Gbps one.
+
 ## What's Fixed in 2.1
 
 ### "--nddshome" Command-Line Option did not Work in `build.bat` Script -- Windows Systems Only

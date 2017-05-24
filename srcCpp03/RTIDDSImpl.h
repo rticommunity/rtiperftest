@@ -86,6 +86,8 @@ class RTIDDSImpl : public IMessaging
     bool         _isScan;
     bool         _isPublisher;
     bool         _isDynamicData;
+    bool         _IsAsynchronous;
+    std::string  _FlowControllerCustom;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

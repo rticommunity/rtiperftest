@@ -178,25 +178,47 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
               <value>65536</value>
             </element>
 
-            <!-- Defining flow controller. This will not enable it. -->
+            <!-- Defining flow controller 10Gbps. This will not enable it. -->
             <element>
-              <name>dds.flow_controller.token_bucket.fast_flow.token_bucket.max_tokens</name>
-              <value>30</value>
+              <name>dds.flow_controller.token_bucket.10Gbps.token_bucket.max_tokens</name>
+              <value>300</value>
             </element>
             <element>
-              <name>dds.flow_controller.token_bucket.fast_flow.token_bucket.tokens_added_per_period</name>
-              <value>20</value>
+              <name>dds.flow_controller.token_bucket.10Gbps.token_bucket.tokens_added_per_period</name>
+              <value>200</value>
             </element>
             <element>
-              <name>dds.flow_controller.token_bucket.fast_flow.token_bucket.bytes_per_token</name>
+              <name>dds.flow_controller.token_bucket.10Gbps.token_bucket.bytes_per_token</name>
               <value>65536</value>
             </element>
             <element>
-              <name>dds.flow_controller.token_bucket.fast_flow.token_bucket.period.sec</name>
+              <name>dds.flow_controller.token_bucket.10Gbps.token_bucket.period.sec</name>
               <value>0</value>
             </element>
             <element>
-              <name>dds.flow_controller.token_bucket.fast_flow.token_bucket.period.nanosec</name>
+              <name>dds.flow_controller.token_bucket.10Gbps.token_bucket.period.nanosec</name>
+              <value>10000000</value>
+            </element>
+
+            <!-- Defining flow controller 1Gbps. This will not enable it. -->
+            <element>
+              <name>dds.flow_controller.token_bucket.1Gbps.token_bucket.max_tokens</name>
+              <value>30</value>
+            </element>
+            <element>
+              <name>dds.flow_controller.token_bucket.1Gbps.token_bucket.tokens_added_per_period</name>
+              <value>20</value>
+            </element>
+            <element>
+              <name>dds.flow_controller.token_bucket.1Gbps.token_bucket.bytes_per_token</name>
+              <value>65536</value>
+            </element>
+            <element>
+              <name>dds.flow_controller.token_bucket.1Gbps.token_bucket.period.sec</name>
+              <value>0</value>
+            </element>
+            <element>
+              <name>dds.flow_controller.token_bucket.1Gbps.token_bucket.period.nanosec</name>
               <value>10000000</value>
             </element>
 
