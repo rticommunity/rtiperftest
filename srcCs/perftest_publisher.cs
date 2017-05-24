@@ -20,15 +20,18 @@ namespace PerformanceTest {
     {
 
         TestData_t _myData;
+        int _MAX_PERFTEST_SAMPLE_SIZE = perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS;
 
-        public DataTypeHelper()
+        public DataTypeHelper(int MAX_PERFTEST_SAMPLE_SIZE)
         {
             _myData = new TestData_t();
+            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
         }
 
-        public DataTypeHelper(TestData_t myData)
+        public DataTypeHelper(TestData_t myData, int MAX_PERFTEST_SAMPLE_SIZE)
         {
                 _myData = myData;
+                _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
         }
 
         public void fillKey(int value)
@@ -92,7 +95,7 @@ namespace PerformanceTest {
 
         public ITypeHelper<TestData_t> clone()
         {
-            return new DataTypeHelper(_myData);
+            return new DataTypeHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
         }
 
         public DDS.LoanableSequence<TestData_t> createSequence()
@@ -100,7 +103,108 @@ namespace PerformanceTest {
             return new TestData_tSeq();
         }
 
+        public int getMAX_PERFTEST_SAMPLE_SIZE() {
+            return _MAX_PERFTEST_SAMPLE_SIZE;
+        }
+
     }
+
+    /*********************************************************
+     * DataTypeLargeHelper (non keyed)
+     */
+    class DataTypeLargeHelper : ITypeHelper<TestDataLarge_t>
+    {
+
+        TestDataLarge_t _myData;
+        int _MAX_PERFTEST_SAMPLE_SIZE = perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS;
+
+        public DataTypeLargeHelper(int MAX_PERFTEST_SAMPLE_SIZE)
+        {
+            _myData = new TestDataLarge_t();
+            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+        }
+
+        public DataTypeLargeHelper(TestDataLarge_t myData, int MAX_PERFTEST_SAMPLE_SIZE)
+        {
+                _myData = myData;
+                _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+        }
+
+        public void fillKey(int value)
+        {
+
+            _myData.key[0] = (byte)(value);
+            _myData.key[1] = (byte)(value >> 8);
+            _myData.key[2] = (byte)(value >> 16);
+            _myData.key[3] = (byte)(value >> 24);
+
+        }
+
+        public void copyFromMessage(TestMessage message)
+        {
+
+            _myData.entity_id = message.entity_id;
+            _myData.seq_num = message.seq_num;
+            _myData.timestamp_sec = message.timestamp_sec;
+            _myData.timestamp_usec = message.timestamp_usec;
+            _myData.latency_ping = message.latency_ping;
+            _myData.bin_data.loan(message.data, message.size);
+
+        }
+
+        public TestMessage copyFromSeqToMessage(LoanableSequence<TestDataLarge_t> data_sequence, int index)
+        {
+
+            TestDataLarge_t msg = ((TestDataLarge_tSeq)data_sequence).get_at(index);
+            TestMessage message = new TestMessage();
+
+            message.entity_id = msg.entity_id;
+            message.seq_num = msg.seq_num;
+            message.timestamp_sec = msg.timestamp_sec;
+            message.timestamp_usec = msg.timestamp_usec;
+            message.latency_ping = msg.latency_ping;
+            message.size = msg.bin_data.length;
+            message.data = msg.bin_data.buffer;
+
+            return message;
+        }
+
+        public TestDataLarge_t getData()
+        {
+            return _myData;
+        }
+
+        public void setBinDataMax(int newMax)
+        {
+            _myData.bin_data.maximum = newMax;
+        }
+
+        public void binDataUnloan()
+        {
+            _myData.bin_data.unloan();
+        }
+
+        public DDS.AbstractTypedTypeSupport<TestDataLarge_t> getTypeSupport()
+        {
+            return TestDataLarge_tTypeSupport.get_instance();
+        }
+
+        public ITypeHelper<TestDataLarge_t> clone()
+        {
+            return new DataTypeLargeHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
+        }
+
+        public DDS.LoanableSequence<TestDataLarge_t> createSequence()
+        {
+            return new TestDataLarge_tSeq();
+        }
+
+        public int getMAX_PERFTEST_SAMPLE_SIZE() {
+            return _MAX_PERFTEST_SAMPLE_SIZE;
+        }
+
+    }
+
 
     /*********************************************************
      * DataTypeKeyedHelper
@@ -109,15 +213,18 @@ namespace PerformanceTest {
     {
 
         TestDataKeyed_t _myData;
+        int _MAX_PERFTEST_SAMPLE_SIZE = perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS;
 
-        public DataTypeKeyedHelper()
+        public DataTypeKeyedHelper(int MAX_PERFTEST_SAMPLE_SIZE)
         {
             _myData = new TestDataKeyed_t();
+            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
         }
 
-        public DataTypeKeyedHelper(TestDataKeyed_t myData)
+        public DataTypeKeyedHelper(TestDataKeyed_t myData, int MAX_PERFTEST_SAMPLE_SIZE)
         {
             _myData = myData;
+            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
         }
 
         public void fillKey(int value)
@@ -181,12 +288,112 @@ namespace PerformanceTest {
 
         public ITypeHelper<TestDataKeyed_t> clone()
         {
-            return new DataTypeKeyedHelper(_myData);
+            return new DataTypeKeyedHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
         }
 
         public DDS.LoanableSequence<TestDataKeyed_t> createSequence()
         {
             return new TestDataKeyed_tSeq();
+        }
+
+        public int getMAX_PERFTEST_SAMPLE_SIZE() {
+            return _MAX_PERFTEST_SAMPLE_SIZE;
+        }
+
+    }
+
+    /*********************************************************
+     * DataTypeKeyedLargeHelper
+     */
+    class DataTypeKeyedLargeHelper : ITypeHelper<TestDataKeyedLarge_t>
+    {
+
+        TestDataKeyedLarge_t _myData;
+        int _MAX_PERFTEST_SAMPLE_SIZE = perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS;
+
+        public DataTypeKeyedLargeHelper(int MAX_PERFTEST_SAMPLE_SIZE)
+        {
+            _myData = new TestDataKeyedLarge_t();
+            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+        }
+
+        public DataTypeKeyedLargeHelper(TestDataKeyedLarge_t myData, int MAX_PERFTEST_SAMPLE_SIZE)
+        {
+            _myData = myData;
+            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
+        }
+
+        public void fillKey(int value)
+        {
+
+            _myData.key[0] = (byte)(value);
+            _myData.key[1] = (byte)(value >> 8);
+            _myData.key[2] = (byte)(value >> 16);
+            _myData.key[3] = (byte)(value >> 24);
+
+        }
+
+        public void copyFromMessage(TestMessage message)
+        {
+
+            _myData.entity_id = message.entity_id;
+            _myData.seq_num = message.seq_num;
+            _myData.timestamp_sec = message.timestamp_sec;
+            _myData.timestamp_usec = message.timestamp_usec;
+            _myData.latency_ping = message.latency_ping;
+            _myData.bin_data.loan(message.data, message.size);
+
+        }
+
+        public TestMessage copyFromSeqToMessage(LoanableSequence<TestDataKeyedLarge_t> data_sequence, int index)
+        {
+
+            TestDataKeyedLarge_t msg = ((TestDataKeyedLarge_tSeq)data_sequence).get_at(index);
+            TestMessage message = new TestMessage();
+
+            message.entity_id = msg.entity_id;
+            message.seq_num = msg.seq_num;
+            message.timestamp_sec = msg.timestamp_sec;
+            message.timestamp_usec = msg.timestamp_usec;
+            message.latency_ping = msg.latency_ping;
+            message.size = msg.bin_data.length;
+            message.data = msg.bin_data.buffer;
+
+            return message;
+        }
+
+        public TestDataKeyedLarge_t getData()
+        {
+            return _myData;
+        }
+
+        public void setBinDataMax(int newMax)
+        {
+            _myData.bin_data.maximum = newMax;
+        }
+
+        public void binDataUnloan()
+        {
+            _myData.bin_data.unloan();
+        }
+
+        public DDS.AbstractTypedTypeSupport<TestDataKeyedLarge_t> getTypeSupport()
+        {
+            return TestDataKeyedLarge_tTypeSupport.get_instance();
+        }
+
+        public ITypeHelper<TestDataKeyedLarge_t> clone()
+        {
+            return new DataTypeKeyedLargeHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
+        }
+
+        public DDS.LoanableSequence<TestDataKeyedLarge_t> createSequence()
+        {
+            return new TestDataKeyedLarge_tSeq();
+        }
+
+        public int getMAX_PERFTEST_SAMPLE_SIZE() {
+            return _MAX_PERFTEST_SAMPLE_SIZE;
         }
 
     }
@@ -196,16 +403,19 @@ namespace PerformanceTest {
 
         bool _isKeyed;
         DynamicData _myData;
+        int _MAX_PERFTEST_SAMPLE_SIZE = perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS;
 
-        public DynamicDataTypeHelper(DDS.TypeCode typeCode, bool isKeyed)
+        public DynamicDataTypeHelper(DDS.TypeCode typeCode, bool isKeyed, int MAX_PERFTEST_SAMPLE_SIZE)
         {
             _isKeyed = isKeyed;
             _myData = new DynamicData(typeCode, DynamicData.DYNAMIC_DATA_PROPERTY_DEFAULT);
+            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
         }
 
-        public DynamicDataTypeHelper(DynamicData myData)
+        public DynamicDataTypeHelper(DynamicData myData, int MAX_PERFTEST_SAMPLE_SIZE)
         {
             _myData = myData;
+            _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
         }
 
         public void fillKey(int value)
@@ -281,7 +491,7 @@ namespace PerformanceTest {
 
         public ITypeHelper<DynamicData> clone()
         {
-            return new DynamicDataTypeHelper(_myData);
+            return new DynamicDataTypeHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
         }
 
         public LoanableSequence<DynamicData> createSequence()
@@ -298,6 +508,10 @@ namespace PerformanceTest {
 
         public void binDataUnloan()
         {
+        }
+
+        public int getMAX_PERFTEST_SAMPLE_SIZE() {
+            return _MAX_PERFTEST_SAMPLE_SIZE;
         }
     }
 
@@ -325,30 +539,59 @@ namespace PerformanceTest {
             {
                 return;
             }
-
-            if (_isKeyed)
-            {
-                Console.Error.Write("Using keyed Data.\n");
-                if (_isDynamicData)
+            int _MAX_PERFTEST_SAMPLE_SIZE = Math.Max(_DataLen,LENGTH_CHANGED_SIZE);
+            if(_useUnbounded > 0) {
+                Console.Error.Write("Using unbounded sequences.\n");
+                if (_isKeyed)
                 {
-                    Console.Error.Write("Using Dynamic Data.\n");
-                    _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyed_t.get_typecode(),_isKeyed));
+                    Console.Error.Write("Using keyed Data.\n");
+                    if (_isDynamicData)
+                    {
+                        Console.Error.Write("Using Dynamic Data.\n");
+                        _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyedLarge_t.get_typecode(),_isKeyed,_MAX_PERFTEST_SAMPLE_SIZE));
+                    }
+                    else
+                    {
+                        _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>(new DataTypeKeyedLargeHelper(_MAX_PERFTEST_SAMPLE_SIZE));
+                    }
                 }
-                else
-                {
-                    _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>(new DataTypeKeyedHelper());
+                else {
+                    Console.Error.Write("Using unkeyed Data.\n");
+                    if (_isDynamicData)
+                    {
+                        Console.Error.Write("Using Dynamic Data.\n");
+                        _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataLarge_t.get_typecode(),_isKeyed,_MAX_PERFTEST_SAMPLE_SIZE));
+                    }
+                    else
+                    {
+                        _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>(new DataTypeLargeHelper(_MAX_PERFTEST_SAMPLE_SIZE));
+                    }
                 }
-            }
-            else {
-                Console.Error.Write("Using unkeyed Data.\n");
-                if (_isDynamicData)
+            } else {
+                if (_isKeyed)
                 {
-                    Console.Error.Write("Using Dynamic Data.\n");
-                    _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyed_t.get_typecode(), _isKeyed));
+                    Console.Error.Write("Using keyed Data.\n");
+                    if (_isDynamicData)
+                    {
+                        Console.Error.Write("Using Dynamic Data.\n");
+                        _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyed_t.get_typecode(),_isKeyed,_MAX_PERFTEST_SAMPLE_SIZE));
+                    }
+                    else
+                    {
+                        _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>(new DataTypeKeyedHelper(_MAX_PERFTEST_SAMPLE_SIZE));
+                    }
                 }
-                else
-                {
-                    _MessagingImpl = new RTIDDSImpl<TestData_t>(new DataTypeHelper());
+                else {
+                    Console.Error.Write("Using unkeyed Data.\n");
+                    if (_isDynamicData)
+                    {
+                        Console.Error.Write("Using Dynamic Data.\n");
+                        _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestData_t.get_typecode(),_isKeyed,_MAX_PERFTEST_SAMPLE_SIZE));
+                    }
+                    else
+                    {
+                        _MessagingImpl = new RTIDDSImpl<TestData_t>(new DataTypeHelper(_MAX_PERFTEST_SAMPLE_SIZE));
+                    }
                 }
             }
 
@@ -358,7 +601,6 @@ namespace PerformanceTest {
             }
 
             _BatchSize = _MessagingImpl.GetBatchSize();
-            _MaxBinDataSize = _MessagingImpl.GetMaxBinDataSize();
 
             if (_BatchSize != 0) {
                 _SamplesPerBatch = _BatchSize/_DataLen;
@@ -419,6 +661,9 @@ namespace PerformanceTest {
                 "\t                          latency pings.\n" +
                 "\t-dataLen <bytes>        - Set length of payload for each send,\n" +
                 "\t                          default 100\n"  +
+                "\t-unbounded <managerMemory> - Use unbounded Sequences\n" +
+                "\t                             default if bounded,  managerMemory not set.\n" +
+                "\t                             default if unbounded, managerMemory is "+ MAX_BOUNDED_SEQ_SIZE.VALUE +".\n" +
                 "\t-numIter <count>        - Set number of messages to send, default is\n" +
                 "\t                          100000000 for Throughput tests or 10000000\n" +
                 "\t                          for Latency tests. See -executionTime.\n" +
@@ -436,7 +681,7 @@ namespace PerformanceTest {
                 "\t-numPublishers <count>  - Number of publishers running in test,\n" +
                 "\t                          default 1\n" +
                 "\t-scan                   - Run test in scan mode, traversing a range of\n"+
-                "\t                          data sizes, 32 - " + TestMessage.MAX_DATA_SIZE + "\n" +
+                "\t                          data sizes, 32 - " + MAX_PERFTEST_SAMPLE_SIZE_CS + "\n" +
                 "\t-noPrintIntervals       - Don't print statistics at intervals during\n"+
                 "\t                          test\n" +
                 "\t-useReadThread          - Use separate thread instead of callback to\n"+
@@ -458,6 +703,8 @@ namespace PerformanceTest {
                 "\t                          Default 0 (don't set execution time)\n" +
                 "\t-writerStats            - Display the Pulled Sample count stats for\n" +
                 "\t                          reliable protocol debugging purposes.\n" +
+                "\t                          Default: Not set\n" +
+                "\t-cpu                   - Display the cpu percent use by the process\n" +
                 "\t                          Default: Not set\n";
 
 
@@ -466,7 +713,9 @@ namespace PerformanceTest {
             if (argc < 0)
             {
                 Console.Error.Write(usage_string);
-                _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>(new DataTypeKeyedHelper());
+                _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>(
+                        new DataTypeKeyedHelper(
+                                Math.Max(_DataLen,LENGTH_CHANGED_SIZE)));
                 _MessagingImpl.PrintCmdLineHelp();
                 return false;
             }
@@ -485,7 +734,9 @@ namespace PerformanceTest {
                 if ( "-help".StartsWith(argv[i], true, null) )
                 {
                     Console.Error.Write(usage_string);
-                    _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>(new DataTypeKeyedHelper());
+                    _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>(
+                            new DataTypeKeyedHelper(
+                                    Math.Max(_DataLen,LENGTH_CHANGED_SIZE)));
                     _MessagingImpl.PrintCmdLineHelp();
                     return false;
                 }
@@ -572,9 +823,40 @@ namespace PerformanceTest {
                         Console.Error.WriteLine("dataLen must be >= " + OVERHEAD_BYTES);
                         return false;
                     }
-                    if (_DataLen > TestMessage.MAX_DATA_SIZE)
+                    if (_DataLen > MAX_PERFTEST_SAMPLE_SIZE_CS)
                     {
-                        Console.Error.WriteLine("dataLen must be <= " + TestMessage.MAX_DATA_SIZE);
+                        Console.Error.WriteLine("dataLen must be <= " + MAX_PERFTEST_SAMPLE_SIZE_CS);
+                        return false;
+                    }
+                    if (_useUnbounded < 0 && _DataLen > MAX_BOUNDED_SEQ_SIZE.VALUE){
+                        _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                    }
+                }
+                else if ("-unbounded".StartsWith(argv[i], true, null))
+                {
+                    _MessagingArgv[_MessagingArgc++] = argv[i];
+
+                    if ((i == (argc - 1)) || argv[i+1].StartsWith("-"))
+                    {
+                        _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                    } else {
+                        ++i;
+                        _MessagingArgv[_MessagingArgc++] = argv[i];
+                        if (!Int32.TryParse(argv[i], out _DataLen))
+                        {
+                            Console.Error.Write("Bad managerMemory value\n");
+                            return false;
+                        }
+                    }
+
+                    if (_useUnbounded < OVERHEAD_BYTES)
+                    {
+                        Console.Error.WriteLine("_useUnbounded must be >= " + OVERHEAD_BYTES);
+                        return false;
+                    }
+                    if (_useUnbounded > MAX_PERFTEST_SAMPLE_SIZE_CS)
+                    {
+                        Console.Error.WriteLine("_useUnbounded must be <= " + MAX_PERFTEST_SAMPLE_SIZE_CS);
                         return false;
                     }
                 }
@@ -776,6 +1058,9 @@ namespace PerformanceTest {
                         return false;
                     }
                 }
+                else if ("-cpu".StartsWith(argv[i], true, null)) {
+                    _showCpu = true;
+                }
                 else {
                     _MessagingArgv[_MessagingArgc++] = argv[i];
                 }
@@ -871,6 +1156,7 @@ namespace PerformanceTest {
 
             private int _num_publishers;
             private List<int> _finished_publishers;
+            public CpuMonitor cpu;
 
 
             public ThroughputListener(IMessagingWriter writer,
@@ -880,6 +1166,7 @@ namespace PerformanceTest {
                 _last_seq_num = new ulong[numPublishers];
                 _num_publishers = numPublishers;
                 _finished_publishers = new List<int>();
+                cpu = new CpuMonitor();
             }
 
             public ThroughputListener(IMessagingWriter writer, IMessagingReader reader,
@@ -955,13 +1242,19 @@ namespace PerformanceTest {
                     _writer.Flush();
 
                     if (_finished_publishers.Count >= _num_publishers) {
+                        String outputCpu = "";
+                        if (_showCpu) {
+                            outputCpu = cpu.get_cpu_average();
+                        }
                         Console.Write("Length: {0,5}  Packets: {1,8}  Packets/s(ave): {2,7:F0}  " +
-                                      "Mbps(ave): {3,7:F1}  Lost: {4}\n",
+                                      "Mbps(ave): {3,7:F1}  Lost: {4}{5}\n",
                                       interval_data_length + OVERHEAD_BYTES,
                                       interval_packets_received,
                                       interval_packets_received * 1000000 /interval_time,
                                       interval_bytes_received * 1000000.0 / interval_time * 8.0 / 1000.0 / 1000.0,
-                                      interval_missing_packets);
+                                      interval_missing_packets,
+                                      outputCpu
+                        );
                     }
                     return;
                 }
@@ -998,14 +1291,19 @@ namespace PerformanceTest {
                         interval_bytes_received = bytes_received;
                         interval_missing_packets = missing_packets;
                         interval_data_length = last_data_length;
-
+                        String outputCpu = "";
+                        if (_showCpu) {
+                            outputCpu = cpu.get_cpu_average();
+                        }
                         Console.Write("Length: {0,5}  Packets: {1,8}  Packets/s(ave): {2,7:F0}  " +
-                                      "Mbps(ave): {3,7:F1}  Lost: {4}\n",
+                                      "Mbps(ave): {3,7:F1}  Lost: {4}{5}\n",
                                       interval_data_length + OVERHEAD_BYTES,
                                       interval_packets_received,
                                       interval_packets_received*1000000/interval_time,
                                       interval_bytes_received*1000000.0/interval_time*8.0/1000.0/1000.0,
-                                      interval_missing_packets);
+                                      interval_missing_packets,
+                                      outputCpu
+                        );
                         Console.Out.Flush();
                     }
 
@@ -1156,6 +1454,9 @@ namespace PerformanceTest {
             double mps_ave = 0.0, bps_ave = 0.0;
             ulong  msgsent, bytes, last_msgs, last_bytes;
 
+            if (_showCpu) {
+                reader_listener.cpu.initialize();
+            }
 
             now = GetTimeUsec();
             while (true) {
@@ -1197,11 +1498,15 @@ namespace PerformanceTest {
 
                     if (last_msgs > 0)
                     {
+                        String outputCpu = "";
+                        if (_showCpu) {
+                            outputCpu = reader_listener.cpu.get_cpu_instant();
+                        }
                         Console.Write("Packets: {0,8}  Packets/s: {1,7}  Packets/s(ave): {2,7:F0}  " +
-                                     "Mbps: {3,7:F1}  Mbps(ave): {4,7:F1}  Lost: {5}\n",
+                                     "Mbps: {3,7:F1}  Mbps(ave): {4,7:F1}  Lost: {5}{6}\n",
                                      last_msgs, mps, mps_ave,
                                     bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
-                                     reader_listener.missing_packets);
+                                     reader_listener.missing_packets,outputCpu);
                     }
                 }
             }
@@ -1257,6 +1562,10 @@ namespace PerformanceTest {
 
             private IMessagingReader _reader = null;
             private IMessagingWriter _writer = null;
+            //PerformanceCounter myAppCpu;
+            //PerformanceCounter cpuUsage;
+            public CpuMonitor cpu;
+
 
             public LatencyListener(IMessagingWriter writer, uint num_latency)
             {
@@ -1266,6 +1575,7 @@ namespace PerformanceTest {
                     _num_latency = num_latency;
                 }
                 _writer = writer;
+                cpu = new CpuMonitor();
             }
 
             public LatencyListener(IMessagingReader reader, IMessagingWriter writer, uint num_latency)
@@ -1326,14 +1636,20 @@ namespace PerformanceTest {
                         System.Array.Sort(_latency_history, 0, (int)count);
                         latency_ave = latency_sum / count;
                         latency_std = System.Math.Sqrt(latency_sum_square / count - (latency_ave * latency_ave));
+                        String outputCpu = "";
+                        if (_showCpu) {
+                            outputCpu = cpu.get_cpu_average();
+                        }
                         Console.Write("Length: {0,5}  Latency: Ave {1,6:F0} us  Std {2,6:F1} us  " +
-                                      "Min {3,6} us  Max {4,6} us  50% {5,6} us  90% {6,6} us  99% {7,6} us  99.99% {8,6} us  99.9999% {9,6} us\n",
+                                      "Min {3,6} us  Max {4,6} us  50% {5,6} us  90% {6,6} us  99% {7,6} us  99.99% {8,6} us  99.9999% {9,6} us{10}\n",
                                       last_data_length + OVERHEAD_BYTES, latency_ave, latency_std, latency_min, latency_max,
                                       _latency_history[count*50/100],
                                       _latency_history[count*90/100],
                                       _latency_history[count*99/100],
                                       _latency_history[(int)(count*(9999.0/10000))],
-                                      _latency_history[(int)(count*(999999.0/1000000))]);
+                                      _latency_history[(int)(count*(999999.0/1000000))],
+                                      outputCpu
+                        );
                         Console.Out.Flush();
                         latency_sum = 0;
                         latency_sum_square = 0;
@@ -1424,8 +1740,12 @@ namespace PerformanceTest {
                         latency_std = System.Math.Sqrt(
                             (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-                        Console.Write("One way Latency: {0,6} us  Ave {1,6:F0} us  Std {2,6:F1} us  Min {3,6} us  Max {4,6}\n",
-                            latency, latency_ave, latency_std, latency_min, latency_max);
+                        String outputCpu = "";
+                        if (_showCpu) {
+                            outputCpu = cpu.get_cpu_instant();
+                        }
+                        Console.Write("One way Latency: {0,6} us  Ave {1,6:F0} us  Std {2,6:F1} us  Min {3,6} us  Max {4,6}{5}\n",
+                            latency, latency_ave, latency_std, latency_min, latency_max,outputCpu);
                     }
                 }
             done:
@@ -1572,9 +1892,12 @@ namespace PerformanceTest {
             // Allocate data and set size
             TestMessage message = new TestMessage();
             message.entity_id = _PubID;
-            message.data = new byte[TestMessage.MAX_DATA_SIZE];
+            message.data = new byte[Math.Max(_DataLen,LENGTH_CHANGED_SIZE)];
 
             Console.Error.Write("Publishing data...\n");
+            if (_showCpu) {
+                reader_listener.cpu.initialize();
+            }
 
             // initialize data pathways by sending some initial pings
             if (initializeSampleCount < _InstanceCount) {
@@ -1715,10 +2038,10 @@ namespace PerformanceTest {
                                     break;
                                 }
 
-                                if (new_size > TestMessage.MAX_SYNCHRONOUS_SIZE)
+                                if (new_size > MAX_SYNCHRONOUS_SIZE.VALUE)
                                 {
                                     // last scan
-                                    new_size = TestMessage.MAX_SYNCHRONOUS_SIZE - OVERHEAD_BYTES;
+                                    new_size = MAX_SYNCHRONOUS_SIZE.VALUE - OVERHEAD_BYTES;
                                     last_scan = true;
                                 }
 
@@ -1732,7 +2055,7 @@ namespace PerformanceTest {
                                 switch (scan_number)
                                 {
                                   case 16:
-                                        new_size = TestMessage.MAX_SYNCHRONOUS_SIZE - OVERHEAD_BYTES;
+                                        new_size = MAX_SYNCHRONOUS_SIZE.VALUE - OVERHEAD_BYTES;
                                     _LatencyCount /= 2;
                                     break;
 
@@ -1886,8 +2209,8 @@ namespace PerformanceTest {
         }
 
         private int  _DataLen = 100;
+        private int     _useUnbounded = -1;
         private int  _BatchSize = 0;
-        private int  _MaxBinDataSize = TestMessage.MAX_DATA_SIZE;
         private int  _SamplesPerBatch = 1;
 
         private ulong _NumIter = 100000000;
@@ -1914,6 +2237,7 @@ namespace PerformanceTest {
         private static int  _SubID = 0;
         private static int  _PubID = 0;
         private static bool _PrintIntervals = true;
+        private static bool _showCpu  = false;
         private static long _ClockFrequency = 0;
         private static bool _testCompleted = false;
         public const string _LatencyTopicName = "Latency";
@@ -1946,7 +2270,10 @@ namespace PerformanceTest {
         // Flag used to indicate end of test
         private const int FINISHED_SIZE = 1235;
         // Flag used to indicate end of test
-        private const int LENGTH_CHANGED_SIZE = 1236;
+        public const int LENGTH_CHANGED_SIZE = 1236;
+
+        // MAX_PERFTEST_SAMPLE_SIZE for java (2GB-5B)
+        public const int MAX_PERFTEST_SAMPLE_SIZE_CS = 2147483591;
 
     }
 

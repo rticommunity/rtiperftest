@@ -25,12 +25,6 @@ public interface IMessaging {
      */
     public int getBatchSize();
 
-    /* Used only for scan mode.
-     * The maximum size of a message's binary payload. If the size
-     * exceeds this during a scan, the test will stop.
-     */
-    public int getMaxBinDataSize();
-
     public IMessagingWriter createWriter(String topicName);
     
     /**

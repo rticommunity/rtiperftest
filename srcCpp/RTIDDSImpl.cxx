@@ -30,6 +30,8 @@
 
 template class RTIDDSImpl<TestDataKeyed_t>;
 template class RTIDDSImpl<TestData_t>;
+template class RTIDDSImpl<TestDataKeyedLarge_t>;
+template class RTIDDSImpl<TestDataLarge_t>;
 
 template <typename T>
 int RTIDDSImpl<T>::_WaitsetEventCount = 5;
@@ -166,7 +168,7 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t-flowController <flow>  - In the case asynchronous writer use a specific flow controller.\n" +
             "\t                          There are several flow controller predefined:\n" +
             "\t                          ";
-    for(int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
+    for(unsigned int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
         usage_string+=valid_flow_controller[i] + " ";
     }
     usage_string += "\n\t                          Default: set default\n";
@@ -224,14 +226,32 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 return false;
             }
 
-            if (_DataLen > TestMessage::MAX_DATA_SIZE) {
-                fprintf(stderr, "-dataLen must be <= %d\n", TestMessage::MAX_DATA_SIZE);
+            if (_DataLen > MAX_PERFTEST_SAMPLE_SIZE) {
+                fprintf(stderr, "-dataLen must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
                 return false;
             }
+            if (_useUnbounded < 0 &&_DataLen > MAX_BOUNDED_SEQ_SIZE) {
+                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+            }
+        }
+        else if (IS_OPTION(argv[i], "-unbounded")) {
+            if ((i == (argc-1)) || *argv[i+1] == '-')
+            {
+                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+            } else {
+                ++i;
+                _useUnbounded = strtol(argv[i], NULL, 10);
 
-            if (_DataLen > MAX_BINDATA_SIZE) {
-                fprintf(stderr, "-dataLen must be <= %d\n", MAX_BINDATA_SIZE);
-                return false;
+                if (_useUnbounded <  perftest_cpp::OVERHEAD_BYTES)
+                {
+                    fprintf(stderr, "-unbounded <managerMemory> must be >= %d\n",  perftest_cpp::OVERHEAD_BYTES);
+                    return false;
+                }
+                if (_useUnbounded > MAX_PERFTEST_SAMPLE_SIZE)
+                {
+                    fprintf(stderr,"-unbounded <managerMemory> must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
+                    return false;
+                }
             }
         } else if (IS_OPTION(argv[i], "-sendQueueSize")) {
             if ((i == (argc - 1)) || *argv[++i] == '-') {
@@ -486,7 +506,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 
             // verify if the flow controller name is correct, else use "default"
             bool valid_flow_control = false;
-            for(int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
+            for(unsigned int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
                 if (_FlowControllerCustom == valid_flow_controller[i]) {
                     valid_flow_control = true;
                 }
@@ -586,13 +606,13 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_DataLen > TestMessage::MAX_SYNCHRONOUS_SIZE) {
+    if (_DataLen > MAX_SYNCHRONOUS_SIZE) {
         if (_isScan) {
             fprintf(stderr,"DataLen will be ignored since -scan is present.\n");
         } else {
             fprintf(stderr,
                     "Large data settings enabled (-dataLen > %d).\n",
-                    TestMessage::MAX_SYNCHRONOUS_SIZE);
+                    MAX_SYNCHRONOUS_SIZE);
             _isLargeData = true;
         }
     }
@@ -2126,6 +2146,14 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     dw_qos.resource_limits.max_instances = _InstanceCount;
     dw_qos.resource_limits.initial_instances = _InstanceCount;
 
+    if (_useUnbounded > 0) {
+        printf("Unbounded data_writer, memory_manager %s\n",
+                std::to_string(_useUnbounded).c_str());
+        DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
+               "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
+               std::to_string(_useUnbounded).c_str(), false);
+    }
+
     if (_InstanceCount > 1) {
         if (_InstanceHashBuckets > 0) {
             dw_qos.resource_limits.instance_hash_buckets =
@@ -2276,6 +2304,13 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(const char *topic_name,
         dr_qos.multicast.value[0].transports.length(0);
     }
 
+    if (_useUnbounded > 0) {
+        printf("Unbounded data_reader, memory_manager %s\n",
+                std::to_string(_useUnbounded).c_str());
+            DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
+                    "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
+                    std::to_string(_useUnbounded).c_str(), false);
+    }
 
     if (callback != NULL) {
 

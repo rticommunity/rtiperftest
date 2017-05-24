@@ -20,8 +20,6 @@ namespace PerformanceTest
         public int    timestamp_sec;
         public uint   timestamp_usec;
         public int    latency_ping;
-        public const int MAX_SYNCHRONOUS_SIZE = 63000;
-        public const int MAX_DATA_SIZE = 131072;
     }
 
     public interface IMessagingCB
@@ -65,11 +63,6 @@ namespace PerformanceTest
         // in bytes
         int GetBatchSize();
 
-        // Used only for scan mode.
-        // The maximum size of a message's binary payload. If the size
-        // exceeds this during a scan, the test will stop.
-        int GetMaxBinDataSize();
-
         IMessagingWriter CreateWriter(string topic_name);
 
         // Pass null for callback if using IMessagingReader.ReceiveMessage()
@@ -97,6 +90,8 @@ namespace PerformanceTest
         LoanableSequence<T> createSequence();
 
         ITypeHelper<T> clone();
+
+        int getMAX_PERFTEST_SAMPLE_SIZE();
 
     }
 }

@@ -14,7 +14,6 @@ import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.IMessagingWriter;
 import com.rti.perftest.TestMessage;
 
-
 //===========================================================================
 
 /**
@@ -42,7 +41,7 @@ import com.rti.perftest.TestMessage;
 
     private IMessagingReader _reader = null;
     private IMessagingWriter _writer = null;    
-
+    private CpuMonitor CpuMonitor = new CpuMonitor();
 
 
     // -----------------------------------------------------------------------
@@ -124,9 +123,14 @@ import com.rti.perftest.TestMessage;
                 double latency_std = sqrt(
                         abs(_latencySumSquare / (double)_count -
                                 (latency_ave * latency_ave)));
+                String outputCpu = "";
+                if (PerfTest._showCpu) {
+                    outputCpu = CpuMonitor.get_cpu_average();
+                }
+
                 System.out.printf(
                         "Length: %1$5d  Latency: Ave %2$6.0f us  Std %3$6.1f us  " +
-                        "Min %4$6d us  Max %5$6d us  50%% %6$6d us  90%% %7$6d us  99%% %8$6d us  99.99%% %9$6d us  99.9999%% %10$6d us\n",
+                        "Min %4$6d us  Max %5$6d us  50%% %6$6d us  90%% %7$6d us  99%% %8$6d us  99.99%% %9$6d us  99.9999%% %10$6d us" + outputCpu + "\n",
                         _lastDataLength + PerfTest.OVERHEAD_BYTES,
                         latency_ave,
                         latency_std,
@@ -136,7 +140,8 @@ import com.rti.perftest.TestMessage;
                         _latencyHistory[(int)(_count * 90/(double)100)],
                         _latencyHistory[(int)(_count * 99/(double)100)],
                         _latencyHistory[(int)(_count * (9999.0/(double)10000))],
-                        _latencyHistory[(int)(_count * (999999.0/(double)1000000))]);
+                        _latencyHistory[(int)(_count * (999999.0/(double)1000000))]
+                );
                 System.out.flush();
                 _latencySum = 0;
                 _latencySumSquare = 0;
@@ -205,6 +210,11 @@ import com.rti.perftest.TestMessage;
         _latencySum += latency;
         _latencySumSquare += ((long)latency * (long)latency);
 
+        String outputCpu = "";
+        if (PerfTest._showCpu) {
+            outputCpu = CpuMonitor.get_cpu_instant();
+        }
+
         // if data sized changed
         if (_lastDataLength != message.size) {
             _lastDataLength = message.size;
@@ -221,8 +231,13 @@ import com.rti.perftest.TestMessage;
                 (double)_latencySumSquare / (double)_count - (latency_ave * latency_ave));
 
             System.out.printf(
-                "One-Way Latency: %1$6d us  Ave %2$6.0f us  Std %3$6.1f us  Min %4$6d us  Max %5$6d\n",
-                latency, latency_ave, latency_std, _latencyMin, _latencyMax);
+                "One-Way Latency: %1$6d us  Ave %2$6.0f us  Std %3$6.1f us  Min %4$6d us  Max %5$6d" + outputCpu + "\n",
+                latency,
+                latency_ave,
+                latency_std,
+                _latencyMin,
+                _latencyMax
+            );
         }
         if (_writer != null) {
             _writer.notifyPingResponse();

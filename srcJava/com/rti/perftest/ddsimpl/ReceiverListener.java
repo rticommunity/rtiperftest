@@ -20,7 +20,7 @@ import com.rti.dds.subscription.ViewStateKind;
 import com.rti.dds.util.AbstractSequence;
 import com.rti.perftest.IMessagingCB;
 import com.rti.perftest.TestMessage;
-import com.rti.perftest.gen.MAX_BINDATA_SIZE;
+import com.rti.perftest.harness.PerfTest;
 
 
 // ===========================================================================
@@ -37,9 +37,6 @@ import com.rti.perftest.gen.MAX_BINDATA_SIZE;
     private List _dataSeq = null;
     private SampleInfoSeq _infoSeq = new SampleInfoSeq();
     private TestMessage   _message  = new TestMessage();
-    {
-        _message.data = new byte[MAX_BINDATA_SIZE.VALUE];
-    }
     private IMessagingCB _callback;
     private TypeHelper<T> _myDataType = null;
 
@@ -53,6 +50,7 @@ import com.rti.perftest.gen.MAX_BINDATA_SIZE;
     public ReceiverListener(IMessagingCB callback, TypeHelper<T> myDatatype) {
         _callback = callback;
         _myDataType = myDatatype;
+        _message.data = new byte[_myDataType.getMAX_PERFTEST_SAMPLE_SIZE()];
         _dataSeq =(List)_myDataType.createSequence();
     }
 

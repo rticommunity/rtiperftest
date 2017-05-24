@@ -75,7 +75,6 @@ class perftest_cpp
   private:
     int  _DataLen;
     int  _BatchSize;
-    int  _maxBinDataSize;
     int  _SamplesPerBatch;
     unsigned long long _NumIter;
     bool _IsPub;
@@ -95,6 +94,7 @@ class perftest_cpp
     int _pubRate;
     bool _pubRateMethodSpin;
     bool _isKeyed;
+    int _useUnbounded;
     unsigned int _executionTime;
     bool _displayWriterStats;
 
@@ -113,6 +113,7 @@ class perftest_cpp
     static int  _SubID;
     static int  _PubID;
     static bool _PrintIntervals;
+    static bool _showCpu;
 
     static struct RTIClock *_Clock;
     static struct RTINtpTime _ClockTime_aux;

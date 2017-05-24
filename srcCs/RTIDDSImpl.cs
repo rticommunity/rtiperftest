@@ -54,14 +54,6 @@ namespace PerformanceTest
         }
 
         /*********************************************************
-         * GetMaxBinDataSize
-         */
-        public int GetMaxBinDataSize()
-        {
-            return MAX_BINDATA_SIZE.VALUE;
-        }
-
-        /*********************************************************
          * PrintCmdLineHelp
          */
         public void PrintCmdLineHelp()
@@ -191,14 +183,38 @@ namespace PerformanceTest
                         Console.Error.WriteLine("dataLen must be >= " + perftest_cs.OVERHEAD_BYTES);
                         return false;
                     }
-                    if (_DataLen > TestMessage.MAX_DATA_SIZE)
+                    if (_DataLen > perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS)
                     {
-                        Console.Error.WriteLine("dataLen must be <= " + TestMessage.MAX_DATA_SIZE);
+                        Console.Error.WriteLine("dataLen must be <= " + perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS);
                         return false;
                     }
-                    if (_DataLen > MAX_BINDATA_SIZE.VALUE)
+                    if (_useUnbounded < 0 && _DataLen > MAX_BOUNDED_SEQ_SIZE.VALUE){
+                        _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                    }
+                }
+                else if ("-unbounded".StartsWith(argv[i], true, null))
+                {
+
+                    if ((i == (argc - 1)) || argv[i+1].StartsWith("-"))
                     {
-                        Console.Error.WriteLine("dataLen must be <= " + MAX_BINDATA_SIZE.VALUE);
+                        _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                    } else {
+                        ++i;
+                        if (!Int32.TryParse(argv[i], out _DataLen))
+                        {
+                            Console.Error.Write("Bad managerMemory value\n");
+                            return false;
+                        }
+                    }
+
+                    if (_useUnbounded < perftest_cs.OVERHEAD_BYTES)
+                    {
+                        Console.Error.WriteLine("_useUnbounded must be >= " + perftest_cs.OVERHEAD_BYTES);
+                        return false;
+                    }
+                    if (_useUnbounded > perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS)
+                    {
+                        Console.Error.WriteLine("_useUnbounded must be <= " + perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS);
                         return false;
                     }
                 }
@@ -513,7 +529,7 @@ namespace PerformanceTest
                 {
                     _TurboMode = true;
                 }
-                else if ("-secureSign".StartsWith(argv[i], true, null)) 
+                else if ("-secureSign".StartsWith(argv[i], true, null))
                 {
                     _secureIsSigned = true;
                     _secureUseSecure = true;
@@ -650,7 +666,7 @@ namespace PerformanceTest
                 }
             }
 
-            if (_DataLen > TestMessage.MAX_SYNCHRONOUS_SIZE)
+            if (_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE)
             {
                 if (_isScan)
                 {
@@ -658,7 +674,7 @@ namespace PerformanceTest
                 }
                 else
                 {
-                    Console.Error.WriteLine("Large data settings enabled (-dataLen < " + MAX_BINDATA_SIZE.VALUE + ").");
+                    Console.Error.WriteLine("Large data settings enabled (-dataLen < " + perftest_cs.MAX_PERFTEST_SAMPLE_SIZE_CS + ").");
                     _isLargeData = true;
                 }
             }
@@ -918,7 +934,7 @@ namespace PerformanceTest
                 _callback = callback;
                 _DataType = DataType;
                 _data_seq = _DataType.createSequence();
-                _message.data = new byte[MAX_BINDATA_SIZE.VALUE];
+                _message.data = new byte[_DataType.getMAX_PERFTEST_SAMPLE_SIZE()];
             }
 
             public override void on_data_available(DDS.DataReader reader)
@@ -998,7 +1014,7 @@ namespace PerformanceTest
                 _reader = reader;
                 _DataType = DataType;
                 _data_seq = _DataType.createSequence();
-                _message.data = new byte[MAX_BINDATA_SIZE.VALUE];
+                _message.data = new byte[_DataType.getMAX_PERFTEST_SAMPLE_SIZE()];
 
                 // null listener means using receive thread
                 if (_reader.get_listener() == null)
@@ -1737,10 +1753,16 @@ namespace PerformanceTest
                 }
             }
 
+            if (_useUnbounded > 0) {
+                Console.Write("Unbounded data_writer, memory_manager " + _useUnbounded.ToString() + ".\n");
+                DDS.PropertyQosPolicyHelper.add_property(dw_qos.property_qos,
+                        "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
+                        _useUnbounded.ToString(), false);
+            }
 
             DataWriter writer = _publisher.create_datawriter(
                     topic,
-                    dw_qos, 
+                    dw_qos,
                     null,
                     StatusMask.STATUS_MASK_NONE);
 
@@ -1906,12 +1928,19 @@ namespace PerformanceTest
             DDS.DataReader reader = null;
             ReceiverListener<T> reader_listener = null;
             StatusMask statusMask = StatusMask.STATUS_MASK_NONE;
-            
+
             if (callback != null)
             {
                 reader_listener = new ReceiverListener<T>(callback, _DataTypeHelper.clone());
                 statusMask = (DDS.StatusMask)DDS.StatusKind.DATA_AVAILABLE_STATUS;
 
+            }
+
+            if (_useUnbounded > 0) {
+                Console.Write("Unbounded data_reader, memory_manager " + _useUnbounded.ToString() + ".\n");
+                DDS.PropertyQosPolicyHelper.add_property(dr_qos.property_qos,
+                        "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
+                        _useUnbounded.ToString(), false);
             }
 
             reader = _subscriber.create_datareader(
@@ -1931,6 +1960,7 @@ namespace PerformanceTest
 
         private int    _SendQueueSize = 50;
         private int    _DataLen = 100;
+        private int     _useUnbounded = -1;
         private int    _DomainID = 1;
         private string _Nic = "";
         private string _ProfileFile = "perftest_qos_profiles.xml";

@@ -36,7 +36,7 @@ import com.rti.perftest.TestMessage;
     public long intervalBytesReceived = 0;
     public long intervalMissingPackets = 0;
     public long intervalTime = 0;
-
+    public  CpuMonitor CpuMonitor = new CpuMonitor();
 
 
     // -----------------------------------------------------------------------
@@ -49,7 +49,6 @@ import com.rti.perftest.TestMessage;
     private long _beginTime;
     private int _numPublishers;
     private ArrayList<Integer> _finished_publishers;
-
 
 
 
@@ -161,13 +160,18 @@ import com.rti.perftest.TestMessage;
             }
 
             if (_finished_publishers.size() >= _numPublishers) {
+                String outputCpu = "";
+                if (PerfTest._showCpu) {
+                    outputCpu = CpuMonitor.get_cpu_average();
+                }
                 System.out.printf("Length: %1$5d  Packets: %2$8d  Packets/s(ave): %3$7.0f  " +
-                                  "Mbps(ave): %4$7.1f  Lost: %5$d\n",
-                                  intervalDataLength + PerfTest.OVERHEAD_BYTES,
-                                  intervalPacketsReceived,
-                                  intervalPacketsReceived * 1000000.0 / intervalTime,
-                                  intervalBytesReceived * 1000000.0 / intervalTime *8.0/1000.0/1000.0,
-                                  intervalMissingPackets);
+                        "Mbps(ave): %4$7.1f  Lost: %5$d" + outputCpu + "\n",
+                        intervalDataLength + PerfTest.OVERHEAD_BYTES,
+                        intervalPacketsReceived,
+                        intervalPacketsReceived * 1000000.0 / intervalTime,
+                        intervalBytesReceived * 1000000.0 / intervalTime *8.0/1000.0/1000.0,
+                        intervalMissingPackets
+                );
                 System.out.flush();
             }
             return;
@@ -207,17 +211,22 @@ import com.rti.perftest.TestMessage;
                 intervalMissingPackets = missingPackets;
                 intervalDataLength = lastDataLength;
 
+                String outputCpu = "";
+                if (PerfTest._showCpu) {
+                    outputCpu = CpuMonitor.get_cpu_average();
+                }
                 System.out.printf(
                     "Length: %1$5d  Packets: %2$8d  Packets/s(ave): %3$7.0f  " +
-                    "Mbps(ave): %4$7.1f  Lost: %5$d\n",
+                    "Mbps(ave): %4$7.1f  Lost: %5$d" + outputCpu + "\n",
                     intervalDataLength + PerfTest.OVERHEAD_BYTES,
                     intervalPacketsReceived,
                     intervalPacketsReceived *
-                        1000000.0 / intervalTime,
+                            1000000.0 / intervalTime,
                     intervalBytesReceived *
-                        1000000.0 / intervalTime *
-                        8.0/1000.0/1000.0,
-                    intervalMissingPackets);
+                            1000000.0 / intervalTime *
+                            8.0/1000.0/1000.0,
+                    intervalMissingPackets
+                );
                 System.out.flush();
             }
             

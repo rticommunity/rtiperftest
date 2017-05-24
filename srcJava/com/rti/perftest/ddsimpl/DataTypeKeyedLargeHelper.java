@@ -8,20 +8,20 @@ package com.rti.perftest.ddsimpl;
 import java.util.List;
 import com.rti.dds.topic.TypeSupportImpl;
 import com.rti.perftest.TestMessage;
-import com.rti.perftest.gen.TestDataKeyed_t;
-import com.rti.perftest.gen.TestDataKeyed_tSeq;
-import com.rti.perftest.gen.TestDataKeyed_tTypeSupport;
+import com.rti.perftest.gen.TestDataKeyedLarge_t;
+import com.rti.perftest.gen.TestDataKeyedLarge_tSeq;
+import com.rti.perftest.gen.TestDataKeyedLarge_tTypeSupport;
 import com.rti.perftest.harness.PerfTest;
 
 
-public class DataTypeKeyedHelper implements TypeHelper<TestDataKeyed_t> {
+public class DataTypeKeyedLargeHelper implements TypeHelper<TestDataKeyedLarge_t> {
 
-    public DataTypeKeyedHelper(int MAX_PERFTEST_SAMPLE_SIZE) {
-        _myData = new TestDataKeyed_t();
+    public DataTypeKeyedLargeHelper(int MAX_PERFTEST_SAMPLE_SIZE) {
+        _myData = new TestDataKeyedLarge_t();
         _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
     }
 
-    public DataTypeKeyedHelper(TestDataKeyed_t myData, int MAX_PERFTEST_SAMPLE_SIZE) {
+    public DataTypeKeyedLargeHelper(TestDataKeyedLarge_t myData, int MAX_PERFTEST_SAMPLE_SIZE) {
         _myData = myData;
         _MAX_PERFTEST_SAMPLE_SIZE = MAX_PERFTEST_SAMPLE_SIZE;
     }
@@ -47,7 +47,7 @@ public class DataTypeKeyedHelper implements TypeHelper<TestDataKeyed_t> {
     @SuppressWarnings("rawtypes")
     public TestMessage copyFromSeqToMessage(List dataSeq, int index) {
 
-        TestDataKeyed_t msg = (TestDataKeyed_t)((List)dataSeq).get(index);
+        TestDataKeyedLarge_t msg = (TestDataKeyedLarge_t)((List)dataSeq).get(index);
         TestMessage message = new TestMessage();
 
         message.entity_id = msg.entity_id;
@@ -61,7 +61,7 @@ public class DataTypeKeyedHelper implements TypeHelper<TestDataKeyed_t> {
         return message;
     }
 
-    public TestDataKeyed_t getData() {
+    public TestDataKeyedLarge_t getData() {
         return _myData;
     }
 
@@ -75,16 +75,16 @@ public class DataTypeKeyedHelper implements TypeHelper<TestDataKeyed_t> {
     }
 
     public TypeSupportImpl getTypeSupport() {
-        return TestDataKeyed_tTypeSupport.getInstance();
+        return TestDataKeyedLarge_tTypeSupport.getInstance();
     }
 
-    public TypeHelper<TestDataKeyed_t> clone(){
-        return new DataTypeKeyedHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
+    public TypeHelper<TestDataKeyedLarge_t> clone(){
+        return new DataTypeKeyedLargeHelper(_myData, _MAX_PERFTEST_SAMPLE_SIZE);
     }
 
     @SuppressWarnings("rawtypes")
     public List createSequence() {
-        return new TestDataKeyed_tSeq();
+        return new TestDataKeyedLarge_tSeq();
     }
 
     @SuppressWarnings("rawtypes")
@@ -93,6 +93,6 @@ public class DataTypeKeyedHelper implements TypeHelper<TestDataKeyed_t> {
     }
 
     private int _MAX_PERFTEST_SAMPLE_SIZE = PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA;
-    private TestDataKeyed_t _myData;
+    private TestDataKeyedLarge_t _myData;
 
 }

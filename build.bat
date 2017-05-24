@@ -167,10 +167,10 @@ if !BUILD_CPP! == 1 (
 	@REM # Generate files for srcCpp
 	echo[
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
-	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -replace^
+	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
-	-additionalHeaderFiles "MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h"^
-	-additionalSourceFiles "RTIDDSImpl.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
+	-additionalHeaderFiles "MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h"^
+	-additionalSourceFiles "RTIDDSImpl.cxx CpuMonitor.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
 	!rtiddsgen_extra_options!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
@@ -216,10 +216,10 @@ if !BUILD_CPP03! == 1 (
 	@REM #Generate files for srcCpp03
 	echo[
 	echo [INFO]: Generating types and makefiles for %modern_cpp_lang_string%
-	call "%rtiddsgen_executable%" -language %modern_cpp_lang_string% -replace^
+	call "%rtiddsgen_executable%" -language %modern_cpp_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
-	-additionalHeaderFiles "MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h"^
-	-additionalSourceFiles "RTIDDSImpl.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
+	-additionalHeaderFiles "MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h"^
+	-additionalSourceFiles "RTIDDSImpl.cxx  CpuMonitor.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
 
@@ -250,9 +250,9 @@ if %BUILD_CS% == 1 (
 	@REM Generate files for srcCs
 	echo[
 	echo [INFO]: Generating types and makefiles for %cs_lang_string%
-	call "%rtiddsgen_executable%" -language %cs_lang_string% -replace^
+	call "%rtiddsgen_executable%" -language %cs_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
-	-additionalSourceFiles "RTIDDSImpl.cs MessagingIF.cs"^
+	-additionalSourceFiles "RTIDDSImpl.cs MessagingIF.cs CpuMonitor.cs"^
 	-additionalDefines "/0x" -d "%cs_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %cs_lang_string%.
@@ -283,7 +283,7 @@ if	%BUILD_JAVA% == 1 (
 	@REM Generate files for Java
 	echo[
 	echo [INFO]: Generating types and makefiles for %java_lang_string%
-	call "%rtiddsgen_executable%" -language %java_lang_string% -replace^
+	call "%rtiddsgen_executable%" -language %java_lang_string% -unboundedSupport -replace^
 	-package com.rti.perftest.gen -d "%java_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %java_lang_string%.

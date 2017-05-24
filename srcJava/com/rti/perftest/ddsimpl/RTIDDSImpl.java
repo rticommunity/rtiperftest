@@ -38,7 +38,8 @@ import com.rti.perftest.IMessagingCB;
 import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.IMessagingWriter;
 import com.rti.perftest.TestMessage;
-import com.rti.perftest.gen.MAX_BINDATA_SIZE;
+import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
+import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 import com.rti.perftest.harness.PerfTest;
 
 
@@ -78,6 +79,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private Duration_t _heartbeatPeriod = new Duration_t(0,0);
     private Duration_t _fastHeartbeatPeriod = new Duration_t (0,0);
     private int     _dataLen = 100;
+    private int     _useUnbounded = -1;
     private int     _domainID = 1;
     private String  _nic = "";
     private String  _profileFile = "perftest_qos_profiles.xml";
@@ -174,10 +176,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
     public int getBatchSize() {
         return _batchSize;
-    }
-
-    public int getMaxBinDataSize() {
-        return MAX_BINDATA_SIZE.VALUE;
     }
 
     public void printCmdLineHelp() {
@@ -766,6 +764,19 @@ public final class RTIDDSImpl<T> implements IMessaging {
             dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = (_keepDurationUsec * 1000) % 1000000000;
         }
 
+        if (_useUnbounded > 0) {
+            System.err.println("Unbounded data_writer, memory_manager " + Integer.toString(_useUnbounded) + ".");
+            PropertyQosPolicyHelper.add_property(
+                    dwQos.property, "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
+                    Integer.toString(_useUnbounded), false);
+            PropertyQosPolicyHelper.add_property(
+                    dwQos.property, "dds.data_writer.history.memory_manager.java_stream.min_size",
+                    Integer.toString(_useUnbounded), false);
+            PropertyQosPolicyHelper.add_property(
+                    dwQos.property, "dds.data_writer.history.memory_manager.java_stream.trim_to_size",
+                    "1", false);
+        }
+
         if ((_isLargeData) && (!_isScan) || _IsAsynchronous)
         {
             System.err.println("Using asynchronous write for " + topicName + ".");
@@ -914,6 +925,19 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 drQos.reliability.kind = ReliabilityQosPolicyKind.BEST_EFFORT_RELIABILITY_QOS;
             }
         }
+
+        if (_useUnbounded > 0) {
+            System.err.println("Unbounded data_reader, memory_manager " + Integer.toString(_useUnbounded) + ".");
+            PropertyQosPolicyHelper.add_property(
+                    drQos.property, "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
+                    Integer.toString(_useUnbounded), false);
+            PropertyQosPolicyHelper.add_property(
+                    drQos.property, "dds.data_reader.history.memory_manager.java_stream.min_size",
+                    Integer.toString(_useUnbounded), false);
+            PropertyQosPolicyHelper.add_property(
+                    drQos.property, "dds.data_reader.history.memory_manager.java_stream.trim_to_size",
+                    "1", false);
+        }
       
         // These QOS's are only set for the Throughput reader
         if ("ThroughputQos".equals(qosProfile) ||
@@ -1020,13 +1044,32 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     System.err.println("dataLen must be >= " + PerfTest.OVERHEAD_BYTES);
                     return false;
                 }
-                if (_dataLen > TestMessage.MAX_DATA_SIZE) {
-                    System.err.println("dataLen must be <= " + TestMessage.MAX_DATA_SIZE);
+                if (_dataLen > PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA) {
+                    System.err.println("dataLen must be <= " + PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA);
                     return false;
                 }
+                if (_useUnbounded < 0 && _dataLen > MAX_BOUNDED_SEQ_SIZE.VALUE){
+                    _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                }
+            }else if ("-unbounded".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[i+1].startsWith("-")) {
+                     _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                } else {
+                    ++i;
+                    try {
+                        _useUnbounded = Integer.parseInt(argv[i]);
+                    } catch (NumberFormatException nfx) {
+                        System.err.print("Bad managerMemory value.\n");
+                        return false;
+                    }
+                }
 
-                if (_dataLen > MAX_BINDATA_SIZE.VALUE) {
-                    System.err.println("dataLen must be <= " + MAX_BINDATA_SIZE.VALUE);
+                if (_useUnbounded < PerfTest.OVERHEAD_BYTES) {
+                    System.err.println("unbounded must be >= " + PerfTest.OVERHEAD_BYTES);
+                    return false;
+                }
+                if (_useUnbounded > PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA) {
+                    System.err.println("unbounded must be <= " + PerfTest.MAX_PERFTEST_SAMPLE_SIZE_JAVA);
                     return false;
                 }
             } else if ("-sendQueueSize".toLowerCase().startsWith(argv[i].toLowerCase())) {
@@ -1388,14 +1431,14 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
         }
 
-        if (_dataLen > TestMessage.MAX_SYNCHRONOUS_SIZE) {
+        if (_dataLen > MAX_SYNCHRONOUS_SIZE.VALUE) {
             if (_isScan) {
                 System.err.println("DataLen will be ignored since -scan is "
                         + "present"); 
 
             } else {
                 System.err.println("Large data settings enabled (-dataLen > " 
-                                    + TestMessage.MAX_SYNCHRONOUS_SIZE + ").");
+                                    + MAX_SYNCHRONOUS_SIZE.VALUE + ").");
                 _isLargeData = true;
             }
         }

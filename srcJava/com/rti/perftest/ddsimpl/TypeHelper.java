@@ -32,4 +32,7 @@ public interface TypeHelper<T> {
     @SuppressWarnings("rawtypes")
     public List createSequence();
 
+    @SuppressWarnings("rawtypes")
+    public int getMAX_PERFTEST_SAMPLE_SIZE();
+
 }
