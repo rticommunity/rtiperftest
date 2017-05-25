@@ -76,6 +76,10 @@ The sample size can be set via the `-dataLen <bytes>` Command-Line Parameter, if
 
 It is also possible to enable the use of *Unbounded Sequences* or *Asynchronous Publishing* independently of the sample size by specifying the Command-Line Parameters `unbounded <managerMemory>` and `-asynchronous`.
 
+### Added Command-Line Parameter "-peer" to specify the discovery peers.
+
+In previous releases the only way to provide the Initial Peers was either adding them to the QoS xml file or by using the environment variable `NDDS_DISCOVERY_PEERS`. Now it is possible to use a new Command-Line Parameter: `-peer <address>` with the peer address.
+
 ## What's Fixed in 2.1
 
 ### "--nddshome" Command-Line Option did not Work in `build.bat` Script -- Windows Systems Only

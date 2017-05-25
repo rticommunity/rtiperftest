@@ -11,6 +11,8 @@
 #include "MessagingIF.h"
 #include "perftestSupport.h"
 
+#define RTIPERFTEST_MAX_PEERS            (1024)
+
 template <typename T>
 class RTIDDSImpl : public IMessaging
 {
@@ -48,6 +50,7 @@ class RTIDDSImpl : public IMessaging
         _IsAsynchronous = false;
         _FlowControllerCustom = "default";
         _useUnbounded = 0;
+        _peer_host_count = 0;
 
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure = false;
@@ -139,6 +142,8 @@ class RTIDDSImpl : public IMessaging
     bool         _IsAsynchronous;
     std::string  _FlowControllerCustom;
     unsigned long _useUnbounded;
+    int          _peer_host_count;
+    char *       _peer_host[RTIPERFTEST_MAX_PEERS];
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

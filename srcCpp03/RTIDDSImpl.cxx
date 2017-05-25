@@ -80,6 +80,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _IsAsynchronous(false),
         _FlowControllerCustom("default"),
         _useUnbounded(0),
+        _peer_host_count(0),
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure(false),
         _secureIsSigned(false),
@@ -193,8 +194,11 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
     for(unsigned int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
         usage_string+=valid_flow_controller[i] + " ";
     }
-    usage_string += "\n"
-                    "\t                          Default: set default\n";
+    usage_string +=
+            "\n"
+            "\t                          Default: set default\n"
+            "\t-peer <address>          - Adds a peer to the peer host address list.\n"
+            "\t                          This argument may be repeated to indicate multiple peers\n";
 #ifdef RTI_SECURE_PERFTEST
     usage_string +=
             "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n"
@@ -564,6 +568,19 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             {
                 std::cerr <<"Bad <flow> "<<_FlowControllerCustom <<" for custom flow controller"<< std::endl;
                 _FlowControllerCustom = "default";// used default
+            }
+        }
+        else if (IS_OPTION(argv[i], "-peer")) {
+            if ((i == (argc-1)) || *argv[++i] == '-')
+            {
+                std::cerr << "[Error] Missing <address> after -peer"<< std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
+                _peer_host[_peer_host_count++] = argv[i];
+            } else {
+                std::cerr <<"[Error] The maximun of -initial peers is "<< RTIPERFTEST_MAX_PEERS << std::endl;
+                return false;
             }
       #ifdef RTI_SECURE_PERFTEST
         } else if (IS_OPTION(argv[i], "-secureSign")) {
@@ -1431,6 +1448,19 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
   #endif
 
+    Discovery qos_discovery = qos.policy<Discovery>(); //get all the Discovery
+    // set initial peers and not use multicast
+    if ( _peer_host_count > 0 ) {
+        std::cout << "[INFO]: Initial peers: ";
+        for ( int i =0; i< _peer_host_count; ++i) {
+            std::cout << _peer_host[i] << " ";
+        }
+        std::cout << std::endl;
+        _peer_host.resize(_peer_host_count);
+        qos_discovery.initial_peers(_peer_host);
+        qos_discovery.multicast_receive_addresses(dds::core::StringSeq());
+    }
+
     // set transports to use
     qos << rti::core::policy::TransportBuiltin(TransportBuiltinMask::udpv4());
     if (_UseTcpOnly) {
@@ -1463,6 +1493,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         properties["dds.transport.shmem.builtin.received_message_count_max"] = buf;
     }
 
+    qos << qos_discovery;
     //We have to copy the properties to the participant_qos object
     qos << rti::core::policy::Property(
             properties.begin(),

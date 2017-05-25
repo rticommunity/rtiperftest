@@ -1,10 +1,9 @@
-//using the algorithm to get cpu from http://stackoverflow.com/questions/63166/how-to-determine-cpu-and-memory-consumption-from-inside-a-process
-#include "clock/clock_highResolution.h"
-#include "osapi/osapi_ntptime.h"
+
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <iomanip> // setprecision
+#include <iomanip> // set precision
+
 #if defined(RTI_LINUX)
     #include "stdlib.h"
     #include "stdio.h"
@@ -38,9 +37,9 @@ private:
     unsigned long long _counter;
     long double _cpuUsageTotal;
 #if defined(RTI_LINUX) || defined(RTI_DARWIN)
-    clock_t lastCPU, lastSysCPU, lastUserCPU;
+    clock_t _lastCPU, _lastSysCPU, _lastUserCPU;
 #elif defined(RTI_WIN32)
-    ULARGE_INTEGER lastCPU, lastSysCPU, lastUserCPU;
+    ULARGE_INTEGER _lastCPU, _lastSysCPU, _lastUserCPU;
     HANDLE self;
 #endif
 

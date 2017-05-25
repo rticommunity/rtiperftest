@@ -71,6 +71,12 @@ std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
 template <typename T>
 void RTIDDSImpl<T>::Shutdown()
 {
+    //delete array of peers
+    for (int i = 0; i < _peer_host_count; ++i) {
+        free(_peer_host[i]);
+        _peer_host[i] = NULL;
+    }
+
     if (_participant != NULL) {
         perftest_cpp::MilliSleep(2000);
 
@@ -171,7 +177,10 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
     for(unsigned int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
         usage_string+=valid_flow_controller[i] + " ";
     }
-    usage_string += "\n\t                          Default: set default\n";
+    usage_string += std::string("\n") +
+            "\t                          Default: set default\n" +
+            "\t-peer <address>          - Adds a peer to the peer host address list.\n" +
+            "\t                          This argument may be repeated to indicate multiple peers\n";
 #ifdef RTI_SECURE_PERFTEST
     usage_string += std::string(
             "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n") +
@@ -516,6 +525,19 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             {
                 fprintf(stderr, "Bad <flow> '%s' for custom flow controller\n",_FlowControllerCustom.c_str());
                 _FlowControllerCustom = "default";
+            }
+        }
+        else if (IS_OPTION(argv[i], "-peer")) {
+            if ((i == (argc-1)) || *argv[++i] == '-')
+            {
+                fprintf(stderr, "Missing <address> after -peer\n");
+                return false;
+            }
+            if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
+                _peer_host[_peer_host_count++] = DDS_String_dup(argv[i]);
+            } else {
+                fprintf(stderr,"The maximun of -initial peers is %d\n", RTIPERFTEST_MAX_PEERS);
+                return false;
             }
         }
       #ifdef RTI_SECURE_PERFTEST
@@ -1886,6 +1908,19 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         }
     }
   #endif
+
+    // set initial peers and not use multicast
+    if ( _peer_host_count > 0 ) {
+        printf("Initial peers: ");
+        for ( int i =0; i< _peer_host_count; ++i) {
+            printf("%s ", _peer_host[i]);
+        }
+        printf("\n");
+        qos.discovery.initial_peers.from_array(
+            (const char **)_peer_host,
+            _peer_host_count);
+        qos.discovery.multicast_receive_addresses.length(0);
+    }
 
     // set transports to use
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;

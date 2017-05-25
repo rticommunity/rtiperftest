@@ -17,6 +17,7 @@
 #include "rti/config/Logger.hpp"
 #include <dds/dds.hpp>
 
+#define RTIPERFTEST_MAX_PEERS            (1024)
 
 template <typename T>
 class RTIDDSImpl : public IMessaging
@@ -84,6 +85,8 @@ class RTIDDSImpl : public IMessaging
     bool         _IsAsynchronous;
     std::string  _FlowControllerCustom;
     unsigned long _useUnbounded;
+    int          _peer_host_count;
+    dds::core::StringSeq  _peer_host = dds::core::StringSeq(RTIPERFTEST_MAX_PEERS);
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;
