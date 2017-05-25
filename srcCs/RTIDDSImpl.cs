@@ -132,6 +132,9 @@ namespace PerformanceTest
                 usage_string += flow + "  ";
             }
             usage_string += "\n\t                          Default: set default\n" +
+            "\t                          Default: set default\n" +
+            "\t-peer <address>          - Adds a peer to the peer host address list.\n" +
+            "\t                          This argument may be repeated to indicate multiple peers\n" +
             "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n" +
             "\t-secureSign                   - Sign (HMAC) discovery and user data\n" +
             "\t-secureEncryptData            - Encrypt topic (user) data\n" +
@@ -658,9 +661,18 @@ namespace PerformanceTest
                         Console.Error.Write("Bad <flow> '" + _FlowControllerCustom + "' for custom flow controller\n");
                         _FlowControllerCustom = "default";
                     }
-                }
-                else
-                {
+                } else if ("-peer".StartsWith(argv[i], true, null)) {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-")){
+                        Console.Error.Write("Missing <address> after -peer\n");
+                        return false;
+                    }
+                    if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
+                        _peer_host[_peer_host_count++] = argv[i];
+                    } else {
+                        Console.Error.Write("The maximun of -initial peers is " + RTIPERFTEST_MAX_PEERS + "\n");
+                        return false;
+                    }
+                } else {
                     Console.Error.Write(argv[i] + ": not recognized\n");
                     return false;
                 }
@@ -1191,6 +1203,17 @@ namespace PerformanceTest
                     return false;
                 }
                 ConfigureSecurePlugin(qos);
+            }
+
+            // set initial peers and not use multicast
+            if ( _peer_host_count > 0 ) {
+                Console.Error.Write("Initial peers: ");
+                for ( int i =0; i< _peer_host_count; ++i) {
+                    Console.Error.Write(_peer_host[i]+" ");
+                }
+                Console.Error.Write("\n");
+                qos.discovery.initial_peers.from_array(_peer_host);
+                qos.discovery.multicast_receive_addresses = new  DDS.StringSeq();
             }
 
             // set transports to use
@@ -1984,6 +2007,10 @@ namespace PerformanceTest
         private bool _IsAsynchronous = false;
         private string _FlowControllerCustom = "default";
         string[] valid_flow_controller = { "default", "1Gbps", "10Gbps" };
+        static int             RTIPERFTEST_MAX_PEERS = 1024;
+        private int     _peer_host_count = 0;
+        private string[] _peer_host = new string[RTIPERFTEST_MAX_PEERS];
+
 
         /* Security related variables */
         private bool _secureUseSecure = false;

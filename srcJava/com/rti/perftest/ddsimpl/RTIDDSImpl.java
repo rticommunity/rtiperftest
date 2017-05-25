@@ -106,6 +106,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean _IsAsynchronous = false;
     private String  _FlowControllerCustom = "default";
     String[] valid_flow_controller = {"default", "1Gbps", "10Gbps"};
+    static int             RTIPERFTEST_MAX_PEERS = 1024;
+    private int     _peer_host_count = 0;
+    private String[] _peer_host = new String[RTIPERFTEST_MAX_PEERS];
 
     private boolean _secureUseSecure = false;
     private boolean _secureIsSigned = false;
@@ -251,7 +254,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
             {
                 usage_string += flow + "  ";
             }
-            usage_string += "\n\t                          Default: set default\n" +
+            usage_string += "\n" +
+            "\t                          Default: set default\n" +
+            "\t-peer <address>          - Adds a peer to the peer host address list.\n" +
+            "\t                          This argument may be repeated to indicate multiple peers\n" +
             "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n" +
             "\t-secureSign                   - Sign (HMAC) discovery and user data\n" +
             "\t-secureEncryptData            - Encrypt topic (user) data\n" +
@@ -321,6 +327,21 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 return false;
             }
             configureSecurePlugin(qos);
+        }
+
+        // set initial peers and not use multicast
+        if ( _peer_host_count > 0 ) {
+            System.out.print("Initial peers: ");
+            for ( int i =0; i< _peer_host_count; ++i) {
+                System.out.print(_peer_host[i]+" ");
+            }
+            System.out.print("\n");
+            qos.discovery.initial_peers.clear();
+            qos.discovery.initial_peers.setMaximum(_peer_host_count);
+            for (int i = 0; i < _peer_host_count; ++i) {
+                 qos.discovery.initial_peers.add(_peer_host[i]);
+            }
+            qos.discovery.multicast_receive_addresses.clear();
         }
 
         qos.transport_builtin.mask = TransportBuiltinKind.UDPv4;
@@ -1422,6 +1443,17 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 if (!valid_flow_control) {
                     System.err.print("Bad <flow> '"+_FlowControllerCustom+"' for custom flow controller\n");
                     _FlowControllerCustom = "default";
+                }
+            } else if ("-peer".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <address> after -peer\n");
+                    return false;
+                }
+                if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
+                    _peer_host[_peer_host_count++] = argv[i];
+                } else {
+                    System.err.print("The maximun of -initial peers is " + RTIPERFTEST_MAX_PEERS + "\n");
+                    return false;
                 }
             } else {
                 System.err.print(argv[i] + ": not recognized\n");

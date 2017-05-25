@@ -4,6 +4,9 @@ CpuMonitor::CpuMonitor()
 {
     _counter = 0;
     _cpuUsageTotal = 0.0;
+    _lastCPU = 0;
+    _lastSysCPU = 0;
+    _lastUserCPU = 0;
 
 #if defined(RTI_LINUX)
 
@@ -57,20 +60,20 @@ void CpuMonitor::initialize()
 #if defined(RTI_LINUX) || defined(RTI_DARWIN)
 
     struct tms timeSample;
-    lastCPU = times(&timeSample);
-    lastSysCPU = timeSample.tms_stime;
-    lastUserCPU = timeSample.tms_utime;
+    _lastCPU = times(&timeSample);
+    _lastSysCPU = timeSample.tms_stime;
+    _lastUserCPU = timeSample.tms_utime;
 
 #elif defined(RTI_WIN32)
 
     FILETIME ftime, fsys, fuser;
     GetSystemTimeAsFileTime(&ftime);
-    memcpy(&lastCPU, &ftime, sizeof(FILETIME));
+    memcpy(&_lastCPU, &ftime, sizeof(FILETIME));
 
     self = GetCurrentProcess();
     GetProcessTimes(self, &ftime, &ftime, &fsys, &fuser);
-    memcpy(&lastSysCPU, &fsys, sizeof(FILETIME));
-    memcpy(&lastUserCPU, &fuser, sizeof(FILETIME));
+    memcpy(&_lastSysCPU, &fsys, sizeof(FILETIME));
+    memcpy(&_lastUserCPU, &fuser, sizeof(FILETIME));
 
 #endif
 }
@@ -85,16 +88,16 @@ std::string CpuMonitor::get_cpu_instant()
     struct tms timeSample;
     clock_t now;
     now = times(&timeSample);
-    if (now > lastCPU && timeSample.tms_stime >= lastSysCPU &&
-            timeSample.tms_utime >= lastUserCPU) {
-        percent = (timeSample.tms_stime - lastSysCPU) +
-                (timeSample.tms_utime - lastUserCPU);
-        percent /= (now - lastCPU);
+    if (now > _lastCPU && timeSample.tms_stime >= _lastSysCPU &&
+            timeSample.tms_utime >= _lastUserCPU) {
+        percent = (timeSample.tms_stime - _lastSysCPU) +
+                (timeSample.tms_utime - _lastUserCPU);
+        percent /= (now - _lastCPU);
         percent /= _numProcessors;
         percent *= 100;
-        lastCPU = now;
-        lastSysCPU = timeSample.tms_stime;
-        lastUserCPU = timeSample.tms_utime;
+        _lastCPU = now;
+        _lastSysCPU = timeSample.tms_stime;
+        _lastUserCPU = timeSample.tms_utime;
     }
 
 #elif defined(RTI_WIN32)
@@ -103,16 +106,16 @@ std::string CpuMonitor::get_cpu_instant()
     ULARGE_INTEGER now, sys, user;
     GetSystemTimeAsFileTime(&ftime);
     memcpy(&now, &ftime, sizeof(FILETIME));
-    if (now.QuadPart - lastCPU.QuadPart>0.0) {
+    if (now.QuadPart - _lastCPU.QuadPart>0.0) {
         GetProcessTimes(self, &ftime, &ftime, &fsys, &fuser);
         memcpy(&sys, &fsys, sizeof(FILETIME));
         memcpy(&user, &fuser, sizeof(FILETIME));
-        percent = (double)(sys.QuadPart - lastSysCPU.QuadPart) +
-                (user.QuadPart - lastUserCPU.QuadPart);
-        percent /= (double)(now.QuadPart - lastCPU.QuadPart);
-        lastCPU = now;
-        lastUserCPU = user;
-        lastSysCPU = sys;
+        percent = (double)(sys.QuadPart - _lastSysCPU.QuadPart) +
+                (user.QuadPart - _lastUserCPU.QuadPart);
+        percent /= (double)(now.QuadPart - _lastCPU.QuadPart);
+        _lastCPU = now;
+        _lastUserCPU = user;
+        _lastSysCPU = sys;
         percent /= _numProcessors;
         percent *= 100;
     }
@@ -123,7 +126,7 @@ std::string CpuMonitor::get_cpu_instant()
     _counter++;
     std::ostringstream strs;
     strs <<  std::fixed << std::setprecision(2)  << percent;
-    output = "CPU: "+ strs.str()+"%";
+    output = "CPU: " + strs.str() + "%";
     return output;
 }
 

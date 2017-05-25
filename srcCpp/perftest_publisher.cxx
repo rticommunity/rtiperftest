@@ -1573,7 +1573,7 @@ int perftest_cpp::Publisher()
     // Allocate data and set size
     TestMessage message;
     message.entity_id = _PubID;
-    message.data = new char[(std::max)((int)_DataLen,LENGTH_CHANGED_SIZE)];
+    message.data = new char[(std::max)((int)_DataLen, (int)LENGTH_CHANGED_SIZE)];
 
     fprintf(stderr,"Publishing data...\n");
     fflush(stderr);

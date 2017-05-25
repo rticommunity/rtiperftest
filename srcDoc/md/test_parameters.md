@@ -267,6 +267,13 @@ For additional information on setting the parameters, see sections:
     **Default:** `63000 bytes.`<br>
     **Range:** `28 - 2147483128 bytes`
 
+-   `-peer <address>`
+
+    Adds a peer to the peer host address list.
+    This argument may be repeated to indicate multiple peers.
+
+    **Default:** `Not set. RTI Perftest will use the default initial peers (localhost, shared-memory and multicast).`  
+
 ## Test Parameters Only for Publishing Applications <a id="params-pub"></a>
 
 - `-batchSize <bytes>`
