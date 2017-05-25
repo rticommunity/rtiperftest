@@ -9,12 +9,16 @@ Edit the file `/etc/sysctl.conf` and add the following:
 
 ```
 net.core.wmem_max = 16777216
-net.core.wmem_default = 16777216
+net.core.wmem_default = 131072
 net.core.rmem_max = 16777216
-net.core.rmem_default = 16777216
-net.ipv4.tcp_rmem = 4096 16777216 33554432
-net.ipv4.tcp_wmem = 4096 16777216 33554432
-net.ipv4.tcp_mem = 4096 16777216 33554432
+net.core.rmem_default = 131072
+net.ipv4.tcp_rmem = 4096 131072 16777216
+net.ipv4.tcp_wmem = 4096 131072 16777216
+net.ipv4.tcp_mem = 4096 131072 16777216
+
+net.core.netdev_max_backlog = 30000
+net.ipv4.ipfrag_high_threshold = 8388608
+
 run /sbin/sysctl -p
 ```
 
