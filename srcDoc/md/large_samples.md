@@ -1,4 +1,4 @@
-# Using Large Samples
+# Using RTI Perftest for Large Samples
 
 *RTI Perftest* can send samples from 28 Bytes to 2,147,483,135 Bytes (2 GBytes - 512 Bytes - 8 Bytes), which corresponds to the maximum payload that *RTI Connext DDS* is able to send in a single sample.
 

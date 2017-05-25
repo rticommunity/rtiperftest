@@ -2,7 +2,7 @@
 #define __RTIDDSIMPL_H__
 
 /*
- * (c) 2005-2016  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
