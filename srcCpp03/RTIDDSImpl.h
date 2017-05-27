@@ -86,7 +86,7 @@ class RTIDDSImpl : public IMessaging
     std::string  _FlowControllerCustom;
     unsigned long _useUnbounded;
     int          _peer_host_count;
-    dds::core::StringSeq  _peer_host = dds::core::StringSeq(RTIPERFTEST_MAX_PEERS);
+    dds::core::StringSeq  _peer_host;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;
@@ -139,4 +139,3 @@ class RTIDDSImpl : public IMessaging
 
 
 #endif // __RTIDDSIMPL_H__
-

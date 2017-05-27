@@ -81,6 +81,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _FlowControllerCustom("default"),
         _useUnbounded(0),
         _peer_host_count(0),
+        _peer_host(dds::core::StringSeq(RTIPERFTEST_MAX_PEERS)),
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure(false),
         _secureIsSigned(false),
@@ -248,18 +249,18 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 
             _DataLen = strtol(argv[i], NULL, 10);
 
-            if (_DataLen < perftest_cpp::OVERHEAD_BYTES) {
+            if (_DataLen < (unsigned)perftest_cpp::OVERHEAD_BYTES) {
                 std::cerr << "[Error] -dataLen must be >= "
                         << perftest_cpp::OVERHEAD_BYTES << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
 
-            if (_DataLen > MAX_PERFTEST_SAMPLE_SIZE) {
+            if (_DataLen > (unsigned)MAX_PERFTEST_SAMPLE_SIZE) {
                 std::cerr << "[Error] -dataLen must be <= "
                         << MAX_PERFTEST_SAMPLE_SIZE << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
-            if (_useUnbounded == 0 && _DataLen > MAX_BOUNDED_SEQ_SIZE) {
+            if (_useUnbounded == 0 && _DataLen > (unsigned)MAX_BOUNDED_SEQ_SIZE) {
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
             }
         }
@@ -271,13 +272,13 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 ++i;
                 _useUnbounded = strtol(argv[i], NULL, 10);
 
-                if (_useUnbounded <  perftest_cpp::OVERHEAD_BYTES)
+                if (_useUnbounded <  (unsigned)perftest_cpp::OVERHEAD_BYTES)
                 {
                     std::cerr << "[Error] -unbounded <managerMemory> must be >="
                         << perftest_cpp::OVERHEAD_BYTES << std::endl;
                     throw std::logic_error("[Error] Error parsing commands");
                 }
-                if (_useUnbounded > MAX_PERFTEST_SAMPLE_SIZE)
+                if (_useUnbounded > (unsigned)MAX_PERFTEST_SAMPLE_SIZE)
                 {
                     std::cerr << "[Error] -unbounded <managerMemory> must be <="
                         << MAX_PERFTEST_SAMPLE_SIZE << std::endl;
@@ -667,7 +668,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_DataLen > MAX_SYNCHRONOUS_SIZE) {
+    if (_DataLen > (unsigned)MAX_SYNCHRONOUS_SIZE) {
         if (_isScan) {
             std::cerr << "[Info] DataLen will be ignored since -scan is present."
                     << std::endl;
