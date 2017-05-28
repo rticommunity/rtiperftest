@@ -9,9 +9,6 @@ CpuMonitor::CpuMonitor()
 {
     _counter = 0;
     _cpuUsageTotal = 0.0;
-    _lastCPU = 0;
-    _lastSysCPU = 0;
-    _lastUserCPU = 0;
 
 #if defined(RTI_LINUX)
 

@@ -383,17 +383,17 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
             _DataLen = strtol(argv[i], NULL, 10);
 
-            if (_DataLen < (unsigned)OVERHEAD_BYTES)
+            if (_DataLen < (unsigned long)OVERHEAD_BYTES)
             {
                 std::cerr << "[Error] -dataLen must be >= " << OVERHEAD_BYTES << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
-            if (_DataLen > (unsigned)MAX_PERFTEST_SAMPLE_SIZE)
+            if (_DataLen > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE)
             {
                 std::cerr << "[Error] -dataLen must be <= " << MAX_PERFTEST_SAMPLE_SIZE << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
-            if (_useUnbounded == 0 && _DataLen > (unsigned)MAX_BOUNDED_SEQ_SIZE) {
+            if (_useUnbounded == 0 && _DataLen > (unsigned long)MAX_BOUNDED_SEQ_SIZE) {
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
             }
         }
@@ -423,12 +423,12 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
                 _useUnbounded = strtol(argv[i], NULL, 10);
 
-                if (_useUnbounded < (unsigned)OVERHEAD_BYTES)
+                if (_useUnbounded < (unsigned long)OVERHEAD_BYTES)
                 {
                     std::cerr << "[Error] -unbounded must be >= " << OVERHEAD_BYTES << std::endl;
                     throw std::logic_error("[Error] Error parsing commands");
                 }
-                if (_useUnbounded > (unsigned)MAX_PERFTEST_SAMPLE_SIZE)
+                if (_useUnbounded > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE)
                 {
                     std::cerr << "[Error] -unbounded must be <= " << MAX_PERFTEST_SAMPLE_SIZE << std::endl;
                     throw std::logic_error("[Error] Error parsing commands");

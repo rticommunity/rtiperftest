@@ -230,16 +230,16 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 
             _DataLen = strtol(argv[i], NULL, 10);
 
-            if (_DataLen < (unsigned)perftest_cpp::OVERHEAD_BYTES) {
+            if (_DataLen < (unsigned long)perftest_cpp::OVERHEAD_BYTES) {
                 fprintf(stderr, "-dataLen must be >= %d\n", perftest_cpp::OVERHEAD_BYTES);
                 return false;
             }
 
-            if (_DataLen > (unsigned)MAX_PERFTEST_SAMPLE_SIZE) {
+            if (_DataLen > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE) {
                 fprintf(stderr, "-dataLen must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
                 return false;
             }
-            if (_useUnbounded == 0 && _DataLen > (unsigned)MAX_BOUNDED_SEQ_SIZE) {
+            if (_useUnbounded == 0 && _DataLen > (unsigned long)MAX_BOUNDED_SEQ_SIZE) {
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
             }
         }
@@ -251,12 +251,12 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 ++i;
                 _useUnbounded = strtol(argv[i], NULL, 10);
 
-                if (_useUnbounded <  (unsigned)perftest_cpp::OVERHEAD_BYTES)
+                if (_useUnbounded <  (unsigned long)perftest_cpp::OVERHEAD_BYTES)
                 {
                     fprintf(stderr, "-unbounded <managerMemory> must be >= %d\n",  perftest_cpp::OVERHEAD_BYTES);
                     return false;
                 }
-                if (_useUnbounded > (unsigned)MAX_PERFTEST_SAMPLE_SIZE)
+                if (_useUnbounded > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE)
                 {
                     fprintf(stderr,"-unbounded <managerMemory> must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
                     return false;
@@ -628,7 +628,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_DataLen > (unsigned)MAX_SYNCHRONOUS_SIZE) {
+    if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
         if (_isScan) {
             fprintf(stderr,"DataLen will be ignored since -scan is present.\n");
         } else {
@@ -653,7 +653,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
      * nor if the sample is bigger (in this case we avoid the checking in the
      * middleware).
      */
-    if (_BatchSize > 0 && (unsigned)_BatchSize <= _DataLen) {
+    if (_BatchSize > 0 && (unsigned long)_BatchSize <= _DataLen) {
         fprintf(stderr,
                 "Batching dissabled: BatchSize (%d) is equal or smaller "
                 "than the sample size (%lu).\n",
