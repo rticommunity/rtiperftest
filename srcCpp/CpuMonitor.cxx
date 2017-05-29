@@ -12,6 +12,10 @@ CpuMonitor::CpuMonitor()
 
 #if defined(RTI_LINUX)
 
+    _lastCPU = 0;
+    _lastSysCPU = 0;
+    _lastUserCPU = 0;
+
     FILE* file;
     char line[128];
 
@@ -25,6 +29,10 @@ CpuMonitor::CpuMonitor()
     fclose(file);
 
 #elif defined(RTI_DARWIN)
+
+    _lastCPU = 0;
+    _lastSysCPU = 0;
+    _lastUserCPU = 0;
 
     int mib[4];
     std::size_t len = sizeof(_numProcessors);
@@ -45,6 +53,10 @@ CpuMonitor::CpuMonitor()
     }
 
 #elif defined(RTI_WIN32)
+
+    _lastCPU = {0};
+    _lastSysCPU = {0};
+    _lastUserCPU = {0};
 
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
@@ -127,18 +139,19 @@ std::string CpuMonitor::get_cpu_instant()
     _counter++;
     std::ostringstream strs;
     strs <<  std::fixed << std::setprecision(2)  << percent;
-    std::string output = "CPU: " + strs.str() + "%";
-    return output;
+    return ("CPU: " + strs.str() + "%");
 }
 
 std::string CpuMonitor::get_cpu_average()
 {
     std::ostringstream strs;
-    if (_counter==0) {
-        //in the case that the CpuMonitor was just initialize, get_cpu_instant
+    if (_counter == 0) {
+        // In the case where the CpuMonitor was just initialized, get_cpu_instant
         get_cpu_instant();
     }
-    strs <<  std::fixed << std::setprecision(2)  << (double)(_cpuUsageTotal/_counter);
-    std::string output = "CPU: "+ strs.str()+"%";
-    return output;
+    strs <<  std::fixed << std::setprecision(2)
+         << (double)(_cpuUsageTotal/_counter);
+
+    return ("CPU: " + strs.str() + "%");
 }
+
