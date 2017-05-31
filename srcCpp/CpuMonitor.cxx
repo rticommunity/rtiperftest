@@ -54,10 +54,6 @@ CpuMonitor::CpuMonitor()
 
 #elif defined(RTI_WIN32)
 
-    _lastCPU = {0};
-    _lastSysCPU = {0};
-    _lastUserCPU = {0};
-
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
     _numProcessors = sysInfo.dwNumberOfProcessors;

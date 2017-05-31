@@ -81,7 +81,7 @@ class perftest_cpp
     bool _IsScan;
     bool _UseReadThread;
     unsigned long long _SpinLoopCount;
-    unsigned long long _SleepNanosec;
+    unsigned long _SleepNanosec;
     int  _LatencyCount;
     int  _NumSubscribers;
     int  _NumPublishers;
