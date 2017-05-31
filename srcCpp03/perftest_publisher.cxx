@@ -1497,7 +1497,7 @@ int perftest_cpp::RunPublisher()
     }
 
     unsigned long long spinPerUsec = 0;
-    unsigned long long sleepUsec = 1000;
+    unsigned long sleepUsec = 1000;
     if (_pubRate > 0) {
         if ( _pubRateMethodSpin) {
             spinPerUsec = rti::util::spin_per_microsecond();
@@ -1568,8 +1568,8 @@ int perftest_cpp::RunPublisher()
     bool sentPing = false;
 
     unsigned long long time_now = 0, time_last_check = 0, time_delta = 0;
-    unsigned long long pubRate_sample_period = 1;
-    unsigned long long rate = 0;
+    unsigned long pubRate_sample_period = 1;
+    unsigned long rate = 0;
 
     time_last_check = perftest_cpp::GetTimeUsec();
 
@@ -1599,22 +1599,22 @@ int perftest_cpp::RunPublisher()
 
             time_delta = time_now - time_last_check;
             time_last_check = time_now;
-            rate = (pubRate_sample_period*1000000)/time_delta;
+            rate = (pubRate_sample_period * 1000000) / (unsigned long)time_delta;
 
             if ( _pubRateMethodSpin) {
-                if (rate > (unsigned long long)_pubRate) {
+                if (rate > (unsigned long)_pubRate) {
                     _SpinLoopCount += spinPerUsec;
-                } else if (rate < (unsigned long long)_pubRate && _SpinLoopCount > spinPerUsec) {
+                } else if (rate < (unsigned long)_pubRate && _SpinLoopCount > spinPerUsec) {
                     _SpinLoopCount -= spinPerUsec;
-                } else if (rate < (unsigned long long)_pubRate && _SpinLoopCount <= spinPerUsec) {
+                } else if (rate < (unsigned long)_pubRate && _SpinLoopCount <= spinPerUsec) {
                     _SpinLoopCount = 0;
                 }
             } else { // sleep
-                if (rate > (unsigned long long)_pubRate) {
+                if (rate > (unsigned long)_pubRate) {
                     _SleepNanosec += sleepUsec; //plus 1 MicroSec
-                } else if (rate < (unsigned long long)_pubRate && _SleepNanosec > sleepUsec) {
+                } else if (rate < (unsigned long)_pubRate && _SleepNanosec > sleepUsec) {
                     _SleepNanosec -=  sleepUsec; //less 1 MicroSec
-                } else if (rate < (unsigned long long)_pubRate && _SleepNanosec <= sleepUsec) {
+                } else if (rate < (unsigned long)_pubRate && _SleepNanosec <= sleepUsec) {
                     _SleepNanosec = 0;
                 }
             }
@@ -1625,7 +1625,7 @@ int perftest_cpp::RunPublisher()
         }
 
         if ( _SleepNanosec > 0 ) {
-            rti::util::sleep(dds::core::Duration(0,_SleepNanosec));
+            rti::util::sleep(dds::core::Duration(0,(unsigned int)_SleepNanosec));
         }
 
         pingID = -1;
