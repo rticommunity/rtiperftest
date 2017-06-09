@@ -219,7 +219,7 @@ if !BUILD_CPP03! == 1 (
 	call "%rtiddsgen_executable%" -language %modern_cpp_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
 	-additionalHeaderFiles "MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h"^
-	-additionalSourceFiles "RTIDDSImpl.cxx  CpuMonitor.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
+	-additionalSourceFiles "RTIDDSImpl.cxx CpuMonitor.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
 
