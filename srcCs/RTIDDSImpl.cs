@@ -1262,22 +1262,34 @@ namespace PerformanceTest
                     Console.Error.WriteLine(e.Message);
                 }
             }
-            if (!_UseTcpOnly)
+            if (_UseSharedMemory)
             {
-                if (_Nic.Length > 0)
-                {
-                    DDS.PropertyQosPolicyHelper.add_property(qos.property_qos,
-                        "dds.transport.UDPv4.builtin.parent.allow_interfaces", _Nic, false);
-                }
-
-                int received_message_count_max = 1024*1024*2 / (int)_DataLen;
-
+                int received_message_count_max = 1024 * 1024 * 2 / (int)_DataLen;
                 if (received_message_count_max < 1) {
                     received_message_count_max = 1;
                 }
 
-                DDS.PropertyQosPolicyHelper.add_property(qos.property_qos,
-                    "dds.transport.shmem.builtin.received_message_count_max", received_message_count_max.ToString(), false);
+                DDS.PropertyQosPolicyHelper.add_property(
+                        qos.property_qos,
+                        "dds.transport.shmem.builtin.received_message_count_max",
+                        received_message_count_max.ToString(),
+                        false);
+            }
+            else
+            {
+                if (_Nic.Length > 0)
+                {
+                    DDS.PropertyQosPolicyHelper.add_property(
+                            qos.property_qos,
+                            "dds.transport.UDPv4.builtin.parent.allow_interfaces",
+                            _Nic,
+                            false);
+                    DDS.PropertyQosPolicyHelper.add_property(
+                            qos.property_qos,
+                            "dds.transport.TCPv4.tcp1.parent.allow_interfaces",
+                            _Nic,
+                            false);
+                }
             }
             // Creates the participant
             _participant = _factory.create_participant(

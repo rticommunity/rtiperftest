@@ -45,6 +45,10 @@ git checkout release/2.0 -- resource/secure
 
 ## What's Fixed in Master
 
+### "-nic" Command-Line Parameter not working when using TCP transport
+
+In previous releases the `-nic` Command-Line Parameter was not taken into account when using the TCP transport. This behavior has been fixed.
+
 ### Batching is disabled when the size of the sample is equal or greater than the Batch size
 
 In previous releases the Batching Parameters were set unconditionally, now the Batching QoS will be only applied if the Batch size is strictly greater than the sample size.

@@ -368,19 +368,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     false);
         }
 
-        if (!_useTcpOnly) {
-
-            if (_nic.length() > 0) {
-                PropertyQosPolicyHelper.add_property(
-                    qos.property,
-                    "dds.transport.UDPv4.builtin.parent.allow_interfaces",
-                    _nic,
-                    false);
-            }
+        if (_useSharedMemory) {
 
             // Shmem transport properties
             int receivedMessageCountMax = 2 * 1024 * 1024 / (int)_dataLen;
-
             if (receivedMessageCountMax < 1) {
                 receivedMessageCountMax = 1;
             }
@@ -390,6 +381,19 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 "dds.transport.shmem.builtin.received_message_count_max",
                 String.valueOf(receivedMessageCountMax),
                 false);
+        } else {
+            if (_nic.length() > 0) {
+                PropertyQosPolicyHelper.add_property(
+                        qos.property,
+                        "dds.transport.UDPv4.builtin.parent.allow_interfaces",
+                        _nic,
+                        false);
+                PropertyQosPolicyHelper.add_property(
+                        qos.property,
+                        "dds.transport.TCPv4.tcp1.parent.allow_interfaces",
+                        _nic,
+                        false);
+            }
         }
 
         // Creates the participant
