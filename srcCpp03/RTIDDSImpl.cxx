@@ -1477,21 +1477,24 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         properties["dds.domain_participant.auto_throttle.enable"] = "true";
     }
 
-    if (!_UseTcpOnly) {
-        if ((_Nic != NULL) && (strlen(_Nic) > 0)) {
-            properties["dds.transport.UDPv4.builtin.parent.allow_interfaces"] = _Nic;
-        }
+    if (_UseSharedMemory) {
 
-        // Shem transport properties
+        // SHMEM transport properties
         int received_message_count_max = 1024 * 1024 * 2 / (int)_DataLen;
-
         if (received_message_count_max < 1) {
             received_message_count_max = 1;
         }
 
-        char buf[64];
-        sprintf(buf,"%d", received_message_count_max);
-        properties["dds.transport.shmem.builtin.received_message_count_max"] = buf;
+        std::ostringstream string_stream_object;
+        string_stream_object << received_message_count_max;
+        properties["dds.transport.shmem.builtin.received_message_count_max"] =
+                string_stream_object.str();
+    } else {
+
+        if ((_Nic != NULL) && (strlen(_Nic) > 0)) {
+            properties["dds.transport.UDPv4.builtin.parent.allow_interfaces"] = _Nic;
+            properties["dds.transport.TCPv4.tcp1.parent.allow_interfaces"] = _Nic;
+        }
     }
 
     qos << qos_discovery;

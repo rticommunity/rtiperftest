@@ -1942,9 +1942,22 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
                 "dds.domain_participant.auto_throttle.enable", "true", false);
     }
 
-    if (!_UseTcpOnly) {
+    if (_UseSharedMemory) {
+
+        // SHMEM transport properties
+        int received_message_count_max = 1024 * 1024 * 2 / (int)_DataLen;
+        if (received_message_count_max < 1) {
+            received_message_count_max = 1;
+        }
 
         char buf[64];
+        sprintf(buf, "%d", received_message_count_max);
+        DDSPropertyQosPolicyHelper::add_property(
+                qos.property,
+                "dds.transport.shmem.builtin.received_message_count_max",
+                buf,
+                false);
+    } else {
 
         if ((_Nic != NULL) && (strlen(_Nic) > 0)) {
             DDSPropertyQosPolicyHelper::add_property(
@@ -1952,18 +1965,12 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
                     "dds.transport.UDPv4.builtin.parent.allow_interfaces",
                     _Nic,
                     false);
+            DDSPropertyQosPolicyHelper::add_property(
+                    qos.property,
+                    "dds.transport.TCPv4.tcp1.parent.allow_interfaces",
+                    _Nic,
+                    false);
         }
-
-        // Shem transport properties
-        int received_message_count_max = 1024 * 1024 * 2 / (int)_DataLen;
-
-        if (received_message_count_max < 1) {
-            received_message_count_max = 1;
-        }
-
-        sprintf(buf,"%d", received_message_count_max);
-        DDSPropertyQosPolicyHelper::add_property(qos.property,
-                                                 "dds.transport.shmem.builtin.received_message_count_max", buf, false);
     }
 
     // Creates the participant
