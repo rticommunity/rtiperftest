@@ -2328,8 +2328,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(const char *topic_name,
         }
     }
 
-    if (!_UseTcpOnly && _IsMulticast) {
-            const char *multicast_addr;
+    if (!_UseTcpOnly && !_UseSharedMemory && _IsMulticast) {
+        const char *multicast_addr;
 
         if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0) {
             multicast_addr = THROUGHPUT_MULTICAST_ADDR;

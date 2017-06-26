@@ -1930,33 +1930,29 @@ namespace PerformanceTest
                 }
             }
 
-            if (!_UseTcpOnly)
+            if (!_UseTcpOnly && !_UseSharedMemory && _IsMulticast)
             {
-                if (_IsMulticast)
+                string multicast_addr;
+
+                if (topic_name == perftest_cs._ThroughputTopicName)
                 {
-                    string multicast_addr;
-
-
-                    if (topic_name == perftest_cs._ThroughputTopicName)
-                    {
-                        multicast_addr = THROUGHPUT_MULTICAST_ADDR;
-                    }
-                    else if (topic_name == perftest_cs._LatencyTopicName)
-                    {
-                        multicast_addr = LATENCY_MULTICAST_ADDR;
-                    }
-                    else
-                    {
-                        multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
-                    }
-
-                    DDS.TransportMulticastSettings_t multicast_setting = new DDS.TransportMulticastSettings_t();
-                    multicast_setting.receive_address = multicast_addr;
-                    multicast_setting.receive_port = 0;
-                    multicast_setting.transports.length = 0;
-                    dr_qos.multicast.value.ensure_length(1, 1);
-                    dr_qos.multicast.value.set_at(0, multicast_setting);
+                    multicast_addr = THROUGHPUT_MULTICAST_ADDR;
                 }
+                else if (topic_name == perftest_cs._LatencyTopicName)
+                {
+                    multicast_addr = LATENCY_MULTICAST_ADDR;
+                }
+                else
+                {
+                    multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
+                }
+
+                DDS.TransportMulticastSettings_t multicast_setting = new DDS.TransportMulticastSettings_t();
+                multicast_setting.receive_address = multicast_addr;
+                multicast_setting.receive_port = 0;
+                multicast_setting.transports.length = 0;
+                dr_qos.multicast.value.ensure_length(1, 1);
+                dr_qos.multicast.value.set_at(0, multicast_setting);
             }
 
             DDS.DataReader reader = null;
