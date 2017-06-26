@@ -35,8 +35,8 @@ For additional information on setting the parameters, see sections:
 
     Length of payload in bytes for each send.
     
-    **Default:** `100 bytes.`<br>
-    **Range:** `28 - 63000 bytes`
+    **Default:** `100 bytes.`  
+    **Range:** `28 - 2147483128 bytes`
 
     The lower limit is the number of "overhead" bytes in the message (i.e., the timestamp, sequence number, and other meta-data used by the test); the upper limit ensures that, when the overhead of the wire protocol is added, it doesn't overflow the UDP maximum datagram size of 64KB.
 
@@ -139,7 +139,7 @@ For additional information on setting the parameters, see sections:
 
     If unspecified, the following default values will be used according to the topic:
 
-    **latency:** `239.255.1.2`  
+    **latency:** `239.255.1.2`  
     **throughput:** `239.255.1.1`  
     **announcement:** `239.255.1.100`
 
@@ -276,7 +276,7 @@ For additional information on setting the parameters, see sections:
 
 ## Test Parameters Only for Publishing Applications <a id="params-pub"></a>
 
-- `-batchSize <bytes>`
+-   `-batchSize <bytes>`
 
     Enable batching and set the maximum batched message size.
 

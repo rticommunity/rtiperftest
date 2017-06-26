@@ -6,7 +6,7 @@ The followings are examples of how to run the performance test for different use
 
 * If you are running on 2 unequal machines, i.e., one machine is faster (has better processors) than another, you will see better performance by running the Publisher on the slower machine.
 
-* To measure CPU usage while running these tests, use "top" or a similar utility.
+* To measure CPU usage while running these tests, use "-cpu" argument or TOP utility.
 
 ## 1-to-1, Multicast, Best Latency as a Function of Message Size
 
