@@ -1841,7 +1841,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (!_UseTcpOnly && _IsMulticast) {
+    if (!_UseTcpOnly && !_UseSharedMemory && _IsMulticast) {
 
        const char *multicast_addr;
 

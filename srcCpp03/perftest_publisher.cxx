@@ -97,7 +97,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
             _MessagingImpl = new RTIDDSImpl<TestData_t>();
         }
     } else {
-        std::cerr << "[Info] Using unbounded Sequences, memory_manager" << _useUnbounded << "." << std::endl;
+        std::cerr << "[Info] Using unbounded Sequences, memory_manager " << _useUnbounded << "." << std::endl;
         if (_isKeyed) {
             std::cerr << "[Info] Using keyed Data." << std::endl;
             _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();

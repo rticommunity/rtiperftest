@@ -1008,32 +1008,29 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
         }
 
-        if (!_useTcpOnly) {
-        
-            if (_isMulticast) {
-                String multicast_addr;
+        if (!_useTcpOnly && !_useSharedMemory && _isMulticast) {
+            String multicast_addr;
 
-                if (PerfTest.THROUGHPUT_TOPIC_NAME.equals(topicName)) {
-                    multicast_addr = THROUGHPUT_MULTICAST_ADDR;
-                } else if (PerfTest.LATENCY_TOPIC_NAME.equals(topicName)) {
-                    multicast_addr = LATENCY_MULTICAST_ADDR;
-                } else {
-                    multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
-                }
-
-                TransportMulticastSettings_t multicast_setting =
-                    new TransportMulticastSettings_t();
-                try {
-                    multicast_setting.receive_address =
-                        InetAddress.getByName(multicast_addr);
-                } catch (UnknownHostException uhx) {
-                    throw new IllegalStateException(uhx.getMessage(), uhx);
-                }
-                multicast_setting.receive_port = 0;
-                multicast_setting.transports.clear();
-                drQos.multicast.value.clear();
-                drQos.multicast.value.add(multicast_setting);
+            if (PerfTest.THROUGHPUT_TOPIC_NAME.equals(topicName)) {
+                multicast_addr = THROUGHPUT_MULTICAST_ADDR;
+            } else if (PerfTest.LATENCY_TOPIC_NAME.equals(topicName)) {
+                multicast_addr = LATENCY_MULTICAST_ADDR;
+            } else {
+                multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
             }
+
+            TransportMulticastSettings_t multicast_setting =
+                new TransportMulticastSettings_t();
+            try {
+                multicast_setting.receive_address =
+                    InetAddress.getByName(multicast_addr);
+            } catch (UnknownHostException uhx) {
+                throw new IllegalStateException(uhx.getMessage(), uhx);
+            }
+            multicast_setting.receive_port = 0;
+            multicast_setting.transports.clear();
+            drQos.multicast.value.clear();
+            drQos.multicast.value.add(multicast_setting);
         }
     }
 
