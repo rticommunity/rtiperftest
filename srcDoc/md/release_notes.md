@@ -45,10 +45,6 @@ git checkout release/2.0 -- resource/secure
 
 ## What's Fixed in Master
 
-### Conflicts when using "-multicast" and "-enableSharedMemory" at the same time
-
-In previous releases using "-multicast" in conjunction with "-enableSharedMemory" could cause the middleware to fail, trying to access to multicast resources once it was set to use only shared memory. This behavior has been fixed.
-
 ### "-nic" Command-Line Parameter not working when using TCP transport
 
 In previous releases the `-nic` Command-Line Parameter was not taken into account when using the TCP transport. This behavior has been fixed.
