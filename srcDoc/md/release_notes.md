@@ -84,6 +84,13 @@ It is also possible to enable the use of *Unbounded Sequences* or *Asynchronous 
 
 In previous releases the only way to provide the Initial Peers was either adding them to the QoS xml file or by using the environment variable `NDDS_DISCOVERY_PEERS`. Now it is possible to use a new Command-Line Parameter: `-peer <address>` with the peer address.
 
+### Changed Announcement QoS profile to use "Transient local" Durability settings
+
+In previous releases, The announcement topic DataWriters and DataReaders were set to have a `Volatile` Durability QoS. In certain complex scenarios that could cause to an incorrect communication which could lead to the RTI Perftest Publisher and Subscribers being stuck and not transmitting data. By moving this topic to `Transient Local` these scenarios are avoided.
+
+This should not have any effect in the latency of throughput reported by RTI Perftest (as the main Throughput and Latency topics remain still with the same configuration).
+
+
 ## What's Fixed in 2.1
 
 ### "--nddshome" Command-Line Option did not Work in `build.bat` Script -- Windows Systems Only

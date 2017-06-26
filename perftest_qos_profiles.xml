@@ -1131,6 +1131,9 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         <history>
           <kind>KEEP_ALL_HISTORY_QOS</kind>
         </history>
+        <durability>
+          <kind>DDS_TRANSIENT_LOCAL_DURABILITY_QOS</kind>
+        </durability>
       </datareader_qos>
 
       <!-- === DataWriter Configuration: ================================= -->
@@ -1147,6 +1150,9 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         <history>
           <kind>KEEP_ALL_HISTORY_QOS</kind>
         </history>
+        <durability>
+          <kind>DDS_TRANSIENT_LOCAL_DURABILITY_QOS</kind>
+        </durability>
       </datawriter_qos>
     </qos_profile>
   </qos_library>
