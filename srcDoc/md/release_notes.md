@@ -88,6 +88,10 @@ It is also possible to enable the use of *Unbounded Sequences* or *Asynchronous 
 
 In previous releases the only way to provide the Initial Peers was either adding them to the QoS xml file or by using the environment variable `NDDS_DISCOVERY_PEERS`. Now it is possible to use a new Command-Line Parameter: `-peer <address>` with the peer address.
 
+### Provided RTI Routing-Service configuration files to test performance along with RTI Perftest
+
+A new configuration file and wrapper script have been added in order to be able to test RTI Perftest using one or several RTI Routing-Service applications in between Publisher and Subscriber. A new section has been added to the documentation with all the configuration parameters: [Using RTI Perftest with RTI Routing-Service](routing_service.md).
+
 ### Changed Announcement QoS profile to use "Transient local" Durability settings
 
 In previous releases, The announcement topic DataWriters and DataReaders were set to have a `Volatile` Durability QoS. In certain complex scenarios that could cause to an incorrect communication which could lead to the RTI Perftest Publisher and Subscribers being stuck and not transmitting data. By moving this topic to `Transient Local` these scenarios are avoided.
