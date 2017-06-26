@@ -45,6 +45,10 @@ git checkout release/2.0 -- resource/secure
 
 ## What's Fixed in Master
 
+### Conflicts when using "-multicast" and "-enableSharedMemory" at the same time
+
+In previous releases using "-multicast" in conjunction with "-enableSharedMemory" could cause the middleware to fail, trying to access to multicast resources once it was set to use only shared memory. This behavior has been fixed.
+
 ### "-nic" Command-Line Parameter not working when using TCP transport
 
 In previous releases the `-nic` Command-Line Parameter was not taken into account when using the TCP transport. This behavior has been fixed.
@@ -83,6 +87,13 @@ It is also possible to enable the use of *Unbounded Sequences* or *Asynchronous 
 ### Added Command-Line Parameter "-peer" to specify the discovery peers.
 
 In previous releases the only way to provide the Initial Peers was either adding them to the QoS xml file or by using the environment variable `NDDS_DISCOVERY_PEERS`. Now it is possible to use a new Command-Line Parameter: `-peer <address>` with the peer address.
+
+### Changed Announcement QoS profile to use "Transient local" Durability settings
+
+In previous releases, The announcement topic DataWriters and DataReaders were set to have a `Volatile` Durability QoS. In certain complex scenarios that could cause to an incorrect communication which could lead to the RTI Perftest Publisher and Subscribers being stuck and not transmitting data. By moving this topic to `Transient Local` these scenarios are avoided.
+
+This should not have any effect in the latency of throughput reported by RTI Perftest (as the main Throughput and Latency topics remain still with the same configuration).
+
 
 ## What's Fixed in 2.1
 
