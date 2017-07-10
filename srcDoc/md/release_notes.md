@@ -1,13 +1,86 @@
 # Release Notes
 
-## RTI Perftest 2.0 Compatibility
+## RTI Perftest Master Compatibility
 
-*RTI Perftest* 2.0 is designed to compile and work against the *RTI Connext DDS* 5.2.x releases.
+### Using security
+
+Governance and Permission files have been updated to be compatible with the latest release for *RTI Connext DDS*, and are compatible with *RTI Connext DDS* 5.2.7 and greater.
+
+If you are compiling *RTI Perftest* against 5.2.5, you will need to get the certificates from the `release/2.0` branch. You can do that by using the following git command from the top level directory of your repository:
+
+```
+git checkout release/2.0 -- resource/secure
+```
+
+### Compilation restrictions
+
+*RTI Perftest* is designed to compile and work against the *RTI Connext DDS* 5.2.x and 5.3.x releases.
 
 However, certain features are not compatible with all the *RTI Connext DDS* versions, since the build scripts make use of certain specific parameters in *Rtiddsgen* that might change or not be present between releases:
 
 - The `--secure` and `--openssl-home` parameters will not work for versions previous to *RTI Connext DDS* 5.2.5.
 - The C# code generation against *RTI Connext DDS 5.2.0.x* is not supported. Users can disable its compilation by adding the `--skip-cs-build` flag.
+
+## What's New in Master
+
+### Added Command-Line Parameter  "-asynchronous" and "-flowController `<`flow`>`"
+
+In previous releases Asynchronous Publishing was only enabled for the DataWriters when the samples are greater than 63000 Bytes and in such chase, RTI Perftest would only use a custom flow controller defined for 1Gbps Networks.
+
+This behavior has been modified: Starting from this release, Asynchronous Publishing will be activated if the samples to send are bigger than 63000 Bytes or if the `-asynchronous` Command-Line Parameter is used. In that case, RTI Perftest will use the `Default` flow controller, however this behavior now can be changed by specifying the `-flowController` option, which allows to specify if using the default flow controller, a 1Gbps flow controller or a 10Gbps one.
+
+### Improved "-pubRate" Command-Line Parameter capabilities
+
+In previous relesases the "-pubRate" command-line option would only use the `spin` function to control the publication rate, that could have negative effects related with high CPU consumption for certain scenarios. Starting from this release, a new modifier has been added to this option so it is possible to use the both "spin" and "sleep" as a way to control the publication rate.
+
+### Add command line option to get the CPU consumption of the process
+
+Starting in this release, it is possible to display the *CPU consumption* of the *RTI Perftest* process by adding the Command-Line Parameter `-cpu` using a Monitor.
+
+### Better support for Large Data Samples
+
+Prior to this release, the maximum sample size allowed by *RTI Perftest* was set to 131072 Bytes. The use of bigger sizes would imply changes in the `perftest.idl` file and source code files.
+Starting from this release, the maximum data length that *RTI Perftest* allows has increased to 2,147,483,135 Bytes, which corresponds to 2 GBytes - 512 Bytes - 8 Bytes, the maximum data length that *RTI Connext DDS* can send.
+
+The sample size can be set via the `-dataLen <bytes>` Command-Line Parameter, if such value is larger than 63,000 Bytes *RTI Perftest* will enable the use of *Asynchronous Publishing* and *Unbounded Sequences*.
+
+It is also possible to enable the use of *Unbounded Sequences* or *Asynchronous Publishing* independently of the sample size by specifying the Command-Line Parameters `unbounded <managerMemory>` and `-asynchronous`.
+
+### Added Command-Line Parameter "-peer" to specify the discovery peers.
+
+In previous releases the only way to provide the Initial Peers was either adding them to the QoS xml file or by using the environment variable `NDDS_DISCOVERY_PEERS`. Now it is possible to use a new Command-Line Parameter: `-peer <address>` with the peer address.
+
+### Provided RTI Routing-Service configuration files to test performance along with RTI Perftest
+
+A new configuration file and wrapper script have been added in order to be able to test RTI Perftest using one or several RTI Routing-Service applications in between Publisher and Subscriber. A new section has been added to the documentation with all the configuration parameters: [Using RTI Perftest with RTI Routing-Service](routing_service.md).
+
+### Changed Announcement QoS profile to use "Transient local" Durability settings
+
+In previous releases, The announcement topic DataWriters and DataReaders were set to have a `Volatile` Durability QoS. In certain complex scenarios that could cause to an incorrect communication which could lead to the RTI Perftest Publisher and Subscribers being stuck and not transmitting data. By moving this topic to `Transient Local` these scenarios are avoided.
+
+This should not have any effect in the latency of throughput reported by RTI Perftest (as the main Throughput and Latency topics remain still with the same configuration).
+
+### Added new functionality Content Filtered Topic.
+
+In previous releases the only way to provide scalability was by using multicast and unicast. Now it is possible also to choose which subscriber will receive the the samples by the parameter `-cft` and also determine which sample will be sent in the publisher by the parameter `-writeInstance.`.
+
+## What's Fixed in Master
+
+### Conflicts when using "-multicast" and "-enableSharedMemory" at the same time
+
+In previous releases using "-multicast" in conjunction with "-enableSharedMemory" could cause the middleware to fail, trying to access to multicast resources once it was set to use only shared memory. This behavior has been fixed.
+
+### "-nic" Command-Line Parameter not working when using TCP transport
+
+In previous releases the `-nic` Command-Line Parameter was not taken into account when using the TCP transport. This behavior has been fixed.
+
+### Batching is disabled when the size of the sample is equal or greater than the Batch size
+
+In previous releases the Batching Parameters were set unconditionally, now the Batching QoS will be only applied if the Batch size is strictly greater than the sample size.
+
+### Changed name of the "-enableTcp" option
+
+In previous releases the command-line option to use TCP for the communication was named as `-enableTcpOnly`. This is was inconsistent with other transport options, so the name of the command has been modified to `-enableTcp`.
 
 ## What's New in 2.1
 
@@ -42,65 +115,6 @@ If you are compiling *RTI Perftest* against 5.2.5, you will need to get the cert
 ```
 git checkout release/2.0 -- resource/secure
 ```
-
-## What's Fixed in Master
-
-### Conflicts when using "-multicast" and "-enableSharedMemory" at the same time
-
-In previous releases using "-multicast" in conjunction with "-enableSharedMemory" could cause the middleware to fail, trying to access to multicast resources once it was set to use only shared memory. This behavior has been fixed.
-
-### "-nic" Command-Line Parameter not working when using TCP transport
-
-In previous releases the `-nic` Command-Line Parameter was not taken into account when using the TCP transport. This behavior has been fixed.
-
-### Batching is disabled when the size of the sample is equal or greater than the Batch size
-
-In previous releases the Batching Parameters were set unconditionally, now the Batching QoS will be only applied if the Batch size is strictly greater than the sample size.
-
-### Changed name of the "-enableTcp" option
-
-In previous releases the command-line option to use TCP for the communication was named as `-enableTcpOnly`. This is was inconsistent with other transport options, so the name of the command has been modified to `-enableTcp`.
-
-### Added Command-Line Parameter  "-asynchronous" and "-flowController `<`flow`>`"
-
-In previous releases Asynchronous Publishing was only enabled for the DataWriters when the samples are greater than 63000 Bytes and in such chase, RTI Perftest would only use a custom flow controller defined for 1Gbps Networks.
-
-This behavior has been modified: Starting from this release, Asynchronous Publishing will be activated if the samples to send are bigger than 63000 Bytes or if the `-asynchronous` Command-Line Parameter is used. In that case, RTI Perftest will use the `Default` flow controller, however this behavior now can be changed by specifying the `-flowController` option, which allows to specify if using the default flow controller, a 1Gbps flow controller or a 10Gbps one.
-
-### Improved "-pubRate" Command-Line Parameter capabilities
-
-In previous relesases the "-pubRate" command-line option would only use the `spin` function to control the publication rate, that could have negative effects related with high CPU consumption for certain scenarios. Starting from this release, a new modifier has been added to this option so it is possible to use the both "spin" and "sleep" as a way to control the publication rate.
-
-### Add command line option to get the CPU consumption of the process
-
-Starting in this release, it is possible to display the *CPU consumption* of the *RTI Perftest* process by adding the Command-Line Parameter `-cpu` using a Monitor.
-
-### Support Large Data samples
-
-Prior to this release, the maximum sample size allowed by *RTI Perftest* was set to 131072 Bytes. The use of bigger sizes would imply changes in the `perftest.idl` file and source code files.
-Starting from this release, the maximum data length that *RTI Perftest* allows has increased to 2,147,483,135 Bytes, which corresponds to 2 GBytes - 512 Bytes - 8 Bytes, the maximum data length that *RTI Connext DDS* can send.
-
-The sample size can be set via the `-dataLen <bytes>` Command-Line Parameter, if such value is larger than 63,000 Bytes *RTI Perftest* will enable the use of *Asynchronous Publishing* and *Unbounded Sequences*.
-
-It is also possible to enable the use of *Unbounded Sequences* or *Asynchronous Publishing* independently of the sample size by specifying the Command-Line Parameters `unbounded <managerMemory>` and `-asynchronous`.
-
-### Added Command-Line Parameter "-peer" to specify the discovery peers.
-
-In previous releases the only way to provide the Initial Peers was either adding them to the QoS xml file or by using the environment variable `NDDS_DISCOVERY_PEERS`. Now it is possible to use a new Command-Line Parameter: `-peer <address>` with the peer address.
-
-### Provided RTI Routing-Service configuration files to test performance along with RTI Perftest
-
-A new configuration file and wrapper script have been added in order to be able to test RTI Perftest using one or several RTI Routing-Service applications in between Publisher and Subscriber. A new section has been added to the documentation with all the configuration parameters: [Using RTI Perftest with RTI Routing-Service](routing_service.md).
-
-### Changed Announcement QoS profile to use "Transient local" Durability settings
-
-In previous releases, The announcement topic DataWriters and DataReaders were set to have a `Volatile` Durability QoS. In certain complex scenarios that could cause to an incorrect communication which could lead to the RTI Perftest Publisher and Subscribers being stuck and not transmitting data. By moving this topic to `Transient Local` these scenarios are avoided.
-
-This should not have any effect in the latency of throughput reported by RTI Perftest (as the main Throughput and Latency topics remain still with the same configuration).
-
-### Added new functionality Content Filtered Topic.
-
-In previous releases the only way to provide scalability was by using multicast and unicast. Now it is possible also to choose which subscriber will receive the the samples by the parameter `-cft` and also determine which sample will be sent in the publisher by the parameter `-writeInstance.`.
 
 ## What's Fixed in 2.1
 
@@ -221,4 +235,4 @@ Large data settings enabled (-dataLen > 63000).
 * Release
 * Release DLL
 
-However, *RTI Perftest 2.0* new build system is focused to only compile one of those modes at a time. Choosing the compilation mode should be done via the `-debug` and `-dynamic` flags.
+However, *RTI Perftest* new build system is focused to only compile one of those modes at a time. Choosing the compilation mode should be done via the `-debug` and `-dynamic` flags.
