@@ -3,7 +3,6 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-#include "ndds/ndds_cpp.h"
 #include "perftest.h"
 #include "perftestPlugin.h"
 #include "perftestSupport.h"
@@ -539,6 +538,31 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 fprintf(stderr,"The maximun of -initial peers is %d\n", RTIPERFTEST_MAX_PEERS);
                 return false;
             }
+        } else if (IS_OPTION(argv[i], "-cft")) {
+            _useCft = true;
+            if ((i == (argc-1)) || *argv[++i] == '-')
+            {
+                fprintf(stderr, "Missing <start> <end> after -cft\n");
+                return false;
+            }
+            _CFTRange[0] = strtol(argv[i], NULL, 10);
+            if (!((i == (argc-1)) || *argv[i+1] == '-')) {
+                ++i;
+                _CFTRange[1] = strtol(argv[i], NULL, 10);
+            } else {
+                _CFTRange[1] = _CFTRange[0];
+            }
+            if (_CFTRange[0] > _CFTRange[1]) {
+                fprintf(stderr, "<start> cannot be bigger than <end>\n");
+                return false;
+            }
+        } else if (IS_OPTION(argv[i], "-writeInstance")) {
+            if ((i == (argc-1)) || *argv[++i] == '-')
+            {
+                fprintf(stderr, "Missing <number> after -writeInstance\n");
+                return false;
+            }
+            _instancesToBeWritten = strtol(argv[i], NULL, 10);
         }
       #ifdef RTI_SECURE_PERFTEST
         else if (IS_OPTION(argv[i], "-secureSign")) {
@@ -662,6 +686,22 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         _BatchSize = 0;
     }
 
+    // Manage _instancesToBeWritten
+    if (_instancesToBeWritten != -1) {
+        if (_InstanceCount <_instancesToBeWritten) {
+            fprintf(
+                    stderr,
+                    "Specified WriterInstances id (%d) invalid: Bigger than the number of instances (%d).\n",
+                    _instancesToBeWritten,_InstanceCount);
+            return false;
+        }
+    }
+    if (_isPublisher && _useCft) {
+        fprintf(
+                stderr,
+                "Content Filtered Topic is not a parameter in the publisher side.\n");
+    }
+
     return true;
 }
 
@@ -711,9 +751,10 @@ class RTIPublisher : public IMessagingWriter
     unsigned long _instance_counter;
     DDS_InstanceHandle_t *_instance_handles;
     RTIOsapiSemaphore *_pongSemaphore;
+    int _instancesToBeWritten;
 
  public:
-    RTIPublisher(DDSDataWriter *writer, int num_instances, RTIOsapiSemaphore * pongSemaphore)
+    RTIPublisher(DDSDataWriter *writer, int num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
     {
         _writer = T::DataWriter::narrow(writer);
         data.bin_data.maximum(0);
@@ -722,14 +763,12 @@ class RTIPublisher : public IMessagingWriter
         _instance_handles = 
             (DDS_InstanceHandle_t *) malloc(sizeof(DDS_InstanceHandle_t)*num_instances);
 	    _pongSemaphore = pongSemaphore;
+        _instancesToBeWritten = instancesToBeWritten;
 
-        for (int i=0; i<_num_instances; ++i)
-        {
-            data.key[0] = (char) (i);
-            data.key[1] = (char) (i >> 8);
-            data.key[2] = (char) (i >> 16);
-            data.key[3] = (char) (i >> 24);
-
+        for (int i = 0; i < _num_instances; ++i) {
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
+                data.key[c] = (unsigned char) (i >> c * 8);
+            }
             _instance_handles[i] = _writer->register_instance(data);
         }
     }
@@ -752,11 +791,14 @@ class RTIPublisher : public IMessagingWriter
         data.bin_data.loan_contiguous((DDS_Octet*)message.data, message.size, message.size);
 
         if (_num_instances > 1) {
-            key = _instance_counter++ % _num_instances;
-            data.key[0] = (char) (key);
-            data.key[1] = (char) (key >> 8);
-            data.key[2] = (char) (key >> 16);
-            data.key[3] = (char) (key >> 24);
+            if (_instancesToBeWritten == -1) {
+                key = _instance_counter++ % _num_instances;
+            } else { // send sample to a specific subscriber
+                key = _instancesToBeWritten;
+            }
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
+                data.key[c] = (unsigned char) (key >> c * 8);
+            }
         }
 
         retcode = _writer->write(data, _instance_handles[key]);
@@ -835,6 +877,10 @@ class RTIPublisher : public IMessagingWriter
         _writer->get_datawriter_protocol_status(status);
         return (unsigned int)status.pulled_sample_count;
     };
+
+    void resetWriteInstance(){
+        _instancesToBeWritten = -1;
+    }
 };
 
 /* Dynamic Data equivalent function from RTIPublisher */
@@ -847,13 +893,15 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     unsigned long _instance_counter;
     DDS_InstanceHandle_t *_instance_handles;
     RTIOsapiSemaphore *_pongSemaphore;
+    int _instancesToBeWritten;
 
 public:
     RTIDynamicDataPublisher(
             DDSDataWriter *writer,
             int num_instances,
             RTIOsapiSemaphore *pongSemaphore,
-            DDS_TypeCode *typeCode) :
+            DDS_TypeCode *typeCode,
+            int instancesToBeWritten) :
             data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT)
 
     {
@@ -863,6 +911,7 @@ public:
 
         _num_instances = num_instances;
         _instance_counter = 0;
+        _instancesToBeWritten = instancesToBeWritten;
         _instance_handles = (DDS_InstanceHandle_t *) malloc(
                 sizeof(DDS_InstanceHandle_t) * num_instances);
         if (_instance_handles == NULL) {
@@ -872,10 +921,9 @@ public:
 
         for (int i = 0; i < _num_instances; ++i) {
             DDS_Octet key_octets[4];
-            key_octets[0] = (char) (i);
-            key_octets[1] = (char) (i >> 8);
-            key_octets[2] = (char) (i >> 16);
-            key_octets[3] = (char) (i >> 24);
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
+                key_octets[c] = (unsigned char) (i >> c * 8);
+            }
             retcode = data.set_octet_array("key",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED, 4, key_octets);
             if (retcode != DDS_RETCODE_OK) {
@@ -947,12 +995,15 @@ public:
         }
 
         if (_num_instances > 1) {
-            key = _instance_counter++ % _num_instances;
+            if (_instancesToBeWritten == -1) {
+                key = _instance_counter++ % _num_instances;
+            } else { // send sample to a specific subscriber
+                key = _instancesToBeWritten;
+            }
             DDS_Octet key_octets[4];
-            key_octets[0] = (char) (key);
-            key_octets[1] = (char) (key >> 8);
-            key_octets[2] = (char) (key >> 16);
-            key_octets[3] = (char) (key >> 24);
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
+                key_octets[c] = (unsigned char) (key >> c * 8);
+            }
             retcode = data.set_octet_array(
                     "key",
                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
@@ -1030,6 +1081,10 @@ public:
         _writer->get_datawriter_protocol_status(status);
         return (unsigned int)status.pulled_sample_count;
     };
+
+    void resetWriteInstance(){
+        _instancesToBeWritten = -1;
+    }
 };
 
 /*********************************************************
@@ -1287,6 +1342,7 @@ class RTISubscriber : public IMessagingReader
         int seq_length;
 
         while (true) {
+
             // no outstanding reads
             if (_no_data)
             {
@@ -2216,23 +2272,108 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     if (!_isDynamicData) {
-        return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore);
+        return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore, _instancesToBeWritten);
     } else {
-        return new RTIDynamicDataPublisher(writer, _InstanceCount, _pongSemaphore, T::TypeSupport::get_typecode());
+        return new RTIDynamicDataPublisher(writer, _InstanceCount, _pongSemaphore, T::TypeSupport::get_typecode(), _instancesToBeWritten);
     }
 
 }
+
+
+/*********************************************************
+ * CreateCFT
+ * The CFT allows to the subscriber to receive a specific instance or a range of them.
+ * In order generate the CFT it is necesary to create a condition:
+ *      - In the case of a specific instance, it is necesary to convert to _CFTRange[0] into a key notation.
+ *        Then it is enought with check that every element of key is equal to the instance.
+ *        Exmaple: _CFTRange[0] = 300. condition ="(0 = key[0] AND 0 = key[1] AND 1 = key[2] AND  44 = key[3])"
+ *          So, in the case that the key = { 0, 0, 1, 44}, it will be received.
+ *      - In the case of a range of instances, it is necesary to convert to _CFTRange[0] and _CFTRange[1] into a key notation.
+ *        Then it is enought with check that the key is in the range of instances.
+ *        Exmaple: _CFTRange[1] = 300 and _CFTRange[1] = 1.
+ *          condition = ""
+ *              "("
+ *                  "("
+ *                      "(44 < key[3]) OR"
+ *                      "(44 <= key[3] AND 1 < key[2]) OR"
+ *                      "(44 <= key[3] AND 1 <= key[2] AND 0 < key[1]) OR"
+ *                      "(44 <= key[3] AND 1 <= key[2] AND 0 <= key[1] AND 0 <= key[0])"
+ *                  ") AND ("
+ *                      "(1 > key[3]) OR"
+ *                      "(1 >= key[3] AND 0 > key[2]) OR"
+ *                      "(1 >= key[3] AND 0 >= key[2] AND 0 > key[1]) OR"
+ *                      "(1 >= key[3] AND 0 >= key[2] AND 0 >= key[1] AND 0 >= key[0])"
+ *                  ")"
+ *              ")"
+ *          The main goal for comaparing a instances and a key is by analyze the elemetns by more significant to the lest significant.
+ *          So, in the case that the key is between [ {0, 0, 0, 1} and { 0, 0, 1, 44} ], it will be received.
+ */
+template <typename T>
+DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
+        const char *topic_name,
+        DDSTopic *topic)
+{
+    std::string condition;
+    DDS_StringSeq parameters(2 * KEY_SIZE);
+    if (_CFTRange[0] == _CFTRange[1]) { // If same elements, no range
+        printf("CFT enabled for instance: '%d' \n",_CFTRange[0]);
+        char cft_param[KEY_SIZE][128];
+        for (int i = 0; i < KEY_SIZE ; i++) {
+            sprintf(cft_param[i],"%d", (unsigned char)(_CFTRange[0] >> i * 8));
+        }
+        const char* param_list[] = { cft_param[0], cft_param[1], cft_param[2], cft_param[3]};
+        parameters.from_array(param_list, KEY_SIZE);
+        condition ="(%0 = key[0] AND %1 = key[1] AND %2 = key[2] AND %3 = key[3])";
+    } else { // If range
+        printf("CFT enabled for instance range: [%d,%d] \n",_CFTRange[0],_CFTRange[1]);
+        char cft_param[2 * KEY_SIZE][128];
+        for (int i = 0; i < 2 * KEY_SIZE ; i++ ) {
+            if ( i < KEY_SIZE ) {
+                sprintf(cft_param[i],"%d", (unsigned char)(_CFTRange[0] >> i * 8));
+            } else { // KEY_SIZE < i < KEY_SIZE * 2
+                sprintf(cft_param[i],"%d", (unsigned char)(_CFTRange[1] >> i * 8));
+            }
+        }
+        const char* param_list[] = { cft_param[0], cft_param[1],
+            cft_param[2], cft_param[3],cft_param[4],
+            cft_param[5], cft_param[6], cft_param[7]
+        };
+        parameters.from_array(param_list, 2 * KEY_SIZE);
+        condition = ""
+                "("
+                    "("
+                        "(%3 < key[3]) OR"
+                        "(%3 <= key[3] AND %2 < key[2]) OR"
+                        "(%3 <= key[3] AND %2 <= key[2] AND %1 < key[1]) OR"
+                        "(%3 <= key[3] AND %2 <= key[2] AND %1 <= key[1] AND %0 <= key[0])"
+                    ") AND ("
+                        "(%7 > key[3]) OR"
+                        "(%7 >= key[3] AND %6 > key[2]) OR"
+                        "(%7 >= key[3] AND %6 >= key[2] AND %5 > key[1]) OR"
+                        "(%7 >= key[3] AND %6 >= key[2] AND %5 >= key[1] AND %4 >= key[0])"
+                    ")"
+                ")";
+    }
+    return _participant->create_contentfilteredtopic(
+            topic_name,
+            topic,
+            condition.c_str(),
+            parameters);
+}
+
 
 /*********************************************************
  * CreateReader
  */
 template <typename T>
-IMessagingReader *RTIDDSImpl<T>::CreateReader(const char *topic_name,
-                                           IMessagingCB *callback)
+IMessagingReader *RTIDDSImpl<T>::CreateReader(
+        const char *topic_name,
+        IMessagingCB *callback)
 {
     DDSDataReader *reader = NULL;
     DDS_DataReaderQos dr_qos;
     std::string qos_profile;
+    DDSTopicDescription* topic_desc = NULL; // Used to create the DDS DataReader
 
     DDSTopic *topic = _participant->create_topic(
                        topic_name, _typename,
@@ -2244,6 +2385,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(const char *topic_name,
         fprintf(stderr,"Problem creating topic %s.\n", topic_name);
         return NULL;
     }
+    topic_desc = topic;
 
     if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0)
     {
@@ -2354,6 +2496,15 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(const char *topic_name,
                 buf, false);
     }
 
+    /* Create CFT Topic */
+    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0 && _useCft) {
+        topic_desc = CreateCft(topic_name, topic);
+        if (topic_desc == NULL) {
+            printf("Create_contentfilteredtopic error\n");
+            return NULL;
+        }
+    }
+
     if (callback != NULL) {
 
        /*  NDDSConfigLogger::get_instance()->
@@ -2362,13 +2513,13 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(const char *topic_name,
 
         if (!_isDynamicData) {
             reader = _subscriber->create_datareader(
-                    topic,
+                    topic_desc,
                     dr_qos,
                     new ReceiverListener<T>(callback),
                     DDS_DATA_AVAILABLE_STATUS);
         } else {
             reader = _subscriber->create_datareader(
-                    topic,
+                    topic_desc,
                     dr_qos,
                     new DynamicDataReceiverListener(callback),
                     DDS_DATA_AVAILABLE_STATUS);
@@ -2376,7 +2527,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(const char *topic_name,
 
     } else {
         reader = _subscriber->create_datareader(
-                topic,
+                topic_desc,
                 dr_qos,
                 NULL,
                 DDS_STATUS_MASK_NONE);

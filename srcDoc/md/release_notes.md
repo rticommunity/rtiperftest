@@ -98,6 +98,9 @@ In previous releases, The announcement topic DataWriters and DataReaders were se
 
 This should not have any effect in the latency of throughput reported by RTI Perftest (as the main Throughput and Latency topics remain still with the same configuration).
 
+### Added new functionality Content Filtered Topic.
+
+In previous releases the only way to provide scalability was by using multicast and unicast. Now it is possible also to choose which subscriber will receive the the samples by the parameter `-cft` and also determine which sample will be sent in the publisher by the parameter `-writeInstance.`.
 
 ## What's Fixed in 2.1
 

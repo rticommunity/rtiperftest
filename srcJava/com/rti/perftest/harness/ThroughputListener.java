@@ -49,6 +49,7 @@ import com.rti.perftest.TestMessage;
     private long _beginTime;
     private int _numPublishers;
     private ArrayList<Integer> _finished_publishers;
+    private boolean _useCft = false;
 
 
 
@@ -59,22 +60,26 @@ import com.rti.perftest.TestMessage;
     // --- Constructors: -----------------------------------------------------
 
     public ThroughputListener(IMessagingWriter writer,
-                              int numPublishers) {
+            boolean UseCft,
+            int numPublishers) {
         _writer = writer;
         _last_seq_num = new long[numPublishers];
         _numPublishers = numPublishers;
         _finished_publishers = new ArrayList<Integer>();
+        _useCft = UseCft;
     }
 
 
     public ThroughputListener(IMessagingWriter writer,
                               IMessagingReader reader,
+                              boolean UseCft,
                               int numPublishers) {
         _writer = writer;
         _reader = reader;
         _last_seq_num = new long[numPublishers];
         _numPublishers = numPublishers;
         _finished_publishers = new ArrayList<Integer>();
+        _useCft = UseCft;
     }
 
 
@@ -132,13 +137,15 @@ import com.rti.perftest.TestMessage;
             _finished_publishers.add(message.entity_id);
 
             if (_finished_publishers.size() >= _numPublishers) {
-                // detect missing packets
-                if (message.seq_num != _last_seq_num[message.entity_id]) {
-                    // only track if skipped, might have restarted pub
-                    if (message.seq_num > _last_seq_num[message.entity_id])
-                    {
-                        missingPackets +=
-                            message.seq_num - _last_seq_num[message.entity_id];
+                if (!_useCft) {
+                    // detect missing packets
+                    if (message.seq_num != _last_seq_num[message.entity_id]) {
+                        // only track if skipped, might have restarted pub
+                        if (message.seq_num > _last_seq_num[message.entity_id])
+                        {
+                            missingPackets +=
+                                message.seq_num - _last_seq_num[message.entity_id];
+                        }
                     }
                 }
 
@@ -178,7 +185,8 @@ import com.rti.perftest.TestMessage;
         }
 
         // Send back a packet if this is a ping
-        if (message.latency_ping == PerfTest.subID) {
+        if ((message.latency_ping == PerfTest.subID)  ||
+                (_useCft && message.latency_ping != -1)) {
             boolean sent = _writer.send(message);
             _writer.flush();
             if (!sent) {
@@ -195,13 +203,15 @@ import com.rti.perftest.TestMessage;
             // may have many length changed packets to support best effort
             if (intervalDataLength != lastDataLength)
             {
-                // detect missing packets
-                if (message.seq_num != _last_seq_num[message.entity_id]) {
-                    // only track if skipped, might have restarted pub
-                    if (message.seq_num > _last_seq_num[message.entity_id])
-                    {
-                        missingPackets +=
-                            message.seq_num - _last_seq_num[message.entity_id];
+                if (!_useCft) {
+                    // detect missing packets
+                    if (message.seq_num != _last_seq_num[message.entity_id]) {
+                        // only track if skipped, might have restarted pub
+                        if (message.seq_num > _last_seq_num[message.entity_id])
+                        {
+                            missingPackets +=
+                                message.seq_num - _last_seq_num[message.entity_id];
+                        }
                     }
                 }
 
@@ -263,18 +273,19 @@ import com.rti.perftest.TestMessage;
         lastDataLength = message.size;
         ++packetsReceived;
         bytesReceived += (message.size + PerfTest.OVERHEAD_BYTES);
-
-        // detect missing packets
-        if (_last_seq_num[message.entity_id] == 0) {
-            _last_seq_num[message.entity_id] = message.seq_num;
-        } else {
-            if (message.seq_num != ++_last_seq_num[message.entity_id]) {
-                // only track if skipped, might have restarted pub
-                if (message.seq_num > _last_seq_num[message.entity_id]) {
-                    missingPackets +=
-                        message.seq_num - _last_seq_num[message.entity_id];
-                }
+        if (!_useCft) {
+            // detect missing packets
+            if (_last_seq_num[message.entity_id] == 0) {
                 _last_seq_num[message.entity_id] = message.seq_num;
+            } else {
+                if (message.seq_num != ++_last_seq_num[message.entity_id]) {
+                    // only track if skipped, might have restarted pub
+                    if (message.seq_num > _last_seq_num[message.entity_id]) {
+                        missingPackets +=
+                            message.seq_num - _last_seq_num[message.entity_id];
+                    }
+                    _last_seq_num[message.entity_id] = message.seq_num;
+                }
             }
         }
     }

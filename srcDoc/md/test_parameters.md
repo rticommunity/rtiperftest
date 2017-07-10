@@ -441,6 +441,13 @@ For additional information on setting the parameters, see sections:
 
     **Default:** `Not enabled`
 
+-   `-writeInstance <instance>`
+
+    Set the instance number to be sent.
+
+    **Default:** `Round-Robin schedule`  
+    **Range:** `0 and instances`
+
 ## Test Parameters Only for Subscribing Applications <a id="params-sub"></a>
 
 -   `-numPublishers <count>`
@@ -463,6 +470,14 @@ For additional information on setting the parameters, see sections:
     Set test to be a subscriber.
 
     **Default:** `-sub`
+
+-   `-cft <start> <end> `
+
+    Use a Content Filtered Topic for the Throughput topic in the subscriber side
+    Specify 2 parameters: <start> and <end> to receive samples with a key in that range.
+    Specify only 1 parameter to receive samples with that exact key.
+
+    **Default:** `Not set`
 
 ## Test Parameters to Control RTI Secure DDS Options (Publishing and Subscribing Applications) <a id="params-pub-sub-secure"></a>
 

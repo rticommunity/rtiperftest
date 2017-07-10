@@ -672,6 +672,41 @@ namespace PerformanceTest
                         Console.Error.Write("The maximun of -initial peers is " + RTIPERFTEST_MAX_PEERS + "\n");
                         return false;
                     }
+                } else if ("-cft".StartsWith(argv[i], true, null)) {
+                    _useCft = true;
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-")) {
+                        Console.Error.Write("Missing <start> <end> after -cft\n");
+                        return false;
+                    }
+                    if (!Int32.TryParse(argv[i], out _CFTRange[0]))
+                    {
+                        Console.Error.Write("Bad <start> for  -cft\n");
+                        return false;
+                    }
+                    if (!((i == (argc-1)) || argv[i+1].StartsWith("-"))) {
+                        ++i;
+                        if (!Int32.TryParse(argv[i], out _CFTRange[1]))
+                        {
+                            Console.Error.Write("Bad <end> for  -cft\n");
+                            return false;
+                        }
+                    } else {
+                        _CFTRange[1] = _CFTRange[0];
+                    }
+                    if (_CFTRange[0] > _CFTRange[1]) {
+                        Console.Error.Write("<start> cannot be bigger than <end>");
+                        return false;
+                    }
+                } else if ("-writeInstance".StartsWith(argv[i], true, null)) {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-")) {
+                        Console.Error.Write("Missing <number> after -writeInstance\n");
+                        return false;
+                    }
+                    if (!Int32.TryParse(argv[i], out _instancesToBeWritten))
+                    {
+                        Console.Error.Write("Bad <start> for  -cft\n");
+                        return false;
+                    }
                 } else {
                     Console.Error.Write(argv[i] + ": not recognized\n");
                     return false;
@@ -711,6 +746,17 @@ namespace PerformanceTest
                         + ") is equal or smaller than the sample size (" + _DataLen
                         + ").");
                 _BatchSize = 0;
+            }
+            // Manage _instancesToBeWritten
+            if (_instancesToBeWritten != -1) {
+                if (_InstanceCount <_instancesToBeWritten) {
+                    Console.Error.WriteLine("Specified WriterInstances id (" + _instancesToBeWritten +
+                            ") invalid: Bigger than the number of instances (" + _InstanceCount + ").");
+                    return false;
+                }
+            }
+            if (_isPublisher && _useCft) {
+                Console.Error.WriteLine("Content Filtered Topic is not a parameter in the publisher side.\n");
             }
             return true;
         }
@@ -759,12 +805,14 @@ namespace PerformanceTest
             protected long _instance_counter;
             protected InstanceHandle_t[] _instance_handles;
             protected Semaphore _pongSemaphore = null;
+            protected int _instancesToBeWritten = -1;
 
             public RTIPublisher(
                     DataWriter writer,
                     int num_instances,
                     Semaphore pongSemaphore,
-                    ITypeHelper<Type> DataType)
+                    ITypeHelper<Type> DataType,
+                    int instancesToBeWritten)
             {
                 _writer = writer;
                 _DataType = DataType;
@@ -773,6 +821,7 @@ namespace PerformanceTest
                 _instance_counter = 0;
                 _instance_handles = new DDS.InstanceHandle_t[num_instances];
                 _pongSemaphore = pongSemaphore;
+                _instancesToBeWritten = instancesToBeWritten;
 
                 _DataType.setBinDataMax(0);
 
@@ -796,7 +845,11 @@ namespace PerformanceTest
                 _DataType.copyFromMessage(message);
 
                 if (_num_instances > 1) {
-                    key = (int) (_instance_counter++ % _num_instances);
+                    if (_instancesToBeWritten == -1) {
+                        key = (int) (_instance_counter++ % _num_instances);
+                    } else {
+                        key = _instancesToBeWritten;
+                    }
                     _DataType.fillKey(key);
                 }
 
@@ -883,6 +936,10 @@ namespace PerformanceTest
                 return status.pulled_sample_count;
             }
 
+            public void resetWriteInstance(){
+                _instancesToBeWritten = -1;
+            }
+
         }
 
         /*********************************************************
@@ -894,8 +951,9 @@ namespace PerformanceTest
                     DataWriter writer,
                     int num_instances,
                     Semaphore pongSemaphore,
-                    ITypeHelper<DynamicData> DataType)
-                : base(writer, num_instances, pongSemaphore, DataType) {}
+                    ITypeHelper<DynamicData> DataType,
+                    int instancesToBeWritten)
+                : base(writer, num_instances, pongSemaphore, DataType, instancesToBeWritten) {}
 
 
             public override bool Send(TestMessage message)
@@ -903,9 +961,12 @@ namespace PerformanceTest
                 int key = 0;
                 _DataType.copyFromMessage(message);
 
-                if (_num_instances > 1)
-                {
-                    key = (int)(_instance_counter++ % _num_instances);
+                if (_num_instances > 1) {
+                    if (_instancesToBeWritten == -1) {
+                        key = (int) (_instance_counter++ % _num_instances);
+                    } else {
+                        key = _instancesToBeWritten;
+                    }
                     _DataType.fillKey(key);
                 }
 
@@ -1812,7 +1873,8 @@ namespace PerformanceTest
                     (DynamicDataWriter)writer,
                     _InstanceCount,
                     _pongSemaphore,
-                    (DynamicDataTypeHelper)_DataTypeHelper.clone());
+                    (DynamicDataTypeHelper)_DataTypeHelper.clone(),
+                    _instancesToBeWritten);
             }
             else
             {
@@ -1820,8 +1882,76 @@ namespace PerformanceTest
                     writer,
                     _InstanceCount,
                     _pongSemaphore,
-                    _DataTypeHelper.clone());
+                    _DataTypeHelper.clone(),
+                    _instancesToBeWritten);
             }
+        }
+
+        /*********************************************************
+         * CreateCFT
+         * The CFT allows to the subscriber to receive a specific instance or a range of them.
+         * In order generate the CFT it is necesary to create a condition:
+         *      - In the case of a specific instance, it is necesary to convert to _CFTRange[0] into a key notation.
+         *        Then it is enought with check that every element of key is equal to the instance.
+         *        Exmaple: _CFTRange[0] = 300. condition ="(0 = key[0] AND 0 = key[1] AND 1 = key[2] AND  44 = key[3])"
+         *          So, in the case that the key = { 0, 0, 1, 44}, it will be received.
+         *      - In the case of a range of instances, it is necesary to convert to _CFTRange[0] and _CFTRange[1] into a key notation.
+         *        Then it is enought with check that the key is in the range of instances.
+         *        Exmaple: _CFTRange[1] = 300 and _CFTRange[1] = 1.
+         *          condition = ""
+         *              "("
+         *                  "("
+         *                      "(44 < key[3]) OR"
+         *                      "(44 <= key[3] AND 1 < key[2]) OR"
+         *                      "(44 <= key[3] AND 1 <= key[2] AND 0 < key[1]) OR"
+         *                      "(44 <= key[3] AND 1 <= key[2] AND 0 <= key[1] AND 0 <= key[0])"
+         *                  ") AND ("
+         *                      "(1 > key[3]) OR"
+         *                      "(1 >= key[3] AND 0 > key[2]) OR"
+         *                      "(1 >= key[3] AND 0 >= key[2] AND 0 > key[1]) OR"
+         *                      "(1 >= key[3] AND 0 >= key[2] AND 0 >= key[1] AND 0 >= key[0])"
+         *                  ")"
+         *              ")"
+         *          The main goal for comaparing a instances and a key is by analyze the elemetns by more significant to the lest significant.
+         *          So, in the case that the key is between [ {0, 0, 0, 1} and { 0, 0, 1, 44} ], it will be received.
+         */
+        public DDS.ContentFilteredTopic createCft(String topic_name, DDS.Topic topic) {
+            string condition;
+            DDS.StringSeq parameters = new DDS.StringSeq();
+            if (_CFTRange[0] == _CFTRange[1]) { // If same elements, no range
+                parameters.ensure_length(KEY_SIZE.VALUE,KEY_SIZE.VALUE);
+                Console.Error.WriteLine("CFT enabled for instance: '"+_CFTRange[0]+"'");
+                for (int i = 0; i < KEY_SIZE.VALUE ; i++) {
+                    parameters.set_at(i,Convert.ToString((byte)(_CFTRange[0] >> i * 8)));
+                }
+                condition = "(%0 = key[0] AND  %1 = key[1] AND %2 = key[2] AND  %3 = key[3])";
+            } else { // If range
+                parameters.ensure_length(KEY_SIZE.VALUE * 2,KEY_SIZE.VALUE * 2);
+                Console.Error.WriteLine("CFT enabled for instance range: ["+_CFTRange[0]+","+_CFTRange[1]+"] ");
+                for (int i = 0; i < KEY_SIZE.VALUE * 2 ; i++) {
+                    if ( i < KEY_SIZE.VALUE ) {
+                        parameters.set_at(i,Convert.ToString((byte)(_CFTRange[0] >> i * 8)));
+                    } else { // KEY_SIZE < i < KEY_SIZE * 2
+                        parameters.set_at(i,Convert.ToString((byte)(_CFTRange[1] >> i * 8)));
+                    }
+                }
+                condition = "" +
+                        "(" +
+                            "(" +
+                                "(%3 < key[3]) OR" +
+                                "(%3 <= key[3] AND %2 < key[2]) OR" +
+                                "(%3 <= key[3] AND %2 <= key[2] AND %1 < key[1]) OR" +
+                                "(%3 <= key[3] AND %2 <= key[2] AND %1 <= key[1] AND %0 <= key[0])" +
+                            ") AND (" +
+                                "(%7 > key[3]) OR" +
+                                "(%7 >= key[3] AND %6 > key[2]) OR" +
+                                "(%7 >= key[3] AND %6 >= key[2] AND %5 > key[1]) OR" +
+                                "(%7 >= key[3] AND %6 >= key[2] AND %5 >= key[1] AND %4 >= key[0])" +
+                            ")" +
+                        ")";
+            }
+            return _participant.create_contentfilteredtopic(
+                    topic_name, topic, condition,  parameters);
         }
 
         /*********************************************************
@@ -1831,6 +1961,7 @@ namespace PerformanceTest
         {
             DDS.DataReaderQos dr_qos = new DDS.DataReaderQos();
             string qos_profile = null;
+            DDS.ITopicDescription topic_desc = null;
 
             DDS.Topic topic = _participant.create_topic(
                                topic_name, _typename,
@@ -1972,8 +2103,18 @@ namespace PerformanceTest
                         _useUnbounded.ToString(), false);
             }
 
+            if ( _useCft && topic_name == perftest_cs._ThroughputTopicName){
+                topic_desc = createCft(topic_name, topic);
+                if (topic_desc == null) {
+                    Console.Error.WriteLine("Create_contentfilteredtopic error");
+                    return null;
+                }
+            } else {
+                topic_desc = topic;
+            }
+
             reader = _subscriber.create_datareader(
-                    topic,
+                    topic_desc,
                     dr_qos,
                     reader_listener,
                     statusMask);
@@ -2018,6 +2159,10 @@ namespace PerformanceTest
         static int             RTIPERFTEST_MAX_PEERS = 1024;
         private int     _peer_host_count = 0;
         private string[] _peer_host = new string[RTIPERFTEST_MAX_PEERS];
+        private bool    _useCft = false;
+        private int     _instancesToBeWritten = -1;
+        private int[]   _CFTRange = {0,0};
+
 
 
         /* Security related variables */

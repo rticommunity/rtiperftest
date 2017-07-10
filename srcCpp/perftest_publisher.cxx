@@ -194,6 +194,7 @@ perftest_cpp::perftest_cpp()
     _executionTime = 0;
     _displayWriterStats = false;
     _pubRateMethodSpin = true;
+    _useCft = false;
 
 #ifdef RTI_WIN32
     if (_hTimerQueue == NULL) {
@@ -242,8 +243,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t-numIter <count>        - Set number of messages to send, default is\n"
         "\t                          100000000 for Throughput tests or 10000000\n"
         "\t                          for Latency tests. See -executionTime.\n"
-        "\t-instances <count>      - set the number of instances (keys) to iterate\n"
+        "\t-instances <count>      - Set the number of instances (keys) to iterate\n"
         "\t                          over when publishing, default 1\n"
+        "\t-writeInstance <instance> - Set the instance number to be sent. \n"
+        "\t                          -WriteInstance parameter cannot be bigger than the number of instances.\n"
+        "\t                          Default 'Round-Robin schedule'\n"
         "\t-sleep <millisec>       - Time to sleep between each send, default 0\n"
         "\t-spin <count>           - Number of times to run in spin loop between\n"
         "\t                          each send, default 0 (Deprecated)\n"
@@ -279,7 +283,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t-writerStats            - Display the Pulled Sample count stats for\n"
         "\t                          reliable protocol debugging purposes.\n"
         "\t                          Default: Not set\n"
-        "\t-cpu                   - Display the cpu percent use by the process\n"
+        "\t-cpu                   -  Display the cpu percent use by the process\n"
+        "\t                          Default: Not set\n"
+        "\t-cft <start> <end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n"
+        "\t                          Specify 2 parameters: <start> and <end> to receive samples with a key in that range.\n"
+        "\t                          Specify only 1 parameter to receive samples with that exact key.\n"
         "\t                          Default: Not set\n";
 
     if (argc < 1)
@@ -641,6 +649,32 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-cpu"))
         {
             _showCpu = true;
+        } else if (IS_OPTION(argv[i], "-cft"))
+        {
+            _useCft = true;
+            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
+
+            if (_MessagingArgv[_MessagingArgc] == NULL) {
+                fprintf(stderr, "Problem allocating memory\n");
+                return false;
+            }
+
+            _MessagingArgc++;
+
+            if ((i == (argc-1)) || *argv[++i] == '-')
+            {
+                fprintf(stderr, "Missing <start> <end> after -cft\n");
+                return false;
+            }
+
+            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
+
+            if (_MessagingArgv[_MessagingArgc] == NULL) {
+                fprintf(stderr, "Problem allocating memory\n");
+                return false;
+            }
+
+            _MessagingArgc++;
         } else
         {
             _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
@@ -738,10 +772,11 @@ class ThroughputListener : public IMessagingCB
     int _num_publishers;
     std::vector<int> _finished_publishers;
     CpuMonitor cpu;
+    bool _useCft;
 
   public:
 
-    ThroughputListener(IMessagingWriter *writer, IMessagingReader *reader = NULL, int numPublishers = 1)
+    ThroughputListener(IMessagingWriter *writer, IMessagingReader *reader = NULL, bool UseCft = false, int numPublishers = 1)
     {
         packets_received = 0;
         bytes_received = 0;
@@ -757,6 +792,7 @@ class ThroughputListener : public IMessagingCB
         _writer = writer;
         _reader = reader;
         _last_seq_num = new unsigned long[numPublishers];
+        _useCft = UseCft;
 
         for (int i=0; i<numPublishers; i++) {
             _last_seq_num[i] = 0;
@@ -813,13 +849,15 @@ class ThroughputListener : public IMessagingCB
 
             if (_finished_publishers.size() >= (unsigned int)_num_publishers)
             {
-                // detect missing packets
-                if (message.seq_num != _last_seq_num[message.entity_id]) {
-                    // only track if skipped, might have restarted pub
-                    if (message.seq_num > _last_seq_num[message.entity_id])
-                    {
-                        missing_packets +=
-                        message.seq_num - _last_seq_num[message.entity_id];
+                if (!_useCft) {
+                    // detect missing packets
+                    if (message.seq_num != _last_seq_num[message.entity_id]) {
+                        // only track if skipped, might have restarted pub
+                        if (message.seq_num > _last_seq_num[message.entity_id])
+                        {
+                            missing_packets +=
+                            message.seq_num - _last_seq_num[message.entity_id];
+                        }
                     }
                 }
 
@@ -858,8 +896,8 @@ class ThroughputListener : public IMessagingCB
         }
 
         // Send back a packet if this is a ping
-        if (message.latency_ping == perftest_cpp::_SubID)
-        {
+        if ((message.latency_ping == perftest_cpp::_SubID)  ||
+                (_useCft && message.latency_ping != -1)) {
             _writer->Send(message);
             _writer->Flush();
         }
@@ -873,13 +911,15 @@ class ThroughputListener : public IMessagingCB
             // may have many length changed packets to support best effort
             if (interval_data_length != last_data_length)
             {
-                // detect missing packets
-                if (message.seq_num != _last_seq_num[message.entity_id]) {
-                    // only track if skipped, might have restarted pub
-                    if (message.seq_num > _last_seq_num[message.entity_id])
-                    {
-                        missing_packets +=
-                            message.seq_num - _last_seq_num[message.entity_id];
+                if (!_useCft) {
+                    // detect missing packets
+                    if (message.seq_num != _last_seq_num[message.entity_id]) {
+                        // only track if skipped, might have restarted pub
+                        if (message.seq_num > _last_seq_num[message.entity_id])
+                        {
+                            missing_packets +=
+                                message.seq_num - _last_seq_num[message.entity_id];
+                        }
                     }
                 }
 
@@ -939,18 +979,20 @@ class ThroughputListener : public IMessagingCB
         ++packets_received;
         bytes_received += (unsigned long long) (message.size + perftest_cpp::OVERHEAD_BYTES);
 
-        // detect missing packets
-        if (_last_seq_num[message.entity_id] == 0) {
-            _last_seq_num[message.entity_id] = message.seq_num;
-        } else {
-            if (message.seq_num != ++_last_seq_num[message.entity_id]) {
-                // only track if skipped, might have restarted pub
-                if (message.seq_num > _last_seq_num[message.entity_id])
-                {
-                    missing_packets +=
-                        message.seq_num - _last_seq_num[message.entity_id];
-                }
+        if (!_useCft) {
+            // detect missing packets
+            if (_last_seq_num[message.entity_id] == 0) {
                 _last_seq_num[message.entity_id] = message.seq_num;
+            } else {
+                if (message.seq_num != ++_last_seq_num[message.entity_id]) {
+                    // only track if skipped, might have restarted pub
+                    if (message.seq_num > _last_seq_num[message.entity_id])
+                    {
+                        missing_packets +=
+                            message.seq_num - _last_seq_num[message.entity_id];
+                    }
+                    _last_seq_num[message.entity_id] = message.seq_num;
+                }
             }
         }
     }
@@ -1001,7 +1043,7 @@ int perftest_cpp::Subscriber()
     if (!_UseReadThread)
     {
         // create latency pong reader
-        reader_listener = new ThroughputListener(writer, NULL, _NumPublishers);
+        reader_listener = new ThroughputListener(writer, NULL, _useCft, _NumPublishers);
         reader = _MessagingImpl->CreateReader(_ThroughputTopicName, reader_listener);
         if (reader == NULL)
         {
@@ -1017,7 +1059,7 @@ int perftest_cpp::Subscriber()
             fprintf(stderr, "Problem creating throughput reader.\n");
             return -1;
         }
-        reader_listener = new ThroughputListener(writer, reader, _NumPublishers);
+        reader_listener = new ThroughputListener(writer, reader, _useCft, _NumPublishers);
 
         RTIOsapiThread_new("ReceiverThread",
                             RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
@@ -1532,7 +1574,7 @@ int perftest_cpp::Publisher()
      */
     announcement_reader_listener = new AnnouncementListener();
     announcement_reader = _MessagingImpl->CreateReader(_AnnouncementTopicName,
-                                                        announcement_reader_listener);
+            announcement_reader_listener);
     if (announcement_reader == NULL)
     {
         fprintf(stderr,"Problem creating announcement reader.\n");
@@ -1836,9 +1878,10 @@ int perftest_cpp::Publisher()
         fprintf(stderr,"Error: FINISHED_SIZE < MAX_PERFTEST_SAMPLE_SIZE\n");
         return -1;
     }
+
     message.size = FINISHED_SIZE;
-    for (int j = 0; j<30; ++j)
-    {
+    writer->resetWriteInstance();
+    for (int j = 0; j < initializeSampleCount; ++j) {
         writer->Send(message);
         writer->Flush();
     }

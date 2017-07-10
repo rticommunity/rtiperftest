@@ -667,8 +667,12 @@ namespace PerformanceTest {
                 "\t-numIter <count>        - Set number of messages to send, default is\n" +
                 "\t                          100000000 for Throughput tests or 10000000\n" +
                 "\t                          for Latency tests. See -executionTime.\n" +
-                "\t-instances <#instance>  - set the number of instances (keys) to iterate\n" +
+                "\t-instances <#instance>  - Set the number of instances (keys) to iterate\n" +
                 "\t                          over when publishing, default 1\n" +
+                "\t-writeInstance <instance> - Set the instance number to be sent. \n" +
+                "\t                          Digit: 'specific instance-digit'\n" +
+                "\t                          -WriteInstance parameter cannot be bigger than the number of instances.\n" +
+                "\t                          default 'Round-Robin schedule'\n" +
                 "\t-sleep <millisec>       - Time to sleep between each send, default 0\n" +
                 "\t-spin <count>           - Number of times to run in spin loop between\n" +
                 "\t                          each send, default 0 (deprecated)\n" +
@@ -705,6 +709,10 @@ namespace PerformanceTest {
                 "\t                          reliable protocol debugging purposes.\n" +
                 "\t                          Default: Not set\n" +
                 "\t-cpu                   - Display the cpu percent use by the process\n" +
+                "\t                          Default: Not set\n" +
+                "\t-cft <start> <end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n" +
+                "\t                          Specify 2 parameters: <start> and <end> to receive samples with a key in that range.\n" +
+                "\t                          Specify only 1 parameter to receive samples with that exact key.\n" +
                 "\t                          Default: Not set\n";
 
 
@@ -1061,6 +1069,18 @@ namespace PerformanceTest {
                 else if ("-cpu".StartsWith(argv[i], true, null)) {
                     _showCpu = true;
                 }
+                else if ("-cft".StartsWith(argv[i], true, null)) {
+                    _MessagingArgv[_MessagingArgc++] = argv[i];
+
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-")) {
+                        Console.Error.Write("Missing <start> <end> after -cft\n");
+                        return false;
+                    }
+
+                    _MessagingArgv[_MessagingArgc++] = argv[i];
+
+                    _useCft = true;
+                }
                 else {
                     _MessagingArgv[_MessagingArgc++] = argv[i];
                 }
@@ -1157,26 +1177,32 @@ namespace PerformanceTest {
             private int _num_publishers;
             private List<int> _finished_publishers;
             public CpuMonitor cpu;
+            private bool _useCft;
 
 
             public ThroughputListener(IMessagingWriter writer,
-                                      int numPublishers)
+                    bool useCft,
+                    int numPublishers)
             {
                 _writer = writer;
                 _last_seq_num = new ulong[numPublishers];
                 _num_publishers = numPublishers;
                 _finished_publishers = new List<int>();
                 cpu = new CpuMonitor();
+                _useCft = useCft;
             }
 
-            public ThroughputListener(IMessagingWriter writer, IMessagingReader reader,
-                                      int numPublishers)
+            public ThroughputListener(IMessagingWriter writer,
+                    IMessagingReader reader,
+                    bool useCft,
+                    int numPublishers)
             {
                 _writer = writer;
                 _reader = reader;
                 _last_seq_num = new ulong[numPublishers];
                 _num_publishers = numPublishers;
                 _finished_publishers = new List<int>();
+                _useCft = useCft;
             }
 
             public void ProcessMessage(TestMessage message)
@@ -1218,13 +1244,15 @@ namespace PerformanceTest {
                     _finished_publishers.Add(message.entity_id);
 
                     if (_finished_publishers.Count >= _num_publishers) {
-                        // detect missing packets
-                        if (message.seq_num != _last_seq_num[message.entity_id]) {
-                            // only track if skipped, might have restarted pub
-                            if (message.seq_num > _last_seq_num[message.entity_id])
-                            {
-                                missing_packets +=
-                                    message.seq_num - _last_seq_num[message.entity_id];
+                        if (!_useCft) {
+                            // detect missing packets
+                            if (message.seq_num != _last_seq_num[message.entity_id]) {
+                                // only track if skipped, might have restarted pub
+                                if (message.seq_num > _last_seq_num[message.entity_id])
+                                {
+                                    missing_packets +=
+                                        message.seq_num - _last_seq_num[message.entity_id];
+                                }
                             }
                         }
 
@@ -1260,8 +1288,8 @@ namespace PerformanceTest {
                 }
 
                 // Send back a packet if this is a ping
-                if (message.latency_ping == _SubID)
-                {
+                if ((message.latency_ping == _SubID)  ||
+                        (_useCft && message.latency_ping != -1)) {
                     _writer.Send(message);
                     _writer.Flush();
                 }
@@ -1276,13 +1304,15 @@ namespace PerformanceTest {
                     // may have many length changed packets to support best effort
                     if (interval_data_length != last_data_length)
                     {
-                        // detect missing packets
-                        if (message.seq_num != _last_seq_num[message.entity_id]) {
-                            // only track if skipped, might have restarted pub
-                            if (message.seq_num > _last_seq_num[message.entity_id])
-                            {
-                                missing_packets +=
-                                    message.seq_num - _last_seq_num[message.entity_id];
+                        if (!_useCft) {
+                            // detect missing packets
+                            if (message.seq_num != _last_seq_num[message.entity_id]) {
+                                // only track if skipped, might have restarted pub
+                                if (message.seq_num > _last_seq_num[message.entity_id])
+                                {
+                                    missing_packets +=
+                                        message.seq_num - _last_seq_num[message.entity_id];
+                                }
                             }
                         }
 
@@ -1343,17 +1373,19 @@ namespace PerformanceTest {
                 bytes_received += (ulong) (message.size + OVERHEAD_BYTES);
 
                 // detect missing packets
-                if (_last_seq_num[message.entity_id] == 0) {
-                    _last_seq_num[message.entity_id] = message.seq_num;
-                } else {
-                    if (message.seq_num != ++_last_seq_num[message.entity_id]) {
-                        // only track if skipped, might have restarted pub
-                        if (message.seq_num > _last_seq_num[message.entity_id])
-                        {
-                            missing_packets +=
-                                message.seq_num - _last_seq_num[message.entity_id];
-                        }
+                if (!_useCft) {
+                    if (_last_seq_num[message.entity_id] == 0) {
                         _last_seq_num[message.entity_id] = message.seq_num;
+                    } else {
+                        if (message.seq_num != ++_last_seq_num[message.entity_id]) {
+                            // only track if skipped, might have restarted pub
+                            if (message.seq_num > _last_seq_num[message.entity_id])
+                            {
+                                missing_packets +=
+                                    message.seq_num - _last_seq_num[message.entity_id];
+                            }
+                            _last_seq_num[message.entity_id] = message.seq_num;
+                        }
                     }
                 }
             }
@@ -1399,7 +1431,7 @@ namespace PerformanceTest {
             if (!_UseReadThread)
             {
                 // create latency pong reader
-                reader_listener = new ThroughputListener(writer, _NumPublishers);
+                reader_listener = new ThroughputListener(writer, _useCft, _NumPublishers);
                 reader = _MessagingImpl.CreateReader(_ThroughputTopicName, reader_listener);
                 if (reader == null)
                 {
@@ -1415,7 +1447,7 @@ namespace PerformanceTest {
                     Console.Error.Write("Problem creating throughput reader.\n");
                     return;
                 }
-                reader_listener = new ThroughputListener(writer, reader, _NumPublishers);
+                reader_listener = new ThroughputListener(writer, reader, _useCft, _NumPublishers);
 
                 Thread thread = new Thread(new ThreadStart(reader_listener.ReadThread));
                 thread.Start();
@@ -2080,7 +2112,7 @@ namespace PerformanceTest {
                                 // back the LENGTH_CHANGED_SIZE message
                                 message.latency_ping = num_pings % _NumSubscribers;
 
-                                for (int i=0; i<30; ++i) {
+                                for (int i=0; i< initializeSampleCount; ++i) {
                                     writer.Send(message);
                                     writer.Flush();
                                 }
@@ -2152,8 +2184,8 @@ namespace PerformanceTest {
             // Test has finished, send end of test message, send multiple
             // times in case of best effort
             message.size = FINISHED_SIZE;
-            for (int j=0; j<30; ++j)
-            {
+            writer.resetWriteInstance();
+            for (int j = 0; j < initializeSampleCount; ++j) {
                 writer.Send(message);
                 writer.Flush();
             }
@@ -2232,6 +2264,7 @@ namespace PerformanceTest {
         private bool _isDynamicData = false;
         private ulong _executionTime = 0;
         private bool _displayWriterStats = false;
+        private bool  _useCft = false;
         private System.Timers.Timer timer = null;
 
         private static int  _SubID = 0;

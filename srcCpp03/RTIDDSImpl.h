@@ -10,9 +10,9 @@
 #include <vector>
 #include "perftest.hpp"
 #include "MessagingIF.h"
+#include <sstream>
 #ifdef RTI_SECURE_PERFTEST
 #include "security/security_default.h"
-#include <sstream>
 #endif
 #include "rti/config/Logger.hpp"
 #include <dds/dds.hpp>
@@ -53,6 +53,11 @@ class RTIDDSImpl : public IMessaging
             const std::string &library_name,
             const std::string &profile_name);
 
+    template <typename U>
+    dds::topic::ContentFilteredTopic<U> CreateCft(
+        const std::string &topic_name,
+        const dds::topic::Topic<U> &topic);
+
   private:
 
     int          _SendQueueSize;
@@ -87,6 +92,9 @@ class RTIDDSImpl : public IMessaging
     unsigned long _useUnbounded;
     int          _peer_host_count;
     dds::core::StringSeq  _peer_host;
+    bool         _useCft;
+    int          _instancesToBeWritten;
+    std::vector<unsigned int> _CFTRange;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

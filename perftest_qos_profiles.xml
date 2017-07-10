@@ -83,6 +83,10 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           Maximum number of properties associated with the DomainParticipant. Default is 32.
           -->
           <participant_property_list_max_length>64</participant_property_list_max_length>
+          <!--
+          Maximum length for content filter property in the DomainParticipant. Default is 256.
+          -->
+          <contentfilter_property_max_length>512</contentfilter_property_max_length>
         </resource_limits>
           
         <!-- 
@@ -407,6 +411,9 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
       parameter not listed here will pick up the documented default value.
       -->
       <datawriter_qos>
+        <writer_resource_limits>
+          <max_remote_reader_filters>256</max_remote_reader_filters>
+        </writer_resource_limits>
         <!--
         Setting history.kind = KEEP_ALL, Connext will attempt to maintain
         and deliver all the values of the instance to existing subscribers. 
@@ -416,7 +423,6 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         <history>
           <kind>KEEP_ALL_HISTORY_QOS</kind>
         </history>
-
         <!--
         Setting reliability.kind = RELIABLE_RELIABILITY_QOS, data samples 
         originating from a single DataWriter cannot be made available to the

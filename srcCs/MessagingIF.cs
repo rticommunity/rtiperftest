@@ -48,6 +48,7 @@ namespace PerformanceTest
         bool WaitForPingResponse();
         bool WaitForPingResponse(int timeout);
         long getPulledSampleCount();
+        void resetWriteInstance();
     }
 
     public interface IMessaging : IDisposable

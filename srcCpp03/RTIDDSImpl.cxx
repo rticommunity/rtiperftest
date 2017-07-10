@@ -82,6 +82,9 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _useUnbounded(0),
         _peer_host_count(0),
         _peer_host(dds::core::StringSeq(RTIPERFTEST_MAX_PEERS)),
+        _useCft(false),
+        _instancesToBeWritten(-1), // By default use round-robin (-1)
+        _CFTRange(2),
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure(false),
         _secureIsSigned(false),
@@ -580,11 +583,36 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
                 _peer_host[_peer_host_count++] = argv[i];
             } else {
-                std::cerr <<"[Error] The maximun of -initial peers is "<< RTIPERFTEST_MAX_PEERS << std::endl;
-                return false;
+                std::cerr << "[Error] The maximun of -initial peers is " << RTIPERFTEST_MAX_PEERS << std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
             }
+        } else if (IS_OPTION(argv[i], "-cft")) {
+            _useCft = true;
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                std::cerr << "Missing <start> <end> after -cft" << std::endl;
+                throw std::logic_error("Missing <start> <end> after -cft");
+            }
+            _CFTRange[0] = strtol(argv[i], NULL, 10);
+            if (!((i == (argc-1)) || *argv[i+1] == '-')) {
+                ++i;
+                _CFTRange[1] = strtol(argv[i], NULL, 10);
+            } else {
+                _CFTRange[1] = _CFTRange[0];
+            }
+            if (_CFTRange[0] > _CFTRange[1]) {
+                std::cerr << "<start> cannot be bigger than <end>" << std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+        } else if (IS_OPTION(argv[i], "-writeInstance")) {
+            if ((i == (argc-1)) || *argv[++i] == '-')
+            {
+                std::cerr << "Missing <number> after -writeInstance"<< std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            _instancesToBeWritten = strtol(argv[i], NULL, 10);
+        }
       #ifdef RTI_SECURE_PERFTEST
-        } else if (IS_OPTION(argv[i], "-secureSign")) {
+        else if (IS_OPTION(argv[i], "-secureSign")) {
             _secureIsSigned = true;
             _secureUseSecure = true;
         } else if (IS_OPTION(argv[i], "-secureEncryptBoth")) {
@@ -659,8 +687,9 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 throw std::logic_error("[Error] Error parsing commands");
             }
             _secureDebugLevel = strtol(argv[i], NULL, 10);
+        }
       #endif
-        } else {
+        else {
             if (i > 0) {
                 std::cerr << argv[i] << " not recognized" << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
@@ -701,6 +730,20 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                    << ")."  << std::endl;
          _BatchSize = 0;
      }
+
+    // Manage _instancesToBeWritten
+    if (_instancesToBeWritten != -1) {
+        if (_InstanceCount <_instancesToBeWritten) {
+            std::cerr << "Specified WriterInstances id (" <<
+                    _instancesToBeWritten <<
+                    ") invalid: Bigger than the number of instances (" <<
+                    _InstanceCount << ")." << std::endl;
+            throw std::logic_error("[Error] Error parsing commands");
+        }
+    }
+    if (_isPublisher && _useCft) {
+        std::cerr << "Content Filtered Topic is not a parameter in the publisher side.\n" << std::endl;
+    }
 
     return true;
 }
@@ -747,19 +790,23 @@ protected:
     dds::core::InstanceHandleSeq _instance_handles;
     bool _useSemaphore;
     rti::core::Semaphore& _pongSemaphore;
+    int _instancesToBeWritten;
 
 public:
     RTIPublisherBase(
             dds::pub::DataWriter<T> writer,
             int num_instances,
             rti::core::Semaphore& pongSemaphore,
-            bool useSemaphore)
+            bool useSemaphore,
+            int instancesToBeWritten)
           :
             _writer(writer),
             _num_instances(num_instances),
             _instance_counter(0),
             _useSemaphore(useSemaphore),
-            _pongSemaphore(pongSemaphore) {}
+            _pongSemaphore(pongSemaphore),
+            _instancesToBeWritten(instancesToBeWritten)
+            {}
 
     void flush() {
         _writer->flush();
@@ -798,6 +845,10 @@ public:
     unsigned int getPulledSampleCount() {
         return (unsigned int)_writer->datawriter_protocol_status().pulled_sample_count().total();
     }
+
+    void resetWriteInstance(){
+        _instancesToBeWritten = -1;
+    }
 };
 
 template<typename T>
@@ -811,21 +862,21 @@ public:
             dds::pub::DataWriter<T> writer,
             int num_instances,
             rti::core::Semaphore& pongSemaphore,
-            bool useSemaphore)
+            bool useSemaphore,
+            int instancesToBeWritten)
           :
             RTIPublisherBase<T>(
                     writer,
                     num_instances,
                     pongSemaphore,
-                    useSemaphore)
+                    useSemaphore,
+                    instancesToBeWritten)
     {
 
         for (int i = 0; i < this->_num_instances; ++i) {
-            this->data.key()[0] = (char) (i);
-            this->data.key()[1] = (char) (i >> 8);
-            this->data.key()[2] = (char) (i >> 16);
-            this->data.key()[3] = (char) (i >> 24);
-
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
+                this->data.key()[c] = (unsigned char) (i >> c * 8);
+            }
             this->_instance_handles.push_back(
                     this->_writer.register_instance(this->data));
         }
@@ -844,11 +895,14 @@ public:
 
         int key = 0;
         if (this->_num_instances > 1) {
-            key = this->_instance_counter++ % this->_num_instances;
-            this->data.key()[0] = (char) (key);
-            this->data.key()[1] = (char) (key >> 8);
-            this->data.key()[2] = (char) (key >> 16);
-            this->data.key()[3] = (char) (key >> 24);
+            if (this->_instancesToBeWritten == -1) {
+                key = this->_instance_counter++ % this->_num_instances;
+            } else { // send sample to a specific subscriber
+                key = this->_instancesToBeWritten;
+            }
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
+                this->data.key()[c] = (unsigned char) (key >> c * 8);
+            }
         }
 
         this->_writer.write(this->data, this->_instance_handles[key]);
@@ -867,22 +921,23 @@ public:
             int num_instances,
             rti::core::Semaphore& pongSemaphore,
             bool useSemaphore,
+            int instancesToBeWritten,
             const dds::core::xtypes::StructType& typeCode)
           :
             RTIPublisherBase<DynamicData>(
                     writer,
                     num_instances,
                     pongSemaphore,
-                    useSemaphore),
+                    useSemaphore,
+                    instancesToBeWritten),
             data(typeCode)
     {
 
         for (int i = 0; i < this->_num_instances; ++i) {
             std::vector<uint8_t> key_octets;
-            key_octets.push_back((uint8_t) (i));
-            key_octets.push_back((uint8_t) (i >> 8));
-            key_octets.push_back((uint8_t) (i >> 16));
-            key_octets.push_back((uint8_t) (i >> 24));
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
+                key_octets.push_back((uint8_t) (i >> c * 8));
+            }
             this->data.set_values("key",key_octets);
 
             this->_instance_handles.push_back(this->_writer.register_instance(this->data));
@@ -904,11 +959,14 @@ public:
         int key = 0;
         if (this->_num_instances > 1) {
             std::vector<uint8_t> key_octets;
-            key = this->_instance_counter++ % this->_num_instances;
-            key_octets.push_back((uint8_t) (key));
-            key_octets.push_back((uint8_t) (key >> 8));
-            key_octets.push_back((uint8_t) (key >> 16));
-            key_octets.push_back((uint8_t) (key >> 24));
+            if (this->_instancesToBeWritten == -1) {
+                key = this->_instance_counter++ % this->_num_instances;
+            } else { // send sample to a specific subscriber
+                key = this->_instancesToBeWritten;
+            }
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
+                key_octets.push_back((uint8_t) (key >> c * 8));
+            }
             this->data.set_values("key", key_octets);
         }
         this->_writer.write(this->data, this->_instance_handles[key]);
@@ -1722,7 +1780,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
                 writer,
                 _InstanceCount,
                 _pongSemaphore,
-                _LatencyTest);
+                _LatencyTest,
+                _instancesToBeWritten);
 
     } else {
 
@@ -1741,8 +1800,89 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
                 _InstanceCount,
                 _pongSemaphore,
                 _LatencyTest,
+                _instancesToBeWritten,
                 type);
     }
+}
+
+
+
+/*********************************************************
+ * CreateCFT
+ * The CFT allows to the subscriber to receive a specific instance or a range of them.
+ * In order generate the CFT it is necesary to create a condition:
+ *      - In the case of a specific instance, it is necesary to convert to _CFTRange[0] into a key notation.
+ *        Then it is enought with check that every element of key is equal to the instance.
+ *        Exmaple: _CFTRange[0] = 300. condition ="(0 = key[0] AND 0 = key[1] AND 1 = key[2] AND  44 = key[3])"
+ *          So, in the case that the key = { 0, 0, 1, 44}, it will be received.
+ *      - In the case of a range of instances, it is necesary to convert to _CFTRange[0] and _CFTRange[1] into a key notation.
+ *        Then it is enought with check that the key is in the range of instances.
+ *        Exmaple: _CFTRange[1] = 300 and _CFTRange[1] = 1.
+ *          condition = ""
+ *              "("
+ *                  "("
+ *                      "(44 < key[3]) OR"
+ *                      "(44 <= key[3] AND 1 < key[2]) OR"
+ *                      "(44 <= key[3] AND 1 <= key[2] AND 0 < key[1]) OR"
+ *                      "(44 <= key[3] AND 1 <= key[2] AND 0 <= key[1] AND 0 <= key[0])"
+ *                  ") AND ("
+ *                      "(1 > key[3]) OR"
+ *                      "(1 >= key[3] AND 0 > key[2]) OR"
+ *                      "(1 >= key[3] AND 0 >= key[2] AND 0 > key[1]) OR"
+ *                      "(1 >= key[3] AND 0 >= key[2] AND 0 >= key[1] AND 0 >= key[0])"
+ *                  ")"
+ *              ")"
+ *          The main goal for comaparing a instances and a key is by analyze the elemetns by more significant to the lest significant.
+ *          So, in the case that the key is between [ {0, 0, 0, 1} and { 0, 0, 1, 44} ], it will be received.
+ */
+template <typename T>
+template <typename U>
+dds::topic::ContentFilteredTopic<U> RTIDDSImpl<T>::CreateCft(
+        const std::string &topic_name,
+        const dds::topic::Topic<U> &topic) {
+    std::string condition;
+    std::vector<std::string> parameters(2 * KEY_SIZE);
+    if (_CFTRange[0] == _CFTRange[1]) { // If same elements, no range
+        std::cerr << "CFT enabled for instance: '" << _CFTRange[0] << std::endl;
+        for (int i = 0; i < KEY_SIZE ; i++) {
+            std::ostringstream string_stream_object;
+            string_stream_object << (int)((unsigned char)(_CFTRange[0] >> i * 8));
+            parameters[i] = string_stream_object.str();
+        }
+        condition = "(%0 = key[0] AND  %1 = key[1] AND %2 = key[2] AND  %3 = key[3])";
+    } else { // If range
+        std::cerr << "CFT enabled for instance range:[" << _CFTRange[0] << ","  << _CFTRange[1] << "]" << std::endl;
+        for (int i = 0; i < 2 * KEY_SIZE ; i++ ) {
+            std::ostringstream string_stream_object;
+            if ( i < KEY_SIZE ) {
+                string_stream_object << (int)((unsigned char)(_CFTRange[0] >> i * 8));
+                parameters[i]= string_stream_object.str();
+            } else { // KEY_SIZE < i < KEY_SIZE * 2
+                string_stream_object << (int)((unsigned char)(_CFTRange[1] >> i * 8));
+                parameters[i] = string_stream_object.str();
+            }
+        }
+        condition = ""
+                "("
+                    "("
+                        "(%3 < key[3]) OR"
+                        "(%3 <= key[3] AND %2 < key[2]) OR"
+                        "(%3 <= key[3] AND %2 <= key[2] AND %1 < key[1]) OR"
+                        "(%3 <= key[3] AND %2 <= key[2] AND %1 <= key[1] AND %0 <= key[0])"
+                    ") AND ("
+                        "(%7 > key[3]) OR"
+                        "(%7 >= key[3] AND %6 > key[2]) OR"
+                        "(%7 >= key[3] AND %6 >= key[2] AND %5 > key[1]) OR"
+                        "(%7 >= key[3] AND %6 >= key[2] AND %5 >= key[1] AND %4 >= key[0])"
+                    ")"
+                ")";
+
+    }
+    return dds::topic::ContentFilteredTopic<U> (
+            topic, topic_name,
+            dds::topic::Filter(
+                (const std::string)condition, parameters)
+    );
 }
 
 /*********************************************************
@@ -1879,18 +2019,36 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         dds::topic::Topic<T> topic(_participant, topic_name);
         dds::sub::DataReader<T> reader(dds::core::null);
         ReceiverListener<T> *reader_listener = NULL;
-        if (callback != NULL) {
-            reader_listener = new ReceiverListener<T>(callback);
-            reader = dds::sub::DataReader<T>(
-                    _subscriber,
-                    topic,
-                    dr_qos,
-                    reader_listener,
-                    dds::core::status::StatusMask::data_available());
-        } else {
-            reader = dds::sub::DataReader<T>(_subscriber, topic, dr_qos);
-        }
 
+        if (topic_name == perftest_cpp::_ThroughputTopicName && _useCft) {
+            /* Create CFT Topic */
+            dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
+                    topic_name,
+                    topic);
+            if (callback != NULL) {
+                reader_listener = new ReceiverListener<T>(callback);
+                reader = dds::sub::DataReader<T>(
+                        _subscriber,
+                        topicCft,
+                        dr_qos,
+                        reader_listener,
+                        dds::core::status::StatusMask::data_available());
+            } else {
+                reader = dds::sub::DataReader<T>(_subscriber, topicCft, dr_qos);
+            }
+        } else {
+            if (callback != NULL) {
+                reader_listener = new ReceiverListener<T>(callback);
+                reader = dds::sub::DataReader<T>(
+                        _subscriber,
+                        topic,
+                        dr_qos,
+                        reader_listener,
+                        dds::core::status::StatusMask::data_available());
+            } else {
+                reader = dds::sub::DataReader<T>(_subscriber, topic, dr_qos);
+            }
+        }
         return new RTISubscriber<T>(
                 reader,
                 reader_listener,
@@ -1898,31 +2056,50 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 _WaitsetDelayUsec);
 
     } else {
-
         const dds::core::xtypes::StructType& type =
                 rti::topic::dynamic_type<T>::get();
         dds::topic::Topic<DynamicData> topic(
                 _participant,
                 topic_name,
                 type);
-        dds::sub::DataReader<DynamicData> reader(
-                dds::core::null);
+        dds::sub::DataReader<DynamicData> reader(dds::core::null);
         DynamicDataReceiverListener *dynamic_data_reader_listener = NULL;
-
-        if (callback != NULL) {
-            dynamic_data_reader_listener =
-                    new DynamicDataReceiverListener(callback);
-            reader = dds::sub::DataReader<DynamicData>(
-                    _subscriber,
-                    topic,
-                    dr_qos,
-                    dynamic_data_reader_listener,
-                    dds::core::status::StatusMask::data_available());
+        if (topic_name == perftest_cpp::_ThroughputTopicName && _useCft) {
+            /* Create CFT Topic */
+            dds::topic::ContentFilteredTopic<DynamicData> topicCft = CreateCft(
+                    topic_name,
+                    topic);
+            if (callback != NULL) {
+                dynamic_data_reader_listener =
+                        new DynamicDataReceiverListener(callback);
+                reader = dds::sub::DataReader<DynamicData>(
+                        _subscriber,
+                        topicCft,
+                        dr_qos,
+                        dynamic_data_reader_listener,
+                        dds::core::status::StatusMask::data_available());
+            } else {
+                reader = dds::sub::DataReader<DynamicData>(
+                        _subscriber,
+                        topicCft,
+                        dr_qos);
+            }
         } else {
-            reader = dds::sub::DataReader<DynamicData>(
-                    _subscriber,
-                    topic,
-                    dr_qos);
+            if (callback != NULL) {
+                dynamic_data_reader_listener =
+                        new DynamicDataReceiverListener(callback);
+                reader = dds::sub::DataReader<DynamicData>(
+                        _subscriber,
+                        topic,
+                        dr_qos,
+                        dynamic_data_reader_listener,
+                        dds::core::status::StatusMask::data_available());
+            } else {
+                reader = dds::sub::DataReader<DynamicData>(
+                        _subscriber,
+                        topic,
+                        dr_qos);
+            }
         }
 
         return new RTIDynamicDataSubscriber(
@@ -1937,6 +2114,7 @@ template class RTIDDSImpl<TestDataKeyed_t>;
 template class RTIDDSImpl<TestData_t>;
 template class RTIDDSImpl<TestDataKeyedLarge_t>;
 template class RTIDDSImpl<TestDataLarge_t>;
+
 
 #ifdef RTI_WIN32
   #pragma warning(pop)

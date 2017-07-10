@@ -86,6 +86,8 @@ class IMessagingWriter
     virtual unsigned int getPulledSampleCount() {
         return -1;
     };
+    virtual void resetWriteInstance(){
+    }
 };
 
 class IMessaging
