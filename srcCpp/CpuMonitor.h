@@ -16,7 +16,6 @@
     #include "stdio.h"
     #include "string.h"
     #include "sys/times.h"
-    #include "sys/vtimes.h"
 #elif defined(RTI_DARWIN)
     #include "stdlib.h"
     #include "stdio.h"

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include "MessagingIF.h"
 #include "perftestSupport.h"
+#include "ndds/ndds_cpp.h"
 
 #define RTIPERFTEST_MAX_PEERS            (1024)
 
@@ -51,6 +52,11 @@ class RTIDDSImpl : public IMessaging
         _FlowControllerCustom = "default";
         _useUnbounded = 0;
         _peer_host_count = 0;
+        _useCft = false;
+        _instancesToBeWritten = -1; // By default use round-robin (-1)
+        _CFTRange[0] = 0;
+        _CFTRange[1] = 0;
+
 
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure = false;
@@ -102,6 +108,7 @@ class RTIDDSImpl : public IMessaging
     // to get data
     IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
 
+    DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
 
 
   private:
@@ -144,6 +151,9 @@ class RTIDDSImpl : public IMessaging
     unsigned long _useUnbounded;
     int          _peer_host_count;
     char *       _peer_host[RTIPERFTEST_MAX_PEERS];
+    bool         _useCft;
+    int          _instancesToBeWritten;
+    unsigned int _CFTRange[2];
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

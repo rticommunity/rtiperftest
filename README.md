@@ -19,4 +19,5 @@ Find all the information about RTI Perftest in the following documents:
 11. [Output Example](srcDoc/md/output_example.md)
 12. [Secure Certificates, Governance and Permission Files](srcDoc/md/secure.md)
 13. [Using RTI Perftest with RTI Routing-Service](srcDoc/md/routing_service.md)
-14. [Optimizing Your OS for Network Performance](srcDoc/md/optimizing.md)
+14. [Using RTI Perftest with RTI Content Filtered Topic](srcDoc/md/content_filtered_topic.md)
+15. [Optimizing Your OS for Network Performance](srcDoc/md/optimizing.md)

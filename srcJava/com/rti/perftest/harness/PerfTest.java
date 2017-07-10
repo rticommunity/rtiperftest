@@ -105,6 +105,7 @@ public final class PerfTest {
     private boolean _pubRateMethodSpin = true;
     private long     _executionTime = 0;
     private boolean  _displayWriterStats = false;
+    private boolean  _useCft = false;
     private PerftestTimerTask timertask = new PerftestTimerTask(this);
     /* Indicates when the test should exit due to timeout */
     private boolean testCompleted = false;
@@ -216,8 +217,12 @@ public final class PerfTest {
             "\t-numIter <count>        - Set number of messages to send, default is\n" +
             "\t                          100000000 for Throughput tests or 10000000\n" +
             "\t                          for Latency tests. See -executionTime.\n" +
-            "\t-instances <#instance>  - set the number of instances (keys) to iterate\n" +
+            "\t-instances <#instance>  - Set the number of instances (keys) to iterate\n" +
             "\t                          over when publishing, default 1\n" +
+            "\t-writeInstance <instance> - Set the instance number to be sent. \n" +
+            "\t                          Digit: 'specific instance-digit'\n" +
+            "\t                          -WriteInstance parameter cannot be bigger than the number of instances.\n" +
+            "\t                          default 'Round-Robin schedule'\n" +
             "\t-sleep <millisec>       - Time to sleep between each send, default 0\n" +
             "\t-spin <count>           - Number of times to run in spin loop between\n"+
             "\t                          each send, default 0 (Deprecated)\n" +
@@ -254,6 +259,10 @@ public final class PerfTest {
             "\t                          reliable protocol debugging purposes.\n"+
             "\t                          Default: Not set\n" +
             "\t-cpu                   - Display the cpu percent use by the process\n" +
+            "\t                          Default: Not set\n" +
+            "\t-cft <start> <end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n" +
+            "\t                          Specify 2 parameters: <start> and <end> to receive samples with a key in that range.\n" +
+            "\t                          Specify only 1 parameter to receive samples with that exact key.\n" +
             "\t                          Default: Not set\n";
 
         int argc = argv.length;
@@ -555,6 +564,19 @@ public final class PerfTest {
             {
                 _showCpu = true;
             }
+            else if ("-cft".toLowerCase().startsWith(argv[i].toLowerCase()))
+            {
+                _messagingArgv[_messagingArgc++] = argv[i];
+
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <start> <end> after -cft\n");
+                    return false;
+                }
+
+                _messagingArgv[_messagingArgc++] = argv[i];
+
+                _useCft = true;
+            }
             else {
                 _messagingArgv[_messagingArgc++] = argv[i];
             }
@@ -636,7 +658,7 @@ public final class PerfTest {
         // Check if using callbacks or read thread
         if (!_useReadThread) {
             // create latency pong reader
-            reader_listener = new ThroughputListener(writer, _numPublishers);
+            reader_listener = new ThroughputListener(writer, _useCft, _numPublishers);
             reader = _messagingImpl.createReader(THROUGHPUT_TOPIC_NAME, reader_listener);
             if (reader == null) {
                 System.err.print("Problem creating throughput reader.\n");
@@ -648,7 +670,7 @@ public final class PerfTest {
                 System.err.print("Problem creating throughput reader.\n");
                 return;
             }
-            reader_listener = new ThroughputListener(writer, reader, _numPublishers);
+            reader_listener = new ThroughputListener(writer, reader, _useCft, _numPublishers);
 
             final ThroughputListener final_listener = reader_listener;
             Thread thread = new Thread(
@@ -1067,7 +1089,7 @@ public final class PerfTest {
                             // back the LENGTH_CHANGED_SIZE message
                             message.latency_ping = num_pings % _numSubscribers;
 
-                            for (int i=0; i<30; ++i) {
+                            for (int i = 0; i < initialize_sample_count; ++i) {
                                 boolean sent = writer.send(message);
                                 writer.flush();
                                 if (!sent) {
@@ -1147,7 +1169,8 @@ public final class PerfTest {
         // Test has finished, send end of test message, send multiple
         // times in case of best effort
         message.size = FINISHED_SIZE;
-        for (int j=0; j<30; ++j) {
+        writer.resetWriteInstance();
+        for (int j = 0; j < initialize_sample_count; ++j) {
             boolean sent = writer.send(message);
             writer.flush();
             if (!sent) {

@@ -32,6 +32,7 @@ final class RTIPublisher<T> implements IMessagingWriter {
     private long _instanceCounter = 0;
     InstanceHandle_t[] _instanceHandles;
     private Semaphore _pongSemaphore = new Semaphore(0,true);
+    private int _instancesToBeWritten = -1;
 
     // -----------------------------------------------------------------------
     // Public Methods
@@ -39,12 +40,13 @@ final class RTIPublisher<T> implements IMessagingWriter {
 
     // --- Constructors: -----------------------------------------------------
 
-    public RTIPublisher(DataWriter writer,int num_instances, TypeHelper<T> myDataType) {
+    public RTIPublisher(DataWriter writer,int num_instances, TypeHelper<T> myDataType, int instancesToBeWritten) {
         _typeHelper = myDataType;
         _writer = writer;
         _numInstances = num_instances;
         _instanceHandles = new InstanceHandle_t[num_instances];
         _typeHelper.setBinDataMax(0);
+        _instancesToBeWritten = instancesToBeWritten;
 
         for (int i = 0; i < _numInstances; ++i) {
             _typeHelper.fillKey(i);
@@ -67,7 +69,11 @@ final class RTIPublisher<T> implements IMessagingWriter {
         _typeHelper.copyFromMessage(message);
 
         if (_numInstances > 1) {
-            key = (int) (_instanceCounter++ % _numInstances);
+            if (_instancesToBeWritten == -1) {
+                key = (int) (_instanceCounter++ % _numInstances);
+            } else {
+                key = _instancesToBeWritten;
+            }
             _typeHelper.fillKey(key);
         }
        
@@ -152,6 +158,10 @@ final class RTIPublisher<T> implements IMessagingWriter {
         DataWriterProtocolStatus status = new DataWriterProtocolStatus();
         this._writer.get_datawriter_protocol_status(status);
         return status.pulled_sample_count;
+    }
+
+    public void resetWriteInstance(){
+        _instancesToBeWritten = -1;
     }
 
 }

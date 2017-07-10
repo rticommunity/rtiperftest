@@ -21,7 +21,7 @@ public interface IMessagingWriter {
     public boolean waitForPingResponse(long timeout, TimeUnit unit);
     public boolean notifyPingResponse();
     public long getPulledSampleCount();
-
+    public void resetWriteInstance();
     public void flush();
 
 }

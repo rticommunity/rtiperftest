@@ -181,8 +181,8 @@ if !BUILD_CPP! == 1 (
 
 	echo[
 	echo [INFO]: Compiling %classic_cpp_lang_string%
-	echo call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!" "%classic_cpp_folder%"\%solution_name_cpp%
-	call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!" "%classic_cpp_folder%"\%solution_name_cpp%
+	echo call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!" /p:Platform="!win_arch!"  "%classic_cpp_folder%"\%solution_name_cpp%
+	call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!"  /p:Platform="!win_arch!"  "%classic_cpp_folder%"\%solution_name_cpp%
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %classic_cpp_lang_string%.
 		exit /b 1
@@ -231,8 +231,8 @@ if !BUILD_CPP03! == 1 (
 
 	echo[
 	echo [INFO]: Compiling %modern_cpp_lang_string%
-	echo call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!" "%modern_cpp_folder%"\%solution_name_cpp%
-	call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!" "%modern_cpp_folder%"\%solution_name_cpp%
+	echo call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!"  /p:Platform="!win_arch!"  "%modern_cpp_folder%"\%solution_name_cpp%
+	call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!"  /p:Platform="!win_arch!"  "%modern_cpp_folder%"\%solution_name_cpp%
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %modern_cpp_lang_string%.
 		exit /b 1
@@ -262,8 +262,8 @@ if %BUILD_CS% == 1 (
 
 	echo[
 	echo [INFO]: Compiling %cs_lang_string%
-  echo call !MSBUILD_EXE! /p:Configuration=!RELEASE_DEBUG! "%cs_folder%"\%solution_name_cs%
-	call !MSBUILD_EXE! /p:Configuration=!RELEASE_DEBUG! "%cs_folder%"\%solution_name_cs%
+  echo call !MSBUILD_EXE! /p:Configuration=!RELEASE_DEBUG! /p:Platform="!cs_win_arch!" "%cs_folder%"\%solution_name_cs%
+	call !MSBUILD_EXE! /p:Configuration=!RELEASE_DEBUG! /p:Platform="!cs_win_arch!" "%cs_folder%"\%solution_name_cs%
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %cs_lang_string%.
 		exit /b 1
@@ -365,9 +365,13 @@ GOTO:EOF
 		set begin_sol=perftest_publisher-64-
 		set begin_sol_cs=perftest-64-
 		set cs_64=x64\
+		set win_arch=x64
+		set cs_win_arch=x64
 	) else (
 		set begin_sol=perftest_publisher-
 		set begin_sol_cs=perftest-
+		set win_arch=win32
+		set cs_win_arch=x86
 	)
 	if not x%architecture:VS2008=%==x%architecture% (
 		set end_sol=vs2008
@@ -387,6 +391,10 @@ GOTO:EOF
 	)
 	if not x%architecture:VS2015=%==x%architecture% (
 		set end_sol=vs2015
+		set extension=.vcxproj
+	)
+	if not x%architecture:VS2017=%==x%architecture% (
+		set end_sol=vs2017
 		set extension=.vcxproj
 	)
 

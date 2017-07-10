@@ -97,6 +97,7 @@ class perftest_cpp
     unsigned long _useUnbounded;
     unsigned int _executionTime;
     bool _displayWriterStats;
+    bool _useCft;
 
   private:
     static void SetTimeout(unsigned int executionTimeInSeconds);

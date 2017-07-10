@@ -154,7 +154,8 @@ perftest_cpp::perftest_cpp() :
         _isKeyed(false),
         _useUnbounded(0),
         _executionTime(0),
-        _displayWriterStats(false)
+        _displayWriterStats(false),
+        _useCft(false)
 {
 #ifdef RTI_WIN32
     if (_hTimerQueue == NULL) {
@@ -242,8 +243,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t-numIter <count>        - Set number of messages to send, default is\n"
         "\t                          100000000 for Throughput tests or 10000000\n"
         "\t                          for Latency tests. See -executionTime.\n"
-        "\t-instances <count>      - set the number of instances (keys) to iterate\n"
+        "\t-instances <count>      - Set the number of instances (keys) to iterate\n"
         "\t                          over when publishing, default 1\n"
+        "\t-writeInstance <instance> - Set the instance number to be sent. \n"
+        "\t                          -WriteInstance parameter cannot be bigger than the number of instances.\n"
+        "\t                          default 'Round-Robin schedule'\n"
         "\t-sleep <millisec>       - Time to sleep between each send, default 0\n"
         "\t-spin <count>           - Number of times to run in spin loop between\n"
         "\t                          each send, default 0 (Deprecated)\n"
@@ -279,7 +283,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t-writerStats            - Display the Pulled Sample count stats for\n"
         "\t                          reliable protocol debugging purposes.\n"
         "\t                          Default: Not set\n"
-        "\t-cpu                   - Display the cpu percent use by the process\n"
+        "\t-cpu                    - Display the cpu percent use by the process\n"
+        "\t                          Default: Not set\n"
+        "\t-cft <start> <end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n"
+        "\t                          Specify 2 parameters '<start> <end>' to receive samples with the key value within that range.\n"
+        "\t                          Specify 1 parameter '<value>' to only receive samples with that key value.\n"
         "\t                          Default: Not set\n";
 
     if (argc < 1) {
@@ -609,17 +617,17 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
             if ((i == (argc-1)) || *argv[i+1] == '-')
             {
-                std::cerr << "-pubRate method: spin (default)" << std::endl;
+                std::cerr << "[Info] -pubRate method: spin (default)" << std::endl;
             } else {
                 ++i;
                 //validate pubRate method> spin or sleep
                 if (IS_OPTION(argv[i], "spin")) {
-                    std::cerr << "-pubRate method: spin."<< std::endl;
+                    std::cerr << "[Info] -pubRate method: spin."<< std::endl;
                 } else if (IS_OPTION(argv[i], "sleep")) {
                     _pubRateMethodSpin = false;
-                    std::cerr << "-pubRate method: sleep."<< std::endl;
+                    std::cerr << "[Info] -pubRate method: sleep."<< std::endl;
                 } else {
-                    std::cerr << "<method> for pubRate '" << argv[i] <<"' is not valid. It must be 'spin' or 'sleep'." << std::endl;
+                    std::cerr << "[Error] <method> for pubRate '" << argv[i] <<"' is not valid. It must be 'spin' or 'sleep'." << std::endl;
                     throw std::logic_error("[Error] Error parsing commands");
                 }
             }
@@ -643,6 +651,26 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-cpu"))
         {
             _showCpu = true;
+        } else if (IS_OPTION(argv[i], "-cft"))
+        {
+            _useCft = true;
+            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
+            if (_MessagingArgv[_MessagingArgc] == NULL) {
+                std::cerr << "[Error] Problem allocating memory" << std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            _MessagingArgc++;
+            if ((i == (argc-1)) || *argv[++i] == '-')
+            {
+                std::cerr << "[Error] Missing <start> <end> after -cft" << std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
+            if (_MessagingArgv[_MessagingArgc] == NULL) {
+                std::cerr << "[Error] Problem allocating memory" << std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            _MessagingArgc++;
         } else
         {
             _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
@@ -701,12 +729,12 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     //manage the parameter: -pubRate -sleep -spin
     if (_IsPub && _pubRate >0) {
         if (_SpinLoopCount > 0) {
-            std::cerr << "'-spin' is not compatible with -pubRate. "
+            std::cerr << "'[Error] -spin' is not compatible with -pubRate. "
                 "Spin/Sleep value will be set by -pubRate." << std::endl;
             _SpinLoopCount = 0;
         }
         if (_SleepNanosec > 0) {
-            std::cerr << "'-sleep' is not compatible with -pubRate. "
+            std::cerr << "'[Error] -sleep' is not compatible with -pubRate. "
                 "Spin/Sleep value will be set by -pubRate." << std::endl;
             _SleepNanosec = 0;
         }
@@ -744,11 +772,12 @@ public:
     int _num_publishers;
     std::vector<int> _finished_publishers;
     CpuMonitor cpu;
+    bool _useCft;
 
   public:
 
     ThroughputListener(IMessagingWriter *writer, IMessagingReader *reader = NULL,
-            int numPublishers = 1):
+            bool UseCft = false, int numPublishers = 1):
                 packets_received(0),
                 bytes_received(0),
                 missing_packets(0),
@@ -762,7 +791,8 @@ public:
                 _writer(writer),
                 _reader(reader),
                 _last_seq_num(numPublishers),
-                _num_publishers(numPublishers)
+                _num_publishers(numPublishers),
+                _useCft(UseCft)
 
     {
         end_test = false;
@@ -812,12 +842,14 @@ public:
             _finished_publishers.push_back(message.entity_id);
 
             if (_finished_publishers.size() >= (unsigned int)_num_publishers) {
-                // detect missing packets
-                if (message.seq_num != _last_seq_num[message.entity_id]) {
-                    // only track if skipped, might have restarted pub
-                    if (message.seq_num > _last_seq_num[message.entity_id]) {
-                        missing_packets += message.seq_num
-                                - _last_seq_num[message.entity_id];
+                if (!_useCft) {
+                    // detect missing packets
+                    if (message.seq_num != _last_seq_num[message.entity_id]) {
+                        // only track if skipped, might have restarted pub
+                        if (message.seq_num > _last_seq_num[message.entity_id]) {
+                            missing_packets += message.seq_num
+                                    - _last_seq_num[message.entity_id];
+                        }
                     }
                 }
 
@@ -856,7 +888,8 @@ public:
         }
 
         // Send back a packet if this is a ping
-        if (message.latency_ping == perftest_cpp::_SubID) {
+        if ((message.latency_ping == perftest_cpp::_SubID)  ||
+                (_useCft && message.latency_ping != -1)) {
             _writer->send(message);
             _writer->flush();
         }
@@ -869,12 +902,14 @@ public:
 
             // may have many length changed packets to support best effort
             if (interval_data_length != last_data_length) {
-                // detect missing packets
-                if (message.seq_num != _last_seq_num[message.entity_id]) {
-                    // only track if skipped, might have restarted pub
-                    if (message.seq_num > _last_seq_num[message.entity_id]) {
-                        missing_packets += message.seq_num
-                                - _last_seq_num[message.entity_id];
+                if (!_useCft) {
+                    // detect missing packets
+                    if (message.seq_num != _last_seq_num[message.entity_id]) {
+                        // only track if skipped, might have restarted pub
+                        if (message.seq_num > _last_seq_num[message.entity_id]) {
+                            missing_packets += message.seq_num
+                                    - _last_seq_num[message.entity_id];
+                        }
                     }
                 }
 
@@ -937,17 +972,19 @@ public:
         bytes_received += (unsigned long long) (message.size
                 + perftest_cpp::OVERHEAD_BYTES);
 
-        // detect missing packets
-        if (_last_seq_num[message.entity_id] == 0) {
-            _last_seq_num[message.entity_id] = message.seq_num;
-        } else {
-            if (message.seq_num != ++_last_seq_num[message.entity_id]) {
-                // only track if skipped, might have restarted pub
-                if (message.seq_num > _last_seq_num[message.entity_id]) {
-                    missing_packets += message.seq_num
-                            - _last_seq_num[message.entity_id];
-                }
+        if (!_useCft) {
+            // detect missing packets
+            if (_last_seq_num[message.entity_id] == 0) {
                 _last_seq_num[message.entity_id] = message.seq_num;
+            } else {
+                if (message.seq_num != ++_last_seq_num[message.entity_id]) {
+                    // only track if skipped, might have restarted pub
+                    if (message.seq_num > _last_seq_num[message.entity_id]) {
+                        missing_packets += message.seq_num
+                                - _last_seq_num[message.entity_id];
+                    }
+                    _last_seq_num[message.entity_id] = message.seq_num;
+                }
             }
         }
     }
@@ -982,7 +1019,7 @@ int perftest_cpp::RunSubscriber()
     if (!_UseReadThread) {
 
         // create latency pong reader
-        reader_listener = new ThroughputListener(writer, NULL, _NumPublishers);
+        reader_listener = new ThroughputListener(writer, NULL, _useCft, _NumPublishers);
         reader = _MessagingImpl->CreateReader(_ThroughputTopicName,
                 reader_listener);
         if (reader == NULL) {
@@ -998,7 +1035,7 @@ int perftest_cpp::RunSubscriber()
                       << std::endl;
             return -1;
         }
-        reader_listener = new ThroughputListener(writer, reader,
+        reader_listener = new ThroughputListener(writer, reader, _useCft,
                 _NumPublishers);
 
         RTIOsapiThread_new("ReceiverThread",
@@ -1795,8 +1832,8 @@ int perftest_cpp::RunPublisher()
     }
     message.size = FINISHED_SIZE;
     //message.data.resize(message.size);
-    for (int j = 0; j<30; ++j)
-    {
+    writer->resetWriteInstance();
+    for (int j = 0; j < initializeSampleCount; ++j) {
         writer->send(message);
         writer->flush();
     }
