@@ -542,18 +542,26 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _useCft = true;
             if ((i == (argc-1)) || *argv[++i] == '-')
             {
-                fprintf(stderr, "Missing <start> <end> after -cft\n");
+                fprintf(stderr, "Missing <start>:<end> after -cft\n");
                 return false;
             }
-            _CFTRange[0] = strtol(argv[i], NULL, 10);
-            if (!((i == (argc-1)) || *argv[i+1] == '-')) {
-                ++i;
-                _CFTRange[1] = strtol(argv[i], NULL, 10);
+
+            if (strchr(argv[i],':') != NULL) { // In the case that there are 2 parameter
+                unsigned int cftStart = 0;
+                unsigned int cftEnd = 0;
+                if (sscanf(argv[i],"%u:%u",&cftStart,&cftEnd) != 2) {
+                    fprintf(stderr, "-cft value must have the format <start>:<end>\n");
+                    return false;
+                }
+                _CFTRange[0] = cftStart;
+                _CFTRange[1] = cftEnd;
             } else {
+                _CFTRange[0] = strtol(argv[i], NULL, 10);
                 _CFTRange[1] = _CFTRange[0];
             }
+
             if (_CFTRange[0] > _CFTRange[1]) {
-                fprintf(stderr, "<start> cannot be bigger than <end>\n");
+                fprintf(stderr, "-cft <start> value cannot be bigger than <end>\n");
                 return false;
             }
         } else if (IS_OPTION(argv[i], "-writeInstance")) {

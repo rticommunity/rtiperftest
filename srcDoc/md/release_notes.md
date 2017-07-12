@@ -226,6 +226,11 @@ Large data settings enabled (-dataLen > 63000).
 
 ## Known Issues
 
+### Publication rate precision on Windows when using "sleep" instead of "spin"
+
+
+When using the `-pubRate <#>:sleep` or `-sleep` Command-Line Parameters on Windows the `sleep()` precision will be accurate up to 10 milliseconds. This means that for publication rates of more than 10000 samples per second we recommend using the "<#>:spin" option instead.
+
 ### Compiling manually on Windows when using the *RTI Security* plugin
 
 *rtiddsgen* generated solutions for Windows allow 4 different configurations: 

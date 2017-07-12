@@ -1,4 +1,4 @@
-# Using RTI Perftest with RTI Content Filtered Topic
+# Using RTI Perftest with RTI Content-Filtered Topics
 
 
 *RTI Perftest* can be used to test latency and throughput scenarios using Content Filtered Topics (*CFT*). This is specially useful in scenarios with many subscribers.
@@ -11,7 +11,7 @@
 
 In order to enable the use of the *CFT* in the subscriber side the following parameter is required:
 
--   `-cft <start> <end> `
+-   `-cft <start>:<end> `
 
     Use a Content Filtered Topic for the Throughput topic in the subscriber side
     Specify 2 parameters: <start> and <end> to receive samples with a key in that range.

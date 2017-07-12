@@ -1541,18 +1541,27 @@ public final class RTIDDSImpl<T> implements IMessaging {
             } else if ("-cft".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _useCft = true;
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.print("Missing <start> <end> after -cft\n");
+                    System.err.print("Missing <start>:<end> after -cft\n");
                     return false;
                 }
-                _CFTRange[0] = Integer.parseInt(argv[i]);
-                if (!((i == (argc-1)) || argv[i+1].startsWith("-"))) {
-                    ++i;
-                    _CFTRange[1] = Integer.parseInt(argv[i]);
+                if (argv[i].contains(":")) {
+                    try {
+                        StringTokenizer st = new StringTokenizer(argv[i],":", false);
+                        String startCFT = st.nextToken();
+                        String endCFT = st.nextToken();
+                        _CFTRange[0] = Integer.parseInt(startCFT);
+                        _CFTRange[1] = Integer.parseInt(endCFT);
+                    } catch (NumberFormatException nfx) {
+                        System.err.print("Bad <start>:<end> after -cft\n");
+                        return false;
+                    }
                 } else {
+                    _CFTRange[0] = Integer.parseInt(argv[i]);
                     _CFTRange[1] = _CFTRange[0];
                 }
+
                 if (_CFTRange[0] > _CFTRange[1]) {
-                    System.err.print("<start> cannot be bigger than <end>");
+                    System.err.print("-cft <start> value cannot be bigger than <end>");
                     return false;
                 }
             } else if ("-writeInstance".toLowerCase().startsWith(argv[i].toLowerCase())) {

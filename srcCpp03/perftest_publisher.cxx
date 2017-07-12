@@ -8,6 +8,8 @@
 
 #if defined(RTI_WIN32)
   #define STRNCASECMP _strnicmp
+  #pragma warning(push)
+  #pragma warning(disable : 4996)
 #elif defined(RTI_VXWORKS)
   #define STRNCASECMP strncmp
 #else
@@ -270,7 +272,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t-verbosity <level>      - Run with different levels of verbosity:\n"
         "\t                          0 - SILENT, 1 - ERROR, 2 - WARNING,\n"
         "\t                          3 - ALL. Default: 1\n"
-        "\t-pubRate <samples/s> <method>    - Limit the throughput to the specified number\n"
+        "\t-pubRate <samples/s>:<method>    - Limit the throughput to the specified number\n"
         "\t                                   of samples/s, default 0 (don't limit)\n"
         "\t                                   [OPTION] Method to control the throughput can be:\n"
         "\t                                   'spin' or 'sleep'\n"
@@ -285,8 +287,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                          Default: Not set\n"
         "\t-cpu                    - Display the cpu percent use by the process\n"
         "\t                          Default: Not set\n"
-        "\t-cft <start> <end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n"
-        "\t                          Specify 2 parameters '<start> <end>' to receive samples with the key value within that range.\n"
+        "\t-cft <start>:<end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n"
+        "\t                          Specify 2 parameters '<start>:<end>' to receive samples with the key value within that range.\n"
         "\t                          Specify 1 parameter '<value>' to only receive samples with that key value.\n"
         "\t                          Default: Not set\n";
 
@@ -599,37 +601,34 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-pubRate")) {
 
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                std::cerr << "[Error] Missing <rate> after -pubRate" << std::endl;
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                std::cerr << "[Error] Missing <samples/s>:<method> after -pubRate" << std::endl;
             }
-            _pubRate = strtol(argv[i], NULL, 10);
+
+            if (strchr(argv[i],':') != NULL) { // In the case that there are 2 parameter
+                if (sscanf(argv[i],"%d:%*s",&_pubRate) != 1) {
+                    std::cerr << "[Error] -pubRate value must have the format <samples/s>:<method>" << std::endl;
+                    throw std::logic_error("[Error] Error parsing commands");
+                }
+                if (strstr(argv[i], "spin") != NULL) {
+                    std::cerr << "[Info] -pubRate method: spin."<< std::endl;
+                } else if (strstr(argv[i], "sleep") != NULL) {
+                    _pubRateMethodSpin = false;
+                    std::cerr << "[Info] -pubRate method: sleep."<< std::endl;
+                } else {
+                    std::cerr << "[Error] <samples/s>:<method> for pubRate '" << argv[i] <<"' is not valid. It must contain 'spin' or 'sleep'." << std::endl;
+                    throw std::logic_error("[Error] Error parsing commands");
+                }
+            } else {
+                _pubRate = strtol(argv[i], NULL, 10);
+            }
 
             if (_pubRate > 10000000) {
                 std::cerr << "[Error] -pubRate cannot be greater than 10000000." << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
-
             } else if (_pubRate < 0) {
                 std::cerr << "[Error] -pubRate cannot be smaller than 0 (set 0 for unlimited)." << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
-
-            }
-
-            if ((i == (argc-1)) || *argv[i+1] == '-')
-            {
-                std::cerr << "[Info] -pubRate method: spin (default)" << std::endl;
-            } else {
-                ++i;
-                //validate pubRate method> spin or sleep
-                if (IS_OPTION(argv[i], "spin")) {
-                    std::cerr << "[Info] -pubRate method: spin."<< std::endl;
-                } else if (IS_OPTION(argv[i], "sleep")) {
-                    _pubRateMethodSpin = false;
-                    std::cerr << "[Info] -pubRate method: sleep."<< std::endl;
-                } else {
-                    std::cerr << "[Error] <method> for pubRate '" << argv[i] <<"' is not valid. It must be 'spin' or 'sleep'." << std::endl;
-                    throw std::logic_error("[Error] Error parsing commands");
-                }
             }
         }
         else if (IS_OPTION(argv[i], "-keyed")) {
@@ -638,9 +637,9 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         else if (IS_OPTION(argv[i], "-writerStats")) {
             _displayWriterStats = true;
         }
-        else if (IS_OPTION(argv[i], "-executionTime")) 
+        else if (IS_OPTION(argv[i], "-executionTime"))
         {
-            if ((i == (argc-1)) || *argv[++i] == '-') 
+            if ((i == (argc-1)) || *argv[++i] == '-')
             {
                 std::cerr << "[Error] Missing <seconds> after -executionTime" << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
@@ -662,7 +661,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             _MessagingArgc++;
             if ((i == (argc-1)) || *argv[++i] == '-')
             {
-                std::cerr << "[Error] Missing <start> <end> after -cft" << std::endl;
+                std::cerr << "[Error] Missing <start>:<end> after -cft" << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
             _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
@@ -1909,6 +1908,7 @@ inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds) {
         (void) lpParam;
         _testCompleted = true;
     }
+  #pragma warning(pop)
 #else
     inline void perftest_cpp::Timeout(int sign) {
         _testCompleted = true;

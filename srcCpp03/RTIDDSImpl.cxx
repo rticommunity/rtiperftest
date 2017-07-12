@@ -589,18 +589,26 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-cft")) {
             _useCft = true;
             if ((i == (argc-1)) || *argv[++i] == '-') {
-                std::cerr << "Missing <start> <end> after -cft" << std::endl;
-                throw std::logic_error("Missing <start> <end> after -cft");
+                std::cerr << "[Error] Missing <start>:<end> after -cft" << std::endl;
+                throw std::logic_error("Missing <start>:<end> after -cft");
             }
-            _CFTRange[0] = strtol(argv[i], NULL, 10);
-            if (!((i == (argc-1)) || *argv[i+1] == '-')) {
-                ++i;
-                _CFTRange[1] = strtol(argv[i], NULL, 10);
+
+            if (strchr(argv[i],':') != NULL) { // In the case that there are 2 parameter
+                unsigned int cftStart = 0;
+                unsigned int cftEnd = 0;
+                if (sscanf(argv[i],"%u:%u",&cftStart,&cftEnd) != 2) {
+                    std::cerr << "[Error] -cft value must have the format <start>:<end>" << std::endl;
+                    throw std::logic_error("[Error] Error parsing commands");
+                }
+                _CFTRange[0] = cftStart;
+                _CFTRange[1] = cftEnd;
             } else {
+                _CFTRange[0] = strtol(argv[i], NULL, 10);
                 _CFTRange[1] = _CFTRange[0];
             }
+
             if (_CFTRange[0] > _CFTRange[1]) {
-                std::cerr << "<start> cannot be bigger than <end>" << std::endl;
+                std::cerr << "[Error]  -cft <start> value cannot be bigger than <end>" << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
         } else if (IS_OPTION(argv[i], "-writeInstance")) {
@@ -1843,7 +1851,7 @@ dds::topic::ContentFilteredTopic<U> RTIDDSImpl<T>::CreateCft(
     std::string condition;
     std::vector<std::string> parameters(2 * KEY_SIZE);
     if (_CFTRange[0] == _CFTRange[1]) { // If same elements, no range
-        std::cerr << "CFT enabled for instance: '" << _CFTRange[0] << std::endl;
+        std::cerr << "[Info] CFT enabled for instance: '" << _CFTRange[0] << "'"<<std::endl;
         for (int i = 0; i < KEY_SIZE ; i++) {
             std::ostringstream string_stream_object;
             string_stream_object << (int)((unsigned char)(_CFTRange[0] >> i * 8));
@@ -1851,7 +1859,7 @@ dds::topic::ContentFilteredTopic<U> RTIDDSImpl<T>::CreateCft(
         }
         condition = "(%0 = key[0] AND  %1 = key[1] AND %2 = key[2] AND  %3 = key[3])";
     } else { // If range
-        std::cerr << "CFT enabled for instance range:[" << _CFTRange[0] << ","  << _CFTRange[1] << "]" << std::endl;
+        std::cerr << "[Info] CFT enabled for instance range:[" << _CFTRange[0] << ","  << _CFTRange[1] << "]" << std::endl;
         for (int i = 0; i < 2 * KEY_SIZE ; i++ ) {
             std::ostringstream string_stream_object;
             if ( i < KEY_SIZE ) {
