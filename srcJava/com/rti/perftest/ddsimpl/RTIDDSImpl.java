@@ -505,6 +505,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
         return new RTIPublisher<T>(writer,_instanceCount, _myDataType.clone(),_instancesToBeWritten);
     }
 
+    static int byteToUnsignedInt(byte b) {
+        return 0x00 << 24 | b & 0xff;
+    }
 
     /*********************************************************
      * CreateCFT
@@ -541,7 +544,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             param_list = new String[KEY_SIZE.VALUE];
             System.err.println("CFT enabled for instance: '"+_CFTRange[0]+"'");
             for (int i = 0; i < KEY_SIZE.VALUE ; i++) {
-                param_list[i] = String.valueOf(Byte.toUnsignedInt((byte)(_CFTRange[0] >>> i * 8)));
+                param_list[i] = String.valueOf(byteToUnsignedInt((byte)(_CFTRange[0] >>> i * 8)));
             }
             condition = "(%0 = key[0] AND  %1 = key[1] AND %2 = key[2] AND  %3 = key[3])";
         } else { // If range
@@ -549,9 +552,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
             System.err.println("CFT enabled for instance range: ["+_CFTRange[0]+","+_CFTRange[1]+"] ");
             for (int i = 0; i < KEY_SIZE.VALUE * 2 ; i++) {
                 if ( i < KEY_SIZE.VALUE ) {
-                    param_list[i] = String.valueOf((byte)(_CFTRange[0] >>> i * 8));
+                    param_list[i] = String.valueOf(byteToUnsignedInt((byte)(_CFTRange[0] >>> i * 8)));
                 } else { // KEY_SIZE < i < KEY_SIZE * 2
-                    param_list[i] = String.valueOf((byte)(_CFTRange[1] >>> i * 8));
+                    param_list[i] = String.valueOf(byteToUnsignedInt((byte)(_CFTRange[1] >>> i * 8)));
                 }
             }
             condition = "" +
@@ -1541,18 +1544,27 @@ public final class RTIDDSImpl<T> implements IMessaging {
             } else if ("-cft".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _useCft = true;
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.print("Missing <start> <end> after -cft\n");
+                    System.err.print("Missing <start>:<end> after -cft\n");
                     return false;
                 }
-                _CFTRange[0] = Integer.parseInt(argv[i]);
-                if (!((i == (argc-1)) || argv[i+1].startsWith("-"))) {
-                    ++i;
-                    _CFTRange[1] = Integer.parseInt(argv[i]);
+                if (argv[i].contains(":")) {
+                    try {
+                        StringTokenizer st = new StringTokenizer(argv[i],":", false);
+                        String startCFT = st.nextToken();
+                        String endCFT = st.nextToken();
+                        _CFTRange[0] = Integer.parseInt(startCFT);
+                        _CFTRange[1] = Integer.parseInt(endCFT);
+                    } catch (NumberFormatException nfx) {
+                        System.err.print("Bad <start>:<end> after -cft\n");
+                        return false;
+                    }
                 } else {
+                    _CFTRange[0] = Integer.parseInt(argv[i]);
                     _CFTRange[1] = _CFTRange[0];
                 }
+
                 if (_CFTRange[0] > _CFTRange[1]) {
-                    System.err.print("<start> cannot be bigger than <end>");
+                    System.err.print("-cft <start> value cannot be bigger than <end>");
                     return false;
                 }
             } else if ("-writeInstance".toLowerCase().startsWith(argv[i].toLowerCase())) {

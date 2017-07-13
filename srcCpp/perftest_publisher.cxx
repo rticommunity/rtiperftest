@@ -8,6 +8,8 @@
 #include "CpuMonitor.h"
 
 #if defined(RTI_WIN32)
+  #pragma warning(push)
+  #pragma warning(disable : 4996)
   #define STRNCASECMP _strnicmp
 #elif defined(RTI_VXWORKS)
   #define STRNCASECMP strncmp
@@ -270,7 +272,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t-verbosity <level>      - Run with different levels of verbosity:\n"
         "\t                          0 - SILENT, 1 - ERROR, 2 - WARNING,\n"
         "\t                          3 - ALL. Default: 1\n"
-        "\t-pubRate <samples/s> <method>    - Limit the throughput to the specified number\n"
+        "\t-pubRate <samples/s>:<method>    - Limit the throughput to the specified number\n"
         "\t                                   of samples/s, default 0 (don't limit)\n"
         "\t                                   [OPTIONAL] Method to control the throughput can be:\n"
         "\t                                   'spin' or 'sleep'\n"
@@ -285,7 +287,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                          Default: Not set\n"
         "\t-cpu                   -  Display the cpu percent use by the process\n"
         "\t                          Default: Not set\n"
-        "\t-cft <start> <end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n"
+        "\t-cft <start>:<end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n"
         "\t                          Specify 2 parameters: <start> and <end> to receive samples with a key in that range.\n"
         "\t                          Specify only 1 parameter to receive samples with that exact key.\n"
         "\t                          Default: Not set\n";
@@ -599,12 +601,28 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-pubRate")) {
 
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <rate> after -pubRate\n");
+            if ((i == (argc-1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <samples/s>:<method> after -pubRate\n");
                 return false;
             }
-            _pubRate = strtol(argv[i], NULL, 10);
+
+            if (strchr(argv[i],':') != NULL) { // In the case that there are 2 parameter
+                if (sscanf(argv[i],"%d:%*s",&_pubRate) != 1) {
+                    fprintf(stderr, "-pubRate value must have the format <samples/s>:<method>\n");
+                    return false;
+                }
+                if (strstr(argv[i], "spin") != NULL) {
+                    printf("-pubRate method: spin.\n");
+                } else if (strstr(argv[i], "sleep") != NULL) {
+                    _pubRateMethodSpin = false;
+                    printf("-pubRate method: sleep.\n");
+                } else {
+                    fprintf(stderr,"<samples/s>:<method> for pubRate '%s' is not valid. It must contain 'spin' or 'sleep'.\n",argv[i]);
+                    return false;
+                }
+            } else {
+                _pubRate = strtol(argv[i], NULL, 10);
+            }
 
             if (_pubRate > 10000000) {
                 fprintf(stderr,"-pubRate cannot be greater than 10000000.\n");
@@ -612,23 +630,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             } else if (_pubRate < 0) {
                 fprintf(stderr,"-pubRate cannot be smaller than 0 (set 0 for unlimited).\n");
                 return false;
-            }
-
-            if ((i == (argc-1)) || *argv[i+1] == '-')
-            {
-                printf("-pubRate method: spin (default)\n");
-            } else {
-                ++i;
-                //validate pubRate method> spin or sleep
-                if (IS_OPTION(argv[i], "spin")) {
-                    printf("-pubRate method: spin.\n");
-                } else if (IS_OPTION(argv[i], "sleep")) {
-                    _pubRateMethodSpin = false;
-                    printf("-pubRate method: sleep.\n");
-                } else {
-                    fprintf(stderr,"<method> for pubRate '%s' is not valid. It must be 'spin' or 'sleep'.\n",argv[i]);
-                    return false;
-                }
             }
         }
         else if (IS_OPTION(argv[i], "-keyed")) {
@@ -663,7 +664,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
             if ((i == (argc-1)) || *argv[++i] == '-')
             {
-                fprintf(stderr, "Missing <start> <end> after -cft\n");
+                fprintf(stderr, "Missing <start>:<end> after -cft\n");
                 return false;
             }
 
@@ -1940,6 +1941,7 @@ inline VOID CALLBACK perftest_cpp::Timeout(PVOID lpParam, BOOLEAN timerOrWaitFir
     (void) lpParam;
     _testCompleted = true;
 }
+  #pragma warning(pop)
 #else
 inline void perftest_cpp::Timeout(int sign) {
     _testCompleted = true;

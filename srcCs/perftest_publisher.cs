@@ -695,7 +695,7 @@ namespace PerformanceTest {
                 "\t-verbosity <level>      - Run with different levels of verbosity:\n" +
                 "\t                          0 - SILENT, 1 - ERROR, 2 - WARNING,\n" +
                 "\t                          3 - ALL. Default: 1\n" +
-                "\t-pubRate <samples/s> <method>    - Limit the throughput to the specified number\n" +
+                "\t-pubRate <samples/s>:<method>    - Limit the throughput to the specified number\n" +
                 "\t                                   of samples/s, default 0 (don't limit)\n" +
                 "\t                                   [OPTIONAL] Method to control the throughput can be:\n" +
                 "\t                                   'spin' or 'sleep'\n" +
@@ -710,7 +710,7 @@ namespace PerformanceTest {
                 "\t                          Default: Not set\n" +
                 "\t-cpu                   - Display the cpu percent use by the process\n" +
                 "\t                          Default: Not set\n" +
-                "\t-cft <start> <end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n" +
+                "\t-cft <start>:<end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n" +
                 "\t                          Specify 2 parameters: <start> and <end> to receive samples with a key in that range.\n" +
                 "\t                          Specify only 1 parameter to receive samples with that exact key.\n" +
                 "\t                          Default: Not set\n";
@@ -1016,14 +1016,38 @@ namespace PerformanceTest {
                 {
                     if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
                     {
-                        Console.Error.Write("Missing <rate> after -pubRate\n");
+                        Console.Error.Write("Missing <samples/s>:<method> after -pubRate\n");
                         return false;
                     }
-
-                    if (!UInt64.TryParse(argv[i], out _pubRate))
-                    {
-                        Console.Error.Write("Bad number for -pubRate\n");
-                        return false;
+                    if (argv[i].Contains(":")) {
+                        try {
+                            String[] st = argv[i].Split(':');
+                            if (!UInt64.TryParse(st[0], out _pubRate))
+                            {
+                                Console.Error.Write("Bad number for -pubRate\n");
+                                return false;
+                            }
+                            if ("spin".Equals(st[1])){
+                                Console.Error.Write("-pubRate method: spin.\n");
+                            } else if ("sleep".Equals(st[1])){
+                                _pubRateMethodSpin = false;
+                                Console.Error.Write("-pubRate method: sleep.\n");
+                            } else {
+                                Console.Error.Write("<method> for pubRate '" + st[1] + "' is not valid. It must be 'spin' or 'sleep'.\n");
+                                return false;
+                            }
+                        }
+                        catch (ArgumentNullException)
+                        {
+                            Console.Error.Write("Bad pubRate\n");
+                            return false;
+                        }
+                    } else {
+                        if (!UInt64.TryParse(argv[i], out _pubRate))
+                        {
+                            Console.Error.Write("Bad number for -pubRate\n");
+                            return false;
+                        }
                     }
 
                     if (_pubRate > 10000000)
@@ -1035,21 +1059,6 @@ namespace PerformanceTest {
                     {
                         Console.Error.Write("-pubRate cannot be smaller than 0 (set 0 for unlimited).\n");
                         return false;
-                    }
-                    if ((i == (argc-1)) || argv[i+1].StartsWith("-")){
-                        Console.Error.Write("-pubRate method: spin (default)");
-                    } else {
-                        ++i;
-                        //validate pubRate method> spin or sleep
-                        if ("spin".Equals(argv[i])){
-                            Console.Error.Write("-pubRate method: spin.");
-                        } else if ("sleep".Equals(argv[i])){
-                            _pubRateMethodSpin = false;
-                            Console.Error.Write("-pubRate method: sleep.");
-                        } else {
-                            Console.Error.Write("<method> for pubRate '" + argv[i] + "' is not valid. It must be 'spin' or 'sleep'.");
-                            return false;
-                        }
                     }
                 }
                 else if ("-executionTime".StartsWith(argv[i], true, null))
@@ -1073,7 +1082,7 @@ namespace PerformanceTest {
                     _MessagingArgv[_MessagingArgc++] = argv[i];
 
                     if ((i == (argc - 1)) || argv[++i].StartsWith("-")) {
-                        Console.Error.Write("Missing <start> <end> after -cft\n");
+                        Console.Error.Write("Missing <start>:<end> after -cft\n");
                         return false;
                     }
 

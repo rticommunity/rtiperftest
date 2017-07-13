@@ -245,10 +245,10 @@ public final class PerfTest {
             "\t-verbosity <level>      - Run with different levels of verbosity:\n" +
             "\t                          0 - SILENT, 1 - ERROR, 2 - WARNING,\n" +
             "\t                          3 - ALL. Default: 1\n" +
-            "\t-pubRate <samples/s> <method>    - Limit the throughput to the specified number\n" +
+            "\t-pubRate <samples/s>:<method>    - Limit the throughput to the specified number\n" +
             "\t                                   of samples/s, default 0 (don't limit)\n" +
             "\t                                   [OPTIONAL] Method to control the throughput can be:\n" +
-            "\t                                 'spin' or 'sleep'\n" +
+            "\t                                   'spin' or 'sleep'\n" +
             "\t                                 Default method: spin\n" +
             "\t-keyed                  - Use keyed data (default: unkeyed)\n"+
             "\t-executionTime <sec>    - Set a maximum duration for the test. The\n"+
@@ -260,7 +260,7 @@ public final class PerfTest {
             "\t                          Default: Not set\n" +
             "\t-cpu                   - Display the cpu percent use by the process\n" +
             "\t                          Default: Not set\n" +
-            "\t-cft <start> <end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n" +
+            "\t-cft <start>:<end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n" +
             "\t                          Specify 2 parameters: <start> and <end> to receive samples with a key in that range.\n" +
             "\t                          Specify only 1 parameter to receive samples with that exact key.\n" +
             "\t                          Default: Not set\n";
@@ -514,15 +514,35 @@ public final class PerfTest {
             else if ( "-pubRate".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
                 if (( i == (argc-1)) || argv[++i].startsWith("-") ) {
-                    System.err.println("Missing <rate> after -pubRate");
+                    System.err.println("Missing <samples/s>:<method> after -pubRate");
                     return false;
                 }
-                try {
-                    _pubRate = Long.parseLong(argv[i]);
-                } catch (NumberFormatException nfx) {
-                    System.err.println("Bad pubRate rate");
-                    return false;
+                if (argv[i].contains(":")) {
+                    try {
+                        _pubRate = Long.parseLong(argv[i].substring(0,argv[i].indexOf(":")));
+                    } catch (NumberFormatException nfx) {
+                        System.err.println("Bad pubRate rate");
+                        return false;
+                    }
+                    // Validate pubRate <method> spin or sleep
+                    if (argv[i].contains("spin".toLowerCase())){
+                        System.err.println("-pubRate method: spin.");
+                    } else if (argv[i].contains("sleep".toLowerCase())){
+                        _pubRateMethodSpin = false;
+                        System.err.println("-pubRate method: sleep.");
+                    } else {
+                        System.err.println("<samples/s>:<method> for pubRate '" + argv[i] + "' is not valid. It must contain 'spin' or 'sleep'.");
+                        return false;
+                    }
+                } else {
+                    try {
+                        _pubRate = Long.parseLong(argv[i]);
+                    } catch (NumberFormatException nfx) {
+                        System.err.println("Bad pubRate rate");
+                        return false;
+                    }
                 }
+
                 if (_pubRate > 10000000) {
                     System.err.println("-pubRate cannot be greater than 10000000.");
                     return false;
@@ -530,21 +550,7 @@ public final class PerfTest {
                     System.err.println("-pubRate cannot be smaller than 0 (set 0 for unlimited).");
                     return false;
                 }
-                if ((i == (argc-1)) || argv[i+1].startsWith("-")){
-                    System.err.println("-pubRate method: spin (default)");
-                } else {
-                    ++i;
-                    //validate pubRate method> spin or sleep
-                    if ("spin".toLowerCase().equals(argv[i].toLowerCase())){
-                        System.err.println("-pubRate method: spin.");
-                    } else if ("sleep".toLowerCase().equals(argv[i].toLowerCase())){
-                        _pubRateMethodSpin = false;
-                        System.err.println("-pubRate method: sleep.");
-                    } else {
-                        System.err.println("<method> for pubRate '" + argv[i] + "' is not valid. It must be 'spin' or 'sleep'.");
-                        return false;
-                    }
-                }
+
             }
             else if ("-executionTime".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
@@ -569,7 +575,7 @@ public final class PerfTest {
                 _messagingArgv[_messagingArgc++] = argv[i];
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.print("Missing <start> <end> after -cft\n");
+                    System.err.print("Missing <start>:<end> after -cft\n");
                     return false;
                 }
 

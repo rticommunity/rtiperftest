@@ -675,26 +675,40 @@ namespace PerformanceTest
                 } else if ("-cft".StartsWith(argv[i], true, null)) {
                     _useCft = true;
                     if ((i == (argc - 1)) || argv[++i].StartsWith("-")) {
-                        Console.Error.Write("Missing <start> <end> after -cft\n");
+                        Console.Error.Write("Missing <start>:<end> after -cft\n");
                         return false;
                     }
-                    if (!Int32.TryParse(argv[i], out _CFTRange[0]))
-                    {
-                        Console.Error.Write("Bad <start> for  -cft\n");
-                        return false;
-                    }
-                    if (!((i == (argc-1)) || argv[i+1].StartsWith("-"))) {
-                        ++i;
-                        if (!Int32.TryParse(argv[i], out _CFTRange[1]))
+
+                    if (argv[i].Contains(":")) {
+                        try {
+                            String[] st = argv[i].Split(':');
+                            if (!Int32.TryParse(st[0], out _CFTRange[0]))
+                            {
+                                Console.Error.Write("Bad <start> for -cft\n");
+                                return false;
+                            }
+                            if (!Int32.TryParse(st[1], out _CFTRange[1]))
+                            {
+                                Console.Error.Write("Bad <end> for  -cft\n");
+                                return false;
+                            }
+                        }
+                        catch (ArgumentNullException)
                         {
-                            Console.Error.Write("Bad <end> for  -cft\n");
+                            Console.Error.Write("Bad cft\n");
                             return false;
                         }
                     } else {
+                        if (!Int32.TryParse(argv[i], out _CFTRange[0]))
+                        {
+                            Console.Error.Write("Bad <start> for  -cft\n");
+                            return false;
+                        }
                         _CFTRange[1] = _CFTRange[0];
                     }
+
                     if (_CFTRange[0] > _CFTRange[1]) {
-                        Console.Error.Write("<start> cannot be bigger than <end>");
+                        Console.Error.Write("-cft <start> value cannot be bigger than <end>\n");
                         return false;
                     }
                 } else if ("-writeInstance".StartsWith(argv[i], true, null)) {

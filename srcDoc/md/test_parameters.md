@@ -378,7 +378,7 @@ For additional information on setting the parameters, see sections:
 
     **Default:** `-sub`
 
--   `-pubRate <samples> <method>`
+-   `-pubRate <sample/s>:<method>`
 
     Limit the throughput to the specified number of samples per second.
     The method to control the throughput rate can be: 'spin' or 'sleep'.
@@ -471,7 +471,7 @@ For additional information on setting the parameters, see sections:
 
     **Default:** `-sub`
 
--   `-cft <start> <end> `
+-   `-cft <start>:<end> `
 
     Use a Content Filtered Topic for the Throughput topic in the subscriber side
     Specify 2 parameters: <start> and <end> to receive samples with a key in that range.
