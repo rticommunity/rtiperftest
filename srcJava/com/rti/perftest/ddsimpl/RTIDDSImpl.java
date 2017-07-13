@@ -505,6 +505,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
         return new RTIPublisher<T>(writer,_instanceCount, _myDataType.clone(),_instancesToBeWritten);
     }
 
+    static int byteToUnsignedInt(byte b) {
+        return 0x00 << 24 | b & 0xff;
+    }
 
     /*********************************************************
      * CreateCFT
@@ -541,7 +544,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             param_list = new String[KEY_SIZE.VALUE];
             System.err.println("CFT enabled for instance: '"+_CFTRange[0]+"'");
             for (int i = 0; i < KEY_SIZE.VALUE ; i++) {
-                param_list[i] = String.valueOf(Byte.toUnsignedInt((byte)(_CFTRange[0] >>> i * 8)));
+                param_list[i] = String.valueOf(byteToUnsignedInt((byte)(_CFTRange[0] >>> i * 8)));
             }
             condition = "(%0 = key[0] AND  %1 = key[1] AND %2 = key[2] AND  %3 = key[3])";
         } else { // If range
@@ -549,9 +552,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
             System.err.println("CFT enabled for instance range: ["+_CFTRange[0]+","+_CFTRange[1]+"] ");
             for (int i = 0; i < KEY_SIZE.VALUE * 2 ; i++) {
                 if ( i < KEY_SIZE.VALUE ) {
-                    param_list[i] = String.valueOf((byte)(_CFTRange[0] >>> i * 8));
+                    param_list[i] = String.valueOf(byteToUnsignedInt((byte)(_CFTRange[0] >>> i * 8)));
                 } else { // KEY_SIZE < i < KEY_SIZE * 2
-                    param_list[i] = String.valueOf((byte)(_CFTRange[1] >>> i * 8));
+                    param_list[i] = String.valueOf(byteToUnsignedInt((byte)(_CFTRange[1] >>> i * 8)));
                 }
             }
             condition = "" +

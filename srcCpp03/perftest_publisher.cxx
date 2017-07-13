@@ -1141,14 +1141,13 @@ int perftest_cpp::RunSubscriber()
         delete(writer);
     }
 
-    if (reader_listener != NULL) {
-    	delete(reader_listener);
-    }
-
-    if (reader != NULL)
-    {
+    if (reader != NULL) {
         reader->Shutdown();
         delete(reader);
+    }
+
+    if (reader_listener != NULL) {
+        delete(reader_listener);
     }
 
     std::cerr << "[Info] Finishing test..." <<std::endl;
