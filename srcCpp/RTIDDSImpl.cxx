@@ -72,7 +72,7 @@ void RTIDDSImpl<T>::Shutdown()
 {
     //delete array of peers
     for (int i = 0; i < _peer_host_count; ++i) {
-        free(_peer_host[i]);
+        DDS_String_free(_peer_host[i]);
         _peer_host[i] = NULL;
     }
 
@@ -951,6 +951,8 @@ public:
     {
         DDS_ReturnCode_t retcode;
         int key = 0;
+
+        data.clear_all_members();
 
         retcode = data.set_long(
                 "entity_id",

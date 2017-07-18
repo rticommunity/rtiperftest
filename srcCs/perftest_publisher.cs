@@ -434,6 +434,7 @@ namespace PerformanceTest {
             ByteSeq my_byteSeq = new ByteSeq();
             my_byteSeq.ensure_length(message.size, message.size);
 
+            _myData.clear_all_members();
             _myData.set_int("entity_id", 2, message.entity_id);
             _myData.set_uint("seq_num", 3, message.seq_num);
             _myData.set_int("timestamp_sec", 4, message.timestamp_sec);

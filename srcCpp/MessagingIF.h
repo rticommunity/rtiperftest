@@ -36,7 +36,7 @@ class TestMessage
     ~TestMessage()
     {
         if (data != NULL) {
-            delete data;
+            delete []data;
         }
     }
 };

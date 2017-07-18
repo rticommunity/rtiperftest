@@ -50,6 +50,7 @@ public class DynamicDataTypeHelper implements TypeHelper<DynamicData> {
         // We won't copy the content of the message, since Perftest does not
         // fill it with actual data, it just allocates a buffer and sends it.
 
+        _myData.clear_all_members();
         _myData.set_int("entity_id", 2, message.entity_id);
         _myData.set_int("seq_num", 3, message.seq_num);
         _myData.set_int("timestamp_sec", 4, message.timestamp_sec);
