@@ -954,6 +954,7 @@ public:
 
     inline bool send(TestMessage &message) {
 
+        this->data.clear_all_members();
         this->data.value("entity_id", message.entity_id);
         this->data.value("seq_num", message.seq_num);
         this->data.value("timestamp_sec", message.timestamp_sec);

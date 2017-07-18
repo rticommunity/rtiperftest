@@ -19,6 +19,9 @@ git checkout release/2.0 -- resource/secure
 However, certain features are not compatible with all the *RTI Connext DDS* versions, since the build scripts make use of certain specific parameters in *Rtiddsgen* that might change or not be present between releases:
 
 - The `--secure` and `--openssl-home` parameters will not work for versions previous to *RTI Connext DDS* 5.2.5.
+
+- The Java code generation against *RTI Connext DDS 5.2.0.x* is not supported out of the box. Users can disable its compilation by adding the `--skip-java-build` flag. See "Known issues" section for more information and alternatives.
+
 - The C# code generation against *RTI Connext DDS 5.2.0.x* is not supported. Users can disable its compilation by adding the `--skip-cs-build` flag.
 
 ## What's New in Master
@@ -81,6 +84,18 @@ In previous releases the Batching Parameters were set unconditionally, now the B
 ### Changed name of the "-enableTcp" option
 
 In previous releases the command-line option to use TCP for the communication was named as `-enableTcpOnly`. This is was inconsistent with other transport options, so the name of the command has been modified to `-enableTcp`.
+
+### Dynamic Data not working properly when using large samples
+
+In previous releases the following error could happen when using the `-dynamicData` Command-Line Parameter in conjunction with `-dataLen` greater than 63000 Bytes:
+
+```
+DDS_DynamicDataStream_assert_array_or_seq_member:!sparsely stored member exceeds 65535 bytes
+DDS_DynamicData_set_octet_array:field bin_data (id=0) not found
+Failed to set uint8_t array
+```
+
+This error has been fixed starting in this release by reseting the members of the Dynamic Data object before repopulating it.
 
 ## What's New in 2.1
 
@@ -226,8 +241,28 @@ Large data settings enabled (-dataLen > 63000).
 
 ## Known Issues
 
-### Publication rate precision on Windows when using "sleep" instead of "spin"
+### Building RTI Perftest Java API against RTI Connext DDS 5.2.0.x
 
+Due to the changes added in order to support larger data sizes, *RTI Perftest* now makes use of *Unbounded Sequences*. This feature was not added to *RTI Connext DDS* in *5.2.0.x*, so the following error will be reported when trying to compile the Java API:
+
+```
+[INFO]: Generating types and makefiles for java.
+[INFO]: Command: "/home/test/nevada/bin/rtiddsgen" -language java -unboundedSupport -replace -package com.rti.perftest.gen -d "/home/test/test-antonio/srcJava" "/home/test/test-antonio/srcIdl/perftest.idl"
+ERROR com.rti.ndds.nddsgen.Main Fail:  -unboundedSupport is only supported with C, C++, C++/CLI, or C# code generation
+rtiddsgen version 2.3.0
+Usage: rtiddsgen [-help]
+. . .
+INFO com.rti.ndds.nddsgen.Main Done (failures)
+[ERROR]: Failure generating code for java.
+```
+
+In order to avoid this compilation error, 2 changes are needed:
+
+- In the `build.sh` or `build.bat` scripts, modify the call for *Rtiddsgen* and remove the `-unboundedSupport` flag.
+
+- In the `srcIdl/perftest.idl` file modify the `TestDataLarge_t` and `TestDataLargeKeyed_t` types and add a bound to the `bin_data` member: `sequence<octet,LIMIT> bin_data;`.
+
+### Publication rate precision on Windows when using "sleep" instead of "spin"
 
 When using the `-pubRate <#>:sleep` or `-sleep` Command-Line Parameters on Windows the `sleep()` precision will be accurate up to 10 milliseconds. This means that for publication rates of more than 10000 samples per second we recommend using the "<#>:spin" option instead.
 

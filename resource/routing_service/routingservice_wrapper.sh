@@ -43,7 +43,7 @@ do
           read_verbosity=$2
           shift 2
           ;;
-      -NDDSHOME)
+      -nddshome)
           read_NDDSHOME=$2
           shift 2
           ;;
