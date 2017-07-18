@@ -1,9 +1,9 @@
 # Using RTI Perftest with RTI Routing-Service
 
-This wrapper has been created to test the effects in latency and Throughput introduced by *RTI Routing Service* when using *RTI Perftest*. It consists on a set of 2 files:
+This wrapper has been created to test the effects of introducing *RTI Routing Service* when using *RTI Perftest* in latency and Throughput. It consists of a set of 2 files:
 
-- A compatible configuration xml file for *RTI Routing Service* parameterized to use different environment variables depending on the scenario to test.
-- A wrapper script to launch *RTI Routing Service* which will set the environment variables needed by the configuration xml file previously mentioned. It contains several Command-Line Parameters to control the scenario to be tested.
+- A compatible XML configuration file for *RTI Routing Service* parameterized to use different environment variables depending on the scenario to test.
+- A wrapper script to launch *RTI Routing Service* which will set the environment variables needed by the XML configuration file previously mentioned. It contains several command-line parameters to control the scenario to be tested.
 
 ## Command-Line Parameters
 
@@ -73,7 +73,7 @@ This wrapper has been created to test the effects in latency and Throughput intr
 
     Path to the *RTI Connext DDS* installation. If this parameter is not present, the `$NDDSHOME` variable will be used.
 
-## Example Command-Lines for Running the Performance Test
+## Example Command Lines for Running the Performance Test
 
 The followings are examples of how to run the performance test for different use cases.
 
