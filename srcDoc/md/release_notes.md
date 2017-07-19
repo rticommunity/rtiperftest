@@ -1,6 +1,6 @@
 # Release Notes
 
-## RTI Perftest Master Compatibility
+## RTI Perftest 2.2 Compatibility
 
 ### Using security
 
@@ -24,7 +24,7 @@ However, certain features are not compatible with all the *RTI Connext DDS* vers
 
 - C# code generation against *RTI Connext DDS 5.2.0.x* is not supported. You can disable this by adding the `--skip-cs-build` flag.
 
-## What's New in Master
+## What's New in 2.2
 
 ### Added command-line parameters "-asynchronous" and "-flowController `<`flow`>`"
 
@@ -67,7 +67,7 @@ This should not have any effect on the latency of throughput reported by RTI Per
 
 In previous releases the only way to provide scalability was by using multicast and unicast. Now you can also choose which subscriber will receive the samples by using the parameter `-cft`. You can also determine which sample will be sent by the publisher with the parameter `-writeInstance`.
 
-## What's Fixed in Master
+## What's Fixed in 2.2
 
 ### Conflicts when using "-multicast" and "-enableSharedMemory" at the same time
 
