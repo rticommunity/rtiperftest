@@ -4,7 +4,7 @@
 
 - You can clone it from the official *Github* repository: 
 
-    `git clone -b v2.0 https://github.com/rticommunity/rtiperftest.git`
+    `git clone -b v2.2 https://github.com/rticommunity/rtiperftest.git`
     
     This command will download the *Github* repository in a folder named `rtiperftest` and move to the v2.0 tag.
 
