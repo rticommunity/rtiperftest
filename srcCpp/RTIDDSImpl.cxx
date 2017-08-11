@@ -1989,7 +1989,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     // set transports to use
-    qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;
+    // default: use the transport specified by the the qos profile
     if (_UseTcpOnly) {
         qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
         DDSPropertyQosPolicyHelper::add_property(
