@@ -379,8 +379,11 @@ Test Parameters Only for Publishing Applications
 
    Allows you to limit the test duration by specifying the number of
    seconds to run the test.
+   
+   The first condition triggered will finish the test: ``-numIter`` or
+   execution time.
 
-   **Default:** feature is not set.
+   **Default:** 0 (i.e. don't set execution time)
 
 -  ``-heartbeatPeriod <sec>:<nanosec>``
 
@@ -424,8 +427,8 @@ Test Parameters Only for Publishing Applications
    See Number of Iterations vs. Latency Count.
 
    **Default:** ``-1`` (if ``-latencyTest`` is not specified,
-   automatically adjust to 10000; if -latency Test is specified,
-   automatically adjust to 1).
+   automatically adjust to 10000 or ``-numIter`` whichever is less; 
+   if -latency Test is specified, automatically adjust to 1).
 
    **Range:** must be ``<= -numIter``
 
@@ -449,7 +452,10 @@ Test Parameters Only for Publishing Applications
    If you set ``scan`` = ``true``, you cannot set this option (See
    ``-scan``).
 
-   | **Default:** ``0`` (infinite)
+   | **Default:** ``100000000`` for throughput tests or ``10000000``
+	               for latency tests (when ``-latencyTest`` is specified);
+	               also, see ``-executionTime``
+   
    | **Range:** ``latencyCount`` (adjusted value) or higher (see
      ``-latencyCount <count>``).
 
