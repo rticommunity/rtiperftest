@@ -1504,7 +1504,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // setup the QOS profile file to be loaded
     dds::core::QosProvider qos_provider =
-        getQosProviderForProfile("PerftestQosLibrary","TransportQos");
+        getQosProviderForProfile( _ProfileLibraryName,"TransportQos");
     dds::domain::qos::DomainParticipantQos qos = qos_provider.participant_qos();
 
     std::map<std::string, std::string> properties =

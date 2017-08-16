@@ -1269,7 +1269,7 @@ namespace PerformanceTest
             }
 
             // Configure DDSDomainParticipant QOS
-            _factory.get_participant_qos_from_profile(qos, "PerftestQosLibrary", "TransportQos");
+            _factory.get_participant_qos_from_profile(qos, _ProfileLibraryName, "TransportQos");
 
             if (_secureUseSecure) {
                 // validate arguments
@@ -1387,7 +1387,7 @@ namespace PerformanceTest
             {
 
                 _publisher = _participant.create_publisher_with_profile(
-                    "PerftestQosLibrary", "TransportQos", null, DDS.StatusMask.STATUS_MASK_NONE);
+                    _ProfileLibraryName, "TransportQos", null, DDS.StatusMask.STATUS_MASK_NONE);
 
                 if (_publisher == null)
                 {
@@ -1396,7 +1396,7 @@ namespace PerformanceTest
                 }
 
                 _subscriber = _participant.create_subscriber_with_profile(
-                    "PerftestQosLibrary", "TransportQos", null, DDS.StatusMask.STATUS_MASK_NONE);
+                    _ProfileLibraryName, "TransportQos", null, DDS.StatusMask.STATUS_MASK_NONE);
 
                 if (_subscriber == null)
                 {
