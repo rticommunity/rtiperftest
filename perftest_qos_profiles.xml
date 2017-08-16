@@ -42,7 +42,8 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
       <participant_qos>
         <!-- === Participant Configuration: ================================ 
 
-        The base configuration of the DomainParticipant object.
+        The base configuration of the DomainParticipant object, excluding 
+        transport configuration.
 
         This element corresponds to the DomainParticipantQos type, which is described
         in detail in the API Reference HTML documentation. Each child element corresponds
@@ -88,93 +89,9 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           -->
           <contentfilter_property_max_length>512</contentfilter_property_max_length>
         </resource_limits>
-          
-        <!-- 
-        Specifies which built-in transports are used.
-
-        Three different transport plug-ins are built into the Connext core
-        libraries (for most supported target platforms): UDPv4, shared memory, and
-        UDPv6.
-        -->
-        <transport_builtin>
-          <mask>UDPv4</mask>
-        </transport_builtin>
         
         <property>
           <value>
-            <!-- 
-            Specifies the configuration to be used with the UDPv4 built-in transport.
-            -->
-            <element>
-              <name>dds.transport.UDPv4.builtin.parent.message_size_max</name>
-              <value>65536</value>
-            </element>
-            <element>
-              <name>dds.transport.UDPv4.builtin.send_socket_buffer_size</name>
-              <value>524288</value>
-            </element>
-            <element>
-              <name>dds.transport.UDPv4.builtin.recv_socket_buffer_size</name>
-              <value>2097152</value>
-            </element>
-
-            <!-- 
-            Specifies the configuration to be used with the SHMEM built-in transport.
-
-            Important: The commented setting is configured automatically within the 
-            source code. The default value of _DataLen is 100.
-              
-            Value set in the source code:
-            
-            <element>
-              <name>dds.transport.shmem.builtin.received_message_count_max</name>
-              <value>2097152/_DataLen</value>
-            </element>
-            -->
-            <element>
-              <name>dds.transport.shmem.builtin.parent.message_size_max</name>
-              <value>65536</value>
-            </element>
-            <element>
-              <name>dds.transport.shmem.builtin.receive_buffer_size</name>
-              <value>2097152</value>
-            </element>
-
-            <!-- 
-            Specifies the configuration to be used with the TCP transport.
-            
-            If TCP is enabled using -useTcpOnly, the load_plugins property is set
-            within the source code.
-            
-            Important: nddstransporttcp.dll is located in NDDSHOME/lib/<architecture>.
-            That folder must be added to the PATH on Windows systems and LD_LIBRARY_PATH
-            on UNIX-based systems in order to load this library properly. If you are 
-            compiling PerfTest using CSHARP, you must also add the folder 
-            NDDSHOME/lib/i86Win32VS<version> or NDDSHOME/lib/x64Win64VS<version> depending
-            on the machine.
-            
-            <element>
-              <name>dds.transport.load_plugins</name>
-              <value>dds.transport.TCPv4.tcp1</value>
-            </element>
-            -->
-            <element>
-              <name>dds.transport.TCPv4.tcp1.library</name>
-              <value>nddstransporttcp</value>
-            </element>
-            <element>
-              <name>dds.transport.TCPv4.tcp1.create_function</name>
-              <value>NDDS_Transport_TCPv4_create</value>
-            </element>
-            <element>
-              <name>dds.transport.TCPv4.tcp1.disable_nagle</name>
-              <value>1</value>
-            </element>
-            <element>
-              <name>dds.transport.TCPv4.tcp1.parent.message_size_max</name>
-              <value>65536</value>
-            </element>
-
             <!-- Defining flow controller 10Gbps. This will not enable it. -->
             <element>
               <name>dds.flow_controller.token_bucket.10Gbps.token_bucket.max_tokens</name>
@@ -380,7 +297,116 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
       </datareader_qos>
       
     </qos_profile>
+        
+    <!-- ================================================================= -->
+    <!-- Transport QoS Profile                                          -->
+    <!-- ================================================================= -->
 
+    <!--
+    This profile is used by the test harness for the creating the 
+    DomainParticipant used for the test.
+    -->
+	<qos_profile name="TransportQos" base_name="BaseProfileQos">
+
+      <participant_qos>
+        <!-- === Participant Transport Configuration: ========================== 
+
+        The transport configuration of the DomainParticipant object.
+        -->
+          
+        <!-- 
+        Specifies which built-in transports are used.
+
+        Three different transport plug-ins are built into the Connext core
+        libraries (for most supported target platforms): UDPv4, shared memory, and
+        UDPv6.
+        -->
+        <transport_builtin>
+          <mask>UDPv4</mask>
+        </transport_builtin>
+	        
+        <property>
+          <value>
+            <!-- 
+            Specifies the configuration to be used with the UDPv4 built-in transport.
+            -->
+            <element>
+              <name>dds.transport.UDPv4.builtin.parent.message_size_max</name>
+              <value>65536</value>
+            </element>
+            <element>
+              <name>dds.transport.UDPv4.builtin.send_socket_buffer_size</name>
+              <value>524288</value>
+            </element>
+            <element>
+              <name>dds.transport.UDPv4.builtin.recv_socket_buffer_size</name>
+              <value>2097152</value>
+            </element>
+
+            <!-- 
+            Specifies the configuration to be used with the SHMEM built-in transport.
+
+            Important: The commented setting is configured automatically within the 
+            source code. The default value of _DataLen is 100.
+              
+            Value set in the source code:
+            
+            <element>
+              <name>dds.transport.shmem.builtin.received_message_count_max</name>
+              <value>2097152/_DataLen</value>
+            </element>
+            -->
+            <element>
+              <name>dds.transport.shmem.builtin.parent.message_size_max</name>
+              <value>65536</value>
+            </element>
+            <element>
+              <name>dds.transport.shmem.builtin.receive_buffer_size</name>
+              <value>2097152</value>
+            </element>
+
+            <!-- 
+            Specifies the configuration to be used with the TCP transport.
+            
+            If TCP is enabled using -enableTcp, the load_plugins property is set
+            within the source code.
+            
+            Important: nddstransporttcp.dll is located in NDDSHOME/lib/<architecture>.
+            That folder must be added to the PATH on Windows systems and LD_LIBRARY_PATH
+            on UNIX-based systems in order to load this library properly. If you are 
+            compiling PerfTest using CSHARP, you must also add the folder 
+            NDDSHOME/lib/i86Win32VS<version> or NDDSHOME/lib/x64Win64VS<version> depending
+            on the machine.
+            
+            <element>
+              <name>dds.transport.load_plugins</name>
+              <value>dds.transport.TCPv4.tcp1</value>
+            </element>
+            -->
+            <element>
+              <name>dds.transport.TCPv4.tcp1.library</name>
+              <value>nddstransporttcp</value>
+            </element>
+            <element>
+              <name>dds.transport.TCPv4.tcp1.create_function</name>
+              <value>NDDS_Transport_TCPv4_create</value>
+            </element>
+            <element>
+              <name>dds.transport.TCPv4.tcp1.disable_nagle</name>
+              <value>1</value>
+            </element>
+            <element>
+              <name>dds.transport.TCPv4.tcp1.parent.message_size_max</name>
+              <value>65536</value>
+            </element>
+            
+          </value>
+        </property>
+
+      </participant_qos>
+          
+	</qos_profile>
+    
     <!-- ================================================================= -->
     <!-- Throughput QoS Profile                                            -->
     <!-- ================================================================= -->
@@ -391,7 +417,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
     '-noPositiveAcks' command-line argument or 'use positive acks = false'
     in the .ini configuration file.
     -->
-    <qos_profile name="ThroughputQos" base_name="BaseProfileQos">
+    <qos_profile name="ThroughputQos" base_name="TransportQos">
 
       <!-- === DataWriter Configuration: ================================= 
       
@@ -824,7 +850,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
     '-noPositiveAcks' command-line argument or 'use positive acks = false'
     INI file configuration.
     -->
-    <qos_profile name="LatencyQos" base_name="BaseProfileQos">
+    <qos_profile name="LatencyQos" base_name="TransportQos">
 
       <!-- === DataWriter Configuration: ================================= 
       
@@ -1154,5 +1180,6 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </durability>
       </datawriter_qos>
     </qos_profile>
+
   </qos_library>
 </dds>

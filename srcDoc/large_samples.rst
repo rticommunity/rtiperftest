@@ -95,7 +95,7 @@ requirements.
 
 .. code:: xml
 
-    <qos_profile name="BaseProfileQos">
+    <qos_profile name="TransportQos">
         <participant_qos>
             . . .
             <property>

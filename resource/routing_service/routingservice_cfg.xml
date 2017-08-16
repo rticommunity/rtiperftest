@@ -119,8 +119,11 @@
             </datareader_qos>
 
         </qos_profile>
-
-        <qos_profile name="ThroughputQos" base_name="BaseProfileQos">
+        
+	    <qos_profile name="TransportQos" base_name="BaseProfileQos">
+	    </qos_profile>
+    
+        <qos_profile name="ThroughputQos" base_name="TransportQos">
 
             <datawriter_qos>
 
@@ -250,7 +253,7 @@
 
         </qos_profile>
 
-        <qos_profile name="LatencyQos" base_name="BaseProfileQos">
+        <qos_profile name="LatencyQos" base_name="TransportQos">
 
             <datawriter_qos>
 
@@ -389,17 +392,17 @@
         <domain_route name="DR">
             <participant_1>
                 <domain_id>0</domain_id>
-                <participant_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
+                <participant_qos base_name="PerformanceLibraries_Modified::TransportQos"/>
             </participant_1>
             <participant_2>
                 <domain_id>1</domain_id>
-                <participant_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
+                <participant_qos base_name="PerformanceLibraries_Modified::TransportQos"/>
             </participant_2>
 
             <session name="Perftest_routing">
 
-                <publisher_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
-                <subscriber_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
+                <publisher_qos base_name="PerformanceLibraries_Modified::TransportQos"/>
+                <subscriber_qos base_name="PerformanceLibraries_Modified::TransportQos"/>
 
                 <thread>
                     <priority>THREAD_PRIORITY_HIGH</priority>

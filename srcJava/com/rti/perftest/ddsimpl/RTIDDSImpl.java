@@ -324,7 +324,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         // Configure DDSDomainParticipant QOS
         DomainParticipantQos qos = new DomainParticipantQos();
-        _factory.get_participant_qos_from_profile(qos, "PerftestQosLibrary" , "BaseProfileQos");
+        _factory.get_participant_qos_from_profile(qos, "PerftestQosLibrary" , "TransportQos");
 
         if (_secureUseSecure) {
             // validate arguments
@@ -422,7 +422,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         // Create the Publisher and Subscriber
         {
             _publisher = _participant.create_publisher_with_profile(
-                "PerftestQosLibrary", "BaseProfileQos", null, StatusKind.STATUS_MASK_NONE);
+                "PerftestQosLibrary", "TransportQos", null, StatusKind.STATUS_MASK_NONE);
 
             if (_publisher == null) {
                 System.err.print("Problem creating publisher.\n");
@@ -430,7 +430,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
 
             _subscriber = _participant.create_subscriber_with_profile(
-                "PerftestQosLibrary", "BaseProfileQos", null, StatusKind.STATUS_MASK_NONE);
+                "PerftestQosLibrary", "TransportQos", null, StatusKind.STATUS_MASK_NONE);
 
             if (_subscriber == null) {
                 System.err.print("Problem creating subscriber.\n");

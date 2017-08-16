@@ -1958,7 +1958,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     // Configure DDSDomainParticipant QOS
-    _factory->get_participant_qos_from_profile(qos, "PerftestQosLibrary", "BaseProfileQos");
+    _factory->get_participant_qos_from_profile(qos, "PerftestQosLibrary", "TransportQos");
 
   #ifdef RTI_SECURE_PERFTEST
     if (_secureUseSecure) {
@@ -2065,7 +2065,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // Create the DDSPublisher and DDSSubscriber
     _publisher = _participant->create_publisher_with_profile(
-        "PerftestQosLibrary", "BaseProfileQos", NULL, DDS_STATUS_MASK_NONE);
+        "PerftestQosLibrary", "TransportQos", NULL, DDS_STATUS_MASK_NONE);
     if (_publisher == NULL)
     {
         fprintf(stderr,"Problem creating publisher.\n");
@@ -2073,7 +2073,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     _subscriber = _participant->create_subscriber_with_profile(
-        "PerftestQosLibrary", "BaseProfileQos", NULL, DDS_STATUS_MASK_NONE);
+        "PerftestQosLibrary", "TransportQos", NULL, DDS_STATUS_MASK_NONE);
     if (_subscriber == NULL)
     {
         fprintf(stderr,"Problem creating subscriber.\n");

@@ -247,10 +247,16 @@ Test Parameters for Publishing and Subscribing Applications
    **Default:** ``perftest_qos_profiles.xml``
 
    | The default file contains these QoS profiles:
-   | The ``ThroughputQos``, ``LatencyQos``, and ``AnnouncementQos``
-     profiles are used by default.
+   
+   |  The ``ThroughputQos``, ``LatencyQos``, and ``AnnouncementQos``
+   |   profiles are used by default (the DDS DataWriter/DataReader entities).
+   |
    | The ``NoAckThroughputQos`` and ``NoAckLatencyQos`` profiles are
-     used if you specify ``-noPositiveAcks``.
+   |  used if you specify ``-noPositiveAcks`` (the DDS 
+   |  DataWriter/DataReader entities).
+   |
+   | The ``TransportQos`` profile is used to configure the transports (the 
+   | DDS DomainParticipant/Publisher/Subscriber entities) 
 
    **Note:** some QoS values are ‘hard-coded’ in the application,
    therefore setting them in the XML file has no effect; see the See
