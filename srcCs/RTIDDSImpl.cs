@@ -64,7 +64,9 @@ namespace PerformanceTest
             "\t                          queue, default 50\n" +
             "\t-domain <ID>            - RTI DDS Domain, default 1\n      " +
             "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles,\n" +
-            "\t                          default perftest_qos_profiles.xml\n" +
+            "\t                          default: perftest_qos_profiles.xml\n" +
+            "\t-qosLibrary <lib name>  - Name of QoS Library for DDS Qos profiles, \n" +
+            "\t                          default: PerftestQosLibrary\n" +
             "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>,\n" +
             "\t                          If unspecificed, use all available interfaces\n" +
             "\t-multicast              - Use multicast to send data, default not to\n" +
@@ -291,6 +293,15 @@ namespace PerformanceTest
                         return false;
                     }
                     _ProfileFile = argv[i];
+                }
+                else if ("-qosLibrary".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing library name after -qosLibrary\n");
+                        return false;
+                    }
+                    _ProfileLibraryName = argv[i];
                 }
                 else if ("-multicast".StartsWith(argv[i], true, null))
                 {

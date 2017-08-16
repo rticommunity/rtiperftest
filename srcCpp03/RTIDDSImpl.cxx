@@ -131,9 +131,11 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
             "\t                          queue, default 50\n"
             "\t-domain <ID>            - RTI DDS Domain, default 1\n"
             "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles, \n"
-            "\t                          default perftest_qos_profiles.xml\n"
+            "\t                          default: perftest_qos_profiles.xml\n"
+            "\t-qosLibrary <lib name>  - Name of QoS Library for DDS Qos profiles, \n"
+            "\t                          default: PerftestQosLibrary\n"
             "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>.\n"
-            "\t                          If unspecificed, use all available interfaces\n"
+            "\t                          If unspecified, use all available interfaces\n"
             "\t-multicast              - Use multicast to send data, default not to\n"
             "\t                          use multicast\n"
             "\t-nomulticast            - Do not use multicast to send data (default)\n"
@@ -349,6 +351,13 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 throw std::logic_error("[Error] Error parsing commands");
             }
             _ProfileFile = argv[i];
+        } else if (IS_OPTION(argv[i], "-qosLibrary")) {
+            if ((i == (argc - 1)) || *argv[++i] == '-') {
+                std::cerr << "[Error] Missing <library name> after -qosLibrary"
+                        << std::endl;
+                throw std::logic_error("[Error] Error parsing commands");
+            }
+            _ProfileLibraryName = argv[i];
         } else if (IS_OPTION(argv[i], "-multicast")) {
             _IsMulticast = true;
         } else if (IS_OPTION(argv[i], "-nomulticast")) {

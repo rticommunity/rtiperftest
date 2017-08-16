@@ -193,8 +193,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n" +
             "\t                          queue, default 50\n" +
             "\t-domain <ID>            - RTI DDS Domain, default 1\n" +
-            "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles, default\n" +
-            "\t                          perftest_qos_profiles.xml\n" +
+            "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles,\n" +
+            "\t                          defaukt: perftest_qos_profiles.xml\n" +
+            "\t-qosLibrary <lib name>  - Name of QoS Library for DDS Qos profiles, \n" +
+            "\t                          default: PerftestQosLibrary\n" +
             "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>.\n" +
             "\t                          If unspecified, use all available interfaces\n" +
             "\t-multicast              - Use multicast to send data, default not to\n"+
@@ -1235,6 +1237,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     return false;
                 }
                 _profileFile = argv[i];
+            } else if ("-qosLibrary".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <library name> after -qosLibrary\n");
+                    return false;
+                }
+                PROFILE_LIBRARY_NAME = argv[i];
             } else if ("-nomulticast".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isMulticast = false;
             } else if ("-multicast".toLowerCase().startsWith(argv[i].toLowerCase())) {

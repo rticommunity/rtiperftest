@@ -266,6 +266,12 @@ Test Parameters for Publishing and Subscribing Applications
    **Configuring QoS with XML, Chapter 17** in the *RTI Connext DDS Core
    Libraries* User’s Manual.
 
+- ``qosLibrary`` <library name>``
+
+    Name of QoS Library for DDS Qos profiles
+  
+  	**Default:** ``PerftestQosLibrary``
+
 -  ``-noXmlQos``
 
    Avoid loading the QoS from the xml profile, instead, they will be
