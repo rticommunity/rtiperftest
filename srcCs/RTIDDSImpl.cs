@@ -1752,10 +1752,11 @@ namespace PerformanceTest
             {
                 if (_IsReliable)
                 {
+                    // default: use the setting specified in the qos profile
                     dw_qos.reliability.kind = DDS.ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
                 }
                 else
-                {
+                {	// override to best-effort
                     dw_qos.reliability.kind = DDS.ReliabilityQosPolicyKind.BEST_EFFORT_RELIABILITY_QOS;
                 }
             }

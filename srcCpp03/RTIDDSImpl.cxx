@@ -1675,8 +1675,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     // only force reliability on throughput/latency topics
     if (topic_name != perftest_cpp::_AnnouncementTopicName) {
         if (_IsReliable) {
-            qos_reliability = Reliability::Reliable(dds::core::Duration::infinite());
+        	// default: use the setting specified in the qos profile
+            //qos_reliability = Reliability::Reliable(dds::core::Duration::infinite());
         } else {
+        	// override to best-effort
             qos_reliability = Reliability::BestEffort();
         }
     }

@@ -2170,9 +2170,11 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     // only force reliability on throughput/latency topics
     if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) != 0) {
         if (_IsReliable) {
-            dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
+        	// default: use the setting specified in the qos profile
+            //dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         }
         else {
+        	// override to best-effort
             dw_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
         }
     }

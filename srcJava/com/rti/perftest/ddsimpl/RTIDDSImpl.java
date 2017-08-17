@@ -901,9 +901,11 @@ public final class RTIDDSImpl<T> implements IMessaging {
         // Configure reliability
         if (!PerfTest.ANNOUNCEMENT_TOPIC_NAME.equals(topicName)) {
             if (_isReliable) {
-                dwQos.reliability.kind = ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
+            	// default: use the setting specified in the qos profile
+                //dwQos.reliability.kind = ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
  
             } else {
+            	// override to best-effort
                 dwQos.reliability.kind =
                     ReliabilityQosPolicyKind.BEST_EFFORT_RELIABILITY_QOS;
             }

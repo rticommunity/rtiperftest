@@ -448,16 +448,13 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         DataReader if there are previous data samples that have not been 
         received yet due to a communication error.
 
-        The default value of reliability.kind is RELIABLE_RELIABILITY_QOS. The
-        reliability.kind configured here is ignored. It is configured 
-        automatically within the source code. reliability.kind can be modified
+        The default value of reliability.kind is RELIABLE_RELIABILITY_QOS.
+         
+        The reliability.kind can be modified
         to BEST_EFFORT_RELIABILITY_QOS using the command-line option -bestEffort.
-        
-        <reliability>
-          <kind>RELIABLE_RELIABILITY_QOS</kind>
-        </reliability>  
         -->
         <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
           <max_blocking_time>
             <sec>DURATION_INFINITE_SEC</sec>
             <nanosec>DURATION_INFINITE_NSEC</nanosec>
@@ -724,15 +721,15 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         DataReader if there are previous data samples that have not been 
         received yet due to a communication error.
         
-        The default value of reliability.kind is RELIABLE_RELIABILITY_QOS. The
-        reliability.kind configured here is ignored. It is configured 
-        automatically within the source code. reliability.kind can be modified
-        to BEST_EFFORT_RELIABILITY_QOS using the command-line option -bestEffort.
+        The default value of reliability.kind is RELIABLE_RELIABILITY_QOS. 
         
+        The reliability.kind can be modified
+        to BEST_EFFORT_RELIABILITY_QOS using the command-line option -bestEffort.
+        -->        
         <reliability>
           <kind>RELIABLE_RELIABILITY_QOS</kind>
         </reliability>
-        -->
+
 
         <!--
         DurabilityQos policy specifies whether or not Connext will store and 
@@ -879,16 +876,12 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         DataReader if there are previous data samples that have not been 
         received yet due to a communication error.
 
-        Important: Reliability.kind is not configured in this QoS file, so 
-        the value set here is ignored. The default value is 
-        RELIABLE_RELIABILITY_QOS. It can be modified to BEST_EFFORT_RELIABILITY_QOS
+        The default value is RELIABLE_RELIABILITY_QOS. 
+        It can be modified to BEST_EFFORT_RELIABILITY_QOS
         using the command-line option -bestEffort.
-        
-        <reliability>
-          <kind>RELIABLE_RELIABILITY_QOS</kind>
-        </reliability>
         -->
         <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
           <max_blocking_time>
             <sec>DURATION_INFINITE_SEC</sec>
             <nanosec>DURATION_INFINITE_NSEC</nanosec>
@@ -979,6 +972,22 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
       parameter not listed here will pick up the documented default value.
       -->
       <datareader_qos>
+      
+        <!--
+        Setting reliability.kind = RELIABLE_RELIABILITY_QOS, data samples 
+        originating from a single DataWriter cannot be made available to the
+        DataReader if there are previous data samples that have not been 
+        received yet due to a communication error.
+        
+        The default value of reliability.kind is RELIABLE_RELIABILITY_QOS. 
+        
+        The reliability.kind can be modified
+        to BEST_EFFORT_RELIABILITY_QOS using the command-line option -bestEffort.
+        -->        
+        <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
+        </reliability>
+      
         <!--
         DurabilityQos policy specifies whether or not Connext will store and 
         deliver previously published data samples to new DDSDataReader entities 
