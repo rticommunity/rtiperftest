@@ -21,6 +21,7 @@ int  perftest_cpp::_SubID = 0;
 int  perftest_cpp::_PubID = 0;
 bool perftest_cpp::_PrintIntervals = true;
 bool perftest_cpp::_testCompleted = false;
+bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan test
 bool perftest_cpp::_showCpu = false;
 
 /* Clock related variables */
@@ -129,6 +130,23 @@ int perftest_cpp::Run(int argc, char *argv[]) {
     }
 }
 
+// Set the default values into the array _scanDataLenSizes vector
+const void set_default_scan_values(
+        std::vector<unsigned long> & _scanDataLenSizes){
+    _scanDataLenSizes.push_back(32);
+    _scanDataLenSizes.push_back(64);
+    _scanDataLenSizes.push_back(128);
+    _scanDataLenSizes.push_back(256);
+    _scanDataLenSizes.push_back(512);
+    _scanDataLenSizes.push_back(1024);
+    _scanDataLenSizes.push_back(2048);
+    _scanDataLenSizes.push_back(4096);
+    _scanDataLenSizes.push_back(8192);
+    _scanDataLenSizes.push_back(16384);
+    _scanDataLenSizes.push_back(32768);
+    _scanDataLenSizes.push_back(63000);
+}
+
 /*********************************************************
  * Constructor
  */
@@ -138,7 +156,7 @@ perftest_cpp::perftest_cpp() :
         _SamplesPerBatch(1),
         _NumIter(100000000),
         _IsPub(false),
-        _IsScan(false),
+        _isScan(false),
         _UseReadThread(false),
         _SpinLoopCount(0),
         _SleepNanosec(0),
@@ -261,8 +279,13 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                          default 1\n"
         "\t-numPublishers <count>  - Number of publishers running in test, \n"
         "\t                          default 1\n"
-        "\t-scan                   - Run test in scan mode, traversing a range of \n"
-        "\t                          data sizes, 32 - 63000\n"
+        "\t-scan <size1>:<size2>:...:<sizeN> - Run test in scan mode, traversing\n"
+        "\t                                    a range of sample data sizes from\n"
+        "\t                                    [32,63000] or [63001,2147483128] bytes,\n"
+        "\t                                    in the case that you are using large data or not.\n"
+        "\t                                    The list of sizes is optional.\n"
+        "\t                                    Default values are '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\n"
+        "\t                                    Default: Not set\n"
         "\t-noPrintIntervals       - Don't print statistics at intervals during \n"
         "\t                          test\n"
         "\t-useReadThread          - Use separate thread instead of callback to \n"
@@ -501,7 +524,48 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         {
             _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
             _MessagingArgc++;
-            _IsScan = true;
+            _isScan = true;
+            if ((i != (argc-1)) && *argv[1+i] != '-') {
+                _scanDataLenSizes.clear();
+                ++i;
+                unsigned long aux_scan;
+                char * pch;
+                _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
+
+                if (_MessagingArgv[_MessagingArgc] == NULL) {
+                    std::cerr << "Problem allocating memory" << std::endl;
+                    throw std::logic_error("[Error] Error parsing commands");
+                }
+                _MessagingArgc++;
+
+                pch = strtok (argv[i], ":");
+                while (pch != NULL) {
+                    if (sscanf(pch, "%lu", &aux_scan) != 1) {
+                        std::cerr << "[Error] -scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'" << std::endl;
+                        throw std::logic_error("[Error] Error parsing commands");
+                    }
+                    _scanDataLenSizes.push_back(aux_scan);
+                    pch = strtok (NULL, ":");
+                }
+                if (_scanDataLenSizes.size() < 2) {
+                    std::cerr << "[Error] '-scan <size1>:<size2>:...:<sizeN>' the number of size should be equal or greater then two." << std::endl;
+                    throw std::logic_error("[Error] Error parsing commands");
+                }
+                std::sort(_scanDataLenSizes.begin(), _scanDataLenSizes.end());
+                if (_scanDataLenSizes[0] < (unsigned long)OVERHEAD_BYTES) {
+                    std::cerr << "[Error] -scan sizes must be >= " <<
+                        OVERHEAD_BYTES << std::endl;
+                    throw std::logic_error("[Error] Error parsing commands");
+                }
+                if (_scanDataLenSizes[_scanDataLenSizes.size() - 1] >
+                        (unsigned long)MAX_PERFTEST_SAMPLE_SIZE) {
+                    std::cerr << "[Error] -scan sizes must be <= " <<
+                        MAX_PERFTEST_SAMPLE_SIZE << std::endl;
+                    throw std::logic_error("[Error] Error parsing commands");
+                }
+            } else { // Set default values
+                set_default_scan_values(_scanDataLenSizes);
+            }
         }
         else if (IS_OPTION(argv[i], "-noPrintIntervals") )
         {
@@ -712,12 +776,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         _LatencyCount = 10000;
     }
 
-    if (_IsScan && _NumPublishers > 1) {
-        std::cerr << "[Error] _IsScan is not supported with more than one publisher" << std::endl;
-        throw std::logic_error("[Error] Error parsing commands");
-
-    }
-
     if ((int)_NumIter < _LatencyCount) {
         std::cerr << "[Error] numIter " << _NumIter <<" must be greater than latencyCount "
                 << _LatencyCount << std::endl;
@@ -728,17 +786,49 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     //manage the parameter: -pubRate -sleep -spin
     if (_IsPub && _pubRate >0) {
         if (_SpinLoopCount > 0) {
-            std::cerr << "'[Error] -spin' is not compatible with -pubRate. "
+            std::cerr << "[Error] '-spin' is not compatible with -pubRate. "
                 "Spin/Sleep value will be set by -pubRate." << std::endl;
             _SpinLoopCount = 0;
         }
         if (_SleepNanosec > 0) {
-            std::cerr << "'[Error] -sleep' is not compatible with -pubRate. "
+            std::cerr << "[Error] '-sleep' is not compatible with -pubRate. "
                 "Spin/Sleep value will be set by -pubRate." << std::endl;
             _SleepNanosec = 0;
         }
     }
 
+    if (_isScan) {
+        if (_DataLen != 100) { // Different that the default value
+            std::cerr << "[Info] DataLen will be ignored since -scan is present." << std::endl;
+        }
+        _DataLen = _scanDataLenSizes[_scanDataLenSizes.size() - 1]; // Max size
+        if (_executionTime == 0){
+            std::cerr << "[Info] Setting timeout to 60 seconds (-scan)." << std::endl;
+            _executionTime = 60;
+        }
+        // Check if large data or small data
+        if (_scanDataLenSizes[0] > (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
+                && _scanDataLenSizes[_scanDataLenSizes.size() - 1] > (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+            if (_useUnbounded == 0) {
+                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+            }
+        } else if (_scanDataLenSizes[0] <= (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
+                && _scanDataLenSizes[_scanDataLenSizes.size() - 1] <= (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+            if (_useUnbounded != 0) {
+                std::cerr << "[Info] Unbounded will be ignored since -scan is present." << std::endl;
+                _useUnbounded = 0;
+            }
+        } else {
+            std::cerr << "[Error] The sizes of -scan [";
+            for (unsigned int i = 0; i < _scanDataLenSizes.size(); i++) {
+                std::cerr << _scanDataLenSizes[i] << " ";
+            }
+            std::cerr << "] should be either all smaller or all bigger than " <<
+                    (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE) <<
+                    std::endl;
+            throw std::logic_error("[Error] Error parsing commands");
+        }
+    }
     return true;
 }
 
@@ -1467,14 +1557,10 @@ int perftest_cpp::RunPublisher()
     // create throughput/ping writer
     writer = _MessagingImpl->CreateWriter(_ThroughputTopicName);
 
-    // calculate number of latency pings that will be sent per data size
-    if (_IsScan) {
-        num_latency = NUM_LATENCY_PINGS_PER_DATA_SIZE;
-    } else {
-        num_latency = (unsigned long)((_NumIter/_SamplesPerBatch) / _LatencyCount);
-        if ((_NumIter/_SamplesPerBatch) % _LatencyCount > 0) {
-            num_latency++;
-        }
+
+    num_latency = (unsigned long)((_NumIter/_SamplesPerBatch) / _LatencyCount);
+    if ((_NumIter/_SamplesPerBatch) % _LatencyCount > 0) {
+        num_latency++;
     }
 
     if (_SamplesPerBatch > 1) {
@@ -1595,8 +1681,7 @@ int perftest_cpp::RunPublisher()
     MilliSleep(1000);
 
     int num_pings = 0;
-    int scan_number = 4; // 4 means start sending with dataLen = 2^5 = 32
-    bool last_scan = false;
+    unsigned int scan_count = 0;
     int pingID = -1;
     int current_index_in_batch = 0;
     int ping_index_in_batch = 0;
@@ -1615,13 +1700,13 @@ int perftest_cpp::RunPublisher()
         pubRate_sample_period = (unsigned long long)(_pubRate / 100);
     }
 
-    if (_executionTime > 0) {
+    if (_executionTime > 0 && !_isScan) {
         SetTimeout(_executionTime);
     }
     /********************
      *  Main sending loop
      */
-    for ( unsigned long long loop = 0; ((_IsScan) || (loop < _NumIter)) &&
+    for ( unsigned long long loop = 0; ((_isScan) || (loop < _NumIter)) &&
                                      (!_testCompleted) ; ++loop ) {
 
         /* This if has been included to perform the control loop
@@ -1684,101 +1769,41 @@ int perftest_cpp::RunPublisher()
             if ( current_index_in_batch == ping_index_in_batch  && !sentPing )
             {
                 // If running in scan mode, dataLen under test is changed
-                // after NUM_LATENCY_PINGS_PER_DATA_SIZE pings are sent
-                if (_IsScan)
-                {
-                    // change data length for scan mode
-                    if ((num_pings % NUM_LATENCY_PINGS_PER_DATA_SIZE == 0))
-                    {
-                        int new_size;
+                // after _executionTime
+                if (_isScan && _testCompleted_scan) {
+                    _testCompleted_scan = false;
+                    SetTimeout(_executionTime, _isScan);
 
-                        // flush anything that was previously sent
+                    // flush anything that was previously sent
+                    writer->flush();
+
+                    if (scan_count == _scanDataLenSizes.size()) {
+                        break; // End of scan test
+                    }
+
+                    message.size = LENGTH_CHANGED_SIZE;
+                    // must set latency_ping so that a subscriber sends us
+                    // back the LENGTH_CHANGED_SIZE message
+                    message.latency_ping = num_pings % _NumSubscribers;
+
+                    for (int i = 0; i < 30; ++i) {
+                        writer->send(message);
                         writer->flush();
-
-                        if (last_scan)
-                        {
-                            // end of scan test
-                            break;
-                        }
-
-                        new_size = (1 << (++scan_number)) - OVERHEAD_BYTES;
-
-                        if (scan_number == 17)
-                        {
-                            // end of scan test
-                            break;
-                        }
-
-                        if (new_size > MAX_SYNCHRONOUS_SIZE) {
-                            // last scan
-                            new_size = MAX_SYNCHRONOUS_SIZE - OVERHEAD_BYTES;
-                            last_scan = true;
-                        }
-
-                        // must reduce the number of latency pings to send
-                        // for larger data sizes because the time to send
-                        // the same number of messages for a given size
-                        // increases with the data size.
-                        //
-                        // If we don't do this, the time to run a complete
-                        // scan would be in the hours
-                        switch (scan_number)
-                        {
-                            case 16:
-                                new_size = MAX_SYNCHRONOUS_SIZE
-                                           - OVERHEAD_BYTES;
-                                _LatencyCount /= 2;
-                             break;
-
-                            case 9:
-                            case 11:
-                            case 13:
-                            case 14:
-                            case 15:
-                                _LatencyCount /= 2;
-                                break;
-                            default:
-                                break;
-                        }
-
-                        if (_LatencyCount == 0)
-                        {
-                            _LatencyCount = 1;
-                        }
-
-                        message.size = LENGTH_CHANGED_SIZE;
-                        //message.data.resize(message.size);
-                        // must set latency_ping so that a subscriber sends us
-                        // back the LENGTH_CHANGED_SIZE message
-                        message.latency_ping = num_pings % _NumSubscribers;
-
-                        for (int i=0; i<30; ++i) {
-                            // sleep to allow packet to be pinged back
-                            writer->send(message);
-                            writer->flush();
-                        }
-
-                        // sleep to allow packet to be pinged back
-                        MilliSleep(1000);
-
-                        message.size = new_size;
-                       // message.data.resize(message.size);
-
-                        /* Reset _SamplePerBatch */
-                        if (_BatchSize != 0)
-                        {
-                            _SamplesPerBatch = _BatchSize/(message.size + OVERHEAD_BYTES);
-                            if (_SamplesPerBatch == 0) {
-                                _SamplesPerBatch = 1;
-                            }
-                        }
-                        else
-                        {
+                    }
+                    // sleep to allow packet to be pinged back
+                    MilliSleep(1000);
+                    message.size = _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
+                    /* Reset _SamplePerBatch */
+                    if (_BatchSize != 0) {
+                        _SamplesPerBatch = _BatchSize / (message.size + OVERHEAD_BYTES);
+                        if (_SamplesPerBatch == 0) {
                             _SamplesPerBatch = 1;
                         }
-                        ping_index_in_batch = 0;
-                        current_index_in_batch = 0;
+                    } else {
+                        _SamplesPerBatch = 1;
                     }
+                    ping_index_in_batch = 0;
+                    current_index_in_batch = 0;
                 }
 
                 // Each time ask a different subscriber to echo back
@@ -1889,27 +1914,47 @@ inline unsigned long long perftest_cpp::GetTimeUsec() {
     return perftest_cpp::_Clock_usec + 1000000 * perftest_cpp::_Clock_sec;
 }
 
-inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds) {
+inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds,
+        bool _isScan) {
     std::cerr <<  "[Info] Setting timeout to " << executionTimeInSeconds <<
         " seconds." << std::endl;
+    if (_isScan) {
   #ifdef RTI_WIN32
-    CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout,
-        NULL , executionTimeInSeconds*1000, 0, 0);
+          CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout_scan,
+              NULL , executionTimeInSeconds * 1000, 0, 0);
   #else
-    signal(SIGALRM, Timeout);
-    alarm(executionTimeInSeconds);
+          signal(SIGALRM, Timeout_scan);
+          alarm(executionTimeInSeconds);
   #endif
+    } else {
+  #ifdef RTI_WIN32
+          CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout,
+              NULL , executionTimeInSeconds * 1000, 0, 0);
+  #else
+          signal(SIGALRM, Timeout);
+          alarm(executionTimeInSeconds);
+  #endif
+    }
 }
 
 #ifdef RTI_WIN32
-    inline VOID CALLBACK perftest_cpp::Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired) {
-        /* This is to avoid the warning of non using lpParam */
-        (void) lpParam;
-        _testCompleted = true;
-    }
+inline VOID CALLBACK perftest_cpp::Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired) {
+    /* This is to avoid the warning of non using lpParam */
+    (void) lpParam;
+    _testCompleted = true;
+}
+
+inline VOID CALLBACK perftest_cpp::Timeout_scan(PVOID lpParam, BOOLEAN timerOrWaitFired) {
+    /* This is to avoid the warning of non using lpParam */
+    (void) lpParam;
+    _testCompleted_scan = true;
+}
   #pragma warning(pop)
 #else
-    inline void perftest_cpp::Timeout(int sign) {
-        _testCompleted = true;
-    }
+inline void perftest_cpp::Timeout(int sign) {
+    _testCompleted = true;
+}
+inline void perftest_cpp::Timeout_scan(int sign) {
+    _testCompleted_scan = true;
+}
 #endif

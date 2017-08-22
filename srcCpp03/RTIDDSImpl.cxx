@@ -235,6 +235,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     int i;
     int sec = 0;
     unsigned int nanosec = 0;
+    unsigned long _scan_max_size = 0;
 
     // now load everything else, command line params override config file
     for (i = 0; i < argc; ++i) {
@@ -242,6 +243,22 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _isPublisher = true;
         } else if (IS_OPTION(argv[i], "-scan")) {
             _isScan = true;
+            if ((i != (argc-1)) && *argv[1+i] != '-') {
+                ++i;
+                unsigned long aux_scan;
+                char * pch;
+                pch = strtok (argv[i], ":");
+                while (pch != NULL) {
+                    if (sscanf(pch, "%lu", &aux_scan) != 1) {
+                        std::cerr << "[Error] -scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'" << std::endl;
+                        return false;
+                    }
+                    pch = strtok (NULL, ":");
+                    if (aux_scan >= _scan_max_size) {
+                        _scan_max_size = aux_scan;
+                    }
+                }
+            }
         } else if (IS_OPTION(argv[i], "-dataLen")) {
 
             if ((i == (argc - 1)) || *argv[++i] == '-') {
@@ -706,22 +723,32 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
-        if (_isScan) {
-            std::cerr << "[Info] DataLen will be ignored since -scan is present."
-                    << std::endl;
-        } else {
-            std::cerr << "[Info] Large data settings enabled (-dataLen > "
-                    << MAX_SYNCHRONOUS_SIZE << ")." << std::endl;
+    if (_isScan) {
+        _DataLen = _scan_max_size;
+        // Check if large data or small data
+        if (_scan_max_size > (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+            if (_useUnbounded == 0) {
+                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+            }
             _isLargeData = true;
+        } else if (_scan_max_size <= (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+            _useUnbounded = 0;
+            _isLargeData = false;
+        } else {
+            return false;
         }
     }
+
+    if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
+        std::cerr << "[Info] Large data settings enabled." << std::endl;
+        _isLargeData = true;
+    }
+
     if (_IsAsynchronous && _BatchSize > 0) {
         std::cerr << "[Error] Batching cannnot be used with asynchronous writing."
                 << std::endl;
         throw std::logic_error("[Error] Error parsing commands");
     }
-
     if (_TurboMode) {
         if (_IsAsynchronous) {
             std::cerr << "[Error] Turbo Mode cannot be used with asynchronous writing. "
@@ -1656,7 +1683,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
                         _KeepDurationUsec % 1000000));
     }
 
-    if (((_isLargeData) && (!_isScan)) || _IsAsynchronous) {
+    if (_isLargeData || _IsAsynchronous) {
         std::cerr << "[Info] Using asynchronous write for "
                   << topic_name << std::endl;
 

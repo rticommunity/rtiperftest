@@ -54,6 +54,7 @@ What's New in Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+
 Modified behavior for ``-batchSize`` and ``-TurboMode``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -65,6 +66,16 @@ This new changes won't be applied if the user sets explicitly ``-asynchronous``,
 in such case, the behavior will remain the same.
 
 Same behavior will be applied for ``-TurboMode``.
+
+Improved -scan command-line parameter functionality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, using '-scan' will execute the execution of *RTI Perftest*
+with different dataLen, which are predefined and the duration for every
+execution is relate with the number of latency-ping. This behavior has been
+fixed, now the command line parameter allow the user to introduce a set of sizes
+which will be used. Besides, now the '-executionTime' parameter is used to every
+size on the scan mode.
 
 Release Notes v2.2
 ------------------

@@ -209,6 +209,7 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
 template <typename T>
 bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 {
+    unsigned long _scan_max_size = 0;
     int i;
     int sec = 0;
     unsigned int nanosec = 0;
@@ -219,7 +220,22 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _isPublisher = true;
         } else if (IS_OPTION(argv[i], "-scan")) {
             _isScan = true;
-
+            if ((i != (argc-1)) && *argv[1+i] != '-') {
+                ++i;
+                unsigned long aux_scan;
+                char * pch;
+                pch = strtok (argv[i], ":");
+                while (pch != NULL) {
+                    if (sscanf(pch, "%lu", &aux_scan) != 1) {
+                        fprintf(stderr, "-scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'\n");
+                        return false;
+                    }
+                    pch = strtok (NULL, ":");
+                    if (aux_scan >= _scan_max_size) {
+                        _scan_max_size = aux_scan;
+                    }
+                }
+            }
         } else if (IS_OPTION(argv[i], "-dataLen")) {
 
             if ((i == (argc-1)) || *argv[++i] == '-') {
@@ -661,16 +677,27 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
-        if (_isScan) {
-            fprintf(stderr,"DataLen will be ignored since -scan is present.\n");
-        } else {
-            fprintf(stderr,
-                    "Large data settings enabled (-dataLen > %d).\n",
-                    MAX_SYNCHRONOUS_SIZE);
+    if (_isScan) {
+        _DataLen = _scan_max_size;
+        // Check if large data or small data
+        if (_scan_max_size > (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+            if (_useUnbounded == 0) {
+                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+            }
             _isLargeData = true;
+        } else if (_scan_max_size <= (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+            _useUnbounded = 0;
+            _isLargeData = false;
+        } else {
+            return false;
         }
     }
+
+    if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
+        fprintf(stderr, "Large data settings enabled.\n");
+        _isLargeData = true;
+    }
+
     if (_IsAsynchronous && _BatchSize > 0) {
         fprintf(stderr, "Batching cannnot be used with asynchronous writing.\n");
         return false;
@@ -716,7 +743,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 stderr,
                 "Content Filtered Topic is not a parameter in the publisher side.\n");
     }
-
     return true;
 }
 
@@ -2155,7 +2181,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = _KeepDurationUsec%1000000;
     }
 
-    if (((_isLargeData) && (!_isScan)) || _IsAsynchronous) {
+    if (_isLargeData || _IsAsynchronous) {
         fprintf(stderr, "Using asynchronous write for %s\n", topic_name);
         dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
         if (_FlowControllerCustom != "default") {

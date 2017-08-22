@@ -500,12 +500,14 @@ Test Parameters Only for Publishing Applications
    | **Default method:** ``spin``
    | **Values method:** ``spin or sleep``
 
--  ``-scan``
+-  ``-scan <size1>:<size2>:...:<sizeN>``
 
-   Run test in scan mode, traversing a range of sample data sizes from
-   32 to 63,000 bytes.
-
-   If you set ``scan = true``, you cannot set ``-numIter <count>``.
+   Run test in scan mode. The list of sizes is optional and can be either in the
+   [32,63000] range or the [63001,2147483128] range (Large Data cannot be tested
+   in the same scan test as small data sizes). Default values to test with are
+   '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'
+   The ``-executionTime`` parameter is applied for every size of the scan.
+   If ``-executionTime`` is not set, a timeout of 60 seconds will be applied.
 
    **Default:** ``false`` (no scan)
 
