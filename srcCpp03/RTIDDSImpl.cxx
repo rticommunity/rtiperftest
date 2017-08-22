@@ -429,9 +429,10 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
             _BatchSize = strtol(argv[i], NULL, 10);
 
-            if (_BatchSize < 0) {
-                std::cerr << "[Error] Batch size cannot be negative"
-                        << std::endl;
+            if (_BatchSize < 0 || _BatchSize > (unsigned int)MAX_SYNCHRONOUS_SIZE) {
+                std::cerr << "[Error] Batch size '" << _BatchSize <<
+                        "' should be between [0," << MAX_SYNCHRONOUS_SIZE <<
+                        "]" << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
         } else if (IS_OPTION(argv[i], "-keepDurationUsec")) {
@@ -715,16 +716,22 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _isLargeData = true;
         }
     }
-    if (_isLargeData && _BatchSize > 0) {
-        std::cerr << "[Error] Batch cannot be enabled if using large data"
+    if (_IsAsynchronous && _BatchSize > 0) {
+        std::cerr << "[Error] Batching cannnot be used with asynchronous writing."
                 << std::endl;
         throw std::logic_error("[Error] Error parsing commands");
     }
 
-    if (_isLargeData && _TurboMode) {
-        std::cerr << "[Error] Turbo Mode cannot be used with asynchronous writing. "
-                "It will be ignored."  << std::endl;
-        throw std::logic_error("[Error] Error parsing commands");
+    if (_TurboMode) {
+        if (_IsAsynchronous) {
+            std::cerr << "[Error] Turbo Mode cannot be used with asynchronous writing. "
+                    << std::endl;
+            return false;
+        }
+        if (_isLargeData) {
+            std::cerr << "Turbo Mode disabled, using large data." << std::endl;
+            _TurboMode = false;
+        }
     }
 
     /*
@@ -733,7 +740,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
      * middleware).
      */
      if (_BatchSize > 0 && (unsigned long)_BatchSize <= _DataLen) {
-         std::cerr << "[Info] Batching dissabled: BatchSize (" << _BatchSize
+         std::cerr << "[Info] Batching disabled: BatchSize (" << _BatchSize
                    << ") is equal or smaller than the sample size (" << _DataLen
                    << ")."  << std::endl;
          _BatchSize = 0;

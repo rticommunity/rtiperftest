@@ -385,9 +385,10 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
             _BatchSize = strtol(argv[i], NULL, 10);
 
-            if (_BatchSize < 0) 
-            {
-                fprintf(stderr, "batch size cannot be negative\n");
+            if (_BatchSize < 0 || _BatchSize > (unsigned int)MAX_SYNCHRONOUS_SIZE) {
+                fprintf(stderr, "Batch size '%d' should be between [0,%d]\n",
+                        _BatchSize,
+                        MAX_SYNCHRONOUS_SIZE);
                 return false;
             }
         } else if (IS_OPTION(argv[i], "-keepDurationUsec")) {
@@ -670,14 +671,20 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _isLargeData = true;
         }
     }
-    if (_isLargeData && _BatchSize > 0) {
-        fprintf(stderr, "Batch cannot be enabled if using large data\n");
+    if (_IsAsynchronous && _BatchSize > 0) {
+        fprintf(stderr, "Batching cannnot be used with asynchronous writing.\n");
         return false;
     }
 
-    if (_isLargeData && _TurboMode) {
-        fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing. It will be ignored.\n");
-        _TurboMode = false;
+    if (_TurboMode) {
+        if (_IsAsynchronous) {
+            fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing.\n");
+            return false;
+        }
+        if (_isLargeData) {
+            fprintf(stderr, "Turbo Mode disabled, using large data.\n");
+            _TurboMode = false;
+        }
     }
 
     /*
@@ -687,7 +694,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
      */
     if (_BatchSize > 0 && (unsigned long)_BatchSize <= _DataLen) {
         fprintf(stderr,
-                "Batching dissabled: BatchSize (%d) is equal or smaller "
+                "Batching disabled: BatchSize (%d) is equal or smaller "
                 "than the sample size (%lu).\n",
                 _BatchSize,
                 _DataLen);
