@@ -396,9 +396,12 @@ namespace PerformanceTest
                         Console.Error.Write("Bad #bytes for batch\n");
                         return false;
                     }
-                    if (_BatchSize < 0)
+                    if (_BatchSize < 0 || _BatchSize > MAX_SYNCHRONOUS_SIZE.VALUE)
                     {
-                        Console.Error.Write("batch size cannot be negative\n");
+                        Console.Error.Write("Batch size '" + _BatchSize +
+                                "' should be between [0," +
+                                MAX_SYNCHRONOUS_SIZE.VALUE +
+                                "]\n");
                         return false;
                     }
                 }
@@ -739,15 +742,20 @@ namespace PerformanceTest
                     _isLargeData = true;
                 }
             }
-            if (_isLargeData && _BatchSize > 0)
+            if (_IsAsynchronous && _BatchSize > 0)
             {
-                Console.Error.WriteLine("Batch cannot be enabled if using large data");
+                Console.Error.WriteLine("Batching cannnot be used with asynchronous writing.");
                 return false;
             }
-            if (_isLargeData && _TurboMode)
-            {
-                Console.Error.WriteLine("Turbo Mode cannot be used with asynchronous writing. It will be ignored.");
-                _TurboMode = false;
+            if (_TurboMode) {
+                if (_IsAsynchronous) {
+                    Console.Error.WriteLine("Turbo Mode cannot be used with asynchronous writing.");
+                    return false;
+                }
+                if (_isLargeData) {
+                    Console.Error.WriteLine("Turbo Mode disabled, using large data.");
+                    _TurboMode = false;
+                }
             }
             /*
              * We don't want to use batching if the sample is the same size as the batch
@@ -756,7 +764,7 @@ namespace PerformanceTest
              */
             if (_BatchSize > 0 && _BatchSize <= (int)_DataLen)
             {
-                Console.Error.WriteLine("Batching dissabled: BatchSize (" + _BatchSize
+                Console.Error.WriteLine("Batching disabled: BatchSize (" + _BatchSize
                         + ") is equal or smaller than the sample size (" + _DataLen
                         + ").");
                 _BatchSize = 0;
@@ -1283,12 +1291,15 @@ namespace PerformanceTest
             // set initial peers and not use multicast
             if ( _peer_host_count > 0 ) {
                 Console.Error.Write("Initial peers: ");
-                for ( int i =0; i< _peer_host_count; ++i) {
+                for ( int i = 0; i < _peer_host_count; ++i) {
                     Console.Error.Write(_peer_host[i]+" ");
                 }
                 Console.Error.Write("\n");
+                qos.discovery.initial_peers.ensure_length(
+                        _peer_host_count,
+                        _peer_host_count);
                 qos.discovery.initial_peers.from_array(_peer_host);
-                qos.discovery.multicast_receive_addresses = new  DDS.StringSeq();
+                qos.discovery.multicast_receive_addresses = new DDS.StringSeq();
             }
 
             // set transports to use

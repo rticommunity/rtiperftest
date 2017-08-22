@@ -39,7 +39,7 @@ class RTIDDSImpl : public IMessaging
 
     void Shutdown();
 
-    int GetBatchSize()
+    unsigned int GetBatchSize()
     {
         return _BatchSize;
     }
@@ -70,7 +70,7 @@ class RTIDDSImpl : public IMessaging
     bool         _AutoThrottle;
     bool         _IsReliable;
     bool         _IsMulticast;
-    int          _BatchSize;
+    unsigned int _BatchSize;
     int          _InstanceCount;
     int          _InstanceMaxCountReader;
     int          _InstanceHashBuckets;

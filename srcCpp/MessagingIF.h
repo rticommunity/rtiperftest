@@ -116,7 +116,7 @@ class IMessaging
     // if the implementation supports batching and the test scenario is
     // using batching, this function should return the size of the batch
     // in bytes
-    virtual int GetBatchSize() = 0;
+    virtual unsigned int GetBatchSize() = 0;
 
     virtual IMessagingWriter *CreateWriter(const char *topic_name) = 0;
 

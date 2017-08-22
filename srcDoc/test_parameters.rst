@@ -276,7 +276,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    Use a separate thread (instead of a callback) to read data.
 
-   See See WaitSet Event Count and Delay
+   See WaitSet Event Count and Delay
 
    **Default:** use callback for subscriber
 -  ``-waitsetDelayUsec <usec>``
@@ -300,7 +300,7 @@ Test Parameters for Publishing and Subscribing Applications
    Only used if the See ``-useReadThread`` option is specified on the
    subscriber side.
 
-   See See WaitSet Event Count and Delay.
+   See WaitSet Event Count and Delay.
 
    | **Default:** ``5``
    | **Range:** ``>= 1``
@@ -352,6 +352,7 @@ Test Parameters Only for Publishing Applications
 -  ``-batchSize <bytes>``
 
    Enable batching and set the maximum batched message size.
+   Disabled automatically if using large data.
 
    | **Default:** ``0`` (batching disabled)
    | **Range:** ``1 to 63000``
@@ -370,8 +371,9 @@ Test Parameters Only for Publishing Applications
 
 -  ``-enableTurboMode``
 
-   Enables the Turbo Mode feature. See See Auto Tuning and Turbo Mode.
+   Enables the Turbo Mode feature. See Auto Tuning and Turbo Mode.
    When turbo mode is enabled, See ``-batchSize <bytes>`` is ignored.
+   Disabled automatically if using large data or asynchronous.
 
    **Default:** feature is disabled.
 

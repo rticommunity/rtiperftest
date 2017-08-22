@@ -1323,8 +1323,11 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     System.err.print("Bad #bytes for batch\n");
                     return false;
                 }
-                if (_batchSize < 0) {
-                    System.err.print("batch size cannot be negative\n");
+                if (_batchSize < 0 || _batchSize > MAX_SYNCHRONOUS_SIZE.VALUE) {
+                    System.err.print("Batch size '" + _batchSize +
+                            "' should be between [0," +
+                            MAX_SYNCHRONOUS_SIZE.VALUE +
+                            "]\n");
                     return false;
                 }
             }
@@ -1590,13 +1593,19 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _isLargeData = true;
             }
         }
-        if (_isLargeData && _batchSize>0) {
-            System.err.println("Batch cannot be enabled if using large data.");
+        if (_IsAsynchronous && _batchSize > 0) {
+            System.err.println("Batching cannnot be used with asynchronous writing.");
             return false;
         }
-        if (_isLargeData && _TurboMode) {
-            System.err.println("Turbo Mode cannot be used with asynchronous writing. It will be ignored.");
-            _TurboMode = false;
+        if (_TurboMode) {
+            if (_IsAsynchronous) {
+                System.err.println("Turbo Mode cannot be used with asynchronous writing.");
+                return false;
+            }
+            if (_isLargeData) {
+                System.err.println("Turbo Mode disabled, using large data.");
+                _TurboMode = false;
+            }
         }
         /*
          * We don't want to use batching if the sample is the same size as the batch
@@ -1604,7 +1613,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
          * middleware).
          */
         if (_batchSize > 0 && _batchSize <= _dataLen) {
-            System.err.println("Batching dissabled: BatchSize (" + _batchSize
+            System.err.println("Batching disabled: BatchSize (" + _batchSize
                     + ") is equal or smaller than the sample size (" + _dataLen
                     + ").");
             _batchSize = 0;

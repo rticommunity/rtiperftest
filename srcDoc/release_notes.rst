@@ -54,6 +54,18 @@ What's New in Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Modified behavior for ``-batchSize`` and ``-TurboMode``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, setting ``-batchSize`` in conjunction with a ``-dataLen``
+value greater than the asynchronous publishing threshold would cause the
+application to show an error and exit. Starting from this release, the
+``-batchSize`` option will be ignored (and a warning message displayed).
+This new changes won't be applied if the user sets explicitly ``-asynchronous``,
+in such case, the behavior will remain the same.
+
+Same behavior will be applied for ``-TurboMode``.
+
 Release Notes v2.2
 ------------------
 
