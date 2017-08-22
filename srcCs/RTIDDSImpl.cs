@@ -160,6 +160,7 @@ namespace PerformanceTest
          */
         bool ParseConfig(int argc, string[] argv)
         {
+            ulong _scan_max_size = 0;
             for (int i = 0; i < argc; ++i)
             {
                 if ("-pub".StartsWith(argv[i], true, null))
@@ -169,6 +170,21 @@ namespace PerformanceTest
                 else if ("-scan".StartsWith(argv[i], true, null))
                 {
                     _isScan = true;
+                    if ((i != (argc - 1)) && !argv[1+i].StartsWith("-")) {
+                        ++i;
+                        ulong aux_scan;
+                        String[] list_scan = argv[i].Split(':');
+                        for( int j = 0; j < list_scan.Length; j++) {
+                            if (!UInt64.TryParse(list_scan[j], out aux_scan)) {
+                                Console.Error.Write(
+                                        "-scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'\n");
+                                return false;
+                            }
+                            if (aux_scan >= _scan_max_size) {
+                                _scan_max_size = aux_scan;
+                            }
+                        }
+                    }
                 } else if ("-dataLen".StartsWith(argv[i], true, null))
                 {
                     if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
@@ -730,20 +746,29 @@ namespace PerformanceTest
                 }
             }
 
-            if ((int)_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE)
-            {
-                if (_isScan)
-                {
-                    Console.Error.WriteLine("DataLen will be ignored since -scan is present.");
-                }
-                else
-                {
-                    Console.Error.WriteLine("Large data settings enabled (-dataLen < " + MAX_SYNCHRONOUS_SIZE.VALUE + ").");
+            if (_isScan) {
+                _DataLen = _scan_max_size;
+                // Check if large data or small data
+                if (_scan_max_size > (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                    if (_useUnbounded == 0) {
+                        _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
+                    }
                     _isLargeData = true;
+                } else if (_scan_max_size <= (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                    _useUnbounded = 0;
+                    _isLargeData = false;
+                } else {
+                    return false;
                 }
             }
-            if (_IsAsynchronous && _BatchSize > 0)
+
+            if ((int)_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE)
             {
+                Console.Error.WriteLine("Large data settings enabled.");
+                _isLargeData = true;
+            }
+
+            if (_IsAsynchronous && _BatchSize > 0) {
                 Console.Error.WriteLine("Batching cannnot be used with asynchronous writing.");
                 return false;
             }
@@ -780,6 +805,7 @@ namespace PerformanceTest
             if (_isPublisher && _useCft) {
                 Console.Error.WriteLine("Content Filtered Topic is not a parameter in the publisher side.\n");
             }
+
             return true;
         }
 

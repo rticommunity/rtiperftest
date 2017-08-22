@@ -15,6 +15,9 @@ import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 import com.rti.perftest.gen.MAX_PERFTEST_SAMPLE_SIZE;
 import com.rti.ndds.Utility;
 
+import java.util.StringTokenizer;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 // ===========================================================================
@@ -78,17 +81,13 @@ public final class PerfTest {
 
     //private static boolean _isDebug = false;
 
-    // When running a scan, this determines the number of
-    // latency pings that will be sent before increasing the
-    // data size
-    private static final int NUM_LATENCY_PINGS_PER_DATA_SIZE = 1000;
-
     private long     _dataLen = 100;
     private int     _batchSize = 0;
     private int     _samplesPerBatch = 1;
     private long    _numIter = 100000000;
     private boolean _isPub = false;
     private boolean _isScan = false;
+    private ArrayList<Long> _scanDataLenSizes = new ArrayList<Long>();
     private boolean _useReadThread = false;
     private long     _spinLoopCount = 0;
     private long    _sleepNanosec = 0;
@@ -109,8 +108,24 @@ public final class PerfTest {
     private PerftestTimerTask timertask = new PerftestTimerTask(this);
     /* Indicates when the test should exit due to timeout */
     private boolean testCompleted = false;
+    private boolean testCompletedScan = true;
 
+    // Set the default values into the array _scanDataLenSizes vector
+    public void set_default_scan_values(){
+        _scanDataLenSizes.add((long)32);
+        _scanDataLenSizes.add((long)64);
+        _scanDataLenSizes.add((long)128);
+        _scanDataLenSizes.add((long)256);
+        _scanDataLenSizes.add((long)512);
+        _scanDataLenSizes.add((long)1024);
+        _scanDataLenSizes.add((long)2048);
+        _scanDataLenSizes.add((long)4096);
+        _scanDataLenSizes.add((long)8192);
+        _scanDataLenSizes.add((long)16384);
+        _scanDataLenSizes.add((long)32768);
+        _scanDataLenSizes.add((long)63000);
 
+    }
     // -----------------------------------------------------------------------
     // Public Methods
     // -----------------------------------------------------------------------
@@ -129,6 +144,10 @@ public final class PerfTest {
 
     public void finishTest() {
         testCompleted = true;
+    }
+
+    public void finishTestScan() {
+        testCompletedScan = true;
     }
 
     static public int getMaxPerftestSampleSizeJava(){
@@ -234,8 +253,13 @@ public final class PerfTest {
             "\t                          default 1\n" +
             "\t-numPublishers <count>  - Number of publishers running in test,\n"+
             "\t                          default 1\n" +
-            "\t-scan                   - Run test in scan mode, traversing a range of\n" +
-            "\t                          data sizes, 32 - " + getMaxPerftestSampleSizeJava() + "\n" +
+            "\t-scan <size1>:<size2>:...:<sizeN> - Run test in scan mode, traversing\n" +
+            "\t                                    a range of sample data sizes from\n" +
+            "\t                                    [32,63000] or [63001,2147483128] bytes,\n" +
+            "\t                                    in the case that you are using large data or not.\n" +
+            "\t                                    The list of sizes is optional.\n" +
+            "\t                                    Default values are '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\n" +
+            "\t                                    Default: Not set\n" +
             "\t-noPrintIntervals       - Don't print statistics at intervals during\n" +
             "\t                          test\n" +
             "\t-useReadThread          - Use separate thread instead of callback to\n"+
@@ -452,6 +476,35 @@ public final class PerfTest {
             {
                 _isScan = true;
                 _messagingArgv[_messagingArgc++] = argv[i];
+                if ((i != (argc - 1)) && !argv[1+i].startsWith("-")) {
+                    ++i;
+                    _messagingArgv[_messagingArgc++] = argv[i];
+                    StringTokenizer st = new StringTokenizer(argv[i], ":", true);
+                    while (st.hasMoreTokens()) {
+                        String s = st.nextToken();
+                        if (!s.equals(":")) {
+                            _scanDataLenSizes.add(Long.parseLong(s));
+                        }
+                    }
+                    if (_scanDataLenSizes.size() < 2) {
+                        System.err.print("'-scan <size1>:<size2>:...:<sizeN>' the number of size should be equal or greater then two.\n");
+                        return false;
+                    }
+                    Collections.sort(_scanDataLenSizes);
+                    if (_scanDataLenSizes.get(0) < OVERHEAD_BYTES) {
+                        System.err.println("-scan sizes must be >= " +
+                                OVERHEAD_BYTES);
+                        return false;
+                    }
+                    if (_scanDataLenSizes.get(_scanDataLenSizes.size() - 1) >
+                            MAX_PERFTEST_SAMPLE_SIZE.VALUE) {
+                        System.err.println("-scan sizes must be <= " +
+                                MAX_PERFTEST_SAMPLE_SIZE.VALUE);
+                        return false;
+                    }
+                } else {
+                    set_default_scan_values();
+                }
             }
             else if ("-noPrintIntervals".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
@@ -588,12 +641,6 @@ public final class PerfTest {
             }
         }
 
-        if (_isScan && _numPublishers > 1)
-        {
-            System.err.print("_isScan is not supported with more than one publisher\n");
-            return false;
-        }
-
         if(_latencyTest) {
             if(pubID != 0) {
                 System.err.printf("Only the publisher with ID = 0 can run the latency test\n");
@@ -639,6 +686,28 @@ public final class PerfTest {
                 System.err.printf("'-sleep' is not compatible with -pubRate. " +
                     "Spin/Sleep value will be set by -pubRate.");
                 _sleepNanosec = 0;
+            }
+        }
+
+        if (_isScan) {
+            if (_dataLen != 100) { // Different that the default value
+                System.err.printf("DataLen will be ignored since -scan is present.\n");
+            }
+            _dataLen = _scanDataLenSizes.get(_scanDataLenSizes.size() - 1); // Max size
+            if (_executionTime == 0){
+                System.err.printf("Setting timeout to 60 seconds (-scan).\n");
+                _executionTime = 60;
+            }
+            // Check if large data or small data
+            if (_scanDataLenSizes.get(0) < Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)
+                    && _scanDataLenSizes.get(_scanDataLenSizes.size() - 1) > Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                System.err.printf("The sizes of -scan [");
+                for (int i = 0; i < _scanDataLenSizes.size(); i++) {
+                    System.err.printf(_scanDataLenSizes.get(i) + " ");
+                }
+                System.err.printf("] should be either all smaller or all bigger than " +
+                        Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE) + "\n");
+                return false;
             }
         }
 
@@ -806,14 +875,9 @@ public final class PerfTest {
             return;
         }
 
-        // calculate number of latency pings that will be sent per data size
-        if (_isScan) {
-            num_latency = NUM_LATENCY_PINGS_PER_DATA_SIZE;
-        } else {
-            num_latency = (((int)_numIter/_samplesPerBatch) / _latencyCount);
-            if ((num_latency/_samplesPerBatch) % _latencyCount > 0) {
-                num_latency++;
-            }
+        num_latency = (((int)_numIter/_samplesPerBatch) / _latencyCount);
+        if ((num_latency/_samplesPerBatch) % _latencyCount > 0) {
+            num_latency++;
         }
 
         // in batch mode, might have to send another ping
@@ -933,8 +997,7 @@ public final class PerfTest {
         sleep(1000);
 
         int num_pings = 0;
-        int scan_number = 4; // 4 means start sending with dataLen = 2^5 = 32
-        boolean last_scan = false;
+        int scan_count = 0;
         int pingID = -1;
         int current_index_in_batch = 0;
         int ping_index_in_batch = 0;
@@ -953,8 +1016,8 @@ public final class PerfTest {
             pubRate_sample_period = _pubRate / 100;
         }
 
-        if (_executionTime > 0) {
-          timertask.setTimeout(_executionTime);
+        if (_executionTime > 0 && !_isScan) {
+          timertask.setTimeout(_executionTime, _isScan);
         }
 
         /********************
@@ -1027,99 +1090,43 @@ public final class PerfTest {
                  */
                 if ( current_index_in_batch == ping_index_in_batch && !sentPing )
                 {
-
                     // If running in scan mode, dataLen under test is changed
-                    // after NUM_LATENCY_PINGS_PER_DATA_SIZE pings are sent
-                    if (_isScan) {
+                    // after _executionTime
+                    if (_isScan && testCompletedScan) {
+                        testCompletedScan = false;
+                        timertask = new PerftestTimerTask(this);
+                        timertask.setTimeout(_executionTime, _isScan);
 
-                        // change data length for scan mode
-                        if ((num_pings % NUM_LATENCY_PINGS_PER_DATA_SIZE == 0))
-                        {
-                            int new_size;
+                        // flush anything that was previously sent
+                        writer.flush();
 
-                                // flush anything that was previously sent
+                        if (scan_count == _scanDataLenSizes.size()) {
+                            break; // End of scan test
+                        }
+
+                        message.size = LENGTH_CHANGED_SIZE;
+                        // must set latency_ping so that a subscriber sends us
+                        // back the LENGTH_CHANGED_SIZE message
+                        message.latency_ping = num_pings % _numSubscribers;
+
+                        for (int i = 0; i < 30; ++i) {
+                            writer.send(message);
                             writer.flush();
-
-                            if (last_scan)
-                            {
-                                // end of scan test
-                                break;
-                            }
-
-                            new_size = (1 << (++scan_number)) - OVERHEAD_BYTES;
-
-                            if (scan_number == 17)
-                            {
-                                // end of scan test
-                                break;
-                            }
-
-                            if (new_size > MAX_SYNCHRONOUS_SIZE.VALUE) {
-                                // last scan
-                                new_size = MAX_SYNCHRONOUS_SIZE.VALUE - OVERHEAD_BYTES;
-                                last_scan = true;
-                            }
-
-                                // must reduce the number of latency pings to send
-                                // for larger data sizes because the time to send
-                                // the same number of messages for a given size
-                                // increases with the data size.
-                                //
-                                // If we don't do this, the time to run a complete
-                                // scan would be in the hours
-                            switch (scan_number)
-                            {
-                              case 16:
-                                new_size =MAX_SYNCHRONOUS_SIZE.VALUE - OVERHEAD_BYTES;
-                                _latencyCount /= 2;
-                                break;
-
-                              case 9:
-                              case 11:
-                              case 13:
-                              case 14:
-                              case 15:
-                                _latencyCount /= 2;
-                                break;
-                              default:
-                                break;
-                            }
-
-                            if (_latencyCount == 0)
-                            {
-                                _latencyCount = 1;
-                            }
-
-                            message.size = LENGTH_CHANGED_SIZE;
-                            // must set latency_ping so that a subscriber sends us
-                            // back the LENGTH_CHANGED_SIZE message
-                            message.latency_ping = num_pings % _numSubscribers;
-
-                            for (int i = 0; i < initialize_sample_count; ++i) {
-                                boolean sent = writer.send(message);
-                                writer.flush();
-                                if (!sent) {
-                                    System.err.println("*** send() failure");
-                                    return;
-                                }
-                            }
-
-                            // sleep to allow packet to be pinged back
-                            sleep(1000);
-
-                            message.size = new_size;
-                            /* Reset _SamplePerBatch */
-                            if (_batchSize != 0) {
-                                _samplesPerBatch = _batchSize/(message.size + OVERHEAD_BYTES);
-                                if (_samplesPerBatch == 0) {
-                                    _samplesPerBatch = 1;
-                                }
-                            } else {
+                        }
+                        // sleep to allow packet to be pinged back
+                        sleep(1000);
+                        message.size = (int)(_scanDataLenSizes.get(scan_count++) - OVERHEAD_BYTES);
+                        /* Reset _SamplePerBatch */
+                        if (_batchSize != 0) {
+                            _samplesPerBatch = _batchSize / (message.size + OVERHEAD_BYTES);
+                            if (_samplesPerBatch == 0) {
                                 _samplesPerBatch = 1;
                             }
-                            ping_index_in_batch = 0;
-                            current_index_in_batch = 0;
+                        } else {
+                            _samplesPerBatch = 1;
                         }
+                        ping_index_in_batch = 0;
+                        current_index_in_batch = 0;
                     }
 
                     // Each time ask a different subscriber to echo back

@@ -640,6 +640,24 @@ namespace PerformanceTest {
             QueryPerformanceFrequency(ref _ClockFrequency);
         }
 
+
+        // Set the default values into the array _scanDataLenSizes vector
+        private void set_default_scan_values(){
+            _scanDataLenSizes.Add(32);
+            _scanDataLenSizes.Add(64);
+            _scanDataLenSizes.Add(128);
+            _scanDataLenSizes.Add(256);
+            _scanDataLenSizes.Add(512);
+            _scanDataLenSizes.Add(1024);
+            _scanDataLenSizes.Add(2048);
+            _scanDataLenSizes.Add(4096);
+            _scanDataLenSizes.Add(8192);
+            _scanDataLenSizes.Add(16384);
+            _scanDataLenSizes.Add(32768);
+            _scanDataLenSizes.Add(63000);
+
+        }
+
         /*********************************************************
         * ParseConfig
         */
@@ -685,8 +703,13 @@ namespace PerformanceTest {
                 "\t                          default 1\n" +
                 "\t-numPublishers <count>  - Number of publishers running in test,\n" +
                 "\t                          default 1\n" +
-                "\t-scan                   - Run test in scan mode, traversing a range of\n"+
-                "\t                          data sizes, 32 - " + getMaxPerftestSampleSizeCS() + "\n" +
+                "\t-scan <size1>:<size2>:...:<sizeN> - Run test in scan mode, traversing\n" +
+                "\t                                    a range of sample data sizes from\n" +
+                "\t                                    [32,63000] or [63001,2147483128] bytes,\n" +
+                "\t                                    in the case that you are using large data or not.\n" +
+                "\t                                    The list of sizes is optional.\n" +
+                "\t                                    Default values are '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\n" +
+                "\t                                    Default: Not set\n" +
                 "\t-noPrintIntervals       - Don't print statistics at intervals during\n"+
                 "\t                          test\n" +
                 "\t-useReadThread          - Use separate thread instead of callback to\n"+
@@ -934,7 +957,56 @@ namespace PerformanceTest {
                 }
                 else if ("-scan".StartsWith(argv[i], true, null))
                 {
-                    _IsScan = true;
+                    _isScan = true;
+                    _MessagingArgv[_MessagingArgc] = argv[i];
+
+                    if (_MessagingArgv[_MessagingArgc] == null)
+                    {
+                        Console.Error.Write("Problem allocating memory\n");
+                        return false;
+                    }
+
+                    _MessagingArgc++;
+                    if ((i != (argc - 1)) && !argv[1+i].StartsWith("-")) {
+                        ++i;
+                        _MessagingArgv[_MessagingArgc] = argv[i];
+
+                        if (_MessagingArgv[_MessagingArgc] == null)
+                        {
+                            Console.Error.Write("Problem allocating memory\n");
+                            return false;
+                        }
+
+                        _MessagingArgc++;
+                        String[] list_scan = argv[i].Split(':');
+                        ulong aux_scan = 0;
+                        for( int j = 0; j < list_scan.Length; j++) {
+                            if (!UInt64.TryParse(list_scan[j], out aux_scan)) {
+                                Console.Error.Write(
+                                        "-scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'\n");
+                                return false;
+                            }
+                            _scanDataLenSizes.Add(aux_scan);
+                        }
+                        if (_scanDataLenSizes.Count < 2) {
+                            Console.Error.Write("'-scan <size1>:<size2>:...:<sizeN>' the number of size should be equal or greater then two.\n");
+                            return false;
+                        }
+                        _scanDataLenSizes.Sort();
+                        if (_scanDataLenSizes[0] < OVERHEAD_BYTES) {
+                            Console.Error.Write("-scan sizes must be >= " +
+                                    OVERHEAD_BYTES + "\n");
+                            return false;
+                        }
+                        if (_scanDataLenSizes[_scanDataLenSizes.Count - 1] >
+                                (ulong)MAX_PERFTEST_SAMPLE_SIZE.VALUE) {
+                            Console.Error.Write("-scan sizes must be <= " +
+                                    MAX_PERFTEST_SAMPLE_SIZE.VALUE + "\n");
+                            return false;
+                        }
+                    } else {
+                        set_default_scan_values();
+                    }
                 }
                 else if ("-keyed".StartsWith(argv[i], true, null))
                 {
@@ -1129,12 +1201,6 @@ namespace PerformanceTest {
             _LatencyCount = 10000;
             }
 
-            if (_IsScan && _NumPublishers > 1)
-            {
-                Console.Error.Write("_IsScan is not supported with more than one publisher\n");
-                return false;
-            }
-
             if ((_NumIter > 0) && (_NumIter < (ulong)_LatencyCount))
             {
                 Console.Error.Write("numIter ({0}) must be greater than latencyCount ({1}).\n",
@@ -1156,6 +1222,39 @@ namespace PerformanceTest {
                 }
             }
 
+            if (_isScan) {
+                if (_DataLen != 100) { // Different that the default value
+                    Console.Error.Write("DataLen will be ignored since -scan is present.\n");
+                }
+                _DataLen = _scanDataLenSizes[_scanDataLenSizes.Count - 1]; // Max size
+                if (_executionTime == 0){
+                    Console.Error.Write("Setting timeout to 60 seconds (-scan).\n");
+                    _executionTime = 60;
+                }
+                // Check if large data or small data
+                if (_scanDataLenSizes[0] > (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)
+                        && _scanDataLenSizes[_scanDataLenSizes.Count - 1] > (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                    if (_useUnbounded == 0) {
+                        _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
+                    }
+                } else if (_scanDataLenSizes[0] <= (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)
+                        && _scanDataLenSizes[_scanDataLenSizes.Count - 1] <= (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                    if (_useUnbounded != 0) {
+                        Console.Error.Write("Unbounded will be ignored since -scan is present.\n");
+                        _useUnbounded = 0;
+                    }
+                } else {
+                    Console.Error.Write("The sizes of -scan [");
+                    for (int i = 0; i < _scanDataLenSizes.Count; i++) {
+                        Console.Error.Write(_scanDataLenSizes[i] + " ");
+                    }
+                    Console.Error.Write(
+                            "] should be either all smaller or all bigger than " +
+                             Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE) +
+                             "\n");
+                    return false;
+                }
+            }
             return true;
         }
 
@@ -1834,22 +1933,14 @@ namespace PerformanceTest {
                 return;
             }
 
-            // calculate number of latency pings that will be sent per data size
-            if (_IsScan)
+            num_latency = (uint)((_NumIter/(ulong)_SamplesPerBatch) / (ulong)_LatencyCount);
+
+            if ((num_latency / (ulong)_SamplesPerBatch) % (ulong)_LatencyCount > 0)
+
             {
-                num_latency = NUM_LATENCY_PINGS_PER_DATA_SIZE;
-            }
-            else
-            {
-                num_latency = (uint)((_NumIter/(ulong)_SamplesPerBatch) / (ulong)_LatencyCount);
 
-                if ((num_latency / (ulong)_SamplesPerBatch) % (ulong)_LatencyCount > 0)
+                num_latency++;
 
-                {
-
-                    num_latency++;
-
-                }
             }
 
             // in batch mode, might have to send another ping
@@ -1960,8 +2051,7 @@ namespace PerformanceTest {
             System.Threading.Thread.Sleep(1000);
 
             int num_pings = 0;
-            int scan_number = 4; // 4 means start sending with dataLen = 2^5 = 32
-            bool last_scan = false;
+            int scan_count = 0;
             int pingID = -1;
             int current_index_in_batch = 0;
             int ping_index_in_batch = 0;
@@ -1980,15 +2070,14 @@ namespace PerformanceTest {
                 pubRate_sample_period = _pubRate / 100;
             }
 
-            if (_executionTime > 0)
-            {
+            if (_executionTime > 0 && !_isScan) {
                 setTimeout(_executionTime);
             }
             /********************
              *  Main sending loop
              */
 
-            for (ulong loop = 0; ((_IsScan) || (loop < _NumIter)) &&
+            for (ulong loop = 0; ((_isScan) || (loop < _NumIter)) &&
                                  (!_testCompleted); ++loop)
             {
 
@@ -2054,98 +2143,41 @@ namespace PerformanceTest {
                     {
 
                         // If running in scan mode, dataLen under test is changed
-                        // after NUM_LATENCY_PINGS_PER_DATA_SIZE pings are sent
-                        if (_IsScan)
-                        {
+                        // after _executionTime
+                        if (_isScan && _testCompletedScan) {
+                            _testCompletedScan = false;
+                            setTimeout(_executionTime);
 
-                            // change data length for scan mode
-                            if ((num_pings % NUM_LATENCY_PINGS_PER_DATA_SIZE == 0))
-                            {
-                                int new_size;
+                            // flush anything that was previously sent
+                            writer.Flush();
 
-                                // flush anything that was previously sent
+                            if (scan_count == _scanDataLenSizes.Count) {
+                                break; // End of scan test
+                            }
+
+                            message.size = LENGTH_CHANGED_SIZE;
+                            // must set latency_ping so that a subscriber sends us
+                            // back the LENGTH_CHANGED_SIZE message
+                            message.latency_ping = num_pings % _NumSubscribers;
+
+                            for (int i = 0; i < 30; ++i) {
+                                writer.Send(message);
                                 writer.Flush();
-
-                                if (last_scan)
-                                {
-                                // end of scan test
-                                    break;
-                                }
-
-                                new_size = (1 << (++scan_number)) - OVERHEAD_BYTES;
-
-                                if (scan_number == 17)
-                                {
-                                // end of scan test
-                                    break;
-                                }
-
-                                if (new_size > MAX_SYNCHRONOUS_SIZE.VALUE)
-                                {
-                                    // last scan
-                                    new_size = MAX_SYNCHRONOUS_SIZE.VALUE - OVERHEAD_BYTES;
-                                    last_scan = true;
-                                }
-
-                                // must reduce the number of latency pings to send
-                                // for larger data sizes because the time to send
-                                // the same number of messages for a given size
-                                // increases with the data size.
-                                //
-                                // If we don't do this, the time to run a complete
-                                // scan would be in the hours
-                                switch (scan_number)
-                                {
-                                  case 16:
-                                        new_size = MAX_SYNCHRONOUS_SIZE.VALUE - OVERHEAD_BYTES;
-                                    _LatencyCount /= 2;
-                                    break;
-
-                                  case 9:
-                                  case 11:
-                                  case 13:
-                                  case 14:
-                                  case 15:
-                                    _LatencyCount /= 2;
-                                    break;
-                                  default:
-                                    break;
-                                }
-
-                                if (_LatencyCount == 0)
-                                {
-                                    _LatencyCount = 1;
-                                }
-
-                                message.size = LENGTH_CHANGED_SIZE;
-                                // must set latency_ping so that a subscriber sends us
-                                // back the LENGTH_CHANGED_SIZE message
-                                message.latency_ping = num_pings % _NumSubscribers;
-
-                                for (int i=0; i< initializeSampleCount; ++i) {
-                                    writer.Send(message);
-                                    writer.Flush();
-                                }
-
-                                // sleep to allow packet to be pinged back
-                                System.Threading.Thread.Sleep(1000);
-
-                                message.size = new_size;
-                                /* Reset _SamplePerBatch */
-                                if (_BatchSize != 0)
-                                {
-                                    _SamplesPerBatch = _BatchSize/(message.size + OVERHEAD_BYTES);
-                                    if (_SamplesPerBatch == 0) {
-                                        _SamplesPerBatch = 1;
-                                    }
-                                }
-                                else
-                                {
+                            }
+                            // sleep to allow packet to be pinged back
+                            System.Threading.Thread.Sleep(1000);
+                            message.size = (int)(_scanDataLenSizes[scan_count++] - OVERHEAD_BYTES);
+                            /* Reset _SamplePerBatch */
+                            if (_BatchSize != 0) {
+                                _SamplesPerBatch = _BatchSize / (message.size + OVERHEAD_BYTES);
+                                if (_SamplesPerBatch == 0) {
                                     _SamplesPerBatch = 1;
                                 }
-                                ping_index_in_batch = 0;
-                                current_index_in_batch = 0;
+                            } else {
+                                _SamplesPerBatch = 1;
                             }
+                            ping_index_in_batch = 0;
+                            current_index_in_batch = 0;
                         }
 
                         // Each time ask a different subscriber to echo back
@@ -2241,10 +2273,19 @@ namespace PerformanceTest {
             _testCompleted = true;
         }
 
+        private static void TimeoutScan(object source, ElapsedEventArgs e)
+        {
+            _testCompletedScan = true;
+        }
+
         private void setTimeout(ulong executionTime)
         {
             timer = new System.Timers.Timer();
-            timer.Elapsed += new ElapsedEventHandler(Timeout);
+            if (!_isScan) {
+                timer.Elapsed += new ElapsedEventHandler(Timeout);
+            } else {
+                timer.Elapsed += new ElapsedEventHandler(TimeoutScan);
+            }
             timer.Interval = executionTime*1000;
             Console.Error.WriteLine("Setting timeout to " + executionTime + " seconds.");
             timer.Enabled = true;
@@ -2257,7 +2298,8 @@ namespace PerformanceTest {
 
         private ulong _NumIter = 100000000;
         private bool _IsPub = false;
-        private bool _IsScan = false;
+        private bool _isScan = false;
+        private List<ulong> _scanDataLenSizes = new List<ulong>();
         private bool  _UseReadThread = false;
         private ulong  _SpinLoopCount = 0;
         private ulong  _SleepNanosec = 0;
@@ -2283,6 +2325,7 @@ namespace PerformanceTest {
         private static bool _showCpu  = false;
         private static long _ClockFrequency = 0;
         private static bool _testCompleted = false;
+        private static bool _testCompletedScan = true;
         public const string _LatencyTopicName = "Latency";
         public const string _ThroughputTopicName = "Throughput";
         public const string _AnnouncementTopicName = "Announcement";
@@ -2302,11 +2345,6 @@ namespace PerformanceTest {
 
         // Number of bytes sent in messages besides user data
         public const int OVERHEAD_BYTES = 28;
-
-        // When running a scan, this determines the number of
-        // latency pings that will be sent before increasing the
-        // data size
-        private const int NUM_LATENCY_PINGS_PER_DATA_SIZE = 1000;
 
         // Flag used to indicate message is used for initialization only
         private const int INITIALIZE_SIZE = 1234;

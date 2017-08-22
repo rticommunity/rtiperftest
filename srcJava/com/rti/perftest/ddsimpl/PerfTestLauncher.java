@@ -18,6 +18,7 @@ import com.rti.perftest.harness.PerfTest;
 import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 
+import java.util.StringTokenizer;
 // ===========================================================================
 
 /**
@@ -127,7 +128,6 @@ public final class PerfTestLauncher {
     }
 
     private static boolean parseConfig(String[] argv) {
-
         int argc = argv.length;
         if (argc < 0) {
             return false;
@@ -184,12 +184,44 @@ public final class PerfTestLauncher {
                     System.err.println("-unbounded <value> must be <= " + PerfTest.getMaxPerftestSampleSizeJava());
                     return false;
                 }
+            }else if ("-scan".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _isScan = true;
+                if ((i != (argc - 1)) && !argv[1+i].startsWith("-")) {
+                    ++i;
+                    long _scan_max_size = 0;
+                    long aux_scan;
+                    StringTokenizer st = new StringTokenizer(argv[i], ":", true);
+                    while (st.hasMoreTokens()) {
+                        String s = st.nextToken();
+                        if (!s.equals(":")) {
+                            aux_scan = Long.parseLong(s);
+                            if (aux_scan >= _scan_max_size) {
+                                _scan_max_size = aux_scan;
+                            }
+                        }
+                    }
+                    // Check if large data or small data
+                    if (_scan_max_size > Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                        if (_useUnbounded == 0) {
+                            _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                        }
+                    } else if (_scan_max_size <= Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                        if (_useUnbounded != 0) {
+                            System.err.printf("Unbounded will be ignored since -scan is present.");
+                            _useUnbounded = 0;
+                        }
+                    } else {
+                        return false;
+                    }
+                }
             }
         }
+
         return true;
     }
 
     private static boolean _isKeyed = false;
+    private static boolean _isScan = false;
     private static boolean _isDynamicData = false;
     private static long _useUnbounded = 0;
     private static long _dataLen = 100;

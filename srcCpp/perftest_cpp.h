@@ -76,7 +76,8 @@ class perftest_cpp
     int  _SamplesPerBatch;
     unsigned long long _NumIter;
     bool _IsPub;
-    bool _IsScan;
+    bool _isScan;
+    std::vector<unsigned long> _scanDataLenSizes;
     bool _UseReadThread;
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
@@ -98,11 +99,12 @@ class perftest_cpp
     bool _useCft;
 
   private:
-    static void SetTimeout(unsigned int executionTimeInSeconds);
+    static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);
 
     /* The following three members are used in a static callback
        and so they have to be static */
     static bool _testCompleted;
+    static bool _testCompleted_scan;
   #ifdef RTI_WIN32
     static HANDLE _hTimerQueue;
     static HANDLE _hTimer;
@@ -129,12 +131,6 @@ class perftest_cpp
 
     // Number of bytes sent in messages besides user data
     static const int OVERHEAD_BYTES = 28;
-
-    // When running a scan, this determines the number of
-    // latency pings that will be sent before increasing the
-    // data size
-    static const int NUM_LATENCY_PINGS_PER_DATA_SIZE = 1000;
-
     // Flag used to indicate message is used for initialization only
     static const int INITIALIZE_SIZE = 1234;
     // Flag used to indicate end of test
@@ -147,8 +143,10 @@ class perftest_cpp
 
   #ifdef RTI_WIN32
     static VOID CALLBACK Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired);
+    static VOID CALLBACK Timeout_scan(PVOID lpParam, BOOLEAN timerOrWaitFired);
   #else
     static void Timeout(int sign);
+    static void Timeout_scan(int sign);
   #endif
 
 };

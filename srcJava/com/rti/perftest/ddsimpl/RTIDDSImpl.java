@@ -886,7 +886,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     "1", false);
         }
 
-        if ((_isLargeData) && (!_isScan) || _IsAsynchronous)
+        if (_isLargeData || _IsAsynchronous)
         {
             System.err.println("Using asynchronous write for " + topicName + ".");
             dwQos.publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
@@ -1120,12 +1120,25 @@ public final class RTIDDSImpl<T> implements IMessaging {
     }
 
     private boolean parseConfig(int argc, String[] argv) {
-
+        long _scan_max_size = 0;
         for (int i = 0; i < argc; ++i) {
 
-            if ("-scan".toLowerCase().startsWith(argv[i].toLowerCase())) 
-            {
+            if ("-scan".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isScan = true;
+                if ((i != (argc - 1)) && !argv[1+i].startsWith("-")) {
+                    ++i;
+                    long aux_scan;
+                    StringTokenizer st = new StringTokenizer(argv[i], ":", true);
+                    while (st.hasMoreTokens()) {
+                        String s = st.nextToken();
+                        if (!s.equals(":")) {
+                            aux_scan = Long.parseLong(s);
+                            if (aux_scan >= _scan_max_size) {
+                                _scan_max_size = aux_scan;
+                            }
+                        }
+                    }
+                }
             }
             else if ("-pub".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isPublisher = true;
@@ -1582,17 +1595,27 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
         }
 
-        if (_dataLen > MAX_SYNCHRONOUS_SIZE.VALUE) {
-            if (_isScan) {
-                System.err.println("DataLen will be ignored since -scan is "
-                        + "present"); 
-
-            } else {
-                System.err.println("Large data settings enabled (-dataLen > " 
-                                    + MAX_SYNCHRONOUS_SIZE.VALUE + ").");
+        if (_isScan) {
+            _dataLen = _scan_max_size;
+            // Check if large data or small data
+            if (_scan_max_size > Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                if (_useUnbounded == 0) {
+                    _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                }
                 _isLargeData = true;
+            } else if (_scan_max_size <= Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                _useUnbounded = 0;
+                _isLargeData = false;
+            } else {
+                return false;
             }
         }
+
+        if (_dataLen > MAX_SYNCHRONOUS_SIZE.VALUE) {
+            System.err.println("Large data settings enabled.");
+            _isLargeData = true;
+        }
+
         if (_IsAsynchronous && _batchSize > 0) {
             System.err.println("Batching cannnot be used with asynchronous writing.");
             return false;
@@ -1630,6 +1653,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         if (_isPublisher && _useCft) {
             System.err.println("Content Filtered Topic is not a parameter in the publisher side.\n");
         }
+
         return true;
     }
 
