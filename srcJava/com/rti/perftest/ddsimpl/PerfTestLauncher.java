@@ -37,7 +37,7 @@ public final class PerfTestLauncher {
                 PerfTest.LENGTH_CHANGED_SIZE);
 
         if(_useUnbounded > 0) {
-            System.err.println("Using unbounded Sequences, memory_manager " + Long.toString(_useUnbounded) + ".");
+            System.err.println("Using unbounded Sequences, allocation_threshold " + Long.toString(_useUnbounded) + ".");
             if (_isKeyed) {
                 System.err.println("Using keyed Data.");
 
@@ -162,26 +162,30 @@ public final class PerfTestLauncher {
                     return false;
                 }
                 if (_useUnbounded == 0 && _dataLen > MAX_BOUNDED_SEQ_SIZE.VALUE) {
-                    _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                    _useUnbounded = Math.min(
+                            MAX_BOUNDED_SEQ_SIZE.VALUE, 2 * _dataLen);
                 }
             }else if ("-unbounded".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[i+1].startsWith("-")) {
-                     _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                     _useUnbounded = Math.min(
+                             MAX_BOUNDED_SEQ_SIZE.VALUE, 2 * _dataLen);
                 } else {
                     ++i;
                     try {
                         _useUnbounded = Long.parseLong(argv[i]);
                     } catch (NumberFormatException nfx) {
-                        System.err.print("Bad managerMemory value.\n");
+                        System.err.print("Bad allocation_threshold value.\n");
                         return false;
                     }
                 }
                 if (_useUnbounded < PerfTest.OVERHEAD_BYTES) {
-                    System.err.println("-unbounded <value> must be >= " + PerfTest.OVERHEAD_BYTES);
+                    System.err.println("-unbounded <value> must be >= " +
+                            PerfTest.OVERHEAD_BYTES);
                     return false;
                 }
-                if (_useUnbounded > PerfTest.getMaxPerftestSampleSizeJava()) {
-                    System.err.println("-unbounded <value> must be <= " + PerfTest.getMaxPerftestSampleSizeJava());
+                if (_useUnbounded > MAX_BOUNDED_SEQ_SIZE.VALUE) {
+                    System.err.println("-unbounded <value> must be <= " +
+                            MAX_BOUNDED_SEQ_SIZE.VALUE);
                     return false;
                 }
             }else if ("-scan".toLowerCase().startsWith(argv[i].toLowerCase())) {

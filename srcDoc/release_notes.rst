@@ -54,7 +54,6 @@ What's New in Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
-
 Modified behavior for ``-batchSize`` and ``-TurboMode``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -76,6 +75,47 @@ execution is relate with the number of latency-ping. This behavior has been
 fixed, now the command line parameter allow the user to introduce a set of sizes
 which will be used. Besides, now the '-executionTime' parameter is used to every
 size on the scan mode.
+
+Reviewed command line parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In order to reduce the number of parameters RTI Perftest accepts, we reviewed
+and deprecated the following parameters. These parameters will still work for
+this release, but they will be deleted for the next one.
+
+-  Removed ``-instanceHashBuckets <n>``
+
+The associated value will be the same as the number of instances.
+
+-  Removed ``-keepDurationUsec <usec>``
+
+removes, set dynamically in the QoS in the case of use noPositiveAcks.
+
+-  Combined ``-multicast`` and ``-multicastAddress <address>``.
+
+The result command can be used as ``-multicast`` keeping its original behavior
+or as ``-multicast <address>``, now enabling multicast and using <address> as
+the multicast receive address.
+
+-  Removed ``-nomulticast``
+
+The default behavior will not use multicast, so this command line option was
+redundant.
+
+-  Updated ``-unbounded <managerMemory>`` to ``-unbounded <allocator_threshold>``
+
+Instead ``managerMemory``, use ``allocator_threshold``, since it better reflects
+the use of the value. New default is ``2 * dataLen`` up to ``63000``.
+Improved the documentation associated.
+
+-  Removed ``-heartbeatPeriod <sec>:<nanosec>`` and
+   ``-fastHeartbeatPeriod <sec>:<nanosec>`` command-line options
+
+This parameter can still be changed via xml.
+
+-  Removed ``-spin <count>``.
+
+Changes in the values for the different QoS associated with these command-line
+parameters can still be changed via QoS profile.
 
 Release Notes v2.2
 ------------------
@@ -134,7 +174,7 @@ enable the use of *Asynchronous Publishing* and *Unbounded Sequences*.
 
 It is also possible to enable the use of *Unbounded Sequences* or
 *Asynchronous Publishing* independently of the sample size by specifying
-the command-line parameters ``unbounded <managerMemory>`` and
+the command-line parameters ``unbounded <allocation_threshold>`` and
 ``-asynchronous``.
 
 Added command-line parameter "-peer" to specify the discovery peers

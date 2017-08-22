@@ -69,7 +69,6 @@ namespace PerformanceTest
             "\t                          If unspecificed, use all available interfaces\n" +
             "\t-multicast              - Use multicast to send data, default not to\n" +
             "\t                          use multicast\n" +
-            "\t-nomulticast            - Do not use multicast to send data (default)\n" +
             "\t-multicastAddress <ipaddr> - Multicast address to use for receiving\n" +
             "\t                          latency/announcement (pub) or \n" +
             "\t                          throughtput (sub) data.\n" +
@@ -82,8 +81,6 @@ namespace PerformanceTest
             "\t                          (no batching)\n" +
             "\t-noPositiveAcks         - Disable use of positive acks in reliable\n" +
             "\t                          protocol, default use positive acks\n" +
-            "\t-keepDurationUsec <usec> - Minimum time (us) to keep samples when\n" +
-            "\t                          positive acks are disabled, default 1000 us\n" +
             "\t-enableSharedMemory     - Enable use of shared memory transport and,\n" +
             "\t                          disable all the other transports, default\n" +
             "\t                          shared memory not enabled\n" +
@@ -93,21 +90,12 @@ namespace PerformanceTest
             "\t-enableTcp              - Enable use of tcp transport and disable all\n" +
             "\t                          the other transports, default do not use\n" +
             "\t                          tcp transport\n" +
-            "\t-heartbeatPeriod <sec>:<nanosec>     - Sets the regular heartbeat\n" +
-            "\t                          period for throughput DataWriter,\n" +
-            "\t                          default 0:0 (use XML QoS Profile value)\n" +
-            "\t-fastHeartbeatPeriod <sec>:<nanosec> - Sets the fast heartbeat period\n" +
-            "\t                          for the throughput DataWriter,\n" +
-            "\t                          default 0:0 (use XML QoS Profile value)\n" +
             "\t-dynamicData            - Makes use of the Dynamic Data APIs instead\n" +
             "\t                          of using the generated types.\n" +
             "\t-durability <0|1|2|3>   - Set durability QOS,\n" +
             "\t                          0 - volatile, 1 - transient local,\n" +
             "\t                          2 - transient, 3 - persistent, default 0\n" +
             "\t-noDirectCommunication  - Use brokered mode for persistent durability\n" +
-            "\t-instanceHashBuckets <#count> - Number of hash buckets for instances.\n" +
-            "\t                          If unspecified, same as number of\n" +
-            "\t                          instances\n" +
             "\t-waitsetDelayUsec <usec>   - UseReadThread related. Allows you to\n" +
             "\t                          process incoming data in groups, based on the\n" +
             "\t                          time rather than individually. It can be used\n" +
@@ -208,7 +196,9 @@ namespace PerformanceTest
                         return false;
                     }
                     if (_useUnbounded == 0 && (int)_DataLen > MAX_BOUNDED_SEQ_SIZE.VALUE) {
-                        _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
+                        _useUnbounded = Math.Min(
+                                (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE,
+                                2 * _DataLen);
                     }
                 }
                 else if ("-unbounded".StartsWith(argv[i], true, null))
@@ -216,12 +206,14 @@ namespace PerformanceTest
 
                     if ((i == (argc - 1)) || argv[i+1].StartsWith("-"))
                     {
-                        _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
+                        _useUnbounded = Math.Min(
+                                (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE,
+                                2 * _DataLen);
                     } else {
                         ++i;
                         if (!UInt64.TryParse(argv[i], out _useUnbounded))
                         {
-                            Console.Error.Write("Bad managerMemory value\n");
+                            Console.Error.Write("Bad allocation_threshold value\n");
                             return false;
                         }
                     }
@@ -231,9 +223,10 @@ namespace PerformanceTest
                         Console.Error.WriteLine("_useUnbounded must be >= " + perftest_cs.OVERHEAD_BYTES);
                         return false;
                     }
-                    if (_useUnbounded > perftest_cs.getMaxPerftestSampleSizeCS())
+                    if (_useUnbounded > (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE)
                     {
-                        Console.Error.WriteLine("_useUnbounded must be <= " + perftest_cs.getMaxPerftestSampleSizeCS());
+                        Console.Error.WriteLine("_useUnbounded must be <= " +
+                                MAX_BOUNDED_SEQ_SIZE.VALUE);
                         return false;
                     }
                 }

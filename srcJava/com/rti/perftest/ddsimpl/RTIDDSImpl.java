@@ -199,7 +199,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t                          If unspecified, use all available interfaces\n" +
             "\t-multicast              - Use multicast to send data, default not to\n"+
             "\t                          use multicast\n" + 
-            "\t-nomulticast            - Do not use multicast to send data (default),\n" +
             "\t-multicastAddress <ipaddr> - Multicast address to use for receiving \n" +
             "\t                          latency/announcement (pub) and \n" +
             "\t                          throughtput (sub) data. \n" +
@@ -211,8 +210,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t                          default 0 (no batching)\n" +
             "\t-noPositiveAcks         - Disable use of positive acks in reliable\n" +
             "\t                          protocol, default use positive acks\n" +
-            "\t-keepDurationUsec <usec> - Minimum time (us) to keep samples when\n" +
-            "\t                          positive acks are disabled, default 1000 us\n" +
             "\t-enableSharedMemory     - Enable use of shared memory transport and\n" +
             "\t                          disable all the other transports, default\n"+
             "\t                          shared memory not enabled\n" +
@@ -222,21 +219,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t-enableTcp              - Enable use of tcp transport and disable all\n"+
             "\t                          the other transports, default do not use\n" +
             "\t                          tcp transport\n" +
-            "\t-heartbeatPeriod <sec>:<nanosec>     - Sets the regular heartbeat period\n" +
-            "\t                          for the throughput DataWriter, default 0:0\n" +
-            "\t                          (use XML QoS Profile value)\n" +
-            "\t-fastHeartbeatPeriod <sec>:<nanosec> - Sets the fast heartbeat period\n" +
-            "\t                          for the throughput DataWriter, default 0:0\n" +
-            "\t                          (use XML QoS Profile value)\n" +
             "\t-durability <0|1|2|3>   - Set durability QOS, 0 - volatile,\n" +
             "\t                          1 - transient local, 2 - transient,\n" +
             "\t                          3 - persistent, default 0\n" +
             "\t-dynamicData            - Makes use of the Dynamic Data APIs instead\n" +
             "\t                          of using the generated types.\n" +
             "\t-noDirectCommunication  - Use brokered mode for persistent durability\n" +
-            "\t-instanceHashBuckets <#count> - Number of hash buckets for instances.\n" +
-            "\t                          If unspecified, same as number of\n" +
-            "\t                          instances.\n" +
             "\t-waitsetDelayUsec <usec>   - UseReadThread related. Allows you to\n" +
             "\t                          process incoming data in groups, based on the\n" +
             "\t                          time rather than individually. It can be used \n" +
@@ -1167,17 +1155,19 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     return false;
                 }
                 if (_useUnbounded == 0 && _dataLen > MAX_BOUNDED_SEQ_SIZE.VALUE) {
-                    _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                    _useUnbounded = Math.min(
+                            MAX_BOUNDED_SEQ_SIZE.VALUE, 2 * _dataLen);
                 }
             }else if ("-unbounded".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[i+1].startsWith("-")) {
-                     _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
+                    _useUnbounded = Math.min(
+                            MAX_BOUNDED_SEQ_SIZE.VALUE, 2 * _dataLen);
                 } else {
                     ++i;
                     try {
                         _useUnbounded = Long.parseLong(argv[i]);
                     } catch (NumberFormatException nfx) {
-                        System.err.print("Bad managerMemory value.\n");
+                        System.err.print("Bad allocation_threshold value.\n");
                         return false;
                     }
                 }
@@ -1186,8 +1176,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     System.err.println("unbounded must be >= " + PerfTest.OVERHEAD_BYTES);
                     return false;
                 }
-                if (_useUnbounded > PerfTest.getMaxPerftestSampleSizeJava()) {
-                    System.err.println("unbounded must be <= " + PerfTest.getMaxPerftestSampleSizeJava());
+                if (_useUnbounded > MAX_BOUNDED_SEQ_SIZE.VALUE) {
+                    System.err.println("unbounded must be <= " + MAX_BOUNDED_SEQ_SIZE.VALUE);
                     return false;
                 }
             } else if ("-sendQueueSize".toLowerCase().startsWith(argv[i].toLowerCase())) {

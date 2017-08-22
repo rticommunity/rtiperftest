@@ -130,13 +130,6 @@ Test Parameters for Publishing and Subscribing Applications
    Print an informative message with all the available command-line
    parameters and exit.
 
--  ``-instanceHashBuckets <n>``
-
-   Number of hash buckets for instances.
-
-   | **Default:** ``-1`` (means same as the number of instances)
-   | **Range:** ``> 0``
-
 -  ``-instances <int>``
 
    Set the number of instances to use in the test. The publishing and
@@ -147,18 +140,6 @@ Test Parameters for Publishing and Subscribing Applications
 
    | **Default:** ``1``
    | **Range:** ``> 0``
-
--  ``-keepDurationUsec <usec>``
-
-   Minimum duration that a sample is queued for ACK-disabled readers.
-   Only used if See ``-noPositiveAcks`` is specified on the publisher
-   side.
-
-   See Disabling Positive Acknowledgements, Section 6.5.3.3 in the RTI
-   Connext DDS Core Libraries User’s Manual.
-
-   | **Default:** ``1000 µsec`` (1 millisec).
-   | **Range:** ``>= 0``.
 
 -  ``-keyed``
 
@@ -213,16 +194,6 @@ Test Parameters for Publishing and Subscribing Applications
    provides a way to guarantee eventual consistency.
 
    **Default:** ``true`` (direct communication)
-
--  ``-nomulticast``
-
-   Do not use multicast.
-
-   **Note:** Starting in 5.1.0, this option is no longer needed since
-   multicast is disabled by default. It exists only to maintain backward
-   compatibility.
-
-   **Default:** Do not use multicast
 
 -  ``-noPositiveAcks``
 
@@ -331,12 +302,11 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** ``not set``
 
--  ``-unbounded <managerMemory>``
+-  ``-unbounded <allocation_threshold>``
 
-   Use *Unbounded Sequences* and set the Qos
-   ``dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size``.
+    Use *Unbounded Sequences* in the data type of IDL..
 
-   **Default:** ``63000 bytes.``\  **Range:** ``28 - 2147483128 bytes``
+   **Default:** ``2*dataLen up to 63000 bytes.``\  **Range:** ``28 - 63000 bytes``
 
 -  ``-peer <address>``
 
@@ -383,41 +353,6 @@ Test Parameters Only for Publishing Applications
    seconds to run the test.
 
    **Default:** feature is not set.
-
--  ``-heartbeatPeriod <sec>:<nanosec>``
-
-   The period at which the publishing application will send heartbeats.
-
-   See **Reliable Communications, Chapter 10**, in the *RTI Connext DDS
-   Core Libraries Getting User’s Manual*.
-
-   **Default:** ``heartbeat period sec = 0``,
-   ``heartbeat period nanosec = 0`` (meaning use the value as specified
-   in the XML QoS Profile, which is set to (10 millisec = 10000000
-   nanosec)).
-
-   See ``-qosprofile <filename>``.
-
-   **Range:** 1 nanosec to 1 year (31,536,000 sec.)
-
--  ``-fastHeartbeatPeriod <sec>:<nanosec>``
-
-   An alternative heartbeat period used when the publishing application
-   needs to flush unacknowledged samples more quickly.
-
-   See **Reliable Communications, Chapter 10**, in the *RTI Connext DDS
-   Core Libraries Getting User’s Manual*.
-
-   **Default:** ``heartbeat period sec = 0``,
-   ``heartbeat period nanosec = 0`` (meaning use the value as specified
-   in the XML QoS Profile, which is set to (1 millisec = 1000000
-   nanosec)). See
-
-   See ``-qosprofile <filename>``.
-
-   **Range:** (actual value) ``1 nanosec`` to
-   ``1 year (31,536,000 sec)``. Must not be slower than See
-   ``-heartbeatPeriod <sec>:<nanosec>``.
 
 -  ``-latencyCount <count>``
 
@@ -527,15 +462,6 @@ Test Parameters Only for Publishing Applications
 -  ``-sleep <millisec>``
 
    Time to sleep between each send.
-
-   See Spinning vs. Sleeping.
-
-   | **Default:** ``0``
-   | **Range:** ``0`` or higher
-
--  ``-spin <count>``
-
-   Number of times to run in a spin loop between each send.
 
    See Spinning vs. Sleeping.
 

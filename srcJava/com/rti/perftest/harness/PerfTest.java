@@ -230,9 +230,8 @@ public final class PerfTest {
             "\t                          latency pings\n" +
             "\t-dataLen <bytes>        - Set length of payload for each send,\n" +
             "\t                          default 100\n" +
-            "\t-unbounded <managerMemory> - Use unbounded Sequences\n" +
-            "\t                             default if bounded,  managerMemory not set.\n" +
-            "\t                             default if unbounded, managerMemory is "+ MAX_BOUNDED_SEQ_SIZE.VALUE +".\n" +
+            "\t-unbounded <allocation_threshold> - Use unbounded Sequences\n" +
+            "\t                                    <allocation_threshold> is optional, default 2*dataLen up to "+ MAX_BOUNDED_SEQ_SIZE.VALUE +" Bytes.\n" +
             "\t-numIter <count>        - Set number of messages to send, default is\n" +
             "\t                          100000000 for Throughput tests or 10000000\n" +
             "\t                          for Latency tests. See -executionTime.\n" +
@@ -243,8 +242,6 @@ public final class PerfTest {
             "\t                          -WriteInstance parameter cannot be bigger than the number of instances.\n" +
             "\t                          default 'Round-Robin schedule'\n" +
             "\t-sleep <millisec>       - Time to sleep between each send, default 0\n" +
-            "\t-spin <count>           - Number of times to run in spin loop between\n"+
-            "\t                          each send, default 0 (Deprecated)\n" +
             "\t-latencyCount <count>   - Number samples (or batches) to send before\n" +
             "\t                          a latency ping packet is sent, default\n" +
             "\t                          10000 if -latencyTest is not specified,\n" +
