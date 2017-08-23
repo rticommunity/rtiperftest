@@ -108,10 +108,12 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n") +
             "\t                          queue, default 50\n" +
             "\t-domain <ID>            - RTI DDS Domain, default 1\n" +
-            "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles, \n" +
-            "\t                          default perftest_qos_profiles.xml\n" +
+            "\t-qosFile <filename>     - Name of XML file for DDS Qos profiles, \n" +
+            "\t                          default: perftest_qos_profiles.xml\n" +
+            "\t-qosLibrary <lib name>  - Name of QoS Library for DDS Qos profiles, \n" +
+            "\t                          default: PerftestQosLibrary\n" +
             "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>.\n" +
-            "\t                          If unspecificed, use all available interfaces\n" +
+            "\t                          If unspecified, use all available interfaces\n" +
             "\t-multicast              - Use multicast to send data, default not to\n" +
             "\t                          use multicast\n" +
             "\t-multicastAddress <ipaddr>   - Multicast address to use for receiving \n" +
@@ -315,13 +317,20 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _DomainID = strtol(argv[i], NULL, 10);
-        } else if (IS_OPTION(argv[i], "-qosprofile")) {
+        } else if (IS_OPTION(argv[i], "-qosFile")) {
             if ((i == (argc-1)) || *argv[++i] == '-') 
             {
-                fprintf(stderr, "Missing <filename> after -qosprofile\n");
+                fprintf(stderr, "Missing <filename> after -qosFile\n");
                 return false;
             }
             _ProfileFile = argv[i];
+        } else if (IS_OPTION(argv[i], "-qosLibrary")) {
+            if ((i == (argc-1)) || *argv[++i] == '-')
+            {
+                fprintf(stderr, "Missing <library name> after -qosLibrary\n");
+                return false;
+            }
+            _ProfileLibraryName = argv[i];
         } else if (IS_OPTION(argv[i], "-multicast")) {
             _IsMulticast = true;
         } else if (IS_OPTION(argv[i], "-nomulticast")) {
@@ -1972,7 +1981,6 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         return false;
     }
 
-
     if (_factory->set_default_library(_ProfileLibraryName) != DDS_RETCODE_OK) 
     {
         fprintf(stderr,"No QOS Library named \"%s\" found in %s.\n",
@@ -1981,7 +1989,15 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     // Configure DDSDomainParticipant QOS
-    _factory->get_participant_qos_from_profile(qos, "PerftestQosLibrary", "BaseProfileQos");
+    if (_factory->get_participant_qos_from_profile(
+            qos,
+            _ProfileLibraryName,
+            "BaseProfileQos") != DDS_RETCODE_OK) {
+        fprintf(
+                stderr,
+                "Problem setting QoS Library \"%s::BaseProfileQos\" for participant_qos.\n",
+                _ProfileLibraryName);
+    }
 
   #ifdef RTI_SECURE_PERFTEST
     if (_secureUseSecure) {
@@ -2012,7 +2028,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     // set transports to use
-    qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;
+    // default: use the transport specified by the the qos profile
     if (_UseTcpOnly) {
         qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
         DDSPropertyQosPolicyHelper::add_property(
@@ -2088,7 +2104,10 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // Create the DDSPublisher and DDSSubscriber
     _publisher = _participant->create_publisher_with_profile(
-        "PerftestQosLibrary", "BaseProfileQos", NULL, DDS_STATUS_MASK_NONE);
+            _ProfileLibraryName,
+            "BaseProfileQos",
+            NULL,
+            DDS_STATUS_MASK_NONE);
     if (_publisher == NULL)
     {
         fprintf(stderr,"Problem creating publisher.\n");
@@ -2096,7 +2115,10 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     _subscriber = _participant->create_subscriber_with_profile(
-        "PerftestQosLibrary", "BaseProfileQos", NULL, DDS_STATUS_MASK_NONE);
+            _ProfileLibraryName,
+            "BaseProfileQos",
+            NULL,
+            DDS_STATUS_MASK_NONE);
     if (_subscriber == NULL)
     {
         fprintf(stderr,"Problem creating subscriber.\n");
@@ -2184,9 +2206,11 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     // only force reliability on throughput/latency topics
     if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) != 0) {
         if (_IsReliable) {
-            dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
+            // default: use the setting specified in the qos profile
+            // dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         }
         else {
+            // override to best-effort
             dw_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
         }
     }
