@@ -63,8 +63,10 @@ namespace PerformanceTest
             "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n" +
             "\t                          queue, default 50\n" +
             "\t-domain <ID>            - RTI DDS Domain, default 1\n      " +
-            "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles,\n" +
-            "\t                          default perftest_qos_profiles.xml\n" +
+            "\t-qosFile <filename>     - Name of XML file for DDS Qos profiles,\n" +
+            "\t                          default: perftest_qos_profiles.xml\n" +
+            "\t-qosLibrary <lib name>  - Name of QoS Library for DDS Qos profiles, \n" +
+            "\t                          default: PerftestQosLibrary\n" +
             "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>,\n" +
             "\t                          If unspecificed, use all available interfaces\n" +
             "\t-multicast              - Use multicast to send data, default not to\n" +
@@ -292,14 +294,23 @@ namespace PerformanceTest
                         return false;
                     }
                 }
-                else if ("-qosprofile".StartsWith(argv[i], true, null))
+                else if ("-qosFile".StartsWith(argv[i], true, null))
                 {
                     if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
                     {
-                        Console.Error.Write("Missing filename after -qosprofile\n");
+                        Console.Error.Write("Missing filename after -qosFile\n");
                         return false;
                     }
                     _ProfileFile = argv[i];
+                }
+                else if ("-qosLibrary".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.WriteLine("Missing library name after -qosLibrary");
+                        return false;
+                    }
+                    _ProfileLibraryName = argv[i];
                 }
                 else if ("-multicast".StartsWith(argv[i], true, null))
                 {
@@ -1296,7 +1307,7 @@ namespace PerformanceTest
             }
 
             // Configure DDSDomainParticipant QOS
-            _factory.get_participant_qos_from_profile(qos, "PerftestQosLibrary", "BaseProfileQos");
+            _factory.get_participant_qos_from_profile(qos, _ProfileLibraryName, "BaseProfileQos");
 
             if (_secureUseSecure) {
                 // validate arguments
@@ -1311,7 +1322,7 @@ namespace PerformanceTest
             if ( _peer_host_count > 0 ) {
                 Console.Error.Write("Initial peers: ");
                 for ( int i = 0; i < _peer_host_count; ++i) {
-                    Console.Error.Write(_peer_host[i]+" ");
+                    Console.Error.Write(_peer_host[i] + " ");
                 }
                 Console.Error.Write("\n");
                 qos.discovery.initial_peers.ensure_length(
@@ -1322,7 +1333,6 @@ namespace PerformanceTest
             }
 
             // set transports to use
-            qos.transport_builtin.mask = (int)DDS.TransportBuiltinKind.TRANSPORTBUILTIN_UDPv4;
             if (_UseTcpOnly)
             {
                 qos.transport_builtin.mask = (int)DDS.TransportBuiltinKindMask.TRANSPORTBUILTIN_MASK_NONE;
@@ -1417,7 +1427,7 @@ namespace PerformanceTest
             {
 
                 _publisher = _participant.create_publisher_with_profile(
-                    "PerftestQosLibrary", "BaseProfileQos", null, DDS.StatusMask.STATUS_MASK_NONE);
+                    _ProfileLibraryName, "BaseProfileQos", null, DDS.StatusMask.STATUS_MASK_NONE);
 
                 if (_publisher == null)
                 {
@@ -1426,7 +1436,7 @@ namespace PerformanceTest
                 }
 
                 _subscriber = _participant.create_subscriber_with_profile(
-                    "PerftestQosLibrary", "BaseProfileQos", null, DDS.StatusMask.STATUS_MASK_NONE);
+                    _ProfileLibraryName, "BaseProfileQos", null, DDS.StatusMask.STATUS_MASK_NONE);
 
                 if (_subscriber == null)
                 {
@@ -1771,10 +1781,12 @@ namespace PerformanceTest
             {
                 if (_IsReliable)
                 {
-                    dw_qos.reliability.kind = DDS.ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
+                    // default: use the setting specified in the qos profile
+                    // dw_qos.reliability.kind = DDS.ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
                 }
                 else
                 {
+                    // override to best-effort
                     dw_qos.reliability.kind = DDS.ReliabilityQosPolicyKind.BEST_EFFORT_RELIABILITY_QOS;
                 }
             }
@@ -2245,7 +2257,8 @@ namespace PerformanceTest
         private static string SECUREPERMISIONFILEPUB = "./resource/secure/signed_PerftestPermissionsPub.xml";
         private static string SECUREPERMISIONFILESUB = "./resource/secure/signed_PerftestPermissionsSub.xml";
         private static string SECURELIBRARYNAME = "nddssecurity";
-        private const string _ProfileLibraryName = "PerftestQosLibrary";
+
+        private string _ProfileLibraryName = "PerftestQosLibrary";
 
         private DDS.DomainParticipantFactory _factory = null;
         private DDS.DomainParticipant        _participant = null;

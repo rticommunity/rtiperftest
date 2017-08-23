@@ -201,7 +201,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** ``true`` (use positive ACKs)
 
-   See ``-qosprofile <filename>`` option for more information.
+   See ``-qosFile <filename>`` option for more information.
 
 -  ``-noPrintIntervals``
 
@@ -211,7 +211,7 @@ Test Parameters for Publishing and Subscribing Applications
    application, and after receiving every latency echo in the publishing
    application.
 
--  ``-qosprofile <filename>``
+-  ``-qosFile <filename>``
 
    Path to the XML file containing DDS QoS profiles.
 
@@ -230,6 +230,12 @@ Test Parameters for Publishing and Subscribing Applications
    See comments in ``perftest_qos_profiles.xml``, as well as
    **Configuring QoS with XML, Chapter 17** in the *RTI Connext DDS Core
    Libraries* User’s Manual.
+
+- ``qosLibrary <library name>``
+
+    Name of QoS Library for DDS Qos profiles
+
+    **Default:** ``PerftestQosLibrary``
 
 -  ``-noXmlQos``
 
@@ -352,7 +358,10 @@ Test Parameters Only for Publishing Applications
    Allows you to limit the test duration by specifying the number of
    seconds to run the test.
 
-   **Default:** feature is not set.
+   The first condition triggered will finish the test: ``-numIter`` or
+   ``-executionTime <sec>``.
+
+   **Default:** 0 (i.e. don't set execution time)
 
 -  ``-latencyCount <count>``
 
@@ -361,8 +370,8 @@ Test Parameters Only for Publishing Applications
    See Number of Iterations vs. Latency Count.
 
    **Default:** ``-1`` (if ``-latencyTest`` is not specified,
-   automatically adjust to 10000; if -latency Test is specified,
-   automatically adjust to 1).
+   automatically adjusted to 10000 or ``-numIter`` whichever is less; 
+   if -latency Test is specified, automatically adjusted to 1).
 
    **Range:** must be ``<= -numIter``
 
@@ -386,7 +395,9 @@ Test Parameters Only for Publishing Applications
    If you set ``scan`` = ``true``, you cannot set this option (See
    ``-scan``).
 
-   | **Default:** ``0`` (infinite)
+   | **Default:** ``100000000`` for throughput tests or ``10000000``
+                   for latency tests (when ``-latencyTest`` is specified);
+                   also, see ``-executionTime``
    | **Range:** ``latencyCount`` (adjusted value) or higher (see
      ``-latencyCount <count>``).
 

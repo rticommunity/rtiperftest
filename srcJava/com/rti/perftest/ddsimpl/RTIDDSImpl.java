@@ -193,8 +193,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n" +
             "\t                          queue, default 50\n" +
             "\t-domain <ID>            - RTI DDS Domain, default 1\n" +
-            "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles, default\n" +
-            "\t                          perftest_qos_profiles.xml\n" +
+            "\t-qosFile <filename>     - Name of XML file for DDS Qos profiles,\n" +
+            "\t                          default: perftest_qos_profiles.xml\n" +
+            "\t-qosLibrary <lib name>  - Name of QoS Library for DDS Qos profiles, \n" +
+            "\t                          default: PerftestQosLibrary\n" +
             "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>.\n" +
             "\t                          If unspecified, use all available interfaces\n" +
             "\t-multicast              - Use multicast to send data, default not to\n"+
@@ -312,7 +314,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         // Configure DDSDomainParticipant QOS
         DomainParticipantQos qos = new DomainParticipantQos();
-        _factory.get_participant_qos_from_profile(qos, "PerftestQosLibrary" , "BaseProfileQos");
+        _factory.get_participant_qos_from_profile(qos, PROFILE_LIBRARY_NAME, "BaseProfileQos");
 
         if (_secureUseSecure) {
             // validate arguments
@@ -338,8 +340,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
             qos.discovery.multicast_receive_addresses.clear();
         }
 
-        qos.transport_builtin.mask = TransportBuiltinKind.UDPv4;
-        
         // set transports to use
         if (_useTcpOnly) {
             qos.transport_builtin.mask = TransportBuiltinKind.MASK_NONE;
@@ -409,16 +409,16 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         // Create the Publisher and Subscriber
         {
-            _publisher = _participant.create_publisher_with_profile(
-                "PerftestQosLibrary", "BaseProfileQos", null, StatusKind.STATUS_MASK_NONE);
+            _publisher = _participant.create_publisher_with_profile(PROFILE_LIBRARY_NAME, "BaseProfileQos", null,
+                    StatusKind.STATUS_MASK_NONE);
 
             if (_publisher == null) {
                 System.err.print("Problem creating publisher.\n");
                 return false;
             }
 
-            _subscriber = _participant.create_subscriber_with_profile(
-                "PerftestQosLibrary", "BaseProfileQos", null, StatusKind.STATUS_MASK_NONE);
+            _subscriber = _participant.create_subscriber_with_profile(PROFILE_LIBRARY_NAME, "BaseProfileQos", null,
+                    StatusKind.STATUS_MASK_NONE);
 
             if (_subscriber == null) {
                 System.err.print("Problem creating subscriber.\n");
@@ -887,9 +887,11 @@ public final class RTIDDSImpl<T> implements IMessaging {
         // Configure reliability
         if (!PerfTest.ANNOUNCEMENT_TOPIC_NAME.equals(topicName)) {
             if (_isReliable) {
-                dwQos.reliability.kind = ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
+                // default: use the setting specified in the qos profile
+                // dwQos.reliability.kind = ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
  
             } else {
+                // override to best-effort
                 dwQos.reliability.kind =
                     ReliabilityQosPolicyKind.BEST_EFFORT_RELIABILITY_QOS;
             }
@@ -1232,12 +1234,18 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     System.err.print("Bad domain id\n");
                     return false;
                 }
-            } else if ("-qosprofile".toLowerCase().startsWith(argv[i].toLowerCase())) {
+            } else if ("-qosFile".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.print("Missing filename after -qosprofile\n");
+                    System.err.print("Missing filename after -qosFile\n");
                     return false;
                 }
                 _profileFile = argv[i];
+            } else if ("-qosLibrary".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <library name> after -qosLibrary\n");
+                    return false;
+                }
+                PROFILE_LIBRARY_NAME = argv[i];
             } else if ("-nomulticast".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isMulticast = false;
             } else if ("-multicast".toLowerCase().startsWith(argv[i].toLowerCase())) {

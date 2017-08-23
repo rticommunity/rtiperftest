@@ -51,6 +51,31 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+Changed name for command-line option from ``-qosProfile`` to ``-qosFile``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting from this release, the ``-qosProfile`` command-line parameter changes
+the name to become ``-qosFile`` to better reflect its use.
+
+Added command-line parameter ``-qosLibrary``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting from this release, the QoS Library can be selected using this option.
+
+This command-line option, combined with the ``-qosFile`` allows the use of custom
+QoS profiles which inherits from the default one (``perftest_qos_profiles.xml``).
+
+A simple example is provided here: ``resource/profile_examples/custom_perftest_qos_profiles.xml``.
+
+Default values for ``Reliability`` and ``Transport`` can be modified via xml
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting from this release, the Reliability and Transport settings are not set
+via code for the different languages, but in the xml profile. This allows the user to
+easily modify these settings without the need of recompiling.
+
+These settings can still be modified via command-line parameters.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
