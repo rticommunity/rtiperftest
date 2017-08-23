@@ -100,7 +100,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
             _MessagingImpl = new RTIDDSImpl<TestData_t>();
         }
     } else {
-        std::cerr << "[Info] Using unbounded Sequences, memory_manager " << _useUnbounded << "." << std::endl;
+        std::cerr << "[Info] Using unbounded Sequences, allocation_threshold " << _useUnbounded << "." << std::endl;
         if (_isKeyed) {
             std::cerr << "[Info] Using keyed Data." << std::endl;
             _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
@@ -257,9 +257,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                          default perftest.ini\n"
         "\t-dataLen <bytes>        - Set length of payload for each send\n"
         "\t                          default 100.\n"
-        "\t-unbounded <managerMemory> - Use unbounded Sequences\n"
-        "\t                             default if bounded,  managerMemory not set.\n"
-        "\t                             default if unbounded, managerMemory is 63000.\n"
+        "\t-unbounded <allocation_threshold> - Use unbounded Sequences\n"
+        "\t                                    <allocation_threshold> is optional, default 2*dataLen up to 63000 Bytes.\n"
         "\t-numIter <count>        - Set number of messages to send, default is\n"
         "\t                          100000000 for Throughput tests or 10000000\n"
         "\t                          for Latency tests. See -executionTime.\n"
@@ -269,8 +268,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                          -WriteInstance parameter cannot be bigger than the number of instances.\n"
         "\t                          default 'Round-Robin schedule'\n"
         "\t-sleep <millisec>       - Time to sleep between each send, default 0\n"
-        "\t-spin <count>           - Number of times to run in spin loop between\n"
-        "\t                          each send, default 0 (Deprecated)\n"
         "\t-latencyCount <count>   - Number of samples (or batches) to send before\n"
         "\t                          a latency ping packet is sent, default\n"
         "\t                          10000 if -latencyTest is not specified,\n"
@@ -427,7 +424,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 throw std::logic_error("[Error] Error parsing commands");
             }
             if (_useUnbounded == 0 && _DataLen > (unsigned long)MAX_BOUNDED_SEQ_SIZE) {
-                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+                _useUnbounded = (std::min)(
+                        2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
             }
         }
         else if (IS_OPTION(argv[i], "-unbounded")) {
@@ -442,7 +440,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
             if ((i == (argc-1)) || *argv[i+1] == '-')
             {
-                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+                _useUnbounded = (std::min)(
+                        2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
             } else {
                 ++i;
                 _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
@@ -458,12 +457,14 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
                 if (_useUnbounded < (unsigned long)OVERHEAD_BYTES)
                 {
-                    std::cerr << "[Error] -unbounded must be >= " << OVERHEAD_BYTES << std::endl;
+                    std::cerr << "[Error] -unbounded must be >= " <<
+                            OVERHEAD_BYTES << std::endl;
                     throw std::logic_error("[Error] Error parsing commands");
                 }
-                if (_useUnbounded > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE)
+                if (_useUnbounded > (unsigned long)MAX_BOUNDED_SEQ_SIZE)
                 {
-                    std::cerr << "[Error] -unbounded must be <= " << MAX_PERFTEST_SAMPLE_SIZE << std::endl;
+                    std::cerr << "[Error] -unbounded must be <= " <<
+                            MAX_BOUNDED_SEQ_SIZE << std::endl;
                     throw std::logic_error("[Error] Error parsing commands");
                 }
             }

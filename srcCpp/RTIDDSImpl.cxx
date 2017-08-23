@@ -114,7 +114,6 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t                          If unspecificed, use all available interfaces\n" +
             "\t-multicast              - Use multicast to send data, default not to\n" +
             "\t                          use multicast\n" +
-            "\t-nomulticast            - Do not use multicast to send data (default)\n" +
             "\t-multicastAddress <ipaddr>   - Multicast address to use for receiving \n" +
             "\t                          latency/announcement (pub) or \n" +
             "\t                          throughtput(sub) data.\n" +
@@ -126,8 +125,6 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t                          (no batching)\n" +
             "\t-noPositiveAcks         - Disable use of positive acks in reliable \n" +
             "\t                          protocol, default use positive acks\n" +
-            "\t-keepDurationUsec <usec> - Minimum time (us) to keep samples when\n" +
-            "\t                          positive acks are disabled, default 1000 us\n" +
             "\t-enableSharedMemory     - Enable use of shared memory transport and \n" +
             "\t                          disable all the other transports, default\n" +
             "\t                          shared memory not enabled\n" +
@@ -137,21 +134,12 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t-enableTcp              - Enable use of TCP transport and disable all\n" +
             "\t                          the other transports, default do not use\n" +
             "\t                          tcp transport\n" +
-            "\t-heartbeatPeriod <sec>:<nanosec>     - Sets the regular heartbeat period\n" +
-            "\t                          for throughput DataWriter, default 0:0\n" +
-            "\t                          (use XML QoS Profile value)\n" +
-            "\t-fastHeartbeatPeriod <sec>:<nanosec> - Sets the fast heartbeat period\n" +
-            "\t                          for the throughput DataWriter, default 0:0\n" +
-            "\t                          (use XML QoS Profile value)\n" +
             "\t-durability <0|1|2|3>   - Set durability QOS, 0 - volatile,\n" +
             "\t                          1 - transient local, 2 - transient, \n" +
             "\t                          3 - persistent, default 0\n" +
             "\t-dynamicData            - Makes use of the Dynamic Data APIs instead\n" +
             "\t                          of using the generated types.\n" +
             "\t-noDirectCommunication  - Use brokered mode for persistent durability\n" +
-            "\t-instanceHashBuckets <#count> - Number of hash buckets for instances.\n" +
-            "\t                          If unspecified, same as number of\n" +
-            "\t                          instances.\n" +
             "\t-waitsetDelayUsec <usec>  - UseReadThread related. Allows you to\n" +
             "\t                          process incoming data in groups, based on the\n" +
             "\t                          time rather than individually. It can be used\n" +
@@ -255,25 +243,27 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 return false;
             }
             if (_useUnbounded == 0 && _DataLen > (unsigned long)MAX_BOUNDED_SEQ_SIZE) {
-                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+                _useUnbounded = (std::min)(
+                        2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
             }
         }
         else if (IS_OPTION(argv[i], "-unbounded")) {
             if ((i == (argc-1)) || *argv[i+1] == '-')
             {
-                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+                _useUnbounded = (std::min)(
+                        2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
             } else {
                 ++i;
                 _useUnbounded = strtol(argv[i], NULL, 10);
 
                 if (_useUnbounded <  (unsigned long)perftest_cpp::OVERHEAD_BYTES)
                 {
-                    fprintf(stderr, "-unbounded <managerMemory> must be >= %d\n",  perftest_cpp::OVERHEAD_BYTES);
+                    fprintf(stderr, "-unbounded <allocation_threshold> must be >= %d\n",  perftest_cpp::OVERHEAD_BYTES);
                     return false;
                 }
-                if (_useUnbounded > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE)
+                if (_useUnbounded > (unsigned long)MAX_BOUNDED_SEQ_SIZE)
                 {
-                    fprintf(stderr,"-unbounded <managerMemory> must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
+                    fprintf(stderr,"-unbounded <allocation_threshold> must be <= %d\n", MAX_BOUNDED_SEQ_SIZE);
                     return false;
                 }
             }
