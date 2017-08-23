@@ -64,7 +64,9 @@ namespace PerformanceTest
             "\t                          queue, default 50\n" +
             "\t-domain <ID>            - RTI DDS Domain, default 1\n      " +
             "\t-qosprofile <filename>  - Name of XML file for DDS Qos profiles,\n" +
-            "\t                          default perftest_qos_profiles.xml\n" +
+            "\t                          default: perftest_qos_profiles.xml\n" +
+            "\t-qosLibrary <lib name>  - Name of QoS Library for DDS Qos profiles, \n" +
+            "\t                          default: PerftestQosLibrary\n" +
             "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>,\n" +
             "\t                          If unspecificed, use all available interfaces\n" +
             "\t-multicast              - Use multicast to send data, default not to\n" +
@@ -300,6 +302,15 @@ namespace PerformanceTest
                         return false;
                     }
                     _ProfileFile = argv[i];
+                }
+                else if ("-qosLibrary".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing library name after -qosLibrary\n");
+                        return false;
+                    }
+                    _ProfileLibraryName = argv[i];
                 }
                 else if ("-multicast".StartsWith(argv[i], true, null))
                 {
@@ -1296,7 +1307,7 @@ namespace PerformanceTest
             }
 
             // Configure DDSDomainParticipant QOS
-            _factory.get_participant_qos_from_profile(qos, "PerftestQosLibrary", "BaseProfileQos");
+            _factory.get_participant_qos_from_profile(qos, _ProfileLibraryName, "TransportQos");
 
             if (_secureUseSecure) {
                 // validate arguments
@@ -1417,7 +1428,7 @@ namespace PerformanceTest
             {
 
                 _publisher = _participant.create_publisher_with_profile(
-                    "PerftestQosLibrary", "BaseProfileQos", null, DDS.StatusMask.STATUS_MASK_NONE);
+                    _ProfileLibraryName, "TransportQos", null, DDS.StatusMask.STATUS_MASK_NONE);
 
                 if (_publisher == null)
                 {
@@ -1426,7 +1437,7 @@ namespace PerformanceTest
                 }
 
                 _subscriber = _participant.create_subscriber_with_profile(
-                    "PerftestQosLibrary", "BaseProfileQos", null, DDS.StatusMask.STATUS_MASK_NONE);
+                    _ProfileLibraryName, "TransportQos", null, DDS.StatusMask.STATUS_MASK_NONE);
 
                 if (_subscriber == null)
                 {
@@ -1771,10 +1782,11 @@ namespace PerformanceTest
             {
                 if (_IsReliable)
                 {
+                    // default: use the setting specified in the qos profile
                     dw_qos.reliability.kind = DDS.ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
                 }
                 else
-                {
+                {	// override to best-effort
                     dw_qos.reliability.kind = DDS.ReliabilityQosPolicyKind.BEST_EFFORT_RELIABILITY_QOS;
                 }
             }

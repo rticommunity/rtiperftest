@@ -218,10 +218,16 @@ Test Parameters for Publishing and Subscribing Applications
    **Default:** ``perftest_qos_profiles.xml``
 
    | The default file contains these QoS profiles:
-   | The ``ThroughputQos``, ``LatencyQos``, and ``AnnouncementQos``
-     profiles are used by default.
+   
+   |  The ``ThroughputQos``, ``LatencyQos``, and ``AnnouncementQos``
+   |   profiles are used by default (the DDS DataWriter/DataReader entities).
+   |
    | The ``NoAckThroughputQos`` and ``NoAckLatencyQos`` profiles are
-     used if you specify ``-noPositiveAcks``.
+   |  used if you specify ``-noPositiveAcks`` (the DDS 
+   |  DataWriter/DataReader entities).
+   |
+   | The ``TransportQos`` profile is used to configure the transports (the 
+   | DDS DomainParticipant/Publisher/Subscriber entities) 
 
    **Note:** some QoS values are ‘hard-coded’ in the application,
    therefore setting them in the XML file has no effect; see the See
@@ -230,6 +236,12 @@ Test Parameters for Publishing and Subscribing Applications
    See comments in ``perftest_qos_profiles.xml``, as well as
    **Configuring QoS with XML, Chapter 17** in the *RTI Connext DDS Core
    Libraries* User’s Manual.
+
+- ``qosLibrary`` <library name>``
+
+    Name of QoS Library for DDS Qos profiles
+  
+  	**Default:** ``PerftestQosLibrary``
 
 -  ``-noXmlQos``
 
@@ -351,8 +363,11 @@ Test Parameters Only for Publishing Applications
 
    Allows you to limit the test duration by specifying the number of
    seconds to run the test.
+   
+   The first condition triggered will finish the test: ``-numIter`` or
+   execution time.
 
-   **Default:** feature is not set.
+   **Default:** 0 (i.e. don't set execution time)
 
 -  ``-latencyCount <count>``
 
@@ -361,8 +376,8 @@ Test Parameters Only for Publishing Applications
    See Number of Iterations vs. Latency Count.
 
    **Default:** ``-1`` (if ``-latencyTest`` is not specified,
-   automatically adjust to 10000; if -latency Test is specified,
-   automatically adjust to 1).
+   automatically adjust to 10000 or ``-numIter`` whichever is less; 
+   if -latency Test is specified, automatically adjust to 1).
 
    **Range:** must be ``<= -numIter``
 
@@ -386,7 +401,10 @@ Test Parameters Only for Publishing Applications
    If you set ``scan`` = ``true``, you cannot set this option (See
    ``-scan``).
 
-   | **Default:** ``0`` (infinite)
+   | **Default:** ``100000000`` for throughput tests or ``10000000``
+	               for latency tests (when ``-latencyTest`` is specified);
+	               also, see ``-executionTime``
+   
    | **Range:** ``latencyCount`` (adjusted value) or higher (see
      ``-latencyCount <count>``).
 

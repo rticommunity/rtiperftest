@@ -333,7 +333,7 @@ examples:
 
    ::
 
-       ./build.sh --platform x64Win64VS2012 --dynamic --debug
+       ./build.bat --platform x64Win64VS2012 --dynamic --debug
 
 -  Generation and compilation for a given architecture
    (``x64Win64VS2012``) for all supported languages, enabling the
@@ -341,7 +341,7 @@ examples:
 
    ::
 
-       ./build.sh --platform x64Win64VS2012 --secure --openssl-home <PATH>
+       ./build.bat --platform x64Win64VS2012 --secure --openssl-home <PATH>
 
 -  Generation and compilation for a given architecture
    (``x64Win64VS2012``) for all supported languages, enabling the
@@ -351,7 +351,7 @@ examples:
 
    ::
 
-       ./build.sh --platform x64Win64VS2012 --secure --dynamic
+       ./build.bat --platform x64Win64VS2012 --secure --dynamic
 
 -  *RTI Perftest* directory clean-up.
 
