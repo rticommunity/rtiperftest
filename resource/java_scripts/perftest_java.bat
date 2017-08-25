@@ -13,9 +13,13 @@ IF NOT DEFINED RTI_PERFTEST_ARCH (
     ECHO "[ERROR]: The RTI_PERFTEST_ARCH environment variable is not set."
     GOTO endscript
 )
+IF NOT DEFINED RTI_OPENSSL_PATH (
+    ECHO "[INFO]: The RTI_OPENSSL_PATH environment variable is not set. Needed for DTLS, TLS and RTI Security Libraries."
+)
 
 set PATH=%NDDSHOME%\lib\java;%PATH%
 set PATH=%NDDSHOME%\lib\%RTI_PERFTEST_ARCH%;%PATH%
+set PATH=%RTI_OPENSSL_PATH%\%RTI_PERFTEST_ARCH%\release\bin;%PATH%
 
 :getarg
 shift

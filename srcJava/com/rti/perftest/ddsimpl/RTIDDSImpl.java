@@ -7,6 +7,7 @@ package com.rti.perftest.ddsimpl;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 
 import com.rti.dds.domain.DomainParticipant;
@@ -83,13 +84,11 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private long     _dataLen = 100;
     private long     _useUnbounded = 0;
     private int     _domainID = 1;
-    private String  _nic = "";
     private String  _profileFile = "perftest_qos_profiles.xml";
     private boolean _isReliable = true;
     private boolean _isMulticast = false;
     private boolean _AutoThrottle = false;
     private boolean _TurboMode = false;
-    private boolean _useTcpOnly = false;
     private int     _instanceCount = 1;
     private int     _instanceMaxCountReader = -1;
     private int     _instanceHashBuckets = -1;
@@ -98,8 +97,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private int     _batchSize = 0;
     private int     _keepDurationUsec = 1000;
     private boolean _usePositiveAcks = true;
-    private boolean _useSharedMemory = false;
-    private boolean _useUdpv6 = false;
     private boolean _isDebug = false;
     private boolean _latencyTest = false;
     private boolean _isLargeData = false;
@@ -114,6 +111,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean _useCft = false;
     private int     _instancesToBeWritten = -1;
     private int[]   _CFTRange = {0, 0};
+    
+    private PerftestTransport _transport;
 
 
     private boolean _secureUseSecure = false;
@@ -151,6 +150,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
     public RTIDDSImpl(TypeHelper<T> typeHelper) {
         _myDataType = typeHelper;
+        _transport = new PerftestTransport();
     }
 
     public void dispose() {
@@ -190,70 +190,62 @@ public final class RTIDDSImpl<T> implements IMessaging {
     public void printCmdLineHelp() {
         /**************************************************************************/
         String usage_string =
-            "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n" +
-            "\t                          queue, default 50\n" +
-            "\t-domain <ID>            - RTI DDS Domain, default 1\n" +
-            "\t-qosFile <filename>     - Name of XML file for DDS Qos profiles,\n" +
-            "\t                          default: perftest_qos_profiles.xml\n" +
-            "\t-qosLibrary <lib name>  - Name of QoS Library for DDS Qos profiles, \n" +
-            "\t                          default: PerftestQosLibrary\n" +
-            "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>.\n" +
-            "\t                          If unspecified, use all available interfaces\n" +
-            "\t-multicast              - Use multicast to send data, default not to\n"+
-            "\t                          use multicast\n" + 
-            "\t-multicastAddress <ipaddr> - Multicast address to use for receiving \n" +
-            "\t                          latency/announcement (pub) and \n" +
-            "\t                          throughtput (sub) data. \n" +
-            "\t                          If unspecified: latency 239.255.1.2,\n" +
-            "\t                          announcement 239.255.1.100,\n" +
-            "\t                          throughput 239.255.1.1\n" +
-            "\t-bestEffort             - Run test in best effort mode, default reliable\n" +
-            "\t-batchSize <bytes>      - Size in bytes of batched message,\n" +
-            "\t                          default 0 (no batching)\n" +
-            "\t-noPositiveAcks         - Disable use of positive acks in reliable\n" +
-            "\t                          protocol, default use positive acks\n" +
-            "\t-enableSharedMemory     - Enable use of shared memory transport and\n" +
-            "\t                          disable all the other transports, default\n"+
-            "\t                          shared memory not enabled\n" +
-            "\t-enableUdpv6            - Enable use of the Udpv6 transport and \n" +
-            "\t                          disable all the other transports, default\n" +
-            "\t                          udpv6 not enabled\n" +
-            "\t-enableTcp              - Enable use of tcp transport and disable all\n"+
-            "\t                          the other transports, default do not use\n" +
-            "\t                          tcp transport\n" +
-            "\t-durability <0|1|2|3>   - Set durability QOS, 0 - volatile,\n" +
-            "\t                          1 - transient local, 2 - transient,\n" +
-            "\t                          3 - persistent, default 0\n" +
-            "\t-dynamicData            - Makes use of the Dynamic Data APIs instead\n" +
-            "\t                          of using the generated types.\n" +
-            "\t-noDirectCommunication  - Use brokered mode for persistent durability\n" +
-            "\t-waitsetDelayUsec <usec>   - UseReadThread related. Allows you to\n" +
-            "\t                          process incoming data in groups, based on the\n" +
-            "\t                          time rather than individually. It can be used \n" +
-            "\t                          combined with -waitsetEventCount,\n" +
-            "\t                          default 100 usec\n" +
-            "\t-waitsetEventCount <count> - UseReadThread related. Allows you to\n" +
-            "\t                          process incoming data in groups, based on the\n" +
-            "\t                          number of samples rather than individually. It\n" +
-            "\t                          can be used combined with -waitsetDelayUsec,\n" +
-            "\t                          default 5\n" +
-            "\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n"+
-            "\t                          throughput DataWriter (pub)\n"+
-            "\t-enableTurboMode        - Enables the TurboMode feature in the throughput\n"+
-            "\t                          DataWriter (pub)\n" +
-            "\t-asynchronous           - Use asynchronous writer\n" +
-            "\t                          Default: Not set\n" +
-            "\t-flowController <flow>  - In the case asynchronous writer use a specific flow controller.\n" +
-            "\t                          There are several flow controller predefined:\n" +
-            "\t                          ";
-            for (String flow : valid_flow_controller)
-            {
-                usage_string += flow + "  ";
+            "\t-sendQueueSize <number>       - Sets number of samples (or batches) in send\n" +
+            "\t                                queue, default 50\n" +
+            "\t-domain <ID>                  - RTI DDS Domain, default 1\n" +
+            "\t-qosFile <filename>           - Name of XML file for DDS Qos profiles,\n" +
+            "\t                                default: perftest_qos_profiles.xml\n" +
+            "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
+            "\t                                default: PerftestQosLibrary\n" +
+            "\t-multicast                    - Use multicast to send data, default not to\n" +
+            "\t                                use multicast\n" +
+            "\t-multicastAddress <ipaddr>    - Multicast address to use for receiving \n" +
+            "\t                                latency/announcement (pub) or \n" +
+            "\t                                throughtput(sub) data.\n" +
+            "\t                                If unspecified: latency 239.255.1.2,\n" +
+            "\t                                                announcement 239.255.1.100,\n" +
+            "\t                                                throughput 239.255.1.1\n" +
+            "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
+            "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
+            "\t                                (no batching)\n" +
+            "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
+            "\t                                protocol, default use positive acks\n" +
+            "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +
+            "\t                                1 - transient local, 2 - transient, \n" +
+            "\t                                3 - persistent, default 0\n" +
+            "\t-dynamicData                  - Makes use of the Dynamic Data APIs instead\n" +
+            "\t                                of using the generated types.\n" +
+            "\t-noDirectCommunication        - Use brokered mode for persistent durability\n" +
+            "\t-waitsetDelayUsec <usec>      - UseReadThread related. Allows you to\n" +
+            "\t                                process incoming data in groups, based on the\n" +
+            "\t                                time rather than individually. It can be used\n" +
+            "\t                                combined with -waitsetEventCount,\n" +
+            "\t                                default 100 usec\n" +
+            "\t-waitsetEventCount <count>    - UseReadThread related. Allows you to\n" +
+            "\t                                process incoming data in groups, based on the\n" +
+            "\t                                number of samples rather than individually. It\n" +
+            "\t                                can be used combined with -waitsetDelayUsec,\n" +
+            "\t                                default 5\n" +
+            "\t-enableAutoThrottle           - Enables the AutoThrottling feature in the\n" +
+            "\t                                throughput DataWriter (pub)\n" +
+            "\t-enableTurboMode              - Enables the TurboMode feature in the\n" +
+            "\t                                throughput DataWriter (pub)\n" +
+            "\t-asynchronous                 - Use asynchronous writer\n" +
+            "\t                                Default: Not set\n" +
+            "\t-flowController <flow>        - In the case asynchronous writer use a specific flow controller.\n" +
+            "\t                                There are several flow controller predefined:\n" +
+            "\t                                ";
+            for (String flow : valid_flow_controller) {
+                usage_string += "\"" + flow + "\" ";
             }
             usage_string += "\n" +
-            "\t                          Default: set default\n" +
-            "\t-peer <address>          - Adds a peer to the peer host address list.\n" +
-            "\t                          This argument may be repeated to indicate multiple peers\n" +
+            "\t                                Default: \"default\" (If using asynchronous).\n" +
+            "\t-peer <address>               - Adds a peer to the peer host address list.\n" +
+            "\t                                This argument may be repeated to indicate multiple peers\n" +
+            "\n";
+            usage_string += _transport.helpMessageString();
+            usage_string += "\n" +
+            "\t======================= SECURE Specific Options =======================\n\n" +
             "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n" +
             "\t-secureSign                   - Sign (HMAC) discovery and user data\n" +
             "\t-secureEncryptData            - Encrypt topic (user) data\n" +
@@ -275,9 +267,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
     }
 
     public boolean initialize(int argc, String[] argv) {
-        
+
         _typename = _myDataType.getTypeSupport().get_type_nameI();
-        
+
         _factory = DomainParticipantFactory.get_instance();
 
         if (!parseConfig(argc, argv)) {
@@ -327,11 +319,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         // set initial peers and not use multicast
         if ( _peer_host_count > 0 ) {
-            System.out.print("Initial peers: ");
+            System.out.println("Initial peers: ");
             for ( int i =0; i< _peer_host_count; ++i) {
-                System.out.print(_peer_host[i]+" ");
+                System.out.println("\t" + _peer_host[i]);
             }
-            System.out.print("\n");
             qos.discovery.initial_peers.clear();
             qos.discovery.initial_peers.setMaximum(_peer_host_count);
             for (int i = 0; i < _peer_host_count; ++i) {
@@ -340,19 +331,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
             qos.discovery.multicast_receive_addresses.clear();
         }
 
-        // set transports to use
-        if (_useTcpOnly) {
-            qos.transport_builtin.mask = TransportBuiltinKind.MASK_NONE;
-            PropertyQosPolicyHelper.add_property(
-                    qos.property,
-                    "dds.transport.load_plugins",
-                    "dds.transport.TCPv4.tcp1",
-                    false);
-        } else if (_useSharedMemory) {
-            qos.transport_builtin.mask = TransportBuiltinKind.SHMEM;
-        } else if (_useUdpv6) {
-            qos.transport_builtin.mask = TransportBuiltinKind.UDPv6;
+        if(!_transport.configureTransport(qos)) {
+            return false;
         }
+        _transport.printTransportConfigurationSummary();
 
         if (_AutoThrottle) {
             PropertyQosPolicyHelper.add_property(
@@ -360,34 +342,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     "dds.domain_participant.auto_throttle.enable",
                     "true",
                     false);
-        }
-
-        if (_useSharedMemory) {
-
-            // Shmem transport properties
-            int receivedMessageCountMax = 2 * 1024 * 1024 / (int)_dataLen;
-            if (receivedMessageCountMax < 1) {
-                receivedMessageCountMax = 1;
-            }
-
-            PropertyQosPolicyHelper.add_property(
-                qos.property,
-                "dds.transport.shmem.builtin.received_message_count_max",
-                String.valueOf(receivedMessageCountMax),
-                false);
-        } else {
-            if (_nic.length() > 0) {
-                PropertyQosPolicyHelper.add_property(
-                        qos.property,
-                        "dds.transport.UDPv4.builtin.parent.allow_interfaces",
-                        _nic,
-                        false);
-                PropertyQosPolicyHelper.add_property(
-                        qos.property,
-                        "dds.transport.TCPv4.tcp1.parent.allow_interfaces",
-                        _nic,
-                        false);
-            }
         }
 
         // Creates the participant
@@ -1083,7 +1037,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
         }
 
-        if (!_useTcpOnly && !_useSharedMemory && _isMulticast) {
+        if (_transport.allowsMulticast() && _isMulticast) {
             String multicast_addr;
 
             if (PerfTest.THROUGHPUT_TOPIC_NAME.equals(topicName)) {
@@ -1258,12 +1212,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 THROUGHPUT_MULTICAST_ADDR = argv[i];
                 LATENCY_MULTICAST_ADDR = argv[i];
                 ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
-            } else if ("-nic".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.print("Missing <address> after -nic\n");
-                    return false;
-                }
-                _nic = argv[i];
             } else if ("-bestEffort".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isReliable = false;
             } else if ("-durability".toLowerCase().startsWith(argv[i].toLowerCase()))
@@ -1362,30 +1310,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
             else if ("-noPositiveAcks".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _usePositiveAcks = false;
-            } else if ("-enableTcp".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                if (_useSharedMemory) {
-                    System.err.print("-enableSharedMemory was already set, ignoring -enableTcp\n");
-                } else if (_useUdpv6) {
-                    System.err.print("-useUdpv6 was already set, ignoring -enableTcp\n");
-                } else {
-                    _useTcpOnly = true;
-                }
-            } else if ("-enableSharedMemory".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                if (_useUdpv6) {
-                    System.err.print("-useUdpv6 was already set, ignoring -enableSharedMemory\n");
-                } else if (_useTcpOnly) {
-                    System.err.print("-enableTcp was already set, ignoring -enableSharedMemory\n");
-                } else {
-                    _useSharedMemory = true;
-                }
-            } else if ("-enableUdpv6".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                if (_useSharedMemory) {
-                    System.err.print("-enableSharedMemory was already set, ignoring -enableUdpv6\n");
-                } else if (_useTcpOnly) {
-                    System.err.print("-enableTcp was already set, ignoring -enableUdpv6\n");
-                } else {
-                    _useUdpv6 = true;
-                }
             } else if ("-verbosity".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 try {
                     int verbosityLevel = Integer.parseInt(argv[++i]);
@@ -1588,8 +1512,16 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 }
                 _instancesToBeWritten = Integer.parseInt(argv[i]);
             } else {
-                System.err.print(argv[i] + ": not recognized\n");
-                return false;
+                
+                Integer value = _transport.getTransportCmdLineArgs().get(argv[i]);
+                if (value != null) {
+                    // Increment the counter with the number of arguments
+                    // obtained from the map.
+                    i = i + value.intValue();
+                } else {
+                    System.err.print(argv[i] + ": not recognized\n");
+                    return false;
+                }
             }
         }
 
@@ -1651,7 +1583,16 @@ public final class RTIDDSImpl<T> implements IMessaging {
         if (_isPublisher && _useCft) {
             System.err.println("Content Filtered Topic is not a parameter in the publisher side.\n");
         }
-
+        if (_transport != null) {
+            if(!_transport.parseTransportOptions(argc, argv)) {
+                System.err.println("Failure parsing the transport options.");
+                return false;
+            }
+        } else {
+            System.err.println("_transport is not initialized");
+            return false;
+        }
+        
         return true;
     }
 

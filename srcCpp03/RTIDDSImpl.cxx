@@ -53,7 +53,6 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _SendQueueSize(50),
         _DataLen(100),
         _DomainID(1),
-        _Nic(""),
         _ProfileFile("perftest_qos_profiles.xml"),
         _TurboMode(false),
         _UseXmlQos(true),
@@ -68,10 +67,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _DirectCommunication(true),
         _KeepDurationUsec(1000),
         _UsePositiveAcks(true),
-        _UseSharedMemory(false),
-        _UseUdpv6(false),
         _LatencyTest(false),
-        _UseTcpOnly(false),
         _IsDebug(false),
         _isLargeData(false),
         _isScan(false),
@@ -126,92 +122,83 @@ void RTIDDSImpl<T>::Shutdown()
  */
 template <typename T>
 void RTIDDSImpl<T>::PrintCmdLineHelp() {
-    std::string usage_string =
-            "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n"
-            "\t                          queue, default 50\n"
-            "\t-domain <ID>            - RTI DDS Domain, default 1\n"
-            "\t-qosFile <filename>     - Name of XML file for DDS Qos profiles, \n"
-            "\t                          default: perftest_qos_profiles.xml\n"
-            "\t-qosLibrary <lib name>  - Name of QoS Library for DDS Qos profiles, \n"
-            "\t                          default: PerftestQosLibrary\n"
-            "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>.\n"
-            "\t                          If unspecified, use all available interfaces\n"
-            "\t-multicast              - Use multicast to send data, default not to\n"
-            "\t                          use multicast\n"
-            "\t-multicastAddress <ipaddr>   - Multicast address to use for receiving \n"
-            "\t                          latency/announcement (pub) or \n"
-            "\t                          throughtput(sub) data.\n"
-            "\t                          If unspecified: latency 239.255.1.2,\n"
-            "\t                                          announcement 239.255.1.100,\n"
-            "\t                                          throughput 239.255.1.1\n"
-            "\t-bestEffort             - Run test in best effort mode, default reliable\n"
-            "\t-batchSize <bytes>      - Size in bytes of batched message, default 0\n"
-            "\t                          (no batching)\n"
-            "\t-noPositiveAcks         - Disable use of positive acks in reliable \n"
-            "\t                          protocol, default use positive acks\n"
-            "\t-enableSharedMemory     - Enable use of shared memory transport and \n"
-            "\t                          disable all the other transports, default\n"
-            "\t                          shared memory not enabled\n"
-            "\t-enableUdpv6            - Enable use of the Udpv6 transport and \n"
-            "\t                          disable all the other transports, default\n"
-            "\t                          udpv6 not enabled\n"
-            "\t-enableTcp              - Enable use of TCP transport and disable all\n"
-            "\t                          the other transports, default do not use\n"
-            "\t                          tcp transport\n"
-            "\t-durability <0|1|2|3>   - Set durability QOS, 0 - volatile,\n"
-            "\t                          1 - transient local, 2 - transient, \n"
-            "\t                          3 - persistent, default 0\n"
-            "\t-dynamicData            - Makes use of the Dynamic Data APIs instead\n"
-            "\t                          of using the generated types.\n"
-            "\t-noDirectCommunication  - Use brokered mode for persistent durability\n"
-            "\t-waitsetDelayUsec <usec>  - UseReadThread related. Allows you to\n"
-            "\t                          process incoming data in groups, based on the\n"
-            "\t                          time rather than individually. It can be used\n"
-            "\t                          combined with -waitsetEventCount,\n"
-            "\t                          default 100 usec\n"
-            "\t-waitsetEventCount <count> - UseReadThread related. Allows you to\n"
-            "\t                          process incoming data in groups, based on the\n"
-            "\t                          number of samples rather than individually. It\n"
-            "\t                          can be used combined with -waitsetDelayUsec,\n"
-            "\t                          default 5\n"
-            "\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n"
-            "\t                          throughput DataWriter (pub)\n"
-            "\t-enableTurboMode        - Enables the TurboMode feature in the\n"
-            "\t                          throughput DataWriter (pub)\n"
-            "\t-noXmlQos               - Skip loading the qos profiles from the xml\n"
-            "\t                          profile\n"
-            "\t-asynchronous           - Use asynchronous writer\n"
-            "\t                          Default: Not set\n"
-            "\t-flowController <flow>  - In the case asynchronous writer use a specific flow controller.\n"
-            "\t                          There are several flow controller predefined:\n"
-            "\t                          ";
+    std::string usage_string = std::string(
+            "\t-sendQueueSize <number>       - Sets number of samples (or batches) in send\n") +
+            "\t                                queue, default 50\n" +
+            "\t-domain <ID>                  - RTI DDS Domain, default 1\n" +
+            "\t-qosFile <filename>           - Name of XML file for DDS Qos profiles, \n"
+            "\t                                default: perftest_qos_profiles.xml\n"
+            "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n"
+            "\t                                default: PerftestQosLibrary\n"
+            "\t-multicast                    - Use multicast to send data, default not to\n" +
+            "\t                                use multicast\n" +
+            "\t-multicastAddress <ipaddr>    - Multicast address to use for receiving \n" +
+            "\t                                latency/announcement (pub) or \n" +
+            "\t                                throughtput(sub) data.\n" +
+            "\t                                If unspecified: latency 239.255.1.2,\n" +
+            "\t                                                announcement 239.255.1.100,\n" +
+            "\t                                                throughput 239.255.1.1\n" +
+            "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
+            "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
+            "\t                                (no batching)\n" +
+            "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
+            "\t                                protocol, default use positive acks\n" +
+            "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +
+            "\t                                1 - transient local, 2 - transient, \n" +
+            "\t                                3 - persistent, default 0\n" +
+            "\t-dynamicData                  - Makes use of the Dynamic Data APIs instead\n" +
+            "\t                                of using the generated types.\n" +
+            "\t-noDirectCommunication        - Use brokered mode for persistent durability\n" +
+            "\t-waitsetDelayUsec <usec>      - UseReadThread related. Allows you to\n" +
+            "\t                                process incoming data in groups, based on the\n" +
+            "\t                                time rather than individually. It can be used\n" +
+            "\t                                combined with -waitsetEventCount,\n" +
+            "\t                                default 100 usec\n" +
+            "\t-waitsetEventCount <count>    - UseReadThread related. Allows you to\n" +
+            "\t                                process incoming data in groups, based on the\n" +
+            "\t                                number of samples rather than individually. It\n" +
+            "\t                                can be used combined with -waitsetDelayUsec,\n" +
+            "\t                                default 5\n" +
+            "\t-enableAutoThrottle           - Enables the AutoThrottling feature in the\n" +
+            "\t                                throughput DataWriter (pub)\n" +
+            "\t-enableTurboMode              - Enables the TurboMode feature in the\n" +
+            "\t                                throughput DataWriter (pub)\n" +
+            "\t-noXmlQos                     - Skip loading the qos profiles from the xml\n" +
+            "\t                                profile\n" +
+            "\t-asynchronous                 - Use asynchronous writer\n" +
+            "\t                                Default: Not set\n" +
+            "\t-flowController <flow>        - In the case asynchronous writer use a specific flow controller.\n" +
+            "\t                                There are several flow controller predefined:\n" +
+            "\t                                ";
     for(unsigned int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
-        usage_string+=valid_flow_controller[i] + " ";
+        usage_string += "\"" + valid_flow_controller[i] + "\" ";
     }
-    usage_string +=
-            "\n"
-            "\t                          Default: set default\n"
-            "\t-peer <address>          - Adds a peer to the peer host address list.\n"
-            "\t                          This argument may be repeated to indicate multiple peers\n";
-#ifdef RTI_SECURE_PERFTEST
-    usage_string +=
-            "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n"
-            "\t-secureSign                   - Sign (HMAC) discovery and user data\n"
-            "\t-secureEncryptData            - Encrypt topic (user) data\n"
-            "\t-secureEncryptSM              - Encrypt RTPS submessages\n"
-            "\t-secureGovernanceFile <file>  - Governance file. If specified, the authentication,\n"
-            "\t                                signing, and encryption arguments are ignored. The\n"
-            "\t                                governance document configuration will be used instead\n"
-            "\t                                Default: built using the secure options.\n"
-            "\t-securePermissionsFile <file> - Permissions file <optional>\n"
-            "\t                                Default: \"./resource/secure/signed_PerftestPermissionsSub.xml\"\n"
-            "\t-secureCertAuthority <file>   - Certificate authority file <optional>\n"
-            "\t                                Default: \"./resource/secure/cacert.pem\"\n"
-            "\t-secureCertFile <file>        - Certificate file <optional>\n"
-            "\t                                Default: \"./resource/secure/sub.pem\"\n"
-            "\t-securePrivateKey <file>      - Private key file <optional>\n"
+    usage_string += std::string("\n") +
+            "\t                                Default: \"default\" (If using asynchronous).\n" +
+            "\t-peer <address>               - Adds a peer to the peer host address list.\n" +
+            "\t                                This argument may be repeated to indicate multiple peers\n" +
+            "\n";
+    usage_string += _transport.helpMessageString();
+  #ifdef RTI_SECURE_PERFTEST
+    usage_string += std::string("\n") +
+            "\t======================= SECURE Specific Options =======================\n\n" +
+            "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n" +
+            "\t-secureSign                   - Sign (HMAC) discovery and user data\n" +
+            "\t-secureEncryptData            - Encrypt topic (user) data\n" +
+            "\t-secureEncryptSM              - Encrypt RTPS submessages\n" +
+            "\t-secureGovernanceFile <file>  - Governance file. If specified, the authentication,\n" +
+            "\t                                signing, and encryption arguments are ignored. The\n" +
+            "\t                                governance document configuration will be used instead\n" +
+            "\t                                Default: built using the secure options.\n" +
+            "\t-securePermissionsFile <file> - Permissions file <optional>\n" +
+            "\t                                Default: \"./resource/secure/signed_PerftestPermissionsSub.xml\"\n" +
+            "\t-secureCertAuthority <file>   - Certificate authority file <optional>\n" +
+            "\t                                Default: \"./resource/secure/cacert.pem\"\n" +
+            "\t-secureCertFile <file>        - Certificate file <optional>\n" +
+            "\t                                Default: \"./resource/secure/sub.pem\"\n" +
+            "\t-securePrivateKey <file>      - Private key file <optional>\n" +
             "\t                                Default: \"./resource/secure/subkey.pem\"\n";
-#endif
+  #endif
 
     std::cerr << usage_string << std::endl;
 }
@@ -379,13 +366,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             THROUGHPUT_MULTICAST_ADDR = argv[i];
             LATENCY_MULTICAST_ADDR = argv[i];
             ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
-        } else if (IS_OPTION(argv[i], "-nic")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <address> after -nic"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _Nic = argv[i];
         } else if (IS_OPTION(argv[i], "-bestEffort")) {
             _IsReliable = false;
         } else if (IS_OPTION(argv[i], "-durability")) {
@@ -460,44 +440,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _KeepDurationUsec = strtol(argv[i], NULL, 10);
         } else if (IS_OPTION(argv[i], "-noPositiveAcks")) {
             _UsePositiveAcks = false;
-        } else if (IS_OPTION(argv[i], "-enableSharedMemory")) {
-            if (_UseUdpv6) {
-                std::cerr << "[Info] -useUdpv6 was already set, "
-                          << "ignoring -enableSharedMemory"
-                          << std::endl;
-            } else if (_UseTcpOnly) {
-                std::cerr << "[Info] -enableTcp was already set, "
-                          << "ignoring -enableSharedMemory"
-                          << std::endl;
-            } else {
-                _UseSharedMemory = true;
-            }
-        } else if (IS_OPTION(argv[i], "-enableUdpv6")){
-            if (_UseSharedMemory) {
-                std::cerr << "[Info] -enableSharedMemory was already set, "
-                          << "ignoring -enableUdpv6"
-                          << std::endl;
-            } else if (_UseTcpOnly) {
-                std::cerr << "[Info] -enableTcp was already set, "
-                          << "ignoring -enableUdpv6"
-                          << std::endl;
-            } else {
-                _UseUdpv6 = true;
-            }
-        } else if (IS_OPTION(argv[i], "-enableTcp")) {
-            if (_UseSharedMemory) {
-                std::cerr << "[Info] -enableSharedMemory was already set, "
-                          << "ignoring -enableTcp"
-                          << std::endl;
-            } else if (_UseUdpv6) {
-                std::cerr << "[Info] -useUdpv6 was already set, "
-                          << "ignoring -enableTcp"
-                          << std::endl;
-            } else {
-                _UseTcpOnly = true;
-            }
-        }
-        else if (IS_OPTION(argv[i], "-verbosity")) {
+        } else if (IS_OPTION(argv[i], "-verbosity")) {
             errno = 0;
             int verbosityLevel = strtol(argv[++i], NULL, 10);
 
@@ -716,6 +659,20 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
       #endif
         else {
             if (i > 0) {
+                std::map<std::string, unsigned int> transportCmdOpts =
+                        PerftestTransport::getTransportCmdLineArgs();
+
+                std::map<std::string, unsigned int>::iterator it =
+                        transportCmdOpts.find(argv[i]);
+                if(it != transportCmdOpts.end()) {
+                    /*
+                     * Increment the counter with the number of arguments
+                     * obtained from the map.
+                     */
+                    i = i + it->second;
+                    continue;
+                }
+
                 std::cerr << argv[i] << " not recognized" << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
@@ -785,6 +742,11 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     if (_isPublisher && _useCft) {
         std::cerr << "Content Filtered Topic is not a parameter in the publisher side.\n" << std::endl;
     }
+
+    if(!_transport.parseTransportOptions(argc, argv)) {
+        throw std::logic_error("Failure parsing the transport options.");
+        return false;
+    };
 
     return true;
 }
@@ -1563,38 +1525,13 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         qos_discovery.multicast_receive_addresses(dds::core::StringSeq());
     }
 
-    // set transports to use
-    if (_UseTcpOnly) {
-        qos << TransportBuiltin(TransportBuiltinMask::none());
-        properties["dds.transport.load_plugins"] = "dds.transport.TCPv4.tcp1";
-    } else if (_UseSharedMemory) {
-        qos << TransportBuiltin(TransportBuiltinMask::shmem());
-    } else if (_UseUdpv6) {
-        qos << TransportBuiltin(TransportBuiltinMask::udpv6());
-    }
+    if (!configureTransport(_transport, qos, properties)){
+        return false;
+    };
+    _transport.printTransportConfigurationSummary();
 
     if (_AutoThrottle) {
         properties["dds.domain_participant.auto_throttle.enable"] = "true";
-    }
-
-    if (_UseSharedMemory) {
-
-        // SHMEM transport properties
-        int received_message_count_max = 1024 * 1024 * 2 / (int)_DataLen;
-        if (received_message_count_max < 1) {
-            received_message_count_max = 1;
-        }
-
-        std::ostringstream string_stream_object;
-        string_stream_object << received_message_count_max;
-        properties["dds.transport.shmem.builtin.received_message_count_max"] =
-                string_stream_object.str();
-    } else {
-
-        if ((_Nic != NULL) && (strlen(_Nic) > 0)) {
-            properties["dds.transport.UDPv4.builtin.parent.allow_interfaces"] = _Nic;
-            properties["dds.transport.TCPv4.tcp1.parent.allow_interfaces"] = _Nic;
-        }
     }
 
     qos << qos_discovery;
@@ -1849,8 +1786,6 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     }
 }
 
-
-
 /*********************************************************
  * CreateCFT
  * The CFT allows to the subscriber to receive a specific instance or a range of them.
@@ -2025,7 +1960,11 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (!_UseTcpOnly && !_UseSharedMemory && _IsMulticast) {
+    if (_transport.transportConfig.kind != TRANSPORT_TCPv4
+            && _transport.transportConfig.kind != TRANSPORT_TLSv4
+            && _transport.transportConfig.kind != TRANSPORT_WANv4
+            && _transport.transportConfig.kind != TRANSPORT_SHMEM
+            && _IsMulticast) {
 
        const char *multicast_addr;
 
