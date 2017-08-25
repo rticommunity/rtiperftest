@@ -107,8 +107,8 @@ Added command-line parameter ``-qosLibrary``
 Starting with this release, the QoS Library can be selected using the new
 ``-qosLibrary`` option.
 
-This command-line option, combined with the -qosFile allows you to use custom
-QoS profiles that inherit from the default one (perftest_qos_profiles.xml).
+This command-line option, combined with the ``-qosFile`` allows you to use custom
+QoS profiles that inherit from the default one (``perftest_qos_profiles.xml``).
 
 A simple example is provided here:
 ``resource/profile_examples/custom_perftest_qos_profiles.xml``.
@@ -148,7 +148,7 @@ in such case, the behavior will remain the same.
 
 Same behavior will be applied for ``-TurboMode``.
 
-Improved -scan command-line parameter functionality
+Improved ``-scan`` command-line parameter functionality
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In previous releases, using '-scan' will execute the execution of *RTI Perftest*
@@ -158,19 +158,19 @@ fixed, now the command line parameter allow the user to introduce a set of sizes
 which will be used. Besides, now the '-executionTime' parameter is used to every
 size on the scan mode.
 
-Reviewed command line parameters
+Reviewed command-line parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In order to reduce the number of parameters RTI Perftest accepts, we reviewed
+In order to simplify the number of parameters *RTI Perftest* accepts, we reviewed
 and deprecated the following parameters. These parameters will still work for
-this release, but they will be deleted for the next one.
+this release, but they will be deleted or altered for future ones.
 
--  Removed ``-instanceHashBuckets <n>``
+-  Deprecated ``-instanceHashBuckets <n>``
 
 The associated value will be the same as the number of instances.
 
--  Removed ``-keepDurationUsec <usec>``
+-  Deprecated ``-keepDurationUsec <usec>``
 
-removes, set dynamically in the QoS in the case of use noPositiveAcks.
+Value will be set in the QoS in the case of use noPositiveAcks.
 
 -  Combined ``-multicast`` and ``-multicastAddress <address>``.
 
@@ -178,7 +178,7 @@ The result command can be used as ``-multicast`` keeping its original behavior
 or as ``-multicast <address>``, now enabling multicast and using <address> as
 the multicast receive address.
 
--  Removed ``-nomulticast``
+-  Deprecated ``-nomulticast``
 
 The default behavior will not use multicast, so this command line option was
 redundant.
@@ -189,15 +189,14 @@ Instead ``managerMemory``, use ``allocator_threshold``, since it better reflects
 the use of the value. New default is ``2 * dataLen`` up to ``63000``.
 Improved the documentation associated.
 
--  Removed ``-heartbeatPeriod <sec>:<nanosec>`` and
+-  Deprecated ``-heartbeatPeriod <sec>:<nanosec>`` and
    ``-fastHeartbeatPeriod <sec>:<nanosec>`` command-line options
 
-This parameter can still be changed via xml.
+These parameters can still be changed via xml.
 
--  Removed ``-spin <count>``.
+-  Deprecated ``-spin <count>``.
 
-Changes in the values for the different QoS associated with these command-line
-parameters can still be changed via QoS profile.
+This option made no sense anymore after the -sleep and -pubRate alternatives were implemented.
 
 Release Notes v2.2
 ------------------
