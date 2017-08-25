@@ -113,11 +113,6 @@ void setTransportVerbosity(
             return;
         }
 
-        fprintf(stderr,
-                "%s Verbosity set to: %s\n",
-                classLoggingString.c_str(),
-                transport.verbosity.c_str());
-
         qos_properties[propertyName] = transport.verbosity;
     }
 }

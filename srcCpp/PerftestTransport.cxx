@@ -154,12 +154,6 @@ bool setTransportVerbosity(
             return true;
         }
 
-        fprintf(
-                stderr,
-                "%s Verbosity set to: %s\n",
-                classLoggingString.c_str(),
-                transport.verbosity.c_str());
-
         return addPropertyToParticipantQos(
                 qos,
                 propertyName,
