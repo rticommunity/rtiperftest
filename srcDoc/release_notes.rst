@@ -79,8 +79,8 @@ parameters to specify:
 
 See *Test Parameters* section for more information about how to configure TLS.
 
-Enhanced TCP funtionalities
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Enhanced TCP functionalities
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As part of the changes for adding support for *TLS*, more functionalities have
 been included for *TCP*, including options to specify:
