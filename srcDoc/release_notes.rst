@@ -116,7 +116,14 @@ A simple example is provided here:
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
-"-nic" command-line parameter not working when using UDPv6 transport
+Fixed ``-peer`` command-line parameter for C#
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, using the ``-peer`` option in the C# implementation would
+cause *RTI Perftest* to fail due to an issue reserving memory. This behavior
+has been fixed.
+
+``-nic`` command-line parameter not working when using UDPv6 transport
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In previous releases the ``-nic`` command-line parameter was not taken
