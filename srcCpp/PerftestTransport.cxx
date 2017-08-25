@@ -628,6 +628,7 @@ std::map<std::string, unsigned int> PerftestTransport::getTransportCmdLineArgs()
     cmdLineArgsMap["-allowInterfaces"] = 1;
     cmdLineArgsMap["-transportServerBindPort"] = 1;
     cmdLineArgsMap["-transportVerbosity"] = 1;
+    cmdLineArgsMap["-transportWan"] = 0;
     cmdLineArgsMap["-transportPublicAddress"] = 1;
     cmdLineArgsMap["-transportCertAuthority"] = 1;
     cmdLineArgsMap["-transportCertFile"] = 1;
