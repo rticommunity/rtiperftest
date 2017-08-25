@@ -1515,11 +1515,10 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     Discovery qos_discovery = qos.policy<Discovery>(); //get all the Discovery
     // set initial peers and not use multicast
     if ( _peer_host_count > 0 ) {
-        std::cout << "[INFO]: Initial peers: ";
+        std::cout << "Initial peers:" << std::endl;
         for ( int i =0; i< _peer_host_count; ++i) {
-            std::cout << _peer_host[i] << " ";
+            std::cout << "\t" << _peer_host[i] << std::endl;
         }
-        std::cout << std::endl;
         _peer_host.resize(_peer_host_count);
         qos_discovery.initial_peers(_peer_host);
         qos_discovery.multicast_receive_addresses(dds::core::StringSeq());
