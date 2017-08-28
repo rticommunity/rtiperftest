@@ -8,23 +8,25 @@
 
 #include <string>
 #include <algorithm>
+#include <map>
 #include "MessagingIF.h"
 #include "perftestSupport.h"
 #include "ndds/ndds_cpp.h"
+#include "PerftestTransport.h"
 
-#define RTIPERFTEST_MAX_PEERS            (1024)
+#define RTIPERFTEST_MAX_PEERS 1024
 
 template <typename T>
 class RTIDDSImpl : public IMessaging
 {
   public:
 
-    RTIDDSImpl()
+    RTIDDSImpl() :
+        _transport()
     {
         _SendQueueSize = 50;
         _DataLen = 100;
         _DomainID = 1;
-        _Nic = "";
         _ProfileFile = "perftest_qos_profiles.xml";
         _AutoThrottle = false;
         _TurboMode = false;
@@ -39,10 +41,7 @@ class RTIDDSImpl : public IMessaging
         _DirectCommunication = true;
         _KeepDurationUsec = 1000;
         _UsePositiveAcks = true;
-        _UseSharedMemory = false;
-        _UseUdpv6 = false;
         _LatencyTest = false;
-        _UseTcpOnly = false;
         _IsDebug = false;
         _isLargeData = false;
         _isScan = false;
@@ -56,7 +55,6 @@ class RTIDDSImpl : public IMessaging
         _instancesToBeWritten = -1; // By default use round-robin (-1)
         _CFTRange[0] = 0;
         _CFTRange[1] = 0;
-
 
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure = false;
@@ -84,7 +82,7 @@ class RTIDDSImpl : public IMessaging
         _reader = NULL;
         _typename = T::TypeSupport::get_type_name();
 
-	_pongSemaphore = NULL;
+        _pongSemaphore = NULL;
     }
 
     ~RTIDDSImpl()
@@ -93,6 +91,7 @@ class RTIDDSImpl : public IMessaging
     }
 
     void PrintCmdLineHelp();
+
 
     bool ParseConfig(int argc, char *argv[]);
 
@@ -113,16 +112,17 @@ class RTIDDSImpl : public IMessaging
 
   private:
 
+    // Specific functions to configure the Security plugin
   #ifdef RTI_SECURE_PERFTEST
     bool configureSecurePlugin(DDS_DomainParticipantQos& dpQos);
     void printSecureArgs();
     bool validateSecureArgs();
   #endif
 
+
     int          _SendQueueSize;
     unsigned long _DataLen;
     int          _DomainID;
-    const char  *_Nic;
     const char  *_ProfileFile;
     bool         _TurboMode;
     bool         _UseXmlQos;
@@ -137,10 +137,7 @@ class RTIDDSImpl : public IMessaging
     bool         _DirectCommunication;
     unsigned int _KeepDurationUsec;
     bool         _UsePositiveAcks;
-    bool         _UseSharedMemory;
-    bool         _UseUdpv6;
     bool         _LatencyTest;
-    bool         _UseTcpOnly;
     bool         _IsDebug;
     bool         _isLargeData;
     bool         _isScan;
@@ -154,6 +151,8 @@ class RTIDDSImpl : public IMessaging
     bool         _useCft;
     int          _instancesToBeWritten;
     unsigned int _CFTRange[2];
+
+    PerftestTransport _transport;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

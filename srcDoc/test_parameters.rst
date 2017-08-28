@@ -112,19 +112,6 @@ Test Parameters for Publishing and Subscribing Applications
    See Choosing a Domain ID and Creating Multiple Domains, Section
    8.3.4, in the RTI Connext DDS Core Libraries User’s Manual.
 
--  ``-enableSharedMemory``
-
-   Enable the shared memory transport.
-
-   **Default:** shared memory transport is disabled
-
--  ``-enableTcp``
-
-   Disable all the other transports and use only TCP transport for
-   communication.
-
-   **Default:** TCP transport not enabled
-
 -  ``-help``
 
    Print an informative message with all the available command-line
@@ -164,18 +151,6 @@ Test Parameters for Publishing and Subscribing Applications
    | **latency:** ``239.255.1.2``
    | **throughput:** ``239.255.1.1``
    | **announcement:** ``239.255.1.100``
-
--  ``-nic <ipaddr>``
-
-   Restrict RTI Connext DDS to sending output through this interface.
-   This can be the IP address of any available network interface on the
-   machine.
-
-   By default, RTI Connext DDS will attempt to contact all possible
-   subscribing nodes on all available network interfaces. Even on a
-   multi-NIC machine, the performance over one NIC vs. another may be
-   different (e.g., Gbit vs. 100 Mbit), so choosing the correct NIC is
-   critical for a proper test.
 
 -  ``-noDirectCommunication``
 
@@ -321,6 +296,97 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:**
    ``Not set. RTI Perftest will use the default initial peers (localhost, shared-memory and multicast).``
+
+Transport Specific Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  ``-transport <TRANSPORT NAME>``
+
+   Set the transport to be used. The rest of the transports will be disabled.
+   
+   | **Options:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS`` and ``WAN``.
+   | **Default:** ``Transport defined in the XML profile. (UDPv4 if no changes).``  
+   
+-  ``-nic <ipaddr>``
+
+  Restrict RTI Connext DDS to sending output through this interface.
+  This can be the IP address of any available network interface on the
+  machine.
+
+  By default, RTI Connext DDS will attempt to contact all possible
+  subscribing nodes on all available network interfaces. Even on a
+  multi-NIC machine, the performance over one NIC vs. another may be
+  different (e.g., Gbit vs. 100 Mbit), so choosing the correct NIC is
+  critical for a proper test.
+
+-  ``-transportVerbosity <level>``
+
+  Especific verbosity of the transport plugin.
+
+  | **Default:** ``0`` (Errors only).
+
+-  ``-transportServerBindPort <port>``
+
+    For TCP and TLS. Port used by the transport to accept TCP/TLS connections.
+
+    | **Default:** ``7400``
+
+-  ``-transportWan``
+
+    For TCP and TLS. Use tcp across LANs and firewalls.
+
+    | **Default:** ``Not set``, LAN Mode.
+
+-  ``-transportPublicAddress <ipaddr>``
+
+    For TCP and TLS. Public IP address and port (WAN address and port) (separated by ‘:’)
+    associated with the transport instantiation.
+
+    | **Default:** ``Not set``
+
+-  ``-transportWanServerAddress <ipaddr>``
+
+    For WAN transport. Address where to find the WAN Server.
+
+    | **Default:** ``Not set``
+    
+-  ``-transportWanServerPort <ipaddr>``
+
+    For WAN transport. Port where to find the WAN Server.
+
+    | **Default:** ``Not set``
+    
+-  ``-transportWanId <id>``
+
+    For WAN transport. Id to be used for the WAN transport. Required when using WAN.
+
+    | **Default:** ``Not set``
+
+-  ``-transportSecureWan``
+
+    For WAN transport. Use DTLS security over WAN.
+
+    | **Default:** ``Not set``
+
+-  ``-transporCertAuthority <file>``
+
+    For TLS, DTLS and Secure WAN. Certificate authority file to be used by TLS.
+
+    | **Default for Publisher:** ``./resource/secure/pub.pem``
+    | **Default for Subscriber:** ``./resource/secure/sub.pem``
+
+-  ``-transporCertFile <file>``
+
+    For TLS, DTLS and Secure WAN. Certificate file to be used by TLS.
+
+    | **Default:** ``./resource/secure/cacert.pem``
+
+-  ``-transporPrivateKey <file>``
+
+    For TLS, DTLS and Secure WAN. Private key file to be used by TLS.
+
+    | **Default for Publisher:** ``./resource/secure/pubkey.pem``
+    | **Default for Subscriber:** ``./resource/secure/subkey.pem``
 
 Test Parameters Only for Publishing Applications 
 -------------------------------------------------
@@ -800,7 +866,7 @@ often does not improve throughput, at least for 1-Gigabyte networks.
 Auto Tuning and Turbo Mode 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*RTI Connext DDS 5.1.0* includes two features that allow the middleware
+*RTI Connext DDS* includes since 5.1.0 two features that allow the middleware
 to auto-tune the communications to achieve better performance. These
 features are **Auto Throttling** and **Turbo Mode**. For more
 information about both features, refer to **Sections 10.4, Auto

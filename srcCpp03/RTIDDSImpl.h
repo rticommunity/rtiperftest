@@ -16,8 +16,9 @@
 #endif
 #include "rti/config/Logger.hpp"
 #include <dds/dds.hpp>
+#include "PerftestTransport.h"
 
-#define RTIPERFTEST_MAX_PEERS            (1024)
+#define RTIPERFTEST_MAX_PEERS 1024
 
 template <typename T>
 class RTIDDSImpl : public IMessaging
@@ -63,7 +64,6 @@ class RTIDDSImpl : public IMessaging
     int          _SendQueueSize;
     unsigned long _DataLen;
     int          _DomainID;
-    const char  *_Nic;
     const char  *_ProfileFile;
     bool         _TurboMode;
     bool         _UseXmlQos;
@@ -78,10 +78,7 @@ class RTIDDSImpl : public IMessaging
     bool         _DirectCommunication;
     unsigned int _KeepDurationUsec;
     bool         _UsePositiveAcks;
-    bool         _UseSharedMemory;
-    bool         _UseUdpv6;
     bool         _LatencyTest;
-    bool         _UseTcpOnly;
     bool         _IsDebug;
     bool         _isLargeData;
     bool         _isScan;
@@ -95,6 +92,8 @@ class RTIDDSImpl : public IMessaging
     bool         _useCft;
     int          _instancesToBeWritten;
     std::vector<unsigned int> _CFTRange;
+
+    PerftestTransport _transport;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

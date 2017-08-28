@@ -3,11 +3,11 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-using DDS;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using DDS;
 
 namespace PerformanceTest
 {
@@ -59,72 +59,65 @@ namespace PerformanceTest
         public void PrintCmdLineHelp()
         {
             string usage_string =
-                /**************************************************************************/
-            "\t-sendQueueSize <number> - Sets number of samples (or batches) in send\n" +
-            "\t                          queue, default 50\n" +
-            "\t-domain <ID>            - RTI DDS Domain, default 1\n      " +
-            "\t-qosFile <filename>     - Name of XML file for DDS Qos profiles,\n" +
-            "\t                          default: perftest_qos_profiles.xml\n" +
-            "\t-qosLibrary <lib name>  - Name of QoS Library for DDS Qos profiles, \n" +
-            "\t                          default: PerftestQosLibrary\n" +
-            "\t-nic <ipaddr>           - Use only the nic specified by <ipaddr>,\n" +
-            "\t                          If unspecificed, use all available interfaces\n" +
-            "\t-multicast              - Use multicast to send data, default not to\n" +
-            "\t                          use multicast\n" +
-            "\t-multicastAddress <ipaddr> - Multicast address to use for receiving\n" +
-            "\t                          latency/announcement (pub) or \n" +
-            "\t                          throughtput (sub) data.\n" +
-            "\t                          If unspecified: latency 239.255.1.2,\n" +
-            "\t                          announcement 239.255.1.100,\n" +
-            "\t                          throughput 239.255.1.1\n" +
-            "\t-bestEffort             - Run test in best effort mode,\n" +
-            "\t                          default reliable\n" +
-            "\t-batchSize <bytes>      - Size in bytes of batched message, default 0\n" +
-            "\t                          (no batching)\n" +
-            "\t-noPositiveAcks         - Disable use of positive acks in reliable\n" +
-            "\t                          protocol, default use positive acks\n" +
-            "\t-enableSharedMemory     - Enable use of shared memory transport and,\n" +
-            "\t                          disable all the other transports, default\n" +
-            "\t                          shared memory not enabled\n" +
-            "\t-enableUdpv6            - Enable use of the Udpv6 transport and \n" +
-            "\t                          disable all the other transports, default\n" +
-            "\t                          udpv6 not enabled\n" +
-            "\t-enableTcp              - Enable use of tcp transport and disable all\n" +
-            "\t                          the other transports, default do not use\n" +
-            "\t                          tcp transport\n" +
-            "\t-dynamicData            - Makes use of the Dynamic Data APIs instead\n" +
-            "\t                          of using the generated types.\n" +
-            "\t-durability <0|1|2|3>   - Set durability QOS,\n" +
-            "\t                          0 - volatile, 1 - transient local,\n" +
-            "\t                          2 - transient, 3 - persistent, default 0\n" +
-            "\t-noDirectCommunication  - Use brokered mode for persistent durability\n" +
-            "\t-waitsetDelayUsec <usec>   - UseReadThread related. Allows you to\n" +
-            "\t                          process incoming data in groups, based on the\n" +
-            "\t                          time rather than individually. It can be used\n" +
-            "\t                          combined with -waitsetEventCount,\n" +
-            "\t                          default 100 usec\n" +
-            "\t-waitsetEventCount <count> - UseReadThread related. Allows you to\n" +
-            "\t                          process incoming data in groups, based on the\n" +
-            "\t                          number of samples rather than individually.\n" +
-            "\t                          It can be used combined with\n" +
-            "\t                          -waitsetDelayUsec, default 5\n" +
-            "\t-enableAutoThrottle     - Enables the AutoThrottling feature in the\n" +
-            "\t                          throughput DataWriter (pub)\n" +
-            "\t-enableTurboMode        - Enables the TurboMode feature in the\n" +
-            "\t                          throughput DataWriter (pub)\n" +
-            "\t-asynchronous           - Use asynchronous writer\n" +
-            "\t                          Default: Not set\n" +
-            "\t-flowController <flow>  - In the case asynchronous writer use a specific flow controller.\n" +
-            "\t                          There are several flow controller predefined:\n" +
-            "\t                          ";
+            "\t-sendQueueSize <number>       - Sets number of samples (or batches) in send\n" +
+            "\t                                queue, default 50\n" +
+            "\t-domain <ID>                  - RTI DDS Domain, default 1\n" +
+            "\t-qosFile <filename>           - Name of XML file for DDS Qos profiles,\n" +
+            "\t                                default: perftest_qos_profiles.xml\n" +
+            "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
+            "\t                                default: PerftestQosLibrary\n" +
+            "\t-multicast                    - Use multicast to send data, default not to\n" +
+            "\t                                use multicast\n" +
+            "\t-multicastAddress <ipaddr>    - Multicast address to use for receiving \n" +
+            "\t                                latency/announcement (pub) or \n" +
+            "\t                                throughtput(sub) data.\n" +
+            "\t                                If unspecified: latency 239.255.1.2,\n" +
+            "\t                                                announcement 239.255.1.100,\n" +
+            "\t                                                throughput 239.255.1.1\n" +
+            "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
+            "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
+            "\t                                (no batching)\n" +
+            "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
+            "\t                                protocol, default use positive acks\n" +
+            "\t-keepDurationUsec <usec>      - Minimum time (us) to keep samples when\n" +
+            "\t                                positive acks are disabled, default 1000 us\n" +
+            "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +
+            "\t                                1 - transient local, 2 - transient, \n" +
+            "\t                                3 - persistent, default 0\n" +
+            "\t-dynamicData                  - Makes use of the Dynamic Data APIs instead\n" +
+            "\t                                of using the generated types.\n" +
+            "\t-noDirectCommunication        - Use brokered mode for persistent durability\n" +
+            "\t-waitsetDelayUsec <usec>      - UseReadThread related. Allows you to\n" +
+            "\t                                process incoming data in groups, based on the\n" +
+            "\t                                time rather than individually. It can be used\n" +
+            "\t                                combined with -waitsetEventCount,\n" +
+            "\t                                default 100 usec\n" +
+            "\t-waitsetEventCount <count>    - UseReadThread related. Allows you to\n" +
+            "\t                                process incoming data in groups, based on the\n" +
+            "\t                                number of samples rather than individually. It\n" +
+            "\t                                can be used combined with -waitsetDelayUsec,\n" +
+            "\t                                default 5\n" +
+            "\t-enableAutoThrottle           - Enables the AutoThrottling feature in the\n" +
+            "\t                                throughput DataWriter (pub)\n" +
+            "\t-enableTurboMode              - Enables the TurboMode feature in the\n" +
+            "\t                                throughput DataWriter (pub)\n" +
+            "\t-asynchronous                 - Use asynchronous writer\n" +
+            "\t                                Default: Not set\n" +
+            "\t-flowController <flow>        - In the case asynchronous writer use a specific flow controller.\n" +
+            "\t                                There are several flow controller predefined:\n" +
+            "\t                                ";
             foreach (string flow in valid_flow_controller)
             {
-                usage_string += flow + "  ";
+                usage_string += "\"" + flow + "\" ";
             }
-            usage_string += "\n\t                          Default: set default\n" +
-            "\t                          Default: set default\n" +
-            "\t-peer <address>          - Adds a peer to the peer host address list.\n" +
-            "\t                          This argument may be repeated to indicate multiple peers\n" +
+            usage_string += "\n" +
+            "\t                                Default: \"default\" (If using asynchronous).\n" +
+            "\t-peer <address>               - Adds a peer to the peer host address list.\n" +
+            "\t                                This argument may be repeated to indicate multiple peers\n" +
+            "\n";
+            usage_string += _transport.HelpMessageString();
+            usage_string += "\n" +
+            "\t======================= SECURE Specific Options =======================\n\n" +
             "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n" +
             "\t-secureSign                   - Sign (HMAC) discovery and user data\n" +
             "\t-secureEncryptData            - Encrypt topic (user) data\n" +
@@ -331,15 +324,6 @@ namespace PerformanceTest
                     LATENCY_MULTICAST_ADDR = argv[i];
                     ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
                 }
-                else if ("-nic".StartsWith(argv[i], true, null))
-                {
-                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
-                    {
-                        Console.Error.Write("Missing <address> after -nic\n");
-                        return false;
-                    }
-                    _Nic = argv[i];
-                }
                 else if ("-bestEffort".StartsWith(argv[i], true, null))
                 {
                     _IsReliable = false;
@@ -446,33 +430,6 @@ namespace PerformanceTest
                 else if ("-noPositiveAcks".StartsWith(argv[i], true, null))
                 {
                     _UsePositiveAcks = false;
-                }
-                else if ("-enableSharedMemory".StartsWith(argv[i], true, null)) {
-                    if (_UseUdpv6) {
-                        Console.Error.Write("-useUdpv6 was already set, ignoring -enableSharedMemory\n");
-                    } else if (_UseTcpOnly) {
-                        Console.Error.Write("-enableTcp was already set, ignoring -enableSharedMemory\n");
-                    } else {
-                        _UseSharedMemory = true;
-                    }
-                }
-                else if ("-enableUdpv6".StartsWith(argv[i], true, null)) {
-                    if (_UseSharedMemory) {
-                        Console.Error.Write("-enableSharedMemory was already set, ignoring -enableUdpv6\n");
-                    } else if (_UseTcpOnly) {
-                        Console.Error.Write("-enableTcp was already set, ignoring -enableUdpv6\n");
-                    } else {
-                        _UseUdpv6 = true;
-                    }
-                }
-                else if ("-enableTcp".StartsWith(argv[i], true, null)) {
-                    if (_UseSharedMemory) {
-                        Console.Error.Write("-enableSharedMemory was already set, ignoring -enableTcp\n");
-                    } else if (_UseUdpv6) {
-                        Console.Error.Write("-useUdpv6 was already set, ignoring -enableTcp\n");
-                    } else {
-                        _UseTcpOnly = true;
-                    }
                 }
                 else if ("-verbosity".StartsWith(argv[i], true, null))
                 {
@@ -734,8 +691,11 @@ namespace PerformanceTest
                         Console.Error.Write("-cft <start> value cannot be bigger than <end>\n");
                         return false;
                     }
-                } else if ("-writeInstance".StartsWith(argv[i], true, null)) {
-                    if ((i == (argc - 1)) || argv[++i].StartsWith("-")) {
+                }
+                else if ("-writeInstance".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
                         Console.Error.Write("Missing <number> after -writeInstance\n");
                         return false;
                     }
@@ -744,9 +704,21 @@ namespace PerformanceTest
                         Console.Error.Write("Bad <start> for  -cft\n");
                         return false;
                     }
-                } else {
-                    Console.Error.Write(argv[i] + ": not recognized\n");
-                    return false;
+                }
+                else
+                {
+                    try
+                    {
+                        int value = PerftestTransport.GetTransportCmdLineArgs()[argv[i]];
+                        // Increment the counter with the number of arguments
+                        // obtained from the map.
+                        i = i + value;
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        Console.Error.Write(argv[i] + ": not recognized\n");
+                        return false;
+                    }
                 }
             }
 
@@ -793,7 +765,7 @@ namespace PerformanceTest
              */
             if (_BatchSize > 0 && _BatchSize <= (int)_DataLen)
             {
-                Console.Error.WriteLine("Batching disabled: BatchSize (" + _BatchSize
+                Console.Error.WriteLine("Batching dissabled: BatchSize (" + _BatchSize
                         + ") is equal or smaller than the sample size (" + _DataLen
                         + ").");
                 _BatchSize = 0;
@@ -808,6 +780,20 @@ namespace PerformanceTest
             }
             if (_isPublisher && _useCft) {
                 Console.Error.WriteLine("Content Filtered Topic is not a parameter in the publisher side.\n");
+            }
+
+            if (_transport != null)
+            {
+                if (!_transport.ParseTransportOptions(argv))
+                {
+                    Console.Error.WriteLine("Failure parsing the transport options.");
+                    return false;
+                }
+            }
+            else
+            {
+                Console.Error.WriteLine("_transport is not initialized");
+                return false;
             }
 
             return true;
@@ -1251,6 +1237,7 @@ namespace PerformanceTest
         public RTIDDSImpl(ITypeHelper<T> myDataTypeHelper)
         {
             _DataTypeHelper = myDataTypeHelper;
+            _transport = new PerftestTransport();
         }
 
         /*********************************************************
@@ -1320,49 +1307,21 @@ namespace PerformanceTest
 
             // set initial peers and not use multicast
             if ( _peer_host_count > 0 ) {
-                Console.Error.Write("Initial peers: ");
-                for ( int i = 0; i < _peer_host_count; ++i) {
-                    Console.Error.Write(_peer_host[i] + " ");
+                Console.Error.WriteLine("Initial peers:");
+                for ( int i =0; i< _peer_host_count; ++i) {
+                    Console.Error.WriteLine("\t" + _peer_host[i]);
                 }
-                Console.Error.Write("\n");
-                qos.discovery.initial_peers.ensure_length(
-                        _peer_host_count,
-                        _peer_host_count);
+                qos.discovery.initial_peers.ensure_length(_peer_host_count, _peer_host_count);
                 qos.discovery.initial_peers.from_array(_peer_host);
                 qos.discovery.multicast_receive_addresses = new DDS.StringSeq();
             }
 
-            // set transports to use
-            if (_UseTcpOnly)
+            if (!_transport.ConfigureTransport(qos))
             {
-                qos.transport_builtin.mask = (int)DDS.TransportBuiltinKindMask.TRANSPORTBUILTIN_MASK_NONE;
-                try
-                {
-                    DDS.PropertyQosPolicyHelper.add_property(qos.property_qos,
-                                             "dds.transport.load_plugins",
-                                             "dds.transport.TCPv4.tcp1",
-                                             false);
-                }
-                catch (DDS.Exception e)
-                {
-                    Console.Error.WriteLine("! unable to set property dds.transport.load_plugins");
-                    Console.Error.WriteLine(e.Message);
-                }
+                return false;
             }
-            else
-            {
-                if (_UseSharedMemory)
-                {
-                    qos.transport_builtin.mask = (int)DDS.TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM;
-                }
-                else
-                {
-                    if (_UseUdpv6)
-                    {
-                        qos.transport_builtin.mask = (int)DDS.TransportBuiltinKind.TRANSPORTBUILTIN_UDPv6;
-                    }
-                }
-            }
+            _transport.PrintTransportConfigurationSummary();
+
             if (_AutoThrottle) {
             	try
                 {
@@ -1377,35 +1336,7 @@ namespace PerformanceTest
                     Console.Error.WriteLine(e.Message);
                 }
             }
-            if (_UseSharedMemory)
-            {
-                int received_message_count_max = 1024 * 1024 * 2 / (int)_DataLen;
-                if (received_message_count_max < 1) {
-                    received_message_count_max = 1;
-                }
 
-                DDS.PropertyQosPolicyHelper.add_property(
-                        qos.property_qos,
-                        "dds.transport.shmem.builtin.received_message_count_max",
-                        received_message_count_max.ToString(),
-                        false);
-            }
-            else
-            {
-                if (_Nic.Length > 0)
-                {
-                    DDS.PropertyQosPolicyHelper.add_property(
-                            qos.property_qos,
-                            "dds.transport.UDPv4.builtin.parent.allow_interfaces",
-                            _Nic,
-                            false);
-                    DDS.PropertyQosPolicyHelper.add_property(
-                            qos.property_qos,
-                            "dds.transport.TCPv4.tcp1.parent.allow_interfaces",
-                            _Nic,
-                            false);
-                }
-            }
             // Creates the participant
             _participant = _factory.create_participant(
                 _DomainID, qos, listener,
@@ -2117,7 +2048,7 @@ namespace PerformanceTest
                 }
             }
 
-            if (!_UseTcpOnly && !_UseSharedMemory && _IsMulticast)
+            if (_transport.AllowsMulticast() && _IsMulticast)
             {
                 string multicast_addr;
 
@@ -2188,7 +2119,6 @@ namespace PerformanceTest
         private ulong    _DataLen = 100;
         private ulong     _useUnbounded = 0;
         private int    _DomainID = 1;
-        private string _Nic = "";
         private string _ProfileFile = "perftest_qos_profiles.xml";
         private bool   _IsReliable = true;
         private bool   _IsMulticast = false;
@@ -2202,10 +2132,7 @@ namespace PerformanceTest
         private bool    _DirectCommunication = true;
         private uint   _KeepDurationUsec = 1000;
         private bool   _UsePositiveAcks = true;
-        private bool   _UseSharedMemory = false;
-        private bool   _UseUdpv6 = false;
         private bool    _LatencyTest = false;
-        private bool   _UseTcpOnly = false;
         private bool   _isLargeData = false;
         private bool   _isScan = false;
         private bool   _isPublisher = false;
@@ -2218,6 +2145,7 @@ namespace PerformanceTest
         private bool    _useCft = false;
         private int     _instancesToBeWritten = -1;
         private int[]   _CFTRange = {0,0};
+        private PerftestTransport _transport;
 
 
 

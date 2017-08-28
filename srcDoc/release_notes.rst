@@ -51,33 +51,90 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
-Changed name for command-line option from ``-qosProfile`` to ``-qosFile``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Added Support for DTLS
+^^^^^^^^^^^^^^^^^^^^^^
 
-Starting from this release, the ``-qosProfile`` command-line parameter changes
-the name to become ``-qosFile`` to better reflect its use.
+*RTI Perftest* now supports the use of the *DTLS* plugin. The out of the
+box configuration allows the application to work using *DTLS* by just specifying
+``-enableDtls``, however we also included command-line parameters to specify:
 
-Added command-line parameter ``-qosLibrary``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+- The Certificates and the public/private keys.
+- The verbosity.
 
-Starting from this release, the QoS Library can be selected using this option.
+See *Test Parameters* section for more information about how to configure DTLS.
 
-This command-line option, combined with the ``-qosFile`` allows the use of custom
-QoS profiles which inherits from the default one (``perftest_qos_profiles.xml``).
+Added Support for TLS
+^^^^^^^^^^^^^^^^^^^^^
 
-A simple example is provided here: ``resource/profile_examples/custom_perftest_qos_profiles.xml``.
+*RTI Perftest* now supports the use of *TLS* on top of the *TCP* plugin.
+The out of the box configuration allows the application to work using *TLS*
+by just specifying ``-enableTls``, however we also included command-line
+parameters to specify:
+
+- The Certificates and the public/private keys.
+- The verbosity.
+- The Server Bind Port.
+- The use of WAN mode.
+- The use of a Public Address.
+
+See *Test Parameters* section for more information about how to configure TLS.
+
+Enhanced TCP functionalities
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As part of the changes for adding support for *TLS*, more functionalities have
+been included for *TCP*, including options to specify:
+
+- The verbosity.
+- The Server Bind Port.
+- The use of WAN mode.
+- The use of a Public Address.
+
+See *Test Parameters* section for more information about how to configure TCP.
 
 Default values for ``Reliability`` and ``Transport`` can be modified via xml
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Starting from this release, the Reliability and Transport settings are not set
-via code for the different languages, but in the xml profile. This allows the user to
-easily modify these settings without the need of recompiling.
+Starting with this release, the Reliability and Transport settings are not set
+via code for the different languages, but are set in the XML profile. 
+This allows you to easily modify these settings without needing to recompile.
 
 These settings can still be modified via command-line parameters.
 
+Added command-line parameter ``-qosLibrary``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting with this release, the QoS Library can be selected using the new
+``-qosLibrary`` option.
+
+This command-line option, combined with the ``-qosFile`` allows you to use custom
+QoS profiles that inherit from the default one (``perftest_qos_profiles.xml``).
+
+A simple example is provided here:
+``resource/profile_examples/custom_perftest_qos_profiles.xml``.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
+
+Fixed ``-peer`` command-line parameter for C#
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, using the ``-peer`` option in the C# implementation would
+cause *RTI Perftest* to fail due to an issue reserving memory. This behavior
+has been fixed.
+
+``-nic`` command-line parameter not working when using UDPv6 transport
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases the ``-nic`` command-line parameter was not taken
+into account when using the UDPv6 transport. This behavior has been
+fixed.
+
+Changed name for command-line option from ``-qosProfile`` to ``-qosFile``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting with this release, the ``-qosProfile`` command-line parameter has been
+changed to ``-qosFile`` to better reflect its use.
 
 Modified behavior for ``-batchSize`` and ``-TurboMode``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -91,7 +148,7 @@ in such case, the behavior will remain the same.
 
 Same behavior will be applied for ``-TurboMode``.
 
-Improved -scan command-line parameter functionality
+Improved ``-scan`` command-line parameter functionality
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In previous releases, using '-scan' will execute the execution of *RTI Perftest*
@@ -101,19 +158,19 @@ fixed, now the command line parameter allow the user to introduce a set of sizes
 which will be used. Besides, now the '-executionTime' parameter is used to every
 size on the scan mode.
 
-Reviewed command line parameters
+Reviewed command-line parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In order to reduce the number of parameters RTI Perftest accepts, we reviewed
+In order to simplify the number of parameters *RTI Perftest* accepts, we reviewed
 and deprecated the following parameters. These parameters will still work for
-this release, but they will be deleted for the next one.
+this release, but they will be deleted or altered for future ones.
 
--  Removed ``-instanceHashBuckets <n>``
+-  Deprecated ``-instanceHashBuckets <n>``
 
 The associated value will be the same as the number of instances.
 
--  Removed ``-keepDurationUsec <usec>``
+-  Deprecated ``-keepDurationUsec <usec>``
 
-removes, set dynamically in the QoS in the case of use noPositiveAcks.
+Value will be set in the QoS in the case of use noPositiveAcks.
 
 -  Combined ``-multicast`` and ``-multicastAddress <address>``.
 
@@ -121,7 +178,7 @@ The result command can be used as ``-multicast`` keeping its original behavior
 or as ``-multicast <address>``, now enabling multicast and using <address> as
 the multicast receive address.
 
--  Removed ``-nomulticast``
+-  Deprecated ``-nomulticast``
 
 The default behavior will not use multicast, so this command line option was
 redundant.
@@ -132,20 +189,19 @@ Instead ``managerMemory``, use ``allocator_threshold``, since it better reflects
 the use of the value. New default is ``2 * dataLen`` up to ``63000``.
 Improved the documentation associated.
 
--  Removed ``-heartbeatPeriod <sec>:<nanosec>`` and
+-  Deprecated ``-heartbeatPeriod <sec>:<nanosec>`` and
    ``-fastHeartbeatPeriod <sec>:<nanosec>`` command-line options
 
-This parameter can still be changed via xml.
+These parameters can still be changed via xml.
 
--  Removed ``-spin <count>``.
+-  Deprecated ``-spin <count>``.
 
-Changes in the values for the different QoS associated with these command-line
-parameters can still be changed via QoS profile.
+This option made no sense anymore after the -sleep and -pubRate alternatives were implemented.
 
 Release Notes v2.2
 ------------------
 
-What's New in 2.2
+What's New
 ~~~~~~~~~~~~~~~~~
 
 Added command-line parameters "-asynchronous" and "-flowController ``<``\ flow\ ``>``"
@@ -242,7 +298,7 @@ receive the samples by using the parameter ``-cft``. You can also
 determine which sample will be sent by the publisher with the parameter
 ``-writeInstance``.
 
-What's Fixed in 2.2
+What's Fixed
 ~~~~~~~~~~~~~~~~~~~
 
 Conflicts when using "-multicast" and "-enableSharedMemory" at the same time
@@ -294,7 +350,7 @@ members of the Dynamic Data object before repopulating it.
 Release Notes v2.1
 ------------------
 
-What's New in 2.1
+What's New
 ~~~~~~~~~~~~~~~~~
 
 Multicast Periodic Heartbeats when the ``-multicast`` command-line parameter is present
@@ -358,7 +414,7 @@ repository:
 
     git checkout release/2.0 -- resource/secure
 
-What's Fixed in 2.1
+What's Fixed
 ~~~~~~~~~~~~~~~~~~~
 
 "--nddshome" Command-Line Option did not Work in ``build.bat`` Script -- Windows Systems Only
@@ -414,7 +470,7 @@ The default verbosity is Error.
 Release Notes v2.0
 ------------------
 
-What's New in 2.0
+What's New
 ~~~~~~~~~~~~~~~~~
 
 Platform support and build system
@@ -508,7 +564,7 @@ the default value was ``100,000,000``. This value was used to internally
 allocate certain buffers, which imposed large memory requirements. The
 new value is ``10,000,000`` (10 times less).
 
-What's Fixed in 2.0
+What's Fixed
 ~~~~~~~~~~~~~~~~~~~
 
 RTI Perftest behavior when using multiple publishers
