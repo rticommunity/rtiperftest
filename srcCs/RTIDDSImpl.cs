@@ -66,12 +66,10 @@ namespace PerformanceTest
             "\t                                default: perftest_qos_profiles.xml\n" +
             "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
             "\t                                default: PerftestQosLibrary\n" +
-            "\t-multicast                    - Use multicast to send data, default not to\n" +
-            "\t                                use multicast\n" +
-            "\t-multicastAddress <ipaddr>    - Multicast address to use for receiving \n" +
-            "\t                                latency/announcement (pub) or \n" +
-            "\t                                throughtput(sub) data.\n" +
-            "\t                                If unspecified: latency 239.255.1.2,\n" +
+            "\t-multicast <address>          - Use multicast to send data.\n" +
+            "\t                                Default not to use multicast\n" +
+            "\t                                <address> is optional, if unspecified:\n" +
+            "\t                                                latency 239.255.1.2,\n" +
             "\t                                                announcement 239.255.1.100,\n" +
             "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
@@ -308,21 +306,17 @@ namespace PerformanceTest
                 else if ("-multicast".StartsWith(argv[i], true, null))
                 {
                     _IsMulticast = true;
+                    if ((i != (argc - 1)) && !argv[1+i].StartsWith("-"))
+                    {
+                        i++;
+                        THROUGHPUT_MULTICAST_ADDR = argv[i];
+                        LATENCY_MULTICAST_ADDR = argv[i];
+                        ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
+                    }
                 }
                 else if ("-nomulticast".StartsWith(argv[i], true, null))
                 {
                     _IsMulticast = false;
-                }
-                else if ("-multicastAddress".StartsWith(argv[i], true, null))
-                {
-                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
-                    {
-                        Console.Error.Write("Missing <multicast address> after -multicastAddress\n");
-                        return false;
-                    }
-                    THROUGHPUT_MULTICAST_ADDR = argv[i];
-                    LATENCY_MULTICAST_ADDR = argv[i];
-                    ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
                 }
                 else if ("-bestEffort".StartsWith(argv[i], true, null))
                 {
