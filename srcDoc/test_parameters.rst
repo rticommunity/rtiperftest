@@ -134,23 +134,19 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** ``Unkeyed`` type.
 
--  ``-multicast``
+-  ``-multicast <address>``
 
    Use multicast to receive data. In addition, the Datawriter heartbeats
    will be sent using multicast instead of unicast.
 
-   **Default:** do not use multicast.
-
--  ``-multicastAddress <address>``
-
-   Specify the multicast receive address for receiving user data.
-
-   If unspecified, the following default values will be used according
-   to the topic:
+   <address> is optional. If unspecified. The following default addresses will
+   be used for each of the topics::
 
    | **latency:** ``239.255.1.2``
    | **throughput:** ``239.255.1.1``
    | **announcement:** ``239.255.1.100``
+
+   **Default:** do not use multicast.
 
 -  ``-noDirectCommunication``
 

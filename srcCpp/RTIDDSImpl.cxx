@@ -114,12 +114,10 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t                                default: perftest_qos_profiles.xml\n" +
             "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
             "\t                                default: PerftestQosLibrary\n" +
-            "\t-multicast                    - Use multicast to send data, default not to\n" +
-            "\t                                use multicast\n" +
-            "\t-multicastAddress <ipaddr>    - Multicast address to use for receiving \n" +
-            "\t                                latency/announcement (pub) or \n" +
-            "\t                                throughtput(sub) data.\n" +
-            "\t                                If unspecified: latency 239.255.1.2,\n" +
+            "\t-multicast <address>          - Use multicast to send data.\n" +
+            "\t                                Default not to use multicast\n" +
+            "\t                                <address> is optional, if unspecified:\n" +
+            "\t                                                latency 239.255.1.2,\n" +
             "\t                                                announcement 239.255.1.100,\n" +
             "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
@@ -327,16 +325,14 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _ProfileLibraryName = argv[i];
         } else if (IS_OPTION(argv[i], "-multicast")) {
             _IsMulticast = true;
+            if ((i != (argc-1)) && *argv[i+1] != '-') {
+                i++;
+                THROUGHPUT_MULTICAST_ADDR = argv[i];
+                LATENCY_MULTICAST_ADDR = argv[i];
+                ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
+            }
         } else if (IS_OPTION(argv[i], "-nomulticast")) {
             _IsMulticast = false;
-        } else if (IS_OPTION(argv[i], "-multicastAddress")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <multicast address> after -multicastAddress\n");
-                return false;
-            }
-            THROUGHPUT_MULTICAST_ADDR = argv[i];
-            LATENCY_MULTICAST_ADDR = argv[i];
-            ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
         } else if (IS_OPTION(argv[i], "-bestEffort")) {
             _IsReliable = false;
         } else if (IS_OPTION(argv[i], "-durability")) {
