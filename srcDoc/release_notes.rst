@@ -157,6 +157,9 @@ execution is relate with the number of latency-ping. This behavior has been
 fixed, now the command line parameter allow the user to introduce a set of sizes
 which will be used. Besides, now the '-executionTime' parameter is used to every
 size on the scan mode.
+When using ``-batchSize`` at the same time as ``-scan`` and not using large
+data, the same batch size will be applied to all the data sizes being used by
+``-scan``.
 
 Reviewed command-line parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

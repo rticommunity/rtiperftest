@@ -673,6 +673,12 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
+    if (_IsAsynchronous && _BatchSize > 0) {
+        std::cerr << "[Error] Batching cannnot be used with asynchronous writing."
+                << std::endl;
+        throw std::logic_error("[Error] Error parsing commands");
+    }
+
     if (_isScan) {
         _DataLen = _scan_max_size;
         // Check if large data or small data
@@ -687,6 +693,23 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         } else {
             return false;
         }
+        if (_isLargeData && _BatchSize > 0) {
+            std::cerr << "[Error] Batching cannnot be used with asynchronous writing."
+                    << std::endl;
+            return false;
+        }
+    } else { // If not Scan, compare sizes of Batching and dataLen
+        /*
+         * We don't want to use batching if the sample is the same size as the batch
+         * nor if the sample is bigger (in this case we avoid the checking in the
+         * middleware).
+         */
+         if (_BatchSize > 0 && (unsigned long)_BatchSize <= _DataLen) {
+             std::cerr << "[Info] Batching disabled: BatchSize (" << _BatchSize
+                       << ") is equal or smaller than the sample size (" << _DataLen
+                       << ")."  << std::endl;
+             _BatchSize = 0;
+         }
     }
 
     if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
@@ -694,11 +717,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         _isLargeData = true;
     }
 
-    if (_IsAsynchronous && _BatchSize > 0) {
-        std::cerr << "[Error] Batching cannnot be used with asynchronous writing."
-                << std::endl;
-        throw std::logic_error("[Error] Error parsing commands");
-    }
     if (_TurboMode) {
         if (_IsAsynchronous) {
             std::cerr << "[Error] Turbo Mode cannot be used with asynchronous writing. "
@@ -710,18 +728,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _TurboMode = false;
         }
     }
-
-    /*
-     * We don't want to use batching if the sample is the same size as the batch
-     * nor if the sample is bigger (in this case we avoid the checking in the
-     * middleware).
-     */
-     if (_BatchSize > 0 && (unsigned long)_BatchSize <= _DataLen) {
-         std::cerr << "[Info] Batching disabled: BatchSize (" << _BatchSize
-                   << ") is equal or smaller than the sample size (" << _DataLen
-                   << ")."  << std::endl;
-         _BatchSize = 0;
-     }
 
     // Manage _instancesToBeWritten
     if (_instancesToBeWritten != -1) {
