@@ -716,6 +716,11 @@ namespace PerformanceTest
                 }
             }
 
+            if (_IsAsynchronous && _BatchSize > 0) {
+                Console.Error.WriteLine("Batching cannnot be used with asynchronous writing.");
+                return false;
+            }
+
             if (_isScan) {
                 _DataLen = _scan_max_size;
                 // Check if large data or small data
@@ -730,6 +735,23 @@ namespace PerformanceTest
                 } else {
                     return false;
                 }
+                if (_isLargeData && _BatchSize > 0) {
+                    Console.Error.WriteLine("Batching cannnot be used with asynchronous writing.");
+                    return false;
+                }
+            } else { // If not Scan, compare sizes of Batching and dataLen
+                /*
+                 * We don't want to use batching if the sample is the same size as the batch
+                 * nor if the sample is bigger (in this case we avoid the checking in the
+                 * middleware).
+                 */
+                if (_BatchSize > 0 && _BatchSize <= (int)_DataLen)
+                {
+                    Console.Error.WriteLine("Batching dissabled: BatchSize (" + _BatchSize
+                            + ") is equal or smaller than the sample size (" + _DataLen
+                            + ").");
+                    _BatchSize = 0;
+                }
             }
 
             if ((int)_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE)
@@ -738,10 +760,6 @@ namespace PerformanceTest
                 _isLargeData = true;
             }
 
-            if (_IsAsynchronous && _BatchSize > 0) {
-                Console.Error.WriteLine("Batching cannnot be used with asynchronous writing.");
-                return false;
-            }
             if (_TurboMode) {
                 if (_IsAsynchronous) {
                     Console.Error.WriteLine("Turbo Mode cannot be used with asynchronous writing.");
@@ -752,18 +770,7 @@ namespace PerformanceTest
                     _TurboMode = false;
                 }
             }
-            /*
-             * We don't want to use batching if the sample is the same size as the batch
-             * nor if the sample is bigger (in this case we avoid the checking in the
-             * middleware).
-             */
-            if (_BatchSize > 0 && _BatchSize <= (int)_DataLen)
-            {
-                Console.Error.WriteLine("Batching dissabled: BatchSize (" + _BatchSize
-                        + ") is equal or smaller than the sample size (" + _DataLen
-                        + ").");
-                _BatchSize = 0;
-            }
+
             // Manage _instancesToBeWritten
             if (_instancesToBeWritten != -1) {
                 if (_InstanceCount <_instancesToBeWritten) {

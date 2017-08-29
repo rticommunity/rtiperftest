@@ -1521,6 +1521,11 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
         }
 
+        if (_IsAsynchronous && _batchSize > 0) {
+            System.err.println("Batching cannnot be used with asynchronous writing.");
+            return false;
+        }
+
         if (_isScan) {
             _dataLen = _scan_max_size;
             // Check if large data or small data
@@ -1535,6 +1540,22 @@ public final class RTIDDSImpl<T> implements IMessaging {
             } else {
                 return false;
             }
+            if (_isLargeData && _batchSize > 0) {
+                System.err.println("Batching cannnot be used with asynchronous writing.");
+                return false;
+            }
+        } else { // If not Scan, compare sizes of Batching and dataLen
+            /*
+             * We don't want to use batching if the sample is the same size as the batch
+             * nor if the sample is bigger (in this case we avoid the checking in the
+             * middleware).
+             */
+            if (_batchSize > 0 && _batchSize <= _dataLen) {
+                System.err.println("Batching disabled: BatchSize (" + _batchSize
+                        + ") is equal or smaller than the sample size (" + _dataLen
+                        + ").");
+                _batchSize = 0;
+            }
         }
 
         if (_dataLen > MAX_SYNCHRONOUS_SIZE.VALUE) {
@@ -1542,10 +1563,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
             _isLargeData = true;
         }
 
-        if (_IsAsynchronous && _batchSize > 0) {
-            System.err.println("Batching cannnot be used with asynchronous writing.");
-            return false;
-        }
         if (_TurboMode) {
             if (_IsAsynchronous) {
                 System.err.println("Turbo Mode cannot be used with asynchronous writing.");
@@ -1555,17 +1572,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 System.err.println("Turbo Mode disabled, using large data.");
                 _TurboMode = false;
             }
-        }
-        /*
-         * We don't want to use batching if the sample is the same size as the batch
-         * nor if the sample is bigger (in this case we avoid the checking in the
-         * middleware).
-         */
-        if (_batchSize > 0 && _batchSize <= _dataLen) {
-            System.err.println("Batching disabled: BatchSize (" + _batchSize
-                    + ") is equal or smaller than the sample size (" + _dataLen
-                    + ").");
-            _batchSize = 0;
         }
 
         // Manage _instancesToBeWritten
