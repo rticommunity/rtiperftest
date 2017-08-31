@@ -42,13 +42,13 @@ namespace PerformanceTest
     public interface IMessagingWriter
     {
         void WaitForReaders(int numReaders);
-        bool Send(TestMessage message);
+        bool Send(TestMessage message, bool isCftWildCardKey);
         void Flush();
         bool NotifyPingResponse();
         bool WaitForPingResponse();
         bool WaitForPingResponse(int timeout);
         long getPulledSampleCount();
-        void resetWriteInstance();
+        void wait_for_acknowledgments(Duration_t timeout);
     }
 
     public interface IMessaging : IDisposable
