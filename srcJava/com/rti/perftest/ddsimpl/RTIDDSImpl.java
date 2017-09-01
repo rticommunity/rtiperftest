@@ -42,6 +42,7 @@ import com.rti.perftest.IMessagingWriter;
 import com.rti.perftest.TestMessage;
 import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
+import com.rti.perftest.gen.MAX_CFT_VALUE;
 import com.rti.perftest.gen.KEY_SIZE;
 import com.rti.perftest.harness.PerfTest;
 
@@ -476,6 +477,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
      *              ")"
      *          The main goal for comaparing a instances and a key is by analyze the elemetns by more significant to the lest significant.
      *          So, in the case that the key is between [ {0, 0, 0, 1} and { 0, 0, 1, 44} ], it will be received.
+     * Beside, there is a special case where all the subscribers will receive the samples, it is MAX_CFT_VALUE = 65535 = [255,255,0,0,]
      */
     public TopicDescription createCft(String topicName, Topic topic) {
         String condition;
@@ -486,7 +488,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
             for (int i = 0; i < KEY_SIZE.VALUE ; i++) {
                 param_list[i] = String.valueOf(byteToUnsignedInt((byte)(_CFTRange[0] >>> i * 8)));
             }
-            condition = "(%0 = key[0] AND  %1 = key[1] AND %2 = key[2] AND  %3 = key[3])";
+            condition = "(%0 = key[0] AND  %1 = key[1] AND %2 = key[2] AND  %3 = key[3]) OR " +
+                        "(255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3])";
         } else { // If range
             param_list = new String[KEY_SIZE.VALUE*2];
             System.err.println("CFT enabled for instance range: ["+_CFTRange[0]+","+_CFTRange[1]+"] ");
@@ -509,7 +512,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
                             "(%7 >= key[3] AND %6 > key[2]) OR" +
                             "(%7 >= key[3] AND %6 >= key[2] AND %5 > key[1]) OR" +
                             "(%7 >= key[3] AND %6 >= key[2] AND %5 >= key[1] AND %4 >= key[0])" +
-                        ")" +
+                        ") OR (" +
+                            "255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3]" +
                     ")";
         }
         return _participant.create_contentfilteredtopic(
@@ -954,8 +958,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
             dwQos.durability.direct_communication = _directCommunication;
         }
 
-        dwQos.resource_limits.max_instances = _instanceCount;
-        dwQos.resource_limits.initial_instances = _instanceCount;
+        dwQos.resource_limits.max_instances = _instanceCount + 1; // One extra for MAX_CFT_VALUE
+        dwQos.resource_limits.initial_instances = _instanceCount + 1;
 
         if (_instanceCount > 1) {
             if (_instanceHashBuckets > 0) {
@@ -1498,7 +1502,14 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 }
 
                 if (_CFTRange[0] > _CFTRange[1]) {
-                    System.err.print("-cft <start> value cannot be bigger than <end>");
+                    System.err.println("-cft <start> value cannot be bigger than <end>");
+                    return false;
+                }
+                if (_CFTRange[0] < 0 ||
+                        _CFTRange[0] >= MAX_CFT_VALUE.VALUE ||
+                        _CFTRange[1] < 0 ||
+                        _CFTRange[1] >= MAX_CFT_VALUE.VALUE) {
+                    System.err.println("-cft <start>:<end> values should be between [0," + MAX_CFT_VALUE.VALUE + "]");
                     return false;
                 }
             } else if ("-writeInstance".toLowerCase().startsWith(argv[i].toLowerCase())) {
@@ -1576,8 +1587,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         // Manage _instancesToBeWritten
         if (_instancesToBeWritten != -1) {
-            if (_instanceCount <_instancesToBeWritten) {
-                System.err.println("Specified WriterInstances id (" + _instancesToBeWritten +
+            if (_instanceCount < _instancesToBeWritten) {
+                System.err.println("Specified '-WriteInstance' (" + _instancesToBeWritten +
                         ") invalid: Bigger than the number of instances (" + _instanceCount + ").");
                 return false;
             }

@@ -11,7 +11,6 @@
 #include <map>
 #include "MessagingIF.h"
 #include "perftestSupport.h"
-#include "ndds/ndds_cpp.h"
 #include "PerftestTransport.h"
 
 #define RTIPERFTEST_MAX_PEERS 1024
@@ -130,8 +129,8 @@ class RTIDDSImpl : public IMessaging
     bool         _IsReliable;
     bool         _IsMulticast;
     unsigned int _BatchSize;
-    int          _InstanceCount;
-    int          _InstanceMaxCountReader;
+    unsigned long _InstanceCount;
+    unsigned long _InstanceMaxCountReader;
     int          _InstanceHashBuckets;
     int          _Durability;
     bool         _DirectCommunication;
@@ -149,7 +148,7 @@ class RTIDDSImpl : public IMessaging
     int          _peer_host_count;
     char *       _peer_host[RTIPERFTEST_MAX_PEERS];
     bool         _useCft;
-    int          _instancesToBeWritten;
+    long _instancesToBeWritten;
     unsigned int _CFTRange[2];
 
     PerftestTransport _transport;
