@@ -148,6 +148,10 @@ namespace PerformanceTest
                 {
                     _isPublisher = true;
                 }
+                else if ("-sub".StartsWith(argv[i], true, null))
+                {
+                    _isPublisher = false;
+                }
                 else if ("-scan".StartsWith(argv[i], true, null))
                 {
                     _isScan = true;

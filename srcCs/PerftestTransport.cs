@@ -328,6 +328,11 @@ namespace PerformanceTest
 
             for (int i = 0; i < argv.Length; ++i)
             {
+                if (string.IsNullOrEmpty(argv[i]))
+                {
+                    continue;
+                }
+
                 if ("-pub".StartsWith(argv[i], true, null))
                 {
                     isPublisher = true;

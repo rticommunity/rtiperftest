@@ -784,6 +784,7 @@ namespace PerformanceTest {
                 else if ("-sub".StartsWith(argv[i], true, null))
                 {
                     _IsPub = false;
+                    _MessagingArgv[_MessagingArgc++] = argv[i];
                 }
                 else if ("-sidMultiSubTest".StartsWith(argv[i], true, null))
                 {
