@@ -5,7 +5,6 @@
  * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
-#include "ndds/ndds_cpp.h"
 
 class TestMessage
 {
@@ -72,7 +71,7 @@ class IMessagingWriter
   public:
     virtual ~IMessagingWriter() {}
     virtual void WaitForReaders(int numSubscribers) = 0;
-    virtual bool Send(const TestMessage &message, bool isCftWildCardKey = false) = 0;
+    virtual bool Send(const TestMessage &message) = 0;
     virtual void Flush() = 0;
     
     virtual bool waitForPingResponse() {
@@ -99,8 +98,9 @@ class IMessagingWriter
     virtual unsigned int getPulledSampleCount() {
         return 0;
     };
-    virtual void wait_for_acknowledgments(const DDS_Duration_t & timeout){
+    virtual void resetWriteInstance(){
     }
+
 };
 
 class IMessaging

@@ -533,13 +533,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 fprintf(stderr, "-cft <start> value cannot be bigger than <end>\n");
                 return false;
             }
-            if (_CFTRange[0] < 0 ||
-                    _CFTRange[0] >= (unsigned int)MAX_CFT_VALUE ||
-                    _CFTRange[1] < 0 ||
-                    _CFTRange[1] >= (unsigned int)MAX_CFT_VALUE) {
-                fprintf(stderr, "-cft <start>:<end> values should be between [0,%d] \n", MAX_CFT_VALUE);
-                return false;
-            }
         } else if (IS_OPTION(argv[i], "-writeInstance")) {
             if ((i == (argc-1)) || *argv[++i] == '-')
             {
@@ -707,11 +700,11 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 
     // Manage _instancesToBeWritten
     if (_instancesToBeWritten != -1) {
-        if ((long)_InstanceCount < _instancesToBeWritten) {
+        if (_InstanceCount <_instancesToBeWritten) {
             fprintf(
                     stderr,
-                    "Specified '-WriteInstance' (%ld) invalid: Bigger than the number of instances (%lu).\n",
-                    _instancesToBeWritten, _InstanceCount);
+                    "Specified WriterInstances id (%d) invalid: Bigger than the number of instances (%d).\n",
+                    _instancesToBeWritten,_InstanceCount);
             return false;
         }
     }
@@ -771,35 +764,30 @@ class RTIPublisher : public IMessagingWriter
   private:
     typename T::DataWriter *_writer;
     T data;
-    unsigned long _num_instances;
+    int _num_instances;
     unsigned long _instance_counter;
     DDS_InstanceHandle_t *_instance_handles;
     RTIOsapiSemaphore *_pongSemaphore;
-    long _instancesToBeWritten;
+    int _instancesToBeWritten;
 
  public:
-    RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
+    RTIPublisher(DDSDataWriter *writer, int num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
     {
         _writer = T::DataWriter::narrow(writer);
         data.bin_data.maximum(0);
         _num_instances = num_instances;
         _instance_counter = 0;
         _instance_handles = 
-                (DDS_InstanceHandle_t *) malloc(sizeof(DDS_InstanceHandle_t)*(_num_instances + 1)); // One extra for MAX_CFT_VALUE
+            (DDS_InstanceHandle_t *) malloc(sizeof(DDS_InstanceHandle_t)*num_instances);
         _pongSemaphore = pongSemaphore;
         _instancesToBeWritten = instancesToBeWritten;
 
-        for (unsigned long i = 0; i < _num_instances; ++i) {
-            for (int c = 0; c < KEY_SIZE; c++) {
+        for (int i = 0; i < _num_instances; ++i) {
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
                 data.key[c] = (unsigned char) (i >> c * 8);
             }
             _instance_handles[i] = _writer->register_instance(data);
         }
-        // Register the key of MAX_CFT_VALUE
-        for (int c = 0; c < KEY_SIZE; c++) {
-            data.key[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
-        }
-        _instance_handles[_num_instances] = _writer->register_instance(data);
     }
 
     void Flush()
@@ -807,10 +795,10 @@ class RTIPublisher : public IMessagingWriter
         _writer->flush();
     }
 
-    bool Send(const TestMessage &message, bool isCftWildCardKey)
+    bool Send(const TestMessage &message)
     {
         DDS_ReturnCode_t retcode;
-        long key = 0;
+        int key = 0;
 
         data.entity_id = message.entity_id;
         data.seq_num = message.seq_num;
@@ -819,26 +807,19 @@ class RTIPublisher : public IMessagingWriter
         data.latency_ping = message.latency_ping;
         data.bin_data.loan_contiguous((DDS_Octet*)message.data, message.size, message.size);
 
-        if (!isCftWildCardKey) {
-            if (_num_instances > 1) {
-                if (_instancesToBeWritten == -1) {
-                    key = _instance_counter++ % _num_instances;
-                } else { // send sample to a specific subscriber
-                    key = _instancesToBeWritten;
-                }
+        if (_num_instances > 1) {
+            if (_instancesToBeWritten == -1) {
+                key = _instance_counter++ % _num_instances;
+            } else { // send sample to a specific subscriber
+                key = _instancesToBeWritten;
             }
-        } else {
-            key = MAX_CFT_VALUE;
-        }
-        for (int c = 0; c < KEY_SIZE; c++) {
-            data.key[c] = (unsigned char)(key >> c * 8);
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
+                data.key[c] = (unsigned char) (key >> c * 8);
+            }
         }
 
-        if (!isCftWildCardKey) {
-            retcode = _writer->write(data, _instance_handles[key]);
-        } else { // send CFT_MAX sample
-            retcode = _writer->write(data, _instance_handles[_num_instances]);
-        }
+        retcode = _writer->write(data, _instance_handles[key]);
+
         data.bin_data.unloan();
 
         if (retcode != DDS_RETCODE_OK)
@@ -914,8 +895,8 @@ class RTIPublisher : public IMessagingWriter
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(const DDS_Duration_t & timeout){
-        _writer->wait_for_acknowledgments(timeout);
+    void resetWriteInstance(){
+        _instancesToBeWritten = -1;
     }
 };
 
@@ -925,16 +906,16 @@ class RTIDynamicDataPublisher : public IMessagingWriter
   private:
     DDSDynamicDataWriter *_writer;
     DDS_DynamicData data;
-    unsigned long _num_instances;
+    int _num_instances;
     unsigned long _instance_counter;
     DDS_InstanceHandle_t *_instance_handles;
     RTIOsapiSemaphore *_pongSemaphore;
-    long _instancesToBeWritten;
+    int _instancesToBeWritten;
 
 public:
     RTIDynamicDataPublisher(
             DDSDataWriter *writer,
-            unsigned long num_instances,
+            int num_instances,
             RTIOsapiSemaphore *pongSemaphore,
             DDS_TypeCode *typeCode,
             int instancesToBeWritten) :
@@ -949,36 +930,25 @@ public:
         _instance_counter = 0;
         _instancesToBeWritten = instancesToBeWritten;
         _instance_handles = (DDS_InstanceHandle_t *) malloc(
-                sizeof(DDS_InstanceHandle_t) * (num_instances + 1));
+                sizeof(DDS_InstanceHandle_t) * num_instances);
         if (_instance_handles == NULL) {
             fprintf(stderr, "_instance_handles malloc failed.\n");
         }
         _pongSemaphore = pongSemaphore;
 
-        for (unsigned long i = 0; i < _num_instances; ++i) {
+        for (int i = 0; i < _num_instances; ++i) {
             DDS_Octet key_octets[4];
-            for (int c = 0; c < KEY_SIZE; c++) {
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
                 key_octets[c] = (unsigned char) (i >> c * 8);
             }
             retcode = data.set_octet_array("key",
-                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED, 4, key_octets);
+            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED, 4, key_octets);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
             }
 
             _instance_handles[i] = _writer->register_instance(data);
         }
-        // Register the key of MAX_CFT_VALUE
-        DDS_Octet key_octets[4];
-        for (int c = 0; c < KEY_SIZE; c++) {
-            key_octets[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
-        }
-        retcode = data.set_octet_array("key",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED, 4, key_octets);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
-        }
-        _instance_handles[_num_instances] = _writer->register_instance(data);
     }
 
     void Flush()
@@ -986,10 +956,10 @@ public:
         _writer->flush();
     }
 
-    bool Send(const TestMessage &message, bool isCftWildCardKey)
+    bool Send(const TestMessage &message)
     {
         DDS_ReturnCode_t retcode;
-        long key = 0;
+        int key = 0;
 
         data.clear_all_members();
 
@@ -1043,35 +1013,27 @@ public:
             fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
         }
 
-        DDS_Octet key_octets[4];
-        if (!isCftWildCardKey) {
-            if (_num_instances > 1) {
-                if (_instancesToBeWritten == -1) {
-                    key = _instance_counter++ % _num_instances;
-                } else { // send sample to a specific subscriber
-                    key = _instancesToBeWritten;
-                }
+        if (_num_instances > 1) {
+            if (_instancesToBeWritten == -1) {
+                key = _instance_counter++ % _num_instances;
+            } else { // send sample to a specific subscriber
+                key = _instancesToBeWritten;
             }
-        } else {
-            key = MAX_CFT_VALUE;
-        }
-        for (int c = 0; c < KEY_SIZE; c++) {
-            key_octets[c] = (unsigned char) (key >> c * 8);
-        }
-        retcode = data.set_octet_array(
-                "key",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                4,
-                key_octets);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
+            DDS_Octet key_octets[4];
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
+                key_octets[c] = (unsigned char) (key >> c * 8);
+            }
+            retcode = data.set_octet_array(
+                    "key",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                    4,
+                    key_octets);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
+            }
         }
 
-        if (!isCftWildCardKey) {
-            retcode = _writer->write(data, _instance_handles[key]);
-        } else {
-            retcode = _writer->write(data, _instance_handles[_num_instances]);
-        }
+        retcode = _writer->write(data, _instance_handles[key]);
 
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "Write error %d.\n", retcode);
@@ -1139,8 +1101,8 @@ public:
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(const DDS_Duration_t & timeout){
-        _writer->wait_for_acknowledgments(timeout);
+    void resetWriteInstance(){
+        _instancesToBeWritten = -1;
     }
 };
 
@@ -2272,8 +2234,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         dw_qos.durability.direct_communication = _DirectCommunication;
     }
 
-    dw_qos.resource_limits.max_instances = _InstanceCount + 1; // One extra for MAX_CFT_VALUE
-    dw_qos.resource_limits.initial_instances = _InstanceCount +1;
+    dw_qos.resource_limits.max_instances = _InstanceCount;
+    dw_qos.resource_limits.initial_instances = _InstanceCount;
 
     if (_useUnbounded > 0) {
         char buf[10];
@@ -2337,7 +2299,6 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
  *              ")"
  *          The main goal for comaparing a instances and a key is by analyze the elemetns by more significant to the lest significant.
  *          So, in the case that the key is between [ {0, 0, 0, 1} and { 0, 0, 1, 44} ], it will be received.
- *  Beside, there is a special case where all the subscribers will receive the samples, it is MAX_CFT_VALUE = 65535 = [255,255,0,0,]
  */
 template <typename T>
 DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
@@ -2354,8 +2315,7 @@ DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
         }
         const char* param_list[] = { cft_param[0], cft_param[1], cft_param[2], cft_param[3]};
         parameters.from_array(param_list, KEY_SIZE);
-        condition = "(%0 = key[0] AND %1 = key[1] AND %2 = key[2] AND %3 = key[3]) OR"
-                "(255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3])";
+        condition ="(%0 = key[0] AND %1 = key[1] AND %2 = key[2] AND %3 = key[3])";
     } else { // If range
         printf("CFT enabled for instance range: [%d,%d] \n",_CFTRange[0],_CFTRange[1]);
         char cft_param[2 * KEY_SIZE][128];
@@ -2383,8 +2343,6 @@ DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
                         "(%7 >= key[3] AND %6 > key[2]) OR"
                         "(%7 >= key[3] AND %6 >= key[2] AND %5 > key[1]) OR"
                         "(%7 >= key[3] AND %6 >= key[2] AND %5 >= key[1] AND %4 >= key[0])"
-                    ") OR ("
-                        "255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3]"
                     ")"
                 ")";
     }

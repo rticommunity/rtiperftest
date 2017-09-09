@@ -565,14 +565,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 std::cerr << "[Error]  -cft <start> value cannot be bigger than <end>" << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
-            if (_CFTRange[0] < 0 ||
-                    _CFTRange[0] >= (unsigned int)MAX_CFT_VALUE ||
-                    _CFTRange[1] < 0 ||
-                    _CFTRange[1] >= (unsigned int)MAX_CFT_VALUE) {
-                std::cerr << "[Error] -cft <start>:<end> values should be between [0,"
-                        << MAX_CFT_VALUE << "]" << std::endl;
-                return false;
-            }
         } else if (IS_OPTION(argv[i], "-writeInstance")) {
             if ((i == (argc-1)) || *argv[++i] == '-')
             {
@@ -739,8 +731,8 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 
     // Manage _instancesToBeWritten
     if (_instancesToBeWritten != -1) {
-        if ((long)_InstanceCount < _instancesToBeWritten) {
-            std::cerr << "Specified '-WriteInstance' (" <<
+        if (_InstanceCount <_instancesToBeWritten) {
+            std::cerr << "Specified WriterInstances id (" <<
                     _instancesToBeWritten <<
                     ") invalid: Bigger than the number of instances (" <<
                     _InstanceCount << ")." << std::endl;
@@ -796,17 +788,17 @@ class RTIPublisherBase: public IMessagingWriter {
 
 protected:
     dds::pub::DataWriter<T> _writer;
-    unsigned long _num_instances;
+    int _num_instances;
     unsigned long _instance_counter;
     dds::core::InstanceHandleSeq _instance_handles;
     bool _useSemaphore;
     rti::core::Semaphore& _pongSemaphore;
-    long _instancesToBeWritten;
+    int _instancesToBeWritten;
 
 public:
     RTIPublisherBase(
             dds::pub::DataWriter<T> writer,
-            unsigned long num_instances,
+            int num_instances,
             rti::core::Semaphore& pongSemaphore,
             bool useSemaphore,
             int instancesToBeWritten)
@@ -857,11 +849,8 @@ public:
         return (unsigned int)_writer->datawriter_protocol_status().pulled_sample_count().total();
     }
 
-    void wait_for_acknowledgments(const dds::core::Duration & timeout){
-        try {
-            _writer->wait_for_acknowledgments(timeout);
-        } catch (const dds::core::TimeoutError) { // Expected exception
-        }
+    void resetWriteInstance(){
+        _instancesToBeWritten = -1;
     }
 };
 
@@ -887,22 +876,16 @@ public:
                     instancesToBeWritten)
     {
 
-        for (unsigned long i = 0; i < this->_num_instances; ++i) {
-            for (int c = 0; c < KEY_SIZE; c++) {
+        for (int i = 0; i < this->_num_instances; ++i) {
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
                 this->data.key()[c] = (unsigned char) (i >> c * 8);
             }
             this->_instance_handles.push_back(
                     this->_writer.register_instance(this->data));
         }
-        // Register the key of MAX_CFT_VALUE
-        for (int c = 0; c < KEY_SIZE; c++) {
-            this->data.key()[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
-        }
-        this->_instance_handles.push_back(
-                this->_writer.register_instance(this->data));
     }
 
-    inline bool send(TestMessage &message, bool isCftWildCardKey) {
+    inline bool send(TestMessage &message) {
 
         this->data.entity_id(message.entity_id);
         this->data.seq_num(message.seq_num);
@@ -913,29 +896,19 @@ public:
         this->data.bin_data().resize(message.size);
         //data.bin_data(message.data);
 
-
-        long key = 0;
-        if (!isCftWildCardKey) {
-            if (this->_num_instances > 1) {
-                if (this->_instancesToBeWritten == -1) {
-                    key = this->_instance_counter++ % this->_num_instances;
-                } else { // send sample to a specific subscriber
-                    key = this->_instancesToBeWritten;
-                }
+        int key = 0;
+        if (this->_num_instances > 1) {
+            if (this->_instancesToBeWritten == -1) {
+                key = this->_instance_counter++ % this->_num_instances;
+            } else { // send sample to a specific subscriber
+                key = this->_instancesToBeWritten;
             }
-        } else {
-            key = MAX_CFT_VALUE;
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
+                this->data.key()[c] = (unsigned char) (key >> c * 8);
+            }
         }
 
-        for (int c = 0; c < KEY_SIZE; c++) {
-            this->data.key()[c] = (unsigned char) (key >> c * 8);
-        }
-        if (!isCftWildCardKey) {
-            this->_writer.write(this->data, this->_instance_handles[key]);
-        } else {
-            this->_writer.write(this->data,
-                    this->_instance_handles[this->_num_instances]);
-        }
+        this->_writer.write(this->data, this->_instance_handles[key]);
         return true;
     }
 };
@@ -963,27 +936,18 @@ public:
             data(typeCode)
     {
 
-        for (unsigned long i = 0; i < this->_num_instances; ++i) {
+        for (int i = 0; i < this->_num_instances; ++i) {
             std::vector<uint8_t> key_octets;
-            for (int c = 0; c < KEY_SIZE; c++) {
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
                 key_octets.push_back((uint8_t) (i >> c * 8));
             }
             this->data.set_values("key",key_octets);
 
-            this->_instance_handles.push_back(
-                    this->_writer.register_instance(this->data));
+            this->_instance_handles.push_back(this->_writer.register_instance(this->data));
         }
-        // Register the key of MAX_CFT_VALUE
-        std::vector<uint8_t> key_octets;
-        for (int c = 0; c < KEY_SIZE; c++) {
-            key_octets.push_back((uint8_t)(MAX_CFT_VALUE >> c * 8));
-        }
-        this->data.set_values("key",key_octets);
-        this->_instance_handles.push_back(
-                this->_writer.register_instance(this->data));
     }
 
-    inline bool send(TestMessage &message, bool isCftWildCardKey) {
+    inline bool send(TestMessage &message) {
 
         this->data.clear_all_members();
         this->data.value("entity_id", message.entity_id);
@@ -996,29 +960,20 @@ public:
         octec_seq.resize(message.size);
         this->data.set_values("bin_data", octec_seq);
 
-        long key = 0;
-        std::vector<uint8_t> key_octets;
-        if (!isCftWildCardKey) {
-            if (this->_num_instances > 1) {
-                if (this->_instancesToBeWritten == -1) {
-                    key = this->_instance_counter++ % this->_num_instances;
-                } else { // send sample to a specific subscriber
-                    key = this->_instancesToBeWritten;
-                }
+        int key = 0;
+        if (this->_num_instances > 1) {
+            std::vector<uint8_t> key_octets;
+            if (this->_instancesToBeWritten == -1) {
+                key = this->_instance_counter++ % this->_num_instances;
+            } else { // send sample to a specific subscriber
+                key = this->_instancesToBeWritten;
             }
-        } else {
-            key = MAX_CFT_VALUE;
+            for (int c = 0 ; c < KEY_SIZE ; c++) {
+                key_octets.push_back((uint8_t) (key >> c * 8));
+            }
+            this->data.set_values("key", key_octets);
         }
-        for (int c = 0; c < KEY_SIZE; c++) {
-            key_octets.push_back((uint8_t) (key >> c * 8));
-        }
-        this->data.set_values("key", key_octets);
-        if (!isCftWildCardKey) {
-            this->_writer.write(this->data, this->_instance_handles[key]);
-        } else {
-            this->_writer.write(this->data,
-                    this->_instance_handles[this->_num_instances]);
-        }
+        this->_writer.write(this->data, this->_instance_handles[key]);
         return true;
     }
 };
@@ -1771,8 +1726,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         qos_durability->direct_communication(_DirectCommunication);
     }
 
-    qos_resource_limits.max_instances(_InstanceCount + 1); // One extra for MAX_CFT_VALUE
-    qos_resource_limits->initial_instances(_InstanceCount + 1);
+    qos_resource_limits.max_instances(_InstanceCount);
+    qos_resource_limits->initial_instances(_InstanceCount);
 
     if (_InstanceCount > 1) {
         if (_InstanceHashBuckets > 0) {
@@ -1857,7 +1812,6 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
  *              ")"
  *          The main goal for comaparing a instances and a key is by analyze the elemetns by more significant to the lest significant.
  *          So, in the case that the key is between [ {0, 0, 0, 1} and { 0, 0, 1, 44} ], it will be received.
- *  Beside, there is a special case where all the subscribers will receive the samples, it is MAX_CFT_VALUE = 65535 = [255,255,0,0,]
  */
 template <typename T>
 template <typename U>
@@ -1867,19 +1821,18 @@ dds::topic::ContentFilteredTopic<U> RTIDDSImpl<T>::CreateCft(
     std::string condition;
     std::vector<std::string> parameters(2 * KEY_SIZE);
     if (_CFTRange[0] == _CFTRange[1]) { // If same elements, no range
-        std::cerr << "[Info] CFT enabled for instance: '" << _CFTRange[0] << "'" <<std::endl;
-        for (int i = 0; i < KEY_SIZE; i++) {
+        std::cerr << "[Info] CFT enabled for instance: '" << _CFTRange[0] << "'"<<std::endl;
+        for (int i = 0; i < KEY_SIZE ; i++) {
             std::ostringstream string_stream_object;
             string_stream_object << (int)((unsigned char)(_CFTRange[0] >> i * 8));
             parameters[i] = string_stream_object.str();
         }
-        condition = "(%0 = key[0] AND  %1 = key[1] AND %2 = key[2] AND  %3 = key[3]) OR "
-                    "(255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3])";
+        condition = "(%0 = key[0] AND  %1 = key[1] AND %2 = key[2] AND  %3 = key[3])";
     } else { // If range
         std::cerr << "[Info] CFT enabled for instance range:[" << _CFTRange[0] << ","  << _CFTRange[1] << "]" << std::endl;
-        for (int i = 0; i < 2 * KEY_SIZE; i++) {
+        for (int i = 0; i < 2 * KEY_SIZE ; i++ ) {
             std::ostringstream string_stream_object;
-            if (i < KEY_SIZE) {
+            if ( i < KEY_SIZE ) {
                 string_stream_object << (int)((unsigned char)(_CFTRange[0] >> i * 8));
                 parameters[i]= string_stream_object.str();
             } else { // KEY_SIZE < i < KEY_SIZE * 2
@@ -1899,8 +1852,7 @@ dds::topic::ContentFilteredTopic<U> RTIDDSImpl<T>::CreateCft(
                         "(%7 >= key[3] AND %6 > key[2]) OR"
                         "(%7 >= key[3] AND %6 >= key[2] AND %5 > key[1]) OR"
                         "(%7 >= key[3] AND %6 >= key[2] AND %5 >= key[1] AND %4 >= key[0])"
-                    ") OR ("
-                        "255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3]"
+                    ")"
                 ")";
 
     }

@@ -63,7 +63,7 @@ class IMessagingWriter
   public:
     virtual ~IMessagingWriter() {}
     virtual void waitForReaders(int numSubscribers) = 0;
-    virtual bool send(TestMessage &message, bool isCftWildCardKey = false) = 0;
+    virtual bool send(TestMessage &message) = 0;
     virtual void flush() = 0;
     virtual void waitForPingResponse() {
         // Implementation required only if
@@ -86,7 +86,7 @@ class IMessagingWriter
     virtual unsigned int getPulledSampleCount() {
         return -1;
     };
-    virtual void wait_for_acknowledgments(const dds::core::Duration & timeout){
+    virtual void resetWriteInstance(){
     }
 };
 

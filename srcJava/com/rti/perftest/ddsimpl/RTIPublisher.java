@@ -6,12 +6,9 @@
 package com.rti.perftest.ddsimpl;
 
 
-import com.rti.dds.infrastructure.Duration_t;
 import com.rti.dds.infrastructure.InstanceHandle_t;
-import com.rti.perftest.gen.MAX_CFT_VALUE;
 import com.rti.dds.infrastructure.RETCODE_ERROR;
 import com.rti.dds.infrastructure.RETCODE_NO_DATA;
-import com.rti.dds.infrastructure.RETCODE_TIMEOUT;
 import com.rti.dds.publication.DataWriter;
 import com.rti.dds.publication.DataWriterProtocolStatus;
 import com.rti.dds.publication.PublicationMatchedStatus;
@@ -47,7 +44,7 @@ final class RTIPublisher<T> implements IMessagingWriter {
         _typeHelper = myDataType;
         _writer = writer;
         _numInstances = num_instances;
-        _instanceHandles = new InstanceHandle_t[num_instances + 1]; // One extra for MAX_CFT_VALUE
+        _instanceHandles = new InstanceHandle_t[num_instances];
         _typeHelper.setBinDataMax(0);
         _instancesToBeWritten = instancesToBeWritten;
 
@@ -55,9 +52,6 @@ final class RTIPublisher<T> implements IMessagingWriter {
             _typeHelper.fillKey(i);
             _instanceHandles[i] = _writer.register_instance_untyped(_typeHelper.getData());
         }
-        // Register the key of MAX_CFT_VALUE
-        _typeHelper.fillKey(MAX_CFT_VALUE.VALUE);
-        _instanceHandles[_numInstances] = _writer.register_instance_untyped(_typeHelper.getData());
         
     }
 
@@ -69,27 +63,22 @@ final class RTIPublisher<T> implements IMessagingWriter {
     }
 
 
-    public boolean send(TestMessage message, boolean isCftWildCardKey) {
+    public boolean send(TestMessage message) {
         int key = 0;
+
         _typeHelper.copyFromMessage(message);
-        if (!isCftWildCardKey) {
-            if (_numInstances > 1) {
-                if (_instancesToBeWritten == -1) {
-                    key = (int) (_instanceCounter++ % _numInstances);
-                } else {
-                    key = _instancesToBeWritten;
-                }
-            }
-        } else {
-            key = MAX_CFT_VALUE.VALUE;
-        }
-        _typeHelper.fillKey(key);
-        try {
-            if (!isCftWildCardKey) {
-                _writer.write_untyped(_typeHelper.getData(), _instanceHandles[key]);
+
+        if (_numInstances > 1) {
+            if (_instancesToBeWritten == -1) {
+                key = (int) (_instanceCounter++ % _numInstances);
             } else {
-                _writer.write_untyped(_typeHelper.getData(), _instanceHandles[_numInstances]);
+                key = _instancesToBeWritten;
             }
+            _typeHelper.fillKey(key);
+        }
+       
+        try {
+            _writer.write_untyped(_typeHelper.getData(), _instanceHandles[key]);
         } catch (RETCODE_NO_DATA ignored) {
             // nothing to do
         } catch (RETCODE_ERROR err) {
@@ -171,12 +160,8 @@ final class RTIPublisher<T> implements IMessagingWriter {
         return status.pulled_sample_count;
     }
 
-    public void wait_for_acknowledgments(Duration_t timeout){
-        try {
-            _writer.wait_for_acknowledgments(timeout);
-        } catch (RETCODE_TIMEOUT ignored) { // Expected exception
-            // nothing to do
-        }
+    public void resetWriteInstance(){
+        _instancesToBeWritten = -1;
     }
 
 }

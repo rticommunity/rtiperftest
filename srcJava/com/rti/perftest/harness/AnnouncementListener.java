@@ -5,7 +5,6 @@
 
 package com.rti.perftest.harness;
 
-import java.util.ArrayList;
 import com.rti.perftest.IMessagingCB;
 import com.rti.perftest.TestMessage;
 
@@ -22,7 +21,7 @@ import com.rti.perftest.TestMessage;
     // -----------------------------------------------------------------------
     // Public Fields
     // -----------------------------------------------------------------------
-    private ArrayList<Integer> _finished_subscribers;
+
     public int announced_subscribers;
 
     // -----------------------------------------------------------------------
@@ -33,18 +32,12 @@ import com.rti.perftest.TestMessage;
 
     public AnnouncementListener() {
         announced_subscribers = 0;
-        _finished_subscribers = new ArrayList<Integer>();
     }
 
     // --- From IMessagingCB: ------------------------------------------------
 
     public void processMessage(TestMessage message) {
-        if (!_finished_subscribers.contains(message.entity_id)) {
-            _finished_subscribers.add(message.entity_id);
-            announced_subscribers++;
-        } else {
-            announced_subscribers--;
-        }
+        announced_subscribers++;
     }
 
 }
