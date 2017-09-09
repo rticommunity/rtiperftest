@@ -5,7 +5,6 @@
 
 package com.rti.perftest.harness;
 
-import com.rti.dds.infrastructure.Duration_t;
 import com.rti.perftest.IMessaging;
 import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.IMessagingWriter;
@@ -36,9 +35,6 @@ public final class PerfTest {
     public static final String LATENCY_TOPIC_NAME = "Latency";
     public static final String THROUGHPUT_TOPIC_NAME = "Throughput";
     public static final String ANNOUNCEMENT_TOPIC_NAME = "Announcement";
-
-    public static final Duration_t timeout_wait_for_ack =
-            new Duration_t(0, 10000000);
 
     // Number of bytes sent in messages besides user data
     public static final int OVERHEAD_BYTES = 28;
@@ -776,7 +772,7 @@ public final class PerfTest {
         message.entity_id = subID;
         message.data = new byte[1];
         message.size = 0;
-        boolean sent = announcement_writer.send(message, false);
+        boolean sent = announcement_writer.send(message);
         announcement_writer.flush();
         if (!sent) {
             System.err.println("*** send() failure: announcement message");
@@ -802,18 +798,7 @@ public final class PerfTest {
             sleep(1000);
             now = getTimeUsec();
 
-            if (reader_listener.change_size) { // ACK change_size
-                TestMessage message_change_size = new TestMessage();
-                message_change_size.entity_id = subID;
-                announcement_writer.send(message_change_size, false);
-                announcement_writer.flush();
-                reader_listener.change_size = false;
-            }
-            if (reader_listener.end_test) {
-                TestMessage message_end_test = new TestMessage();
-                message_end_test.entity_id = subID;
-                announcement_writer.send(message_end_test, false);
-                announcement_writer.flush();
+            if (reader_listener.endTest) {
                 break;
             }
             String outputCpu = "";
@@ -990,7 +975,7 @@ public final class PerfTest {
         for (int i = 0; i < initialize_sample_count; i++)
         {
             // Send test initialization message
-            if (!writer.send(message, true)) {
+            if (!writer.send(message)) {
                 System.out.println(
                         "*** send() failure: initialization message");
                 return;
@@ -1120,14 +1105,13 @@ public final class PerfTest {
                         // must set latency_ping so that a subscriber sends us
                         // back the LENGTH_CHANGED_SIZE message
                         message.latency_ping = num_pings % _numSubscribers;
-                        int i = 0;
-                        while (announcement_reader_listener.announced_subscribers > 0
-                                && i < initialize_sample_count) {
-                            writer.send(message, true);
-                            i++;
-                            writer.wait_for_acknowledgments(
-                                    timeout_wait_for_ack);
+
+                        for (int i = 0; i < 30; ++i) {
+                            writer.send(message);
+                            writer.flush();
                         }
+                        // sleep to allow packet to be pinged back
+                        sleep(1000);
                         message.size = (int)(_scanDataLenSizes.get(scan_count++) - OVERHEAD_BYTES);
                         /* Reset _SamplePerBatch */
                         if (_batchSize != 0) {
@@ -1169,7 +1153,7 @@ public final class PerfTest {
 
             message.seq_num = (int)loop;
             message.latency_ping = pingID;
-            if (!writer.send(message, false)) {
+            if (!writer.send(message)) {
                 System.err.println("*** send() failure");
                 return;
             }
@@ -1195,20 +1179,22 @@ public final class PerfTest {
         // Test has finished, send end of test message, send multiple
         // times in case of best effort
         message.size = FINISHED_SIZE;
-        int i = 0;
-        while (announcement_reader_listener.announced_subscribers > 0
-                && i < initialize_sample_count) {
-            writer.send(message, true);
-            i++;
-            writer.wait_for_acknowledgments(timeout_wait_for_ack);
+        writer.resetWriteInstance();
+        for (int j = 0; j < initialize_sample_count; ++j) {
+            boolean sent = writer.send(message);
+            writer.flush();
+            if (!sent) {
+                System.err.println("*** send() failure");
+                return;
+            }
         }
-        reader_listener.print_summary();
-        reader_listener.end_test = true;
 
         if (_useReadThread) {
             assert reader != null;
             reader.shutdown();
         }
+
+        sleep(1000);
 
         if (_displayWriterStats) {
             System.out.printf(

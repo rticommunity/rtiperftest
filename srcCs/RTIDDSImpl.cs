@@ -689,14 +689,8 @@ namespace PerformanceTest
                         Console.Error.Write("-cft <start> value cannot be bigger than <end>\n");
                         return false;
                     }
-                    if (_CFTRange[0] < 0 ||
-                            _CFTRange[0] >= MAX_CFT_VALUE.VALUE ||
-                            _CFTRange[1] < 0 ||
-                            _CFTRange[1] >= MAX_CFT_VALUE.VALUE) {
-                        Console.Error.Write("-cft <start>:<end> values should be between [0," + MAX_CFT_VALUE.VALUE + "]\n");
-                        return false;
-                    }
-                } else if ("-writeInstance".StartsWith(argv[i], true, null))
+                }
+                else if ("-writeInstance".StartsWith(argv[i], true, null))
                 {
                     if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
                     {
@@ -783,8 +777,8 @@ namespace PerformanceTest
 
             // Manage _instancesToBeWritten
             if (_instancesToBeWritten != -1) {
-                if (_InstanceCount < _instancesToBeWritten) {
-                    Console.Error.WriteLine("Specified '-WriteInstance' (" + _instancesToBeWritten +
+                if (_InstanceCount <_instancesToBeWritten) {
+                    Console.Error.WriteLine("Specified WriterInstances id (" + _instancesToBeWritten +
                             ") invalid: Bigger than the number of instances (" + _InstanceCount + ").");
                     return false;
                 }
@@ -868,7 +862,7 @@ namespace PerformanceTest
 
                 _num_instances = num_instances;
                 _instance_counter = 0;
-                _instance_handles = new DDS.InstanceHandle_t[_num_instances + 1]; // One extra for MAX_CFT_VALUE
+                _instance_handles = new DDS.InstanceHandle_t[num_instances];
                 _pongSemaphore = pongSemaphore;
                 _instancesToBeWritten = instancesToBeWritten;
 
@@ -880,10 +874,7 @@ namespace PerformanceTest
                     _instance_handles[i] = writer.register_instance_untyped(
                             _DataType.getData());
                 }
-                // Register the key of MAX_CFT_VALUE
-                _DataType.fillKey(MAX_CFT_VALUE.VALUE);
-                _instance_handles[_num_instances] = writer.register_instance_untyped(
-                        _DataType.getData());
+
             }
 
             public void Flush()
@@ -891,31 +882,23 @@ namespace PerformanceTest
                 _writer.flush();
             }
 
-            public virtual bool Send(TestMessage message, bool isCftWildCardKey)
+            public virtual bool Send(TestMessage message)
             {
                 int key = 0;
                 _DataType.copyFromMessage(message);
 
-                if (!isCftWildCardKey) {
-                    if (_num_instances > 1) {
-                        if (_instancesToBeWritten == -1) {
-                            key = (int) (_instance_counter++ % _num_instances);
-                        } else {
-                            key = _instancesToBeWritten;
-                        }
+                if (_num_instances > 1) {
+                    if (_instancesToBeWritten == -1) {
+                        key = (int) (_instance_counter++ % _num_instances);
+                    } else {
+                        key = _instancesToBeWritten;
                     }
-                } else {
-                    key = MAX_CFT_VALUE.VALUE;
+                    _DataType.fillKey(key);
                 }
-                _DataType.fillKey(key);
 
                 try
                 {
-                    if (!isCftWildCardKey) {
-                        _writer.write_untyped(_DataType.getData(), ref _instance_handles[key]);
-                    } else {
-                        _writer.write_untyped(_DataType.getData(), ref _instance_handles[_num_instances]);
-                    }
+                    _writer.write_untyped(_DataType.getData(), ref _instance_handles[key]);
                 }
                 catch (DDS.Exception ex)
                 {
@@ -996,13 +979,10 @@ namespace PerformanceTest
                 return status.pulled_sample_count;
             }
 
-            public void wait_for_acknowledgments(Duration_t timeout){
-                try {
-                    _writer.wait_for_acknowledgments(timeout);
-                } catch (DDS.Retcode_Timeout) { // Expected exception
-                    // nothing to do
-                }
+            public void resetWriteInstance(){
+                _instancesToBeWritten = -1;
             }
+
         }
 
         /*********************************************************
@@ -1019,34 +999,25 @@ namespace PerformanceTest
                 : base(writer, num_instances, pongSemaphore, DataType, instancesToBeWritten) {}
 
 
-            public override bool Send(TestMessage message, bool isCftWildCardKey)
+            public override bool Send(TestMessage message)
             {
                 int key = 0;
                 _DataType.copyFromMessage(message);
-                if (!isCftWildCardKey) {
-                    if (_num_instances > 1) {
-                        if (_instancesToBeWritten == -1) {
-                            key = (int) (_instance_counter++ % _num_instances);
-                        } else {
-                            key = _instancesToBeWritten;
-                        }
 
+                if (_num_instances > 1) {
+                    if (_instancesToBeWritten == -1) {
+                        key = (int) (_instance_counter++ % _num_instances);
+                    } else {
+                        key = _instancesToBeWritten;
                     }
-                } else {
-                    key = MAX_CFT_VALUE.VALUE;
+                    _DataType.fillKey(key);
                 }
-                _DataType.fillKey(key);
+
                 try
                 {
-                    if (!isCftWildCardKey) {
-                        ((DynamicDataWriter)_writer).write(
-                                (DynamicData)_DataType.getData(),
-                                ref _instance_handles[key]);
-                    } else {
-                        ((DynamicDataWriter)_writer).write(
-                                (DynamicData)_DataType.getData(),
-                                ref _instance_handles[_num_instances]);
-                    }
+                    ((DynamicDataWriter)_writer).write(
+                            (DynamicData)_DataType.getData(),
+                            ref _instance_handles[key]);
                 }
                 catch (DDS.Exception ex)
                 {
@@ -1859,8 +1830,8 @@ namespace PerformanceTest
                 dw_qos.durability.direct_communication = _DirectCommunication;
             }
 
-            dw_qos.resource_limits.max_instances = _InstanceCount + 1; // One extra for MAX_CFT_VALUE
-            dw_qos.resource_limits.initial_instances = _InstanceCount + 1;
+            dw_qos.resource_limits.max_instances = _InstanceCount;
+            dw_qos.resource_limits.initial_instances = _InstanceCount;
 
             if (_InstanceCount > 1) {
                 if (_InstanceHashBuckets > 0) {
@@ -1935,7 +1906,6 @@ namespace PerformanceTest
          *              ")"
          *          The main goal for comaparing a instances and a key is by analyze the elemetns by more significant to the lest significant.
          *          So, in the case that the key is between [ {0, 0, 0, 1} and { 0, 0, 1, 44} ], it will be received.
-         * Beside, there is a special case where all the subscribers will receive the samples, it is MAX_CFT_VALUE = 65535 = [255,255,0,0,]
          */
         public DDS.ContentFilteredTopic createCft(String topic_name, DDS.Topic topic) {
             string condition;
@@ -1946,8 +1916,7 @@ namespace PerformanceTest
                 for (int i = 0; i < KEY_SIZE.VALUE ; i++) {
                     parameters.set_at(i,Convert.ToString((byte)(_CFTRange[0] >> i * 8)));
                 }
-                condition = "(%0 = key[0] AND  %1 = key[1] AND %2 = key[2] AND  %3 = key[3]) OR " +
-                        "(255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3])";
+                condition = "(%0 = key[0] AND  %1 = key[1] AND %2 = key[2] AND  %3 = key[3])";
             } else { // If range
                 parameters.ensure_length(KEY_SIZE.VALUE * 2,KEY_SIZE.VALUE * 2);
                 Console.Error.WriteLine("CFT enabled for instance range: ["+_CFTRange[0]+","+_CFTRange[1]+"] ");
@@ -1970,8 +1939,7 @@ namespace PerformanceTest
                                 "(%7 >= key[3] AND %6 > key[2]) OR" +
                                 "(%7 >= key[3] AND %6 >= key[2] AND %5 > key[1]) OR" +
                                 "(%7 >= key[3] AND %6 >= key[2] AND %5 >= key[1] AND %4 >= key[0])" +
-                            ") OR (" +
-                                "255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3]" +
+                            ")" +
                         ")";
             }
             return _participant.create_contentfilteredtopic(

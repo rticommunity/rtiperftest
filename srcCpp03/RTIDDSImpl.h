@@ -15,6 +15,7 @@
 #include "security/security_default.h"
 #endif
 #include "rti/config/Logger.hpp"
+#include <dds/dds.hpp>
 #include "PerftestTransport.h"
 
 #define RTIPERFTEST_MAX_PEERS 1024
@@ -70,8 +71,8 @@ class RTIDDSImpl : public IMessaging
     bool         _IsReliable;
     bool         _IsMulticast;
     unsigned int _BatchSize;
-    unsigned long _InstanceCount;
-    unsigned long _InstanceMaxCountReader;
+    int          _InstanceCount;
+    int          _InstanceMaxCountReader;
     int          _InstanceHashBuckets;
     int          _Durability;
     bool         _DirectCommunication;
@@ -89,7 +90,7 @@ class RTIDDSImpl : public IMessaging
     int          _peer_host_count;
     dds::core::StringSeq  _peer_host;
     bool         _useCft;
-    long         _instancesToBeWritten;
+    int          _instancesToBeWritten;
     std::vector<unsigned int> _CFTRange;
 
     PerftestTransport _transport;

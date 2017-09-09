@@ -84,7 +84,7 @@ class perftest_cpp
     int  _LatencyCount;
     int  _NumSubscribers;
     int  _NumPublishers;
-    unsigned long _InstanceCount;
+    int _InstanceCount;
     IMessaging *_MessagingImpl;
     char **_MessagingArgv;
     int _MessagingArgc;
