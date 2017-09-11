@@ -844,6 +844,8 @@ public class PerftestTransport {
 
         if (transportConfig.kind != Transport.TRANSPORT_SHMEM) {
             setAllowInterfacesList(qos);
+        } else {
+            allowInterfaces = "";
         }
 
         setTransportVerbosity(qos);

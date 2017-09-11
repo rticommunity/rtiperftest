@@ -928,6 +928,9 @@ namespace PerformanceTest
 
             if (transportConfig.kind != Transport.TRANSPORT_SHMEM) {
                 SetAllowInterfacesList(qos);
+            } else {
+                // We are not using the allow interface string, so we clear it
+                allowInterfaces = string.Empty;
             }
 
             SetTransportVerbosity(qos);

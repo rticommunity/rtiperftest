@@ -500,6 +500,9 @@ bool configureTransport(
         if (!setAllowInterfacesList(transport, qos)) {
             return false;
         }
+    } else {
+        // We are not using the allow interface string, so we clear it
+        transport.allowInterfaces.clear();
     }
 
     if (!setTransportVerbosity(transport, qos)) {

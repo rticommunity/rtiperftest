@@ -351,6 +351,9 @@ bool configureTransport(
 
     if (transport.transportConfig.kind != TRANSPORT_SHMEM) {
         setAllowInterfacesList(transport, qos, qos_properties);
+    } else {
+       // We are not using the allow interface string, so we clear it
+       transport.allowInterfaces.clear();
     }
 
     setTransportVerbosity(transport, qos, qos_properties);
