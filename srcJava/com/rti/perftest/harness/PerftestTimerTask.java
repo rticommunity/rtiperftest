@@ -36,7 +36,10 @@ public class PerftestTimerTask extends TimerTask {
   public void setTimeout(long executionTime, boolean isScan) {
       timer.schedule(this, executionTime * 1000);
       _isScan = isScan;
-      System.err.println("Setting timeout to " + executionTime + " seconds.");
+      if (!_isScan) {
+          System.err.println("Setting timeout to "
+                + executionTime + " seconds.");
+      }
   }
   
   public void cancelTimer() {

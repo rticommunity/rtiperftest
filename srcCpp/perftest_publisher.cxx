@@ -34,6 +34,7 @@ bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the sca
 const char *perftest_cpp::_LatencyTopicName = "Latency";
 const char *perftest_cpp::_AnnouncementTopicName = "Announcement";
 const char *perftest_cpp::_ThroughputTopicName = "Throughput";
+const DDS_Duration_t timeout_wait_for_ack = {0, 100000000};
 
 /*
  * PERFTEST-108
@@ -864,6 +865,7 @@ class ThroughputListener : public IMessagingCB
     std::vector<int> _finished_publishers;
     CpuMonitor cpu;
     bool _useCft;
+    bool change_size;
 
   public:
 
@@ -873,6 +875,7 @@ class ThroughputListener : public IMessagingCB
         bytes_received = 0;
         missing_packets = 0;
         end_test = false;
+        change_size = false;
         last_data_length = -1;
         interval_data_length = -1;
         interval_packets_received = 0;
@@ -892,13 +895,13 @@ class ThroughputListener : public IMessagingCB
         _num_publishers = numPublishers;
     }
 
-    virtual ~ThroughputListener() {
+    ~ThroughputListener() {
         if (_last_seq_num != NULL) {
             delete []_last_seq_num;
         }
     }
 
-    virtual void ProcessMessage(TestMessage &message)
+    void ProcessMessage(TestMessage &message)
     {
         if (message.entity_id >= _num_publishers ||
             message.entity_id < 0) {
@@ -938,50 +941,9 @@ class ThroughputListener : public IMessagingCB
 
             _finished_publishers.push_back(message.entity_id);
 
-            if (_finished_publishers.size() >= (unsigned int)_num_publishers)
-            {
-                if (!_useCft) {
-                    // detect missing packets
-                    if (message.seq_num != _last_seq_num[message.entity_id]) {
-                        // only track if skipped, might have restarted pub
-                        if (message.seq_num > _last_seq_num[message.entity_id])
-                        {
-                            missing_packets +=
-                            message.seq_num - _last_seq_num[message.entity_id];
-                        }
-                    }
-                }
-
-                // store the info for this interval
-                unsigned long long now = perftest_cpp::GetTimeUsec();
-
-                interval_time = now - begin_time;
-                interval_packets_received = packets_received;
-                interval_bytes_received = bytes_received;
-                interval_missing_packets = missing_packets;
-                interval_data_length = last_data_length;
+            if (_finished_publishers.size() >= (unsigned int)_num_publishers) {
+                print_summary(message);
                 end_test = true;
-            }
-
-            _writer->Send(message);
-            _writer->Flush();
-
-            if (_finished_publishers.size() >= (unsigned int)_num_publishers)
-            {
-                std::string outputCpu = "";
-                if (perftest_cpp::_showCpu) {
-                    outputCpu = cpu.get_cpu_average();
-                }
-                printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
-                       "Mbps(ave): %7.1lf  Lost: %llu %s\n",
-                       interval_data_length + perftest_cpp::OVERHEAD_BYTES,
-                       interval_packets_received,
-                       interval_packets_received*1000000/interval_time,
-                       interval_bytes_received*1000000.0/interval_time*8.0/1000.0/1000.0,
-                       interval_missing_packets,
-                       outputCpu.c_str()
-                );
-                fflush(stdout);
             }
             return;
         }
@@ -996,53 +958,8 @@ class ThroughputListener : public IMessagingCB
         // Always check if need to reset internals
         if (message.size == perftest_cpp::LENGTH_CHANGED_SIZE)
         {
-            // store the info for this interval
-            unsigned long long now = perftest_cpp::GetTimeUsec();
-
-            // may have many length changed packets to support best effort
-            if (interval_data_length != last_data_length)
-            {
-                if (!_useCft) {
-                    // detect missing packets
-                    if (message.seq_num != _last_seq_num[message.entity_id]) {
-                        // only track if skipped, might have restarted pub
-                        if (message.seq_num > _last_seq_num[message.entity_id])
-                        {
-                            missing_packets +=
-                                message.seq_num - _last_seq_num[message.entity_id];
-                        }
-                    }
-                }
-
-                interval_time = now - begin_time;
-                interval_packets_received = packets_received;
-                interval_bytes_received = bytes_received;
-                interval_missing_packets = missing_packets;
-                interval_data_length = last_data_length;
-
-                std::string outputCpu = "";
-                if (perftest_cpp::_showCpu) {
-                    outputCpu = cpu.get_cpu_average();
-                }
-                printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
-                       "Mbps(ave): %7.1lf  Lost: %llu %s\n",
-                       interval_data_length + perftest_cpp::OVERHEAD_BYTES,
-                       interval_packets_received,
-                       interval_packets_received*1000000/interval_time,
-                       interval_bytes_received*1000000.0/interval_time*8.0/1000.0/1000.0,
-                       interval_missing_packets,
-                       outputCpu.c_str()
-                );
-                fflush(stdout);
-            }
-
-            packets_received = 0;
-            bytes_received = 0;
-            missing_packets = 0;
-            // length changed only used in scan mode in which case
-            // there is only 1 publisher with ID 0
-            _last_seq_num[0] = 0;
-            begin_time = now;
+            print_summary(message);
+            change_size = true;
             return;
         }
 
@@ -1080,12 +997,62 @@ class ThroughputListener : public IMessagingCB
                     if (message.seq_num > _last_seq_num[message.entity_id])
                     {
                         missing_packets +=
-                            message.seq_num - _last_seq_num[message.entity_id];
+                                message.seq_num - _last_seq_num[message.entity_id];
                     }
                     _last_seq_num[message.entity_id] = message.seq_num;
                 }
             }
         }
+    }
+
+    void print_summary(TestMessage &message){
+
+        // store the info for this interval
+        unsigned long long now = perftest_cpp::GetTimeUsec();
+
+        if (interval_data_length != last_data_length) {
+
+            if (!_useCft) {
+                // detect missing packets
+                if (message.seq_num != _last_seq_num[message.entity_id]) {
+                    // only track if skipped, might have restarted pub
+                    if (message.seq_num > _last_seq_num[message.entity_id])
+                    {
+                        missing_packets +=
+                                message.seq_num - _last_seq_num[message.entity_id];
+                    }
+                }
+            }
+
+            interval_time = now - begin_time;
+            interval_packets_received = packets_received;
+            interval_bytes_received = bytes_received;
+            interval_missing_packets = missing_packets;
+            interval_data_length = last_data_length;
+
+            std::string outputCpu = "";
+            if (perftest_cpp::_showCpu) {
+                outputCpu = cpu.get_cpu_average();
+            }
+            printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
+                   "Mbps(ave): %7.1lf  Lost: %llu %s\n",
+                   interval_data_length + perftest_cpp::OVERHEAD_BYTES,
+                   interval_packets_received,
+                   interval_packets_received*1000000/interval_time,
+                   interval_bytes_received*1000000.0/interval_time*8.0/1000.0/1000.0,
+                   interval_missing_packets,
+                   outputCpu.c_str()
+            );
+            fflush(stdout);
+        }
+
+        packets_received = 0;
+        bytes_received = 0;
+        missing_packets = 0;
+        // length changed only used in scan mode in which case
+        // there is only 1 publisher with ID 0
+        _last_seq_num[0] = 0;
+        begin_time = now;
     }
 };
 
@@ -1206,8 +1173,19 @@ int perftest_cpp::Subscriber()
         MilliSleep(1000);
         now = GetTimeUsec();
 
-        if (reader_listener->end_test)
-        {
+        if (reader_listener->change_size) { // ACK change_size
+            TestMessage message_change_size;
+            message_change_size.entity_id = _SubID;
+            announcement_writer->Send(message_change_size);
+            announcement_writer->Flush();
+            reader_listener->change_size = false;
+        }
+
+        if (reader_listener->end_test) { // ACK end_test
+            TestMessage message_end_test;
+            message_end_test.entity_id = _SubID;
+            announcement_writer->Send(message_end_test);
+            announcement_writer->Flush();
             break;
         }
 
@@ -1278,14 +1256,24 @@ class AnnouncementListener : public IMessagingCB
 {
   public:
     int announced_subscribers;
+    std::vector<int> _finished_subscribers;
+
   public:
     AnnouncementListener() {
         announced_subscribers = 0;
     }
 
-    virtual void ProcessMessage(TestMessage& /*message*/)
-    {
-        announced_subscribers++;
+    void ProcessMessage(TestMessage& message) {
+        if (std::find(
+                _finished_subscribers.begin(),
+                _finished_subscribers.end(),
+                message.entity_id)
+                == _finished_subscribers.end()) {
+            _finished_subscribers.push_back(message.entity_id);
+            announced_subscribers++;
+        } else {
+            announced_subscribers--;
+        }
     }
 };
 
@@ -1358,7 +1346,54 @@ class LatencyListener : public IMessagingCB
         _writer = writer;
     }
 
-    virtual void ProcessMessage(TestMessage &message)
+    void print_summary_latency(){
+        double latency_ave;
+        double latency_std;
+        std::string outputCpu = "";
+        if (count == 0)
+        {
+            return;
+        }
+
+        if (clock_skew_count != 0) {
+            fprintf(stderr,"The following latency result may not be accurate because clock skew happens %lu times\n",
+                        clock_skew_count);
+            fflush(stderr);
+        }
+
+        // sort the array (in ascending order)
+        std::sort(_latency_history, _latency_history+count);
+        latency_ave = (double)latency_sum / count;
+        latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
+
+        if (perftest_cpp::_showCpu) {
+            outputCpu = cpu.get_cpu_average();
+        }
+
+        printf("Length: %5d  Latency: Ave %6.0lf us  Std %6.1lf us  "
+               "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us  99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
+               last_data_length + perftest_cpp::OVERHEAD_BYTES,
+               latency_ave, latency_std, latency_min, latency_max,
+               _latency_history[count*50/100],
+               _latency_history[count*90/100],
+               _latency_history[count*99/100],
+               _latency_history[(int)(count*(9999.0/10000))],
+               _latency_history[(int)(count*(999999.0/1000000))],
+               outputCpu.c_str()
+        );
+        fflush(stdout);
+
+        latency_sum = 0;
+        latency_sum_square = 0;
+        latency_min = 0;
+        latency_max = 0;
+        count = 0;
+        clock_skew_count = 0;
+
+        return;
+    }
+
+    void ProcessMessage(TestMessage &message)
     {
         unsigned long long now, sentTime;
         unsigned long latency;
@@ -1378,58 +1413,11 @@ class LatencyListener : public IMessagingCB
 
             // Test finished message
             case perftest_cpp::FINISHED_SIZE:
-                // may get this message multiple times for 1 to N tests
-                if (end_test == true)
-                {
-                    return;
-                }
-
-                end_test = true;
-                // fall through...
+                return;
 
             // Data length is changing size
             case perftest_cpp::LENGTH_CHANGED_SIZE:
-
-                // will get a LENGTH_CHANGED message on startup before any data
-                if (count == 0)
-                {
-                    return;
-                }
-
-                if (clock_skew_count != 0) {
-                    fprintf(stderr,"The following latency result may not be accurate because clock skew happens %lu times\n",
-                                clock_skew_count);
-                    fflush(stderr);
-                }
-
-                // sort the array (in ascending order)
-                std::sort(_latency_history, _latency_history+count);
-                latency_ave = (double)latency_sum / count;
-                latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
-
-                if (perftest_cpp::_showCpu) {
-                    outputCpu = cpu.get_cpu_average();
-                }
-
-                printf("Length: %5d  Latency: Ave %6.0lf us  Std %6.1lf us  "
-                       "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us  99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
-                       last_data_length + perftest_cpp::OVERHEAD_BYTES,
-                       latency_ave, latency_std, latency_min, latency_max,
-                       _latency_history[count*50/100],
-                       _latency_history[count*90/100],
-                       _latency_history[count*99/100],
-                       _latency_history[(int)(count*(9999.0/10000))],
-                       _latency_history[(int)(count*(999999.0/1000000))],
-                       outputCpu.c_str()
-                );
-                fflush(stdout);
-
-                latency_sum = 0;
-                latency_sum_square = 0;
-                latency_min = 0;
-                latency_max = 0;
-                count = 0;
-                clock_skew_count = 0;
+                print_summary_latency();
                 return;
 
             default:
@@ -1580,7 +1568,7 @@ int perftest_cpp::Publisher()
     AnnouncementListener  *announcement_reader_listener = NULL;
     IMessagingReader *announcement_reader;
     unsigned long num_latency;
-    int initializeSampleCount = 50;
+    unsigned long initializeSampleCount = 50;
 
     // create throughput/ping writer
     IMessagingWriter *writer = _MessagingImpl->CreateWriter(_ThroughputTopicName);
@@ -1717,10 +1705,9 @@ int perftest_cpp::Publisher()
     }
 
     message.size = INITIALIZE_SIZE;
-    for (int i = 0; i < initializeSampleCount; i++)
-    {
+    for (unsigned long i = 0; i < initializeSampleCount; i++) {
         // Send test initialization message
-        writer->Send(message);
+        writer->Send(message, true);
     }
     writer->Flush();
 
@@ -1826,6 +1813,9 @@ int perftest_cpp::Publisher()
 
                     // flush anything that was previously sent
                     writer->Flush();
+                    writer->wait_for_acknowledgments(timeout_wait_for_ack);
+
+                    announcement_reader_listener->announced_subscribers = _NumSubscribers;
 
                     if (scan_count == _scanDataLenSizes.size()) {
                         break; // End of scan test
@@ -1836,12 +1826,12 @@ int perftest_cpp::Publisher()
                     // back the LENGTH_CHANGED_SIZE message
                     message.latency_ping = num_pings % _NumSubscribers;
 
-                    for (int i = 0; i < 30; ++i) {
-                        writer->Send(message);
+                    while (announcement_reader_listener->announced_subscribers > 0) {
+                        writer->Send(message, true);
                         writer->Flush();
+                        writer->wait_for_acknowledgments(timeout_wait_for_ack);
                     }
-                    // sleep to allow packet to be pinged back
-                    MilliSleep(1000);
+
                     message.size = _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
                     /* Reset _SamplePerBatch */
                     if (_BatchSize != 0) {
@@ -1904,11 +1894,17 @@ int perftest_cpp::Publisher()
     }
 
     message.size = FINISHED_SIZE;
-    writer->resetWriteInstance();
-    for (int j = 0; j < initializeSampleCount; ++j) {
-        writer->Send(message);
+    unsigned long i = 0;
+    announcement_reader_listener->announced_subscribers = _NumSubscribers;
+    while (announcement_reader_listener->announced_subscribers > 0
+            && i < initializeSampleCount) {
+        writer->Send(message, true);
         writer->Flush();
+        writer->wait_for_acknowledgments(timeout_wait_for_ack);
+        i++;
     }
+    reader_listener->print_summary_latency();
+    reader_listener->end_test = true;
 
     if (_UseReadThread && reader)
     {
@@ -1938,23 +1934,23 @@ int perftest_cpp::Publisher()
 
 inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds,
         bool _isScan) {
-    fprintf(stderr,"Setting timeout to %u seconds\n", executionTimeInSeconds);
     if (_isScan) {
-  #ifdef RTI_WIN32
-          CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout_scan,
-              NULL , executionTimeInSeconds * 1000, 0, 0);
-  #else
-          signal(SIGALRM, Timeout_scan);
-          alarm(executionTimeInSeconds);
-  #endif
+      #ifdef RTI_WIN32
+        CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout_scan,
+                NULL , executionTimeInSeconds * 1000, 0, 0);
+      #else
+        signal(SIGALRM, Timeout_scan);
+        alarm(executionTimeInSeconds);
+      #endif
     } else {
-  #ifdef RTI_WIN32
-          CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout,
-              NULL , executionTimeInSeconds * 1000, 0, 0);
-  #else
-          signal(SIGALRM, Timeout);
-          alarm(executionTimeInSeconds);
-  #endif
+        fprintf(stderr,"Setting timeout to %u seconds\n", executionTimeInSeconds);
+      #ifdef RTI_WIN32
+        CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout,
+                NULL , executionTimeInSeconds * 1000, 0, 0);
+      #else
+        signal(SIGALRM, Timeout);
+        alarm(executionTimeInSeconds);
+      #endif
     }
 }
 

@@ -27,7 +27,7 @@ import com.rti.perftest.TestMessage;
     public long packetsReceived = 0;
     public long bytesReceived = 0;
     public long missingPackets = 0;
-    public boolean endTest = false;
+    public boolean end_test = false;
     public int  lastDataLength = -1;
 
     // store info for the last data set
@@ -36,8 +36,8 @@ import com.rti.perftest.TestMessage;
     public long intervalBytesReceived = 0;
     public long intervalMissingPackets = 0;
     public long intervalTime = 0;
-    public  CpuMonitor CpuMonitor = new CpuMonitor();
-
+    public CpuMonitor CpuMonitor = new CpuMonitor();
+    public boolean change_size = false;
 
     // -----------------------------------------------------------------------
     // Private Fields
@@ -90,7 +90,7 @@ import com.rti.perftest.TestMessage;
      */
     public void ReadThread() {
         TestMessage message = null;
-        while (!endTest) {
+        while (!end_test) {
             // Receive message should block until a message is received
             message = _reader.receiveMessage();
             if (message != null) {
@@ -111,7 +111,7 @@ import com.rti.perftest.TestMessage;
         }
         // Check for test initialization messages
         if (message.size == PerfTest.INITIALIZE_SIZE) {
-            _writer.send(message);      // don't check return; exiting anyway
+            _writer.send(message, false); // Don't check return; exiting anyway
             _writer.flush();
             return;
         }
@@ -130,56 +130,13 @@ import com.rti.perftest.TestMessage;
                 return;
             }
 
-            if (endTest) {
+            if (end_test) {
                 return;
             }
-
             _finished_publishers.add(message.entity_id);
-
             if (_finished_publishers.size() >= _numPublishers) {
-                if (!_useCft) {
-                    // detect missing packets
-                    if (message.seq_num != _last_seq_num[message.entity_id]) {
-                        // only track if skipped, might have restarted pub
-                        if (message.seq_num > _last_seq_num[message.entity_id])
-                        {
-                            missingPackets +=
-                                message.seq_num - _last_seq_num[message.entity_id];
-                        }
-                    }
-                }
-
-                // store the info for this interval
-                long now = PerfTest.getTimeUsec();
-                intervalTime = now - _beginTime;
-                intervalPacketsReceived = packetsReceived;
-                intervalBytesReceived = bytesReceived;
-                intervalMissingPackets = missingPackets;
-                intervalDataLength = lastDataLength;
-                endTest = true;
-            }
-
-            boolean sent = _writer.send(message);
-            _writer.flush();
-            if (!sent) {
-                System.out.println("*** send() failure");
-                return;
-            }
-
-            if (_finished_publishers.size() >= _numPublishers) {
-                String outputCpu = "";
-                if (PerfTest._showCpu) {
-                    outputCpu = CpuMonitor.get_cpu_average();
-                }
-                System.out.printf("Length: %1$5d  Packets: %2$8d  Packets/s(ave): %3$7.0f  " +
-                        "Mbps(ave): %4$7.1f  Lost: %5$d" + outputCpu + "\n",
-                        intervalDataLength + PerfTest.OVERHEAD_BYTES,
-                        intervalPacketsReceived,
-                        intervalPacketsReceived * 1000000.0 / intervalTime,
-                        intervalBytesReceived * 1000000.0 / intervalTime *8.0/1000.0/1000.0,
-                        intervalMissingPackets
-                );
-                System.out.flush();
+                print_summary(message);
+                end_test = true;
             }
             return;
         }
@@ -187,7 +144,7 @@ import com.rti.perftest.TestMessage;
         // Send back a packet if this is a ping
         if ((message.latency_ping == PerfTest.subID)  ||
                 (_useCft && message.latency_ping != -1)) {
-            boolean sent = _writer.send(message);
+            boolean sent = _writer.send(message, false);
             _writer.flush();
             if (!sent) {
                 System.out.println("*** send() failure");
@@ -197,56 +154,8 @@ import com.rti.perftest.TestMessage;
 
         // reset internals
         if (message.size == PerfTest.LENGTH_CHANGED_SIZE) {
-            // store the info for this interval
-            long now = PerfTest.getTimeUsec();
-
-            // may have many length changed packets to support best effort
-            if (intervalDataLength != lastDataLength)
-            {
-                if (!_useCft) {
-                    // detect missing packets
-                    if (message.seq_num != _last_seq_num[message.entity_id]) {
-                        // only track if skipped, might have restarted pub
-                        if (message.seq_num > _last_seq_num[message.entity_id])
-                        {
-                            missingPackets +=
-                                message.seq_num - _last_seq_num[message.entity_id];
-                        }
-                    }
-                }
-
-                intervalTime = now - _beginTime;
-                intervalPacketsReceived = packetsReceived;
-                intervalBytesReceived = bytesReceived;
-                intervalMissingPackets = missingPackets;
-                intervalDataLength = lastDataLength;
-
-                String outputCpu = "";
-                if (PerfTest._showCpu) {
-                    outputCpu = CpuMonitor.get_cpu_average();
-                }
-                System.out.printf(
-                    "Length: %1$5d  Packets: %2$8d  Packets/s(ave): %3$7.0f  " +
-                    "Mbps(ave): %4$7.1f  Lost: %5$d" + outputCpu + "\n",
-                    intervalDataLength + PerfTest.OVERHEAD_BYTES,
-                    intervalPacketsReceived,
-                    intervalPacketsReceived *
-                            1000000.0 / intervalTime,
-                    intervalBytesReceived *
-                            1000000.0 / intervalTime *
-                            8.0/1000.0/1000.0,
-                    intervalMissingPackets
-                );
-                System.out.flush();
-            }
-            
-            packetsReceived = 0;
-            bytesReceived = 0;
-            missingPackets = 0;
-            // length changed only used in scan mode in which case
-            // there is only 1 publisher with ID 0
-            _last_seq_num[0] = 0;
-            _beginTime = now;
+            print_summary(message);
+            change_size = true;
             return;
         }
 
@@ -282,12 +191,61 @@ import com.rti.perftest.TestMessage;
                     // only track if skipped, might have restarted pub
                     if (message.seq_num > _last_seq_num[message.entity_id]) {
                         missingPackets +=
-                            message.seq_num - _last_seq_num[message.entity_id];
+                                message.seq_num - _last_seq_num[message.entity_id];
                     }
                     _last_seq_num[message.entity_id] = message.seq_num;
                 }
             }
         }
+    }
+
+    public void print_summary(TestMessage message) {
+
+        // store the info for this interval
+        long now = PerfTest.getTimeUsec();
+
+        if (intervalDataLength != lastDataLength) {
+
+            if (!_useCft) {
+                // detect missing packets
+                if (message.seq_num != _last_seq_num[message.entity_id]) {
+                    // only track if skipped, might have restarted pub
+                    if (message.seq_num > _last_seq_num[message.entity_id])
+                    {
+                        missingPackets +=
+                            message.seq_num - _last_seq_num[message.entity_id];
+                    }
+                }
+            }
+
+            intervalTime = now - _beginTime;
+            intervalPacketsReceived = packetsReceived;
+            intervalBytesReceived = bytesReceived;
+            intervalMissingPackets = missingPackets;
+            intervalDataLength = lastDataLength;
+
+            String outputCpu = "";
+            if (PerfTest._showCpu) {
+                outputCpu = CpuMonitor.get_cpu_average();
+            }
+            System.out.printf("Length: %1$5d  Packets: %2$8d  Packets/s(ave): %3$7.0f  " +
+                    "Mbps(ave): %4$7.1f  Lost: %5$d" + outputCpu + "\n",
+                    intervalDataLength + PerfTest.OVERHEAD_BYTES,
+                    intervalPacketsReceived,
+                    intervalPacketsReceived * 1000000.0 / intervalTime,
+                    intervalBytesReceived * 1000000.0 / intervalTime *8.0/1000.0/1000.0,
+                    intervalMissingPackets
+            );
+            System.out.flush();
+        }
+
+        packetsReceived = 0;
+        bytesReceived = 0;
+        missingPackets = 0;
+        // length changed only used in scan mode in which case
+        // there is only 1 publisher with ID 0
+        _last_seq_num[0] = 0;
+        _beginTime = now;
     }
 
 }

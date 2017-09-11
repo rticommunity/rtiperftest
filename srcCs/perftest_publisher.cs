@@ -638,6 +638,9 @@ namespace PerformanceTest {
         perftest_cs()
         {
             QueryPerformanceFrequency(ref _ClockFrequency);
+            // Initialize timer
+            timeout_wait_for_ack.sec = 0;
+            timeout_wait_for_ack.nanosec = 10000000;
         }
 
 
@@ -1273,6 +1276,7 @@ namespace PerformanceTest {
             public ulong bytes_received = 0;
             public ulong missing_packets = 0;
             public bool  end_test = false;
+            public bool change_size = false;
             public int   last_data_length = -1;
 
             // store info for the last data set
@@ -1328,7 +1332,7 @@ namespace PerformanceTest {
                 // Check for test initialization messages
                 if (message.size == INITIALIZE_SIZE)
                 {
-                    _writer.Send(message);
+                    _writer.Send(message, false);
                     _writer.Flush();
                     return;
                 }
@@ -1356,45 +1360,8 @@ namespace PerformanceTest {
                     _finished_publishers.Add(message.entity_id);
 
                     if (_finished_publishers.Count >= _num_publishers) {
-                        if (!_useCft) {
-                            // detect missing packets
-                            if (message.seq_num != _last_seq_num[message.entity_id]) {
-                                // only track if skipped, might have restarted pub
-                                if (message.seq_num > _last_seq_num[message.entity_id])
-                                {
-                                    missing_packets +=
-                                        message.seq_num - _last_seq_num[message.entity_id];
-                                }
-                            }
-                        }
-
-                        // store the info for this interval
-                        ulong now = perftest_cs.GetTimeUsec();
-                        interval_time = now - begin_time;
-                        interval_packets_received = packets_received;
-                        interval_bytes_received = bytes_received;
-                        interval_missing_packets = missing_packets;
-                        interval_data_length = last_data_length;
+                        print_summary(message);
                         end_test = true;
-                    }
-
-                    _writer.Send(message);
-                    _writer.Flush();
-
-                    if (_finished_publishers.Count >= _num_publishers) {
-                        String outputCpu = "";
-                        if (_showCpu) {
-                            outputCpu = cpu.get_cpu_average();
-                        }
-                        Console.Write("Length: {0,5}  Packets: {1,8}  Packets/s(ave): {2,7:F0}  " +
-                                      "Mbps(ave): {3,7:F1}  Lost: {4}{5}\n",
-                                      interval_data_length + OVERHEAD_BYTES,
-                                      interval_packets_received,
-                                      interval_packets_received * 1000000 /interval_time,
-                                      interval_bytes_received * 1000000.0 / interval_time * 8.0 / 1000.0 / 1000.0,
-                                      interval_missing_packets,
-                                      outputCpu
-                        );
                     }
                     return;
                 }
@@ -1402,60 +1369,15 @@ namespace PerformanceTest {
                 // Send back a packet if this is a ping
                 if ((message.latency_ping == _SubID)  ||
                         (_useCft && message.latency_ping != -1)) {
-                    _writer.Send(message);
+                    _writer.Send(message, false);
                     _writer.Flush();
                 }
 
                 // Always check if need to reset internals
                 if (message.size == LENGTH_CHANGED_SIZE)
                 {
-                    ulong now;
-                    // store the info for this interval
-                    now = perftest_cs.GetTimeUsec();
-
-                    // may have many length changed packets to support best effort
-                    if (interval_data_length != last_data_length)
-                    {
-                        if (!_useCft) {
-                            // detect missing packets
-                            if (message.seq_num != _last_seq_num[message.entity_id]) {
-                                // only track if skipped, might have restarted pub
-                                if (message.seq_num > _last_seq_num[message.entity_id])
-                                {
-                                    missing_packets +=
-                                        message.seq_num - _last_seq_num[message.entity_id];
-                                }
-                            }
-                        }
-
-                        interval_time = now - begin_time;
-                        interval_packets_received = packets_received;
-                        interval_bytes_received = bytes_received;
-                        interval_missing_packets = missing_packets;
-                        interval_data_length = last_data_length;
-                        String outputCpu = "";
-                        if (_showCpu) {
-                            outputCpu = cpu.get_cpu_average();
-                        }
-                        Console.Write("Length: {0,5}  Packets: {1,8}  Packets/s(ave): {2,7:F0}  " +
-                                      "Mbps(ave): {3,7:F1}  Lost: {4}{5}\n",
-                                      interval_data_length + OVERHEAD_BYTES,
-                                      interval_packets_received,
-                                      interval_packets_received*1000000/interval_time,
-                                      interval_bytes_received*1000000.0/interval_time*8.0/1000.0/1000.0,
-                                      interval_missing_packets,
-                                      outputCpu
-                        );
-                        Console.Out.Flush();
-                    }
-
-                    packets_received = 0;
-                    bytes_received = 0;
-                    missing_packets = 0;
-                    // length changed only used in scan mode in which case
-                    // there is only 1 publisher with ID 0
-                    _last_seq_num[0] = 0;
-                    begin_time = now;
+                    print_summary(message);
+                    change_size = true;
                     return;
                 }
 
@@ -1494,7 +1416,8 @@ namespace PerformanceTest {
                             if (message.seq_num > _last_seq_num[message.entity_id])
                             {
                                 missing_packets +=
-                                    message.seq_num - _last_seq_num[message.entity_id];
+                                        message.seq_num -
+                                        _last_seq_num[message.entity_id];
                             }
                             _last_seq_num[message.entity_id] = message.seq_num;
                         }
@@ -1518,6 +1441,55 @@ namespace PerformanceTest {
                         ProcessMessage(message);
                     }
                 }
+            }
+
+            public void print_summary(TestMessage message)
+            {
+                // store the info for this interval
+                ulong now = perftest_cs.GetTimeUsec();
+
+                if (interval_data_length != last_data_length) {
+                    if (!_useCft) {
+                        // detect missing packets
+                        if (message.seq_num != _last_seq_num[message.entity_id]) {
+                            // only track if skipped, might have restarted pub
+                            if (message.seq_num > _last_seq_num[message.entity_id])
+                            {
+                                missing_packets +=
+                                        message.seq_num -
+                                        _last_seq_num[message.entity_id];
+                            }
+                        }
+                    }
+
+                    interval_time = now - begin_time;
+                    interval_packets_received = packets_received;
+                    interval_bytes_received = bytes_received;
+                    interval_missing_packets = missing_packets;
+                    interval_data_length = last_data_length;
+
+                    String outputCpu = "";
+                    if (_showCpu) {
+                        outputCpu = cpu.get_cpu_average();
+                    }
+                    Console.Write("Length: {0,5}  Packets: {1,8}  Packets/s(ave): {2,7:F0}  " +
+                                  "Mbps(ave): {3,7:F1}  Lost: {4}{5}\n",
+                                  interval_data_length + OVERHEAD_BYTES,
+                                  interval_packets_received,
+                                  interval_packets_received * 1000000 / interval_time,
+                                  interval_bytes_received * 1000000.0 / interval_time * 8.0 / 1000.0 / 1000.0,
+                                  interval_missing_packets,
+                                  outputCpu
+                    );
+                }
+
+                packets_received = 0;
+                bytes_received = 0;
+                missing_packets = 0;
+                // length changed only used in scan mode in which case
+                // there is only 1 publisher with ID 0
+                _last_seq_num[0] = 0;
+                begin_time = now;
             }
         }
 
@@ -1583,7 +1555,7 @@ namespace PerformanceTest {
             message.entity_id = _SubID;
             message.data = new byte[1];
             message.size = 1;
-            announcement_writer.Send(message);
+            announcement_writer.Send(message, false);
             announcement_writer.Flush();
 
             Console.Error.Write("Waiting for data...\n");
@@ -1608,8 +1580,22 @@ namespace PerformanceTest {
                 System.Threading.Thread.Sleep(1000);
                 now = GetTimeUsec();
 
-                if (reader_listener.end_test)
-                {
+                if (reader_listener.change_size) { // ACK change_size
+                    TestMessage message_change_size = new TestMessage();
+                    message_change_size.entity_id = _SubID;
+                    message_change_size.data = new byte[1];
+                    message_change_size.size = 1;
+                    announcement_writer.Send(message_change_size, false);
+                    announcement_writer.Flush();
+                    reader_listener.change_size = false;
+                }
+                if (reader_listener.end_test) {
+                    TestMessage message_end_test = new TestMessage();
+                    message_end_test.entity_id = _SubID;
+                    message_end_test.data = new byte[1];
+                    message_end_test.size = 1;
+                    announcement_writer.Send(message_end_test, false);
+                    announcement_writer.Flush();
                     break;
                 }
 
@@ -1674,14 +1660,21 @@ namespace PerformanceTest {
         class AnnouncementListener : IMessagingCB
         {
             public int announced_subscribers;
+            private List<int> _finished_subscribers;
 
             public AnnouncementListener() {
                 announced_subscribers = 0;
+                _finished_subscribers = new List<int>();
             }
 
             public void ProcessMessage(TestMessage message)
             {
-                announced_subscribers++;
+                if (!_finished_subscribers.Contains(message.entity_id)) {
+                    _finished_subscribers.Add(message.entity_id);
+                    announced_subscribers++;
+                } else{
+                    announced_subscribers--;
+                }
             }
         }
 
@@ -1753,56 +1746,12 @@ namespace PerformanceTest {
 
                     // Test finished message
                     case FINISHED_SIZE:
-                      // may get this message multiple times for 1 to N tests
-                      if (end_test == true)
-                      {
-                          return;
-                      }
-                      end_test = true;
-                      goto case LENGTH_CHANGED_SIZE;
+                        return;
 
                     // Data length is changing size
                     case LENGTH_CHANGED_SIZE:
-
-                        // will get a LENGTH_CHANGED message on startup before any data
-                        if (count == 0)
-                        {
-                            return;
-                        }
-
-                        if (clock_skew_count != 0)
-                        {
-                            Console.Error.Write("The following latency result may not be accurate because clock skew happens {0} times\n",
-                            clock_skew_count);
-                        }
-
-                        // sort the array (in ascending order)
-                        System.Array.Sort(_latency_history, 0, (int)count);
-                        latency_ave = latency_sum / count;
-                        latency_std = System.Math.Sqrt(latency_sum_square / count - (latency_ave * latency_ave));
-                        String outputCpu = "";
-                        if (_showCpu) {
-                            outputCpu = cpu.get_cpu_average();
-                        }
-                        Console.Write("Length: {0,5}  Latency: Ave {1,6:F0} us  Std {2,6:F1} us  " +
-                                      "Min {3,6} us  Max {4,6} us  50% {5,6} us  90% {6,6} us  99% {7,6} us  99.99% {8,6} us  99.9999% {9,6} us{10}\n",
-                                      last_data_length + OVERHEAD_BYTES, latency_ave, latency_std, latency_min, latency_max,
-                                      _latency_history[count*50/100],
-                                      _latency_history[count*90/100],
-                                      _latency_history[count*99/100],
-                                      _latency_history[(int)(count*(9999.0/10000))],
-                                      _latency_history[(int)(count*(999999.0/1000000))],
-                                      outputCpu
-                        );
-                        Console.Out.Flush();
-                        latency_sum = 0;
-                        latency_sum_square = 0;
-                        latency_min = 0;
-                        latency_max = 0;
-                        count = 0;
-                        clock_skew_count = 0;
-
-                        goto done;
+                        print_summary_latency();
+                        return;
 
                     default:
                         break;
@@ -1892,7 +1841,6 @@ namespace PerformanceTest {
                             latency, latency_ave, latency_std, latency_min, latency_max,outputCpu);
                     }
                 }
-            done:
                 if (_writer != null)
                 {
                     _writer.NotifyPingResponse();
@@ -1911,6 +1859,48 @@ namespace PerformanceTest {
                         ProcessMessage(message);
                     }
                 }
+            }
+
+            public void print_summary_latency()
+            {
+                double latency_ave;
+                double latency_std;
+                if (count == 0)
+                {
+                    return;
+                }
+
+                if (clock_skew_count != 0)
+                {
+                    Console.Error.Write("The following latency result may not be accurate because clock skew happens {0} times\n",
+                    clock_skew_count);
+                }
+
+                // sort the array (in ascending order)
+                System.Array.Sort(_latency_history, 0, (int)count);
+                latency_ave = latency_sum / count;
+                latency_std = System.Math.Sqrt(latency_sum_square / count - (latency_ave * latency_ave));
+                String outputCpu = "";
+                if (_showCpu) {
+                    outputCpu = cpu.get_cpu_average();
+                }
+                Console.Write("Length: {0,5}  Latency: Ave {1,6:F0} us  Std {2,6:F1} us  " +
+                              "Min {3,6} us  Max {4,6} us  50% {5,6} us  90% {6,6} us  99% {7,6} us  99.99% {8,6} us  99.9999% {9,6} us{10}\n",
+                              last_data_length + OVERHEAD_BYTES, latency_ave, latency_std, latency_min, latency_max,
+                              _latency_history[count*50/100],
+                              _latency_history[count*90/100],
+                              _latency_history[count*99/100],
+                              _latency_history[(int)(count*(9999.0/10000))],
+                              _latency_history[(int)(count*(999999.0/1000000))],
+                              outputCpu
+                );
+                Console.Out.Flush();
+                latency_sum = 0;
+                latency_sum_square = 0;
+                latency_min = 0;
+                latency_max = 0;
+                count = 0;
+                clock_skew_count = 0;
             }
         }
 
@@ -2043,7 +2033,7 @@ namespace PerformanceTest {
             for (int i = 0; i < initializeSampleCount; i++)
             {
                 // Send test initialization message
-                writer.Send(message);
+                writer.Send(message, true);
             }
             writer.Flush();
 
@@ -2153,6 +2143,10 @@ namespace PerformanceTest {
 
                             // flush anything that was previously sent
                             writer.Flush();
+                            writer.wait_for_acknowledgments(timeout_wait_for_ack);
+
+                            announcement_reader_listener.announced_subscribers =
+                                    _NumSubscribers;
 
                             if (scan_count == _scanDataLenSizes.Count) {
                                 break; // End of scan test
@@ -2163,12 +2157,10 @@ namespace PerformanceTest {
                             // back the LENGTH_CHANGED_SIZE message
                             message.latency_ping = num_pings % _NumSubscribers;
 
-                            for (int i = 0; i < 30; ++i) {
-                                writer.Send(message);
-                                writer.Flush();
+                            while (announcement_reader_listener.announced_subscribers > 0) {
+                                writer.Send(message, true);
+                                writer.wait_for_acknowledgments(timeout_wait_for_ack);
                             }
-                            // sleep to allow packet to be pinged back
-                            System.Threading.Thread.Sleep(1000);
                             message.size = (int)(_scanDataLenSizes[scan_count++] - OVERHEAD_BYTES);
                             /* Reset _SamplePerBatch */
                             if (_BatchSize != 0) {
@@ -2203,7 +2195,7 @@ namespace PerformanceTest {
 
                 message.seq_num = (uint)loop;
                 message.latency_ping = pingID;
-                writer.Send(message);
+                writer.Send(message, false);
 
                 if (_LatencyTest && sentPing)
                 {
@@ -2229,18 +2221,22 @@ namespace PerformanceTest {
             // Test has finished, send end of test message, send multiple
             // times in case of best effort
             message.size = FINISHED_SIZE;
-            writer.resetWriteInstance();
-            for (int j = 0; j < initializeSampleCount; ++j) {
-                writer.Send(message);
-                writer.Flush();
+            int j = 0;
+            announcement_reader_listener.announced_subscribers =
+                    _NumSubscribers;
+            while (announcement_reader_listener.announced_subscribers > 0
+                    && j < initializeSampleCount) {
+                writer.Send(message, true);
+                j++;
+                writer.wait_for_acknowledgments(timeout_wait_for_ack);
             }
+            reader_listener.print_summary_latency();
+            reader_listener.end_test = true;
 
             if (_UseReadThread)
             {
                 reader.Shutdown();
             }
-
-            System.Threading.Thread.Sleep(1000);
 
             if (_displayWriterStats)
             {
@@ -2288,9 +2284,10 @@ namespace PerformanceTest {
                 timer.Elapsed += new ElapsedEventHandler(Timeout);
             } else {
                 timer.Elapsed += new ElapsedEventHandler(TimeoutScan);
+                Console.Error.WriteLine("Setting timeout to "
+                        + executionTime + " seconds.");
             }
-            timer.Interval = executionTime*1000;
-            Console.Error.WriteLine("Setting timeout to " + executionTime + " seconds.");
+            timer.Interval = executionTime * 1000;
             timer.Enabled = true;
         }
 
@@ -2332,6 +2329,9 @@ namespace PerformanceTest {
         public const string _LatencyTopicName = "Latency";
         public const string _ThroughputTopicName = "Throughput";
         public const string _AnnouncementTopicName = "Announcement";
+        public DDS.Duration_t timeout_wait_for_ack =
+                DDS.Duration_t.DURATION_ZERO;
+
 
         /*
          * PERFTEST-108

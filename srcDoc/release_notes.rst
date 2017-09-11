@@ -201,6 +201,15 @@ These parameters can still be changed via xml.
 
 This option made no sense anymore after the -sleep and -pubRate alternatives were implemented.
 
+Modified mechanism to handle finishing the performance test and changing the size of the samples being sent
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In order to make the mechanism to finish the performance test or changing sizes
+more robust, we now use the ``Announcement`` topic in the Subscriber side to
+notify the Publisher side that the special samples sent to signal a change of
+sample size or to signal that the test is finishing have arrived. In previous
+releases this process was not reliable and could cause hangs in certain
+scenarios.
 
 Fixed unreliable behavior finishing tests when using content-filtered-topic (CFT)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

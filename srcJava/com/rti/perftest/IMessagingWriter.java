@@ -6,7 +6,7 @@
 package com.rti.perftest;
 
 import java.util.concurrent.TimeUnit;
-
+import com.rti.dds.infrastructure.Duration_t;
 
 // ===========================================================================
 
@@ -16,12 +16,12 @@ import java.util.concurrent.TimeUnit;
 public interface IMessagingWriter {
     public void waitForReaders(int numReaders);
 
-    public boolean send(TestMessage message);
+    public boolean send(TestMessage message, boolean isCftWildCardKey);
     public boolean waitForPingResponse();
     public boolean waitForPingResponse(long timeout, TimeUnit unit);
     public boolean notifyPingResponse();
     public long getPulledSampleCount();
-    public void resetWriteInstance();
+    public void wait_for_acknowledgments(Duration_t timeout);
     public void flush();
 
 }
