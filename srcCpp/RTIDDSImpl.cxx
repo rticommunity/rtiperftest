@@ -2491,8 +2491,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         dr_qos.durability.direct_communication = _DirectCommunication;
     }
 
-    dr_qos.resource_limits.initial_instances = _InstanceCount;
-    dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
+    dr_qos.resource_limits.initial_instances = _InstanceCount + 1;
+    dr_qos.resource_limits.max_instances = _InstanceMaxCountReader + 1;
     
     if (_InstanceCount > 1) {
         if (_InstanceHashBuckets > 0) {

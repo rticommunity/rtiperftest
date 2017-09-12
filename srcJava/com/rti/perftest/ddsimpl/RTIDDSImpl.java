@@ -1028,8 +1028,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
             drQos.durability.direct_communication = _directCommunication;
         }
            
-        drQos.resource_limits.initial_instances = _instanceCount;
-        drQos.resource_limits.max_instances = _instanceMaxCountReader;
+        drQos.resource_limits.initial_instances = _instanceCount + 1;
+        drQos.resource_limits.max_instances = _instanceMaxCountReader + 1;
 
         if (_instanceCount > 1) {
             if (_instanceHashBuckets > 0) {

@@ -1996,8 +1996,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         qos_durability->direct_communication(_DirectCommunication);
     }
 
-    qos_resource_limits->initial_instances(_InstanceCount);
-    qos_resource_limits->max_instances(_InstanceMaxCountReader);
+    qos_resource_limits->initial_instances(_InstanceCount + 1);
+    qos_resource_limits->max_instances(_InstanceMaxCountReader + 1);
 
     if (_InstanceCount > 1) {
         if (_InstanceHashBuckets > 0) {
