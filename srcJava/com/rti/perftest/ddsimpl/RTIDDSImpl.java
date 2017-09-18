@@ -728,6 +728,15 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _secureLibrary,
                 false);
 
+        /*
+         * Below, we are using com.rti.serv.secure properties in order to be
+         * backward compatible with RTI Connext DDS 5.3.0 and below. Later
+         * versions use the properties that are specified in the DDS Security
+         * specification (see also the RTI Security Plugins Getting Started
+         * Guide). However, later versions still support the legacy properties
+         * as an alternative.
+         */
+
         // check if governance file provided
         if (_governanceFile == null) {
             // choose a pre-built governance file
@@ -1029,7 +1038,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
            
         drQos.resource_limits.initial_instances = _instanceCount + 1;
-        drQos.resource_limits.max_instances = _instanceMaxCountReader + 1;
+        if (_instanceMaxCountReader != -1) {
+            _instanceMaxCountReader++;
+        }
+        drQos.resource_limits.max_instances = _instanceMaxCountReader;
 
         if (_instanceCount > 1) {
             if (_instanceHashBuckets > 0) {

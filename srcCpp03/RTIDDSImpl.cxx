@@ -1370,6 +1370,14 @@ void RTIDDSImpl<T>::configureSecurePlugin(
 
   #endif
 
+    /*
+     * Below, we are using com.rti.serv.secure properties in order to be
+     * backward compatible with RTI Connext DDS 5.3.0 and below. Later versions
+     * use the properties that are specified in the DDS Security specification
+     * (see also the RTI Security Plugins Getting Started Guide). However,
+     * later versions still support the legacy properties as an alternative.
+     */
+
     // check if governance file provided
     if (_secureGovernanceFile.empty()) {
         // choose a pre-built governance file
@@ -1997,7 +2005,10 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     qos_resource_limits->initial_instances(_InstanceCount + 1);
-    qos_resource_limits->max_instances(_InstanceMaxCountReader + 1);
+    if (_InstanceMaxCountReader != dds::core::LENGTH_UNLIMITED) {
+        _InstanceMaxCountReader++;
+    }
+    qos_resource_limits->max_instances(_InstanceMaxCountReader);
 
     if (_InstanceCount > 1) {
         if (_InstanceHashBuckets > 0) {
