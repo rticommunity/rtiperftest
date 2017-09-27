@@ -1,7 +1,7 @@
-.. _section-code_generation_and_compilation:
+.. _section-compilation:
 
-Code generation and compilation
-===============================
+Compilation
+===========
 
 Unix systems
 ------------

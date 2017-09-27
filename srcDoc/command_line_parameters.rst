@@ -1,7 +1,7 @@
-.. _section-test_parameters:
+.. _section-command_line_parameters:
 
-Test Parameters
-===============
+Command-Line Parameters
+=======================
 
 Several parameters are available; you can enter them on the command
 line. All parameters are optional and case-insensitive; partial matches
@@ -12,14 +12,10 @@ application. The parameters are presented in the following tables, based
 on whether they may be used in a publishing application, a subscribing
 application, or both:
 
--  See `Test Parameters for Publishing and Subscribing
-   Applications <#params-pub-sub>`__
--  See `Test Parameters Only for Publishing
-   Applications <#params-pub>`__
--  See `Test Parameters Only for Subscribing
-   Applications <#params-sub>`__
--  See `Test Parameters to Control RTI Secure DDS
-   Options <#params-pub-sub-secure>`__
+-  :ref:`Test Parameters for Publishing and Subscribing Applications`
+-  :ref:`Test Parameters Only For Publishing Applications`
+-  :ref:`Test Parameters Only For Subscribing Applications`
+-  :ref:`Test Parameters to Control RTI Connext DDS Secure Options`
 
 As you will see in the tables, the ``-pub`` parameter specifies a
 publishing application and the ``-sub`` specifies a subscribing
@@ -28,16 +24,18 @@ assumed.
 
 For additional information on setting the parameters, see sections:
 
--  `Spinning vs. Sleeping <#sleepVsSpin>`__
--  `Send-Queue Size and Queue-Full Behavior <#queueSize>`__
--  `Number of Iterations vs. Latency
-   Count <#iterationsVsLatencyCount>`__
--  `Warming Up <#warmUp>`__
--  `WaitSet Event Count and Delay <#WaitSetEventCount>`__
--  `How to Measure Latency for a Given Throughput <#lat>`__
--  `Auto Tuning and Turbo Mode <#AutoTuningTurboMode>`__
+-  :ref:`Publication rate and Spinning vs. Sleeping`
+-  :ref:`Send-Queue Size and Queue-Full Behavior`
+-  :ref:`Number of Iterations vs. Latency Count`
+-  :ref:`Warming Up`
+-  :ref:`WaitSet Event Count and Delay`
+-  :ref:`How to Measure Latency for a Given Throughput`
+-  :ref:`Auto Tuning and Turbo Mode`
+-  :ref:`Optimizing Your OS For Network Performance`
 
-Test Parameters for Publishing and Subscribing Applications 
+.. _Test Parameters for Publishing and Subscribing Applications:
+
+Test Parameters for Publishing and Subscribing Applications
 ------------------------------------------------------------
 
 -  ``-bestEffort``
@@ -224,7 +222,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    Use a separate thread (instead of a callback) to read data.
 
-   See WaitSet Event Count and Delay
+   See :ref:`WaitSet Event Count and Delay`.
 
    **Default:** use callback for subscriber
 -  ``-waitsetDelayUsec <usec>``
@@ -235,7 +233,7 @@ Test Parameters for Publishing and Subscribing Applications
    Only used if the See ``-useReadThread`` option is specified on the
    subscriber side.
 
-   See WaitSet Event Count and Delay.
+   See :ref:`WaitSet Event Count and Delay`.
 
    | **Default:** ``100``
    | **Range:** ``>= 0``
@@ -248,7 +246,7 @@ Test Parameters for Publishing and Subscribing Applications
    Only used if the See ``-useReadThread`` option is specified on the
    subscriber side.
 
-   See WaitSet Event Count and Delay.
+   See :ref:`WaitSet Event Count and Delay`.
 
    | **Default:** ``5``
    | **Range:** ``>= 1``
@@ -384,7 +382,9 @@ Transport Specific Options
     | **Default for Publisher:** ``./resource/secure/pubkey.pem``
     | **Default for Subscriber:** ``./resource/secure/subkey.pem``
 
-Test Parameters Only for Publishing Applications 
+.. _Test Parameters Only For Publishing Applications:
+
+Test Parameters Only For Publishing Applications 
 -------------------------------------------------
 
 -  ``-batchSize <bytes>``
@@ -403,13 +403,13 @@ Test Parameters Only for Publishing Applications
 
 -  ``-enableAutoThrottle``
 
-   Enable the Auto Throttling feature. See Auto Tuning and Turbo Mode.
+   Enable the Auto Throttling feature. See :ref:`Auto Tuning and Turbo Mode`.
 
    **Default:** feature is disabled.
 
 -  ``-enableTurboMode``
 
-   Enables the Turbo Mode feature. See Auto Tuning and Turbo Mode.
+   Enables the Turbo Mode feature. See :ref:`Auto Tuning and Turbo Mode`.
    When turbo mode is enabled, See ``-batchSize <bytes>`` is ignored.
    Disabled automatically if using large data or asynchronous.
 
@@ -429,7 +429,7 @@ Test Parameters Only for Publishing Applications
 
    Number samples to send before a latency ping packet is sent.
 
-   See Number of Iterations vs. Latency Count.
+   See :ref:`Number of Iterations vs. Latency Count`.
 
    **Default:** ``-1`` (if ``-latencyTest`` is not specified,
    automatically adjusted to 10000 or ``-numIter`` whichever is less; 
@@ -452,7 +452,7 @@ Test Parameters Only for Publishing Applications
 
    Number of samples to send.
 
-   See Number of Iterations vs. Latency Count and See Warming Up.
+   See :ref:`Number of Iterations vs. Latency Count` and See :ref:`Warming Up`.
 
    If you set ``scan`` = ``true``, you cannot set this option (See
    ``-scan``).
@@ -559,7 +559,9 @@ Test Parameters Only for Publishing Applications
    | **Default:** ``Round-Robin schedule``
    | **Range:** ``0 and instances``
 
-Test Parameters Only for Subscribing Applications 
+.. _Test Parameters Only For Subscribing Applications:
+
+Test Parameters Only For Subscribing Applications 
 --------------------------------------------------
 
 -  ``-numPublishers <count>``
@@ -595,8 +597,10 @@ Test Parameters Only for Subscribing Applications
 
    **Default:** ``Not set``
 
-Test Parameters to Control RTI Secure DDS Options (Publishing and Subscribing Applications) 
---------------------------------------------------------------------------------------------
+.. _Test Parameters to Control RTI Connext DDS Secure Options:
+
+Test Parameters to Control RTI Connext DDS Secure Options 
+---------------------------------------------------------
 
 -  ``-secureEncryptDiscovery``
 
@@ -662,8 +666,25 @@ Test Parameters to Control RTI Secure DDS Options (Publishing and Subscribing Ap
 Additional information about the parameters
 -------------------------------------------
 
-Spinning vs. Sleeping 
-~~~~~~~~~~~~~~~~~~~~~~
+Secure Certificates, Governance and Permission Files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+RTI Perftest provides a set of already generated certificates,
+governance and permission files to be loaded when using the *RTI Connext DDS Secure
+Libraries*. Both governance files and permission files are already
+signed, so no action is required by the user. These files are located in
+``$(RTIPERFTESTHOME)/resource/secure``.
+
+In addition to the already signed governance and permission files, the
+original files are also provided (not signed) as well as a ``bash``
+script with the steps to generate all the signed files. Those files can
+be found in ``$(RTIPERFTESTHOME)/resource/secure/input``; the script is
+in ``$(RTIPERFTESTHOME)/resource/secure/make.sh``.
+
+.. _Publication rate and Spinning vs. Sleeping:
+
+Publication rate and Spinning vs. Sleeping
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When the publisher is writing as fast as it can, sooner or later, it is
 likely to get ahead of the subscriber. There are 4 things you can do in
@@ -682,17 +703,14 @@ this case:
    a period of 1 or 10 ms. If you specify a sleep period that is less
    than that minimum, the OS may sleep for its minimum resolution.)
 
-3. Spin in a tight loop between writes (See ``-spin <count>``). This
-   approach will add a pause without giving up the CPU, making it easier
-   to "sleep" for very short periods of time. In the test
-   implementation, there is a very short loop that just performs some
-   simple math to take up CPU time. The argument to ``-spin <count>``
-   (any number >= 0) is the number of times to go through that loop. The
-   default is 0. If you specify something else, it should be a fairly
-   large number (100’s or 1000’s), since spinning the loop just a few
-   times will take negligible time. Avoid spinning on a single-core
-   machine, as the code that would break you out of the spin may not be
-   able to execute in a timely manner.
+3. Set a publication rate (See ``-pubRate <count>:<method>``). This approach
+   will make *RTI Perftest* automatically set the rate of the write call so
+   you can get the number of samples per second requested (if possible).
+   This option allows to choose to use ``sleep()`` between calls or ``spin()``.
+   This second approach will add a pause without yielding the CPU to other
+   processes, making it easier to "sleep" for very short periods of time. 
+   Avoid spinning on a single-core machine, as the code that would break 
+   you out of the spin may not be able to execute in a timely manner.
 
 4. Let the publisher automatically adjust the writing rate (See
    ``-enableAutoThrottle``). This option enables the Auto Throttle
@@ -701,10 +719,12 @@ this case:
    automatically determined by the publisher based on the number of
    unacknowledged samples in the send queue.
 
-See also: Send-Queue Size and Queue-Full Behavior.
+See also: :ref:`Send-Queue Size and Queue-Full Behavior`.
 
-Send-Queue Size and Queue-Full Behavior 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _Send-Queue Size and Queue-Full Behavior:
+
+Send-Queue Size and Queue-Full Behavior
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In many distributed systems, a data producer will often outperform data
 consumers. That means that, if the communications are to be reliable,
@@ -749,8 +769,10 @@ For more information on the send queue size, see the ``RESOURCE_LIMITS``
 QosPolicy, **Section 6.5.20** in the *RTI Connext DDS Core Libraries
 User’s Manual* (specifically, the ``max_samples`` field).
 
-Number of Iterations vs. Latency Count 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _Number of Iterations vs. Latency Count:
+
+Number of Iterations vs. Latency Count
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When configuring the total number of samples to send during the test
 (See ``-numIter <count>``) and the number of samples to send between
@@ -776,8 +798,10 @@ mind:
    (<1k); reduce as needed for larger sizes (otherwise the tests will
    take longer and longer to complete).
 
-Warming Up 
-~~~~~~~~~~~
+.. _Warming Up:
+
+Warming Up
+~~~~~~~~~~
 
 When running the performance test in *Java*, and to a lesser extent,
 *C#*, you may observe that throughput slowly increases through the first
@@ -787,8 +811,10 @@ optimizer on these platforms. For the best indication of steady-state
 performance, be sure to run the test for a number of samples (See
 ``-numIter <count>``) sufficient to smooth out this start-up artifact.
 
-WaitSet Event Count and Delay 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _WaitSet Event Count and Delay:
+
+WaitSet Event Count and Delay
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *RTI Connext DDS*, and by extension, this performance test, gives you
 the option to either process received data in the middleware's receive
@@ -812,8 +838,10 @@ For more information, see these sections in the *RTI Connext DDS Core
 Libraries User’s Manual*: **Receive Threads (Section 19.3)** and
 **Conditions and WaitSets (Section 4.6)**.
 
-How to Measure Latency for a Given Throughput 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _How to Measure Latency for a Given Throughput:
+
+How to Measure Latency for a Given Throughput
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you want to measure the minimum latency for a given throughput, you
 have to use the command-line parameters ``-sleep <millisec>``,
@@ -859,8 +887,10 @@ throughputs higher than the ``max_no_batch`` throughput rate.
 **Note:** For larger data sizes (``8000 bytes`` and higher), batching
 often does not improve throughput, at least for 1-Gigabyte networks.
 
-Auto Tuning and Turbo Mode 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _Auto Tuning and Turbo Mode:
+
+Auto Tuning and Turbo Mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *RTI Connext DDS* includes since 5.1.0 two features that allow the middleware
 to auto-tune the communications to achieve better performance. These
@@ -886,3 +916,55 @@ is ignored.
 
 To achieve the best latency under maximum throughput conditions, use See
 ``-enableAutoThrottle`` and See ``-enableTurboMode`` in combination.
+
+.. _Optimizing Your OS For Network Performance:
+
+Optimizing Your OS For Network Performance
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The network stacks of popular operating systems are not always tuned for
+maximum performance out of the box. RTI has found that the following
+configuration changes frequently improve performance for a broad set of
+demanding applications. Consider testing your network performance with
+and without these changes to learn if they can benefit your system.
+
+Optimizing Linux Systems
+************************
+
+Edit the file ``/etc/sysctl.conf`` and add the following:
+
+::
+
+    net.core.wmem_max = 16777216
+    net.core.wmem_default = 131072
+    net.core.rmem_max = 16777216
+    net.core.rmem_default = 131072
+    net.ipv4.tcp_rmem = 4096 131072 16777216
+    net.ipv4.tcp_wmem = 4096 131072 16777216
+    net.ipv4.tcp_mem = 4096 131072 16777216
+
+    net.core.netdev_max_backlog = 30000
+    net.ipv4.ipfrag_high_threshold = 8388608
+
+    run /sbin/sysctl -p
+
+Optimizing Windows Systems
+**************************
+
+1. From the Start button, select Run..., then enter ``regedit``.
+
+2. Change this entry:
+   ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\ Services\Tcpip\Parameters``
+
+   -  Add the ``DWORD`` key: ``MaximumReassemblyHeaders``
+   -  Set the value to ``0xffff`` (this is the max value)
+   -  See http://support.microsoft.com/kb/811003 for more information.
+
+3. Change this entry:
+   ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\ Services\AFD\Parameters``
+
+   -  Add the ``DWORD`` key: ``FastSendDatagramThreshold``
+   -  Set the value to ``65536`` (``0x10000``) See
+      http://support.microsoft.com/kb/235257 for more information.
+
+4. Reboot your machine for the changes to take effect.

@@ -3,8 +3,8 @@
 Release Notes
 =============
 
-RTI Perftest Master Compatibility
----------------------------------
+Compatibility Master
+--------------------
 
 Using security
 ~~~~~~~~~~~~~~
@@ -124,7 +124,7 @@ cause *RTI Perftest* to fail due to an issue reserving memory. This behavior
 has been fixed.
 
 ``-nic`` command-line parameter not working when using UDPv6 transport
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In previous releases the ``-nic`` command-line parameter was not taken
 into account when using the UDPv6 transport. This behavior has been
@@ -149,7 +149,7 @@ in such case, the behavior will remain the same.
 Same behavior will be applied for ``-TurboMode``.
 
 Improved ``-scan`` command-line parameter functionality
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In previous releases, using '-scan' will execute the execution of *RTI Perftest*
 with different dataLen, which are predefined and the duration for every

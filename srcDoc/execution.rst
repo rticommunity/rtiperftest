@@ -1,7 +1,7 @@
 .. _section-execution:
 
-Executing the test
-==================
+Execution
+=========
 
 The test is provided in C++ (Modern and Traditional APIs), C#, and Java.
 The list below identifies how to run the executables, once you have
@@ -46,19 +46,19 @@ Traditional C++:
 
 ::
 
-    bin/<architecture>/<release or debug>/perftest_cpp <-pub | -sub (default)> [parameters]
+    bin/<architecture>/<release or debug>/perftest_cpp <-pub|-sub(default)> [parameters]
 
 Modern C++:
 
 ::
 
-    bin/<architecture>/<release or debug>/perftest_cpp03 <-pub | -sub (default)> [parameters]
+    bin/<architecture>/<release or debug>/perftest_cpp03 <-pub|-sub(default)> [parameters]
 
 C#:
 
 ::
 
-    bin/<architecture>/<release or debug>/perftest_cs <-pub | -sub (default)> [parameters]
+    bin/<architecture>/<release or debug>/perftest_cs <-pub|-sub(default)> [parameters]
 
 When using dynamic linking
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -155,40 +155,68 @@ parameters, choose parameters that allow the test to run for at least 15
 seconds to get any kind of meaningful results. The longer it runs, the
 more accurate the results will be.
 
-Ideally, you should run the test for at least 180 seconds.
+Ideally, you should run the test for at least 100 seconds.
 
 C++ Traditional API
 ~~~~~~~~~~~~~~~~~~~
 
 ::
 
-    bin/<architecture>/<release or debug>/perftest_cpp <-pub | -sub (default)> [parameters]
+    bin/<architecture>/<release or debug>/perftest_cpp <-pub|-sub(default)> [parameters]
 
 C++ Modern API
 ~~~~~~~~~~~~~~
 
 ::
 
-    bin/<architecture>/<release or debug>/perftest_cpp03 <-pub | -sub (default)> [parameters]
+    bin/<architecture>/<release or debug>/perftest_cpp03 <-pub|-sub(default)> [parameters]
 
 C# API
 ~~~~~~
 
 ::
 
-    bin/<architecture>/<release or debug>/perftest_cs <-pub | -sub (default)> [parameters]
+    bin/<architecture>/<release or debug>/perftest_cs <-pub|-sub(default)> [parameters]
 
 Java API
 ~~~~~~~~
 
 ::
 
-    bin/<release or debug>/perftest_java <-pub | -sub (default)> [parameters]
+    bin/<release or debug>/perftest_java <-pub|-sub(default)> [parameters]
 
 where ``<architecture>`` depends on your architecture, such as
 ``x64Linux3gcc4.8.2`` or ``i86Win32VS2012``.
 
 After the publisher recognizes that the specified number of subscribers
-(see the See ``-numSubscribers <count>`` option) are online and the
+(see the ``-numSubscribers <count>`` option) are online and the
 subscriber recognizes that the specified number of publishers (see the
-See ``-numPublishers <count>`` option) are online, the test begins.
+``-numPublishers <count>`` option) are online, the test begins.
+
+Output Example
+--------------
+
+The following is an example of the expected output from the performance
+test.
+
+-  Publisher:
+
+::
+
+    > perftest_cpp -pub -noPrint -domain 27 -sendQueueSize 50 -latencyCount 10000 -scan Waiting to discover 1 subscribers... 
+    Waiting for subscribers announcement ...
+    Publishing data...
+    Length: 32 Latency: Ave 396 us Std 48.9 us Min 83 us Max 538 us 50% 401 us 90% 459 us 99% 510 us 99.99% 538 us 99.9999% 538 us
+    Length: 64 Latency: Ave 399 us Std 53.1 us Min 88 us Max 1062 us 50% 403 us 90% 461 us 99% 537 us 99.99% 1062 us 99.9999% 1062 us
+    ...
+
+-  Subscriber
+
+::
+
+    > perftest_cpp -sub -noPrint -domain 27
+    Waiting to discover 1 publishers ...
+    Waiting for data...
+    Length: 32 Packets: 10000000 Packets/s(ave): 47913 Mbps(ave): 12.3 Lost: 0
+    Length: 64 Packets: 10000000 Packets/s(ave): 47580 Mbps(ave): 24.4 Lost: 0
+    ...
