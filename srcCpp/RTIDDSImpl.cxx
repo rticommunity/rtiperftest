@@ -82,18 +82,25 @@ void RTIDDSImpl<T>::Shutdown()
         perftest_cpp::MilliSleep(2000);
 
         if (_reader != NULL) {
+            DDSDataReaderListener* reader_listener = _reader->get_listener();
+            if (reader_listener != NULL) {
+                delete(reader_listener);
+            }
             _subscriber->delete_datareader(_reader);
         }
 
-        perftest_cpp::MilliSleep(4000);
+        DDSDomainParticipantListener* participant_listener = _participant->get_listener();
+        if (participant_listener != NULL) {
+            delete(participant_listener);
+        }
 
         _participant->delete_contained_entities();
         DDSTheParticipantFactory->delete_participant(_participant);
     }
 
     if(_pongSemaphore != NULL) {
-        RTIOsapiSemaphore_delete(_pongSemaphore);
-        _pongSemaphore = NULL;
+	RTIOsapiSemaphore_delete(_pongSemaphore);
+	_pongSemaphore = NULL;
     }
 
     DDSDomainParticipantFactory::finalize_instance();
@@ -802,6 +809,19 @@ class RTIPublisher : public IMessagingWriter
         _instance_handles[_num_instances] = _writer->register_instance(data);
     }
 
+    ~RTIPublisher() {
+        Shutdown();
+    }
+
+    void Shutdown() {
+        if (_writer->get_listener() != NULL) {
+            delete(_writer->get_listener());
+            _writer->set_listener(NULL);
+        }
+
+        free(_instance_handles);
+    }
+
     void Flush()
     {
         _writer->flush();
@@ -867,15 +887,15 @@ class RTIPublisher : public IMessagingWriter
 
     bool waitForPingResponse() 
     {
-    if(_pongSemaphore != NULL)
-    {
-        if(!RTIOsapiSemaphore_take(_pongSemaphore, NULL))
+        if(_pongSemaphore != NULL)
         {
-        fprintf(stderr,"Unexpected error taking semaphore\n");
-        return false;
+            if(!RTIOsapiSemaphore_take(_pongSemaphore, NULL))
+            {
+                fprintf(stderr,"Unexpected error taking semaphore\n");
+                return false;
+            }
         }
-    }
-    return true;
+        return true;
     }
 
     /* time out in milliseconds */
@@ -884,28 +904,28 @@ class RTIPublisher : public IMessagingWriter
         struct RTINtpTime blockDurationIn;
         RTINtpTime_packFromMillisec(blockDurationIn, 0, timeout);
 
-    if(_pongSemaphore != NULL)
-    {
-        if(!RTIOsapiSemaphore_take(_pongSemaphore, &blockDurationIn))
+        if(_pongSemaphore != NULL)
         {
-        fprintf(stderr,"Unexpected error taking semaphore\n");
-        return false;
+        if(!RTIOsapiSemaphore_take(_pongSemaphore, &blockDurationIn))
+            {
+                fprintf(stderr,"Unexpected error taking semaphore\n");
+                return false;
+            }
         }
-    }
-    return true;
+        return true;
     }    
 
     bool notifyPingResponse() 
     {
-    if(_pongSemaphore != NULL)
-    {
-        if(!RTIOsapiSemaphore_give(_pongSemaphore))
+        if(_pongSemaphore != NULL)
         {
-        fprintf(stderr,"Unexpected error giving semaphore\n");
-        return false;
+            if(!RTIOsapiSemaphore_give(_pongSemaphore))
+            {
+                fprintf(stderr,"Unexpected error giving semaphore\n");
+                return false;
+            }
         }
-    }
-    return true;
+        return true;
     }
 
     unsigned int getPulledSampleCount() {
@@ -979,6 +999,19 @@ public:
             fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
         }
         _instance_handles[_num_instances] = _writer->register_instance(data);
+    }
+
+    ~RTIDynamicDataPublisher() {
+        Shutdown();
+    }
+
+    void Shutdown() {
+        if (_writer->get_listener() != NULL) {
+            delete(_writer->get_listener());
+            _writer->set_listener(NULL);
+        }
+
+        free(_instance_handles);
     }
 
     void Flush()
@@ -1387,8 +1420,17 @@ class RTISubscriber : public IMessagingReader
         }
     }
 
-    virtual void Shutdown()
+    ~RTISubscriber()
     {
+        Shutdown();
+    }
+
+    void Shutdown()
+    {
+        if (_reader->get_listener() != NULL) {
+            delete(_reader->get_listener());
+            _reader->set_listener(NULL);
+        }
         // loan may be outstanding during shutdown
         _reader->return_loan(_data_seq, _info_seq);
     }
@@ -1528,8 +1570,17 @@ class RTIDynamicDataSubscriber : public IMessagingReader
         }
     }
 
-    virtual void Shutdown()
+    ~RTIDynamicDataSubscriber()
     {
+        Shutdown();
+    }
+
+    void Shutdown()
+    {
+        if (_reader->get_listener() != NULL) {
+            delete(_reader->get_listener());
+            _reader->set_listener(NULL);
+        }
         // loan may be outstanding during shutdown
         _reader->return_loan(_data_seq, _info_seq);
     }

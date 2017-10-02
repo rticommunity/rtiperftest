@@ -1234,9 +1234,22 @@ int perftest_cpp::Subscriber()
         }
     }
 
-    if (_UseReadThread)
+    if (writer != NULL) {
+        delete(writer);
+    }
+
+    if (announcement_writer != NULL) {
+        delete(announcement_writer);
+    }
+
+    if (reader != NULL)
     {
         reader->Shutdown();
+        delete(reader);
+    }
+
+    if (reader_listener != NULL) {
+        delete(reader_listener);
     }
 
     perftest_cpp::MilliSleep(1000);
@@ -1347,6 +1360,7 @@ class LatencyListener : public IMessagingCB
     }
 
     void print_summary_latency(){
+
         double latency_ave;
         double latency_std;
         std::string outputCpu = "";
@@ -1391,6 +1405,19 @@ class LatencyListener : public IMessagingCB
         clock_skew_count = 0;
 
         return;
+    }
+
+    ~LatencyListener()
+    {
+        if (_latency_history != NULL) {
+            delete []_latency_history;
+        }
+        if (_reader != NULL) {
+            delete(_reader);
+        }
+        if (_writer != NULL) {
+            delete(_writer);
+        }
     }
 
     void ProcessMessage(TestMessage &message)
@@ -1906,16 +1933,31 @@ int perftest_cpp::Publisher()
     reader_listener->print_summary_latency();
     reader_listener->end_test = true;
 
-    if (_UseReadThread && reader)
-    {
-        reader->Shutdown();
-    }
-
-    perftest_cpp::MilliSleep(1000);
-
     if (_displayWriterStats) {
         printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
     }
+
+    if (reader != NULL) {
+        delete(reader);
+    }
+
+    if (writer != NULL) {
+        delete(writer);
+    }
+
+    if (announcement_reader != NULL) {
+        delete(announcement_reader);
+    }
+
+    if (reader_listener != NULL) {
+        delete(reader_listener);
+    }
+
+    if (announcement_reader_listener != NULL) {
+        delete(announcement_reader_listener);
+    }
+
+    delete []message.data;
 
     if (_testCompleted) {
         fprintf(stderr,"Finishing test due to timer...\n");

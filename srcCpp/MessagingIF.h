@@ -34,12 +34,6 @@ class TestMessage
         key[3]=0;
     }
 
-    ~TestMessage()
-    {
-        if (data != NULL) {
-            delete []data;
-        }
-    }
 };
 
 class IMessagingCB
