@@ -33,10 +33,10 @@ Download instructions
 
 -  You can clone it from the official *Github* repository:
 
-   ``git clone -b master https://github.com/rticommunity/rtiperftest.git``
+   ``git clone -b 2.3 https://github.com/rticommunity/rtiperftest.git``
 
    This command will download the *Github* repository in a folder named
-   ``rtiperftest`` and move to the ``master`` tag.
+   ``rtiperftest`` and move to the ``2.3`` tag.
 
 
 -  You can download a zip file containing the *RTI Perftest* source files from

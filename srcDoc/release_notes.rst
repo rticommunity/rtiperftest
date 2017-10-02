@@ -3,7 +3,7 @@
 Release Notes
 =============
 
-Compatibility Master
+Compatibility 2.3
 --------------------
 
 Using security
@@ -45,10 +45,10 @@ releases:
    supported. You can disable this by adding the ``--skip-cs-build``
    flag.
 
-Release Notes Master
+Release Notes 2.3
 --------------------
 
-What's New in Master
+What's New in 2.3
 ~~~~~~~~~~~~~~~~~~~~
 
 Added Support for DTLS
@@ -113,7 +113,7 @@ QoS profiles that inherit from the default one (``perftest_qos_profiles.xml``).
 A simple example is provided here:
 ``resource/profile_examples/custom_perftest_qos_profiles.xml``.
 
-What's Fixed in Master
+What's Fixed in 2.3
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Fixed ``-peer`` command-line parameter for C#
