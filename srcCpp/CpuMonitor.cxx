@@ -59,7 +59,7 @@ CpuMonitor::CpuMonitor()
     _numProcessors = sysInfo.dwNumberOfProcessors;
 
 #else
-    fprintf(stderr, "[WARNING] get CPU consumption feature, is not available in that Operator System\n");
+    fprintf(stderr, "[WARNING] get CPU consumption feature, is not available in this OS\n");
 
 #endif
 }
