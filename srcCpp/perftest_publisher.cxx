@@ -1412,12 +1412,6 @@ class LatencyListener : public IMessagingCB
         if (_latency_history != NULL) {
             delete []_latency_history;
         }
-        if (_reader != NULL) {
-            delete(_reader);
-        }
-        if (_writer != NULL) {
-            delete(_writer);
-        }
     }
 
     void ProcessMessage(TestMessage &message)
@@ -1937,6 +1931,10 @@ int perftest_cpp::Publisher()
         printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
     }
 
+    if (reader_listener != NULL) {
+        delete(reader_listener);
+    }
+
     if (reader != NULL) {
         delete(reader);
     }
@@ -1947,10 +1945,6 @@ int perftest_cpp::Publisher()
 
     if (announcement_reader != NULL) {
         delete(announcement_reader);
-    }
-
-    if (reader_listener != NULL) {
-        delete(reader_listener);
     }
 
     if (announcement_reader_listener != NULL) {
