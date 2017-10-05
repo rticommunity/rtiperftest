@@ -6,7 +6,7 @@ Release Notes
 Compatibility Master
 --------------------
 
-Using security
+Using Security
 ~~~~~~~~~~~~~~
 
 Governance and Permission files have been updated to be compatible with
@@ -22,7 +22,7 @@ repository:
 
     git checkout release/2.0 -- resource/secure
 
-Compilation restrictions
+Compilation Restrictions
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 *RTI Perftest* is designed to compile and work against the *RTI Connext
@@ -34,7 +34,7 @@ parameters in *Rtiddsgen* that might change or not be present between
 releases:
 
 -  The ``--secure`` and ``--openssl-home`` parameters will not work for
-   versions previous to *RTI Connext DDS* 5.2.5.
+   versions prior to *RTI Connext DDS* 5.2.5.
 
 -  Java code generation against *RTI Connext DDS 5.2.0.x* will fail out
    of the box. You can disable this by adding the ``--skip-java-build``
@@ -56,19 +56,19 @@ Added Support for DTLS
 
 *RTI Perftest* now supports the use of the *DTLS* plugin. The out of the
 box configuration allows the application to work using *DTLS* by just specifying
-``-enableDtls``, however we also included command-line parameters to specify:
+``-transport DTLS``, however we also included command-line parameters to specify:
 
 - The Certificates and the public/private keys.
 - The verbosity.
 
-See *Test Parameters* section for more information about how to configure DTLS.
+See the *Test Parameters* section for more information about how to configure DTLS.
 
 Added Support for TLS
 ^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* now supports the use of *TLS* on top of the *TCP* plugin.
 The out of the box configuration allows the application to work using *TLS*
-by just specifying ``-enableTls``, however we also included command-line
+by just specifying ``-transport TLS``, however we also included command-line
 parameters to specify:
 
 - The Certificates and the public/private keys.
@@ -77,9 +77,9 @@ parameters to specify:
 - The use of WAN mode.
 - The use of a Public Address.
 
-See *Test Parameters* section for more information about how to configure TLS.
+See the *Test Parameters* section for more information about how to configure TLS.
 
-Enhanced TCP functionalities
+Enhanced TCP Functionalities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As part of the changes for adding support for *TLS*, more functionalities have
@@ -90,9 +90,24 @@ been included for *TCP*, including options to specify:
 - The use of WAN mode.
 - The use of a Public Address.
 
-See *Test Parameters* section for more information about how to configure TCP.
+See the *Test Parameters* section for more information about how to configure TCP.
 
-Default values for ``Reliability`` and ``Transport`` can be modified via xml
+Added Support for WAN
+^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* now supports the use of the *WAN* transport plugin.
+In order to use this transport the command-line option ``-transport WAN`` needs
+to be specified, we also included command-line parameters to specify:
+
+- The WAN Server Address and Port
+- The WAN ID.
+- The Certificates and the public/private keys in case of using Secure WAN.
+- The verbosity.
+- The Server Bind Port.
+
+See the *Test Parameters* section for more information about how to configure WAN.
+
+Default Values for ``Reliability`` and ``Transport`` can be Modified via XML
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Starting with this release, the Reliability and Transport settings are not set
@@ -101,71 +116,43 @@ This allows you to easily modify these settings without needing to recompile.
 
 These settings can still be modified via command-line parameters.
 
-Added command-line parameter ``-qosLibrary``
+Added Command-Line Parameter ``-qosLibrary``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Starting with this release, the QoS Library can be selected using the new
 ``-qosLibrary`` option.
 
-This command-line option, combined with the ``-qosFile`` allows you to use custom
+This command-line option, combined with ``-qosFile``, allows you to use custom
 QoS profiles that inherit from the default one (``perftest_qos_profiles.xml``).
 
 A simple example is provided here:
 ``resource/profile_examples/custom_perftest_qos_profiles.xml``.
 
-What's Fixed in Master
-~~~~~~~~~~~~~~~~~~~~~~
-
-Fixed ``-peer`` command-line parameter for C#
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In previous releases, using the ``-peer`` option in the C# implementation would
-cause *RTI Perftest* to fail due to an issue reserving memory. This behavior
-has been fixed.
-
-``-nic`` command-line parameter not working when using UDPv6 transport
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In previous releases the ``-nic`` command-line parameter was not taken
-into account when using the UDPv6 transport. This behavior has been
-fixed.
-
-Changed name for command-line option from ``-qosProfile`` to ``-qosFile``
+Changed Name for Command-Line Option from ``-qosProfile`` to ``-qosFile``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Starting with this release, the ``-qosProfile`` command-line parameter has been
 changed to ``-qosFile`` to better reflect its use.
 
-Modified behavior for ``-batchSize`` and ``-TurboMode``
+Improved ``-scan`` Command-line Parameter Functionality
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In the previous release, using ``-scan`` caused *RTI Perftest* to execute with 
+a predefined set of values for -dataLen, and with execution durations related to 
+the number of latency pings. This behavior has been changed. Now ``-scan`` allows 
+you to specify a set of -datalen sizes to be used (or you can use the default set). 
+In addition, the value specified for the '-executionTime' parameter is now used 
+for each execution during the scan, regardless of the number of latency pings.
 
-In previous releases, setting ``-batchSize`` in conjunction with a ``-dataLen``
-value greater than the asynchronous publishing threshold would cause the
-application to show an error and exit. Starting from this release, the
-``-batchSize`` option will be ignored (and a warning message displayed).
-This new changes won't be applied if the user sets explicitly ``-asynchronous``,
-in such case, the behavior will remain the same.
-
-Same behavior will be applied for ``-TurboMode``.
-
-Improved ``-scan`` command-line parameter functionality
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In previous releases, using '-scan' will execute the execution of *RTI Perftest*
-with different dataLen, which are predefined and the duration for every
-execution is relate with the number of latency-ping. This behavior has been
-fixed, now the command line parameter allow the user to introduce a set of sizes
-which will be used. Besides, now the '-executionTime' parameter is used to every
-size on the scan mode.
 When using ``-batchSize`` at the same time as ``-scan`` and not using large
 data, the same batch size will be applied to all the data sizes being used by
 ``-scan``.
 
-Reviewed command-line parameters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In order to simplify the number of parameters *RTI Perftest* accepts, we reviewed
-and deprecated the following parameters. These parameters will still work for
-this release, but they will be deleted or altered for future ones.
+Deprecated Some Command-Line Parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To simplify the number of parameters *RTI Perftest* accepts, we reviewed and 
+deprecated some parameters. These parameters will still work for this 
+release, but they will be deleted or altered for future ones.
 
 -  Deprecated ``-instanceHashBuckets <n>``
 
@@ -173,53 +160,82 @@ The associated value will be the same as the number of instances.
 
 -  Deprecated ``-keepDurationUsec <usec>``
 
-Value will be set in the QoS in the case of use noPositiveAcks.
+The value will be set in the QoS in the case of using -noPositiveAcks.
 
 -  Combined ``-multicast`` and ``-multicastAddress <address>``.
 
-The result command can be used as ``-multicast`` keeping its original behavior
-or as ``-multicast <address>``, now enabling multicast and using <address> as
+The resulting command can be used as ``-multicast`` keeping its original behavior
+or as ``-multicast <address>``, which will enable multicast and use <address> as
 the multicast receive address.
 
 -  Deprecated ``-nomulticast``
 
-The default behavior will not use multicast, so this command line option was
+The default behavior is to not use multicast, so this command-line option was
 redundant.
 
 -  Updated ``-unbounded <managerMemory>`` to ``-unbounded <allocator_threshold>``
 
-Instead ``managerMemory``, use ``allocator_threshold``, since it better reflects
-the use of the value. New default is ``2 * dataLen`` up to ``63000``.
-Improved the documentation associated.
+Instead of ``managerMemory``, use ``allocator_threshold``, since it better reflects
+the use of the value. The new default is ``2 * dataLen`` up to ``63000``.
+The associated documentation has also been improved.
 
 -  Deprecated ``-heartbeatPeriod <sec>:<nanosec>`` and
-   ``-fastHeartbeatPeriod <sec>:<nanosec>`` command-line options
+   ``-fastHeartbeatPeriod <sec>:<nanosec>``
 
-These parameters can still be changed via xml.
+These parameters can still be changed via XML.
 
--  Deprecated ``-spin <count>``.
+-  Deprecated ``-spin <count>``
 
-This option made no sense anymore after the -sleep and -pubRate alternatives were implemented.
+This option made no sense after the -sleep and -pubRate alternatives were implemented.
 
-Modified mechanism to handle finishing the performance test and changing the size of the samples being sent
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+What's Fixed in Master
+~~~~~~~~~~~~~~~~~~~~~~
 
-In order to make the mechanism to finish the performance test or changing sizes
-more robust, we now use the ``Announcement`` topic in the Subscriber side to
-notify the Publisher side that the special samples sent to signal a change of
-sample size or to signal that the test is finishing have arrived. In previous
-releases this process was not reliable and could cause hangs in certain
-scenarios.
+Failure when Using ``-peer`` Command-Line Parameter for C#
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Fixed unreliable behavior finishing tests when using content-filtered-topic (CFT)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Using the ``-peer`` option in the C# implementation caused 
+*RTI Perftest* to fail due to an issue reserving memory. This behavior
+has been fixed.
 
-In previous releases, when using CFTs, in order to finish a test, the publisher
-would  need to send as many samples signaling that the test is finishing as the
-number of instances being used by the test (1 sample per instance). This could
-result in a very long process, and in the case of scenarios where the
-reliability is set to BEST_EFFORT, in a higher chance to lose one of those
-samples, making the test hang.
+``-nic`` Command-Line Parameter not Working when Using UDPv6 Transport
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``-nic`` command-line parameter was not taken into account when 
+using the UDPv6 transport. This behavior has been fixed.
+
+
+Failure when Using -batchSize or -enableTurboMode if -dataLen Exceeded Async Publishing Threshold
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Using ``-batchSize`` along with a ``-dataLen`` value greater than the asynchronous 
+publishing threshold caused the application to show an error and exit. 
+Starting with this release, the ``-batchSize`` option will be ignored in this scenario 
+(and a warning message displayed). 
+
+This change (ignoring ``-batchSize``) won't be applied if you explicitly set ``-asynchronous``; 
+in this case, the behavior will remain the same as before (it will show an error and exit).
+
+This change also applies to the use of ``-enableTurboMode``.
+
+Issues when Finishing Performance Test or Changing Sample Size
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In order to make the mechanism to finish the performance test or change sample sizes
+more robust, we now use the ``Announcement`` topic on the Subscriber side to notify
+the Publisher side of the arrival of special samples sent to signal a change of sample 
+size or to signal that the test is finishing. In previous releases, this process was 
+not reliable and may have caused hangs in certain scenarios.
+
+Unreliable Behavior Finishing Tests when Using ContentFilteredTopic (CFT)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases when using CFTs, in order to finish a test, the Publisher
+needed to send as many samples signaling that the test is finishing as the
+number of instances that were being used by the test (1 sample per instance). 
+This could result in a very long process, and in scenarios where the reliability 
+was set to BEST_EFFORT, in a higher chance of losing one of those samples, 
+making the test hang.
 
 This behavior has been modified by using a specific key for the signaling
 messages, so they are not filtered by the CFTs.
