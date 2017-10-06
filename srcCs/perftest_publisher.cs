@@ -30,8 +30,9 @@ namespace PerformanceTest {
 
         public DataTypeHelper(TestData_t myData, ulong maxPerftestSampleSize)
         {
-                _myData = myData;
-                _maxPerftestSampleSize = maxPerftestSampleSize;
+            _myData = new TestData_t();
+            _myData.copy_from(myData);
+            _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
         public void fillKey(int value)
@@ -126,8 +127,9 @@ namespace PerformanceTest {
 
         public DataTypeLargeHelper(TestDataLarge_t myData, ulong maxPerftestSampleSize)
         {
-                _myData = myData;
-                _maxPerftestSampleSize = maxPerftestSampleSize;
+            _myData = new TestDataLarge_t();
+            _myData.copy_from(myData);
+            _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
         public void fillKey(int value)
@@ -223,7 +225,8 @@ namespace PerformanceTest {
 
         public DataTypeKeyedHelper(TestDataKeyed_t myData, ulong maxPerftestSampleSize)
         {
-            _myData = myData;
+            _myData = new TestDataKeyed_t();
+            _myData.copy_from(myData);
             _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
@@ -319,7 +322,8 @@ namespace PerformanceTest {
 
         public DataTypeKeyedLargeHelper(TestDataKeyedLarge_t myData, ulong maxPerftestSampleSize)
         {
-            _myData = myData;
+            _myData = new TestDataKeyedLarge_t();
+            _myData.copy_from(myData);
             _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
