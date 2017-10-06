@@ -30,8 +30,9 @@ namespace PerformanceTest {
 
         public DataTypeHelper(TestData_t myData, ulong maxPerftestSampleSize)
         {
-                _myData = myData;
-                _maxPerftestSampleSize = maxPerftestSampleSize;
+            _myData = new TestData_t();
+            _myData.copy_from(myData);
+            _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
         public void fillKey(int value)
@@ -126,8 +127,9 @@ namespace PerformanceTest {
 
         public DataTypeLargeHelper(TestDataLarge_t myData, ulong maxPerftestSampleSize)
         {
-                _myData = myData;
-                _maxPerftestSampleSize = maxPerftestSampleSize;
+            _myData = new TestDataLarge_t();
+            _myData.copy_from(myData);
+            _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
         public void fillKey(int value)
@@ -223,7 +225,8 @@ namespace PerformanceTest {
 
         public DataTypeKeyedHelper(TestDataKeyed_t myData, ulong maxPerftestSampleSize)
         {
-            _myData = myData;
+            _myData = new TestDataKeyed_t();
+            _myData.copy_from(myData);
             _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
@@ -319,7 +322,8 @@ namespace PerformanceTest {
 
         public DataTypeKeyedLargeHelper(TestDataKeyedLarge_t myData, ulong maxPerftestSampleSize)
         {
-            _myData = myData;
+            _myData = new TestDataKeyedLarge_t();
+            _myData.copy_from(myData);
             _maxPerftestSampleSize = maxPerftestSampleSize;
         }
 
@@ -2279,16 +2283,18 @@ namespace PerformanceTest {
 
         private void setTimeout(ulong executionTime)
         {
-            timer = new System.Timers.Timer();
-            if (!_isScan) {
-                timer.Elapsed += new ElapsedEventHandler(Timeout);
-            } else {
-                timer.Elapsed += new ElapsedEventHandler(TimeoutScan);
-                Console.Error.WriteLine("Setting timeout to "
-                        + executionTime + " seconds.");
+            if (timer == null) {
+                timer = new System.Timers.Timer();
+                if (!_isScan) {
+                    timer.Elapsed += new ElapsedEventHandler(Timeout);
+                    Console.Error.WriteLine("Setting timeout to "
+                            + executionTime + " seconds.");
+                } else {
+                    timer.Elapsed += new ElapsedEventHandler(TimeoutScan);
+                }
+                timer.Interval = executionTime * 1000;
+                timer.Enabled = true;
             }
-            timer.Interval = executionTime * 1000;
-            timer.Enabled = true;
         }
 
         private ulong  _DataLen = 100;

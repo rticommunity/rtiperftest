@@ -22,7 +22,7 @@ public class DataTypeKeyedLargeHelper implements TypeHelper<TestDataKeyedLarge_t
     }
 
     public DataTypeKeyedLargeHelper(TestDataKeyedLarge_t myData, int maxPerftestSampleSize) {
-        _myData = myData;
+        _myData = new TestDataKeyedLarge_t(myData);
         _maxPerftestSampleSize = maxPerftestSampleSize;
     }
 

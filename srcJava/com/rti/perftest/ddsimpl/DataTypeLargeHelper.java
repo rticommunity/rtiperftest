@@ -23,7 +23,7 @@ public class DataTypeLargeHelper implements TypeHelper<TestDataLarge_t> {
 
 
     public DataTypeLargeHelper(TestDataLarge_t myData, int maxPerftestSampleSize) {
-        _myData = myData;
+        _myData = new TestDataLarge_t(myData);
         _maxPerftestSampleSize = maxPerftestSampleSize;
     }
 

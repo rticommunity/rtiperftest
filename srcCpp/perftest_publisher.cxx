@@ -1234,13 +1234,7 @@ int perftest_cpp::Subscriber()
         }
     }
 
-    if (writer != NULL) {
-        delete(writer);
-    }
-
-    if (announcement_writer != NULL) {
-        delete(announcement_writer);
-    }
+    perftest_cpp::MilliSleep(2000);
 
     if (reader != NULL)
     {
@@ -1252,7 +1246,14 @@ int perftest_cpp::Subscriber()
         delete(reader_listener);
     }
 
-    perftest_cpp::MilliSleep(1000);
+    if (writer != NULL) {
+        delete(writer);
+    }
+
+    if (announcement_writer != NULL) {
+        delete(announcement_writer);
+    }
+
     fprintf(stderr,"Finishing test...\n");
     fflush(stderr);
 

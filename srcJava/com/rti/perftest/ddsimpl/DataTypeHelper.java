@@ -23,7 +23,7 @@ public class DataTypeHelper implements TypeHelper<TestData_t> {
 
 
     public DataTypeHelper(TestData_t myData, int maxPerftestSampleSize) {
-        _myData = myData;
+        _myData = new TestData_t(myData);
         _maxPerftestSampleSize = maxPerftestSampleSize;
     }
 
