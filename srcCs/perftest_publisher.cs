@@ -2283,16 +2283,18 @@ namespace PerformanceTest {
 
         private void setTimeout(ulong executionTime)
         {
-            timer = new System.Timers.Timer();
-            if (!_isScan) {
-                timer.Elapsed += new ElapsedEventHandler(Timeout);
-            } else {
-                timer.Elapsed += new ElapsedEventHandler(TimeoutScan);
-                Console.Error.WriteLine("Setting timeout to "
-                        + executionTime + " seconds.");
+            if (timer == null) {
+                timer = new System.Timers.Timer();
+                if (!_isScan) {
+                    timer.Elapsed += new ElapsedEventHandler(Timeout);
+                    Console.Error.WriteLine("Setting timeout to "
+                            + executionTime + " seconds.");
+                } else {
+                    timer.Elapsed += new ElapsedEventHandler(TimeoutScan);
+                }
+                timer.Interval = executionTime * 1000;
+                timer.Enabled = true;
             }
-            timer.Interval = executionTime * 1000;
-            timer.Enabled = true;
         }
 
         private ulong  _DataLen = 100;
