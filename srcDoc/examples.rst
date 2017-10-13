@@ -142,13 +142,13 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 200 -batchSize 6400 -multicast
+    bin/<arch>/release/perftest_cpp -sub -noPrint -multicast -sidMultiSubTest 0
 
 -  Subscriber 2:
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 200 -batchSize 6400 -multicast
+    bin/<arch>/release/perftest_cpp -sub -noPrint -multicast -sidMultiSubTest 1
 
 2-to-1, Multicast, Reliable, UDPv4
 ----------------------------------
