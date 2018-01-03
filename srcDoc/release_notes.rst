@@ -48,8 +48,22 @@ releases:
 Release Notes Master
 --------------------
 
-What's New in Master
-~~~~~~~~~~~~~~~~~~~~
+What's Fixed in Master
+~~~~~~~~~~~~~~~~~~~~~~
+
+Segmentation fault when using multiple publishers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous versions, in scenarios with multiple publishers, every *RTI Perftest*
+publisher application with `-pidMultiPubTest` different than 0 would crash in the
+process of printing the latency statistics. This behavior has been fixed.
+
+
+Release Notes 2.3
+-----------------
+
+What's New in 2.3
+~~~~~~~~~~~~~~~~~
 
 Added Support for DTLS
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -188,8 +202,8 @@ These parameters can still be changed via XML.
 
 This option made no sense after the -sleep and -pubRate alternatives were implemented.
 
-What's Fixed in Master
-~~~~~~~~~~~~~~~~~~~~~~
+What's Fixed in 2.3
+~~~~~~~~~~~~~~~~~~~
 
 Failure when Using ``-peer`` Command-Line Parameter for C#
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -244,7 +258,7 @@ Release Notes v2.2
 ------------------
 
 What's New
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
 
 Added command-line parameters "-asynchronous" and "-flowController ``<``\ flow\ ``>``"
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

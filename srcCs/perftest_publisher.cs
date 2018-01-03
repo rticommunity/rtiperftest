@@ -2234,8 +2234,13 @@ namespace PerformanceTest {
                 j++;
                 writer.wait_for_acknowledgments(timeout_wait_for_ack);
             }
-            reader_listener.print_summary_latency();
-            reader_listener.end_test = true;
+
+            if (_PubID == 0) {
+                reader_listener.print_summary_latency();
+                reader_listener.end_test = true;
+            } else {
+                Console.Write("Latency results are only shown when -pidMultiPubTest = 0\n");
+            }
 
             if (_UseReadThread)
             {
