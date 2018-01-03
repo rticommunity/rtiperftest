@@ -3,7 +3,7 @@
 Release Notes
 =============
 
-Compatibility 2.3
+Compatibility 2.3.1
 --------------------
 
 Using Security
