@@ -34,7 +34,7 @@ bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the sca
 const char *perftest_cpp::_LatencyTopicName = "Latency";
 const char *perftest_cpp::_AnnouncementTopicName = "Announcement";
 const char *perftest_cpp::_ThroughputTopicName = "Throughput";
-const DDS_Duration_t timeout_wait_for_ack = {0, 100000000};
+int timeout_wait_for_ack_nsec = 100000000;
 
 /*
  * PERFTEST-108
@@ -1835,8 +1835,7 @@ int perftest_cpp::Publisher()
 
                     // flush anything that was previously sent
                     writer->Flush();
-                    writer->wait_for_acknowledgments(timeout_wait_for_ack);
-
+                    writer->wait_for_acknowledgments(0, timeout_wait_for_ack_nsec);
                     announcement_reader_listener->announced_subscribers = _NumSubscribers;
 
                     if (scan_count == _scanDataLenSizes.size()) {
@@ -1851,7 +1850,7 @@ int perftest_cpp::Publisher()
                     while (announcement_reader_listener->announced_subscribers > 0) {
                         writer->Send(message, true);
                         writer->Flush();
-                        writer->wait_for_acknowledgments(timeout_wait_for_ack);
+                        writer->wait_for_acknowledgments(0, timeout_wait_for_ack_nsec);
                     }
 
                     message.size = _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
@@ -1922,7 +1921,7 @@ int perftest_cpp::Publisher()
             && i < initializeSampleCount) {
         writer->Send(message, true);
         writer->Flush();
-        writer->wait_for_acknowledgments(timeout_wait_for_ack);
+        writer->wait_for_acknowledgments(0, timeout_wait_for_ack_nsec);
         i++;
     }
 

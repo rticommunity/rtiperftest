@@ -9,6 +9,7 @@
 #include "MessagingIF.h"
 #include "perftest_cpp.h"
 #include "RTIDDSImpl.h"
+#include "ndds/ndds_cpp.h"
 #include "qos_string.h"
 
 #ifdef RTI_SECURE_PERFTEST
@@ -934,7 +935,8 @@ class RTIPublisher : public IMessagingWriter
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(const DDS_Duration_t & timeout){
+    void wait_for_acknowledgments(long sec, unsigned long nsec){
+        DDS_Duration_t timeout = {sec, nsec};
         _writer->wait_for_acknowledgments(timeout);
     }
 };
@@ -1172,7 +1174,8 @@ public:
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(const DDS_Duration_t & timeout){
+    void wait_for_acknowledgments(long sec, unsigned long nsec){
+        DDS_Duration_t timeout = {sec, nsec};
         _writer->wait_for_acknowledgments(timeout);
     }
 };
