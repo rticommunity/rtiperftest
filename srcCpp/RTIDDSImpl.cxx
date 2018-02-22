@@ -935,7 +935,7 @@ class RTIPublisher : public IMessagingWriter
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec){
+    void wait_for_acknowledgments(long sec, unsigned long nsec) {
         DDS_Duration_t timeout = {sec, nsec};
         _writer->wait_for_acknowledgments(timeout);
     }
@@ -1174,7 +1174,7 @@ public:
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec){
+    void wait_for_acknowledgments(long sec, unsigned long nsec) {
         DDS_Duration_t timeout = {sec, nsec};
         _writer->wait_for_acknowledgments(timeout);
     }

@@ -33,7 +33,8 @@ RTI_UINT64 perftest_cpp::_Clock_usec = 0;
 const std::string perftest_cpp::_LatencyTopicName = "Latency";
 const std::string perftest_cpp::_AnnouncementTopicName = "Announcement";
 const std::string perftest_cpp::_ThroughputTopicName = "Throughput";
-const int timeout_wait_for_ack_nsec = 10000000;
+const long timeout_wait_for_ack_sec = 0;
+const unsigned long timeout_wait_for_ack_nsec = 100000000;
 
 /*
  * PERFTEST-108
@@ -1764,7 +1765,9 @@ int perftest_cpp::RunPublisher()
 
                     // flush anything that was previously sent
                     writer->flush();
-                    writer->wait_for_acknowledgments(0, timeout_wait_for_ack_nsec);
+                    writer->wait_for_acknowledgments(
+                            timeout_wait_for_ack_sec,
+                            timeout_wait_for_ack_nsec);
 
                     announcement_reader_listener->announced_subscribers = _NumSubscribers;
 
@@ -1782,7 +1785,9 @@ int perftest_cpp::RunPublisher()
                     while (announcement_reader_listener->announced_subscribers > 0) {
                         writer->send(message, true);
                         writer->flush();
-                        writer->wait_for_acknowledgments(0, timeout_wait_for_ack_nsec);
+                        writer->wait_for_acknowledgments(
+                                timeout_wait_for_ack_sec,
+                                timeout_wait_for_ack_nsec);
                     }
 
                     message.size = _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
@@ -1856,7 +1861,9 @@ int perftest_cpp::RunPublisher()
         writer->send(message, true);
         writer->flush();
         i++;
-        writer->wait_for_acknowledgments(0, timeout_wait_for_ack_nsec);
+        writer->wait_for_acknowledgments(
+                timeout_wait_for_ack_sec,
+                timeout_wait_for_ack_nsec);
     }
 
     if (_PubID == 0) {

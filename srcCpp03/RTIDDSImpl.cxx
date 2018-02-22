@@ -857,7 +857,7 @@ public:
         return (unsigned int)_writer->datawriter_protocol_status().pulled_sample_count().total();
     }
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec){
+    void wait_for_acknowledgments(long sec, unsigned long nsec) {
         try {
             _writer->wait_for_acknowledgments(dds::core::Duration(sec, nsec));
         } catch (const dds::core::TimeoutError) { // Expected exception

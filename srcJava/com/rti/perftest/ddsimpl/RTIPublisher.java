@@ -171,7 +171,7 @@ final class RTIPublisher<T> implements IMessagingWriter {
         return status.pulled_sample_count;
     }
 
-    public void wait_for_acknowledgments(int sec, int nsec){
+    public void wait_for_acknowledgments(int sec, int nsec) {
         try {
             _writer.wait_for_acknowledgments(new Duration_t(sec, nsec));
         } catch (RETCODE_TIMEOUT ignored) { // Expected exception

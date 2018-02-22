@@ -2144,7 +2144,9 @@ namespace PerformanceTest {
 
                             // flush anything that was previously sent
                             writer.Flush();
-                            writer.wait_for_acknowledgments(0, timeout_wait_for_ack_nanosec);
+                            writer.wait_for_acknowledgments(
+                                    timeout_wait_for_ack_sec,
+                                    timeout_wait_for_ack_nsec);
 
                             announcement_reader_listener.announced_subscribers =
                                     _NumSubscribers;
@@ -2160,7 +2162,9 @@ namespace PerformanceTest {
 
                             while (announcement_reader_listener.announced_subscribers > 0) {
                                 writer.Send(message, true);
-                                writer.wait_for_acknowledgments(0, timeout_wait_for_ack_nanosec);
+                                writer.wait_for_acknowledgments(
+                                        timeout_wait_for_ack_sec,
+                                        timeout_wait_for_ack_nsec);
                             }
                             message.size = (int)(_scanDataLenSizes[scan_count++] - OVERHEAD_BYTES);
                             /* Reset _SamplePerBatch */
@@ -2229,7 +2233,9 @@ namespace PerformanceTest {
                     && j < initializeSampleCount) {
                 writer.Send(message, true);
                 j++;
-                writer.wait_for_acknowledgments(0, timeout_wait_for_ack_nanosec);
+                writer.wait_for_acknowledgments(
+                        timeout_wait_for_ack_sec,
+                        timeout_wait_for_ack_nsec);
             }
 
             if (_PubID == 0) {
@@ -2337,7 +2343,8 @@ namespace PerformanceTest {
         public const string _LatencyTopicName = "Latency";
         public const string _ThroughputTopicName = "Throughput";
         public const string _AnnouncementTopicName = "Announcement";
-        public const uint timeout_wait_for_ack_nanosec = 10000000;
+        public const uint timeout_wait_for_ack_sec = 0;
+        public const uint timeout_wait_for_ack_nsec = 10000000;
 
 
         /*
