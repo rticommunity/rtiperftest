@@ -5,7 +5,6 @@
 
 package com.rti.perftest.harness;
 
-import com.rti.dds.infrastructure.Duration_t;
 import com.rti.perftest.IMessaging;
 import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.IMessagingWriter;
@@ -37,8 +36,7 @@ public final class PerfTest {
     public static final String THROUGHPUT_TOPIC_NAME = "Throughput";
     public static final String ANNOUNCEMENT_TOPIC_NAME = "Announcement";
 
-    public static final Duration_t timeout_wait_for_ack =
-            new Duration_t(0, 10000000);
+    public static final int timeout_wait_for_ack_nanosec = 10000000;
 
     // Number of bytes sent in messages besides user data
     public static final int OVERHEAD_BYTES = 28;
@@ -1111,8 +1109,7 @@ public final class PerfTest {
 
                         // flush anything that was previously sent
                         writer.flush();
-                        writer.wait_for_acknowledgments(timeout_wait_for_ack);
-
+                        writer.wait_for_acknowledgments(0, timeout_wait_for_ack_nanosec);
                         announcement_reader_listener.announced_subscribers =
                                 _numSubscribers;
 
@@ -1127,7 +1124,7 @@ public final class PerfTest {
                         int i = 0;
                         while (announcement_reader_listener.announced_subscribers > 0) {
                             writer.send(message, true);
-                            writer.wait_for_acknowledgments(timeout_wait_for_ack);
+                            writer.wait_for_acknowledgments(0, timeout_wait_for_ack_nanosec);
                         }
 
                         message.size = (int)(_scanDataLenSizes.get(scan_count++) - OVERHEAD_BYTES);
@@ -1203,7 +1200,7 @@ public final class PerfTest {
                 && i < initialize_sample_count) {
             writer.send(message, true);
             i++;
-            writer.wait_for_acknowledgments(timeout_wait_for_ack);
+            writer.wait_for_acknowledgments(0, timeout_wait_for_ack_nanosec);
         }
 
         if (pubID == 0) {
