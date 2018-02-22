@@ -48,7 +48,7 @@ namespace PerformanceTest
         bool WaitForPingResponse();
         bool WaitForPingResponse(int timeout);
         long getPulledSampleCount();
-        void wait_for_acknowledgments(Duration_t timeout);
+        void wait_for_acknowledgments(int sec, uint nanosec);
     }
 
     public interface IMessaging : IDisposable
