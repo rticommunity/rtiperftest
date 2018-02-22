@@ -998,7 +998,10 @@ namespace PerformanceTest
 
             public void wait_for_acknowledgments(int sec, uint nanosec){
                 try {
-                    _writer.wait_for_acknowledgments(new Duration_t(sec, nanosec));
+                    Duration_t duration = new Duration_t();
+                    duration.sec = sec;
+                    duration.nanosec = nanosec;
+                    _writer.wait_for_acknowledgments(duration);
                 } catch (DDS.Retcode_Timeout) { // Expected exception
                     // nothing to do
                 }
