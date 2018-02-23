@@ -996,9 +996,12 @@ namespace PerformanceTest
                 return status.pulled_sample_count;
             }
 
-            public void wait_for_acknowledgments(Duration_t timeout){
+            public void wait_for_acknowledgments(int sec, uint nsec) {
                 try {
-                    _writer.wait_for_acknowledgments(timeout);
+                    Duration_t duration = new Duration_t();
+                    duration.sec = sec;
+                    duration.nanosec = nsec;
+                    _writer.wait_for_acknowledgments(duration);
                 } catch (DDS.Retcode_Timeout) { // Expected exception
                     // nothing to do
                 }

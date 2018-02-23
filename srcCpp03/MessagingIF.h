@@ -6,8 +6,6 @@
 #ifndef __MESSAGINGIF_H__
 #define __MESSAGINGIF_H__
 
-#include <dds/dds.hpp>
-
 class TestMessage
 {
   public:
@@ -86,8 +84,8 @@ class IMessagingWriter
     virtual unsigned int getPulledSampleCount() {
         return -1;
     };
-    virtual void wait_for_acknowledgments(const dds::core::Duration & timeout){
-    }
+    virtual void wait_for_acknowledgments(long sec, unsigned long nsec) {
+    };
 };
 
 class IMessaging
