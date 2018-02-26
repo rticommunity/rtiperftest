@@ -9,7 +9,6 @@
 #include <string>
 #include <map>
 #include <sstream>
-#include "ndds/ndds_cpp.h"
 
 /******************************************************************************/
 
@@ -125,9 +124,5 @@ private:
     void populateSecurityFiles(bool isPublisher);
 
 };
-
-bool configureTransport(
-        PerftestTransport &transport,
-        DDS_DomainParticipantQos &qos);
 
 #endif /* PERFTEST_2_0_SRCCPP_PERFTESTTRANSPORT_H_ */
