@@ -24,7 +24,7 @@
     #include <sys/sysctl.h>
     #include <cstddef>
 #elif defined(RTI_WIN32)
-    #include "windows.h"
+    #include <windows.h>
 #endif
 
 class CpuMonitor
