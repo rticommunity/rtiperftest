@@ -58,22 +58,6 @@ Subscriber(s):
     </qos_profile>
 
     <!-- ================================================================= -->
-    <!-- Throughput QoS Profile (positive ACKs disabled)                   -->
-    <!-- ================================================================= -->
-
-    <qos_profile name="NoAckThroughputQos" 
-                 base_name="PerftestQosLibrary::NoAckThroughputQos">
-    </qos_profile>
-
-    <!-- ================================================================= -->
-    <!-- Latency QoS Profile (positive ACKs disabled)                      -->
-    <!-- ================================================================= -->
-
-    <qos_profile name="NoAckLatencyQos" 
-                 base_name="PerftestQosLibrary::NoAckLatencyQos">
-    </qos_profile>
-
-    <!-- ================================================================= -->
     <!-- Announcement QoS Profile                                          -->
     <!-- ================================================================= -->
 
