@@ -822,7 +822,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private void configureWriterQos(
             String topicName, String qosProfile, DataWriterQos dwQos) {
         // Configure ACKs
-        if (_usePositiveAcks) {
+        if (!_usePositiveAcks) {
             dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (_keepDurationUsec * 1000) / 1000000000;
             dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = (_keepDurationUsec * 1000) % 1000000000;
         }

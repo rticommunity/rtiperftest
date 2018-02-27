@@ -1664,7 +1664,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     std::map<std::string, std::string> properties =
             dw_qos.policy<Property>().get_all();
 
-    if (_UsePositiveAcks) {
+    if (!_UsePositiveAcks) {
         dw_reliableWriterProtocol.disable_positive_acks_min_sample_keep_duration(
                 dds::core::Duration((int) _KeepDurationUsec / 1000000,
                         _KeepDurationUsec % 1000000));

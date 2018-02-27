@@ -1736,7 +1736,7 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (_UsePositiveAcks)
+            if (!_UsePositiveAcks)
             {
                 dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (int)_KeepDurationUsec/1000000;
                 dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = _KeepDurationUsec%1000000;
