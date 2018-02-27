@@ -344,10 +344,6 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
             
             The default value of _KeepDurationUsec is 1000.
             -->
-            <disable_positive_acks_min_sample_keep_duration>
-              <sec>DURATION_ZERO_SEC</sec>
-              <nanosec>100000</nanosec>
-            </disable_positive_acks_min_sample_keep_duration>
           </rtps_reliable_writer>
         </protocol>
 
@@ -1086,20 +1082,6 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
     The QoS parameters overridden below are all documented above.
     -->
     <qos_profile name="NoAckLatencyQos" base_name="LatencyQos">
-
-      <!-- === DataWriter Configuration: ================================= -->
-
-      <datawriter_qos>
-        <protocol>
-          <disable_positive_acks>true</disable_positive_acks>
-          <rtps_reliable_writer>
-            <disable_positive_acks_min_sample_keep_duration>
-              <sec>DURATION_ZERO_SEC</sec>
-              <nanosec>100000</nanosec>
-            </disable_positive_acks_min_sample_keep_duration>
-          </rtps_reliable_writer>
-        </protocol>
-      </datawriter_qos>
 
       <!-- === DataReader Configuration: ================================= -->
 
