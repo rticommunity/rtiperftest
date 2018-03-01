@@ -6,6 +6,7 @@
 filename=$0
 script_location=`cd "\`dirname "$filename"\`"; pwd`
 idl_location="${script_location}/srcIdl"
+customType_location="${idl_location}/customType"
 classic_cpp_folder="${script_location}/srcCpp"
 modern_cpp_folder="${script_location}/srcCpp03"
 java_folder="${script_location}/srcJava"
@@ -28,6 +29,9 @@ USE_SECURE_LIBS=0
 
 # Needed when compiling statically using security
 RTI_OPENSSLHOME=""
+
+#Variable for customType
+CUSTOM_TYPE=0
 
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
@@ -71,6 +75,7 @@ function usage()
     echo "    --openssl-home <path>        Path to the openssl home. This will be used    "
     echo "                                 when compiling statically and using security   "
     echo "                                 Default is an empty string (current folder).   "
+    echo "    --customType                 Use your own type. Documentation: URL          "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
@@ -99,6 +104,19 @@ function clean()
     rm -rf "${script_location}"/srcJava/jar
     rm -rf "${script_location}"/srcJava/com/rti/perftest/gen
     rm -rf "${script_location}"/bin
+
+    # Remove customType generated files
+    for file in ${customType_location}/*.idl
+    do
+        if [ -f $file ]; then
+            name_file=$(basename $file)
+            rm -rf ${idl_location}/${name_file}
+            name_file="${name_file%.*}"
+            rm -f "${script_location}"/srcC*/"${name_file}Plugin".*
+            rm -f "${script_location}"/srcC*/"${name_file}".*
+            rm -f "${script_location}"/srcC*/"${name_file}Support".*
+        fi
+    done
 
     echo ""
     echo "================================================================================"
@@ -196,16 +214,51 @@ function additional_defines_calculation()
             echo -e "${INFO_TAG} Using security plugin. Linking Statically."
         fi
     fi
+    if [ "${CUSTOM_TYPE}" == "1" ]; then
+        additional_defines=${additional_defines}" DRTI_CUSTOM_TYPE"
+    fi
 }
 
 function build_cpp()
 {
     additional_defines_calculation
 
+    additional_defines_customType=""
+    additionalHeaderFiles_customType=""
+    additionalSourceFiles_customType=""
+    if [ "${CUSTOM_TYPE}" == "1" ]; then
+        cp -rf ${customType_location}/* ${idl_location}/
+        additionalHeaderFiles_customType="customType.h"
+        additionalSourceFiles_customType="customType.cxx"
+        # Find all the files of the folder ${customType_location}
+        # Run codegen with all the files
+        echo -e "${INFO_TAG} Generating types for ${classic_cpp_lang_string}."
+        for file in ${customType_location}/*.idl
+        do
+            if [ -f $file ]; then
+                # Executing RTIDDSGEN command here.
+                rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -d \"${classic_cpp_folder}\" \"${file}\" "
+                echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+                eval $rtiddsgen_command
+                if [ "$?" != 0 ]; then
+                    echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
+                    exit -1
+                fi
+                # Adding the generated file as additional HearderFiles and SourceFiles
+                name_file=$(basename $file)
+                name_file="${name_file%.*}"
+                additionalHeaderFiles_customType="${name_file}Plugin.h ${name_file}.h ${name_file}Support.h "$additionalHeaderFiles_customType
+                additionalSourceFiles_customType="${name_file}Plugin.cxx ${name_file}.cxx ${name_file}Support.cxx "$additionalSourceFiles_customType
+            fi
+        done
+        # Adding RTI_CUSTOM_TYPE as a macro
+        additional_defines_customType=" -D RTI_CUSTOM_TYPE"
+    fi
+
     ##############################################################################
     # Generate files for srcCpp
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles  \"RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"${additionalHeaderFiles_customType} MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles \"${additionalSourceFiles_customType} RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} ${additional_defines_customType} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${classic_cpp_lang_string}."
@@ -441,6 +494,9 @@ while [ "$1" != "" ]; do
             ;;
         --secure)
             USE_SECURE_LIBS=1
+            ;;
+        --customType)
+            CUSTOM_TYPE=1
             ;;
         --openssl-home)
             RTI_OPENSSLHOME=$2

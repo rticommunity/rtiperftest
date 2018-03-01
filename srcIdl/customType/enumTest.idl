@@ -1,0 +1,4 @@
+enum PrimitiveEnum {
+    ENUM1,
+    ENUM2
+};//@Extensibility FINAL_EXTENSIBILITY

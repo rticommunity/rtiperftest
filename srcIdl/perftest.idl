@@ -2,6 +2,13 @@
  * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
+#ifdef RTI_CUSTOM_TYPE
+// TODO Include here your idl filename
+#include "test.idl"
+// TODO Create an alias from your type to CustomType
+typedef Test CustomType;
+#endif
+
 
 const long MAX_SYNCHRONOUS_SIZE = 63000;
 const long MAX_BOUNDED_SEQ_SIZE = 63000;
@@ -18,6 +25,11 @@ struct TestData_t {
     unsigned long timestamp_usec;
     long latency_ping;
     sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
+    long size;
+#ifdef RTI_CUSTOM_TYPE
+    CustomType customType;
+#endif
+
 }; //@Extensibility FINAL_EXTENSIBILITY
 
 
@@ -30,6 +42,10 @@ struct TestDataKeyed_t {
     unsigned long timestamp_usec;
     long latency_ping;
     sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
+    long size;
+#ifdef RTI_CUSTOM_TYPE
+    CustomType customType;
+#endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 
 struct TestDataLarge_t {
@@ -41,6 +57,10 @@ struct TestDataLarge_t {
     unsigned long timestamp_usec;
     long latency_ping;
     sequence<octet> bin_data;
+    long size;
+#ifdef RTI_CUSTOM_TYPE
+    CustomType customType;
+#endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 
 struct TestDataKeyedLarge_t {
@@ -52,5 +72,9 @@ struct TestDataKeyedLarge_t {
     unsigned long timestamp_usec;
     long latency_ping;
     sequence<octet> bin_data;
+    long size;
+#ifdef RTI_CUSTOM_TYPE
+    CustomType customType;
+#endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 

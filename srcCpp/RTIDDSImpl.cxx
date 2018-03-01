@@ -788,6 +788,9 @@ class RTIPublisher : public IMessagingWriter
  public:
     RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
     {
+#ifdef RTI_CUSTOM_TYPE
+        initialize_custom_type(data.customType);
+#endif
         _writer = T::DataWriter::narrow(writer);
         data.bin_data.maximum(0);
         _num_instances = num_instances;
@@ -838,7 +841,12 @@ class RTIPublisher : public IMessagingWriter
         data.timestamp_sec = message.timestamp_sec;
         data.timestamp_usec = message.timestamp_usec;
         data.latency_ping = message.latency_ping;
+        data.size = message.size;
+#ifdef RTI_CUSTOM_TYPE
+        set_custom_type(data.customType);
+#else
         data.bin_data.loan_contiguous((DDS_Octet*)message.data, message.size, message.size);
+#endif
 
         if (!isCftWildCardKey) {
             if (_num_instances > 1) {
@@ -860,7 +868,12 @@ class RTIPublisher : public IMessagingWriter
         } else { // send CFT_MAX sample
             retcode = _writer->write(data, _instance_handles[_num_instances]);
         }
+
+#ifdef RTI_CUSTOM_TYPE
+        unloan_custom_type(data.customType);
+#else
         data.bin_data.unloan();
+#endif
 
         if (retcode != DDS_RETCODE_OK)
         {
@@ -1063,6 +1076,9 @@ public:
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_long(latency_ping) failed: %d.\n", retcode);
         }
+#ifdef RTI_CUSTOM_TYPE
+        set_custom_type_dynamic(data);
+#else
         DDS_OctetSeq octetSeq;
         bool succeeded = octetSeq.from_array(
                 (DDS_Octet *) message.data,
@@ -1076,6 +1092,14 @@ public:
                 octetSeq);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
+        }
+#endif
+        retcode = data.set_long(
+                "size",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                message.size);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_long(size) failed: %d.\n", retcode);
         }
 
         DDS_Octet key_octets[4];
@@ -1240,7 +1264,7 @@ class ReceiverListener : public DDSDataReaderListener
                 _message.timestamp_sec = _data_seq[i].timestamp_sec;
                 _message.timestamp_usec = _data_seq[i].timestamp_usec;
                 _message.latency_ping = _data_seq[i].latency_ping;
-                _message.size = _data_seq[i].bin_data.length();
+                _message.size = _data_seq[i].size;
                 _message.data = (char *)_data_seq[i].bin_data.get_contiguous_bufferI();
 
                 _callback->ProcessMessage(_message);
@@ -1367,7 +1391,16 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                             "on_data_available() get_octet_seq(bin_data) failed: %d.\n",
                             retcode);
                 }
-                _message.size = octetSeq.length();
+                retcode = _data_seq[i].get_long(
+                        _message.size,
+                        "size",
+                        8);
+                if (retcode != DDS_RETCODE_OK) {
+                    fprintf(stderr,
+                            "on_data_available() get_long(size) failed: %d.\n",
+                            retcode);
+                    _message.size = 0;
+                }
                 _message.data = (char *)octetSeq.get_contiguous_buffer();
 
                 _callback->ProcessMessage(_message);
@@ -1502,7 +1535,7 @@ class RTISubscriber : public IMessagingReader
             _message.timestamp_sec = _data_seq[_data_idx].timestamp_sec;
             _message.timestamp_usec = _data_seq[_data_idx].timestamp_usec;
             _message.latency_ping = _data_seq[_data_idx].latency_ping;
-            _message.size = _data_seq[_data_idx].bin_data.length();
+            _message.size = _data_seq[_data_idx].size;
             _message.data = (char *)_data_seq[_data_idx].bin_data.get_contiguous_bufferI();
 
             ++_data_idx;
@@ -1711,7 +1744,16 @@ class RTIDynamicDataSubscriber : public IMessagingReader
                          "ReceiveMessage() get_octet_seq(bin_data) failed: %d.\n",
                          retcode);
              }
-             _message.size = octetSeq.length();
+             retcode = _data_seq[_data_idx].get_long(
+                     _message.size,
+                     "size",
+                     8);
+             if (retcode != DDS_RETCODE_OK) {
+                 fprintf(stderr,
+                         "on_data_available() get_long(size) failed: %d.\n",
+                         retcode);
+                 _message.size = 0;
+             }
              _message.data = (char *)octetSeq.get_contiguous_buffer();
 
             ++_data_idx;

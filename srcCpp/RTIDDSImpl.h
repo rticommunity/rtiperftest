@@ -13,6 +13,10 @@
 #include "perftestSupport.h"
 #include "PerftestTransport.h"
 
+#ifdef RTI_CUSTOM_TYPE
+#include "customType.h"
+#endif
+
 #define RTIPERFTEST_MAX_PEERS 1024
 
 template <typename T>
