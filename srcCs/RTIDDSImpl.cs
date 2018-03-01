@@ -1724,8 +1724,7 @@ namespace PerformanceTest
 
             if (!_UsePositiveAcks 
                     && (qos_profile == "ThroughputQos"
-                            || qos_profile == "LatencyQos"))
-            {
+                        || qos_profile == "LatencyQos")) {
                 dw_qos.protocol.disable_positive_acks = true;
                 dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (int)_KeepDurationUsec/1000000;
                 dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = _KeepDurationUsec%1000000;
@@ -1852,7 +1851,10 @@ namespace PerformanceTest
 
             if ("LatencyQos" == qos_profile
                     && !_DirectCommunication
-                    && (_Durability == 2 || _Durability == 3)){
+                    && ((DDS.DurabilityQosPolicyKind)_Durability 
+                            == DDS.DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS
+                        || (DDS.DurabilityQosPolicyKind)_Durability 
+                            == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS)) {
 
                 dw_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
                 dw_qos.durability.direct_communication = _DirectCommunication;
@@ -2045,15 +2047,17 @@ namespace PerformanceTest
 
             if (!_UsePositiveAcks 
                     && (qos_profile == "ThroughputQos"
-                            || qos_profile == "LatencyQos"))
-            {
+                            || qos_profile == "LatencyQos")) {
                 dr_qos.protocol.disable_positive_acks = true;
             }
 
             if ("ThroughputQos" == qos_profile 
                     || ("LatencyQos" == qos_profile
                         && !_DirectCommunication
-                        && (_Durability == 2 || _Durability == 3)) {
+                        && ((DDS.DurabilityQosPolicyKind)_Durability 
+                                == DDS.DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS
+                            || (DDS.DurabilityQosPolicyKind)_Durability 
+                                == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS)) {
 
                 dr_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
                 dr_qos.durability.direct_communication = _DirectCommunication;

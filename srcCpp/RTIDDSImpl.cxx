@@ -2311,9 +2311,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     if (qos_profile == "LatencyQos"
-        && !_DirectCommunication
-        && (_Durability == DDS_TRANSIENT_DURABILITY_QOS ||
-         _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
+            && !_DirectCommunication
+            && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
+                || _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
         dw_qos.durability.kind = (DDS_DurabilityQosPolicyKind)_Durability;
         dw_qos.durability.direct_communication = _DirectCommunication;
     }
