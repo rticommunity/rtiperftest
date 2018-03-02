@@ -2212,8 +2212,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     if (!_UsePositiveAcks
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_qos.protocol.disable_positive_acks = true;
-        dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (int)_KeepDurationUsec/1000000;
-        dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = _KeepDurationUsec%1000000;
+        if (_KeepDurationUsec != -1) {
+            dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
+                DDS_Duration_t::from_micros(_KeepDurationUsec);
+        }
     }
 
     if (_isLargeData || _IsAsynchronous) {

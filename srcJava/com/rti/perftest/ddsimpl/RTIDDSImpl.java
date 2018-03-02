@@ -96,7 +96,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private int     _durability = 0;
     private boolean _directCommunication = true;
     private int     _batchSize = 0;
-    private int     _keepDurationUsec = 1000;
+    private int     _keepDurationUsec = -1;
     private boolean _usePositiveAcks = true;
     private boolean _isDebug = false;
     private boolean _latencyTest = false;
@@ -809,8 +809,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 && ("ThroughputQos".equals(qosProfile)
                     || "LatencyQos".equals(qosProfile))) {
             dwQos.protocol.disable_positive_acks = true;
-            dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (_keepDurationUsec * 1000) / 1000000000;
-            dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = (_keepDurationUsec * 1000) % 1000000000;
+            if (_keepDurationUsec != -1) {
+                dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = 
+                    Duration_t.from_micros(_keepDurationUsec).sec;
+                dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec =
+                    Duration_t.from_micros(_keepDurationUsec).nanosec;
+            }
         }
 
         if (_useUnbounded > 0) {
@@ -940,7 +944,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         if ("LatencyQos".equals(qosProfile)
                 && !_directCommunication 
                 && (_durability == 2
-                    || _durability == 3)){
+                    || _durability == 3)) {
 
             if(_durability == 2){
                 dwQos.durability.kind = DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS;
@@ -1013,7 +1017,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             drQos.durability.direct_communication = _directCommunication;
         }
 
-        if (("LatencyQos".equals(qosProfile))
+        if ("LatencyQos".equals(qosProfile)
                 && !_directCommunication
                 && (_durability == 2 || _durability == 3)) {
 
@@ -1301,10 +1305,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     _keepDurationUsec = Integer.parseInt(argv[i]);
                 } catch (NumberFormatException nfx) {
                     System.err.print("Bad usec for keep duration\n");
-                    return false;
-                }
-                if (_keepDurationUsec < 0) {
-                    System.err.print("keep duration cannot be negative\n");
                     return false;
                 }
             }

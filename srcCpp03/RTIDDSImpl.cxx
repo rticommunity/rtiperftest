@@ -65,7 +65,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED), //(-1)
         _Durability(0), // DDS_VOLATILE_DURABILITY_QOS;
         _DirectCommunication(true),
-        _KeepDurationUsec(1000),
+        _KeepDurationUsec(-1),
         _UsePositiveAcks(true),
         _LatencyTest(false),
         _IsDebug(false),
@@ -1659,9 +1659,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     if (!_UsePositiveAcks 
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_DataWriterProtocol.disable_positive_acks(true);
-        dw_reliableWriterProtocol.disable_positive_acks_min_sample_keep_duration(
-                dds::core::Duration((int) _KeepDurationUsec / 1000000,
-                        _KeepDurationUsec % 1000000));
+        if (_KeepDurationUsec != -1) {
+            dw_reliableWriterProtocol.disable_positive_acks_min_sample_keep_duration(
+                dds::core::Duration::from_microsecs(_KeepDurationUsec));
+        }
     }
 
     if (_isLargeData || _IsAsynchronous) {
