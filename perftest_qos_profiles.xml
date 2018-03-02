@@ -328,23 +328,25 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </resource_limits>
         
         <protocol>
-          <rtps_reliable_writer>
-            <!--
-            When positive acknowledgements have been disabled, the DataWriter will 
-            consider samples as positively "acknowledged" after this duration has 
-            elapsed if it has not heard otherwise.
-            
-            Important: when the input command-line option "-noPositiveAcks" is not used,
-            this setting is configured automatically within the source code.
+            <rtps_reliable_writer>
+                <!--
+                When positive acknowledgements have been disabled, the DataWriter will 
+                consider samples as positively "acknowledged" after this duration has 
+                elapsed if it has not heard otherwise.
+                
+                We disable the positive acknowledgements in perftest by using:
+                -disablePositiveAcks. You can alternatively enable them via QoS by
+                adding <disable_positive_acks>true</disable_positive_acks> in the
+                <protocol> QoS of the DW and DR of the ThroughputQoS and LatencyQoS.
 
-            <disable_positive_acks_min_sample_keep_duration>
-              <sec>(_KeepDurationUsec * 1000) / 1000000000</sec>
-              <nanosec>(_KeepDurationUsec * 1000) % 1000000000</nanosec>
-            </disable_positive_acks_min_sample_keep_duration>
-            
-            The default value of _KeepDurationUsec is 1000.
-            -->
-          </rtps_reliable_writer>
+                The default value of _KeepDurationUsec can be configured here or via the
+                command line parameter -keepDuration.
+                -->
+                <disable_positive_acks_min_sample_keep_duration>
+                    <sec>DURATION_ZERO_SEC</sec>
+                    <nanosec>100000</nanosec>
+                </disable_positive_acks_min_sample_keep_duration>
+            </rtps_reliable_writer>
         </protocol>
 
       </datawriter_qos>
