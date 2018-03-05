@@ -943,10 +943,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         if ("LatencyQos".equals(qosProfile)
                 && !_directCommunication 
-                && (_durability == 2
-                    || _durability == 3)) {
+                && (_durability == DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS.ordinal()
+                    || _durability == DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS.ordinal())) {
 
-            if(_durability == 2){
+            if(_durability == DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS.ordinal()){
                 dwQos.durability.kind = DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS;
             } else{
                 dwQos.durability.kind = DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS;

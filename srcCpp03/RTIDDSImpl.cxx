@@ -1646,10 +1646,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     Durability qos_durability = dw_qos.policy<Durability>();
     PublishMode dwPublishMode= dw_qos.policy<PublishMode>();
     Batch dwBatch = dw_qos.policy<Batch>();
-    rti::core::policy::DataWriterProtocol dw_DataWriterProtocol =
+    rti::core::policy::DataWriterProtocol dw_dataWriterProtocol =
             dw_qos.policy<rti::core::policy::DataWriterProtocol>();
     RtpsReliableWriterProtocol dw_reliableWriterProtocol =
-            dw_DataWriterProtocol.rtps_reliable_writer();
+            dw_dataWriterProtocol.rtps_reliable_writer();
 
 
     // This will allow us to load some properties.
@@ -1658,7 +1658,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
 
     if (!_UsePositiveAcks 
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
-        dw_DataWriterProtocol.disable_positive_acks(true);
+        dw_dataWriterProtocol.disable_positive_acks(true);
         if (_KeepDurationUsec != -1) {
             dw_reliableWriterProtocol.disable_positive_acks_min_sample_keep_duration(
                 dds::core::Duration::from_microsecs(_KeepDurationUsec));
@@ -1795,8 +1795,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     dw_qos << qos_durability;
     dw_qos << dwPublishMode;
     dw_qos << dwBatch;
-    dw_DataWriterProtocol.rtps_reliable_writer(dw_reliableWriterProtocol);
-    dw_qos << dw_DataWriterProtocol;
+    dw_dataWriterProtocol.rtps_reliable_writer(dw_reliableWriterProtocol);
+    dw_qos << dw_dataWriterProtocol;
     dw_qos << Property(properties.begin(), properties.end(), true);
 
     if (!_isDynamicData) {
