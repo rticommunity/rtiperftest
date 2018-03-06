@@ -946,7 +946,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 && (_durability == DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS.ordinal()
                     || _durability == DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS.ordinal())) {
 
-            if(_durability == DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS.ordinal()){
+            if (_durability == DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS.ordinal()) {
                 dwQos.durability.kind = DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS;
             } else{
                 dwQos.durability.kind = DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS;
