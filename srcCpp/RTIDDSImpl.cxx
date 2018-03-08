@@ -2181,38 +2181,23 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                        NULL,
                        DDS_STATUS_MASK_NONE);
 
-    if (topic == NULL)
-    {
+    if (topic == NULL) {
         fprintf(stderr,"Problem creating topic %s.\n", topic_name);
         return NULL;
     }
 
-    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0)
-    {
-        if (_UsePositiveAcks)
-        {
-            qos_profile = "ThroughputQos";
-        }
-        else
-        {
-            qos_profile = "NoAckThroughputQos";
-        }
+    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0) {
+        qos_profile = "ThroughputQos";
     } else if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0) {
-        if (_UsePositiveAcks)
-        {
-            qos_profile = "LatencyQos";
-        }
-        else
-        {
-            qos_profile = "NoAckLatencyQos";
-        }
-    } else if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) == 0)
-    {
+        qos_profile = "LatencyQos";
+    } else if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) == 0) {
         qos_profile = "AnnouncementQos";
     } else {
-        fprintf(stderr,"topic name must either be %s or %s or %s.\n",
-               perftest_cpp::_ThroughputTopicName, perftest_cpp::_LatencyTopicName,
-               perftest_cpp::_AnnouncementTopicName);
+        fprintf(stderr,
+                "topic name must either be %s or %s or %s.\n",
+                perftest_cpp::_ThroughputTopicName,
+                perftest_cpp::_LatencyTopicName,
+                perftest_cpp::_AnnouncementTopicName);
         return NULL;
     }
 
@@ -2224,9 +2209,13 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
     
-    if (_UsePositiveAcks) {
-        dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (int)_KeepDurationUsec/1000000;
-        dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = _KeepDurationUsec%1000000;
+    if (!_UsePositiveAcks
+            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
+        dw_qos.protocol.disable_positive_acks = true;
+        if (_KeepDurationUsec != -1) {
+            dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
+                DDS_Duration_t::from_micros(_KeepDurationUsec);
+        }
     }
 
     if (_isLargeData || _IsAsynchronous) {
@@ -2252,9 +2241,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     // These QOS's are only set for the Throughput datawriter
-    if (qos_profile == "ThroughputQos" ||
-        qos_profile =="NoAckThroughputQos")
-    {
+    if (qos_profile == "ThroughputQos") {
 
         if (_IsMulticast) {
             dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
@@ -2325,11 +2312,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         dw_qos.protocol.rtps_reliable_writer.min_send_window_size = _SendQueueSize;
     }
 
-    if ((qos_profile == "LatencyQos" ||
-        qos_profile == "NoAckLatencyQos") &&
-        !_DirectCommunication && 
-        (_Durability == DDS_TRANSIENT_DURABILITY_QOS ||
-         _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
+    if (qos_profile == "LatencyQos"
+            && !_DirectCommunication
+            && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
+                || _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
         dw_qos.durability.kind = (DDS_DurabilityQosPolicyKind)_Durability;
         dw_qos.durability.direct_communication = _DirectCommunication;
     }
@@ -2475,44 +2461,24 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                        DDS_TOPIC_QOS_DEFAULT, NULL,
                        DDS_STATUS_MASK_NONE);
 
-    if (topic == NULL)
-    {
+    if (topic == NULL) {
         fprintf(stderr,"Problem creating topic %s.\n", topic_name);
         return NULL;
     }
     topic_desc = topic;
 
-    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0)
-    {
-        if (_UsePositiveAcks)
-        {
-            qos_profile = "ThroughputQos";
-        }
-        else
-        {
-            qos_profile = "NoAckThroughputQos";
-        }
-    }
-    else if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0)
-    {
-        if (_UsePositiveAcks)
-        {
-            qos_profile = "LatencyQos";
-        }
-        else
-        {
-            qos_profile = "NoAckLatencyQos";
-        }
-    }
-    else if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) == 0)
-    {
+    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0) {
+        qos_profile = "ThroughputQos";
+    } else if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0) {
+        qos_profile = "LatencyQos";
+    } else if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) == 0) {
         qos_profile = "AnnouncementQos";
-    }
-    else
-    {
-        fprintf(stderr,"topic name must either be %s or %s or %s.\n",
-               perftest_cpp::_ThroughputTopicName, perftest_cpp::_LatencyTopicName,
-               perftest_cpp::_AnnouncementTopicName);
+    } else {
+        fprintf(stderr,
+                "topic name must either be %s or %s or %s.\n",
+                perftest_cpp::_ThroughputTopicName,
+                perftest_cpp::_LatencyTopicName,
+                perftest_cpp::_AnnouncementTopicName);
         return NULL;
     }
 
@@ -2537,17 +2503,17 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    // only apply durability on Throughput datareader
-    if (qos_profile == "ThroughputQos" || qos_profile == "NoAckThroughputQos")
-    {
-        dr_qos.durability.kind = (DDS_DurabilityQosPolicyKind)_Durability;
-        dr_qos.durability.direct_communication = _DirectCommunication;
+    if (!_UsePositiveAcks
+            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
+        dr_qos.protocol.disable_positive_acks = true;
     }
 
-    if ((qos_profile == "LatencyQos" || qos_profile == "NoAckLatencyQos")
-            && !_DirectCommunication
-            && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
-                    || _Durability == DDS_PERSISTENT_DURABILITY_QOS))
+    // only apply durability on Throughput datareader
+    if (qos_profile == "ThroughputQos"
+            || (qos_profile == "LatencyQos"
+                    && !_DirectCommunication
+                    && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
+                            || _Durability == DDS_PERSISTENT_DURABILITY_QOS)))
     {
         dr_qos.durability.kind = (DDS_DurabilityQosPolicyKind) _Durability;
         dr_qos.durability.direct_communication = _DirectCommunication;

@@ -328,27 +328,25 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </resource_limits>
         
         <protocol>
-          <rtps_reliable_writer>
-            <!--
-            When positive acknowledgements have been disabled, the DataWriter will 
-            consider samples as positively "acknowledged" after this duration has 
-            elapsed if it has not heard otherwise.
-            
-            Important: when the input command-line option "-noPositiveAcks" is not used,
-            this setting is configured automatically within the source code.
+            <rtps_reliable_writer>
+                <!--
+                When positive acknowledgements have been disabled, the DataWriter will 
+                consider samples as positively "acknowledged" after this duration has 
+                elapsed if it has not heard otherwise.
+                
+                We disable the positive acknowledgements in perftest by using:
+                -disablePositiveAcks. You can alternatively enable them via QoS by
+                adding <disable_positive_acks>true</disable_positive_acks> in the
+                <protocol> QoS of the DW and DR of the ThroughputQoS and LatencyQoS.
 
-            <disable_positive_acks_min_sample_keep_duration>
-              <sec>(_KeepDurationUsec * 1000) / 1000000000</sec>
-              <nanosec>(_KeepDurationUsec * 1000) % 1000000000</nanosec>
-            </disable_positive_acks_min_sample_keep_duration>
-            
-            The default value of _KeepDurationUsec is 1000.
-            -->
-            <disable_positive_acks_min_sample_keep_duration>
-              <sec>DURATION_ZERO_SEC</sec>
-              <nanosec>100000</nanosec>
-            </disable_positive_acks_min_sample_keep_duration>
-          </rtps_reliable_writer>
+                The default value of _KeepDurationUsec can be configured here or via the
+                command line parameter -keepDuration.
+                -->
+                <disable_positive_acks_min_sample_keep_duration>
+                    <sec>DURATION_ZERO_SEC</sec>
+                    <nanosec>100000</nanosec>
+                </disable_positive_acks_min_sample_keep_duration>
+            </rtps_reliable_writer>
         </protocol>
 
       </datawriter_qos>
@@ -1021,96 +1019,6 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
       </datareader_qos>
       
     </qos_profile>
-
-
-    <!-- ================================================================= -->
-    <!-- Throughput QoS Profile (positive ACKs disabled)                   -->
-    <!-- ================================================================= -->
-
-    <!--
-    This profile extends the "Throughput Qos" profile above. Any fields not
-    included here will pick up the value from that profile.
-    -->
-    <qos_profile name="NoAckThroughputQos" base_name="ThroughputQos">
-
-      <!-- === DataWriter Configuration: ================================= -->
-
-      <datawriter_qos>
-        <protocol>
-          <!--
-          Positive sample acknowledgements will be disabled for all DataReaders
-          when they communicate with this DataWriter. Readers will respond to
-          this writer only when they realize that they have not received some
-          data.
-
-          When a writer is matched with many readers, and the network is
-          highly reliable, significant bandwidth and CPU resources can be
-          spent on processing positive acknowledgements. Disabling these can
-          improve performance in such scenarios, at the price of exchanging
-          strict reliability for statistical reliability.
-          -->
-          <disable_positive_acks>true</disable_positive_acks>
-        </protocol>
-      </datawriter_qos>
-
-      <!-- === DataReader Configuration: ================================= -->
-
-      <datareader_qos>
-        <protocol>
-          <!--
-          This DataReader will not send positive acknowledgements to any
-          DataWriters. It will only respond to a heartbeat from a DataWriter
-          when it realizes that it has missed some data.
-
-          When a writer is matched with many readers, and the network is
-          highly reliable, significant bandwidth and CPU resources can be
-          spent on processing positive acknowledgements. Disabling these can
-          improve performance in such scenarios, at the price of exchanging
-          strict reliability for statistical reliability.
-          -->
-          <disable_positive_acks>true</disable_positive_acks>
-        </protocol>
-      </datareader_qos>
-
-    </qos_profile>
-
-
-    <!-- ================================================================= -->
-    <!-- Latency QoS Profile (positive ACKs disabled)                      -->
-    <!-- ================================================================= -->
-
-    <!--
-    This profile extends the "Latency Qos" profile above. Any fields not
-    included here will pick up the value from that profile.
-
-    The QoS parameters overridden below are all documented above.
-    -->
-    <qos_profile name="NoAckLatencyQos" base_name="LatencyQos">
-
-      <!-- === DataWriter Configuration: ================================= -->
-
-      <datawriter_qos>
-        <protocol>
-          <disable_positive_acks>true</disable_positive_acks>
-          <rtps_reliable_writer>
-            <disable_positive_acks_min_sample_keep_duration>
-              <sec>DURATION_ZERO_SEC</sec>
-              <nanosec>100000</nanosec>
-            </disable_positive_acks_min_sample_keep_duration>
-          </rtps_reliable_writer>
-        </protocol>
-      </datawriter_qos>
-
-      <!-- === DataReader Configuration: ================================= -->
-
-      <datareader_qos>
-        <protocol>
-          <disable_positive_acks>true</disable_positive_acks>
-        </protocol>
-      </datareader_qos>
-
-    </qos_profile>
-
 
     <!-- ================================================================= -->
     <!-- Announcement QoS Profile                                          -->

@@ -96,7 +96,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private int     _durability = 0;
     private boolean _directCommunication = true;
     private int     _batchSize = 0;
-    private int     _keepDurationUsec = 1000;
+    private int     _keepDurationUsec = -1;
     private boolean _usePositiveAcks = true;
     private boolean _isDebug = false;
     private boolean _latencyTest = false;
@@ -398,21 +398,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         if (PerfTest.THROUGHPUT_TOPIC_NAME.equals(topicName)) {
-            if (_usePositiveAcks) {
-                qosProfile = "ThroughputQos";
-            } else {
-                qosProfile = "NoAckThroughputQos";
-            }
+            qosProfile = "ThroughputQos";
         } else if (PerfTest.LATENCY_TOPIC_NAME.equals(topicName)) {
-            if (_usePositiveAcks) {
-                qosProfile = "LatencyQos";
-            } else {
-                qosProfile = "NoAckLatencyQos";
-            }
+            qosProfile = "LatencyQos";
         } else if (PerfTest.ANNOUNCEMENT_TOPIC_NAME.equals(topicName)) {
             qosProfile = "AnnouncementQos";
-        }
-        else {
+        } else {
             System.err.println(
                     "topic name must either be " +
                     PerfTest.THROUGHPUT_TOPIC_NAME + " or " +
@@ -534,17 +525,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         String qosProfile;
         if (PerfTest.THROUGHPUT_TOPIC_NAME.equals(topicName)) {
-            if (_usePositiveAcks) {
-                qosProfile = "ThroughputQos";
-            } else {
-                qosProfile = "NoAckThroughputQos";
-            }
+            qosProfile = "ThroughputQos";
         } else if (PerfTest.LATENCY_TOPIC_NAME.equals(topicName)) {
-            if (_usePositiveAcks) {
-                qosProfile = "LatencyQos";
-            } else {
-                qosProfile = "NoAckLatencyQos";
-            }
+            qosProfile = "LatencyQos";
         } else if (PerfTest.ANNOUNCEMENT_TOPIC_NAME.equals(topicName)) {
             qosProfile = "AnnouncementQos";
         }
@@ -822,9 +805,16 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private void configureWriterQos(
             String topicName, String qosProfile, DataWriterQos dwQos) {
         // Configure ACKs
-        if (_usePositiveAcks) {
-            dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (_keepDurationUsec * 1000) / 1000000000;
-            dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = (_keepDurationUsec * 1000) % 1000000000;
+        if (!_usePositiveAcks
+                && ("ThroughputQos".equals(qosProfile)
+                    || "LatencyQos".equals(qosProfile))) {
+            dwQos.protocol.disable_positive_acks = true;
+            if (_keepDurationUsec != -1) {
+                dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = 
+                    Duration_t.from_micros(_keepDurationUsec).sec;
+                dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec =
+                    Duration_t.from_micros(_keepDurationUsec).nanosec;
+            }
         }
 
         if (_useUnbounded > 0) {
@@ -863,8 +853,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         // These QOS's are only set for the Throughput datawriter
-        if ("ThroughputQos".equals(qosProfile) ||
-            "NoAckThroughputQos".equals(qosProfile)) {
+        if ("ThroughputQos".equals(qosProfile)) {
 
             if (_isMulticast) {
                 dwQos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat = true;
@@ -952,13 +941,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     _sendQueueSize;
         }
 
-        if (("LatencyQos".equals(qosProfile) ||
-             "NoAckLatencyQos".equals(qosProfile)) &&
-             !_directCommunication &&
-             (_durability == 2 ||
-              _durability == 3)){
+        if ("LatencyQos".equals(qosProfile)
+                && !_directCommunication 
+                && (_durability == DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS.ordinal()
+                    || _durability == DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS.ordinal())) {
 
-            if(_durability == 2){
+            if (_durability == DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS.ordinal()) {
                 dwQos.durability.kind = DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS;
             } else{
                 dwQos.durability.kind = DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS;
@@ -981,6 +969,13 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
     private void configureReaderQos(
             String topicName, String qosProfile, DataReaderQos drQos) {
+        // Configure ACKs
+        if (!_usePositiveAcks
+                && ("ThroughputQos".equals(qosProfile)
+                    || "LatencyQos".equals(qosProfile))) {
+            drQos.protocol.disable_positive_acks = true;
+        }
+
         // Configure reliability
         if (!PerfTest.ANNOUNCEMENT_TOPIC_NAME.equals(topicName)) {
             if (_isReliable) {
@@ -1003,8 +998,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
       
         // These QOS's are only set for the Throughput reader
-        if ("ThroughputQos".equals(qosProfile) ||
-            "NoAckThroughputQos".equals(qosProfile)) {
+        if ("ThroughputQos".equals(qosProfile)) {
             switch(_durability){
             case 0:
                 drQos.durability.kind = DurabilityQosPolicyKind.VOLATILE_DURABILITY_QOS;
@@ -1023,13 +1017,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
             drQos.durability.direct_communication = _directCommunication;
         }
 
-        if (("LatencyQos".equals(qosProfile) ||
-             "NoAckLatencyQos".equals(qosProfile)) &&
-            !_directCommunication &&
-            (_durability == 2 ||
-             _durability == 3)){
+        if ("LatencyQos".equals(qosProfile)
+                && !_directCommunication
+                && (_durability == DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS.ordinal()
+                    || _durability == DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS.ordinal())) {
 
-            if(_durability == 2){
+            if(_durability == DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS.ordinal()){
                 drQos.durability.kind = DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS;
             } else{
                 drQos.durability.kind = DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS;
@@ -1313,10 +1306,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     _keepDurationUsec = Integer.parseInt(argv[i]);
                 } catch (NumberFormatException nfx) {
                     System.err.print("Bad usec for keep duration\n");
-                    return false;
-                }
-                if (_keepDurationUsec < 0) {
-                    System.err.print("keep duration cannot be negative\n");
                     return false;
                 }
             }

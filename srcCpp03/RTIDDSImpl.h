@@ -75,7 +75,7 @@ class RTIDDSImpl : public IMessaging
     int          _InstanceHashBuckets;
     int          _Durability;
     bool         _DirectCommunication;
-    unsigned int _KeepDurationUsec;
+    int          _KeepDurationUsec;
     bool         _UsePositiveAcks;
     bool         _LatencyTest;
     bool         _IsDebug;

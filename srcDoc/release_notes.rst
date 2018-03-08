@@ -51,6 +51,24 @@ Release Notes Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+`Keep Duration` not configurable when using `-noPositiveAcks`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous versions, if the `-noPositiveAcks` command line parameter was provided
+the *Disable Positive Acks Keep Duration* QoS setting would be ignored both when
+provided via XML configuration or via command line parameter (deprecated option),
+instead, *RTI Perftest* would always use the default value set up via code.
+
+This behavior has been fixed. We also took the oportunity to simplify and clarify
+the XML configurations when disabling positive Acks.
+
+
+Release Notes 2.3.1
+--------------------
+
+What's Fixed in 2.3.1
+~~~~~~~~~~~~~~~~~~~~~~
+
 Segmentation fault when using multiple publishers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

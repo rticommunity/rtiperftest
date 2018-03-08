@@ -414,14 +414,9 @@ namespace PerformanceTest
                         Console.Error.Write("Missing <usec> after -keepDurationUsec\n");
                         return false;
                     }
-                    if (!UInt32.TryParse(argv[i], out _KeepDurationUsec))
+                    if (!Int32.TryParse(argv[i], out _KeepDurationUsec))
                     {
                         Console.Error.Write("Bad usec for keep duration\n");
-                        return false;
-                    }
-                    if (_KeepDurationUsec < 0)
-                    {
-                        Console.Error.Write(" keep duration usec cannot be negative or null\n");
                         return false;
                     }
                 }
@@ -1691,25 +1686,11 @@ namespace PerformanceTest
 
             if (topic_name == perftest_cs._ThroughputTopicName)
             {
-                if (_UsePositiveAcks)
-                {
-                    qos_profile = "ThroughputQos";
-                }
-                else
-                {
-                    qos_profile = "NoAckThroughputQos";
-                }
+                qos_profile = "ThroughputQos";
             }
             else if (topic_name == perftest_cs._LatencyTopicName)
             {
-                if (_UsePositiveAcks)
-                {
-                    qos_profile = "LatencyQos";
-                }
-                else
-                {
-                    qos_profile = "NoAckLatencyQos";
-                }
+                qos_profile = "LatencyQos";
             }
             else if (topic_name == perftest_cs._AnnouncementTopicName)
             {
@@ -1736,10 +1717,14 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (_UsePositiveAcks)
-            {
-                dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (int)_KeepDurationUsec/1000000;
-                dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = _KeepDurationUsec%1000000;
+            if (!_UsePositiveAcks 
+                    && (qos_profile == "ThroughputQos"
+                        || qos_profile == "LatencyQos")) {
+                dw_qos.protocol.disable_positive_acks = true;
+                if (_KeepDurationUsec != -1) {
+                    dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
+                        DDS.Duration_t.from_micros(_KeepDurationUsec);
+                }
             }
 
             if (_isLargeData || _IsAsynchronous)
@@ -1769,7 +1754,7 @@ namespace PerformanceTest
             }
 
             // These QOS's are only set for the Throughput datawriter
-            if ((qos_profile == "ThroughputQos") || (qos_profile == "NoAckThroughputQos"))
+            if (qos_profile == "ThroughputQos")
             {
 
                 if (_IsMulticast) {
@@ -1861,11 +1846,12 @@ namespace PerformanceTest
             }
 
 
-            if (("LatencyQos" == qos_profile ||
-                 "NoAckLatencyQos"  == qos_profile) &&
-                 !_DirectCommunication &&
-                (_Durability == 2 ||
-                 _Durability == 3)){
+            if ("LatencyQos" == qos_profile
+                    && !_DirectCommunication
+                    && ((DDS.DurabilityQosPolicyKind)_Durability 
+                            == DDS.DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS
+                        || (DDS.DurabilityQosPolicyKind)_Durability 
+                            == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS)) {
 
                 dw_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
                 dw_qos.durability.direct_communication = _DirectCommunication;
@@ -2012,25 +1998,11 @@ namespace PerformanceTest
 
             if (topic_name == perftest_cs._ThroughputTopicName)
             {
-                if (_UsePositiveAcks)
-                {
-                    qos_profile = "ThroughputQos";
-                }
-                else
-                {
-                    qos_profile = "NoAckThroughputQos";
-                }
+                qos_profile = "ThroughputQos";
             }
             else if (topic_name == perftest_cs._LatencyTopicName)
             {
-                if (_UsePositiveAcks)
-                {
-                    qos_profile = "LatencyQos";
-                }
-                else
-                {
-                    qos_profile = "NoAckLatencyQos";
-                }
+                qos_profile = "LatencyQos";
             }
             else if (topic_name == perftest_cs._AnnouncementTopicName)
             {
@@ -2070,17 +2042,19 @@ namespace PerformanceTest
                 }
             }
 
-            if ("ThroughputQos" == qos_profile ||
-                "NoAckThroughputQos" == qos_profile) {
-                dr_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
-                dr_qos.durability.direct_communication = _DirectCommunication;
+            if (!_UsePositiveAcks 
+                    && (qos_profile == "ThroughputQos"
+                            || qos_profile == "LatencyQos")) {
+                dr_qos.protocol.disable_positive_acks = true;
             }
 
-            if (("LatencyQos" == qos_profile ||
-                "NoAckLatencyQos" == qos_profile) &&
-                !_DirectCommunication &&
-                (_Durability == 2 ||
-                 _Durability == 3)){
+            if ("ThroughputQos" == qos_profile 
+                    || ("LatencyQos" == qos_profile
+                        && !_DirectCommunication
+                        && ((DDS.DurabilityQosPolicyKind)_Durability 
+                                == DDS.DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS
+                            || (DDS.DurabilityQosPolicyKind)_Durability 
+                                == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS)) {
 
                 dr_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
                 dr_qos.durability.direct_communication = _DirectCommunication;
@@ -2182,7 +2156,7 @@ namespace PerformanceTest
         private int     _InstanceHashBuckets = -1;
         private int     _Durability = 0;
         private bool    _DirectCommunication = true;
-        private uint   _KeepDurationUsec = 1000;
+        private int     _KeepDurationUsec = -1;
         private bool   _UsePositiveAcks = true;
         private bool    _LatencyTest = false;
         private bool   _isLargeData = false;

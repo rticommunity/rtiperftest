@@ -189,8 +189,6 @@ Test Parameters for Publishing and Subscribing Applications
    | The default file contains these QoS profiles:
    | The ``ThroughputQos``, ``LatencyQos``, and ``AnnouncementQos``
      profiles are used by default.
-   | The ``NoAckThroughputQos`` and ``NoAckLatencyQos`` profiles are
-     used if you specify ``-noPositiveAcks``.
 
    **Note:** some QoS values are ‘hard-coded’ in the application,
    therefore setting them in the XML file has no effect; see the See
