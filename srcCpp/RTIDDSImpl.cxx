@@ -841,8 +841,8 @@ class RTIPublisher : public IMessagingWriter
         data.timestamp_sec = message.timestamp_sec;
         data.timestamp_usec = message.timestamp_usec;
         data.latency_ping = message.latency_ping;
-        data.size = message.size;
 #ifdef RTI_CUSTOM_TYPE
+        data.size_customType = message.size;
         set_custom_type(data.customType);
 #else
         data.bin_data.loan_contiguous((DDS_Octet*)message.data, message.size, message.size);
@@ -1078,6 +1078,13 @@ public:
         }
 #ifdef RTI_CUSTOM_TYPE
         set_custom_type_dynamic(data);
+        retcode = data.set_long(
+                "size_customType",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                message.size);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_long(size) failed: %d.\n", retcode);
+        }
 #else
         DDS_OctetSeq octetSeq;
         bool succeeded = octetSeq.from_array(
@@ -1094,14 +1101,6 @@ public:
             fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
         }
 #endif
-        retcode = data.set_long(
-                "size",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                message.size);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_long(size) failed: %d.\n", retcode);
-        }
-
         DDS_Octet key_octets[4];
         if (!isCftWildCardKey) {
             if (_num_instances > 1) {
@@ -1264,7 +1263,11 @@ class ReceiverListener : public DDSDataReaderListener
                 _message.timestamp_sec = _data_seq[i].timestamp_sec;
                 _message.timestamp_usec = _data_seq[i].timestamp_usec;
                 _message.latency_ping = _data_seq[i].latency_ping;
-                _message.size = _data_seq[i].size;
+#ifdef RTI_CUSTOM_TYPE
+                _message.size = _data_seq[i].size_customType;
+#else
+                _message.size = _data_seq[i].bin_data.length();
+#endif
                 _message.data = (char *)_data_seq[i].bin_data.get_contiguous_bufferI();
 
                 _callback->ProcessMessage(_message);
@@ -1391,9 +1394,10 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                             "on_data_available() get_octet_seq(bin_data) failed: %d.\n",
                             retcode);
                 }
+#ifdef RTI_CUSTOM_TYPE
                 retcode = _data_seq[i].get_long(
                         _message.size,
-                        "size",
+                        "size_customType",
                         8);
                 if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
@@ -1401,6 +1405,9 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                             retcode);
                     _message.size = 0;
                 }
+#else
+                 _message.size = octetSeq.length();
+#endif
                 _message.data = (char *)octetSeq.get_contiguous_buffer();
 
                 _callback->ProcessMessage(_message);
@@ -1535,7 +1542,11 @@ class RTISubscriber : public IMessagingReader
             _message.timestamp_sec = _data_seq[_data_idx].timestamp_sec;
             _message.timestamp_usec = _data_seq[_data_idx].timestamp_usec;
             _message.latency_ping = _data_seq[_data_idx].latency_ping;
-            _message.size = _data_seq[_data_idx].size;
+#ifdef RTI_CUSTOM_TYPE
+            _message.size = _data_seq[_data_idx].size_customType;
+#else
+            _message.size = _data_seq[_data_idx].bin_data.length();
+#endif
             _message.data = (char *)_data_seq[_data_idx].bin_data.get_contiguous_bufferI();
 
             ++_data_idx;
@@ -1744,17 +1755,21 @@ class RTIDynamicDataSubscriber : public IMessagingReader
                          "ReceiveMessage() get_octet_seq(bin_data) failed: %d.\n",
                          retcode);
              }
-             retcode = _data_seq[_data_idx].get_long(
-                     _message.size,
-                     "size",
-                     8);
-             if (retcode != DDS_RETCODE_OK) {
-                 fprintf(stderr,
-                         "on_data_available() get_long(size) failed: %d.\n",
-                         retcode);
-                 _message.size = 0;
-             }
-             _message.data = (char *)octetSeq.get_contiguous_buffer();
+#ifdef RTI_CUSTOM_TYPE
+            retcode = _data_seq[_data_idx].get_long(
+                    _message.size,
+                    "size_customType",
+                    8);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "on_data_available() get_long(size) failed: %d.\n",
+                        retcode);
+                _message.size = 0;
+            }
+#else
+            _message.size = octetSeq.length();
+#endif
+            _message.data = (char *)octetSeq.get_contiguous_buffer();
 
             ++_data_idx;
 

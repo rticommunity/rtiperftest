@@ -25,8 +25,8 @@ struct TestData_t {
     unsigned long timestamp_usec;
     long latency_ping;
     sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
-    long size;
 #ifdef RTI_CUSTOM_TYPE
+    long size_customType;
     CustomType customType;
 #endif
 
@@ -42,8 +42,8 @@ struct TestDataKeyed_t {
     unsigned long timestamp_usec;
     long latency_ping;
     sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
-    long size;
 #ifdef RTI_CUSTOM_TYPE
+    long size_customType;
     CustomType customType;
 #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
@@ -57,8 +57,8 @@ struct TestDataLarge_t {
     unsigned long timestamp_usec;
     long latency_ping;
     sequence<octet> bin_data;
-    long size;
 #ifdef RTI_CUSTOM_TYPE
+    long size_customType;
     CustomType customType;
 #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
@@ -72,8 +72,8 @@ struct TestDataKeyedLarge_t {
     unsigned long timestamp_usec;
     long latency_ping;
     sequence<octet> bin_data;
-    long size;
 #ifdef RTI_CUSTOM_TYPE
+    long size_customType;
     CustomType customType;
 #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
