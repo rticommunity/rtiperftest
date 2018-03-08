@@ -51,8 +51,8 @@ Release Notes Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
-`Keep Duration` not configurable when using `-noPositiveAcks`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`Keep Duration` not configurable when using `-noPositiveAcks` (#39)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In previous versions, if the `-noPositiveAcks` command line parameter was provided
 the *Disable Positive Acks Keep Duration* QoS setting would be ignored both when
