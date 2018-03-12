@@ -6,11 +6,11 @@
 #include "customType.h"
 #include <string>
 
-void initialize_custom_type(CustomType & data) {
-    // CustomType::TypeSupport::initialize_data(&data);
+void initialize_custom_type(RTI_CUSTOM_TYPE & data) {
+    // RTI_CUSTOM_TYPE::TypeSupport::initialize_data(&data);
 }
 
-void set_custom_type(CustomType & data) {
+void set_custom_type(RTI_CUSTOM_TYPE & data) {
     // TODO initialize your data
     data.test_long = 5;
     data.stringTest.test_string = DDS_String_dup("Hello World!");
@@ -19,7 +19,7 @@ void set_custom_type(CustomType & data) {
     data.seqTest.test_seq.loan_contiguous((DDS_Long*)test_seq, SIZE_TEST_SEQ,SIZE_TEST_SEQ);
 }
 
-void unloan_custom_type(CustomType & data) {
+void unloan_custom_type(RTI_CUSTOM_TYPE & data) {
     data.seqTest.test_seq.unloan();
 }
 

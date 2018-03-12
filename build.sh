@@ -6,7 +6,6 @@
 filename=$0
 script_location=`cd "\`dirname "$filename"\`"; pwd`
 idl_location="${script_location}/srcIdl"
-customType_location="${idl_location}/customType"
 classic_cpp_folder="${script_location}/srcCpp"
 modern_cpp_folder="${script_location}/srcCpp03"
 java_folder="${script_location}/srcJava"
@@ -31,7 +30,10 @@ USE_SECURE_LIBS=0
 RTI_OPENSSLHOME=""
 
 #Variable for customType
-CUSTOM_TYPE=0
+customType_location="${idl_location}/customType"
+USE_CUSTOM_TYPE=0
+CUSTOM_TYPE=""
+customType_idl_file="${customType_location}/custom.idl"
 
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
@@ -75,11 +77,28 @@ function usage()
     echo "    --openssl-home <path>        Path to the openssl home. This will be used    "
     echo "                                 when compiling statically and using security   "
     echo "                                 Default is an empty string (current folder).   "
-    echo "    --customType                 Use your own type. Documentation: URL          "
+    echo "    --customType <type>          Use your own type. Documentation: URL          "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
     echo ""
+}
+
+function clean_custom_typ()
+{
+    # Remove customType generated files
+    for file in ${customType_location}/*.idl
+    do
+        if [ -f $file ]; then
+            name_file=$(basename $file)
+            rm -rf ${idl_location}/${name_file}
+            name_file="${name_file%.*}"
+            rm -f "${script_location}"/srcC*/"${name_file}Plugin."*
+            rm -f "${script_location}"/srcC*/"${name_file}."*
+            rm -f "${script_location}"/srcC*/"${name_file}Support."*
+        fi
+    done
+    rm -rf ${customType_idl_file}
 }
 
 function clean()
@@ -105,18 +124,7 @@ function clean()
     rm -rf "${script_location}"/srcJava/com/rti/perftest/gen
     rm -rf "${script_location}"/bin
 
-    # Remove customType generated files
-    for file in ${customType_location}/*.idl
-    do
-        if [ -f $file ]; then
-            name_file=$(basename $file)
-            rm -rf ${idl_location}/${name_file}
-            name_file="${name_file%.*}"
-            rm -f "${script_location}"/srcC*/"${name_file}Plugin".*
-            rm -f "${script_location}"/srcC*/"${name_file}".*
-            rm -f "${script_location}"/srcC*/"${name_file}Support".*
-        fi
-    done
+    clean_custom_typ
 
     echo ""
     echo "================================================================================"
@@ -214,8 +222,8 @@ function additional_defines_calculation()
             echo -e "${INFO_TAG} Using security plugin. Linking Statically."
         fi
     fi
-    if [ "${CUSTOM_TYPE}" == "1" ]; then
-        additional_defines=${additional_defines}" DRTI_CUSTOM_TYPE"
+    if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
+        additional_defines=${additional_defines}" DRTI_CUSTOM_TYPE="${CUSTOM_TYPE}
     fi
 }
 
@@ -226,7 +234,24 @@ function build_cpp()
     additional_defines_customType=""
     additionalHeaderFiles_customType=""
     additionalSourceFiles_customType=""
-    if [ "${CUSTOM_TYPE}" == "1" ]; then
+    if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
+        # Search the file which contains the Struct ${CUSTOM_TYPE} {
+        # Include the file into ${customType_idl_file}
+        found_idl=false
+        for file in ${customType_location}/*.idl
+        do
+            if [ -f $file ]; then
+                if grep -Fq  "struct "${CUSTOM_TYPE}" {" ${file}
+                then # found
+                    echo "#include \"$(basename $file)\"" > ${customType_idl_file}
+                    found_idl=true
+                fi
+            fi
+        done
+        if [ "$found_idl" = false ]; then
+            echo -e "${ERROR_TAG} Cannot find the idl file with the structure ${CUSTOM_TYPE}"
+            exit -1
+        fi
         cp -rf ${customType_location}/* ${idl_location}/
         additionalHeaderFiles_customType="customType.h"
         additionalSourceFiles_customType="customType.cxx"
@@ -237,7 +262,7 @@ function build_cpp()
         do
             if [ -f $file ]; then
                 # Executing RTIDDSGEN command here.
-                rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -d \"${classic_cpp_folder}\" \"${file}\" "
+                rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -I /home/ajimenez/Documents/KB/new_type_perftest/github/rtiperftest/srcIdl -unboundedSupport -replace -create typefiles -d \"${classic_cpp_folder}\" \"${file}\" "
                 echo -e "${INFO_TAG} Command: $rtiddsgen_command"
                 eval $rtiddsgen_command
                 if [ "$?" != 0 ]; then
@@ -251,8 +276,8 @@ function build_cpp()
                 additionalSourceFiles_customType="${name_file}Plugin.cxx ${name_file}.cxx ${name_file}Support.cxx "$additionalSourceFiles_customType
             fi
         done
-        # Adding RTI_CUSTOM_TYPE as a macro
-        additional_defines_customType=" -D RTI_CUSTOM_TYPE"
+        # Adding RTI_USE_CUSTOM_TYPE as a macro
+        additional_defines_customType=" -D RTI_CUSTOM_TYPE="${CUSTOM_TYPE}
     fi
 
     ##############################################################################
@@ -496,7 +521,14 @@ while [ "$1" != "" ]; do
             USE_SECURE_LIBS=1
             ;;
         --customType)
-            CUSTOM_TYPE=1
+            USE_CUSTOM_TYPE=1
+            CUSTOM_TYPE=$2
+            if [ -z "${CUSTOM_TYPE}" ]; then
+                echo -e "${ERROR_TAG} --customType should be follow by the name of you type"
+                usage
+                exit -1
+            fi
+            shift
             ;;
         --openssl-home)
             RTI_OPENSSLHOME=$2
