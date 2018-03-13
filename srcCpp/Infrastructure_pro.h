@@ -11,10 +11,6 @@
 #include "ndds/ndds_cpp.h"
 #include "PerftestTransport.h"
 
-// #ifdef RTI_SECURE_PERFTEST
-//   #include "security/security_default.h"
-// #endif
-
 #ifdef RTI_WIN32
   #include <windows.h>
 #else
