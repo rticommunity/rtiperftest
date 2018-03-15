@@ -754,8 +754,7 @@ class RTIPublisher : public IMessagingWriter
     long _instancesToBeWritten;
 
  public:
-    RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, PerftestSemaphore * pongSemaphore, int instancesToBeWritten)
-    {
+    RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, PerftestSemaphore * pongSemaphore, int instancesToBeWritten) {
         _writer = T::DataWriter::narrow(writer);
         data.bin_data.maximum(0);
         _num_instances = num_instances;
@@ -791,13 +790,11 @@ class RTIPublisher : public IMessagingWriter
         free(_instance_handles);
     }
 
-    void Flush()
-    {
+    void Flush() {
         _writer->flush();
     }
 
-    bool Send(const TestMessage &message, bool isCftWildCardKey)
-    {
+    bool Send(const TestMessage &message, bool isCftWildCardKey) {
         DDS_ReturnCode_t retcode;
         long key = 0;
 
@@ -839,8 +836,7 @@ class RTIPublisher : public IMessagingWriter
         return true;
     }
 
-    void WaitForReaders(int numSubscribers)
-    {
+    void WaitForReaders(int numSubscribers) {
         DDS_PublicationMatchedStatus status;
 
         while (true)
@@ -854,9 +850,20 @@ class RTIPublisher : public IMessagingWriter
         }
     }
 
+    bool waitForPingResponse() {
+        if(_pongSemaphore != NULL) {
+            if (!PerftestSemaphore_take(
+                    _pongSemaphore,
+                    PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
+                fprintf(stderr,"Unexpected error taking semaphore\n");
+                return false;
+            }
+        }
+        return true;
+    }
+
     /* time out in milliseconds */
-    bool waitForPingResponse(int timeout = PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)
-    {
+    bool waitForPingResponse(int timeout) {
         if(_pongSemaphore != NULL) {
             if (!PerftestSemaphore_take(_pongSemaphore, timeout)) {
                 fprintf(stderr,"Unexpected error taking semaphore\n");
@@ -864,10 +871,9 @@ class RTIPublisher : public IMessagingWriter
             }
         }
         return true;
-    }    
+    }
 
-    bool notifyPingResponse() 
-    {
+    bool notifyPingResponse() {
         if(_pongSemaphore != NULL) {
             if (!PerftestSemaphore_give(_pongSemaphore)) {
                 fprintf(stderr,"Unexpected error giving semaphore\n");
@@ -1082,8 +1088,20 @@ public:
         }
     }
 
+    bool waitForPingResponse() {
+        if (_pongSemaphore != NULL) {
+            if (!PerftestSemaphore_take(
+                    _pongSemaphore,
+                    PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
+                fprintf(stderr, "Unexpected error taking semaphore\n");
+                return false;
+            }
+        }
+        return true;
+    }
+
     /* time out in milliseconds */
-    bool waitForPingResponse(int timeout = PERFTEST_SEMAPHORE_TIMEOUT_INFINITE) {
+    bool waitForPingResponse(int timeout) {
         if (_pongSemaphore != NULL) {
             if (!PerftestSemaphore_take(_pongSemaphore, timeout)) {
                 fprintf(stderr, "Unexpected error taking semaphore\n");
