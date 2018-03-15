@@ -414,7 +414,7 @@ namespace PerformanceTest
                         Console.Error.Write("Missing <usec> after -keepDurationUsec\n");
                         return false;
                     }
-                    if (!Int32.TryParse(argv[i], out _KeepDurationUsec))
+                    if (!Int64.TryParse(argv[i], out _KeepDurationUsec))
                     {
                         Console.Error.Write("Bad usec for keep duration\n");
                         return false;
@@ -1723,7 +1723,7 @@ namespace PerformanceTest
                 dw_qos.protocol.disable_positive_acks = true;
                 if (_KeepDurationUsec != -1) {
                     dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
-                        DDS.Duration_t.from_micros(_KeepDurationUsec);
+                        DDS.Duration_t.from_micros((ulong)_KeepDurationUsec);
                 }
             }
 
@@ -1851,7 +1851,7 @@ namespace PerformanceTest
                     && ((DDS.DurabilityQosPolicyKind)_Durability 
                             == DDS.DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS
                         || (DDS.DurabilityQosPolicyKind)_Durability 
-                            == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS)) {
+                            == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS))) {
 
                 dw_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
                 dw_qos.durability.direct_communication = _DirectCommunication;
@@ -2156,7 +2156,7 @@ namespace PerformanceTest
         private int     _InstanceHashBuckets = -1;
         private int     _Durability = 0;
         private bool    _DirectCommunication = true;
-        private int     _KeepDurationUsec = -1;
+        private long    _KeepDurationUsec = -1;
         private bool   _UsePositiveAcks = true;
         private bool    _LatencyTest = false;
         private bool   _isLargeData = false;
