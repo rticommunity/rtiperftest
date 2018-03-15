@@ -1851,7 +1851,7 @@ namespace PerformanceTest
                     && ((DDS.DurabilityQosPolicyKind)_Durability 
                             == DDS.DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS
                         || (DDS.DurabilityQosPolicyKind)_Durability 
-                            == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS))) {
+                            == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS)) {
 
                 dw_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
                 dw_qos.durability.direct_communication = _DirectCommunication;
@@ -2054,7 +2054,7 @@ namespace PerformanceTest
                         && ((DDS.DurabilityQosPolicyKind)_Durability 
                                 == DDS.DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS
                             || (DDS.DurabilityQosPolicyKind)_Durability 
-                                == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS)) {
+                                == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS))) {
 
                 dr_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
                 dr_qos.durability.direct_communication = _DirectCommunication;
