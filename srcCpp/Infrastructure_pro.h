@@ -34,14 +34,14 @@
 
 inline bool PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
 {
-    struct RTINtpTime *block_duration = RTI_NTP_TIME_INFINITE;
+    struct RTINtpTime block_duration = RTI_NTP_TIME_MAX;
     if (timeout != PERFTEST_SEMAPHORE_TIMEOUT_INFINITE) {
-        RTINtpTime_packFromMillisec(*block_duration, 0, timeout);
+        RTINtpTime_packFromMillisec(block_duration, 0, timeout);
     }
-    return RTIOsapiSemaphore_take(sem, block_duration)
-            == RTI_OSAPI_SEMAPHORE_STATUS_OK
-            ? true
-            : false;
+    return RTIOsapiSemaphore_take(sem, &block_duration)
+            == RTI_OSAPI_SEMAPHORE_STATUS_ERROR
+            ? false
+            : true;
 }
 
 #define Perftest_param_not_micro(param)
