@@ -7,40 +7,43 @@
 
 /* Perftest Clock class */
 
- struct RTIClock *PerftestClock::Clock = RTIHighResolutionClock_new();
- struct RTINtpTime PerftestClock::ClockTime_aux = {0,0};
- RTI_UINT64 PerftestClock::Clock_sec = 0;
- RTI_UINT64 PerftestClock::Clock_usec = 0;
-
-void PerftestClock::Initialize() 
+PerftestClock::PerftestClock()
 {
-    if (PerftestClock::Clock == NULL) {
-        PerftestClock::Clock = RTIHighResolutionClock_new();
-    }
-    RTINtpTime_setZero(&PerftestClock::ClockTime_aux);
-    PerftestClock::Clock_sec = 0;
-    PerftestClock::Clock_usec = 0;
+    clock = RTIHighResolutionClock_new();
+    RTINtpTime_setZero(&clockTime_aux);
+
+    clock_sec = 0;
+    clock_usec = 0;
 }
 
-void PerftestClock::Finalize() 
+PerftestClock::~PerftestClock() 
 {
-    if (PerftestClock::Clock != NULL) {
-        RTIHighResolutionClock_delete(PerftestClock::Clock);
+    if (clock != NULL) {
+        RTIHighResolutionClock_delete(clock);
     }
 }
 
 unsigned long long PerftestClock::GetTimeUsec() 
 {
-    PerftestClock::Clock->getTime(
-            PerftestClock::Clock,
-            &PerftestClock::ClockTime_aux);
+    clock->getTime(clock, &clockTime_aux);
     RTINtpTime_unpackToMicrosec(
-            PerftestClock::Clock_sec,
-            PerftestClock::Clock_usec,
-            PerftestClock::ClockTime_aux);
-    return PerftestClock::Clock_usec + 1000000 * PerftestClock::Clock_sec;
+            clock_sec,
+            clock_usec,
+            clockTime_aux);
+    return clock_usec + 1000000 * clock_sec;
 }
 
+void PerftestClock::MilliSleep(unsigned int millisec)
+{
+  #if defined(RTI_WIN32)
+    Sleep(millisec);
+  #elif defined(RTI_VXWORKS)
+    DDS_Duration_t sleep_period = {0, millisec * 1000000};
+    NDDSUtility::sleep(sleep_period);
+  #else
+    usleep(millisec * 1000);
+  #endif
+}
 
 const std::string classLoggingString = "PerftestTransport:";
 

@@ -88,7 +88,6 @@ int perftest_cpp::Run(int argc, char *argv[])
         }
     }
 
-    PerftestClock::Initialize();
     PerftestTimer::Initialize();
 
     if ( !_MessagingImpl->Initialize(_MessagingArgc, _MessagingArgv) )
@@ -152,7 +151,6 @@ perftest_cpp::~perftest_cpp()
         delete _MessagingImpl;
     }
 
-    PerftestClock::Finalize();
     PerftestTimer::Finalize();
 
     fprintf(stderr,"Test ended.\n");
@@ -947,7 +945,7 @@ class ThroughputListener : public IMessagingCB
                 _last_seq_num[i] = 0;
             }
 
-            begin_time = PerftestClock::GetTimeUsec();
+            begin_time = PerftestClock::GetInstance().GetTimeUsec();
 
             if (perftest_cpp::_PrintIntervals) {
                 printf("\n\n********** New data length is %d\n",
@@ -981,7 +979,7 @@ class ThroughputListener : public IMessagingCB
     void print_summary(TestMessage &message){
 
         // store the info for this interval
-        unsigned long long now = PerftestClock::GetTimeUsec();
+        unsigned long long now = PerftestClock::GetInstance().GetTimeUsec();
 
         if (interval_data_length != last_data_length) {
 
@@ -1134,12 +1132,12 @@ int perftest_cpp::Subscriber()
          reader_listener->cpu.initialize();
     }
 
-    now = PerftestClock::GetTimeUsec();
+    now = PerftestClock::GetInstance().GetTimeUsec();
 
     while (true) {
         prev_time = now;
-        PerftestClock::MilliSleep(1000);
-        now = PerftestClock::GetTimeUsec();
+        PerftestClock::GetInstance().MilliSleep(1000);
+        now = PerftestClock::GetInstance().GetTimeUsec();
 
         if (reader_listener->change_size) { // ACK change_size
             TestMessage message_change_size;
@@ -1202,7 +1200,7 @@ int perftest_cpp::Subscriber()
         }
     }
 
-    PerftestClock::MilliSleep(2000);
+    PerftestClock::GetInstance().MilliSleep(2000);
 
     if (reader != NULL)
     {
@@ -1393,7 +1391,7 @@ class LatencyListener : public IMessagingCB
         double latency_std;
         std::string outputCpu = "";
 
-        now = PerftestClock::GetTimeUsec();
+        now = PerftestClock::GetInstance().GetTimeUsec();
 
         switch (message.size)
         {
@@ -1668,7 +1666,7 @@ int perftest_cpp::Publisher()
     fprintf(stderr,"Waiting for subscribers announcement ...\n");
     fflush(stderr);
     while (_NumSubscribers > announcement_reader_listener->announced_subscribers) {
-        PerftestClock::MilliSleep(1000);
+        PerftestClock::GetInstance().MilliSleep(1000);
     }
 
     // Allocate data and set size
@@ -1703,7 +1701,7 @@ int perftest_cpp::Publisher()
     message.size = (int)_DataLen - OVERHEAD_BYTES;
 
     // Sleep 1 second, then begin test
-    PerftestClock::MilliSleep(1000);
+    PerftestClock::GetInstance().MilliSleep(1000);
 
     int num_pings = 0;
     unsigned int scan_count = 0;
@@ -1716,7 +1714,7 @@ int perftest_cpp::Publisher()
     unsigned long pubRate_sample_period = 1;
     unsigned long rate = 0;
 
-    time_last_check = PerftestClock::GetTimeUsec();
+    time_last_check = PerftestClock::GetInstance().GetTimeUsec();
 
     /* Minimum value for pubRate_sample_period will be 1 so we execute 100 times
        the control loop every second, or every sample if we want to send less
@@ -1740,7 +1738,7 @@ int perftest_cpp::Publisher()
                 (loop > 0) &&
                 (loop % pubRate_sample_period == 0)) {
 
-            time_now = PerftestClock::GetTimeUsec();
+            time_now = PerftestClock::GetInstance().GetTimeUsec();
 
             time_delta = time_now - time_last_check;
             time_last_check = time_now;
@@ -1844,7 +1842,7 @@ int perftest_cpp::Publisher()
 
                 // Each time ask a different subscriber to echo back
                 pingID = num_pings % _NumSubscribers;
-                unsigned long long now = PerftestClock::GetTimeUsec();
+                unsigned long long now = PerftestClock::GetInstance().GetTimeUsec();
                 message.timestamp_sec = (int)((now >> 32) & 0xFFFFFFFF);
                 message.timestamp_usec = (unsigned int)(now & 0xFFFFFFFF);
                 ++num_pings;

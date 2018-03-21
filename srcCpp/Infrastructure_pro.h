@@ -51,27 +51,23 @@ inline bool PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
 class PerftestClock
 {
 
-    private:
-        static struct RTIClock *Clock;
-        static struct RTINtpTime ClockTime_aux;
-        static RTI_UINT64 Clock_sec;
-        static RTI_UINT64 Clock_usec;
+  private:
+    struct RTIClock *clock;
+    struct RTINtpTime clockTime_aux;
+    RTI_UINT64 clock_sec;
+    RTI_UINT64 clock_usec;
 
-    public:
-        static void Initialize();
-        static void Finalize();
-        static unsigned long long GetTimeUsec();
+  public:
+    static PerftestClock &GetInstance()
+    {
+        static PerftestClock instance;
+        return instance;
+    }
+    PerftestClock();
+    ~PerftestClock();
 
-        static void MilliSleep(unsigned int millisec) {
-          #if defined(RTI_WIN32)
-            Sleep(millisec);
-          #elif defined(RTI_VXWORKS)
-            DDS_Duration_t sleep_period = {0, millisec*1000000};
-            NDDSUtility::sleep(sleep_period);
-          #else
-            usleep(millisec * 1000);
-          #endif
-        }
+    unsigned long long GetTimeUsec();
+    void MilliSleep(unsigned int millisec);
 };
 
 bool configureTransport(
