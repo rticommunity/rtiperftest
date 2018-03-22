@@ -67,7 +67,9 @@ class IMessagingWriter
     virtual void WaitForReaders(int numSubscribers) = 0;
     virtual bool Send(const TestMessage &message, bool isCftWildCardKey = false) = 0;
     virtual void Flush() = 0;
-    
+  #ifdef RTI_CUSTOM_TYPE
+    virtual int getSizeCustomType() = 0;
+  #endif
     virtual bool waitForPingResponse() {
         // Implementation required only if
         // support for LatencyTest is desired.

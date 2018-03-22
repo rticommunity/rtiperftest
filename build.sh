@@ -262,7 +262,7 @@ function build_cpp()
         do
             if [ -f $file ]; then
                 # Executing RTIDDSGEN command here.
-                rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -I /home/ajimenez/Documents/KB/new_type_perftest/github/rtiperftest/srcIdl -unboundedSupport -replace -create typefiles -d \"${classic_cpp_folder}\" \"${file}\" "
+                rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -I /home/ajimenez/Documents/KB/new_type_perftest/github/rtiperftest/srcIdl -unboundedSupport -replace -create typefiles -d \"${classic_cpp_folder}\" \"${file}\" "
                 echo -e "${INFO_TAG} Command: $rtiddsgen_command"
                 eval $rtiddsgen_command
                 if [ "$?" != 0 ]; then
