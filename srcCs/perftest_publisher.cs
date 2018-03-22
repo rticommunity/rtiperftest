@@ -2343,7 +2343,7 @@ namespace PerformanceTest {
         public const string _LatencyTopicName = "Latency";
         public const string _ThroughputTopicName = "Throughput";
         public const string _AnnouncementTopicName = "Announcement";
-        public const uint timeout_wait_for_ack_sec = 0;
+        public const int timeout_wait_for_ack_sec = 0;
         public const uint timeout_wait_for_ack_nsec = 10000000;
 
 
