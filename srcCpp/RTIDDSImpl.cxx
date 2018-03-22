@@ -792,8 +792,8 @@ class RTIPublisher : public IMessagingWriter
     RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
     {
       #ifdef RTI_CUSTOM_TYPE
-        initialize_custom_type(data.customType);
-        size_custom_type = Fooget_serialized_sample_size(NULL, RTI_TRUE, RTI_CDR_ENCAPSULATION_ID_CDR_NATIVE, 0, &data.customType); // get the size of data.customType
+        initialize_custom_type(data.custom_type);
+        size_custom_type = Fooget_serialized_sample_size(NULL, RTI_TRUE, RTI_CDR_ENCAPSULATION_ID_CDR_NATIVE, 0, &data.custom_type); // get the size of data.custom_type
       #endif
         _writer = T::DataWriter::narrow(writer);
         data.bin_data.maximum(0);
@@ -809,7 +809,7 @@ class RTIPublisher : public IMessagingWriter
                 data.key[c] = (unsigned char) (i >> c * 8);
             }
           #ifdef RTI_CUSTOM_TYPE
-            register_custom_type(data.customType, i, size_custom_type);
+            register_custom_type(data.custom_type, i, size_custom_type);
           #endif
             _instance_handles[i] = _writer->register_instance(data);
         }
@@ -818,7 +818,7 @@ class RTIPublisher : public IMessagingWriter
             data.key[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
         }
       #ifdef RTI_CUSTOM_TYPE
-        register_custom_type(data.customType, MAX_CFT_VALUE, size_custom_type);
+        register_custom_type(data.custom_type, MAX_CFT_VALUE, size_custom_type);
       #endif
         _instance_handles[_num_instances] = _writer->register_instance(data);
     }
@@ -874,15 +874,15 @@ class RTIPublisher : public IMessagingWriter
         data.timestamp_usec = message.timestamp_usec;
         data.latency_ping = message.latency_ping;
       #ifdef RTI_CUSTOM_TYPE
-        data.size_customType = message.size;
-        set_custom_type(data.customType, key, data.size_customType);
+        data.size_custom_type = message.size;
+        set_custom_type(data.custom_type, key, data.size_custom_type);
       #else
         data.bin_data.loan_contiguous((DDS_Octet*)message.data, message.size, message.size);
       #endif
 
         // TODO remove, only for debugging
       #ifdef RTI_CUSTOM_TYPE
-        size_custom_type = Fooget_serialized_sample_size(NULL, RTI_TRUE, RTI_CDR_ENCAPSULATION_ID_CDR_NATIVE, 0, &data.customType); // get the size of data.customType
+        size_custom_type = Fooget_serialized_sample_size(NULL, RTI_TRUE, RTI_CDR_ENCAPSULATION_ID_CDR_NATIVE, 0, &data.custom_type); // get the size of data.custom_type
         printf("size_custom_type = %d and size data = %d\n", size_custom_type , TestData_tPlugin_get_serialized_sample_size(NULL, RTI_TRUE, RTI_CDR_ENCAPSULATION_ID_CDR_NATIVE, 0, (const TestData_t*)&data) );
       #else
         printf("size data = %d\n", TestData_tPlugin_get_serialized_sample_size(NULL, RTI_TRUE, RTI_CDR_ENCAPSULATION_ID_CDR_NATIVE, 0, (const TestData_t*)&data));
@@ -1022,7 +1022,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
                 DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
         data.get_complex_member(
                 data_custom_type,
-                "customType",
+                "custom_type",
                 DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
         size_custom_type = DDS_DynamicData_get_serialized_size(
                 &data_custom_type,
@@ -1139,11 +1139,11 @@ class RTIDynamicDataPublisher : public IMessagingWriter
       #ifdef RTI_CUSTOM_TYPE
         set_custom_type_dynamic(data, key, message.size);
         retcode = data.set_long(
-                "size_customType",
+                "size_custom_type",
                 DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
                 message.size);
         if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_long(size_customType) failed: %d.\n", retcode);
+            fprintf(stderr, "set_long(size_custom_type) failed: %d.\n", retcode);
         }
       #else
         DDS_OctetSeq octetSeq;
@@ -1177,7 +1177,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         // TODO remove, only for debugging
       #ifdef RTI_CUSTOM_TYPE
         DDS_DynamicData data_custom_type(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
-        data.get_complex_member(data_custom_type, "customType", DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+        data.get_complex_member(data_custom_type, "custom_type", DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
         size_custom_type = DDS_DynamicData_get_serialized_size(&data_custom_type, DDS_DYNAMIC_DATA_ENCAPSULATION_KIND_DEFAULT);
         printf("size_custom_type = %d and size data = %d\n",size_custom_type,DDS_DynamicData_get_serialized_size(&data, DDS_DYNAMIC_DATA_ENCAPSULATION_KIND_DEFAULT));
       #else
@@ -1323,7 +1323,7 @@ class ReceiverListener : public DDSDataReaderListener
                 _message.timestamp_usec = _data_seq[i].timestamp_usec;
                 _message.latency_ping = _data_seq[i].latency_ping;
               #ifdef RTI_CUSTOM_TYPE
-                _message.size = _data_seq[i].size_customType;
+                _message.size = _data_seq[i].size_custom_type;
               #else
                 _message.size = _data_seq[i].bin_data.length();
               #endif
@@ -1456,7 +1456,7 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
               #ifdef RTI_CUSTOM_TYPE
                 retcode = _data_seq[i].get_long(
                         _message.size,
-                        "size_customType",
+                        "size_custom_type",
                         8);
                 if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
@@ -1602,7 +1602,7 @@ class RTISubscriber : public IMessagingReader
             _message.timestamp_usec = _data_seq[_data_idx].timestamp_usec;
             _message.latency_ping = _data_seq[_data_idx].latency_ping;
           #ifdef RTI_CUSTOM_TYPE
-            _message.size = _data_seq[_data_idx].size_customType;
+            _message.size = _data_seq[_data_idx].size_custom_type;
           #else
             _message.size = _data_seq[_data_idx].bin_data.length();
           #endif
@@ -1817,7 +1817,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
           #ifdef RTI_CUSTOM_TYPE
             retcode = _data_seq[_data_idx].get_long(
                     _message.size,
-                    "size_customType",
+                    "size_custom_type",
                     8);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,

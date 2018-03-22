@@ -24,8 +24,8 @@ struct TestData_t {
     long latency_ping;
     sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE
-    long size_customType;
-    RTI_CUSTOM_TYPE customType;
+    long size_custom_type;
+    RTI_CUSTOM_TYPE custom_type;
   #endif
 
 }; //@Extensibility FINAL_EXTENSIBILITY
@@ -41,8 +41,8 @@ struct TestDataKeyed_t {
     long latency_ping;
     sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE
-    long size_customType;
-    RTI_CUSTOM_TYPE customType; //@key
+    long size_custom_type;
+    RTI_CUSTOM_TYPE custom_type; //@key
   #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 
@@ -56,8 +56,8 @@ struct TestDataLarge_t {
     long latency_ping;
     sequence<octet> bin_data;
   #ifdef RTI_CUSTOM_TYPE
-    long size_customType;
-    RTI_CUSTOM_TYPE customType;
+    long size_custom_type;
+    RTI_CUSTOM_TYPE custom_type;
   #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 
@@ -71,8 +71,8 @@ struct TestDataKeyedLarge_t {
     long latency_ping;
     sequence<octet> bin_data;
   #ifdef RTI_CUSTOM_TYPE
-    long size_customType;
-    RTI_CUSTOM_TYPE customType; //@key
+    long size_custom_type;
+    RTI_CUSTOM_TYPE custom_type; //@key
   #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 

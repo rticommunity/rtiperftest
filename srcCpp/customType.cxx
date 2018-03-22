@@ -26,7 +26,11 @@ void register_custom_type(
     data.test_long = key;
 }
 
-void set_custom_type(RTI_CUSTOM_TYPE & data, unsigned long key, int target_data_len) {
+void set_custom_type(
+        RTI_CUSTOM_TYPE & data,
+        unsigned long key,
+        int target_data_len)
+{
     // TODO initialize your data to be sent
     data.test_long = key;
     data.stringTest.test_string = DDS_String_dup("Hello World!");
@@ -39,13 +43,14 @@ void set_custom_type(RTI_CUSTOM_TYPE & data, unsigned long key, int target_data_
             SIZE_TEST_SEQ);
 }
 
-void initialize_custom_type_dynamic(DDS_DynamicData & data) {
+void initialize_custom_type_dynamic(DDS_DynamicData & data)
+{
     // TODO initialize your data to measure the size
     DDS_ReturnCode_t retcode;
     long *test_seq = new long[SIZE_TEST_SEQ];
 
     retcode = data.set_long(
-            "customType.test_long",
+            "custom_type.test_long",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
             0);
     if (retcode != DDS_RETCODE_OK) {
@@ -53,7 +58,7 @@ void initialize_custom_type_dynamic(DDS_DynamicData & data) {
     }
 
     retcode = data.set_string(
-            "customType.stringTest.test_string",
+            "custom_type.stringTest.test_string",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
             "Hello World!");
     if (retcode != DDS_RETCODE_OK) {
@@ -64,7 +69,7 @@ void initialize_custom_type_dynamic(DDS_DynamicData & data) {
     }
 
     retcode = data.set_long(
-            "customType.test_enum",
+            "custom_type.test_enum",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
             ENUM1);
     if (retcode != DDS_RETCODE_OK) {
@@ -73,7 +78,7 @@ void initialize_custom_type_dynamic(DDS_DynamicData & data) {
 
     for (int i = 0; i < SIZE_TEST_SEQ; i++) {
         char member_name[29+21]; //size of member_name
-        sprintf(member_name, "customType.seqTest.test_seq[%d]", i);
+        sprintf(member_name, "custom_type.seqTest.test_seq[%d]", i);
         retcode = data.set_long(
                 member_name,
                 DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
@@ -88,12 +93,16 @@ void initialize_custom_type_dynamic(DDS_DynamicData & data) {
     }
 }
 
-void register_custom_type_dynamic(DDS_DynamicData & data, unsigned long key, int target_data_len) {
+void register_custom_type_dynamic(
+        DDS_DynamicData & data,
+        unsigned long key,
+        int target_data_len)
+{
     // TODO initialize DDS_DynamicData to be registered
     DDS_ReturnCode_t retcode;
 
     retcode = data.set_long(
-            "customType.test_long",
+            "custom_type.test_long",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
             key);
     if (retcode != DDS_RETCODE_OK) {
@@ -101,13 +110,17 @@ void register_custom_type_dynamic(DDS_DynamicData & data, unsigned long key, int
     }
 }
 
-void set_custom_type_dynamic(DDS_DynamicData & data, unsigned long key, int target_data_len) {
+void set_custom_type_dynamic(
+        DDS_DynamicData & data,
+        unsigned long key,
+        int target_data_len)
+{
     // TODO initialize DDS_DynamicData to be sent
     DDS_ReturnCode_t retcode;
     long *test_seq = new long[SIZE_TEST_SEQ];
 
     retcode = data.set_long(
-            "customType.test_long",
+            "custom_type.test_long",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
             key);
     if (retcode != DDS_RETCODE_OK) {
@@ -115,7 +128,7 @@ void set_custom_type_dynamic(DDS_DynamicData & data, unsigned long key, int targ
     }
 
     retcode = data.set_string(
-            "customType.stringTest.test_string",
+            "custom_type.stringTest.test_string",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
             "Hello World!");
     if (retcode != DDS_RETCODE_OK) {
@@ -126,7 +139,7 @@ void set_custom_type_dynamic(DDS_DynamicData & data, unsigned long key, int targ
     }
 
     retcode = data.set_long(
-            "customType.test_enum",
+            "custom_type.test_enum",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
             ENUM1);
     if (retcode != DDS_RETCODE_OK) {
@@ -135,7 +148,7 @@ void set_custom_type_dynamic(DDS_DynamicData & data, unsigned long key, int targ
 
     for (int i = 0; i < SIZE_TEST_SEQ; i++) {
         char member_name[29+21]; //size of member_name
-        sprintf(member_name, "customType.seqTest.test_seq[%d]", i);
+        sprintf(member_name, "custom_type.seqTest.test_seq[%d]", i);
         retcode = data.set_long(
                 member_name,
                 DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
