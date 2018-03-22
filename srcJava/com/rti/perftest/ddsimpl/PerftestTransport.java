@@ -81,6 +81,11 @@ public class PerftestTransport {
     public WanTransportOptions wanOptions = null;
 
     public long dataLen = 100;
+    public boolean useMulticast = false;
+    
+    public String throughputMulticastAddr = "239.255.1.1";
+    public String latencyMulticastAddr = "239.255.1.2";
+    public String announcementMulticastAddr = "239.255.1.100";
 
     /**************************************************************************/
     /* PRIVATE CLASS MEMBERS*/
@@ -96,6 +101,14 @@ public class PerftestTransport {
     private static String TRANSPORT_CERTIFICATE_FILE_PUB = "./resource/secure/pub.pem";
     private static String TRANSPORT_CERTIFICATE_FILE_SUB = "./resource/secure/sub.pem";
     private static String TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
+    
+    private String _LatencyTopicName = "Latency";
+    private String _AnnouncementTopicName = "Announcement";
+    private String _ThroughputTopicName = "Throughput";
+    
+    HashMap topicNameMap = new HashMap();
+
+
 
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
@@ -106,6 +119,11 @@ public class PerftestTransport {
         tcpOptions = new TcpTransportOptions();
         secureOptions = new SecureTransportOptions();
         wanOptions = new WanTransportOptions();
+        
+        topicNameMap.put(_LatencyTopicName, latencyMulticastAddr);
+        topicNameMap.put(_AnnouncementTopicName, announcementMulticastAddr);
+        topicNameMap.put(_ThroughputTopicName, throughputMulticastAddr);
+
     }
 
     /**************************************************************************/
@@ -131,6 +149,9 @@ public class PerftestTransport {
         cmdLineArgsMap.put("-transportWanServerPort", new Integer(1));
         cmdLineArgsMap.put("-transportWanId", new Integer(1));
         cmdLineArgsMap.put("-transportSecureWan", new Integer(0));
+        cmdLineArgsMap.put("-multicast", new Integer(1));
+        cmdLineArgsMap.put("-nomulticast", new Integer(0));
+        
 
         return cmdLineArgsMap;
     }
@@ -154,6 +175,12 @@ public class PerftestTransport {
     sb.append("\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n");
     sb.append("\t                                If not specified, use all available\n");
     sb.append("\t                                interfaces\n");
+    sb.append("\t-multicast <address>          - Use multicast to send data.\n");
+    sb.append("\t                                Default not to use multicast\n");
+    sb.append("\t                                <address> is optional, if unspecified:\n");
+    sb.append("\t                                                latency 239.255.1.2,\n");
+    sb.append("\t                                                announcement 239.255.1.100,\n");
+    sb.append("\t                                                throughput 239.255.1.1\n");
     sb.append("\t-transportVerbosity <level>   - Verbosity of the transport\n");
     sb.append("\t                                Default: 0 (errors only)\n");
     sb.append("\t-transportServerBindPort <p>  - Port used by the transport to accept\n");
@@ -200,6 +227,12 @@ public class PerftestTransport {
             sb.append("\tNic: ").append(allowInterfaces).append("\n");
         }
 
+        sb.append( "\tUse Multicast: ").append((allowsMulticast())? "True\n" : "False");
+        if(!allowsMulticast()){
+            sb.append ("  (Multicast is not supported for " );
+            sb.append( transportConfig.nameString ).append(")\n");
+        }
+
         if (transportConfig.kind == Transport.TRANSPORT_TCPv4
                 || transportConfig.kind == Transport.TRANSPORT_TLSv4) {
 
@@ -243,14 +276,11 @@ public class PerftestTransport {
     }
 
     public boolean allowsMulticast() {
-        if (transportConfig.kind != Transport.TRANSPORT_TCPv4
+        return (transportConfig.kind != Transport.TRANSPORT_TCPv4
                 && transportConfig.kind != Transport.TRANSPORT_TLSv4
                 && transportConfig.kind != Transport.TRANSPORT_WANv4
-                && transportConfig.kind != Transport.TRANSPORT_SHMEM) {
-            return true;
-        } else {
-            return false;
-        }
+                && transportConfig.kind != Transport.TRANSPORT_SHMEM
+                && useMulticast);
     }
 
     public boolean parseTransportOptions(int argc, String[] argv) {
@@ -416,7 +446,17 @@ public class PerftestTransport {
             } else if ("-transportSecureWan".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 wanOptions.secureWan = true;
-            }
+            } else if ("-nomulticast".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                useMulticast = false;
+            } else if ("-multicast".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                useMulticast = true;
+                if ((i != (argc - 1)) && !argv[1+i].startsWith("-")) {
+                    i++;
+                    throughputMulticastAddr = argv[i];
+                    latencyMulticastAddr = argv[i];
+                    announcementMulticastAddr = argv[i];
+                }
+            }    
         }
 
         if (!setTransport(transportString)) {
@@ -853,5 +893,11 @@ public class PerftestTransport {
         return true;
     }
 
+    public String getMulticastAddr(String topic)
+    {
+        return topicNameMap.get(topic).toString();
+    }
 }
+
+
 //===========================================================================

@@ -122,12 +122,6 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t                                default: perftest_qos_profiles.xml\n" +
             "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
             "\t                                default: PerftestQosLibrary\n" +
-            "\t-multicast <address>          - Use multicast to send data.\n" +
-            "\t                                Default not to use multicast\n" +
-            "\t                                <address> is optional, if unspecified:\n" +
-            "\t                                                latency 239.255.1.2,\n" +
-            "\t                                                announcement 239.255.1.100,\n" +
-            "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
             "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
             "\t                                (no batching)\n" +
@@ -331,23 +325,13 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _ProfileLibraryName = argv[i];
-        } else if (IS_OPTION(argv[i], "-multicast")) {
-            _IsMulticast = true;
-            if ((i != (argc-1)) && *argv[i+1] != '-') {
-                i++;
-                THROUGHPUT_MULTICAST_ADDR = argv[i];
-                LATENCY_MULTICAST_ADDR = argv[i];
-                ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
-            }
-        } else if (IS_OPTION(argv[i], "-nomulticast")) {
-            _IsMulticast = false;
         } else if (IS_OPTION(argv[i], "-bestEffort")) {
             _IsReliable = false;
         } else if (IS_OPTION(argv[i], "-durability")) {
             if ((i == (argc-1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <kind> after -durability\n");
                 return false;
-            }       
+            }
             _Durability = strtol(argv[i], NULL, 10);
 
             if ((_Durability < 0) || (_Durability > 3)) {
@@ -2208,7 +2192,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                 qos_profile.c_str(), _ProfileLibraryName, _ProfileFile);
         return NULL;
     }
-    
+
     if (!_UsePositiveAcks
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_qos.protocol.disable_positive_acks = true;
@@ -2243,7 +2227,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     // These QOS's are only set for the Throughput datawriter
     if (qos_profile == "ThroughputQos") {
 
-        if (_IsMulticast) {
+        if (_transport.useMulticast) {
             dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
                     RTI_TRUE;
         }
@@ -2534,25 +2518,10 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (_transport.transportConfig.kind != TRANSPORT_TCPv4
-            && _transport.transportConfig.kind != TRANSPORT_TLSv4
-            && _transport.transportConfig.kind != TRANSPORT_WANv4
-            && _transport.transportConfig.kind != TRANSPORT_SHMEM
-            && _IsMulticast) {
-
-        const char *multicast_addr;
-
-        if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0) {
-            multicast_addr = THROUGHPUT_MULTICAST_ADDR;
-        } else if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0) {
-            multicast_addr = LATENCY_MULTICAST_ADDR;
-        } else {
-            multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
-        }
-
+    if (_transport.allowsMulticast()) {
         dr_qos.multicast.value.ensure_length(1, 1);
         dr_qos.multicast.value[0].receive_address = DDS_String_dup(
-                multicast_addr);
+                _transport.getMulticastAddr(topic_name));
         dr_qos.multicast.value[0].receive_port = 0;
         dr_qos.multicast.value[0].transports.length(0);
     }

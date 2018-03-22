@@ -58,7 +58,6 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _UseXmlQos(true),
         _AutoThrottle(false),
         _IsReliable(true),
-        _IsMulticast(false),
         _BatchSize(0),
         _InstanceCount(1),
         _InstanceMaxCountReader(dds::core::LENGTH_UNLIMITED), //(-1)
@@ -93,9 +92,6 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _WaitsetDelayUsec(100),
         _HeartbeatPeriod(dds::core::Duration::zero()),
         _FastHeartbeatPeriod(dds::core::Duration::zero()),
-        THROUGHPUT_MULTICAST_ADDR("239.255.1.1"),
-        LATENCY_MULTICAST_ADDR("239.255.1.2"),
-        ANNOUNCEMENT_MULTICAST_ADDR("239.255.1.100"),
         _ProfileLibraryName("PerftestQosLibrary"),
         _participant(dds::core::null),
         _subscriber(dds::core::null),
@@ -350,16 +346,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 throw std::logic_error("[Error] Error parsing commands");
             }
             _ProfileLibraryName = argv[i];
-        } else if (IS_OPTION(argv[i], "-multicast")) {
-            _IsMulticast = true;
-            if ((i != (argc-1)) && *argv[i+1] != '-') {
-                i++;
-                THROUGHPUT_MULTICAST_ADDR = argv[i];
-                LATENCY_MULTICAST_ADDR = argv[i];
-                ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
-            }
-        } else if (IS_OPTION(argv[i], "-nomulticast")) {
-            _IsMulticast = false;
         } else if (IS_OPTION(argv[i], "-bestEffort")) {
             _IsReliable = false;
         } else if (IS_OPTION(argv[i], "-durability")) {
@@ -1656,7 +1642,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     std::map<std::string, std::string> properties =
             dw_qos.policy<Property>().get_all();
 
-    if (!_UsePositiveAcks 
+    if (!_UsePositiveAcks
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_dataWriterProtocol.disable_positive_acks(true);
         if (_KeepDurationUsec != -1) {
@@ -1693,7 +1679,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     // These QOS's are only set for the Throughput datawriter
     if (qos_profile == "ThroughputQos") {
 
-        if (_IsMulticast) {
+        if (_transport.useMulticast) {
             dw_reliableWriterProtocol.enable_multicast_periodic_heartbeat(true);
         }
 
@@ -2009,31 +1995,18 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (_transport.transportConfig.kind != TRANSPORT_TCPv4
-            && _transport.transportConfig.kind != TRANSPORT_TLSv4
-            && _transport.transportConfig.kind != TRANSPORT_WANv4
-            && _transport.transportConfig.kind != TRANSPORT_SHMEM
-            && _IsMulticast) {
-
-       const char *multicast_addr;
-
-        if (topic_name == perftest_cpp::_ThroughputTopicName) {
-            multicast_addr = THROUGHPUT_MULTICAST_ADDR;
-        } else if (topic_name == perftest_cpp::_LatencyTopicName) {
-            multicast_addr = LATENCY_MULTICAST_ADDR;
-        } else {
-            multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
-        }
-
+    if (_transport.allowsMulticast()) {
+        
         dds::core::StringSeq transports;
         transports.push_back("udpv4");
         rti::core::TransportMulticastSettings multicast_settings(
-                transports, multicast_addr, 0);
+                transports, _transport.getMulticastAddr(topic_name), 0);
         rti::core::TransportMulticastSettingsSeq multicast_seq;
         multicast_seq.push_back(multicast_settings);
 
         dr_qos << rti::core::policy::TransportMulticast(multicast_seq,
                 rti::core::policy::TransportMulticastKind::AUTOMATIC);
+
     }
 
     if (_useUnbounded > 0) {

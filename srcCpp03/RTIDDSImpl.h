@@ -68,7 +68,6 @@ class RTIDDSImpl : public IMessaging
     bool         _UseXmlQos;
     bool         _AutoThrottle;
     bool         _IsReliable;
-    bool         _IsMulticast;
     unsigned int _BatchSize;
     unsigned long _InstanceCount;
     unsigned long _InstanceMaxCountReader;
@@ -124,9 +123,6 @@ class RTIDDSImpl : public IMessaging
     dds::core::Duration   _HeartbeatPeriod;
     dds::core::Duration   _FastHeartbeatPeriod;
 
-    const char          *THROUGHPUT_MULTICAST_ADDR;
-    const char          *LATENCY_MULTICAST_ADDR;
-    const char          *ANNOUNCEMENT_MULTICAST_ADDR;
     const char          *_ProfileLibraryName;
 
     dds::domain::DomainParticipant _participant;

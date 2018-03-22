@@ -95,6 +95,11 @@ public:
     WanTransportOptions wanOptions;
 
     unsigned long dataLen;
+    bool useMulticast;
+
+    std::string throughputMulticastAddr;
+    std::string latencyMulticastAddr;
+    std::string announcementMulticastAddr;
 
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
@@ -114,9 +119,19 @@ public:
 
     bool parseTransportOptions(int argc, char *argv[]);
 
+    bool allowsMulticast();
+    
+    const char * getMulticastAddr(const char * topic);
+
 private:
 
     static std::map<std::string, TransportConfig> transportConfigMap;
+
+    std::map<std::string, std::string> topicNameMap;
+
+    const std::string _LatencyTopicName;
+    const std::string _AnnouncementTopicName;
+    const std::string _ThroughputTopicName;
 
     /**************************************************************************/
 

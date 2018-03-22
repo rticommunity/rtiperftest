@@ -31,7 +31,6 @@ class RTIDDSImpl : public IMessaging
         _TurboMode = false;
         _UseXmlQos = true;
         _IsReliable = true;
-        _IsMulticast = false;
         _BatchSize = 0;
         _InstanceCount = 1;
         _InstanceMaxCountReader = DDS_LENGTH_UNLIMITED;
@@ -69,9 +68,6 @@ class RTIDDSImpl : public IMessaging
         _FastHeartbeatPeriod.sec = 0;
         _FastHeartbeatPeriod.nanosec = 0;
 
-        THROUGHPUT_MULTICAST_ADDR = "239.255.1.1";
-        LATENCY_MULTICAST_ADDR = "239.255.1.2";
-        ANNOUNCEMENT_MULTICAST_ADDR = "239.255.1.100";
         _ProfileLibraryName = "PerftestQosLibrary";
 
         _factory = NULL;
@@ -127,7 +123,6 @@ class RTIDDSImpl : public IMessaging
     bool         _UseXmlQos;
     bool         _AutoThrottle;
     bool         _IsReliable;
-    bool         _IsMulticast;
     unsigned int _BatchSize;
     unsigned long _InstanceCount;
     unsigned long _InstanceMaxCountReader;
@@ -180,9 +175,6 @@ class RTIDDSImpl : public IMessaging
     DDS_Duration_t   _HeartbeatPeriod;
     DDS_Duration_t   _FastHeartbeatPeriod;
 
-    const char          *THROUGHPUT_MULTICAST_ADDR;
-    const char          *LATENCY_MULTICAST_ADDR;
-    const char          *ANNOUNCEMENT_MULTICAST_ADDR;
     const char          *_ProfileLibraryName;
 
     DDSDomainParticipantFactory *_factory;
@@ -202,4 +194,3 @@ class RTIDDSImpl : public IMessaging
 
 
 #endif // __RTIDDSIMPL_H__
-
