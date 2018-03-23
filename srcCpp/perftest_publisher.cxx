@@ -698,6 +698,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-keyed")) {
             _isKeyed = true;
+            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
+            _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-writerStats")) {
             _displayWriterStats = true;

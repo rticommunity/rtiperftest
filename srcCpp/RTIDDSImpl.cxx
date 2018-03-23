@@ -9,6 +9,7 @@
 #include "MessagingIF.h"
 #include "perftest_cpp.h"
 #include "RTIDDSImpl.h"
+#include "FastMemory.h"
 #include "qos_string.h"
 
 #ifdef RTI_SECURE_PERFTEST
@@ -202,6 +203,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     int i;
     int sec = 0;
     unsigned int nanosec = 0;
+    bool keyed = false;
 
     // Command line params
     for (i = 0; i < argc; ++i) {
@@ -341,7 +343,11 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-nomulticast")) {
             _IsMulticast = false;
         } else if (IS_OPTION(argv[i], "-bestEffort")) {
-            _IsReliable = false;
+            _IsReliable = false;        
+        } else if (IS_OPTION(argv[i], "-useFastQueue")) {
+            _UseFastQueue = true;
+        } else if (IS_OPTION(argv[i], "-keyed")) {
+            keyed = true;
         } else if (IS_OPTION(argv[i], "-durability")) {
             if ((i == (argc-1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <kind> after -durability\n");
@@ -655,6 +661,11 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 return false;
             }
         }
+    }
+
+    if (_UseFastQueue && (_IsReliable || keyed)) {
+        fprintf(stderr, "FastQueue can only be used with Best Effort reliability and Unkeyed Data.\n");
+        return false;
     }
 
     if (_IsAsynchronous && _BatchSize > 0) {
@@ -2124,6 +2135,26 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         return false;
     }
 
+    if (!_IsReliable && _UseFastQueue) {
+
+
+        struct NDDS_WriterHistory_Plugin *plugin = NULL;
+        NDDS_WriterHistory_FastMemoryPlugin_create(&plugin);
+        if (plugin == NULL) {
+            fprintf(stderr, "WriterHistoryFastMemoryPlugin_createHistory error\n");
+        }
+
+        if (!NDDSWriterHistoryPluginSupport::register_plugin(
+                _participant,
+                plugin,
+                "FastMemory")) {
+            fprintf(stderr, "NDDS_WriterHistory_PluginSupport_register_plugin error\n");
+            return false;
+            }
+
+        fprintf(stderr, "Using FastQueue\n");
+    }
+
     // Register the types and create the topics
     if (!_isDynamicData) {
         T::TypeSupport::register_type(_participant, _typename);
@@ -2245,6 +2276,13 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         else {
             // override to best-effort
             dw_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
+            if (_UseFastQueue) {
+                DDSPropertyQosPolicyHelper::add_property(
+                    dw_qos.property,
+                    "dds.data_writer.history.plugin_name",
+                    "FastMemory", 
+                    false);
+            }
         }
     }
 

@@ -31,6 +31,7 @@ class RTIDDSImpl : public IMessaging
         _TurboMode = false;
         _UseXmlQos = true;
         _IsReliable = true;
+        _UseFastQueue = false;
         _IsMulticast = false;
         _BatchSize = 0;
         _InstanceCount = 1;
@@ -127,6 +128,7 @@ class RTIDDSImpl : public IMessaging
     bool         _UseXmlQos;
     bool         _AutoThrottle;
     bool         _IsReliable;
+    bool         _UseFastQueue;
     bool         _IsMulticast;
     unsigned int _BatchSize;
     unsigned long _InstanceCount;
