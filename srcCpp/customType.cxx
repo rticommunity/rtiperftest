@@ -43,6 +43,12 @@ void set_custom_type(
             SIZE_TEST_SEQ);
 }
 
+void delete_data_custom_type(RTI_CUSTOM_TYPE & data)
+{
+    // TODO delete the data. For example: unloaan()...
+    data.seqTest.test_seq.unloan();
+}
+
 void initialize_custom_type_dynamic(DDS_DynamicData & data)
 {
     // TODO initialize your data to measure the size

@@ -84,7 +84,7 @@ function usage()
     echo ""
 }
 
-function clean_custom_typ()
+function clean_custom_type()
 {
     # Remove customType generated files
     for file in ${customType_location}/*.idl
@@ -124,7 +124,7 @@ function clean()
     rm -rf "${script_location}"/srcJava/com/rti/perftest/gen
     rm -rf "${script_location}"/bin
 
-    clean_custom_typ
+    clean_custom_type
 
     echo ""
     echo "================================================================================"

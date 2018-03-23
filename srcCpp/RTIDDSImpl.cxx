@@ -831,6 +831,9 @@ class RTIPublisher : public IMessagingWriter
   #endif
 
     ~RTIPublisher() {
+      #ifdef RTI_CUSTOM_TYPE
+        delete_data_custom_type(data.custom_type);
+      #endif
         Shutdown();
     }
 
@@ -880,13 +883,13 @@ class RTIPublisher : public IMessagingWriter
         data.bin_data.loan_contiguous((DDS_Octet*)message.data, message.size, message.size);
       #endif
 
-        // TODO remove, only for debugging
-      #ifdef RTI_CUSTOM_TYPE
-        size_custom_type = Fooget_serialized_sample_size(NULL, RTI_TRUE, RTI_CDR_ENCAPSULATION_ID_CDR_NATIVE, 0, &data.custom_type); // get the size of data.custom_type
-        printf("size_custom_type = %d and size data = %d\n", size_custom_type , TestData_tPlugin_get_serialized_sample_size(NULL, RTI_TRUE, RTI_CDR_ENCAPSULATION_ID_CDR_NATIVE, 0, (const TestData_t*)&data) );
-      #else
-        printf("size data = %d\n", TestData_tPlugin_get_serialized_sample_size(NULL, RTI_TRUE, RTI_CDR_ENCAPSULATION_ID_CDR_NATIVE, 0, (const TestData_t*)&data));
-      #endif
+    //     // TODO remove, only for debugging
+    //   #ifdef RTI_CUSTOM_TYPE
+    //     size_custom_type = Fooget_serialized_sample_size(NULL, RTI_TRUE, RTI_CDR_ENCAPSULATION_ID_CDR_NATIVE, 0, &data.custom_type); // get the size of data.custom_type
+    //     printf("size_custom_type = %d and size data = %d\n", size_custom_type , TestData_tPlugin_get_serialized_sample_size(NULL, RTI_TRUE, RTI_CDR_ENCAPSULATION_ID_CDR_NATIVE, 0, (const TestData_t*)&data) );
+    //   #else
+    //     printf("size data = %d\n", TestData_tPlugin_get_serialized_sample_size(NULL, RTI_TRUE, RTI_CDR_ENCAPSULATION_ID_CDR_NATIVE, 0, (const TestData_t*)&data));
+    //   #endif
 
         if (!isCftWildCardKey) {
             retcode = _writer->write(data, _instance_handles[key]);
@@ -1174,15 +1177,15 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
         }
 
-        // TODO remove, only for debugging
-      #ifdef RTI_CUSTOM_TYPE
-        DDS_DynamicData data_custom_type(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
-        data.get_complex_member(data_custom_type, "custom_type", DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
-        size_custom_type = DDS_DynamicData_get_serialized_size(&data_custom_type, DDS_DYNAMIC_DATA_ENCAPSULATION_KIND_DEFAULT);
-        printf("size_custom_type = %d and size data = %d\n",size_custom_type,DDS_DynamicData_get_serialized_size(&data, DDS_DYNAMIC_DATA_ENCAPSULATION_KIND_DEFAULT));
-      #else
-        printf("size data = %d\n",DDS_DynamicData_get_serialized_size(&data, DDS_DYNAMIC_DATA_ENCAPSULATION_KIND_DEFAULT));
-      #endif
+    //     // TODO remove, only for debugging
+    //   #ifdef RTI_CUSTOM_TYPE
+    //     DDS_DynamicData data_custom_type(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
+    //     data.get_complex_member(data_custom_type, "custom_type", DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+    //     size_custom_type = DDS_DynamicData_get_serialized_size(&data_custom_type, DDS_DYNAMIC_DATA_ENCAPSULATION_KIND_DEFAULT);
+    //     printf("size_custom_type = %d and size data = %d\n",size_custom_type,DDS_DynamicData_get_serialized_size(&data, DDS_DYNAMIC_DATA_ENCAPSULATION_KIND_DEFAULT));
+    //   #else
+    //     printf("size data = %d\n",DDS_DynamicData_get_serialized_size(&data, DDS_DYNAMIC_DATA_ENCAPSULATION_KIND_DEFAULT));
+    //   #endif
 
 
         if (!isCftWildCardKey) {
