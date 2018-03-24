@@ -10,20 +10,22 @@
 PerftestClock::PerftestClock()
 {
     clock = RTIHighResolutionClock_new();
+    if (clock == NULL) {
+        std::bad_alloc exception;
+        throw exception;
+    }
     RTINtpTime_setZero(&clockTime_aux);
 
     clock_sec = 0;
     clock_usec = 0;
 }
 
-PerftestClock::~PerftestClock() 
+PerftestClock::~PerftestClock()
 {
-    if (clock != NULL) {
-        RTIHighResolutionClock_delete(clock);
-    }
+    RTIHighResolutionClock_delete(clock);
 }
 
-unsigned long long PerftestClock::GetTimeUsec() 
+unsigned long long PerftestClock::GetTimeUsec()
 {
     clock->getTime(clock, &clockTime_aux);
     RTINtpTime_unpackToMicrosec(

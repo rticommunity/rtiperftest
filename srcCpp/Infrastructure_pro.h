@@ -67,7 +67,7 @@ class PerftestClock
     ~PerftestClock();
 
     unsigned long long GetTimeUsec();
-    void MilliSleep(unsigned int millisec);
+    static void MilliSleep(unsigned int millisec);
 };
 
 bool configureTransport(

@@ -68,7 +68,7 @@ void RTIDDSImpl<T>::Shutdown()
     }
 
     if (_participant != NULL) {
-        PerftestClock::GetInstance().MilliSleep(2000);
+        PerftestClock::MilliSleep(2000);
 
         if (_reader != NULL) {
             DDSDataReaderListener* reader_listener = _reader->get_listener();
@@ -846,7 +846,7 @@ class RTIPublisher : public IMessagingWriter
             {
                 break;
             }
-            PerftestClock::GetInstance().MilliSleep(1000);
+            PerftestClock::MilliSleep(1000);
         }
     }
 
@@ -1084,7 +1084,7 @@ public:
             if (status.current_count >= numSubscribers) {
                 break;
             }
-            PerftestClock::GetInstance().MilliSleep(1000);
+            PerftestClock::MilliSleep(1000);
         }
     }
 
@@ -1473,7 +1473,7 @@ class RTISubscriber : public IMessagingReader
             {
                 break;
             }
-            PerftestClock::GetInstance().MilliSleep(1000);
+            PerftestClock::MilliSleep(1000);
         }
     }
 };
@@ -1680,7 +1680,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
             if (status.current_count >= numPublishers) {
                 break;
             }
-            PerftestClock::GetInstance().MilliSleep(1000);
+            PerftestClock::MilliSleep(1000);
         }
     }
 };

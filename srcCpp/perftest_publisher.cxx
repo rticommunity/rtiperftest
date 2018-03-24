@@ -1138,7 +1138,7 @@ int perftest_cpp::Subscriber()
 
     while (true) {
         prev_time = now;
-        PerftestClock::GetInstance().MilliSleep(1000);
+        PerftestClock::MilliSleep(1000);
         now = PerftestClock::GetInstance().GetTimeUsec();
 
         if (reader_listener->change_size) { // ACK change_size
@@ -1202,7 +1202,7 @@ int perftest_cpp::Subscriber()
         }
     }
 
-    PerftestClock::GetInstance().MilliSleep(2000);
+    PerftestClock::MilliSleep(2000);
 
     if (reader != NULL)
     {
@@ -1671,7 +1671,7 @@ int perftest_cpp::Publisher()
     fprintf(stderr,"Waiting for subscribers announcement ...\n");
     fflush(stderr);
     while (_NumSubscribers > announcement_reader_listener->announced_subscribers) {
-        PerftestClock::GetInstance().MilliSleep(1000);
+        PerftestClock::MilliSleep(1000);
     }
 
     // Allocate data and set size
@@ -1706,7 +1706,7 @@ int perftest_cpp::Publisher()
     message.size = (int)_DataLen - OVERHEAD_BYTES;
 
     // Sleep 1 second, then begin test
-    PerftestClock::GetInstance().MilliSleep(1000);
+    PerftestClock::MilliSleep(1000);
 
     int num_pings = 0;
     unsigned int scan_count = 0;
