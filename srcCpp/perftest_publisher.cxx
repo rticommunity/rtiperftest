@@ -1083,14 +1083,16 @@ int perftest_cpp::Subscriber()
     else
     {
         reader = _MessagingImpl->CreateReader(_ThroughputTopicName, NULL);
-        if (reader == NULL)
-        {
+        if (reader == NULL) {
             fprintf(stderr, "Problem creating throughput reader.\n");
             return -1;
         }
         reader_listener = new ThroughputListener(writer, reader, _useCft, _NumPublishers);
 
-        PerftestCreateThread("ReceiverThread", ThroughputReadThread, reader_listener);
+        if (!PerftestCreateThread("ReceiverThread", ThroughputReadThread, reader_listener)) {
+            fprintf(stderr, "Problem creating ReceiverThread.\n");
+            return -1;
+        }
     }
 
     // Create announcement writer
@@ -1613,7 +1615,10 @@ int perftest_cpp::Publisher()
                     reader,
                     _LatencyTest ? writer : NULL);
 
-            PerftestCreateThread("ReceiverThread", LatencyReadThread, reader_listener);
+            if (!PerftestCreateThread("ReceiverThread", LatencyReadThread, reader_listener)) {
+                fprintf(stderr, "Problem creating ReceiverThread.\n");
+                return -1;
+            }
         }
     }
     else

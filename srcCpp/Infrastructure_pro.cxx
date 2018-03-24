@@ -521,12 +521,13 @@ bool configureTransport(
     return true;
 }
 
-void PerftestCreateThread(
+bool PerftestCreateThread(
         const char *name,
         RTIOsapiThreadOnSpawnedMethod method,
         void *threadParam)
 {
-    RTIOsapiThread_new(
+    struct RTIOsapiThread* thread = NULL;
+    thread = RTIOsapiThread_new(
             name,
             RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
             RTI_OSAPI_THREAD_OPTION_DEFAULT,
@@ -534,6 +535,13 @@ void PerftestCreateThread(
             NULL,
             method,
             threadParam);
+    if (thread == NULL) {
+        fprintf(stderr,
+                "Error creating thread for \"%s\"\n",
+                name);
+        return false;
+    }
+    return true;
 }
 
 void configureVerbosity(int verbosityLevel)

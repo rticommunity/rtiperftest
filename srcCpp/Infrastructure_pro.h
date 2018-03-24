@@ -74,7 +74,7 @@ bool configureTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos &qos);
 
-void PerftestCreateThread(
+bool PerftestCreateThread(
         const char *name,
         RTIOsapiThreadOnSpawnedMethod method,
         void *threadParam);
