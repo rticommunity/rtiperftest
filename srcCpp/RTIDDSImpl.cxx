@@ -1131,7 +1131,7 @@ public:
     bool waitForPingResponse() {
         if (_pongSemaphore != NULL) {
             if (RTIOsapiSemaphore_take(_pongSemaphore, &blockDurationIn)
-                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
+                    != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
                 fprintf(stderr, "Unexpected error taking semaphore\n");
                 return false;
             }
@@ -1146,7 +1146,7 @@ public:
 
         if (_pongSemaphore != NULL) {
             if (RTIOsapiSemaphore_take(_pongSemaphore, &blockDuration)
-                    != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
                 fprintf(stderr, "Unexpected error taking semaphore\n");
                 return false;
             }
