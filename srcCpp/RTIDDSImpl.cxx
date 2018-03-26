@@ -1130,8 +1130,8 @@ public:
 
     bool waitForPingResponse() {
         if (_pongSemaphore != NULL) {
-            if (RTIOsapiSemaphore_take(_pongSemaphore, NULL)
-                    != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+            if (RTIOsapiSemaphore_take(_pongSemaphore, &blockDurationIn)
+                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
                 fprintf(stderr, "Unexpected error taking semaphore\n");
                 return false;
             }
