@@ -88,8 +88,6 @@ int perftest_cpp::Run(int argc, char *argv[])
         }
     }
 
-    PerftestTimer::Initialize();
-
     if ( !_MessagingImpl->Initialize(_MessagingArgc, _MessagingArgv) )
     {
         return -1;
@@ -150,8 +148,6 @@ perftest_cpp::~perftest_cpp()
     if(_MessagingImpl != NULL){
         delete _MessagingImpl;
     }
-
-    PerftestTimer::Finalize();
 
     fprintf(stderr,"Test ended.\n");
     fflush(stderr);
@@ -1729,7 +1725,7 @@ int perftest_cpp::Publisher()
     }
 
     if (_executionTime > 0 && !_isScan) {
-        PerftestTimer::SetTimeout(_executionTime, Timeout);
+        PerftestTimer::GetInstance().SetTimeout(_executionTime, Timeout);
     }
     /********************
      *  Main sending loop
@@ -1805,7 +1801,7 @@ int perftest_cpp::Publisher()
                 // after _executionTime
                 if (_isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    PerftestTimer::SetTimeout(_executionTime, Timeout_scan);
+                    PerftestTimer::GetInstance().SetTimeout(_executionTime, Timeout_scan);
 
                     // flush anything that was previously sent
                     writer->Flush();

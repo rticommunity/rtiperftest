@@ -46,10 +46,14 @@ private:
     static void (*handler_function)(void);
 
 public:
-    static void Initialize();
-    static void Finalize();
-    static void SetTimeout(unsigned int executionTimeInSeconds,
-            void (*function)(void));
+    PerftestTimer();
+    ~PerftestTimer();
+    static PerftestTimer &GetInstance()
+    {
+        static PerftestTimer instance;
+        return instance;
+    }
+    void SetTimeout(unsigned int executionTimeInSeconds, void (*function)(void));
 #ifdef RTI_WIN32
     static VOID CALLBACK TimeoutTask(PVOID lpParam, BOOLEAN timerOrWaitFired);
 #else

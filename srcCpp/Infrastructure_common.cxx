@@ -14,7 +14,8 @@ HANDLE PerftestTimer::_hTimer = NULL;
 #endif
 void (*PerftestTimer::handler_function)(void) = NULL;
 
-void PerftestTimer::Initialize() {
+PerftestTimer::PerftestTimer()
+{
 #ifdef RTI_WIN32
     if (_hTimerQueue == NULL) {
         _hTimerQueue = CreateTimerQueue();
@@ -24,7 +25,8 @@ void PerftestTimer::Initialize() {
     handler_function = NULL;
 }
 
-void PerftestTimer::Finalize() {
+PerftestTimer::~PerftestTimer()
+{
 #ifdef RTI_WIN32
     if (_hTimerQueue != NULL) {
         DeleteTimerQueue(_hTimerQueue);
