@@ -754,12 +754,13 @@ class RTIPublisher : public IMessagingWriter
     long _instancesToBeWritten;
 
  public:
-    RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, PerftestSemaphore * pongSemaphore, int instancesToBeWritten) {
+    RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, PerftestSemaphore * pongSemaphore, int instancesToBeWritten)
+    {
         _writer = T::DataWriter::narrow(writer);
         data.bin_data.maximum(0);
         _num_instances = num_instances;
         _instance_counter = 0;
-        _instance_handles = 
+        _instance_handles =
                 (DDS_InstanceHandle_t *) malloc(sizeof(DDS_InstanceHandle_t)*(_num_instances + 1)); // One extra for MAX_CFT_VALUE
         _pongSemaphore = pongSemaphore;
         _instancesToBeWritten = instancesToBeWritten;
@@ -777,11 +778,13 @@ class RTIPublisher : public IMessagingWriter
         _instance_handles[_num_instances] = _writer->register_instance(data);
     }
 
-    ~RTIPublisher() {
+    ~RTIPublisher()
+    {
         Shutdown();
     }
 
-    void Shutdown() {
+    void Shutdown()
+    {
         if (_writer->get_listener() != NULL) {
             delete(_writer->get_listener());
             _writer->set_listener(NULL);
@@ -790,11 +793,13 @@ class RTIPublisher : public IMessagingWriter
         free(_instance_handles);
     }
 
-    void Flush() {
+    void Flush()
+    {
         _writer->flush();
     }
 
-    bool Send(const TestMessage &message, bool isCftWildCardKey) {
+    bool Send(const TestMessage &message, bool isCftWildCardKey)
+    {
         DDS_ReturnCode_t retcode;
         long key = 0;
 
@@ -836,7 +841,8 @@ class RTIPublisher : public IMessagingWriter
         return true;
     }
 
-    void WaitForReaders(int numSubscribers) {
+    void WaitForReaders(int numSubscribers)
+    {
         DDS_PublicationMatchedStatus status;
 
         while (true)
@@ -850,7 +856,8 @@ class RTIPublisher : public IMessagingWriter
         }
     }
 
-    bool waitForPingResponse() {
+    bool waitForPingResponse()
+    {
         if(_pongSemaphore != NULL) {
             if (!PerftestSemaphore_take(
                     _pongSemaphore,
@@ -863,7 +870,8 @@ class RTIPublisher : public IMessagingWriter
     }
 
     /* time out in milliseconds */
-    bool waitForPingResponse(int timeout) {
+    bool waitForPingResponse(int timeout)
+    {
         if(_pongSemaphore != NULL) {
             if (!PerftestSemaphore_take(_pongSemaphore, timeout)) {
                 fprintf(stderr,"Unexpected error taking semaphore\n");
@@ -873,7 +881,8 @@ class RTIPublisher : public IMessagingWriter
         return true;
     }
 
-    bool notifyPingResponse() {
+    bool notifyPingResponse()
+    {
         if(_pongSemaphore != NULL) {
             if (!PerftestSemaphore_give(_pongSemaphore)) {
                 fprintf(stderr,"Unexpected error giving semaphore\n");
@@ -883,13 +892,15 @@ class RTIPublisher : public IMessagingWriter
         return true;
     }
 
-    unsigned int getPulledSampleCount() {
+    unsigned int getPulledSampleCount()
+    {
         DDS_DataWriterProtocolStatus status;
         _writer->get_datawriter_protocol_status(status);
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec) {
+    void wait_for_acknowledgments(long sec, unsigned long nsec)
+    {
         DDS_Duration_t timeout = {sec, nsec};
         _writer->wait_for_acknowledgments(timeout);
     }
@@ -907,7 +918,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     PerftestSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
 
-public:
+  public:
     RTIDynamicDataPublisher(
             DDSDataWriter *writer,
             unsigned long num_instances,
@@ -957,11 +968,13 @@ public:
         _instance_handles[_num_instances] = _writer->register_instance(data);
     }
 
-    ~RTIDynamicDataPublisher() {
+    ~RTIDynamicDataPublisher()
+    {
         Shutdown();
     }
 
-    void Shutdown() {
+    void Shutdown()
+    {
         if (_writer->get_listener() != NULL) {
             delete(_writer->get_listener());
             _writer->set_listener(NULL);
@@ -1070,7 +1083,8 @@ public:
         return true;
     }
 
-    void WaitForReaders(int numSubscribers) {
+    void WaitForReaders(int numSubscribers)
+    {
         DDS_PublicationMatchedStatus status;
 
         while (true) {
@@ -1088,7 +1102,8 @@ public:
         }
     }
 
-    bool waitForPingResponse() {
+    bool waitForPingResponse()
+    {
         if (_pongSemaphore != NULL) {
             if (!PerftestSemaphore_take(
                     _pongSemaphore,
@@ -1101,7 +1116,8 @@ public:
     }
 
     /* time out in milliseconds */
-    bool waitForPingResponse(int timeout) {
+    bool waitForPingResponse(int timeout)
+    {
         if (_pongSemaphore != NULL) {
             if (!PerftestSemaphore_take(_pongSemaphore, timeout)) {
                 fprintf(stderr, "Unexpected error taking semaphore\n");
@@ -1111,7 +1127,8 @@ public:
         return true;
     }
 
-    bool notifyPingResponse() {
+    bool notifyPingResponse()
+    {
         if (_pongSemaphore != NULL) {
             if (!PerftestSemaphore_give(_pongSemaphore)) {
                 fprintf(stderr, "Unexpected error giving semaphore\n");
@@ -1121,13 +1138,15 @@ public:
         return true;
     }
 
-    unsigned int getPulledSampleCount() {
+    unsigned int getPulledSampleCount()
+    {
         DDS_DataWriterProtocolStatus status;
         _writer->get_datawriter_protocol_status(status);
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec) {
+    void wait_for_acknowledgments(long sec, unsigned long nsec)
+    {
         DDS_Duration_t timeout = {sec, nsec};
         _writer->wait_for_acknowledgments(timeout);
     }
@@ -1365,7 +1384,7 @@ class RTISubscriber : public IMessagingReader
             property.max_event_count = RTIDDSImpl<T>::_WaitsetEventCount;
             property.max_event_delay = DDS_Duration_t::from_micros(RTIDDSImpl<T>::_WaitsetDelayUsec);
             _waitset = new DDSWaitSet(property);
-           
+
             DDSStatusCondition *reader_status;
             reader_status = reader->get_statuscondition();
             reader_status->set_enabled_statuses(DDS_DATA_AVAILABLE_STATUS);
@@ -2173,7 +2192,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                 qos_profile.c_str(), _ProfileLibraryName, _ProfileFile);
         return NULL;
     }
-    
+
     if (_UsePositiveAcks) {
         dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (int)_KeepDurationUsec/1000000;
         dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = _KeepDurationUsec%1000000;
@@ -2277,7 +2296,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 
     if ((qos_profile == "LatencyQos" ||
         qos_profile == "NoAckLatencyQos") &&
-        !_DirectCommunication && 
+        !_DirectCommunication &&
         (_Durability == DDS_TRANSIENT_DURABILITY_QOS ||
          _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
         dw_qos.durability.kind = (DDS_DurabilityQosPolicyKind)_Durability;

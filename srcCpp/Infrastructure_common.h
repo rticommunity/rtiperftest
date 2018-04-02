@@ -20,13 +20,13 @@
 
 /* STRNCASECMP and IS_OPTION */
 #if defined(RTI_WIN32)
-#pragma warning(push)
-#pragma warning(disable : 4996)
-#define STRNCASECMP _strnicmp
+  #pragma warning(push)
+  #pragma warning(disable : 4996)
+  #define STRNCASECMP _strnicmp
 #elif defined(RTI_VXWORKS)
-#define STRNCASECMP strncmp
+  #define STRNCASECMP strncmp
 #else
-#define STRNCASECMP strncasecmp
+  #define STRNCASECMP strncasecmp
 #endif
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 
@@ -38,11 +38,11 @@ typedef void (*sighandler_t)(int);
 class PerftestTimer {
 
 private:
-#ifdef RTI_WIN32
+  #ifdef RTI_WIN32
     static HANDLE _hTimerQueue;
     static HANDLE _hTimer;
     static LARGE_INTEGER _ClockFrequency;
-#endif
+  #endif
     static void (*handler_function)(void);
 
 public:
@@ -54,12 +54,11 @@ public:
         return instance;
     }
     void SetTimeout(unsigned int executionTimeInSeconds, void (*function)(void));
-#ifdef RTI_WIN32
+  #ifdef RTI_WIN32
     static VOID CALLBACK TimeoutTask(PVOID lpParam, BOOLEAN timerOrWaitFired);
-#else
+  #else
     static void TimeoutTask(int sign);
-#endif
-
+  #endif
 };
 
 bool configureTransport(

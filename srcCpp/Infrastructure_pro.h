@@ -38,10 +38,14 @@ inline bool PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
     if (timeout != PERFTEST_SEMAPHORE_TIMEOUT_INFINITE) {
         RTINtpTime_packFromMillisec(block_duration, 0, timeout);
     }
-    return RTIOsapiSemaphore_take(sem, &block_duration)
-            == RTI_OSAPI_SEMAPHORE_STATUS_ERROR
-            ? false
-            : true;
+    /*
+     * RTIOsapiSemaphore_take can return 3 values:
+     * - OK
+     * - TIMEOUT
+     * - ERROR
+     * We will only return false if ERROR
+     */
+    return RTIOsapiSemaphore_take(sem, &block_duration) != RTI_OSAPI_SEMAPHORE_STATUS_ERROR;
 }
 
 #define Perftest_param_not_micro(param)

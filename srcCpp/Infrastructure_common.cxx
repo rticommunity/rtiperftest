@@ -16,22 +16,22 @@ void (*PerftestTimer::handler_function)(void) = NULL;
 
 PerftestTimer::PerftestTimer()
 {
-#ifdef RTI_WIN32
+  #ifdef RTI_WIN32
     if (_hTimerQueue == NULL) {
         _hTimerQueue = CreateTimerQueue();
     }
     QueryPerformanceFrequency(&_ClockFrequency);
-#endif
+  #endif
     handler_function = NULL;
 }
 
 PerftestTimer::~PerftestTimer()
 {
-#ifdef RTI_WIN32
+  #ifdef RTI_WIN32
     if (_hTimerQueue != NULL) {
         DeleteTimerQueue(_hTimerQueue);
     }
-#endif
+  #endif
 }
 
 void PerftestTimer::SetTimeout(unsigned int executionTimeInSeconds,
@@ -39,7 +39,7 @@ void PerftestTimer::SetTimeout(unsigned int executionTimeInSeconds,
 
     handler_function = function;
 
-#ifdef RTI_WIN32
+  #ifdef RTI_WIN32
     CreateTimerQueueTimer(
             &_hTimer,
             _hTimerQueue,
@@ -48,10 +48,10 @@ void PerftestTimer::SetTimeout(unsigned int executionTimeInSeconds,
             executionTimeInSeconds * 1000,
             0,
             0);
-#else
+  #else
     signal(SIGALRM, PerftestTimer::TimeoutTask);
     alarm(executionTimeInSeconds);
-#endif
+  #endif
 }
 
 #ifdef RTI_WIN32

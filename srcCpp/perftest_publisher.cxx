@@ -1218,6 +1218,8 @@ int perftest_cpp::Subscriber()
         delete(announcement_writer);
     }
 
+    delete[] message.data;
+
     fprintf(stderr,"Finishing test...\n");
     fflush(stderr);
 

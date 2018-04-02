@@ -548,7 +548,7 @@ bool PerftestCreateThread(
 
 void configureVerbosity(int verbosityLevel)
 {
-    
+
     NDDS_Config_LogVerbosity verbosity = NDDS_CONFIG_LOG_VERBOSITY_ERROR;
     switch (verbosityLevel) {
         case 0: verbosity = NDDS_CONFIG_LOG_VERBOSITY_SILENT;
