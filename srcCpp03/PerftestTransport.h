@@ -120,13 +120,13 @@ public:
     bool parseTransportOptions(int argc, char *argv[]);
 
     bool allowsMulticast();
-    
+
     const std::string getMulticastAddr(const std::string &topic);
 
 private:
 
     static std::map<std::string, TransportConfig> transportConfigMap;
-    
+
     std::map<std::string, std::string> topicNameMap;
 
     const std::string _LatencyTopicName;

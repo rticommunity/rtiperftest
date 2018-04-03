@@ -118,7 +118,7 @@ namespace PerformanceTest
         private const string TRANSPORT_CERTIFICATE_FILE_PUB = "./resource/secure/pub.pem";
         private const string TRANSPORT_CERTIFICATE_FILE_SUB = "./resource/secure/sub.pem";
         private const string TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
-        
+
         private string _LatencyTopicName;
         private string _AnnouncementTopicName;
         private string _ThroughputTopicName;
@@ -1001,7 +1001,5 @@ namespace PerformanceTest
         }
         
     }
-    
-    
 
 } // Perftest Namespace

@@ -1833,9 +1833,9 @@ namespace PerformanceTest
 
             if ("LatencyQos" == qos_profile
                     && !_DirectCommunication
-                    && ((DDS.DurabilityQosPolicyKind)_Durability
+                    && ((DDS.DurabilityQosPolicyKind)_Durability 
                             == DDS.DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS
-                        || (DDS.DurabilityQosPolicyKind)_Durability
+                        || (DDS.DurabilityQosPolicyKind)_Durability 
                             == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS)) {
 
                 dw_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
@@ -2027,18 +2027,18 @@ namespace PerformanceTest
                 }
             }
 
-            if (!_UsePositiveAcks
+            if (!_UsePositiveAcks 
                     && (qos_profile == "ThroughputQos"
                             || qos_profile == "LatencyQos")) {
                 dr_qos.protocol.disable_positive_acks = true;
             }
 
-            if ("ThroughputQos" == qos_profile
+            if ("ThroughputQos" == qos_profile 
                     || ("LatencyQos" == qos_profile
                         && !_DirectCommunication
-                        && ((DDS.DurabilityQosPolicyKind)_Durability
+                        && ((DDS.DurabilityQosPolicyKind)_Durability 
                                 == DDS.DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS
-                            || (DDS.DurabilityQosPolicyKind)_Durability
+                            || (DDS.DurabilityQosPolicyKind)_Durability 
                                 == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS))) {
 
                 dr_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;

@@ -331,7 +331,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             if ((i == (argc-1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <kind> after -durability\n");
                 return false;
-            }
+            }       
             _Durability = strtol(argv[i], NULL, 10);
 
             if ((_Durability < 0) || (_Durability > 3)) {
@@ -2192,7 +2192,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                 qos_profile.c_str(), _ProfileLibraryName, _ProfileFile);
         return NULL;
     }
-
+    
     if (!_UsePositiveAcks
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_qos.protocol.disable_positive_acks = true;

@@ -151,7 +151,6 @@ public class PerftestTransport {
         cmdLineArgsMap.put("-transportSecureWan", new Integer(0));
         cmdLineArgsMap.put("-multicast", new Integer(1));
         cmdLineArgsMap.put("-nomulticast", new Integer(0));
-        
 
         return cmdLineArgsMap;
     }
@@ -457,7 +456,7 @@ public class PerftestTransport {
                     latencyMulticastAddr = argv[i];
                     announcementMulticastAddr = argv[i];
                 }
-            }    
+            }
         }
 
         if (!setTransport(transportString)) {
