@@ -793,7 +793,7 @@ class RTIPublisher : public IMessagingWriter
     {
       #ifdef RTI_CUSTOM_TYPE
         last_size = 0;
-        // TODO initialize(data.custom_type) without allocation
+        RTI_CUSTOM_TYPE::TypeSupport::initialize_data(&data.custom_type);
         initialize_custom_type(data.custom_type);
         // TODO return a bool retcode = initialize_custom_type(
       #endif
@@ -881,7 +881,10 @@ class RTIPublisher : public IMessagingWriter
             set_custom_type(data.custom_type, key, message.size);
             // TODO if not set_custom_type() check retcode
             if (message.size != last_size) {
-                data.size_custom_type = Fooget_serialized_sample_size(NULL, RTI_TRUE, RTI_CDR_ENCAPSULATION_ID_CDR_NATIVE, 0, &data.custom_type); // get the size of data.custom_type
+                RTI_CUSTOM_TYPE::TypeSupport::serialize_data_to_cdr_buffer(
+                        NULL,
+                        (unsigned int &)data.size_custom_type,
+                        &data.custom_type);
                 last_size = message.size;
             }
         }

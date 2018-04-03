@@ -5,15 +5,14 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
  // TODO add the XPlugin.h of your type if call initialize_custom_type
-#define RTI_CUSTOM_FILE_NAME "testPlugin.h"
-#include RTI_CUSTOM_FILE_NAME
+#define RTI_CUSTOM_FILE_NAME_PLUGIN "testPlugin.h"
+#include RTI_CUSTOM_FILE_NAME_PLUGIN
+
+#define RTI_CUSTOM_FILE_NAME_SUPPORT "testSupport.h"
+#include RTI_CUSTOM_FILE_NAME_SUPPORT
 
 #include "perftest.h"
 #include <string>
-#define concatenate(A, B) A ## B
-#define get_serialized_sample_size(RTI_CUSTOM_TYPE) concatenate(RTI_CUSTOM_TYPE,Plugin_get_serialized_sample_size)
-#define Fooget_serialized_sample_size get_serialized_sample_size(RTI_CUSTOM_TYPE)
-
 
 void initialize_custom_type(RTI_CUSTOM_TYPE & data);
 void register_custom_type(RTI_CUSTOM_TYPE & data, unsigned long key);
