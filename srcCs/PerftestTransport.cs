@@ -298,11 +298,12 @@ namespace PerformanceTest
                 sb.Append("\tNic: ").Append(allowInterfaces).Append("\n");
             }
 
-            sb.Append( "\tUse Multicast: ").Append((AllowsMulticast())? "True\n" : "False");
-            if(!AllowsMulticast()){
+            sb.Append( "\tUse Multicast: ").Append((AllowsMulticast())? "True" : "False");
+            if(!AllowsMulticast() && useMulticast){
                 sb.Append ("  (Multicast is not supported for " );
                 sb.Append( transportConfig.nameString ).Append(")\n");
             }
+            sb.Append( "\n");
 
             if (transportConfig.kind == Transport.TRANSPORT_TCPv4
                     || transportConfig.kind == Transport.TRANSPORT_TLSv4)

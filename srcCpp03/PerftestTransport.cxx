@@ -580,12 +580,13 @@ void PerftestTransport::printTransportConfigurationSummary()
         stringStream << "\tNic: " << allowInterfaces << "\n";
     }
 
-    stringStream << "\tUse Multicast: " << ((allowsMulticast())? "True\n" : "False");
-    if(!allowsMulticast()){
+    stringStream << "\tUse Multicast: " << ((allowsMulticast())? "True" : "False");
+    if(!allowsMulticast() && useMulticast){
         stringStream << "  (Multicast is not supported for " 
                      << transportConfig.nameString 
                      << ")\n";
     }
+    stringStream << "\n";
 
     if (transportConfig.kind == TRANSPORT_TCPv4
             || transportConfig.kind == TRANSPORT_TLSv4) {

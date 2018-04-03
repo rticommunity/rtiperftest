@@ -227,11 +227,12 @@ public class PerftestTransport {
             sb.append("\tNic: ").append(allowInterfaces).append("\n");
         }
 
-        sb.append( "\tUse Multicast: ").append((allowsMulticast())? "True\n" : "False");
-        if(!allowsMulticast()){
+        sb.append( "\tUse Multicast: ").append((allowsMulticast())? "True" : "False");
+        if(!allowsMulticast() && useMulticast){
             sb.append ("  (Multicast is not supported for " );
             sb.append( transportConfig.nameString ).append(")\n");
         }
+        sb.append( "\n");
 
         if (transportConfig.kind == Transport.TRANSPORT_TCPv4
                 || transportConfig.kind == Transport.TRANSPORT_TLSv4) {
