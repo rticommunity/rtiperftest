@@ -826,7 +826,6 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-nomulticast")) {
             useMulticast = false;
         }
-        
     }
 
     if (!setTransport(transportString)) {
@@ -861,6 +860,5 @@ const std::string PerftestTransport::getMulticastAddr(const std::string &topic)
 {
     return topicNameMap[topic];
 }
-
 
 /******************************************************************************/

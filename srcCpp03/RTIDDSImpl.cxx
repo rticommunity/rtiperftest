@@ -1642,7 +1642,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     std::map<std::string, std::string> properties =
             dw_qos.policy<Property>().get_all();
 
-    if (!_UsePositiveAcks
+    if (!_UsePositiveAcks 
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_dataWriterProtocol.disable_positive_acks(true);
         if (_KeepDurationUsec != -1) {
@@ -1996,7 +1996,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     if (_transport.allowsMulticast()) {
-        
+
         dds::core::StringSeq transports;
         transports.push_back("udpv4");
         rti::core::TransportMulticastSettings multicast_settings(
@@ -2006,7 +2006,6 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
         dr_qos << rti::core::policy::TransportMulticast(multicast_seq,
                 rti::core::policy::TransportMulticastKind::AUTOMATIC);
-
     }
 
     if (_useUnbounded > 0) {
