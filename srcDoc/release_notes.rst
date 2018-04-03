@@ -62,6 +62,14 @@ instead, *RTI Perftest* would always use the default value set up via code.
 This behavior has been fixed. We also took the oportunity to simplify and clarify
 the XML configurations when disabling positive Acks.
 
+Update Security Certificates and Governance files (#49)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Security Certificates and Governance files used when enabling security options
+in RTI Perftest have been regenerated and signed again, since they had expired.
+
+The script used for updating the files has been improved to generate certificates
+valid for a longer period of time (from one year to ten years).
 
 Release Notes 2.3.1
 --------------------
