@@ -63,6 +63,26 @@ if NOT "%1"=="" (
 				SET BUILD_CPP03=0
 		) ELSE if "%1"=="--skip-cs-build" (
 				SET BUILD_CS=0
+		) ELSE if "%1"=="--java-build" (
+				SET BUILD_JAVA=1
+				SET BUILD_CPP=0
+				SET BUILD_CPP03=0
+				SET BUILD_CS=0
+		) ELSE if "%1"=="--cpp-build" (
+				SET BUILD_JAVA=0
+				SET BUILD_CPP=1
+				SET BUILD_CPP03=0
+				SET BUILD_CS=0
+		) ELSE if "%1"=="--cpp03-build" (
+				SET BUILD_JAVA=0
+				SET BUILD_CPP=0
+				SET BUILD_CPP03=1
+				SET BUILD_CS=0
+		) ELSE if "%1"=="--cs-build" (
+				SET BUILD_JAVA=0
+				SET BUILD_CPP=0
+				SET BUILD_CPP03=0
+				SET BUILD_CS=1
 		) ELSE if "%1"=="--debug" (
 				SET RELEASE_DEBUG=debug
 		) ELSE if "%1"=="--dynamic" (
@@ -442,6 +462,11 @@ GOTO:EOF
 	echo.    --skip-cpp03-build     Avoid C++ New PSM code generation and
 	echo.                           compilation.
 	echo.    --skip-cs-build        Avoid C Sharp code generation and compilation.
+	echo.    --java-build           Only Java ByteCode generation creation.
+	echo.    --cpp-build            Only C++ code generation and compilation.
+	echo.    --cpp03-build          Only C++ New PSM code generation and
+	echo.                           compilation.
+	echo.    --cs-build             Only C Sharp code generation and compilation.
 	echo.    --make  path           Path to the GNU make executable. If this
 	echo.                           parameter is not present, GNU make variable
 	echo.                           should be available from your $PATH variable.

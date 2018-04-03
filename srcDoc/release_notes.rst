@@ -48,6 +48,25 @@ releases:
 Release Notes Master
 --------------------
 
+What's New in Master
+~~~~~~~~~~~~~~~~~~~~
+
+Added command-line parameters to simplify single API build
+^^^^^^^^^^^^^^^^^^^^^^
+
+*Build script* now supports a single API build using command-line parameters:
+
+- For build.sh (linux):
+    --java-build
+    --cpp03-build
+    --cpp-build
+    
+- For build.bat (windows):
+    --java-build
+    --cpp03-build
+    --cpp-build
+    --cs-build
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
