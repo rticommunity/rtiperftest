@@ -1737,7 +1737,7 @@ int perftest_cpp::Publisher()
     // Set data size, account for other bytes in message
 
   #ifdef RTI_CUSTOM_TYPE
-    message.size = writer->getSizeCustomType();// - OVERHEAD_BYTES;
+    message.size = (int)_DataLen;// - OVERHEAD_BYTES;
   #else
     message.size = (int)_DataLen - OVERHEAD_BYTES;
   #endif

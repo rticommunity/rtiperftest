@@ -16,22 +16,19 @@
 
 
 void initialize_custom_type(RTI_CUSTOM_TYPE & data);
-void register_custom_type(
-        RTI_CUSTOM_TYPE & data,
-        unsigned long key,
-        int target_data_len);
+void register_custom_type(RTI_CUSTOM_TYPE & data, unsigned long key);
 void set_custom_type(
         RTI_CUSTOM_TYPE & data,
         unsigned long key,
         int target_data_len);
-void delete_data_custom_type(RTI_CUSTOM_TYPE & data);
+void finalize_data_custom_type(RTI_CUSTOM_TYPE & data);
 
 void initialize_custom_type_dynamic(DDS_DynamicData & data);
-void register_custom_type_dynamic(DDS_DynamicData & data,
+void register_custom_type_dynamic(DDS_DynamicData & data, unsigned long key);
+void set_custom_type_dynamic(
+        DDS_DynamicData & data,
         unsigned long key,
         int target_data_len);
-void set_custom_type_dynamic(DDS_DynamicData & data,
-        unsigned long key,
-        int target_data_len);
+void finalize_data_custom_type_dynamic(DDS_DynamicData & data);
 
 #endif // __CUSTOMTYPE_H__

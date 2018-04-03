@@ -4,23 +4,19 @@
  */
 #include "customType.h"
 
+long * test_seq;
+DDS_LongSeq longSeq;
+
 void initialize_custom_type(RTI_CUSTOM_TYPE & data)
 {
-    // TODO initialize your data to measure the size
-    data.test_long = 0;
-    data.stringTest.test_string = DDS_String_dup("Hello World!");
-    data.test_enum = ENUM1;
-    long * test_seq = new long[SIZE_TEST_SEQ];
-    data.seqTest.test_seq.loan_contiguous(
-            (DDS_Long*)test_seq, 
-            SIZE_TEST_SEQ,
-            SIZE_TEST_SEQ);
+    // TODO Initialize your data
+    test_seq = new long[SIZE_TEST_SEQ];
+    data.seqTest.test_seq.maximum(0);
 }
 
 void register_custom_type(
         RTI_CUSTOM_TYPE & data,
-        unsigned long key,
-        int target_data_len)
+        unsigned long key)
 {
     // TODO initialize your data to be registered
     data.test_long = key;
@@ -35,74 +31,32 @@ void set_custom_type(
     data.test_long = key;
     data.stringTest.test_string = DDS_String_dup("Hello World!");
     data.test_enum = ENUM1;
-    data.seqTest.test_seq.unloan();
-    long * test_seq = new long[SIZE_TEST_SEQ];
-    data.seqTest.test_seq.loan_contiguous(
+    data.seqTest.test_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ);
+    data.seqTest.test_seq.from_array(
             (DDS_Long*)test_seq,
-            SIZE_TEST_SEQ,
             SIZE_TEST_SEQ);
 }
 
-void delete_data_custom_type(RTI_CUSTOM_TYPE & data)
+void finalize_data_custom_type(RTI_CUSTOM_TYPE & data)
 {
-    // TODO delete the data. For example: unloaan()...
-    data.seqTest.test_seq.unloan();
+    // TODO delete the data. For example: unloan()...
 }
 
 void initialize_custom_type_dynamic(DDS_DynamicData & data)
 {
-    // TODO initialize your data to measure the size
-    DDS_ReturnCode_t retcode;
-    long *test_seq = new long[SIZE_TEST_SEQ];
-
-    retcode = data.set_long(
-            "custom_type.test_long",
-            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-            0);
-    if (retcode != DDS_RETCODE_OK) {
-        fprintf(stderr, "set_long(test_long) failed: %d.\n", retcode);
-    }
-
-    retcode = data.set_string(
-            "custom_type.stringTest.test_string",
-            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-            "Hello World!");
-    if (retcode != DDS_RETCODE_OK) {
-        fprintf(
-                stderr,
-                "set_string(stringTest.test_string) failed: %d.\n",
-                        retcode);
-    }
-
-    retcode = data.set_long(
-            "custom_type.test_enum",
-            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-            ENUM1);
-    if (retcode != DDS_RETCODE_OK) {
-        fprintf(stderr, "set_long(test_enum) failed: %d.\n", retcode);
-    }
-
-    for (int i = 0; i < SIZE_TEST_SEQ; i++) {
-        char member_name[29+21]; //size of member_name
-        sprintf(member_name, "custom_type.seqTest.test_seq[%d]", i);
-        retcode = data.set_long(
-                member_name,
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                test_seq[i]);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(
-                    stderr,
-                    "set_long(seqTest.test_seq[%d]) failed: %d.\n",
-                            i,
-                            retcode);
-        }
+    // TODO Initialize your data
+    test_seq = new long[SIZE_TEST_SEQ];
+    bool succeeded = longSeq.from_array(
+            (DDS_Long *) test_seq,
+            SIZE_TEST_SEQ);
+    if (!succeeded) {
+        fprintf(stderr, "from_array(test_seq) failed.\n");
     }
 }
 
 void register_custom_type_dynamic(
         DDS_DynamicData & data,
-        unsigned long key,
-        int target_data_len)
+        unsigned long key)
 {
     // TODO initialize DDS_DynamicData to be registered
     DDS_ReturnCode_t retcode;
@@ -152,19 +106,33 @@ void set_custom_type_dynamic(
         fprintf(stderr, "set_long(test_enum) failed: %d.\n", retcode);
     }
 
-    for (int i = 0; i < SIZE_TEST_SEQ; i++) {
-        char member_name[29+21]; //size of member_name
-        sprintf(member_name, "custom_type.seqTest.test_seq[%d]", i);
-        retcode = data.set_long(
-                member_name,
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                test_seq[i]);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(
-                    stderr,
-                    "set_long(seqTest.test_seq[%d]) failed: %d.\n",
-                            i,
-                            retcode);
-        }
+    DDS_DynamicData custom_type_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
+    DDS_DynamicData test_seq_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
+    retcode = data.bind_complex_member(custom_type_data, "custom_type",
+            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "bind_complex_member(custom_type) failed: %d.\n", retcode);
     }
+    retcode = custom_type_data.bind_complex_member(test_seq_data, "seqTest",
+            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "bind_complex_member(custom_type) failed: %d.\n", retcode);
+    }
+    retcode = test_seq_data.set_long_seq(
+            "test_seq",
+            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+            longSeq);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "set_long(test_seq) failed: %d.\n", retcode);
+    }
+    retcode = custom_type_data.unbind_complex_member(test_seq_data);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "bind_complex_member(custom_type) failed: %d.\n", retcode);
+    }
+    retcode = data.unbind_complex_member(custom_type_data);
+}
+
+void finalize_data_custom_type_dynamic(DDS_DynamicData & data)
+{
+    // TODO delete the data.
 }
