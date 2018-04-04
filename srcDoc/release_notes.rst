@@ -51,6 +51,13 @@ Release Notes 2.3.2
 What's Fixed in 2.3.2
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Classic C++ Semaphore Take() and Give() operations not checking for errors properly (#47)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous versions, the semaphore Take() and Give() operations
+were not being checked for error in a correct way in the Classic C++ API implementation.
+This has been fixed.
+
 Update Security Certificates and Governance files (#49)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
