@@ -4,7 +4,7 @@
 
 struct Test {
     long test_long;
-    PrimitiveEnum test_enum;
-    SeqTest seqTest;
-    StringTest stringTest;
+    TestEnum test_enum;
+    SeqTest test_seq;
+    StringTest test_string;
 };//@Extensibility FINAL_EXTENSIBILITY

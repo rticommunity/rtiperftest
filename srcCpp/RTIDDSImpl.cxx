@@ -785,16 +785,18 @@ class RTIPublisher : public IMessagingWriter
     RTIOsapiSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
   #ifdef RTI_CUSTOM_TYPE
-    int last_size;
+    int last_message_size;
   #endif
 
  public:
     RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
     {
       #ifdef RTI_CUSTOM_TYPE
-        last_size = 0;
+        last_message_size = 0;
         RTI_CUSTOM_TYPE::TypeSupport::initialize_data(&data.custom_type);
-        initialize_custom_type(data.custom_type);
+        if (! initialize_custom_type(data.custom_type)) {
+            fprintf(stderr, "initialize_custom_type failed.\n");
+        }
         // TODO return a bool retcode = initialize_custom_type(
       #endif
         _writer = T::DataWriter::narrow(writer);
@@ -827,7 +829,9 @@ class RTIPublisher : public IMessagingWriter
 
     ~RTIPublisher() {
       #ifdef RTI_CUSTOM_TYPE
-        finalize_data_custom_type(data.custom_type);
+        if (! finalize_data_custom_type(data.custom_type)) {
+            fprintf(stderr, "finalize_data_custom_type failed.\n");
+        }
       #endif
         Shutdown();
     }
@@ -872,20 +876,20 @@ class RTIPublisher : public IMessagingWriter
         data.timestamp_usec = message.timestamp_usec;
         data.latency_ping = message.latency_ping;
       #ifdef RTI_CUSTOM_TYPE
-        if (
-                message.size == perftest_cpp::INITIALIZE_SIZE ||
-                message.size == perftest_cpp::FINISHED_SIZE ||
-                message.size == perftest_cpp::LENGTH_CHANGED_SIZE) {
+        if (message.size == perftest_cpp::INITIALIZE_SIZE
+                || message.size == perftest_cpp::FINISHED_SIZE
+                || message.size == perftest_cpp::LENGTH_CHANGED_SIZE) {
             data.size_custom_type = message.size;
         } else {
-            set_custom_type(data.custom_type, key, message.size);
-            // TODO if not set_custom_type() check retcode
-            if (message.size != last_size) {
+            if (! set_custom_type(data.custom_type, key, message.size)) {
+                fprintf(stderr, "set_custom_type failed.\n");
+            }
+            if (message.size != last_message_size) {
                 RTI_CUSTOM_TYPE::TypeSupport::serialize_data_to_cdr_buffer(
                         NULL,
                         (unsigned int &)data.size_custom_type,
                         &data.custom_type);
-                last_size = message.size;
+                last_message_size = message.size;
             }
         }
       #else
@@ -993,7 +997,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     RTIOsapiSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
   #ifdef RTI_CUSTOM_TYPE
-    int last_size;
+    int last_message_size;
     int size_custom_type;
   #endif
 
@@ -1007,10 +1011,17 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT)
 
     {
-        _writer = DDSDynamicDataWriter::narrow(writer);
         DDS_OctetSeq octetSeq;
         DDS_ReturnCode_t retcode;
 
+        #ifdef RTI_CUSTOM_TYPE
+          last_message_size = 0;
+          size_custom_type = 0;
+          if (! initialize_custom_type_dynamic(data)) {
+              fprintf(stderr, "initialize_custom_type_dynamic failed.\n");
+          }
+        #endif
+        _writer = DDSDynamicDataWriter::narrow(writer);
         _num_instances = num_instances;
         _instance_counter = 0;
         _instancesToBeWritten = instancesToBeWritten;
@@ -1020,11 +1031,6 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             fprintf(stderr, "_instance_handles malloc failed.\n");
         }
         _pongSemaphore = pongSemaphore;
-      #ifdef RTI_CUSTOM_TYPE
-        last_size = 0;
-        size_custom_type = 0;
-        initialize_custom_type_dynamic(data);
-      #endif
 
         for (unsigned long i = 0; i < _num_instances; ++i) {
             DDS_Octet key_octets[4];
@@ -1060,7 +1066,9 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     ~RTIDynamicDataPublisher() {
         Shutdown();
       #ifdef RTI_CUSTOM_TYPE
-        finalize_data_custom_type_dynamic(data);
+        if (! finalize_data_custom_type_dynamic(data)) {
+            fprintf(stderr, "finalize_data_custom_type_dynamic failed.\n");
+        }
       #endif
     }
 
@@ -1132,10 +1140,9 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             fprintf(stderr, "set_long(latency_ping) failed: %d.\n", retcode);
         }
       #ifdef RTI_CUSTOM_TYPE
-        if (
-                message.size == perftest_cpp::INITIALIZE_SIZE ||
-                message.size == perftest_cpp::FINISHED_SIZE ||
-                message.size == perftest_cpp::LENGTH_CHANGED_SIZE) {
+        if (message.size == perftest_cpp::INITIALIZE_SIZE
+                || message.size == perftest_cpp::FINISHED_SIZE
+                || message.size == perftest_cpp::LENGTH_CHANGED_SIZE) {
             retcode = data.set_long(
                     "size_custom_type",
                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
@@ -1144,20 +1151,15 @@ class RTIDynamicDataPublisher : public IMessagingWriter
                 fprintf(stderr, "set_long(size_custom_type) failed: %d.\n", retcode);
             }
         } else {
-            set_custom_type_dynamic(data, key, message.size);
-            // TODO if not set_custom_type() check retcode
-            if (message.size != last_size) {
-                DDS_DynamicData data_custom_type(
+            if (! set_custom_type_dynamic(data, key, message.size)) {
+                fprintf(stderr, "set_custom_type_dynamic failed.\n");
+            }
+            if (message.size != last_message_size) {
+                data.to_cdr_buffer(
                         NULL,
-                        DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
-                data.get_complex_member(
-                        data_custom_type,
-                        "custom_type",
-                        DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
-                size_custom_type = DDS_DynamicData_get_serialized_size(
-                        &data_custom_type,
-                        DDS_DYNAMIC_DATA_ENCAPSULATION_KIND_DEFAULT);
-                last_size = message.size;
+                        (unsigned int &)size_custom_type);
+                size_custom_type -= perftest_cpp::OVERHEAD_BYTES;
+                last_message_size = message.size;
             }
             retcode = data.set_long(
                     "size_custom_type",
