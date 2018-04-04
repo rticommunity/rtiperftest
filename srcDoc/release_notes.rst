@@ -58,6 +58,15 @@ In previous versions, the semaphore Take() and Give() operations
 were not being checked for error in a correct way in the Classic C++ API implementation.
 This has been fixed.
 
+Update Security Certificates and Governance files (#49)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Security Certificates and Governance files used when enabling security options
+in RTI Perftest have been regenerated and signed again, since they had expired.
+
+The script used for updating the files has been improved to generate certificates
+valid for a longer period of time (from one year to ten years).
+
 Release Notes 2.3.1
 --------------------
 
