@@ -1,6 +1,6 @@
 export OPENSSL_EXE=openssl
 
-rm *.xml *.csr *.pem demoCA/* demoCA/private/*
+rm -rf *.xml *.csr *.pem demoCA/* demoCA/private/*
 
 mkdir output
 mkdir -p 'demoCA/private'
@@ -16,13 +16,13 @@ echo 01 > demoCA/serial
 echo ">> Generating pubkey and signing PerftestPermissionsPub:"
 $OPENSSL_EXE genrsa -out pubkey.pem 2048
 $OPENSSL_EXE req -config input/pub.cnf -new -key pubkey.pem -out temp.csr
-$OPENSSL_EXE ca -days 365 -in temp.csr -out pub.pem
+$OPENSSL_EXE ca -days 3650 -in temp.csr -out pub.pem
 $OPENSSL_EXE smime -sign -in input/PerftestPermissionsPub.xml -text -out signed_PerftestPermissionsPub.xml -signer demoCA/cacert.pem -inkey demoCA/private/cakey.pem
 
 echo ">> Generating subkey and signing PerftestPermissionsSub:"
 $OPENSSL_EXE genrsa -out subkey.pem 2048
 $OPENSSL_EXE req -config input/sub.cnf -new -key subkey.pem -out temp.csr
-$OPENSSL_EXE ca -days 365 -in temp.csr -out sub.pem
+$OPENSSL_EXE ca -days 3650 -in temp.csr -out sub.pem
 $OPENSSL_EXE smime -sign -in input/PerftestPermissionsSub.xml -text -out signed_PerftestPermissionsSub.xml -signer demoCA/cacert.pem -inkey demoCA/private/cakey.pem
 
 for i in $( ls input/governances ); do

@@ -3,7 +3,7 @@
 Release Notes
 =============
 
-Compatibility 2.3.1
+Compatibility 2.3.2
 --------------------
 
 Using Security
@@ -44,6 +44,21 @@ releases:
 -  C# code generation against *RTI Connext DDS 5.2.0.x* is not
    supported. You can disable this by adding the ``--skip-cs-build``
    flag.
+
+Release Notes 2.3.2
+--------------------
+
+What's Fixed in 2.3.2
+~~~~~~~~~~~~~~~~~~~~~~
+
+Update Security Certificates and Governance files (#49)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Security Certificates and Governance files used when enabling security options
+in RTI Perftest have been regenerated and signed again, since they had expired.
+
+The script used for updating the files has been improved to generate certificates
+valid for a longer period of time (from one year to ten years).
 
 Release Notes 2.3.1
 --------------------
