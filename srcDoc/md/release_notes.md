@@ -1,13 +1,25 @@
 # Release Notes
 
-## RTI Perftest 2.0 Compatibility
+## RTI Perftest 2.0.X Compatibility
 
-*RTI Perftest* 2.0 is designed to compile and work against the *RTI Connext DDS* 5.2.x releases.
+*RTI Perftest* 2.0.X is designed to compile and work against the *RTI Connext DDS* 5.2.x releases.
 
 However, certain features are not compatible with all the *RTI Connext DDS* versions, since the build scripts make use of certain specific parameters in *Rtiddsgen* that might change or not be present between releases:
 
 - The `--secure` and `--openssl-home` parameters will not work for versions previous to *RTI Connext DDS* 5.2.5.
 - The C# code generation against *RTI Connext DDS 5.2.0.x* is not supported. Users can disable its compilation by adding the `--skip-cs-build` flag.
+
+## What's Fixed in 2.0.X
+
+### Update Security Certificates and Governance files (#49)
+
+The Security Certificates and Governance files used when enabling security options
+in RTI Perftest have been regenerated and signed again, since they had expired.
+
+The script used for updating the files has been improved to generate certificates
+valid for a longer period of time (from one year to ten years).
+
+# Release Notes
 
 ## What's New in 2.0
 
