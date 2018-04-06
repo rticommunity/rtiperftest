@@ -23,7 +23,7 @@ import com.rti.perftest.TestMessage;
     // Public Fields
     // -----------------------------------------------------------------------
     private ArrayList<Integer> _finished_subscribers;
-    public int announced_subscribers;
+    public int announced_subscriber_replies;
 
     // -----------------------------------------------------------------------
     // Public Methods
@@ -32,18 +32,27 @@ import com.rti.perftest.TestMessage;
     // --- Constructors: -----------------------------------------------------
 
     public AnnouncementListener() {
-        announced_subscribers = 0;
+        announced_subscriber_replies = 0;
         _finished_subscribers = new ArrayList<Integer>();
     }
 
     // --- From IMessagingCB: ------------------------------------------------
 
     public void processMessage(TestMessage message) {
+        /*
+         * If the entity_id is not in the list of subscribers
+         * that finished the test, add it.
+         *
+         * Independently, decrease announced_subscriber_replies if a known
+         * writer responds to a message using this channel. We use
+         * this as a way to check that all the readers have received
+         * a message written by the Throughput writer.
+         */
         if (!_finished_subscribers.contains(message.entity_id)) {
             _finished_subscribers.add(message.entity_id);
-            announced_subscribers++;
+            announced_subscriber_replies++;
         } else {
-            announced_subscribers--;
+            announced_subscriber_replies--;
         }
     }
 

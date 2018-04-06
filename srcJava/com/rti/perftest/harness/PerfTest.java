@@ -970,7 +970,8 @@ public final class PerfTest {
         // We have to wait until every Subscriber sends an announcement message
         // indicating that it has discovered every Publisher
         System.err.print("Waiting for subscribers announcement ...\n");
-        while (_numSubscribers > announcement_reader_listener.announced_subscribers) {
+        while (_numSubscribers
+                > announcement_reader_listener.announced_subscriber_replies) {
             sleep(1000);
         }
 
@@ -979,7 +980,7 @@ public final class PerfTest {
         message.entity_id = pubID;
         message.data = new byte[Math.max((int)_dataLen,LENGTH_CHANGED_SIZE)];
 
-        System.err.print("Publishing data...\n");
+        System.err.print("Sending initial pings...\n");
 
         // initialize data pathways by sending some initial pings
         if (initialize_sample_count < _instanceCount) {
@@ -1000,6 +1001,8 @@ public final class PerfTest {
             }
         }
         writer.flush();
+
+        System.err.print("Publishing data...\n");
 
         // Set data size, account for other bytes in message
         message.size = (int)_dataLen - OVERHEAD_BYTES;
@@ -1110,10 +1113,15 @@ public final class PerfTest {
 
                         // flush anything that was previously sent
                         writer.flush();
-                        writer.wait_for_acknowledgments(
+                        if (_isReliable) {
+                            writer.wait_for_acknowledgments(
                                 timeout_wait_for_ack_sec,
                                 timeout_wait_for_ack_nsec);
-                        announcement_reader_listener.announced_subscribers =
+                        } else {
+                            sleep(timeout_wait_for_ack_nsec/1000000);
+                        }
+
+                        announcement_reader_listener.announced_subscriber_replies =
                                 _numSubscribers;
 
                         if (scan_count == _scanDataLenSizes.size()) {
@@ -1124,12 +1132,27 @@ public final class PerfTest {
                         // must set latency_ping so that a subscriber sends us
                         // back the LENGTH_CHANGED_SIZE message
                         message.latency_ping = num_pings % _numSubscribers;
-                        int i = 0;
-                        while (announcement_reader_listener.announced_subscribers > 0) {
+
+                        /*
+                         * If the Throughput topic is reliable, we can send the packet and do
+                         * a wait for acknowledgements. However, if the Throughput topic is
+                         * Best Effort, wait_for_acknowledgments() will return inmediately.
+                         * This would cause that the Send() would be exercised too many times,
+                         * in some cases causing the network to be flooded, a lot of packets being
+                         * lost, and potentially CPU starbation for other processes.
+                         * We can prevent this by adding a small sleep() if the test is best
+                         * effort.
+                         */
+
+                        while (announcement_reader_listener.announced_subscriber_replies > 0) {
                             writer.send(message, true);
-                            writer.wait_for_acknowledgments(
+                            if (_isReliable) {
+                                writer.wait_for_acknowledgments(
                                     timeout_wait_for_ack_sec,
                                     timeout_wait_for_ack_nsec);
+                            } else {
+                                sleep(timeout_wait_for_ack_nsec/1000000);
+                            }
                         }
 
                         message.size = (int)(_scanDataLenSizes.get(scan_count++) - OVERHEAD_BYTES);
@@ -1200,14 +1223,18 @@ public final class PerfTest {
         // times in case of best effort
         message.size = FINISHED_SIZE;
         int i = 0;
-        announcement_reader_listener.announced_subscribers = _numSubscribers;
-        while (announcement_reader_listener.announced_subscribers > 0
+        announcement_reader_listener.announced_subscriber_replies = _numSubscribers;
+        while (announcement_reader_listener.announced_subscriber_replies > 0
                 && i < initialize_sample_count) {
             writer.send(message, true);
             i++;
-            writer.wait_for_acknowledgments(
+            if (_isReliable) {
+                writer.wait_for_acknowledgments(
                     timeout_wait_for_ack_sec,
                     timeout_wait_for_ack_nsec);
+            } else {
+                sleep(timeout_wait_for_ack_nsec/1000000);
+            }
         }
 
         if (pubID == 0) {

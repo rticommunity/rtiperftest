@@ -1234,24 +1234,33 @@ int perftest_cpp::RunSubscriber()
 class AnnouncementListener : public IMessagingCB
 {
   public:
-    int announced_subscribers;
+    int announced_subscriber_replies;
     std::vector<int> _finished_subscribers;
 
   public:
     AnnouncementListener() {
-        announced_subscribers = 0;
+        announced_subscriber_replies = 0;
     }
 
     void ProcessMessage(TestMessage& message) {
+        /*
+         * If the entity_id is not in the list of subscribers
+         * that finished the test, add it.
+         *
+         * Independently, decrease announced_subscriber_replies if a known
+         * writer responds to a message using this channel. We use
+         * this as a way to check that all the readers have received
+         * a message written by the Throughput writer.
+         */
         if (std::find(
                 _finished_subscribers.begin(),
                 _finished_subscribers.end(),
                 message.entity_id)
-                == _finished_subscribers.end()) {
+                    == _finished_subscribers.end()) {
             _finished_subscribers.push_back(message.entity_id);
-            announced_subscribers++;
+            announced_subscriber_replies++;
         } else {
-            announced_subscribers--;
+            announced_subscriber_replies--;
         }
     }
 };
@@ -1629,7 +1638,8 @@ int perftest_cpp::RunPublisher()
     // We have to wait until every Subscriber sends an announcement message
     // indicating that it has discovered every RunPublisher
     std::cerr << "[Info] Waiting for subscribers announcement ..." << std::endl;
-    while (_NumSubscribers > announcement_reader_listener->announced_subscribers) {
+    while (_NumSubscribers
+            > announcement_reader_listener->announced_subscriber_replies) {
         MilliSleep(1000);
     }
 
@@ -1639,7 +1649,7 @@ int perftest_cpp::RunPublisher()
     //message.size = std::max(_DataLen,LENGTH_CHANGED_SIZE);
     //message.bin_data.resize(std::max(_DataLen,LENGTH_CHANGED_SIZE));
 
-    std::cerr << "[Info] Publishing data..." << std::endl;
+    std::cerr << "[Info] Sending initial pings..." << std::endl;
 
     if ( perftest_cpp::_showCpu && _PubID == 0) {
         reader_listener->cpu.initialize();
@@ -1661,6 +1671,8 @@ int perftest_cpp::RunPublisher()
         writer->send(message, true);
     }
     writer->flush();
+
+    std::cerr << "[Info] Publishing data..." << std::endl;
 
     // Set data size, account for other bytes in message
     message.size = (int)_DataLen - OVERHEAD_BYTES;
@@ -1765,11 +1777,15 @@ int perftest_cpp::RunPublisher()
 
                     // flush anything that was previously sent
                     writer->flush();
-                    writer->wait_for_acknowledgments(
+                    if (_IsReliable) {
+                        writer->wait_for_acknowledgments(
                             timeout_wait_for_ack_sec,
                             timeout_wait_for_ack_nsec);
+                    } else {
+                        MilliSleep(timeout_wait_for_ack_nsec / 1000000);
+                    }
 
-                    announcement_reader_listener->announced_subscribers = _NumSubscribers;
+                    announcement_reader_listener->announced_subscriber_replies = _NumSubscribers;
 
                     if (scan_count == _scanDataLenSizes.size()) {
                         break; // End of scan test
@@ -1782,12 +1798,27 @@ int perftest_cpp::RunPublisher()
                     // back the LENGTH_CHANGED_SIZE message
                     message.latency_ping = num_pings % _NumSubscribers;
 
-                    while (announcement_reader_listener->announced_subscribers > 0) {
+                    /*
+                     * If the Throughput topic is reliable, we can send the packet and do
+                     * a wait for acknowledgements. However, if the Throughput topic is
+                     * Best Effort, wait_for_acknowledgments() will return inmediately.
+                     * This would cause that the Send() would be exercised too many times,
+                     * in some cases causing the network to be flooded, a lot of packets being
+                     * lost, and potentially CPU starbation for other processes.
+                     * We can prevent this by adding a small sleep() if the test is best
+                     * effort.
+                     */
+
+                    while (announcement_reader_listener->announced_subscriber_replies > 0) {
                         writer->send(message, true);
                         writer->flush();
-                        writer->wait_for_acknowledgments(
+                        if (_IsReliable) {
+                            writer->wait_for_acknowledgments(
                                 timeout_wait_for_ack_sec,
                                 timeout_wait_for_ack_nsec);
+                        } else {
+                            MilliSleep(timeout_wait_for_ack_nsec / 1000000);
+                        }
                     }
 
                     message.size = _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
@@ -1855,15 +1886,19 @@ int perftest_cpp::RunPublisher()
     message.size = FINISHED_SIZE;
     message.data.resize(message.size);
     unsigned long i = 0;
-    announcement_reader_listener->announced_subscribers = _NumSubscribers;
-    while (announcement_reader_listener->announced_subscribers > 0
+    announcement_reader_listener->announced_subscriber_replies = _NumSubscribers;
+    while (announcement_reader_listener->announced_subscriber_replies > 0
             && i < initializeSampleCount) {
         writer->send(message, true);
         writer->flush();
-        i++;
-        writer->wait_for_acknowledgments(
+        if (_IsReliable) {
+            writer->wait_for_acknowledgments(
                 timeout_wait_for_ack_sec,
                 timeout_wait_for_ack_nsec);
+        } else {
+            MilliSleep(timeout_wait_for_ack_nsec / 1000000);
+        }
+        i++;
     }
 
     if (_PubID == 0) {

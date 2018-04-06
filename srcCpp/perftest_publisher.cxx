@@ -1854,7 +1854,7 @@ int perftest_cpp::Publisher()
                                 timeout_wait_for_ack_sec,
                                 timeout_wait_for_ack_nsec);
                     } else {
-                        MilliSleep(timeout_wait_for_ack_nsec/1000000);
+                        MilliSleep(timeout_wait_for_ack_nsec / 1000000);
                     }
                     announcement_reader_listener->announced_subscriber_replies = _NumSubscribers;
 
@@ -1886,7 +1886,7 @@ int perftest_cpp::Publisher()
                                 timeout_wait_for_ack_sec,
                                 timeout_wait_for_ack_nsec);
                         } else {
-                            MilliSleep(timeout_wait_for_ack_nsec/1000000);
+                            MilliSleep(timeout_wait_for_ack_nsec / 1000000);
                         }
                     }
 
@@ -1963,7 +1963,7 @@ int perftest_cpp::Publisher()
                     timeout_wait_for_ack_sec,
                     timeout_wait_for_ack_nsec);
         } else {
-            MilliSleep(timeout_wait_for_ack_nsec/1000000);
+            MilliSleep(timeout_wait_for_ack_nsec / 1000000);
         }
         i++;
     }

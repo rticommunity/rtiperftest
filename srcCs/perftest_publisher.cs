@@ -1660,21 +1660,30 @@ namespace PerformanceTest {
          */
         class AnnouncementListener : IMessagingCB
         {
-            public int announced_subscribers;
+            public int announced_subscriber_replies;
             private List<int> _finished_subscribers;
 
             public AnnouncementListener() {
-                announced_subscribers = 0;
+                announced_subscriber_replies = 0;
                 _finished_subscribers = new List<int>();
             }
 
             public void ProcessMessage(TestMessage message)
             {
+                /*
+                 * If the entity_id is not in the list of subscribers
+                 * that finished the test, add it.
+                 *
+                 * Independently, decrease announced_subscriber_replies if a known
+                 * writer responds to a message using this channel. We use
+                 * this as a way to check that all the readers have received
+                 * a message written by the Throughput writer.
+                 */
                 if (!_finished_subscribers.Contains(message.entity_id)) {
                     _finished_subscribers.Add(message.entity_id);
-                    announced_subscribers++;
+                    announced_subscriber_replies++;
                 } else{
-                    announced_subscribers--;
+                    announced_subscriber_replies--;
                 }
             }
         }
@@ -2012,7 +2021,7 @@ namespace PerformanceTest {
             // We have to wait until every Subscriber sends an announcement message
             // indicating that it has discovered every Publisher
             Console.Error.Write("Waiting for subscribers announcement ...\n");
-            while (_NumSubscribers > announcement_reader_listener.announced_subscribers) {
+            while (_NumSubscribers > announcement_reader_listener.announced_subscriber_replies) {
                 System.Threading.Thread.Sleep(1000);
             }
 
@@ -2021,7 +2030,7 @@ namespace PerformanceTest {
             message.entity_id = _PubID;
             message.data = new byte[Math.Max(_DataLen,LENGTH_CHANGED_SIZE)];
 
-            Console.Error.Write("Publishing data...\n");
+            Console.Error.Write("Sending initial pings...\n");
             if (_showCpu) {
                 reader_listener.cpu.initialize();
             }
@@ -2037,6 +2046,8 @@ namespace PerformanceTest {
                 writer.Send(message, true);
             }
             writer.Flush();
+
+            Console.Error.Write("Publishing data...\n");
 
             // Set data size, account for other bytes in message
             message.size = (int)_DataLen - OVERHEAD_BYTES;
@@ -2075,9 +2086,9 @@ namespace PerformanceTest {
                                  (!_testCompleted); ++loop)
             {
 
-                if ((_pubRate > 0) &&
-                (loop > 0) &&
-                (loop % pubRate_sample_period == 0)) {
+                if ((_pubRate > 0)
+                        && (loop > 0)
+                        && (loop % pubRate_sample_period == 0)) {
 
                     time_now = GetTimeUsec();
 
@@ -2144,11 +2155,16 @@ namespace PerformanceTest {
 
                             // flush anything that was previously sent
                             writer.Flush();
-                            writer.wait_for_acknowledgments(
+                            if (_isReliable) {
+                                writer.wait_for_acknowledgments(
                                     timeout_wait_for_ack_sec,
                                     timeout_wait_for_ack_nsec);
+                            } else {
+                                System.Threading.Thread.Sleep(
+                                    (int)timeout_wait_for_ack_nsec / 1000000);
+                            }
 
-                            announcement_reader_listener.announced_subscribers =
+                            announcement_reader_listener.announced_subscriber_replies =
                                     _NumSubscribers;
 
                             if (scan_count == _scanDataLenSizes.Count) {
@@ -2160,11 +2176,26 @@ namespace PerformanceTest {
                             // back the LENGTH_CHANGED_SIZE message
                             message.latency_ping = num_pings % _NumSubscribers;
 
-                            while (announcement_reader_listener.announced_subscribers > 0) {
+                            /*
+                             * If the Throughput topic is reliable, we can send the packet and do
+                             * a wait for acknowledgements. However, if the Throughput topic is
+                             * Best Effort, wait_for_acknowledgments() will return inmediately.
+                             * This would cause that the Send() would be exercised too many times,
+                             * in some cases causing the network to be flooded, a lot of packets being
+                             * lost, and potentially CPU starbation for other processes.
+                             * We can prevent this by adding a small sleep() if the test is best
+                             * effort.
+                             */
+                            while (announcement_reader_listener.announced_subscriber_replies > 0) {
                                 writer.Send(message, true);
-                                writer.wait_for_acknowledgments(
+                                if (_isReliable) {
+                                    writer.wait_for_acknowledgments(
                                         timeout_wait_for_ack_sec,
                                         timeout_wait_for_ack_nsec);
+                                } else {
+                                    System.Threading.Thread.Sleep(
+                                        (int)timeout_wait_for_ack_nsec / 1000000);
+                                }
                             }
                             message.size = (int)(_scanDataLenSizes[scan_count++] - OVERHEAD_BYTES);
                             /* Reset _SamplePerBatch */
@@ -2227,15 +2258,21 @@ namespace PerformanceTest {
             // times in case of best effort
             message.size = FINISHED_SIZE;
             int j = 0;
-            announcement_reader_listener.announced_subscribers =
+            announcement_reader_listener.announced_subscriber_replies =
                     _NumSubscribers;
-            while (announcement_reader_listener.announced_subscribers > 0
+            while (announcement_reader_listener.announced_subscriber_replies > 0
                     && j < initializeSampleCount) {
                 writer.Send(message, true);
-                j++;
-                writer.wait_for_acknowledgments(
+                writer.Flush();
+                if (_isReliable) {
+                    writer.wait_for_acknowledgments(
                         timeout_wait_for_ack_sec,
                         timeout_wait_for_ack_nsec);
+                } else {
+                    System.Threading.Thread.Sleep(
+                        (int)timeout_wait_for_ack_nsec / 1000000);
+                }
+                j++;
             }
 
             if (_PubID == 0) {
