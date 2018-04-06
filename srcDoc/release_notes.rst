@@ -45,6 +45,27 @@ releases:
    supported. You can disable this by adding the ``--skip-cs-build``
    flag.
 
+Release Notes Master
+--------------------
+
+What's Fixed in Master
+~~~~~~~~~~~~~~~~~~~~~~
+
+Improve behavior when using the `-scan` command-line option and Best Effort (#59)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, the use of `-scan` in combination with *Best Effort* would cause
+to send too many times certain packets used to signalize the change of sizes and the
+initialization and finalization of the test.
+
+In certain scenarios, mostly local tests where *RTI Perftest* Publishers and Subscribers
+were in the same machine and that machine had limitations with respect to the CPU, this
+would cause the *Scan* test to not work properly, since the *Publisher* would make use of
+the CPU and network intensively, potentially starving the subscriber side and making the
+test hang.
+
+This behavior has been fixed.
+
 Release Notes 2.3.2
 --------------------
 
