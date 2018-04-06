@@ -517,14 +517,11 @@ bool configureTransport(
 
 PerftestTransport::PerftestTransport() :
         dataLen(100),
-        useMulticast(false),
-        throughputMulticastAddr("239.255.1.1"),
-        latencyMulticastAddr("239.255.1.2"),
-        announcementMulticastAddr("239.255.1.100")
+        useMulticast(false)
 {
-    multicastAddrMap[LATENCY_TOPIC_NAME] = latencyMulticastAddr;
-    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = announcementMulticastAddr;
-    multicastAddrMap[THROUGHPUT_TOPIC_NAME] = throughputMulticastAddr;
+    multicastAddrMap[LATENCY_TOPIC_NAME] = "239.255.1.2";
+    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = "239.255.1.100";
+    multicastAddrMap[THROUGHPUT_TOPIC_NAME] = "239.255.1.1";
 }
 
 PerftestTransport::~PerftestTransport()
@@ -730,7 +727,7 @@ void PerftestTransport::printTransportConfigurationSummary()
         stringStream << "\tNic: " << allowInterfaces << "\n";
     }
 
-    stringStream << "\tUse Multicast: " << ((allowsMulticast())? "True" : "False");
+    stringStream << "\tUse Multicast: " << ((allowsMulticast()) ? "True" : "False");
     if (!allowsMulticast() && useMulticast) {
         stringStream << "  (Multicast is not supported for "
                      << transportConfig.nameString << ")";
@@ -968,9 +965,9 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
             useMulticast = true;
             if ((i != (argc-1)) && *argv[i+1] != '-') {
                 i++;
-                throughputMulticastAddr = std::string(argv[i]);
-                latencyMulticastAddr = std::string(argv[i]);
-                announcementMulticastAddr = std::string(argv[i]);
+                multicastAddrMap[THROUGHPUT_TOPIC_NAME] = std::string(argv[i]);
+                multicastAddrMap[LATENCY_TOPIC_NAME] = std::string(argv[i]);
+                multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = std::string(argv[i]);
             }
         } else if (IS_OPTION(argv[i], "-nomulticast")) {
             useMulticast = false;
@@ -1003,9 +1000,9 @@ bool PerftestTransport::allowsMulticast()
             && useMulticast);
 }
 
-const char * PerftestTransport::getMulticastAddr(const char * topic)
+const char * PerftestTransport::getMulticastAddr(const char * topicName)
 {
-    std::string ret = multicastAddrMap[std::string(topic)];
+    std::string ret = multicastAddrMap[std::string(topicName)];
 
     if (ret.length() == 0) {
         return NULL;

@@ -98,10 +98,6 @@ public:
     unsigned long dataLen;
     bool useMulticast;
 
-    std::string throughputMulticastAddr;
-    std::string latencyMulticastAddr;
-    std::string announcementMulticastAddr;
-
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 
