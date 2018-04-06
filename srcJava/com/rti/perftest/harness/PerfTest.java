@@ -4,6 +4,7 @@
  */
 
 package com.rti.perftest.harness;
+import com.rti.perftest.ddsimpl.TOPIC_NAME;
 
 import com.rti.perftest.IMessaging;
 import com.rti.perftest.IMessagingReader;
@@ -32,10 +33,6 @@ public final class PerfTest {
     // Public Fields
     // -----------------------------------------------------------------------
 
-    public static final String LATENCY_TOPIC_NAME = "Latency";
-    public static final String THROUGHPUT_TOPIC_NAME = "Throughput";
-    public static final String ANNOUNCEMENT_TOPIC_NAME = "Announcement";
-    
     public static final int timeout_wait_for_ack_sec = 0;
     public static final int timeout_wait_for_ack_nsec = 10000000;
 
@@ -724,7 +721,7 @@ public final class PerfTest {
         IMessagingWriter writer;
         IMessagingWriter announcement_writer;
 
-        writer = _messagingImpl.createWriter(LATENCY_TOPIC_NAME);
+        writer = _messagingImpl.createWriter(TOPIC_NAME.LATENCY);
         if (writer == null) {
             System.err.print("Problem creating latency writer.\n");
             return;
@@ -734,13 +731,13 @@ public final class PerfTest {
         if (!_useReadThread) {
             // create latency pong reader
             reader_listener = new ThroughputListener(writer, _useCft, _numPublishers);
-            reader = _messagingImpl.createReader(THROUGHPUT_TOPIC_NAME, reader_listener);
+            reader = _messagingImpl.createReader(TOPIC_NAME.THROUGHPUT, reader_listener);
             if (reader == null) {
                 System.err.print("Problem creating throughput reader.\n");
                 return;
             }
         } else {
-            reader = _messagingImpl.createReader(THROUGHPUT_TOPIC_NAME, null);
+            reader = _messagingImpl.createReader(TOPIC_NAME.THROUGHPUT, null);
             if (reader == null) {
                 System.err.print("Problem creating throughput reader.\n");
                 return;
@@ -758,7 +755,7 @@ public final class PerfTest {
         }
 
         // Create announcement writer
-        announcement_writer = _messagingImpl.createWriter(ANNOUNCEMENT_TOPIC_NAME);
+        announcement_writer = _messagingImpl.createWriter(TOPIC_NAME.ANNOUNCEMENT);
 
         if (announcement_writer == null) {
              System.err.print("Problem creating announcement writer.\n");
@@ -879,7 +876,7 @@ public final class PerfTest {
         int initialize_sample_count = 50;
 
         // create throughput/ping writer
-        writer = _messagingImpl.createWriter(THROUGHPUT_TOPIC_NAME);
+        writer = _messagingImpl.createWriter(TOPIC_NAME.THROUGHPUT);
 
         if (writer == null) {
             System.err.print("Problem creating throughput writer.\n");
@@ -902,7 +899,7 @@ public final class PerfTest {
             if (!_useReadThread) {
                 // create latency pong reader
                 reader_listener = new LatencyListener(num_latency,_latencyTest?writer:null);
-                reader = _messagingImpl.createReader(LATENCY_TOPIC_NAME, reader_listener);
+                reader = _messagingImpl.createReader(TOPIC_NAME.LATENCY, reader_listener);
                 if (reader == null)
                 {
                     System.err.print("Problem creating latency reader.\n");
@@ -911,7 +908,7 @@ public final class PerfTest {
             }
             else
             {
-                reader = _messagingImpl.createReader(LATENCY_TOPIC_NAME, null);
+                reader = _messagingImpl.createReader(TOPIC_NAME.LATENCY, null);
                 if (reader == null)
                 {
                     System.err.print("Problem creating latency reader.\n");
@@ -938,7 +935,7 @@ public final class PerfTest {
          * every Publisher
          */
         announcement_reader_listener = new AnnouncementListener();
-        announcement_reader = _messagingImpl.createReader(ANNOUNCEMENT_TOPIC_NAME,
+        announcement_reader = _messagingImpl.createReader(TOPIC_NAME.ANNOUNCEMENT,
                                                           announcement_reader_listener);
         if (announcement_reader == null)
         {

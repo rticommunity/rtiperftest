@@ -48,7 +48,7 @@ class perftest_cpp
 
     int Run(int argc, char *argv[]);
     bool ParseConfig(int argc, char *argv[]);
-    
+
   private:
     int RunPublisher();
     int RunSubscriber();
@@ -123,14 +123,10 @@ class perftest_cpp
     static RTI_UINT64 _Clock_sec;
     static RTI_UINT64 _Clock_usec;
 
-    static const std::string _LatencyTopicName;
-    static const std::string _ThroughputTopicName;
-    static const std::string _AnnouncementTopicName;
-
   #ifdef RTI_WIN32
     static LARGE_INTEGER _ClockFrequency;
   #endif
-    
+
     // Number of bytes sent in messages besides user data
     static const int OVERHEAD_BYTES = 28;
 

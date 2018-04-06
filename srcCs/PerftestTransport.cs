@@ -119,18 +119,13 @@ namespace PerformanceTest
         private const string TRANSPORT_CERTIFICATE_FILE_SUB = "./resource/secure/sub.pem";
         private const string TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
 
-        private string _LatencyTopicName;
-        private string _AnnouncementTopicName;
-        private string _ThroughputTopicName;
-        
-        
         public bool useMulticast;
-        
+
         public string latencyMulticastAddr;
         public string announcementMulticastAddr;
         public string throughputMulticastAddr;
-        
-        public SortedDictionary<string, string> topicNameMap = 
+
+        public SortedDictionary<string, string> multicastAddrMap =
             new SortedDictionary<string, string>();
 
         /**************************************************************************/
@@ -174,25 +169,22 @@ namespace PerformanceTest
                     "dds.transport.shmem.builtin")}
             };
         }
-        
+
         public PerftestTransport()
         {
             transportConfig = new TransportConfig();
             tcpOptions = new TcpTransportOptions();
             secureOptions = new SecureTransportOptions();
             wanOptions = new WanTransportOptions();
-        
+
             useMulticast = false;
             latencyMulticastAddr = "239.255.1.2";
             announcementMulticastAddr = "239.255.1.100";
             throughputMulticastAddr = "239.255.1.1";
-            _LatencyTopicName = "Latency";
-            _AnnouncementTopicName = "Announcement";
-            _ThroughputTopicName = "Throughput";
-            
-            topicNameMap.Add(_LatencyTopicName, latencyMulticastAddr);
-            topicNameMap.Add(_AnnouncementTopicName, announcementMulticastAddr);
-            topicNameMap.Add(_ThroughputTopicName, throughputMulticastAddr);
+
+            multicastAddrMap.Add(TopicName.LATENCY, latencyMulticastAddr);
+            multicastAddrMap.Add(TopicName.ANNOUNCEMENT, announcementMulticastAddr);
+            multicastAddrMap.Add(TopicName.THROUGHPUT, throughputMulticastAddr);
         }
 
         /**************************************************************************/
@@ -247,6 +239,11 @@ namespace PerformanceTest
             sb.Append("\t-multicast <address>          - Use multicast to send data.\n");
             sb.Append("\t                                Default not to use multicast\n");
             sb.Append("\t                                <address> is optional, if unspecified:\n");
+            foreach(KeyValuePair<string, string> nameAddress in multicastAddrMap)
+            {
+                sb.Append("\t                                                ");
+                sb.Append(nameAddress.Key).Append(" ").Append(nameAddress.Value).Append("\n");
+            }
             sb.Append("\t                                                latency 239.255.1.2,\n");
             sb.Append("\t                                                announcement 239.255.1.100,\n");
             sb.Append("\t                                                throughput 239.255.1.1\n");
@@ -301,9 +298,9 @@ namespace PerformanceTest
             sb.Append( "\tUse Multicast: ").Append((AllowsMulticast())? "True" : "False");
             if(!AllowsMulticast() && useMulticast){
                 sb.Append ("  (Multicast is not supported for " );
-                sb.Append( transportConfig.nameString ).Append(")\n");
+                sb.Append( transportConfig.nameString ).Append(")");
             }
-            sb.Append( "\n");
+            sb.Append("\n");
 
             if (transportConfig.kind == Transport.TRANSPORT_TCPv4
                     || transportConfig.kind == Transport.TRANSPORT_TLSv4)
@@ -994,12 +991,20 @@ namespace PerformanceTest
 
             return true;
         }
-        
+
         public string getMulticastAddr(string topic)
         {
-            return topicNameMap[topic];
+
+            string ret;
+            if (multicastAddrMap.TryGetValue(topic, out ret)) {
+                return ret;
+            }
+            else {
+                return null;
+            }
+
         }
-        
+
     }
 
 } // Perftest Namespace

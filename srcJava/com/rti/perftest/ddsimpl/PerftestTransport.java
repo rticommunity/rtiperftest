@@ -7,6 +7,7 @@ package com.rti.perftest.ddsimpl;
 
 import java.nio.file.WatchEvent.Kind;
 import java.util.HashMap;
+import java.util.Map;
 import com.rti.dds.infrastructure.PropertyQosPolicyHelper;
 import com.rti.dds.infrastructure.TransportBuiltinKind;
 import com.rti.dds.domain.DomainParticipantQos;
@@ -101,14 +102,8 @@ public class PerftestTransport {
     private static String TRANSPORT_CERTIFICATE_FILE_PUB = "./resource/secure/pub.pem";
     private static String TRANSPORT_CERTIFICATE_FILE_SUB = "./resource/secure/sub.pem";
     private static String TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
-    
-    private String _LatencyTopicName = "Latency";
-    private String _AnnouncementTopicName = "Announcement";
-    private String _ThroughputTopicName = "Throughput";
-    
-    HashMap topicNameMap = new HashMap();
 
-
+    Map<String,String> multicastAddrMap = new HashMap();
 
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
@@ -119,10 +114,10 @@ public class PerftestTransport {
         tcpOptions = new TcpTransportOptions();
         secureOptions = new SecureTransportOptions();
         wanOptions = new WanTransportOptions();
-        
-        topicNameMap.put(_LatencyTopicName, latencyMulticastAddr);
-        topicNameMap.put(_AnnouncementTopicName, announcementMulticastAddr);
-        topicNameMap.put(_ThroughputTopicName, throughputMulticastAddr);
+
+        multicastAddrMap.put(TOPIC_NAME.LATENCY, latencyMulticastAddr);
+        multicastAddrMap.put(TOPIC_NAME.ANNOUNCEMENT, announcementMulticastAddr);
+        multicastAddrMap.put(TOPIC_NAME.THROUGHPUT, throughputMulticastAddr);
 
     }
 
@@ -177,6 +172,10 @@ public class PerftestTransport {
     sb.append("\t-multicast <address>          - Use multicast to send data.\n");
     sb.append("\t                                Default not to use multicast\n");
     sb.append("\t                                <address> is optional, if unspecified:\n");
+    for (Map.Entry<String, String> map : multicastAddrMap.entrySet()) {
+        sb.append("\t                                                ");
+        sb.append(map.getKey()).append(" ").append(map.getValue()).append("\n");
+    }
     sb.append("\t                                                latency 239.255.1.2,\n");
     sb.append("\t                                                announcement 239.255.1.100,\n");
     sb.append("\t                                                throughput 239.255.1.1\n");
@@ -229,7 +228,7 @@ public class PerftestTransport {
         sb.append( "\tUse Multicast: ").append((allowsMulticast())? "True" : "False");
         if(!allowsMulticast() && useMulticast){
             sb.append ("  (Multicast is not supported for " );
-            sb.append( transportConfig.nameString ).append(")\n");
+            sb.append( transportConfig.nameString ).append(")");
         }
         sb.append( "\n");
 
@@ -895,7 +894,8 @@ public class PerftestTransport {
 
     public String getMulticastAddr(String topic)
     {
-        return topicNameMap.get(topic).toString();
+        //get() function return null if the map contains no mapping for the key
+        return multicastAddrMap.get(topic).toString();
     }
 }
 

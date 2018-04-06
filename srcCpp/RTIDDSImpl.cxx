@@ -2170,18 +2170,18 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0) {
+    if (strcmp(topic_name,THROUGHPUT_TOPIC_NAME) == 0) {
         qos_profile = "ThroughputQos";
-    } else if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0) {
+    } else if (strcmp(topic_name,LATENCY_TOPIC_NAME) == 0) {
         qos_profile = "LatencyQos";
-    } else if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) == 0) {
+    } else if (strcmp(topic_name,ANNOUNCEMENT_TOPIC_NAME) == 0) {
         qos_profile = "AnnouncementQos";
     } else {
         fprintf(stderr,
                 "topic name must either be %s or %s or %s.\n",
-                perftest_cpp::_ThroughputTopicName,
-                perftest_cpp::_LatencyTopicName,
-                perftest_cpp::_AnnouncementTopicName);
+                THROUGHPUT_TOPIC_NAME,
+                LATENCY_TOPIC_NAME,
+                ANNOUNCEMENT_TOPIC_NAME);
         return NULL;
     }
 
@@ -2192,7 +2192,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                 qos_profile.c_str(), _ProfileLibraryName, _ProfileFile);
         return NULL;
     }
-    
+
     if (!_UsePositiveAcks
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_qos.protocol.disable_positive_acks = true;
@@ -2213,7 +2213,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     // only force reliability on throughput/latency topics
-    if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) != 0) {
+    if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0) {
         if (_IsReliable) {
             // default: use the setting specified in the qos profile
             // dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
@@ -2451,18 +2451,18 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
     topic_desc = topic;
 
-    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0) {
+    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0) {
         qos_profile = "ThroughputQos";
-    } else if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0) {
+    } else if (strcmp(topic_name, LATENCY_TOPIC_NAME) == 0) {
         qos_profile = "LatencyQos";
-    } else if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) == 0) {
+    } else if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) == 0) {
         qos_profile = "AnnouncementQos";
     } else {
         fprintf(stderr,
                 "topic name must either be %s or %s or %s.\n",
-                perftest_cpp::_ThroughputTopicName,
-                perftest_cpp::_LatencyTopicName,
-                perftest_cpp::_AnnouncementTopicName);
+                THROUGHPUT_TOPIC_NAME,
+                LATENCY_TOPIC_NAME,
+                ANNOUNCEMENT_TOPIC_NAME);
         return NULL;
     }
 
@@ -2475,7 +2475,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     // only force reliability on throughput/latency topics
-    if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) != 0)
+    if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0)
     {
         if (_IsReliable)
         {
@@ -2508,7 +2508,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         _InstanceMaxCountReader++;
     }
     dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
-    
+
     if (_InstanceCount > 1) {
         if (_InstanceHashBuckets > 0) {
             dr_qos.resource_limits.instance_hash_buckets =
@@ -2522,6 +2522,15 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         dr_qos.multicast.value.ensure_length(1, 1);
         dr_qos.multicast.value[0].receive_address = DDS_String_dup(
                 _transport.getMulticastAddr(topic_name));
+        if (dr_qos.multicast.value[0].receive_address == NULL) {
+            fprintf(stderr,
+                    "topic name must either be %s or %s or %s.\n",
+                    THROUGHPUT_TOPIC_NAME,
+                    LATENCY_TOPIC_NAME,
+                    ANNOUNCEMENT_TOPIC_NAME);
+            return NULL;
+        }
+
         dr_qos.multicast.value[0].receive_port = 0;
         dr_qos.multicast.value[0].transports.length(0);
     }
@@ -2535,7 +2544,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     /* Create CFT Topic */
-    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0 && _useCft) {
+    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && _useCft) {
         topic_desc = CreateCft(topic_name, topic);
         if (topic_desc == NULL) {
             printf("Create_contentfilteredtopic error\n");
@@ -2573,8 +2582,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-    if (!strcmp(topic_name, perftest_cpp::_ThroughputTopicName) ||
-        !strcmp(topic_name, perftest_cpp::_LatencyTopicName)) {
+    if (!strcmp(topic_name, THROUGHPUT_TOPIC_NAME) ||
+        !strcmp(topic_name, LATENCY_TOPIC_NAME)) {
         _reader = reader;
     }
 

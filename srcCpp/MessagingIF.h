@@ -6,6 +6,15 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
+/*
+ * Names of the topics for all the comunications, they will be used for the
+ * class Perftest_cpp, RTIDDSImpl and PerftestTransport to retrieve the
+ * corresponding address.
+ */
+#define LATENCY_TOPIC_NAME "Latency"
+#define ANNOUNCEMENT_TOPIC_NAME "Announcement"
+#define THROUGHPUT_TOPIC_NAME "Throughput"
+
 class TestMessage
 {
   public:

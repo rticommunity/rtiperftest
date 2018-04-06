@@ -1505,7 +1505,7 @@ namespace PerformanceTest {
             IMessagingWriter   announcement_writer;
 
             // create latency pong writer
-            writer = _MessagingImpl.CreateWriter(_LatencyTopicName);
+            writer = _MessagingImpl.CreateWriter(TopicName.LATENCY);
 
             if (writer == null) {
                 Console.Error.Write("Problem creating latency writer.\n");
@@ -1517,7 +1517,7 @@ namespace PerformanceTest {
             {
                 // create latency pong reader
                 reader_listener = new ThroughputListener(writer, _useCft, _NumPublishers);
-                reader = _MessagingImpl.CreateReader(_ThroughputTopicName, reader_listener);
+                reader = _MessagingImpl.CreateReader(TopicName.THROUGHPUT, reader_listener);
                 if (reader == null)
                 {
                     Console.Error.Write("Problem creating throughput reader.\n");
@@ -1526,7 +1526,7 @@ namespace PerformanceTest {
             }
             else
             {
-                reader = _MessagingImpl.CreateReader(_ThroughputTopicName, null);
+                reader = _MessagingImpl.CreateReader(TopicName.THROUGHPUT, null);
                 if (reader == null)
                 {
                     Console.Error.Write("Problem creating throughput reader.\n");
@@ -1539,7 +1539,7 @@ namespace PerformanceTest {
             }
 
             // Create announcement writer
-            announcement_writer = _MessagingImpl.CreateWriter(_AnnouncementTopicName);
+            announcement_writer = _MessagingImpl.CreateWriter(TopicName.ANNOUNCEMENT);
 
             if (announcement_writer == null) {
                 Console.Error.Write("Problem creating announcement writer.\n");
@@ -1919,7 +1919,7 @@ namespace PerformanceTest {
             int initializeSampleCount = 50;
 
             // create throughput/ping writer
-            writer = _MessagingImpl.CreateWriter(_ThroughputTopicName);
+            writer = _MessagingImpl.CreateWriter(TopicName.THROUGHPUT);
 
             if (writer == null)
             {
@@ -1950,7 +1950,7 @@ namespace PerformanceTest {
                 {
                     // create latency pong reader
                     reader_listener = new LatencyListener(_LatencyTest?writer:null, num_latency);
-                    reader = _MessagingImpl.CreateReader(_LatencyTopicName, reader_listener);
+                    reader = _MessagingImpl.CreateReader(TopicName.LATENCY, reader_listener);
                     if (reader == null)
                     {
                         Console.Error.Write("Problem creating latency reader.\n");
@@ -1959,7 +1959,7 @@ namespace PerformanceTest {
                 }
                 else
                 {
-                    reader = _MessagingImpl.CreateReader(_LatencyTopicName, null);
+                    reader = _MessagingImpl.CreateReader(TopicName.LATENCY, null);
                     if (reader == null)
                     {
                         Console.Error.Write("Problem creating latency reader.\n");
@@ -1981,7 +1981,7 @@ namespace PerformanceTest {
              * every Publisher
              */
             announcement_reader_listener = new AnnouncementListener();
-            announcement_reader = _MessagingImpl.CreateReader(_AnnouncementTopicName,
+            announcement_reader = _MessagingImpl.CreateReader(TopicName.ANNOUNCEMENT,
                                                               announcement_reader_listener);
             if (announcement_reader == null)
             {
@@ -2340,9 +2340,6 @@ namespace PerformanceTest {
         private static long _ClockFrequency = 0;
         private static bool _testCompleted = false;
         private static bool _testCompletedScan = true;
-        public const string _LatencyTopicName = "Latency";
-        public const string _ThroughputTopicName = "Throughput";
-        public const string _AnnouncementTopicName = "Announcement";
         public const int timeout_wait_for_ack_sec = 0;
         public const uint timeout_wait_for_ack_nsec = 10000000;
 

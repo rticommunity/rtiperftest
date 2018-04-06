@@ -66,8 +66,8 @@ Show message in sumary when -multicast is present but it wont be used (#44)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In previous versions, if the `-multicast` command line parameter was provided but
-the transport does not allow it, any information was given. This fix print a
-message like `Use Multicast: False  (Multicast is not supported for TCP)`.
+the transport does not allow it, any information was given. This fix prints the
+message: `Use Multicast: False  (Multicast is not supported for TCP)`.
 
 
 Release Notes 2.3.1

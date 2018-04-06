@@ -10,6 +10,7 @@
 #include <map>
 #include <sstream>
 #include <dds/dds.hpp>
+#include "MessagingIF.h"
 
 /******************************************************************************/
 
@@ -127,11 +128,7 @@ private:
 
     static std::map<std::string, TransportConfig> transportConfigMap;
 
-    std::map<std::string, std::string> topicNameMap;
-
-    const std::string _LatencyTopicName;
-    const std::string _AnnouncementTopicName;
-    const std::string _ThroughputTopicName;
+    std::map<std::string, std::string> multicastAddrMap;
 
     /**************************************************************************/
 

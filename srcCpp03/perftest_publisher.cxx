@@ -30,9 +30,6 @@ struct RTINtpTime perftest_cpp::_ClockTime_aux = RTI_NTP_TIME_ZERO;
 RTI_UINT64 perftest_cpp::_Clock_sec = 0;
 RTI_UINT64 perftest_cpp::_Clock_usec = 0;
 
-const std::string perftest_cpp::_LatencyTopicName = "Latency";
-const std::string perftest_cpp::_AnnouncementTopicName = "Announcement";
-const std::string perftest_cpp::_ThroughputTopicName = "Throughput";
 const long timeout_wait_for_ack_sec = 0;
 const unsigned long timeout_wait_for_ack_nsec = 100000000;
 
@@ -1071,14 +1068,14 @@ int perftest_cpp::RunSubscriber()
     IMessagingWriter   *announcement_writer = NULL;
 
     // create latency pong writer
-    writer = _MessagingImpl->CreateWriter(_LatencyTopicName);
+    writer = _MessagingImpl->CreateWriter(LATENCY_TOPIC_NAME);
 
     // Check if using callbacks or read thread
     if (!_UseReadThread) {
 
         // create latency pong reader
         reader_listener = new ThroughputListener(writer, NULL, _useCft, _NumPublishers);
-        reader = _MessagingImpl->CreateReader(_ThroughputTopicName,
+        reader = _MessagingImpl->CreateReader(THROUGHPUT_TOPIC_NAME,
                 reader_listener);
         if (reader == NULL) {
             std::cerr << "[Error] Problem creating throughput reader."
@@ -1087,7 +1084,7 @@ int perftest_cpp::RunSubscriber()
         }
     } else {
         std::cerr << "[Info] Using reading thread." << std::endl;
-        reader = _MessagingImpl->CreateReader(_ThroughputTopicName, NULL);
+        reader = _MessagingImpl->CreateReader(THROUGHPUT_TOPIC_NAME, NULL);
         if (reader == NULL) {
             std::cerr << "[Error] Problem creating throughput reader."
                       << std::endl;
@@ -1104,7 +1101,7 @@ int perftest_cpp::RunSubscriber()
     }
 
     // Create announcement writer
-    announcement_writer = _MessagingImpl->CreateWriter(_AnnouncementTopicName);
+    announcement_writer = _MessagingImpl->CreateWriter(ANNOUNCEMENT_TOPIC_NAME);
 
     // Synchronize with publishers
     std::cerr << "[Info] Waiting to discover " << _NumPublishers
@@ -1544,7 +1541,7 @@ int perftest_cpp::RunPublisher()
     unsigned long initializeSampleCount = 50;
 
     // create throughput/ping writer
-    writer = _MessagingImpl->CreateWriter(_ThroughputTopicName);
+    writer = _MessagingImpl->CreateWriter(THROUGHPUT_TOPIC_NAME);
 
 
     num_latency = (unsigned long)((_NumIter/_SamplesPerBatch) / _LatencyCount);
@@ -1565,7 +1562,7 @@ int perftest_cpp::RunPublisher()
             // the writer is passed for ping-pong notification in LatencyTest
             reader_listener = new LatencyListener(num_latency, NULL,
                     _LatencyTest ? writer : NULL);
-            reader = _MessagingImpl->CreateReader(_LatencyTopicName,
+            reader = _MessagingImpl->CreateReader(LATENCY_TOPIC_NAME,
                     reader_listener);
             if (reader == NULL) {
                 std::cerr << "[Error] Problem creating latency reader."
@@ -1575,7 +1572,7 @@ int perftest_cpp::RunPublisher()
         } else {
 
             std::cerr << "[Debug] Using Read Thread." << std::endl;
-            reader = _MessagingImpl->CreateReader(_LatencyTopicName, NULL);
+            reader = _MessagingImpl->CreateReader(LATENCY_TOPIC_NAME, NULL);
             if (reader == NULL) {
                 std::cerr << "[Error] Problem creating latency reader."
                         << std::endl;
@@ -1599,7 +1596,7 @@ int perftest_cpp::RunPublisher()
      * every Publisher
      */
     announcement_reader_listener = new AnnouncementListener();
-    announcement_reader = _MessagingImpl->CreateReader(_AnnouncementTopicName,
+    announcement_reader = _MessagingImpl->CreateReader(ANNOUNCEMENT_TOPIC_NAME,
                                                         announcement_reader_listener);
     if (announcement_reader == NULL) {
         std::cerr << "[Error] Problem creating announcement reader." << std::endl;

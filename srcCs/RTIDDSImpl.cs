@@ -1669,24 +1669,24 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (topic_name == perftest_cs._ThroughputTopicName)
+            if (topic_name == TopicName.THROUGHPUT)
             {
                 qos_profile = "ThroughputQos";
             }
-            else if (topic_name == perftest_cs._LatencyTopicName)
+            else if (topic_name == TopicName.LATENCY)
             {
                 qos_profile = "LatencyQos";
             }
-            else if (topic_name == perftest_cs._AnnouncementTopicName)
+            else if (topic_name == TopicName.ANNOUNCEMENT)
             {
                 qos_profile = "AnnouncementQos";
             }
             else
             {
                 Console.Error.WriteLine("topic name must either be "
-                    + perftest_cs._ThroughputTopicName
-                    + " or " + perftest_cs._LatencyTopicName
-                    + " or " + perftest_cs._AnnouncementTopicName);
+                    + TopicName.THROUGHPUT
+                    + " or " + TopicName.LATENCY
+                    + " or " + TopicName.ANNOUNCEMENT);
                 return null;
             }
 
@@ -1724,7 +1724,7 @@ namespace PerformanceTest
             }
 
             // only force reliability on throughput/latency topics
-            if (topic_name != perftest_cs._AnnouncementTopicName)
+            if (topic_name != TopicName.ANNOUNCEMENT)
             {
                 if (_IsReliable)
                 {
@@ -1981,24 +1981,24 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (topic_name == perftest_cs._ThroughputTopicName)
+            if (topic_name == TopicName.THROUGHPUT)
             {
                 qos_profile = "ThroughputQos";
             }
-            else if (topic_name == perftest_cs._LatencyTopicName)
+            else if (topic_name == TopicName.LATENCY)
             {
                 qos_profile = "LatencyQos";
             }
-            else if (topic_name == perftest_cs._AnnouncementTopicName)
+            else if (topic_name == TopicName.ANNOUNCEMENT)
             {
                 qos_profile = "AnnouncementQos";
             }
             else
             {
                 Console.Error.WriteLine("topic name must either be "
-                    + perftest_cs._ThroughputTopicName
-                    + " or " + perftest_cs._LatencyTopicName
-                    + " or " + perftest_cs._AnnouncementTopicName);
+                    + TopicName.THROUGHPUT
+                    + " or " + TopicName.LATENCY
+                    + " or " + TopicName.ANNOUNCEMENT);
                 return null;
             }
 
@@ -2015,7 +2015,7 @@ namespace PerformanceTest
             }
 
             // only force reliability on throughput/latency topics
-            if (topic_name != perftest_cs._AnnouncementTopicName)
+            if (topic_name != TopicName.ANNOUNCEMENT)
             {
                 if (_IsReliable)
                 {
@@ -2063,17 +2063,13 @@ namespace PerformanceTest
             {
                 string multicast_addr;
 
-                if (topic_name == perftest_cs._ThroughputTopicName)
-                {
-                    multicast_addr = THROUGHPUT_MULTICAST_ADDR;
-                }
-                else if (topic_name == perftest_cs._LatencyTopicName)
-                {
-                    multicast_addr = LATENCY_MULTICAST_ADDR;
-                }
-                else
-                {
-                    multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
+                multicast_addr = _transport.getMulticastAddr(topic_name);
+                if(multicast_addr == null){
+                    Console.Error.WriteLine("topic name must either be "
+                        + TopicName.THROUGHPUT
+                        + " or " + TopicName.LATENCY
+                        + " or " + TopicName.ANNOUNCEMENT);
+                    return null;
                 }
 
                 DDS.TransportMulticastSettings_t multicast_setting = new DDS.TransportMulticastSettings_t();
@@ -2101,7 +2097,7 @@ namespace PerformanceTest
                         _useUnbounded.ToString(), false);
             }
 
-            if ( _useCft && topic_name == perftest_cs._ThroughputTopicName){
+            if ( _useCft && topic_name == TopicName.THROUGHPUT){
                 topic_desc = createCft(topic_name, topic);
                 if (topic_desc == null) {
                     Console.Error.WriteLine("Create_contentfilteredtopic error");

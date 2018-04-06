@@ -8,6 +8,24 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+/*
+ * Names of the topics for all the comunications, they will be used for the
+ * class Perftest_cpp, RTIDDSImpl and PerftestTransport to retrieve the
+ * corresponding address.
+ */
+public static class TopicName
+{
+   public static string LATENCY {
+        get { return "Latency"; }
+   }
+   public static string ANNOUNCEMENT {
+        get { return "Announcement"; }
+   }
+   public static string THROUGHPUT {
+        get { return "Throughput"; }
+   }
+}
+
 namespace PerformanceTest
 {
     public class TestMessage
