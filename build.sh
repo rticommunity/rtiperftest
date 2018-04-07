@@ -32,8 +32,11 @@ RTI_OPENSSLHOME=""
 #Variable for customType
 customType_location="${idl_location}/customType"
 USE_CUSTOM_TYPE=0
-CUSTOM_TYPE=""
-customType_idl_file="${customType_location}/custom.idl"
+custom_type=""
+custom_idl_file="${customType_location}/custom.idl"
+custom_type_file_name_support=""
+
+
 
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
@@ -98,7 +101,7 @@ function clean_custom_type()
             rm -f "${script_location}"/srcC*/"${name_file}Support."*
         fi
     done
-    rm -rf ${customType_idl_file}
+    rm -rf ${custom_idl_file}
 }
 
 function clean()
@@ -223,33 +226,34 @@ function additional_defines_calculation()
         fi
     fi
     if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
-        additional_defines=${additional_defines}" DRTI_CUSTOM_TYPE="${CUSTOM_TYPE}
+        additional_defines=${additional_defines}" DRTI_CUSTOM_TYPE="${custom_type}" DRTI_CUSTOM_TYPE_FILE_NAME_SUPPORT="${custom_type_file_name_support}
     fi
 }
 
 function build_cpp()
 {
-    additional_defines_calculation
-
     additional_defines_customType=""
     additionalHeaderFiles_customType=""
     additionalSourceFiles_customType=""
     if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
-        # Search the file which contains the Struct ${CUSTOM_TYPE} {
-        # Include the file into ${customType_idl_file}
+        # Search the file which contains the Struct ${custom_type} {
+        # Include the file into ${custom_idl_file}
         found_idl=false
         for file in ${customType_location}/*.idl
         do
             if [ -f $file ]; then
-                if grep -Fq  "struct "${CUSTOM_TYPE}" {" ${file}
+                if grep -Fq  "struct "${custom_type}" {" ${file}
                 then # found
-                    echo "#include \"$(basename $file)\"" > ${customType_idl_file}
+                    custom_type_file_name_support=$(basename $file)
+                    custom_type_file_name_support=${custom_type_file_name_support%.*}
+                    custom_type_file_name_support=${custom_type_file_name_support}"Support.h"
+                    echo "#include \"$(basename $file)\"" > ${custom_idl_file}
                     found_idl=true
                 fi
             fi
         done
         if [ "$found_idl" = false ]; then
-            echo -e "${ERROR_TAG} Cannot find the idl file with the structure ${CUSTOM_TYPE}"
+            echo -e "${ERROR_TAG} Cannot find the idl file with the structure ${custom_type}"
             exit -1
         fi
         cp -rf ${customType_location}/* ${idl_location}/
@@ -277,9 +281,9 @@ function build_cpp()
             fi
         done
         # Adding RTI_USE_CUSTOM_TYPE as a macro
-        additional_defines_customType=" -D RTI_CUSTOM_TYPE="${CUSTOM_TYPE}
+        additional_defines_customType=" -D RTI_CUSTOM_TYPE="${custom_type}
     fi
-
+    additional_defines_calculation
     ##############################################################################
     # Generate files for srcCpp
 
@@ -522,8 +526,8 @@ while [ "$1" != "" ]; do
             ;;
         --customType)
             USE_CUSTOM_TYPE=1
-            CUSTOM_TYPE=$2
-            if [ -z "${CUSTOM_TYPE}" ]; then
+            custom_type=$2
+            if [ -z "${custom_type}" ]; then
                 echo -e "${ERROR_TAG} --customType should be follow by the name of you type"
                 usage
                 exit -1

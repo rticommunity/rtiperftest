@@ -797,7 +797,6 @@ class RTIPublisher : public IMessagingWriter
         if (! initialize_custom_type(data.custom_type)) {
             fprintf(stderr, "initialize_custom_type failed.\n");
         }
-        // TODO return a bool retcode = initialize_custom_type(
       #endif
         _writer = T::DataWriter::narrow(writer);
         data.bin_data.maximum(0);
