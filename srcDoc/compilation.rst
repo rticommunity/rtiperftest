@@ -355,6 +355,12 @@ examples:
 
        build.bat --platform x64Win64VS2012 --cs-build
 
+   Alternatively this can be achieved by using:
+
+   ::
+   
+       build.bat --platform x64Win64VS2012 --skip-java-build --skip-cpp-build --skip-cpp03-build
+
 -  Generation and compilation for a given architecture
    (``x64Win64VS2012``) for all supported languages and linking against
    the Dynamic + Debug libraries.

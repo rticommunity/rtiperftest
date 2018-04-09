@@ -52,16 +52,11 @@ What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
 Added command-line parameters to simplify single API build
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-*Build script* now supports a single API build using command-line parameters:
+*RTI Perftest Build scripts* now support building a single API using the
+following command-line parameters:
 
-- For build.sh (linux):
-    --java-build
-    --cpp03-build
-    --cpp-build
-    
-- For build.bat (windows):
     --java-build
     --cpp03-build
     --cpp-build
