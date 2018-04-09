@@ -405,7 +405,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 fprintf(stderr, "Unexpected value after -verbosity\n");
                 return false;
             }
-            configureVerbosity(verbosityLevel);
+            PerftestConfigureVerbosity(verbosityLevel);
         }
         else if (IS_OPTION(argv[i], "-waitsetDelayUsec")) {
             if ((i == (argc-1)) || *argv[++i] == '-') 
@@ -2073,7 +2073,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         qos.discovery.multicast_receive_addresses.length(0);
     }
 
-    if (!configureTransport(_transport, qos)){
+    if (!PerftestConfigureTransport(_transport, qos)){
         return false;
     };
     _transport.printTransportConfigurationSummary();

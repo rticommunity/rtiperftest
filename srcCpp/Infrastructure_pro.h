@@ -48,33 +48,29 @@ inline bool PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
     return RTIOsapiSemaphore_take(sem, &block_duration) != RTI_OSAPI_SEMAPHORE_STATUS_ERROR;
 }
 
-#define Perftest_param_not_micro(param)
-#define Perftest_not_supported_in_micro(message)
+#define PerftestLogParamNotMicro(param)
+#define PerftestLogNotSupportedInMicro(message)
 
 /* Perftest Clock Class */
 class PerftestClock
 {
 
   private:
-    struct RTIClock *clock;
-    struct RTINtpTime clockTime_aux;
+    RTIClock *clock;
+    RTINtpTime clock_time_aux;
     RTI_UINT64 clock_sec;
     RTI_UINT64 clock_usec;
 
   public:
-    static PerftestClock &GetInstance()
-    {
-        static PerftestClock instance;
-        return instance;
-    }
     PerftestClock();
     ~PerftestClock();
 
+    static PerftestClock &GetInstance();
     unsigned long long GetTimeUsec();
     static void MilliSleep(unsigned int millisec);
 };
 
-bool configureTransport(
+bool PerftestConfigureTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos &qos);
 
@@ -83,6 +79,6 @@ bool PerftestCreateThread(
         RTIOsapiThreadOnSpawnedMethod method,
         void *threadParam);
 
-void configureVerbosity(int verbosityLevel);
+void PerftestConfigureVerbosity(int verbosityLevel);
 
 #endif /* INFRASTRUCTURE_PRO_H_ */

@@ -14,7 +14,7 @@ PerftestClock::PerftestClock()
         std::bad_alloc exception;
         throw exception;
     }
-    RTINtpTime_setZero(&clockTime_aux);
+    RTINtpTime_setZero(&clock_time_aux);
 
     clock_sec = 0;
     clock_usec = 0;
@@ -25,13 +25,19 @@ PerftestClock::~PerftestClock()
     RTIHighResolutionClock_delete(clock);
 }
 
+PerftestClock &PerftestClock::GetInstance()
+{
+    static PerftestClock instance;
+    return instance;
+}
+
 unsigned long long PerftestClock::GetTimeUsec()
 {
-    clock->getTime(clock, &clockTime_aux);
+    clock->getTime(clock, &clock_time_aux);
     RTINtpTime_unpackToMicrosec(
             clock_sec,
             clock_usec,
-            clockTime_aux);
+            clock_time_aux);
     return clock_usec + 1000000 * clock_sec;
 }
 
@@ -433,7 +439,7 @@ bool configureShmemTransport(
     return true;
 }
 
-bool configureTransport(
+bool PerftestConfigureTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos &qos)
 {
@@ -546,7 +552,7 @@ bool PerftestCreateThread(
     return true;
 }
 
-void configureVerbosity(int verbosityLevel)
+void PerftestConfigureVerbosity(int verbosityLevel)
 {
 
     NDDS_Config_LogVerbosity verbosity = NDDS_CONFIG_LOG_VERBOSITY_ERROR;

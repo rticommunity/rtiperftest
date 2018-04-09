@@ -48,11 +48,7 @@ private:
 public:
     PerftestTimer();
     ~PerftestTimer();
-    static PerftestTimer &GetInstance()
-    {
-        static PerftestTimer instance;
-        return instance;
-    }
+    static PerftestTimer &GetInstance();
     void SetTimeout(unsigned int executionTimeInSeconds, void (*function)(void));
   #ifdef RTI_WIN32
     static VOID CALLBACK TimeoutTask(PVOID lpParam, BOOLEAN timerOrWaitFired);
@@ -60,9 +56,5 @@ public:
     static void TimeoutTask(int sign);
   #endif
 };
-
-bool configureTransport(
-        PerftestTransport &transport,
-        DDS_DomainParticipantQos &qos);
 
 #endif /* INFRASTRUCTURE_COMMON_H_ */

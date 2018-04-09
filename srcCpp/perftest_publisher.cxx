@@ -396,13 +396,13 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             }
 
             if (_useUnbounded == 0 && _DataLen > (unsigned long)MAX_BOUNDED_SEQ_SIZE) {
-                Perftest_not_supported_in_micro("Large Data");
+                PerftestLogNotSupportedInMicro("Large Data");
                 _useUnbounded = (std::min)(
                         2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
             }
         }
         else if (IS_OPTION(argv[i], "-unbounded")) {
-            Perftest_param_not_micro(argv[i]);
+            PerftestLogParamNotMicro(argv[i]);
             _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
 
             if (_MessagingArgv[_MessagingArgc] == NULL) {
@@ -443,7 +443,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-spin"))
         {
-            Perftest_param_not_micro(argv[i]);
+            PerftestLogParamNotMicro(argv[i]);
             fprintf(stderr,"-spin option is deprecated. It will be removed "
                     "in upcoming releases.\n");
             if ((i == (argc-1)) || *argv[++i] == '-')
@@ -640,7 +640,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                     return false;
                 }
                 if (strstr(argv[i], "spin") != NULL) {
-                    Perftest_param_not_micro(argv[i]);
+                    PerftestLogParamNotMicro(argv[i]);
                     printf("-pubRate method: spin.\n");
                 } else if (strstr(argv[i], "sleep") != NULL) {
                     _pubRateMethodSpin = false;
@@ -665,7 +665,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             _isKeyed = true;
         }
         else if (IS_OPTION(argv[i], "-writerStats")) {
-            Perftest_param_not_micro(argv[i]);
+            PerftestLogParamNotMicro(argv[i]);
             _displayWriterStats = true;
         }
         else if (IS_OPTION(argv[i], "-executionTime"))
@@ -682,7 +682,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             _showCpu = true;
         } else if (IS_OPTION(argv[i], "-cft"))
         {
-            Perftest_param_not_micro(argv[i]);
+            PerftestLogParamNotMicro(argv[i]);
             _useCft = true;
             _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
 
@@ -1218,7 +1218,9 @@ int perftest_cpp::Subscriber()
         delete(announcement_writer);
     }
 
-    delete[] message.data;
+    if (message.data != NULL) {
+        delete[] message.data;
+    }
 
     fprintf(stderr,"Finishing test...\n");
     fflush(stderr);

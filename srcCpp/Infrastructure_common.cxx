@@ -34,6 +34,11 @@ PerftestTimer::~PerftestTimer()
   #endif
 }
 
+PerftestTimer &PerftestTimer::GetInstance() {
+    static PerftestTimer instance;
+    return instance;
+}
+
 void PerftestTimer::SetTimeout(unsigned int executionTimeInSeconds,
         void (*function)(void)) {
 
