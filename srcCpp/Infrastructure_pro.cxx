@@ -11,8 +11,7 @@ PerftestClock::PerftestClock()
 {
     clock = RTIHighResolutionClock_new();
     if (clock == NULL) {
-        std::bad_alloc exception;
-        throw exception;
+        throw std::bad_alloc();
     }
     RTINtpTime_setZero(&clock_time_aux);
 
