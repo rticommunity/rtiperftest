@@ -121,10 +121,6 @@ namespace PerformanceTest
 
         public bool useMulticast;
 
-        public string latencyMulticastAddr;
-        public string announcementMulticastAddr;
-        public string throughputMulticastAddr;
-
         public SortedDictionary<string, string> multicastAddrMap =
             new SortedDictionary<string, string>();
 
@@ -178,13 +174,10 @@ namespace PerformanceTest
             wanOptions = new WanTransportOptions();
 
             useMulticast = false;
-            latencyMulticastAddr = "239.255.1.2";
-            announcementMulticastAddr = "239.255.1.100";
-            throughputMulticastAddr = "239.255.1.1";
 
-            multicastAddrMap.Add(TopicName.LATENCY, latencyMulticastAddr);
-            multicastAddrMap.Add(TopicName.ANNOUNCEMENT, announcementMulticastAddr);
-            multicastAddrMap.Add(TopicName.THROUGHPUT, throughputMulticastAddr);
+            multicastAddrMap.Add(TopicName.LATENCY, "239.255.1.2");
+            multicastAddrMap.Add(TopicName.ANNOUNCEMENT, "239.255.1.100");
+            multicastAddrMap.Add(TopicName.THROUGHPUT, "239.255.1.1");
         }
 
         /**************************************************************************/
@@ -244,9 +237,6 @@ namespace PerformanceTest
                 sb.Append("\t                                                ");
                 sb.Append(nameAddress.Key).Append(" ").Append(nameAddress.Value).Append("\n");
             }
-            sb.Append("\t                                                latency 239.255.1.2,\n");
-            sb.Append("\t                                                announcement 239.255.1.100,\n");
-            sb.Append("\t                                                throughput 239.255.1.1\n");
             sb.Append("\t-transportVerbosity <level>   - Verbosity of the transport\n");
             sb.Append("\t                                Default: 0 (errors only)\n");
             sb.Append("\t-transportServerBindPort <p>  - Port used by the transport to accept\n");
@@ -295,7 +285,7 @@ namespace PerformanceTest
                 sb.Append("\tNic: ").Append(allowInterfaces).Append("\n");
             }
 
-            sb.Append( "\tUse Multicast: ").Append((AllowsMulticast())? "True" : "False");
+            sb.Append( "\tUse Multicast: ").Append((AllowsMulticast()) ? "True" : "False");
             if(!AllowsMulticast() && useMulticast){
                 sb.Append ("  (Multicast is not supported for " );
                 sb.Append( transportConfig.nameString ).Append(")");
@@ -549,9 +539,9 @@ namespace PerformanceTest
                     if ((i != (argv.Length - 1)) && !argv[1+i].StartsWith("-"))
                     {
                         i++;
-                        throughputMulticastAddr = argv[i];
-                        latencyMulticastAddr = argv[i];
-                        announcementMulticastAddr = argv[i];
+                        multicastAddrMap[TopicName.THROUGHPUT] = argv[i];
+                        multicastAddrMap[TopicName.LATENCY] = argv[i];
+                        multicastAddrMap[TopicName.ANNOUNCEMENT] = argv[i];
                     }
                 }
                 else if ("-nomulticast".StartsWith(argv[i], true, null))
@@ -992,11 +982,11 @@ namespace PerformanceTest
             return true;
         }
 
-        public string getMulticastAddr(string topic)
+        public string getMulticastAddr(string topicName)
         {
 
             string ret;
-            if (multicastAddrMap.TryGetValue(topic, out ret)) {
+            if (multicastAddrMap.TryGetValue(topicName, out ret)) {
                 return ret;
             }
             else {

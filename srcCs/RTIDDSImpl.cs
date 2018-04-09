@@ -2128,7 +2128,6 @@ namespace PerformanceTest
         private int    _DomainID = 1;
         private string _ProfileFile = "perftest_qos_profiles.xml";
         private bool   _IsReliable = true;
-        private bool   _IsMulticast = false;
         private bool   _AutoThrottle = false;
         private bool   _TurboMode = false;
         private int    _BatchSize = 0;
@@ -2181,9 +2180,6 @@ namespace PerformanceTest
         private static int   _WaitsetEventCount = 5;
         private static uint  _WaitsetDelayUsec = 100;
 
-        private static string THROUGHPUT_MULTICAST_ADDR = "239.255.1.1";
-        private static string LATENCY_MULTICAST_ADDR = "239.255.1.2";
-        private static string ANNOUNCEMENT_MULTICAST_ADDR = "239.255.1.100";
         private static string SECUREPRIVATEKEYFILEPUB = "./resource/secure/pubkey.pem";
         private static string SECUREPRIVATEKEYFILESUB = "./resource/secure/subkey.pem";
         private static string SECURECERTIFICATEFILEPUB = "./resource/secure/pub.pem";

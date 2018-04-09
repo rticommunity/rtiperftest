@@ -815,9 +815,12 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
             useMulticast = true;
             if ((i != (argc-1)) && *argv[i+1] != '-') {
                 i++;
-                multicastAddrMap[THROUGHPUT_TOPIC_NAME] = std::string(argv[i]);
-                multicastAddrMap[LATENCY_TOPIC_NAME] = std::string(argv[i]);
-                multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = std::string(argv[i]);
+                multicastAddrMap.find(THROUGHPUT_TOPIC_NAME)->second = 
+                        std::string(argv[i]);
+                multicastAddrMap.find(LATENCY_TOPIC_NAME)->second =
+                        std::string(argv[i]);
+                multicastAddrMap.find(ANNOUNCEMENT_TOPIC_NAME)->second =
+                        std::string(argv[i]);
             }
         } else if (IS_OPTION(argv[i], "-nomulticast")) {
             useMulticast = false;

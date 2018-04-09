@@ -83,10 +83,6 @@ public class PerftestTransport {
 
     public long dataLen = 100;
     public boolean useMulticast = false;
-    
-    public String throughputMulticastAddr = "239.255.1.1";
-    public String latencyMulticastAddr = "239.255.1.2";
-    public String announcementMulticastAddr = "239.255.1.100";
 
     /**************************************************************************/
     /* PRIVATE CLASS MEMBERS*/
@@ -115,9 +111,9 @@ public class PerftestTransport {
         secureOptions = new SecureTransportOptions();
         wanOptions = new WanTransportOptions();
 
-        multicastAddrMap.put(TOPIC_NAME.LATENCY, latencyMulticastAddr);
-        multicastAddrMap.put(TOPIC_NAME.ANNOUNCEMENT, announcementMulticastAddr);
-        multicastAddrMap.put(TOPIC_NAME.THROUGHPUT, throughputMulticastAddr);
+        multicastAddrMap.put(TOPIC_NAME.LATENCY, "239.255.1.1");
+        multicastAddrMap.put(TOPIC_NAME.ANNOUNCEMENT, "239.255.1.2");
+        multicastAddrMap.put(TOPIC_NAME.THROUGHPUT, "239.255.1.100");
 
     }
 
@@ -176,9 +172,6 @@ public class PerftestTransport {
         sb.append("\t                                                ");
         sb.append(map.getKey()).append(" ").append(map.getValue()).append("\n");
     }
-    sb.append("\t                                                latency 239.255.1.2,\n");
-    sb.append("\t                                                announcement 239.255.1.100,\n");
-    sb.append("\t                                                throughput 239.255.1.1\n");
     sb.append("\t-transportVerbosity <level>   - Verbosity of the transport\n");
     sb.append("\t                                Default: 0 (errors only)\n");
     sb.append("\t-transportServerBindPort <p>  - Port used by the transport to accept\n");
@@ -225,8 +218,8 @@ public class PerftestTransport {
             sb.append("\tNic: ").append(allowInterfaces).append("\n");
         }
 
-        sb.append( "\tUse Multicast: ").append((allowsMulticast())? "True" : "False");
-        if(!allowsMulticast() && useMulticast){
+        sb.append( "\tUse Multicast: ").append((allowsMulticast()) ? "True" : "False");
+        if (!allowsMulticast() && useMulticast) {
             sb.append ("  (Multicast is not supported for " );
             sb.append( transportConfig.nameString ).append(")");
         }
@@ -451,9 +444,9 @@ public class PerftestTransport {
                 useMulticast = true;
                 if ((i != (argc - 1)) && !argv[1+i].startsWith("-")) {
                     i++;
-                    throughputMulticastAddr = argv[i];
-                    latencyMulticastAddr = argv[i];
-                    announcementMulticastAddr = argv[i];
+                    multicastAddrMap.replace(TOPIC_NAME.THROUGHPUT, argv[i]);
+                    multicastAddrMap.replace(TOPIC_NAME.LATENCY, argv[i]);
+                    multicastAddrMap.replace(TOPIC_NAME.ANNOUNCEMENT, argv[i]);
                 }
             }
         }
@@ -892,10 +885,10 @@ public class PerftestTransport {
         return true;
     }
 
-    public String getMulticastAddr(String topic)
+    public String getMulticastAddr(String topicName)
     {
         //get() function return null if the map contains no mapping for the key
-        return multicastAddrMap.get(topic).toString();
+        return multicastAddrMap.get(topicName).toString();
     }
 }
 
