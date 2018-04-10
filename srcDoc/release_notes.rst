@@ -51,8 +51,8 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
-Added command-line parameters to simplify single API build
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Added command-line parameters to simplify single API build (#50)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest Build scripts* now support building a single API using the
 following command-line parameters:
@@ -62,8 +62,33 @@ following command-line parameters:
     --cpp-build
     --cs-build
 
-What's Fixed in Master
+Release Notes 2.3.2
+-------------------
+
+What's Fixed in 2.3.2
 ~~~~~~~~~~~~~~~~~~~~~~
+
+Classic C++ Semaphore Take() and Give() operations not checking for errors properly (#47)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous versions, the semaphore Take() and Give() operations
+were not being checked for error in a correct way in the Classic C++ API implementation.
+This has been fixed.
+
+Update Security Certificates and Governance files (#49)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Security Certificates and Governance files used when enabling security options
+in RTI Perftest have been regenerated and signed again, since they had expired.
+
+The script used for updating the files has been improved to generate certificates
+valid for a longer period of time (from one year to ten years).
+
+Release Notes 2.3.1
+--------------------
+
+What's Fixed in 2.3.1
+~~~~~~~~~~~~~~~~~~~~~
 
 `Keep Duration` not configurable when using `-noPositiveAcks` (#39)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -76,6 +101,14 @@ instead, *RTI Perftest* would always use the default value set up via code.
 This behavior has been fixed. We also took the oportunity to simplify and clarify
 the XML configurations when disabling positive Acks.
 
+Update Security Certificates and Governance files (#49)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Security Certificates and Governance files used when enabling security options
+in RTI Perftest have been regenerated and signed again, since they had expired.
+
+The script used for updating the files has been improved to generate certificates
+valid for a longer period of time (from one year to ten years).
 
 Release Notes 2.3.1
 --------------------
@@ -89,7 +122,6 @@ Segmentation fault when using multiple publishers
 In previous versions, in scenarios with multiple publishers, every *RTI Perftest*
 publisher application with `-pidMultiPubTest` different than 0 would crash in the
 process of printing the latency statistics. This behavior has been fixed.
-
 
 Release Notes 2.3
 -----------------
