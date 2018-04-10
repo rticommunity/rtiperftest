@@ -1,0 +1,5 @@
+#include "constTest.idl"
+
+struct StringTest {
+    string<SIZE_TEST_STRING> test_string;
+};//@Extensibility FINAL_EXTENSIBILITY

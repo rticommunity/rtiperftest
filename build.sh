@@ -30,10 +30,10 @@ USE_SECURE_LIBS=0
 RTI_OPENSSLHOME=""
 
 #Variable for customType
-customType_location="${idl_location}/customType"
+custom_type_location="${idl_location}/customType"
 USE_CUSTOM_TYPE=0
 custom_type=""
-custom_idl_file="${customType_location}/custom.idl"
+custom_idl_file="${custom_type_location}/custom.idl"
 custom_type_file_name_support=""
 
 
@@ -90,7 +90,7 @@ function usage()
 function clean_custom_type()
 {
     # Remove customType generated files
-    for file in ${customType_location}/*.idl
+    for file in ${custom_type_location}/*.idl
     do
         if [ -f $file ]; then
             name_file=$(basename $file)
@@ -239,7 +239,7 @@ function build_cpp()
         # Search the file which contains the Struct ${custom_type} {
         # Include the file into ${custom_idl_file}
         found_idl=false
-        for file in ${customType_location}/*.idl
+        for file in ${custom_type_location}/*.idl
         do
             if [ -f $file ]; then
                 if grep -Fq  "struct "${custom_type}" {" ${file}
@@ -256,13 +256,13 @@ function build_cpp()
             echo -e "${ERROR_TAG} Cannot find the idl file with the structure ${custom_type}"
             exit -1
         fi
-        cp -rf ${customType_location}/* ${idl_location}/
+        cp -rf ${custom_type_location}/* ${idl_location}/
         additionalHeaderFiles_customType="customType.h"
         additionalSourceFiles_customType="customType.cxx"
-        # Find all the files of the folder ${customType_location}
+        # Find all the files of the folder ${custom_type_location}
         # Run codegen with all the files
         echo -e "${INFO_TAG} Generating types for ${classic_cpp_lang_string}."
-        for file in ${customType_location}/*.idl
+        for file in ${custom_type_location}/*.idl
         do
             if [ -f $file ]; then
                 # Executing RTIDDSGEN command here.

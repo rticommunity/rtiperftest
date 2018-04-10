@@ -1,0 +1,7 @@
+#ifndef __CONSTTEST_IDL__
+#define __CONSTTEST_IDL__
+
+const long SIZE_TEST_SEQ = 64000;
+const long SIZE_TEST_STRING = 128;
+
+#endif // __CONSTTEST_IDL__

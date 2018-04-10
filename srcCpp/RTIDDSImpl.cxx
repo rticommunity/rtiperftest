@@ -875,6 +875,17 @@ class RTIPublisher : public IMessagingWriter
         data.timestamp_usec = message.timestamp_usec;
         data.latency_ping = message.latency_ping;
       #ifdef RTI_CUSTOM_TYPE
+        /*
+         * Using custom type the size of the data is set in data.size_custom_type:
+         *      If the message.size is a predefined value used to handle the test:
+         *          data.size_custom_type = message.size
+         *      Else:
+         *          If the message.size is different from the last iteration:
+         *              data.size_custom_type of the custom type (data.custom_type)
+         *              is measured from the function serialize_data_to_cdr_buffer()
+         *          Else:
+         *              data.size_custom_type is the same as the last iteration
+        */
         if (message.size == perftest_cpp::INITIALIZE_SIZE
                 || message.size == perftest_cpp::FINISHED_SIZE
                 || message.size == perftest_cpp::LENGTH_CHANGED_SIZE) {
@@ -1139,6 +1150,17 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             fprintf(stderr, "set_long(latency_ping) failed: %d.\n", retcode);
         }
       #ifdef RTI_CUSTOM_TYPE
+        /*
+         * Using custom type the size of the data is set in data.size_custom_type:
+         *      If the message.size is a predefined value used to handle the test:
+         *          data.size_custom_type = message.size
+         *      Else:
+         *          If the message.size is different from the last iteration:
+         *              data.size_custom_type of the custom type (data.custom_type)
+         *              is measured from the function serialize_data_to_cdr_buffer()
+         *          Else:
+         *              data.size_custom_type is the same as the last iteration
+        */
         if (message.size == perftest_cpp::INITIALIZE_SIZE
                 || message.size == perftest_cpp::FINISHED_SIZE
                 || message.size == perftest_cpp::LENGTH_CHANGED_SIZE) {
