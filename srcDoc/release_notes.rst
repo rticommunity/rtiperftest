@@ -45,8 +45,25 @@ releases:
    supported. You can disable this by adding the ``--skip-cs-build``
    flag.
 
-Release Notes 2.3.2
+Release Notes Master
 --------------------
+
+What's New in Master
+~~~~~~~~~~~~~~~~~~~~
+
+Added command-line parameters to simplify single API build (#50)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest Build scripts* now support building a single API using the
+following command-line parameters:
+
+    --java-build
+    --cpp03-build
+    --cpp-build
+    --cs-build
+
+Release Notes 2.3.2
+-------------------
 
 What's Fixed in 2.3.2
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -71,7 +88,7 @@ Release Notes 2.3.1
 --------------------
 
 What's Fixed in 2.3.1
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 `Keep Duration` not configurable when using `-noPositiveAcks` (#39)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
