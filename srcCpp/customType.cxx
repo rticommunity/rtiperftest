@@ -21,9 +21,7 @@ bool initialize_custom_type(RTI_CUSTOM_TYPE & data)
     return success;
 }
 
-void register_custom_type(
-        RTI_CUSTOM_TYPE & data,
-        unsigned long key)
+void register_custom_type(RTI_CUSTOM_TYPE & data, unsigned long key)
 {
     // TODO initialize your data to be registered
     data.test_long = key;
@@ -68,9 +66,7 @@ bool initialize_custom_type_dynamic(DDS_DynamicData & data)
     return true;
 }
 
-void register_custom_type_dynamic(
-        DDS_DynamicData & data,
-        unsigned long key)
+void register_custom_type_dynamic(DDS_DynamicData & data, unsigned long key)
 {
     // TODO initialize DDS_DynamicData to be registered
     DDS_ReturnCode_t retcode = data.set_long(

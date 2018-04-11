@@ -600,3 +600,316 @@ Maximum Throughput -- 2 *Routing Service*
 ::
 
     bin/<arch>/release/perftest_cpp -sub -noPrint -nic <ipaddr> -domain <ID+2> -dataLen <length>
+
+Using Custom Type
+-----------------
+
+It is a new feature which allows to the customer to use their own type for
+running the performance test. The current *RTI Perftest* has a predefined type
+which is form by several long and a sequence of ``octet``. So now it is possible
+to use a complex type and it is automated and really simple.
+
+Briefly, the only thing that you need to is:
+
+-  Copy your IDL files into srcIdl/custom/
+-  Implement the functions of customtype.cxx
+-  Run the build script with the ``--customType <type>``
+-  Run *RTI Perftest* as usual.
+
+Full example using Custom Type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The type that we are going to use in our example is:
+
+::
+
+    const long SIZE_TEST_SEQ = 100;
+    const long SIZE_TEST_STRING = 128;
+
+    enum TestEnum {
+        ENUM1,
+        ENUM2
+    };//@Extensibility FINAL_EXTENSIBILITY
+    struct StringTest {
+        string<SIZE_TEST_STRING> test_string;
+    };//@Extensibility FINAL_EXTENSIBILITY
+    struct SeqTest {
+        sequence<long, SIZE_TEST_SEQ> test_seq;
+    };//@Extensibility FINAL_EXTENSIBILITY
+    struct Test {
+        long test_long;
+        TestEnum test_enum;
+        SeqTest test_seq;
+        StringTest test_string;
+    };//@Extensibility FINAL_EXTENSIBILITY
+
+Bellow, you can see the necessary step to do it on C++ (Traditional):
+
+1. Copy the IDL files into srcIdl/custom/
+
+2. Implement the functions of customtype.cxx
+
+- **initialize_custom_type**:
+    This function is used to initialize your data.
+
+::
+
+    bool initialize_custom_type(RTI_CUSTOM_TYPE & data)
+    {
+        bool success = true;
+        if (! data.test_seq.test_seq.maximum(0)) {
+            success = false;
+        }
+        if (! data.test_seq.test_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
+            success = false;
+        }
+        data.test_enum = ENUM1;
+        return success;
+    }
+
+- **register_custom_type**:
+    This function is used to set your data before been register.
+
+::
+
+    void register_custom_type(RTI_CUSTOM_TYPE & data, unsigned long key)
+    {
+        data.test_long = key;
+    }
+
+- **set_custom_type**:
+    This function is used to set your data before being sent.
+
+::
+
+    bool set_custom_type(
+            RTI_CUSTOM_TYPE & data,
+            unsigned long key,
+            int target_data_len)
+    {
+        bool success = true;
+        data.test_long = key;
+        if (sprintf(data.test_string.test_string, "Hello World! %lu", key) < 0) {
+            success = false;
+        }
+        return success;
+    }
+
+- **finalize_data_custom_type**:
+    This function is used to remove your data. It is called in the destructor.
+
+::
+
+    bool finalize_data_custom_type(RTI_CUSTOM_TYPE & data)
+    {
+        return true;
+    }
+
+- **initialize_custom_type_dynamic**:
+    This function is used to initialize your DynamicData.
+
+::
+
+    bool initialize_custom_type_dynamic(DDS_DynamicData & data)
+    {
+        try {
+            test_seq = new long[SIZE_TEST_SEQ];
+        } catch (std::bad_alloc& ba) {
+            fprintf(stderr, "bad_alloc test_seq  %s failed.\n",  ba.what());
+            return false;
+        }
+        bool success = long_seq.from_array(
+                (DDS_Long *) test_seq,
+                SIZE_TEST_SEQ);
+        if (! success) {
+            fprintf(stderr, "from_array(test_seq) failed.\n");
+            return false;
+        }
+        return true;
+    }
+
+- **register_custom_type_dynamic**:
+    This function is used to set your DynamicData before been register.
+
+::
+
+    void register_custom_type_dynamic(DDS_DynamicData & data, unsigned long key)
+    {
+        // TODO initialize DDS_DynamicData to be registered
+        DDS_ReturnCode_t retcode = data.set_long(
+                "custom_type.test_long",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                key);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_long(test_long) failed: %d.\n", retcode);
+        }
+    }
+
+- **set_custom_type_dynamic**:
+    This function is used to set your DynamicData before been sent.
+
+::
+
+    bool set_custom_type_dynamic(
+            DDS_DynamicData & data,
+            unsigned long key,
+            int target_data_len)
+    {
+        DDS_ReturnCode_t retcode;
+        char test_string[SIZE_TEST_STRING]; //size of member_name
+        bool success = true;
+        DDS_DynamicData custom_type_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
+        DDS_DynamicData test_seq_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
+
+        retcode = data.set_long(
+                "custom_type.test_long",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                key);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_long(test_long) failed: %d.\n", retcode);
+            success = false;
+        }
+
+        if (sprintf(test_string, "Hello World! %lu", key) < 0) {
+            success = false;
+        }
+        retcode = data.set_string(
+                "custom_type.test_string.test_string",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                test_string);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_string(test_string) failed: %d.\n", retcode);
+            success = false;
+        }
+
+        retcode = data.set_long(
+                "custom_type.test_enum",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                ENUM1);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_long(test_enum) failed: %d.\n", retcode);
+            success = false;
+        }
+
+        retcode = data.bind_complex_member(custom_type_data, "custom_type",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(
+                    stderr,
+                    "bind_complex_member(custom_type) failed: %d.\n",
+                    retcode);
+            success = false;
+        }
+        retcode = custom_type_data.bind_complex_member(test_seq_data, "test_seq",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(
+                    stderr,
+                    "bind_complex_member(test_seq_data) failed: %d.\n",
+                    retcode);
+            success = false;
+        }
+        retcode = test_seq_data.set_long_seq(
+                    "test_seq",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                    long_seq);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_long(test_seq) failed: %d.\n", retcode);
+            success = false;
+        }
+        retcode = custom_type_data.unbind_complex_member(test_seq_data);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(
+                    stderr,
+                    "bind_complex_member(test_seq_data) failed: %d.\n",
+                    retcode);
+        }
+        retcode = data.unbind_complex_member(custom_type_data);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(
+                    stderr,
+                    "bind_complex_member(custom_type) failed: %d.\n",
+                    retcode);
+            success = false;
+        }
+        return success;
+    }
+
+- **finalize_data_custom_type_dynamic**:
+    This function is used to remove your data. It is called in the destructor.
+
+::
+
+    bool finalize_data_custom_type_dynamic(DDS_DynamicData & data)
+    {
+        if (test_seq != NULL) {
+            delete[] test_seq;
+            test_seq = NULL;
+        }
+        return true;
+    }
+
+3. Build *RTI Perftest* with ``--customType <type>``
+
+::
+
+    ./build.sh --platform x64Linux3gcc5.4.0 --nddshome /home/rti_connext_dds-5.3.0 --cpp-build --customType Test
+
+4. Launching *RTI Perftest*
+
+::
+
+    ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint
+    Using Unkeyed Data.
+    Transport Information:
+        Kind: Default (UDPv4) / Custom (Taken from QoS profile)
+    Waiting to discover 1 subscribers...
+    Waiting for subscribers announcement ...
+    Publishing data...
+    Setting timeout to 60 seconds
+    Length:   467  Latency: Ave    315 us  Std   89.7 us  Min     38 us  Max    561 us  50%    318 us  90%    384 us  99%    561 us  99.99%    561 us  99.9999%    561 us
+    Finishing test due to timer...
+    Test ended.
+
+::
+
+    ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint
+    Using Unkeyed Data.
+    Transport Information:
+        Kind: Default (UDPv4) / Custom (Taken from QoS profile)
+    Waiting to discover 1 publishers ...
+    Waiting for data...
+    Length:   467  Packets:   359020  Packets/s(ave):   71806  Mbps(ave):   268.3  Lost: 0
+    Finishing test...
+    Test ended.
+
+4. Launching *RTI Perftest* with DynamicData
+
+::
+
+    ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint -dynamicData
+    Using Unkeyed Data.
+    Using Dynamic Data.
+    Transport Information:
+        Kind: Default (UDPv4) / Custom (Taken from QoS profile)
+    Waiting to discover 1 subscribers...
+    Waiting for subscribers announcement ...
+    Publishing data...
+    Setting timeout to 60 seconds
+    Length:   516  Latency: Ave    117 us  Std   50.9 us  Min     87 us  Max    268 us  50%    104 us  90%    268 us  99%    268 us  99.99%    268 us  99.9999%    268 us
+    Finishing test due to timer...
+    Test ended.
+
+
+::
+
+    ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint -dynamicData
+    Using Unkeyed Data.
+    Using Dynamic Data.
+    Transport Information:
+        Kind: Default (UDPv4) / Custom (Taken from QoS profile)
+    Waiting to discover 1 publishers ...
+    Waiting for data...
+    Length:   516  Packets:    93744  Packets/s(ave):   18750  Mbps(ave):    77.4  Lost: 0
+    Finishing test...
+    Test ended.
