@@ -36,7 +36,8 @@ const char *perftest_cpp::_AnnouncementTopicName = "Announcement";
 const char *perftest_cpp::_ThroughputTopicName = "Throughput";
 const long timeout_wait_for_ack_sec = 0;
 const unsigned long timeout_wait_for_ack_nsec = 100000000;
-
+const Perftest_ProductVersion_t perftest_cpp::_version =
+    {2,3,2,0};
 /*
  * PERFTEST-108
  * If we are performing a latency test, the default number for _NumIter will be
@@ -88,6 +89,16 @@ int subscriber_main()
 
 int perftest_cpp::Run(int argc, char *argv[])
 {
+    DDS_ProductVersion_t ddsV = perftest_cpp::GetDDSVersion();
+    Perftest_ProductVersion_t perftestV = perftest_cpp::GetPerftestVersion();
+    printf("RTI DDS version: %d.%d.%d\n",
+            ddsV.major,
+            ddsV.minor,
+            ddsV.release);
+    printf("RTI Perftest version: %d.%d.%d \n",
+            perftestV.major,
+            perftestV.minor,
+            perftestV.release);
 
     if (!ParseConfig(argc, argv))
     {
@@ -133,6 +144,16 @@ int perftest_cpp::Run(int argc, char *argv[])
     } else {
         return Subscriber();
     }
+}
+
+const DDS_ProductVersion_t perftest_cpp::GetDDSVersion()
+{
+    return NDDSConfigVersion::get_instance().get_product_version();
+}
+
+const Perftest_ProductVersion_t perftest_cpp::GetPerftestVersion()
+{
+    return _version;
 }
 
 // Set the default values into the array _scanDataLenSizes vector
