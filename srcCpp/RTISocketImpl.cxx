@@ -936,7 +936,7 @@ class RTISocketPublisher : public IMessagingWriter
         char * payload;
         int payload_size = message.size;
 
-        RTIOsapiHeap_allocateArray(&payload, payload_size, char);
+        RTIOsapiHeap_allocateArray(&payload, payload_size, sizeof(TestMessage));
 
         send_buffer.length = payload_size;
         send_buffer.pointer = payload;
@@ -1114,6 +1114,9 @@ class RTISocketSubscriber : public IMessagingReader
     NDDS_Transport_Plugin *_plugin;
     NDDS_Transport_SendResource_t _recv_resource;
     NDDS_Transport_Port_t _recv_port;
+    struct RTINtpTime timestamp = {0, 0};
+
+    TestMessage _message;
 
     int _data_idx;
     bool _no_data;
@@ -1150,80 +1153,51 @@ class RTISocketSubscriber : public IMessagingReader
 
     TestMessage *ReceiveMessage()
     {
-        DDS_ReturnCode_t retcode;
-        int seq_length;
+
+        NDDS_Transport_Message_t transp_message = NDDS_TRANSPORT_MESSAGE_INVALID;
 
         while (true)
         {
 
-            // no outstanding reads
-            if (_no_data)
+            bool result = plugin->receive_rEA(
+                    plugin,
+                    &transp_message,
+                    &recv_buffer,
+                    &recv_resource,
+                    &worker);
+
+            if (!result)
             {
-                _waitset->wait(_active_conditions, DDS_DURATION_INFINITE);
-
-                if (_active_conditions.length() == 0)
-                {
-                    //printf("Read thread woke up but no data\n.");
-                    //return NULL;
-                    continue;
-                }
-
-                retcode = _reader->take(
-                    _data_seq, _info_seq,
-                    DDS_LENGTH_UNLIMITED,
-                    DDS_ANY_SAMPLE_STATE,
-                    DDS_ANY_VIEW_STATE,
-                    DDS_ANY_INSTANCE_STATE);
-                if (retcode == DDS_RETCODE_NO_DATA)
-                {
-                    //printf("Called back no data.\n");
-                    //return NULL;
-                    continue;
-                }
-                else if (retcode != DDS_RETCODE_OK)
-                {
-                    fprintf(stderr, "Error during taking data %d.\n", retcode);
-                    return NULL;
-                }
-
-                _data_idx = 0;
-                _no_data = false;
-            }
-
-            seq_length = _data_seq.length();
-            // check to see if hit end condition
-            if (_data_idx == seq_length)
-            {
-                _reader->return_loan(_data_seq, _info_seq);
-                _no_data = true;
+                fprintf(stderr, "error receiving data\n");
                 continue;
             }
 
-            // skip non-valid data
-            while ((_info_seq[_data_idx].valid_data == false) &&
-                   (++_data_idx < seq_length))
+            RTIOsapiMemory_copy(
+                    &_message,
+                    transp_message.buffer.pointer,
+                    sizeof(TestMessage);
+
+            if (_message.timestamp_sec == 0 && _message.timestamp_usec == 0)
             {
-                //No operation required
+                if (plugin->return_loaned_buffer_rEA != NULL)
+                {
+                    plugin->return_loaned_buffer_rEA(
+                            plugin,
+                            &recv_resource,
+                            &transp_message,
+                            NULL);
+                }
+                break;
             }
 
-            // may have hit end condition
-            if (_data_idx == seq_length)
+            if (debug)
             {
-                continue;
+                printf("Received PING sample with length %d\n",
+                        transp_message.buffer.length);
             }
-
-            _message.entity_id = _data_seq[_data_idx].entity_id;
-            _message.seq_num = _data_seq[_data_idx].seq_num;
-            _message.timestamp_sec = _data_seq[_data_idx].timestamp_sec;
-            _message.timestamp_usec = _data_seq[_data_idx].timestamp_usec;
-            _message.latency_ping = _data_seq[_data_idx].latency_ping;
-            _message.size = _data_seq[_data_idx].bin_data.length();
-            _message.data = (char *)_data_seq[_data_idx].bin_data.get_contiguous_bufferI();
-
-            ++_data_idx;
-
-            return &_message;
         }
+
+        return &_message;
     }
 
     void WaitForWriters(int numPublishers)
