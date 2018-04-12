@@ -12,6 +12,7 @@
 #include "MessagingIF.h"
 #include "perftestSupport.h"
 #include "PerftestTransport.h"
+#include "Infrastructure_common.h"
 
 #define RTIPERFTEST_MAX_PEERS 1024
 
@@ -192,7 +193,7 @@ class RTIDDSImpl : public IMessaging
     DDSDataReader               *_reader;
     const char                  *_typename;
 
-    RTIOsapiSemaphore *_pongSemaphore;
+    PerftestSemaphore *_pongSemaphore;
 
   public:
 

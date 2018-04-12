@@ -9,23 +9,11 @@
 #include "MessagingIF.h"
 #include "perftest_cpp.h"
 #include "RTIDDSImpl.h"
-#include "ndds/ndds_cpp.h"
 #include "qos_string.h"
 
 #ifdef RTI_SECURE_PERFTEST
 #include "security/security_default.h"
 #endif
-
-#if defined(RTI_WIN32)
-  #pragma warning(push)
-  #pragma warning(disable : 4996)
-  #define STRNCASECMP _strnicmp
-#elif defined(RTI_VXWORKS)
-  #define STRNCASECMP strncmp
-#else
-  #define STRNCASECMP strncasecmp
-#endif
-#define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 
 
 template class RTIDDSImpl<TestDataKeyed_t>;
@@ -80,7 +68,7 @@ void RTIDDSImpl<T>::Shutdown()
     }
 
     if (_participant != NULL) {
-        perftest_cpp::MilliSleep(2000);
+        PerftestClock::MilliSleep(2000);
 
         if (_reader != NULL) {
             DDSDataReaderListener* reader_listener = _reader->get_listener();
@@ -100,7 +88,7 @@ void RTIDDSImpl<T>::Shutdown()
     }
 
     if(_pongSemaphore != NULL) {
-        RTIOsapiSemaphore_delete(_pongSemaphore);
+        PerftestSemaphore_delete(_pongSemaphore);
         _pongSemaphore = NULL;
     }
 
@@ -125,9 +113,9 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t-multicast <address>          - Use multicast to send data.\n" +
             "\t                                Default not to use multicast\n" +
             "\t                                <address> is optional, if unspecified:\n" +
-            "\t                                                latency 239.255.1.2,\n" +
-            "\t                                                announcement 239.255.1.100,\n" +
-            "\t                                                throughput 239.255.1.1\n" +
+            "\t                                    latency - 239.255.1.2,\n" +
+            "\t                                    announcement - 239.255.1.100,\n" +
+            "\t                                    throughput - 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
             "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
             "\t                                (no batching)\n" +
@@ -138,6 +126,7 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t                                3 - persistent, default 0\n" +
             "\t-dynamicData                  - Makes use of the Dynamic Data APIs instead\n" +
             "\t                                of using the generated types.\n" +
+            "\t                                (Not supported when using Micro)\n" +
             "\t-noDirectCommunication        - Use brokered mode for persistent durability\n" +
             "\t-waitsetDelayUsec <usec>      - UseReadThread related. Allows you to\n" +
             "\t                                process incoming data in groups, based on the\n" +
@@ -157,8 +146,10 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t                                profile\n" +
             "\t-asynchronous                 - Use asynchronous writer\n" +
             "\t                                Default: Not set\n" +
-            "\t-flowController <flow>        - In the case asynchronous writer use a specific flow controller.\n" +
-            "\t                                There are several flow controller predefined:\n" +
+            "\t                                (Not supported when using Micro)\n" +
+            "\t-flowController <flow>        - In the case asynchronous writer use a specific\n" +
+            "\t                                flow controller. There are several flow controller\n" +
+            "\t                                predefined:\n" +
             "\t                                ";
     for(unsigned int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
         usage_string += "\"" + valid_flow_controller[i] + "\" ";
@@ -166,9 +157,8 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
     usage_string += std::string("\n") +
             "\t                                Default: \"default\" (If using asynchronous).\n" +
             "\t-peer <address>               - Adds a peer to the peer host address list.\n" +
-            "\t                                This argument may be repeated to indicate multiple peers\n" +
-            "\n";
-    usage_string += _transport.helpMessageString();
+            "\t                                This argument may be repeated to indicate\n" +
+            "\t                                multiple peers\n";
   #ifdef RTI_SECURE_PERFTEST
     usage_string += std::string("\n") +
             "\t======================= SECURE Specific Options =======================\n\n" +
@@ -415,29 +405,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 fprintf(stderr, "Unexpected value after -verbosity\n");
                 return false;
             }
-
-            switch (verbosityLevel) {
-                case 0: NDDSConfigLogger::get_instance()->
-                            set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_SILENT);
-                        fprintf(stderr, "Setting verbosity to SILENT\n");
-                        break;
-                case 1: NDDSConfigLogger::get_instance()->
-                            set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_ERROR);
-                        fprintf(stderr, "Setting verbosity to ERROR\n");
-                        break;
-                case 2: NDDSConfigLogger::get_instance()->
-                            set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_WARNING);
-                        fprintf(stderr, "Setting verbosity to WARNING\n");
-                        break;
-                case 3: NDDSConfigLogger::get_instance()->
-                            set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
-                        fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
-                        break;
-                default: fprintf(stderr,
-                            "Invalid value for the verbosity parameter. Setting verbosity to ERROR (1)\n");
-                        verbosityLevel = 1;
-                        break;
-            }
+            PerftestConfigureVerbosity(verbosityLevel);
         }
         else if (IS_OPTION(argv[i], "-waitsetDelayUsec")) {
             if ((i == (argc-1)) || *argv[++i] == '-') 
@@ -782,17 +750,17 @@ class RTIPublisher : public IMessagingWriter
     unsigned long _num_instances;
     unsigned long _instance_counter;
     DDS_InstanceHandle_t *_instance_handles;
-    RTIOsapiSemaphore *_pongSemaphore;
+    PerftestSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
 
  public:
-    RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
+    RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, PerftestSemaphore * pongSemaphore, int instancesToBeWritten)
     {
         _writer = T::DataWriter::narrow(writer);
         data.bin_data.maximum(0);
         _num_instances = num_instances;
         _instance_counter = 0;
-        _instance_handles = 
+        _instance_handles =
                 (DDS_InstanceHandle_t *) malloc(sizeof(DDS_InstanceHandle_t)*(_num_instances + 1)); // One extra for MAX_CFT_VALUE
         _pongSemaphore = pongSemaphore;
         _instancesToBeWritten = instancesToBeWritten;
@@ -810,11 +778,13 @@ class RTIPublisher : public IMessagingWriter
         _instance_handles[_num_instances] = _writer->register_instance(data);
     }
 
-    ~RTIPublisher() {
+    ~RTIPublisher()
+    {
         Shutdown();
     }
 
-    void Shutdown() {
+    void Shutdown()
+    {
         if (_writer->get_listener() != NULL) {
             delete(_writer->get_listener());
             _writer->set_listener(NULL);
@@ -882,15 +852,17 @@ class RTIPublisher : public IMessagingWriter
             {
                 break;
             }
-            perftest_cpp::MilliSleep(1000);
+            PerftestClock::MilliSleep(1000);
         }
     }
 
-    bool waitForPingResponse() {
+    bool waitForPingResponse()
+    {
         if(_pongSemaphore != NULL) {
-            if(RTIOsapiSemaphore_take(_pongSemaphore, NULL)
-                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
-                fprintf(stderr, "Unexpected error taking semaphore\n");
+            if (!PerftestSemaphore_take(
+                    _pongSemaphore,
+                    PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
+                fprintf(stderr,"Unexpected error taking semaphore\n");
                 return false;
             }
         }
@@ -900,13 +872,9 @@ class RTIPublisher : public IMessagingWriter
     /* time out in milliseconds */
     bool waitForPingResponse(int timeout)
     {
-        struct RTINtpTime blockDurationIn;
-        RTINtpTime_packFromMillisec(blockDurationIn, 0, timeout);
-
         if(_pongSemaphore != NULL) {
-            if (RTIOsapiSemaphore_take(_pongSemaphore, &blockDurationIn)
-                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
-                fprintf(stderr, "Unexpected error taking semaphore\n");
+            if (!PerftestSemaphore_take(_pongSemaphore, timeout)) {
+                fprintf(stderr,"Unexpected error taking semaphore\n");
                 return false;
             }
         }
@@ -916,8 +884,7 @@ class RTIPublisher : public IMessagingWriter
     bool notifyPingResponse()
     {
         if(_pongSemaphore != NULL) {
-            if(RTIOsapiSemaphore_give(_pongSemaphore)
-                    != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+            if (!PerftestSemaphore_give(_pongSemaphore)) {
                 fprintf(stderr,"Unexpected error giving semaphore\n");
                 return false;
             }
@@ -925,13 +892,15 @@ class RTIPublisher : public IMessagingWriter
         return true;
     }
 
-    unsigned int getPulledSampleCount() {
+    unsigned int getPulledSampleCount()
+    {
         DDS_DataWriterProtocolStatus status;
         _writer->get_datawriter_protocol_status(status);
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec) {
+    void wait_for_acknowledgments(long sec, unsigned long nsec)
+    {
         DDS_Duration_t timeout = {sec, nsec};
         _writer->wait_for_acknowledgments(timeout);
     }
@@ -946,14 +915,14 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     unsigned long _num_instances;
     unsigned long _instance_counter;
     DDS_InstanceHandle_t *_instance_handles;
-    RTIOsapiSemaphore *_pongSemaphore;
+    PerftestSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
 
-public:
+  public:
     RTIDynamicDataPublisher(
             DDSDataWriter *writer,
             unsigned long num_instances,
-            RTIOsapiSemaphore *pongSemaphore,
+            PerftestSemaphore *pongSemaphore,
             DDS_TypeCode *typeCode,
             int instancesToBeWritten) :
             data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT)
@@ -999,11 +968,13 @@ public:
         _instance_handles[_num_instances] = _writer->register_instance(data);
     }
 
-    ~RTIDynamicDataPublisher() {
+    ~RTIDynamicDataPublisher()
+    {
         Shutdown();
     }
 
-    void Shutdown() {
+    void Shutdown()
+    {
         if (_writer->get_listener() != NULL) {
             delete(_writer->get_listener());
             _writer->set_listener(NULL);
@@ -1112,7 +1083,8 @@ public:
         return true;
     }
 
-    void WaitForReaders(int numSubscribers) {
+    void WaitForReaders(int numSubscribers)
+    {
         DDS_PublicationMatchedStatus status;
 
         while (true) {
@@ -1126,14 +1098,16 @@ public:
             if (status.current_count >= numSubscribers) {
                 break;
             }
-            perftest_cpp::MilliSleep(1000);
+            PerftestClock::MilliSleep(1000);
         }
     }
 
-    bool waitForPingResponse() {
+    bool waitForPingResponse()
+    {
         if (_pongSemaphore != NULL) {
-            if (RTIOsapiSemaphore_take(_pongSemaphore, NULL)
-                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
+            if (!PerftestSemaphore_take(
+                    _pongSemaphore,
+                    PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
                 fprintf(stderr, "Unexpected error taking semaphore\n");
                 return false;
             }
@@ -1142,13 +1116,10 @@ public:
     }
 
     /* time out in milliseconds */
-    bool waitForPingResponse(int timeout) {
-        struct RTINtpTime blockDuration;
-        RTINtpTime_packFromMillisec(blockDuration, 0, timeout);
-
+    bool waitForPingResponse(int timeout)
+    {
         if (_pongSemaphore != NULL) {
-            if (RTIOsapiSemaphore_take(_pongSemaphore, &blockDuration)
-                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
+            if (!PerftestSemaphore_take(_pongSemaphore, timeout)) {
                 fprintf(stderr, "Unexpected error taking semaphore\n");
                 return false;
             }
@@ -1156,10 +1127,10 @@ public:
         return true;
     }
 
-    bool notifyPingResponse() {
+    bool notifyPingResponse()
+    {
         if (_pongSemaphore != NULL) {
-            if (RTIOsapiSemaphore_give(_pongSemaphore)
-                    != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+            if (!PerftestSemaphore_give(_pongSemaphore)) {
                 fprintf(stderr, "Unexpected error giving semaphore\n");
                 return false;
             }
@@ -1167,13 +1138,15 @@ public:
         return true;
     }
 
-    unsigned int getPulledSampleCount() {
+    unsigned int getPulledSampleCount()
+    {
         DDS_DataWriterProtocolStatus status;
         _writer->get_datawriter_protocol_status(status);
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec) {
+    void wait_for_acknowledgments(long sec, unsigned long nsec)
+    {
         DDS_Duration_t timeout = {sec, nsec};
         _writer->wait_for_acknowledgments(timeout);
     }
@@ -1240,8 +1213,7 @@ class ReceiverListener : public DDSDataReaderListener
                 _message.timestamp_usec = _data_seq[i].timestamp_usec;
                 _message.latency_ping = _data_seq[i].latency_ping;
                 _message.size = _data_seq[i].bin_data.length();
-                _message.data = (char *)_data_seq[i].bin_data.get_contiguous_bufferI();
-
+                _message.data = (char *)_data_seq[i].bin_data.get_contiguous_buffer();
                 _callback->ProcessMessage(_message);
 
             }
@@ -1409,12 +1381,10 @@ class RTISubscriber : public IMessagingReader
         // null listener means using receive thread
         if (_reader->get_listener() == NULL) {
             DDS_WaitSetProperty_t property;
-            property.max_event_count         = RTIDDSImpl<T>::_WaitsetEventCount;
-            property.max_event_delay.sec     = (int)RTIDDSImpl<T>::_WaitsetDelayUsec / 1000000;
-            property.max_event_delay.nanosec = (RTIDDSImpl<T>::_WaitsetDelayUsec % 1000000) * 1000;
-
+            property.max_event_count = RTIDDSImpl<T>::_WaitsetEventCount;
+            property.max_event_delay = DDS_Duration_t::from_micros(RTIDDSImpl<T>::_WaitsetDelayUsec);
             _waitset = new DDSWaitSet(property);
-           
+
             DDSStatusCondition *reader_status;
             reader_status = reader->get_statuscondition();
             reader_status->set_enabled_statuses(DDS_DATA_AVAILABLE_STATUS);
@@ -1502,7 +1472,7 @@ class RTISubscriber : public IMessagingReader
             _message.timestamp_usec = _data_seq[_data_idx].timestamp_usec;
             _message.latency_ping = _data_seq[_data_idx].latency_ping;
             _message.size = _data_seq[_data_idx].bin_data.length();
-            _message.data = (char *)_data_seq[_data_idx].bin_data.get_contiguous_bufferI();
+            _message.data = (char *)_data_seq[_data_idx].bin_data.get_contiguous_buffer();
 
             ++_data_idx;
 
@@ -1522,7 +1492,7 @@ class RTISubscriber : public IMessagingReader
             {
                 break;
             }
-            perftest_cpp::MilliSleep(1000);
+            PerftestClock::MilliSleep(1000);
         }
     }
 };
@@ -1729,7 +1699,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
             if (status.current_count >= numPublishers) {
                 break;
             }
-            perftest_cpp::MilliSleep(1000);
+            PerftestClock::MilliSleep(1000);
         }
     }
 };
@@ -2036,7 +2006,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     // only if we run the latency test we need to wait 
     // for pongs after sending pings
     _pongSemaphore = _LatencyTest ?
-        RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL) :
+        PerftestSemaphore_new() :
         NULL;
 
     // setup the QOS profile file to be loaded
@@ -2103,7 +2073,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         qos.discovery.multicast_receive_addresses.length(0);
     }
 
-    if (!configureTransport(_transport, qos)){
+    if (!PerftestConfigureTransport(_transport, qos)){
         return false;
     };
     _transport.printTransportConfigurationSummary();
@@ -2207,7 +2177,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                 qos_profile.c_str(), _ProfileLibraryName, _ProfileFile);
         return NULL;
     }
-    
+
     if (!_UsePositiveAcks
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_qos.protocol.disable_positive_acks = true;
