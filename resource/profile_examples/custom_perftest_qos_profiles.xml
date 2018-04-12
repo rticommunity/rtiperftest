@@ -18,13 +18,13 @@ export NDDS_QOS_PROFILES=<path_to>/perftest_qos_profiles.xml
 Publisher(s):
 
      perftest_cpp -qosFile custom_perftest_qos_profiles.xml
-                  -qosLibrary MyPerftestQosLibrary 
+                  -qosLibrary MyPerftestQosLibrary
                   -pub
 
 Subscriber(s):
 
      perftest_cpp -qosFile custom_perftest_qos_profiles.xml
-                  -qosLibrary MyPerftestQosLibrary 
+                  -qosLibrary MyPerftestQosLibrary
                   -sub
 -->
 
@@ -37,15 +37,15 @@ Subscriber(s):
     <!-- Base QoS Profile                                                  -->
     <!-- ================================================================= -->
 
-    <qos_profile name="BaseProfileQos" 
+    <qos_profile name="BaseProfileQos"
                  base_name="PerftestQosLibrary::BaseProfileQos">
     </qos_profile>
-    
+
     <!-- ================================================================= -->
     <!-- Throughput QoS Profile                                            -->
     <!-- ================================================================= -->
 
-    <qos_profile name="ThroughputQos" 
+    <qos_profile name="ThroughputQos"
                  base_name="PerftestQosLibrary::ThroughputQos">
     </qos_profile>
 
@@ -53,7 +53,7 @@ Subscriber(s):
     <!-- Latency QoS Profile                                               -->
     <!-- ================================================================= -->
 
-    <qos_profile name="LatencyQos" 
+    <qos_profile name="LatencyQos"
                  base_name="PerftestQosLibrary::LatencyQos">
     </qos_profile>
 
@@ -61,7 +61,7 @@ Subscriber(s):
     <!-- Announcement QoS Profile                                          -->
     <!-- ================================================================= -->
 
-    <qos_profile name="AnnouncementQos" 
+    <qos_profile name="AnnouncementQos"
                  base_name="PerftestQosLibrary::AnnouncementQos">
     </qos_profile>
 
