@@ -189,8 +189,6 @@ Test Parameters for Publishing and Subscribing Applications
    | The default file contains these QoS profiles:
    | The ``ThroughputQos``, ``LatencyQos``, and ``AnnouncementQos``
      profiles are used by default.
-   | The ``NoAckThroughputQos`` and ``NoAckLatencyQos`` profiles are
-     used if you specify ``-noPositiveAcks``.
 
    **Note:** some QoS values are ‘hard-coded’ in the application,
    therefore setting them in the XML file has no effect; see the See
@@ -304,8 +302,10 @@ Transport Specific Options
 -  ``-nic <ipaddr>``
 
   Restrict RTI Connext DDS to sending output through this interface.
-  This can be the IP address of any available network interface on the
-  machine.
+  The value should be the IP address assigned to any of the available network 
+  interfaces on the machine. On UNIX systems the name of the interface is also
+  valid. This command line parameter is mapped to the "allow_interfaces_list"
+  property in RTI Connext DDS.
 
   By default, RTI Connext DDS will attempt to contact all possible
   subscribing nodes on all available network interfaces. Even on a

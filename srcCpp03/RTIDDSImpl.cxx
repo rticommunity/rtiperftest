@@ -65,7 +65,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED), //(-1)
         _Durability(0), // DDS_VOLATILE_DURABILITY_QOS;
         _DirectCommunication(true),
-        _KeepDurationUsec(1000),
+        _KeepDurationUsec(-1),
         _UsePositiveAcks(true),
         _LatencyTest(false),
         _IsDebug(false),
@@ -1621,17 +1621,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
 
     std::string qos_profile = "";
     if (topic_name == perftest_cpp::_ThroughputTopicName) {
-        if (_UsePositiveAcks) {
-            qos_profile = "ThroughputQos";
-        } else {
-            qos_profile = "NoAckThroughputQos";
-        }
+        qos_profile = "ThroughputQos";
     } else if (topic_name == perftest_cpp::_LatencyTopicName) {
-        if (_UsePositiveAcks) {
-            qos_profile = "LatencyQos";
-        } else {
-            qos_profile = "NoAckLatencyQos";
-        }
+        qos_profile = "LatencyQos";
     } else if (topic_name == perftest_cpp::_AnnouncementTopicName) {
         qos_profile = "AnnouncementQos";
     } else {
@@ -1654,20 +1646,23 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     Durability qos_durability = dw_qos.policy<Durability>();
     PublishMode dwPublishMode= dw_qos.policy<PublishMode>();
     Batch dwBatch = dw_qos.policy<Batch>();
-    rti::core::policy::DataWriterProtocol dw_DataWriterProtocol =
+    rti::core::policy::DataWriterProtocol dw_dataWriterProtocol =
             dw_qos.policy<rti::core::policy::DataWriterProtocol>();
     RtpsReliableWriterProtocol dw_reliableWriterProtocol =
-            dw_DataWriterProtocol.rtps_reliable_writer();
+            dw_dataWriterProtocol.rtps_reliable_writer();
 
 
     // This will allow us to load some properties.
     std::map<std::string, std::string> properties =
             dw_qos.policy<Property>().get_all();
 
-    if (_UsePositiveAcks) {
-        dw_reliableWriterProtocol.disable_positive_acks_min_sample_keep_duration(
-                dds::core::Duration((int) _KeepDurationUsec / 1000000,
-                        _KeepDurationUsec % 1000000));
+    if (!_UsePositiveAcks 
+            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
+        dw_dataWriterProtocol.disable_positive_acks(true);
+        if (_KeepDurationUsec != -1) {
+            dw_reliableWriterProtocol.disable_positive_acks_min_sample_keep_duration(
+                dds::core::Duration::from_microsecs(_KeepDurationUsec));
+        }
     }
 
     if (_isLargeData || _IsAsynchronous) {
@@ -1696,9 +1691,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     }
 
     // These QOS's are only set for the Throughput datawriter
-    if (qos_profile == "ThroughputQos" ||
-        qos_profile == "NoAckThroughputQos")
-    {
+    if (qos_profile == "ThroughputQos") {
 
         if (_IsMulticast) {
             dw_reliableWriterProtocol.enable_multicast_periodic_heartbeat(true);
@@ -1767,7 +1760,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         dw_reliableWriterProtocol.min_send_window_size(_SendQueueSize);
     }
 
-    if ( (qos_profile == "LatencyQos" || qos_profile =="NoAckLatencyQos")
+    if (qos_profile == "LatencyQos"
             && !_DirectCommunication
             && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
                     || _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
@@ -1802,8 +1795,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     dw_qos << qos_durability;
     dw_qos << dwPublishMode;
     dw_qos << dwBatch;
-    dw_DataWriterProtocol.rtps_reliable_writer(dw_reliableWriterProtocol);
-    dw_qos << dw_DataWriterProtocol;
+    dw_dataWriterProtocol.rtps_reliable_writer(dw_reliableWriterProtocol);
+    dw_qos << dw_dataWriterProtocol;
     dw_qos << Property(properties.begin(), properties.end(), true);
 
     if (!_isDynamicData) {
@@ -1932,17 +1925,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
     std::string qos_profile;
     if (topic_name == perftest_cpp::_ThroughputTopicName) {
-        if (_UsePositiveAcks) {
-            qos_profile = "ThroughputQos";
-        } else {
-            qos_profile = "NoAckThroughputQos";
-        }
+        qos_profile = "ThroughputQos";
     } else if (topic_name == perftest_cpp::_LatencyTopicName) {
-        if (_UsePositiveAcks) {
-            qos_profile = "LatencyQos";
-        } else {
-            qos_profile = "NoAckLatencyQos";
-        }
+        qos_profile = "LatencyQos";
     } else if (topic_name == perftest_cpp::_AnnouncementTopicName) {
         qos_profile = "AnnouncementQos";
     } else {
@@ -1962,6 +1947,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     Reliability qos_reliability = dr_qos.policy<Reliability>();
     ResourceLimits qos_resource_limits = dr_qos.policy<ResourceLimits>();
     Durability qos_durability = dr_qos.policy<Durability>();
+    rti::core::policy::DataReaderProtocol dr_DataReaderProtocol =
+            dr_qos.policy<rti::core::policy::DataReaderProtocol>();
 
     // This will allow us to load some properties.
     std::map<std::string, std::string> properties =
@@ -1976,9 +1963,13 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
+    if (!_UsePositiveAcks
+            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
+        dr_DataReaderProtocol.disable_positive_acks(true);
+    }
+
     // only apply durability on Throughput datareader
-    if (qos_profile == "ThroughputQos" ||
-        qos_profile == "NoAckThroughputQos") {
+    if (qos_profile == "ThroughputQos") {
 
         if (_Durability == DDS_VOLATILE_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::Volatile();
@@ -1990,12 +1981,12 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         qos_durability->direct_communication(_DirectCommunication);
     }
 
-    if ((qos_profile == "LatencyQos" ||
-        qos_profile == "NoAckLatencyQos") &&
-        !_DirectCommunication &&
-        (_Durability == DDS_TRANSIENT_DURABILITY_QOS ||
-         _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
-        if (_Durability == DDS_TRANSIENT_DURABILITY_QOS){
+    if ((qos_profile == "LatencyQos")
+            && !_DirectCommunication
+            && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
+                    || _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
+
+        if (_Durability == DDS_TRANSIENT_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::TransientLocal();
         }
         else {
@@ -2054,6 +2045,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     dr_qos << qos_reliability;
     dr_qos << qos_resource_limits;
     dr_qos << qos_durability;
+    dr_qos << dr_DataReaderProtocol;
     dr_qos << Property(properties.begin(), properties.end(), true);
 
     if (!_isDynamicData) {

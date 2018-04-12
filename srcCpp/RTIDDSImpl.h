@@ -39,7 +39,7 @@ class RTIDDSImpl : public IMessaging
         _InstanceHashBuckets = -1;
         _Durability = DDS_VOLATILE_DURABILITY_QOS;
         _DirectCommunication = true;
-        _KeepDurationUsec = 1000;
+        _KeepDurationUsec = -1;
         _UsePositiveAcks = true;
         _LatencyTest = false;
         _IsDebug = false;
@@ -135,7 +135,7 @@ class RTIDDSImpl : public IMessaging
     int          _InstanceHashBuckets;
     int          _Durability;
     bool         _DirectCommunication;
-    unsigned int _KeepDurationUsec;
+    int          _KeepDurationUsec;
     bool         _UsePositiveAcks;
     bool         _LatencyTest;
     bool         _IsDebug;

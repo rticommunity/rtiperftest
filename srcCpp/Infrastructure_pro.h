@@ -29,7 +29,6 @@
 #define PerftestSemaphore RTIOsapiSemaphore
 #define PerftestSemaphore_new() RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL)
 #define PerftestSemaphore_delete RTIOsapiSemaphore_delete
-#define PerftestSemaphore_give RTIOsapiSemaphore_give
 #define PERFTEST_SEMAPHORE_TIMEOUT_INFINITE -1
 
 inline bool PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
@@ -46,6 +45,11 @@ inline bool PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
      * We will only return false if ERROR
      */
     return RTIOsapiSemaphore_take(sem, &block_duration) != RTI_OSAPI_SEMAPHORE_STATUS_ERROR;
+}
+
+inline bool PerftestSemaphore_give(PerftestSemaphore *sem)
+{
+    return RTIOsapiSemaphore_give(sem) == RTI_OSAPI_SEMAPHORE_STATUS_OK;
 }
 
 #define PerftestLogParamNotMicro(param)
