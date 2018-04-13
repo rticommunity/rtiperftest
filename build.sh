@@ -32,10 +32,10 @@ RTI_OPENSSLHOME=""
 #Variable for customType
 custom_type_location="${idl_location}/customType"
 USE_CUSTOM_TYPE=0
-custom_type=""
+custom_type="" # Type of the customer
+custom_type_file_name_support="" # Name of the file with the type. "TSupport.h"
+# Intermediate file for the include of the custom_type file #include "file.idl"
 custom_idl_file="${custom_type_location}/custom.idl"
-custom_type_file_name_support=""
-
 
 
 # We will use some colors to improve visibility of errors and information
@@ -80,7 +80,8 @@ function usage()
     echo "    --openssl-home <path>        Path to the openssl home. This will be used    "
     echo "                                 when compiling statically and using security   "
     echo "                                 Default is an empty string (current folder).   "
-    echo "    --customType <type>          Use your own type. Documentation: URL          "
+    echo "    --customType <type>          Use the Custom type feature with your type.    "
+    echo "                                 More infromation in the documentation page.    "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
@@ -89,7 +90,7 @@ function usage()
 
 function clean_custom_type()
 {
-    # Remove customType generated files
+    # Remove generated files of the customer type
     for file in ${custom_type_location}/*.idl
     do
         if [ -f $file ]; then
@@ -126,7 +127,6 @@ function clean()
     rm -rf "${script_location}"/srcJava/jar
     rm -rf "${script_location}"/srcJava/com/rti/perftest/gen
     rm -rf "${script_location}"/bin
-
     clean_custom_type
 
     echo ""
@@ -236,8 +236,7 @@ function build_cpp()
     additionalHeaderFiles_customType=""
     additionalSourceFiles_customType=""
     if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
-        # Search the file which contains the Struct ${custom_type} {
-        # Include the file into ${custom_idl_file}
+        # Search the file which contains "Struct ${custom_type} {" and include it to ${custom_idl_file}
         found_idl=false
         for file in ${custom_type_location}/*.idl
         do
@@ -259,18 +258,16 @@ function build_cpp()
         cp -rf ${custom_type_location}/* ${idl_location}/
         additionalHeaderFiles_customType="customType.h"
         additionalSourceFiles_customType="customType.cxx"
-        # Find all the files of the folder ${custom_type_location}
-        # Run codegen with all the files
-        echo -e "${INFO_TAG} Generating types for ${classic_cpp_lang_string}."
+        # Find all the files in the folder ${custom_type_location}
+        # Run codegen with all those files
         for file in ${custom_type_location}/*.idl
         do
             if [ -f $file ]; then
-                # Executing RTIDDSGEN command here.
-                rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -I /home/ajimenez/Documents/KB/new_type_perftest/github/rtiperftest/srcIdl -unboundedSupport -replace -create typefiles -d \"${classic_cpp_folder}\" \"${file}\" "
+                rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -I ${idl_location} -unboundedSupport -replace -create typefiles -d \"${classic_cpp_folder}\" \"${file}\" "
                 echo -e "${INFO_TAG} Command: $rtiddsgen_command"
                 eval $rtiddsgen_command
                 if [ "$?" != 0 ]; then
-                    echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
+                    echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string} with the file ${file}."
                     exit -1
                 fi
                 # Adding the generated file as additional HearderFiles and SourceFiles
@@ -528,7 +525,7 @@ while [ "$1" != "" ]; do
             USE_CUSTOM_TYPE=1
             custom_type=$2
             if [ -z "${custom_type}" ]; then
-                echo -e "${ERROR_TAG} --customType should be follow by the name of you type"
+                echo -e "${ERROR_TAG} --customType should be follow by the name of the type."
                 usage
                 exit -1
             fi

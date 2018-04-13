@@ -5,7 +5,7 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 #define Q(x) #x
-#define QUOTE(x) Q(x)
+#define QUOTE(x) Q(x) // Used to set quotation marks
 
 #include QUOTE(RTI_CUSTOM_TYPE_FILE_NAME_SUPPORT)
 

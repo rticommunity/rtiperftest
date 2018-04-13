@@ -606,15 +606,15 @@ Using Custom Type
 
 It is a new feature which allows to the customer to use their own type for
 running the performance test. The current *RTI Perftest* has a predefined type
-which is form by several long and a sequence of ``octet``. So now it is possible
-to use a complex type and it is automated and really simple.
+which is formed by several long membersand a sequence of ``octet``. So now it is
+possible to use a complex type and it is automated and really simple.
 
-Briefly, the only thing that you need to is:
+Briefly, the necesary steps that you need to use your type in *RTI Perftest* are:
 
 -  Copy your IDL files into srcIdl/custom/
 -  Implement the functions of customtype.cxx
 -  Run the build script with the ``--customType <type>``
--  Run *RTI Perftest* as usual.
+-  Now, you can run *RTI Perftest* as usual.
 
 Full example using Custom Type
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -625,7 +625,6 @@ The type that we are going to use in our example is:
 
     const long SIZE_TEST_SEQ = 100;
     const long SIZE_TEST_STRING = 128;
-
     enum TestEnum {
         ENUM1,
         ENUM2
@@ -643,7 +642,7 @@ The type that we are going to use in our example is:
         StringTest test_string;
     };//@Extensibility FINAL_EXTENSIBILITY
 
-Bellow, you can see the necessary step to do it on C++ (Traditional):
+Bellow, you can see the necessary steps to use your own type on C++ (Traditional):
 
 1. Copy the IDL files into srcIdl/custom/
 
@@ -651,6 +650,9 @@ Bellow, you can see the necessary step to do it on C++ (Traditional):
 
 - **initialize_custom_type**:
     This function is used to initialize your data.
+    The function takes one argument:
+
+        - A reference to the customer type.
 
 ::
 
@@ -669,6 +671,10 @@ Bellow, you can see the necessary step to do it on C++ (Traditional):
 
 - **register_custom_type**:
     This function is used to set your data before been register.
+    The function takes two arguments:
+
+        - A reference to the customer type.
+        - A specific number unique for every key.
 
 ::
 
@@ -679,6 +685,11 @@ Bellow, you can see the necessary step to do it on C++ (Traditional):
 
 - **set_custom_type**:
     This function is used to set your data before being sent.
+    The function takes three arguments:
+
+        - A reference to the customer type.
+        - A specific number unique for every key.
+        - The target size set by the command line parameter ``-dataLen <bytes>``
 
 ::
 
@@ -697,6 +708,9 @@ Bellow, you can see the necessary step to do it on C++ (Traditional):
 
 - **finalize_data_custom_type**:
     This function is used to remove your data. It is called in the destructor.
+    The function takes one argument:
+
+        - A reference to the customer type.
 
 ::
 
@@ -707,6 +721,9 @@ Bellow, you can see the necessary step to do it on C++ (Traditional):
 
 - **initialize_custom_type_dynamic**:
     This function is used to initialize your DynamicData.
+    The function takes one argument:
+
+            - A reference to the full DDS_DynamicData.
 
 ::
 
@@ -730,6 +747,10 @@ Bellow, you can see the necessary step to do it on C++ (Traditional):
 
 - **register_custom_type_dynamic**:
     This function is used to set your DynamicData before been register.
+    The function takes two arguments:
+
+        - A reference to the full DDS_DynamicData.
+        - A specific number unique for every key.
 
 ::
 
@@ -747,6 +768,11 @@ Bellow, you can see the necessary step to do it on C++ (Traditional):
 
 - **set_custom_type_dynamic**:
     This function is used to set your DynamicData before been sent.
+    The function takes three arguments:
+
+        - A reference to the full DDS_DynamicData.
+        - A specific number unique for every key.
+        - The target size set by the command line parameter ``-dataLen <bytes>``
 
 ::
 
@@ -837,6 +863,9 @@ Bellow, you can see the necessary step to do it on C++ (Traditional):
 
 - **finalize_data_custom_type_dynamic**:
     This function is used to remove your data. It is called in the destructor.
+    The function takes one argument:
+
+            - A reference to the full DDS_DynamicData.
 
 ::
 
@@ -899,7 +928,6 @@ Bellow, you can see the necessary step to do it on C++ (Traditional):
     Length:   516  Latency: Ave    117 us  Std   50.9 us  Min     87 us  Max    268 us  50%    104 us  90%    268 us  99%    268 us  99.99%    268 us  99.9999%    268 us
     Finishing test due to timer...
     Test ended.
-
 
 ::
 

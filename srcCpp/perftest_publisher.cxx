@@ -1736,11 +1736,8 @@ int perftest_cpp::Publisher()
 
     // Set data size, account for other bytes in message
 
-  #ifdef RTI_CUSTOM_TYPE
-    message.size = (int)_DataLen;// - OVERHEAD_BYTES;
-  #else
+
     message.size = (int)_DataLen - OVERHEAD_BYTES;
-  #endif
 
     // Sleep 1 second, then begin test
     MilliSleep(1000);

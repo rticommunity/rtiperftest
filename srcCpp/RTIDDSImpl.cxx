@@ -875,7 +875,7 @@ class RTIPublisher : public IMessagingWriter
         data.timestamp_usec = message.timestamp_usec;
         data.latency_ping = message.latency_ping;
       #ifdef RTI_CUSTOM_TYPE
-        /*
+        /**
          * Using custom type the size of the data is set in data.size_custom_type:
          *      If the message.size is a predefined value used to handle the test:
          *          data.size_custom_type = message.size
@@ -1150,7 +1150,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             fprintf(stderr, "set_long(latency_ping) failed: %d.\n", retcode);
         }
       #ifdef RTI_CUSTOM_TYPE
-        /*
+        /**
          * Using custom type the size of the data is set in data.size_custom_type:
          *      If the message.size is a predefined value used to handle the test:
          *          data.size_custom_type = message.size
@@ -1499,9 +1499,9 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                     _message.size = 0;
                 }
               #else
-                 _message.size = octetSeq.length();
-              #endif
+                _message.size = octetSeq.length();
                 _message.data = (char *)octetSeq.get_contiguous_buffer();
+              #endif
 
                 _callback->ProcessMessage(_message);
             }
@@ -1861,8 +1861,8 @@ class RTIDynamicDataSubscriber : public IMessagingReader
             }
           #else
             _message.size = octetSeq.length();
-          #endif
             _message.data = (char *)octetSeq.get_contiguous_buffer();
+          #endif
 
             ++_data_idx;
 

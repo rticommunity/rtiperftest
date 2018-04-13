@@ -19,7 +19,6 @@ pub_command=""
 sub_command=""
 domain="1"
 
-
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -38,7 +37,7 @@ function usage()
     echo "                                 install_testing_custom_type.sh is going to     "
     echo "                                 compileRTI Perftest.                           "
     echo "    --domain <domain_id>         Domain used for the test.                      "
-    echo "                                 Default                           "
+    echo "                                 Default: 1                                     "
     echo "    --nddshome <path>            Path to the *RTI Connext DDS installation*. If "
     echo "                                 this parameter is not present, the \$NDDSHOME  "
     echo "                                 variable should be set.                        "
@@ -49,7 +48,6 @@ function usage()
     echo "================================================================================"
     echo ""
 }
-
 
 function clean()
 {
@@ -82,10 +80,6 @@ function build_perfest_clean()
     cleaning_command="${rtiperftest_folder}build.sh --clean >&- 2>&-"
     # Executing compailing command
     eval $cleaning_command
-    # if [ "$?" != 0 ]; then
-    #     echo -e "${ERROR_TAG} Failure cleaning execution folder. Command: ${cleaning_command}"
-    #     exit -1
-    # fi
 }
 
 function build_perftest()
@@ -103,7 +97,7 @@ function build_perftest()
     fi
 }
 
-function pkill()
+function kill_pub_sub_jobs()
 {
     kill_command="kill -9 ${pub_pid} >&- 2>&-"
     eval $kill_command
@@ -111,7 +105,8 @@ function pkill()
     eval $kill_command
 }
 
-function verify_command_execution()
+# Verify if the publisher and the subscriber communicate properly.
+function verify_execution()
 {
     execution_success_pub=false
     execution_success_sub=false
@@ -132,10 +127,10 @@ function verify_command_execution()
 
     if [ "$execution_success_pub" = true ] && [ "$execution_success_sub" = true ]; then
         echo -e "${INFO_TAG} The install testing for ${1} does work."
-        pkill
+        kill_pub_sub_jobs
     else
         echo -e "${ERROR_TAG} The install testing for ${1} does not work."
-        pkill
+        kill_pub_sub_jobs
         exit -1
     fi
 }
@@ -149,7 +144,6 @@ function set_command_publisher()
     if ! [[ ${1} = *"no_key"* ]]; then
         pub_command=${pub_command}" -keyed"
     fi
-
     if ! [[ ${1} = *"no_large"* ]]; then
         pub_command=${pub_command}" -asynchronous"
     fi
@@ -165,15 +159,12 @@ function set_command_subscriber()
     if ! [[ ${1} = *"no_key"* ]]; then
         sub_command=${sub_command}" -keyed"
     fi
-
     if ! [[ ${1} = *"no_large"* ]]; then
         sub_command=${sub_command}" -asynchronous"
     fi
     sub_command=${sub_command}" &> ${tmp_sub_file} &"
 }
 
-
-# TODO provide the command of pub and sub
 function execute_RTI_Perftest()
 {
     echo ""
@@ -194,8 +185,8 @@ function execute_RTI_Perftest()
         exit -1
     fi
     sub_pid=$!
-    
-    verify_command_execution ${1}
+
+    verify_execution ${1}
 }
 
 function copy_scenario() 
@@ -204,14 +195,14 @@ function copy_scenario()
     echo -e "${INFO_TAG} copy_comand: ${copy_comand}"
     eval ${copy_comand}
     if [ "$?" != 0 ]; then
-        echo -e "${ERROR_TAG} Failure copy_comand for ${1}"
+        echo -e "${ERROR_TAG} Failure copy scenario for ${1}"
         exit -1
     fi
 }
 
 ################################################################################
 echo ""
-echo "=============== Install testing customType RTI PERFTEST: ================"
+echo "=============== Feature testing customType RTI PERFTEST: ================"
 
 if [ "$#" -eq "0" ]; then
   usage
@@ -253,21 +244,22 @@ done
 cd ${rtiperftest_folder}
 mkdir -p ${tmp_folder}
 verify_precondition_variables
+clean
 for i in ${test[@]};do
     echo -e "${INFO_TAG} Running test ${i}"
-    clean
     copy_scenario ${i}
     build_perftest ${i}
     set_command_publisher ${i}
     set_command_subscriber ${i}
-    execute_RTI_Perftest ${i} ${pub_command} ${sub_command}
+    execute_RTI_Perftest ${i}
     set_command_publisher ${i} "dynamic"
     set_command_subscriber ${i} "dynamic"
-    execute_RTI_Perftest ${i} ${pub_command} ${sub_command}
+    execute_RTI_Perftest ${i}
+    clean
     echo "======================================"
 done
 
 echo ""
-echo -e "${INFO_TAG} The full install testing was success."
+echo -e "${INFO_TAG} The full feature testing was success."
 echo "================================================================================"
 echo ""
