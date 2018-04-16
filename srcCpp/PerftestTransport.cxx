@@ -4,11 +4,11 @@
  */
 
 #include "PerftestTransport.h"
+// #ifdef RTI_SECURE_PERFTEST
+//   #include "PerftestSecurity.h"
+// #endif
 
 #include "Infrastructure_common.h"
-
-// Tag used when adding logging output.
-const std::string classLoggingString = "PerftestTransport:";
 
 // Default location of the security related files
 const std::string TRANSPORT_PRIVATEKEY_FILE_PUB = "./resource/secure/pubkey.pem";

@@ -12,6 +12,9 @@
 
 /******************************************************************************/
 
+// Tag used when adding logging output.
+const std::string classLoggingString = "PerftestTransport:";
+
 enum Transport {
     TRANSPORT_DEFAULT,
     TRANSPORT_UDPv4,

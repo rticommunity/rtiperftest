@@ -1904,8 +1904,15 @@ int perftest_cpp::Publisher()
                 timeout_wait_for_ack_nsec);
         i++;
     }
-    reader_listener->print_summary_latency();
-    reader_listener->end_test = true;
+
+    if (_PubID == 0) {
+        reader_listener->print_summary_latency();
+        reader_listener->end_test = true;
+    } else {
+        fprintf(
+            stderr,
+            "Latency results are only shown when -pidMultiPubTest = 0\n");
+    }
 
     if (_displayWriterStats) {
         printf("Pulled samples: %7d\n", writer->getPulledSampleCount());

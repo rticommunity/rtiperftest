@@ -22,6 +22,9 @@ class RTIDDSImpl : public IMessaging
   public:
 
     RTIDDSImpl() :
+      #ifdef RTI_SECURE_PERFTEST
+        _security(),
+      #endif
         _transport()
     {
         _SendQueueSize = 50;
@@ -55,15 +58,6 @@ class RTIDDSImpl : public IMessaging
         _instancesToBeWritten = -1; // By default use round-robin (-1)
         _CFTRange[0] = 0;
         _CFTRange[1] = 0;
-
-      #ifdef RTI_SECURE_PERFTEST
-        _secureUseSecure = false;
-        _secureIsSigned = false;
-        _secureIsDataEncrypted = false;
-        _secureIsSMEncrypted = false;
-        _secureIsDiscoveryEncrypted = false;
-        _secureDebugLevel = -1;
-      #endif
 
         _HeartbeatPeriod.sec = 0;
         _HeartbeatPeriod.nanosec = 0;
@@ -109,16 +103,9 @@ class RTIDDSImpl : public IMessaging
 
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
 
+    bool ConfigureDomainParticipantQos(DDS_DomainParticipantQos &qos);
 
   private:
-
-    // Specific functions to configure the Security plugin
-  #ifdef RTI_SECURE_PERFTEST
-    bool configureSecurePlugin(DDS_DomainParticipantQos& dpQos);
-    void printSecureArgs();
-    bool validateSecureArgs();
-  #endif
-
 
     int          _SendQueueSize;
     unsigned long _DataLen;
@@ -152,31 +139,10 @@ class RTIDDSImpl : public IMessaging
     long _instancesToBeWritten;
     unsigned int _CFTRange[2];
 
-    PerftestTransport _transport;
-
   #ifdef RTI_SECURE_PERFTEST
-    bool _secureUseSecure;
-    bool _secureIsSigned;
-    bool _secureIsDataEncrypted; // user data
-    bool _secureIsSMEncrypted;   // submessage
-    bool _secureIsDiscoveryEncrypted;
-    std::string _secureCertAuthorityFile;
-    std::string _secureCertificateFile;
-    std::string _securePrivateKeyFile;
-    std::string _secureGovernanceFile;
-    std::string _securePermissionsFile;
-    std::string _secureLibrary;
-    int  _secureDebugLevel;
-
-    static const std::string SECURE_PRIVATEKEY_FILE_PUB;
-    static const std::string SECURE_PRIVATEKEY_FILE_SUB;
-    static const std::string SECURE_CERTIFICATE_FILE_PUB;
-    static const std::string SECURE_CERTIFICATE_FILE_SUB;
-    static const std::string SECURE_CERTAUTHORITY_FILE;
-    static const std::string SECURE_PERMISION_FILE_PUB;
-    static const std::string SECURE_PERMISION_FILE_SUB;
-    static const std::string SECURE_LIBRARY_NAME;
+    PerftestSecurity _security;
   #endif
+    PerftestTransport _transport;
 
     DDS_Duration_t   _HeartbeatPeriod;
     DDS_Duration_t   _FastHeartbeatPeriod;

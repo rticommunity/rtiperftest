@@ -11,10 +11,6 @@
 #include "RTIDDSImpl.h"
 #include "qos_string.h"
 
-#ifdef RTI_SECURE_PERFTEST
-#include "security/security_default.h"
-#endif
-
 
 template class RTIDDSImpl<TestDataKeyed_t>;
 template class RTIDDSImpl<TestData_t>;
@@ -25,33 +21,6 @@ template <typename T>
 int RTIDDSImpl<T>::_WaitsetEventCount = 5;
 template <typename T>
 unsigned int RTIDDSImpl<T>::_WaitsetDelayUsec = 100;
-
-#ifdef RTI_SECURE_PERFTEST
-template <typename T>
-const std::string RTIDDSImpl<T>::SECURE_PRIVATEKEY_FILE_PUB =
-        "./resource/secure/pubkey.pem";
-template <typename T>
-const std::string RTIDDSImpl<T>::SECURE_PRIVATEKEY_FILE_SUB =
-        "./resource/secure/subkey.pem";
-template <typename T>
-const std::string RTIDDSImpl<T>::SECURE_CERTIFICATE_FILE_PUB =
-        "./resource/secure/pub.pem";
-template <typename T>
-const std::string RTIDDSImpl<T>::SECURE_CERTIFICATE_FILE_SUB =
-        "./resource/secure/sub.pem";
-template <typename T>
-const std::string RTIDDSImpl<T>::SECURE_CERTAUTHORITY_FILE =
-        "./resource/secure/cacert.pem";
-template <typename T>
-const std::string RTIDDSImpl<T>::SECURE_PERMISION_FILE_PUB =
-        "./resource/secure/signed_PerftestPermissionsPub.xml";
-template <typename T>
-const std::string RTIDDSImpl<T>::SECURE_PERMISION_FILE_SUB =
-        "./resource/secure/signed_PerftestPermissionsSub.xml";
-template <typename T>
-const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME =
-        "nddssecurity";
-#endif
 
 std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
 
@@ -159,25 +128,9 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t-peer <address>               - Adds a peer to the peer host address list.\n" +
             "\t                                This argument may be repeated to indicate\n" +
             "\t                                multiple peers\n";
+    usage_string += std::string("\n") + _transport.helpMessageString();
   #ifdef RTI_SECURE_PERFTEST
-    usage_string += std::string("\n") +
-            "\t======================= SECURE Specific Options =======================\n\n" +
-            "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n" +
-            "\t-secureSign                   - Sign (HMAC) discovery and user data\n" +
-            "\t-secureEncryptData            - Encrypt topic (user) data\n" +
-            "\t-secureEncryptSM              - Encrypt RTPS submessages\n" +
-            "\t-secureGovernanceFile <file>  - Governance file. If specified, the authentication,\n" +
-            "\t                                signing, and encryption arguments are ignored. The\n" +
-            "\t                                governance document configuration will be used instead\n" +
-            "\t                                Default: built using the secure options.\n" +
-            "\t-securePermissionsFile <file> - Permissions file <optional>\n" +
-            "\t                                Default: \"./resource/secure/signed_PerftestPermissionsSub.xml\"\n" +
-            "\t-secureCertAuthority <file>   - Certificate authority file <optional>\n" +
-            "\t                                Default: \"./resource/secure/cacert.pem\"\n" +
-            "\t-secureCertFile <file>        - Certificate file <optional>\n" +
-            "\t                                Default: \"./resource/secure/sub.pem\"\n" +
-            "\t-securePrivateKey <file>      - Private key file <optional>\n" +
-            "\t                                Default: \"./resource/secure/subkey.pem\"\n";
+    usage_string += std::string("\n") +_security.helpMessageString();
   #endif
 
     fprintf(stderr, "%s", usage_string.c_str());
@@ -523,88 +476,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _instancesToBeWritten = strtol(argv[i], NULL, 10);
-        }
-      #ifdef RTI_SECURE_PERFTEST
-        else if (IS_OPTION(argv[i], "-secureSign")) {
-            _secureIsSigned = true;
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureEncryptBoth")) {
-            _secureIsDataEncrypted = true;
-            _secureIsSMEncrypted = true;
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureEncryptData")) {
-            _secureIsDataEncrypted = true;
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureEncryptSM")) {
-            _secureIsSMEncrypted = true;
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureEncryptDiscovery")) {
-            _secureIsDiscoveryEncrypted = true;
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureGovernanceFile")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-               fprintf(stderr, "Missing <file> after -secureGovernanceFile\n");
-               return false;
-            }
-            _secureGovernanceFile = argv[i];
-            fprintf(stdout, "Warning -- authentication, encryption, signing arguments "
-                    "will be ignored, and the values specified by the Governance file will "
-                    "be used instead\n");
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-securePermissionsFile")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <file> after -securePermissionsFile\n");
-                return false;
-            }
-            _securePermissionsFile = argv[i];
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureCertAuthority")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <file> after -secureCertAuthority\n");
-                return false;
-            }
-            _secureCertAuthorityFile = argv[i];
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureCertFile")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <file> after -secureCertFile\n");
-                return false;
-            }
-            _secureCertificateFile = argv[i];
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-securePrivateKey")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <file> after -securePrivateKey\n");
-                return false;
-            }
-            _securePrivateKeyFile = argv[i];
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureLibrary")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <file> after -secureLibrary\n");
-                return false;
-            }
-            _secureLibrary = argv[i];
-        }
-        else if (IS_OPTION(argv[i], "-secureDebug")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <level> after -secureDebug\n");
-                 return false;
-            }
-            _secureDebugLevel = strtol(argv[i], NULL, 10);
-        }
-      #endif
-        else {
+        } else {
             if (i > 0) {
                 std::map<std::string, unsigned int> transportCmdOpts =
                         PerftestTransport::getTransportCmdLineArgs();
@@ -619,6 +491,21 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                     i = i + it->second;
                     continue;
                 }
+
+              #ifdef RTI_SECURE_PERFTEST
+                std::map<std::string, unsigned int> securityCmdOpts =
+                        PerftestSecurity::getSecurityCmdLineArgs();
+
+                it = securityCmdOpts.find(argv[i]);
+                if(it != securityCmdOpts.end()) {
+                    /*
+                     * Increment the counter with the number of arguments
+                     * obtained from the map.
+                     */
+                    i = i + it->second;
+                    continue;
+                }
+              #endif
 
                 fprintf(stderr, "%s: not recognized\n", argv[i]);
                 return false;
@@ -701,6 +588,14 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 "Failure parsing the transport options.\n");
         return false;
     };
+
+  #ifdef RTI_SECURE_PERFTEST
+    if(!_security.parseSecurityOptions(argc, argv)) {
+        fprintf(stderr,
+                "Failure parsing the security options.\n");
+        return false;
+    };
+  #endif
 
     return true;
 }
@@ -897,7 +792,7 @@ class RTIPublisher : public IMessagingWriter
         DDS_DataWriterProtocolStatus status;
         _writer->get_datawriter_protocol_status(status);
         return (unsigned int)status.pulled_sample_count;
-    };
+    }
 
     void wait_for_acknowledgments(long sec, unsigned long nsec)
     {
@@ -1704,312 +1599,15 @@ class RTIDynamicDataSubscriber : public IMessagingReader
     }
 };
 
-/*******************************************************************************
- * SECURITY PLUGIN
- */
-#ifdef RTI_SECURE_PERFTEST
-
-template<typename T>
-bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
-    // configure use of security plugins, based on provided arguments
-
-    DDS_ReturnCode_t retcode;
-    // print arguments
-    printSecureArgs();
-
-    // load plugin
-    retcode = DDSPropertyQosPolicyHelper::add_property(
-            dpQos.property,
-            "com.rti.serv.load_plugin",
-            "com.rti.serv.secure",
-            false);
-    if (retcode != DDS_RETCODE_OK) {
-        printf("Failed to add property com.rti.serv.load_plugin\n");
-        return false;
-    }
-
-  #ifdef RTI_PERFTEST_DYNAMIC_LINKING
-
-    retcode = DDSPropertyQosPolicyHelper::assert_property(
-            dpQos.property,
-            "com.rti.serv.secure.create_function",
-            "RTI_Security_PluginSuite_create",
-            false);
-    if (retcode != DDS_RETCODE_OK) {
-        printf("Failed to add property com.rti.serv.secure.create_function\n");
-        return false;
-    }
-
-
-    retcode = DDSPropertyQosPolicyHelper::add_property(
-            dpQos.property,
-            "com.rti.serv.secure.library",
-            _secureLibrary.c_str(),
-            false);
-    if (retcode != DDS_RETCODE_OK) {
-        printf("Failed to add property com.rti.serv.secure.library\n");
-        return false;
-    }
-
-  #else // Static library linking
-
-    retcode = DDSPropertyQosPolicyHelper::assert_pointer_property(
-            dpQos.property,
-            "com.rti.serv.secure.create_function_ptr",
-            (void *) RTI_Security_PluginSuite_create);
-    if (retcode != DDS_RETCODE_OK) {
-        printf("Failed to add pointer_property "
-                "com.rti.serv.secure.create_function_ptr\n");
-        return false;
-    }
-
-  #endif
-
-    /*
-     * Below, we are using com.rti.serv.secure properties in order to be
-     * backward compatible with RTI Connext DDS 5.3.0 and below. Later versions
-     * use the properties that are specified in the DDS Security specification
-     * (see also the RTI Security Plugins Getting Started Guide). However,
-     * later versions still support the legacy properties as an alternative.
-     */
-
-    // check if governance file provided
-    if (_secureGovernanceFile.empty()) {
-        // choose a pre-built governance file
-        std::string file = "resource/secure/signed_PerftestGovernance_";
-        if (_secureIsDiscoveryEncrypted) {
-            file += "Discovery";
-        }
-
-        if (_secureIsSigned) {
-            file += "Sign";
-        }
-
-        if (_secureIsDataEncrypted && _secureIsSMEncrypted) {
-            file += "EncryptBoth";
-        } else if (_secureIsDataEncrypted) {
-            file += "EncryptData";
-        } else if (_secureIsSMEncrypted) {
-            file += "EncryptSubmessage";
-        }
-
-        file = file + ".xml";
-
-        fprintf(
-                stdout,
-                "\tUsing pre-built governance file: \n\t./%s\n",
-                file.c_str());
-        retcode = DDSPropertyQosPolicyHelper::add_property(
-                dpQos.property,
-                "com.rti.serv.secure.access_control.governance_file",
-                file.c_str(),
-                false);
-    } else {
-        retcode = DDSPropertyQosPolicyHelper::add_property(
-                dpQos.property,
-                "com.rti.serv.secure.access_control.governance_file",
-                _secureGovernanceFile.c_str(),
-                false);
-    }
-    if (retcode != DDS_RETCODE_OK) {
-        printf("Failed to add property "
-                "com.rti.serv.secure.access_control.governance_file\n");
-        return false;
-    }
-
-    // permissions file
-    retcode = DDSPropertyQosPolicyHelper::add_property(
-            dpQos.property,
-            "com.rti.serv.secure.access_control.permissions_file",
-            _securePermissionsFile.c_str(),
-            false);
-    if (retcode != DDS_RETCODE_OK) {
-        printf("Failed to add property "
-                "com.rti.serv.secure.access_control.permissions_file\n");
-        return false;
-    }
-
-    // permissions authority file
-    retcode = DDSPropertyQosPolicyHelper::add_property(
-            dpQos.property,
-            "com.rti.serv.secure.access_control.permissions_authority_file",
-            _secureCertAuthorityFile.c_str(),
-            false);
-    if (retcode != DDS_RETCODE_OK) {
-        printf("Failed to add property "
-                "com.rti.serv.secure.access_control.permissions_authority_file\n");
-        return false;
-    }
-
-    // certificate authority
-    retcode = DDSPropertyQosPolicyHelper::add_property(
-            dpQos.property,
-            "com.rti.serv.secure.authentication.ca_file",
-            _secureCertAuthorityFile.c_str(),
-            false);
-    if (retcode != DDS_RETCODE_OK) {
-        printf("Failed to add property "
-                "com.rti.serv.secure.authentication.ca_file\n");
-        return false;
-    }
-
-    // public key
-    retcode = DDSPropertyQosPolicyHelper::add_property(
-            dpQos.property,
-            "com.rti.serv.secure.authentication.certificate_file",
-            _secureCertificateFile.c_str(),
-            false);
-    if (retcode != DDS_RETCODE_OK) {
-        printf("Failed to add property "
-                "com.rti.serv.secure.authentication.certificate_file\n");
-        return false;
-    }
-
-    // private key
-    retcode = DDSPropertyQosPolicyHelper::add_property(
-            dpQos.property,
-            "com.rti.serv.secure.authentication.private_key_file",
-            _securePrivateKeyFile.c_str(),
-            false);
-    if (retcode != DDS_RETCODE_OK) {
-        printf("Failed to add property "
-                "com.rti.serv.secure.authentication.private_key_file\n");
-        return false;
-    }
-
-    if (_secureDebugLevel != -1) {
-        char buf[16];
-        sprintf(buf, "%d", _secureDebugLevel);
-        retcode = DDSPropertyQosPolicyHelper::add_property(
-                dpQos.property,
-                "com.rti.serv.secure.logging.log_level",
-                buf,
-                false);
-        if (retcode != DDS_RETCODE_OK) {
-            printf("Failed to add property "
-                    "com.rti.serv.secure.logging.log_level\n");
-            return false;
-        }
-    }
-
-    return true;
-}
-
-template <typename T>
-bool RTIDDSImpl<T>::validateSecureArgs()
-{
-    if (_secureUseSecure) {
-        if (_securePrivateKeyFile.empty()) {
-            if (_isPublisher) {
-                _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_PUB;
-            } else {
-                _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_SUB;
-            }
-        }
-
-        if (_secureCertificateFile.empty()) {
-            if (_isPublisher) {
-                _secureCertificateFile = SECURE_CERTIFICATE_FILE_PUB;
-            } else {
-                _secureCertificateFile = SECURE_CERTIFICATE_FILE_SUB;
-            }
-        }
-
-        if (_secureCertAuthorityFile.empty()) {
-            _secureCertAuthorityFile = SECURE_CERTAUTHORITY_FILE;
-        }
-
-        if (_securePermissionsFile.empty()) {
-            if (_isPublisher) {
-                _securePermissionsFile = SECURE_PERMISION_FILE_PUB;
-            } else {
-                _securePermissionsFile = SECURE_PERMISION_FILE_SUB;
-            }
-        }
-
-      #ifdef RTI_PERFTEST_DYNAMIC_LINKING
-        if (_secureLibrary.empty()) {
-            _secureLibrary = SECURE_LIBRARY_NAME;
-        }
-      #endif
-
-    }
-
-    return true;
-}
-
-template <typename T>
-void RTIDDSImpl<T>::printSecureArgs()
-{
-    printf("Secure Arguments:\n");
-
-    printf("\tEncrypt discovery: %s\n",
-            _secureIsDiscoveryEncrypted ? "True" : "False");
-
-    printf("\tEncrypt topic (user) data: %s\n",
-            _secureIsDataEncrypted ? "True" : "False");
-
-    printf("\tEncrypt submessage: %s\n",
-            _secureIsSMEncrypted ? "True" : "False");
-
-    printf("\tSign data: %s\n",
-            _secureIsSigned ? "True" : "False");
-
-    printf("\tGovernance file: %s\n",
-            _secureGovernanceFile.empty() ?
-                    "Not Specified" : _secureGovernanceFile.c_str());
-
-    printf("\tPermissions file: %s\n",
-            _securePermissionsFile.empty() ?
-                    "Not Specified" : _securePermissionsFile.c_str());
-
-    printf("\tPrivate key file: %s\n",
-            _securePrivateKeyFile.empty() ?
-                    "Not Specified" : _securePrivateKeyFile.c_str());
-
-    printf("\tCertificate file: %s\n",
-            _secureCertificateFile.empty() ?
-                    "Not Specified" : _secureCertificateFile.c_str());
-
-    printf("\tCertificate authority file: %s\n",
-            _secureCertAuthorityFile.empty() ?
-                    "Not Specified" : _secureCertAuthorityFile.c_str());
-
-    printf("\tPlugin library : %s\n",
-            _secureLibrary.empty() ? "Not Specified" : _secureLibrary.c_str());
-
-    if( _secureDebugLevel != -1 ){
-        printf("\tDebug level: %d\n", _secureDebugLevel);
-    }
-
-}
-
-#endif
 
 /*********************************************************
- * Initialize
+ * ConfigureDomainParticipantQos
  */
 template <typename T>
-bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
+bool RTIDDSImpl<T>::ConfigureDomainParticipantQos(DDS_DomainParticipantQos &qos)
 {
-    DDS_DomainParticipantQos qos; 
     DDS_DomainParticipantFactoryQos factory_qos;
-    DomainListener *listener = new DomainListener();
 
-    _factory = DDSDomainParticipantFactory::get_instance();
-
-    if (!ParseConfig(argc, argv))
-    {
-        return false;
-    }
-
-    // only if we run the latency test we need to wait 
-    // for pongs after sending pings
-    _pongSemaphore = _LatencyTest ?
-        PerftestSemaphore_new() :
-        NULL;
-
-    // setup the QOS profile file to be loaded
     _factory->get_qos(factory_qos);
     if (_UseXmlQos) {
         factory_qos.profile.url_profile.ensure_length(1, 1);
@@ -2022,14 +1620,12 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
     _factory->set_qos(factory_qos);
 
-    if (_factory->reload_profiles() != DDS_RETCODE_OK) 
-    {
+    if (_factory->reload_profiles() != DDS_RETCODE_OK) {
         fprintf(stderr,"Problem opening QOS profiles file %s.\n", _ProfileFile);
         return false;
     }
 
-    if (_factory->set_default_library(_ProfileLibraryName) != DDS_RETCODE_OK) 
-    {
+    if (_factory->set_default_library(_ProfileLibraryName) != DDS_RETCODE_OK) {
         fprintf(stderr,"No QOS Library named \"%s\" found in %s.\n",
                _ProfileLibraryName, _ProfileFile);
         return false;
@@ -2040,31 +1636,15 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
             qos,
             _ProfileLibraryName,
             "BaseProfileQos") != DDS_RETCODE_OK) {
-        fprintf(
-                stderr,
+        fprintf(stderr,
                 "Problem setting QoS Library \"%s::BaseProfileQos\" for participant_qos.\n",
                 _ProfileLibraryName);
     }
 
-  #ifdef RTI_SECURE_PERFTEST
-    if (_secureUseSecure) {
-        // validate arguments
-        if (!validateSecureArgs()) {
-            fprintf(stderr, "Failed to configure security plugins\n");
-            return false;
-        }
-        // configure
-        if (!configureSecurePlugin(qos)) {
-            fprintf(stderr, "Failed to configure security plugins\n");
-            return false;
-        }
-    }
-  #endif
-
-    // set initial peers and not use multicast
+    // Set initial peers and not use multicast
     if ( _peer_host_count > 0 ) {
         printf("Initial peers:\n");
-        for ( int i = 0; i< _peer_host_count; ++i) {
+        for ( int i = 0; i < _peer_host_count; ++i) {
             printf("\t%s\n", _peer_host[i]);
         }
         qos.discovery.initial_peers.from_array(
@@ -2073,25 +1653,71 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         qos.discovery.multicast_receive_addresses.length(0);
     }
 
-    if (!PerftestConfigureTransport(_transport, qos)){
-        return false;
-    };
-    _transport.printTransportConfigurationSummary();
+    // Configure security
+  #ifdef RTI_SECURE_PERFTEST
+    if (_security.useSecurity) {
+        // validate arguments
+        if (!_security.validateSecureArgs(_isPublisher)) {
+            fprintf(stderr, "Failed to configure security plugins\n");
+            return false;
+        }
+        // configure
+        if (!PerftestConfigureSecurity(_security, qos)) {
+            fprintf(stderr, "Failed to configure security plugins\n");
+            return false;
+        }
+    }
+  #endif // RTI_SECURE_PERFTEST
 
     if (_AutoThrottle) {
         DDSPropertyQosPolicyHelper::add_property(qos.property,
                 "dds.domain_participant.auto_throttle.enable", "true", false);
     }
 
-    // Creates the participant
+
+
+    if (!PerftestConfigureTransport(_transport, qos)) {
+        return false;
+    };
+    _transport.printTransportConfigurationSummary();
+
+    return true;
+}
+
+
+/*********************************************************
+ * Initialize
+ */
+template <typename T>
+bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
+{
+    DDS_DomainParticipantQos qos;
+    DDS_DomainParticipantFactoryQos factory_qos;
+    DomainListener *listener = new DomainListener();
+
+    _factory = DDSDomainParticipantFactory::get_instance();
+
+    if (!ParseConfig(argc, argv)) {
+        return false;
+    }
+
+    // only if we run the latency test we need to wait
+    // for pongs after sending pings
+    _pongSemaphore = _LatencyTest ?
+        PerftestSemaphore_new() :
+        NULL;
+
+    if (!ConfigureDomainParticipantQos(qos)) {
+        return false;
+    }
+
     _participant = _factory->create_participant(
-        _DomainID, qos, listener,
+        (DDS_DomainId_t)_DomainID, qos, listener,
         DDS_INCONSISTENT_TOPIC_STATUS |
         DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
         DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
 
-    if (_participant == NULL)
-    {
+    if (_participant == NULL) {
         fprintf(stderr,"Problem creating participant.\n");
         return false;
     }
@@ -2460,14 +2086,11 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     // only force reliability on throughput/latency topics
-    if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) != 0)
-    {
-        if (_IsReliable)
-        {
+    if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) != 0)  {
+        if (_IsReliable) {
             dr_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         }
-        else
-        {
+        else {
             dr_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
         }
     }
@@ -2484,16 +2107,17 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                     && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
                             || _Durability == DDS_PERSISTENT_DURABILITY_QOS)))
     {
-        dr_qos.durability.kind = (DDS_DurabilityQosPolicyKind) _Durability;
+        dr_qos.durability.kind = (DDS_DurabilityQosPolicyKind)_Durability;
         dr_qos.durability.direct_communication = _DirectCommunication;
     }
 
     dr_qos.resource_limits.initial_instances = _InstanceCount + 1;
-    if (_InstanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
-        _InstanceMaxCountReader++;
+    unsigned long maxInstances = _InstanceMaxCountReader;
+    if (maxInstances != DDS_LENGTH_UNLIMITED) {
+        maxInstances++;
     }
-    dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
-    
+    dr_qos.resource_limits.max_instances = maxInstances;
+
     if (_InstanceCount > 1) {
         if (_InstanceHashBuckets > 0) {
             dr_qos.resource_limits.instance_hash_buckets =
@@ -2529,7 +2153,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     if (_useUnbounded > 0) {
         char buf[10];
         sprintf(buf, "%lu", _useUnbounded);
-        DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
+                DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
     }

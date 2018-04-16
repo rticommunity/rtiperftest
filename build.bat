@@ -184,6 +184,9 @@ if !BUILD_CPP! == 1 (
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
 		)
+
+		set "additional_header_files=!additional_header_files! PerftestSecurity.h"
+		set "additional_source_files=!additional_source_files! PerftestSecurity.cxx"
 	)
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
 
@@ -215,6 +218,8 @@ if !BUILD_CPP! == 1 (
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
 	copy /Y "%classic_cpp_folder%"\objs\%architecture%\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp.exe
 )
+
+::------------------------------------------------------------------------------
 
 if !BUILD_CPP03! == 1 (
 
@@ -285,7 +290,7 @@ if %BUILD_CS% == 1 (
 
 	echo[
 	echo [INFO]: Compiling %cs_lang_string%
-  echo call !MSBUILD_EXE! /p:Configuration=!RELEASE_DEBUG! /p:Platform="!cs_win_arch!" "%cs_folder%"\%solution_name_cs%
+	echo call !MSBUILD_EXE! /p:Configuration=!RELEASE_DEBUG! /p:Platform="!cs_win_arch!" "%cs_folder%"\%solution_name_cs%
 	call !MSBUILD_EXE! /p:Configuration=!RELEASE_DEBUG! /p:Platform="!cs_win_arch!" "%cs_folder%"\%solution_name_cs%
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %cs_lang_string%.
@@ -301,7 +306,7 @@ if %BUILD_CS% == 1 (
 
 ::------------------------------------------------------------------------------
 
-if	%BUILD_JAVA% == 1 (
+if %BUILD_JAVA% == 1 (
 
 	@REM Generate files for Java
 	echo[
@@ -440,12 +445,12 @@ GOTO:EOF
 	set "solution_compilation_mode_flag="
 	if x!STATIC_DYNAMIC!==xdynamic (
 		set "solution_compilation_mode_flag= DLL"
-  )
-  if x!RELEASE_DEBUG!==xdebug (
+	)
+	if x!RELEASE_DEBUG!==xdebug (
 		set solution_compilation_mode_flag=debug!solution_compilation_mode_flag!
-  ) else (
+	) else (
 		set solution_compilation_mode_flag=release!solution_compilation_mode_flag!
-  )
+	)
 
 	echo [INFO]: Compilation flag for msbuild is: !solution_compilation_mode_flag!
 

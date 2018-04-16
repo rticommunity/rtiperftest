@@ -11,6 +11,11 @@
 #include "ndds/ndds_cpp.h"
 #include "PerftestTransport.h"
 
+#ifdef RTI_SECURE_PERFTEST
+  #include "security/security_default.h"
+  #include "PerftestSecurity.h"
+#endif
+
 #ifdef RTI_WIN32
   #include <windows.h>
 #else
@@ -84,5 +89,12 @@ bool PerftestCreateThread(
         void *threadParam);
 
 void PerftestConfigureVerbosity(int verbosityLevel);
+
+#ifdef RTI_SECURE_PERFTEST
+bool PerftestConfigureSecurity(
+        PerftestSecurity &security,
+        DDS_DomainParticipantQos &qos);
+#endif
+
 
 #endif /* INFRASTRUCTURE_PRO_H_ */
