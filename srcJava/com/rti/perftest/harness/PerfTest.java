@@ -770,12 +770,17 @@ public final class PerfTest {
         reader.waitForWriters(_numPublishers);
         announcement_writer.waitForReaders(_numPublishers);
 
+        // Announcement message that will be used by the announcement_writer
+        // to send information to the Publisher. This message size will indicate
+        // different things.
+
+        TestMessage announcement_msg = new TestMessage();
+        announcement_msg.entity_id = subID;
+        announcement_msg.data = new byte[LENGTH_CHANGED_SIZE];
+        announcement_msg.size = INITIALIZE_SIZE;
+
         // Send announcement message
-        TestMessage message = new TestMessage();
-        message.entity_id = subID;
-        message.data = new byte[1];
-        message.size = 0;
-        boolean sent = announcement_writer.send(message, false);
+        boolean sent = announcement_writer.send(announcement_msg, false);
         announcement_writer.flush();
         if (!sent) {
             System.err.println("*** send() failure: announcement message");
@@ -802,16 +807,16 @@ public final class PerfTest {
             now = getTimeUsec();
 
             if (reader_listener.change_size) { // ACK change_size
-                TestMessage message_change_size = new TestMessage();
-                message_change_size.entity_id = subID;
-                announcement_writer.send(message_change_size, false);
+                announcement_msg.entity_id = subID;
+                announcement_msg.size = LENGTH_CHANGED_SIZE;
+                announcement_writer.send(announcement_msg, false);
                 announcement_writer.flush();
                 reader_listener.change_size = false;
             }
             if (reader_listener.end_test) {
-                TestMessage message_end_test = new TestMessage();
-                message_end_test.entity_id = subID;
-                announcement_writer.send(message_end_test, false);
+                announcement_msg.entity_id = subID;
+                announcement_msg.size = FINISHED_SIZE;
+                announcement_writer.send(announcement_msg, false);
                 announcement_writer.flush();
                 break;
             }
@@ -971,7 +976,7 @@ public final class PerfTest {
         // indicating that it has discovered every Publisher
         System.err.print("Waiting for subscribers announcement ...\n");
         while (_numSubscribers
-                > announcement_reader_listener.announced_subscriber_replies) {
+                > announcement_reader_listener.subscriber_list.size()) {
             sleep(1000);
         }
 
@@ -1121,9 +1126,6 @@ public final class PerfTest {
                             sleep(timeout_wait_for_ack_nsec/1000000);
                         }
 
-                        announcement_reader_listener.announced_subscriber_replies =
-                                _numSubscribers;
-
                         if (scan_count == _scanDataLenSizes.size()) {
                             break; // End of scan test
                         }
@@ -1144,7 +1146,9 @@ public final class PerfTest {
                          * effort.
                          */
 
-                        while (announcement_reader_listener.announced_subscriber_replies > 0) {
+                        announcement_reader_listener.subscriber_list.clear();
+                        while (announcement_reader_listener.subscriber_list.size()
+                                < _numSubscribers) {
                             writer.send(message, true);
                             if (_isReliable) {
                                 writer.wait_for_acknowledgments(
@@ -1223,8 +1227,7 @@ public final class PerfTest {
         // times in case of best effort
         message.size = FINISHED_SIZE;
         int i = 0;
-        announcement_reader_listener.announced_subscriber_replies = _numSubscribers;
-        while (announcement_reader_listener.announced_subscriber_replies > 0
+        while (announcement_reader_listener.subscriber_list.size() > 0
                 && i < initialize_sample_count) {
             writer.send(message, true);
             i++;

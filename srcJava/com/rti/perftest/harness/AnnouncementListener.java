@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import com.rti.perftest.IMessagingCB;
 import com.rti.perftest.TestMessage;
 
-
 //===========================================================================
 
 /**
@@ -22,8 +21,7 @@ import com.rti.perftest.TestMessage;
     // -----------------------------------------------------------------------
     // Public Fields
     // -----------------------------------------------------------------------
-    private ArrayList<Integer> _finished_subscribers;
-    public int announced_subscriber_replies;
+    public ArrayList<Integer> subscriber_list;
 
     // -----------------------------------------------------------------------
     // Public Methods
@@ -32,27 +30,31 @@ import com.rti.perftest.TestMessage;
     // --- Constructors: -----------------------------------------------------
 
     public AnnouncementListener() {
-        announced_subscriber_replies = 0;
-        _finished_subscribers = new ArrayList<Integer>();
+        subscriber_list = new ArrayList<Integer>();
     }
 
     // --- From IMessagingCB: ------------------------------------------------
 
     public void processMessage(TestMessage message) {
         /*
-         * If the entity_id is not in the list of subscribers
-         * that finished the test, add it.
+         * The subscriber_list vector contains the list of discovered subscribers.
          *
-         * Independently, decrease announced_subscriber_replies if a known
-         * writer responds to a message using this channel. We use
-         * this as a way to check that all the readers have received
-         * a message written by the Throughput writer.
+         * - If the message.size is INITIALIZE or LENGTH_CHANGED and the
+         *   subscriber is not in the list, it will be added.
+         * - If the message.size is FINISHED_SIZE and the
+         *   subscriber is in the list, it will be removed.
+         *
+         * The publisher access to this list to verify:
+         * - If all the subscribers are discovered or notified about the length
+         *   being changed.
+         * - If all the subscribers are notified that the test has finished.
          */
-        if (!_finished_subscribers.contains(message.entity_id)) {
-            _finished_subscribers.add(message.entity_id);
-            announced_subscriber_replies++;
-        } else {
-            announced_subscriber_replies--;
+        if ((message.size == PerfTest.INITIALIZE_SIZE
+                || message.size == PerfTest.LENGTH_CHANGED_SIZE)
+                && !subscriber_list.contains(message.entity_id)) {
+            subscriber_list.add(message.entity_id);
+        } else if (message.size == PerfTest.FINISHED_SIZE) {
+            subscriber_list.remove(new Integer(message.entity_id));
         }
     }
 
