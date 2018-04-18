@@ -2519,11 +2519,11 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     dr_qos.resource_limits.initial_instances = _InstanceCount + 1;
-    if (_InstanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
+    if (_InstanceMaxCountReader != (unsigned long)DDS_LENGTH_UNLIMITED) {
         _InstanceMaxCountReader++;
     }
     dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
-    
+
     if (_InstanceCount > 1) {
         if (_InstanceHashBuckets > 0) {
             dr_qos.resource_limits.instance_hash_buckets =
