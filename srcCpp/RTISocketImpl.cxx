@@ -708,39 +708,6 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[])
 }
 
 /*********************************************************
- * DomainListener
- */
-class DomainListener : public DDSDomainParticipantListener
-{
-    virtual void on_inconsistent_topic(
-        DDSTopic *topic,
-        const DDS_InconsistentTopicStatus & /*status*/)
-    {
-        fprintf(stderr, "Found inconsistent topic. Expecting %s of type %s.\n",
-                topic->get_name(), topic->get_type_name());
-        fflush(stderr);
-    }
-
-    virtual void on_offered_incompatible_qos(
-        DDSDataWriter *writer,
-        const DDS_OfferedIncompatibleQosStatus &status)
-    {
-        fprintf(stderr, "Found incompatible reader for writer %s QoS is %d.\n",
-                writer->get_topic()->get_name(), status.last_policy_id);
-        fflush(stderr);
-    }
-
-    virtual void on_requested_incompatible_qos(
-        DDSDataReader *reader,
-        const DDS_RequestedIncompatibleQosStatus &status)
-    {
-        fprintf(stderr, "Found incompatible writer for reader %s QoS is %d.\n",
-                reader->get_topicdescription()->get_name(), status.last_policy_id);
-        fflush(stderr);
-    }
-};
-
-/*********************************************************
  * RTIPublisher
  */
 class RTISocketPublisher : public IMessagingWriter
@@ -782,13 +749,6 @@ class RTISocketPublisher : public IMessagingWriter
 
         _pulled_sample_count = 0;
 
-        long key = 0;
-
-        for (int c = 0; c < KEY_SIZE; c++)
-        {
-            _data.key[c] = (unsigned char)(key >> c * 8);
-        }
-
         _data.bin_data.maximum(0);
     }
 
@@ -828,12 +788,7 @@ class RTISocketPublisher : public IMessagingWriter
                 message.size,
                 message.size);
 
-        int payload_size = message.size + perftest_cpp::OVERHEAD_BYTES;
-        char * payload;
-        //RTIOsapiHeap_allocateArray(&payload, payload_size, char);
-        //RTIOsapiMemory_copy(payload, &_data, payload_size);
-
-        _send_buffer.length = payload_size;
+        _send_buffer.length = message.size + perftest_cpp::OVERHEAD_BYTES;
         _send_buffer.pointer = (char*) &_data;
 
         bool result = _plugin->send(
@@ -965,12 +920,6 @@ class RTISocketSubscriber : public IMessagingReader
             fprintf(stderr, "RTIOsapiHeap_allocateArray error\n");
         }
 
-        //_data.entity_id = 0;
-        _data.seq_num = 0;
-        _data.timestamp_sec = 0;
-        _data.timestamp_usec = 0;
-        _data.latency_ping = 0;
-        _data.bin_data = DDS_OctetSeq();
         _data.bin_data.maximum(0);
 
     }
