@@ -4,6 +4,7 @@
  */
 
 #include "RTIDDSImpl.h"
+#include "RTISocketImpl.h"
 #include "perftest_cpp.h"
 #include "CpuMonitor.h"
 
@@ -93,22 +94,28 @@ int perftest_cpp::Run(int argc, char *argv[])
     {
         return -1;
     }
-    if (_useUnbounded == 0) { //unbounded is not set
-        if (_isKeyed){
-            fprintf(stderr, "Using Keyed Data.\n");
-            _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
+
+    if (_useSocket) {
+        _MessagingImpl = new RTISocketImpl();
+    }
+    else{
+        if (_useUnbounded == 0) { //unbounded is not set
+            if (_isKeyed){
+                fprintf(stderr, "Using Keyed Data.\n");
+                _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
+            } else {
+                fprintf(stderr, "Using Unkeyed Data.\n");
+                _MessagingImpl = new RTIDDSImpl<TestData_t>();
+            }
         } else {
-            fprintf(stderr, "Using Unkeyed Data.\n");
-            _MessagingImpl = new RTIDDSImpl<TestData_t>();
-        }
-    } else {
-        fprintf(stderr, "Using unbounded Sequences, allocation_threshold %lu.\n", _useUnbounded);
-        if (_isKeyed) {
-            fprintf(stderr, "Using Keyed Data.\n");
-            _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
-        } else {
-            fprintf(stderr, "Using Unkeyed Data.\n");
-            _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
+            fprintf(stderr, "Using unbounded Sequences, allocation_threshold %lu.\n", _useUnbounded);
+            if (_isKeyed) {
+                fprintf(stderr, "Using Keyed Data.\n");
+                _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
+            } else {
+                fprintf(stderr, "Using Unkeyed Data.\n");
+                _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
+            }
         }
     }
 
@@ -354,6 +361,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         else if (IS_OPTION(argv[i], "-sub"))
         {
             _IsPub = false;
+        }
+        else if (IS_OPTION(argv[i], "-socket"))
+        {
+            _useSocket = true;
+            _UseReadThread = true;
         }
         else if (IS_OPTION(argv[i], "-sidMultiSubTest"))
         {
@@ -1146,8 +1158,18 @@ int perftest_cpp::Subscriber()
     // Send announcement message
     TestMessage message;
     message.entity_id = _SubID;
-    announcement_writer->Send(message);
-    announcement_writer->Flush();
+
+    if (_useSocket) {
+        while (reader_listener->packets_received == 0)
+        {
+            announcement_writer->Send(message);
+            perftest_cpp::MilliSleep(1000);
+        }
+    }
+    else{
+        announcement_writer->Send(message);
+        announcement_writer->Flush();
+    }
 
 
     fprintf(stderr,"Waiting for data...\n");
@@ -1272,10 +1294,14 @@ class AnnouncementListener : public IMessagingCB
   public:
     int announced_subscribers;
     std::vector<int> _finished_subscribers;
+    IMessagingReader *_reader;
 
   public:
-    AnnouncementListener() {
+    AnnouncementListener(IMessagingReader *reader = NULL)
+    {
         announced_subscribers = 0;
+        end_test = false;
+        _reader = reader;
     }
 
     void ProcessMessage(TestMessage& message) {
@@ -1583,6 +1609,39 @@ static void *LatencyReadThread(void *arg)
 }
 
 /*********************************************************
+ * Used for receiving data using a thread instead of callback
+ *
+ */
+static void *AnnouncementReadThread(void *arg)
+{
+    AnnouncementListener *listener = static_cast<AnnouncementListener *>(arg);
+    TestMessage *message = NULL;
+
+    while (!listener->end_test)
+    {
+        // Receive message should block until a message is received
+        message = listener->_reader->ReceiveMessage();
+
+        if (message != NULL)
+        {
+            listener->ProcessMessage(*message);
+        }
+
+        /*
+    * TODO:
+    *
+    * To support -latencyTest plus -useReadThread we need to signal
+    * --HERE-- the internal semaphore used in RTIDDSImpl.cxx as
+    * we now do in the listener on_data_available callback
+    * inside RTIDDSImpl.cxx
+    *
+    */
+    }
+
+    return NULL;
+}
+
+/*********************************************************
  * Publisher
  */
 int perftest_cpp::Publisher()
@@ -1666,13 +1725,35 @@ int perftest_cpp::Publisher()
      * A Subscriber will send a message on this channel once it discovers
      * every Publisher
      */
-    announcement_reader_listener = new AnnouncementListener();
-    announcement_reader = _MessagingImpl->CreateReader(_AnnouncementTopicName,
-            announcement_reader_listener);
-    if (announcement_reader == NULL)
-    {
-        fprintf(stderr,"Problem creating announcement reader.\n");
-        return -1;
+    if(_useSocket){
+        announcement_reader = _MessagingImpl->CreateReader(
+                _AnnouncementTopicName,
+                NULL);
+
+        if (announcement_reader == NULL)
+        {
+            fprintf(stderr, "Problem creating announcement reader.\n");
+            return -1;
+        }
+        announcement_reader_listener = new AnnouncementListener(announcement_reader);
+
+        RTIOsapiThread_new("AnnouncementThread",
+                           RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
+                           RTI_OSAPI_THREAD_OPTION_DEFAULT,
+                           RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                           NULL,
+                           AnnouncementReadThread,
+                           announcement_reader_listener);
+    }
+    else{
+        announcement_reader_listener = new AnnouncementListener();
+        announcement_reader = _MessagingImpl->CreateReader(_AnnouncementTopicName,
+                announcement_reader_listener);
+        if (announcement_reader == NULL)
+        {
+            fprintf(stderr,"Problem creating announcement reader.\n");
+            return -1;
+        }
     }
 
     unsigned long long spinPerUsec = 0;
@@ -1705,6 +1786,8 @@ int perftest_cpp::Publisher()
     while (_NumSubscribers > announcement_reader_listener->announced_subscribers) {
         MilliSleep(1000);
     }
+    /* Necesary to finish the AnnouncementReadThread */
+    announcement_reader_listener->end_test = true;
 
     // Allocate data and set size
     TestMessage message;

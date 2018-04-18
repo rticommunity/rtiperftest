@@ -12,6 +12,9 @@
 #include "MessagingIF.h"
 #include "perftestSupport.h"
 #include "PerftestTransport.h"
+#include "RTIDDSImpl.h"
+#include "perftest.h"
+#include "perftest_cpp.h"
 
 #define RTIPERFTEST_MAX_PEERS 1024
 
@@ -67,30 +70,25 @@ class RTISocketImpl : public IMessaging
         _subscriber = NULL;
         _publisher = NULL;
         _reader = NULL;
-        _typename = T::TypeSupport::get_type_name();
 
         _pongSemaphore = NULL;
 
     /**************************************************************************/
     /*****************************sockets stuff********************************/
 
-        fast_queue = 0;
-        domainId = 56;
-        sample_count = -1; /* -1: Infinite */
-        skip_dds = 0;
-        use_shmem = 0; /* 0: UDPv4 1: SHMEM */
-        payload_size = 256;
-        debug = 0;
-        execution_time = 30; /* 30 seconds */
-        *send_nic = "127.0.0.1";
-        *receive_nic = "127.0.0.1";
-        plugin = NULL;
+        /*TODO retrieve shmem, sendNic and receiveNic from the tramsport parameters*/
+        /*TODO Shared memory does not work right now*/
+        _useShmem = 0; /* 0: UDPv4 1: SHMEM */
+
+        _sendNic = (char *)"127.0.0.1";
+        _receiveNic = (char *)"127.0.0.1";
+        _plugin = NULL;
 
     /**************************************************************************/
     /**************************************************************************/
     }
 
-    ~RTIDDSImpl()
+    ~RTISocketImpl()
     {
         Shutdown();
     }
@@ -103,7 +101,7 @@ class RTISocketImpl : public IMessaging
 
     void Shutdown();
 
-    //unsigned int GetBatchSize() { return _BatchSize; }
+    unsigned int GetBatchSize() { return _BatchSize; }
 
     IMessagingWriter *CreateWriter(const char *topic_name);
 
@@ -167,17 +165,11 @@ class RTISocketImpl : public IMessaging
 
     /**************************************************************************/
     /*****************************sockets stuff********************************/
-    int fast_queue;
-    int domainId;
-    int sample_count;
-    int skip_dds;
-    int use_shmem;
-    int payload_size;
-    int debug;
-    int execution_time;
-    char *send_nic;
-    char *receive_nic;
-    NDDS_Transport_Plugin *plugin;
+
+    int _useShmem;
+    char *_sendNic;
+    char *_receiveNic;
+    NDDS_Transport_Plugin *_plugin;
 
     /**************************************************************************/
     /**************************************************************************/

@@ -3,14 +3,8 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-#include "perftest.h"
-#include "perftestPlugin.h"
-#include "perftestSupport.h"
-#include "MessagingIF.h"
-#include "perftest_cpp.h"
-#include "RTIDDSImpl.h"
-#include "ndds/ndds_cpp.h"
-#include "qos_string.h"
+
+#include "RTISocketImpl.h"
 
 #ifdef RTI_SECURE_PERFTEST
 #include "security/security_default.h"
@@ -30,43 +24,17 @@
 int RTISocketImpl::_WaitsetEventCount = 5;
 unsigned int RTISocketImpl::_WaitsetDelayUsec = 100;
 
-
-std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
+std::string valid_flow_controller_socket[] = {"default", "1Gbps", "10Gbps"};
 
 /*********************************************************
  * Shutdown
  */
 void RTISocketImpl::Shutdown()
 {
-    //delete array of peers
-    for (int i = 0; i < _peer_host_count; ++i)
+
+    if (_plugin != NULL)
     {
-        DDS_String_free(_peer_host[i]);
-        _peer_host[i] = NULL;
-    }
-
-    if (_participant != NULL)
-    {
-        perftest_cpp::MilliSleep(2000);
-
-        if (_reader != NULL)
-        {
-            DDSDataReaderListener *reader_listener = _reader->get_listener();
-            if (reader_listener != NULL)
-            {
-                delete (reader_listener);
-            }
-            _subscriber->delete_datareader(_reader);
-        }
-
-        DDSDomainParticipantListener *participant_listener = _participant->get_listener();
-        if (participant_listener != NULL)
-        {
-            delete (participant_listener);
-        }
-
-        _participant->delete_contained_entities();
-        DDSTheParticipantFactory->delete_participant(_participant);
+        _plugin->delete_cEA(_plugin, NULL);
     }
 
     if (_pongSemaphore != NULL)
@@ -75,7 +43,6 @@ void RTISocketImpl::Shutdown()
         _pongSemaphore = NULL;
     }
 
-    DDSDomainParticipantFactory::finalize_instance();
 }
 
 /*********************************************************
@@ -130,9 +97,9 @@ void RTISocketImpl::PrintCmdLineHelp()
                                "\t-flowController <flow>        - In the case asynchronous writer use a specific flow controller.\n" +
                                "\t                                There are several flow controller predefined:\n" +
                                "\t                                ";
-    for (unsigned int i = 0; i < sizeof(valid_flow_controller) / sizeof(valid_flow_controller[0]); i++)
+    for (unsigned int i = 0; i < sizeof(valid_flow_controller_socket) / sizeof(valid_flow_controller_socket[0]); i++)
     {
-        usage_string += "\"" + valid_flow_controller[i] + "\" ";
+        usage_string += "\"" + valid_flow_controller_socket[i] + "\" ";
     }
     usage_string += std::string("\n") +
                     "\t                                Default: \"default\" (If using asynchronous).\n" +
@@ -535,9 +502,9 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[])
 
             // verify if the flow controller name is correct, else use "default"
             bool valid_flow_control = false;
-            for (unsigned int i = 0; i < sizeof(valid_flow_controller) / sizeof(valid_flow_controller[0]); i++)
+            for (unsigned int i = 0; i < sizeof(valid_flow_controller_socket) / sizeof(valid_flow_controller_socket[0]); i++)
             {
-                if (_FlowControllerCustom == valid_flow_controller[i])
+                if (_FlowControllerCustom == valid_flow_controller_socket[i])
                 {
                     valid_flow_control = true;
                 }
@@ -616,105 +583,6 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[])
             }
             _instancesToBeWritten = strtol(argv[i], NULL, 10);
         }
-#ifdef RTI_SECURE_PERFTEST
-        else if (IS_OPTION(argv[i], "-secureSign"))
-        {
-            _secureIsSigned = true;
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureEncryptBoth"))
-        {
-            _secureIsDataEncrypted = true;
-            _secureIsSMEncrypted = true;
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureEncryptData"))
-        {
-            _secureIsDataEncrypted = true;
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureEncryptSM"))
-        {
-            _secureIsSMEncrypted = true;
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureEncryptDiscovery"))
-        {
-            _secureIsDiscoveryEncrypted = true;
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureGovernanceFile"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <file> after -secureGovernanceFile\n");
-                return false;
-            }
-            _secureGovernanceFile = argv[i];
-            fprintf(stdout, "Warning -- authentication, encryption, signing arguments "
-                            "will be ignored, and the values specified by the Governance file will "
-                            "be used instead\n");
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-securePermissionsFile"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <file> after -securePermissionsFile\n");
-                return false;
-            }
-            _securePermissionsFile = argv[i];
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureCertAuthority"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <file> after -secureCertAuthority\n");
-                return false;
-            }
-            _secureCertAuthorityFile = argv[i];
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureCertFile"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <file> after -secureCertFile\n");
-                return false;
-            }
-            _secureCertificateFile = argv[i];
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-securePrivateKey"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <file> after -securePrivateKey\n");
-                return false;
-            }
-            _securePrivateKeyFile = argv[i];
-            _secureUseSecure = true;
-        }
-        else if (IS_OPTION(argv[i], "-secureLibrary"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <file> after -secureLibrary\n");
-                return false;
-            }
-            _secureLibrary = argv[i];
-        }
-        else if (IS_OPTION(argv[i], "-secureDebug"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <level> after -secureDebug\n");
-                return false;
-            }
-            _secureDebugLevel = strtol(argv[i], NULL, 10);
-        }
-#endif
         else
         {
             if (i > 0)
@@ -878,101 +746,107 @@ class DomainListener : public DDSDomainParticipantListener
 class RTISocketPublisher : public IMessagingWriter
 {
   private:
-
+    TestData_t data;
     NDDS_Transport_Plugin *_plugin;
     NDDS_Transport_SendResource_t _send_resource;
     NDDS_Transport_Address_t _dst_address;
     NDDS_Transport_Port_t _send_port;
+    NDDS_Transport_Buffer_t _send_buffer;
+    char *_payload;
+    int _payload_size;
 
-    //typename T::DataWriter *_writer;
-    unsigned long _num_instances;
-    unsigned long _instance_counter;
-    DDS_InstanceHandle_t *_instance_handles;
     RTIOsapiSemaphore *_pongSemaphore;
-    long _instancesToBeWritten;
+
+    unsigned int _pulled_sample_count;
 
   public:
     RTISocketPublisher(
-        NDDS_Transport_Plugin plugin,
-        NDDS_Transport_SendResource_t send_resource;
-        NDDS_Transport_Address_t dst_address;
-        NDDS_Transport_Port_t send_port;
-    )
+        NDDS_Transport_Plugin *plugin,
+        NDDS_Transport_SendResource_t send_resource,
+        NDDS_Transport_Address_t dst_address,
+        NDDS_Transport_Port_t send_port,
+        RTIOsapiSemaphore *pongSemaphore)
     {
-        _plugin = &plugin;
+        _plugin = plugin;
         _send_resource = send_resource;
         _dst_address = dst_address;
         _send_port = send_port;
+        _pongSemaphore = pongSemaphore;
+
+        _payload = new char;
+        _payload_size = 0;
+
+        _send_buffer.length = _payload_size;
+        _send_buffer.pointer = _payload;
+
+        _pulled_sample_count = 0;
     }
 
-    ~RTIPublisher()
+    ~RTISocketPublisher()
     {
         Shutdown();
     }
 
     void Shutdown()
     {
-        // TODO, destruct the resources and the plugin
-        /*
-        if (_writer->get_listener() != NULL)
+
+        if (_send_resource != NULL)
         {
-            delete (_writer->get_listener());
-            _writer->set_listener(NULL);
+            _plugin->destroy_sendresource_srEA(_plugin, &_send_resource);
         }
 
-        free(_instance_handles);
-        */
-
+        if (_payload != NULL)
+        {
+            RTIOsapiHeap_freeArray(_payload);
+        }
     }
 
     void Flush()
     {
-        //_writer->flush();
+        /* Dummy funtion */
     }
 
     bool Send(const TestMessage &message, bool isCftWildCardKey)
     {
 
-        char * payload;
-        int payload_size = message.size;
+        if(message.size != _payload_size || _payload_size == 0){
+            _payload_size = message.size + perftest_cpp::OVERHEAD_BYTES;
+            RTIOsapiHeap_freeArray(_payload);
+            RTIOsapiHeap_allocateArray(&_payload, _payload_size, char);
 
-        RTIOsapiHeap_allocateArray(&payload, payload_size, sizeof(TestMessage));
+            _send_buffer.length = _payload_size;
+            _send_buffer.pointer = _payload;
+        }
 
-        send_buffer.length = payload_size;
-        send_buffer.pointer = payload;
 
-        bool result = plugin->send(
-                plugin,
-                &send_resource,
-                &dst_address,
-                send_port,
-                0,
-                &send_buffer,
-                1,
-                NULL);
+        /*TODO review*/
+        RTIOsapiMemory_move(_payload, &message, sizeof(message));
+        //RTIOsapiMemory_copy(payload, &message, perftest_cpp::OVERHEAD_BYTES+8);
+
+
+        bool result = _plugin->send(
+            _plugin,
+            &_send_resource,
+            &_dst_address,
+            _send_port,
+            0,
+            &_send_buffer,
+            1,
+            NULL);
 
         if (!result)
         {
             fprintf(stderr, "Write error using sockets\n");
             return false;
         }
+        ++_pulled_sample_count;
 
         return true;
     }
 
     void WaitForReaders(int numSubscribers)
     {
-        DDS_PublicationMatchedStatus status;
-
-        while (true)
-        {
-            _writer->get_publication_matched_status(status);
-            if (status.current_count >= numSubscribers)
-            {
-                break;
-            }
-            perftest_cpp::MilliSleep(1000);
-        }
+        /*Dummy Function*/
     }
 
     bool waitForPingResponse()
@@ -1020,88 +894,13 @@ class RTISocketPublisher : public IMessagingWriter
 
     unsigned int getPulledSampleCount()
     {
-        DDS_DataWriterProtocolStatus status;
-        _writer->get_datawriter_protocol_status(status);
-        return (unsigned int)status.pulled_sample_count;
+        return _pulled_sample_count;
     };
 
     void wait_for_acknowledgments(long sec, unsigned long nsec)
     {
-        DDS_Duration_t timeout = {sec, nsec};
-        //TODO change for a simple Wait _writer->wait_for_acknowledgments(timeout);
-    }
-};
-
-/*********************************************************
- * ReceiverListener
- */
-class ReceiverListener : public DDSDataReaderListener
-{
-  private:
-    typename T::Seq _data_seq;
-    DDS_SampleInfoSeq _info_seq;
-    TestMessage _message;
-    IMessagingCB *_callback;
-
-  public:
-    ReceiverListener(IMessagingCB *callback) : _message()
-    {
-        _callback = callback;
-    }
-
-    void on_data_available(DDSDataReader *reader)
-    {
-
-        typename T::DataReader *datareader;
-
-        datareader = T::DataReader::narrow(reader);
-        if (datareader == NULL)
-        {
-            fprintf(stderr, "DataReader narrow error.\n");
-            return;
-        }
-
-        DDS_ReturnCode_t retcode = datareader->take(
-            _data_seq, _info_seq,
-            DDS_LENGTH_UNLIMITED,
-            DDS_ANY_SAMPLE_STATE,
-            DDS_ANY_VIEW_STATE,
-            DDS_ANY_INSTANCE_STATE);
-
-        if (retcode == DDS_RETCODE_NO_DATA)
-        {
-            fprintf(stderr, "called back no data\n");
-            return;
-        }
-        else if (retcode != DDS_RETCODE_OK)
-        {
-            fprintf(stderr, "Error during taking data %d\n", retcode);
-            return;
-        }
-
-        int seq_length = _data_seq.length();
-        for (int i = 0; i < seq_length; ++i)
-        {
-            if (_info_seq[i].valid_data)
-            {
-                _message.entity_id = _data_seq[i].entity_id;
-                _message.seq_num = _data_seq[i].seq_num;
-                _message.timestamp_sec = _data_seq[i].timestamp_sec;
-                _message.timestamp_usec = _data_seq[i].timestamp_usec;
-                _message.latency_ping = _data_seq[i].latency_ping;
-                _message.size = _data_seq[i].bin_data.length();
-                _message.data = (char *)_data_seq[i].bin_data.get_contiguous_bufferI();
-
-                _callback->ProcessMessage(_message);
-            }
-        }
-
-        retcode = datareader->return_loan(_data_seq, _info_seq);
-        if (retcode != DDS_RETCODE_OK)
-        {
-            fprintf(stderr, "Error during return loan %d.\n", retcode);
-            fflush(stderr);
-        }
+        /*TODO idk how to cach that ack.*/
+        //perftest_cpp::MilliSleep(1000);
     }
 };
 
@@ -1113,42 +912,71 @@ class RTISocketSubscriber : public IMessagingReader
   private:
     NDDS_Transport_Plugin *_plugin;
     NDDS_Transport_SendResource_t _recv_resource;
+    NDDS_Transport_Buffer_t _recv_buffer;
     NDDS_Transport_Port_t _recv_port;
-    struct RTINtpTime timestamp = {0, 0};
 
     TestMessage _message;
+
+    struct REDAWorker worker;
 
     int _data_idx;
     bool _no_data;
 
+
+    RTIOsapiSemaphore *_pongSemaphore;
+
   public:
-    RTISubscriber(
-        NDDS_Transport_Plugin plugin,
-        NDDS_Transport_SendResource_t recv_resource;
-        NDDS_Transport_Port_t recv_port;)
+    RTISocketSubscriber(
+        NDDS_Transport_Plugin *plugin,
+        NDDS_Transport_SendResource_t recv_resource,
+        NDDS_Transport_Port_t recv_port)
     {
-        _plugin = &plugin;
+        _plugin = plugin;
         _recv_resource = recv_resource;
         _recv_port = recv_port;
+        _recv_buffer.length = 0;
+        _recv_buffer.pointer = NULL;
+
+        worker._name = "worker";
+
+        _message.data = NULL;
+        _message.size = 0;
+        //_message.key = new unsigned char[4];
+        _message.entity_id = 0;
+        _message.seq_num = 0;
+        _message.timestamp_sec = 0;
+        _message.timestamp_usec = 0;
+        _message.latency_ping = 0;
+
+        unsigned int size = 63000 + perftest_cpp::OVERHEAD_BYTES;
+
+        RTIOsapiHeap_allocateArray(
+            &_recv_buffer.pointer,
+            size,
+            char);
+
+        _recv_buffer.length = size;
+        if (_recv_buffer.pointer == NULL)
+        {
+            fprintf(stderr, "RTIOsapiHeap_allocateArray error\n");
+        }
+
     }
 
-    ~RTISubscriber()
+    ~RTISocketSubscriber()
     {
         Shutdown();
     }
 
     void Shutdown()
     {
-        //TODO
-        /*
-        if (_reader->get_listener() != NULL)
+
+        if (_recv_resource != NULL)
         {
-            delete (_reader->get_listener());
-            _reader->set_listener(NULL);
+            /*TODO fail when is destroy*/
+            //_plugin->destroy_recvresource_rrEA(_plugin, &_recv_resource);
         }
-        // loan may be outstanding during shutdown
-        _reader->return_loan(_data_seq, _info_seq);
-        */
+
     }
 
     TestMessage *ReceiveMessage()
@@ -1156,45 +984,33 @@ class RTISocketSubscriber : public IMessagingReader
 
         NDDS_Transport_Message_t transp_message = NDDS_TRANSPORT_MESSAGE_INVALID;
 
-        while (true)
+        //TestData_t data;
+
+        bool result = _plugin->receive_rEA(
+                _plugin,
+                &transp_message,
+                &_recv_buffer,
+                &_recv_resource,
+                &worker);
+
+        if (!result)
         {
+            fprintf(stderr, "error receiving data\n");
+            return NULL;
+        }
 
-            bool result = plugin->receive_rEA(
-                    plugin,
-                    &transp_message,
-                    &recv_buffer,
-                    &recv_resource,
-                    &worker);
+        RTIOsapiMemory_copy(
+            &_message,
+            _recv_buffer.pointer,
+            perftest_cpp::OVERHEAD_BYTES + 8);
 
-            if (!result)
-            {
-                fprintf(stderr, "error receiving data\n");
-                continue;
-            }
-
-            RTIOsapiMemory_copy(
-                    &_message,
-                    transp_message.buffer.pointer,
-                    sizeof(TestMessage);
-
-            if (_message.timestamp_sec == 0 && _message.timestamp_usec == 0)
-            {
-                if (plugin->return_loaned_buffer_rEA != NULL)
-                {
-                    plugin->return_loaned_buffer_rEA(
-                            plugin,
-                            &recv_resource,
-                            &transp_message,
-                            NULL);
-                }
-                break;
-            }
-
-            if (debug)
-            {
-                printf("Received PING sample with length %d\n",
-                        transp_message.buffer.length);
-            }
+        if (_plugin->return_loaned_buffer_rEA != NULL)
+        {
+            _plugin->return_loaned_buffer_rEA(
+                _plugin,
+                &_recv_resource,
+                &transp_message,
+                NULL);
         }
 
         return &_message;
@@ -1202,18 +1018,7 @@ class RTISocketSubscriber : public IMessagingReader
 
     void WaitForWriters(int numPublishers)
     {
-        DDS_SubscriptionMatchedStatus status;
-
-        while (true)
-        {
-            _reader->get_subscription_matched_status(status);
-
-            if (status.current_count >= numPublishers)
-            {
-                break;
-            }
-            perftest_cpp::MilliSleep(1000);
-        }
+        /*Dummy Function*/
     }
 };
 
@@ -1222,164 +1027,56 @@ class RTISocketSubscriber : public IMessagingReader
  */
 bool RTISocketImpl::Initialize(int argc, char *argv[])
 {
-    DDS_DomainParticipantQos qos;
-    DDS_DomainParticipantFactoryQos factory_qos;
-    DomainListener *listener = new DomainListener();
-
-    _factory = DDSDomainParticipantFactory::get_instance();
-
     if (!ParseConfig(argc, argv))
     {
         return false;
     }
 
-    // only if we run the latency test we need to wait
-    // for pongs after sending pings
-    _pongSemaphore = _LatencyTest ? RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL) : NULL;
+    // only if we run the latency test we need to wait for pongs after sending pings
+    _pongSemaphore = _LatencyTest
+        ? RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL)
+        : NULL;
 
-    // setup the QOS profile file to be loaded
-    _factory->get_qos(factory_qos);
-    if (_UseXmlQos)
+    struct NDDS_Transport_UDPv4_Property_t updv4_prop =
+        NDDS_TRANSPORT_UDPV4_PROPERTY_DEFAULT;
+    struct NDDS_Transport_Shmem_Property_t shmem_prop =
+        NDDS_TRANSPORT_SHMEM_PROPERTY_DEFAULT;
+
+    if (_useShmem)
     {
-        factory_qos.profile.url_profile.ensure_length(1, 1);
-        factory_qos.profile.url_profile[0] = DDS_String_dup(_ProfileFile);
+        _plugin = NDDS_Transport_Shmem_new(&shmem_prop);
     }
     else
     {
-        fprintf(stderr, "Not using xml file for QoS.\n");
-        factory_qos.profile.string_profile.from_array(
-            PERFTEST_QOS_STRING,
-            PERFTEST_QOS_STRING_SIZE);
-    }
-    _factory->set_qos(factory_qos);
-
-    if (_factory->reload_profiles() != DDS_RETCODE_OK)
-    {
-        fprintf(stderr, "Problem opening QOS profiles file %s.\n", _ProfileFile);
-        return false;
-    }
-
-    if (_factory->set_default_library(_ProfileLibraryName) != DDS_RETCODE_OK)
-    {
-        fprintf(stderr, "No QOS Library named \"%s\" found in %s.\n",
-                _ProfileLibraryName, _ProfileFile);
-        return false;
-    }
-
-    // Configure DDSDomainParticipant QOS
-    if (_factory->get_participant_qos_from_profile(
-            qos,
-            _ProfileLibraryName,
-            "BaseProfileQos") != DDS_RETCODE_OK)
-    {
-        fprintf(
-            stderr,
-            "Problem setting QoS Library \"%s::BaseProfileQos\" for participant_qos.\n",
-            _ProfileLibraryName);
-    }
-
-    // set initial peers and not use multicast
-    if (_peer_host_count > 0)
-    {
-        printf("Initial peers:\n");
-        for (int i = 0; i < _peer_host_count; ++i)
+        if (_receiveNic != NULL)
         {
-            printf("\t%s\n", _peer_host[i]);
-        }
-        qos.discovery.initial_peers.from_array(
-            (const char **)_peer_host,
-            _peer_host_count);
-        qos.discovery.multicast_receive_addresses.length(0);
-    }
-
-    if (!configureTransport(_transport, qos))
-    {
-        return false;
-    };
-    _transport.printTransportConfigurationSummary();
-
-    if (_AutoThrottle)
-    {
-        DDSPropertyQosPolicyHelper::add_property(qos.property,
-                                                 "dds.domain_participant.auto_throttle.enable", "true", false);
-    }
-
-    // Creates the participant
-    _participant = _factory->create_participant(
-        _DomainID, qos, listener,
-        DDS_INCONSISTENT_TOPIC_STATUS |
-            DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
-            DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
-
-    if (_participant == NULL)
-    {
-        fprintf(stderr, "Problem creating participant.\n");
-        return false;
-    }
-
-    // Register the types and create the topics
-    if (!_isDynamicData)
-    {
-        T::TypeSupport::register_type(_participant, _typename);
-    }
-    else
-    {
-        DDSDynamicDataTypeSupport *dynamicDataTypeSupportObject =
-            new DDSDynamicDataTypeSupport(
-                T::TypeSupport::get_typecode(),
-                DDS_DYNAMIC_DATA_TYPE_PROPERTY_DEFAULT);
-        dynamicDataTypeSupportObject->register_type(_participant, _typename);
-    }
-
-    // Create the DDSPublisher and DDSSubscriber
-    _publisher = _participant->create_publisher_with_profile(
-        _ProfileLibraryName,
-        "BaseProfileQos",
-        NULL,
-        DDS_STATUS_MASK_NONE);
-    if (_publisher == NULL)
-    {
-        fprintf(stderr, "Problem creating publisher.\n");
-        return false;
-    }
-
-    _subscriber = _participant->create_subscriber_with_profile(
-        _ProfileLibraryName,
-        "BaseProfileQos",
-        NULL,
-        DDS_STATUS_MASK_NONE);
-    if (_subscriber == NULL)
-    {
-        fprintf(stderr, "Problem creating subscriber.\n");
-        return false;
-    }
-
-    /**************************************************************************/
-    /*****************************sockets stuff********************************/
-
-    if (use_shmem)
-    {
-        plugin = NDDS_Transport_Shmem_new(&shmem_prop);
-    }
-    else
-    {
-        if (receive_nic != NULL)
-        {
-            updv4_prop.parent.allow_interfaces_list = &receive_nic;
+            updv4_prop.parent.allow_interfaces_list = &_receiveNic;
             updv4_prop.parent.allow_interfaces_list_length = 1;
+            updv4_prop.send_blocking = false;
+            updv4_prop.no_zero_copy = false;
+
+            /*
+             * updv4_prop.send_socket_buffer_size = 63000;
+             * updv4_prop.recv_socket_buffer_size = 63000;
+             *
+             * The default value for send_socket_buffer_size and receive is
+             * 131072 and does not allow to go lower.
+             * NDDS_TRANSPORT_UDPV4_SEND_SOCKET_BUFFER_SIZE_DEFAULT   (131072)
+             * NDDS_TRANSPORT_UDPV4_RECV_SOCKET_BUFFER_SIZE_DEFAULT   (131072)
+             *
+             * This could be necesary to modify for large data.
+             */
+
         }
 
-        plugin = NDDS_Transport_UDPv4_new(&updv4_prop);
+        _plugin = NDDS_Transport_UDPv4_new(&updv4_prop);
     }
 
-    if (plugin == NULL)
+    if (_plugin == NULL)
     {
         fprintf(stderr, "error creating transport plugin\n");
-        goto done;
+        return false;
     }
-
-    /**************************************************************************/
-    /**************************************************************************/
 
 
     return true;
@@ -1391,51 +1088,38 @@ bool RTISocketImpl::Initialize(int argc, char *argv[])
 IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
 {
 
-    struct RTINtpTime timestamp;
-    int ok = 0;
     int result = 0;
-    // TODO remove line //NDDS_Transport_Plugin *plugin = NULL; //The plugin is menmer of the class
-    struct NDDS_Transport_UDPv4_Property_t updv4_prop =
-        NDDS_TRANSPORT_UDPV4_PROPERTY_DEFAULT;
-    struct NDDS_Transport_Shmem_Property_t shmem_prop =
-        NDDS_TRANSPORT_SHMEM_PROPERTY_DEFAULT;
-    NDDS_Transport_RecvResource_t recv_resource = NULL;
+
     NDDS_Transport_SendResource_t send_resource = NULL;
-    NDDS_Transport_Port_t recv_port = 0;
     NDDS_Transport_Port_t send_port = 0;
     NDDS_Transport_Address_t dst_address =
         NDDS_TRANSPORT_ADDRESS_INVALID;
-    char *payload = NULL;
-    struct RTIOsapiThread *recv_thread = NULL;
-    struct PayloadListener payload_listener =
-        PayloadListener_INITIALIZER;
-    struct RTINtpTime block_buration = {5, 0};
-    int count = 0;
-    int last_sample = 0;
-    struct DDS_Duration_t ten_milli = {0, 10000000};
-    struct DDS_Duration_t ten_sec = {10, 0};
-    struct RTINtpTime one_sec = {1, 0};
-    struct RTINtpTime start_timestamp = {0, 0};
-    struct RTINtpTime diff_timestamp = {0, 0};
-    NDDS_Transport_Buffer_t send_buffer = {0, NULL};
-    RTIOsapiSemaphoreStatus semStatus;
 
-    //TODO create a offset depend of the topic name for the port
+    int portOffset = 0;
+    if (!strcmp(topic_name, perftest_cpp::_LatencyTopicName))
+    {
+        portOffset += 1;
+    }
+    if (!strcmp(topic_name, perftest_cpp::_ThroughputTopicName))
+    {
+        portOffset += 2;
+    }
+
     send_port = PRESRtps_getWellKnownUnicastPort(
-        domainId,
-        1,
-        7400,
-        250,
-        2,
-        11);
+            _DomainID,
+            0,
+            7400,
+            250,
+            2,
+            portOffset);
 
     /* Create send resource */
-    if (!use_shmem)
+    if (!_useShmem)
     {
         result = NDDS_Transport_UDP_string_to_address_cEA(
-                plugin,
+                _plugin,
                 &dst_address,
-                send_nic);
+                _sendNic);
 
         if (result != 1)
         {
@@ -1444,8 +1128,10 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
         }
     }
 
-    result = plugin->create_sendresource_srEA(
-            plugin,
+    printf("Creating send resource, topic name: %s \t port: %d\n", topic_name, send_port);
+
+    result = _plugin->create_sendresource_srEA(
+            _plugin,
             &send_resource,
             &dst_address,
             send_port,
@@ -1456,9 +1142,12 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    return new RTISocketPublisher(plugin, send_resource, dst_address, send_port);
-
-
+    return new RTISocketPublisher(
+            _plugin,
+            send_resource,
+            dst_address,
+            send_port,
+            _pongSemaphore);
 }
 
 /*********************************************************
@@ -1559,49 +1248,34 @@ IMessagingReader *RTISocketImpl::CreateReader(
     const char *topic_name,
     IMessagingCB *callback)
 {
-
-    struct RTINtpTime timestamp;
-    int ok = 0;
     int result = 0;
-    // TODO remove line //NDDS_Transport_Plugin *plugin = NULL; //The plugin is menmer of the class
-    struct NDDS_Transport_UDPv4_Property_t updv4_prop =
-        NDDS_TRANSPORT_UDPV4_PROPERTY_DEFAULT;
-    struct NDDS_Transport_Shmem_Property_t shmem_prop =
-        NDDS_TRANSPORT_SHMEM_PROPERTY_DEFAULT;
     NDDS_Transport_RecvResource_t recv_resource = NULL;
-    NDDS_Transport_SendResource_t send_resource = NULL;
     NDDS_Transport_Port_t recv_port = 0;
-    NDDS_Transport_Port_t send_port = 0;
-    NDDS_Transport_Address_t dst_address =
-        NDDS_TRANSPORT_ADDRESS_INVALID;
-    char *payload = NULL;
-    struct RTIOsapiThread *recv_thread = NULL;
-    struct PayloadListener payload_listener =
-        PayloadListener_INITIALIZER;
-    struct RTINtpTime block_buration = {5, 0};
-    int count = 0;
-    int last_sample = 0;
-    struct DDS_Duration_t ten_milli = {0, 10000000};
-    struct DDS_Duration_t ten_sec = {10, 0};
-    struct RTINtpTime one_sec = {1, 0};
-    struct RTINtpTime start_timestamp = {0, 0};
-    struct RTINtpTime diff_timestamp = {0, 0};
-    NDDS_Transport_Buffer_t send_buffer = {0, NULL};
-    RTIOsapiSemaphoreStatus semStatus;
 
-    /* Port in which to receive PONG data */
+    int portOffset = 0;
+    if (!strcmp(topic_name, perftest_cpp::_LatencyTopicName) )
+    {
+        portOffset += 1;
+    }
+    if (!strcmp(topic_name, perftest_cpp::_ThroughputTopicName))
+    {
+        portOffset += 2;
+    }
+
     // parameters order (domain_id, participant_id, port_base, domain_id_gain, participant_id_gain, port_offset)
     recv_port = PRESRtps_getWellKnownUnicastPort(
-            domainId,
-            0, // TODO // 0 - 1 depend of is publiser or the subcriber // maybe not
+            _DomainID,
+            0,
             7400,
             250,
             2,
-            11);
+            portOffset);
+
+    printf("Creating receive resource, topic name: %s \t port: %d\n", topic_name, recv_port);
 
     /* Create receive resource */
-    result = plugin->create_recvresource_rrEA(
-            plugin,
+    result = _plugin->create_recvresource_rrEA(
+            _plugin,
             &recv_resource,
             &recv_port,
             NULL,
@@ -1612,7 +1286,11 @@ IMessagingReader *RTISocketImpl::CreateReader(
         fprintf(stderr, "Create_recvresource_rrEA error\n");
         return NULL;
     }
-    return new RTISocketSubscriber(plugin, recv_resource, recv_port);
+
+    return new RTISocketSubscriber(
+            _plugin,
+            recv_resource,
+            recv_port);
 }
 
 #ifdef RTI_WIN32
