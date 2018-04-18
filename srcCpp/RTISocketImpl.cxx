@@ -746,7 +746,6 @@ class DomainListener : public DDSDomainParticipantListener
 class RTISocketPublisher : public IMessagingWriter
 {
   private:
-    TestData_t data;
     NDDS_Transport_Plugin *_plugin;
     NDDS_Transport_SendResource_t _send_resource;
     NDDS_Transport_Address_t _dst_address;
@@ -756,8 +755,10 @@ class RTISocketPublisher : public IMessagingWriter
     int _payload_size;
 
     RTIOsapiSemaphore *_pongSemaphore;
-
     unsigned int _pulled_sample_count;
+
+    TestData_t _data;
+    unsigned long _num_instances;
 
   public:
     RTISocketPublisher(
@@ -780,6 +781,15 @@ class RTISocketPublisher : public IMessagingWriter
         _send_buffer.pointer = _payload;
 
         _pulled_sample_count = 0;
+
+        long key = 0;
+
+        for (int c = 0; c < KEY_SIZE; c++)
+        {
+            _data.key[c] = (unsigned char)(key >> c * 8);
+        }
+
+        _data.bin_data.maximum(0);
     }
 
     ~RTISocketPublisher()
@@ -789,7 +799,6 @@ class RTISocketPublisher : public IMessagingWriter
 
     void Shutdown()
     {
-
         if (_send_resource != NULL)
         {
             _plugin->destroy_sendresource_srEA(_plugin, &_send_resource);
@@ -809,20 +818,23 @@ class RTISocketPublisher : public IMessagingWriter
     bool Send(const TestMessage &message, bool isCftWildCardKey)
     {
 
-        if(message.size != _payload_size || _payload_size == 0){
-            _payload_size = message.size + perftest_cpp::OVERHEAD_BYTES;
-            RTIOsapiHeap_freeArray(_payload);
-            RTIOsapiHeap_allocateArray(&_payload, _payload_size, char);
+        _data.entity_id = message.entity_id;
+        _data.seq_num = message.seq_num;
+        _data.timestamp_sec = message.timestamp_sec;
+        _data.timestamp_usec = message.timestamp_usec;
+        _data.latency_ping = message.latency_ping;
+        _data.bin_data.loan_contiguous(
+                (DDS_Octet *)message.data,
+                message.size,
+                message.size);
 
-            _send_buffer.length = _payload_size;
-            _send_buffer.pointer = _payload;
-        }
+        int payload_size = message.size + perftest_cpp::OVERHEAD_BYTES;
+        char * payload;
+        //RTIOsapiHeap_allocateArray(&payload, payload_size, char);
+        //RTIOsapiMemory_copy(payload, &_data, payload_size);
 
-
-        /*TODO review*/
-        RTIOsapiMemory_move(_payload, &message, sizeof(message));
-        //RTIOsapiMemory_copy(payload, &message, perftest_cpp::OVERHEAD_BYTES+8);
-
+        _send_buffer.length = payload_size;
+        _send_buffer.pointer = (char*) &_data;
 
         bool result = _plugin->send(
             _plugin,
@@ -839,6 +851,9 @@ class RTISocketPublisher : public IMessagingWriter
             fprintf(stderr, "Write error using sockets\n");
             return false;
         }
+
+        _data.bin_data.unloan();
+
         ++_pulled_sample_count;
 
         return true;
@@ -899,7 +914,7 @@ class RTISocketPublisher : public IMessagingWriter
 
     void wait_for_acknowledgments(long sec, unsigned long nsec)
     {
-        /*TODO idk how to cach that ack.*/
+        /* TODO .*/
         //perftest_cpp::MilliSleep(1000);
     }
 };
@@ -919,9 +934,7 @@ class RTISocketSubscriber : public IMessagingReader
 
     struct REDAWorker worker;
 
-    int _data_idx;
-    bool _no_data;
-
+    TestData_t _data;
 
     RTIOsapiSemaphore *_pongSemaphore;
 
@@ -939,15 +952,6 @@ class RTISocketSubscriber : public IMessagingReader
 
         worker._name = "worker";
 
-        _message.data = NULL;
-        _message.size = 0;
-        //_message.key = new unsigned char[4];
-        _message.entity_id = 0;
-        _message.seq_num = 0;
-        _message.timestamp_sec = 0;
-        _message.timestamp_usec = 0;
-        _message.latency_ping = 0;
-
         unsigned int size = 63000 + perftest_cpp::OVERHEAD_BYTES;
 
         RTIOsapiHeap_allocateArray(
@@ -961,6 +965,14 @@ class RTISocketSubscriber : public IMessagingReader
             fprintf(stderr, "RTIOsapiHeap_allocateArray error\n");
         }
 
+        //_data.entity_id = 0;
+        _data.seq_num = 0;
+        _data.timestamp_sec = 0;
+        _data.timestamp_usec = 0;
+        _data.latency_ping = 0;
+        _data.bin_data = DDS_OctetSeq();
+        _data.bin_data.maximum(0);
+
     }
 
     ~RTISocketSubscriber()
@@ -970,6 +982,8 @@ class RTISocketSubscriber : public IMessagingReader
 
     void Shutdown()
     {
+
+        _data.bin_data.unloan();
 
         if (_recv_resource != NULL)
         {
@@ -983,8 +997,6 @@ class RTISocketSubscriber : public IMessagingReader
     {
 
         NDDS_Transport_Message_t transp_message = NDDS_TRANSPORT_MESSAGE_INVALID;
-
-        //TestData_t data;
 
         bool result = _plugin->receive_rEA(
                 _plugin,
@@ -1000,9 +1012,9 @@ class RTISocketSubscriber : public IMessagingReader
         }
 
         RTIOsapiMemory_copy(
-            &_message,
+            &_data,
             _recv_buffer.pointer,
-            perftest_cpp::OVERHEAD_BYTES + 8);
+            sizeof(_data));
 
         if (_plugin->return_loaned_buffer_rEA != NULL)
         {
@@ -1012,6 +1024,14 @@ class RTISocketSubscriber : public IMessagingReader
                 &transp_message,
                 NULL);
         }
+
+        _message.entity_id = _data.entity_id;
+        _message.seq_num = _data.seq_num;
+        _message.timestamp_sec = _data.timestamp_sec;
+        _message.timestamp_usec = _data.timestamp_usec;
+        _message.latency_ping = _data.latency_ping;
+        _message.size = _data.bin_data.length();
+        _message.data = (char *)_data.bin_data.get_contiguous_bufferI();
 
         return &_message;
     }
@@ -1148,97 +1168,6 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
             dst_address,
             send_port,
             _pongSemaphore);
-}
-
-/*********************************************************
- * CreateCFT
- * The CFT allows to the subscriber to receive a specific instance or a range of them.
- * In order generate the CFT it is necesary to create a condition:
- *      - In the case of a specific instance, it is necesary to convert to _CFTRange[0] into a key notation.
- *        Then it is enought with check that every element of key is equal to the instance.
- *        Exmaple: _CFTRange[0] = 300. condition ="(0 = key[0] AND 0 = key[1] AND 1 = key[2] AND  44 = key[3])"
- *          So, in the case that the key = { 0, 0, 1, 44}, it will be received.
- *      - In the case of a range of instances, it is necesary to convert to _CFTRange[0] and _CFTRange[1] into a key notation.
- *        Then it is enought with check that the key is in the range of instances.
- *        Exmaple: _CFTRange[1] = 300 and _CFTRange[1] = 1.
- *          condition = ""
- *              "("
- *                  "("
- *                      "(44 < key[3]) OR"
- *                      "(44 <= key[3] AND 1 < key[2]) OR"
- *                      "(44 <= key[3] AND 1 <= key[2] AND 0 < key[1]) OR"
- *                      "(44 <= key[3] AND 1 <= key[2] AND 0 <= key[1] AND 0 <= key[0])"
- *                  ") AND ("
- *                      "(1 > key[3]) OR"
- *                      "(1 >= key[3] AND 0 > key[2]) OR"
- *                      "(1 >= key[3] AND 0 >= key[2] AND 0 > key[1]) OR"
- *                      "(1 >= key[3] AND 0 >= key[2] AND 0 >= key[1] AND 0 >= key[0])"
- *                  ")"
- *              ")"
- *          The main goal for comaparing a instances and a key is by analyze the elemetns by more significant to the lest significant.
- *          So, in the case that the key is between [ {0, 0, 0, 1} and { 0, 0, 1, 44} ], it will be received.
- *  Beside, there is a special case where all the subscribers will receive the samples, it is MAX_CFT_VALUE = 65535 = [255,255,0,0,]
- */
-DDSTopicDescription *RTISocketImpl::CreateCft(
-    const char *topic_name,
-    DDSTopic *topic)
-{
-    std::string condition;
-    DDS_StringSeq parameters(2 * KEY_SIZE);
-    if (_CFTRange[0] == _CFTRange[1])
-    { // If same elements, no range
-        printf("CFT enabled for instance: '%d' \n", _CFTRange[0]);
-        char cft_param[KEY_SIZE][128];
-        for (int i = 0; i < KEY_SIZE; i++)
-        {
-            sprintf(cft_param[i], "%d", (unsigned char)(_CFTRange[0] >> i * 8));
-        }
-        const char *param_list[] = {cft_param[0], cft_param[1], cft_param[2], cft_param[3]};
-        parameters.from_array(param_list, KEY_SIZE);
-        condition = "(%0 = key[0] AND %1 = key[1] AND %2 = key[2] AND %3 = key[3]) OR"
-                    "(255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3])";
-    }
-    else
-    { // If range
-        printf("CFT enabled for instance range: [%d,%d] \n", _CFTRange[0], _CFTRange[1]);
-        char cft_param[2 * KEY_SIZE][128];
-        for (int i = 0; i < 2 * KEY_SIZE; i++)
-        {
-            if (i < KEY_SIZE)
-            {
-                sprintf(cft_param[i], "%d", (unsigned char)(_CFTRange[0] >> i * 8));
-            }
-            else
-            { // KEY_SIZE < i < KEY_SIZE * 2
-                sprintf(cft_param[i], "%d", (unsigned char)(_CFTRange[1] >> i * 8));
-            }
-        }
-        const char *param_list[] = {cft_param[0], cft_param[1],
-                                    cft_param[2], cft_param[3], cft_param[4],
-                                    cft_param[5], cft_param[6], cft_param[7]};
-        parameters.from_array(param_list, 2 * KEY_SIZE);
-        condition = ""
-                    "("
-                    "("
-                    "(%3 < key[3]) OR"
-                    "(%3 <= key[3] AND %2 < key[2]) OR"
-                    "(%3 <= key[3] AND %2 <= key[2] AND %1 < key[1]) OR"
-                    "(%3 <= key[3] AND %2 <= key[2] AND %1 <= key[1] AND %0 <= key[0])"
-                    ") AND ("
-                    "(%7 > key[3]) OR"
-                    "(%7 >= key[3] AND %6 > key[2]) OR"
-                    "(%7 >= key[3] AND %6 >= key[2] AND %5 > key[1]) OR"
-                    "(%7 >= key[3] AND %6 >= key[2] AND %5 >= key[1] AND %4 >= key[0])"
-                    ") OR ("
-                    "255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3]"
-                    ")"
-                    ")";
-    }
-    return _participant->create_contentfilteredtopic(
-        topic_name,
-        topic,
-        condition.c_str(),
-        parameters);
 }
 
 /*********************************************************

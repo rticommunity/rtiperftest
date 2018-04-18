@@ -1624,6 +1624,8 @@ static void *AnnouncementReadThread(void *arg)
 
         if (message != NULL)
         {
+            //Wait until the Subscriber be ready
+            perftest_cpp::MilliSleep(1000);
             listener->ProcessMessage(*message);
         }
 
