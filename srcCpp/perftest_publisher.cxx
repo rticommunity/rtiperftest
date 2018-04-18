@@ -1189,7 +1189,7 @@ int perftest_cpp::Subscriber()
 
         if (reader_listener->change_size) { // ACK change_size
             announcement_msg.entity_id = _SubID;
-            announcement_msg.size =  perftest_cpp::LENGTH_CHANGED_SIZE;
+            announcement_msg.size =  LENGTH_CHANGED_SIZE;
             announcement_writer->Send(announcement_msg);
             announcement_writer->Flush();
             reader_listener->change_size = false;
@@ -1197,7 +1197,7 @@ int perftest_cpp::Subscriber()
 
         if (reader_listener->end_test) { // ACK end_test
             announcement_msg.entity_id = _SubID;
-            announcement_msg.size = perftest_cpp::FINISHED_SIZE;
+            announcement_msg.size = FINISHED_SIZE;
             announcement_writer->Send(announcement_msg);
             announcement_writer->Flush();
             break;
