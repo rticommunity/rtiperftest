@@ -718,8 +718,6 @@ class RTISocketPublisher : public IMessagingWriter
     NDDS_Transport_Address_t _dst_address;
     NDDS_Transport_Port_t _send_port;
     NDDS_Transport_Buffer_t _send_buffer;
-    char *_payload;
-    int _payload_size;
 
     RTIOsapiSemaphore *_pongSemaphore;
     unsigned int _pulled_sample_count;
@@ -741,11 +739,8 @@ class RTISocketPublisher : public IMessagingWriter
         _send_port = send_port;
         _pongSemaphore = pongSemaphore;
 
-        _payload = new char;
-        _payload_size = 0;
-
-        _send_buffer.length = _payload_size;
-        _send_buffer.pointer = _payload;
+        _send_buffer.length = 0;
+        _send_buffer.pointer = 0;
 
         _pulled_sample_count = 0;
 
@@ -764,10 +759,6 @@ class RTISocketPublisher : public IMessagingWriter
             _plugin->destroy_sendresource_srEA(_plugin, &_send_resource);
         }
 
-        if (_payload != NULL)
-        {
-            RTIOsapiHeap_freeArray(_payload);
-        }
     }
 
     void Flush()
@@ -808,7 +799,6 @@ class RTISocketPublisher : public IMessagingWriter
         }
 
         _data.bin_data.unloan();
-
         ++_pulled_sample_count;
 
         return true;
@@ -885,11 +875,15 @@ class RTISocketSubscriber : public IMessagingReader
     NDDS_Transport_Buffer_t _recv_buffer;
     NDDS_Transport_Port_t _recv_port;
 
+    NDDS_Transport_Message_t _transp_message;
+
     TestMessage _message;
 
-    struct REDAWorker worker;
+    struct REDAWorker _worker;
 
-    TestData_t _data;
+    TestData_t *_data;
+    char * _payload;
+    int _payload_size;
 
     RTIOsapiSemaphore *_pongSemaphore;
 
@@ -905,22 +899,27 @@ class RTISocketSubscriber : public IMessagingReader
         _recv_buffer.length = 0;
         _recv_buffer.pointer = NULL;
 
-        worker._name = "worker";
+        _transp_message = NDDS_TRANSPORT_MESSAGE_INVALID;
 
-        unsigned int size = 63000 + perftest_cpp::OVERHEAD_BYTES;
+        _worker._name = "SubscriberWorker";
+
+        /*TODO  size as global constant or something*/
+        unsigned int size = 100 + perftest_cpp::OVERHEAD_BYTES;
 
         RTIOsapiHeap_allocateArray(
             &_recv_buffer.pointer,
             size,
             char);
 
-        _recv_buffer.length = size;
         if (_recv_buffer.pointer == NULL)
         {
             fprintf(stderr, "RTIOsapiHeap_allocateArray error\n");
         }
+        _recv_buffer.length = size;
 
-        _data.bin_data.maximum(0);
+        //_data.bin_data.maximum(0);
+        _payload_size = 0;
+        _payload = 0;
 
     }
 
@@ -932,7 +931,7 @@ class RTISocketSubscriber : public IMessagingReader
     void Shutdown()
     {
 
-        _data.bin_data.unloan();
+        //_data.bin_data.unloan();
 
         if (_recv_resource != NULL)
         {
@@ -945,45 +944,40 @@ class RTISocketSubscriber : public IMessagingReader
     TestMessage *ReceiveMessage()
     {
 
-        NDDS_Transport_Message_t transp_message = NDDS_TRANSPORT_MESSAGE_INVALID;
-
         bool result = _plugin->receive_rEA(
                 _plugin,
-                &transp_message,
+                &_transp_message,
                 &_recv_buffer,
                 &_recv_resource,
-                &worker);
-
+                &_worker);
         if (!result)
         {
             fprintf(stderr, "error receiving data\n");
             return NULL;
         }
 
-        RTIOsapiMemory_copy(
-            &_data,
-            _recv_buffer.pointer,
-            sizeof(_data));
+        _data = reinterpret_cast<TestData_t *>(_transp_message.buffer.pointer);
 
-        if (_plugin->return_loaned_buffer_rEA != NULL)
+        _message.entity_id = _data->entity_id;
+        _message.seq_num = _data->seq_num;
+        _message.timestamp_sec = _data->timestamp_sec;
+        _message.timestamp_usec = _data->timestamp_usec;
+        _message.latency_ping = _data->latency_ping;
+        _message.size = _data->bin_data.length();
+        _message.data = (char *)_data->bin_data.get_contiguous_bufferI();
+
+        if (_plugin -> return_loaned_buffer_rEA != NULL)
         {
             _plugin->return_loaned_buffer_rEA(
                 _plugin,
                 &_recv_resource,
-                &transp_message,
+                &_transp_message,
                 NULL);
         }
 
-        _message.entity_id = _data.entity_id;
-        _message.seq_num = _data.seq_num;
-        _message.timestamp_sec = _data.timestamp_sec;
-        _message.timestamp_usec = _data.timestamp_usec;
-        _message.latency_ping = _data.latency_ping;
-        _message.size = _data.bin_data.length();
-        _message.data = (char *)_data.bin_data.get_contiguous_bufferI();
-
         return &_message;
     }
+
 
     void WaitForWriters(int numPublishers)
     {
