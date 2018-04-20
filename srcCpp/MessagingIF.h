@@ -11,9 +11,9 @@
  * class Perftest_cpp, RTIDDSImpl and PerftestTransport to retrieve the
  * corresponding address.
  */
-#define LATENCY_TOPIC_NAME "Latency"
-#define ANNOUNCEMENT_TOPIC_NAME "Announcement"
-#define THROUGHPUT_TOPIC_NAME "Throughput"
+// #define GetLatencyTopicName() "Latency"
+// #define GetAnnouncementTopicName() "Announcement"
+// #define GetThroughputTopicName() "Throughput"
 
 class TestMessage
 {

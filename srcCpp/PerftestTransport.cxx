@@ -4,6 +4,7 @@
  */
 
 #include "PerftestTransport.h"
+#include "perftest_cpp.h"
 
 /******************************************************************************/
 
@@ -519,9 +520,9 @@ PerftestTransport::PerftestTransport() :
         dataLen(100),
         useMulticast(false)
 {
-    multicastAddrMap[LATENCY_TOPIC_NAME] = "239.255.1.2";
-    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = "239.255.1.100";
-    multicastAddrMap[THROUGHPUT_TOPIC_NAME] = "239.255.1.1";
+    multicastAddrMap[perftest_cpp::GetLatencyTopicName().c_str()] = "239.255.1.2";
+    multicastAddrMap[perftest_cpp::GetAnnouncementTopicName().c_str()] = "239.255.1.100";
+    multicastAddrMap[perftest_cpp::GetThroughputTopicName().c_str()] = "239.255.1.1";
 }
 
 PerftestTransport::~PerftestTransport()
@@ -965,9 +966,9 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
             useMulticast = true;
             if ((i != (argc-1)) && *argv[i+1] != '-') {
                 i++;
-                multicastAddrMap.find(THROUGHPUT_TOPIC_NAME)->second = argv[i];
-                multicastAddrMap.find(LATENCY_TOPIC_NAME)->second = argv[i];
-                multicastAddrMap.find(ANNOUNCEMENT_TOPIC_NAME)->second = argv[i];
+                multicastAddrMap.find(perftest_cpp::GetThroughputTopicName().c_str())->second = argv[i];
+                multicastAddrMap.find(perftest_cpp::GetLatencyTopicName().c_str())->second = argv[i];
+                multicastAddrMap.find(perftest_cpp::GetAnnouncementTopicName().c_str())->second = argv[i];
             }
         } else if (IS_OPTION(argv[i], "-nomulticast")) {
             useMulticast = false;

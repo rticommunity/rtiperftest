@@ -136,6 +136,14 @@ class perftest_cpp
 
    public:
     static unsigned long long GetTimeUsec();
+    /*
+     * Names of the topics for all the comunications, they will be used for the
+     * class Perftest_cpp, RTIDDSImpl and PerftestTransport to retrieve the
+     * corresponding address.
+     */
+    static std::string GetLatencyTopicName();
+    static std::string GetAnnouncementTopicName();
+    static std::string GetThroughputTopicName();
 
   #ifdef RTI_WIN32
     static VOID CALLBACK Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired);
