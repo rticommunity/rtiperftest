@@ -1727,36 +1727,25 @@ int perftest_cpp::Publisher()
      * A Subscriber will send a message on this channel once it discovers
      * every Publisher
      */
+    announcement_reader_listener = new AnnouncementListener();
+    announcement_reader = _MessagingImpl->CreateReader(_AnnouncementTopicName,
+            announcement_reader_listener);
 
-    /*TODO remove some duplicate code*/
-    if(_useSockets){
-        announcement_reader = _MessagingImpl->CreateReader(
-                _AnnouncementTopicName,
-                NULL);
-
-        if (announcement_reader == NULL)
-        {
-            fprintf(stderr, "Problem creating announcement reader.\n");
+    if (announcement_reader == NULL){
+            fprintf(stderr,"Problem creating announcement reader.\n");
             return -1;
-        }
+    }
+
+    if(_useSockets){
         announcement_reader_listener = new AnnouncementListener(announcement_reader);
 
         RTIOsapiThread_new("AnnouncementThread",
-                           RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-                           RTI_OSAPI_THREAD_OPTION_DEFAULT,
-                           RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                           NULL,
-                           AnnouncementReadThread,
-                           announcement_reader_listener);        
-    } else {
-        announcement_reader_listener = new AnnouncementListener();
-        announcement_reader = _MessagingImpl->CreateReader(_AnnouncementTopicName,
+                RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
+                RTI_OSAPI_THREAD_OPTION_DEFAULT,
+                RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                NULL,
+                AnnouncementReadThread,
                 announcement_reader_listener);
-        if (announcement_reader == NULL)
-        {
-            fprintf(stderr,"Problem creating announcement reader.\n");
-            return -1;
-        }
     }
 
     unsigned long long spinPerUsec = 0;
@@ -1789,8 +1778,10 @@ int perftest_cpp::Publisher()
     while (_NumSubscribers > announcement_reader_listener->announced_subscribers) {
         MilliSleep(1000);
     }
-    /* Necesary to finish the AnnouncementReadThread */
-    announcement_reader_listener->end_test = true;
+    if (_useSockets) {
+        /* Necesary to finish the AnnouncementReadThread */
+        announcement_reader_listener->end_test = true;
+    }
 
     // Allocate data and set size
     TestMessage message;

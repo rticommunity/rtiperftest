@@ -480,7 +480,9 @@ class RTISocketPublisher : public IMessagingWriter
     unsigned int _pulled_sample_count;
 
     TestData_t _data;
-    unsigned long _num_instances;
+
+    int _peer_host_count;
+    char **_peer_host;
 
   public:
     RTISocketPublisher(
@@ -489,6 +491,8 @@ class RTISocketPublisher : public IMessagingWriter
         NDDS_Transport_Address_t dst_address,
         NDDS_Transport_Port_t send_port,
         RTIOsapiSemaphore *pongSemaphore,
+        int peer_host_count,
+        char **peer_host,
         struct REDAWorker *worker = NULL)
     {
         _plugin = plugin;
@@ -498,6 +502,9 @@ class RTISocketPublisher : public IMessagingWriter
         _pongSemaphore = pongSemaphore;
 
         _worker = worker;
+
+        _peer_host_count = peer_host_count;
+        _peer_host = peer_host;
 
         _send_buffer.length = 0;
         _send_buffer.pointer = 0;
@@ -542,21 +549,38 @@ class RTISocketPublisher : public IMessagingWriter
         _send_buffer.length = message.size + perftest_cpp::OVERHEAD_BYTES;
         _send_buffer.pointer = (char*) &_data;
 
-        bool result = _plugin->send(
-            _plugin,
-            &_send_resource,
-            &_dst_address,
-            _send_port,
-            0,
-            &_send_buffer,
-            1,
-            _worker);
+        bool result = true;
+        for(int i=0; i < _peer_host_count; i++){
 
-        if (!result)
-        {
-            fprintf(stderr, "Write error using sockets\n");
-            return false;
+            result = NDDS_Transport_UDP_string_to_address_cEA(
+                _plugin,
+                &_dst_address,
+                _peer_host[i]);
+
+            if (result != 1)
+            {
+                fprintf(stderr, "NDDS_Transport_UDP_string_to_address_cEA error\n");
+                return false;
+            }
+
+            result = _plugin->send(
+                _plugin,
+                &_send_resource,
+                &_dst_address,
+                _send_port,
+                0,
+                &_send_buffer,
+                1,
+                _worker);
+
+            if (!result)
+            {
+                fprintf(stderr, "Write error using sockets\n");
+                return false;
+            }
+
         }
+
 
         _data.bin_data.unloan();
         ++_pulled_sample_count;
@@ -646,6 +670,7 @@ class RTISocketSubscriber : public IMessagingReader
     int _payload_size;
 
     RTIOsapiSemaphore *_pongSemaphore;
+
 
   public:
     RTISocketSubscriber(
@@ -759,6 +784,11 @@ bool RTISocketImpl::Initialize(int argc, char *argv[])
     if (!ParseConfig(argc, argv))
     {
         return false;
+    }
+
+    if(_peer_host_count == 0){
+        _peer_host[0] = (char *) "127.0.0.1";
+        _peer_host_count++;
     }
 
     // only if we run the latency test we need to wait for pongs after sending pings
@@ -896,22 +926,16 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if(_useShmem){
-        return new RTISocketPublisher(
-            _plugin,
-            send_resource,
-            dst_address,
-            send_port,
-            _pongSemaphore,
-            _worker);
-    }
-
     return new RTISocketPublisher(
-            _plugin,
-            send_resource,
-            dst_address,
-            send_port,
-            _pongSemaphore);
+        _plugin,
+        send_resource,
+        dst_address,
+        send_port,
+        _pongSemaphore,
+        _peer_host_count,
+        (char**)_peer_host,
+        _worker);
+
 }
 
 /*********************************************************
@@ -960,19 +984,11 @@ IMessagingReader *RTISocketImpl::CreateReader(
         return NULL;
     }
 
-    if (_useShmem)
-    {
-        return new RTISocketSubscriber(
-            _plugin,
-            recv_resource,
-            recv_port,
-            _worker);
-    }
-
     return new RTISocketSubscriber(
-            _plugin,
-            recv_resource,
-            recv_port);
+        _plugin,
+        recv_resource,
+        recv_port,
+        _worker);
 }
 
 #ifdef RTI_WIN32
