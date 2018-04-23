@@ -138,8 +138,6 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[])
 {
     unsigned long _scan_max_size = 0;
     int i;
-    int sec = 0;
-    unsigned int nanosec = 0;
 
     // Command line params
     for (i = 0; i < argc; ++i)
@@ -200,85 +198,6 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[])
                     2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
             }
         }
-        else if (IS_OPTION(argv[i], "-unbounded"))
-        {
-            if ((i == (argc - 1)) || *argv[i + 1] == '-')
-            {
-                _useUnbounded = (std::min)(
-                    2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
-            }
-            else
-            {
-                ++i;
-                _useUnbounded = strtol(argv[i], NULL, 10);
-
-                if (_useUnbounded < (unsigned long)perftest_cpp::OVERHEAD_BYTES)
-                {
-                    fprintf(stderr, "-unbounded <allocation_threshold> must be >= %d\n", perftest_cpp::OVERHEAD_BYTES);
-                    return false;
-                }
-                if (_useUnbounded > (unsigned long)MAX_BOUNDED_SEQ_SIZE)
-                {
-                    fprintf(stderr, "-unbounded <allocation_threshold> must be <= %d\n", MAX_BOUNDED_SEQ_SIZE);
-                    return false;
-                }
-            }
-        }
-        else if (IS_OPTION(argv[i], "-sendQueueSize"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <count> after -sendQueueSize\n");
-                return false;
-            }
-            _SendQueueSize = strtol(argv[i], NULL, 10);
-        }
-        else if (IS_OPTION(argv[i], "-heartbeatPeriod"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <period> after -heartbeatPeriod\n");
-                return false;
-            }
-
-            sec = 0;
-            nanosec = 0;
-
-            if (sscanf(argv[i], "%d:%u", &sec, &nanosec) != 2)
-            {
-                fprintf(stderr, "-heartbeatPeriod value must have the format <sec>:<nanosec>\n");
-                return false;
-            }
-
-            if (sec > 0 || nanosec > 0)
-            {
-                _HeartbeatPeriod.sec = sec;
-                _HeartbeatPeriod.nanosec = nanosec;
-            }
-        }
-        else if (IS_OPTION(argv[i], "-fastHeartbeatPeriod"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <period> after -fastHeartbeatPeriod\n");
-                return false;
-            }
-
-            sec = 0;
-            nanosec = 0;
-
-            if (sscanf(argv[i], "%d:%u", &sec, &nanosec) != 2)
-            {
-                fprintf(stderr, "-fastHeartbeatPeriod value must have the format <sec>:<nanosec>\n");
-                return false;
-            }
-
-            if (sec > 0 || nanosec > 0)
-            {
-                _FastHeartbeatPeriod.sec = sec;
-                _FastHeartbeatPeriod.nanosec = nanosec;
-            }
-        }
         else if (IS_OPTION(argv[i], "-domain"))
         {
             if ((i == (argc - 1)) || *argv[++i] == '-')
@@ -287,24 +206,6 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _DomainID = strtol(argv[i], NULL, 10);
-        }
-        else if (IS_OPTION(argv[i], "-qosFile"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <filename> after -qosFile\n");
-                return false;
-            }
-            _ProfileFile = argv[i];
-        }
-        else if (IS_OPTION(argv[i], "-qosLibrary"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <library name> after -qosLibrary\n");
-                return false;
-            }
-            _ProfileLibraryName = argv[i];
         }
         else if (IS_OPTION(argv[i], "-multicast"))
         {
@@ -325,46 +226,6 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[])
         {
             _IsReliable = false;
         }
-        else if (IS_OPTION(argv[i], "-durability"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <kind> after -durability\n");
-                return false;
-            }
-            _Durability = strtol(argv[i], NULL, 10);
-
-            if ((_Durability < 0) || (_Durability > 3))
-            {
-                fprintf(stderr, "durability kind must be 0(volatile), 1(transient local), 2(transient), or 3(persistent) \n");
-                return false;
-            }
-        }
-        else if (IS_OPTION(argv[i], "-dynamicData"))
-        {
-            _isDynamicData = true;
-            fprintf(stderr, "Using Dynamic Data.\n");
-        }
-        else if (IS_OPTION(argv[i], "-noDirectCommunication"))
-        {
-            _DirectCommunication = false;
-        }
-        else if (IS_OPTION(argv[i], "-instances"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <count> after -instances\n");
-                return false;
-            }
-            _InstanceCount = strtol(argv[i], NULL, 10);
-            _InstanceMaxCountReader = _InstanceCount;
-
-            if (_InstanceCount <= 0)
-            {
-                fprintf(stderr, "instance count cannot be negative or zero\n");
-                return false;
-            }
-        }
         else if (IS_OPTION(argv[i], "-instanceHashBuckets"))
         {
             if ((i == (argc - 1)) || *argv[++i] == '-')
@@ -379,37 +240,6 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[])
                 fprintf(stderr, "instance hash buckets cannot be negative or zero\n");
                 return false;
             }
-        }
-        else if (IS_OPTION(argv[i], "-batchSize"))
-        {
-
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <#bytes> after -batchSize\n");
-                return false;
-            }
-            _BatchSize = strtol(argv[i], NULL, 10);
-
-            if (_BatchSize < 0 || _BatchSize > (unsigned int)MAX_SYNCHRONOUS_SIZE)
-            {
-                fprintf(stderr, "Batch size '%d' should be between [0,%d]\n",
-                        _BatchSize,
-                        MAX_SYNCHRONOUS_SIZE);
-                return false;
-            }
-        }
-        else if (IS_OPTION(argv[i], "-keepDurationUsec"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <usec> after -keepDurationUsec\n");
-                return false;
-            }
-            _KeepDurationUsec = strtol(argv[i], NULL, 10);
-        }
-        else if (IS_OPTION(argv[i], "-noPositiveAcks"))
-        {
-            _UsePositiveAcks = false;
         }
         else if (IS_OPTION(argv[i], "-verbosity"))
         {
@@ -447,144 +277,69 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[])
                 break;
             }
         }
-        else if (IS_OPTION(argv[i], "-waitsetDelayUsec"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <usec> after -waitsetDelayUsec\n");
-                return false;
-            }
-            _WaitsetDelayUsec = (unsigned int)strtol(argv[i], NULL, 10);
-        }
-        else if (IS_OPTION(argv[i], "-waitsetEventCount"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <count> after -waitsetEventCount\n");
-                return false;
-            }
-            _WaitsetEventCount = strtol(argv[i], NULL, 10);
-            if (_WaitsetEventCount < 0)
-            {
-                fprintf(stderr, "waitset event count cannot be negative\n");
-                return false;
-            }
-        }
         else if (IS_OPTION(argv[i], "-latencyTest"))
         {
             _LatencyTest = true;
         }
-        else if (IS_OPTION(argv[i], "-enableAutoThrottle"))
-        {
-            fprintf(stderr, "Auto Throttling enabled. Automatically adjusting the DataWriter\'s writing rate\n");
-            _AutoThrottle = true;
-        }
-        else if (IS_OPTION(argv[i], "-enableTurboMode"))
-        {
-            _TurboMode = true;
-        }
-        else if (IS_OPTION(argv[i], "-noXmlQos"))
-        {
-            _UseXmlQos = false;
-        }
-        else if (IS_OPTION(argv[i], "-asynchronous"))
-        {
-            _IsAsynchronous = true;
-        }
-        else if (IS_OPTION(argv[i], "-flowController"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <flow Controller Name> after -flowController\n");
-                return false;
-            }
-            _FlowControllerCustom = argv[i];
-
-            // verify if the flow controller name is correct, else use "default"
-            bool valid_flow_control = false;
-            for (unsigned int i = 0; i < sizeof(valid_flow_controller_socket) / sizeof(valid_flow_controller_socket[0]); i++)
-            {
-                if (_FlowControllerCustom == valid_flow_controller_socket[i])
-                {
-                    valid_flow_control = true;
-                }
-            }
-
-            if (!valid_flow_control)
-            {
-                fprintf(stderr, "Bad <flow> '%s' for custom flow controller\n", _FlowControllerCustom.c_str());
-                _FlowControllerCustom = "default";
-            }
-        }
-        else if (IS_OPTION(argv[i], "-peer"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
+        else if (IS_OPTION(argv[i], "-peer")) {
+            if ((i == (argc-1)) || *argv[++i] == '-')
             {
                 fprintf(stderr, "Missing <address> after -peer\n");
                 return false;
             }
-            if (_peer_host_count + 1 < RTIPERFTEST_MAX_PEERS)
-            {
+            if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
                 _peer_host[_peer_host_count++] = DDS_String_dup(argv[i]);
-            }
-            else
-            {
-                fprintf(stderr, "The maximun of -initial peers is %d\n", RTIPERFTEST_MAX_PEERS);
+            } else {
+                fprintf(stderr,"The maximun of -initial peers is %d\n", RTIPERFTEST_MAX_PEERS);
                 return false;
             }
         }
-        else if (IS_OPTION(argv[i], "-cft"))
-        {
-            _useCft = true;
+        else if (IS_OPTION(argv[i], "-nic")) {
+
             if ((i == (argc - 1)) || *argv[++i] == '-')
             {
-                fprintf(stderr, "Missing <start>:<end> after -cft\n");
+                fprintf(stderr, "Missing <address> after -nic\n");
                 return false;
             }
 
-            if (strchr(argv[i], ':') != NULL)
-            { // In the case that there are 2 parameter
-                unsigned int cftStart = 0;
-                unsigned int cftEnd = 0;
-                if (sscanf(argv[i], "%u:%u", &cftStart, &cftEnd) != 2)
-                {
-                    fprintf(stderr, "-cft value must have the format <start>:<end>\n");
-                    return false;
-                }
-                _CFTRange[0] = cftStart;
-                _CFTRange[1] = cftEnd;
-            }
-            else
-            {
-                _CFTRange[0] = strtol(argv[i], NULL, 10);
-                _CFTRange[1] = _CFTRange[0];
-            }
-
-            if (_CFTRange[0] > _CFTRange[1])
-            {
-                fprintf(stderr, "-cft <start> value cannot be bigger than <end>\n");
-                return false;
-            }
-            if (_CFTRange[0] < 0 ||
-                _CFTRange[0] >= (unsigned int)MAX_CFT_VALUE ||
-                _CFTRange[1] < 0 ||
-                _CFTRange[1] >= (unsigned int)MAX_CFT_VALUE)
-            {
-                fprintf(stderr, "-cft <start>:<end> values should be between [0,%d] \n", MAX_CFT_VALUE);
-                return false;
-            }
+            _nic = std::string(argv[i]);
         }
-        else if (IS_OPTION(argv[i], "-writeInstance"))
-        {
-            if ((i == (argc - 1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <number> after -writeInstance\n");
+        else if (IS_OPTION(argv[i], "-transport")) {
+
+            if ((i == (argc - 1)) || *argv[++i] == '-') {
+                fprintf(stderr,
+                        "Missing transport name after -trasnport\n");
                 return false;
             }
-            _instancesToBeWritten = strtol(argv[i], NULL, 10);
+
+            if (IS_OPTION(argv[i], "UDPv4")) {
+                _useShmem = 0;
+            }
+            else if (IS_OPTION(argv[i], "SHMEM")){
+                _useShmem = 1;
+            }
+            else{
+                fprintf(stderr,
+                        "Socket transport only support UDPv4 & SHMEM\n");
+                return false;
+            }
         }
         else
         {
+            std::vector<std::string> no_socket_params_v(
+            no_socket_params,
+            no_socket_params + sizeof(no_socket_params) / sizeof(std::string) );
+
+            std::vector<std::string>::iterator it;
+            it = std::find( no_socket_params_v.begin(),
+                    no_socket_params_v.end(),
+                    std::string(argv[i]) );
+
+            if (it != no_socket_params_v.end()) {
+                fprintf(stderr, "%s: not compatible with -socket\n", argv[i]);
+                return false;
+            }
+
             if (i > 0)
             {
                 std::map<std::string, unsigned int> transportCmdOpts =
@@ -719,6 +474,8 @@ class RTISocketPublisher : public IMessagingWriter
     NDDS_Transport_Port_t _send_port;
     NDDS_Transport_Buffer_t _send_buffer;
 
+    struct REDAWorker *_worker;
+
     RTIOsapiSemaphore *_pongSemaphore;
     unsigned int _pulled_sample_count;
 
@@ -731,13 +488,16 @@ class RTISocketPublisher : public IMessagingWriter
         NDDS_Transport_SendResource_t send_resource,
         NDDS_Transport_Address_t dst_address,
         NDDS_Transport_Port_t send_port,
-        RTIOsapiSemaphore *pongSemaphore)
+        RTIOsapiSemaphore *pongSemaphore,
+        struct REDAWorker *worker = NULL)
     {
         _plugin = plugin;
         _send_resource = send_resource;
         _dst_address = dst_address;
         _send_port = send_port;
         _pongSemaphore = pongSemaphore;
+
+        _worker = worker;
 
         _send_buffer.length = 0;
         _send_buffer.pointer = 0;
@@ -790,7 +550,7 @@ class RTISocketPublisher : public IMessagingWriter
             0,
             &_send_buffer,
             1,
-            NULL);
+            _worker);
 
         if (!result)
         {
@@ -879,7 +639,7 @@ class RTISocketSubscriber : public IMessagingReader
 
     TestMessage _message;
 
-    struct REDAWorker _worker;
+    struct REDAWorker *_worker;
 
     TestData_t *_data;
     char * _payload;
@@ -891,17 +651,23 @@ class RTISocketSubscriber : public IMessagingReader
     RTISocketSubscriber(
         NDDS_Transport_Plugin *plugin,
         NDDS_Transport_SendResource_t recv_resource,
-        NDDS_Transport_Port_t recv_port)
+        NDDS_Transport_Port_t recv_port,
+        struct REDAWorker *worker = NULL)
     {
         _plugin = plugin;
         _recv_resource = recv_resource;
         _recv_port = recv_port;
         _recv_buffer.length = 0;
         _recv_buffer.pointer = NULL;
+        _worker = worker;
 
-        _transp_message = NDDS_TRANSPORT_MESSAGE_INVALID;
+        // Similar to NDDS_Transport_Message_t message = 
+        //      NDDS_TRANSPORT_MESSAGE_INVALID;
+        _transp_message.buffer.pointer = NULL;
+        _transp_message.buffer.length = 0;
+        _transp_message.loaned_buffer_param = NULL;
 
-        _worker._name = "SubscriberWorker";
+        //_worker._name = "SubscriberWorker";
 
         /*TODO  size as global constant or something*/
         unsigned int size = 100 + perftest_cpp::OVERHEAD_BYTES;
@@ -1007,13 +773,20 @@ bool RTISocketImpl::Initialize(int argc, char *argv[])
 
     if (_useShmem)
     {
+        //shmem_prop.parent.properties_bitmap |= NDDS_TRANSPORT_PROPERTY_BIT_POLLED;
+        shmem_prop.parent.message_size_max = 63000;
+        //shmem_prop.received_message_count_max = MESSAGE_COUNT_MAX;
+        shmem_prop.receive_buffer_size =  63000;
+
         _plugin = NDDS_Transport_Shmem_new(&shmem_prop);
     }
     else
     {
-        if (_receiveNic != NULL)
+        if (_nic.empty())
         {
-            updv4_prop.parent.allow_interfaces_list = &_receiveNic;
+            char * interfaces;
+            strcpy(interfaces, _nic.c_str());
+            updv4_prop.parent.allow_interfaces_list = &interfaces;
             updv4_prop.parent.allow_interfaces_list_length = 1;
             updv4_prop.send_blocking = false;
             updv4_prop.no_zero_copy = false;
@@ -1037,10 +810,28 @@ bool RTISocketImpl::Initialize(int argc, char *argv[])
 
     if (_plugin == NULL)
     {
-        fprintf(stderr, "error creating transport plugin\n");
+        fprintf(stderr, "Error creating transport plugin\n");
         return false;
     }
 
+    if (_useShmem){
+        struct REDAWorkerFactory *workerFactory = NULL;
+
+        /*TODO set the size as constant*/
+        workerFactory = REDAWorkerFactory_new(63000);
+        if (workerFactory == NULL)
+        {
+            fprintf(stderr, "Error creating Worker Factory\n");
+            return false;
+        }
+
+        _worker = REDAWorkerFactory_createWorker(workerFactory, "RTISockerImpl");
+        if (_worker == NULL)
+        {
+            fprintf(stderr, "Error creating Worker\n");
+            return false;
+        }
+    }
 
     return true;
 }
@@ -1082,7 +873,7 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
         result = NDDS_Transport_UDP_string_to_address_cEA(
                 _plugin,
                 &dst_address,
-                _sendNic);
+                _nic.c_str());
 
         if (result != 1)
         {
@@ -1103,6 +894,16 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
     {
         fprintf(stderr, "create_sendresource_srEA error\n");
         return NULL;
+    }
+
+    if(_useShmem){
+        return new RTISocketPublisher(
+            _plugin,
+            send_resource,
+            dst_address,
+            send_port,
+            _pongSemaphore,
+            _worker);
     }
 
     return new RTISocketPublisher(
@@ -1157,6 +958,15 @@ IMessagingReader *RTISocketImpl::CreateReader(
     {
         fprintf(stderr, "Create_recvresource_rrEA error\n");
         return NULL;
+    }
+
+    if (_useShmem)
+    {
+        return new RTISocketSubscriber(
+            _plugin,
+            recv_resource,
+            recv_port,
+            _worker);
     }
 
     return new RTISocketSubscriber(

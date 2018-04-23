@@ -80,12 +80,49 @@ class RTISocketImpl : public IMessaging
         /*TODO Shared memory does not work right now*/
         _useShmem = 0; /* 0: UDPv4 1: SHMEM */
 
-        _sendNic = (char *)"127.0.0.1";
-        _receiveNic = (char *)"127.0.0.1";
+        _nic = std::string("127.0.0.1");
         _plugin = NULL;
+        _worker = NULL;
+        std::string no_socket_params[] = {
+            "-unbounded",
+            "-sendQueueSize",
+            "-heartbeatPeriod",
+            "-fastHeartbeatPeriod",
+            "-qosFile",
+            "-qosLibrary",
+            "-durability",
+            "-dynamicData",
+            "-noDirectCommunication",
+            "-instances",
+            "-instanceHashBuckets",
+            "-batchSize",
+            "-keepDurationUsec",
+            "-noPositiveAcks",
+            "-waitsetDelayUsec",
+            "-waitsetEventCount",
+            "-enableAutoThrottle",
+            "-enableTurboMode",
+            "-noXmlQos",
+            "-asynchronous",
+            "-flowController",
+            "-cft",
+            "-writeInstance",
+            "-enableTCP",
+            "-enableUDPv6",
+            "-allowInterfaces",
+            "-transportServerBindPort",
+            "-transportWan",
+            "-transportCertAuthority",
+            "-transportCertFile",
+            "-transportPrivateKey",
+            "-transportWanServerAddress",
+            "-transportWanServerPort",
+            "-transportWanId",
+            "-transportSecureWan"
+        };
 
-    /**************************************************************************/
-    /**************************************************************************/
+        /**************************************************************************/
+        /**************************************************************************/
     }
 
     ~RTISocketImpl()
@@ -167,9 +204,14 @@ class RTISocketImpl : public IMessaging
     /*****************************sockets stuff********************************/
 
     int _useShmem;
-    char *_sendNic;
-    char *_receiveNic;
+    std::string _nic;
+    /*TODO decide if is necesary only one Nic or one for send and another for recive*/
+    // char *_sendNic;
+    // char *_receiveNic;
     NDDS_Transport_Plugin *_plugin;
+    struct REDAWorker *_worker;
+
+    std::string no_socket_params[];
 
     /**************************************************************************/
     /**************************************************************************/
