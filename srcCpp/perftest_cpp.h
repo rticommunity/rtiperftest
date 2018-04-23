@@ -97,7 +97,7 @@ class perftest_cpp
     unsigned int _executionTime;
     bool _displayWriterStats;
     bool _useCft;
-    bool _useSocket;
+    bool _useSockets;
 
   private:
     static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);

@@ -95,7 +95,7 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
-    if (_useSocket) {
+    if (_useSockets) {
         _MessagingImpl = new RTISocketImpl();
     }
     else{
@@ -362,9 +362,9 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         {
             _IsPub = false;
         }
-        else if (IS_OPTION(argv[i], "-socket"))
+        else if (IS_OPTION(argv[i], "-sockets"))
         {
-            _useSocket = true;
+            _useSockets = true;
             _UseReadThread = true;
         }
         else if (IS_OPTION(argv[i], "-sidMultiSubTest"))
@@ -1159,7 +1159,7 @@ int perftest_cpp::Subscriber()
     TestMessage message;
     message.entity_id = _SubID;
 
-    if (_useSocket) {
+    if (_useSockets) {
         while (reader_listener->packets_received == 0)
         {
             announcement_writer->Send(message);
@@ -1727,7 +1727,9 @@ int perftest_cpp::Publisher()
      * A Subscriber will send a message on this channel once it discovers
      * every Publisher
      */
-    if(_useSocket){
+
+    /*TODO remove some duplicate code*/
+    if(_useSockets){
         announcement_reader = _MessagingImpl->CreateReader(
                 _AnnouncementTopicName,
                 NULL);
@@ -1745,9 +1747,8 @@ int perftest_cpp::Publisher()
                            RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
                            NULL,
                            AnnouncementReadThread,
-                           announcement_reader_listener);
-    }
-    else{
+                           announcement_reader_listener);        
+    } else {
         announcement_reader_listener = new AnnouncementListener();
         announcement_reader = _MessagingImpl->CreateReader(_AnnouncementTopicName,
                 announcement_reader_listener);

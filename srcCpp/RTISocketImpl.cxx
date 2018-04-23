@@ -775,7 +775,7 @@ bool RTISocketImpl::Initialize(int argc, char *argv[])
     {
         //shmem_prop.parent.properties_bitmap |= NDDS_TRANSPORT_PROPERTY_BIT_POLLED;
         shmem_prop.parent.message_size_max = 63000;
-        //shmem_prop.received_message_count_max = MESSAGE_COUNT_MAX;
+        //shmem_prop.received_message_count_max = 10000000;
         shmem_prop.receive_buffer_size =  63000;
 
         _plugin = NDDS_Transport_Shmem_new(&shmem_prop);
