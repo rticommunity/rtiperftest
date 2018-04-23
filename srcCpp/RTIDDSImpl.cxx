@@ -888,17 +888,20 @@ class RTIPublisher : public IMessagingWriter
         */
         if (message.size == perftest_cpp::INITIALIZE_SIZE
                 || message.size == perftest_cpp::FINISHED_SIZE
-                || message.size == perftest_cpp::LENGTH_CHANGED_SIZE) {
+                || message.size == perftest_cpp::LENGTH_CHANGED_SIZE
+                || message.size == 0) {
             data.size_custom_type = message.size;
         } else {
             if (! set_custom_type(data.custom_type, key, message.size)) {
                 fprintf(stderr, "set_custom_type failed.\n");
             }
             if (message.size != last_message_size) {
-                RTI_CUSTOM_TYPE::TypeSupport::serialize_data_to_cdr_buffer(
+                T::TypeSupport::serialize_data_to_cdr_buffer(
                         NULL,
                         (unsigned int &)data.size_custom_type,
-                        &data.custom_type);
+                        &data);
+                data.size_custom_type -= perftest_cpp::OVERHEAD_BYTES;
+                data.size_custom_type -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
                 last_message_size = message.size;
             }
         }
@@ -1113,7 +1116,18 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         }
 
         data.clear_all_members();
-
+        DDS_Octet key_octets[4];
+        for (int c = 0; c < KEY_SIZE; c++) {
+            key_octets[c] = (unsigned char) (key >> c * 8);
+        }
+        retcode = data.set_octet_array(
+                "key",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                4,
+                key_octets);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
+        }
         retcode = data.set_long(
                 "entity_id",
                 DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
@@ -1163,7 +1177,8 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         */
         if (message.size == perftest_cpp::INITIALIZE_SIZE
                 || message.size == perftest_cpp::FINISHED_SIZE
-                || message.size == perftest_cpp::LENGTH_CHANGED_SIZE) {
+                || message.size == perftest_cpp::LENGTH_CHANGED_SIZE
+                || message.size == 0) {
             retcode = data.set_long(
                     "size_custom_type",
                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
@@ -1176,10 +1191,23 @@ class RTIDynamicDataPublisher : public IMessagingWriter
                 fprintf(stderr, "set_custom_type_dynamic failed.\n");
             }
             if (message.size != last_message_size) {
+                char *buffer = NULL;
                 data.to_cdr_buffer(
                         NULL,
                         (unsigned int &)size_custom_type);
+                RTIOsapiHeap_allocateBufferAligned(
+                    &buffer,
+                    size_custom_type,
+                    RTIOsapiAlignment_getAlignmentOf(void *));
+                data.to_cdr_buffer(
+                        buffer,
+                        (unsigned int &)size_custom_type);
+                if (buffer != NULL) {
+                    RTIOsapiHeap_freeBuffer(buffer);
+                    buffer = NULL;
+                }
                 size_custom_type -= perftest_cpp::OVERHEAD_BYTES;
+                size_custom_type -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
                 last_message_size = message.size;
             }
             retcode = data.set_long(
@@ -1206,19 +1234,6 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
         }
       #endif
-        DDS_Octet key_octets[4];
-        for (int c = 0; c < KEY_SIZE; c++) {
-            key_octets[c] = (unsigned char) (key >> c * 8);
-        }
-        retcode = data.set_octet_array(
-                "key",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                4,
-                key_octets);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
-        }
-
         if (!isCftWildCardKey) {
             retcode = _writer->write(data, _instance_handles[key]);
         } else {

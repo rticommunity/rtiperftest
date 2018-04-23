@@ -1735,8 +1735,6 @@ int perftest_cpp::Publisher()
     writer->Flush();
 
     // Set data size, account for other bytes in message
-
-
     message.size = (int)_DataLen - OVERHEAD_BYTES;
 
     // Sleep 1 second, then begin test
