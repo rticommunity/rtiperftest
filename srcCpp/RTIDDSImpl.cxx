@@ -950,6 +950,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     DDS_InstanceHandle_t *_instance_handles;
     RTIOsapiSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
+    int _last_message_size;
 
 public:
     RTIDynamicDataPublisher(
@@ -965,6 +966,7 @@ public:
         DDS_Octet key_octets[KEY_SIZE];
         DDS_ReturnCode_t retcode;
 
+        _last_message_size = 0;
         _num_instances = num_instances;
         _instance_counter = 0;
         _instancesToBeWritten = instancesToBeWritten;
@@ -1030,8 +1032,22 @@ public:
         DDS_Octet key_octets[KEY_SIZE];
         long key = 0;
 
-        data.clear_all_members();
-
+        if (_last_message_size != message.size) {
+                //Cannot use data.clear_member("bind_data") because:
+                //DDS_DynamicData_clear_member:unsupported for non-sparse types
+                data.clear_all_members();
+                retcode = data.set_octet_array(
+                        "bin_data",
+                        dynamicDataMembersId::at("bin_data"),
+                        message.size,
+                        (DDS_Octet *) message.data);
+                if (retcode != DDS_RETCODE_OK) {
+                    fprintf(stderr,
+                        "set_octet_array(bin_data) failed: %d.\n",
+                        retcode);
+                }
+            _last_message_size = message.size;
+        }
         retcode = data.set_long(
                 "entity_id",
                 dynamicDataMembersId::at("entity_id"),
@@ -1066,19 +1082,6 @@ public:
                 message.latency_ping);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_long(latency_ping) failed: %d.\n", retcode);
-        }
-        bool succeeded = octetSeq.from_array(
-                (DDS_Octet *) message.data,
-                message.size);
-        if (!succeeded) {
-            fprintf(stderr, "from_array() failed.\n");
-        }
-        retcode = data.set_octet_seq(
-                "bin_data",
-                dynamicDataMembersId::at("bin_data"),
-                octetSeq);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
         }
 
         if (!isCftWildCardKey) {
@@ -1122,7 +1125,8 @@ public:
         DDS_PublicationMatchedStatus status;
 
         while (true) {
-            DDS_ReturnCode_t retcode = _writer->get_publication_matched_status(status);
+            DDS_ReturnCode_t retcode = _writer->get_publication_matched_status(
+                    status);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
                         "WaitForReaders _writer->get_publication_matched_status "
@@ -1282,13 +1286,14 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
     void on_data_available(DDSDataReader *reader)
     {
         DDS_OctetSeq octetSeq;
+        DDS_ReturnCode_t retcode;
         DDSDynamicDataReader *datareader = DDSDynamicDataReader::narrow(reader);
         if (datareader == NULL) {
             fprintf(stderr, "DataReader narrow error.\n");
             return;
         }
 
-        DDS_ReturnCode_t retcode = datareader->take(
+        retcode = datareader->take(
                 _data_seq,
                 _info_seq,
                 DDS_LENGTH_UNLIMITED,
@@ -1365,7 +1370,7 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                             "on_data_available() get_octet_seq(bin_data) failed: %d.\n",
                             retcode);
                 }
-                _message.size = octetSeq.length(); // the size comming from bin_data
+                _message.size = octetSeq.length(); // size comming from bin_data
                 _message.data = (char *)octetSeq.get_contiguous_buffer();
 
                 _callback->ProcessMessage(_message);
