@@ -529,6 +529,9 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _NumSubscribers = strtol(argv[i], NULL, 10);
+            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i - 1]);
+            _MessagingArgv[++_MessagingArgc] = DDS_String_dup(argv[i]);
+            _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-numPublishers"))
         {
@@ -538,6 +541,9 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _NumPublishers = strtol(argv[i], NULL, 10);
+            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i - 1]);
+            _MessagingArgv[++_MessagingArgc] = DDS_String_dup(argv[i]);
+            _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-scan"))
         {
@@ -1579,9 +1585,10 @@ class LatencyListener : public IMessagingCB
  * Used for receiving data using a thread instead of callback
  *
  */
-static void *LatencyReadThread(void *arg)
+template<class T>
+static void *ReadThread(void *arg)
 {
-    LatencyListener *listener = static_cast<LatencyListener *>(arg);
+    T *listener = static_cast<T *>(arg);
     TestMessage *message = NULL;
 
     while (!listener->end_test)
@@ -1608,40 +1615,6 @@ static void *LatencyReadThread(void *arg)
     return NULL;
 }
 
-/*********************************************************
- * Used for receiving data using a thread instead of callback
- *
- */
-static void *AnnouncementReadThread(void *arg)
-{
-    AnnouncementListener *listener = static_cast<AnnouncementListener *>(arg);
-    TestMessage *message = NULL;
-
-    while (!listener->end_test)
-    {
-        // Receive message should block until a message is received
-        message = listener->_reader->ReceiveMessage();
-
-        if (message != NULL)
-        {
-            //Wait until the Subscriber be ready
-            perftest_cpp::MilliSleep(1000);
-            listener->ProcessMessage(*message);
-        }
-
-        /*
-    * TODO:
-    *
-    * To support -latencyTest plus -useReadThread we need to signal
-    * --HERE-- the internal semaphore used in RTIDDSImpl.cxx as
-    * we now do in the listener on_data_available callback
-    * inside RTIDDSImpl.cxx
-    *
-    */
-    }
-
-    return NULL;
-}
 
 /*********************************************************
  * Publisher
@@ -1714,7 +1687,7 @@ int perftest_cpp::Publisher()
                                 RTI_OSAPI_THREAD_OPTION_DEFAULT,
                                 RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
                                 NULL,
-                                LatencyReadThread,
+                                ReadThread<LatencyListener>,
                                 reader_listener);
         }
     }
@@ -1744,7 +1717,7 @@ int perftest_cpp::Publisher()
                 RTI_OSAPI_THREAD_OPTION_DEFAULT,
                 RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
                 NULL,
-                AnnouncementReadThread,
+                ReadThread<AnnouncementListener>,
                 announcement_reader_listener);
     }
 

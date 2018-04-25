@@ -26,6 +26,8 @@ unsigned int RTISocketImpl::_WaitsetDelayUsec = 100;
 
 std::string valid_flow_controller_socket[] = {"default", "1Gbps", "10Gbps"};
 
+const int RTISocketImpl::resources_per_participant = 3;
+
 /*********************************************************
  * Shutdown
  */
@@ -52,51 +54,51 @@ void RTISocketImpl::PrintCmdLineHelp()
 {
     /**************************************************************************/
     std::string usage_string = std::string(
-                                   "\t-sendQueueSize <number>       - Sets number of samples (or batches) in send\n") +
-                               "\t                                queue, default 50\n" +
-                               "\t-domain <ID>                  - RTI DDS Domain, default 1\n" +
-                               "\t-qosFile <filename>           - Name of XML file for DDS Qos profiles, \n" +
-                               "\t                                default: perftest_qos_profiles.xml\n" +
-                               "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
-                               "\t                                default: PerftestQosLibrary\n" +
-                               "\t-multicast <address>          - Use multicast to send data.\n" +
-                               "\t                                Default not to use multicast\n" +
-                               "\t                                <address> is optional, if unspecified:\n" +
-                               "\t                                                latency 239.255.1.2,\n" +
-                               "\t                                                announcement 239.255.1.100,\n" +
-                               "\t                                                throughput 239.255.1.1\n" +
-                               "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
-                               "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
-                               "\t                                (no batching)\n" +
-                               "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
-                               "\t                                protocol, default use positive acks\n" +
-                               "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +
-                               "\t                                1 - transient local, 2 - transient, \n" +
-                               "\t                                3 - persistent, default 0\n" +
-                               "\t-dynamicData                  - Makes use of the Dynamic Data APIs instead\n" +
-                               "\t                                of using the generated types.\n" +
-                               "\t-noDirectCommunication        - Use brokered mode for persistent durability\n" +
-                               "\t-waitsetDelayUsec <usec>      - UseReadThread related. Allows you to\n" +
-                               "\t                                process incoming data in groups, based on the\n" +
-                               "\t                                time rather than individually. It can be used\n" +
-                               "\t                                combined with -waitsetEventCount,\n" +
-                               "\t                                default 100 usec\n" +
-                               "\t-waitsetEventCount <count>    - UseReadThread related. Allows you to\n" +
-                               "\t                                process incoming data in groups, based on the\n" +
-                               "\t                                number of samples rather than individually. It\n" +
-                               "\t                                can be used combined with -waitsetDelayUsec,\n" +
-                               "\t                                default 5\n" +
-                               "\t-enableAutoThrottle           - Enables the AutoThrottling feature in the\n" +
-                               "\t                                throughput DataWriter (pub)\n" +
-                               "\t-enableTurboMode              - Enables the TurboMode feature in the\n" +
-                               "\t                                throughput DataWriter (pub)\n" +
-                               "\t-noXmlQos                     - Skip loading the qos profiles from the xml\n" +
-                               "\t                                profile\n" +
-                               "\t-asynchronous                 - Use asynchronous writer\n" +
-                               "\t                                Default: Not set\n" +
-                               "\t-flowController <flow>        - In the case asynchronous writer use a specific flow controller.\n" +
-                               "\t                                There are several flow controller predefined:\n" +
-                               "\t                                ";
+            "\t-sendQueueSize <number>       - Sets number of samples (or batches) in send\n") +
+            "\t                                queue, default 50\n" +
+            "\t-domain <ID>                  - RTI DDS Domain, default 1\n" +
+            "\t-qosFile <filename>           - Name of XML file for DDS Qos profiles, \n" +
+            "\t                                default: perftest_qos_profiles.xml\n" +
+            "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
+            "\t                                default: PerftestQosLibrary\n" +
+            "\t-multicast <address>          - Use multicast to send data.\n" +
+            "\t                                Default not to use multicast\n" +
+            "\t                                <address> is optional, if unspecified:\n" +
+            "\t                                                latency 239.255.1.2,\n" +
+            "\t                                                announcement 239.255.1.100,\n" +
+            "\t                                                throughput 239.255.1.1\n" +
+            "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
+            "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
+            "\t                                (no batching)\n" +
+            "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
+            "\t                                protocol, default use positive acks\n" +
+            "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +
+            "\t                                1 - transient local, 2 - transient, \n" +
+            "\t                                3 - persistent, default 0\n" +
+            "\t-dynamicData                  - Makes use of the Dynamic Data APIs instead\n" +
+            "\t                                of using the generated types.\n" +
+            "\t-noDirectCommunication        - Use brokered mode for persistent durability\n" +
+            "\t-waitsetDelayUsec <usec>      - UseReadThread related. Allows you to\n" +
+            "\t                                process incoming data in groups, based on the\n" +
+            "\t                                time rather than individually. It can be used\n" +
+            "\t                                combined with -waitsetEventCount,\n" +
+            "\t                                default 100 usec\n" +
+            "\t-waitsetEventCount <count>    - UseReadThread related. Allows you to\n" +
+            "\t                                process incoming data in groups, based on the\n" +
+            "\t                                number of samples rather than individually. It\n" +
+            "\t                                can be used combined with -waitsetDelayUsec,\n" +
+            "\t                                default 5\n" +
+            "\t-enableAutoThrottle           - Enables the AutoThrottling feature in the\n" +
+            "\t                                throughput DataWriter (pub)\n" +
+            "\t-enableTurboMode              - Enables the TurboMode feature in the\n" +
+            "\t                                throughput DataWriter (pub)\n" +
+            "\t-noXmlQos                     - Skip loading the qos profiles from the xml\n" +
+            "\t                                profile\n" +
+            "\t-asynchronous                 - Use asynchronous writer\n" +
+            "\t                                Default: Not set\n" +
+            "\t-flowController <flow>        - In the case asynchronous writer use a specific flow controller.\n" +
+            "\t                                There are several flow controller predefined:\n" +
+            "\t                                ";
     for (unsigned int i = 0; i < sizeof(valid_flow_controller_socket) / sizeof(valid_flow_controller_socket[0]); i++)
     {
         usage_string += "\"" + valid_flow_controller_socket[i] + "\" ";
@@ -304,6 +306,24 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[])
 
             _nic = std::string(argv[i]);
         }
+        else if (IS_OPTION(argv[i], "-numPublishers"))
+        {
+            if ((i == (argc - 1)) || *argv[++i] == '-')
+            {
+                fprintf(stderr, "Missing <count> after -numPublishers\n");
+                return false;
+            }
+            _NumPublishers = strtol(argv[i], NULL, 10);
+        }
+        else if (IS_OPTION(argv[i], "-numSubscribers"))
+        {
+            if ((i == (argc - 1)) || *argv[++i] == '-')
+            {
+                fprintf(stderr, "Missing <count> after -numSubscribers\n");
+                return false;
+            }
+            _NumSubscribers = strtol(argv[i], NULL, 10);
+        }
         else if (IS_OPTION(argv[i], "-transport")) {
 
             if ((i == (argc - 1)) || *argv[++i] == '-') {
@@ -477,12 +497,13 @@ class RTISocketPublisher : public IMessagingWriter
     struct REDAWorker *_worker;
 
     RTIOsapiSemaphore *_pongSemaphore;
-    unsigned int _pulled_sample_count;
 
     TestData_t _data;
 
     int _peer_host_count;
     char **_peer_host;
+
+    int _NumSubscribers;
 
   public:
     RTISocketPublisher(
@@ -493,6 +514,7 @@ class RTISocketPublisher : public IMessagingWriter
         RTIOsapiSemaphore *pongSemaphore,
         int peer_host_count,
         char **peer_host,
+        int numSubscribers,
         struct REDAWorker *worker = NULL)
     {
         _plugin = plugin;
@@ -501,6 +523,8 @@ class RTISocketPublisher : public IMessagingWriter
         _send_port = send_port;
         _pongSemaphore = pongSemaphore;
 
+        _NumSubscribers = numSubscribers;
+
         _worker = worker;
 
         _peer_host_count = peer_host_count;
@@ -508,8 +532,6 @@ class RTISocketPublisher : public IMessagingWriter
 
         _send_buffer.length = 0;
         _send_buffer.pointer = 0;
-
-        _pulled_sample_count = 0;
 
         _data.bin_data.maximum(0);
     }
@@ -549,8 +571,20 @@ class RTISocketPublisher : public IMessagingWriter
         _send_buffer.length = message.size + perftest_cpp::OVERHEAD_BYTES;
         _send_buffer.pointer = (char*) &_data;
 
+        /*
+         * We don't know how many subscriber there are per Peer.
+         * So, we do as many send() as the maximum of subscribers that
+         * can be on a single peer.
+         */
+        //int sends_per_peer = (_peer_host_count % _NumSubscribers) + 1;
+        int sends_per_peer = _NumSubscribers;
+
+        int actual_port;
+
         bool result = true;
         for(int i=0; i < _peer_host_count; i++){
+
+            actual_port = _send_port;
 
             result = NDDS_Transport_UDP_string_to_address_cEA(
                 _plugin,
@@ -563,33 +597,38 @@ class RTISocketPublisher : public IMessagingWriter
                 return false;
             }
 
-            result = _plugin->send(
-                _plugin,
-                &_send_resource,
-                &_dst_address,
-                _send_port,
-                0,
-                &_send_buffer,
-                1,
-                _worker);
+            for(int j=0; j < sends_per_peer; j++){
 
-            if (!result)
-            {
-                fprintf(stderr, "Write error using sockets\n");
-                return false;
+                actual_port += j * RTISocketImpl::resources_per_participant;
+
+                result = _plugin->send(
+                    _plugin,
+                    &_send_resource,
+                    &_dst_address,
+                    actual_port,
+                    0,
+                    &_send_buffer,
+                    1,
+                    _worker);
+
+                if (!result)
+                {
+                    fprintf(stderr, "Write error using sockets\n");
+                    return false;
+                }
             }
 
         }
 
 
         _data.bin_data.unloan();
-        ++_pulled_sample_count;
 
         return true;
     }
 
     void WaitForReaders(int numSubscribers)
     {
+        perftest_cpp::MilliSleep(1000);
         /*Dummy Function*/
     }
 
@@ -638,12 +677,13 @@ class RTISocketPublisher : public IMessagingWriter
 
     unsigned int getPulledSampleCount()
     {
-        return _pulled_sample_count;
+        /*Dummy Function*/
+        return 0;
     };
 
     void wait_for_acknowledgments(long sec, unsigned long nsec)
     {
-        /* TODO .*/
+        /* TODO: .*/
         //perftest_cpp::MilliSleep(1000);
     }
 };
@@ -694,7 +734,7 @@ class RTISocketSubscriber : public IMessagingReader
 
         //_worker._name = "SubscriberWorker";
 
-        /*TODO  size as global constant or something*/
+        /*TODO:  size as global constant or something*/
         unsigned int size = 100 + perftest_cpp::OVERHEAD_BYTES;
 
         RTIOsapiHeap_allocateArray(
@@ -722,11 +762,9 @@ class RTISocketSubscriber : public IMessagingReader
     void Shutdown()
     {
 
-        //_data.bin_data.unloan();
-
         if (_recv_resource != NULL)
         {
-            /*TODO fail when is destroy*/
+            /*TODO: fail when is destroy*/
             //_plugin->destroy_recvresource_rrEA(_plugin, &_recv_resource);
         }
 
@@ -796,72 +834,10 @@ bool RTISocketImpl::Initialize(int argc, char *argv[])
         ? RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL)
         : NULL;
 
-    struct NDDS_Transport_UDPv4_Property_t updv4_prop =
-        NDDS_TRANSPORT_UDPV4_PROPERTY_DEFAULT;
-    struct NDDS_Transport_Shmem_Property_t shmem_prop =
-        NDDS_TRANSPORT_SHMEM_PROPERTY_DEFAULT;
-
-    if (_useShmem)
-    {
-        //shmem_prop.parent.properties_bitmap |= NDDS_TRANSPORT_PROPERTY_BIT_POLLED;
-        shmem_prop.parent.message_size_max = 63000;
-        //shmem_prop.received_message_count_max = 10000000;
-        shmem_prop.receive_buffer_size =  63000;
-
-        _plugin = NDDS_Transport_Shmem_new(&shmem_prop);
-    }
-    else
-    {
-        if (_nic.empty())
-        {
-            char * interfaces;
-            strcpy(interfaces, _nic.c_str());
-            updv4_prop.parent.allow_interfaces_list = &interfaces;
-            updv4_prop.parent.allow_interfaces_list_length = 1;
-            updv4_prop.send_blocking = false;
-            updv4_prop.no_zero_copy = false;
-
-            /*
-             * updv4_prop.send_socket_buffer_size = 63000;
-             * updv4_prop.recv_socket_buffer_size = 63000;
-             *
-             * The default value for send_socket_buffer_size and receive is
-             * 131072 and does not allow to go lower.
-             * NDDS_TRANSPORT_UDPV4_SEND_SOCKET_BUFFER_SIZE_DEFAULT   (131072)
-             * NDDS_TRANSPORT_UDPV4_RECV_SOCKET_BUFFER_SIZE_DEFAULT   (131072)
-             *
-             * This could be necesary to modify for large data.
-             */
-
-        }
-
-        _plugin = NDDS_Transport_UDPv4_new(&updv4_prop);
-    }
-
-    if (_plugin == NULL)
-    {
-        fprintf(stderr, "Error creating transport plugin\n");
+    if (!configureSocketsTransport()) {
         return false;
     }
 
-    if (_useShmem){
-        struct REDAWorkerFactory *workerFactory = NULL;
-
-        /*TODO set the size as constant*/
-        workerFactory = REDAWorkerFactory_new(63000);
-        if (workerFactory == NULL)
-        {
-            fprintf(stderr, "Error creating Worker Factory\n");
-            return false;
-        }
-
-        _worker = REDAWorkerFactory_createWorker(workerFactory, "RTISockerImpl");
-        if (_worker == NULL)
-        {
-            fprintf(stderr, "Error creating Worker\n");
-            return false;
-        }
-    }
 
     return true;
 }
@@ -879,7 +855,7 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
     NDDS_Transport_Address_t dst_address =
         NDDS_TRANSPORT_ADDRESS_INVALID;
 
-    int portOffset = 0;
+    int portOffset = 0;//3 * perftest_cpp::_SubID;
     if (!strcmp(topic_name, perftest_cpp::_LatencyTopicName))
     {
         portOffset += 1;
@@ -903,7 +879,7 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
         result = NDDS_Transport_UDP_string_to_address_cEA(
                 _plugin,
                 &dst_address,
-                _nic.c_str());
+                _transport.allowInterfaces.c_str());
 
         if (result != 1)
         {
@@ -934,6 +910,7 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
         _pongSemaphore,
         _peer_host_count,
         (char**)_peer_host,
+        _NumSubscribers,
         _worker);
 
 }
@@ -949,7 +926,7 @@ IMessagingReader *RTISocketImpl::CreateReader(
     NDDS_Transport_RecvResource_t recv_resource = NULL;
     NDDS_Transport_Port_t recv_port = 0;
 
-    int portOffset = 0;
+    int portOffset = 3 * perftest_cpp::_SubID;
     if (!strcmp(topic_name, perftest_cpp::_LatencyTopicName) )
     {
         portOffset += 1;
@@ -989,6 +966,147 @@ IMessagingReader *RTISocketImpl::CreateReader(
         recv_resource,
         recv_port,
         _worker);
+}
+
+bool RTISocketImpl::configureSocketsTransport()
+{
+    struct NDDS_Transport_UDPv4_Property_t updv4_prop =
+        NDDS_TRANSPORT_UDPV4_PROPERTY_DEFAULT;
+    struct NDDS_Transport_Shmem_Property_t shmem_prop =
+        NDDS_TRANSPORT_SHMEM_PROPERTY_DEFAULT;
+
+    struct REDAWorkerFactory *workerFactory = NULL;
+
+    char * outInterfaceBuffer = NULL;
+    int outInterfaceBufferSize = 0;
+    RTIOsapiSocket_InterfaceDescription *outInterfaceArray = NULL;
+    int outInterfaceCount = 0;
+
+    RTIOsapiSocket_getInterfaces(
+        &outInterfaceBuffer,
+        &outInterfaceBufferSize,
+        &outInterfaceArray,
+        &outInterfaceCount,
+        RTI_OSAPI_SOCKET_AF_INET,
+        0,
+        0,
+        0);
+
+    NDDS_Transport_Address_t transportAddress = NDDS_TRANSPORT_ADDRESS_INVALID;
+    for(int i = 0; i < outInterfaceCount; i++){
+
+        if ( !strcmp(outInterfaceArray[i].name,
+                _transport.allowInterfaces.c_str()) ){
+            NDDS_Transport_SocketUtil_Address_to_transportAddress(
+                    outInterfaceArray[i].address,
+                    &transportAddress,
+                    RTI_OSAPI_SOCKET_AF_INET);
+        }
+
+    }
+
+    if (!NDDS_Transport_Address_is_ipv4(&transportAddress)) {
+        fprintf(stderr, "The interface it's not recognize\n");
+        return false;
+    }
+
+    char *interface = new char[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
+
+    NDDS_Transport_Address_to_string(
+            &transportAddress,
+            interface,
+            NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE);
+
+    _transport.allowInterfaces = std::string(interface);
+
+    switch (_transport.transportConfig.kind)
+    {
+
+    case TRANSPORT_DEFAULT:
+        /*Default transport is UDPv4*/
+
+    case TRANSPORT_UDPv4:
+
+        if (!_transport.allowInterfaces.empty())
+        {
+            strcpy(interface, _transport.allowInterfaces.c_str());
+            updv4_prop.parent.allow_interfaces_list = &interface;
+            updv4_prop.parent.allow_interfaces_list_length = 1;
+        }
+        updv4_prop.send_blocking = false;
+        updv4_prop.no_zero_copy = false;
+
+        /*
+            * updv4_prop.recv_socket_buffer_size = ;
+            * updv4_prop.send_socket_buffer_size = ;
+            *
+            * The default value for send_socket_buffer_size and receive is
+            * 131072 and does not allow to go lower.
+            * NDDS_TRANSPORT_UDPV4_SEND_SOCKET_BUFFER_SIZE_DEFAULT   (131072)
+            * NDDS_TRANSPORT_UDPV4_RECV_SOCKET_BUFFER_SIZE_DEFAULT   (131072)
+            *
+            * This could be necesary to modify for large data.
+            */
+
+        _plugin = NDDS_Transport_UDPv4_new(&updv4_prop);
+
+        break;
+
+    case TRANSPORT_SHMEM:
+
+        /*_Plugin configure*/
+
+        //shmem_prop.parent.properties_bitmap |= NDDS_TRANSPORT_PROPERTY_BIT_POLLED;
+        //shmem_prop.received_message_count_max = 10000000;
+        shmem_prop.parent.message_size_max = MAX_SYNCHRONOUS_SIZE;
+        /* TODO:
+             * decide the values for receive_buffer_size
+             * and received_message_count_max.
+             */
+
+        //shmem_prop.received_message_count_max =
+        shmem_prop.receive_buffer_size = MAX_SYNCHRONOUS_SIZE;
+
+        _plugin = NDDS_Transport_Shmem_new(&shmem_prop);
+
+        /*Worker configure*/
+
+        workerFactory = REDAWorkerFactory_new(MAX_SYNCHRONOUS_SIZE);
+        if (workerFactory == NULL)
+        {
+            fprintf(stderr, "Error creating Worker Factory\n");
+            return false;
+        }
+
+        _worker = REDAWorkerFactory_createWorker(workerFactory, "RTISockerImpl");
+
+        if (_worker == NULL)
+        {
+            fprintf(stderr, "Error creating Worker\n");
+            return false;
+        }
+
+        break;
+
+    case TRANSPORT_UDPv6:
+    case TRANSPORT_TCPv4:
+    case TRANSPORT_TLSv4:
+    case TRANSPORT_DTLSv4:
+    case TRANSPORT_WANv4:
+    default:
+        fprintf(stderr,
+                "Transport is not supported\n");
+        return false;
+
+    } // Switch
+
+    if (_plugin == NULL)
+    {
+        fprintf(stderr, "Error creating transport plugin\n");
+        return false;
+    }
+
+    return true;
 }
 
 #ifdef RTI_WIN32

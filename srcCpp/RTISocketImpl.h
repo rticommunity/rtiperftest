@@ -15,6 +15,7 @@
 #include "RTIDDSImpl.h"
 #include "perftest.h"
 #include "perftest_cpp.h"
+#include "transport/transport_socketutil.h"
 
 #define RTIPERFTEST_MAX_PEERS 1024
 
@@ -83,6 +84,10 @@ class RTISocketImpl : public IMessaging
         _nic = std::string("127.0.0.1");
         _plugin = NULL;
         _worker = NULL;
+
+        _NumPublishers = 1;
+        _NumSubscribers = 1;
+
         std::string no_socket_params[] = {
             "-unbounded",
             "-sendQueueSize",
@@ -148,6 +153,8 @@ class RTISocketImpl : public IMessaging
 
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
 
+    bool configureSocketsTransport();
+
   private:
     int _SendQueueSize;
     unsigned long _DataLen;
@@ -205,13 +212,18 @@ class RTISocketImpl : public IMessaging
 
     int _useShmem;
     std::string _nic;
-    /*TODO decide if is necesary only one Nic or one for send and another for recive*/
-    // char *_sendNic;
-    // char *_receiveNic;
+
     NDDS_Transport_Plugin *_plugin;
     struct REDAWorker *_worker;
 
     std::string no_socket_params[];
+
+    /*
+     * Resources reserved by a participant
+     * It's use to calculate the offset between the ports
+     */
+    int _NumPublishers;
+    int _NumSubscribers;
 
     /**************************************************************************/
     /**************************************************************************/
@@ -219,6 +231,7 @@ class RTISocketImpl : public IMessaging
   public:
     static int _WaitsetEventCount;
     static unsigned int _WaitsetDelayUsec;
+    static const int resources_per_participant;
 };
 
 #endif // __RTISOCKETIMPL_H__
