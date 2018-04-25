@@ -1028,24 +1028,23 @@ public:
     bool Send(const TestMessage &message, bool isCftWildCardKey)
     {
         DDS_ReturnCode_t retcode;
-        DDS_OctetSeq octetSeq;
         DDS_Octet key_octets[KEY_SIZE];
         long key = 0;
 
         if (_last_message_size != message.size) {
-                //Cannot use data.clear_member("bind_data") because:
-                //DDS_DynamicData_clear_member:unsupported for non-sparse types
-                data.clear_all_members();
-                retcode = data.set_octet_array(
-                        "bin_data",
-                        dynamicDataMembersId::at("bin_data"),
-                        message.size,
-                        (DDS_Octet *) message.data);
-                if (retcode != DDS_RETCODE_OK) {
-                    fprintf(stderr,
-                        "set_octet_array(bin_data) failed: %d.\n",
-                        retcode);
-                }
+            //Cannot use data.clear_member("bind_data") because:
+            //DDS_DynamicData_clear_member:unsupported for non-sparse types
+            data.clear_all_members();
+            retcode = data.set_octet_array(
+                    "bin_data",
+                    dynamicDataMembersId::at("bin_data"),
+                    message.size,
+                    (DDS_Octet *) message.data);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                    "set_octet_array(bin_data) failed: %d.\n",
+                    retcode);
+            }
             _last_message_size = message.size;
         }
         retcode = data.set_long(
