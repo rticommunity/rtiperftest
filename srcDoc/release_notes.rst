@@ -62,6 +62,22 @@ following command-line parameters:
     --cpp-build
     --cs-build
 
+What's Fixed in Master
+~~~~~~~~~~~~~~~~~~~~~~
+
+Review Dynamic Data Send() and Receive() operations (#55)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* has optimize the `Send()` and `Received()` methods by:
+
+- Specifying the member_id in the `get_T()` and `set_T()` methods instead of
+  `DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED`.
+- Creating a `std::map<std::string, int>` for the DDS_DynamicDataMemberIds.
+- Set the content of `bind_data`, using `set_octet_array` when the message_size
+  changes.
+- Clearing the contents of DDS_DynamicData object, calling `clear_all_members()`
+  when the size change.
+
 Release Notes 2.3.2
 -------------------
 
