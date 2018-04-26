@@ -1872,13 +1872,9 @@ int perftest_cpp::Publisher()
 
                     // flush anything that was previously sent
                     writer->Flush();
-                    if (_IsReliable) {
-                        writer->wait_for_acknowledgments(
-                                timeout_wait_for_ack_sec,
-                                timeout_wait_for_ack_nsec);
-                    } else {
-                        MilliSleep(timeout_wait_for_ack_nsec / 1000000);
-                    }
+                    writer->waitForAck(
+                            timeout_wait_for_ack_sec,
+                            timeout_wait_for_ack_nsec);
 
                     if (scan_count == _scanDataLenSizes.size()) {
                         break; // End of scan test
@@ -1904,13 +1900,9 @@ int perftest_cpp::Publisher()
                             < _NumSubscribers) {
                         writer->Send(message, true);
                         writer->Flush();
-                        if (_IsReliable) {
-                            writer->wait_for_acknowledgments(
-                                timeout_wait_for_ack_sec,
-                                timeout_wait_for_ack_nsec);
-                        } else {
-                            MilliSleep(timeout_wait_for_ack_nsec / 1000000);
-                        }
+                        writer->waitForAck(
+                            timeout_wait_for_ack_sec,
+                            timeout_wait_for_ack_nsec);
                     }
 
                     message.size = _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
@@ -1980,13 +1972,9 @@ int perftest_cpp::Publisher()
             && i < initializeSampleCount) {
         writer->Send(message, true);
         writer->Flush();
-        if (_IsReliable) {
-            writer->wait_for_acknowledgments(
-                    timeout_wait_for_ack_sec,
-                    timeout_wait_for_ack_nsec);
-        } else {
-            MilliSleep(timeout_wait_for_ack_nsec / 1000000);
-        }
+        writer->waitForAck(
+                timeout_wait_for_ack_sec,
+                timeout_wait_for_ack_nsec);
         i++;
     }
 

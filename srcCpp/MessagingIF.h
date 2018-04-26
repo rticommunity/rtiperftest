@@ -92,7 +92,7 @@ class IMessagingWriter
     virtual unsigned int getPulledSampleCount() {
         return 0;
     };
-    virtual void wait_for_acknowledgments(long sec, unsigned long nsec) {
+    virtual void waitForAck(long sec, unsigned long nsec) {
     };
 };
 
