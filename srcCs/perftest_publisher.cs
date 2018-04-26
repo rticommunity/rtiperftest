@@ -1925,7 +1925,7 @@ namespace PerformanceTest {
             IMessagingReader announcement_reader;
             AnnouncementListener  announcement_reader_listener = null;
             uint num_latency;
-            int initializeSampleCount = 50;
+            int announcementSampleCount = 50;
 
             // create throughput/ping writer
             writer = _MessagingImpl.CreateWriter(_ThroughputTopicName);
@@ -1938,12 +1938,8 @@ namespace PerformanceTest {
 
             num_latency = (uint)((_NumIter/(ulong)_SamplesPerBatch) / (ulong)_LatencyCount);
 
-            if ((num_latency / (ulong)_SamplesPerBatch) % (ulong)_LatencyCount > 0)
-
-            {
-
+            if ((num_latency / (ulong)_SamplesPerBatch) % (ulong)_LatencyCount > 0) {
                 num_latency++;
-
             }
 
             // in batch mode, might have to send another ping
@@ -2031,16 +2027,16 @@ namespace PerformanceTest {
             message.data = new byte[Math.Max(_DataLen,LENGTH_CHANGED_SIZE)];
 
             Console.Error.Write("Sending initial pings...\n");
+
             if (_showCpu) {
                 reader_listener.cpu.initialize();
             }
 
             // initialize data pathways by sending some initial pings
-            if (initializeSampleCount < _InstanceCount) {
-                initializeSampleCount = _InstanceCount;
-            }
             message.size = INITIALIZE_SIZE;
-            for (int i = 0; i < initializeSampleCount; i++)
+            for (int i = 0;
+                    i < Math.Max(_InstanceCount, announcementSampleCount);
+                    i++)
             {
                 // Send test initialization message
                 writer.Send(message, true);
@@ -2155,14 +2151,9 @@ namespace PerformanceTest {
 
                             // flush anything that was previously sent
                             writer.Flush();
-                            if (_isReliable) {
-                                writer.wait_for_acknowledgments(
-                                    timeout_wait_for_ack_sec,
-                                    timeout_wait_for_ack_nsec);
-                            } else {
-                                System.Threading.Thread.Sleep(
-                                    (int)timeout_wait_for_ack_nsec / 1000000);
-                            }
+                            writer.waitForAck(
+                                timeout_wait_for_ack_sec,
+                                timeout_wait_for_ack_nsec);
 
                             announcement_reader_listener.announced_subscriber_replies =
                                     _NumSubscribers;
@@ -2179,7 +2170,7 @@ namespace PerformanceTest {
                             /*
                              * If the Throughput topic is reliable, we can send the packet and do
                              * a wait for acknowledgements. However, if the Throughput topic is
-                             * Best Effort, wait_for_acknowledgments() will return inmediately.
+                             * Best Effort, waitForAck() will return inmediately.
                              * This would cause that the Send() would be exercised too many times,
                              * in some cases causing the network to be flooded, a lot of packets being
                              * lost, and potentially CPU starbation for other processes.
@@ -2188,14 +2179,9 @@ namespace PerformanceTest {
                              */
                             while (announcement_reader_listener.announced_subscriber_replies > 0) {
                                 writer.Send(message, true);
-                                if (_isReliable) {
-                                    writer.wait_for_acknowledgments(
-                                        timeout_wait_for_ack_sec,
-                                        timeout_wait_for_ack_nsec);
-                                } else {
-                                    System.Threading.Thread.Sleep(
-                                        (int)timeout_wait_for_ack_nsec / 1000000);
-                                }
+                                writer.waitForAck(
+                                    timeout_wait_for_ack_sec,
+                                    timeout_wait_for_ack_nsec);
                             }
                             message.size = (int)(_scanDataLenSizes[scan_count++] - OVERHEAD_BYTES);
                             /* Reset _SamplePerBatch */
@@ -2261,17 +2247,12 @@ namespace PerformanceTest {
             announcement_reader_listener.announced_subscriber_replies =
                     _NumSubscribers;
             while (announcement_reader_listener.announced_subscriber_replies > 0
-                    && j < initializeSampleCount) {
+                    && j < announcementSampleCount) {
                 writer.Send(message, true);
                 writer.Flush();
-                if (_isReliable) {
-                    writer.wait_for_acknowledgments(
-                        timeout_wait_for_ack_sec,
-                        timeout_wait_for_ack_nsec);
-                } else {
-                    System.Threading.Thread.Sleep(
-                        (int)timeout_wait_for_ack_nsec / 1000000);
-                }
+                writer.waitForAck(
+                    timeout_wait_for_ack_sec,
+                    timeout_wait_for_ack_nsec);
                 j++;
             }
 
