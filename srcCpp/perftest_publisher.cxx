@@ -1623,7 +1623,7 @@ int perftest_cpp::Publisher()
     AnnouncementListener  *announcement_reader_listener = NULL;
     IMessagingReader *announcement_reader;
     unsigned long num_latency;
-    unsigned long initializeSampleCount = 50;
+    unsigned long announcementSampleCount = 50;
 
     // create throughput/ping writer
     IMessagingWriter *writer = _MessagingImpl->CreateWriter(_ThroughputTopicName);
@@ -1750,10 +1750,6 @@ int perftest_cpp::Publisher()
     if ( perftest_cpp::_showCpu && _PubID == 0) {
         reader_listener->cpu.initialize();
     }
-    // initialize data pathways by sending some initial pings
-    if (_InstanceCount > initializeSampleCount) {
-        initializeSampleCount = _InstanceCount;
-    }
 
     if (INITIALIZE_SIZE > MAX_PERFTEST_SAMPLE_SIZE) {
         fprintf(stderr,"Error: INITIALIZE_SIZE > MAX_PERFTEST_SAMPLE_SIZE\n");
@@ -1761,7 +1757,10 @@ int perftest_cpp::Publisher()
     }
 
     message.size = INITIALIZE_SIZE;
-    for (unsigned long i = 0; i < initializeSampleCount; i++) {
+
+    for (unsigned long i = 0;
+            i < (std::max)(_InstanceCount, announcementSampleCount);
+            i++) {
         // Send test initialization message
         writer->Send(message, true);
     }
@@ -1969,7 +1968,7 @@ int perftest_cpp::Publisher()
     message.size = FINISHED_SIZE;
     unsigned long i = 0;
     while (announcement_reader_listener->subscriber_list.size() > 0
-            && i < initializeSampleCount) {
+            && i < announcementSampleCount) {
         writer->Send(message, true);
         writer->Flush();
         writer->waitForAck(

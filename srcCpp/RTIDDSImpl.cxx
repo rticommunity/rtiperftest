@@ -941,7 +941,7 @@ class RTIPublisher : public IMessagingWriter
             DDS_Duration_t timeout = {sec, nsec};
             _writer->wait_for_acknowledgments(timeout);
         } else {
-            MilliSleep(nsec / 1000000);
+            perftest_cpp::MilliSleep(nsec / 1000000);
         }
     }
 };
@@ -957,6 +957,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     DDS_InstanceHandle_t *_instance_handles;
     RTIOsapiSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
+    bool _isReliable;
 
 public:
     RTIDynamicDataPublisher(
@@ -1191,7 +1192,7 @@ public:
             DDS_Duration_t timeout = {sec, nsec};
             _writer->wait_for_acknowledgments(timeout);
         } else {
-            MilliSleep(nsec / 1000000);
+            perftest_cpp::MilliSleep(nsec / 1000000);
         }
     }
 };
@@ -2536,7 +2537,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     dr_qos.resource_limits.initial_instances = _InstanceCount + 1;
-    if (_InstanceMaxCountReader != (unsigned long)DDS_LENGTH_UNLIMITED) {
+    if (_InstanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
         _InstanceMaxCountReader++;
     }
     dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
