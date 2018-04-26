@@ -1566,7 +1566,7 @@ int perftest_cpp::RunPublisher()
     AnnouncementListener  *announcement_reader_listener = NULL;
     IMessagingReader *announcement_reader;
     unsigned long num_latency;
-    unsigned long initializeSampleCount = 50;
+    unsigned long announcementSampleCount = 50;
 
     // create throughput/ping writer
     writer = _MessagingImpl->CreateWriter(_ThroughputTopicName);
@@ -1670,10 +1670,6 @@ int perftest_cpp::RunPublisher()
     if ( perftest_cpp::_showCpu && _PubID == 0) {
         reader_listener->cpu.initialize();
     }
-    // initialize data pathways by sending some initial pings
-    if (_InstanceCount > initializeSampleCount) {
-        initializeSampleCount = _InstanceCount;
-    }
 
     if (INITIALIZE_SIZE > MAX_PERFTEST_SAMPLE_SIZE) {
         std::cerr << "[Error] INITIALIZE_SIZE > MAX_PERFTEST_SAMPLE_SIZE" << std::endl;
@@ -1682,7 +1678,9 @@ int perftest_cpp::RunPublisher()
 
     message.size = INITIALIZE_SIZE;
     //message.data.resize(message.size);
-    for (unsigned long i = 0; i < initializeSampleCount; i++) {
+    for (unsigned long i = 0;
+            i < (std::max)(_InstanceCount, announcementSampleCount);
+            i++) {
         // Send test initialization message
         writer->send(message, true);
     }
@@ -1793,13 +1791,9 @@ int perftest_cpp::RunPublisher()
 
                     // flush anything that was previously sent
                     writer->flush();
-                    if (_IsReliable) {
-                        writer->wait_for_acknowledgments(
-                            timeout_wait_for_ack_sec,
-                            timeout_wait_for_ack_nsec);
-                    } else {
-                        MilliSleep(timeout_wait_for_ack_nsec / 1000000);
-                    }
+                    writer->waitForAck(
+                        timeout_wait_for_ack_sec,
+                        timeout_wait_for_ack_nsec);
 
                     if (scan_count == _scanDataLenSizes.size()) {
                         break; // End of scan test
@@ -1815,7 +1809,7 @@ int perftest_cpp::RunPublisher()
                     /*
                      * If the Throughput topic is reliable, we can send the packet and do
                      * a wait for acknowledgements. However, if the Throughput topic is
-                     * Best Effort, wait_for_acknowledgments() will return inmediately.
+                     * Best Effort, waitForAck() will return inmediately.
                      * This would cause that the Send() would be exercised too many times,
                      * in some cases causing the network to be flooded, a lot of packets being
                      * lost, and potentially CPU starbation for other processes.
@@ -1827,13 +1821,9 @@ int perftest_cpp::RunPublisher()
                             < _NumSubscribers) {
                         writer->send(message, true);
                         writer->flush();
-                        if (_IsReliable) {
-                            writer->wait_for_acknowledgments(
-                                timeout_wait_for_ack_sec,
-                                timeout_wait_for_ack_nsec);
-                        } else {
-                            MilliSleep(timeout_wait_for_ack_nsec / 1000000);
-                        }
+                        writer->waitForAck(
+                            timeout_wait_for_ack_sec,
+                            timeout_wait_for_ack_nsec);
                     }
 
                     message.size = _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
@@ -1902,16 +1892,12 @@ int perftest_cpp::RunPublisher()
     message.data.resize(message.size);
     unsigned long i = 0;
     while (announcement_reader_listener->subscriber_list.size() > 0
-            && i < initializeSampleCount) {
+            && i < announcementSampleCount) {
         writer->send(message, true);
         writer->flush();
-        if (_IsReliable) {
-            writer->wait_for_acknowledgments(
-                timeout_wait_for_ack_sec,
-                timeout_wait_for_ack_nsec);
-        } else {
-            MilliSleep(timeout_wait_for_ack_nsec / 1000000);
-        }
+        writer->waitForAck(
+            timeout_wait_for_ack_sec,
+            timeout_wait_for_ack_nsec);
         i++;
     }
 

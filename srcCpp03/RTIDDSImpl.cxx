@@ -802,6 +802,7 @@ protected:
     bool _useSemaphore;
     rti::core::Semaphore& _pongSemaphore;
     long _instancesToBeWritten;
+    bool _isReliable;
 
 public:
     RTIPublisherBase(
@@ -817,7 +818,12 @@ public:
             _useSemaphore(useSemaphore),
             _pongSemaphore(pongSemaphore),
             _instancesToBeWritten(instancesToBeWritten)
-            {}
+    {
+        using namespace dds::core::policy;
+
+        _isReliable = (_writer.qos().template policy<Reliability>().kind()
+                            == ReliabilityKind::RELIABLE);
+    }
 
     void flush() {
         _writer->flush();
@@ -857,11 +863,16 @@ public:
         return (unsigned int)_writer->datawriter_protocol_status().pulled_sample_count().total();
     }
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec) {
-        try {
-            _writer->wait_for_acknowledgments(dds::core::Duration(sec, nsec));
-        } catch (const dds::core::TimeoutError) { // Expected exception
+    void waitForAck(long sec, unsigned long nsec) {
+
+        if (_isReliable) {
+            try {
+                _writer->wait_for_acknowledgments(dds::core::Duration(sec, nsec));
+            } catch (const dds::core::TimeoutError) {} // Expected exception
+        } else {
+            perftest_cpp::MilliSleep(nsec / 1000000);
         }
+
     }
 };
 
