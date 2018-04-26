@@ -881,7 +881,7 @@ public final class PerfTest {
         AnnouncementListener  announcement_reader_listener = null;
         IMessagingReader announcement_reader;
         int num_latency;
-        int initialize_sample_count = 50;
+        int announcement_sample_count = 50;
 
         // create throughput/ping writer
         writer = _messagingImpl.createWriter(THROUGHPUT_TOPIC_NAME);
@@ -986,13 +986,10 @@ public final class PerfTest {
         message.data = new byte[Math.max((int)_dataLen,LENGTH_CHANGED_SIZE)];
 
         System.err.print("Sending initial pings...\n");
-
-        // initialize data pathways by sending some initial pings
-        if (initialize_sample_count < _instanceCount) {
-            initialize_sample_count = _instanceCount;
-        }
         message.size = INITIALIZE_SIZE;
-        for (int i = 0; i < initialize_sample_count; i++)
+        for (int i = 0;
+                i < Math.max(_instanceCount, announcement_sample_count);
+                i++)
         {
             // Send test initialization message
             if (!writer.send(message, true)) {
@@ -1118,13 +1115,9 @@ public final class PerfTest {
 
                         // flush anything that was previously sent
                         writer.flush();
-                        if (_isReliable) {
-                            writer.wait_for_acknowledgments(
-                                timeout_wait_for_ack_sec,
-                                timeout_wait_for_ack_nsec);
-                        } else {
-                            sleep(timeout_wait_for_ack_nsec/1000000);
-                        }
+                        writer.waitForAck(
+                            timeout_wait_for_ack_sec,
+                            timeout_wait_for_ack_nsec);
 
                         if (scan_count == _scanDataLenSizes.size()) {
                             break; // End of scan test
@@ -1138,7 +1131,7 @@ public final class PerfTest {
                         /*
                          * If the Throughput topic is reliable, we can send the packet and do
                          * a wait for acknowledgements. However, if the Throughput topic is
-                         * Best Effort, wait_for_acknowledgments() will return inmediately.
+                         * Best Effort, waitForAck() will return inmediately.
                          * This would cause that the Send() would be exercised too many times,
                          * in some cases causing the network to be flooded, a lot of packets being
                          * lost, and potentially CPU starbation for other processes.
@@ -1150,13 +1143,9 @@ public final class PerfTest {
                         while (announcement_reader_listener.subscriber_list.size()
                                 < _numSubscribers) {
                             writer.send(message, true);
-                            if (_isReliable) {
-                                writer.wait_for_acknowledgments(
-                                    timeout_wait_for_ack_sec,
-                                    timeout_wait_for_ack_nsec);
-                            } else {
-                                sleep(timeout_wait_for_ack_nsec/1000000);
-                            }
+                            writer.waitForAck(
+                                timeout_wait_for_ack_sec,
+                                timeout_wait_for_ack_nsec);
                         }
 
                         message.size = (int)(_scanDataLenSizes.get(scan_count++) - OVERHEAD_BYTES);
@@ -1228,16 +1217,12 @@ public final class PerfTest {
         message.size = FINISHED_SIZE;
         int i = 0;
         while (announcement_reader_listener.subscriber_list.size() > 0
-                && i < initialize_sample_count) {
+                && i < announcement_sample_count) {
             writer.send(message, true);
             i++;
-            if (_isReliable) {
-                writer.wait_for_acknowledgments(
-                    timeout_wait_for_ack_sec,
-                    timeout_wait_for_ack_nsec);
-            } else {
-                sleep(timeout_wait_for_ack_nsec/1000000);
-            }
+            writer.waitForAck(
+                timeout_wait_for_ack_sec,
+                timeout_wait_for_ack_nsec);
         }
 
         if (pubID == 0) {
