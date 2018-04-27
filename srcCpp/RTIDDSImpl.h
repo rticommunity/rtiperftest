@@ -14,25 +14,17 @@
 #include "PerftestTransport.h"
 
 #define RTIPERFTEST_MAX_PEERS 1024
+/* Class for the DDS_DynamicDataMemberId of the type of RTI Perftest*/
+class DynamicDataMembersId
+{
+  private:
+    std::map<std::string, int> membersId;
 
-struct dynamicDataMembersId{
-    static std::map<std::string, int> create_map()
-    {
-      std::map<std::string, int> m;
-      m["key"] = 1;
-      m["entity_id"] = 2;
-      m["seq_num"] = 3;
-      m["timestamp_sec"] = 4;
-      m["timestamp_usec"] = 5;
-      m["latency_ping"] = 6;
-      m["bin_data"] = 7;
-      return m;
-    }
-    static int at(std::string key)
-    {
-      return membersId.at(key);
-    }
-    static const std::map<std::string, int> membersId;
+  public:
+    DynamicDataMembersId();
+    ~DynamicDataMembersId();
+    static DynamicDataMembersId &GetInstance();
+    int at(std::string key);
 };
 
 template <typename T>
