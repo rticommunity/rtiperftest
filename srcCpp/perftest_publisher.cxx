@@ -34,8 +34,8 @@ bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the sca
 const char *perftest_cpp::_LatencyTopicName = "Latency";
 const char *perftest_cpp::_AnnouncementTopicName = "Announcement";
 const char *perftest_cpp::_ThroughputTopicName = "Throughput";
-const long timeout_wait_for_ack_sec = 0;
-const unsigned long timeout_wait_for_ack_nsec = 100000000;
+const int timeout_wait_for_ack_sec = 0;
+const unsigned int timeout_wait_for_ack_nsec = 100000000;
 
 /*
  * PERFTEST-108
