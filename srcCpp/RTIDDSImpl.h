@@ -14,6 +14,7 @@
 #include "PerftestTransport.h"
 
 #define RTIPERFTEST_MAX_PEERS 1024
+
 /* Class for the DDS_DynamicDataMemberId of the type of RTI Perftest*/
 class DynamicDataMembersId
 {

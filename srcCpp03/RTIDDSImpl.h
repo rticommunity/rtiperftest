@@ -19,6 +19,19 @@
 
 #define RTIPERFTEST_MAX_PEERS 1024
 
+/* Class for the DDS_DynamicDataMemberId of the type of RTI Perftest*/
+class DynamicDataMembersId
+{
+  private:
+    std::map<std::string, int> membersId;
+
+  public:
+    DynamicDataMembersId();
+    ~DynamicDataMembersId();
+    static DynamicDataMembersId &GetInstance();
+    int at(std::string key);
+};
+
 template <typename T>
 class RTIDDSImpl : public IMessaging
 {

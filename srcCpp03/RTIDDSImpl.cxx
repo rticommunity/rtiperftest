@@ -48,6 +48,34 @@ const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME = "nddssecurity";
 
 std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
 
+/* Perftest DynamicDataMembersId class */
+DynamicDataMembersId::DynamicDataMembersId()
+{
+    membersId["key"] = 1;
+    membersId["entity_id"] = 2;
+    membersId["seq_num"] = 3;
+    membersId["timestamp_sec"] = 4;
+    membersId["timestamp_usec"] = 5;
+    membersId["latency_ping"] = 6;
+    membersId["bin_data"] = 7;
+}
+
+DynamicDataMembersId::~DynamicDataMembersId()
+{
+    membersId.clear();
+}
+
+DynamicDataMembersId &DynamicDataMembersId::GetInstance()
+{
+    static DynamicDataMembersId instance;
+    return instance;
+}
+
+int DynamicDataMembersId::at(std::string key)
+{
+   return membersId.at(key);
+}
+
 template <typename T>
 RTIDDSImpl<T>::RTIDDSImpl():
         _SendQueueSize(50),
@@ -944,6 +972,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DynamicData> {
 
 protected:
     DynamicData data;
+    int _last_message_size;
 
 public:
     RTIDynamicDataPublisher(
@@ -960,49 +989,62 @@ public:
                     pongSemaphore,
                     useSemaphore,
                     instancesToBeWritten),
-            data(typeCode)
+            data(typeCode),
+            _last_message_size(0)
     {
-
+        std::vector<uint8_t> key_octets(KEY_SIZE);
         for (unsigned long i = 0; i < this->_num_instances; ++i) {
-            std::vector<uint8_t> key_octets;
             for (int c = 0; c < KEY_SIZE; c++) {
-                key_octets.push_back((uint8_t) (i >> c * 8));
+                key_octets[c] = (uint8_t) (i >> c * 8);
             }
-            this->data.set_values("key",key_octets);
-
+            this->data.set_values(
+                    DynamicDataMembersId::GetInstance().at("key"),
+                    key_octets);
             this->_instance_handles.push_back(
                     this->_writer.register_instance(this->data));
         }
         // Register the key of MAX_CFT_VALUE
-        std::vector<uint8_t> key_octets;
         for (int c = 0; c < KEY_SIZE; c++) {
-            key_octets.push_back((uint8_t)(MAX_CFT_VALUE >> c * 8));
+            key_octets[c] = (uint8_t)(MAX_CFT_VALUE >> c * 8);
         }
-        this->data.set_values("key",key_octets);
+        this->data.set_values(
+                    DynamicDataMembersId::GetInstance().at("key"),
+                    key_octets);
         this->_instance_handles.push_back(
                 this->_writer.register_instance(this->data));
     }
 
     inline bool send(TestMessage &message, bool isCftWildCardKey) {
-
-        this->data.clear_all_members();
-        this->data.value("entity_id", message.entity_id);
-        this->data.value("seq_num", message.seq_num);
-        this->data.value("timestamp_sec", message.timestamp_sec);
-        this->data.value("timestamp_usec", message.timestamp_usec);
-        this->data.value("latency_ping", message.latency_ping);
-
-        std::vector<uint8_t> octec_seq;
-        octec_seq.resize(message.size);
-        this->data.set_values("bin_data", octec_seq);
+        if (_last_message_size != message.size) {
+            this->data.clear_all_members();
+            std::vector<uint8_t> octec_seq(message.size);
+            this->data.set_values(
+                    DynamicDataMembersId::GetInstance().at("bin_data"),
+                    octec_seq);
+        }
+        this->data.value(
+                DynamicDataMembersId::GetInstance().at("entity_id"),
+                message.entity_id);
+        this->data.value(
+                DynamicDataMembersId::GetInstance().at("seq_num"),
+                message.seq_num);
+        this->data.value(
+                DynamicDataMembersId::GetInstance().at("timestamp_sec"),
+                message.timestamp_sec);
+        this->data.value(
+                DynamicDataMembersId::GetInstance().at("timestamp_usec"),
+                message.timestamp_usec);
+        this->data.value(
+                DynamicDataMembersId::GetInstance().at("latency_ping"),
+                message.latency_ping);
 
         long key = 0;
-        std::vector<uint8_t> key_octets;
+        std::vector<uint8_t> key_octets(KEY_SIZE);
         if (!isCftWildCardKey) {
             if (this->_num_instances > 1) {
                 if (this->_instancesToBeWritten == -1) {
                     key = this->_instance_counter++ % this->_num_instances;
-                } else { // send sample to a specific subscriber
+                } else { // Send sample to a specific subscriber
                     key = this->_instancesToBeWritten;
                 }
             }
@@ -1010,9 +1052,11 @@ public:
             key = MAX_CFT_VALUE;
         }
         for (int c = 0; c < KEY_SIZE; c++) {
-            key_octets.push_back((uint8_t) (key >> c * 8));
+            key_octets[c] = (uint8_t) (key >> c * 8);
         }
-        this->data.set_values("key", key_octets);
+        this->data.set_values(
+                DynamicDataMembersId::GetInstance().at("key"),
+                key_octets);
         if (!isCftWildCardKey) {
             this->_writer.write(this->data, this->_instance_handles[key]);
         } else {
@@ -1085,18 +1129,18 @@ public:
             if (this->samples[i].info().valid()) {
                 DynamicData& sample =
                         const_cast<DynamicData&>(this->samples[i].data());
-                this->_message.entity_id =
-                        sample.value<int32_t>("entity_id");
-                this->_message.seq_num =
-                        sample.value<uint32_t>("seq_num");
-                this->_message.timestamp_sec =
-                        sample.value<int32_t>("timestamp_sec");
-                this->_message.timestamp_usec =
-                        sample.value<uint32_t>("timestamp_usec");
-                this->_message.latency_ping =
-                        sample.value<int32_t>("latency_ping");
-                this->_message.size =
-                        (int)(sample.get_values<uint8_t>("bin_data")).size();
+                this->_message.entity_id = sample.value<int32_t>(
+                        DynamicDataMembersId::GetInstance().at("entity_id"));
+                this->_message.seq_num = sample.value<uint32_t>(
+                        DynamicDataMembersId::GetInstance().at("seq_num"));
+                this->_message.timestamp_sec = sample.value<int32_t>(
+                        DynamicDataMembersId::GetInstance().at("timestamp_sec"));
+                this->_message.timestamp_usec = sample.value<uint32_t>(
+                        DynamicDataMembersId::GetInstance().at("timestamp_usec"));
+                this->_message.latency_ping = sample.value<int32_t>(
+                        DynamicDataMembersId::GetInstance().at("latency_ping"));
+                this->_message.size = (int)(sample.get_values<uint8_t>(
+                        DynamicDataMembersId::GetInstance().at("bin_data")).size());
 
                 //_message.data = sample.bin_data();
                 _callback->ProcessMessage(this->_message);
@@ -1275,8 +1319,7 @@ public:
                 this->_waitset.wait(dds::core::Duration::infinite());
             }
 
-            dds::sub::LoanedSamples<DynamicData> samples =
-                    this->_reader.take();
+            dds::sub::LoanedSamples<DynamicData> samples = this->_reader.take();
             this->_data_idx = 0;
             this->_no_data = false;
 
@@ -1295,15 +1338,20 @@ public:
                 continue;
             }
 
-            DynamicData& sample =
-                    const_cast<DynamicData&>(
-                            samples[this->_data_idx].data());
-            this->_message.entity_id = sample.value<int32_t>("entity_id");
-            this->_message.seq_num = sample.value<uint32_t>("seq_num");
-            this->_message.timestamp_sec = sample.value<int32_t>("timestamp_sec");
-            this->_message.timestamp_usec = sample.value<uint32_t>("timestamp_usec");
-            this->_message.latency_ping = sample.value<int32_t>("latency_ping");
-            this->_message.size = (int)(sample.get_values<uint8_t>("bin_data")).size();
+            DynamicData& sample = const_cast<DynamicData&>(
+                    samples[this->_data_idx].data());
+            this->_message.entity_id = sample.value<int32_t>(
+                    DynamicDataMembersId::GetInstance().at("entity_id"));
+            this->_message.seq_num = sample.value<uint32_t>(
+                    DynamicDataMembersId::GetInstance().at("seq_num"));
+            this->_message.timestamp_sec = sample.value<int32_t>(
+                    DynamicDataMembersId::GetInstance().at("timestamp_sec"));
+            this->_message.timestamp_usec = sample.value<uint32_t>(
+                    DynamicDataMembersId::GetInstance().at("timestamp_usec"));
+            this->_message.latency_ping = sample.value<int32_t>(
+                    DynamicDataMembersId::GetInstance().at("latency_ping"));
+            this->_message.size = (int)(sample.get_values<uint8_t>(
+                    DynamicDataMembersId::GetInstance().at("bin_data")).size());
 
             ++(this->_data_idx);
             return &_message;
@@ -1323,16 +1371,22 @@ public:
                     DynamicData& sample =
                             const_cast<DynamicData&>(
                                     samples[i].data());
-                    this->_message.entity_id = sample.value<int32_t>("entity_id");
-                    this->_message.seq_num = sample.value<uint32_t>("seq_num");
-                    this->_message.timestamp_sec =
-                            sample.value<int32_t>("timestamp_sec");
-                    this->_message.timestamp_usec =
-                            sample.value<uint32_t>("timestamp_usec");
-                    this->_message.latency_ping =
-                            sample.value<int32_t>("latency_ping");
-                    this->_message.size =
-                            (int)(sample.get_values<uint8_t>("bin_data")).size();
+                    this->_message.entity_id = sample.value<int32_t>(
+                            DynamicDataMembersId::GetInstance().at(
+                                    "entity_id"));
+                    this->_message.seq_num = sample.value<uint32_t>(
+                            DynamicDataMembersId::GetInstance().at(
+                                    "seq_num"));
+                    this->_message.timestamp_sec = sample.value<int32_t>(
+                            DynamicDataMembersId::GetInstance().at(
+                                    "timestamp_sec"));
+                    this->_message.timestamp_usec = sample.value<uint32_t>(
+                            DynamicDataMembersId::GetInstance().at(
+                                    "timestamp_usec"));
+                    this->_message.latency_ping = sample.value<int32_t>(
+                            DynamicDataMembersId::GetInstance().at("latency_ping"));
+                    this->_message.size = (int)(sample.get_values<uint8_t>(
+                            DynamicDataMembersId::GetInstance().at("bin_data")).size());
                     //_message.data = sample.bin_data();
                     listener->ProcessMessage(this->_message);
                 }
