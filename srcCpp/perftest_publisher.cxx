@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 #if defined(RTI_VXWORKS)
 int publisher_main()
 {
-    const char *argv[2] = {"perftest_cpp", "-pub"};
+    const char *argv[] = {"perftest_cpp", "-pub"};
     int argc = sizeof(argv)/sizeof(const char*);
 
     return main(argc, (char **) argv);
@@ -79,7 +79,7 @@ int publisher_main()
 
 int subscriber_main()
 {
-    const char *argv[2] = {"perftest_cpp", "-sub"};
+    const char *argv[] = {"perftest_cpp", "-sub"};
     int argc = sizeof(argv)/sizeof(const char*);
 
     return main(argc, (char **) argv);
