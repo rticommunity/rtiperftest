@@ -358,7 +358,7 @@ examples:
    Alternatively this can be achieved by using:
 
    ::
-   
+
        build.bat --platform x64Win64VS2012 --skip-java-build --skip-cpp-build --skip-cpp03-build
 
 -  Generation and compilation for a given architecture

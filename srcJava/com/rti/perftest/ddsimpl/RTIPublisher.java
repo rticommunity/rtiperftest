@@ -19,6 +19,9 @@ import com.rti.perftest.IMessagingWriter;
 import com.rti.perftest.TestMessage;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import com.rti.dds.publication.DataWriterQos;
+import com.rti.dds.infrastructure.ReliabilityQosPolicyKind;
+import com.rti.perftest.harness.PerftestTimerTask;
 
 // ===========================================================================
 
@@ -36,6 +39,7 @@ final class RTIPublisher<T> implements IMessagingWriter {
     InstanceHandle_t[] _instanceHandles;
     private Semaphore _pongSemaphore = new Semaphore(0,true);
     private int _instancesToBeWritten = -1;
+    private boolean _isReliable;
 
     // -----------------------------------------------------------------------
     // Public Methods
@@ -58,7 +62,11 @@ final class RTIPublisher<T> implements IMessagingWriter {
         // Register the key of MAX_CFT_VALUE
         _typeHelper.fillKey(MAX_CFT_VALUE.VALUE);
         _instanceHandles[_numInstances] = _writer.register_instance_untyped(_typeHelper.getData());
-        
+
+        DataWriterQos dwQos = new DataWriterQos();
+        _writer.get_qos(dwQos);
+        _isReliable = (dwQos.reliability.kind
+                        == ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS);
     }
 
 
@@ -171,11 +179,15 @@ final class RTIPublisher<T> implements IMessagingWriter {
         return status.pulled_sample_count;
     }
 
-    public void wait_for_acknowledgments(int sec, int nsec) {
-        try {
-            _writer.wait_for_acknowledgments(new Duration_t(sec, nsec));
-        } catch (RETCODE_TIMEOUT ignored) { // Expected exception
-            // nothing to do
+    public void waitForAck(int sec, int nsec) {
+        if (_isReliable) {
+            try {
+                _writer.wait_for_acknowledgments(new Duration_t(sec, nsec));
+            } catch (RETCODE_TIMEOUT ignored) {} // Expected exception
+        } else {
+            try {
+                Thread.sleep(nsec / 1000000);
+            } catch (InterruptedException ix) {}
         }
     }
 
