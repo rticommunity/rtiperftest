@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 int publisher_main()
 {
     const char *argv[2] = {"perftest_cpp", "-pub"};
-    int argc = 2;
+    int argc = sizeof(argv)/sizeof(const char*);
 
     return main(argc, (char **) argv);
 }
@@ -80,7 +80,7 @@ int publisher_main()
 int subscriber_main()
 {
     const char *argv[2] = {"perftest_cpp", "-sub"};
-    int argc = 2;
+    int argc = sizeof(argv)/sizeof(const char*);
 
     return main(argc, (char **) argv);
 }
