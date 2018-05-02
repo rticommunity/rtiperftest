@@ -936,7 +936,7 @@ class RTIPublisher : public IMessagingWriter
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void waitForAck(long sec, unsigned long nsec) {
+    void waitForAck(int sec, unsigned int nsec) {
         if (_isReliable) {
             DDS_Duration_t timeout = {sec, nsec};
             _writer->wait_for_acknowledgments(timeout);
@@ -1187,7 +1187,7 @@ public:
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void waitForAck(long sec, unsigned long nsec) {
+    void waitForAck(int sec, unsigned int nsec) {
         if (_isReliable) {
             DDS_Duration_t timeout = {sec, nsec};
             _writer->wait_for_acknowledgments(timeout);
