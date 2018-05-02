@@ -319,7 +319,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t-cft <start>:<end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n"
         "\t                          Specify 2 parameters: <start> and <end> to receive samples with a key in that range.\n"
         "\t                          Specify only 1 parameter to receive samples with that exact key.\n"
-        "\t                          Default: Not set\n";
+        "\t                          Default: Not set\n"
+        "\t-sockets                - Use sockets as a transport instead of DDS protocol.\n"
+        "\t                          Support UDPv4 and Shared Memory (SHMEM). Default: UDPv4\n"
+        "\t                          Many of the parameters are not supported with sockets.\n";
+
 
     if (argc < 1)
     {
@@ -1166,7 +1170,7 @@ int perftest_cpp::Subscriber()
     message.entity_id = _SubID;
 
     if (_useSockets) {
-        while (reader_listener->packets_received == 0)
+        while (reader_listener->packets_received == 0 && !reader_listener->change_size)
         {
             announcement_writer->Send(message);
             perftest_cpp::MilliSleep(1000);
