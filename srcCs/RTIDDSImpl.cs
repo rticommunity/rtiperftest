@@ -850,6 +850,7 @@ namespace PerformanceTest
             protected InstanceHandle_t[] _instance_handles;
             protected Semaphore _pongSemaphore = null;
             protected int _instancesToBeWritten = -1;
+            protected bool _isReliable = false;
 
             public RTIPublisher(
                     DataWriter writer,
@@ -879,6 +880,11 @@ namespace PerformanceTest
                 _DataType.fillKey(MAX_CFT_VALUE.VALUE);
                 _instance_handles[_num_instances] = writer.register_instance_untyped(
                         _DataType.getData());
+
+                DDS.DataWriterQos dw_qos = new DDS.DataWriterQos();
+                _writer.get_qos(dw_qos);
+                _isReliable = (dw_qos.reliability.kind 
+                                == DDS.ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS);
             }
 
             public void Flush()
@@ -991,14 +997,16 @@ namespace PerformanceTest
                 return status.pulled_sample_count;
             }
 
-            public void wait_for_acknowledgments(int sec, uint nsec) {
-                try {
-                    Duration_t duration = new Duration_t();
-                    duration.sec = sec;
-                    duration.nanosec = nsec;
-                    _writer.wait_for_acknowledgments(duration);
-                } catch (DDS.Retcode_Timeout) { // Expected exception
-                    // nothing to do
+            public void waitForAck(int sec, uint nsec) {
+                if (_isReliable) {
+                    try {
+                        Duration_t duration = new Duration_t();
+                        duration.sec = sec;
+                        duration.nanosec = nsec;
+                        _writer.wait_for_acknowledgments(duration);
+                    } catch (DDS.Retcode_Timeout) {} // Expected exception
+                } else {
+                    System.Threading.Thread.Sleep((int)nsec / 1000000);
                 }
             }
         }
