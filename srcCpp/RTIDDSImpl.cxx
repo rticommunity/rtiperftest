@@ -100,8 +100,8 @@ void RTIDDSImpl<T>::Shutdown()
     }
 
     if(_pongSemaphore != NULL) {
-	RTIOsapiSemaphore_delete(_pongSemaphore);
-	_pongSemaphore = NULL;
+        RTIOsapiSemaphore_delete(_pongSemaphore);
+        _pongSemaphore = NULL;
     }
 
     DDSDomainParticipantFactory::finalize_instance();
@@ -891,13 +891,11 @@ class RTIPublisher : public IMessagingWriter
         }
     }
 
-    bool waitForPingResponse() 
-    {
-        if(_pongSemaphore != NULL)
-        {
-            if(!RTIOsapiSemaphore_take(_pongSemaphore, NULL))
-            {
-                fprintf(stderr,"Unexpected error taking semaphore\n");
+    bool waitForPingResponse() {
+        if(_pongSemaphore != NULL) {
+            if(RTIOsapiSemaphore_take(_pongSemaphore, NULL)
+                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
+                fprintf(stderr, "Unexpected error taking semaphore\n");
                 return false;
             }
         }
@@ -905,28 +903,26 @@ class RTIPublisher : public IMessagingWriter
     }
 
     /* time out in milliseconds */
-    bool waitForPingResponse(int timeout) 
+    bool waitForPingResponse(int timeout)
     {
         struct RTINtpTime blockDurationIn;
         RTINtpTime_packFromMillisec(blockDurationIn, 0, timeout);
 
-        if(_pongSemaphore != NULL)
-        {
-        if(!RTIOsapiSemaphore_take(_pongSemaphore, &blockDurationIn))
-            {
-                fprintf(stderr,"Unexpected error taking semaphore\n");
+        if(_pongSemaphore != NULL) {
+            if (RTIOsapiSemaphore_take(_pongSemaphore, &blockDurationIn)
+                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
+                fprintf(stderr, "Unexpected error taking semaphore\n");
                 return false;
             }
         }
         return true;
-    }    
+    }
 
-    bool notifyPingResponse() 
+    bool notifyPingResponse()
     {
-        if(_pongSemaphore != NULL)
-        {
-            if(!RTIOsapiSemaphore_give(_pongSemaphore))
-            {
+        if(_pongSemaphore != NULL) {
+            if(RTIOsapiSemaphore_give(_pongSemaphore)
+                    != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
                 fprintf(stderr,"Unexpected error giving semaphore\n");
                 return false;
             }
@@ -940,7 +936,7 @@ class RTIPublisher : public IMessagingWriter
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void waitForAck(long sec, unsigned long nsec) {
+    void waitForAck(int sec, unsigned int nsec) {
         if (_isReliable) {
             DDS_Duration_t timeout = {sec, nsec};
             _writer->wait_for_acknowledgments(timeout);
@@ -1150,7 +1146,8 @@ public:
 
     bool waitForPingResponse() {
         if (_pongSemaphore != NULL) {
-            if (!RTIOsapiSemaphore_take(_pongSemaphore, NULL)) {
+            if (RTIOsapiSemaphore_take(_pongSemaphore, NULL)
+                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
                 fprintf(stderr, "Unexpected error taking semaphore\n");
                 return false;
             }
@@ -1164,7 +1161,8 @@ public:
         RTINtpTime_packFromMillisec(blockDuration, 0, timeout);
 
         if (_pongSemaphore != NULL) {
-            if (!RTIOsapiSemaphore_take(_pongSemaphore, &blockDuration)) {
+            if (RTIOsapiSemaphore_take(_pongSemaphore, &blockDuration)
+                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
                 fprintf(stderr, "Unexpected error taking semaphore\n");
                 return false;
             }
@@ -1174,7 +1172,8 @@ public:
 
     bool notifyPingResponse() {
         if (_pongSemaphore != NULL) {
-            if (!RTIOsapiSemaphore_give(_pongSemaphore)) {
+            if (RTIOsapiSemaphore_give(_pongSemaphore)
+                    != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
                 fprintf(stderr, "Unexpected error giving semaphore\n");
                 return false;
             }
@@ -1188,7 +1187,7 @@ public:
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void waitForAck(long sec, unsigned long nsec) {
+    void waitForAck(int sec, unsigned int nsec) {
         if (_isReliable) {
             DDS_Duration_t timeout = {sec, nsec};
             _writer->wait_for_acknowledgments(timeout);

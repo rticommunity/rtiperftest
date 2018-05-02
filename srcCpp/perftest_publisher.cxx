@@ -35,8 +35,8 @@ bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the sca
 const char *perftest_cpp::_LatencyTopicName = "Latency";
 const char *perftest_cpp::_AnnouncementTopicName = "Announcement";
 const char *perftest_cpp::_ThroughputTopicName = "Throughput";
-const long timeout_wait_for_ack_sec = 0;
-const unsigned long timeout_wait_for_ack_nsec = 100000000;
+const int timeout_wait_for_ack_sec = 0;
+const unsigned int timeout_wait_for_ack_nsec = 100000000;
 
 /*
  * PERFTEST-108
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 int publisher_main()
 {
     const char *argv[2] = {"perftest_cpp", "-pub"};
-    int argc = 2;
+    int argc = sizeof(argv)/sizeof(const char*);
 
     return main(argc, (char **) argv);
 }
@@ -81,7 +81,7 @@ int publisher_main()
 int subscriber_main()
 {
     const char *argv[2] = {"perftest_cpp", "-sub"};
-    int argc = 2;
+    int argc = sizeof(argv)/sizeof(const char*);
 
     return main(argc, (char **) argv);
 }
@@ -1741,31 +1741,27 @@ int perftest_cpp::Publisher()
      * A Subscriber will send a message on this channel once it discovers
      * every Publisher
      */
-    if(_useSockets){
-        announcement_reader = _MessagingImpl->CreateReader(_AnnouncementTopicName,
-                NULL);
+    announcement_reader_listener = new AnnouncementListener();
+    announcement_reader = _MessagingImpl->CreateReader(_AnnouncementTopicName,
+            announcement_reader_listener);
+
+    if (announcement_reader == NULL)
+    {
+        fprintf(stderr, "Problem creating announcement reader.\n");
+        return -1;
+    }
+
+    if (_useSockets)
+    {
         announcement_reader_listener = new AnnouncementListener(announcement_reader);
-    }
-    else{
-        announcement_reader_listener = new AnnouncementListener();
-        announcement_reader = _MessagingImpl->CreateReader(_AnnouncementTopicName,
-                announcement_reader_listener);
-    }
 
-
-    if (announcement_reader == NULL){
-            fprintf(stderr,"Problem creating announcement reader.\n");
-            return -1;
-    }
-
-    if(_useSockets){
         RTIOsapiThread_new("AnnouncementThread",
-                RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-                RTI_OSAPI_THREAD_OPTION_DEFAULT,
-                RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                NULL,
-                ReadThread<AnnouncementListener>,
-                announcement_reader_listener);
+                           RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
+                           RTI_OSAPI_THREAD_OPTION_DEFAULT,
+                           RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                           NULL,
+                           ReadThread<AnnouncementListener>,
+                           announcement_reader_listener);
     }
 
     unsigned long long spinPerUsec = 0;

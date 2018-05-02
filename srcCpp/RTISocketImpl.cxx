@@ -38,9 +38,15 @@ void RTISocketImpl::Shutdown()
         _plugin->delete_cEA(_plugin, NULL);
     }
 
-    REDAWorkerFactory_destroyWorker(_workerFactory, _worker);
-    REDAWorkerFactory_destroyExclusiveArea(_workerFactory, _exclusiveArea);
-    REDAWorkerFactory_delete(_workerFactory);
+    if (_workerFactory != NULL && _worker != NULL) {
+        REDAWorkerFactory_destroyWorker(_workerFactory, _worker);
+    }
+    if (_exclusiveArea != NULL){
+        REDAWorkerFactory_destroyExclusiveArea(_workerFactory, _exclusiveArea);
+    }
+    if (_workerFactory != NULL) {
+        REDAWorkerFactory_delete(_workerFactory);
+    }
 
     if (_pongSemaphore != NULL) {
         RTIOsapiSemaphore_delete(_pongSemaphore);
@@ -76,49 +82,48 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
     unsigned long _scan_max_size = 0;
     int i;
 
-    /* Parameters ot supported by sockets */
-    char *no_socket_params[] {
-        (char *) "-unbounded",
-        (char *) "-sendQueueSize",
-        (char *) "-heartbeatPeriod",
-        (char *) "-fastHeartbeatPeriod",
-        (char *) "-qosFile",
-        (char *) "-qosLibrary",
-        (char *) "-durability",
-        (char *) "-dynamicData",
-        (char *) "-noDirectCommunication",
-        (char *) "-instances",
-        (char *) "-instanceHashBuckets",
-        (char *) "-batchSize",
-        (char *) "-keepDurationUsec",
-        (char *) "-noPositiveAcks",
-        (char *) "-waitsetDelayUsec",
-        (char *) "-waitsetEventCount",
-        (char *) "-enableAutoThrottle",
-        (char *) "-enableTurboMode",
-        (char *) "-noXmlQos",
-        (char *) "-asynchronous",
-        (char *) "-flowController",
-        (char *) "-cft",
-        (char *) "-writeInstance",
-        (char *) "-enableTCP",
-        (char *) "-enableUDPv6",
-        (char *) "-allowInterfaces",
-        (char *) "-transportServerBindPort",
-        (char *) "-transportWan",
-        (char *) "-transportCertAuthority",
-        (char *) "-transportCertFile",
-        (char *) "-transportPrivateKey",
-        (char *) "-transportWanServerAddress",
-        (char *) "-transportWanServerPort",
-        (char *) "-transportWanId",
-        (char *) "-transportSecureWan"
-    };
+    /* Parameters not supported by sockets */
+    std::vector<std::string> no_socket_params_v;
 
-    std::vector<std::string> no_socket_params_v(
-        no_socket_params,
-        no_socket_params + sizeof(no_socket_params) / sizeof(char*)
-    );
+    /*C++98 dont support extended initializer lists*/
+    no_socket_params_v.push_back(std::string("-unbounded"));
+    no_socket_params_v.push_back(std::string("-sendQueueSize"));
+    no_socket_params_v.push_back(std::string("-heartbeatPeriod"));
+    no_socket_params_v.push_back(std::string("-fastHeartbeatPeriod"));
+    no_socket_params_v.push_back(std::string("-qosFile"));
+    no_socket_params_v.push_back(std::string("-qosLibrary"));
+    no_socket_params_v.push_back(std::string("-durability"));
+    no_socket_params_v.push_back(std::string("-dynamicData"));
+    no_socket_params_v.push_back(std::string("-noDirectCommunication"));
+    no_socket_params_v.push_back(std::string("-instances"));
+    no_socket_params_v.push_back(std::string("-instanceHashBuckets"));
+    no_socket_params_v.push_back(std::string("-batchSize"));
+    no_socket_params_v.push_back(std::string("-keepDurationUsec"));
+    no_socket_params_v.push_back(std::string("-noPositiveAcks"));
+    no_socket_params_v.push_back(std::string("-waitsetDelayUsec"));
+    no_socket_params_v.push_back(std::string("-waitsetEventCount"));
+    no_socket_params_v.push_back(std::string("-enableAutoThrottle"));
+    no_socket_params_v.push_back(std::string("-enableTurboMode"));
+    no_socket_params_v.push_back(std::string("-noXmlQos"));
+    no_socket_params_v.push_back(std::string("-asynchronous"));
+    no_socket_params_v.push_back(std::string("-flowController"));
+    no_socket_params_v.push_back(std::string("-cft"));
+    no_socket_params_v.push_back(std::string("-writeInstance"));
+    no_socket_params_v.push_back(std::string("-enableTCP"));
+    no_socket_params_v.push_back(std::string("-enableUDPv6"));
+    no_socket_params_v.push_back(std::string("-allowInterfaces"));
+    no_socket_params_v.push_back(std::string("-transportServerBindPort"));
+    no_socket_params_v.push_back(std::string("-transportWan"));
+    no_socket_params_v.push_back(std::string("-transportCertAuthority"));
+    no_socket_params_v.push_back(std::string("-transportCertFile"));
+    no_socket_params_v.push_back(std::string("-transportPrivateKey"));
+    no_socket_params_v.push_back(std::string("-transportWanServerAddress"));
+    no_socket_params_v.push_back(std::string("-transportWanServerPort"));
+    no_socket_params_v.push_back(std::string("-transportWanId"));
+    no_socket_params_v.push_back(std::string("-transportSecureWan"));
+
+    std::string params_info = std::string(
+            "Parameters not supported by sockets: (Delete them and try again)\n");
 
     /* Print all the non compatibles params together and return */
     bool found = false;
@@ -129,12 +134,13 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
                 no_socket_params_v.end(),
                 argv[i]);
         if (it != no_socket_params_v.end()) {
-            fprintf(stderr, "%s: not compatible with -socket\n", argv[i]);
+            params_info += std::string("\t" + std::string(argv[i]) + "\n" );
             found = true;
         }
     }
 
     if (found) {
+        fprintf(stderr, "%s", params_info.c_str());
         return false;
     }
 
