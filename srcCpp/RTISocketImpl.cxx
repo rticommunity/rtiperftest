@@ -452,14 +452,17 @@ class RTISocketPublisher : public IMessagingWriter{
 
                 if (!result) {
                     /**
-                     * TODO:
+                     * TODO: Ask Fernando
+                     *
                      * Set a log with warning level???? Not clear
+                     *
+                     * Keep count on writes errors and then output on intervals.?
                      *
                      * use -> RTILog_printContextAndMsg??
                      *
                      */
-                    fprintf(stderr, "Write error using sockets\n");
-                    return false;
+                    // fprintf(stderr, "Write error using sockets\n");
+                    // return false;
 
                 }
             }

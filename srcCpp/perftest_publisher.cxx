@@ -1799,7 +1799,7 @@ int perftest_cpp::Publisher()
             > (int)announcement_reader_listener->subscriber_list.size()) {
         MilliSleep(1000);
     }
-    if (_useSockets) {
+    if (_useSockets && !_isScan) {
         /* Necesary to finish the AnnouncementReadThread */
         announcement_reader_listener->end_test = true;
     }
@@ -1931,6 +1931,10 @@ int perftest_cpp::Publisher()
                 // If running in scan mode, dataLen under test is changed
                 // after _executionTime
                 if (_isScan && _testCompleted_scan) {
+                    /* Give time to the subscriber to catch the publisher */
+                    if(_useSockets){
+                        MilliSleep(1000);
+                    }
                     _testCompleted_scan = false;
                     SetTimeout(_executionTime, _isScan);
 
