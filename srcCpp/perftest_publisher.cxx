@@ -1356,7 +1356,7 @@ class LatencyListener : public IMessagingCB
         latency_sum = 0;
         latency_sum_square = 0;
         count = 0;
-        latency_min = 0;
+        latency_min = ULONG_MAX;
         latency_max = 0;
         last_data_length = 0;
         clock_skew_count = 0;
@@ -1433,7 +1433,7 @@ class LatencyListener : public IMessagingCB
 
         latency_sum = 0;
         latency_sum_square = 0;
-        latency_min = 0;
+        latency_min = ULONG_MAX;
         latency_max = 0;
         count = 0;
         clock_skew_count = 0;
@@ -1483,7 +1483,7 @@ class LatencyListener : public IMessagingCB
         {
             latency_sum = 0;
             latency_sum_square = 0;
-            latency_min = 0;
+            latency_min = ULONG_MAX;
             latency_max = 0;
             count = 0;
         }
@@ -1521,19 +1521,14 @@ class LatencyListener : public IMessagingCB
             }
         }
 
-        if (latency_min == 0)
-        {
+        if (latency_min == ULONG_MAX) {
             latency_min = latency;
             latency_max = latency;
         }
-        else
-        {
-            if (latency < latency_min)
-            {
+        else {
+            if (latency < latency_min) {
                 latency_min = latency;
-            }
-            if (latency > latency_max)
-            {
+            } else if (latency > latency_max) {
                 latency_max = latency;
             }
         }

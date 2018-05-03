@@ -14,6 +14,7 @@
 #include <vector>
 // STL needed for sorting
 #include <algorithm>
+#include <limits.h>
 
 #ifdef RTI_WIN32
   #include <windows.h>

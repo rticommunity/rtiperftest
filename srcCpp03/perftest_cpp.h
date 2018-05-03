@@ -12,6 +12,7 @@
 #include <string.h>
 #include <algorithm>
 #include <iostream>
+#include <limits.h>
 
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
@@ -130,7 +131,7 @@ class perftest_cpp
   #ifdef RTI_WIN32
     static LARGE_INTEGER _ClockFrequency;
   #endif
-    
+
     // Number of bytes sent in messages besides user data
     static const int OVERHEAD_BYTES = 28;
 

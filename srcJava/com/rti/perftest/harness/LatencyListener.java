@@ -30,7 +30,7 @@ import com.rti.perftest.TestMessage;
     private long  _latencySum = 0;
     private long  _latencySumSquare = 0;
     private long  _count = 0;
-    private int   _latencyMin = 0;
+    private int   _latencyMin = Integer.MAX_VALUE;
     private int   _latencyMax = 0;
     private int   _lastDataLength = 0;
     private int[] _latencyHistory = null;
@@ -38,7 +38,7 @@ import com.rti.perftest.TestMessage;
     private int   _num_latency = 0;
 
     private IMessagingReader _reader = null;
-    private IMessagingWriter _writer = null;    
+    private IMessagingWriter _writer = null;
     private CpuMonitor CpuMonitor = new CpuMonitor();
 
 
@@ -139,14 +139,13 @@ import com.rti.perftest.TestMessage;
             }
         }
 
-        if (_latencyMin == 0) {
+        if (_latencyMin == Integer.MAX_VALUE) {
             _latencyMin = latency;
             _latencyMax = latency;
         } else {
             if (latency < _latencyMin) {
                 _latencyMin = latency;
-            }
-            if (latency > _latencyMax) {
+            } else if (latency > _latencyMax) {
                 _latencyMax = latency;
             }
         }
@@ -228,7 +227,7 @@ import com.rti.perftest.TestMessage;
         System.out.flush();
         _latencySum = 0;
         _latencySumSquare = 0;
-        _latencyMin = 0;
+        _latencyMin = Integer.MAX_VALUE;
         _latencyMax = 0;
         _count = 0;
         _clockSkewCount = 0;

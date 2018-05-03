@@ -1699,7 +1699,7 @@ namespace PerformanceTest {
             private ulong latency_sum = 0;
             private ulong latency_sum_square = 0;
             private ulong count = 0;
-            private uint  latency_min = 0;
+            private uint  latency_min = uint.MaxValue;
             private uint  latency_max = 0;
             private int   last_data_length = 0;
             public  bool  end_test = false;
@@ -1800,19 +1800,13 @@ namespace PerformanceTest {
                     }
                 }
 
-                if (latency_min == 0)
-                {
+                if (latency_min == uint.MaxValue) {
                     latency_min = latency;
                     latency_max = latency;
-                }
-                else
-                {
-                    if (latency < latency_min)
-                    {
+                } else {
+                    if (latency < latency_min) {
                         latency_min = latency;
-                    }
-                    if (latency > latency_max)
-                    {
+                    } else if (latency > latency_max) {
                         latency_max = latency;
                     }
                 }
@@ -1907,7 +1901,7 @@ namespace PerformanceTest {
                 Console.Out.Flush();
                 latency_sum = 0;
                 latency_sum_square = 0;
-                latency_min = 0;
+                latency_min = uint.MaxValue;
                 latency_max = 0;
                 count = 0;
                 clock_skew_count = 0;
