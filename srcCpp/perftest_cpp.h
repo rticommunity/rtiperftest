@@ -139,6 +139,12 @@ class perftest_cpp
     // Flag used to data packet length is changing
     static const int LENGTH_CHANGED_SIZE = 1236;
 
+    /*
+     * Value used to compare against to check if the latency_min has
+     * been reset.
+     */
+    static const unsigned long LATENCY_RESET_VALUE = ULONG_MAX;
+
    public:
     static unsigned long long GetTimeUsec();
 

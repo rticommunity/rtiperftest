@@ -9,6 +9,7 @@ import static java.lang.Math.abs;
 import static java.lang.Math.sqrt;
 import java.util.Arrays;
 
+import com.rti.perftest.harness.PerfTest;
 import com.rti.perftest.IMessagingCB;
 import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.IMessagingWriter;
@@ -30,7 +31,7 @@ import com.rti.perftest.TestMessage;
     private long  _latencySum = 0;
     private long  _latencySumSquare = 0;
     private long  _count = 0;
-    private int   _latencyMin = Integer.MAX_VALUE;
+    private int   _latencyMin = PerfTest.LATENCY_RESET_VALUE;
     private int   _latencyMax = 0;
     private int   _lastDataLength = 0;
     private int[] _latencyHistory = null;
@@ -139,7 +140,7 @@ import com.rti.perftest.TestMessage;
             }
         }
 
-        if (_latencyMin == Integer.MAX_VALUE) {
+        if (_latencyMin == PerfTest.LATENCY_RESET_VALUE) {
             _latencyMin = latency;
             _latencyMax = latency;
         } else {
@@ -227,7 +228,7 @@ import com.rti.perftest.TestMessage;
         System.out.flush();
         _latencySum = 0;
         _latencySumSquare = 0;
-        _latencyMin = Integer.MAX_VALUE;
+        _latencyMin = PerfTest.LATENCY_RESET_VALUE;
         _latencyMax = 0;
         _count = 0;
         _clockSkewCount = 0;
