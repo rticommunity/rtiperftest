@@ -24,9 +24,9 @@ class DynamicDataMembersId
 {
   private:
     std::map<std::string, int> membersId;
+    DynamicDataMembersId();
 
   public:
-    DynamicDataMembersId();
     ~DynamicDataMembersId();
     static DynamicDataMembersId &GetInstance();
     int at(std::string key);

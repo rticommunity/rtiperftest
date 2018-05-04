@@ -407,7 +407,7 @@ namespace PerformanceTest {
         private static DynamicDataMembersId _instance = new DynamicDataMembersId();
         private Dictionary<string, int> membersId;
 
-        protected DynamicDataMembersId(){
+        private DynamicDataMembersId(){
             membersId = new Dictionary<string, int>();
             membersId.Add("key", 1);
             membersId.Add("entity_id", 2);

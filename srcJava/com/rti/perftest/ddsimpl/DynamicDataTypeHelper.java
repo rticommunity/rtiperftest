@@ -42,7 +42,6 @@ public class DynamicDataTypeHelper implements TypeHelper<DynamicData> {
                 "key",
                 DynamicDataMembersId.getInstance().at("key"),
                 _byteArray);
-
     }
 
     public void copyFromMessage(TestMessage message) {

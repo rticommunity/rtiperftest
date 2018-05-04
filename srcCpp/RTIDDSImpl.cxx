@@ -1521,8 +1521,8 @@ class RTISubscriber : public IMessagingReader
                 //No operation required
             }
 
-             // may have hit end condition
-             if (_data_idx == seq_length) {
+            // may have hit end condition
+            if (_data_idx == seq_length) {
                 continue;
             }
 

@@ -12,7 +12,7 @@ public class DynamicDataMembersId {
     private static DynamicDataMembersId instance = null;
     private Map<String, Integer> membersId;
 
-    protected DynamicDataMembersId(){
+    private DynamicDataMembersId(){
         membersId = new HashMap<String, Integer>();
         membersId.put("key", 1);
         membersId.put("entity_id", 2);
