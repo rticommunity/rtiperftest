@@ -104,6 +104,8 @@ class IMessaging
 
     virtual void PrintCmdLineHelp() = 0;
 
+    virtual std::string PrintConfiguration() = 0;
+
     virtual void Shutdown() = 0;
 
     // if the implementation supports batching and the test scenario is

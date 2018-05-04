@@ -93,26 +93,22 @@ int perftest_cpp::Run(int argc, char *argv[])
     {
         return -1;
     }
+
     if (_useUnbounded == 0) { //unbounded is not set
-        if (_isKeyed){
-            fprintf(stderr, "Using Keyed Data.\n");
+        if (_isKeyed) {
             _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
         } else {
-            fprintf(stderr, "Using Unkeyed Data.\n");
             _MessagingImpl = new RTIDDSImpl<TestData_t>();
         }
     } else {
-        fprintf(stderr, "Using unbounded Sequences, allocation_threshold %lu.\n", _useUnbounded);
         if (_isKeyed) {
-            fprintf(stderr, "Using Keyed Data.\n");
             _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
         } else {
-            fprintf(stderr, "Using Unkeyed Data.\n");
             _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
         }
     }
 
-    if ( !_MessagingImpl->Initialize(_MessagingArgc, _MessagingArgv) )
+    if (!_MessagingImpl->Initialize(_MessagingArgc, _MessagingArgv))
     {
         return -1;
     }
@@ -127,6 +123,8 @@ int perftest_cpp::Run(int argc, char *argv[])
     } else {
         _SamplesPerBatch = 1;
     }
+
+    PrintConfiguration();
 
     if (_IsPub) {
         return Publisher();
@@ -808,7 +806,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         _DataLen = _scanDataLenSizes[_scanDataLenSizes.size() - 1]; // Max size
         if (_executionTime == 0){
-            fprintf(stderr, "Setting timeout to 60 seconds (-scan).\n");
             _executionTime = 60;
         }
         // Check if large data or small data
@@ -835,6 +832,122 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     }
 
     return true;
+}
+
+/*********************************************************
+ * PrintConfiguration
+ */
+void perftest_cpp::PrintConfiguration()
+{
+    // TODO: Print Perftest and Connext DDS versions
+
+    std::ostringstream stringStream;
+    stringStream << "\nConfiguration:\n";
+
+    // Publisher/Subscriber and Entity ID
+    if (_IsPub) {
+        stringStream << "\tPublisher ID: " << _PubID << "\n";
+    } else {
+        stringStream << "\tSubscriber ID: " << _SubID << "\n";
+    }
+
+    // Throughput/Latency mode
+    if (_IsPub) {
+        stringStream << "\tMode: ";
+        if (_LatencyTest) {
+            stringStream << "Latency (Ping-pong test)\n";
+        } else {
+            stringStream << "Throughput (Use \"-latency\" for Latency Mode)\n";
+        }
+        // Latency Count
+        stringStream << "\tLatency count: 1 latency sample every "
+                     << _LatencyCount << "\n";
+    }
+
+    // Scan/Data Sizes
+    stringStream << "\tData Size: ";
+    if (_isScan) {
+        for (unsigned long i = 0; i < _scanDataLenSizes.size(); i++ ) {
+            stringStream << _scanDataLenSizes[i];
+            if (i == _scanDataLenSizes.size() - 1) {
+                stringStream << "\n";
+            } else {
+                stringStream << ", ";
+            }
+        }
+    } else {
+        stringStream << _DataLen << "\n";
+    }
+
+    // Keyed/Unkeyed
+    stringStream << "\tKeyed: ";
+    if (_isKeyed) {
+        stringStream << "Yes\n";
+    } else {
+        stringStream << "No\n";
+    }
+
+    // Reliable/Best Effort
+    stringStream << "\tReliability: ";
+    if (_IsReliable) {
+        stringStream << "Reliable\n";
+    } else {
+        stringStream << "Best Effort\n";
+    }
+
+    // Batching
+    stringStream << "\tBatching: ";
+    if (_BatchSize != 0) {
+        stringStream << _BatchSize << " Bytes\n";
+    } else {
+        stringStream << "No\n";
+    }
+
+    // Unbounded Sequences
+    stringStream << "\tUnbounded Sequences: ";
+    if (_useUnbounded != 0) {
+        stringStream << "Enabled (Allocation Threshold is " << _useUnbounded << " Bytes)\n";
+    } else {
+        stringStream << "No\n";
+    }
+
+    // Listener/WaitSets
+    stringStream << "\tListener/WaitSet: ";
+    if (_UseReadThread) {
+        stringStream << "Using WaitSets\n";
+    } else {
+        stringStream << "Using Listeners\n";
+    }
+
+
+    if (_IsPub) {
+        // Publication Rate
+        stringStream << "\tPublication Rate: ";
+        if (_pubRate > 0) {
+            stringStream << _pubRate << "Samples/s (";
+            if (_pubRateMethodSpin) {
+                stringStream << "Spin)\n";
+            } else {
+                stringStream << "Sleep)\n";
+            }
+        } else {
+            stringStream << "Unlimited (Not set)\n";
+        }
+    }
+
+    // Execution Time or Num Iter
+    if (_executionTime > 0) {
+        stringStream << "\tExecution time: "
+                     << _executionTime
+                     << " seconds\n";
+    } else {
+        stringStream << "\tNumber of samples: "
+                     << _NumIter << "\n";
+    }
+
+    stringStream << _MessagingImpl->PrintConfiguration() << "\n";
+    fprintf(stderr, "%s", stringStream.str().c_str());
+
 }
 
 /*********************************************************

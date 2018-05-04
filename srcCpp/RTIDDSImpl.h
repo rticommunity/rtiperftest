@@ -94,6 +94,8 @@ class RTIDDSImpl : public IMessaging
 
     bool ParseConfig(int argc, char *argv[]);
 
+    std::string PrintConfiguration();
+
     bool Initialize(int argc, char *argv[]);
 
     void Shutdown();

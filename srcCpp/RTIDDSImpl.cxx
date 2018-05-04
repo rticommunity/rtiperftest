@@ -738,6 +738,81 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 }
 
 /*********************************************************
+ * PrintConfiguration
+ */
+template <typename T>
+std::string RTIDDSImpl<T>::PrintConfiguration()
+{
+
+    std::ostringstream stringStream;
+
+    // Domain ID
+    stringStream << "\tDomain: " << _DomainID << "\n";
+
+    // Dynamic Data
+    stringStream << "\tDynamic Data: ";
+    if (_isDynamicData) {
+        stringStream << "Yes\n";
+    } else {
+        stringStream << "No\n";
+    }
+
+    // Turbo Mode / AutoThrottle
+    if (_TurboMode) {
+        stringStream << "\tTurbo Mode: Enabled\n";
+    }
+    if (_AutoThrottle) {
+        stringStream << "\tAutoThrottle: Enabled\n";
+    }
+
+    // XML File
+    stringStream << "\tXML File: ";
+    if (!_UseXmlQos) {
+        stringStream << "Disabled\n";
+    } else {
+        stringStream << _ProfileFile << "\n";
+    }
+
+    // if (_IsPub) {
+    //     // Publication Rate
+    //     stringStream << "\tPublication Rate: ";
+    //     if (_pubRate > 0) {
+    //         stringStream << _pubRate << "Samples/s (";
+    //         if (_pubRateMethodSpin) {
+    //             stringStream << "Spin)\n";
+    //         } else {
+    //             stringStream << "Sleep)\n";
+    //         }
+    //     } else {
+    //         stringStream << "Unlimited (Not set)\n";
+    //     }
+    // }
+
+    // // Execution Time or Num Iter
+    // if (_executionTime > 0) {
+    //     stringStream << "\tExecution time: "
+    //                  << _executionTime
+    //                  << " seconds\n";
+    // } else {
+    //     stringStream << "\tNumber of samples: "
+    //                  << _NumIter << "\n";
+    // }
+
+    stringStream << "\n";
+
+
+    _transport.printTransportConfigurationSummary();
+
+    return stringStream.str();
+
+    // Asynchronous
+    // Flow controller
+    // Verbosity
+    // scan
+    // CFT
+}
+
+/*********************************************************
  * DomainListener
  */
 class DomainListener : public DDSDomainParticipantListener
@@ -2040,7 +2115,7 @@ void RTIDDSImpl<T>::printSecureArgs()
 template <typename T>
 bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 {
-    DDS_DomainParticipantQos qos; 
+    DDS_DomainParticipantQos qos;
     DDS_DomainParticipantFactoryQos factory_qos;
     DomainListener *listener = new DomainListener();
 
@@ -2051,7 +2126,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         return false;
     }
 
-    // only if we run the latency test we need to wait 
+    // only if we run the latency test we need to wait
     // for pongs after sending pings
     _pongSemaphore = _LatencyTest ?
         RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL) :
@@ -2063,20 +2138,19 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         factory_qos.profile.url_profile.ensure_length(1, 1);
         factory_qos.profile.url_profile[0] = DDS_String_dup(_ProfileFile);
     } else {
-        fprintf(stderr,"Not using xml file for QoS.\n");
         factory_qos.profile.string_profile.from_array(
                 PERFTEST_QOS_STRING,
                 PERFTEST_QOS_STRING_SIZE);
     }
     _factory->set_qos(factory_qos);
 
-    if (_factory->reload_profiles() != DDS_RETCODE_OK) 
+    if (_factory->reload_profiles() != DDS_RETCODE_OK)
     {
         fprintf(stderr,"Problem opening QOS profiles file %s.\n", _ProfileFile);
         return false;
     }
 
-    if (_factory->set_default_library(_ProfileLibraryName) != DDS_RETCODE_OK) 
+    if (_factory->set_default_library(_ProfileLibraryName) != DDS_RETCODE_OK)
     {
         fprintf(stderr,"No QOS Library named \"%s\" found in %s.\n",
                _ProfileLibraryName, _ProfileFile);
@@ -2124,7 +2198,6 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     if (!configureTransport(_transport, qos)){
         return false;
     };
-    _transport.printTransportConfigurationSummary();
 
     if (_AutoThrottle) {
         DDSPropertyQosPolicyHelper::add_property(qos.property,
