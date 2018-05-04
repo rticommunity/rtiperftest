@@ -362,9 +362,9 @@ class RTISocketPublisher : public IMessagingWriter{
         _peer_host = peer_host;
 
         _send_buffer.length = 0;
-        _send_buffer.pointer = 0;
+        _send_buffer.pointer = NULL;
 
-        _data.bin_data.maximum(0);
+        //_data.bin_data.maximum(0);
     }
 
     ~RTISocketPublisher() {
@@ -390,18 +390,36 @@ class RTISocketPublisher : public IMessagingWriter{
         _data.timestamp_usec = message.timestamp_usec;
         _data.latency_ping = message.latency_ping;
         _data.bin_data.ensure_length(message.size, message.size);
-        // _data.bin_data.loan_contiguous(
-        //         (DDS_Octet *)message.data,
-        //         message.size,
-        //         message.size);
 
-        _send_buffer.length = message.size + perftest_cpp::OVERHEAD_BYTES;
-        _send_buffer.pointer = (char *)& _data;
+        unsigned int serialize_size = 0;
+        TestData_tPlugin_serialize_to_cdr_buffer(
+            NULL,
+            &serialize_size,
+            &_data);
 
-        //printf("message size: %d\n", _send_buffer.length);
+        /*Only when the size of the message change, it's reallocate new memory*/
+        if ((unsigned int)_send_buffer.length != serialize_size) {
+            RTIOsapiHeap_freeBuffer(_send_buffer.pointer);
+            RTIOsapiHeap_allocateBuffer(
+                    &_send_buffer.pointer,
+                    serialize_size,
+                    RTI_OSAPI_ALIGNMENT_DEFAULT);
 
-        //TODO: //Ask Fernando
+            if (_send_buffer.pointer == NULL) {
+                fprintf(stderr,"Error allocating memory for the send buffer\n");
+                return false;
+            }
+            _send_buffer.length = serialize_size;
+        }
+
+        TestData_tPlugin_serialize_to_cdr_buffer(
+            _send_buffer.pointer,
+            &serialize_size,
+            &_data);
+
         /**
+         * TODO: //Ask Fernando
+         *
          * The 1th option is be restrictive, and only allow one subcriber
          * per subscriber.
          *
@@ -475,9 +493,6 @@ class RTISocketPublisher : public IMessagingWriter{
 
         }
 
-
-        //_data.bin_data.unloan();
-
         return true;
     }
 
@@ -549,7 +564,7 @@ class RTISocketSubscriber : public IMessagingReader
 
     struct REDAWorker *_worker;
 
-    TestData_t *_data;
+    TestData_t _data;
     char * _payload;
     int _payload_size;
 
@@ -605,10 +620,16 @@ class RTISocketSubscriber : public IMessagingReader
     void Shutdown()
     {
 
-        if (_recv_resource != NULL && _plugin != NULL) {
-            /*TODO: fail when is destroy*/
-            //_plugin->destroy_recvresource_rrEA(_plugin, &_recv_resource);
-        }
+        // struct NDDS_Transport_UDP_RecvResource_t recvresource =
+        //     (struct NDDS_Transport_UDP_RecvResource_t ) _recv_resource;
+
+        // if (recvresource.last_source_socket_address != NULL) {
+        //     RTIOsapiHeap_freeBuffer(recvresource.last_source_socket_address);
+        // }
+        // if (_recv_resource != NULL && _plugin != NULL) {
+        //     /*TODO: fail when is destroy*/
+        //     _plugin->destroy_recvresource_rrEA(_plugin, &_recv_resource);
+        // }
 
     }
 
@@ -625,15 +646,31 @@ class RTISocketSubscriber : public IMessagingReader
             return NULL;
         }
 
-        _data = reinterpret_cast<TestData_t *>(_transp_message.buffer.pointer);
+        /*
+         * To be able of deserialize, bin data must have the right length.
+         * The right size is: the total receive buffer minus the overhead
+         * create by the serialize minus the overhead include by perftest.
+         */
+        unsigned int serialize_size =  _transp_message.buffer.length
+                - perftest_cpp::OVERHEAD_BYTES
+                - RTI_CDR_ENCAPSULATION_HEADER_SIZE;
 
-        _message.entity_id = _data->entity_id;
-        _message.seq_num = _data->seq_num;
-        _message.timestamp_sec = _data->timestamp_sec;
-        _message.timestamp_usec = _data->timestamp_usec;
-        _message.latency_ping = _data->latency_ping;
-        _message.size = _data->bin_data.length();
-        _message.data = (char *)_data->bin_data.get_contiguous_bufferI();
+        if ((unsigned int)_data.bin_data.length() != serialize_size){
+            _data.bin_data.ensure_length(serialize_size, serialize_size);
+        }
+
+        TestData_tPlugin_deserialize_from_cdr_buffer(
+            &_data,
+            _transp_message.buffer.pointer,
+            _transp_message.buffer.length);
+
+        _message.entity_id = _data.entity_id;
+        _message.seq_num = _data.seq_num;
+        _message.timestamp_sec = _data.timestamp_sec;
+        _message.timestamp_usec = _data.timestamp_usec;
+        _message.latency_ping = _data.latency_ping;
+        _message.size = _data.bin_data.length();
+        _message.data = (char *)_data.bin_data.get_contiguous_bufferI();
 
         if (_plugin -> return_loaned_buffer_rEA != NULL) {
             _plugin->return_loaned_buffer_rEA(

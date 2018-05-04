@@ -16,6 +16,7 @@
 #include "perftest.h"
 #include "perftest_cpp.h"
 #include "transport/transport_socketutil.h"
+#include "perftestPlugin.h"
 
 #define RTIPERFTEST_MAX_PEERS 1024
 
