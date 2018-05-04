@@ -1285,7 +1285,6 @@ int perftest_cpp::Subscriber()
 
     if (reader != NULL)
     {
-        reader->Shutdown();
         delete(reader);
     }
 
@@ -1796,7 +1795,7 @@ int perftest_cpp::Publisher()
         MilliSleep(1000);
     }
     if (_useSockets && !_isScan) {
-        /* Necesary to finish the AnnouncementReadThread */
+        /* Necessary to finish the AnnouncementReadThread */
         announcement_reader_listener->end_test = true;
     }
 
@@ -2060,6 +2059,7 @@ int perftest_cpp::Publisher()
     }
 
     if (reader != NULL) {
+        perftest_cpp::MilliSleep(5000);
         delete(reader);
     }
 

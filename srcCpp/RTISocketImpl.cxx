@@ -363,8 +363,6 @@ class RTISocketPublisher : public IMessagingWriter{
 
         _send_buffer.length = 0;
         _send_buffer.pointer = NULL;
-
-        //_data.bin_data.maximum(0);
     }
 
     ~RTISocketPublisher() {
@@ -372,8 +370,13 @@ class RTISocketPublisher : public IMessagingWriter{
     }
 
     void Shutdown() {
+
         if (_send_resource != NULL && _plugin != NULL) {
             _plugin->destroy_sendresource_srEA(_plugin, &_send_resource);
+        }
+
+        if (_send_buffer.pointer != NULL) {
+            RTIOsapiHeap_freeBuffer(_send_buffer.pointer);
         }
 
     }
@@ -397,7 +400,7 @@ class RTISocketPublisher : public IMessagingWriter{
             &serialize_size,
             &_data);
 
-        /*Only when the size of the message change, it's reallocate new memory*/
+        /*Only when the size of the message change, it reallocates new memory*/
         if ((unsigned int)_send_buffer.length != serialize_size) {
             RTIOsapiHeap_freeBuffer(_send_buffer.pointer);
             RTIOsapiHeap_allocateBuffer(
@@ -541,8 +544,6 @@ class RTISocketPublisher : public IMessagingWriter{
     };
 
     void wait_for_acknowledgments(long sec, unsigned long nsec) {
-        /*TODO: Set wait function???? may dont have sense*/
-        //perftest_cpp::MilliSleep(10);
         /*Dummy Function*/
     }
 };
@@ -591,14 +592,13 @@ class RTISocketSubscriber : public IMessagingReader
         _transp_message.buffer.length = 0;
         _transp_message.loaned_buffer_param = NULL;
 
-        //_worker._name = "SubscriberWorker";
+        /* Maximun size of UDP package*/
+        unsigned int size = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
 
-        unsigned int size = MAX_SYNCHRONOUS_SIZE;
-
-        RTIOsapiHeap_allocateArray(
+        RTIOsapiHeap_allocateBufferAligned(
             &_recv_buffer.pointer,
             size,
-            char);
+            RTI_OSAPI_ALIGNMENT_DEFAULT);
 
         if (_recv_buffer.pointer == NULL)
         {
@@ -606,7 +606,6 @@ class RTISocketSubscriber : public IMessagingReader
         }
         _recv_buffer.length = size;
 
-        //_data.bin_data.maximum(0);
         _payload_size = 0;
         _payload = 0;
 
@@ -620,17 +619,14 @@ class RTISocketSubscriber : public IMessagingReader
     void Shutdown()
     {
 
-        // struct NDDS_Transport_UDP_RecvResource_t recvresource =
-        //     (struct NDDS_Transport_UDP_RecvResource_t ) _recv_resource;
+        if (_recv_buffer.pointer != NULL) {
+            RTIOsapiHeap_freeBufferAligned(_recv_buffer.pointer);
+        }
 
-        // if (recvresource.last_source_socket_address != NULL) {
-        //     RTIOsapiHeap_freeBuffer(recvresource.last_source_socket_address);
-        // }
-        // if (_recv_resource != NULL && _plugin != NULL) {
-        //     /*TODO: fail when is destroy*/
-        //     _plugin->destroy_recvresource_rrEA(_plugin, &_recv_resource);
-        // }
-
+        if (_recv_resource != NULL && _plugin != NULL)
+        {
+            _plugin->destroy_recvresource_rrEA(_plugin, &_recv_resource);
+        }
     }
 
     TestMessage *ReceiveMessage() {
@@ -651,11 +647,21 @@ class RTISocketSubscriber : public IMessagingReader
          * The right size is: the total receive buffer minus the overhead
          * create by the serialize minus the overhead include by perftest.
          */
-        unsigned int serialize_size =  _transp_message.buffer.length
+
+        int serialize_size =  _transp_message.buffer.length
                 - perftest_cpp::OVERHEAD_BYTES
                 - RTI_CDR_ENCAPSULATION_HEADER_SIZE;
 
-        if ((unsigned int)_data.bin_data.length() != serialize_size){
+        /*
+         * if serialize_size is lower than 0 means that the length of the
+         * message is 0
+         */
+        if (serialize_size < 0) {
+            serialize_size = 0;
+        }
+
+        /* Only reserve memory if the length change */
+        if (_data.bin_data.length() != serialize_size){
             _data.bin_data.ensure_length(serialize_size, serialize_size);
         }
 
@@ -672,12 +678,13 @@ class RTISocketSubscriber : public IMessagingReader
         _message.size = _data.bin_data.length();
         _message.data = (char *)_data.bin_data.get_contiguous_bufferI();
 
-        if (_plugin -> return_loaned_buffer_rEA != NULL) {
+        if (_plugin -> return_loaned_buffer_rEA != NULL
+                && _transp_message.loaned_buffer_param != (void *)-1) {
             _plugin->return_loaned_buffer_rEA(
-                _plugin,
-                &_recv_resource,
-                &_transp_message,
-                NULL);
+                    _plugin,
+                    &_recv_resource,
+                    &_transp_message,
+                    _worker);
         }
 
         return &_message;
@@ -696,6 +703,8 @@ bool RTISocketImpl::Initialize(int argc, char *argv[]) {
     if (!ParseConfig(argc, argv)) {
         return false;
     }
+
+    printf("-- Using SOCKETS --\n");
 
     if(_peer_host_count == 0) {
         _peer_host[0] = (char *) "127.0.0.1";
@@ -756,9 +765,6 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
         }
     }
 
-    printf("Creating send resource, topic name: %s \t port: %d\n",
-            topic_name, send_port);
-
     result = _plugin->create_sendresource_srEA(
             _plugin,
             &send_resource,
@@ -812,8 +818,6 @@ IMessagingReader *RTISocketImpl::CreateReader(
             250,
             2,
             portOffset);
-
-    printf("Creating receive resource, topic name: %s \t port: %d\n", topic_name, recv_port);
 
     /* Create receive resource */
     result = _plugin->create_recvresource_rrEA(
@@ -934,7 +938,8 @@ bool RTISocketImpl::configureSocketsTransport()
              * updv4_prop.send_blocking = NDDS_TRANSPORT_UDPV4_BLOCKING_ALWAYS;
              */
             updv4_prop.no_zero_copy = false;
-            updv4_prop.parent.message_size_max = MAX_SYNCHRONOUS_SIZE;
+            updv4_prop.parent.message_size_max =
+                    NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
             updv4_prop.parent.gather_send_buffer_count_max =
                     NDDS_TRANSPORT_PROPERTY_GATHER_SEND_BUFFER_COUNT_MIN;
 
@@ -960,10 +965,12 @@ bool RTISocketImpl::configureSocketsTransport()
 
             /*_Plugin configure for shared memory*/
 
-            shmem_prop.parent.message_size_max = MAX_SYNCHRONOUS_SIZE;
-            shmem_prop.receive_buffer_size = MAX_SYNCHRONOUS_SIZE * 10;
+            shmem_prop.parent.message_size_max =
+                    NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
+            shmem_prop.receive_buffer_size =
+                    NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX * 10;
             shmem_prop.received_message_count_max =
-                shmem_prop.receive_buffer_size / perftest_cpp::OVERHEAD_BYTES;
+                    shmem_prop.receive_buffer_size / perftest_cpp::OVERHEAD_BYTES;
             /*
              * The total number of bytes that can be buffered in the receive
              * queue is:
@@ -991,6 +998,8 @@ bool RTISocketImpl::configureSocketsTransport()
         fprintf(stderr, "Error creating transport plugin\n");
         return false;
     }
+
+   _transport.printTransportConfigurationSummary();
 
     return true;
 }
