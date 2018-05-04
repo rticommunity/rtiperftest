@@ -72,6 +72,7 @@ class perftest_cpp
 
     static const DDS_ProductVersion_t GetDDSVersion();
     static const Perftest_ProductVersion_t GetPerftestVersion();
+    static void PrintVersion();
 
     static void ThreadYield() {
   #ifdef RTI_WIN32
