@@ -402,49 +402,101 @@ namespace PerformanceTest {
 
     }
 
+    class DynamicDataMembersId
+    {
+        private static DynamicDataMembersId _instance = new DynamicDataMembersId();
+        private Dictionary<string, int> membersId;
+
+        protected DynamicDataMembersId(){
+            membersId = new Dictionary<string, int>();
+            membersId.Add("key", 1);
+            membersId.Add("entity_id", 2);
+            membersId.Add("seq_num", 3);
+            membersId.Add("timestamp_sec", 4);
+            membersId.Add("timestamp_usec", 5);
+            membersId.Add("latency_ping", 6);
+            membersId.Add("bin_data", 7);
+        }
+        public static DynamicDataMembersId Instance
+        {
+            get
+            {
+                return _instance;
+            }
+        }
+
+        public int at(string key) {
+            return membersId[key];
+        }
+    }
+
     class DynamicDataTypeHelper : ITypeHelper<DynamicData>
     {
-
         bool _isKeyed;
         DynamicData _myData;
         ulong _maxPerftestSampleSize = perftest_cs.getMaxPerftestSampleSizeCS();
+        Byte[] _byteArray;
+        int _last_message_size;
 
         public DynamicDataTypeHelper(DDS.TypeCode typeCode, bool isKeyed, ulong maxPerftestSampleSize)
         {
             _isKeyed = isKeyed;
             _myData = new DynamicData(typeCode, DynamicData.DYNAMIC_DATA_PROPERTY_DEFAULT);
             _maxPerftestSampleSize = maxPerftestSampleSize;
+            _byteArray = new Byte[KEY_SIZE.VALUE];
         }
 
         public DynamicDataTypeHelper(DynamicData myData, ulong maxPerftestSampleSize)
         {
             _myData = myData;
             _maxPerftestSampleSize = maxPerftestSampleSize;
+            _byteArray = new Byte[KEY_SIZE.VALUE];
         }
 
         public void fillKey(int value)
         {
-            Byte[] byteArray = new Byte[4];
-            byteArray[0] = (byte)(value);
-            byteArray[1] = (byte)(value >> 8);
-            byteArray[2] = (byte)(value >> 16);
-            byteArray[3] = (byte)(value >> 24);
-            _myData.set_byte_array("key", 1, byteArray);
+            _byteArray[0] = (byte)(value);
+            _byteArray[1] = (byte)(value >> 8);
+            _byteArray[2] = (byte)(value >> 16);
+            _byteArray[3] = (byte)(value >> 24);
+            _myData.set_byte_array(
+                    "key",
+                    DynamicDataMembersId.Instance.at("key"),
+                    _byteArray);
         }
 
         public void copyFromMessage(TestMessage message)
         {
-
-            ByteSeq my_byteSeq = new ByteSeq();
-            my_byteSeq.ensure_length(message.size, message.size);
-
-            _myData.clear_all_members();
-            _myData.set_int("entity_id", 2, message.entity_id);
-            _myData.set_uint("seq_num", 3, message.seq_num);
-            _myData.set_int("timestamp_sec", 4, message.timestamp_sec);
-            _myData.set_uint("timestamp_usec", 5, message.timestamp_usec);
-            _myData.set_int("latency_ping", 6, message.latency_ping);
-            _myData.set_byte_seq("bin_data", 7, my_byteSeq);
+            if (_last_message_size != message.size) {
+                ByteSeq bin_data = new ByteSeq();
+                bin_data.ensure_length(message.size, message.size);
+                _myData.clear_all_members();
+                _myData.set_byte_seq(
+                    "bin_data",
+                    DynamicDataMembersId.Instance.at("bin_data"),
+                    bin_data);
+                _last_message_size = message.size;
+            }
+            _myData.set_int(
+                    "entity_id",
+                    DynamicDataMembersId.Instance.at("entity_id"),
+                    message.entity_id);
+            _myData.set_uint(
+                    "seq_num",
+                    DynamicDataMembersId.Instance.at("seq_num"),
+                    message.seq_num);
+            _myData.set_int(
+                    "timestamp_sec",
+                    DynamicDataMembersId.Instance.at("timestamp_sec"),
+                    message.timestamp_sec);
+            _myData.set_uint(
+                    "timestamp_usec",
+                    DynamicDataMembersId.Instance.at("timestamp_usec"),
+                    message.timestamp_usec);
+            _myData.set_int(
+                    "latency_ping",
+                    DynamicDataMembersId.Instance.at("latency_ping"),
+                    message.latency_ping);
         }
 
         public TestMessage copyFromSeqToMessage(LoanableSequence<DynamicData> data_sequence, int index)
@@ -453,16 +505,31 @@ namespace PerformanceTest {
             DynamicData msg = ((DynamicDataSeq)data_sequence).get_at(index);
             TestMessage message = new TestMessage();
 
-            message.entity_id = msg.get_int("entity_id", 2);
-            message.seq_num = msg.get_uint("seq_num", 3);
-            message.timestamp_sec = msg.get_int("timestamp_sec", 4);
-            message.timestamp_usec = msg.get_uint("timestamp_usec", 5);
-            message.latency_ping = msg.get_int("latency_ping", 6);
+            message.entity_id = msg.get_int(
+                    "entity_id",
+                    DynamicDataMembersId.Instance.at("entity_id"));
+            message.seq_num = msg.get_uint(
+                    "seq_num",
+                    DynamicDataMembersId.Instance.at("seq_num"));
+            message.timestamp_sec = msg.get_int(
+                    "timestamp_sec",
+                    DynamicDataMembersId.Instance.at("timestamp_sec"));
+            message.timestamp_usec = msg.get_uint(
+                    "timestamp_usec",
+                    DynamicDataMembersId.Instance.at("timestamp_usec"));
+            message.latency_ping = msg.get_int(
+                    "latency_ping",
+                    DynamicDataMembersId.Instance.at("latency_ping"));
 
             ByteSeq bin_data = new ByteSeq();
-            msg.get_byte_seq(bin_data, "bin_data", 7);
-            message.data = new byte[bin_data.length];
-            bin_data.to_array(message.data);
+            msg.get_byte_seq(
+                    bin_data,
+                    "bin_data",
+                    DynamicDataMembersId.Instance.at("bin_data"));
+            // message.data is not necesary becasue in the copyFromMessage
+            // it is not used. I used ensure_length with the size
+            // message.data = new byte[bin_data.length];
+            // bin_data already has the size, not necessary to call toArrayByte()
             message.size = bin_data.length;
 
             return message;
@@ -479,15 +546,12 @@ namespace PerformanceTest {
 
         public AbstractTypedTypeSupport<DynamicData> getTypeSupport()
         {
-
-            if (!_isKeyed)
-            {
+            if (!_isKeyed) {
                 return new DynamicDataTypeSupport(
                         TestData_tTypeSupport.get_typecode(),
                         DynamicDataTypeProperty_t.DYNAMIC_DATA_TYPE_PROPERTY_DEFAULT);
             }
-            else
-            {
+            else {
                 return new DynamicDataTypeSupport(
                         TestDataKeyed_tTypeSupport.get_typecode(),
                         DynamicDataTypeProperty_t.DYNAMIC_DATA_TYPE_PROPERTY_DEFAULT);
@@ -507,7 +571,10 @@ namespace PerformanceTest {
         public void setBinDataMax(int newMax)
         {
             ByteSeq bin_data = new ByteSeq();
-            _myData.get_byte_seq(bin_data, "bin_data", 7);
+            _myData.get_byte_seq(
+                    bin_data,
+                    "bin_data",
+                    DynamicDataMembersId.Instance.at("bin_data"));
             bin_data.maximum = newMax;
         }
 
