@@ -842,7 +842,7 @@ void perftest_cpp::PrintConfiguration()
     // TODO: Print Perftest and Connext DDS versions
 
     std::ostringstream stringStream;
-    stringStream << "\nConfiguration:\n";
+    stringStream << "\nPerftest Configuration:\n";
 
     // Publisher/Subscriber and Entity ID
     if (_IsPub) {
@@ -912,11 +912,11 @@ void perftest_cpp::PrintConfiguration()
     }
 
     // Listener/WaitSets
-    stringStream << "\tListener/WaitSet: ";
+    stringStream << "\tReceive using: ";
     if (_UseReadThread) {
-        stringStream << "Using WaitSets\n";
+        stringStream << "WaitSets\n";
     } else {
-        stringStream << "Using Listeners\n";
+        stringStream << "Listeners\n";
     }
 
 
@@ -946,7 +946,7 @@ void perftest_cpp::PrintConfiguration()
     }
 
     stringStream << _MessagingImpl->PrintConfiguration();
-    fprintf(stderr, "%s", stringStream.str().c_str());
+    fprintf(stderr, "%s\n", stringStream.str().c_str());
 
 }
 

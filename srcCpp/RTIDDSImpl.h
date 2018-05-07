@@ -115,7 +115,7 @@ class RTIDDSImpl : public IMessaging
     // Specific functions to configure the Security plugin
   #ifdef RTI_SECURE_PERFTEST
     bool configureSecurePlugin(DDS_DomainParticipantQos& dpQos);
-    void printSecureArgs();
+    std::string printSecureArgs();
     bool validateSecureArgs();
   #endif
 

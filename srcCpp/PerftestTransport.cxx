@@ -705,7 +705,7 @@ std::string PerftestTransport::printTransportConfigurationSummary()
 {
 
     std::ostringstream stringStream;
-    stringStream << "Transport Information:\n";
+    stringStream << "Transport Configuration:\n";
     stringStream << "\tKind: " << transportConfig.nameString << "\n";
 
     if (!allowInterfaces.empty()) {

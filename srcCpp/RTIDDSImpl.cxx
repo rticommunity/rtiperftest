@@ -782,7 +782,29 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << _ProfileFile << "\n";
     }
 
-    stringStream << _transport.printTransportConfigurationSummary();
+    stringStream << "\n"
+                 << _transport.printTransportConfigurationSummary();
+
+
+    // set initial peers and not use multicast
+    if ( _peer_host_count > 0 ) {
+        stringStream << "\tInitial peers: \n";
+        for (int i = 0; i < _peer_host_count; ++i) {
+            stringStream << _peer_host[i];
+            if (i == _peer_host_count -1) {
+                stringStream << "\n";
+            } else {
+                stringStream << ", ";
+            }
+        }
+    }
+
+   #ifdef RTI_SECURE_PERFTEST
+   if (_isSecure) {
+        stringStream << "\n"
+                     << printSecureArgs();
+   }
+   #endif
 
     return stringStream.str();
 }
@@ -1812,8 +1834,6 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     // configure use of security plugins, based on provided arguments
 
     DDS_ReturnCode_t retcode;
-    // print arguments
-    printSecureArgs();
 
     // load plugin
     retcode = DDSPropertyQosPolicyHelper::add_property(
@@ -1874,33 +1894,29 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     // check if governance file provided
     if (_secureGovernanceFile.empty()) {
         // choose a pre-built governance file
-        std::string file = "resource/secure/signed_PerftestGovernance_";
+        _secureGovernanceFile = "./resource/secure/signed_PerftestGovernance_";
         if (_secureIsDiscoveryEncrypted) {
-            file += "Discovery";
+            _secureGovernanceFile += "Discovery";
         }
 
         if (_secureIsSigned) {
-            file += "Sign";
+            _secureGovernanceFile += "Sign";
         }
 
         if (_secureIsDataEncrypted && _secureIsSMEncrypted) {
-            file += "EncryptBoth";
+            _secureGovernanceFile += "EncryptBoth";
         } else if (_secureIsDataEncrypted) {
-            file += "EncryptData";
+            _secureGovernanceFile += "EncryptData";
         } else if (_secureIsSMEncrypted) {
-            file += "EncryptSubmessage";
+            _secureGovernanceFile += "EncryptSubmessage";
         }
 
-        file = file + ".xml";
+        _secureGovernanceFile = _secureGovernanceFile + ".xml";
 
-        fprintf(
-                stdout,
-                "\tUsing pre-built governance file: \n\t./%s\n",
-                file.c_str());
         retcode = DDSPropertyQosPolicyHelper::add_property(
                 dpQos.property,
                 "com.rti.serv.secure.access_control.governance_file",
-                file.c_str(),
+                _secureGovernanceFile.c_str(),
                 false);
     } else {
         retcode = DDSPropertyQosPolicyHelper::add_property(
@@ -2037,49 +2053,92 @@ bool RTIDDSImpl<T>::validateSecureArgs()
 }
 
 template <typename T>
-void RTIDDSImpl<T>::printSecureArgs()
+std::string RTIDDSImpl<T>::printSecureArgs()
 {
-    printf("Secure Arguments:\n");
+    std::ostringstream stringStream;
+    stringStream << "Secure Configuration:\n";
 
-    printf("\tEncrypt discovery: %s\n",
-            _secureIsDiscoveryEncrypted ? "True" : "False");
-
-    printf("\tEncrypt topic (user) data: %s\n",
-            _secureIsDataEncrypted ? "True" : "False");
-
-    printf("\tEncrypt submessage: %s\n",
-            _secureIsSMEncrypted ? "True" : "False");
-
-    printf("\tSign data: %s\n",
-            _secureIsSigned ? "True" : "False");
-
-    printf("\tGovernance file: %s\n",
-            _secureGovernanceFile.empty() ?
-                    "Not Specified" : _secureGovernanceFile.c_str());
-
-    printf("\tPermissions file: %s\n",
-            _securePermissionsFile.empty() ?
-                    "Not Specified" : _securePermissionsFile.c_str());
-
-    printf("\tPrivate key file: %s\n",
-            _securePrivateKeyFile.empty() ?
-                    "Not Specified" : _securePrivateKeyFile.c_str());
-
-    printf("\tCertificate file: %s\n",
-            _secureCertificateFile.empty() ?
-                    "Not Specified" : _secureCertificateFile.c_str());
-
-    printf("\tCertificate authority file: %s\n",
-            _secureCertAuthorityFile.empty() ?
-                    "Not Specified" : _secureCertAuthorityFile.c_str());
-
-    printf("\tPlugin library : %s\n",
-            _secureLibrary.empty() ? "Not Specified" : _secureLibrary.c_str());
-
-    if( _secureDebugLevel != -1 ){
-        printf("\tDebug level: %d\n", _secureDebugLevel);
+    stringStream << "\tEncrypt discovery: ";
+    if (_secureIsDiscoveryEncrypted) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
     }
 
+    stringStream << "\tEncrypt topic (user) data: ";
+    if (_secureIsDataEncrypted) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
+    }
+
+    stringStream << "\tEncrypt submessage: ";
+    if (_secureIsSMEncrypted) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
+    }
+
+    stringStream << "\tSign data: ";
+    if (_secureIsSigned) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
+    }
+
+    stringStream << "\tGovernance file: ";
+    if (_secureGovernanceFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureGovernanceFile << "\n";
+    }
+
+    stringStream << "\tPermissions file: ";
+    if (_securePermissionsFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _securePermissionsFile << "\n";
+    }
+
+    stringStream << "\tPrivate key file: ";
+    if (_securePrivateKeyFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _securePrivateKeyFile << "\n";
+    }
+
+    stringStream << "\tCertificate file: ";
+    if (_secureCertificateFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureCertificateFile << "\n";
+    }
+
+    stringStream << "\tCertificate authority file: ";
+    if (_secureCertAuthorityFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureCertAuthorityFile << "\n";
+    }
+
+    stringStream << "\tGovernance File: "
+                << "_secureGovernanceFile"
+                << "\n";
+
+    stringStream << "\tPlugin library: ";
+    if (_secureLibrary.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureLibrary << "\n";
+    }
+
+    if( _secureDebugLevel != -1 ){
+        stringStream << "\tDebug level: "
+                     <<  _secureDebugLevel
+                     << "\n";
+    }
+
+    return stringStream.str();
 }
 
 #endif
@@ -2160,10 +2219,6 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // set initial peers and not use multicast
     if ( _peer_host_count > 0 ) {
-        printf("Initial peers:\n");
-        for ( int i = 0; i< _peer_host_count; ++i) {
-            printf("\t%s\n", _peer_host[i]);
-        }
         qos.discovery.initial_peers.from_array(
             (const char **)_peer_host,
             _peer_host_count);
