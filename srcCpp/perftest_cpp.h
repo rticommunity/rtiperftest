@@ -132,7 +132,7 @@ class perftest_cpp
     // Number of bytes sent in messages besides user data
   #ifdef RTI_CUSTOM_TYPE
     static const int OVERHEAD_BYTES = 28 + 8;
-    // For size_custom_type and bin_data
+    // For custom_type_size and bin_data
   #else
     static const int OVERHEAD_BYTES = 28;
   #endif

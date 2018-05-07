@@ -14,7 +14,7 @@
 #include "PerftestTransport.h"
 
 #ifdef RTI_CUSTOM_TYPE
-#include "customType.h"
+#include "CustomType.h"
 #endif
 
 #define RTIPERFTEST_MAX_PEERS 1024

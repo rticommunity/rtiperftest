@@ -29,13 +29,13 @@ USE_SECURE_LIBS=0
 # Needed when compiling statically using security
 RTI_OPENSSLHOME=""
 
-#Variable for customType
-custom_type_location="${idl_location}/customType"
+#Variables for customType
+custom_type_folder="${idl_location}/customType"
 USE_CUSTOM_TYPE=0
 custom_type="" # Type of the customer
 custom_type_file_name_support="" # Name of the file with the type. "TSupport.h"
-# Intermediate file for the include of the custom_type file #include "file.idl"
-custom_idl_file="${custom_type_location}/custom.idl"
+# Intermediate file for including the custom type file #include "file.idl"
+custom_idl_file="${custom_type_folder}/custom.idl"
 
 
 # We will use some colors to improve visibility of errors and information
@@ -81,17 +81,18 @@ function usage()
     echo "                                 when compiling statically and using security   "
     echo "                                 Default is an empty string (current folder).   "
     echo "    --customType <type>          Use the Custom type feature with your type.    "
-    echo "                                 More infromation in the documentation page.    "
+    echo "                                 See detailed documentation and examples of use "
+    echo "                                 in the documentation.                          "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
     echo ""
 }
 
-function clean_custom_type()
+function clean_custom_type_files()
 {
     # Remove generated files of the customer type
-    for file in ${custom_type_location}/*.idl
+    for file in ${custom_type_folder}/*.idl
     do
         if [ -f $file ]; then
             name_file=$(basename $file)
@@ -127,7 +128,7 @@ function clean()
     rm -rf "${script_location}"/srcJava/jar
     rm -rf "${script_location}"/srcJava/com/rti/perftest/gen
     rm -rf "${script_location}"/bin
-    clean_custom_type
+    clean_custom_type_files
 
     echo ""
     echo "================================================================================"
@@ -232,13 +233,15 @@ function additional_defines_calculation()
 
 function build_cpp()
 {
-    additional_defines_customType=""
-    additionalHeaderFiles_customType=""
-    additionalSourceFiles_customType=""
+    ##############################################################################
+    # Generate files for the custom type files
+    additional_defines_custom_type=""
+    additional_header_files_custom_type=""
+    additional_source_files_custom_type=""
     if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
         # Search the file which contains "Struct ${custom_type} {" and include it to ${custom_idl_file}
         found_idl=false
-        for file in ${custom_type_location}/*.idl
+        for file in ${custom_type_folder}/*.idl
         do
             if [ -f $file ]; then
                 if grep -Fq  "struct "${custom_type}" {" ${file}
@@ -252,15 +255,15 @@ function build_cpp()
             fi
         done
         if [ "$found_idl" = false ]; then
-            echo -e "${ERROR_TAG} Cannot find the idl file with the structure ${custom_type}"
+            echo -e "${ERROR_TAG} Cannot find an idl file with the ${custom_type} structure."
             exit -1
         fi
-        cp -rf ${custom_type_location}/* ${idl_location}/
-        additionalHeaderFiles_customType="customType.h"
-        additionalSourceFiles_customType="customType.cxx"
-        # Find all the files in the folder ${custom_type_location}
+        cp -rf ${custom_type_folder}/* ${idl_location}/
+        additional_header_files_custom_type="CustomType.h"
+        additional_source_files_custom_type="CustomType.cxx"
+        # Find all the files in the folder ${custom_type_folder}
         # Run codegen with all those files
-        for file in ${custom_type_location}/*.idl
+        for file in ${custom_type_folder}/*.idl
         do
             if [ -f $file ]; then
                 rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -I ${idl_location} -unboundedSupport -replace -create typefiles -d \"${classic_cpp_folder}\" \"${file}\" "
@@ -273,18 +276,18 @@ function build_cpp()
                 # Adding the generated file as additional HearderFiles and SourceFiles
                 name_file=$(basename $file)
                 name_file="${name_file%.*}"
-                additionalHeaderFiles_customType="${name_file}Plugin.h ${name_file}.h ${name_file}Support.h "$additionalHeaderFiles_customType
-                additionalSourceFiles_customType="${name_file}Plugin.cxx ${name_file}.cxx ${name_file}Support.cxx "$additionalSourceFiles_customType
+                additional_header_files_custom_type="${name_file}Plugin.h ${name_file}.h ${name_file}Support.h "$additional_header_files_custom_type
+                additional_source_files_custom_type="${name_file}Plugin.cxx ${name_file}.cxx ${name_file}Support.cxx "$additional_source_files_custom_type
             fi
         done
         # Adding RTI_USE_CUSTOM_TYPE as a macro
-        additional_defines_customType=" -D RTI_CUSTOM_TYPE="${custom_type}
+        additional_defines_custom_type=" -D RTI_CUSTOM_TYPE="${custom_type}
     fi
     additional_defines_calculation
     ##############################################################################
     # Generate files for srcCpp
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"${additionalHeaderFiles_customType} MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles \"${additionalSourceFiles_customType} RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} ${additional_defines_customType} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"${additional_header_files_custom_type} MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles \"${additional_source_files_custom_type} RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} ${additional_defines_custom_type} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${classic_cpp_lang_string}."

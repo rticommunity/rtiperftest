@@ -601,13 +601,12 @@ Maximum Throughput -- 2 *Routing Service*
 
     bin/<arch>/release/perftest_cpp -sub -noPrint -nic <ipaddr> -domain <ID+2> -dataLen <length>
 
-Using Custom Type
------------------
+Using Custom Types
+------------------
 
-It is a new feature which allows to the customer to use their own type for
-running the performance test. The current *RTI Perftest* has a predefined type
-which is formed by several long membersand a sequence of ``octet``. So now it is
-possible to use a complex type and it is automated and really simple.
+The Custom Types feature allows the use of customized types instead of the one
+provided by RTI Perftest. It is designed in a way in which the number of changes
+in the code and configuration files is minimal.
 
 Briefly, the necesary steps that you need to use your type in *RTI Perftest* are:
 
@@ -616,10 +615,10 @@ Briefly, the necesary steps that you need to use your type in *RTI Perftest* are
 -  Run the build script with the ``--customType <type>``
 -  Now, you can run *RTI Perftest* as usual.
 
-Full example using Custom Type
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Full example using Custom Types
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The type that we are going to use in our example is:
+The custom type that will be used for this example is the following:
 
 ::
 
@@ -642,11 +641,13 @@ The type that we are going to use in our example is:
         StringTest test_string;
     };//@Extensibility FINAL_EXTENSIBILITY
 
-Bellow, you can see the necessary steps to use your own type on C++ (Traditional):
+These are the steps needed to use the previously described type in RTI Perftest
+for the the C++ (Traditional) API:
 
-1. Copy the IDL files into srcIdl/custom/
+1. Copy the IDL files into `srcIdl/custom/` folder.
 
-2. Implement the functions of customtype.cxx
+2. The following functions should be implemented (optionally) to properly
+initialize the Custom Type structures.
 
 - **initialize_custom_type**:
     This function is used to initialize your data.
@@ -670,7 +671,8 @@ Bellow, you can see the necessary steps to use your own type on C++ (Traditional
     }
 
 - **register_custom_type**:
-    This function is used to set your data before been register.
+    This function is used to set your data before being register. It is only
+    required for key types.
     The function takes two arguments:
 
         - A reference to the customer type.
@@ -723,7 +725,7 @@ Bellow, you can see the necessary steps to use your own type on C++ (Traditional
     This function is used to initialize your DynamicData.
     The function takes one argument:
 
-            - A reference to the full DDS_DynamicData.
+            - A reference to the full DDS_DynamicData object.
 
 ::
 
@@ -746,17 +748,18 @@ Bellow, you can see the necessary steps to use your own type on C++ (Traditional
     }
 
 - **register_custom_type_dynamic**:
-    This function is used to set your DynamicData before been register.
+    This function is used to set your DynamicData before been register.It is
+    only required for key types.
     The function takes two arguments:
 
-        - A reference to the full DDS_DynamicData.
+        - A reference to the full DDS_DynamicData object.
         - A specific number unique for every key.
 
 ::
 
     void register_custom_type_dynamic(DDS_DynamicData & data, unsigned long key)
     {
-        // TODO initialize DDS_DynamicData to be registered
+        // TODO initialize DDS_DynamicData object to be registered
         DDS_ReturnCode_t retcode = data.set_long(
                 "custom_type.test_long",
                 DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
@@ -770,7 +773,7 @@ Bellow, you can see the necessary steps to use your own type on C++ (Traditional
     This function is used to set your DynamicData before been sent.
     The function takes three arguments:
 
-        - A reference to the full DDS_DynamicData.
+        - A reference to the full DDS_DynamicData object.
         - A specific number unique for every key.
         - The target size set by the command line parameter ``-dataLen <bytes>``
 
@@ -865,7 +868,7 @@ Bellow, you can see the necessary steps to use your own type on C++ (Traditional
     This function is used to remove your data. It is called in the destructor.
     The function takes one argument:
 
-            - A reference to the full DDS_DynamicData.
+            - A reference to the full DDS_DynamicData object.
 
 ::
 

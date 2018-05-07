@@ -794,7 +794,7 @@ class RTIPublisher : public IMessagingWriter
       #ifdef RTI_CUSTOM_TYPE
         last_message_size = 0;
         RTI_CUSTOM_TYPE::TypeSupport::initialize_data(&data.custom_type);
-        if (! initialize_custom_type(data.custom_type)) {
+        if (!initialize_custom_type(data.custom_type)) {
             fprintf(stderr, "initialize_custom_type failed.\n");
         }
       #endif
@@ -876,21 +876,21 @@ class RTIPublisher : public IMessagingWriter
         data.latency_ping = message.latency_ping;
       #ifdef RTI_CUSTOM_TYPE
         /**
-         * Using custom type the size of the data is set in data.size_custom_type:
+         * Using custom type the size of the data is set in data.custom_type_size:
          *      If the message.size is a predefined value used to handle the test:
-         *          data.size_custom_type = message.size
+         *          data.custom_type_size = message.size
          *      Else:
          *          If the message.size is different from the last iteration:
-         *              data.size_custom_type of the custom type (data.custom_type)
+         *              data.custom_type_size of the custom type (data.custom_type)
          *              is measured from the function serialize_data_to_cdr_buffer()
          *          Else:
-         *              data.size_custom_type is the same as the last iteration
+         *              data.custom_type_size is the same as the last iteration
         */
         if (message.size == perftest_cpp::INITIALIZE_SIZE
                 || message.size == perftest_cpp::FINISHED_SIZE
                 || message.size == perftest_cpp::LENGTH_CHANGED_SIZE
                 || message.size == 0) {
-            data.size_custom_type = message.size;
+            data.custom_type_size = message.size;
         } else {
             if (! set_custom_type(data.custom_type, key, message.size)) {
                 fprintf(stderr, "set_custom_type failed.\n");
@@ -898,10 +898,10 @@ class RTIPublisher : public IMessagingWriter
             if (message.size != last_message_size) {
                 T::TypeSupport::serialize_data_to_cdr_buffer(
                         NULL,
-                        (unsigned int &)data.size_custom_type,
+                        (unsigned int &)data.custom_type_size,
                         &data);
-                data.size_custom_type -= perftest_cpp::OVERHEAD_BYTES;
-                data.size_custom_type -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
+                data.custom_type_size -= perftest_cpp::OVERHEAD_BYTES;
+                data.custom_type_size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
                 last_message_size = message.size;
             }
         }
@@ -1011,7 +1011,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     long _instancesToBeWritten;
   #ifdef RTI_CUSTOM_TYPE
     int last_message_size;
-    int size_custom_type;
+    int custom_type_size;
   #endif
 
   public:
@@ -1029,7 +1029,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
 
         #ifdef RTI_CUSTOM_TYPE
           last_message_size = 0;
-          size_custom_type = 0;
+          custom_type_size = 0;
           if (! initialize_custom_type_dynamic(data)) {
               fprintf(stderr, "initialize_custom_type_dynamic failed.\n");
           }
@@ -1165,26 +1165,26 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         }
       #ifdef RTI_CUSTOM_TYPE
         /**
-         * Using custom type the size of the data is set in data.size_custom_type:
+         * Using custom type the size of the data is set in data.custom_type_size:
          *      If the message.size is a predefined value used to handle the test:
-         *          data.size_custom_type = message.size
+         *          data.custom_type_size = message.size
          *      Else:
          *          If the message.size is different from the last iteration:
-         *              data.size_custom_type of the custom type (data.custom_type)
+         *              data.custom_type_size of the custom type (data.custom_type)
          *              is measured from the function serialize_data_to_cdr_buffer()
          *          Else:
-         *              data.size_custom_type is the same as the last iteration
+         *              data.custom_type_size is the same as the last iteration
         */
         if (message.size == perftest_cpp::INITIALIZE_SIZE
                 || message.size == perftest_cpp::FINISHED_SIZE
                 || message.size == perftest_cpp::LENGTH_CHANGED_SIZE
                 || message.size == 0) {
             retcode = data.set_long(
-                    "size_custom_type",
+                    "custom_type_size",
                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
                     message.size);
             if (retcode != DDS_RETCODE_OK) {
-                fprintf(stderr, "set_long(size_custom_type) failed: %d.\n", retcode);
+                fprintf(stderr, "set_long(custom_type_size) failed: %d.\n", retcode);
             }
         } else {
             if (! set_custom_type_dynamic(data, key, message.size)) {
@@ -1194,28 +1194,28 @@ class RTIDynamicDataPublisher : public IMessagingWriter
                 char *buffer = NULL;
                 data.to_cdr_buffer(
                         NULL,
-                        (unsigned int &)size_custom_type);
+                        (unsigned int &)custom_type_size);
                 RTIOsapiHeap_allocateBufferAligned(
                     &buffer,
-                    size_custom_type,
+                    custom_type_size,
                     RTIOsapiAlignment_getAlignmentOf(void *));
                 data.to_cdr_buffer(
                         buffer,
-                        (unsigned int &)size_custom_type);
+                        (unsigned int &)custom_type_size);
                 if (buffer != NULL) {
                     RTIOsapiHeap_freeBuffer(buffer);
                     buffer = NULL;
                 }
-                size_custom_type -= perftest_cpp::OVERHEAD_BYTES;
-                size_custom_type -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
+                custom_type_size -= perftest_cpp::OVERHEAD_BYTES;
+                custom_type_size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
                 last_message_size = message.size;
             }
             retcode = data.set_long(
-                    "size_custom_type",
+                    "custom_type_size",
                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                    size_custom_type);
+                    custom_type_size);
             if (retcode != DDS_RETCODE_OK) {
-                fprintf(stderr, "set_long(size_custom_type) failed: %d.\n", retcode);
+                fprintf(stderr, "set_long(custom_type_size) failed: %d.\n", retcode);
             }
         }
       #else
@@ -1372,7 +1372,7 @@ class ReceiverListener : public DDSDataReaderListener
                 _message.timestamp_usec = _data_seq[i].timestamp_usec;
                 _message.latency_ping = _data_seq[i].latency_ping;
               #ifdef RTI_CUSTOM_TYPE
-                _message.size = _data_seq[i].size_custom_type;
+                _message.size = _data_seq[i].custom_type_size;
               #else
                 _message.size = _data_seq[i].bin_data.length();
               #endif
@@ -1505,7 +1505,7 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
               #ifdef RTI_CUSTOM_TYPE
                 retcode = _data_seq[i].get_long(
                         _message.size,
-                        "size_custom_type",
+                        "custom_type_size",
                         8);
                 if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
@@ -1651,7 +1651,7 @@ class RTISubscriber : public IMessagingReader
             _message.timestamp_usec = _data_seq[_data_idx].timestamp_usec;
             _message.latency_ping = _data_seq[_data_idx].latency_ping;
           #ifdef RTI_CUSTOM_TYPE
-            _message.size = _data_seq[_data_idx].size_custom_type;
+            _message.size = _data_seq[_data_idx].custom_type_size;
           #else
             _message.size = _data_seq[_data_idx].bin_data.length();
           #endif
@@ -1866,7 +1866,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
           #ifdef RTI_CUSTOM_TYPE
             retcode = _data_seq[_data_idx].get_long(
                     _message.size,
-                    "size_custom_type",
+                    "custom_type_size",
                     8);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
