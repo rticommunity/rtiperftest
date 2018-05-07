@@ -906,7 +906,7 @@ void perftest_cpp::PrintConfiguration()
     // Unbounded Sequences
     stringStream << "\tUnbounded Sequences: ";
     if (_useUnbounded != 0) {
-        stringStream << "Enabled (Allocation Threshold is " << _useUnbounded << " Bytes)\n";
+        stringStream << "Enabled (Alloc Threshold " << _useUnbounded << " Bytes)\n";
     } else {
         stringStream << "No\n";
     }
@@ -945,7 +945,7 @@ void perftest_cpp::PrintConfiguration()
                      << _NumIter << "\n";
     }
 
-    stringStream << _MessagingImpl->PrintConfiguration() << "\n";
+    stringStream << _MessagingImpl->PrintConfiguration();
     fprintf(stderr, "%s", stringStream.str().c_str());
 
 }

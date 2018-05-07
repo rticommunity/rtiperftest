@@ -701,7 +701,7 @@ std::string PerftestTransport::helpMessageString()
     return oss.str();
 }
 
-void PerftestTransport::printTransportConfigurationSummary()
+std::string PerftestTransport::printTransportConfigurationSummary()
 {
 
     std::ostringstream stringStream;
@@ -752,8 +752,7 @@ void PerftestTransport::printTransportConfigurationSummary()
         stringStream << "\tVerbosity: " << verbosity << "\n";
     }
 
-    fprintf(stderr, "%s", stringStream.str().c_str());
-
+    return stringStream.str();
 }
 
 bool PerftestTransport::parseTransportOptions(int argc, char *argv[])

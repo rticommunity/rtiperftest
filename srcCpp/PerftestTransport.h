@@ -110,7 +110,7 @@ public:
 
     std::string helpMessageString();
 
-    void printTransportConfigurationSummary();
+    std::string printTransportConfigurationSummary();
 
     bool parseTransportOptions(int argc, char *argv[]);
 

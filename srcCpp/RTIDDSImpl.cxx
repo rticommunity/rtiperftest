@@ -356,7 +356,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
         } else if (IS_OPTION(argv[i], "-dynamicData")) {
             _isDynamicData = true;
-            fprintf(stderr, "Using Dynamic Data.\n");
         } else if (IS_OPTION(argv[i], "-noDirectCommunication")) {
             _DirectCommunication = false;
         } else if (IS_OPTION(argv[i], "-instances")) {
@@ -698,7 +697,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     }
 
     if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
-        fprintf(stderr, "Large data settings enabled.\n");
         _isLargeData = true;
     }
 
@@ -757,6 +755,17 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "No\n";
     }
 
+    // Dynamic Data
+    stringStream << "\tAsynchronous Publishing: ";
+    if (_isLargeData || _IsAsynchronous) {
+        stringStream << "Yes\n";
+        stringStream << "\tFlow Controller: "
+                     << _FlowControllerCustom
+                     << "\n";
+    } else {
+        stringStream << "No\n";
+    }
+
     // Turbo Mode / AutoThrottle
     if (_TurboMode) {
         stringStream << "\tTurbo Mode: Enabled\n";
@@ -773,43 +782,9 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << _ProfileFile << "\n";
     }
 
-    // if (_IsPub) {
-    //     // Publication Rate
-    //     stringStream << "\tPublication Rate: ";
-    //     if (_pubRate > 0) {
-    //         stringStream << _pubRate << "Samples/s (";
-    //         if (_pubRateMethodSpin) {
-    //             stringStream << "Spin)\n";
-    //         } else {
-    //             stringStream << "Sleep)\n";
-    //         }
-    //     } else {
-    //         stringStream << "Unlimited (Not set)\n";
-    //     }
-    // }
-
-    // // Execution Time or Num Iter
-    // if (_executionTime > 0) {
-    //     stringStream << "\tExecution time: "
-    //                  << _executionTime
-    //                  << " seconds\n";
-    // } else {
-    //     stringStream << "\tNumber of samples: "
-    //                  << _NumIter << "\n";
-    // }
-
-    stringStream << "\n";
-
-
-    _transport.printTransportConfigurationSummary();
+    stringStream << _transport.printTransportConfigurationSummary();
 
     return stringStream.str();
-
-    // Asynchronous
-    // Flow controller
-    // Verbosity
-    // scan
-    // CFT
 }
 
 /*********************************************************
@@ -1507,7 +1482,7 @@ class RTISubscriber : public IMessagingReader
             property.max_event_delay.nanosec = (RTIDDSImpl<T>::_WaitsetDelayUsec % 1000000) * 1000;
 
             _waitset = new DDSWaitSet(property);
-           
+
             DDSStatusCondition *reader_status;
             reader_status = reader->get_statuscondition();
             reader_status->set_enabled_statuses(DDS_DATA_AVAILABLE_STATUS);
@@ -1547,7 +1522,7 @@ class RTISubscriber : public IMessagingReader
                     //printf("Read thread woke up but no data\n.");
                     //return NULL;
                     continue;
-                }   
+                }
 
                 retcode = _reader->take(
                     _data_seq, _info_seq,
@@ -2298,7 +2273,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                 qos_profile.c_str(), _ProfileLibraryName, _ProfileFile);
         return NULL;
     }
-    
+
     if (!_UsePositiveAcks
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_qos.protocol.disable_positive_acks = true;
@@ -2309,13 +2284,11 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     if (_isLargeData || _IsAsynchronous) {
-        fprintf(stderr, "Using asynchronous write for %s\n", topic_name);
         dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
         if (_FlowControllerCustom != "default") {
             dw_qos.publish_mode.flow_controller_name =
                     DDS_String_dup(("dds.flow_controller.token_bucket."+_FlowControllerCustom).c_str());
         }
-        fprintf(stderr, "Using flow controller %s\n", _FlowControllerCustom.c_str());
     }
 
     // only force reliability on throughput/latency topics

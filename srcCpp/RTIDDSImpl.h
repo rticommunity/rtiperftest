@@ -91,7 +91,6 @@ class RTIDDSImpl : public IMessaging
 
     void PrintCmdLineHelp();
 
-
     bool ParseConfig(int argc, char *argv[]);
 
     std::string PrintConfiguration();
