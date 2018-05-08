@@ -51,11 +51,11 @@ function usage()
 
 function clean()
 {
+    build_perfest_clean
     # Remove tmp files
     rm -rf "${tmp_folder}"/*
     rm -rf "${custom_type_location}"/*
     # Remove execution files
-    build_perfest_clean
 }
 
 function verify_precondition_variables()
@@ -189,7 +189,7 @@ function execute_RTI_Perftest()
     verify_execution ${1}
 }
 
-function copy_scenario() 
+function copy_scenario()
 {
     copy_comand="cp -rf ${script_location}/${1}/* ${rtiperftest_folder}/"
     echo -e "${INFO_TAG} copy_comand: ${copy_comand}"

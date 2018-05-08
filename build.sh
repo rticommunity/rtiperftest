@@ -231,6 +231,55 @@ function additional_defines_calculation()
     fi
 }
 
+# Generate code for the type of the customer.
+# Fill additional source and hearder files for custom type.
+function build_cpp_custom_type()
+{
+    # Search the file which contains "Struct ${custom_type} {" and include it to ${custom_idl_file}
+    found_idl=false
+    for file in ${custom_type_folder}/*.idl
+    do
+        if [ -f $file ]; then
+            if grep -Fq  "struct "${custom_type}" {" ${file}
+            then # found
+                custom_type_file_name_support=$(basename $file)
+                custom_type_file_name_support=${custom_type_file_name_support%.*}
+                custom_type_file_name_support=${custom_type_file_name_support}"Support.h"
+                echo "#include \"$(basename $file)\"" > ${custom_idl_file}
+                found_idl=true
+            fi
+        fi
+    done
+    if [ "$found_idl" = false ]; then
+        echo -e "${ERROR_TAG} Cannot find an idl file with the ${custom_type} structure."
+        exit -1
+    fi
+    cp -rf ${custom_type_folder}/* ${idl_location}/
+    additional_header_files_custom_type="CustomType.h"
+    additional_source_files_custom_type="CustomType.cxx"
+    # Find all the files in the folder ${custom_type_folder}
+    # Run codegen with all those files
+    for file in ${custom_type_folder}/*.idl
+    do
+        if [ -f $file ]; then
+            rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -I ${idl_location} -unboundedSupport -replace -create typefiles -d \"${classic_cpp_folder}\" \"${file}\" "
+            echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+            eval $rtiddsgen_command
+            if [ "$?" != 0 ]; then
+                echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string} with the file ${file}."
+                exit -1
+            fi
+            # Adding the generated file as additional HearderFiles and SourceFiles
+            name_file=$(basename $file)
+            name_file="${name_file%.*}"
+            additional_header_files_custom_type="${name_file}Plugin.h ${name_file}.h ${name_file}Support.h "$additional_header_files_custom_type
+            additional_source_files_custom_type="${name_file}Plugin.cxx ${name_file}.cxx ${name_file}Support.cxx "$additional_source_files_custom_type
+        fi
+    done
+    # Adding RTI_USE_CUSTOM_TYPE as a macro
+    additional_defines_custom_type=" -D RTI_CUSTOM_TYPE="${custom_type}
+}
+
 function build_cpp()
 {
     ##############################################################################
@@ -238,50 +287,9 @@ function build_cpp()
     additional_defines_custom_type=""
     additional_header_files_custom_type=""
     additional_source_files_custom_type=""
+
     if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
-        # Search the file which contains "Struct ${custom_type} {" and include it to ${custom_idl_file}
-        found_idl=false
-        for file in ${custom_type_folder}/*.idl
-        do
-            if [ -f $file ]; then
-                if grep -Fq  "struct "${custom_type}" {" ${file}
-                then # found
-                    custom_type_file_name_support=$(basename $file)
-                    custom_type_file_name_support=${custom_type_file_name_support%.*}
-                    custom_type_file_name_support=${custom_type_file_name_support}"Support.h"
-                    echo "#include \"$(basename $file)\"" > ${custom_idl_file}
-                    found_idl=true
-                fi
-            fi
-        done
-        if [ "$found_idl" = false ]; then
-            echo -e "${ERROR_TAG} Cannot find an idl file with the ${custom_type} structure."
-            exit -1
-        fi
-        cp -rf ${custom_type_folder}/* ${idl_location}/
-        additional_header_files_custom_type="CustomType.h"
-        additional_source_files_custom_type="CustomType.cxx"
-        # Find all the files in the folder ${custom_type_folder}
-        # Run codegen with all those files
-        for file in ${custom_type_folder}/*.idl
-        do
-            if [ -f $file ]; then
-                rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -I ${idl_location} -unboundedSupport -replace -create typefiles -d \"${classic_cpp_folder}\" \"${file}\" "
-                echo -e "${INFO_TAG} Command: $rtiddsgen_command"
-                eval $rtiddsgen_command
-                if [ "$?" != 0 ]; then
-                    echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string} with the file ${file}."
-                    exit -1
-                fi
-                # Adding the generated file as additional HearderFiles and SourceFiles
-                name_file=$(basename $file)
-                name_file="${name_file%.*}"
-                additional_header_files_custom_type="${name_file}Plugin.h ${name_file}.h ${name_file}Support.h "$additional_header_files_custom_type
-                additional_source_files_custom_type="${name_file}Plugin.cxx ${name_file}.cxx ${name_file}Support.cxx "$additional_source_files_custom_type
-            fi
-        done
-        # Adding RTI_USE_CUSTOM_TYPE as a macro
-        additional_defines_custom_type=" -D RTI_CUSTOM_TYPE="${custom_type}
+        build_cpp_custom_type
     fi
     additional_defines_calculation
     ##############################################################################
