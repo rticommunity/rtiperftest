@@ -68,10 +68,10 @@ What's Fixed in Master
 Incorrect Latency maximum calculation in certain scenarios with low resolution clocks (#58)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In previous releases, if the clock provided by the system had a low resolution, many of the
-*Latency* times calculated by sending and receiving back samples would be `0us`. *RTI Perftest*
-would assume in those cases this was a intialization value and it wrongly reset the maximum
-latency.
+In previous releases, if the clock provided by the system had low resolution, many of the
+*Latency* times calculated by sending and receiving back samples would end up being `0us`.
+*RTI Perftest* would assume in those cases this value was a initialization value and it
+would reset the maximum latency.
 
 This behavior has been fixed.
 
