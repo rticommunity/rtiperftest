@@ -1187,6 +1187,7 @@ int perftest_cpp::Subscriber()
     if (_useSockets) {
         while (reader_listener->packets_received == 0 && !reader_listener->change_size){
             announcement_writer->Send(announcement_msg);
+            announcement_writer->Flush();
             perftest_cpp::MilliSleep(1000);
         }
     }
@@ -2059,7 +2060,6 @@ int perftest_cpp::Publisher()
     }
 
     if (reader != NULL) {
-        perftest_cpp::MilliSleep(5000);
         delete(reader);
     }
 

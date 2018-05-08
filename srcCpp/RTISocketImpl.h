@@ -36,6 +36,7 @@ class RTISocketImpl : public IMessaging
         _isScan = false;
         _isPublisher = false;
         _peer_host_count = 0;
+        _batchSize = 0;
 
         THROUGHPUT_MULTICAST_ADDR = "239.255.1.1";
         LATENCY_MULTICAST_ADDR = "239.255.1.2";
@@ -91,6 +92,7 @@ class RTISocketImpl : public IMessaging
     bool _isScan;
     bool _isPublisher;
     int _peer_host_count;
+    unsigned int _batchSize;
     char *_peer_host[RTIPERFTEST_MAX_PEERS];
 
     PerftestTransport _transport;

@@ -97,7 +97,7 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
     no_socket_params_v.push_back(std::string("-noDirectCommunication"));
     no_socket_params_v.push_back(std::string("-instances"));
     no_socket_params_v.push_back(std::string("-instanceHashBuckets"));
-    no_socket_params_v.push_back(std::string("-batchSize"));
+    //no_socket_params_v.push_back(std::string("-batchSize")); //support
     no_socket_params_v.push_back(std::string("-keepDurationUsec"));
     no_socket_params_v.push_back(std::string("-noPositiveAcks"));
     no_socket_params_v.push_back(std::string("-waitsetDelayUsec"));
@@ -109,10 +109,10 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
     no_socket_params_v.push_back(std::string("-flowController"));
     no_socket_params_v.push_back(std::string("-cft"));
     no_socket_params_v.push_back(std::string("-writeInstance"));
-    no_socket_params_v.push_back(std::string("-enableTCP"));
+    no_socket_params_v.push_back(std::string("-enableTCP")); //
     no_socket_params_v.push_back(std::string("-enableUDPv6"));
     no_socket_params_v.push_back(std::string("-allowInterfaces"));
-    no_socket_params_v.push_back(std::string("-transportServerBindPort"));
+    no_socket_params_v.push_back(std::string("-transportServerBindPort")); //
     no_socket_params_v.push_back(std::string("-transportWan"));
     no_socket_params_v.push_back(std::string("-transportCertAuthority"));
     no_socket_params_v.push_back(std::string("-transportCertFile"));
@@ -273,6 +273,22 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
             }
             _NumSubscribers = strtol(argv[i], NULL, 10);
         }
+        else if (IS_OPTION(argv[i], "-batchSize")) {
+
+            if ((i == (argc-1)) || *argv[++i] == '-')
+            {
+                fprintf(stderr, "Missing <#bytes> after -batchSize\n");
+                return false;
+            }
+            _batchSize = strtol(argv[i], NULL, 10);
+
+            if (_batchSize < 0 || _batchSize > (unsigned int)MAX_SYNCHRONOUS_SIZE) {
+                fprintf(stderr, "Batch size '%d' should be between [0,%d]\n",
+                        _batchSize,
+                        MAX_SYNCHRONOUS_SIZE);
+                return false;
+            }
+        }
         else {
 
             if (i > 0) {
@@ -298,6 +314,12 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
 
     if (_isScan) {
         _DataLen = _scan_max_size;
+    }
+
+    /*TODO: ask if this should finish or just print warning*/
+    if (_batchSize != 0 && _DataLen > _batchSize) {
+        fprintf(stderr, "\t -batchSize must be bigger than -datalen\n");
+        return false;
     }
 
     if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
@@ -336,6 +358,12 @@ class RTISocketPublisher : public IMessagingWriter{
 
     int _NumSubscribers;
 
+    unsigned int _batchBufferSize;
+    bool _useBatching;
+
+    struct RTICdrStream _stream;
+    struct PRESTypePluginDefaultEndpointData _epd;
+
   public:
     RTISocketPublisher(
             NDDS_Transport_Plugin *plugin,
@@ -346,7 +374,8 @@ class RTISocketPublisher : public IMessagingWriter{
             int peer_host_count,
             char **peer_host,
             int numSubscribers,
-            struct REDAWorker *worker) {
+            struct REDAWorker *worker,
+            unsigned int batchBufferSize) {
 
         _plugin = plugin;
         _send_resource = send_resource;
@@ -361,8 +390,35 @@ class RTISocketPublisher : public IMessagingWriter{
         _peer_host_count = peer_host_count;
         _peer_host = peer_host;
 
+        if (batchBufferSize == 0){
+            _batchBufferSize = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
+            _useBatching = false;
+        } else {
+            _batchBufferSize = batchBufferSize;
+            _useBatching = true;
+        }
+
+        RTIOsapiHeap_allocateBuffer(
+            &_send_buffer.pointer,
+            NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
+            RTI_OSAPI_ALIGNMENT_DEFAULT);
+
+        if (_send_buffer.pointer == NULL) {
+            fprintf(stderr, "Error allocating memory for the send buffer\n");
+        }
         _send_buffer.length = 0;
-        _send_buffer.pointer = NULL;
+
+
+        RTICdrStream_init(&_stream);
+        RTICdrStream_set(&_stream, (char *)_send_buffer.pointer,
+                NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+
+        _epd._maxSizeSerializedSample =
+                TestData_tPlugin_get_serialized_sample_max_size(
+                        NULL,
+                        RTI_TRUE,
+                        RTICdrEncapsulation_getNativeCdrEncapsulationId(), 0);
+
     }
 
     ~RTISocketPublisher() {
@@ -381,50 +437,13 @@ class RTISocketPublisher : public IMessagingWriter{
 
     }
 
-    void Flush() {
-        /* Dummy funtion */
-    }
+    bool SendMessage() {
 
-    bool Send(const TestMessage &message, bool isCftWildCardKey) {
-
-        _data.entity_id = message.entity_id;
-        _data.seq_num = message.seq_num;
-        _data.timestamp_sec = message.timestamp_sec;
-        _data.timestamp_usec = message.timestamp_usec;
-        _data.latency_ping = message.latency_ping;
-        _data.bin_data.ensure_length(message.size, message.size);
-
-        unsigned int serialize_size = 0;
-        TestData_tPlugin_serialize_to_cdr_buffer(
-            NULL,
-            &serialize_size,
-            &_data);
-
-        /*Only when the size of the message change, it reallocates new memory*/
-        if ((unsigned int)_send_buffer.length != serialize_size) {
-            RTIOsapiHeap_freeBuffer(_send_buffer.pointer);
-            RTIOsapiHeap_allocateBuffer(
-                    &_send_buffer.pointer,
-                    serialize_size,
-                    RTI_OSAPI_ALIGNMENT_DEFAULT);
-
-            if (_send_buffer.pointer == NULL) {
-                fprintf(stderr,"Error allocating memory for the send buffer\n");
-                return false;
-            }
-            _send_buffer.length = serialize_size;
-        }
-
-        TestData_tPlugin_serialize_to_cdr_buffer(
-            _send_buffer.pointer,
-            &serialize_size,
-            &_data);
-
-        /**
+        /*
          * TODO: //Ask Fernando
          *
-         * The 1th option is be restrictive, and only allow one subcriber
-         * per subscriber.
+         * The 1th option is be restrictive, and only allow one subscriber
+         * per Peer.
          *
          * The 2th options is identify how many subscriber are per Peer
          * on the command line parameters like -peer x.x.x.x N
@@ -439,24 +458,24 @@ class RTISocketPublisher : public IMessagingWriter{
          * So, we do as many send() as the maximum of subscribers that
          * can be on a single peer.
          */
-        int sends_per_peer =  (_NumSubscribers / _peer_host_count);
+
+        int sends_per_peer = (_NumSubscribers / _peer_host_count);
 
         int actual_port;
 
-        bool result = true;
+        bool retCode = true;
         for (int i=0; i < _peer_host_count; i++) {
 
             actual_port = _send_port;
 
-
             /* Only take the address if it's not been use SHMEM */
             if (_plugin->property->classid != NDDS_TRANSPORT_CLASSID_SHMEM) {
-                result = NDDS_Transport_UDP_string_to_address_cEA(
+                retCode = NDDS_Transport_UDP_string_to_address_cEA(
                     _plugin,
                     &_dst_address,
                     _peer_host[i]);
 
-                if (result != 1){
+                if (retCode != 1){
                     fprintf(stderr,
                             "NDDS_Transport_UDP_string_to_address_cEA error\n");
                     return false;
@@ -467,7 +486,7 @@ class RTISocketPublisher : public IMessagingWriter{
 
                 actual_port += j * RTISocketImpl::resources_per_participant;
 
-                result = _plugin->send(
+                retCode = _plugin->send(
                     _plugin,
                     &_send_resource,
                     &_dst_address,
@@ -477,7 +496,7 @@ class RTISocketPublisher : public IMessagingWriter{
                     1,
                     _worker);
 
-                if (!result) {
+                if (!retCode) {
                     /**
                      * TODO: Ask Fernando
                      *
@@ -493,8 +512,72 @@ class RTISocketPublisher : public IMessagingWriter{
 
                 }
             }
-
         }
+
+        return retCode;
+
+    }
+
+    void Flush() {
+
+        /* If there is no data, no need to flush */
+        if (_send_buffer.length == 0) {
+            return;
+        }
+
+        if (SendMessage() != 1) {
+            //TODO: the same as sendMessage print problem.
+            //fprintf(stderr, "Fail in flush() -> sendMessage()\n");
+        }
+
+        /* If the send it's done, reset the stream to fill the buffer again */
+        RTICdrStream_set(&_stream, (char *)_send_buffer.pointer,
+                         NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+
+        _send_buffer.length = 0;
+    }
+
+    bool Send(const TestMessage &message, bool isCftWildCardKey) {
+
+        bool retCode = RTI_FALSE;
+
+        _data.entity_id = message.entity_id;
+        _data.seq_num = message.seq_num;
+        _data.timestamp_sec = message.timestamp_sec;
+        _data.timestamp_usec = message.timestamp_usec;
+        _data.latency_ping = message.latency_ping;
+        _data.bin_data.loan_contiguous(
+                (DDS_Octet *)message.data,
+                message.size,
+                message.size);
+
+        int serialize_size =  message.size
+                + perftest_cpp::OVERHEAD_BYTES
+                + RTI_CDR_ENCAPSULATION_HEADER_SIZE;
+
+        if ((unsigned int)(serialize_size + _send_buffer.length)
+                > _batchBufferSize) {
+            Flush();
+        }
+
+        retCode = TestData_tPlugin_serialize(
+                (PRESTypePluginEndpointData)&_epd, &_data, &_stream,
+                RTI_TRUE, RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+                RTI_TRUE, NULL);
+        if (!retCode){
+            fprintf(stderr, "Fail serializing data\n");
+            return false;
+        }
+
+        _data.bin_data.unloan();
+
+        _send_buffer.length = RTICdrStream_getCurrentPositionOffset(&_stream);
+
+        if (_useBatching && ((unsigned int)_send_buffer.length <= _batchBufferSize)) {
+            return true;
+        }
+
+        Flush();
 
         return true;
     }
@@ -571,6 +654,8 @@ class RTISocketSubscriber : public IMessagingReader
 
     RTIOsapiSemaphore *_pongSemaphore;
 
+    struct RTICdrStream _stream;
+    bool _no_data;
 
   public:
     RTISocketSubscriber(
@@ -593,22 +678,20 @@ class RTISocketSubscriber : public IMessagingReader
         _transp_message.loaned_buffer_param = NULL;
 
         /* Maximun size of UDP package*/
-        unsigned int size = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
-
         RTIOsapiHeap_allocateBufferAligned(
             &_recv_buffer.pointer,
-            size,
+            NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
             RTI_OSAPI_ALIGNMENT_DEFAULT);
 
-        if (_recv_buffer.pointer == NULL)
-        {
+        if (_recv_buffer.pointer == NULL) {
             fprintf(stderr, "RTIOsapiHeap_allocateArray error\n");
         }
-        _recv_buffer.length = size;
+        _recv_buffer.length = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
 
-        _payload_size = 0;
-        _payload = 0;
+        _data.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
 
+        RTICdrStream_init(&_stream);
+        _no_data = true;
     }
 
     ~RTISocketSubscriber()
@@ -619,75 +702,75 @@ class RTISocketSubscriber : public IMessagingReader
     void Shutdown()
     {
 
+        //_plugin->unblock_receive_rrEA(_plugin, &_recv_resource, _worker);
+        //perftest_cpp::MilliSleep(5000);
         if (_recv_buffer.pointer != NULL) {
             RTIOsapiHeap_freeBufferAligned(_recv_buffer.pointer);
         }
 
-        if (_recv_resource != NULL && _plugin != NULL)
-        {
+        if (_recv_resource != NULL && _plugin != NULL) {
             _plugin->destroy_recvresource_rrEA(_plugin, &_recv_resource);
         }
     }
 
     TestMessage *ReceiveMessage() {
 
-        bool result = _plugin->receive_rEA(
-                _plugin,
-                &_transp_message,
-                &_recv_buffer,
-                &_recv_resource,
-                _worker);
-        if (!result) {
-            fprintf(stderr, "error receiving data\n");
-            return NULL;
+
+        while (true) {
+            if (_no_data) {
+
+                bool result = _plugin->receive_rEA(
+                        _plugin,
+                        &_transp_message,
+                        &_recv_buffer,
+                        &_recv_resource,
+                        _worker);
+                if (!result) {
+                    fprintf(stderr, "error receiving data\n");
+                    return NULL;
+                }
+
+                RTICdrStream_set(&_stream,
+                        (char *)_transp_message.buffer.pointer,
+                        _transp_message.buffer.length);
+
+                _no_data = false;
+            }
+
+            // may have hit end condition
+            if (RTICdrStream_getCurrentPositionOffset(&_stream)
+                    >= _transp_message.buffer.length) {
+
+                if (_plugin -> return_loaned_buffer_rEA != NULL
+                        && _transp_message.loaned_buffer_param != (void *)-1) {
+                    _plugin->return_loaned_buffer_rEA(
+                            _plugin,
+                            &_recv_resource,
+                            &_transp_message,
+                            _worker);
+                }
+
+                _no_data = true;
+                continue;
+            }
+            TestData_t_finalize_optional_members(&_data, RTI_TRUE);
+            TestData_tPlugin_deserialize_sample(
+                    NULL, &_data,
+                    &_stream, RTI_TRUE, RTI_TRUE,
+                    NULL);
+
+            _message.entity_id = _data.entity_id;
+            _message.seq_num = _data.seq_num;
+            _message.timestamp_sec = _data.timestamp_sec;
+            _message.timestamp_usec = _data.timestamp_usec;
+            _message.latency_ping = _data.latency_ping;
+            _message.size = _data.bin_data.length();
+            _message.data = (char *)_data.bin_data.get_contiguous_bufferI();
+
+            return &_message;
+
         }
 
-        /*
-         * To be able of deserialize, bin data must have the right length.
-         * The right size is: the total receive buffer minus the overhead
-         * create by the serialize minus the overhead include by perftest.
-         */
-
-        int serialize_size =  _transp_message.buffer.length
-                - perftest_cpp::OVERHEAD_BYTES
-                - RTI_CDR_ENCAPSULATION_HEADER_SIZE;
-
-        /*
-         * if serialize_size is lower than 0 means that the length of the
-         * message is 0
-         */
-        if (serialize_size < 0) {
-            serialize_size = 0;
-        }
-
-        /* Only reserve memory if the length change */
-        if (_data.bin_data.length() != serialize_size){
-            _data.bin_data.ensure_length(serialize_size, serialize_size);
-        }
-
-        TestData_tPlugin_deserialize_from_cdr_buffer(
-            &_data,
-            _transp_message.buffer.pointer,
-            _transp_message.buffer.length);
-
-        _message.entity_id = _data.entity_id;
-        _message.seq_num = _data.seq_num;
-        _message.timestamp_sec = _data.timestamp_sec;
-        _message.timestamp_usec = _data.timestamp_usec;
-        _message.latency_ping = _data.latency_ping;
-        _message.size = _data.bin_data.length();
-        _message.data = (char *)_data.bin_data.get_contiguous_bufferI();
-
-        if (_plugin -> return_loaned_buffer_rEA != NULL
-                && _transp_message.loaned_buffer_param != (void *)-1) {
-            _plugin->return_loaned_buffer_rEA(
-                    _plugin,
-                    &_recv_resource,
-                    &_transp_message,
-                    _worker);
-        }
-
-        return &_message;
     }
 
 
@@ -785,7 +868,8 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
             _peer_host_count,
             (char**)_peer_host,
             _NumSubscribers,
-            _worker);
+            _worker,
+            _batchSize);
 
 }
 
@@ -845,6 +929,8 @@ bool RTISocketImpl::configureSocketsTransport()
             NDDS_TRANSPORT_UDPV4_PROPERTY_DEFAULT;
     struct NDDS_Transport_Shmem_Property_t shmem_prop =
             NDDS_TRANSPORT_SHMEM_PROPERTY_DEFAULT;
+    struct NDDS_Transport_TCPv4_Property_t tcpv4Local_prop =
+            NDDS_TRANSPORT_TCPV4_PROPERTY_DEFAULT_LAN;
 
     char * outInterfaceBuffer = NULL;
     int outInterfaceBufferSize = 0;
@@ -863,7 +949,7 @@ bool RTISocketImpl::configureSocketsTransport()
     bool found = false;
 
     /*Worker configure*/
-    _workerFactory = REDAWorkerFactory_new(200);
+    _workerFactory = REDAWorkerFactory_new(200);// TODO: understand size
     if (_workerFactory == NULL)
     {
         fprintf(stderr, "Error creating Worker Factory\n");
@@ -906,7 +992,7 @@ bool RTISocketImpl::configureSocketsTransport()
                     RTI_OSAPI_SOCKET_AF_INET,
                     0, 0, 0);
 
-            /* Compare the list of interfaces with the imput -nic*/
+            /* Compare the list of interfaces with the input -nic*/
             for (int i = 0; i < outInterfaceCount; i++) {
                 if (!strcmp(outInterfaceArray[i].name, interface)) {
                     NDDS_Transport_SocketUtil_Address_to_transportAddress(
@@ -984,6 +1070,7 @@ bool RTISocketImpl::configureSocketsTransport()
 
         case TRANSPORT_UDPv6:
         case TRANSPORT_TCPv4:
+
         case TRANSPORT_TLSv4:
         case TRANSPORT_DTLSv4:
         case TRANSPORT_WANv4:

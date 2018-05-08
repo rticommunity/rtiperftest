@@ -391,7 +391,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
             _BatchSize = strtol(argv[i], NULL, 10);
 
-            if (_BatchSize < 0 || _BatchSize > (unsigned int)MAX_SYNCHRONOUS_SIZE) {
+            if (_BatchSize > (unsigned int)MAX_SYNCHRONOUS_SIZE) {
                 fprintf(stderr, "Batch size '%d' should be between [0,%d]\n",
                         _BatchSize,
                         MAX_SYNCHRONOUS_SIZE);
