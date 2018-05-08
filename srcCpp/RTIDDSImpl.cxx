@@ -756,14 +756,16 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
     // Dynamic Data
-    stringStream << "\tAsynchronous Publishing: ";
-    if (_isLargeData || _IsAsynchronous) {
-        stringStream << "Yes\n";
-        stringStream << "\tFlow Controller: "
-                     << _FlowControllerCustom
-                     << "\n";
-    } else {
-        stringStream << "No\n";
+    if (_isPublisher) {
+        stringStream << "\tAsynchronous Publishing: ";
+        if (_isLargeData || _IsAsynchronous) {
+            stringStream << "Yes\n";
+            stringStream << "\tFlow Controller: "
+                        << _FlowControllerCustom
+                        << "\n";
+        } else {
+            stringStream << "No\n";
+        }
     }
 
     // Turbo Mode / AutoThrottle
@@ -788,7 +790,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
     // set initial peers and not use multicast
     if ( _peer_host_count > 0 ) {
-        stringStream << "\tInitial peers: \n";
+        stringStream << "\tInitial peers: ";
         for (int i = 0; i < _peer_host_count; ++i) {
             stringStream << _peer_host[i];
             if (i == _peer_host_count -1) {
@@ -800,7 +802,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
    #ifdef RTI_SECURE_PERFTEST
-   if (_isSecure) {
+   if (_secureUseSecure) {
         stringStream << "\n"
                      << printSecureArgs();
    }
@@ -2120,10 +2122,6 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     } else {
         stringStream << _secureCertAuthorityFile << "\n";
     }
-
-    stringStream << "\tGovernance File: "
-                << "_secureGovernanceFile"
-                << "\n";
 
     stringStream << "\tPlugin library: ";
     if (_secureLibrary.empty()) {

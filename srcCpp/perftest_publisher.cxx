@@ -844,13 +844,6 @@ void perftest_cpp::PrintConfiguration()
     std::ostringstream stringStream;
     stringStream << "\nPerftest Configuration:\n";
 
-    // Publisher/Subscriber and Entity ID
-    if (_IsPub) {
-        stringStream << "\tPublisher ID: " << _PubID << "\n";
-    } else {
-        stringStream << "\tSubscriber ID: " << _SubID << "\n";
-    }
-
     // Throughput/Latency mode
     if (_IsPub) {
         stringStream << "\tMode: ";
@@ -862,6 +855,29 @@ void perftest_cpp::PrintConfiguration()
         // Latency Count
         stringStream << "\tLatency count: 1 latency sample every "
                      << _LatencyCount << "\n";
+    }
+
+    // Reliable/Best Effort
+    stringStream << "\tReliability: ";
+    if (_IsReliable) {
+        stringStream << "Reliable\n";
+    } else {
+        stringStream << "Best Effort\n";
+    }
+
+    // Keyed/Unkeyed
+    stringStream << "\tKeyed: ";
+    if (_isKeyed) {
+        stringStream << "Yes\n";
+    } else {
+        stringStream << "No\n";
+    }
+
+    // Publisher/Subscriber and Entity ID
+    if (_IsPub) {
+        stringStream << "\tPublisher ID: " << _PubID << "\n";
+    } else {
+        stringStream << "\tSubscriber ID: " << _SubID << "\n";
     }
 
     // Scan/Data Sizes
@@ -877,22 +893,6 @@ void perftest_cpp::PrintConfiguration()
         }
     } else {
         stringStream << _DataLen << "\n";
-    }
-
-    // Keyed/Unkeyed
-    stringStream << "\tKeyed: ";
-    if (_isKeyed) {
-        stringStream << "Yes\n";
-    } else {
-        stringStream << "No\n";
-    }
-
-    // Reliable/Best Effort
-    stringStream << "\tReliability: ";
-    if (_IsReliable) {
-        stringStream << "Reliable\n";
-    } else {
-        stringStream << "Best Effort\n";
     }
 
     // Batching
@@ -918,7 +918,6 @@ void perftest_cpp::PrintConfiguration()
     } else {
         stringStream << "Listeners\n";
     }
-
 
     if (_IsPub) {
         // Publication Rate
