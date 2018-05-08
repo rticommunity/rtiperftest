@@ -12,6 +12,7 @@
 #include <string.h>
 #include <algorithm>
 #include <iostream>
+#include <limits.h>
 
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
@@ -130,7 +131,7 @@ class perftest_cpp
   #ifdef RTI_WIN32
     static LARGE_INTEGER _ClockFrequency;
   #endif
-    
+
     // Number of bytes sent in messages besides user data
     static const int OVERHEAD_BYTES = 28;
 
@@ -140,6 +141,13 @@ class perftest_cpp
     static const int FINISHED_SIZE = 1235;
     // Flag used to data packet length is changing
     static const int LENGTH_CHANGED_SIZE = 1236;
+
+    /*
+     * Value used to compare against to check if the latency_min has
+     * been reset.
+     */
+    static const unsigned long LATENCY_RESET_VALUE = ULONG_MAX;
+
 
    public:
     static unsigned long long GetTimeUsec();
