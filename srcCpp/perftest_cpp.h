@@ -14,6 +14,7 @@
 #include <vector>
 // STL needed for sorting
 #include <algorithm>
+#include <limits.h>
 
 #ifdef RTI_WIN32
   #include <windows.h>
@@ -150,6 +151,12 @@ class perftest_cpp
     static const int FINISHED_SIZE = 1235;
     // Flag used to data packet length is changing
     static const int LENGTH_CHANGED_SIZE = 1236;
+
+    /*
+     * Value used to compare against to check if the latency_min has
+     * been reset.
+     */
+    static const unsigned long LATENCY_RESET_VALUE = ULONG_MAX;
 
    public:
     static unsigned long long GetTimeUsec();

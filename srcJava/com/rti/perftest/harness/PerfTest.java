@@ -72,6 +72,9 @@ public final class PerfTest {
     // Flag used to indicate end of test
     public static final int LENGTH_CHANGED_SIZE = 1236;
 
+    // Value used to compare against to check if the latency_min has
+    // been reset.
+    public static final int LATENCY_RESET_VALUE = Integer.MAX_VALUE;
 
     /*package*/ static int subID = 0;
 

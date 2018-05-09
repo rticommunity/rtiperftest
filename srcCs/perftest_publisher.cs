@@ -1701,7 +1701,7 @@ namespace PerformanceTest {
             private ulong latency_sum = 0;
             private ulong latency_sum_square = 0;
             private ulong count = 0;
-            private uint  latency_min = 0;
+            private uint  latency_min = perftest_cs.LATENCY_RESET_VALUE;
             private uint  latency_max = 0;
             private int   last_data_length = 0;
             public  bool  end_test = false;
@@ -1802,19 +1802,13 @@ namespace PerformanceTest {
                     }
                 }
 
-                if (latency_min == 0)
-                {
+                if (latency_min == perftest_cs.LATENCY_RESET_VALUE) {
                     latency_min = latency;
                     latency_max = latency;
-                }
-                else
-                {
-                    if (latency < latency_min)
-                    {
+                } else {
+                    if (latency < latency_min) {
                         latency_min = latency;
-                    }
-                    if (latency > latency_max)
-                    {
+                    } else if (latency > latency_max) {
                         latency_max = latency;
                     }
                 }
@@ -1909,7 +1903,7 @@ namespace PerformanceTest {
                 Console.Out.Flush();
                 latency_sum = 0;
                 latency_sum_square = 0;
-                latency_min = 0;
+                latency_min = perftest_cs.LATENCY_RESET_VALUE;
                 latency_max = 0;
                 count = 0;
                 clock_skew_count = 0;
@@ -2432,6 +2426,12 @@ namespace PerformanceTest {
         private const int FINISHED_SIZE = 1235;
         // Flag used to indicate end of test
         public const int LENGTH_CHANGED_SIZE = 1236;
+
+        /*
+         * Value used to compare against to check if the latency_min has
+         * been reset.
+         */
+        static public const ulong LATENCY_RESET_VALUE = uint.MaxValue;
 
         static public ulong getMaxPerftestSampleSizeCS(){
             if (MAX_PERFTEST_SAMPLE_SIZE.VALUE > 2147483591){

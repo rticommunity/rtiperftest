@@ -38,6 +38,7 @@ const int timeout_wait_for_ack_sec = 0;
 const unsigned int timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {2, 3, 2, 0};
 
+
 /*
  * PERFTEST-108
  * If we are performing a latency test, the default number for _NumIter will be
@@ -1381,7 +1382,7 @@ class LatencyListener : public IMessagingCB
         latency_sum = 0;
         latency_sum_square = 0;
         count = 0;
-        latency_min = 0;
+        latency_min = perftest_cpp::LATENCY_RESET_VALUE;
         latency_max = 0;
         last_data_length = 0;
         clock_skew_count = 0;
@@ -1458,7 +1459,7 @@ class LatencyListener : public IMessagingCB
 
         latency_sum = 0;
         latency_sum_square = 0;
-        latency_min = 0;
+        latency_min = perftest_cpp::LATENCY_RESET_VALUE;
         latency_max = 0;
         count = 0;
         clock_skew_count = 0;
@@ -1508,7 +1509,7 @@ class LatencyListener : public IMessagingCB
         {
             latency_sum = 0;
             latency_sum_square = 0;
-            latency_min = 0;
+            latency_min = perftest_cpp::LATENCY_RESET_VALUE;
             latency_max = 0;
             count = 0;
         }
@@ -1546,19 +1547,14 @@ class LatencyListener : public IMessagingCB
             }
         }
 
-        if (latency_min == 0)
-        {
+        if (latency_min == perftest_cpp::LATENCY_RESET_VALUE) {
             latency_min = latency;
             latency_max = latency;
         }
-        else
-        {
-            if (latency < latency_min)
-            {
+        else {
+            if (latency < latency_min) {
                 latency_min = latency;
-            }
-            if (latency > latency_max)
-            {
+            } else if (latency > latency_max) {
                 latency_max = latency;
             }
         }
