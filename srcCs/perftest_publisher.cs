@@ -2386,7 +2386,7 @@ namespace PerformanceTest {
          * Value used to compare against to check if the latency_min has
          * been reset.
          */
-        static public const ulong LATENCY_RESET_VALUE = uint.MaxValue;
+        public const uint LATENCY_RESET_VALUE = uint.MaxValue;
 
         static public ulong getMaxPerftestSampleSizeCS(){
             if (MAX_PERFTEST_SAMPLE_SIZE.VALUE > 2147483591){
