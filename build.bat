@@ -113,6 +113,7 @@ if NOT "%1"=="" (
 )
 
 ::------------------------------------------------------------------------------
+
 if not exist "%NDDSHOME%" (
 		echo [ERROR]: The NDDSHOME variable is not set.
 		exit /b 1
@@ -178,7 +179,7 @@ if !BUILD_CPP! == 1 (
 				REM # found
 				set custom_type_file_name_support=%%~niSupport.h
 				echo #include "%%~nxi" > %custom_idl_file%
-                set found_idl=1
+				set found_idl=1
 			)
 		)
 		if !found_idl! == 0 (
@@ -187,7 +188,7 @@ if !BUILD_CPP! == 1 (
 		)
 	)
 	call copy /Y %custom_type_folder%\* %idl_location%\
-    set "additional_header_files_custom_type=CustomType.h"
+	set "additional_header_files_custom_type=CustomType.h"
 	set "additional_source_files_custom_type=CustomType.cxx"
 	REM # Find all the files in the folder ${custom_type_folder}
 	REM # Run codegen with all those files
@@ -219,7 +220,7 @@ if !BUILD_CPP! == 1 (
 		)
 	)
 	if !USE_CUSTOM_TYPE! == 1 (
-        set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_CUSTOM_TYPE=%custom_type% RTI_CUSTOM_TYPE_FILE_NAME_SUPPORT=!custom_type_file_name_support!"
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_CUSTOM_TYPE=%custom_type% RTI_CUSTOM_TYPE_FILE_NAME_SUPPORT=!custom_type_file_name_support!"
 	)
 
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
@@ -520,9 +521,9 @@ GOTO:EOF
 	echo.    --clean                If this option is present, the build.sh script
 	echo.                           will clean all the generated code and binaries
 	echo.                           from previous executions.
-    echo.    --customType type      Use the Custom type feature with your type.
-    echo.                           See detailed documentation and examples of use
-    echo.                           in the documentation.
+	echo.    --customType type      Use the Custom type feature with your type.
+	echo.                           See detailed documentation and examples of use
+	echo.                           in the documentation.
 	echo.    --help -h              Display this message.
 	echo[
 	echo ================================================================================
