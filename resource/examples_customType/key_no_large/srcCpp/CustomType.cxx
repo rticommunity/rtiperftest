@@ -4,6 +4,9 @@
  */
 #include "CustomType.h"
 
+#ifdef RTI_WIN32
+  #define snprintf sprintf_s
+#endif
 /*
  * It is the source code files that contain the implementation of the requires
  * and optional functions used for the handling of the custom type. These
@@ -58,7 +61,7 @@ bool set_custom_type(
 {
     bool success = true;
     data.test_long = key;
-    if (sprintf(data.test_string.test_string, "Hello World! %lu", key) < 0) {
+    if (snprintf(data.test_string.test_string, SIZE_TEST_STRING, "Hello World! %lu", key) < 0) {
         success = false;
     }
     return success;
@@ -141,7 +144,7 @@ bool set_custom_type_dynamic(
         success = false;
     }
 
-    if (sprintf(test_string, "Hello World! %lu", key) < 0) {
+    if (snprintf(test_string, SIZE_TEST_STRING, "Hello World! %lu", key) < 0) {
         success = false;
     }
     retcode = data.set_string(
