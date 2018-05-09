@@ -35,6 +35,7 @@ const std::string perftest_cpp::_AnnouncementTopicName = "Announcement";
 const std::string perftest_cpp::_ThroughputTopicName = "Throughput";
 const long timeout_wait_for_ack_sec = 0;
 const unsigned long timeout_wait_for_ack_nsec = 100000000;
+const Perftest_ProductVersion_t perftest_cpp::_version = {2, 3, 2, 0};
 
 /*
  * PERFTEST-108
@@ -70,16 +71,16 @@ int main(int argc, char *argv[])
 #if defined(RTI_VXWORKS)
 int publisher_main()
 {
-    const char *argv[2] = {"perftest_cpp", "-pub"};
-    int argc = 2;
+    const char *argv[] = {"perftest_cpp", "-pub"};
+    int argc = sizeof(argv)/sizeof(const char*);
 
     return main(argc, (char **) argv);
 }
 
 int subscriber_main()
 {
-    const char *argv[2] = {"perftest_cpp", "-sub"};
-    int argc = 2;
+    const char *argv[] = {"perftest_cpp", "-sub"};
+    int argc = sizeof(argv)/sizeof(const char*);
 
     return main(argc, (char **) argv);
 }
@@ -89,6 +90,9 @@ int subscriber_main()
  * Run
  */
 int perftest_cpp::Run(int argc, char *argv[]) {
+
+    PrintVersion();
+
     if (!ParseConfig(argc, argv)) {
         return -1;
     }
@@ -132,9 +136,34 @@ int perftest_cpp::Run(int argc, char *argv[]) {
     }
 }
 
+const rti::core::ProductVersion perftest_cpp::GetDDSVersion()
+{
+    return rti::core::ProductVersion::current();
+}
+
+const Perftest_ProductVersion_t perftest_cpp::GetPerftestVersion()
+{
+    return _version;
+}
+
+void perftest_cpp::PrintVersion()
+{
+    Perftest_ProductVersion_t perftestV = perftest_cpp::GetPerftestVersion();
+    rti::core::ProductVersion ddsV = perftest_cpp::GetDDSVersion();
+
+    printf("RTI Perftest: %d.%d.%d (RTI Connext DDS %d.%d.%d)\n",
+           perftestV.major,
+           perftestV.minor,
+           perftestV.release,
+           ddsV.major_version(),
+           ddsV.minor_version(),
+           ddsV.release_version());
+}
+
 // Set the default values into the array _scanDataLenSizes vector
-const void set_default_scan_values(
-        std::vector<unsigned long> & _scanDataLenSizes){
+void set_default_scan_values(
+        std::vector<unsigned long> & _scanDataLenSizes)
+{
     _scanDataLenSizes.push_back(32);
     _scanDataLenSizes.push_back(64);
     _scanDataLenSizes.push_back(128);
@@ -1112,11 +1141,18 @@ int perftest_cpp::RunSubscriber()
     reader->waitForWriters(_NumPublishers);
     announcement_writer->waitForReaders(_NumPublishers);
 
+    /*
+     * Announcement message that will be used by the announcement_writer
+     * to send information to the Publisher. This message size will indicate
+     * different things.
+     */
+    TestMessage announcement_msg;
+    announcement_msg.entity_id = _SubID;
+    announcement_msg.size = INITIALIZE_SIZE;
+
     // Send announcement message
-    TestMessage message;
-    message.entity_id = _SubID;
-    message.size = 0;
-    announcement_writer->send(message);
+    announcement_writer->send(announcement_msg);
+
     announcement_writer->flush();
     std::cerr << "[Info] Waiting for data..." << std::endl;
 
@@ -1142,17 +1178,17 @@ int perftest_cpp::RunSubscriber()
         now = GetTimeUsec();
 
         if (reader_listener->change_size) { // ACK change_size
-            TestMessage message_change_size;
-            message_change_size.entity_id = _SubID;
-            announcement_writer->send(message_change_size);
+            announcement_msg.entity_id = _SubID;
+            announcement_msg.size = LENGTH_CHANGED_SIZE;
+            announcement_writer->send(announcement_msg);
             announcement_writer->flush();
             reader_listener->change_size = false;
         }
 
         if (reader_listener->end_test) { // ACK end_test
-            TestMessage message_end_test;
-            message_end_test.entity_id = _SubID;
-            announcement_writer->send(message_end_test);
+            announcement_msg.entity_id = _SubID;
+            announcement_msg.size = FINISHED_SIZE;
+            announcement_writer->send(announcement_msg);
             announcement_writer->flush();
             break;
         }
@@ -1234,24 +1270,41 @@ int perftest_cpp::RunSubscriber()
 class AnnouncementListener : public IMessagingCB
 {
   public:
-    int announced_subscribers;
-    std::vector<int> _finished_subscribers;
+    std::vector<int> subscriber_list;
 
-  public:
     AnnouncementListener() {
-        announced_subscribers = 0;
     }
 
     void ProcessMessage(TestMessage& message) {
-        if (std::find(
-                _finished_subscribers.begin(),
-                _finished_subscribers.end(),
-                message.entity_id)
-                == _finished_subscribers.end()) {
-            _finished_subscribers.push_back(message.entity_id);
-            announced_subscribers++;
-        } else {
-            announced_subscribers--;
+        /*
+         * The subscriber_list vector contains the list of discovered subscribers.
+         *
+         * - If the message.size is INITIALIZE or LENGTH_CHANGED and the
+         *   subscriber is not in the list, it will be added.
+         * - If the message.size is FINISHED_SIZE and the
+         *   subscriber is in the list, it will be removed.
+         *
+         * The publisher access to this list to verify:
+         * - If all the subscribers are discovered or notified about the length
+         *   being changed.
+         * - If all the subscribers are notified that the test has finished.
+         */
+        if ((message.size == perftest_cpp::INITIALIZE_SIZE
+                || message.size == perftest_cpp::LENGTH_CHANGED_SIZE)
+                && std::find(
+                        subscriber_list.begin(),
+                        subscriber_list.end(),
+                        message.entity_id)
+                    == subscriber_list.end()) {
+            subscriber_list.push_back(message.entity_id);
+        } else if (message.size == perftest_cpp::FINISHED_SIZE) {
+            std::vector<int>::iterator position = std::find(
+                    subscriber_list.begin(),
+                    subscriber_list.end(),
+                    message.entity_id);
+            if (position != subscriber_list.end()) {
+                subscriber_list.erase(position);
+            }
         }
     }
 };
@@ -1541,7 +1594,7 @@ int perftest_cpp::RunPublisher()
     AnnouncementListener  *announcement_reader_listener = NULL;
     IMessagingReader *announcement_reader;
     unsigned long num_latency;
-    unsigned long initializeSampleCount = 50;
+    unsigned long announcementSampleCount = 50;
 
     // create throughput/ping writer
     writer = _MessagingImpl->CreateWriter(_ThroughputTopicName);
@@ -1629,7 +1682,8 @@ int perftest_cpp::RunPublisher()
     // We have to wait until every Subscriber sends an announcement message
     // indicating that it has discovered every RunPublisher
     std::cerr << "[Info] Waiting for subscribers announcement ..." << std::endl;
-    while (_NumSubscribers > announcement_reader_listener->announced_subscribers) {
+    while (_NumSubscribers
+            > (int)announcement_reader_listener->subscriber_list.size()) {
         MilliSleep(1000);
     }
 
@@ -1639,14 +1693,10 @@ int perftest_cpp::RunPublisher()
     //message.size = std::max(_DataLen,LENGTH_CHANGED_SIZE);
     //message.bin_data.resize(std::max(_DataLen,LENGTH_CHANGED_SIZE));
 
-    std::cerr << "[Info] Publishing data..." << std::endl;
+    std::cerr << "[Info] Sending initial pings..." << std::endl;
 
     if ( perftest_cpp::_showCpu && _PubID == 0) {
         reader_listener->cpu.initialize();
-    }
-    // initialize data pathways by sending some initial pings
-    if (_InstanceCount > initializeSampleCount) {
-        initializeSampleCount = _InstanceCount;
     }
 
     if (INITIALIZE_SIZE > MAX_PERFTEST_SAMPLE_SIZE) {
@@ -1656,11 +1706,15 @@ int perftest_cpp::RunPublisher()
 
     message.size = INITIALIZE_SIZE;
     //message.data.resize(message.size);
-    for (unsigned long i = 0; i < initializeSampleCount; i++) {
+    for (unsigned long i = 0;
+            i < (std::max)(_InstanceCount, announcementSampleCount);
+            i++) {
         // Send test initialization message
         writer->send(message, true);
     }
     writer->flush();
+
+    std::cerr << "[Info] Publishing data..." << std::endl;
 
     // Set data size, account for other bytes in message
     message.size = (int)_DataLen - OVERHEAD_BYTES;
@@ -1765,11 +1819,9 @@ int perftest_cpp::RunPublisher()
 
                     // flush anything that was previously sent
                     writer->flush();
-                    writer->wait_for_acknowledgments(
-                            timeout_wait_for_ack_sec,
-                            timeout_wait_for_ack_nsec);
-
-                    announcement_reader_listener->announced_subscribers = _NumSubscribers;
+                    writer->waitForAck(
+                        timeout_wait_for_ack_sec,
+                        timeout_wait_for_ack_nsec);
 
                     if (scan_count == _scanDataLenSizes.size()) {
                         break; // End of scan test
@@ -1782,12 +1834,24 @@ int perftest_cpp::RunPublisher()
                     // back the LENGTH_CHANGED_SIZE message
                     message.latency_ping = num_pings % _NumSubscribers;
 
-                    while (announcement_reader_listener->announced_subscribers > 0) {
+                    /*
+                     * If the Throughput topic is reliable, we can send the packet and do
+                     * a wait for acknowledgements. However, if the Throughput topic is
+                     * Best Effort, waitForAck() will return inmediately.
+                     * This would cause that the Send() would be exercised too many times,
+                     * in some cases causing the network to be flooded, a lot of packets being
+                     * lost, and potentially CPU starbation for other processes.
+                     * We can prevent this by adding a small sleep() if the test is best
+                     * effort.
+                     */
+                    announcement_reader_listener->subscriber_list.clear();
+                    while ((int)announcement_reader_listener->subscriber_list.size()
+                            < _NumSubscribers) {
                         writer->send(message, true);
                         writer->flush();
-                        writer->wait_for_acknowledgments(
-                                timeout_wait_for_ack_sec,
-                                timeout_wait_for_ack_nsec);
+                        writer->waitForAck(
+                            timeout_wait_for_ack_sec,
+                            timeout_wait_for_ack_nsec);
                     }
 
                     message.size = _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
@@ -1855,15 +1919,14 @@ int perftest_cpp::RunPublisher()
     message.size = FINISHED_SIZE;
     message.data.resize(message.size);
     unsigned long i = 0;
-    announcement_reader_listener->announced_subscribers = _NumSubscribers;
-    while (announcement_reader_listener->announced_subscribers > 0
-            && i < initializeSampleCount) {
+    while (announcement_reader_listener->subscriber_list.size() > 0
+            && i < announcementSampleCount) {
         writer->send(message, true);
         writer->flush();
+        writer->waitForAck(
+            timeout_wait_for_ack_sec,
+            timeout_wait_for_ack_nsec);
         i++;
-        writer->wait_for_acknowledgments(
-                timeout_wait_for_ack_sec,
-                timeout_wait_for_ack_nsec);
     }
 
     if (_PubID == 0) {

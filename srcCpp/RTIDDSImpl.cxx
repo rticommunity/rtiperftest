@@ -784,6 +784,7 @@ class RTIPublisher : public IMessagingWriter
     DDS_InstanceHandle_t *_instance_handles;
     RTIOsapiSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
+    bool _isReliable;
 
  public:
     RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
@@ -792,7 +793,7 @@ class RTIPublisher : public IMessagingWriter
         data.bin_data.maximum(0);
         _num_instances = num_instances;
         _instance_counter = 0;
-        _instance_handles = 
+        _instance_handles =
                 (DDS_InstanceHandle_t *) malloc(sizeof(DDS_InstanceHandle_t)*(_num_instances + 1)); // One extra for MAX_CFT_VALUE
         _pongSemaphore = pongSemaphore;
         _instancesToBeWritten = instancesToBeWritten;
@@ -808,6 +809,10 @@ class RTIPublisher : public IMessagingWriter
             data.key[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
         }
         _instance_handles[_num_instances] = _writer->register_instance(data);
+
+        DDS_DataWriterQos qos;
+        _writer->get_qos(qos);
+        _isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
     }
 
     ~RTIPublisher() {
@@ -931,9 +936,13 @@ class RTIPublisher : public IMessagingWriter
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec) {
-        DDS_Duration_t timeout = {sec, nsec};
-        _writer->wait_for_acknowledgments(timeout);
+    void waitForAck(int sec, unsigned int nsec) {
+        if (_isReliable) {
+            DDS_Duration_t timeout = {sec, nsec};
+            _writer->wait_for_acknowledgments(timeout);
+        } else {
+            perftest_cpp::MilliSleep(nsec / 1000000);
+        }
     }
 };
 
@@ -948,6 +957,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     DDS_InstanceHandle_t *_instance_handles;
     RTIOsapiSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
+    bool _isReliable;
 
 public:
     RTIDynamicDataPublisher(
@@ -997,6 +1007,10 @@ public:
             fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
         }
         _instance_handles[_num_instances] = _writer->register_instance(data);
+
+        DDS_DataWriterQos qos;
+        _writer->get_qos(qos);
+        _isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
     }
 
     ~RTIDynamicDataPublisher() {
@@ -1173,9 +1187,13 @@ public:
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec) {
-        DDS_Duration_t timeout = {sec, nsec};
-        _writer->wait_for_acknowledgments(timeout);
+    void waitForAck(int sec, unsigned int nsec) {
+        if (_isReliable) {
+            DDS_Duration_t timeout = {sec, nsec};
+            _writer->wait_for_acknowledgments(timeout);
+        } else {
+            perftest_cpp::MilliSleep(nsec / 1000000);
+        }
     }
 };
 
@@ -2523,7 +2541,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         _InstanceMaxCountReader++;
     }
     dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
-    
+
     if (_InstanceCount > 1) {
         if (_InstanceHashBuckets > 0) {
             dr_qos.resource_limits.instance_hash_buckets =
