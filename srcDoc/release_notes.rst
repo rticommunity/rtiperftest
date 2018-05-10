@@ -62,6 +62,19 @@ following command-line parameters:
     --cpp-build
     --cs-build
 
+Added message of the Perftest Version and DDS Version at the beginning of every Test (#54)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Now, a line like
+::
+
+    RTI Perftest: 2.3.2 (RTI Connext DDS 5.3.1)
+
+will show up on every test.
+
+For future versions, a variable located at the beginning of
+perftest_publisher will need to be changed to the corresponding version.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
