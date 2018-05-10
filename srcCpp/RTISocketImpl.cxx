@@ -97,7 +97,6 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
     no_socket_params_v.push_back(std::string("-noDirectCommunication"));
     no_socket_params_v.push_back(std::string("-instances"));
     no_socket_params_v.push_back(std::string("-instanceHashBuckets"));
-    //no_socket_params_v.push_back(std::string("-batchSize")); //support
     no_socket_params_v.push_back(std::string("-keepDurationUsec"));
     no_socket_params_v.push_back(std::string("-noPositiveAcks"));
     no_socket_params_v.push_back(std::string("-waitsetDelayUsec"));
@@ -109,10 +108,10 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
     no_socket_params_v.push_back(std::string("-flowController"));
     no_socket_params_v.push_back(std::string("-cft"));
     no_socket_params_v.push_back(std::string("-writeInstance"));
-    no_socket_params_v.push_back(std::string("-enableTCP")); //
+    no_socket_params_v.push_back(std::string("-enableTCP")); // TODO: future support
     no_socket_params_v.push_back(std::string("-enableUDPv6"));
     no_socket_params_v.push_back(std::string("-allowInterfaces"));
-    no_socket_params_v.push_back(std::string("-transportServerBindPort")); //
+    no_socket_params_v.push_back(std::string("-transportServerBindPort")); // TODO: future support
     no_socket_params_v.push_back(std::string("-transportWan"));
     no_socket_params_v.push_back(std::string("-transportCertAuthority"));
     no_socket_params_v.push_back(std::string("-transportCertFile"));
@@ -200,9 +199,7 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
             _IsMulticast = true;
             if ((i != (argc - 1)) && *argv[i + 1] != '-') {
                 i++;
-                THROUGHPUT_MULTICAST_ADDR = argv[i];
-                LATENCY_MULTICAST_ADDR = argv[i];
-                ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
+                _multicastAddrString = argv[i];
             }
         }
         else if (IS_OPTION(argv[i], "-nomulticast")) {
@@ -316,9 +313,26 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
         _DataLen = _scan_max_size;
     }
 
+    if (_peer_host_count == 0) {
+        if (_IsMulticast) {
+            _peer_host[0] = _multicastAddrString;
+        } else {
+            _peer_host[0] = (char *)"127.0.0.1";
+        }
+        _peer_host_count = 1;
+    }
+
     /*TODO: ask if this should finish or just print warning*/
     if (_batchSize != 0 && _DataLen > _batchSize) {
-        fprintf(stderr, "\t -batchSize must be bigger than -datalen\n");
+        fprintf(stderr, "\t -batchSize must be bigger or equal than -datalen\n");
+        return false;
+    }
+
+    if (_batchSize != 0 && _LatencyTest) {
+        fprintf(
+                stderr,
+                "\t -latencyTest not supported with batchign. (Remove "
+                "-batchSize)\n");
         return false;
     }
 
@@ -328,8 +342,7 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
     }
 
     if (!_transport.parseTransportOptions(argc, argv)) {
-        fprintf(stderr,
-                "Failure parsing the transport options.\n");
+        fprintf(stderr, "Failure parsing the transport options.\n");
         return false;
     };
 
@@ -353,8 +366,7 @@ class RTISocketPublisher : public IMessagingWriter{
 
     TestData_t _data;
 
-    int _peer_host_count;
-    char **_peer_host;
+    std::vector<std::pair<NDDS_Transport_Address_t, int> > _peersMap;
 
     int _NumSubscribers;
 
@@ -371,8 +383,7 @@ class RTISocketPublisher : public IMessagingWriter{
             NDDS_Transport_Address_t dst_address,
             NDDS_Transport_Port_t send_port,
             RTIOsapiSemaphore *pongSemaphore,
-            int peer_host_count,
-            char **peer_host,
+            std::vector<std::pair<NDDS_Transport_Address_t, int> > peersMap,
             int numSubscribers,
             struct REDAWorker *worker,
             unsigned int batchBufferSize) {
@@ -387,8 +398,7 @@ class RTISocketPublisher : public IMessagingWriter{
 
         _worker = worker;
 
-        _peer_host_count = peer_host_count;
-        _peer_host = peer_host;
+        _peersMap = peersMap;
 
         if (batchBufferSize == 0){
             _batchBufferSize = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
@@ -459,42 +469,46 @@ class RTISocketPublisher : public IMessagingWriter{
          * can be on a single peer.
          */
 
-        int sends_per_peer = (_NumSubscribers / _peer_host_count);
+        int actual_port = 0;
+        int sendsPerPeer = 0;
+        bool isMulticat = false;
 
-        int actual_port;
+        if (_plugin->property->allow_interfaces_list_length ==
+            _plugin->property->allow_multicast_interfaces_list_length) {
+            isMulticat = true;
+        }
 
         bool retCode = true;
-        for (int i=0; i < _peer_host_count; i++) {
+
+        for (int i = 0;  i < _peersMap.size(); ++i) {
 
             actual_port = _send_port;
 
-            /* Only take the address if it's not been use SHMEM */
-            if (_plugin->property->classid != NDDS_TRANSPORT_CLASSID_SHMEM) {
-                retCode = NDDS_Transport_UDP_string_to_address_cEA(
-                    _plugin,
-                    &_dst_address,
-                    _peer_host[i]);
-
-                if (retCode != 1){
-                    fprintf(stderr,
-                            "NDDS_Transport_UDP_string_to_address_cEA error\n");
-                    return false;
-                }
+            sendsPerPeer = _peersMap[i].second;
+            /* If it's been use multicast, send only one time per peer*/
+            if (isMulticat) {
+                sendsPerPeer = 1;
+            } else if (_NumSubscribers != 0) {
+                /*
+                 * If the number of subscriber is set, send as many subs are
+                 * especified
+                 */
+                sendsPerPeer = _NumSubscribers;
             }
 
-            for (int j=0; j < sends_per_peer; j++) {
+            for (unsigned int j = 0; j < _peersMap[i].second; j++) {
 
                 actual_port += j * RTISocketImpl::resources_per_participant;
 
                 retCode = _plugin->send(
-                    _plugin,
-                    &_send_resource,
-                    &_dst_address,
-                    actual_port,
-                    0,
-                    &_send_buffer,
-                    1,
-                    _worker);
+                        _plugin,
+                        &_send_resource,
+                        &_peersMap[i].first,
+                        actual_port,
+                        NDDS_TRANSPORT_PRIORITY_DEFAULT,
+                        &_send_buffer,
+                        1,
+                        _worker);
 
                 if (!retCode) {
                     /**
@@ -509,7 +523,6 @@ class RTISocketPublisher : public IMessagingWriter{
                      */
                     // fprintf(stderr, "Write error using sockets\n");
                     // return false;
-
                 }
             }
         }
@@ -789,17 +802,12 @@ bool RTISocketImpl::Initialize(int argc, char *argv[]) {
 
     printf("-- Using SOCKETS --\n");
 
-    if(_peer_host_count == 0) {
-        _peer_host[0] = (char *) "127.0.0.1";
-        _peer_host_count = 1;
-    }
-
     // only if we run the latency test we need to wait for pongs after sending pings
     _pongSemaphore = _LatencyTest
         ? RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL)
         : NULL;
 
-    if (!configureSocketsTransport()) {
+    if (!ConfigureSocketsTransport()) {
         return false;
     }
 
@@ -816,8 +824,6 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
 
     NDDS_Transport_SendResource_t send_resource = NULL;
     NDDS_Transport_Port_t send_port = 0;
-    NDDS_Transport_Address_t dst_address =
-        NDDS_TRANSPORT_ADDRESS_INVALID;
 
     int portOffset = 0;
     if (!strcmp(topic_name, perftest_cpp::_LatencyTopicName)) {
@@ -835,25 +841,12 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
             2,
             portOffset);
 
-    /* Create send resource */
-    if (_plugin->property->classid != NDDS_TRANSPORT_CLASSID_SHMEM){
-        result = NDDS_Transport_UDP_string_to_address_cEA(
-                _plugin,
-                &dst_address,
-                _transport.allowInterfaces.c_str());
-
-        if (result != 1) {
-            fprintf(stderr, "NDDS_Transport_UDP_string_to_address_cEA error\n");
-            return NULL;
-        }
-    }
-
     result = _plugin->create_sendresource_srEA(
             _plugin,
             &send_resource,
-            &dst_address,
+            &_nicAddress,
             send_port,
-            0);
+            NDDS_TRANSPORT_PRIORITY_DEFAULT);
     if (result != 1) {
         fprintf(stderr, "create_sendresource_srEA error\n");
         return NULL;
@@ -862,29 +855,28 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
     return new RTISocketPublisher(
             _plugin,
             send_resource,
-            dst_address,
+            _nicAddress,
             send_port,
             _pongSemaphore,
-            _peer_host_count,
-            (char**)_peer_host,
+            _peersMap,
             _NumSubscribers,
             _worker,
             _batchSize);
-
 }
 
 /*********************************************************
  * CreateReader
  */
-IMessagingReader *RTISocketImpl::CreateReader(
-    const char *topic_name,
-    IMessagingCB *callback)
-{
-    int result = 0;
+IMessagingReader *RTISocketImpl::CreateReader(const char *topic_name, IMessagingCB *callback) {
     NDDS_Transport_RecvResource_t recv_resource = NULL;
     NDDS_Transport_Port_t recv_port = 0;
+    NDDS_Transport_Address_t * dst_multicast_addr = NULL;
 
-    int portOffset = 3 * perftest_cpp::_SubID;
+    if (_IsMulticast) {
+        dst_multicast_addr = &_multicastAddrTransp;
+    }
+
+    int portOffset = 0;
     if (!strcmp(topic_name, perftest_cpp::_LatencyTopicName) )
     {
         portOffset += 1;
@@ -900,184 +892,221 @@ IMessagingReader *RTISocketImpl::CreateReader(
             0,
             7400,
             250,
-            2,
+            0,
             portOffset);
 
     /* Create receive resource */
-    result = _plugin->create_recvresource_rrEA(
-            _plugin,
-            &recv_resource,
-            &recv_port,
-            NULL,
-            0);
+    /* usefull to implement many to many */
+    // if (_IsMulticast) {
+    //     recv_resource = new NDDS_Transport_RecvResource_t;
+    //     result = _plugin->share_recvresource_rrEA(
+    //             _plugin,
+    //             &recv_resource,
+    //             recv_port,
+    //             dst_multicast_addr,
+    //             0);
+    // }
+    // else {
+    // }
+    int result = 1;
+    unsigned int count = 0;
+    while(
+        !_plugin->create_recvresource_rrEA(
+                _plugin,
+                &recv_resource,
+                &recv_port,
+                dst_multicast_addr,
+                NDDS_TRANSPORT_PRIORITY_DEFAULT)) {
+        recv_port += RTISocketImpl::resources_per_participant;
+        if (++count == RTIPERFTEST_MAX_PORT_ATTEMPT) {
+            result = 0;
+            break;
+        }
+    }
 
     if (result != 1) {
         fprintf(stderr, "Create_recvresource_rrEA error\n");
         return NULL;
     }
 
-    return new RTISocketSubscriber(
-            _plugin,
-            recv_resource,
-            recv_port,
-            _worker);
+    return new RTISocketSubscriber(_plugin, recv_resource, recv_port, _worker);
 }
 
-bool RTISocketImpl::configureSocketsTransport()
-{
+bool RTISocketImpl::ConfigureSocketsTransport() {
     struct NDDS_Transport_UDPv4_Property_t updv4_prop =
             NDDS_TRANSPORT_UDPV4_PROPERTY_DEFAULT;
     struct NDDS_Transport_Shmem_Property_t shmem_prop =
             NDDS_TRANSPORT_SHMEM_PROPERTY_DEFAULT;
-    struct NDDS_Transport_TCPv4_Property_t tcpv4Local_prop =
-            NDDS_TRANSPORT_TCPV4_PROPERTY_DEFAULT_LAN;
+    struct NDDS_Transport_TCPv4_Property_t tcpv4_prop =
+            NDDS_TRANSPORT_TCPV4_PROPERTY_DEFAULT;
 
-    char * outInterfaceBuffer = NULL;
-    int outInterfaceBufferSize = 0;
-    RTIOsapiSocket_InterfaceDescription *outInterfaceArray = NULL;
-    int outInterfaceCount = 0;
+    struct NDDS_Transport_UDP *udpPlugin;
 
     /* If none -nic parameter has been received, assume the default interface */
     if (_transport.allowInterfaces.empty()) {
         _transport.allowInterfaces = std::string("127.0.0.1");
     }
 
-    char *interface = new char[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
-    strcpy(interface, _transport.allowInterfaces.c_str());
-
-    NDDS_Transport_Address_t transportAddress = NDDS_TRANSPORT_ADDRESS_INVALID;
-    bool found = false;
+    char *interface = DDS_String_dup(_transport.allowInterfaces.c_str());
 
     /*Worker configure*/
-    _workerFactory = REDAWorkerFactory_new(200);// TODO: understand size
-    if (_workerFactory == NULL)
-    {
+    _workerFactory = REDAWorkerFactory_new(256); // TODO: understand size
+    if (_workerFactory == NULL) {
         fprintf(stderr, "Error creating Worker Factory\n");
         return false;
     }
 
-    _worker = REDAWorkerFactory_createWorker( _workerFactory, "RTISockerImpl");
+    _worker = REDAWorkerFactory_createWorker(_workerFactory, "RTISockerImpl");
 
-    if (_worker == NULL)
-    {
+    if (_worker == NULL) {
         fprintf(stderr, "Error creating Worker\n");
         return false;
     }
 
     _exclusiveArea = REDAWorkerFactory_createExclusiveArea(_workerFactory, 1);
-    if (_exclusiveArea == NULL){
+    if (_exclusiveArea == NULL) {
         fprintf(stderr, "Error creating exclusive area\n");
         return false;
     }
 
     switch (_transport.transportConfig.kind) {
 
-        case TRANSPORT_DEFAULT:
-            /*Default transport is UDPv4*/
+    case TRANSPORT_DEFAULT:
+        /*Default transport is UDPv4*/
 
-        case TRANSPORT_UDPv4:
+    case TRANSPORT_UDPv4:
 
-            /*_Plugin configure for UDPv4*/
+        /*_Plugin properties configure for UDPv4*/
+        updv4_prop.parent.properties_bitmap |=
+                NDDS_TRANSPORT_PROPERTY_BIT_POLLED;
 
-            /*
-             * TODO:
-             * Check for windows, this function may not work.
-             */
-            /*Get all the interfaces on the current PC*/
-            RTIOsapiSocket_getInterfaces(
-                    &outInterfaceBuffer,
-                    &outInterfaceBufferSize,
-                    &outInterfaceArray,
-                    &outInterfaceCount,
-                    RTI_OSAPI_SOCKET_AF_INET,
-                    0, 0, 0);
+        updv4_prop.parent.allow_interfaces_list = &interface;
+        updv4_prop.parent.allow_interfaces_list_length = 1;
 
-            /* Compare the list of interfaces with the input -nic*/
-            for (int i = 0; i < outInterfaceCount; i++) {
-                if (!strcmp(outInterfaceArray[i].name, interface)) {
-                    NDDS_Transport_SocketUtil_Address_to_transportAddress(
-                        outInterfaceArray[i].address,
-                        &transportAddress,
-                        RTI_OSAPI_SOCKET_AF_INET);
-                    found = true;
+        if (_IsMulticast) {
+            updv4_prop.parent.allow_multicast_interfaces_list = &interface;
+            updv4_prop.parent.allow_multicast_interfaces_list_length = 1;
+            updv4_prop.reuse_multicast_receive_resource = 1;
+            updv4_prop.multicast_enabled = 1;
+        }
+
+        /*
+         * updv4_prop.send_blocking = NDDS_TRANSPORT_UDPV4_BLOCKING_ALWAYS;
+         * This will reduce the package loss but affect on the performance.
+         */
+        updv4_prop.no_zero_copy = false;
+        updv4_prop.parent.message_size_max =
+                NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
+        updv4_prop.parent.gather_send_buffer_count_max =
+                NDDS_TRANSPORT_PROPERTY_GATHER_SEND_BUFFER_COUNT_MIN;
+        //updv4_prop.multicast_loopback_disabled = false;
+        /*
+         * updv4_prop.recv_socket_buffer_size = ;
+         * updv4_prop.send_socket_buffer_size = ;
+         *
+         * The default value for send_socket_buffer_size and receive is
+         * 131072 and does not allow to go lower.
+         * NDDS_TRANSPORT_UDPV4_SEND_SOCKET_BUFFER_SIZE_DEFAULT   (131072)
+         * NDDS_TRANSPORT_UDPV4_RECV_SOCKET_BUFFER_SIZE_DEFAULT   (131072)
+         *
+         * This could be necessary to modify for large data.
+         */
+
+        _plugin = NDDS_Transport_UDPv4_new(&updv4_prop);
+
+        udpPlugin = (struct NDDS_Transport_UDP*)_plugin;
+        if (udpPlugin->_interfacesCount == 0) {
+            fprintf(stderr, "Input interface (%s) not recognize\n", interface);
+            return false;
+        }
+
+        _nicAddress = udpPlugin->_interfaceArray[0]._interface.address;
+        if (_IsMulticast) {
+            _multicastAddrTransp =
+                    udpPlugin->_interfaceArray[1]._interface.address;
+        }
+        if (_IsMulticast
+                && NDDS_Transport_UDPv4_get_num_multicast_interfaces(
+                        udpPlugin) <= 0) {
+                fprintf(stderr, "No multicast-enabled interfaces detected\n");
+                return false;
+        }
+
+        /*TODO:
+         * Change the way it's parse the -peer option to allow a number of
+         * peers.
+         */
+
+        /* Peers parse to NDDS_Transport_Address_t */
+        NDDS_Transport_Address_t addr;
+        for (int i = 0; i < _peer_host_count; i++) {
+            if (NDDS_Transport_UDP_string_to_address_cEA(
+                        _plugin,
+                        &addr,
+                        _peer_host[i])) {
+                int j;
+                for (j = 0; j < _peersMap.size(); j++) {
+                    if (_peersMap[j].first.network_ordered_value
+                            == addr.network_ordered_value) {
+                        _peersMap[j].second++;
+                    }
+                }
+                if (j+1 == _peersMap.size() || _peersMap.size() == 0) {
+                    _peersMap.push_back(
+                            std::pair<NDDS_Transport_Address_t, int> (addr,1));
                 }
             }
+        }
 
-            /* Check if it is a valid IPv4 address */
-            if (!NDDS_Transport_Address_is_ipv4(&transportAddress)) {
-                fprintf(stderr, "The interface it's not recognize\n");
-                return false;
-            }
-
-            if (found) {
-                NDDS_Transport_Address_to_string(
-                        &transportAddress,
-                        interface,
-                        NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE);
-            }
-
-            updv4_prop.parent.allow_interfaces_list = &interface;
-            updv4_prop.parent.allow_interfaces_list_length = 1;
-
-            /*
-             * This will reduce the package loss but affect on the performance.
-             * updv4_prop.send_blocking = NDDS_TRANSPORT_UDPV4_BLOCKING_ALWAYS;
-             */
-            updv4_prop.no_zero_copy = false;
-            updv4_prop.parent.message_size_max =
-                    NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
-            updv4_prop.parent.gather_send_buffer_count_max =
-                    NDDS_TRANSPORT_PROPERTY_GATHER_SEND_BUFFER_COUNT_MIN;
-
-            /*
-            * updv4_prop.recv_socket_buffer_size = ;
-            * updv4_prop.send_socket_buffer_size = ;
-            *
-            * The default value for send_socket_buffer_size and receive is
-            * 131072 and does not allow to go lower.
-            * NDDS_TRANSPORT_UDPV4_SEND_SOCKET_BUFFER_SIZE_DEFAULT   (131072)
-            * NDDS_TRANSPORT_UDPV4_RECV_SOCKET_BUFFER_SIZE_DEFAULT   (131072)
-            *
-            * This could be necesary to modify for large data.
-            */
-
-            _plugin = NDDS_Transport_UDPv4_new(&updv4_prop);
-
-            _transport.allowInterfaces = std::string(interface);
-
-            break;
-
-        case TRANSPORT_SHMEM:
-
-            /*_Plugin configure for shared memory*/
-
-            shmem_prop.parent.message_size_max =
-                    NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
-            shmem_prop.receive_buffer_size =
-                    NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX * 10;
-            shmem_prop.received_message_count_max =
-                    shmem_prop.receive_buffer_size / perftest_cpp::OVERHEAD_BYTES;
-            /*
-             * The total number of bytes that can be buffered in the receive
-             * queue is:
-             * size = receive_buffer_size + message_size_max +
-             *          received_message_count_max * fixedOverhead
-             */
-
-            _plugin = NDDS_Transport_Shmem_new(&shmem_prop);
-
-            break;
-
-        case TRANSPORT_UDPv6:
-        case TRANSPORT_TCPv4:
-
-        case TRANSPORT_TLSv4:
-        case TRANSPORT_DTLSv4:
-        case TRANSPORT_WANv4:
-        default:
-            fprintf(stderr,
-                    "Socket transport only support UDPv4 & SHMEM\n");
+        if (_peersMap.size() == 0) {
+            fprintf(stderr, "Any peer correspond to a valid address\n");
             return false;
+        }
+
+        break;
+
+    case TRANSPORT_SHMEM:
+
+        /*_Plugin configure for shared memory*/
+
+        shmem_prop.parent.message_size_max =
+                NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
+        shmem_prop.receive_buffer_size =
+                NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX * 10;
+
+        shmem_prop.received_message_count_max =
+                shmem_prop.receive_buffer_size / perftest_cpp::OVERHEAD_BYTES;
+        /*
+         * The total number of bytes that can be buffered in the receive
+         * queue is:
+         * size = receive_buffer_size + message_size_max +
+         *          received_message_count_max * fixedOverhead
+         */
+
+        _plugin = NDDS_Transport_Shmem_new(&shmem_prop);
+
+        break;
+
+    case TRANSPORT_UDPv6:
+    case TRANSPORT_TCPv4:
+
+        /* TODO: We dont know if TCP will be supported*/
+        // tcpv4_prop.parent.message_size_max =
+        //         NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
+        // tcpv4_prop.parent.gather_send_buffer_count_max =
+        //         NDDS_TRANSPORT_PROPERTY_GATHER_SEND_BUFFER_COUNT_MIN;
+        // tcpv4_prop.bind_interface_address = interface;
+
+        // _plugin = NDDS_Transport_TCPv4_new(&tcpv4_prop);
+
+        // break;
+
+    case TRANSPORT_TLSv4:
+    case TRANSPORT_DTLSv4:
+    case TRANSPORT_WANv4:
+    default:
+        fprintf(stderr, "Socket transport only support UDPv4 & SHMEM\n");
+        return false;
 
     } // Switch
 
@@ -1086,10 +1115,86 @@ bool RTISocketImpl::configureSocketsTransport()
         return false;
     }
 
-   _transport.printTransportConfigurationSummary();
+    _transport.printTransportConfigurationSummary();
 
     return true;
 }
+
+char *InterfaceNameToAddress(const char *nicName) {
+
+    if (nicName == NULL) {
+        return NULL;
+    }
+
+    char * address = DDS_String_dup(nicName);
+
+    char *outInterfaceBuffer = NULL;
+    int outInterfaceBufferSize = 0;
+    RTIOsapiSocket_InterfaceDescription *outInterfaceArray = NULL;
+    int outInterfaceCount = 0;
+
+    NDDS_Transport_Address_t transportAddress = NDDS_TRANSPORT_ADDRESS_INVALID;
+    bool found = false;
+
+    /* Interface to address translation */
+    /*
+     * TODO:
+     * Check for windows, this function may not work.
+     */
+    /*Get all the interfaces on the current PC*/
+    RTIOsapiSocket_getInterfaces(
+            &outInterfaceBuffer,
+            &outInterfaceBufferSize,
+            &outInterfaceArray,
+            &outInterfaceCount,
+            RTI_OSAPI_SOCKET_AF_INET,
+            0,
+            0,
+            0);
+
+    /* Compare the list of interfaces with the input -nic*/
+    for (int i = 0; i < outInterfaceCount; i++) {
+        if (!strcmp(outInterfaceArray[i].name, address)) {
+            NDDS_Transport_SocketUtil_Address_to_transportAddress(
+                    outInterfaceArray[i].address,
+                    &transportAddress,
+                    RTI_OSAPI_SOCKET_AF_INET);
+            found = true;
+        }
+    }
+
+    /* Check if it is a valid IPv4 address */
+    if (!NDDS_Transport_Address_is_ipv4(&transportAddress)) {
+        fprintf(stderr, "The interface it's not recognize\n");
+        return NULL;
+    }
+
+    if (found) {
+        NDDS_Transport_Address_to_string(
+                &transportAddress,
+                address,
+                NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE);
+    }
+
+    return address;
+
+}
+
+int NDDS_Transport_UDPv4_get_num_multicast_interfaces(
+        struct NDDS_Transport_UDP *plugin){
+    int count = 0;
+    int i;
+
+    for (i=0; i<plugin->_interfacesCount; i++) {
+
+        if (plugin->_interfaceArray[i]._interfaceFlags &
+            RTI_OSAPI_SOCKET_INTERFACE_FLAG_MULTICAST ) {
+            ++count;
+        }
+    }
+    return count;
+}
+
 
 #ifdef RTI_WIN32
 #pragma warning(pop)

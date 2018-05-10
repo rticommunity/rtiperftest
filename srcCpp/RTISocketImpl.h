@@ -2,29 +2,32 @@
 #define __RTISOCKETIMPL_H__
 
 /*
- * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-#include <string>
 #include <algorithm>
 #include <map>
+#include <string>
 #include "MessagingIF.h"
-#include "perftestSupport.h"
 #include "PerftestTransport.h"
 #include "RTIDDSImpl.h"
 #include "perftest.h"
+#include "perftestSupport.h"
 #include "perftest_cpp.h"
 #include "transport/transport_socketutil.h"
+#include "transport/transport_udpv4.h"
+#include "transport_tcp/transport_tcp_socketutil.h"
+#include "transport_tcp/transport_tcp_tcpv4.h"
+
 #include "perftestPlugin.h"
 
 #define RTIPERFTEST_MAX_PEERS 1024
+#define RTIPERFTEST_MAX_PORT_ATTEMPT 1024
 
-class RTISocketImpl : public IMessaging
-{
+class RTISocketImpl : public IMessaging {
   public:
-    RTISocketImpl() : _transport()
-    {
+    RTISocketImpl() : _transport() {
         _DataLen = 100;
         _DomainID = 1;
         _IsReliable = false;
@@ -38,9 +41,7 @@ class RTISocketImpl : public IMessaging
         _peer_host_count = 0;
         _batchSize = 0;
 
-        THROUGHPUT_MULTICAST_ADDR = "239.255.1.1";
-        LATENCY_MULTICAST_ADDR = "239.255.1.2";
-        ANNOUNCEMENT_MULTICAST_ADDR = "239.255.1.100";
+        _multicastAddrString = (char *)"239.255.1.1";
 
         _pongSemaphore = NULL;
 
@@ -48,16 +49,14 @@ class RTISocketImpl : public IMessaging
         _worker = NULL;
         _workerFactory = NULL;
         _exclusiveArea = NULL;
+        //_nicAddress = NDDS_TRANSPORT_ADDRESS_INVALID;
+        //_multicastAddrTransp = NDDS_TRANSPORT_ADDRESS_INVALID;
 
         _NumPublishers = 1;
         _NumSubscribers = 1;
-
     }
 
-    ~RTISocketImpl()
-    {
-        Shutdown();
-    }
+    ~RTISocketImpl() { Shutdown(); }
 
     void PrintCmdLineHelp();
 
@@ -73,11 +72,12 @@ class RTISocketImpl : public IMessaging
 
     // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
     // to get data
-    IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
+    IMessagingReader *
+    CreateReader(const char *topic_name, IMessagingCB *callback);
 
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
 
-    bool configureSocketsTransport();
+    bool ConfigureSocketsTransport();
 
   private:
     unsigned long _DataLen;
@@ -91,15 +91,21 @@ class RTISocketImpl : public IMessaging
     bool _isLargeData;
     bool _isScan;
     bool _isPublisher;
-    int _peer_host_count;
     unsigned int _batchSize;
+    int _peer_host_count;
     char *_peer_host[RTIPERFTEST_MAX_PEERS];
+
+    /*TODO: Others solution to this:
+     * 1 -> Use a unorderedMap (C++11) not possible
+     * 2 -> Use a map with a custom comparator operator for the
+     *      NDDS_Transport_Address_t type.
+     *      std::map<NDDS_Transport_Address_t, int, dummyCmpStruct>
+     */
+    std::vector<std::pair<NDDS_Transport_Address_t, int> > _peersMap;
 
     PerftestTransport _transport;
 
-    const char *THROUGHPUT_MULTICAST_ADDR;
-    const char *LATENCY_MULTICAST_ADDR;
-    const char *ANNOUNCEMENT_MULTICAST_ADDR;
+    char *_multicastAddrString;
 
     RTIOsapiSemaphore *_pongSemaphore;
 
@@ -107,6 +113,8 @@ class RTISocketImpl : public IMessaging
     struct REDAWorker *_worker;
     struct REDAWorkerFactory *_workerFactory;
     struct REDAExclusiveArea *_exclusiveArea;
+    NDDS_Transport_Address_t _nicAddress;
+    NDDS_Transport_Address_t _multicastAddrTransp;
 
     int _NumPublishers;
     int _NumSubscribers;
@@ -121,5 +129,10 @@ class RTISocketImpl : public IMessaging
      */
     static const int resources_per_participant;
 };
+
+char *InterfaceNameToAddress(const char *nicName);
+
+int NDDS_Transport_UDPv4_get_num_multicast_interfaces(
+        struct NDDS_Transport_UDP *plugin);
 
 #endif // __RTISOCKETIMPL_H__
