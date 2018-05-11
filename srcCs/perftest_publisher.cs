@@ -2337,8 +2337,12 @@ namespace PerformanceTest {
 
             Console.Write(
                     "RTI Perftest: "
-                    + perftestV.major + "." + perftestV.minor + "." + perftestV.release
-                    + "(RTI Connext DDS: "
+                    + perftestV.major + "." + perftestV.minor + "." + perftestV.release);
+            if (perftestV != 0) {
+                Console.Write("." + perftestV.revision);
+            }
+            Console.Write(
+                    " (RTI Connext DDS: "
                     + ddsV.major + "." + ddsV.minor + "." + ddsV.release + ")\n");
         }
 

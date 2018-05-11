@@ -232,15 +232,20 @@ public final class PerfTest {
         ProductVersion_t perftestV = GetPerftestVersion();
         ProductVersion_t ddsV = GetDDSVersion();
 
+        StringBuffer perftestVString = new StringBuffer(128);
+        perftestVString.append((int)perftestV.major).append(".");
+        perftestVString.append((int)perftestV.minor).append(".");
+        perftestVString.append((int)perftestV.release);
+
+        if( perftestV.revision != 0 ) {
+            perftestVString.append(".").append((int) perftestV.revision);
+        }
+
         StringBuffer ddsVString = new StringBuffer(128);
         ddsVString.append((int)ddsV.major).append(".");
         ddsVString.append((int)ddsV.minor).append(".");
         ddsVString.append((int)ddsV.release);
 
-        StringBuffer perftestVString = new StringBuffer(128);
-        perftestVString.append((int)perftestV.major).append(".");
-        perftestVString.append((int)perftestV.minor).append(".");
-        perftestVString.append((int)perftestV.release);
 
         System.out.print(
                 "RTI Perftest: "

@@ -151,10 +151,16 @@ void perftest_cpp::PrintVersion()
     Perftest_ProductVersion_t perftestV = perftest_cpp::GetPerftestVersion();
     rti::core::ProductVersion ddsV = perftest_cpp::GetDDSVersion();
 
-    printf("RTI Perftest: %d.%d.%d (RTI Connext DDS %d.%d.%d)\n",
-           perftestV.major,
-           perftestV.minor,
-           perftestV.release,
+    printf("RTI Perftest: %d.%d.%d",
+            perftestV.major,
+            perftestV.minor,
+            perftestV.release);
+
+    if (perftestV.revision != 0) {
+        printf(".%d", perftestV.revision);
+    }
+
+    printf(" (RTI Connext DDS %d.%d.%d)\n",
            ddsV.major_version(),
            ddsV.minor_version(),
            ddsV.release_version());

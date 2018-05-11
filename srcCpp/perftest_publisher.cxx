@@ -152,13 +152,18 @@ void perftest_cpp::PrintVersion()
     Perftest_ProductVersion_t perftestV = perftest_cpp::GetPerftestVersion();
     DDS_ProductVersion_t ddsV = perftest_cpp::GetDDSVersion();
 
-    printf("RTI Perftest: %d.%d.%d (RTI Connext DDS %d.%d.%d)\n",
-           perftestV.major,
-           perftestV.minor,
-           perftestV.release,
-           ddsV.major,
-           ddsV.minor,
-           ddsV.release);
+    printf("RTI Perftest: %d.%d.%d",
+            perftestV.major,
+            perftestV.minor,
+            perftestV.release);
+    if (perftestV.revision != 0) {
+        printf(".%d", perftestV.revision);
+    }
+    printf(" (RTI Connext DDS %d.%d.%d)\n",
+            ddsV.major,
+            ddsV.minor,
+            ddsV.release);
+
 }
 
 // Set the default values into the array _scanDataLenSizes vector
