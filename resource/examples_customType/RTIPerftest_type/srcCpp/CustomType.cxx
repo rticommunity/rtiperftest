@@ -12,9 +12,15 @@
  * of the section "Use-Cases And Examples" in the documentation.
  */
 
-char * test_seq;
+char * test_seq = NULL;
 DDS_OctetSeq octect_seq;
-int old_dynamic_target_data_len;
+int old_dynamic_target_data_len = 0;
+/*
+*   size_alignment_type is Size of the custom_type empty.
+*   It will be calculate in the initialization and it will be substract to the
+*   target_data_len, in order to fill the sequence with the correct size.
+*/
+unsigned int size_alignment_type = 0;
 
 /*
 *   This function is used to initialize your data.
@@ -24,9 +30,18 @@ int old_dynamic_target_data_len;
 bool initialize_custom_type(RTI_CUSTOM_TYPE &data)
 {
     bool success = true;
-    if (! data.test_seq.maximum(0)) {
+    if (!data.test_seq.maximum(0)) {
         success = false;
     }
+    DDS_ReturnCode_t retcode = RTI_CUSTOM_TYPE::TypeSupport::serialize_data_to_cdr_buffer(
+            NULL,
+            (unsigned int &)size_alignment_type,
+            &data);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "serialize_data_to_cdr_buffer failed: %d.\n", retcode);
+         success = false;
+    }
+    size_alignment_type -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
     return success;
 }
 
@@ -53,6 +68,7 @@ bool set_custom_type(
         int target_data_len)
 {
     bool success = true;
+    target_data_len -= size_alignment_type;
     if (! data.test_seq.ensure_length(target_data_len, target_data_len)) {
         success = false;
     }
@@ -76,14 +92,46 @@ bool finalize_data_custom_type(RTI_CUSTOM_TYPE &data)
 */
 bool initialize_custom_type_dynamic(DDS_DynamicData &data)
 {
-    old_dynamic_target_data_len = 0;
+    bool success = true;
     try {
         test_seq = new char[MAX_SIZE];
     } catch (std::bad_alloc& ba) {
         fprintf(stderr, "bad_alloc test_seq  %s failed.\n",  ba.what());
-        return false;
+        success = false;
     }
-    return true;
+
+    // Calculate size_alignment_type of DDS_DynamicData object
+    DDS_ReturnCode_t retcode;
+    char *buffer = NULL;
+    retcode = data.to_cdr_buffer(
+            NULL,
+            (unsigned int &)size_alignment_type);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "to_cdr_buffer failed: %d.\n", retcode);
+        success = false;
+    }
+    RTIOsapiHeap_allocateBufferAligned(
+            &buffer,
+            size_alignment_type,
+            RTIOsapiAlignment_getAlignmentOf(void *));
+    if (buffer == NULL) {
+        fprintf(stderr, "RTIOsapiHeap_allocateBufferAligned failed.\n");
+        success = false;
+    }
+    data.to_cdr_buffer(
+            buffer,
+            (unsigned int &)size_alignment_type);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "to_cdr_buffer failed: %d.\n", retcode);
+        success = false;
+    }
+    if (buffer != NULL) {
+        RTIOsapiHeap_freeBufferAligned(buffer);
+        buffer = NULL;
+    }
+    size_alignment_type -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
+    size_alignment_type -= perftest_cpp::OVERHEAD_BYTES;
+    return success;
 }
 
 /*
@@ -109,6 +157,7 @@ bool set_custom_type_dynamic(
         int target_data_len)
 {
     DDS_ReturnCode_t retcode;
+    target_data_len -= size_alignment_type;
     DDS_DynamicData custom_type_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
     bool success = true;
     if (old_dynamic_target_data_len != target_data_len) {
@@ -132,9 +181,9 @@ bool set_custom_type_dynamic(
         success = false;
     }
     retcode = custom_type_data.set_octet_seq(
-                "test_seq",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                octect_seq);
+            "test_seq",
+            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+            octect_seq);
     if (retcode != DDS_RETCODE_OK) {
         fprintf(stderr, "set_octet_seq(test_seq) failed: %d.\n", retcode);
         success = false;

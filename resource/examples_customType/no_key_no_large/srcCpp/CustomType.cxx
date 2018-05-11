@@ -15,7 +15,7 @@
  * of the section "Use-Cases And Examples" in the documentation.
  */
 
-long * test_seq;
+long * test_seq = NULL;
 DDS_LongSeq long_seq;
 
 /*
@@ -26,10 +26,10 @@ DDS_LongSeq long_seq;
 bool initialize_custom_type(RTI_CUSTOM_TYPE &data)
 {
     bool success = true;
-    if (! data.test_seq.test_seq.maximum(0)) {
+    if (!data.test_seq.test_seq.maximum(0)) {
         success = false;
     }
-    if (! data.test_seq.test_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
+    if (!data.test_seq.test_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
         success = false;
     }
     data.test_enum = ENUM1;

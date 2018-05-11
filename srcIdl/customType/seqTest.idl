@@ -1,5 +1,0 @@
-#include "constTest.idl"
-
-struct SeqTest {
-    sequence<long, SIZE_TEST_SEQ> test_seq;
-};//@Extensibility FINAL_EXTENSIBILITY

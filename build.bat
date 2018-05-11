@@ -183,7 +183,7 @@ if !BUILD_CPP! == 1 (
 			)
 		)
 		if !found_idl! == 0 (
-			echo [ERROR]: Cannot find an idl file with the %custom_type% structure.
+			echo [ERROR]: Cannot find an idl file with the %custom_type% structure for custom type test.
 			exit /b 1
 		)
 	)

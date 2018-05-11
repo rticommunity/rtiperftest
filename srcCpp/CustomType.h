@@ -10,6 +10,7 @@
 #include QUOTE(RTI_CUSTOM_TYPE_FILE_NAME_SUPPORT)
 
 #include "perftest.h"
+#include "perftest_cpp.h"
 #include <string>
 
 /*

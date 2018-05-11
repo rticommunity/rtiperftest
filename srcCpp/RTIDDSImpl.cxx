@@ -892,15 +892,14 @@ class RTIPublisher : public IMessagingWriter
                 || message.size == 0) {
             data.custom_type_size = message.size;
         } else {
-            if (! set_custom_type(data.custom_type, key, message.size)) {
+            if (!set_custom_type(data.custom_type, key, message.size)) {
                 fprintf(stderr, "set_custom_type failed.\n");
             }
             if (message.size != last_message_size) {
-                T::TypeSupport::serialize_data_to_cdr_buffer(
+                RTI_CUSTOM_TYPE::TypeSupport::serialize_data_to_cdr_buffer(
                         NULL,
                         (unsigned int &)data.custom_type_size,
-                        &data);
-                data.custom_type_size -= perftest_cpp::OVERHEAD_BYTES;
+                        &data.custom_type);
                 data.custom_type_size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
                 last_message_size = message.size;
             }
@@ -908,7 +907,6 @@ class RTIPublisher : public IMessagingWriter
       #else
         data.bin_data.loan_contiguous((DDS_Octet*)message.data, message.size, message.size);
       #endif
-
         if (!isCftWildCardKey) {
             retcode = _writer->write(data, _instance_handles[key]);
         } else { // send CFT_MAX sample
@@ -1196,14 +1194,14 @@ class RTIDynamicDataPublisher : public IMessagingWriter
                         NULL,
                         (unsigned int &)custom_type_size);
                 RTIOsapiHeap_allocateBufferAligned(
-                    &buffer,
-                    custom_type_size,
-                    RTIOsapiAlignment_getAlignmentOf(void *));
+                        &buffer,
+                        custom_type_size,
+                        RTIOsapiAlignment_getAlignmentOf(void *));
                 data.to_cdr_buffer(
                         buffer,
                         (unsigned int &)custom_type_size);
                 if (buffer != NULL) {
-                    RTIOsapiHeap_freeBuffer(buffer);
+                    RTIOsapiHeap_freeBufferAligned(buffer);
                     buffer = NULL;
                 }
                 custom_type_size -= perftest_cpp::OVERHEAD_BYTES;

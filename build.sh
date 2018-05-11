@@ -251,7 +251,7 @@ function build_cpp_custom_type()
         fi
     done
     if [ "$found_idl" = false ]; then
-        echo -e "${ERROR_TAG} Cannot find an idl file with the ${custom_type} structure."
+        echo -e "${ERROR_TAG} Cannot find an idl file with the ${custom_type} structure for custom type test."
         exit -1
     fi
     cp -rf ${custom_type_folder}/* ${idl_location}/
