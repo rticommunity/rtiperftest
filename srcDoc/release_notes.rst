@@ -51,6 +51,18 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+Print a summary with the main setting of the test *RTI Perftest* will run (#46)(#67)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* provides a great number of command-line parameters, plus the option
+of using the *xml configuration file* for modying *RTI Connext DDS QoS*. This could
+lead to some confusion with regards to the test that will run when executing the application.
+
+In order to make this clear, *RTI Perftest* now shows a summary at the beginning of
+the test with most of the relevant parameters being used for such test. This is done
+for both *Publisher* and *Subscriber* sides.
+
+
 Added command-line parameters to simplify single API build (#50)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

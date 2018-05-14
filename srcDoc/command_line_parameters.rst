@@ -292,6 +292,10 @@ Test Parameters for Publishing and Subscribing Applications
 Transport Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+By default, *RTI Perftest* will try to use the transport settings provided via the
+`xml` configuration file. However, it is possible to override these values directly
+by using the `Transport` spececific command-line parameters.
+
 -  ``-transport <TRANSPORT NAME>``
 
    Set the transport to be used. The rest of the transports will be disabled.
