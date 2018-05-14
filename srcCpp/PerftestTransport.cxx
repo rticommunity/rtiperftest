@@ -89,14 +89,22 @@ bool setAllowInterfacesList(
 {
     if (!transport.allowInterfaces.empty()) {
 
-        /* In these 2 specific cases, we are forced to add 2 properties, one
+        if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
+            fprintf(stderr,
+                    "%s Ignoring -nic/-allowInterfaces option\n",
+                    classLoggingString.c_str());
+            return true;
+        }
+
+        /*
+         * In these 2 specific cases, we are forced to add 2 properties, one
          * for UDPv4 and another for UDPv6
          */
         if (transport.transportConfig.kind == TRANSPORT_UDPv4_UDPv6_SHMEM
                 || transport.transportConfig.kind == TRANSPORT_UDPv4_UDPv6) {
 
             std::string propertyName =
-                "dds.transport.UDPv4.builtin.parent.allow_interfaces";
+                    "dds.transport.UDPv4.builtin.parent.allow_interfaces";
 
             if (!addPropertyToParticipantQos(
                     qos,
@@ -106,7 +114,7 @@ bool setAllowInterfacesList(
             }
 
             propertyName =
-                "dds.transport.UDPv6.builtin.parent.allow_interfaces";
+                    "dds.transport.UDPv6.builtin.parent.allow_interfaces";
 
             if (!addPropertyToParticipantQos(
                     qos,
@@ -140,14 +148,8 @@ bool setTransportVerbosity(
 {
     if (!transport.verbosity.empty()) {
 
-        /*
-         * By default, if the transport is not set, it should be UDPv4, if it is not
-         * It means that we have modified the QOS, so we won't use the
-         * -transportVerbosity param.
-         */
         if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
-            fprintf(
-                    stderr,
+            fprintf(stderr,
                     "%s Ignoring -transportVerbosity option\n",
                     classLoggingString.c_str());
             return true;
@@ -573,7 +575,7 @@ bool configureTransport(
      * we empty it.
      */
     if (transport.transportConfig.kind != TRANSPORT_NOT_SET
-        && transport.transportConfig.kind != TRANSPORT_SHMEM) {
+            && transport.transportConfig.kind != TRANSPORT_SHMEM) {
         if (!setAllowInterfacesList(transport, qos)) {
             return false;
         }
@@ -776,7 +778,8 @@ std::string PerftestTransport::helpMessageString()
     << TRANSPORT_PRIVATEKEY_FILE_PUB << "\"\n"
     << "\t                                Default (Subscriber): \""
     << TRANSPORT_PRIVATEKEY_FILE_SUB << "\"\n";
-        return oss.str();
+
+    return oss.str();
 }
 
 std::string PerftestTransport::printTransportConfigurationSummary()

@@ -761,8 +761,8 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         if (_isLargeData || _IsAsynchronous) {
             stringStream << "Yes\n";
             stringStream << "\tFlow Controller: "
-                        << _FlowControllerCustom
-                        << "\n";
+                         << _FlowControllerCustom
+                         << "\n";
         } else {
             stringStream << "No\n";
         }
@@ -784,8 +784,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << _ProfileFile << "\n";
     }
 
-    stringStream << "\n"
-                 << _transport.printTransportConfigurationSummary();
+    stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
 
     // set initial peers and not use multicast
@@ -803,8 +802,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
    #ifdef RTI_SECURE_PERFTEST
    if (_secureUseSecure) {
-        stringStream << "\n"
-                     << printSecureArgs();
+        stringStream << "\n" << printSecureArgs();
    }
    #endif
 
@@ -1580,8 +1578,8 @@ class RTISubscriber : public IMessagingReader
             }
 
             // skip non-valid data
-            while ( (_info_seq[_data_idx].valid_data == false) && 
-                    (++_data_idx < seq_length)){
+            while ( (_info_seq[_data_idx].valid_data == false)
+                        && (++_data_idx < seq_length)){
                 //No operation required
             }
 
@@ -1913,7 +1911,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
             _secureGovernanceFile += "EncryptSubmessage";
         }
 
-        _secureGovernanceFile = _secureGovernanceFile + ".xml";
+        _secureGovernanceFile += ".xml";
 
         retcode = DDSPropertyQosPolicyHelper::add_property(
                 dpQos.property,
@@ -2130,10 +2128,8 @@ std::string RTIDDSImpl<T>::printSecureArgs()
         stringStream << _secureLibrary << "\n";
     }
 
-    if( _secureDebugLevel != -1 ){
-        stringStream << "\tDebug level: "
-                     <<  _secureDebugLevel
-                     << "\n";
+    if (_secureDebugLevel != -1) {
+        stringStream << "\tDebug level: " <<  _secureDebugLevel << "\n";
     }
 
     return stringStream.str();

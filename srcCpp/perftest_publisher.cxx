@@ -906,7 +906,9 @@ void perftest_cpp::PrintConfiguration()
     // Unbounded Sequences
     stringStream << "\tUnbounded Sequences: ";
     if (_useUnbounded != 0) {
-        stringStream << "Enabled (Alloc Threshold " << _useUnbounded << " Bytes)\n";
+        stringStream << "Enabled (Alloc Threshold "
+                     << _useUnbounded
+                     << " Bytes)\n";
     } else {
         stringStream << "No\n";
     }
@@ -936,12 +938,9 @@ void perftest_cpp::PrintConfiguration()
 
     // Execution Time or Num Iter
     if (_executionTime > 0) {
-        stringStream << "\tExecution time: "
-                     << _executionTime
-                     << " seconds\n";
+        stringStream << "\tExecution time: " << _executionTime << " seconds\n";
     } else {
-        stringStream << "\tNumber of samples: "
-                     << _NumIter << "\n";
+        stringStream << "\tNumber of samples: " << _NumIter << "\n";
     }
 
     stringStream << _MessagingImpl->PrintConfiguration();
