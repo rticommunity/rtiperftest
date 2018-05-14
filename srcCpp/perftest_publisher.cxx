@@ -925,7 +925,7 @@ void perftest_cpp::PrintConfiguration()
         // Publication Rate
         stringStream << "\tPublication Rate: ";
         if (_pubRate > 0) {
-            stringStream << _pubRate << "Samples/s (";
+            stringStream << _pubRate << " Samples/s (";
             if (_pubRateMethodSpin) {
                 stringStream << "Spin)\n";
             } else {
