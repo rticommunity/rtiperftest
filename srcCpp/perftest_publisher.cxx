@@ -848,9 +848,9 @@ void perftest_cpp::PrintConfiguration()
     if (_IsPub) {
         stringStream << "\tMode: ";
         if (_LatencyTest) {
-            stringStream << "Latency (Ping-pong test)\n";
+            stringStream << "Latency (Ping-Pong test)\n";
         } else {
-            stringStream << "Throughput (Use \"-latency\" for Latency Mode)\n";
+            stringStream << "Throughput (Use \"-latencyTest\" for Latency Mode)\n";
         }
         // Latency Count
         stringStream << "\tLatency count: 1 latency sample every "
@@ -899,16 +899,6 @@ void perftest_cpp::PrintConfiguration()
     stringStream << "\tBatching: ";
     if (_BatchSize != 0) {
         stringStream << _BatchSize << " Bytes\n";
-    } else {
-        stringStream << "No\n";
-    }
-
-    // Unbounded Sequences
-    stringStream << "\tUnbounded Sequences: ";
-    if (_useUnbounded != 0) {
-        stringStream << "Enabled (Alloc Threshold "
-                     << _useUnbounded
-                     << " Bytes)\n";
     } else {
         stringStream << "No\n";
     }
