@@ -378,7 +378,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
         } else if (IS_OPTION(argv[i], "-dynamicData")) {
             _isDynamicData = true;
-            std::cerr << "[Info] Using Dynamic Data." << std::endl;
         } else if (IS_OPTION(argv[i], "-noDirectCommunication")) {
             _DirectCommunication = false;
         } else if (IS_OPTION(argv[i], "-instances")) {
@@ -499,7 +498,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _TurboMode = true;
         } else if (IS_OPTION(argv[i], "-noXmlQos") ) {
             _UseXmlQos = false;
-            std::cerr << "[Info] Not using xml file for QoS." << std::endl;
         }
         else if (IS_OPTION(argv[i], "-asynchronous") )
         {
@@ -721,7 +719,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     }
 
     if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
-        std::cerr << "[Info] Large data settings enabled." << std::endl;
         _isLargeData = true;
     }
 
@@ -757,6 +754,81 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     };
 
     return true;
+}
+
+
+/*********************************************************
+ * PrintConfiguration
+ */
+template <typename T>
+std::string RTIDDSImpl<T>::PrintConfiguration()
+{
+
+    std::ostringstream stringStream;
+
+    // Domain ID
+    stringStream << "\tDomain: " << _DomainID << "\n";
+
+    // Dynamic Data
+    stringStream << "\tDynamic Data: ";
+    if (_isDynamicData) {
+        stringStream << "Yes\n";
+    } else {
+        stringStream << "No\n";
+    }
+
+    // Dynamic Data
+    if (_isPublisher) {
+        stringStream << "\tAsynchronous Publishing: ";
+        if (_isLargeData || _IsAsynchronous) {
+            stringStream << "Yes\n";
+            stringStream << "\tFlow Controller: "
+                         << _FlowControllerCustom
+                         << "\n";
+        } else {
+            stringStream << "No\n";
+        }
+    }
+
+    // Turbo Mode / AutoThrottle
+    if (_TurboMode) {
+        stringStream << "\tTurbo Mode: Enabled\n";
+    }
+    if (_AutoThrottle) {
+        stringStream << "\tAutoThrottle: Enabled\n";
+    }
+
+    // XML File
+    stringStream << "\tXML File: ";
+    if (!_UseXmlQos) {
+        stringStream << "Disabled\n";
+    } else {
+        stringStream << _ProfileFile << "\n";
+    }
+
+    stringStream << "\n" << _transport.printTransportConfigurationSummary();
+
+
+    // set initial peers and not use multicast
+    if ( _peer_host_count > 0 ) {
+        stringStream << "\tInitial peers: ";
+        for (int i = 0; i < _peer_host_count; ++i) {
+            stringStream << _peer_host[i];
+            if (i == _peer_host_count -1) {
+                stringStream << "\n";
+            } else {
+                stringStream << ", ";
+            }
+        }
+    }
+
+   #ifdef RTI_SECURE_PERFTEST
+   if (_secureUseSecure) {
+        stringStream << "\n" << printSecureArgs();
+   }
+   #endif
+
+    return stringStream.str();
 }
 
 /*********************************************************
@@ -1360,9 +1432,6 @@ template<typename T>
 void RTIDDSImpl<T>::configureSecurePlugin(
         std::map<std::string, std::string> &dpQosProperties) {
 
-    // print arguments
-    printSecureArgs();
-
     // load plugin
     dpQosProperties["com.rti.serv.load_plugin"] = "com.rti.serv.secure";
 
@@ -1392,30 +1461,30 @@ void RTIDDSImpl<T>::configureSecurePlugin(
     // check if governance file provided
     if (_secureGovernanceFile.empty()) {
         // choose a pre-built governance file
-        std::string governance_file = "./resource/secure/signed_PerftestGovernance_";
+        _secureGovernanceFile = "./resource/secure/signed_PerftestGovernance_";
         if (_secureIsDiscoveryEncrypted) {
-            governance_file += "Discovery";
+            _secureGovernanceFile += "Discovery";
         }
 
         if (_secureIsSigned) {
-            governance_file += "Sign";
+            _secureGovernanceFile += "Sign";
         }
 
         if (_secureIsDataEncrypted && _secureIsSMEncrypted) {
-            governance_file += "EncryptBoth";
+            _secureGovernanceFile += "EncryptBoth";
         } else if (_secureIsDataEncrypted) {
-            governance_file += "EncryptData";
+            _secureGovernanceFile += "EncryptData";
         } else if (_secureIsSMEncrypted) {
-            governance_file += "EncryptSubmessage";
+            _secureGovernanceFile += "EncryptSubmessage";
         }
 
-        governance_file = governance_file + ".xml";
+        _secureGovernanceFile += ".xml";
 
         std::cout << "[Info] Secure: using pre-built governance file: "
                   << governance_file
                   << std::endl;
         dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
-                governance_file;
+                _secureGovernanceFile;
     } else {
         dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
                 _secureGovernanceFile;
@@ -1490,35 +1559,86 @@ void RTIDDSImpl<T>::validateSecureArgs()
 }
 
 template <typename T>
-void RTIDDSImpl<T>::printSecureArgs()
+std::string RTIDDSImpl<T>::printSecureArgs()
 {
-    std::cout << "[Info] Secure Arguments:\n"
-              << "\t encrypt discovery: "
-              << (_secureIsDiscoveryEncrypted ? "true\n" : "false\n")
-              << "\t encrypt topic (user) data: "
-              << (_secureIsDataEncrypted ? "true\n" : "false\n")
-              << "\t encrypt submessage: "
-              << (_secureIsSMEncrypted ? "true\n" : "false\n")
-              << "\t sign data: "
-              << (_secureIsSigned ? "true\n" : "false\n")
-              << "\t governance file: "
-              << (_secureGovernanceFile.empty() ? "not specified" : _secureGovernanceFile)
-              << "\n\t permissions file: "
-              << (_securePermissionsFile.empty() ? "not specified" : _securePermissionsFile)
-              << "\n\t private key file: "
-              << (_securePrivateKeyFile.empty() ? "not specified" : _securePrivateKeyFile)
-              << "\n\t certificate file: "
-              << (_secureCertificateFile.empty() ? "not specified" : _secureCertificateFile)
-              << "\n\t certificate authority file: "
-              << (_secureCertAuthorityFile.empty() ? "not specified" : _secureCertAuthorityFile)
-              << "\n\t plugin library: "
-              << (_secureLibrary.empty() ? "not specified" : _secureLibrary)
-              << std::endl;
-    if( _secureDebugLevel != -1 ){
-        std::cout << "\t debug level: "
-                  << _secureDebugLevel
-                  << std::endl;
+    std::ostringstream stringStream;
+    stringStream << "Secure Configuration:\n";
+
+    stringStream << "\tEncrypt discovery: ";
+    if (_secureIsDiscoveryEncrypted) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
     }
+
+    stringStream << "\tEncrypt topic (user) data: ";
+    if (_secureIsDataEncrypted) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
+    }
+
+    stringStream << "\tEncrypt submessage: ";
+    if (_secureIsSMEncrypted) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
+    }
+
+    stringStream << "\tSign data: ";
+    if (_secureIsSigned) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
+    }
+
+    stringStream << "\tGovernance file: ";
+    if (_secureGovernanceFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureGovernanceFile << "\n";
+    }
+
+    stringStream << "\tPermissions file: ";
+    if (_securePermissionsFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _securePermissionsFile << "\n";
+    }
+
+    stringStream << "\tPrivate key file: ";
+    if (_securePrivateKeyFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _securePrivateKeyFile << "\n";
+    }
+
+    stringStream << "\tCertificate file: ";
+    if (_secureCertificateFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureCertificateFile << "\n";
+    }
+
+    stringStream << "\tCertificate authority file: ";
+    if (_secureCertAuthorityFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureCertAuthorityFile << "\n";
+    }
+
+    stringStream << "\tPlugin library: ";
+    if (_secureLibrary.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureLibrary << "\n";
+    }
+
+    if (_secureDebugLevel != -1) {
+        stringStream << "\tDebug level: " <<  _secureDebugLevel << "\n";
+    }
+
+    return stringStream.str();
 }
 
 #endif
@@ -1579,10 +1699,6 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     Discovery qos_discovery = qos.policy<Discovery>(); //get all the Discovery
     // set initial peers and not use multicast
     if ( _peer_host_count > 0 ) {
-        std::cout << "Initial peers:" << std::endl;
-        for ( int i =0; i< _peer_host_count; ++i) {
-            std::cout << "\t" << _peer_host[i] << std::endl;
-        }
         _peer_host.resize(_peer_host_count);
         qos_discovery.initial_peers(_peer_host);
         qos_discovery.multicast_receive_addresses(dds::core::StringSeq());
@@ -1591,7 +1707,6 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     if (!configureTransport(_transport, qos, properties)){
         return false;
     };
-    _transport.printTransportConfigurationSummary();
 
     if (_AutoThrottle) {
         properties["dds.domain_participant.auto_throttle.enable"] = "true";
@@ -1667,7 +1782,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     std::map<std::string, std::string> properties =
             dw_qos.policy<Property>().get_all();
 
-    if (!_UsePositiveAcks 
+    if (!_UsePositiveAcks
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_dataWriterProtocol.disable_positive_acks(true);
         if (_KeepDurationUsec != -1) {
@@ -1677,17 +1792,12 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     }
 
     if (_isLargeData || _IsAsynchronous) {
-        std::cerr << "[Info] Using asynchronous write for "
-                  << topic_name << std::endl;
-
        if (_FlowControllerCustom!= "default") {
            dwPublishMode = PublishMode::Asynchronous(
                "dds.flow_controller.token_bucket."+_FlowControllerCustom);
        } else{
            dwPublishMode = PublishMode::Asynchronous();
        }
-       std::cerr << "[Info] Using flow controller "
-                 << _FlowControllerCustom << std::endl;
    }
 
     // only force reliability on throughput/latency topics
