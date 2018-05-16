@@ -108,10 +108,10 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
     no_socket_params_v.push_back(std::string("-flowController"));
     no_socket_params_v.push_back(std::string("-cft"));
     no_socket_params_v.push_back(std::string("-writeInstance"));
-    no_socket_params_v.push_back(std::string("-enableTCP")); // TODO: future support
+    no_socket_params_v.push_back(std::string("-enableTCP"));
     no_socket_params_v.push_back(std::string("-enableUDPv6"));
     no_socket_params_v.push_back(std::string("-allowInterfaces"));
-    no_socket_params_v.push_back(std::string("-transportServerBindPort")); // TODO: future support
+    no_socket_params_v.push_back(std::string("-transportServerBindPort"));
     no_socket_params_v.push_back(std::string("-transportWan"));
     no_socket_params_v.push_back(std::string("-transportCertAuthority"));
     no_socket_params_v.push_back(std::string("-transportCertFile"));
@@ -322,7 +322,6 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
         _peer_host_count = 1;
     }
 
-    /*TODO: ask if this should finish or just print warning*/
     if (_batchSize != 0 && _DataLen > _batchSize) {
         fprintf(stderr, "\t -batchSize must be bigger or equal than -datalen\n");
         return false;
@@ -375,6 +374,9 @@ class RTISocketPublisher : public IMessagingWriter{
 
     struct RTICdrStream _stream;
     struct PRESTypePluginDefaultEndpointData _epd;
+
+    int itersCounter = 0;
+    double sumTimes = 0;
 
   public:
     RTISocketPublisher(
@@ -437,6 +439,10 @@ class RTISocketPublisher : public IMessagingWriter{
 
     void Shutdown() {
 
+        printf("----- AVERAGE TIME SERIALIZATION -----\n"
+                "\t Result: %11.9f\n", sumTimes/((double)itersCounter)
+        );
+
         if (_send_resource != NULL && _plugin != NULL) {
             _plugin->destroy_sendresource_srEA(_plugin, &_send_resource);
         }
@@ -444,7 +450,6 @@ class RTISocketPublisher : public IMessagingWriter{
         if (_send_buffer.pointer != NULL) {
             RTIOsapiHeap_freeBuffer(_send_buffer.pointer);
         }
-
     }
 
     bool SendMessage() {
@@ -465,12 +470,12 @@ class RTISocketPublisher : public IMessagingWriter{
 
         /*
          * We don't know how many subscriber there are per Peer.
-         * So, we do as many send() as the maximum of subscribers that
+         * So, we do as many sendmessage() as the maximum of subscribers that
          * can be on a single peer.
          */
 
         int actual_port = 0;
-        int sendsPerPeer = 0;
+        unsigned int sendsPerPeer = 0;
         bool isMulticat = false;
 
         if (_plugin->property->allow_interfaces_list_length ==
@@ -480,7 +485,7 @@ class RTISocketPublisher : public IMessagingWriter{
 
         bool retCode = true;
 
-        for (int i = 0;  i < _peersMap.size(); ++i) {
+        for (unsigned int i = 0;  i < _peersMap.size(); ++i) {
 
             actual_port = _send_port;
 
@@ -496,10 +501,9 @@ class RTISocketPublisher : public IMessagingWriter{
                 sendsPerPeer = _NumSubscribers;
             }
 
-            for (unsigned int j = 0; j < _peersMap[i].second; j++) {
+            for (unsigned int j = 0; j < sendsPerPeer; j++) {
 
                 actual_port += j * RTISocketImpl::resources_per_participant;
-
                 retCode = _plugin->send(
                         _plugin,
                         &_send_resource,
@@ -572,11 +576,22 @@ class RTISocketPublisher : public IMessagingWriter{
                 > _batchBufferSize) {
             Flush();
         }
+        struct timespec cgt1, cgt2;
+        double ncgt;
 
+        clock_gettime(CLOCK_REALTIME, &cgt1);
         retCode = TestData_tPlugin_serialize(
                 (PRESTypePluginEndpointData)&_epd, &_data, &_stream,
                 RTI_TRUE, RTICdrEncapsulation_getNativeCdrEncapsulationId(),
                 RTI_TRUE, NULL);
+
+        clock_gettime(CLOCK_REALTIME, &cgt2);
+        ncgt = (double)(cgt2.tv_sec - cgt1.tv_sec) +
+               (double)((cgt2.tv_nsec - cgt1.tv_nsec) / (1.e+9));
+
+        sumTimes += ncgt;
+        itersCounter++;
+
         if (!retCode){
             fprintf(stderr, "Fail serializing data\n");
             return false;
@@ -670,6 +685,9 @@ class RTISocketSubscriber : public IMessagingReader
     struct RTICdrStream _stream;
     bool _no_data;
 
+    int itersCounter = 0;
+    double sumTimes = 0;
+
   public:
     RTISocketSubscriber(
         NDDS_Transport_Plugin *plugin,
@@ -714,6 +732,10 @@ class RTISocketSubscriber : public IMessagingReader
 
     void Shutdown()
     {
+
+        printf("----- AVERAGE TIME DESERIALIZATION -----\n"
+               "\t Result: %11.9f\n",
+               sumTimes / ((double)itersCounter));
 
         //_plugin->unblock_receive_rrEA(_plugin, &_recv_resource, _worker);
         //perftest_cpp::MilliSleep(5000);
@@ -766,11 +788,22 @@ class RTISocketSubscriber : public IMessagingReader
                 _no_data = true;
                 continue;
             }
-            TestData_t_finalize_optional_members(&_data, RTI_TRUE);
+
+            struct timespec cgt1, cgt2;
+            double ncgt;
+            clock_gettime(CLOCK_REALTIME, &cgt1);
+
             TestData_tPlugin_deserialize_sample(
                     NULL, &_data,
                     &_stream, RTI_TRUE, RTI_TRUE,
                     NULL);
+
+            clock_gettime(CLOCK_REALTIME, &cgt2);
+            ncgt = (double)(cgt2.tv_sec - cgt1.tv_sec) +
+                   (double)((cgt2.tv_nsec - cgt1.tv_nsec) / (1.e+9));
+
+            sumTimes += ncgt;
+            itersCounter ++;
 
             _message.entity_id = _data.entity_id;
             _message.seq_num = _data.seq_num;
@@ -895,23 +928,9 @@ IMessagingReader *RTISocketImpl::CreateReader(const char *topic_name, IMessaging
             0,
             portOffset);
 
-    /* Create receive resource */
-    /* usefull to implement many to many */
-    // if (_IsMulticast) {
-    //     recv_resource = new NDDS_Transport_RecvResource_t;
-    //     result = _plugin->share_recvresource_rrEA(
-    //             _plugin,
-    //             &recv_resource,
-    //             recv_port,
-    //             dst_multicast_addr,
-    //             0);
-    // }
-    // else {
-    // }
     int result = 1;
     unsigned int count = 0;
-    while(
-        !_plugin->create_recvresource_rrEA(
+    while(!_plugin->create_recvresource_rrEA(
                 _plugin,
                 &recv_resource,
                 &recv_port,
@@ -937,8 +956,6 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
             NDDS_TRANSPORT_UDPV4_PROPERTY_DEFAULT;
     struct NDDS_Transport_Shmem_Property_t shmem_prop =
             NDDS_TRANSPORT_SHMEM_PROPERTY_DEFAULT;
-    struct NDDS_Transport_TCPv4_Property_t tcpv4_prop =
-            NDDS_TRANSPORT_TCPV4_PROPERTY_DEFAULT;
 
     struct NDDS_Transport_UDP *udpPlugin;
 
@@ -950,7 +967,7 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
     char *interface = DDS_String_dup(_transport.allowInterfaces.c_str());
 
     /*Worker configure*/
-    _workerFactory = REDAWorkerFactory_new(256); // TODO: understand size
+    _workerFactory = REDAWorkerFactory_new(256);
     if (_workerFactory == NULL) {
         fprintf(stderr, "Error creating Worker Factory\n");
         return false;
@@ -1044,7 +1061,7 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
                         _plugin,
                         &addr,
                         _peer_host[i])) {
-                int j;
+                unsigned int j;
                 for (j = 0; j < _peersMap.size(); j++) {
                     if (_peersMap[j].first.network_ordered_value
                             == addr.network_ordered_value) {
@@ -1069,11 +1086,15 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
 
         /*_Plugin configure for shared memory*/
 
+        shmem_prop.parent.properties_bitmap |=
+                NDDS_TRANSPORT_PROPERTY_BIT_POLLED;
         shmem_prop.parent.message_size_max =
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
         shmem_prop.receive_buffer_size =
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX * 10;
 
+        // shmem_prop.parent.allow_interfaces_list = &interface;
+        // shmem_prop.parent.allow_interfaces_list_length = 1;
         shmem_prop.received_message_count_max =
                 shmem_prop.receive_buffer_size / perftest_cpp::OVERHEAD_BYTES;
         /*
@@ -1085,22 +1106,27 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
 
         _plugin = NDDS_Transport_Shmem_new(&shmem_prop);
 
+
+        NDDS_Transport_Interface_t interface;
+        RTI_INT32 foundMore;
+        RTI_INT32 count;
+        _plugin->get_receive_interfaces_cEA(
+                _plugin, &foundMore, &count, &interface, 1);
+
+        /*TODO: What if the user want force a diferent nic? Should be allow it */
+        if (count != 1) {
+            fprintf(stderr, "Any valid interface for SHMEM found\n");
+            return false;
+        }
+        _nicAddress = interface.address;
+
+        _peersMap.push_back(std::pair<NDDS_Transport_Address_t, int>(
+                _nicAddress, 1));
+
         break;
 
     case TRANSPORT_UDPv6:
     case TRANSPORT_TCPv4:
-
-        /* TODO: We dont know if TCP will be supported*/
-        // tcpv4_prop.parent.message_size_max =
-        //         NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
-        // tcpv4_prop.parent.gather_send_buffer_count_max =
-        //         NDDS_TRANSPORT_PROPERTY_GATHER_SEND_BUFFER_COUNT_MIN;
-        // tcpv4_prop.bind_interface_address = interface;
-
-        // _plugin = NDDS_Transport_TCPv4_new(&tcpv4_prop);
-
-        // break;
-
     case TRANSPORT_TLSv4:
     case TRANSPORT_DTLSv4:
     case TRANSPORT_WANv4:
@@ -1120,6 +1146,8 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
     return true;
 }
 
+
+/* TODO: Actually dont used funtion. */
 char *InterfaceNameToAddress(const char *nicName) {
 
     if (nicName == NULL) {

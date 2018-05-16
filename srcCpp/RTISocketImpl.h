@@ -49,8 +49,8 @@ class RTISocketImpl : public IMessaging {
         _worker = NULL;
         _workerFactory = NULL;
         _exclusiveArea = NULL;
-        //_nicAddress = NDDS_TRANSPORT_ADDRESS_INVALID;
-        //_multicastAddrTransp = NDDS_TRANSPORT_ADDRESS_INVALID;
+        // _nicAddress = NDDS_TRANSPORT_ADDRESS_INVALID;
+        // _multicastAddrTransp = NDDS_TRANSPORT_ADDRESS_INVALID;
 
         _NumPublishers = 1;
         _NumSubscribers = 1;

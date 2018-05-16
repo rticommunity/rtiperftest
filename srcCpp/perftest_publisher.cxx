@@ -242,6 +242,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 {
     _MessagingArgc = 0;
     _MessagingArgv = new char*[argc];
+    int _MessagingSocketsArgc = 0;
+    char **_MessagingSocketsArgv = new char*[argc];
 
     if (_MessagingArgv == NULL) {
         fprintf(stderr, "Problem allocating memory\n");
@@ -534,9 +536,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _NumSubscribers = strtol(argv[i], NULL, 10);
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i - 1]);
-            _MessagingArgv[++_MessagingArgc] = DDS_String_dup(argv[i]);
-            _MessagingArgc++;
+            _MessagingSocketsArgv[_MessagingSocketsArgc] =
+                    DDS_String_dup(argv[i - 1]);
+            _MessagingSocketsArgv[++_MessagingSocketsArgc] =
+                    DDS_String_dup(argv[i]);
+            _MessagingSocketsArgc++;
         }
         else if (IS_OPTION(argv[i], "-numPublishers"))
         {
@@ -546,9 +550,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _NumPublishers = strtol(argv[i], NULL, 10);
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i - 1]);
-            _MessagingArgv[++_MessagingArgc] = DDS_String_dup(argv[i]);
-            _MessagingArgc++;
+            _MessagingSocketsArgv[_MessagingSocketsArgc] =
+                    DDS_String_dup(argv[i - 1]);
+            _MessagingSocketsArgv[++_MessagingSocketsArgc] =
+                    DDS_String_dup(argv[i]);
+            _MessagingSocketsArgc++;
         }
         else if (IS_OPTION(argv[i], "-scan"))
         {
@@ -853,6 +859,26 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             fprintf(stderr, "] should be either all smaller or all bigger than %d.\n",
                     (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE));
             return false;
+        }
+    }
+
+    if (_useSockets) {
+        int count = 0;
+        if (_NumSubscribers != 1) {
+            _MessagingArgv[_MessagingArgc] =
+                    DDS_String_dup(_MessagingSocketsArgv[count]);
+            _MessagingArgv[++_MessagingArgc] =
+                    DDS_String_dup(_MessagingSocketsArgv[++count]);
+            _MessagingArgc++;
+            count++;
+        }
+        if (_NumPublishers != 1) {
+            _MessagingArgv[_MessagingArgc] =
+                    DDS_String_dup(_MessagingSocketsArgv[count]);
+            _MessagingArgv[++_MessagingArgc] =
+                    DDS_String_dup(_MessagingSocketsArgv[++count]);
+            _MessagingArgc++;
+            count++;
         }
     }
 
