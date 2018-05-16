@@ -545,14 +545,12 @@ namespace PerformanceTest {
                 return;
             }
             ulong _maxPerftestSampleSize = Math.Max(_DataLen,LENGTH_CHANGED_SIZE);
-            if (_useUnbounded > 0) {
-                Console.Write("Using unbounded Sequences, allocation_threshold " + _useUnbounded.ToString() + ".\n");
+            if (_useUnbounded > 0)
+            {
                 if (_isKeyed)
                 {
-                    Console.Error.Write("Using keyed Data.\n");
                     if (_isDynamicData)
                     {
-                        Console.Error.Write("Using Dynamic Data.\n");
                         _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyedLarge_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
@@ -561,10 +559,8 @@ namespace PerformanceTest {
                     }
                 }
                 else {
-                    Console.Error.Write("Using unkeyed Data.\n");
                     if (_isDynamicData)
                     {
-                        Console.Error.Write("Using Dynamic Data.\n");
                         _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataLarge_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
@@ -575,10 +571,8 @@ namespace PerformanceTest {
             } else {
                 if (_isKeyed)
                 {
-                    Console.Error.Write("Using keyed Data.\n");
                     if (_isDynamicData)
                     {
-                        Console.Error.Write("Using Dynamic Data.\n");
                         _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyed_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
@@ -587,10 +581,8 @@ namespace PerformanceTest {
                     }
                 }
                 else {
-                    Console.Error.Write("Using unkeyed Data.\n");
                     if (_isDynamicData)
                     {
-                        Console.Error.Write("Using Dynamic Data.\n");
                         _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestData_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
@@ -615,6 +607,8 @@ namespace PerformanceTest {
             } else {
                 _SamplesPerBatch = 1;
             }
+
+            PrintConfiguration();
 
             if (_IsPub) {
                 Publisher();
@@ -1230,12 +1224,8 @@ namespace PerformanceTest {
             }
 
             if (_isScan) {
-                if (_DataLen != 100) { // Different that the default value
-                    Console.Error.Write("DataLen will be ignored since -scan is present.\n");
-                }
                 _DataLen = _scanDataLenSizes[_scanDataLenSizes.Count - 1]; // Max size
                 if (_executionTime == 0){
-                    Console.Error.Write("Setting timeout to 60 seconds (-scan).\n");
                     _executionTime = 60;
                 }
                 // Check if large data or small data
@@ -1263,6 +1253,118 @@ namespace PerformanceTest {
                 }
             }
             return true;
+        }
+
+        private void PrintConfiguration() {
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append("\nPerftest Configuration:\n");
+
+            // Throughput/Latency mode
+            if (_IsPub) {
+                sb.Append("\tMode: ");
+                if (_LatencyTest) {
+                    sb.Append("Latency (Ping-Pong test)\n");
+                } else {
+                    sb.Append("Throughput (Use \"-latencyTest\" for Latency Mode)\n");
+                }
+
+                sb.Append("\tLatency count: 1 latency sample every ");
+                sb.Append(_LatencyCount);
+                sb.Append("\n");
+            }
+
+            // Reliable/Best Effort
+            sb.Append("\tReliability: ");
+            if (_isReliable) {
+                sb.Append("Reliable\n");
+            } else {
+                sb.Append("Best Effort\n");
+            }
+
+            // Keyed/Unkeyed
+            sb.Append("\tKeyed: ");
+            if (_isKeyed) {
+                sb.Append("Yes\n");
+            } else {
+                sb.Append("No\n");
+            }
+
+            // Publisher/Subscriber and Entity ID
+            if (_IsPub) {
+                sb.Append("\tPublisher ID: ");
+                sb.Append(_PubID);
+                sb.Append("\n");
+            } else {
+                sb.Append("\tSubscriber ID: ");
+                sb.Append(_SubID);
+                sb.Append("\n");
+            }
+
+            // Scan/Data Sizes
+            sb.Append("\tData Size: ");
+            if (_isScan) {
+                for (int i = 0; i < _scanDataLenSizes.Count; i++ ) {
+                    sb.Append(_scanDataLenSizes[i]);
+                    if (i == _scanDataLenSizes.Count - 1) {
+                        sb.Append("\n");
+                    } else {
+                        sb.Append(", ");
+                    }
+                }
+            } else {
+                sb.Append(_DataLen);
+                sb.Append("\n");
+            }
+
+            // Batching
+            sb.Append("\tBatching: ");
+            if (_BatchSize != 0) {
+                sb.Append(_BatchSize);
+                sb.Append(" Bytes\n");
+            } else {
+                sb.Append("No\n");
+            }
+
+            // Listener/WaitSets
+            sb.Append("\tReceive using: ");
+            if (_UseReadThread) {
+                sb.Append("WaitSets\n");
+            } else {
+                sb.Append("Listeners\n");
+            }
+
+            if (_IsPub) {
+                // Publication Rate
+                sb.Append("\tPublication Rate: ");
+                if (_pubRate > 0) {
+                    sb.Append(_pubRate);
+                    sb.Append(" Samples/s (");
+                    if (_pubRateMethodSpin) {
+                        sb.Append("Spin)\n");
+                    } else {
+                        sb.Append("Sleep)\n");
+                    }
+                } else {
+                    sb.Append("Unlimited (Not set)\n");
+                }
+            }
+
+            // Execution Time or Num Iter
+            if (_executionTime > 0) {
+                sb.Append("\tExecution time: ");
+                sb.Append(_executionTime);
+                sb.Append(" seconds\n");
+            } else {
+                sb.Append("\tNumber of samples: " );
+                sb.Append(_NumIter);
+                sb.Append("\n");
+            }
+
+            sb.Append(_MessagingImpl.PrintConfiguration());
+
+            Console.Error.WriteLine(sb.ToString());
         }
 
         /*********************************************************

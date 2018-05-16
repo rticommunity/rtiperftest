@@ -799,9 +799,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     }
 
     if (_isScan) {
-        if (_DataLen != 100) { // Different that the default value
-            std::cerr << "[Info] DataLen will be ignored since -scan is present." << std::endl;
-        }
         _DataLen = _scanDataLenSizes[_scanDataLenSizes.size() - 1]; // Max size
         if (_executionTime == 0){
             _executionTime = 60;

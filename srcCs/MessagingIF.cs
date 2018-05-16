@@ -57,6 +57,8 @@ namespace PerformanceTest
 
         void PrintCmdLineHelp();
 
+        string PrintConfiguration();
+
         void Shutdown();
 
         // if the implementation supports batching and the test scenario is

@@ -6,6 +6,8 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
+#include <string>
+
 class TestMessage
 {
   public:

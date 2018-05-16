@@ -692,9 +692,6 @@ public final class PerfTest {
         }
 
         if (_isScan) {
-            if (_dataLen != 100) { // Different that the default value
-                System.err.printf("DataLen will be ignored since -scan is present.\n");
-            }
             _dataLen = _scanDataLenSizes.get(_scanDataLenSizes.size() - 1); // Max size
             if (_executionTime == 0){
                 _executionTime = 60;

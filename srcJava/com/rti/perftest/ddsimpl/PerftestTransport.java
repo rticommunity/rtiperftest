@@ -449,8 +449,8 @@ public class PerftestTransport {
 
             transportConfigMap.put("Default", new TransportConfig(
                     Transport.TRANSPORT_NOT_SET,
-                    "Default (UDPv4) / Custom (Taken from QoS profile)",
-                    "dds.transport.UDPv4.builtin"));
+                    "--",
+                    "--"));
             transportConfigMap.put("UDPv4", new TransportConfig(
                     Transport.TRANSPORT_UDPv4,
                     "UDPv4",
@@ -533,7 +533,7 @@ public class PerftestTransport {
 
             if (transportConfig.kind == Transport.TRANSPORT_NOT_SET) {
                 System.err.println(classLoggingString
-                        + " Ignoring -nic/-allowInterfaces option");
+                        + " Ignoring -nic/-allowInterfaces option.");
                 return;
             }
 
