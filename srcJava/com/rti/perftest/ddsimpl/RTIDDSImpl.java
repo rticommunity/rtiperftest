@@ -104,6 +104,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean _isScan = false;
     private boolean _isPublisher = false;
     private boolean _IsAsynchronous = false;
+    private boolean _isDynamicData = false;
     private String  _FlowControllerCustom = "default";
     String[] valid_flow_controller = {"default", "1Gbps", "10Gbps"};
     static int             RTIPERFTEST_MAX_PEERS = 1024;
@@ -112,7 +113,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean _useCft = false;
     private int     _instancesToBeWritten = -1;
     private int[]   _CFTRange = {0, 0};
-    
+
     private PerftestTransport _transport;
 
 
@@ -124,7 +125,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private String _secureCertAuthorityFile = null;
     private String _secureCertificateFile = null;
     private String _securePrivateKeyFile = null;
-    
+
     /*
      * if _GovernanceFile is specified, overrides the options for
      * signing, encrypting, and authentication.
@@ -318,10 +319,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         // set initial peers and not use multicast
         if ( _peer_host_count > 0 ) {
-            System.out.println("Initial peers: ");
-            for ( int i =0; i< _peer_host_count; ++i) {
-                System.out.println("\t" + _peer_host[i]);
-            }
             qos.discovery.initial_peers.clear();
             qos.discovery.initial_peers.setMaximum(_peer_host_count);
             for (int i = 0; i < _peer_host_count; ++i) {
@@ -333,7 +330,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
         if(!_transport.configureTransport(qos)) {
             return false;
         }
-        _transport.printTransportConfigurationSummary();
 
         if (_AutoThrottle) {
             PropertyQosPolicyHelper.add_property(
@@ -630,7 +626,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         return true;
     }
 
-    private void printSecureArgs() {
+    private String printSecureArgs() {
 
         String secure_arguments_string =
                 "Secure Arguments:\n" +
@@ -683,14 +679,11 @@ public final class RTIDDSImpl<T> implements IMessaging {
         if( _secyreDebugLevel != -1 ){
             secure_arguments_string += "\t debug level: " + _secyreDebugLevel + "\n";
         }
-        System.out.print(secure_arguments_string);
+        return secure_arguments_string;
     }
 
     private void configureSecurePlugin(DomainParticipantQos dpQos) {
         // configure use of security plugins, based on provided arguments
-
-        // print arguments
-        printSecureArgs();
 
         // load plugin
         PropertyQosPolicyHelper.add_property(
@@ -723,32 +716,30 @@ public final class RTIDDSImpl<T> implements IMessaging {
         // check if governance file provided
         if (_governanceFile == null) {
             // choose a pre-built governance file
-            String file = "resource/secure/signed_PerftestGovernance_";
+            _governanceFile = "resource/secure/signed_PerftestGovernance_";
 
             if (_secureIsDiscoveryEncrypted) {
-                file += "Discovery";
+                _governanceFile += "Discovery";
             }
 
             if (_secureIsSigned) {
-                file += "Sign";
+                _governanceFile += "Sign";
             }
 
             if (_secureIsDataEncrypted && _secureIsSMEncrypted) {
-                file += "EncryptBoth";
+                _governanceFile += "EncryptBoth";
             } else if (_secureIsDataEncrypted) {
-                file += "EncryptData";
+                _governanceFile += "EncryptData";
             } else if (_secureIsSMEncrypted) {
-                file += "EncryptSubmessage";
+                _governanceFile += "EncryptSubmessage";
             }
 
-            file = file + ".xml";
+            _governanceFile += ".xml";
 
-            System.out.println("Secure: using pre-built governance file:" + 
-                    file);
             PropertyQosPolicyHelper.add_property(
                     dpQos.property,
                     "com.rti.serv.secure.access_control.governance_file",
-                    file,
+                    _governanceFile,
                     false);
         } else {
             PropertyQosPolicyHelper.add_property(
@@ -810,7 +801,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     || "LatencyQos".equals(qosProfile))) {
             dwQos.protocol.disable_positive_acks = true;
             if (_keepDurationUsec != -1) {
-                dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = 
+                dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec =
                     Duration_t.from_micros(_keepDurationUsec).sec;
                 dwQos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec =
                     Duration_t.from_micros(_keepDurationUsec).nanosec;
@@ -831,12 +822,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         if (_isLargeData || _IsAsynchronous)
         {
-            System.err.println("Using asynchronous write for " + topicName + ".");
             dwQos.publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
             if (!_FlowControllerCustom.toLowerCase().startsWith("default".toLowerCase())) {
                 dwQos.publish_mode.flow_controller_name = "dds.flow_controller.token_bucket."+_FlowControllerCustom;
             }
-            System.err.println("Using flow controller " + _FlowControllerCustom + ".");
         }
 
         // Configure reliability
@@ -844,7 +833,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             if (_isReliable) {
                 // default: use the setting specified in the qos profile
                 // dwQos.reliability.kind = ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
- 
+
             } else {
                 // override to best-effort
                 dwQos.reliability.kind =
@@ -864,7 +853,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 dwQos.batch.max_data_bytes = _batchSize;
                 dwQos.resource_limits.max_samples = ResourceLimitsQosPolicy.LENGTH_UNLIMITED;
                 dwQos.writer_resource_limits.max_batches = _sendQueueSize;
-                
             } else {
                 dwQos.resource_limits.max_samples = _sendQueueSize;
             }
@@ -901,7 +889,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             dwQos.resource_limits.initial_samples = _sendQueueSize;
             dwQos.resource_limits.max_samples_per_instance
                 = dwQos.resource_limits.max_samples;
-            
+
             switch(_durability){
             case 0:
                 dwQos.durability.kind = DurabilityQosPolicyKind.VOLATILE_DURABILITY_QOS;
@@ -920,7 +908,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             dwQos.durability.direct_communication = _directCommunication;
 
             dwQos.protocol.rtps_reliable_writer.heartbeats_per_max_samples = _sendQueueSize / 10;
-            
+
             dwQos.protocol.rtps_reliable_writer.low_watermark = _sendQueueSize * 1 / 10;
             dwQos.protocol.rtps_reliable_writer.high_watermark = _sendQueueSize * 9 / 10;
 
@@ -935,14 +923,14 @@ public final class RTIDDSImpl<T> implements IMessaging {
                         dwQos.protocol.rtps_reliable_writer.high_watermark + 1;
             }
 
-            dwQos.protocol.rtps_reliable_writer.max_send_window_size = 
+            dwQos.protocol.rtps_reliable_writer.max_send_window_size =
                     _sendQueueSize;
-            dwQos.protocol.rtps_reliable_writer.min_send_window_size = 
+            dwQos.protocol.rtps_reliable_writer.min_send_window_size =
                     _sendQueueSize;
         }
 
         if ("LatencyQos".equals(qosProfile)
-                && !_directCommunication 
+                && !_directCommunication
                 && (_durability == DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS.ordinal()
                     || _durability == DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS.ordinal())) {
 
@@ -996,17 +984,17 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     drQos.property, "dds.data_reader.history.memory_manager.java_stream.trim_to_size",
                     "1", false);
         }
-      
+
         // These QOS's are only set for the Throughput reader
         if ("ThroughputQos".equals(qosProfile)) {
             switch(_durability){
             case 0:
                 drQos.durability.kind = DurabilityQosPolicyKind.VOLATILE_DURABILITY_QOS;
                 break;
-            case 1:                              
+            case 1:
                 drQos.durability.kind = DurabilityQosPolicyKind.TRANSIENT_LOCAL_DURABILITY_QOS;
                 break;
-            case 2:              
+            case 2:
                 drQos.durability.kind = DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS;
                 break;
             case 3:
@@ -1029,7 +1017,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
             drQos.durability.direct_communication = _directCommunication;
         }
-           
+
         drQos.resource_limits.initial_instances = _instanceCount + 1;
         if (_instanceMaxCountReader != -1) {
             _instanceMaxCountReader++;
@@ -1070,6 +1058,75 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
     }
 
+    public String printConfiguration() {
+
+        StringBuilder sb = new StringBuilder();
+
+        // Domain ID
+        sb.append("\tDomain: ");
+        sb.append(_domainID);
+        sb.append("\n");
+
+        // Dynamic Data
+        sb.append("\tDynamic Data: ");
+        if (_isDynamicData) {
+            sb.append("Yes\n");
+        } else {
+            sb.append("No\n");
+        }
+
+        // Dynamic Data
+        if (_isPublisher) {
+            sb.append("\tAsynchronous Publishing: ");
+            if (_isLargeData || _IsAsynchronous) {
+                sb.append("Yes\n");
+                sb.append("\tFlow Controller: ");
+                sb.append(_FlowControllerCustom);
+                sb.append("\n");
+            } else {
+                sb.append("No\n");
+            }
+        }
+
+        // Turbo Mode / AutoThrottle
+        if (_TurboMode) {
+            sb.append("\tTurbo Mode: Enabled\n");
+        }
+        if (_AutoThrottle) {
+            sb.append("\tAutoThrottle: Enabled\n");
+        }
+
+        // XML File
+        sb.append("\tXML File: ");
+        sb.append(_profileFile);
+        sb.append("\n");
+
+
+        sb.append("\n");
+        sb.append(_transport.printTransportConfigurationSummary());
+
+
+        // set initial peers and not use multicast
+        if ( _peer_host_count > 0 ) {
+            sb.append("Initial peers: ");
+            for ( int i = 0; i < _peer_host_count; ++i) {
+                sb.append(_peer_host[i]);
+                if (i == _peer_host_count -1) {
+                    sb.append("\n");
+                } else {
+                    sb.append(", ");
+                }
+            }
+        }
+
+        if (_secureUseSecure) {
+            sb.append("\n");
+            sb.append(printSecureArgs());
+        }
+
+        return sb.toString();
+    }
+
     private boolean parseConfig(int argc, String[] argv) {
         long _scan_max_size = 0;
         for (int i = 0; i < argc; ++i) {
@@ -1095,8 +1152,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _isPublisher = true;
             }
             else if ("-dynamicData".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                // Using Dynamic data, we need to check here this, since the
-                // previous place does not remove it from the list.
+                _isDynamicData = true;
             }
             else if ("-dataLen".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
@@ -1238,11 +1294,11 @@ public final class RTIDDSImpl<T> implements IMessaging {
             } else if ("-noDirectCommunication".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _directCommunication = false;
             }
-            else if ("-latencyTest".toLowerCase().startsWith(argv[i].toLowerCase())) 
+            else if ("-latencyTest".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
                 _latencyTest = true;
             }
-            else if ("-instances".toLowerCase().startsWith(argv[i].toLowerCase())) 
+            else if ("-instances".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
                     System.err.print("Missing <count> after -instances\n");
@@ -1259,7 +1315,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     System.err.print("instance count cannot be negative\n");
                     return false;
                 }
-            } else if ("-instanceHashBuckets".toLowerCase().startsWith(argv[i].toLowerCase())) 
+            } else if ("-instanceHashBuckets".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
                     System.err.print("Missing <count> after -instanceHashBuckets\n");
@@ -1275,7 +1331,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     System.err.print("instanceHashBucket count cannot be negative or zero\n");
                     return false;
                 }
-            } else if ("-batchSize".toLowerCase().startsWith(argv[i].toLowerCase())) 
+            } else if ("-batchSize".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
                     System.err.print("Missing <#bytes> after -batchSize\n");
@@ -1520,7 +1576,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 }
                 _instancesToBeWritten = Integer.parseInt(argv[i]);
             } else {
-                
+
                 Integer value = _transport.getTransportCmdLineArgs().get(argv[i]);
                 if (value != null) {
                     // Increment the counter with the number of arguments
@@ -1571,7 +1627,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         if (_dataLen > MAX_SYNCHRONOUS_SIZE.VALUE) {
-            System.err.println("Large data settings enabled.");
             _isLargeData = true;
         }
 
@@ -1606,7 +1661,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             System.err.println("_transport is not initialized");
             return false;
         }
-        
+
         return true;
     }
 

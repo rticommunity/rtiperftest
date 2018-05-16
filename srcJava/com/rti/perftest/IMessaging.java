@@ -16,6 +16,8 @@ public interface IMessaging {
 
     public void printCmdLineHelp();
 
+    String printConfiguration();
+
     public void shutdown();
 
     /**
@@ -26,14 +28,14 @@ public interface IMessaging {
     public int getBatchSize();
 
     public IMessagingWriter createWriter(String topicName);
-    
+
     /**
      * Pass null for callback if using IMessagingReader.ReceiveMessage()
      * to get data.
      */
     public IMessagingReader createReader(
             String topicName, IMessagingCB callback);
-    
+
     public void dispose();
 
 }
