@@ -66,6 +66,7 @@ const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME =
 #endif
 
 std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
+const unsigned int DEFAULT_BATCH_SIZE = 8192;
 
 /*********************************************************
  * Shutdown
@@ -200,6 +201,7 @@ template <typename T>
 bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 {
     unsigned long _scan_max_size = 0;
+    bool inputBatchSize = false;
     int i;
     int sec = 0;
     unsigned int nanosec = 0;
@@ -384,19 +386,20 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
         } else if (IS_OPTION(argv[i], "-batchSize")) {
 
-            if ((i == (argc-1)) || *argv[++i] == '-') 
-            {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <#bytes> after -batchSize\n");
                 return false;
             }
-            _BatchSize = strtol(argv[i], NULL, 10);
 
-            if (_BatchSize < 0 || _BatchSize > (unsigned int)MAX_SYNCHRONOUS_SIZE) {
+            if (strtol(argv[i], NULL, 10) < 0
+                    || strtol(argv[i], NULL, 10) > (unsigned int)MAX_SYNCHRONOUS_SIZE) {
                 fprintf(stderr, "Batch size '%d' should be between [0,%d]\n",
                         _BatchSize,
                         MAX_SYNCHRONOUS_SIZE);
                 return false;
             }
+            _BatchSize = strtol(argv[i], NULL, 10);
+            inputBatchSize = true;
         } else if (IS_OPTION(argv[i], "-keepDurationUsec")) {
             if ((i == (argc-1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <usec> after -keepDurationUsec\n");
@@ -658,8 +661,17 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
+    if (_LatencyTest ) {
+        if (inputBatchSize) {
+            fprintf(stderr, "Batching cannot be used with Latency test.\n");
+            return false;
+        } else {
+            _BatchSize = 0; //Disable Batching
+        }
+    }
+
     if (_IsAsynchronous && _BatchSize > 0) {
-        fprintf(stderr, "Batching cannnot be used with asynchronous writing.\n");
+        fprintf(stderr, "Batching cannot be used with asynchronous writing.\n");
         return false;
     }
 
@@ -671,35 +683,33 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
             }
             _isLargeData = true;
-        } else if (_scan_max_size <= (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+        } else {
             _useUnbounded = 0;
             _isLargeData = false;
-        } else {
-            return false;
         }
-        if (_isLargeData && _BatchSize > 0) {
-            fprintf(stderr, "Batching cannnot be used with asynchronous writing.\n");
-            return false;
-        }
-    } else { // If not Scan, compare sizes of Batching and dataLen
-        /*
-         * We don't want to use batching if the sample is the same size as the batch
-         * nor if the sample is bigger (in this case we avoid the checking in the
-         * middleware).
-         */
-        if (_BatchSize > 0 && (unsigned long)_BatchSize <= _DataLen) {
+        // If not Scan, compare sizes of Batching and dataLen
+    } else if (_BatchSize > 0 && (unsigned long)_BatchSize < _DataLen * 2) {
+            /*
+            * We don't want to use batching if the batch size is not large enough
+            * to contain at least two sample (in this case we avoid the checking in
+            * the middleware).
+            */
             fprintf(stderr,
-                    "Batching disabled: BatchSize (%d) is equal or smaller "
-                    "than the sample size (%lu).\n",
+                    "Batching disabled: BatchSize (%d) is smaller than two "
+                    "times the sample size (%lu).\n",
                     _BatchSize,
                     _DataLen);
             _BatchSize = 0;
-        }
     }
 
     if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
         fprintf(stderr, "Large data settings enabled.\n");
         _isLargeData = true;
+    }
+
+    if (_isLargeData && _BatchSize > 0) {
+            fprintf(stderr, "Batching cannot be used with asynchronous writing.\n");
+            return false;
     }
 
     if (_TurboMode) {
