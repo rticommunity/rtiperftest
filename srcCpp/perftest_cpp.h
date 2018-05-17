@@ -38,6 +38,14 @@
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
 
+struct Perftest_ProductVersion_t
+{
+  char major;
+  char minor;
+  char release;
+  char revision;
+};
+
 class perftest_cpp
 {
   public:
@@ -62,6 +70,10 @@ class perftest_cpp
         usleep(millisec * 1000);
       #endif
     }
+
+    static const DDS_ProductVersion_t GetDDSVersion();
+    static const Perftest_ProductVersion_t GetPerftestVersion();
+    static void PrintVersion();
 
     static void ThreadYield() {
   #ifdef RTI_WIN32
@@ -98,6 +110,7 @@ class perftest_cpp
     unsigned int _executionTime;
     bool _displayWriterStats;
     bool _useCft;
+    static const Perftest_ProductVersion_t _version;
 
   private:
     static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);
