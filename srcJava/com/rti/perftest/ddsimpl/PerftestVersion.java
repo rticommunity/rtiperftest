@@ -13,19 +13,15 @@ public final class PerftestVersion {
 
     private final ProductVersion_t _productVersion;
 
-    public static PerftestVersion get_instance() {
+    private PerftestVersion() {
+        _productVersion = new ProductVersion_t(new int[] { 2, 3, 2, 0 });
+    }
+
+    public static PerftestVersion getInstance() {
         return _singleton;
     }
 
-    public ProductVersion_t get_product_version() {
+    public ProductVersion_t getProductVersion() {
         return _productVersion;
     }
-
-    private PerftestVersion() {
-
-        _productVersion =
-                new ProductVersion_t(new int[] {2, 3, 2, 0});
-
-    }
-
 }

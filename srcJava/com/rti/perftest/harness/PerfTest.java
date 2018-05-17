@@ -191,7 +191,7 @@ public final class PerfTest {
     private void run(IMessaging messagingImpl,
                      String[] argv) {
 
-        PrintVersion();
+        printVersion();
 
         _messagingImpl = messagingImpl;
 
@@ -220,17 +220,17 @@ public final class PerfTest {
         }
     }
 
-    private ProductVersion_t GetDDSVersion() {
+    private ProductVersion_t getDDSVersion() {
         return Version.get_instance().get_product_version();
     }
 
-    private ProductVersion_t GetPerftestVersion() {
-        return PerftestVersion.get_instance().get_product_version();
+    private ProductVersion_t getPerftestVersion() {
+        return PerftestVersion.getInstance().getProductVersion();
     }
 
-    private void PrintVersion() {
-        ProductVersion_t perftestV = GetPerftestVersion();
-        ProductVersion_t ddsV = GetDDSVersion();
+    private void printVersion() {
+        ProductVersion_t perftestV = getPerftestVersion();
+        ProductVersion_t ddsV = getDDSVersion();
 
         StringBuffer perftestVString = new StringBuffer(128);
         perftestVString.append((int)perftestV.major).append(".");

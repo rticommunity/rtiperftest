@@ -38,7 +38,6 @@ const int timeout_wait_for_ack_sec = 0;
 const unsigned int timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {2, 3, 2, 0};
 
-
 /*
  * PERFTEST-108
  * If we are performing a latency test, the default number for _NumIter will be

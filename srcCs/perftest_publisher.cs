@@ -2337,31 +2337,37 @@ namespace PerformanceTest {
 
             Console.Write(
                     "RTI Perftest: "
-                    + perftestV.major + "." + perftestV.minor + "." + perftestV.release);
+                    + perftestV.major + "."
+                    + perftestV.minor + "."
+                    + perftestV.release);
             if (perftestV != 0) {
                 Console.Write("." + perftestV.revision);
             }
             Console.Write(
                     " (RTI Connext DDS: "
-                    + ddsV.major + "." + ddsV.minor + "." + ddsV.release + ")\n");
+                    + ddsV.major + "."
+                    + ddsV.minor + "."
+                    + ddsV.release + ")\n");
         }
 
-        public struct Perftest_ProductVersion_t{
-                public uint  major;
-                public uint minor;
-                public uint release;
-                public uint revision;
+        public struct Perftest_ProductVersion_t
+        {
+            public uint  major;
+            public uint minor;
+            public uint release;
+            public uint revision;
 
-                public Perftest_ProductVersion_t (
-                        uint major,
-                        uint minor,
-                        uint release,
-                        uint revision){
-                    this.major = major;
-                    this.minor = minor;
-                    this.release = release;
-                    this.revision = revision;
-                }
+            public Perftest_ProductVersion_t (
+                    uint major,
+                    uint minor,
+                    uint release,
+                    uint revision)
+            {
+                this.major = major;
+                this.minor = minor;
+                this.release = release;
+                this.revision = revision;
+            }
         }
 
         private ulong  _DataLen = 100;
