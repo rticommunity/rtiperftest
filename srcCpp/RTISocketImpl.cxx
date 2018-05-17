@@ -375,9 +375,6 @@ class RTISocketPublisher : public IMessagingWriter{
     struct RTICdrStream _stream;
     struct PRESTypePluginDefaultEndpointData _epd;
 
-    int itersCounter = 0;
-    double sumTimes = 0;
-
   public:
     RTISocketPublisher(
             NDDS_Transport_Plugin *plugin,
@@ -439,10 +436,6 @@ class RTISocketPublisher : public IMessagingWriter{
 
     void Shutdown() {
 
-        printf("----- AVERAGE TIME SERIALIZATION -----\n"
-                "\t Result: %11.9f\n", sumTimes/((double)itersCounter)
-        );
-
         if (_send_resource != NULL && _plugin != NULL) {
             _plugin->destroy_sendresource_srEA(_plugin, &_send_resource);
         }
@@ -465,7 +458,6 @@ class RTISocketPublisher : public IMessagingWriter{
          *
          * The 3th option is always have the same numbers of subscriber per
          * Peer.
-         *
          */
 
         /*
@@ -548,8 +540,10 @@ class RTISocketPublisher : public IMessagingWriter{
         }
 
         /* If the send it's done, reset the stream to fill the buffer again */
-        RTICdrStream_set(&_stream, (char *)_send_buffer.pointer,
-                         NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+        RTICdrStream_set(
+                &_stream,
+                (char *)_send_buffer.pointer,
+                NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
 
         _send_buffer.length = 0;
     }
@@ -576,21 +570,15 @@ class RTISocketPublisher : public IMessagingWriter{
                 > _batchBufferSize) {
             Flush();
         }
-        struct timespec cgt1, cgt2;
-        double ncgt;
 
-        clock_gettime(CLOCK_REALTIME, &cgt1);
         retCode = TestData_tPlugin_serialize(
-                (PRESTypePluginEndpointData)&_epd, &_data, &_stream,
-                RTI_TRUE, RTICdrEncapsulation_getNativeCdrEncapsulationId(),
-                RTI_TRUE, NULL);
-
-        clock_gettime(CLOCK_REALTIME, &cgt2);
-        ncgt = (double)(cgt2.tv_sec - cgt1.tv_sec) +
-               (double)((cgt2.tv_nsec - cgt1.tv_nsec) / (1.e+9));
-
-        sumTimes += ncgt;
-        itersCounter++;
+                (PRESTypePluginEndpointData)&_epd,
+                &_data,
+                &_stream,
+                RTI_TRUE,
+                RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+                RTI_TRUE,
+                NULL);
 
         if (!retCode){
             fprintf(stderr, "Fail serializing data\n");
@@ -685,9 +673,6 @@ class RTISocketSubscriber : public IMessagingReader
     struct RTICdrStream _stream;
     bool _no_data;
 
-    int itersCounter = 0;
-    double sumTimes = 0;
-
   public:
     RTISocketSubscriber(
         NDDS_Transport_Plugin *plugin,
@@ -732,10 +717,6 @@ class RTISocketSubscriber : public IMessagingReader
 
     void Shutdown()
     {
-
-        printf("----- AVERAGE TIME DESERIALIZATION -----\n"
-               "\t Result: %11.9f\n",
-               sumTimes / ((double)itersCounter));
 
         //_plugin->unblock_receive_rrEA(_plugin, &_recv_resource, _worker);
         //perftest_cpp::MilliSleep(5000);
@@ -789,21 +770,8 @@ class RTISocketSubscriber : public IMessagingReader
                 continue;
             }
 
-            struct timespec cgt1, cgt2;
-            double ncgt;
-            clock_gettime(CLOCK_REALTIME, &cgt1);
-
             TestData_tPlugin_deserialize_sample(
-                    NULL, &_data,
-                    &_stream, RTI_TRUE, RTI_TRUE,
-                    NULL);
-
-            clock_gettime(CLOCK_REALTIME, &cgt2);
-            ncgt = (double)(cgt2.tv_sec - cgt1.tv_sec) +
-                   (double)((cgt2.tv_nsec - cgt1.tv_nsec) / (1.e+9));
-
-            sumTimes += ncgt;
-            itersCounter ++;
+                    NULL, &_data, &_stream, RTI_TRUE, RTI_TRUE, NULL);
 
             _message.entity_id = _data.entity_id;
             _message.seq_num = _data.seq_num;
@@ -845,6 +813,156 @@ bool RTISocketImpl::Initialize(int argc, char *argv[]) {
     }
 
     return true;
+}
+
+/*********************************************************
+ * ObtainSerializeTime
+ */
+
+double RTISocketImpl::ObtainSerializeTimeCost(int iterations, unsigned int sampleSize){
+
+    struct timespec cgt1, cgt2;
+    double serializeTime;
+
+    struct RTICdrStream stream;
+    struct PRESTypePluginDefaultEndpointData epd;
+
+    char * buffer;
+
+    RTIOsapiHeap_allocateBuffer(
+            &buffer,
+            NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
+            RTI_OSAPI_ALIGNMENT_DEFAULT);
+
+    if (buffer == NULL) {
+        fprintf(stderr,
+                "Error allocating memory for buffer on ObtainSerializeTimeCost\n");
+    }
+
+    RTICdrStream_init(&stream);
+    RTICdrStream_set(
+            &stream,
+            buffer,
+            NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+
+    epd._maxSizeSerializedSample =
+            TestData_tPlugin_get_serialized_sample_max_size(
+                    NULL,
+                    RTI_TRUE,
+                    RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+                    0);
+
+    /* Created a dummy data to serialize*/
+    TestData_t testData;
+    testData.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+    testData.entity_id = 0;
+    testData.seq_num = 0;
+    testData.timestamp_sec = 0;
+    testData.timestamp_usec = 0;
+    testData.latency_ping = 0;
+
+    /* The buffer can be reuse, does not matter what it's inside */
+    testData.bin_data.loan_contiguous(
+            (DDS_Octet *) buffer, sampleSize, sampleSize);
+
+
+    /* Serialize time calculating */
+    clock_gettime(CLOCK_REALTIME, &cgt1);
+
+    for (int i = 0; i < iterations; i++) {
+        /*
+         * Reset the stream to allocate the serialize data always at the
+         * beggining
+         */
+        RTICdrStream_set(
+                &stream, buffer, NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+
+        TestData_tPlugin_serialize(
+                (PRESTypePluginEndpointData) &epd,
+                &testData,
+                &stream,
+                RTI_TRUE,
+                RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+                RTI_TRUE,
+                NULL);
+    }
+
+    clock_gettime(CLOCK_REALTIME, &cgt2);
+    serializeTime = (double) (cgt2.tv_sec - cgt1.tv_sec)
+            + (double) ((cgt2.tv_nsec - cgt1.tv_nsec) / (1.e+9));
+
+    return serializeTime /= iterations;
+}
+/*********************************************************
+ * ObtainDeserializeTime
+ */
+
+double ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize) {
+    struct timespec cgt1, cgt2;
+    double deSerializeTime;
+
+    struct RTICdrStream stream;
+    struct PRESTypePluginDefaultEndpointData epd;
+
+    char *buffer;
+
+    RTIOsapiHeap_allocateBuffer(
+            &buffer,
+            NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
+            RTI_OSAPI_ALIGNMENT_DEFAULT);
+
+    if (buffer == NULL) {
+        fprintf(stderr,
+                "Error allocating memory for buffer on "
+                "ObtainDeSerializeTimeCost\n");
+    }
+
+    RTICdrStream_init(&stream);
+    RTICdrStream_set(&stream, buffer, NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+
+    epd._maxSizeSerializedSample =
+            TestData_tPlugin_get_serialized_sample_max_size(
+                    NULL,
+                    RTI_TRUE,
+                    RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+                    0);
+
+    TestData_t testData;
+    testData.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+    testData.entity_id = 0;
+    testData.seq_num = 0;
+    testData.timestamp_sec = 0;
+    testData.timestamp_usec = 0;
+    testData.latency_ping = 0;
+    testData.bin_data.loan_contiguous(
+            (DDS_Octet *) buffer, sampleSize, sampleSize);
+
+    TestData_tPlugin_serialize(
+            (PRESTypePluginEndpointData) &epd,
+            &testData,
+            &stream,
+            RTI_TRUE,
+            RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+            RTI_TRUE,
+            NULL);
+
+    /* Serialize time calculating */
+    clock_gettime(CLOCK_REALTIME, &cgt1);
+
+    for (int i = 0; i < iterations; i++) {
+
+        RTICdrStream_set(
+                &stream, buffer, NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+
+        TestData_tPlugin_deserialize_sample(
+                NULL, &testData, &stream, RTI_TRUE, RTI_TRUE, NULL);
+    }
+
+    clock_gettime(CLOCK_REALTIME, &cgt2);
+    deSerializeTime = (double) (cgt2.tv_sec - cgt1.tv_sec)
+            + (double) ((cgt2.tv_nsec - cgt1.tv_nsec) / (1.e+9));
+
+    return deSerializeTime /= iterations;
 }
 
 /*********************************************************
@@ -910,12 +1028,10 @@ IMessagingReader *RTISocketImpl::CreateReader(const char *topic_name, IMessaging
     }
 
     int portOffset = 0;
-    if (!strcmp(topic_name, perftest_cpp::_LatencyTopicName) )
-    {
+    if (!strcmp(topic_name, perftest_cpp::_LatencyTopicName)) {
         portOffset += 1;
     }
-    if (!strcmp(topic_name, perftest_cpp::_ThroughputTopicName))
-    {
+    if (!strcmp(topic_name, perftest_cpp::_ThroughputTopicName)) {
         portOffset += 2;
     }
 

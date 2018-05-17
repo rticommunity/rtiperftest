@@ -79,6 +79,9 @@ class RTISocketImpl : public IMessaging {
 
     bool ConfigureSocketsTransport();
 
+    static double ObtainSerializeTimeCost(int iterations, unsigned int sampleSize);
+    static double ObtainDeSerializeTimeCost(int iterations, unsigned int sampleSize);
+
   private:
     unsigned long _DataLen;
     int _DomainID;

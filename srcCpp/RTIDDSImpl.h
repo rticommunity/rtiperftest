@@ -108,6 +108,8 @@ class RTIDDSImpl : public IMessaging
 
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
 
+    void ObtainSerializeTime();
+
 
   private:
 

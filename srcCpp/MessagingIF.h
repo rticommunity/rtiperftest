@@ -58,6 +58,16 @@ class IMessagingReader
     // only used for non-callback test to cleanup
     // the thread
     virtual void Shutdown() {}
+
+    virtual double
+    ObtainSerializeTimeCost(int iterations, unsigned int sampleSize) {
+        return 0;
+    }
+
+    virtual double
+    ObtainDeSerializeTimeCost(int iterations, unsigned int sampleSize) {
+        return 0;
+    }
 };
 
 class IMessagingWriter
