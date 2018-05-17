@@ -32,7 +32,7 @@ class RTIDDSImpl : public IMessaging
         _UseXmlQos = true;
         _IsReliable = true;
         _IsMulticast = false;
-        _BatchSize = 8192; //Default: 8 Kbytes
+        _BatchSize = DEFAULT_BATCH_SIZE; //Default: 8 Kbytes
         _InstanceCount = 1;
         _InstanceMaxCountReader = DDS_LENGTH_UNLIMITED;
         _InstanceHashBuckets = -1;
@@ -193,7 +193,6 @@ class RTIDDSImpl : public IMessaging
     const char                  *_typename;
 
     RTIOsapiSemaphore *_pongSemaphore;
-
 
   public:
 
