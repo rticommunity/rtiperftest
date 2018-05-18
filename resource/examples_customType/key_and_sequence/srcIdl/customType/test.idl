@@ -1,0 +1,5 @@
+const long MAX_SIZE = 63000;
+struct Test {
+    sequence<octet, MAX_SIZE> test_seq;
+    long test_long; //@key
+};//@Extensibility FINAL_EXTENSIBILITY

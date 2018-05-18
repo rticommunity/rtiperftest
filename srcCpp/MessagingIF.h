@@ -93,6 +93,15 @@ class IMessagingWriter
     };
     virtual void wait_for_acknowledgments(long sec, unsigned long nsec) {
     };
+#ifdef RTI_CUSTOM_TYPE
+  private:
+    virtual bool is_setinel_size(int size) {
+        return 0;
+    };
+    virtual bool get_serialize_size_custom_type_data(unsigned int &size) {
+        return 0;
+    };
+#endif
 };
 
 class IMessaging

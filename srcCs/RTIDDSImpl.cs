@@ -647,7 +647,7 @@ namespace PerformanceTest
                     if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
                         _peer_host[_peer_host_count++] = argv[i];
                     } else {
-                        Console.Error.Write("The maximun of -initial peers is " + RTIPERFTEST_MAX_PEERS + "\n");
+                        Console.Error.Write("The maximum of -initial peers is " + RTIPERFTEST_MAX_PEERS + "\n");
                         return false;
                     }
                 } else if ("-cft".StartsWith(argv[i], true, null)) {

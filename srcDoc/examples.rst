@@ -610,9 +610,9 @@ in the code and configuration files is minimal.
 
 Briefly, the necesary steps that you need to use your type in *RTI Perftest* are:
 
--  Copy your IDL files into srcIdl/custom/
--  Implement the functions of customtype.cxx
--  Run the build script with the ``--customType <type>``
+-  Copy your IDL files into `~/rtiperftest/srcIdl/custom/`
+-  Implement the API custom type functions of customtype.cxx
+-  Run the build script with the command line paramiter ``--customType <type>``
 -  Now, you can run *RTI Perftest* as usual.
 
 Full example using Custom Types
@@ -642,27 +642,25 @@ The custom type that will be used for this example is the following:
     };//@Extensibility FINAL_EXTENSIBILITY
 
 These are the steps needed to use the previously described type in RTI Perftest
-for the the C++ (Traditional) API:
+for the C++ (Traditional) API:
 
-1. Copy the IDL files into `srcIdl/custom/` folder.
+1. Copy the IDL files into `~/rtiperftest/srcIdl/custom/` folder.
 
 2. The following functions should be implemented (optionally) to properly
-initialize the Custom Type structures.
+initialize and set the Custom Type structures.
 
-- **initialize_custom_type**:
+- **initialize_custom_type_data**:
     This function is used to initialize your data.
+    The user will be able to allocate memory or set an immutable field of the data.
     The function takes one argument:
 
-        - A reference to the customer type.
+        - A reference to the customer type data.
 
 ::
 
-    bool initialize_custom_type(RTI_CUSTOM_TYPE & data)
+    bool initialize_custom_type_data(RTI_CUSTOM_TYPE & data)
     {
         bool success = true;
-        if (! data.test_seq.test_seq.maximum(0)) {
-            success = false;
-        }
         if (! data.test_seq.test_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
             success = false;
         }
@@ -670,32 +668,39 @@ initialize the Custom Type structures.
         return success;
     }
 
-- **register_custom_type**:
+- **register_custom_type_data**:
     This function is used to set your data before being register. It is only
-    required for key types.
+    required for key types. The user will set the key field of the data,
+    base on the key input. There is a one to one mapping between an input key
+    and an instance.
     The function takes two arguments:
 
-        - A reference to the customer type.
+        - A reference to the customer type data.
         - A specific number unique for every key.
 
 ::
 
-    void register_custom_type(RTI_CUSTOM_TYPE & data, unsigned long key)
+    void register_custom_type_data(RTI_CUSTOM_TYPE & data, unsigned long key)
     {
         data.test_long = key;
     }
 
-- **set_custom_type**:
+- **set_custom_type_data**:
     This function is used to set your data before being sent.
+    It is called everytime that data is sent.
+    It is the responsibility of the user to set the custom type data before been
+    sent with the right "key" value and the "target_data_len".
     The function takes three arguments:
 
-        - A reference to the customer type.
+        - A reference to the customer type data.
         - A specific number unique for every key.
         - The target size set by the command line parameter ``-dataLen <bytes>``
+        minus the overhead of RTI Perftest. If applicable, the user can use this
+        value to set the content of the data.
 
 ::
 
-    bool set_custom_type(
+    bool set_custom_type_data(
             RTI_CUSTOM_TYPE & data,
             unsigned long key,
             int target_data_len)
@@ -708,56 +713,50 @@ initialize the Custom Type structures.
         return success;
     }
 
-- **finalize_data_custom_type**:
+- **finalize_custom_type_data**:
     This function is used to remove your data. It is called in the destructor.
     The function takes one argument:
 
-        - A reference to the customer type.
+        - A reference to the customer type data.
 
 ::
 
-    bool finalize_data_custom_type(RTI_CUSTOM_TYPE & data)
+    bool finalize_custom_type_data(RTI_CUSTOM_TYPE & data)
     {
         return true;
     }
 
-- **initialize_custom_type_dynamic**:
+- **initialize_custom_type_dynamic_data**:
     This function is used to initialize your DynamicData.
+    The user will be able to allocate memory or set an immutable field of the data.
     The function takes one argument:
 
-            - A reference to the full DDS_DynamicData object.
+        - A reference to the full DDS_DynamicData object including custom_type.
 
 ::
 
-    bool initialize_custom_type_dynamic(DDS_DynamicData & data)
+    bool initialize_custom_type_dynamic_data(DDS_DynamicData & data)
     {
-        try {
-            test_seq = new long[SIZE_TEST_SEQ];
-        } catch (std::bad_alloc& ba) {
-            fprintf(stderr, "bad_alloc test_seq  %s failed.\n",  ba.what());
-            return false;
+        bool success = long_seq.maximum(0);
+        if (!success) {
+            fprintf(stderr, "long_seq.maximum failed.\n");
         }
-        bool success = long_seq.from_array(
-                (DDS_Long *) test_seq,
-                SIZE_TEST_SEQ);
-        if (! success) {
-            fprintf(stderr, "from_array(test_seq) failed.\n");
-            return false;
-        }
-        return true;
+        return success;
     }
 
-- **register_custom_type_dynamic**:
-    This function is used to set your DynamicData before been register.It is
+- **register_custom_type_dynamic_data**:
+    This function is used to set your DynamicData before been register. It is
     only required for key types.
+    The user will set the key field of the data, base on the key input.
+    There is a one to one mapping between an input key and an instance.
     The function takes two arguments:
 
-        - A reference to the full DDS_DynamicData object.
+        - A reference to the full DDS_DynamicData object including custom_type.
         - A specific number unique for every key.
 
 ::
 
-    void register_custom_type_dynamic(DDS_DynamicData & data, unsigned long key)
+    void register_custom_type_dynamic_data(DDS_DynamicData & data, unsigned long key)
     {
         // TODO initialize DDS_DynamicData object to be registered
         DDS_ReturnCode_t retcode = data.set_long(
@@ -769,17 +768,21 @@ initialize the Custom Type structures.
         }
     }
 
-- **set_custom_type_dynamic**:
+- **set_custom_type_dynamic_data**:
     This function is used to set your DynamicData before been sent.
+    It is called everytime that data is sent. It is the responsibility of the
+    user to set the custom type data before been sent with the right "key"
+    value and the "target_data_len".
     The function takes three arguments:
 
-        - A reference to the full DDS_DynamicData object.
+        - A reference to the full DDS_DynamicData object including custom_type.
         - A specific number unique for every key.
         - The target size set by the command line parameter ``-dataLen <bytes>``
-
+        minus the overhead of RTI Perftest. If applicable, the user can use this
+        value to set the content of the data.
 ::
 
-    bool set_custom_type_dynamic(
+    bool set_custom_type_dynamic_data(
             DDS_DynamicData & data,
             unsigned long key,
             int target_data_len)
@@ -799,7 +802,7 @@ initialize the Custom Type structures.
             success = false;
         }
 
-        if (sprintf(test_string, "Hello World! %lu", key) < 0) {
+        if (snprintf(test_string, SIZE_TEST_STRING, "Hello World! %lu", key) < 0) {
             success = false;
         }
         retcode = data.set_string(
@@ -864,24 +867,29 @@ initialize the Custom Type structures.
         return success;
     }
 
-- **finalize_data_custom_type_dynamic**:
+- **finalize_custom_type_dynamic_data**:
     This function is used to remove your data. It is called in the destructor.
     The function takes one argument:
 
-            - A reference to the full DDS_DynamicData object.
+        - A reference to the full DDS_DynamicData object including custom_type.
 
 ::
 
-    bool finalize_data_custom_type_dynamic(DDS_DynamicData & data)
+    bool finalize_custom_type_dynamic_data(DDS_DynamicData & data)
     {
-        if (test_seq != NULL) {
-            delete[] test_seq;
-            test_seq = NULL;
+        bool success = long_seq.ensure_length(0, 0);
+        if (!success) {
+            fprintf(stderr, "long_seq.ensure_length failed.\n");
         }
-        return true;
+        DDS_ReturnCode_t retcode = data.clear_all_members();
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "clear_all_members failed: %d.\n", retcode);
+            success = false;
+        }
+        return success;
     }
 
-3. Build *RTI Perftest* with ``--customType <type>``
+3. Build *RTI Perftest* using ``--customType <type>``
 
 ::
 
@@ -899,9 +907,10 @@ initialize the Custom Type structures.
     Waiting for subscribers announcement ...
     Publishing data...
     Setting timeout to 60 seconds
-    Length:   467  Latency: Ave    315 us  Std   89.7 us  Min     38 us  Max    561 us  50%    318 us  90%    384 us  99%    561 us  99.99%    561 us  99.9999%    561 us
+    Length:   463  Latency: Ave    266 us  Std   70.3 us  Min     28 us  Max    777 us  50%    260 us  90%    341 us  99%    465 us  99.99%    777 us  99.9999%    777 us 
     Finishing test due to timer...
     Test ended.
+
 
 ::
 
@@ -911,9 +920,10 @@ initialize the Custom Type structures.
         Kind: Default (UDPv4) / Custom (Taken from QoS profile)
     Waiting to discover 1 publishers ...
     Waiting for data...
-    Length:   467  Packets:   359020  Packets/s(ave):   71806  Mbps(ave):   268.3  Lost: 0
+    Length:   463  Packets:  4990501  Packets/s(ave):   83175  Mbps(ave):   308.1  Lost: 0
     Finishing test...
     Test ended.
+
 
 4. Launching *RTI Perftest* with DynamicData
 
@@ -928,9 +938,11 @@ initialize the Custom Type structures.
     Waiting for subscribers announcement ...
     Publishing data...
     Setting timeout to 60 seconds
-    Length:   516  Latency: Ave    117 us  Std   50.9 us  Min     87 us  Max    268 us  50%    104 us  90%    268 us  99%    268 us  99.99%    268 us  99.9999%    268 us
+    Length:   463  Latency: Ave    107 us  Std   92.6 us  Min     68 us  Max    836 us  50%     93 us  90%    125 us  99%    733 us  99.99%    836 us  99.9999%    836 us
     Finishing test due to timer...
     Test ended.
+
+
 
 ::
 
@@ -941,6 +953,6 @@ initialize the Custom Type structures.
         Kind: Default (UDPv4) / Custom (Taken from QoS profile)
     Waiting to discover 1 publishers ...
     Waiting for data...
-    Length:   516  Packets:    93744  Packets/s(ave):   18750  Mbps(ave):    77.4  Lost: 0
+    Length:   463  Packets:  1137454  Packets/s(ave):   18957  Mbps(ave):    70.2  Lost: 0
     Finishing test...
     Test ended.

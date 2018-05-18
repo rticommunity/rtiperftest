@@ -23,6 +23,8 @@ struct TestData_t {
     long latency_ping;
     sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE
+    // custom_type_size is the serialize size of the field custom_type
+    // in the the sample that we send on the wire
     long custom_type_size;
     RTI_CUSTOM_TYPE custom_type;
   #endif

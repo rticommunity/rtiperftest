@@ -19,6 +19,7 @@ bool initialize_custom_type_data(RTI_CUSTOM_TYPE &data)
 
 void register_custom_type_data(RTI_CUSTOM_TYPE &data, unsigned long key)
 {
+    data.test_long = key;
 }
 
 bool set_custom_type_data(
@@ -30,6 +31,7 @@ bool set_custom_type_data(
     if (!data.test_seq.ensure_length(target_data_len, target_data_len)) {
         success = false;
     }
+    data.test_long = key;
     return success;
 }
 
@@ -50,6 +52,13 @@ bool initialize_custom_type_dynamic_data(DDS_DynamicData &data)
 
 void register_custom_type_dynamic_data(DDS_DynamicData &data, unsigned long key)
 {
+    DDS_ReturnCode_t retcode = data.set_long(
+            "custom_type.test_long",
+            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+            key);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "set_long(test_long) failed: %d.\n", retcode);
+    }
 }
 
 bool set_custom_type_dynamic_data(

@@ -1488,7 +1488,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
                     _peer_host[_peer_host_count++] = argv[i];
                 } else {
-                    System.err.print("The maximun of -initial peers is " + RTIPERFTEST_MAX_PEERS + "\n");
+                    System.err.print("The maximum of -initial peers is " + RTIPERFTEST_MAX_PEERS + "\n");
                     return false;
                 }
             } else if ("-cft".toLowerCase().startsWith(argv[i].toLowerCase())) {

@@ -8,27 +8,15 @@
   #define snprintf sprintf_s
 #endif
 /*
- * It is the source code files that contain the implementation of the requires
- * and optional functions used for the handling of the custom type. These
- * functions will be used only if the parameter "--customType <type>" is aplpied
- * in the build. You can find more information in the point "Using Custom Types"
- * of the section "Use-Cases And Examples" in the documentation.
+ * It is the source code file that contain the implementation of API required
+ * to work with Custom Type.
  */
 
-long * test_seq = NULL;
 DDS_LongSeq long_seq;
 
-/*
-*   This function is used to initialize your data.
-*   @param data: A reference to the customer type.
-*   @return true if the operation was success, otherwise false.
-*/
-bool initialize_custom_type(RTI_CUSTOM_TYPE &data)
+bool initialize_custom_type_data(RTI_CUSTOM_TYPE &data)
 {
     bool success = true;
-    if (!data.test_seq.test_seq.maximum(0)) {
-        success = false;
-    }
     if (!data.test_seq.test_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
         success = false;
     }
@@ -36,25 +24,12 @@ bool initialize_custom_type(RTI_CUSTOM_TYPE &data)
     return success;
 }
 
-/*
-*   This function is used to set your data before being register.
-*   @param data: A reference to the customer type.
-*   @param key: A specific number unique for every key.
-*/
-void register_custom_type(RTI_CUSTOM_TYPE &data, unsigned long key)
+void register_custom_type_data(RTI_CUSTOM_TYPE &data, unsigned long key)
 {
     data.test_long = key;
 }
 
-/*
-*   This function is used to set your data before being sent.
-*   @param data: A reference to the customer type.
-*   @param key: A specific number unique for every key.
-*   @param targe_data_len: The target size set by the command line parameter
-*   ``-dataLen <bytes>``
-*   @return true if the operation was success, otherwise false.
-*/
-bool set_custom_type(
+bool set_custom_type_data(
         RTI_CUSTOM_TYPE &data,
         unsigned long key,
         int target_data_len)
@@ -67,45 +42,25 @@ bool set_custom_type(
     return success;
 }
 
-/*
-*   This function is used to remove your data. It is called in the destructor.
-*   @param data: A reference to the customer type.
-*   @return true if the operation was success, otherwise false.
-*/
-bool finalize_data_custom_type(RTI_CUSTOM_TYPE &data)
+bool finalize_custom_type_data(RTI_CUSTOM_TYPE &data)
 {
-    return true;
+    bool success = true;
+    if (!data.test_seq.test_seq.maximum(0)) {
+        success = false;
+    }
+    return success;
 }
 
-/*
-*   This function is used to initialize your DynamicData.
-*   @param data: A reference to the full DDS_DynamicData object including custom_type.
-*   @return true if the operation was success, otherwise false.
-*/
-bool initialize_custom_type_dynamic(DDS_DynamicData &data)
+bool initialize_custom_type_dynamic_data(DDS_DynamicData &data)
 {
-    try {
-        test_seq = new long[SIZE_TEST_SEQ];
-    } catch (std::bad_alloc& ba) {
-        fprintf(stderr, "bad_alloc test_seq  %s failed.\n",  ba.what());
-        return false;
+    bool success = long_seq.maximum(0);
+    if (!success) {
+        fprintf(stderr, "long_seq.maximum failed.\n");
     }
-    bool success = long_seq.from_array(
-            (DDS_Long *) test_seq,
-            SIZE_TEST_SEQ);
-    if (! success) {
-        fprintf(stderr, "from_array(test_seq) failed.\n");
-        return false;
-    }
-    return true;
+    return success;
 }
 
-/*
-*   This function is used to set your DynamicData before been register.
-*   @param data: A reference to the full DDS_DynamicData object including custom_type.
-*   @param key: A specific number unique for every key.
-*/
-void register_custom_type_dynamic(DDS_DynamicData &data, unsigned long key)
+void register_custom_type_dynamic_data(DDS_DynamicData &data, unsigned long key)
 {
     DDS_ReturnCode_t retcode = data.set_long(
             "custom_type.test_long",
@@ -116,15 +71,7 @@ void register_custom_type_dynamic(DDS_DynamicData &data, unsigned long key)
     }
 }
 
-/*
-*   This function is used to set your DynamicData before been sent.
-*   @param data: A reference to the full DDS_DynamicData object including custom_type.
-*   @param key: A specific number unique for every key.
-*   @param targe_data_len: The target size set by the command line parameter
-*   ``-dataLen <bytes>``
-*   @return true if the operation was success, otherwise false.
-*/
-bool set_custom_type_dynamic(
+bool set_custom_type_dynamic_data(
         DDS_DynamicData &data,
         unsigned long key,
         int target_data_len)
@@ -209,16 +156,17 @@ bool set_custom_type_dynamic(
     return success;
 }
 
-/*
-*   This function is used to remove your data. It is called in the destructor.
-*   @param data: A reference to the full DDS_DynamicData object including custom_type.
-*   @return true if the operation was success, otherwise false.
-*/
-bool finalize_data_custom_type_dynamic(DDS_DynamicData &data)
+
+bool finalize_custom_type_dynamic_data(DDS_DynamicData &data)
 {
-    if (test_seq != NULL) {
-        delete[] test_seq;
-        test_seq = NULL;
+    bool success = long_seq.ensure_length(0, 0);
+    if (!success) {
+        fprintf(stderr, "long_seq.ensure_length failed.\n");
     }
-    return true;
+    DDS_ReturnCode_t retcode = data.clear_all_members();
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "clear_all_members failed: %d.\n", retcode);
+        success = false;
+    }
+    return success;
 }

@@ -19,3 +19,4 @@
 .project
 /srcIdl/customType/*
 /tmp
+.vscode
