@@ -125,7 +125,7 @@ class RTIDDSImpl : public IMessaging
     bool         _IsReliable;
     unsigned int _BatchSize;
     unsigned long _InstanceCount;
-    unsigned long _InstanceMaxCountReader;
+    long _InstanceMaxCountReader;
     int          _InstanceHashBuckets;
     int          _Durability;
     bool         _DirectCommunication;

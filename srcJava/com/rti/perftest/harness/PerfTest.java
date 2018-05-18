@@ -14,7 +14,10 @@ import com.rti.perftest.harness.PerftestTimerTask;
 import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 import com.rti.perftest.gen.MAX_PERFTEST_SAMPLE_SIZE;
+import com.rti.perftest.ddsimpl.PerftestVersion;
 import com.rti.ndds.Utility;
+import com.rti.dds.infrastructure.ProductVersion_t;
+import com.rti.ndds.config.Version;
 
 import java.util.StringTokenizer;
 import java.util.ArrayList;
@@ -66,6 +69,9 @@ public final class PerfTest {
     // Flag used to indicate end of test
     public static final int LENGTH_CHANGED_SIZE = 1236;
 
+    // Value used to compare against to check if the latency_min has
+    // been reset.
+    public static final int LATENCY_RESET_VALUE = Integer.MAX_VALUE;
 
     /*package*/ static int subID = 0;
 
@@ -182,6 +188,8 @@ public final class PerfTest {
     private void run(IMessaging messagingImpl,
                      String[] argv) {
 
+        printVersion();
+
         _messagingImpl = messagingImpl;
 
         if ( !parseConfig(argv) ) {
@@ -209,6 +217,40 @@ public final class PerfTest {
         }
     }
 
+    private ProductVersion_t getDDSVersion() {
+        return Version.get_instance().get_product_version();
+    }
+
+    private ProductVersion_t getPerftestVersion() {
+        return PerftestVersion.getInstance().getProductVersion();
+    }
+
+    private void printVersion() {
+        ProductVersion_t perftestV = getPerftestVersion();
+        ProductVersion_t ddsV = getDDSVersion();
+
+        StringBuffer perftestVString = new StringBuffer(128);
+        perftestVString.append((int)perftestV.major).append(".");
+        perftestVString.append((int)perftestV.minor).append(".");
+        perftestVString.append((int)perftestV.release);
+
+        if( perftestV.revision != 0 ) {
+            perftestVString.append(".").append((int) perftestV.revision);
+        }
+
+        StringBuffer ddsVString = new StringBuffer(128);
+        ddsVString.append((int)ddsV.major).append(".");
+        ddsVString.append((int)ddsV.minor).append(".");
+        ddsVString.append((int)ddsV.release);
+
+
+        System.out.print(
+                "RTI Perftest: "
+                + perftestVString.toString()
+                + " (RTI Connext DDS "
+                + ddsVString.toString()
+                + ")\n");
+    }
 
     private boolean parseConfig(String[] argv) {
 
@@ -767,12 +809,17 @@ public final class PerfTest {
         reader.waitForWriters(_numPublishers);
         announcement_writer.waitForReaders(_numPublishers);
 
+        // Announcement message that will be used by the announcement_writer
+        // to send information to the Publisher. This message size will indicate
+        // different things.
+
+        TestMessage announcement_msg = new TestMessage();
+        announcement_msg.entity_id = subID;
+        announcement_msg.data = new byte[LENGTH_CHANGED_SIZE];
+        announcement_msg.size = INITIALIZE_SIZE;
+
         // Send announcement message
-        TestMessage message = new TestMessage();
-        message.entity_id = subID;
-        message.data = new byte[1];
-        message.size = 0;
-        boolean sent = announcement_writer.send(message, false);
+        boolean sent = announcement_writer.send(announcement_msg, false);
         announcement_writer.flush();
         if (!sent) {
             System.err.println("*** send() failure: announcement message");
@@ -799,16 +846,16 @@ public final class PerfTest {
             now = getTimeUsec();
 
             if (reader_listener.change_size) { // ACK change_size
-                TestMessage message_change_size = new TestMessage();
-                message_change_size.entity_id = subID;
-                announcement_writer.send(message_change_size, false);
+                announcement_msg.entity_id = subID;
+                announcement_msg.size = LENGTH_CHANGED_SIZE;
+                announcement_writer.send(announcement_msg, false);
                 announcement_writer.flush();
                 reader_listener.change_size = false;
             }
             if (reader_listener.end_test) {
-                TestMessage message_end_test = new TestMessage();
-                message_end_test.entity_id = subID;
-                announcement_writer.send(message_end_test, false);
+                announcement_msg.entity_id = subID;
+                announcement_msg.size = FINISHED_SIZE;
+                announcement_writer.send(announcement_msg, false);
                 announcement_writer.flush();
                 break;
             }
@@ -873,7 +920,7 @@ public final class PerfTest {
         AnnouncementListener  announcement_reader_listener = null;
         IMessagingReader announcement_reader;
         int num_latency;
-        int initialize_sample_count = 50;
+        int announcement_sample_count = 50;
 
         // create throughput/ping writer
         writer = _messagingImpl.createWriter(TOPIC_NAME.THROUGHPUT);
@@ -967,7 +1014,8 @@ public final class PerfTest {
         // We have to wait until every Subscriber sends an announcement message
         // indicating that it has discovered every Publisher
         System.err.print("Waiting for subscribers announcement ...\n");
-        while (_numSubscribers > announcement_reader_listener.announced_subscribers) {
+        while (_numSubscribers
+                > announcement_reader_listener.subscriber_list.size()) {
             sleep(1000);
         }
 
@@ -976,14 +1024,11 @@ public final class PerfTest {
         message.entity_id = pubID;
         message.data = new byte[Math.max((int)_dataLen,LENGTH_CHANGED_SIZE)];
 
-        System.err.print("Publishing data...\n");
-
-        // initialize data pathways by sending some initial pings
-        if (initialize_sample_count < _instanceCount) {
-            initialize_sample_count = _instanceCount;
-        }
+        System.err.print("Sending initial pings...\n");
         message.size = INITIALIZE_SIZE;
-        for (int i = 0; i < initialize_sample_count; i++)
+        for (int i = 0;
+                i < Math.max(_instanceCount, announcement_sample_count);
+                i++)
         {
             // Send test initialization message
             if (!writer.send(message, true)) {
@@ -997,6 +1042,8 @@ public final class PerfTest {
             }
         }
         writer.flush();
+
+        System.err.print("Publishing data...\n");
 
         // Set data size, account for other bytes in message
         message.size = (int)_dataLen - OVERHEAD_BYTES;
@@ -1107,11 +1154,9 @@ public final class PerfTest {
 
                         // flush anything that was previously sent
                         writer.flush();
-                        writer.wait_for_acknowledgments(
-                                timeout_wait_for_ack_sec,
-                                timeout_wait_for_ack_nsec);
-                        announcement_reader_listener.announced_subscribers =
-                                _numSubscribers;
+                        writer.waitForAck(
+                            timeout_wait_for_ack_sec,
+                            timeout_wait_for_ack_nsec);
 
                         if (scan_count == _scanDataLenSizes.size()) {
                             break; // End of scan test
@@ -1121,12 +1166,25 @@ public final class PerfTest {
                         // must set latency_ping so that a subscriber sends us
                         // back the LENGTH_CHANGED_SIZE message
                         message.latency_ping = num_pings % _numSubscribers;
-                        int i = 0;
-                        while (announcement_reader_listener.announced_subscribers > 0) {
+
+                        /*
+                         * If the Throughput topic is reliable, we can send the packet and do
+                         * a wait for acknowledgements. However, if the Throughput topic is
+                         * Best Effort, waitForAck() will return inmediately.
+                         * This would cause that the Send() would be exercised too many times,
+                         * in some cases causing the network to be flooded, a lot of packets being
+                         * lost, and potentially CPU starbation for other processes.
+                         * We can prevent this by adding a small sleep() if the test is best
+                         * effort.
+                         */
+
+                        announcement_reader_listener.subscriber_list.clear();
+                        while (announcement_reader_listener.subscriber_list.size()
+                                < _numSubscribers) {
                             writer.send(message, true);
-                            writer.wait_for_acknowledgments(
-                                    timeout_wait_for_ack_sec,
-                                    timeout_wait_for_ack_nsec);
+                            writer.waitForAck(
+                                timeout_wait_for_ack_sec,
+                                timeout_wait_for_ack_nsec);
                         }
 
                         message.size = (int)(_scanDataLenSizes.get(scan_count++) - OVERHEAD_BYTES);
@@ -1197,14 +1255,13 @@ public final class PerfTest {
         // times in case of best effort
         message.size = FINISHED_SIZE;
         int i = 0;
-        announcement_reader_listener.announced_subscribers = _numSubscribers;
-        while (announcement_reader_listener.announced_subscribers > 0
-                && i < initialize_sample_count) {
+        while (announcement_reader_listener.subscriber_list.size() > 0
+                && i < announcement_sample_count) {
             writer.send(message, true);
             i++;
-            writer.wait_for_acknowledgments(
-                    timeout_wait_for_ack_sec,
-                    timeout_wait_for_ack_nsec);
+            writer.waitForAck(
+                timeout_wait_for_ack_sec,
+                timeout_wait_for_ack_nsec);
         }
 
         if (pubID == 0) {

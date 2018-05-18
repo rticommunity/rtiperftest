@@ -53,6 +53,10 @@ function usage()
     echo "    --skip-cpp-build             Avoid C++ code generation and compilation.     "
     echo "    --skip-cpp03-build           Avoid C++ New PSM code generation and          "
     echo "                                 compilation.                                   "
+    echo "    --java-build                 Only Java ByteCode generation creation.        "
+    echo "    --cpp-build                  Only C++ code generation and compilation.      "
+    echo "    --cpp03-build                Only C++ New PSM code generation and           "
+    echo "                                 compilation.                                   "
     echo "    --make <path>                Path to the GNU make executable. If this       "
     echo "                                 parameter is not present, GNU make variable    "
     echo "                                 should be available from your \$PATH variable. "
@@ -413,6 +417,21 @@ while [ "$1" != "" ]; do
             ;;
         --skip-cpp03-build)
             BUILD_CPP03=0
+            ;;
+        --java-build)
+            BUILD_JAVA=1
+            BUILD_CPP=0
+            BUILD_CPP03=0
+            ;;
+        --cpp-build)
+            BUILD_JAVA=0
+            BUILD_CPP=1
+            BUILD_CPP03=0
+            ;;
+        --cpp03-build)
+            BUILD_JAVA=0
+            BUILD_CPP=0
+            BUILD_CPP03=1
             ;;
         --make)
             MAKE_EXE=$2

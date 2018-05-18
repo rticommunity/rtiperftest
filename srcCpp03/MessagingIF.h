@@ -48,7 +48,7 @@ class IMessagingCB
   public:
     bool  end_test;
 
-  public: 
+  public:
     virtual ~IMessagingCB() {}
     virtual void ProcessMessage(TestMessage &message) = 0;
 };
@@ -61,7 +61,7 @@ class IMessagingReader
     // only used for non-callback test
     virtual TestMessage *ReceiveMessage() = 0;
     virtual void ReceiveAndProccess(IMessagingCB *listener) = 0;
-    // only used for non-callback test to cleanup  
+    // only used for non-callback test to cleanup
     // the thread
     virtual void Shutdown() {}
 };
@@ -79,7 +79,7 @@ class IMessagingWriter
         // The implementation may consist of just
         // a binary semaphore TAKE operation
     };
-    virtual void waitForPingResponse(int timeout) {
+    virtual void waitForPingResponse(int /*timeout*/) {
         // Implementation required only if
         // support for LatencyTest is desired.
         // The implementation may consist of just
@@ -94,7 +94,7 @@ class IMessagingWriter
     virtual unsigned int getPulledSampleCount() {
         return -1;
     };
-    virtual void wait_for_acknowledgments(long sec, unsigned long nsec) {
+    virtual void waitForAck(long /*sec*/, unsigned long /*nsec*/) {
     };
 };
 
