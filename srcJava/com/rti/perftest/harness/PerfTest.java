@@ -821,9 +821,9 @@ public final class PerfTest {
         sb.append("\tBatching: ");
         if (_batchSize != 0) {
             sb.append(_batchSize);
-            sb.append(" Bytes\n");
+            sb.append(" Bytes (Use \"-batchSize 0\" to dissable batching)\n");
         } else {
-            sb.append("No\n");
+            sb.append("No (Use \"-batchSize\" to setup batching)\n");
         }
 
         // Listener/WaitSets

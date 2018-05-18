@@ -1324,9 +1324,9 @@ namespace PerformanceTest {
             sb.Append("\tBatching: ");
             if (_BatchSize != 0) {
                 sb.Append(_BatchSize);
-                sb.Append(" Bytes\n");
+                sb.Append(" Bytes (Use \"-batchSize 0\" to dissable batching)\n");
             } else {
-                sb.Append("No\n");
+                sb.Append("No (Use \"-batchSize\" to setup batching)\n");
             }
 
             // Listener/WaitSets

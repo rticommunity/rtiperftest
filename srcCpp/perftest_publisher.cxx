@@ -927,9 +927,9 @@ void perftest_cpp::PrintConfiguration()
     // Batching
     stringStream << "\tBatching: ";
     if (_BatchSize != 0) {
-        stringStream << _BatchSize << " Bytes\n";
+        stringStream << _BatchSize << " Bytes (Use \"-batchSize 0\" to dissable batching)\n";
     } else {
-        stringStream << "No\n";
+        stringStream << "No (Use \"-batchSize\" to setup batching)\n";
     }
 
     // Listener/WaitSets
