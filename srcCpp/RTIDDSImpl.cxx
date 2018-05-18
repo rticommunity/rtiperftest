@@ -1061,15 +1061,20 @@ public:
             //Cannot use data.clear_member("bind_data") because:
             //DDS_DynamicData_clear_member:unsupported for non-sparse types
             data.clear_all_members();
-            retcode = data.set_octet_array(
+
+            DDS_OctetSeq octetSeq;
+            bool succeeded = octetSeq.from_array(
+                    (DDS_Octet *) message.data,
+                    message.size);
+            if (!succeeded) {
+                fprintf(stderr, "from_array() failed.\n");
+            }
+            retcode = data.set_octet_seq(
                     "bin_data",
                     DynamicDataMembersId::GetInstance().at("bin_data"),
-                    message.size,
-                    (DDS_Octet *) message.data);
+                    octetSeq);
             if (retcode != DDS_RETCODE_OK) {
-                fprintf(stderr,
-                    "set_octet_array(bin_data) failed: %d.\n",
-                    retcode);
+                fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
             }
             _last_message_size = message.size;
         }
