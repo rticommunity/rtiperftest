@@ -13,7 +13,10 @@ import com.rti.perftest.harness.PerftestTimerTask;
 import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 import com.rti.perftest.gen.MAX_PERFTEST_SAMPLE_SIZE;
+import com.rti.perftest.ddsimpl.PerftestVersion;
 import com.rti.ndds.Utility;
+import com.rti.dds.infrastructure.ProductVersion_t;
+import com.rti.ndds.config.Version;
 
 import java.util.StringTokenizer;
 import java.util.ArrayList;
@@ -69,6 +72,9 @@ public final class PerfTest {
     // Flag used to indicate end of test
     public static final int LENGTH_CHANGED_SIZE = 1236;
 
+    // Value used to compare against to check if the latency_min has
+    // been reset.
+    public static final int LATENCY_RESET_VALUE = Integer.MAX_VALUE;
 
     /*package*/ static int subID = 0;
 
@@ -186,6 +192,8 @@ public final class PerfTest {
     private void run(IMessaging messagingImpl,
                      String[] argv) {
 
+        printVersion();
+
         _messagingImpl = messagingImpl;
 
         if ( !parseConfig(argv) ) {
@@ -215,6 +223,40 @@ public final class PerfTest {
         }
     }
 
+    private ProductVersion_t getDDSVersion() {
+        return Version.get_instance().get_product_version();
+    }
+
+    private ProductVersion_t getPerftestVersion() {
+        return PerftestVersion.getInstance().getProductVersion();
+    }
+
+    private void printVersion() {
+        ProductVersion_t perftestV = getPerftestVersion();
+        ProductVersion_t ddsV = getDDSVersion();
+
+        StringBuffer perftestVString = new StringBuffer(128);
+        perftestVString.append((int)perftestV.major).append(".");
+        perftestVString.append((int)perftestV.minor).append(".");
+        perftestVString.append((int)perftestV.release);
+
+        if( perftestV.revision != 0 ) {
+            perftestVString.append(".").append((int) perftestV.revision);
+        }
+
+        StringBuffer ddsVString = new StringBuffer(128);
+        ddsVString.append((int)ddsV.major).append(".");
+        ddsVString.append((int)ddsV.minor).append(".");
+        ddsVString.append((int)ddsV.release);
+
+
+        System.out.print(
+                "RTI Perftest: "
+                + perftestVString.toString()
+                + " (RTI Connext DDS "
+                + ddsVString.toString()
+                + ")\n");
+    }
 
     private boolean parseConfig(String[] argv) {
 

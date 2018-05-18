@@ -74,8 +74,25 @@ following command-line parameters:
     --cpp-build
     --cs-build
 
+
+Added RTI Perftest and RTI Connext DDS information at beginning of the test(#54)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting with this release, RTI Perftest will print at the beginning of the test
+its version and the version of RTI Connext DDS used to compile against.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
+
+Incorrect Latency maximum calculation in certain scenarios with low resolution clocks (#58)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, if the clock provided by the system had low resolution, many of the
+*Latency* times calculated by sending and receiving back samples would end up being `0us`.
+*RTI Perftest* would assume in those cases this value was a initialization value and it
+would reset the maximum latency.
+
+This behavior has been fixed.
 
 Improve behavior when using the `-scan` command-line option and Best Effort (#59)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

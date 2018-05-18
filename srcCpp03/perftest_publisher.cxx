@@ -35,6 +35,7 @@ const std::string perftest_cpp::_AnnouncementTopicName = "Announcement";
 const std::string perftest_cpp::_ThroughputTopicName = "Throughput";
 const long timeout_wait_for_ack_sec = 0;
 const unsigned long timeout_wait_for_ack_nsec = 100000000;
+const Perftest_ProductVersion_t perftest_cpp::_version = {2, 3, 2, 0};
 
 /*
  * PERFTEST-108
@@ -89,6 +90,9 @@ int subscriber_main()
  * Run
  */
 int perftest_cpp::Run(int argc, char *argv[]) {
+
+    PrintVersion();
+
     if (!ParseConfig(argc, argv)) {
         return -1;
     }
@@ -127,6 +131,36 @@ int perftest_cpp::Run(int argc, char *argv[]) {
     } else {
         return RunSubscriber();
     }
+}
+
+const rti::core::ProductVersion perftest_cpp::GetDDSVersion()
+{
+    return rti::core::ProductVersion::current();
+}
+
+const Perftest_ProductVersion_t perftest_cpp::GetPerftestVersion()
+{
+    return _version;
+}
+
+void perftest_cpp::PrintVersion()
+{
+    Perftest_ProductVersion_t perftestV = perftest_cpp::GetPerftestVersion();
+    rti::core::ProductVersion ddsV = perftest_cpp::GetDDSVersion();
+
+    printf("RTI Perftest: %d.%d.%d",
+            perftestV.major,
+            perftestV.minor,
+            perftestV.release);
+
+    if (perftestV.revision != 0) {
+        printf(".%d", perftestV.revision);
+    }
+
+    printf(" (RTI Connext DDS %d.%d.%d)\n",
+           ddsV.major_version(),
+           ddsV.minor_version(),
+           ddsV.release_version());
 }
 
 // Set the default values into the array _scanDataLenSizes vector
@@ -1410,7 +1444,7 @@ class LatencyListener : public IMessagingCB
         latency_sum = 0;
         latency_sum_square = 0;
         count = 0;
-        latency_min = 0;
+        latency_min = perftest_cpp::LATENCY_RESET_VALUE;
         latency_max = 0;
         last_data_length = 0;
         clock_skew_count = 0;
@@ -1492,7 +1526,7 @@ class LatencyListener : public IMessagingCB
         {
             latency_sum = 0;
             latency_sum_square = 0;
-            latency_min = 0;
+            latency_min = perftest_cpp::LATENCY_RESET_VALUE;
             latency_max = 0;
             count = 0;
         }
@@ -1523,15 +1557,14 @@ class LatencyListener : public IMessagingCB
             }
         }
 
-        if (latency_min == 0) {
+        if (latency_min == perftest_cpp::LATENCY_RESET_VALUE) {
             latency_min = latency;
             latency_max = latency;
         }
         else {
             if (latency < latency_min) {
                 latency_min = latency;
-            }
-            if (latency > latency_max) {
+            } else if (latency > latency_max) {
                 latency_max = latency;
             }
         }
@@ -1612,7 +1645,7 @@ class LatencyListener : public IMessagingCB
         fflush(stdout);
         latency_sum = 0;
         latency_sum_square = 0;
-        latency_min = 0;
+        latency_min = perftest_cpp::LATENCY_RESET_VALUE;
         latency_max = 0;
         count = 0;
         clock_skew_count = 0;

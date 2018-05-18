@@ -540,6 +540,8 @@ namespace PerformanceTest {
 
         void Run(string[] argv)
         {
+            PrintVersion();
+
             if (!ParseConfig(argv))
             {
                 return;
@@ -1801,7 +1803,7 @@ namespace PerformanceTest {
             private ulong latency_sum = 0;
             private ulong latency_sum_square = 0;
             private ulong count = 0;
-            private uint  latency_min = 0;
+            private uint  latency_min = perftest_cs.LATENCY_RESET_VALUE;
             private uint  latency_max = 0;
             private int   last_data_length = 0;
             public  bool  end_test = false;
@@ -1902,19 +1904,13 @@ namespace PerformanceTest {
                     }
                 }
 
-                if (latency_min == 0)
-                {
+                if (latency_min == perftest_cs.LATENCY_RESET_VALUE) {
                     latency_min = latency;
                     latency_max = latency;
-                }
-                else
-                {
-                    if (latency < latency_min)
-                    {
+                } else {
+                    if (latency < latency_min) {
                         latency_min = latency;
-                    }
-                    if (latency > latency_max)
-                    {
+                    } else if (latency > latency_max) {
                         latency_max = latency;
                     }
                 }
@@ -2009,7 +2005,7 @@ namespace PerformanceTest {
                 Console.Out.Flush();
                 latency_sum = 0;
                 latency_sum_square = 0;
-                latency_min = 0;
+                latency_min = perftest_cs.LATENCY_RESET_VALUE;
                 latency_max = 0;
                 count = 0;
                 clock_skew_count = 0;
@@ -2425,6 +2421,57 @@ namespace PerformanceTest {
             }
         }
 
+
+        public ProductVersion_t GetDDSVersion()
+        {
+            return NDDS.ConfigVersion.get_instance().get_product_version();
+        }
+
+        public Perftest_ProductVersion_t GetPerftestVersion()
+        {
+            return _version;
+        }
+
+        public void PrintVersion()
+        {
+            Perftest_ProductVersion_t perftestV = GetPerftestVersion();
+            ProductVersion_t ddsV = GetDDSVersion();
+
+            Console.Write(
+                    "RTI Perftest: "
+                    + perftestV.major + "."
+                    + perftestV.minor + "."
+                    + perftestV.release);
+            if (perftestV != 0) {
+                Console.Write("." + perftestV.revision);
+            }
+            Console.Write(
+                    " (RTI Connext DDS: "
+                    + ddsV.major + "."
+                    + ddsV.minor + "."
+                    + ddsV.release + ")\n");
+        }
+
+        public struct Perftest_ProductVersion_t
+        {
+            public uint  major;
+            public uint minor;
+            public uint release;
+            public uint revision;
+
+            public Perftest_ProductVersion_t (
+                    uint major,
+                    uint minor,
+                    uint release,
+                    uint revision)
+            {
+                this.major = major;
+                this.minor = minor;
+                this.release = release;
+                this.revision = revision;
+            }
+        }
+
         private ulong  _DataLen = 100;
         private ulong _useUnbounded = 0;
         private int  _BatchSize = 0;
@@ -2465,6 +2512,8 @@ namespace PerformanceTest {
         public const string _AnnouncementTopicName = "Announcement";
         public const int timeout_wait_for_ack_sec = 0;
         public const uint timeout_wait_for_ack_nsec = 10000000;
+        public static readonly Perftest_ProductVersion_t _version =
+                new Perftest_ProductVersion_t(2, 3, 2, 0);
 
 
         /*
@@ -2489,6 +2538,12 @@ namespace PerformanceTest {
         private const int FINISHED_SIZE = 1235;
         // Flag used to indicate end of test
         public const int LENGTH_CHANGED_SIZE = 1236;
+
+        /*
+         * Value used to compare against to check if the latency_min has
+         * been reset.
+         */
+        public const uint LATENCY_RESET_VALUE = uint.MaxValue;
 
         static public ulong getMaxPerftestSampleSizeCS(){
             if (MAX_PERFTEST_SAMPLE_SIZE.VALUE > 2147483591){
