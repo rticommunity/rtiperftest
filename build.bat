@@ -186,24 +186,27 @@ if !BUILD_CPP! == 1 (
 			echo [ERROR]: Cannot find an idl file with the %custom_type% structure for custom type test.
 			exit /b 1
 		)
-	)
-	call copy /Y %custom_type_folder%\* %idl_location%\
-	set "additional_header_files_custom_type=CustomType.h"
-	set "additional_source_files_custom_type=CustomType.cxx"
-	REM # Find all the files in the folder ${custom_type_folder}
-	REM # Run codegen with all those files
-	for %%i in (%custom_type_folder%\*) do (
-		call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -I %idl_location% -replace^
-		-create typefiles -d "%classic_cpp_folder%" %%i
-		if not !ERRORLEVEL! == 0 (
-			echo [ERROR]:Failure generating code for %classic_cpp_lang_string% with the file %%i."
-			exit /b 1
+
+		call copy /Y %custom_type_folder%\* %idl_location%\
+		set "additional_header_files_custom_type=CustomType.h"
+		set "additional_source_files_custom_type=CustomType.cxx"
+		REM # Find all the files in the folder ${custom_type_folder}
+		REM # Run codegen with all those files
+		for %%i in (%custom_type_folder%\*) do (
+			call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -I %idl_location% -replace^
+			-create typefiles -d "%classic_cpp_folder%" %%i
+			if not !ERRORLEVEL! == 0 (
+				echo [ERROR]:Failure generating code for %classic_cpp_lang_string% with the file %%i."
+				exit /b 1
+			)
+			set "additional_header_files_custom_type=%%~niPlugin.h %%~ni.h %%~niSupport.h !additional_header_files_custom_type!"
+			set "additional_source_files_custom_type=%%~niPlugin.cxx %%~ni.cxx %%~niSupport.cxx !additional_source_files_custom_type!"
 		)
-		set "additional_header_files_custom_type=%%~niPlugin.h %%~ni.h %%~niSupport.h !additional_header_files_custom_type!"
-		set "additional_source_files_custom_type=%%~niPlugin.cxx %%~ni.cxx %%~niSupport.cxx !additional_source_files_custom_type!"
+		set "additional_header_files_custom_type=!additional_header_files_custom_type! "
+		set "additional_source_files_custom_type=!additional_source_files_custom_type! "
+		REM # Adding RTI_USE_CUSTOM_TYPE as a macro
+		set "additional_defines_custom_type= -D RTI_CUSTOM_TYPE=%custom_type%"
 	)
-	REM # Adding RTI_USE_CUSTOM_TYPE as a macro
-	set "additional_defines_custom_type= -D RTI_CUSTOM_TYPE=%custom_type%"
 
 	if !USE_SECURE_LIBS! == 1 (
 		set "ADDITIONAL_DEFINES=RTI_SECURE_PERFTEST"
@@ -230,8 +233,8 @@ if !BUILD_CPP! == 1 (
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
-	-additionalHeaderFiles "!additional_header_files_custom_type! MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
-	-additionalSourceFiles "!additional_source_files_custom_type! RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
+	-additionalHeaderFiles "!additional_header_files_custom_type!MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
+	-additionalSourceFiles "!additional_source_files_custom_type!RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
 	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
