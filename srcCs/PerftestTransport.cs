@@ -665,12 +665,12 @@ namespace PerformanceTest
                     propertyName = transportConfig.prefixString + ".logging_verbosity_bitmap";
                 }
                 else if (transportConfig.kind == Transport.TRANSPORT_UDPv4
-                      || transportConfig.kind == Transport.TRANSPORT_UDPv6
-                      || transportConfig.kind == Transport.TRANSPORT_SHMEM
-                      || transportConfig.kind == Transport.TRANSPORT_UDPv4_SHMEM
-                      || transportConfig.kind == Transport.TRANSPORT_UDPv6_SHMEM
-                      || transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6
-                      || transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6_SHMEM)
+                        || transportConfig.kind == Transport.TRANSPORT_UDPv6
+                        || transportConfig.kind == Transport.TRANSPORT_SHMEM
+                        || transportConfig.kind == Transport.TRANSPORT_UDPv4_SHMEM
+                        || transportConfig.kind == Transport.TRANSPORT_UDPv6_SHMEM
+                        || transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6
+                        || transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6_SHMEM)
                 {
                     // We do not change logging for the builtin transports.
                     return;
@@ -921,48 +921,48 @@ namespace PerformanceTest
                         break;
                     case (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv6:
                         transportConfig = new TransportConfig(
-                            Transport.TRANSPORT_UDPv6,
-                            "UDPv6",
-                            "dds.transport.UDPv6.builtin");
+                                Transport.TRANSPORT_UDPv6,
+                                "UDPv6",
+                                "dds.transport.UDPv6.builtin");
                         break;
                     case (int)TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM:
                         transportConfig = new TransportConfig(
-                            Transport.TRANSPORT_SHMEM,
-                            "SHMEM",
-                            "dds.transport.shmem.builtin");
+                                Transport.TRANSPORT_SHMEM,
+                                "SHMEM",
+                                "dds.transport.shmem.builtin");
                         break;
                     case (int)TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM | (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv4:
                         transportConfig = new TransportConfig(
-                            Transport.TRANSPORT_UDPv4_SHMEM,
-                            "UDPv4 & SHMEM",
-                            "dds.transport.UDPv4.builtin");
+                                Transport.TRANSPORT_UDPv4_SHMEM,
+                                "UDPv4 & SHMEM",
+                                "dds.transport.UDPv4.builtin");
                         break;
                     case (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv6 | (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv4:
                         transportConfig = new TransportConfig(
-                            Transport.TRANSPORT_UDPv4_UDPv6,
-                            "UDPv4 & UDPv6",
-                            "dds.transport.UDPv4.builtin");
+                                Transport.TRANSPORT_UDPv4_UDPv6,
+                                "UDPv4 & UDPv6",
+                                "dds.transport.UDPv4.builtin");
                         break;
                     case (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv6 | (int)TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM:
                         transportConfig = new TransportConfig(
-                            Transport.TRANSPORT_UDPv6_SHMEM,
-                            "UDPv6 & SHMEM",
-                            "dds.transport.UDPv6.builtin");
+                                Transport.TRANSPORT_UDPv6_SHMEM,
+                                "UDPv6 & SHMEM",
+                                "dds.transport.UDPv6.builtin");
                         break;
                     case (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv4
-                       | (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv6
-                       | (int)TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM:
+                            | (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv6
+                            | (int)TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM:
                         transportConfig = new TransportConfig(
-                            Transport.TRANSPORT_UDPv4_UDPv6_SHMEM,
-                            "UDPv4 & UDPv6 & SHMEM",
-                            "dds.transport.UDPv4.builtin");
+                                Transport.TRANSPORT_UDPv4_UDPv6_SHMEM,
+                                "UDPv4 & UDPv6 & SHMEM",
+                                "dds.transport.UDPv4.builtin");
                         break;
                     default:
                         /*
-                        * This would mean that the mask is either empty or a
-                        * different value that we do not support yet. So we keep
-                        * The value as "TRANSPORT_NOT_SET"
-                        */
+                         * This would mean that the mask is either empty or a
+                         * different value that we do not support yet. So we keep
+                         * the value as "TRANSPORT_NOT_SET"
+                         */
                         break;
                 }
                 transportConfig.takenFromQoS = true;

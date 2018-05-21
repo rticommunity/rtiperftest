@@ -502,7 +502,7 @@ bool configureTransport(
                 /*
                  * This would mean that the mask is either empty or a
                  * different value that we do not support yet. So we keep
-                 * The value as "TRANSPORT_NOT_SET"
+                 * the value as "TRANSPORT_NOT_SET"
                  */
                 break;
         }

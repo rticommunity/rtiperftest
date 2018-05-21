@@ -318,7 +318,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         // set initial peers and not use multicast
-        if ( _peer_host_count > 0 ) {
+        if (_peer_host_count > 0) {
             qos.discovery.initial_peers.clear();
             qos.discovery.initial_peers.setMaximum(_peer_host_count);
             for (int i = 0; i < _peer_host_count; ++i) {
@@ -1107,11 +1107,11 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
 
         // set initial peers and not use multicast
-        if ( _peer_host_count > 0 ) {
+        if (_peer_host_count > 0) {
             sb.append("Initial peers: ");
             for ( int i = 0; i < _peer_host_count; ++i) {
                 sb.append(_peer_host[i]);
-                if (i == _peer_host_count -1) {
+                if (i == _peer_host_count - 1) {
                     sb.append("\n");
                 } else {
                     sb.append(", ");

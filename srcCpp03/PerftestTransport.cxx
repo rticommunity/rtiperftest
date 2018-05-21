@@ -336,6 +336,13 @@ bool configureTransport(
                 "dds.transport.UDPv4.builtin");
         }
 
+        /*
+         * If we do not enter in any of these if statements, it
+         * would mean that the mask is either empty or a
+         * different value that we do not support yet. So we keep
+         * the value as "TRANSPORT_NOT_SET"
+         */
+
         transport.transportConfig.takenFromQoS = true;
     }
 

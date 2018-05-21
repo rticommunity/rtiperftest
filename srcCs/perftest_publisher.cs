@@ -1324,7 +1324,7 @@ namespace PerformanceTest {
             sb.Append("\tBatching: ");
             if (_BatchSize != 0) {
                 sb.Append(_BatchSize);
-                sb.Append(" Bytes (Use \"-batchSize 0\" to dissable batching)\n");
+                sb.Append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
             } else {
                 sb.Append("No (Use \"-batchSize\" to setup batching)\n");
             }
@@ -1337,8 +1337,8 @@ namespace PerformanceTest {
                 sb.Append("Listeners\n");
             }
 
+            // Publication Rate
             if (_IsPub) {
-                // Publication Rate
                 sb.Append("\tPublication Rate: ");
                 if (_pubRate > 0) {
                     sb.Append(_pubRate);

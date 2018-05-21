@@ -538,7 +538,7 @@ public class PerftestTransport {
             }
 
             if (transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6_SHMEM
-                || transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6) {
+                    || transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6) {
 
                 String propertyName =
                         "dds.transport.UDPv4.builtin.parent.allow_interfaces";
@@ -553,10 +553,10 @@ public class PerftestTransport {
                         "dds.transport.UDPv6.builtin.parent.allow_interfaces";
 
                 PropertyQosPolicyHelper.add_property(
-                    qos.property,
-                    propertyName,
-                    allowInterfaces,
-                    false);
+                        qos.property,
+                        propertyName,
+                        allowInterfaces,
+                        false);
 
             } else {
 
@@ -834,46 +834,46 @@ public class PerftestTransport {
                     break;
                 case TransportBuiltinKind.UDPv6:
                     transportConfig = new TransportConfig(
-                        Transport.TRANSPORT_UDPv6,
-                        "UDPv6",
-                        "dds.transport.UDPv6.builtin");
+                            Transport.TRANSPORT_UDPv6,
+                            "UDPv6",
+                            "dds.transport.UDPv6.builtin");
                     break;
                 case TransportBuiltinKind.SHMEM:
                     transportConfig = new TransportConfig(
-                        Transport.TRANSPORT_SHMEM,
-                        "SHMEM",
-                        "dds.transport.shmem.builtin");
+                            Transport.TRANSPORT_SHMEM,
+                            "SHMEM",
+                            "dds.transport.shmem.builtin");
                     break;
                 case TransportBuiltinKind.SHMEM|TransportBuiltinKind.UDPv4:
                     transportConfig = new TransportConfig(
-                        Transport.TRANSPORT_UDPv4_SHMEM,
-                        "UDPv4 & SHMEM",
-                        "dds.transport.UDPv4.builtin");
+                            Transport.TRANSPORT_UDPv4_SHMEM,
+                            "UDPv4 & SHMEM",
+                            "dds.transport.UDPv4.builtin");
                     break;
                 case TransportBuiltinKind.UDPv6|TransportBuiltinKind.UDPv4:
                     transportConfig = new TransportConfig(
-                        Transport.TRANSPORT_UDPv4_UDPv6,
-                        "UDPv4 & UDPv6",
-                        "dds.transport.UDPv4.builtin");
+                            Transport.TRANSPORT_UDPv4_UDPv6,
+                            "UDPv4 & UDPv6",
+                            "dds.transport.UDPv4.builtin");
                     break;
                 case TransportBuiltinKind.UDPv6|TransportBuiltinKind.SHMEM:
                     transportConfig = new TransportConfig(
-                        Transport.TRANSPORT_UDPv6_SHMEM,
-                        "UDPv6 & SHMEM",
-                        "dds.transport.UDPv6.builtin");
+                            Transport.TRANSPORT_UDPv6_SHMEM,
+                            "UDPv6 & SHMEM",
+                            "dds.transport.UDPv6.builtin");
                     break;
                 case TransportBuiltinKind.UDPv4|TransportBuiltinKind.UDPv6|TransportBuiltinKind.SHMEM:
                     transportConfig = new TransportConfig(
-                        Transport.TRANSPORT_UDPv4_UDPv6_SHMEM,
-                        "UDPv4 & UDPv6 & SHMEM",
-                        "dds.transport.UDPv4.builtin");
+                            Transport.TRANSPORT_UDPv4_UDPv6_SHMEM,
+                            "UDPv4 & UDPv6 & SHMEM",
+                            "dds.transport.UDPv4.builtin");
                     break;
                 default:
                     /*
-                    * This would mean that the mask is either empty or a
-                    * different value that we do not support yet. So we keep
-                    * The value as "TRANSPORT_NOT_SET"
-                    */
+                     * This would mean that the mask is either empty or a
+                     * different value that we do not support yet. So we keep
+                     * the value as "TRANSPORT_NOT_SET"
+                     */
                     break;
             }
             transportConfig.takenFromQoS = true;

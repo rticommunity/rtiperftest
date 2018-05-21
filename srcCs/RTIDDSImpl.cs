@@ -843,7 +843,7 @@ namespace PerformanceTest
                  */
                 if (_BatchSize > 0 && _BatchSize <= (int)_DataLen)
                 {
-                    Console.Error.WriteLine("Batching dissabled: BatchSize (" + _BatchSize
+                    Console.Error.WriteLine("Batching disabled: BatchSize (" + _BatchSize
                             + ") is equal or smaller than the sample size (" + _DataLen
                             + ").");
                     _BatchSize = 0;
@@ -1436,7 +1436,7 @@ namespace PerformanceTest
             }
 
             // set initial peers and not use multicast
-            if ( _peer_host_count > 0 ) {
+            if (_peer_host_count > 0) {
                 qos.discovery.initial_peers.ensure_length(_peer_host_count, _peer_host_count);
                 qos.discovery.initial_peers.from_array(_peer_host);
                 qos.discovery.multicast_receive_addresses = new DDS.StringSeq();

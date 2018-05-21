@@ -788,11 +788,11 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
 
     // set initial peers and not use multicast
-    if ( _peer_host_count > 0 ) {
+    if (_peer_host_count > 0) {
         stringStream << "\tInitial peers: ";
         for (int i = 0; i < _peer_host_count; ++i) {
             stringStream << _peer_host[i];
-            if (i == _peer_host_count -1) {
+            if (i == _peer_host_count - 1) {
                 stringStream << "\n";
             } else {
                 stringStream << ", ";
@@ -2212,7 +2212,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
   #endif
 
     // set initial peers and not use multicast
-    if ( _peer_host_count > 0 ) {
+    if (_peer_host_count > 0) {
         qos.discovery.initial_peers.from_array(
             (const char **)_peer_host,
             _peer_host_count);

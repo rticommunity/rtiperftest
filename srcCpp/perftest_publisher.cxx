@@ -927,7 +927,7 @@ void perftest_cpp::PrintConfiguration()
     // Batching
     stringStream << "\tBatching: ";
     if (_BatchSize != 0) {
-        stringStream << _BatchSize << " Bytes (Use \"-batchSize 0\" to dissable batching)\n";
+        stringStream << _BatchSize << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
     } else {
         stringStream << "No (Use \"-batchSize\" to setup batching)\n";
     }
@@ -940,8 +940,8 @@ void perftest_cpp::PrintConfiguration()
         stringStream << "Listeners\n";
     }
 
+    // Publication Rate
     if (_IsPub) {
-        // Publication Rate
         stringStream << "\tPublication Rate: ";
         if (_pubRate > 0) {
             stringStream << _pubRate << " Samples/s (";
