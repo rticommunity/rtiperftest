@@ -106,15 +106,26 @@ class IMessaging
 
     virtual void Shutdown() = 0;
 
-    // if the implementation supports batching and the test scenario is
-    // using batching, this function should return the size of the batch
-    // in bytes
+    /*
+     * If the implementation supports batching and the test scenario is
+     * using batching, this function should return the size of the batch
+     * in bytes.
+     */
     virtual unsigned int GetBatchSize() = 0;
+
+    /*
+     * If the middleware that implements IMessaging implements also reliability
+     * and it uses a Send Queue to keep the un-acknowledged samples, this
+     * function should be implemented and return the Max Size of that Queue.
+     */
+    virtual int GetSendQueueSizeMax() = 0;
 
     virtual IMessagingWriter *CreateWriter(const char *topic_name) = 0;
 
-    // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
-    // to get data
+    /*
+     * Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
+     * to get data
+     */
     virtual IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback) = 0;
 };
 

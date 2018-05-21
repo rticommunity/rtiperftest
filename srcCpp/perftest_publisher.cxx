@@ -1769,9 +1769,6 @@ int perftest_cpp::Publisher()
     message.entity_id = _PubID;
     message.data = new char[(std::max)((int)_DataLen, (int)LENGTH_CHANGED_SIZE)];
 
-    fprintf(stderr,"Sending initial pings...\n");
-    fflush(stderr);
-
     if ( perftest_cpp::_showCpu && _PubID == 0) {
         reader_listener->cpu.initialize();
     }
@@ -1783,9 +1780,50 @@ int perftest_cpp::Publisher()
 
     message.size = INITIALIZE_SIZE;
 
-    for (unsigned long i = 0;
-            i < (std::max)(_InstanceCount, announcementSampleCount);
-            i++) {
+    /*
+     * The purpose of this initial burst of Data is to make sure that all the
+     * queues are initialized already by the time the test starts taking
+     * measures. This means that we should handle the worst case scenario
+     * where we send super fast, so we don't need to grow.
+     *
+     * 1 - At minimum, we need to send the number of Instances that we have.
+     *   To initialize all the queues and also for the use of CFTs.
+     *
+     * 2 - We are not going to send more samples than the max_send_window_size if
+     *   reliability is enabled. Therefore, we want to send at least a burst of
+     *   max_send_window_size.
+     *
+     * 3 - If we are using batching, the maximum we can send is
+     *   max_send_window_size batches. Therefore we should send that number of
+     *   batches: max_send_window_size * (batchSize/datalen) samples.
+     *
+     * 4 - In any case we want to at least send announcementSampleCount samples.
+     */
+
+    // This handles 1 (num. of instances) and 4 (announcementSampleCount).
+    unsigned long initializeSampleCount = (std::max)(
+            _InstanceCount,
+            announcementSampleCount);
+
+    // This handles 2 (send_queue_size).
+    initializeSampleCount = (std::max)(
+            (unsigned long) _MessagingImpl->GetSendQueueSizeMax(),
+            initializeSampleCount);
+
+    // This handles 3 (num. samples per batch).
+    if (_BatchSize > 0) {
+        initializeSampleCount = (std::max)(
+                (unsigned long) _MessagingImpl->GetSendQueueSizeMax()
+                        * (_BatchSize/_DataLen),
+                initializeSampleCount);
+    }
+
+    fprintf(stderr,
+            "Sending %lu initialization pings...\n",
+            initializeSampleCount);
+    fflush(stderr);
+
+    for (unsigned long i = 0; i < initializeSampleCount; i++) {
         // Send test initialization message
         writer->Send(message, true);
     }
