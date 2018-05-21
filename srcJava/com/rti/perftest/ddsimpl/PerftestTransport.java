@@ -140,7 +140,8 @@ public class PerftestTransport {
         cmdLineArgsMap.put("-transportWanServerPort", new Integer(1));
         cmdLineArgsMap.put("-transportWanId", new Integer(1));
         cmdLineArgsMap.put("-transportSecureWan", new Integer(0));
-        cmdLineArgsMap.put("-multicast", new Integer(1));
+        cmdLineArgsMap.put("-multicast", new Integer(0));
+        cmdLineArgsMap.put("-multicastAddr", new Integer(1));
         cmdLineArgsMap.put("-nomulticast", new Integer(0));
 
         return cmdLineArgsMap;
@@ -165,9 +166,10 @@ public class PerftestTransport {
     sb.append("\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n");
     sb.append("\t                                If not specified, use all available\n");
     sb.append("\t                                interfaces\n");
-    sb.append("\t-multicast <address>          - Use multicast to send data.\n");
-    sb.append("\t                                Default not to use multicast\n");
-    sb.append("\t                                <address> is optional, if unspecified:\n");
+    sb.append("\t-multicastAddr <address>      - Use multicast to send data and set\n");
+    sb.append("\t                                multicast <address>\n");
+    sb.append("\t-multicast                    - Use multicast to send data with.\n");
+    sb.append("\t                                default addresses values:\n");
     for (Map.Entry<String, String> map : multicastAddrMap.entrySet()) {
         sb.append("\t                                                ");
         sb.append(map.getKey()).append(" ").append(map.getValue()).append("\n");
@@ -442,12 +444,16 @@ public class PerftestTransport {
                 useMulticast = false;
             } else if ("-multicast".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 useMulticast = true;
-                if ((i != (argc - 1)) && !argv[1+i].startsWith("-")) {
-                    i++;
-                    multicastAddrMap.replace(TOPIC_NAME.THROUGHPUT, argv[i]);
-                    multicastAddrMap.replace(TOPIC_NAME.LATENCY, argv[i]);
-                    multicastAddrMap.replace(TOPIC_NAME.ANNOUNCEMENT, argv[i]);
+            }
+            else if ("-multicastAddr".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                useMulticast = true;
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.println(classLoggingString + " Missing <address> after -multicastAddr");
+                    return false;
                 }
+                multicastAddrMap.replace(TOPIC_NAME.THROUGHPUT, argv[i]);
+                multicastAddrMap.replace(TOPIC_NAME.LATENCY, argv[i]);
+                multicastAddrMap.replace(TOPIC_NAME.ANNOUNCEMENT, argv[i]);
             }
         }
 

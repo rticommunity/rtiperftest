@@ -12,7 +12,6 @@
 #define ANNOUNCEMENT_TOPIC_NAME "Announcement"
 #define THROUGHPUT_TOPIC_NAME "Throughput"
 
-
 #ifndef __MESSAGINGIF_H__
 #define __MESSAGINGIF_H__
 

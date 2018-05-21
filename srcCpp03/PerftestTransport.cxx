@@ -493,7 +493,8 @@ std::map<std::string, unsigned int> PerftestTransport::getTransportCmdLineArgs()
     cmdLineArgsMap["-transportWanServerPort"] = 1;
     cmdLineArgsMap["-transportWanId"] = 1;
     cmdLineArgsMap["-transportSecureWan"] = 0;
-    cmdLineArgsMap["-multicast"] = 1;
+    cmdLineArgsMap["-multicast"] = 0;
+    cmdLineArgsMap["-multicastAddr"] = 1;
     cmdLineArgsMap["-nomulticast"] = 0;
 
 
@@ -812,16 +813,23 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
 
             wanOptions.secureWan = true;
         } else if (IS_OPTION(argv[i], "-multicast")) {
+
             useMulticast = true;
-            if ((i != (argc-1)) && *argv[i+1] != '-') {
-                i++;
-                multicastAddrMap.find(THROUGHPUT_TOPIC_NAME)->second = 
-                        std::string(argv[i]);
-                multicastAddrMap.find(LATENCY_TOPIC_NAME)->second =
-                        std::string(argv[i]);
-                multicastAddrMap.find(ANNOUNCEMENT_TOPIC_NAME)->second =
-                        std::string(argv[i]);
+        } else if (IS_OPTION(argv[i], "-multicastAddr")) {
+            useMulticast = true;
+            if ((i == (argc - 1)) || *argv[++i] == '-') {
+                fprintf(stderr,
+                        "%s Missing <address> after "
+                        "-multicastAddr\n",
+                        classLoggingString.c_str());
+                return false;
             }
+            multicastAddrMap.find(THROUGHPUT_TOPIC_NAME)->second = 
+                    std::string(argv[i]);
+            multicastAddrMap.find(LATENCY_TOPIC_NAME)->second =
+                    std::string(argv[i]);
+            multicastAddrMap.find(ANNOUNCEMENT_TOPIC_NAME)->second =
+                    std::string(argv[i]);
         } else if (IS_OPTION(argv[i], "-nomulticast")) {
             useMulticast = false;
         }

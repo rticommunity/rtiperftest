@@ -2538,7 +2538,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     if (_transport.allowsMulticast()) {
         dr_qos.multicast.value.ensure_length(1, 1);
         dr_qos.multicast.value[0].receive_address = DDS_String_dup(
-                _transport.getMulticastAddr(topic_name));
+                _transport.getMulticastAddr(topic_name).c_str());
+
         if (dr_qos.multicast.value[0].receive_address == NULL) {
             fprintf(stderr,
                     "topic name must either be %s or %s or %s.\n",

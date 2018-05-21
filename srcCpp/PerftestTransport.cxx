@@ -645,8 +645,9 @@ std::map<std::string, unsigned int> PerftestTransport::getTransportCmdLineArgs()
     cmdLineArgsMap["-transportWanServerPort"] = 1;
     cmdLineArgsMap["-transportWanId"] = 1;
     cmdLineArgsMap["-transportSecureWan"] = 0;
-    cmdLineArgsMap["-multicast"] = 1;
+    cmdLineArgsMap["-multicast"] = 0;
     cmdLineArgsMap["-nomulticast"] = 0;
+    cmdLineArgsMap["-multicastAddr"] = 1;
 
     return cmdLineArgsMap;
 }
@@ -672,10 +673,11 @@ std::string PerftestTransport::helpMessageString()
 << "\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n"
 << "\t                                If not specified, use all available\n"
 << "\t                                interfaces\n"
-<< "\t-multicast <address>          - Use multicast to send data.\n"
-<< "\t                                Default not to use multicast\n"
-<< "\t                                <address> is optional, if unspecified:\n";
-for (std::map<std::string,std::string>::iterator it=multicastAddrMap.begin(); 
+<< "\t-multicastAddr <address>      - Use multicast to send data and set\n"
+<< "\t                                multicast <address>\n"
+<< "\t-multicast <address>          - Use multicast to send data with default\n"
+<< "\t                                addresses values:\n";
+for (std::map<std::string,std::string>::iterator it = multicastAddrMap.begin();
     it!=multicastAddrMap.end(); ++it) {
         oss << "\t                                                "
         << it->first << " " << it->second << "\n";
@@ -728,7 +730,8 @@ void PerftestTransport::printTransportConfigurationSummary()
         stringStream << "\tNic: " << allowInterfaces << "\n";
     }
 
-    stringStream << "\tUse Multicast: " << ((allowsMulticast()) ? "True" : "False");
+    stringStream << "\tUse Multicast: "
+                 << ((allowsMulticast()) ? "True" : "False");
     if (!allowsMulticast() && useMulticast) {
         stringStream << "  (Multicast is not supported for "
                      << transportConfig.nameString << ")";
@@ -962,14 +965,27 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-transportSecureWan")) {
 
             wanOptions.secureWan = true;
+
         } else if (IS_OPTION(argv[i], "-multicast")) {
+
             useMulticast = true;
-            if ((i != (argc-1)) && *argv[i+1] != '-') {
-                i++;
-                multicastAddrMap.find(perftest_cpp::GetThroughputTopicName().c_str())->second = argv[i];
-                multicastAddrMap.find(perftest_cpp::GetLatencyTopicName().c_str())->second = argv[i];
-                multicastAddrMap.find(perftest_cpp::GetAnnouncementTopicName().c_str())->second = argv[i];
+
+        } else if (IS_OPTION(argv[i], "-multicastAddr")) {
+            useMulticast = true;
+            if ((i == (argc - 1)) || *argv[++i] == '-') {
+                fprintf(stderr,
+                        "%s Missing <address> after "
+                        "-multicastAddr\n",
+                        classLoggingString.c_str());
+                return false;
             }
+            multicastAddrMap[perftest_cpp::GetThroughputTopicName().c_str()] =
+                    argv[i];
+            multicastAddrMap[perftest_cpp::GetLatencyTopicName().c_str()] =
+                    argv[i];
+            multicastAddrMap[perftest_cpp::GetAnnouncementTopicName().c_str()] =
+                    argv[i];
+
         } else if (IS_OPTION(argv[i], "-nomulticast")) {
             useMulticast = false;
         }
@@ -992,8 +1008,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
     return true;
 }
 
-bool PerftestTransport::allowsMulticast()
-{
+bool PerftestTransport::allowsMulticast() {
     return (transportConfig.kind != TRANSPORT_TCPv4
             && transportConfig.kind != TRANSPORT_TLSv4
             && transportConfig.kind != TRANSPORT_WANv4
@@ -1001,15 +1016,14 @@ bool PerftestTransport::allowsMulticast()
             && useMulticast);
 }
 
-const char * PerftestTransport::getMulticastAddr(const char * topicName)
-{
+const std::string PerftestTransport::getMulticastAddr(const char *topicName) {
     std::string ret = multicastAddrMap[std::string(topicName)];
 
     if (ret.length() == 0) {
         return NULL;
     }
 
-    return ret.c_str();
+    return ret;
 
 }
 

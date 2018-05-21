@@ -10,7 +10,6 @@
 #include <map>
 #include <sstream>
 #include "ndds/ndds_cpp.h"
-#include "MessagingIF.h"
 
 /******************************************************************************/
 
@@ -118,7 +117,7 @@ public:
 
     bool allowsMulticast();
 
-    const char * getMulticastAddr(const char * topic);
+    const std::string getMulticastAddr(const char * topic);
 
 private:
 

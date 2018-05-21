@@ -204,7 +204,8 @@ namespace PerformanceTest
             cmdLineArgsMap.Add("-transportWanServerPort", 1);
             cmdLineArgsMap.Add("-transportWanId", 1);
             cmdLineArgsMap.Add("-transportSecureWan", 0);
-            cmdLineArgsMap.Add("-multicast", 1);
+            cmdLineArgsMap.Add("-multicast", 0);
+            cmdLineArgsMap.Add("-multicastAddr", 1);
             cmdLineArgsMap.Add("-nomulticast", 0);
 
             return cmdLineArgsMap;
@@ -533,16 +534,22 @@ namespace PerformanceTest
                 {
                     wanOptions.secureWan = true;
                 }
+                else if ("-multicastAddr".StartsWith(argv[i], true, null))
+                {
+                    useMulticast = true;
+                    if ((i == (argv.Length - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write(classLoggingString
+                                + " Missing <address> after -multicastAddr");
+                        return false;
+                    }
+                    multicastAddrMap[TopicName.THROUGHPUT] = argv[i];
+                    multicastAddrMap[TopicName.LATENCY] = argv[i];
+                    multicastAddrMap[TopicName.ANNOUNCEMENT] = argv[i];
+                }
                 else if ("-multicast".StartsWith(argv[i], true, null))
                 {
                     useMulticast = true;
-                    if ((i != (argv.Length - 1)) && !argv[1+i].StartsWith("-"))
-                    {
-                        i++;
-                        multicastAddrMap[TopicName.THROUGHPUT] = argv[i];
-                        multicastAddrMap[TopicName.LATENCY] = argv[i];
-                        multicastAddrMap[TopicName.ANNOUNCEMENT] = argv[i];
-                    }
                 }
                 else if ("-nomulticast".StartsWith(argv[i], true, null))
                 {
