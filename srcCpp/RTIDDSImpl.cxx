@@ -447,25 +447,24 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _WaitsetDelayUsec = (unsigned int) strtol (argv[i], NULL, 10);
         }
         else if (IS_OPTION(argv[i], "-waitsetEventCount")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') 
+            if ((i == (argc-1)) || *argv[++i] == '-')
             {
                 fprintf(stderr, "Missing <count> after -waitsetEventCount\n");
                 return false;
             }
             _WaitsetEventCount = strtol (argv[i], NULL, 10);
-            if (_WaitsetEventCount < 0) 
+            if (_WaitsetEventCount < 0)
             {
                 fprintf(stderr, "waitset event count cannot be negative\n");
                 return false;
             }
-        } 
+        }
         else if (IS_OPTION(argv[i], "-latencyTest"))
         {
             _LatencyTest = true;
         }
         else if (IS_OPTION(argv[i], "-enableAutoThrottle"))
         {
-            fprintf(stderr, "Auto Throttling enabled. Automatically adjusting the DataWriter\'s writing rate\n");
             _AutoThrottle = true;
         }
         else if (IS_OPTION(argv[i], "-enableTurboMode") )

@@ -1429,7 +1429,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     return false;
                 }
             } else if ("-enableAutoThrottle".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                System.err.print("Auto Throttling enabled. Automatically adjusting the DataWriter\'s writing rate\n");
                 _AutoThrottle = true;
             } else if ("-enableTurboMode".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _TurboMode = true;

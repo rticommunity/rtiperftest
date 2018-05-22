@@ -589,7 +589,6 @@ namespace PerformanceTest
                 }
                 else if ("-enableAutoThrottle".StartsWith(argv[i], true, null))
                 {
-                    Console.Error.Write("Auto Throttling enabled. Automatically adjusting the DataWriter\'s writing rate\n");
                     _AutoThrottle = true;
                 }
                 else if ("-enableTurboMode".StartsWith(argv[i], true, null))

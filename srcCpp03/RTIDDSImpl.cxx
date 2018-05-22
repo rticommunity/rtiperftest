@@ -491,8 +491,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-latencyTest")) {
             _LatencyTest = true;
         } else if (IS_OPTION(argv[i], "-enableAutoThrottle")) {
-            std::cerr << "[Info] Auto Throttling enabled. Automatically "
-                    "adjusting the DataWriter\'s writing rate" << std::endl;
             _AutoThrottle = true;
         } else if (IS_OPTION(argv[i], "-enableTurboMode")) {
             _TurboMode = true;
