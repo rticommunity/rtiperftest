@@ -1478,9 +1478,6 @@ void RTIDDSImpl<T>::configureSecurePlugin(
 
         _secureGovernanceFile += ".xml";
 
-        std::cout << "[Info] Secure: using pre-built governance file: "
-                  << _secureGovernanceFile
-                  << std::endl;
         dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
                 _secureGovernanceFile;
     } else {
