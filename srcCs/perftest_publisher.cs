@@ -540,6 +540,8 @@ namespace PerformanceTest {
 
         void Run(string[] argv)
         {
+            PrintVersion();
+
             if (!ParseConfig(argv))
             {
                 return;
@@ -2317,6 +2319,57 @@ namespace PerformanceTest {
             }
         }
 
+
+        public ProductVersion_t GetDDSVersion()
+        {
+            return NDDS.ConfigVersion.get_instance().get_product_version();
+        }
+
+        public Perftest_ProductVersion_t GetPerftestVersion()
+        {
+            return _version;
+        }
+
+        public void PrintVersion()
+        {
+            Perftest_ProductVersion_t perftestV = GetPerftestVersion();
+            ProductVersion_t ddsV = GetDDSVersion();
+
+            Console.Write(
+                    "RTI Perftest: "
+                    + perftestV.major + "."
+                    + perftestV.minor + "."
+                    + perftestV.release);
+            if (perftestV != 0) {
+                Console.Write("." + perftestV.revision);
+            }
+            Console.Write(
+                    " (RTI Connext DDS: "
+                    + ddsV.major + "."
+                    + ddsV.minor + "."
+                    + ddsV.release + ")\n");
+        }
+
+        public struct Perftest_ProductVersion_t
+        {
+            public uint  major;
+            public uint minor;
+            public uint release;
+            public uint revision;
+
+            public Perftest_ProductVersion_t (
+                    uint major,
+                    uint minor,
+                    uint release,
+                    uint revision)
+            {
+                this.major = major;
+                this.minor = minor;
+                this.release = release;
+                this.revision = revision;
+            }
+        }
+
         private ulong  _DataLen = 100;
         private ulong _useUnbounded = 0;
         private int  _BatchSize = 0;
@@ -2357,6 +2410,8 @@ namespace PerformanceTest {
         public const string _AnnouncementTopicName = "Announcement";
         public const int timeout_wait_for_ack_sec = 0;
         public const uint timeout_wait_for_ack_nsec = 10000000;
+        public static readonly Perftest_ProductVersion_t _version =
+                new Perftest_ProductVersion_t(2, 3, 2, 0);
 
 
         /*
@@ -2386,7 +2441,7 @@ namespace PerformanceTest {
          * Value used to compare against to check if the latency_min has
          * been reset.
          */
-        static public const ulong LATENCY_RESET_VALUE = uint.MaxValue;
+        public const uint LATENCY_RESET_VALUE = uint.MaxValue;
 
         static public ulong getMaxPerftestSampleSizeCS(){
             if (MAX_PERFTEST_SAMPLE_SIZE.VALUE > 2147483591){
