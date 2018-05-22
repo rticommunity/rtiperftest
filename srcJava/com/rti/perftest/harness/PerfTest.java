@@ -38,7 +38,7 @@ public final class PerfTest {
     public static final String LATENCY_TOPIC_NAME = "Latency";
     public static final String THROUGHPUT_TOPIC_NAME = "Throughput";
     public static final String ANNOUNCEMENT_TOPIC_NAME = "Announcement";
-    
+
     public static final int timeout_wait_for_ack_sec = 0;
     public static final int timeout_wait_for_ack_nsec = 10000000;
 
@@ -110,7 +110,8 @@ public final class PerfTest {
     private boolean  _latencyTest = false;
     private boolean  _isReliable = true;
     private long     _pubRate = 0;
-    private boolean _pubRateMethodSpin = true;
+    private boolean  _isKeyed = false;
+    private boolean  _pubRateMethodSpin = true;
     private long     _executionTime = 0;
     private boolean  _displayWriterStats = false;
     private boolean  _useCft = false;
@@ -213,6 +214,8 @@ public final class PerfTest {
             _samplesPerBatch = 1;
         }
 
+        printConfiguration();
+
         if (_isPub) {
             publisher();
         } else {
@@ -248,7 +251,7 @@ public final class PerfTest {
 
 
         System.out.print(
-                "RTI Perftest: "
+                "RTI Perftest "
                 + perftestVString.toString()
                 + " (RTI Connext DDS "
                 + ddsVString.toString()
@@ -563,8 +566,7 @@ public final class PerfTest {
             }
             else if ("-keyed".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
-                // Do nothing, the keyed option has already been parsed, but we still
-                // need to account it as a valid option.
+                _isKeyed = true;
             }
             else if ("-bestEffort".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isReliable = false;
@@ -692,7 +694,7 @@ public final class PerfTest {
             if(_latencyCount == -1) {
                 _latencyCount = 1;
             }
-            
+
             /*
              * PERFTEST-108
              * If we are in a latency test, the default value for _NumIter has
@@ -732,12 +734,8 @@ public final class PerfTest {
         }
 
         if (_isScan) {
-            if (_dataLen != 100) { // Different that the default value
-                System.err.printf("DataLen will be ignored since -scan is present.\n");
-            }
             _dataLen = _scanDataLenSizes.get(_scanDataLenSizes.size() - 1); // Max size
             if (_executionTime == 0){
-                System.err.printf("Setting timeout to 60 seconds (-scan).\n");
                 _executionTime = 60;
             }
             // Check if large data or small data
@@ -754,6 +752,118 @@ public final class PerfTest {
         }
 
         return true;
+    }
+
+    private void printConfiguration() {
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("\nPerftest Configuration:\n");
+
+        // Throughput/Latency mode
+        if (_isPub) {
+            sb.append("\tMode: ");
+            if (_latencyTest) {
+                sb.append("Latency (Ping-Pong test)\n");
+            } else {
+                sb.append("Throughput (Use \"-latencyTest\" for Latency Mode)\n");
+            }
+
+            sb.append("\tLatency count: 1 latency sample every ");
+            sb.append(_latencyCount);
+            sb.append("\n");
+        }
+
+        // Reliable/Best Effort
+        sb.append("\tReliability: ");
+        if (_isReliable) {
+            sb.append("Reliable\n");
+        } else {
+            sb.append("Best Effort\n");
+        }
+
+        // Keyed/Unkeyed
+        sb.append("\tKeyed: ");
+        if (_isKeyed) {
+            sb.append("Yes\n");
+        } else {
+            sb.append("No\n");
+        }
+
+        // Publisher/Subscriber and Entity ID
+        if (_isPub) {
+            sb.append("\tPublisher ID: ");
+            sb.append(pubID);
+            sb.append("\n");
+        } else {
+            sb.append("\tSubscriber ID: ");
+            sb.append(subID);
+            sb.append("\n");
+        }
+
+        // Scan/Data Sizes
+        sb.append("\tData Size: ");
+        if (_isScan) {
+            for (int i = 0; i < _scanDataLenSizes.size(); i++ ) {
+                sb.append(_scanDataLenSizes.get(i));
+                if (i == _scanDataLenSizes.size() - 1) {
+                    sb.append("\n");
+                } else {
+                    sb.append(", ");
+                }
+            }
+        } else {
+            sb.append(_dataLen);
+            sb.append("\n");
+        }
+
+        // Batching
+        sb.append("\tBatching: ");
+        if (_batchSize != 0) {
+            sb.append(_batchSize);
+            sb.append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
+        } else {
+            sb.append("No (Use \"-batchSize\" to setup batching)\n");
+        }
+
+        // Listener/WaitSets
+        sb.append("\tReceive using: ");
+        if (_useReadThread) {
+            sb.append("WaitSets\n");
+        } else {
+            sb.append("Listeners\n");
+        }
+
+        // Publication Rate
+        if (_isPub) {
+            sb.append("\tPublication Rate: ");
+            if (_pubRate > 0) {
+                sb.append(_pubRate);
+                sb.append(" Samples/s (");
+                if (_pubRateMethodSpin) {
+                    sb.append("Spin)\n");
+                } else {
+                    sb.append("Sleep)\n");
+                }
+            } else {
+                sb.append("Unlimited (Not set)\n");
+            }
+        }
+
+        // Execution Time or Num Iter
+        if (_executionTime > 0) {
+            sb.append("\tExecution time: ");
+            sb.append(_executionTime);
+            sb.append(" seconds\n");
+        } else {
+            sb.append("\tNumber of samples: " );
+            sb.append(_numIter);
+            sb.append("\n");
+        }
+
+        sb.append(_messagingImpl.printConfiguration());
+
+        System.err.println(sb.toString());
     }
 
     /**

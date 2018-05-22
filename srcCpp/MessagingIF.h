@@ -6,6 +6,8 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
+#include <string>
+
 class TestMessage
 {
   public:
@@ -103,6 +105,8 @@ class IMessaging
     virtual bool Initialize(int argc, char *argv[]) = 0;
 
     virtual void PrintCmdLineHelp() = 0;
+
+    virtual std::string PrintConfiguration() = 0;
 
     virtual void Shutdown() = 0;
 
