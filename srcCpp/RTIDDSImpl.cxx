@@ -67,6 +67,34 @@ const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME =
 
 std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
 
+/* Perftest DynamicDataMembersId class */
+DynamicDataMembersId::DynamicDataMembersId()
+{
+    membersId["key"] = 1;
+    membersId["entity_id"] = 2;
+    membersId["seq_num"] = 3;
+    membersId["timestamp_sec"] = 4;
+    membersId["timestamp_usec"] = 5;
+    membersId["latency_ping"] = 6;
+    membersId["bin_data"] = 7;
+}
+
+DynamicDataMembersId::~DynamicDataMembersId()
+{
+    membersId.clear();
+}
+
+DynamicDataMembersId &DynamicDataMembersId::GetInstance()
+{
+    static DynamicDataMembersId instance;
+    return instance;
+}
+
+int DynamicDataMembersId::at(std::string key)
+{
+   return membersId.at(key);
+}
+
 /*********************************************************
  * Shutdown
  */
@@ -1028,6 +1056,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     DDS_InstanceHandle_t *_instance_handles;
     RTIOsapiSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
+    int _last_message_size;
     bool _isReliable;
 
 public:
@@ -1041,9 +1070,10 @@ public:
 
     {
         _writer = DDSDynamicDataWriter::narrow(writer);
-        DDS_OctetSeq octetSeq;
+        DDS_Octet key_octets[KEY_SIZE];
         DDS_ReturnCode_t retcode;
 
+        _last_message_size = 0;
         _num_instances = num_instances;
         _instance_counter = 0;
         _instancesToBeWritten = instancesToBeWritten;
@@ -1055,12 +1085,14 @@ public:
         _pongSemaphore = pongSemaphore;
 
         for (unsigned long i = 0; i < _num_instances; ++i) {
-            DDS_Octet key_octets[4];
             for (int c = 0; c < KEY_SIZE; c++) {
                 key_octets[c] = (unsigned char) (i >> c * 8);
             }
-            retcode = data.set_octet_array("key",
-                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED, 4, key_octets);
+            retcode = data.set_octet_array(
+                    "key",
+                    DynamicDataMembersId::GetInstance().at("key"),
+                    KEY_SIZE,
+                    key_octets);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
             }
@@ -1068,12 +1100,14 @@ public:
             _instance_handles[i] = _writer->register_instance(data);
         }
         // Register the key of MAX_CFT_VALUE
-        DDS_Octet key_octets[4];
         for (int c = 0; c < KEY_SIZE; c++) {
             key_octets[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
         }
-        retcode = data.set_octet_array("key",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED, 4, key_octets);
+        retcode = data.set_octet_array(
+                    "key",
+                    DynamicDataMembersId::GetInstance().at("key"),
+                    KEY_SIZE,
+                    key_octets);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
         }
@@ -1105,61 +1139,66 @@ public:
     bool Send(const TestMessage &message, bool isCftWildCardKey)
     {
         DDS_ReturnCode_t retcode;
+        DDS_Octet key_octets[KEY_SIZE];
         long key = 0;
 
-        data.clear_all_members();
+        if (_last_message_size != message.size) {
+            //Cannot use data.clear_member("bind_data") because:
+            //DDS_DynamicData_clear_member:unsupported for non-sparse types
+            data.clear_all_members();
 
+            DDS_OctetSeq octetSeq;
+            bool succeeded = octetSeq.from_array(
+                    (DDS_Octet *) message.data,
+                    message.size);
+            if (!succeeded) {
+                fprintf(stderr, "from_array() failed.\n");
+            }
+            retcode = data.set_octet_seq(
+                    "bin_data",
+                    DynamicDataMembersId::GetInstance().at("bin_data"),
+                    octetSeq);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
+            }
+            _last_message_size = message.size;
+        }
         retcode = data.set_long(
                 "entity_id",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                DynamicDataMembersId::GetInstance().at("entity_id"),
                 message.entity_id);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_long(entity_id) failed: %d.\n", retcode);
         }
         retcode = data.set_ulong(
                 "seq_num",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                DynamicDataMembersId::GetInstance().at("seq_num"),
                 message.seq_num);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_ulong(seq_num) failed: %d.\n", retcode);
         }
         retcode = data.set_long(
                 "timestamp_sec",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                DynamicDataMembersId::GetInstance().at("timestamp_sec"),
                 message.timestamp_sec);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_long(timestamp_sec) failed: %d.\n", retcode);
         }
         retcode = data.set_ulong(
                 "timestamp_usec",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                DynamicDataMembersId::GetInstance().at("timestamp_usec"),
                 message.timestamp_usec);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_ulong(timestamp_usec) failed: %d.\n", retcode);
         }
         retcode = data.set_long(
                 "latency_ping",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                DynamicDataMembersId::GetInstance().at("latency_ping"),
                 message.latency_ping);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_long(latency_ping) failed: %d.\n", retcode);
         }
-        DDS_OctetSeq octetSeq;
-        bool succeeded = octetSeq.from_array(
-                (DDS_Octet *) message.data,
-                message.size);
-        if (!succeeded) {
-            fprintf(stderr, "from_array() failed.\n");
-        }
-        retcode = data.set_octet_seq(
-                "bin_data",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                octetSeq);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
-        }
 
-        DDS_Octet key_octets[4];
         if (!isCftWildCardKey) {
             if (_num_instances > 1) {
                 if (_instancesToBeWritten == -1) {
@@ -1176,8 +1215,8 @@ public:
         }
         retcode = data.set_octet_array(
                 "key",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                4,
+                DynamicDataMembersId::GetInstance().at("key"),
+                KEY_SIZE,
                 key_octets);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
@@ -1201,7 +1240,8 @@ public:
         DDS_PublicationMatchedStatus status;
 
         while (true) {
-            DDS_ReturnCode_t retcode = _writer->get_publication_matched_status(status);
+            DDS_ReturnCode_t retcode = _writer->get_publication_matched_status(
+                    status);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
                         "WaitForReaders _writer->get_publication_matched_status "
@@ -1351,14 +1391,12 @@ class ReceiverListener : public DDSDataReaderListener
 class DynamicDataReceiverListener : public DDSDataReaderListener
 {
   private:
-
     DDS_DynamicDataSeq _data_seq;
     DDS_SampleInfoSeq _info_seq;
     TestMessage _message;
     IMessagingCB *_callback;
 
   public:
-
     DynamicDataReceiverListener(IMessagingCB *callback): _message()
     {
         _callback = callback;
@@ -1373,7 +1411,8 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
         }
 
         DDS_ReturnCode_t retcode = datareader->take(
-                _data_seq, _info_seq,
+                _data_seq,
+                _info_seq,
                 DDS_LENGTH_UNLIMITED,
                 DDS_ANY_SAMPLE_STATE,
                 DDS_ANY_VIEW_STATE,
@@ -1387,14 +1426,13 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
             return;
         }
 
-        int seq_length = _data_seq.length();
         DDS_OctetSeq octetSeq;
-        for (int i = 0; i < seq_length; ++i) {
+        for (int i = 0; i < _data_seq.length(); ++i) {
             if (_info_seq[i].valid_data) {
                 retcode = _data_seq[i].get_long(
                         _message.entity_id,
                         "entity_id",
-                        2);
+                        DynamicDataMembersId::GetInstance().at("entity_id"));
                 if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_long(entity_id) failed: %d.\n",
@@ -1404,9 +1442,8 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                 retcode = _data_seq[i].get_ulong(
                         _message.seq_num,
                         "seq_num",
-                        3);
-                if (retcode != DDS_RETCODE_OK)
-                {
+                        DynamicDataMembersId::GetInstance().at("seq_num"));
+                if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_ulong(seq_num) failed: %d.\n",
                             retcode);
@@ -1415,9 +1452,8 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                 retcode = _data_seq[i].get_long(
                         _message.timestamp_sec,
                         "timestamp_sec",
-                        4);
-                if (retcode != DDS_RETCODE_OK)
-                {
+                        DynamicDataMembersId::GetInstance().at("timestamp_sec"));
+                if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_long(timestamp_sec) failed: %d.\n",
                             retcode);
@@ -1426,9 +1462,8 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                 retcode = _data_seq[i].get_ulong(
                         _message.timestamp_usec,
                         "timestamp_usec",
-                        5);
-                if (retcode != DDS_RETCODE_OK)
-                {
+                        DynamicDataMembersId::GetInstance().at("timestamp_usec"));
+                if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_ulong(timestamp_usec) failed: %d.\n",
                             retcode);
@@ -1437,9 +1472,8 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                 retcode = _data_seq[i].get_long(
                         _message.latency_ping,
                         "latency_ping",
-                        6);
-                if (retcode != DDS_RETCODE_OK)
-                {
+                        DynamicDataMembersId::GetInstance().at("latency_ping"));
+                if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_long(latency_ping) failed: %d.\n",
                             retcode);
@@ -1448,14 +1482,13 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                 retcode = _data_seq[i].get_octet_seq(
                         octetSeq,
                         "bin_data",
-                        7);
-                if (retcode != DDS_RETCODE_OK)
-                {
+                        DynamicDataMembersId::GetInstance().at("bin_data"));
+                if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_octet_seq(bin_data) failed: %d.\n",
                             retcode);
                 }
-                _message.size = octetSeq.length();
+                _message.size = octetSeq.length(); // size comming from bin_data
                 _message.data = (char *)octetSeq.get_contiguous_buffer();
 
                 _callback->ProcessMessage(_message);
@@ -1582,8 +1615,10 @@ class RTISubscriber : public IMessagingReader
                 //No operation required
             }
 
-             // may have hit end condition
-             if (_data_idx == seq_length) { continue; }
+            // may have hit end condition
+            if (_data_idx == seq_length) {
+                continue;
+            }
 
             _message.entity_id = _data_seq[_data_idx].entity_id;
             _message.seq_num = _data_seq[_data_idx].seq_num;
@@ -1651,9 +1686,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
                     (int) RTIDDSImpl<T>::_WaitsetDelayUsec / 1000000;
             property.max_event_delay.nanosec = (RTIDDSImpl<T>::_WaitsetDelayUsec
                     % 1000000) * 1000;
-
             _waitset = new DDSWaitSet(property);
-
             DDSStatusCondition *reader_status;
             reader_status = reader->get_statuscondition();
             reader_status->set_enabled_statuses(DDS_DATA_AVAILABLE_STATUS);
@@ -1680,6 +1713,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
     {
         DDS_ReturnCode_t retcode;
         int seq_length;
+        DDS_OctetSeq octetSeq;
 
         while (true) {
             // no outstanding reads
@@ -1693,11 +1727,12 @@ class RTIDynamicDataSubscriber : public IMessagingReader
                 }
 
                 retcode = _reader->take(
-                    _data_seq, _info_seq,
-                    DDS_LENGTH_UNLIMITED,
-                    DDS_ANY_SAMPLE_STATE,
-                    DDS_ANY_VIEW_STATE,
-                    DDS_ANY_INSTANCE_STATE);
+                        _data_seq,
+                        _info_seq,
+                        DDS_LENGTH_UNLIMITED,
+                        DDS_ANY_SAMPLE_STATE,
+                        DDS_ANY_VIEW_STATE,
+                        DDS_ANY_INSTANCE_STATE);
                 if (retcode == DDS_RETCODE_NO_DATA)
                 {
                     //printf("Called back no data.\n");
@@ -1729,78 +1764,72 @@ class RTIDynamicDataSubscriber : public IMessagingReader
                 //No operation required
             }
 
-             // may have hit end condition
-             if (_data_idx == seq_length) { continue; }
+            // may have hit end condition
+            if (_data_idx == seq_length) {
+                continue;
+            }
 
-
-             retcode = _data_seq[_data_idx].get_long(
-                     _message.entity_id,
-                     "entity_id",
-                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
-             if (retcode != DDS_RETCODE_OK)
-             {
-                 fprintf(stderr,
-                         "ReceiveMessage() get_long(entity_id) failed: %d.\n",
-                         retcode);
-                 _message.entity_id = 0;
-             }
-             retcode = _data_seq[_data_idx].get_ulong(
-                     _message.seq_num,
-                     "seq_num",
-                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
-             if (retcode != DDS_RETCODE_OK)
-             {
-                 fprintf(stderr,
-                         "ReceiveMessage() get_ulong(seq_num) failed: %d.\n",
-                         retcode);
-                 _message.seq_num = 0;
-             }
-             retcode = _data_seq[_data_idx].get_long(
-                     _message.timestamp_sec,
-                     "timestamp_sec",
-                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);;
-             if (retcode != DDS_RETCODE_OK)
-             {
-                 fprintf(stderr,
-                         "ReceiveMessage() get_long(timestamp_sec) failed: %d.\n",
-                         retcode);
-                 _message.timestamp_sec = 0;
-             }
-             retcode = _data_seq[_data_idx].get_ulong(
-                     _message.timestamp_usec,
-                     "timestamp_usec",
-                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);;
-             if (retcode != DDS_RETCODE_OK)
-             {
-                 fprintf(stderr,
-                         "ReceiveMessage() get_ulong(timestamp_usec) failed: %d.\n",
-                         retcode);
-                 _message.timestamp_usec = 0;
-             }
-             retcode = _data_seq[_data_idx].get_long(
-                     _message.latency_ping,
-                     "latency_ping",
-                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);;
-             if (retcode != DDS_RETCODE_OK)
-             {
-                 fprintf(stderr,
-                         "ReceiveMessage() get_long(latency_ping) failed: %d.\n",
-                         retcode);
-                 _message.latency_ping = 0;
-             }
-             DDS_OctetSeq octetSeq;
-             retcode = _data_seq[_data_idx].get_octet_seq(
-                     octetSeq,
-                     "bin_data",
-                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
-             if (retcode != DDS_RETCODE_OK)
-             {
-                 fprintf(stderr,
-                         "ReceiveMessage() get_octet_seq(bin_data) failed: %d.\n",
-                         retcode);
-             }
-             _message.size = octetSeq.length();
-             _message.data = (char *)octetSeq.get_contiguous_buffer();
+            retcode = _data_seq[_data_idx].get_long(
+                _message.entity_id,
+                "entity_id",
+                DynamicDataMembersId::GetInstance().at("entity_id"));
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "ReceiveMessage() get_long(entity_id) failed: %d.\n",
+                        retcode);
+                _message.entity_id = 0;
+            }
+            retcode = _data_seq[_data_idx].get_ulong(
+                _message.seq_num,
+                "seq_num",
+                DynamicDataMembersId::GetInstance().at("seq_num"));
+            if (retcode != DDS_RETCODE_OK){
+                fprintf(stderr,
+                        "ReceiveMessage() get_ulong(seq_num) failed: %d.\n",
+                        retcode);
+                _message.seq_num = 0;
+            }
+            retcode = _data_seq[_data_idx].get_long(
+                _message.timestamp_sec,
+                "timestamp_sec",
+                DynamicDataMembersId::GetInstance().at("timestamp_sec"));
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "ReceiveMessage() get_long(timestamp_sec) failed: %d.\n",
+                        retcode);
+                _message.timestamp_sec = 0;
+            }
+            retcode = _data_seq[_data_idx].get_ulong(
+                _message.timestamp_usec,
+                "timestamp_usec",
+                DynamicDataMembersId::GetInstance().at("timestamp_usec"));
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "ReceiveMessage() get_ulong(timestamp_usec) failed: %d.\n",
+                        retcode);
+                _message.timestamp_usec = 0;
+            }
+            retcode = _data_seq[_data_idx].get_long(
+                _message.latency_ping,
+                "latency_ping",
+                DynamicDataMembersId::GetInstance().at("latency_ping"));
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "ReceiveMessage() get_long(latency_ping) failed: %d.\n",
+                        retcode);
+                _message.latency_ping = 0;
+            }
+            retcode = _data_seq[_data_idx].get_octet_seq(
+                octetSeq,
+                "bin_data",
+                DynamicDataMembersId::GetInstance().at("bin_data"));
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "ReceiveMessage() get_octet_seq(bin_data) failed: %d.\n",
+                        retcode);
+            }
+            _message.size = octetSeq.length();
+            _message.data = (char *)octetSeq.get_contiguous_buffer();
 
             ++_data_idx;
 
