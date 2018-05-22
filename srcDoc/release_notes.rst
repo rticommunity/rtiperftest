@@ -65,22 +65,16 @@ following command-line parameters:
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Review Dynamic Data Send() and Receive() operations (#55)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Improve Dynamic Data Send() and Receive() operations (#55)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The `Send()` and `Received()` for Dynamic Data have been optimized by:
-
-- Specifying the member_id in the `get_T()` and `set_T()` methods instead of
-  `DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED`.
-- Creating a map for the DDS_DynamicDataMemberIds.
-- Set the content of `bind_data`, using `set_octet_array`, when the message_size
-  changes.
-- Clearing the contents of DDS_DynamicData object, calling `clear_all_members()`,
-  when the size changes.
+The Dynamic Data Send() and Received() functions have been optimized
+reducing the time of setting and getting the samples.
 
 The result of these optimizations is that RTI Perftest now minimizes the time
 employed in the application-related tasks, therefore maximizing the time for
-sending and receiving calls.
+sending and receiving calls. This allows to do a fair comparison between
+Dynamic Data results and Generated Type-Code Data results.
 
 Release Notes 2.3.2
 -------------------
