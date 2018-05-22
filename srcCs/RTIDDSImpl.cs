@@ -137,6 +137,93 @@ namespace PerformanceTest
         }
 
         /*********************************************************
+         * PrintConfiguration
+         */
+        public string PrintConfiguration()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            // Domain ID
+            sb.Append("\tDomain: ");
+            sb.Append(_DomainID);
+            sb.Append("\n");
+
+            // Dynamic Data
+            sb.Append("\tDynamic Data: ");
+            if (_isDynamicData)
+            {
+                sb.Append("Yes\n");
+            }
+            else
+            {
+                sb.Append("No\n");
+            }
+
+            // Dynamic Data
+            if (_isPublisher)
+            {
+                sb.Append("\tAsynchronous Publishing: ");
+                if (_isLargeData || _IsAsynchronous)
+                {
+                    sb.Append("Yes\n");
+                    sb.Append("\tFlow Controller: ");
+                    sb.Append(_FlowControllerCustom);
+                    sb.Append("\n");
+                }
+                else
+                {
+                    sb.Append("No\n");
+                }
+            }
+
+            // Turbo Mode / AutoThrottle
+            if (_TurboMode)
+            {
+                sb.Append("\tTurbo Mode: Enabled\n");
+            }
+            if (_AutoThrottle)
+            {
+                sb.Append("\tAutoThrottle: Enabled\n");
+            }
+
+            // XML File
+            sb.Append("\tXML File: ");
+            sb.Append(_ProfileFile);
+            sb.Append("\n");
+
+
+            sb.Append("\n");
+            sb.Append(_transport.PrintTransportConfigurationSummary());
+
+
+            // set initial peers and not use multicast
+            if (_peer_host_count > 0)
+            {
+                sb.Append("Initial peers: ");
+                for (int i = 0; i < _peer_host_count; ++i)
+                {
+                    sb.Append(_peer_host[i]);
+                    if (i == _peer_host_count - 1)
+                    {
+                        sb.Append("\n");
+                    }
+                    else
+                    {
+                        sb.Append(", ");
+                    }
+                }
+            }
+
+            if (_secureUseSecure)
+            {
+                sb.Append("\n");
+                sb.Append(PrintSecureArgs());
+            }
+
+            return sb.ToString();
+        }
+
+        /*********************************************************
          * ParseConfig
          */
         bool ParseConfig(int argc, string[] argv)
@@ -151,6 +238,10 @@ namespace PerformanceTest
                 else if ("-sub".StartsWith(argv[i], true, null))
                 {
                     _isPublisher = false;
+                }
+                else if ("-dynamicData".StartsWith(argv[i], true, null))
+                {
+                    _isDynamicData = true;
                 }
                 else if ("-scan".StartsWith(argv[i], true, null))
                 {
@@ -498,7 +589,6 @@ namespace PerformanceTest
                 }
                 else if ("-enableAutoThrottle".StartsWith(argv[i], true, null))
                 {
-                    Console.Error.Write("Auto Throttling enabled. Automatically adjusting the DataWriter\'s writing rate\n");
                     _AutoThrottle = true;
                 }
                 else if ("-enableTurboMode".StartsWith(argv[i], true, null))
@@ -752,7 +842,7 @@ namespace PerformanceTest
                  */
                 if (_BatchSize > 0 && _BatchSize <= (int)_DataLen)
                 {
-                    Console.Error.WriteLine("Batching dissabled: BatchSize (" + _BatchSize
+                    Console.Error.WriteLine("Batching disabled: BatchSize (" + _BatchSize
                             + ") is equal or smaller than the sample size (" + _DataLen
                             + ").");
                     _BatchSize = 0;
@@ -761,7 +851,6 @@ namespace PerformanceTest
 
             if ((int)_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE)
             {
-                Console.Error.WriteLine("Large data settings enabled.");
                 _isLargeData = true;
             }
 
@@ -850,6 +939,7 @@ namespace PerformanceTest
             protected InstanceHandle_t[] _instance_handles;
             protected Semaphore _pongSemaphore = null;
             protected int _instancesToBeWritten = -1;
+            protected bool _isReliable = false;
 
             public RTIPublisher(
                     DataWriter writer,
@@ -879,6 +969,11 @@ namespace PerformanceTest
                 _DataType.fillKey(MAX_CFT_VALUE.VALUE);
                 _instance_handles[_num_instances] = writer.register_instance_untyped(
                         _DataType.getData());
+
+                DDS.DataWriterQos dw_qos = new DDS.DataWriterQos();
+                _writer.get_qos(dw_qos);
+                _isReliable = (dw_qos.reliability.kind 
+                                == DDS.ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS);
             }
 
             public void Flush()
@@ -991,14 +1086,16 @@ namespace PerformanceTest
                 return status.pulled_sample_count;
             }
 
-            public void wait_for_acknowledgments(int sec, uint nsec) {
-                try {
-                    Duration_t duration = new Duration_t();
-                    duration.sec = sec;
-                    duration.nanosec = nsec;
-                    _writer.wait_for_acknowledgments(duration);
-                } catch (DDS.Retcode_Timeout) { // Expected exception
-                    // nothing to do
+            public void waitForAck(int sec, uint nsec) {
+                if (_isReliable) {
+                    try {
+                        Duration_t duration = new Duration_t();
+                        duration.sec = sec;
+                        duration.nanosec = nsec;
+                        _writer.wait_for_acknowledgments(duration);
+                    } catch (DDS.Retcode_Timeout) {} // Expected exception
+                } else {
+                    System.Threading.Thread.Sleep((int)nsec / 1000000);
                 }
             }
         }
@@ -1338,11 +1435,7 @@ namespace PerformanceTest
             }
 
             // set initial peers and not use multicast
-            if ( _peer_host_count > 0 ) {
-                Console.Error.WriteLine("Initial peers:");
-                for ( int i =0; i< _peer_host_count; ++i) {
-                    Console.Error.WriteLine("\t" + _peer_host[i]);
-                }
+            if (_peer_host_count > 0) {
                 qos.discovery.initial_peers.ensure_length(_peer_host_count, _peer_host_count);
                 qos.discovery.initial_peers.from_array(_peer_host);
                 qos.discovery.multicast_receive_addresses = new DDS.StringSeq();
@@ -1352,7 +1445,6 @@ namespace PerformanceTest
             {
                 return false;
             }
-            _transport.PrintTransportConfigurationSummary();
 
             if (_AutoThrottle) {
             	try
@@ -1457,7 +1549,7 @@ namespace PerformanceTest
         /*********************************************************
          * printSecureArgs
          */
-        private void PrintSecureArgs()
+        private string PrintSecureArgs()
         {
 
             string secure_arguments_string =
@@ -1530,7 +1622,7 @@ namespace PerformanceTest
             {
                 secure_arguments_string += "\t debug level: " + _secureDebugLevel + "\n";
             }
-            Console.Error.Write(secure_arguments_string);
+            return secure_arguments_string;
         }
 
         /*********************************************************
@@ -1539,9 +1631,6 @@ namespace PerformanceTest
         private void ConfigureSecurePlugin(DDS.DomainParticipantQos dpQos)
         {
             // configure use of security plugins, based on provided arguments
-
-            // print arguments
-            PrintSecureArgs();
 
             // load plugin
             DDS.PropertyQosPolicyHelper.add_property(
@@ -1575,39 +1664,37 @@ namespace PerformanceTest
             if (_secureGovernanceFile == null)
             {
                 // choose a pre-built governance file
-                StringBuilder file = new StringBuilder("resource/secure/signed_PerftestGovernance_");
+                _secureGovernanceFile = "resource/secure/signed_PerftestGovernance_";
 
                 if (_secureIsDiscoveryEncrypted)
                 {
-                    file.Append("Discovery");
+                    _secureGovernanceFile += "Discovery";
                 }
 
                 if (_secureIsSigned)
                 {
-                    file.Append("Sign");
+                    _secureGovernanceFile += "Sign";
                 }
 
                 if (_secureIsDataEncrypted && _secureIsSMEncrypted)
                 {
-                    file.Append("EncryptBoth");
+                    _secureGovernanceFile += "EncryptBoth";
                 }
                 else if (_secureIsDataEncrypted)
                 {
-                    file.Append("EncryptData");
+                    _secureGovernanceFile += "EncryptData";
                 }
                 else if (_secureIsSMEncrypted)
                 {
-                    file.Append("EncryptSubmessage");
+                    _secureGovernanceFile += "EncryptSubmessage";
                 }
 
-                file.Append(".xml");
-
-                Console.Error.WriteLine("Secure: using pre-built governance file:" +
-                        file.ToString());
+                _secureGovernanceFile += ".xml";
+                
                 DDS.PropertyQosPolicyHelper.add_property(
                         dpQos.property_qos,
                         "com.rti.serv.secure.access_control.governance_file",
-                        file.ToString(),
+                        _secureGovernanceFile,
                         false);
             }
             else
@@ -1729,13 +1816,11 @@ namespace PerformanceTest
 
             if (_isLargeData || _IsAsynchronous)
             {
-                Console.Error.Write("Using asynchronous write for " + topic_name + ".\n");
                 dw_qos.publish_mode.kind = DDS.PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
                 if (!_FlowControllerCustom.StartsWith("default", true, null))
                 {
                     dw_qos.publish_mode.flow_controller_name = "dds.flow_controller.token_bucket." + _FlowControllerCustom;
                 }
-                Console.Error.Write("Using flow controller " + _FlowControllerCustom + ".\n");
             }
 
             // only force reliability on throughput/latency topics
@@ -2163,6 +2248,7 @@ namespace PerformanceTest
         private bool   _isScan = false;
         private bool   _isPublisher = false;
         private bool _IsAsynchronous = false;
+        private bool _isDynamicData = false;
         private string _FlowControllerCustom = "default";
         string[] valid_flow_controller = { "default", "1Gbps", "10Gbps" };
         static int             RTIPERFTEST_MAX_PEERS = 1024;

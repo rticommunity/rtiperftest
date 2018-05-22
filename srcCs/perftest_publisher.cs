@@ -607,19 +607,19 @@ namespace PerformanceTest {
 
         void Run(string[] argv)
         {
+            PrintVersion();
+
             if (!ParseConfig(argv))
             {
                 return;
             }
             ulong _maxPerftestSampleSize = Math.Max(_DataLen,LENGTH_CHANGED_SIZE);
-            if (_useUnbounded > 0) {
-                Console.Write("Using unbounded Sequences, allocation_threshold " + _useUnbounded.ToString() + ".\n");
+            if (_useUnbounded > 0)
+            {
                 if (_isKeyed)
                 {
-                    Console.Error.Write("Using keyed Data.\n");
                     if (_isDynamicData)
                     {
-                        Console.Error.Write("Using Dynamic Data.\n");
                         _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyedLarge_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
@@ -628,10 +628,8 @@ namespace PerformanceTest {
                     }
                 }
                 else {
-                    Console.Error.Write("Using unkeyed Data.\n");
                     if (_isDynamicData)
                     {
-                        Console.Error.Write("Using Dynamic Data.\n");
                         _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataLarge_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
@@ -642,10 +640,8 @@ namespace PerformanceTest {
             } else {
                 if (_isKeyed)
                 {
-                    Console.Error.Write("Using keyed Data.\n");
                     if (_isDynamicData)
                     {
-                        Console.Error.Write("Using Dynamic Data.\n");
                         _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyed_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
@@ -654,10 +650,8 @@ namespace PerformanceTest {
                     }
                 }
                 else {
-                    Console.Error.Write("Using unkeyed Data.\n");
                     if (_isDynamicData)
                     {
-                        Console.Error.Write("Using Dynamic Data.\n");
                         _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestData_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
@@ -682,6 +676,8 @@ namespace PerformanceTest {
             } else {
                 _SamplesPerBatch = 1;
             }
+
+            PrintConfiguration();
 
             if (_IsPub) {
                 Publisher();
@@ -1297,12 +1293,8 @@ namespace PerformanceTest {
             }
 
             if (_isScan) {
-                if (_DataLen != 100) { // Different that the default value
-                    Console.Error.Write("DataLen will be ignored since -scan is present.\n");
-                }
                 _DataLen = _scanDataLenSizes[_scanDataLenSizes.Count - 1]; // Max size
                 if (_executionTime == 0){
-                    Console.Error.Write("Setting timeout to 60 seconds (-scan).\n");
                     _executionTime = 60;
                 }
                 // Check if large data or small data
@@ -1330,6 +1322,118 @@ namespace PerformanceTest {
                 }
             }
             return true;
+        }
+
+        private void PrintConfiguration() {
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append("\nPerftest Configuration:\n");
+
+            // Throughput/Latency mode
+            if (_IsPub) {
+                sb.Append("\tMode: ");
+                if (_LatencyTest) {
+                    sb.Append("Latency (Ping-Pong test)\n");
+                } else {
+                    sb.Append("Throughput (Use \"-latencyTest\" for Latency Mode)\n");
+                }
+
+                sb.Append("\tLatency count: 1 latency sample every ");
+                sb.Append(_LatencyCount);
+                sb.Append("\n");
+            }
+
+            // Reliable/Best Effort
+            sb.Append("\tReliability: ");
+            if (_isReliable) {
+                sb.Append("Reliable\n");
+            } else {
+                sb.Append("Best Effort\n");
+            }
+
+            // Keyed/Unkeyed
+            sb.Append("\tKeyed: ");
+            if (_isKeyed) {
+                sb.Append("Yes\n");
+            } else {
+                sb.Append("No\n");
+            }
+
+            // Publisher/Subscriber and Entity ID
+            if (_IsPub) {
+                sb.Append("\tPublisher ID: ");
+                sb.Append(_PubID);
+                sb.Append("\n");
+            } else {
+                sb.Append("\tSubscriber ID: ");
+                sb.Append(_SubID);
+                sb.Append("\n");
+            }
+
+            // Scan/Data Sizes
+            sb.Append("\tData Size: ");
+            if (_isScan) {
+                for (int i = 0; i < _scanDataLenSizes.Count; i++ ) {
+                    sb.Append(_scanDataLenSizes[i]);
+                    if (i == _scanDataLenSizes.Count - 1) {
+                        sb.Append("\n");
+                    } else {
+                        sb.Append(", ");
+                    }
+                }
+            } else {
+                sb.Append(_DataLen);
+                sb.Append("\n");
+            }
+
+            // Batching
+            sb.Append("\tBatching: ");
+            if (_BatchSize != 0) {
+                sb.Append(_BatchSize);
+                sb.Append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
+            } else {
+                sb.Append("No (Use \"-batchSize\" to setup batching)\n");
+            }
+
+            // Listener/WaitSets
+            sb.Append("\tReceive using: ");
+            if (_UseReadThread) {
+                sb.Append("WaitSets\n");
+            } else {
+                sb.Append("Listeners\n");
+            }
+
+            // Publication Rate
+            if (_IsPub) {
+                sb.Append("\tPublication Rate: ");
+                if (_pubRate > 0) {
+                    sb.Append(_pubRate);
+                    sb.Append(" Samples/s (");
+                    if (_pubRateMethodSpin) {
+                        sb.Append("Spin)\n");
+                    } else {
+                        sb.Append("Sleep)\n");
+                    }
+                } else {
+                    sb.Append("Unlimited (Not set)\n");
+                }
+            }
+
+            // Execution Time or Num Iter
+            if (_executionTime > 0) {
+                sb.Append("\tExecution time: ");
+                sb.Append(_executionTime);
+                sb.Append(" seconds\n");
+            } else {
+                sb.Append("\tNumber of samples: " );
+                sb.Append(_NumIter);
+                sb.Append("\n");
+            }
+
+            sb.Append(_MessagingImpl.PrintConfiguration());
+
+            Console.Error.WriteLine(sb.ToString());
         }
 
         /*********************************************************
@@ -1727,21 +1831,30 @@ namespace PerformanceTest {
          */
         class AnnouncementListener : IMessagingCB
         {
-            public int announced_subscribers;
+            public int announced_subscriber_replies;
             private List<int> _finished_subscribers;
 
             public AnnouncementListener() {
-                announced_subscribers = 0;
+                announced_subscriber_replies = 0;
                 _finished_subscribers = new List<int>();
             }
 
             public void ProcessMessage(TestMessage message)
             {
+                /*
+                 * If the entity_id is not in the list of subscribers
+                 * that finished the test, add it.
+                 *
+                 * Independently, decrease announced_subscriber_replies if a known
+                 * writer responds to a message using this channel. We use
+                 * this as a way to check that all the readers have received
+                 * a message written by the Throughput writer.
+                 */
                 if (!_finished_subscribers.Contains(message.entity_id)) {
                     _finished_subscribers.Add(message.entity_id);
-                    announced_subscribers++;
+                    announced_subscriber_replies++;
                 } else{
-                    announced_subscribers--;
+                    announced_subscriber_replies--;
                 }
             }
         }
@@ -1757,7 +1870,7 @@ namespace PerformanceTest {
             private ulong latency_sum = 0;
             private ulong latency_sum_square = 0;
             private ulong count = 0;
-            private uint  latency_min = 0;
+            private uint  latency_min = perftest_cs.LATENCY_RESET_VALUE;
             private uint  latency_max = 0;
             private int   last_data_length = 0;
             public  bool  end_test = false;
@@ -1858,19 +1971,13 @@ namespace PerformanceTest {
                     }
                 }
 
-                if (latency_min == 0)
-                {
+                if (latency_min == perftest_cs.LATENCY_RESET_VALUE) {
                     latency_min = latency;
                     latency_max = latency;
-                }
-                else
-                {
-                    if (latency < latency_min)
-                    {
+                } else {
+                    if (latency < latency_min) {
                         latency_min = latency;
-                    }
-                    if (latency > latency_max)
-                    {
+                    } else if (latency > latency_max) {
                         latency_max = latency;
                     }
                 }
@@ -1965,7 +2072,7 @@ namespace PerformanceTest {
                 Console.Out.Flush();
                 latency_sum = 0;
                 latency_sum_square = 0;
-                latency_min = 0;
+                latency_min = perftest_cs.LATENCY_RESET_VALUE;
                 latency_max = 0;
                 count = 0;
                 clock_skew_count = 0;
@@ -1983,7 +2090,7 @@ namespace PerformanceTest {
             IMessagingReader announcement_reader;
             AnnouncementListener  announcement_reader_listener = null;
             uint num_latency;
-            int initializeSampleCount = 50;
+            int announcementSampleCount = 50;
 
             // create throughput/ping writer
             writer = _MessagingImpl.CreateWriter(_ThroughputTopicName);
@@ -1996,12 +2103,8 @@ namespace PerformanceTest {
 
             num_latency = (uint)((_NumIter/(ulong)_SamplesPerBatch) / (ulong)_LatencyCount);
 
-            if ((num_latency / (ulong)_SamplesPerBatch) % (ulong)_LatencyCount > 0)
-
-            {
-
+            if ((num_latency / (ulong)_SamplesPerBatch) % (ulong)_LatencyCount > 0) {
                 num_latency++;
-
             }
 
             // in batch mode, might have to send another ping
@@ -2079,7 +2182,7 @@ namespace PerformanceTest {
             // We have to wait until every Subscriber sends an announcement message
             // indicating that it has discovered every Publisher
             Console.Error.Write("Waiting for subscribers announcement ...\n");
-            while (_NumSubscribers > announcement_reader_listener.announced_subscribers) {
+            while (_NumSubscribers > announcement_reader_listener.announced_subscriber_replies) {
                 System.Threading.Thread.Sleep(1000);
             }
 
@@ -2088,22 +2191,24 @@ namespace PerformanceTest {
             message.entity_id = _PubID;
             message.data = new byte[Math.Max(_DataLen,LENGTH_CHANGED_SIZE)];
 
-            Console.Error.Write("Publishing data...\n");
+            Console.Error.Write("Sending initial pings...\n");
+
             if (_showCpu) {
                 reader_listener.cpu.initialize();
             }
 
             // initialize data pathways by sending some initial pings
-            if (initializeSampleCount < _InstanceCount) {
-                initializeSampleCount = _InstanceCount;
-            }
             message.size = INITIALIZE_SIZE;
-            for (int i = 0; i < initializeSampleCount; i++)
+            for (int i = 0;
+                    i < Math.Max(_InstanceCount, announcementSampleCount);
+                    i++)
             {
                 // Send test initialization message
                 writer.Send(message, true);
             }
             writer.Flush();
+
+            Console.Error.Write("Publishing data...\n");
 
             // Set data size, account for other bytes in message
             message.size = (int)_DataLen - OVERHEAD_BYTES;
@@ -2142,9 +2247,9 @@ namespace PerformanceTest {
                                  (!_testCompleted); ++loop)
             {
 
-                if ((_pubRate > 0) &&
-                (loop > 0) &&
-                (loop % pubRate_sample_period == 0)) {
+                if ((_pubRate > 0)
+                        && (loop > 0)
+                        && (loop % pubRate_sample_period == 0)) {
 
                     time_now = GetTimeUsec();
 
@@ -2211,11 +2316,11 @@ namespace PerformanceTest {
 
                             // flush anything that was previously sent
                             writer.Flush();
-                            writer.wait_for_acknowledgments(
-                                    timeout_wait_for_ack_sec,
-                                    timeout_wait_for_ack_nsec);
+                            writer.waitForAck(
+                                timeout_wait_for_ack_sec,
+                                timeout_wait_for_ack_nsec);
 
-                            announcement_reader_listener.announced_subscribers =
+                            announcement_reader_listener.announced_subscriber_replies =
                                     _NumSubscribers;
 
                             if (scan_count == _scanDataLenSizes.Count) {
@@ -2227,11 +2332,21 @@ namespace PerformanceTest {
                             // back the LENGTH_CHANGED_SIZE message
                             message.latency_ping = num_pings % _NumSubscribers;
 
-                            while (announcement_reader_listener.announced_subscribers > 0) {
+                            /*
+                             * If the Throughput topic is reliable, we can send the packet and do
+                             * a wait for acknowledgements. However, if the Throughput topic is
+                             * Best Effort, waitForAck() will return inmediately.
+                             * This would cause that the Send() would be exercised too many times,
+                             * in some cases causing the network to be flooded, a lot of packets being
+                             * lost, and potentially CPU starbation for other processes.
+                             * We can prevent this by adding a small sleep() if the test is best
+                             * effort.
+                             */
+                            while (announcement_reader_listener.announced_subscriber_replies > 0) {
                                 writer.Send(message, true);
-                                writer.wait_for_acknowledgments(
-                                        timeout_wait_for_ack_sec,
-                                        timeout_wait_for_ack_nsec);
+                                writer.waitForAck(
+                                    timeout_wait_for_ack_sec,
+                                    timeout_wait_for_ack_nsec);
                             }
                             message.size = (int)(_scanDataLenSizes[scan_count++] - OVERHEAD_BYTES);
                             /* Reset _SamplePerBatch */
@@ -2294,15 +2409,16 @@ namespace PerformanceTest {
             // times in case of best effort
             message.size = FINISHED_SIZE;
             int j = 0;
-            announcement_reader_listener.announced_subscribers =
+            announcement_reader_listener.announced_subscriber_replies =
                     _NumSubscribers;
-            while (announcement_reader_listener.announced_subscribers > 0
-                    && j < initializeSampleCount) {
+            while (announcement_reader_listener.announced_subscriber_replies > 0
+                    && j < announcementSampleCount) {
                 writer.Send(message, true);
+                writer.Flush();
+                writer.waitForAck(
+                    timeout_wait_for_ack_sec,
+                    timeout_wait_for_ack_nsec);
                 j++;
-                writer.wait_for_acknowledgments(
-                        timeout_wait_for_ack_sec,
-                        timeout_wait_for_ack_nsec);
             }
 
             if (_PubID == 0) {
@@ -2372,6 +2488,57 @@ namespace PerformanceTest {
             }
         }
 
+
+        public ProductVersion_t GetDDSVersion()
+        {
+            return NDDS.ConfigVersion.get_instance().get_product_version();
+        }
+
+        public Perftest_ProductVersion_t GetPerftestVersion()
+        {
+            return _version;
+        }
+
+        public void PrintVersion()
+        {
+            Perftest_ProductVersion_t perftestV = GetPerftestVersion();
+            ProductVersion_t ddsV = GetDDSVersion();
+
+            Console.Write(
+                    "RTI Perftest "
+                    + perftestV.major + "."
+                    + perftestV.minor + "."
+                    + perftestV.release);
+            if (perftestV.revision != 0) {
+                Console.Write("." + perftestV.revision);
+            }
+            Console.Write(
+                    " (RTI Connext DDS: "
+                    + ddsV.major + "."
+                    + ddsV.minor + "."
+                    + ddsV.release + ")\n");
+        }
+
+        public struct Perftest_ProductVersion_t
+        {
+            public uint  major;
+            public uint minor;
+            public uint release;
+            public uint revision;
+
+            public Perftest_ProductVersion_t (
+                    uint major,
+                    uint minor,
+                    uint release,
+                    uint revision)
+            {
+                this.major = major;
+                this.minor = minor;
+                this.release = release;
+                this.revision = revision;
+            }
+        }
+
         private ulong  _DataLen = 100;
         private ulong _useUnbounded = 0;
         private int  _BatchSize = 0;
@@ -2412,6 +2579,8 @@ namespace PerformanceTest {
         public const string _AnnouncementTopicName = "Announcement";
         public const int timeout_wait_for_ack_sec = 0;
         public const uint timeout_wait_for_ack_nsec = 10000000;
+        public static readonly Perftest_ProductVersion_t _version =
+                new Perftest_ProductVersion_t(2, 3, 2, 0);
 
 
         /*
@@ -2436,6 +2605,12 @@ namespace PerformanceTest {
         private const int FINISHED_SIZE = 1235;
         // Flag used to indicate end of test
         public const int LENGTH_CHANGED_SIZE = 1236;
+
+        /*
+         * Value used to compare against to check if the latency_min has
+         * been reset.
+         */
+        public const uint LATENCY_RESET_VALUE = uint.MaxValue;
 
         static public ulong getMaxPerftestSampleSizeCS(){
             if (MAX_PERFTEST_SAMPLE_SIZE.VALUE > 2147483591){

@@ -39,7 +39,7 @@ class RTIDDSImpl : public IMessaging
 
     RTIDDSImpl();
 
-    ~RTIDDSImpl() 
+    ~RTIDDSImpl()
     {
         Shutdown();
     }
@@ -47,6 +47,8 @@ class RTIDDSImpl : public IMessaging
     void PrintCmdLineHelp();
 
     bool ParseConfig(int argc, char *argv[]);
+
+    std::string PrintConfiguration();
 
     bool Initialize(int argc, char *argv[]);
 
@@ -84,7 +86,7 @@ class RTIDDSImpl : public IMessaging
     bool         _IsMulticast;
     unsigned int _BatchSize;
     unsigned long _InstanceCount;
-    unsigned long _InstanceMaxCountReader;
+    long _InstanceMaxCountReader;
     int          _InstanceHashBuckets;
     int          _Durability;
     bool         _DirectCommunication;
@@ -150,7 +152,7 @@ class RTIDDSImpl : public IMessaging
 
   #ifdef RTI_SECURE_PERFTEST
     void configureSecurePlugin(std::map<std::string, std::string> &dpQosProperties);
-    void printSecureArgs();
+    std::string printSecureArgs();
     void validateSecureArgs();
   #endif
 

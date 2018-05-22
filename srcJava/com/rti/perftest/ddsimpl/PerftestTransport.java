@@ -14,23 +14,28 @@ import com.rti.dds.domain.DomainParticipantQos;
 public class PerftestTransport {
 
     /* Internal classes and enums */
-    
+
     public enum Transport {
-        TRANSPORT_DEFAULT,
+        TRANSPORT_NOT_SET,
         TRANSPORT_UDPv4,
         TRANSPORT_UDPv6,
         TRANSPORT_TCPv4,
         TRANSPORT_TLSv4,
         TRANSPORT_DTLSv4,
         TRANSPORT_WANv4,
-        TRANSPORT_SHMEM
+        TRANSPORT_SHMEM,
+        TRANSPORT_UDPv4_SHMEM,
+        TRANSPORT_UDPv4_UDPv6,
+        TRANSPORT_UDPv6_SHMEM,
+        TRANSPORT_UDPv4_UDPv6_SHMEM
     };
 
     public class TransportConfig {
 
-        public Transport kind = Transport.TRANSPORT_DEFAULT;
+        public Transport kind = Transport.TRANSPORT_NOT_SET;
         public String nameString = "";
         public String prefixString = "";
+        public boolean takenFromQoS = false;
 
         public TransportConfig()
         {
@@ -54,7 +59,7 @@ public class PerftestTransport {
     };
 
     public class TcpTransportOptions {
-        
+
         public String serverBindPort = "7400";
         public boolean wanNetwork = false;
         public String publicAddress = "";
@@ -191,7 +196,7 @@ public class PerftestTransport {
         return sb.toString();
     }
 
-    public void printTransportConfigurationSummary() {
+    public String printTransportConfigurationSummary() {
 
         StringBuilder sb = new StringBuilder("Transport Information:\n");
         sb.append("\tKind: ").append(transportConfig.nameString).append("\n");
@@ -220,16 +225,16 @@ public class PerftestTransport {
             sb.append("\tWAN Server Address: ");
             sb.append(wanOptions.wanServerAddress).append(":");
             sb.append(wanOptions.wanServerPort).append("\n");
-            
+
             sb.append("\tWAN Id: ").append(wanOptions.wanId).append("\n");
-            
+
             sb.append("\tWAN Secure: ").append(wanOptions.secureWan).append("\n");
         }
 
         if (transportConfig.kind == Transport.TRANSPORT_TLSv4
                 || transportConfig.kind == Transport.TRANSPORT_DTLSv4
                 || (transportConfig.kind == Transport.TRANSPORT_WANv4 && wanOptions.secureWan)) {
-            
+
             sb.append("\tCertificate authority file: ").append(secureOptions.certAuthorityFile).append("\n");
             sb.append("\tCertificate file: ").append(secureOptions.certificateFile).append("\n");
             sb.append("\tPrivate key file: ").append(secureOptions.privateKeyFile).append("\n");
@@ -239,7 +244,7 @@ public class PerftestTransport {
             sb.append("\tVerbosity: ").append(verbosity).append("\n");
         }
 
-        System.err.print(sb.toString());
+        return sb.toString();
     }
 
     public boolean allowsMulticast() {
@@ -266,7 +271,7 @@ public class PerftestTransport {
             else if ("-dataLen".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing <length> after -dataLen");
                     return false;
                 }
@@ -280,7 +285,7 @@ public class PerftestTransport {
             } else if ("-transport".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing <kind> after -transport");
                     return false;
                 }
@@ -304,7 +309,7 @@ public class PerftestTransport {
             } else if ("-nic".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing <address> after -nic");
                     return false;
                 }
@@ -313,7 +318,7 @@ public class PerftestTransport {
             } else if ("-allowInterfaces".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing <address> after -allowInterfaces");
                     return false;
                 }
@@ -322,7 +327,7 @@ public class PerftestTransport {
             } else if ("-transportVerbosity".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing <level> after -transportVerbosity");
                     return false;
                 }
@@ -331,7 +336,7 @@ public class PerftestTransport {
             } else if ("-transportServerBindPort".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing <number> after -transportServerBindPort");
                     return false;
                 }
@@ -344,7 +349,7 @@ public class PerftestTransport {
             } else if ("-transportPublicAddress".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing <address> after -transportPublicAddress");
                     return false;
                 }
@@ -353,7 +358,7 @@ public class PerftestTransport {
             } else if ("-transportPublicAddress".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing <address> after -transportPublicAddress");
                     return false;
                 }
@@ -362,7 +367,7 @@ public class PerftestTransport {
             } else if ("-transportCertAuthority".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing Missing <path> after -transportCertAuthority");
                     return false;
                 }
@@ -371,7 +376,7 @@ public class PerftestTransport {
             } else if ("-transportCertFile".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing <path> after -transportCertFile");
                     return false;
                 }
@@ -380,7 +385,7 @@ public class PerftestTransport {
             } else if ("-transportPrivateKey".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing <path> after -transportPrivateKey");
                     return false;
                 }
@@ -389,7 +394,7 @@ public class PerftestTransport {
             } else if ("-transportWanServerAddress".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing <address> after -transportWanServerAddress");
                     return false;
                 }
@@ -398,7 +403,7 @@ public class PerftestTransport {
             } else if ("-transportWanServerPort".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing <port> after -transportWanServerPort");
                     return false;
                 }
@@ -407,7 +412,7 @@ public class PerftestTransport {
             } else if ("-transportWanId".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Missing <id> after -transportWanId");
                     return false;
                 }
@@ -441,11 +446,11 @@ public class PerftestTransport {
 
             // First, we create the Map
             transportConfigMap = new HashMap<String, TransportConfig>();
-            
+
             transportConfigMap.put("Default", new TransportConfig(
-                    Transport.TRANSPORT_DEFAULT,
-                    "Default (UDPv4) / Custom (Taken from QoS profile)",
-                    "dds.transport.UDPv4.builtin"));
+                    Transport.TRANSPORT_NOT_SET,
+                    "--",
+                    "--"));
             transportConfigMap.put("UDPv4", new TransportConfig(
                     Transport.TRANSPORT_UDPv4,
                     "UDPv4",
@@ -485,7 +490,7 @@ public class PerftestTransport {
         transportConfig = configMap.get(transportString);
 
         if (transportConfig == null) {
-            System.err.println(classLoggingString + " \"" 
+            System.err.println(classLoggingString + " \""
                     + transportString + "\" is not a valid transport. "
                     + "List of supported transport:");
             for (String key : configMap.keySet() ) {
@@ -498,7 +503,7 @@ public class PerftestTransport {
     }
 
     private void populateSecurityFiles(boolean isPublisher) {
-        
+
         if (secureOptions.certificateFile.isEmpty()) {
             if (isPublisher) {
                 secureOptions.certificateFile = TRANSPORT_CERTIFICATE_FILE_PUB;
@@ -525,30 +530,50 @@ public class PerftestTransport {
     private void setAllowInterfacesList(DomainParticipantQos qos) {
 
         if (!allowInterfaces.isEmpty()) {
-            /*
-             * By default, if the transport is not set, it should be UDPv4, if it is not
-             * It means that we have modified the QOS, so we won't use the -nic param.
-             */
-            if (transportConfig.kind == Transport.TRANSPORT_DEFAULT
-                    && qos.transport_builtin.mask != TransportBuiltinKind.UDPv4) {
+
+            if (transportConfig.kind == Transport.TRANSPORT_NOT_SET) {
                 System.err.println(classLoggingString
-                        + " Ignoring -nic option, Transport has been modified via QoS");
+                        + " Ignoring -nic/-allowInterfaces option.");
                 return;
             }
 
-            String propertyName = transportConfig.prefixString;
-            
-            if (transportConfig.kind == Transport.TRANSPORT_WANv4) {
-                propertyName += ".parent";
-            }
+            if (transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6_SHMEM
+                    || transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6) {
 
-            propertyName += ".parent.allow_interfaces";
+                String propertyName =
+                        "dds.transport.UDPv4.builtin.parent.allow_interfaces";
 
-            PropertyQosPolicyHelper.add_property(
+                PropertyQosPolicyHelper.add_property(
                     qos.property,
                     propertyName,
                     allowInterfaces,
                     false);
+
+                propertyName =
+                        "dds.transport.UDPv6.builtin.parent.allow_interfaces";
+
+                PropertyQosPolicyHelper.add_property(
+                        qos.property,
+                        propertyName,
+                        allowInterfaces,
+                        false);
+
+            } else {
+
+                String propertyName = transportConfig.prefixString;
+
+                if (transportConfig.kind == Transport.TRANSPORT_WANv4) {
+                    propertyName += ".parent";
+                }
+
+                propertyName += ".parent.allow_interfaces";
+
+                PropertyQosPolicyHelper.add_property(
+                        qos.property,
+                        propertyName,
+                        allowInterfaces,
+                        false);
+            }
         }
     }
 
@@ -561,10 +586,9 @@ public class PerftestTransport {
              * if it is not it means that we have modified the QOS, so we won't
              * use the -transportVerbosity param.
              */
-            if (transportConfig.kind == Transport.TRANSPORT_DEFAULT
-                    && qos.transport_builtin.mask != TransportBuiltinKind.UDPv4) {
+            if (transportConfig.kind == Transport.TRANSPORT_NOT_SET) {
                 System.err.println(classLoggingString
-                        + " Ignoring -transportVerbosity option, Transport has been modified via QoS");
+                        + " Ignoring -transportVerbosity option.");
                 return;
             }
 
@@ -575,7 +599,11 @@ public class PerftestTransport {
                 propertyName = transportConfig.prefixString + ".logging_verbosity_bitmap";
             } else if (transportConfig.kind == Transport.TRANSPORT_UDPv4
                     || transportConfig.kind == Transport.TRANSPORT_UDPv6
-                    || transportConfig.kind == Transport.TRANSPORT_SHMEM) {
+                    || transportConfig.kind == Transport.TRANSPORT_SHMEM
+                    || transportConfig.kind == Transport.TRANSPORT_UDPv4_SHMEM
+                    || transportConfig.kind == Transport.TRANSPORT_UDPv6_SHMEM
+                    || transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6
+                    || transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6_SHMEM) {
                 // We do not change logging for the builtin transports.
                 return;
             }
@@ -589,7 +617,7 @@ public class PerftestTransport {
     }
 
     private void configureSecurityFiles(DomainParticipantQos qos) {
-    
+
         if (!secureOptions.certAuthorityFile.isEmpty()) {
             PropertyQosPolicyHelper.add_property(
                     qos.property,
@@ -597,7 +625,7 @@ public class PerftestTransport {
                     secureOptions.certAuthorityFile,
                     false);
         }
-    
+
         if (!secureOptions.certificateFile.isEmpty()) {
             PropertyQosPolicyHelper.add_property(
                     qos.property,
@@ -605,7 +633,7 @@ public class PerftestTransport {
                     secureOptions.certificateFile,
                     false);
         }
-    
+
         if (!secureOptions.privateKeyFile.isEmpty()) {
             PropertyQosPolicyHelper.add_property(
                     qos.property,
@@ -642,14 +670,14 @@ public class PerftestTransport {
 
             if (!tcpOptions.serverBindPort.equals("0")) {
                 if (!tcpOptions.publicAddress.isEmpty()) {
-                    
+
                     PropertyQosPolicyHelper.add_property(
                             qos.property,
                             transportConfig.prefixString + ".public_address",
                             tcpOptions.publicAddress,
                             false);
                 } else {
-                    System.err.println(classLoggingString 
+                    System.err.println(classLoggingString
                             + " Public Address is required if Server Bind Port != 0");
                     return false;
                 }
@@ -732,7 +760,7 @@ public class PerftestTransport {
                     wanOptions.wanServerAddress,
                     false);
         } else {
-            System.err.println(classLoggingString 
+            System.err.println(classLoggingString
                     + " Wan Server Address is required");
             return false;
         }
@@ -752,7 +780,7 @@ public class PerftestTransport {
                     wanOptions.wanId,
                     false);
         } else {
-            System.err.println(classLoggingString 
+            System.err.println(classLoggingString
                     + " Wan ID is required");
             return false;
         }
@@ -789,11 +817,69 @@ public class PerftestTransport {
 
     public boolean configureTransport(DomainParticipantQos qos) {
 
-        switch (transportConfig.kind) {
+        /*
+        * If transportConfig.kind is not set, then we want to use the value
+        * provided by the Participant Qos, so first we read it from there and
+        * update the value of transportConfig.kind with whatever was already set.
+        */
+        if (transportConfig.kind == Transport.TRANSPORT_NOT_SET) {
 
-        case TRANSPORT_DEFAULT:
-            // We do not set any transport_builtin mask, either is UDPv4 or is something custom writen in the xml.
-            break;
+            int mask = qos.transport_builtin.mask;
+            switch (mask) {
+                case TransportBuiltinKind.UDPv4:
+                    transportConfig = new TransportConfig(
+                            Transport.TRANSPORT_UDPv4,
+                            "UDPv4",
+                            "dds.transport.UDPv4.builtin");
+                    break;
+                case TransportBuiltinKind.UDPv6:
+                    transportConfig = new TransportConfig(
+                            Transport.TRANSPORT_UDPv6,
+                            "UDPv6",
+                            "dds.transport.UDPv6.builtin");
+                    break;
+                case TransportBuiltinKind.SHMEM:
+                    transportConfig = new TransportConfig(
+                            Transport.TRANSPORT_SHMEM,
+                            "SHMEM",
+                            "dds.transport.shmem.builtin");
+                    break;
+                case TransportBuiltinKind.SHMEM|TransportBuiltinKind.UDPv4:
+                    transportConfig = new TransportConfig(
+                            Transport.TRANSPORT_UDPv4_SHMEM,
+                            "UDPv4 & SHMEM",
+                            "dds.transport.UDPv4.builtin");
+                    break;
+                case TransportBuiltinKind.UDPv6|TransportBuiltinKind.UDPv4:
+                    transportConfig = new TransportConfig(
+                            Transport.TRANSPORT_UDPv4_UDPv6,
+                            "UDPv4 & UDPv6",
+                            "dds.transport.UDPv4.builtin");
+                    break;
+                case TransportBuiltinKind.UDPv6|TransportBuiltinKind.SHMEM:
+                    transportConfig = new TransportConfig(
+                            Transport.TRANSPORT_UDPv6_SHMEM,
+                            "UDPv6 & SHMEM",
+                            "dds.transport.UDPv6.builtin");
+                    break;
+                case TransportBuiltinKind.UDPv4|TransportBuiltinKind.UDPv6|TransportBuiltinKind.SHMEM:
+                    transportConfig = new TransportConfig(
+                            Transport.TRANSPORT_UDPv4_UDPv6_SHMEM,
+                            "UDPv4 & UDPv6 & SHMEM",
+                            "dds.transport.UDPv4.builtin");
+                    break;
+                default:
+                    /*
+                     * This would mean that the mask is either empty or a
+                     * different value that we do not support yet. So we keep
+                     * the value as "TRANSPORT_NOT_SET"
+                     */
+                    break;
+            }
+            transportConfig.takenFromQoS = true;
+        }
+
+        switch (transportConfig.kind) {
 
         case TRANSPORT_UDPv4:
             qos.transport_builtin.mask = TransportBuiltinKind.UDPv4;
@@ -809,7 +895,7 @@ public class PerftestTransport {
 
         case TRANSPORT_TCPv4:
             if (!configureTcpTransport(qos)) {
-                System.err.println(classLoggingString 
+                System.err.println(classLoggingString
                         + " Failed to configure TCP plugin");
                 return false;
             }
@@ -817,7 +903,7 @@ public class PerftestTransport {
 
         case TRANSPORT_TLSv4:
             if (!configureTcpTransport(qos)) {
-                System.err.println(classLoggingString 
+                System.err.println(classLoggingString
                         + " Failed to configure TCP - TLS plugin");
                 return false;
             }
@@ -829,20 +915,16 @@ public class PerftestTransport {
 
         case TRANSPORT_WANv4:
             if (!configureWanTransport(qos)) {
-                System.err.println(classLoggingString 
+                System.err.println(classLoggingString
                         + " Failed to configure WAN plugin");
                 return false;
             }
             break;
 
-        default:
-            System.err.println(classLoggingString 
-                    + " Transport is not supported");
-            return false;
-
         } // Switch
 
-        if (transportConfig.kind != Transport.TRANSPORT_SHMEM) {
+        if (transportConfig.kind != Transport.TRANSPORT_NOT_SET
+                && transportConfig.kind != Transport.TRANSPORT_SHMEM) {
             setAllowInterfacesList(qos);
         } else {
             allowInterfaces = "";

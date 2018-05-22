@@ -104,8 +104,9 @@ class RTIDDSImpl : public IMessaging
 
     void PrintCmdLineHelp();
 
-
     bool ParseConfig(int argc, char *argv[]);
+
+    std::string PrintConfiguration();
 
     bool Initialize(int argc, char *argv[]);
 
@@ -127,7 +128,7 @@ class RTIDDSImpl : public IMessaging
     // Specific functions to configure the Security plugin
   #ifdef RTI_SECURE_PERFTEST
     bool configureSecurePlugin(DDS_DomainParticipantQos& dpQos);
-    void printSecureArgs();
+    std::string printSecureArgs();
     bool validateSecureArgs();
   #endif
 
@@ -143,7 +144,7 @@ class RTIDDSImpl : public IMessaging
     bool         _IsMulticast;
     unsigned int _BatchSize;
     unsigned long _InstanceCount;
-    unsigned long _InstanceMaxCountReader;
+    long _InstanceMaxCountReader;
     int          _InstanceHashBuckets;
     int          _Durability;
     bool         _DirectCommunication;

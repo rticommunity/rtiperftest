@@ -51,6 +51,18 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+Print a summary with the main setting of the test *RTI Perftest* will run (#46)(#67)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* provides a great number of command-line parameters, plus the option
+of using the *xml configuration file* for modying *RTI Connext DDS QoS*. This could
+lead to some confusion with regards to the test that will run when executing the application.
+
+In order to make this clear, *RTI Perftest* now shows a summary at the beginning of
+the test with most of the relevant parameters being used for such test. This is done
+for both *Publisher* and *Subscriber* sides.
+
+
 Added command-line parameters to simplify single API build (#50)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -65,6 +77,12 @@ following command-line parameters:
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Added RTI Perftest and RTI Connext DDS information at beginning of the test(#54)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting with this release, RTI Perftest will print at the beginning of the test
+its version and the version of RTI Connext DDS used to compile against.
+
 Improve Dynamic Data Send() and Receive() operations (#55)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -75,6 +93,35 @@ The result of these optimizations is that RTI Perftest now minimizes the time
 employed in the application-related tasks, therefore maximizing the time for
 sending and receiving calls. This allows to do a fair comparison between
 Dynamic Data results and Generated Type-Code Data results.
+
+What's Fixed in Master
+~~~~~~~~~~~~~~~~~~~~~~
+
+Incorrect Latency maximum calculation in certain scenarios with low resolution clocks (#58)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, if the clock provided by the system had low resolution, many of the
+*Latency* times calculated by sending and receiving back samples would end up being `0us`.
+*RTI Perftest* would assume in those cases this value was a initialization value and it
+would reset the maximum latency.
+
+This behavior has been fixed.
+
+Improve behavior when using the `-scan` command-line option and Best Effort (#59)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, the use of `-scan` in combination with *Best Effort* would cause
+to send too many times certain packets used to signalize the change of sizes and the
+initialization and finalization of the test.
+
+In certain scenarios, mostly local tests where *RTI Perftest* Publishers and Subscribers
+were in the same machine and that machine had limitations with respect to the CPU, this
+would cause the *Scan* test to not work properly, since the *Publisher* would make use of
+the CPU and network intensively, potentially starving the subscriber side and making the
+test hang.
+
+This behavior has been fixed.
+>>>>>>> master
 
 Release Notes 2.3.2
 -------------------

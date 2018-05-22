@@ -20,7 +20,7 @@ public interface IMessagingWriter {
     public boolean waitForPingResponse(long timeout, TimeUnit unit);
     public boolean notifyPingResponse();
     public long getPulledSampleCount();
-    public void wait_for_acknowledgments(int sec, int nsec);
+    public void waitForAck(int sec, int nsec);
     public void flush();
 
 }
