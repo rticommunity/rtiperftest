@@ -251,7 +251,7 @@ public final class PerfTest {
 
 
         System.out.print(
-                "RTI Perftest: "
+                "RTI Perftest "
                 + perftestVString.toString()
                 + " (RTI Connext DDS "
                 + ddsVString.toString()

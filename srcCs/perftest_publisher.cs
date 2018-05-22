@@ -2438,7 +2438,7 @@ namespace PerformanceTest {
             ProductVersion_t ddsV = GetDDSVersion();
 
             Console.Write(
-                    "RTI Perftest: "
+                    "RTI Perftest "
                     + perftestV.major + "."
                     + perftestV.minor + "."
                     + perftestV.release);

@@ -148,7 +148,7 @@ void perftest_cpp::PrintVersion()
     Perftest_ProductVersion_t perftestV = perftest_cpp::GetPerftestVersion();
     rti::core::ProductVersion ddsV = perftest_cpp::GetDDSVersion();
 
-    printf("RTI Perftest: %d.%d.%d",
+    printf("RTI Perftest %d.%d.%d",
             perftestV.major,
             perftestV.minor,
             perftestV.release);
