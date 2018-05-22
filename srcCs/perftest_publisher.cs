@@ -2442,7 +2442,7 @@ namespace PerformanceTest {
                     + perftestV.major + "."
                     + perftestV.minor + "."
                     + perftestV.release);
-            if (perftestV != 0) {
+            if (perftestV.revision != 0) {
                 Console.Write("." + perftestV.revision);
             }
             Console.Write(
