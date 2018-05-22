@@ -1787,9 +1787,7 @@ int perftest_cpp::Publisher()
      * memory allocations in the critical path are done before the test begings,
      * for both the Writer and the Reader that receives the samples.
      * It will also serve to make sure that all the instances are registered
-     * in advance in the subscriber application, and if we use CFTs, that at
-     * least one sample of each instance is sent (so all the subscribers receive
-     * at least one sample even if they filter).
+     * in advance in the subscriber application.
      */
 
     /*
