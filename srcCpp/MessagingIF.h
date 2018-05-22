@@ -114,11 +114,11 @@ class IMessaging
     virtual unsigned int GetBatchSize() = 0;
 
     /*
-     * If the middleware that implements IMessaging implements also reliability
-     * and it uses a Send Queue to keep the un-acknowledged samples, this
-     * function should be implemented and return the Max Size of that Queue.
+     * Get an estimation of the minimum number of samples that need to be send
+     * before starting the test to ensure that most memory allocations will be
+     * done in the subscriber side (when sending a burst of that data).
      */
-    virtual int GetSendQueueSizeMax() = 0;
+    virtual unsigned long GetInitializationSampleCount() = 0;
 
     virtual IMessagingWriter *CreateWriter(const char *topic_name) = 0;
 

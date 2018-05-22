@@ -103,10 +103,7 @@ class RTIDDSImpl : public IMessaging
         return _BatchSize;
     }
 
-    int GetSendQueueSizeMax()
-    {
-        return _SendQueueSize;
-    }
+    unsigned long GetInitializationSampleCount();
 
     IMessagingWriter *CreateWriter(const char *topic_name);
 

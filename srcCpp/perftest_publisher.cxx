@@ -1781,42 +1781,34 @@ int perftest_cpp::Publisher()
     message.size = INITIALIZE_SIZE;
 
     /*
-     * The purpose of this initial burst of Data is to make sure that all the
-     * queues are initialized already by the time the test starts taking
-     * measures. This means that we should handle the worst case scenario
-     * where we send super fast, so we don't need to grow.
+     * Initial burst of data:
      *
-     * 1 - At minimum, we need to send the number of Instances that we have.
-     *   To initialize all the queues and also for the use of CFTs.
-     *
-     * 2 - We are not going to send more samples than the max_send_window_size if
-     *   reliability is enabled. Therefore, we want to send at least a burst of
-     *   max_send_window_size.
-     *
-     * 3 - If we are using batching, the maximum we can send is
-     *   max_send_window_size batches. Therefore we should send that number of
-     *   batches: max_send_window_size * (batchSize/datalen) samples.
-     *
-     * 4 - In any case we want to at least send announcementSampleCount samples.
+     * The purpose of this initial burst of Data is to ensure that most
+     * memory allocations in the critical path are done before the test begings,
+     * for both the Writer and the Reader that receives the samples.
+     * It will also serve to make sure that all the instances are registered
+     * in advance in the subscriber application, and if we use CFTs, that at
+     * least one sample of each instance is sent (so all the subscribers receive
+     * at least one sample even if they filter).
      */
 
-    // This handles 1 (num. of instances) and 4 (announcementSampleCount).
+    /*
+     * We initialize the number of samples sent to the maximum between instances
+     * to be sent and the minimum number of announcement messages we want to
+     * send.
+     */
     unsigned long initializeSampleCount = (std::max)(
             _InstanceCount,
             announcementSampleCount);
 
-    // This handles 2 (send_queue_size).
+    /*
+     * We query the MessagingImplementation class to get the suggested sample
+     * count that we should send. This number might be based on the reliability
+     * protocol implemented by the middleware behind.
+     */
     initializeSampleCount = (std::max)(
-            (unsigned long) _MessagingImpl->GetSendQueueSizeMax(),
+            _MessagingImpl->GetInitializationSampleCount(),
             initializeSampleCount);
-
-    // This handles 3 (num. samples per batch).
-    if (_BatchSize > 0) {
-        initializeSampleCount = (std::max)(
-                (unsigned long) _MessagingImpl->GetSendQueueSizeMax()
-                        * (_BatchSize/_DataLen),
-                initializeSampleCount);
-    }
 
     fprintf(stderr,
             "Sending %lu initialization pings...\n",
