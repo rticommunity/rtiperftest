@@ -19,3 +19,4 @@ about: Create a report to help us improve
 - [ ] Automatic install testing
 - [ ] Documentation
 - [ ] Full [Code Review]()
+- [ ] Final Merge into master
