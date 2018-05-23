@@ -142,6 +142,8 @@ namespace PerformanceTest
         bool ParseConfig(int argc, string[] argv)
         {
             ulong _scan_max_size = 0;
+            bool isBatchSizeProvided = false;
+
             for (int i = 0; i < argc; ++i)
             {
                 if ("-pub".StartsWith(argv[i], true, null))
@@ -406,6 +408,7 @@ namespace PerformanceTest
                                 "]\n");
                         return false;
                     }
+                    isBatchSizeProvided = true;
                 }
                 else if ("-keepDurationUsec".StartsWith(argv[i], true, null))
                 {
@@ -722,7 +725,7 @@ namespace PerformanceTest
             }
 
             if (_IsAsynchronous && _BatchSize > 0) {
-                Console.Error.WriteLine("Batching cannnot be used with asynchronous writing.");
+                Console.Error.WriteLine("Batching cannot be used with asynchronous writing.");
                 return false;
             }
 
@@ -734,35 +737,40 @@ namespace PerformanceTest
                         _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
                     }
                     _isLargeData = true;
-                } else if (_scan_max_size <= (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                } else {
                     _useUnbounded = 0;
                     _isLargeData = false;
-                } else {
-                    return false;
                 }
-                if (_isLargeData && _BatchSize > 0) {
-                    Console.Error.WriteLine("Batching cannnot be used with asynchronous writing.");
-                    return false;
-                }
-            } else { // If not Scan, compare sizes of Batching and dataLen
                 /*
-                 * We don't want to use batching if the sample is the same size as the batch
-                 * nor if the sample is bigger (in this case we avoid the checking in the
-                 * middleware).
+                 * If not Scan, compare sizes of Batching and dataLen
+                 * At this point we have checked that we are not in a latency test mode,
+                 * therefore we are sure we are in throughput test mode, where we do want
+                 * to enable batching by default in certain cases
                  */
-                if (_BatchSize > 0 && _BatchSize <= (int)_DataLen)
-                {
-                    Console.Error.WriteLine("Batching dissabled: BatchSize (" + _BatchSize
-                            + ") is equal or smaller than the sample size (" + _DataLen
-                            + ").");
-                    _BatchSize = 0;
+            } else if (_BatchSize > 0 && _BatchSize < (int)_DataLen * 2){
+                /*
+                 * We don't want to use batching if the batch size is not large enough
+                 * to contain at least two samples (in this case we avoid the checking
+                 * at the middleware level).
+                 */
+                if (isBatchSizeProvided) {
+                    Console.Error.WriteLine("Batching disabled: BatchSize ("
+                            + _BatchSize +
+                            ") is smaller than two times the sample size ("
+                            + _DataLen + ").");
                 }
+                _BatchSize = 0;
             }
 
             if ((int)_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE)
             {
                 Console.Error.WriteLine("Large data settings enabled.");
                 _isLargeData = true;
+            }
+
+            if (_isLargeData && _BatchSize > 0) {
+                Console.Error.WriteLine("Batching cannot be used with asynchronous writing.");
+                return false;
             }
 
             if (_TurboMode) {
@@ -2149,6 +2157,9 @@ namespace PerformanceTest
             return new RTISubscriber<T>(reader, _DataTypeHelper.clone());
         }
 
+        static int DEFAULT_BATCH_SIZE = 8192;
+        static int RTIPERFTEST_MAX_PEERS = 1024;
+
         private int    _SendQueueSize = 50;
         private ulong    _DataLen = 100;
         private ulong     _useUnbounded = 0;
@@ -2158,7 +2169,7 @@ namespace PerformanceTest
         private bool   _IsMulticast = false;
         private bool   _AutoThrottle = false;
         private bool   _TurboMode = false;
-        private int    _BatchSize = 0;
+        private int    _BatchSize = DEFAULT_BATCH_SIZE;
         private int    _InstanceCount = 1;
         private int    _InstanceMaxCountReader = -1;
         private int     _InstanceHashBuckets = -1;
@@ -2173,7 +2184,6 @@ namespace PerformanceTest
         private bool _IsAsynchronous = false;
         private string _FlowControllerCustom = "default";
         string[] valid_flow_controller = { "default", "1Gbps", "10Gbps" };
-        static int             RTIPERFTEST_MAX_PEERS = 1024;
         private int     _peer_host_count = 0;
         private string[] _peer_host = new string[RTIPERFTEST_MAX_PEERS];
         private bool    _useCft = false;

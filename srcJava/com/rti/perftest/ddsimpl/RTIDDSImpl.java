@@ -79,6 +79,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private static String SECUREPERMISIONFILESUB = "./resource/secure/signed_PerftestPermissionsSub.xml";
     private static String SECURELIBRARYNAME = "nddssecurity";
 
+    private static final int DEFAULT_BATCH_SIZE = 8192; //8kbytes
+    private static final int RTIPERFTEST_MAX_PEERS = 1024;
+
     private int     _sendQueueSize = 50;
     private Duration_t _heartbeatPeriod = new Duration_t(0,0);
     private Duration_t _fastHeartbeatPeriod = new Duration_t (0,0);
@@ -95,7 +98,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private int     _instanceHashBuckets = -1;
     private int     _durability = 0;
     private boolean _directCommunication = true;
-    private int     _batchSize = 0;
+    private int     _batchSize = DEFAULT_BATCH_SIZE;
     private int     _keepDurationUsec = -1;
     private boolean _usePositiveAcks = true;
     private boolean _isDebug = false;
@@ -106,13 +109,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean _IsAsynchronous = false;
     private String  _FlowControllerCustom = "default";
     String[] valid_flow_controller = {"default", "1Gbps", "10Gbps"};
-    static int             RTIPERFTEST_MAX_PEERS = 1024;
     private int     _peer_host_count = 0;
     private String[] _peer_host = new String[RTIPERFTEST_MAX_PEERS];
     private boolean _useCft = false;
     private int     _instancesToBeWritten = -1;
     private int[]   _CFTRange = {0, 0};
-    
+
     private PerftestTransport _transport;
 
 
@@ -124,7 +126,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private String _secureCertAuthorityFile = null;
     private String _secureCertificateFile = null;
     private String _securePrivateKeyFile = null;
-    
+
     /*
      * if _GovernanceFile is specified, overrides the options for
      * signing, encrypting, and authentication.
@@ -1072,6 +1074,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
     private boolean parseConfig(int argc, String[] argv) {
         long _scan_max_size = 0;
+        boolean isBatchSizeProvided = false;
+
         for (int i = 0; i < argc; ++i) {
 
             if ("-scan".toLowerCase().startsWith(argv[i].toLowerCase())) {
@@ -1294,6 +1298,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                             "]\n");
                     return false;
                 }
+                isBatchSizeProvided = true;
             }
             else if ("-keepDurationUsec".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
@@ -1533,8 +1538,18 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
         }
 
+        if (_latencyTest) {
+            if (isBatchSizeProvided && _batchSize != 0) {
+                System.err.println("Batching cannot be used with Latency test.");
+                return false;
+            }
+            else {
+                _batchSize = 0;// Disable Batching
+            }
+        }
+
         if (_IsAsynchronous && _batchSize > 0) {
-            System.err.println("Batching cannnot be used with asynchronous writing.");
+            System.err.println("Batching cannot be used with asynchronous writing.");
             return false;
         }
 
@@ -1546,33 +1561,38 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
                 }
                 _isLargeData = true;
-            } else if (_scan_max_size <= Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+            } else {
                 _useUnbounded = 0;
                 _isLargeData = false;
-            } else {
-                return false;
             }
-            if (_isLargeData && _batchSize > 0) {
-                System.err.println("Batching cannnot be used with asynchronous writing.");
-                return false;
-            }
-        } else { // If not Scan, compare sizes of Batching and dataLen
+            /*
+             * If not Scan, compare sizes of Batching and dataLen At this point we have
+             * checked that we are not in a latency test mode, therefore we are sure we are
+             * in throughput test mode, where we do want to enable batching by default in
+             * certain cases
+             */
+        } else if (_batchSize > 0 && _batchSize < _dataLen * 2){
             /*
              * We don't want to use batching if the sample is the same size as the batch
              * nor if the sample is bigger (in this case we avoid the checking in the
              * middleware).
              */
-            if (_batchSize > 0 && _batchSize <= _dataLen) {
+            if (isBatchSizeProvided) {
                 System.err.println("Batching disabled: BatchSize (" + _batchSize
-                        + ") is equal or smaller than the sample size (" + _dataLen
-                        + ").");
-                _batchSize = 0;
+                        + ") is smaller than two times the sample size ("
+                        + _dataLen + ").");
             }
+            _batchSize = 0;
         }
 
         if (_dataLen > MAX_SYNCHRONOUS_SIZE.VALUE) {
             System.err.println("Large data settings enabled.");
             _isLargeData = true;
+        }
+
+        if (_isLargeData && _batchSize > 0) {
+            System.err.println("Batching cannot be used with asynchronous writing.");
+            return false;
         }
 
         if (_TurboMode) {
@@ -1606,7 +1626,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             System.err.println("_transport is not initialized");
             return false;
         }
-        
+
         return true;
     }
 

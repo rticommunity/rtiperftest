@@ -66,7 +66,7 @@ const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME =
 #endif
 
 std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
-const unsigned int DEFAULT_BATCH_SIZE = 8192;
+template <typename T> const unsigned int RTIDDSImpl<T>::DEFAULT_BATCH_SIZE = 8192;
 
 /*********************************************************
  * Shutdown
@@ -663,7 +663,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_LatencyTest ) {
+    if (_LatencyTest) {
         if (isBatchSizeProvided && _BatchSize != 0) {
             fprintf(stderr, "Batching cannot be used with Latency test.\n");
             return false;
@@ -695,19 +695,19 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
      * therefore we are sure we are in throughput test mode, where we do want
      * to enable batching by default in certain cases
      */
-    } else if (_BatchSize > 0
-                && (unsigned long)_BatchSize < _DataLen * 2
-                && isBatchSizeProvided) {
+    } else if (_BatchSize > 0 && (unsigned long)_BatchSize < _DataLen * 2) {
             /*
              * We don't want to use batching if the batch size is not large enough
              * to contain at least two samples (in this case we avoid the checking
              * at the middleware level).
              */
-        fprintf(stderr,
-                "Batching disabled: BatchSize (%d) is smaller than two "
-                "times the sample size (%lu).\n",
-                _BatchSize,
-                _DataLen);
+        if (isBatchSizeProvided) {
+            fprintf(stderr,
+                    "Batching disabled: BatchSize (%d) is smaller than two "
+                    "times the sample size (%lu).\n",
+                    _BatchSize,
+                    _DataLen);
+        }
         _BatchSize = 0;
     }
 

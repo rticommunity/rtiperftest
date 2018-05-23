@@ -68,6 +68,13 @@ Added RTI Perftest and RTI Connext DDS information at beginning of the test(#54)
 Starting with this release, RTI Perftest will print at the beginning of the test
 its version and the version of RTI Connext DDS used to compile against.
 
+Set batching as default with 8kb as default value in Throughput mode (#76)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+From now on, Batching will be set as default with 8Kb default value.
+This will be automatically disable if it's set LatencyTest mode or the
+`-batchSize` is lower than two times the `-dataLen`.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
