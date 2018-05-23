@@ -734,7 +734,12 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           The initial and maximum number of data samples. The middleware will
           make sure to allocate space for the initial_samples, and then if
           needed, it will grow the allocated memory up to a point where it
-          supports max_samples
+          supports max_samples.
+
+          For the initial number of samples we choose a number that should be
+          enough for most use-cases (therefore no need to grow), but that
+          should not affect the memory consumption by reserving too much
+          memory.
           -->
           <max_samples>10000</max_samples>
           <initial_samples>128</initial_samples>

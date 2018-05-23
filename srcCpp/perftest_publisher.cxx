@@ -1788,25 +1788,15 @@ int perftest_cpp::Publisher()
      * for both the Writer and the Reader that receives the samples.
      * It will also serve to make sure that all the instances are registered
      * in advance in the subscriber application.
-     */
-
-    /*
-     * We initialize the number of samples sent to the maximum between instances
-     * to be sent and the minimum number of announcement messages we want to
-     * send.
-     */
-    unsigned long initializeSampleCount = (std::max)(
-            _InstanceCount,
-            announcementSampleCount);
-
-    /*
+     *
      * We query the MessagingImplementation class to get the suggested sample
      * count that we should send. This number might be based on the reliability
-     * protocol implemented by the middleware behind.
+     * protocol implemented by the middleware behind. Then we choose between that
+     * number and the number of instances to be sent.
      */
-    initializeSampleCount = (std::max)(
+    unsigned long initializeSampleCount = (std::max)(
             _MessagingImpl->GetInitializationSampleCount(),
-            initializeSampleCount);
+            _InstanceCount);
 
     fprintf(stderr,
             "Sending %lu initialization pings...\n",
