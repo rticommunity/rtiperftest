@@ -419,10 +419,7 @@ bool configureShmemTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos)
 {
-
-    qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_SHMEM;
-
-    // SHMEM transport properties
+    // Number of messages that can be buffered in the receive queue.
     int received_message_count_max = 1024 * 1024 * 2
             / (int) transport.dataLen;
     if (received_message_count_max < 1) {
@@ -433,8 +430,7 @@ bool configureShmemTransport(
     string_stream_object << received_message_count_max;
     if (!assertPropertyToParticipantQos(
             qos,
-            transport.transportConfig.prefixString
-                    + ".received_message_count_max",
+            "dds.transport.shmem.builtin.received_message_count_max",
             string_stream_object.str())) {
         return false;
     }
@@ -520,6 +516,7 @@ bool configureTransport(
             break;
 
         case TRANSPORT_SHMEM:
+            qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_SHMEM;
             if (!configureShmemTransport(transport, qos)) {
                 fprintf(stderr,
                         "%s Failed to configure SHMEM plugin\n",
@@ -563,10 +560,22 @@ bool configureTransport(
                 return false;
             }
             break;
-
         default:
-            break;
 
+            /*
+             * If shared memory is enabled we want to set up its
+             * specific configuration
+             */
+            if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_SHMEM)
+                    != 0) {
+                if (!configureShmemTransport(transport, qos)) {
+                    fprintf(stderr,
+                            "%s Failed to configure SHMEM plugin\n",
+                            classLoggingString.c_str());
+                    return false;
+                }
+            }
+            break;
     } // Switch
 
     /*
