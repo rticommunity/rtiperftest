@@ -1170,13 +1170,11 @@ namespace PerformanceTest {
                                 Console.Error.Write("Bad number for -pubRate\n");
                                 return false;
                             }
-                            if ("spin".Equals(st[1])){
-                                Console.Error.Write("-pubRate method: spin.\n");
-                            } else if ("sleep".Equals(st[1])){
+                            if ("sleep".Equals(st[1])){
                                 _pubRateMethodSpin = false;
-                                Console.Error.Write("-pubRate method: sleep.\n");
-                            } else {
-                                Console.Error.Write("<method> for pubRate '" + st[1] + "' is not valid. It must be 'spin' or 'sleep'.\n");
+                            } else if (!"spin".Equals(st[1])) {
+                                Console.Error.Write("<method> for pubRate '" + st[1]
+                                        + "' is not valid. It must be 'spin' or 'sleep'.\n");
                                 return false;
                             }
                         }

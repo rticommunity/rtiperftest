@@ -622,13 +622,12 @@ public final class PerfTest {
                         return false;
                     }
                     // Validate pubRate <method> spin or sleep
-                    if (argv[i].contains("spin".toLowerCase())){
-                        System.err.println("-pubRate method: spin.");
-                    } else if (argv[i].contains("sleep".toLowerCase())){
+                    if (argv[i].contains("sleep".toLowerCase())){
                         _pubRateMethodSpin = false;
-                        System.err.println("-pubRate method: sleep.");
-                    } else {
-                        System.err.println("<samples/s>:<method> for pubRate '" + argv[i] + "' is not valid. It must contain 'spin' or 'sleep'.");
+                    } else if (!argv[i].contains("spin".toLowerCase())) {
+                        System.err.println("<samples/s>:<method> for pubRate '"
+                                + argv[i]
+                                + "' is not valid. It must contain 'spin' or 'sleep'.");
                         return false;
                     }
                 } else {

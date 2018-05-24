@@ -709,13 +709,13 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                     std::cerr << "[Error] -pubRate value must have the format <samples/s>:<method>" << std::endl;
                     throw std::logic_error("[Error] Error parsing commands");
                 }
-                if (strstr(argv[i], "spin") != NULL) {
-                    std::cerr << "[Info] -pubRate method: spin."<< std::endl;
-                } else if (strstr(argv[i], "sleep") != NULL) {
+                if (strstr(argv[i], "sleep") != NULL) {
                     _pubRateMethodSpin = false;
-                    std::cerr << "[Info] -pubRate method: sleep."<< std::endl;
-                } else {
-                    std::cerr << "[Error] <samples/s>:<method> for pubRate '" << argv[i] <<"' is not valid. It must contain 'spin' or 'sleep'." << std::endl;
+                } else if (strstr(argv[i], "spin") == NULL) {
+                    std::cerr << "[Error] <samples/s>:<method> for pubRate '"
+                              << argv[i]
+                              << "' is not valid. It must contain 'spin' or 'sleep'."
+                              << std::endl;
                     throw std::logic_error("[Error] Error parsing commands");
                 }
             } else {

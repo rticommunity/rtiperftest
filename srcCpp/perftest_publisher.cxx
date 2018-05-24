@@ -707,13 +707,12 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                     fprintf(stderr, "-pubRate value must have the format <samples/s>:<method>\n");
                     return false;
                 }
-                if (strstr(argv[i], "spin") != NULL) {
-                    printf("-pubRate method: spin.\n");
-                } else if (strstr(argv[i], "sleep") != NULL) {
+                if (strstr(argv[i], "sleep") != NULL) {
                     _pubRateMethodSpin = false;
-                    printf("-pubRate method: sleep.\n");
-                } else {
-                    fprintf(stderr,"<samples/s>:<method> for pubRate '%s' is not valid. It must contain 'spin' or 'sleep'.\n",argv[i]);
+                } else if (strstr(argv[i], "spin") == NULL) {
+                    fprintf(stderr,
+                            "<samples/s>:<method> for pubRate '%s' is not valid."
+                            " It must contain 'spin' or 'sleep'.\n",argv[i]);
                     return false;
                 }
             } else {
