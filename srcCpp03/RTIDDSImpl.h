@@ -141,9 +141,6 @@ class RTIDDSImpl : public IMessaging
     void validateSecureArgs();
   #endif
 
-  public:
-    static const unsigned int DEFAULT_BATCH_SIZE;
-
 };
 
 

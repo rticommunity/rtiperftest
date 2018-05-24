@@ -89,8 +89,6 @@ class perftest_cpp
 
   private:
     unsigned long _DataLen;
-    unsigned int  _BatchSize;
-    int  _SamplesPerBatch;
     unsigned long long _NumIter;
     bool _IsPub;
     bool _isScan;
@@ -114,7 +112,7 @@ class perftest_cpp
     unsigned int _executionTime;
     bool _displayWriterStats;
     bool _useCft;
-    static const Perftest_ProductVersion_t _version;    
+    static const Perftest_ProductVersion_t _version;
 
   private:
     static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);

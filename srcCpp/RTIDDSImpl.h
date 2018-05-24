@@ -32,7 +32,7 @@ class RTIDDSImpl : public IMessaging
         _UseXmlQos = true;
         _IsReliable = true;
         _IsMulticast = false;
-        _BatchSize = DEFAULT_BATCH_SIZE; //Default: 8 Kbytes
+        _BatchSize = DEFAULT_THROUGHPUT_BATCH_SIZE; // Default: 8 kBytes
         _InstanceCount = 1;
         _InstanceMaxCountReader = DDS_LENGTH_UNLIMITED;
         _InstanceHashBuckets = -1;
@@ -198,7 +198,6 @@ class RTIDDSImpl : public IMessaging
 
     static int          _WaitsetEventCount;
     static unsigned int _WaitsetDelayUsec;
-    static const unsigned int DEFAULT_BATCH_SIZE;
 };
 
 

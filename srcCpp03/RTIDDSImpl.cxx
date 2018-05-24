@@ -47,7 +47,6 @@ const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME = "nddssecurity";
 #endif
 
 std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
-template <typename T> const unsigned int RTIDDSImpl<T>::DEFAULT_BATCH_SIZE = 8192;
 
 template <typename T>
 RTIDDSImpl<T>::RTIDDSImpl():
@@ -60,7 +59,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _AutoThrottle(false),
         _IsReliable(true),
         _IsMulticast(false),
-        _BatchSize(DEFAULT_BATCH_SIZE),
+        _BatchSize(DEFAULT_THROUGHPUT_BATCH_SIZE),
         _InstanceCount(1),
         _InstanceMaxCountReader(dds::core::LENGTH_UNLIMITED), //(-1)
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED), //(-1)
@@ -138,8 +137,8 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
             "\t                                                announcement 239.255.1.100,\n" +
             "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
-            "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
-            "\t                                (no batching)\n" +
+            "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
+            "\t                                (disabled on Latency-test or with dataLen > 4kB)\n" +
             "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
             "\t                                protocol, default use positive acks\n" +
             "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +

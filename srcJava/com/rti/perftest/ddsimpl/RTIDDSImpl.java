@@ -44,6 +44,7 @@ import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 import com.rti.perftest.gen.MAX_CFT_VALUE;
 import com.rti.perftest.gen.KEY_SIZE;
+import com.rti.perftest.gen.DEFAULT_THROUGHPUT_BATCH_SIZE;
 import com.rti.perftest.harness.PerfTest;
 
 
@@ -79,7 +80,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private static String SECUREPERMISIONFILESUB = "./resource/secure/signed_PerftestPermissionsSub.xml";
     private static String SECURELIBRARYNAME = "nddssecurity";
 
-    private static final int DEFAULT_BATCH_SIZE = 8192; //8kbytes
     private static final int RTIPERFTEST_MAX_PEERS = 1024;
 
     private int     _sendQueueSize = 50;
@@ -98,7 +98,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private int     _instanceHashBuckets = -1;
     private int     _durability = 0;
     private boolean _directCommunication = true;
-    private int     _batchSize = DEFAULT_BATCH_SIZE;
+    private int     _batchSize = DEFAULT_THROUGHPUT_BATCH_SIZE.VALUE;
     private int     _keepDurationUsec = -1;
     private boolean _usePositiveAcks = true;
     private boolean _isDebug = false;
@@ -207,8 +207,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t                                                announcement 239.255.1.100,\n" +
             "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
-            "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
-            "\t                                (no batching)\n" +
+            "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
+            "\t                                (disabled on Latency-test or with dataLen > 4kB)\n" +
             "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
             "\t                                protocol, default use positive acks\n" +
             "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +
@@ -1549,7 +1549,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         if (_IsAsynchronous && _batchSize > 0) {
-            System.err.println("Batching cannot be used with asynchronous writing.");
+            System.err.println(
+                        "Batching cannot be used with asynchronous writing.");
             return false;
         }
 
@@ -1566,16 +1567,16 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _isLargeData = false;
             }
             /*
-             * If not Scan, compare sizes of Batching and dataLen At this point we have
-             * checked that we are not in a latency test mode, therefore we are sure we are
-             * in throughput test mode, where we do want to enable batching by default in
-             * certain cases
+             * If not Scan, compare sizes of Batching and dataLen At this point
+             * we have checked that we are not in a latency test mode, therefore
+             * we are sure we are in throughput test mode, where we do want to
+             * enable batching by default in certain cases
              */
         } else if (_batchSize > 0 && _batchSize < _dataLen * 2){
             /*
-             * We don't want to use batching if the sample is the same size as the batch
-             * nor if the sample is bigger (in this case we avoid the checking in the
-             * middleware).
+             * We don't want to use batching if the sample is the same size as
+             * the batch nor if the sample is bigger (in this case we avoid the
+             * checking in the middleware).
              */
             if (isBatchSizeProvided) {
                 System.err.println("Batching disabled: BatchSize (" + _batchSize
@@ -1591,7 +1592,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         if (_isLargeData && _batchSize > 0) {
-            System.err.println("Batching cannot be used with asynchronous writing.");
+            System.err.println(
+                        "Batching cannot be used with asynchronous writing.");
             return false;
         }
 

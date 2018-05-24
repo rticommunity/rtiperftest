@@ -85,8 +85,6 @@ class perftest_cpp
 
   private:
     unsigned long  _DataLen;
-    unsigned int  _BatchSize;
-    int  _SamplesPerBatch;
     unsigned long long _NumIter;
     bool _IsPub;
     bool _isScan;

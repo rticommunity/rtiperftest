@@ -66,7 +66,6 @@ const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME =
 #endif
 
 std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
-template <typename T> const unsigned int RTIDDSImpl<T>::DEFAULT_BATCH_SIZE = 8192;
 
 /*********************************************************
  * Shutdown
@@ -130,8 +129,8 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t                                                announcement 239.255.1.100,\n" +
             "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
-            "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
-            "\t                                (no batching)\n" +
+            "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
+            "\t                                (disabled on Latency-test or with dataLen > 4kB)\n" +
             "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
             "\t                                protocol, default use positive acks\n" +
             "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +
@@ -392,8 +391,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
             int readValue = strtol(argv[i], NULL, 10);
 
-            if (readValue < 0
-                    || readValue > (int)MAX_SYNCHRONOUS_SIZE) {
+            if (readValue < 0 || readValue > (int)MAX_SYNCHRONOUS_SIZE) {
                 fprintf(stderr,
                         "Batch size '%d' should be between [0,%d]\n",
                         _BatchSize,
@@ -697,9 +695,9 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
      */
     } else if (_BatchSize > 0 && (unsigned long)_BatchSize < _DataLen * 2) {
             /*
-             * We don't want to use batching if the batch size is not large enough
-             * to contain at least two samples (in this case we avoid the checking
-             * at the middleware level).
+             * We don't want to use batching if the batch size is not large
+             * enough to contain at least two samples (in this case we avoid the
+             * checking at the middleware level).
              */
         if (isBatchSizeProvided) {
             fprintf(stderr,

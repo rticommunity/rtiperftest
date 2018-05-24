@@ -118,17 +118,6 @@ int perftest_cpp::Run(int argc, char *argv[]) {
 
     _MessagingImpl->Initialize(_MessagingArgc, _MessagingArgv);
 
-    _BatchSize = _MessagingImpl->GetBatchSize();
-
-    if (_BatchSize != 0) {
-        _SamplesPerBatch = _BatchSize / (int)_DataLen;
-        if (_SamplesPerBatch == 0) {
-            _SamplesPerBatch = 1;
-        }
-    } else {
-        _SamplesPerBatch = 1;
-    }
-
     if (_IsPub) {
         return RunPublisher();
     } else {
@@ -189,8 +178,6 @@ void set_default_scan_values(
  */
 perftest_cpp::perftest_cpp() :
         _DataLen(100),
-        _BatchSize(0),
-        _SamplesPerBatch(1),
         _NumIter(100000000),
         _IsPub(false),
         _isScan(false),
@@ -1600,17 +1587,28 @@ int perftest_cpp::RunPublisher()
     IMessagingReader *announcement_reader;
     unsigned long num_latency;
     unsigned long announcementSampleCount = 50;
-
+    unsigned int BatchSize = 0;
+    unsigned int SamplesPerBatch = 1;
     // create throughput/ping writer
     writer = _MessagingImpl->CreateWriter(_ThroughputTopicName);
 
+    BatchSize = _MessagingImpl->GetBatchSize();
 
-    num_latency = (unsigned long)((_NumIter/_SamplesPerBatch) / _LatencyCount);
-    if ((_NumIter/_SamplesPerBatch) % _LatencyCount > 0) {
+    if (BatchSize != 0) {
+        SamplesPerBatch = BatchSize / (int) _DataLen;
+        if (SamplesPerBatch == 0) {
+            SamplesPerBatch = 1;
+        }
+    } else {
+        SamplesPerBatch = 1;
+    }
+
+    num_latency = (unsigned long)((_NumIter/SamplesPerBatch) / _LatencyCount);
+    if ((_NumIter/SamplesPerBatch) % _LatencyCount > 0) {
         num_latency++;
     }
 
-    if (_SamplesPerBatch > 1) {
+    if (SamplesPerBatch > 1) {
         // in batch mode, might have to send another ping
         ++num_latency;
     }
@@ -1800,7 +1798,8 @@ int perftest_cpp::RunPublisher()
 
         // only send latency pings if is publisher with ID 0
         // In batch mode, latency pings are sent once every LatencyCount batches
-        if ( (_PubID == 0) && (((loop/_SamplesPerBatch) % (unsigned long long)_LatencyCount) == 0) )
+        if ( (_PubID == 0) && (((loop/SamplesPerBatch)
+                % (unsigned long long)_LatencyCount) == 0) )
         {
 
             /* In batch mode only send a single ping in a batch.
@@ -1859,15 +1858,17 @@ int perftest_cpp::RunPublisher()
                             timeout_wait_for_ack_nsec);
                     }
 
-                    message.size = _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
+                    message.size =
+                            _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
                     /* Reset _SamplePerBatch */
-                    if (_BatchSize != 0) {
-                        _SamplesPerBatch = _BatchSize / (message.size + OVERHEAD_BYTES);
-                        if (_SamplesPerBatch == 0) {
-                            _SamplesPerBatch = 1;
+                    if (BatchSize != 0) {
+                        SamplesPerBatch =
+                                BatchSize / (message.size + OVERHEAD_BYTES);
+                        if (SamplesPerBatch == 0) {
+                            SamplesPerBatch = 1;
                         }
                     } else {
-                        _SamplesPerBatch = 1;
+                        SamplesPerBatch = 1;
                     }
                     ping_index_in_batch = 0;
                     current_index_in_batch = 0;
@@ -1880,7 +1881,7 @@ int perftest_cpp::RunPublisher()
                 message.timestamp_usec = (unsigned int)(now & 0xFFFFFFFF);
 
                 ++num_pings;
-                ping_index_in_batch = (ping_index_in_batch + 1) % _SamplesPerBatch;
+                ping_index_in_batch = (ping_index_in_batch + 1) % SamplesPerBatch;
                 sentPing = true;
 
                 if (_displayWriterStats && _PrintIntervals) {
@@ -1888,7 +1889,7 @@ int perftest_cpp::RunPublisher()
                 }
             }
         }
-        current_index_in_batch = (current_index_in_batch + 1) % _SamplesPerBatch;
+        current_index_in_batch = (current_index_in_batch + 1) % SamplesPerBatch;
 
         message.seq_num = (unsigned long) loop;
         message.latency_ping = pingID;

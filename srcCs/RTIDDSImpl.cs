@@ -73,8 +73,8 @@ namespace PerformanceTest
             "\t                                                announcement 239.255.1.100,\n" +
             "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
-            "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
-            "\t                                (no batching)\n" +
+            "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
+            "\t                                (disabled on Latency-test or with dataLen > 4kB)\n" +
             "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
             "\t                                protocol, default use positive acks\n" +
             "\t-keepDurationUsec <usec>      - Minimum time (us) to keep samples when\n" +
@@ -743,15 +743,16 @@ namespace PerformanceTest
                 }
                 /*
                  * If not Scan, compare sizes of Batching and dataLen
-                 * At this point we have checked that we are not in a latency test mode,
-                 * therefore we are sure we are in throughput test mode, where we do want
-                 * to enable batching by default in certain cases
+                 * At this point we have checked that we are not in a latency
+                 * test mode, therefore we are sure we are in throughput test
+                 * mode, where we do want to enable batching by default in
+                 * certain cases.
                  */
             } else if (_BatchSize > 0 && _BatchSize < (int)_DataLen * 2){
                 /*
-                 * We don't want to use batching if the batch size is not large enough
-                 * to contain at least two samples (in this case we avoid the checking
-                 * at the middleware level).
+                 * We don't want to use batching if the batch size is not large
+                 * enough to contain at least two samples (in this case we avoid
+                 * the checking at the middleware level).
                  */
                 if (isBatchSizeProvided) {
                     Console.Error.WriteLine("Batching disabled: BatchSize ("
@@ -2157,7 +2158,6 @@ namespace PerformanceTest
             return new RTISubscriber<T>(reader, _DataTypeHelper.clone());
         }
 
-        static int DEFAULT_BATCH_SIZE = 8192;
         static int RTIPERFTEST_MAX_PEERS = 1024;
 
         private int    _SendQueueSize = 50;
@@ -2169,7 +2169,7 @@ namespace PerformanceTest
         private bool   _IsMulticast = false;
         private bool   _AutoThrottle = false;
         private bool   _TurboMode = false;
-        private int    _BatchSize = DEFAULT_BATCH_SIZE;
+        private int    _BatchSize = (int)DEFAULT_THROUGHPUT_BATCH_SIZE.VALUE;
         private int    _InstanceCount = 1;
         private int    _InstanceMaxCountReader = -1;
         private int     _InstanceHashBuckets = -1;
