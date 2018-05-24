@@ -1326,21 +1326,19 @@ namespace PerformanceTest {
 
             StringBuilder sb = new StringBuilder();
 
-            sb.Append("\nPerftest Configuration:\n");
-
             // Throughput/Latency mode
             if (_IsPub) {
-                sb.Append("\tMode: ");
-                if (_LatencyTest) {
-                    sb.Append("Latency (Ping-Pong test)\n");
-                } else {
-                    sb.Append("Throughput (Use \"-latencyTest\" for Latency Mode)\n");
-                }
+                sb.Append("\nMode: ");
 
-                sb.Append("\tLatency count: 1 latency sample every ");
-                sb.Append(_LatencyCount);
-                sb.Append("\n");
+                if (_LatencyTest) {
+                    sb.Append("LATENCY TEST (Ping-Pong test)\n");
+                } else {
+                    sb.Append("THROUGHPUT TEST\n");
+                    sb.Append("      (Use \"-latencyTest\" for Latency Mode)\n");
+                }
             }
+
+            sb.Append("\nPerftest Configuration:\n");
 
             // Reliable/Best Effort
             sb.Append("\tReliability: ");
@@ -1369,41 +1367,38 @@ namespace PerformanceTest {
                 sb.Append("\n");
             }
 
-            // Scan/Data Sizes
-            sb.Append("\tData Size: ");
-            if (_isScan) {
-                for (int i = 0; i < _scanDataLenSizes.Count; i++ ) {
-                    sb.Append(_scanDataLenSizes[i]);
-                    if (i == _scanDataLenSizes.Count - 1) {
-                        sb.Append("\n");
-                    } else {
-                        sb.Append(", ");
-                    }
-                }
-            } else {
-                sb.Append(_DataLen);
-                sb.Append("\n");
-            }
-
-            // Batching
-            sb.Append("\tBatching: ");
-            if (_BatchSize != 0) {
-                sb.Append(_BatchSize);
-                sb.Append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
-            } else {
-                sb.Append("No (Use \"-batchSize\" to setup batching)\n");
-            }
-
-            // Listener/WaitSets
-            sb.Append("\tReceive using: ");
-            if (_UseReadThread) {
-                sb.Append("WaitSets\n");
-            } else {
-                sb.Append("Listeners\n");
-            }
-
-            // Publication Rate
             if (_IsPub) {
+
+                sb.Append("\tLatency count: 1 latency sample every ");
+                sb.Append(_LatencyCount);
+                sb.Append("\n");
+
+                // Scan/Data Sizes
+                sb.Append("\tData Size: ");
+                if (_isScan) {
+                    for (int i = 0; i < _scanDataLenSizes.Count; i++ ) {
+                        sb.Append(_scanDataLenSizes[i]);
+                        if (i == _scanDataLenSizes.Count - 1) {
+                            sb.Append("\n");
+                        } else {
+                            sb.Append(", ");
+                        }
+                    }
+                } else {
+                    sb.Append(_DataLen);
+                    sb.Append("\n");
+                }
+
+                // Batching
+                sb.Append("\tBatching: ");
+                if (_BatchSize != 0) {
+                    sb.Append(_BatchSize);
+                    sb.Append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
+                } else {
+                    sb.Append("No (Use \"-batchSize\" to setup batching)\n");
+                }
+
+                // Publication Rate
                 sb.Append("\tPublication Rate: ");
                 if (_pubRate > 0) {
                     sb.Append(_pubRate);
@@ -1416,17 +1411,25 @@ namespace PerformanceTest {
                 } else {
                     sb.Append("Unlimited (Not set)\n");
                 }
+
+                // Execution Time or Num Iter
+                if (_executionTime > 0) {
+                    sb.Append("\tExecution time: ");
+                    sb.Append(_executionTime);
+                    sb.Append(" seconds\n");
+                } else {
+                    sb.Append("\tNumber of samples: " );
+                    sb.Append(_NumIter);
+                    sb.Append("\n");
+                }
             }
 
-            // Execution Time or Num Iter
-            if (_executionTime > 0) {
-                sb.Append("\tExecution time: ");
-                sb.Append(_executionTime);
-                sb.Append(" seconds\n");
+            // Listener/WaitSets
+            sb.Append("\tReceive using: ");
+            if (_UseReadThread) {
+                sb.Append("WaitSets\n");
             } else {
-                sb.Append("\tNumber of samples: " );
-                sb.Append(_NumIter);
-                sb.Append("\n");
+                sb.Append("Listeners\n");
             }
 
             sb.Append(_MessagingImpl.PrintConfiguration());

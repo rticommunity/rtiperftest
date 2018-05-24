@@ -757,21 +757,19 @@ public final class PerfTest {
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("\nPerftest Configuration:\n");
-
         // Throughput/Latency mode
         if (_isPub) {
-            sb.append("\tMode: ");
-            if (_latencyTest) {
-                sb.append("Latency (Ping-Pong test)\n");
-            } else {
-                sb.append("Throughput (Use \"-latencyTest\" for Latency Mode)\n");
-            }
+            sb.append("\nMode: ");
 
-            sb.append("\tLatency count: 1 latency sample every ");
-            sb.append(_latencyCount);
-            sb.append("\n");
+            if (_latencyTest) {
+                sb.append("LATENCY TEST (Ping-Pong test)\n");
+            } else {
+                sb.append("THROUGHPUT TEST\n");
+                sb.append("      (Use \"-latencyTest\" for Latency Mode)\n");
+            }
         }
+
+        sb.append("\nPerftest Configuration:\n");
 
         // Reliable/Best Effort
         sb.append("\tReliability: ");
@@ -800,41 +798,38 @@ public final class PerfTest {
             sb.append("\n");
         }
 
-        // Scan/Data Sizes
-        sb.append("\tData Size: ");
-        if (_isScan) {
-            for (int i = 0; i < _scanDataLenSizes.size(); i++ ) {
-                sb.append(_scanDataLenSizes.get(i));
-                if (i == _scanDataLenSizes.size() - 1) {
-                    sb.append("\n");
-                } else {
-                    sb.append(", ");
-                }
-            }
-        } else {
-            sb.append(_dataLen);
-            sb.append("\n");
-        }
-
-        // Batching
-        sb.append("\tBatching: ");
-        if (_batchSize != 0) {
-            sb.append(_batchSize);
-            sb.append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
-        } else {
-            sb.append("No (Use \"-batchSize\" to setup batching)\n");
-        }
-
-        // Listener/WaitSets
-        sb.append("\tReceive using: ");
-        if (_useReadThread) {
-            sb.append("WaitSets\n");
-        } else {
-            sb.append("Listeners\n");
-        }
-
-        // Publication Rate
         if (_isPub) {
+
+            sb.append("\tLatency count: 1 latency sample every ");
+            sb.append(_latencyCount);
+            sb.append("\n");
+
+            // Scan/Data Sizes
+            sb.append("\tData Size: ");
+            if (_isScan) {
+                for (int i = 0; i < _scanDataLenSizes.size(); i++ ) {
+                    sb.append(_scanDataLenSizes.get(i));
+                    if (i == _scanDataLenSizes.size() - 1) {
+                        sb.append("\n");
+                    } else {
+                        sb.append(", ");
+                    }
+                }
+            } else {
+                sb.append(_dataLen);
+                sb.append("\n");
+            }
+
+            // Batching
+            sb.append("\tBatching: ");
+            if (_batchSize != 0) {
+                sb.append(_batchSize);
+                sb.append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
+            } else {
+                sb.append("No (Use \"-batchSize\" to setup batching)\n");
+            }
+
+            // Publication Rate
             sb.append("\tPublication Rate: ");
             if (_pubRate > 0) {
                 sb.append(_pubRate);
@@ -847,17 +842,25 @@ public final class PerfTest {
             } else {
                 sb.append("Unlimited (Not set)\n");
             }
+
+            // Execution Time or Num Iter
+            if (_executionTime > 0) {
+                sb.append("\tExecution time: ");
+                sb.append(_executionTime);
+                sb.append(" seconds\n");
+            } else {
+                sb.append("\tNumber of samples: " );
+                sb.append(_numIter);
+                sb.append("\n");
+            }
         }
 
-        // Execution Time or Num Iter
-        if (_executionTime > 0) {
-            sb.append("\tExecution time: ");
-            sb.append(_executionTime);
-            sb.append(" seconds\n");
+        // Listener/WaitSets
+        sb.append("\tReceive using: ");
+        if (_useReadThread) {
+            sb.append("WaitSets\n");
         } else {
-            sb.append("\tNumber of samples: " );
-            sb.append(_numIter);
-            sb.append("\n");
+            sb.append("Listeners\n");
         }
 
         sb.append(_messagingImpl.printConfiguration());

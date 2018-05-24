@@ -867,23 +867,21 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
  */
 void perftest_cpp::PrintConfiguration()
 {
-    // TODO: Print Perftest and Connext DDS versions
-
     std::ostringstream stringStream;
-    stringStream << "\nPerftest Configuration:\n";
 
     // Throughput/Latency mode
     if (_IsPub) {
-        stringStream << "\tMode: ";
+        stringStream << "\nMode: ";
+
         if (_LatencyTest) {
-            stringStream << "Latency (Ping-Pong test)\n";
+            stringStream << "LATENCY TEST (Ping-Pong test)\n";
         } else {
-            stringStream << "Throughput (Use \"-latencyTest\" for Latency Mode)\n";
+            stringStream << "THROUGHPUT TEST\n"
+                         << "      (Use \"-latencyTest\" for Latency Mode)\n";
         }
-        // Latency Count
-        stringStream << "\tLatency count: 1 latency sample every "
-                     << _LatencyCount << "\n";
     }
+
+    stringStream << "\nPerftest Configuration:\n";
 
     // Reliable/Best Effort
     stringStream << "\tReliability: ";
@@ -908,39 +906,35 @@ void perftest_cpp::PrintConfiguration()
         stringStream << "\tSubscriber ID: " << _SubID << "\n";
     }
 
-    // Scan/Data Sizes
-    stringStream << "\tData Size: ";
-    if (_isScan) {
-        for (unsigned long i = 0; i < _scanDataLenSizes.size(); i++ ) {
-            stringStream << _scanDataLenSizes[i];
-            if (i == _scanDataLenSizes.size() - 1) {
-                stringStream << "\n";
-            } else {
-                stringStream << ", ";
-            }
-        }
-    } else {
-        stringStream << _DataLen << "\n";
-    }
-
-    // Batching
-    stringStream << "\tBatching: ";
-    if (_BatchSize != 0) {
-        stringStream << _BatchSize << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
-    } else {
-        stringStream << "No (Use \"-batchSize\" to setup batching)\n";
-    }
-
-    // Listener/WaitSets
-    stringStream << "\tReceive using: ";
-    if (_UseReadThread) {
-        stringStream << "WaitSets\n";
-    } else {
-        stringStream << "Listeners\n";
-    }
-
-    // Publication Rate
     if (_IsPub) {
+        // Latency Count
+        stringStream << "\tLatency count: 1 latency sample every "
+                     << _LatencyCount << " samples\n";
+
+        // Scan/Data Sizes
+        stringStream << "\tData Size: ";
+        if (_isScan) {
+            for (unsigned long i = 0; i < _scanDataLenSizes.size(); i++ ) {
+                stringStream << _scanDataLenSizes[i];
+                if (i == _scanDataLenSizes.size() - 1) {
+                    stringStream << "\n";
+                } else {
+                    stringStream << ", ";
+                }
+            }
+        } else {
+            stringStream << _DataLen << "\n";
+        }
+
+        // Batching
+        stringStream << "\tBatching: ";
+        if (_BatchSize != 0) {
+            stringStream << _BatchSize << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
+        } else {
+            stringStream << "No (Use \"-batchSize\" to setup batching)\n";
+        }
+
+        // Publication Rate
         stringStream << "\tPublication Rate: ";
         if (_pubRate > 0) {
             stringStream << _pubRate << " Samples/s (";
@@ -952,13 +946,20 @@ void perftest_cpp::PrintConfiguration()
         } else {
             stringStream << "Unlimited (Not set)\n";
         }
+        // Execution Time or Num Iter
+        if (_executionTime > 0) {
+            stringStream << "\tExecution time: " << _executionTime << " seconds\n";
+        } else {
+            stringStream << "\tNumber of samples: " << _NumIter << "\n";
+        }
     }
 
-    // Execution Time or Num Iter
-    if (_executionTime > 0) {
-        stringStream << "\tExecution time: " << _executionTime << " seconds\n";
+    // Listener/WaitSets
+    stringStream << "\tReceive using: ";
+    if (_UseReadThread) {
+        stringStream << "WaitSets\n";
     } else {
-        stringStream << "\tNumber of samples: " << _NumIter << "\n";
+        stringStream << "Listeners\n";
     }
 
     stringStream << _MessagingImpl->PrintConfiguration();
