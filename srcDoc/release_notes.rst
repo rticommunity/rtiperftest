@@ -96,6 +96,22 @@ test hang.
 
 This behavior has been fixed.
 
+Reduce memory consumption in the Subscriber side (#74)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The *initial_samples* value for the *ThroughputQoS* QoS profile has been updated
+to a lower number. This profile is used by the Subscriber side to create a
+*DDS DataWriter*.
+
+The reason why this value has been updated is to decrease the memory consumption
+of the *RTI Perftest* Subscriber side.
+
+In order to ensure that this change does not affect to the overall performance of
+the application, the initial burst of samples sent by the Publisher side has been
+also reviewed, to always send a burst big enough to ensure that the allocations in
+both publisher and subscriber sides are done before the test starts.
+
+
 Release Notes 2.3.2
 -------------------
 
