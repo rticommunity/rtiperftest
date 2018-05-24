@@ -114,7 +114,7 @@ class IMessaging
     virtual IMessagingWriter *CreateWriter(const std::string &topic_name) = 0;
 
     /*
-     * Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
+     * Pass null for callback if using IMessagingReader.ReceiveMessage()
      * to get data
      */
     virtual IMessagingReader *CreateReader(

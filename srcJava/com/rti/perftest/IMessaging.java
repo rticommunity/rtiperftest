@@ -35,7 +35,7 @@ public interface IMessaging {
     public IMessagingWriter createWriter(String topicName);
 
     /**
-     * Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
+     * Pass null for callback if using IMessagingReader.ReceiveMessage()
      * to get data
      */
     public IMessagingReader createReader(
