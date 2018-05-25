@@ -11,7 +11,7 @@ void RTIDDSLoggerDevice::write(const NDDS_Config_LogMessage *message)
 {
     if (message && !shmem_issue) {
         if (message->level == NDDS_CONFIG_LOG_LEVEL_ERROR) {
-            if (std::string(message->text).find(SHMEM_ERROR) != std::string::npos) {
+            if (std::string(message->text).find(NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE) != std::string::npos) {
                 shmem_issue = true;
             }
         }
