@@ -262,8 +262,7 @@ void configureShmemTransport(
         PerftestTransport &transport,
         std::map<std::string, std::string> &qos_properties)
 {
-
-    // SHMEM transport properties
+    // Number of messages that can be buffered in the receive queue.
     int received_message_count_max = 1024 * 1024 * 2
             / (int) transport.dataLen;
     if (received_message_count_max < 1) {
@@ -404,6 +403,15 @@ bool configureTransport(
             break;
 
         default:
+
+            /*
+             * If shared memory is enabled we want to set up its
+             * specific configuration
+             */
+            TransportBuiltinMask mask = qos.policy<TransportBuiltin>().mask();
+            if ((mask & TransportBuiltinMask::shmem()) != 0) {
+                configureShmemTransport(transport, qos_properties);
+            }
             break;
 
     } // Switch
