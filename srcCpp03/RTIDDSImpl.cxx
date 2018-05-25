@@ -138,7 +138,7 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
             "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
             "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
-            "\t                                (disabled on Latency-test or with dataLen > 4kB)\n" +
+            "\t                                (Disabled for LatencyTest mode or if dataLen > 4kB)\n" +
             "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
             "\t                                protocol, default use positive acks\n" +
             "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +

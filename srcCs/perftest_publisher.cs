@@ -1911,8 +1911,8 @@ namespace PerformanceTest {
             AnnouncementListener  announcement_reader_listener = null;
             uint num_latency;
             int announcementSampleCount = 50;
-            int BatchSize = 0;
-            int SamplesPerBatch = 1;
+            int batchSize = 0;
+            int samplesPerBatch = 1;
 
             // create throughput/ping writer
             writer = _MessagingImpl.CreateWriter(_ThroughputTopicName);
@@ -1923,27 +1923,27 @@ namespace PerformanceTest {
                 return;
             }
 
-            BatchSize = _MessagingImpl.GetBatchSize();
+            batchSize = _MessagingImpl.GetBatchSize();
 
-            if (BatchSize != 0) {
-                SamplesPerBatch = BatchSize/(int)_DataLen;
-                if (SamplesPerBatch == 0) {
-                   SamplesPerBatch = 1;
+            if (batchSize != 0) {
+                samplesPerBatch = batchSize/(int)_DataLen;
+                if (samplesPerBatch == 0) {
+                   samplesPerBatch = 1;
                 }
             } else {
-                SamplesPerBatch = 1;
+                samplesPerBatch = 1;
             }
 
-            num_latency = (uint)((_NumIter/(ulong)SamplesPerBatch)
+            num_latency = (uint)((_NumIter/(ulong)samplesPerBatch)
                     / (ulong)_LatencyCount);
 
-            if ((num_latency / (ulong)SamplesPerBatch)
+            if ((num_latency / (ulong)samplesPerBatch)
                     % (ulong)_LatencyCount > 0) {
                 num_latency++;
             }
 
             // in batch mode, might have to send another ping
-            if (SamplesPerBatch > 1) {
+            if (samplesPerBatch > 1) {
                 ++num_latency;
             }
 
@@ -2126,7 +2126,7 @@ namespace PerformanceTest {
 
                 // only send latency pings if is publisher with ID 0
                 // In batch mode, latency pings are sent once every LatencyCount batches
-                if ( (_PubID == 0) && (((loop/(ulong)SamplesPerBatch)
+                if ( (_PubID == 0) && (((loop/(ulong)samplesPerBatch)
                         % (ulong)_LatencyCount) == 0) )
                 {
 
@@ -2186,14 +2186,14 @@ namespace PerformanceTest {
                             }
                             message.size = (int)(_scanDataLenSizes[scan_count++] - OVERHEAD_BYTES);
                             /* Reset _SamplePerBatch */
-                            if (BatchSize != 0) {
-                                SamplesPerBatch = BatchSize
+                            if (batchSize != 0) {
+                                samplesPerBatch = batchSize
                                         / (message.size + OVERHEAD_BYTES);
-                                if (SamplesPerBatch == 0) {
-                                    SamplesPerBatch = 1;
+                                if (samplesPerBatch == 0) {
+                                    samplesPerBatch = 1;
                                 }
                             } else {
-                                SamplesPerBatch = 1;
+                                samplesPerBatch = 1;
                             }
                             ping_index_in_batch = 0;
                             current_index_in_batch = 0;
@@ -2207,7 +2207,7 @@ namespace PerformanceTest {
 
                         ++num_pings;
                         ping_index_in_batch =
-                                (ping_index_in_batch + 1) % SamplesPerBatch;
+                                (ping_index_in_batch + 1) % samplesPerBatch;
                         sentPing = true;
 
                         if (_displayWriterStats && _PrintIntervals) {
@@ -2217,7 +2217,7 @@ namespace PerformanceTest {
                 }
 
                 current_index_in_batch =
-                        (current_index_in_batch + 1) % SamplesPerBatch;
+                        (current_index_in_batch + 1) % samplesPerBatch;
 
                 message.seq_num = (uint)loop;
                 message.latency_ping = pingID;
