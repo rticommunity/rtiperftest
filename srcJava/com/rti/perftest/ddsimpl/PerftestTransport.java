@@ -800,9 +800,7 @@ public class PerftestTransport {
 
     private void configureShmemTransport(DomainParticipantQos qos) {
 
-        qos.transport_builtin.mask = TransportBuiltinKind.SHMEM;
-
-        // SHMEM transport properties
+        // Number of messages that can be buffered in the receive queue.
         int receivedMessageCountMax = 2 * 1024 * 1024 / (int) dataLen;
         if (receivedMessageCountMax < 1) {
             receivedMessageCountMax = 1;
@@ -881,46 +879,57 @@ public class PerftestTransport {
 
         switch (transportConfig.kind) {
 
-        case TRANSPORT_UDPv4:
-            qos.transport_builtin.mask = TransportBuiltinKind.UDPv4;
-            break;
+            case TRANSPORT_UDPv4:
+                qos.transport_builtin.mask = TransportBuiltinKind.UDPv4;
+                break;
 
-        case TRANSPORT_UDPv6:
-            qos.transport_builtin.mask = TransportBuiltinKind.UDPv6;
-            break;
+            case TRANSPORT_UDPv6:
+                qos.transport_builtin.mask = TransportBuiltinKind.UDPv6;
+                break;
 
-        case TRANSPORT_SHMEM:
-            configureShmemTransport(qos);
-            break;
+            case TRANSPORT_SHMEM:
+                qos.transport_builtin.mask = TransportBuiltinKind.SHMEM;
+                configureShmemTransport(qos);
+                break;
 
-        case TRANSPORT_TCPv4:
-            if (!configureTcpTransport(qos)) {
-                System.err.println(classLoggingString
-                        + " Failed to configure TCP plugin");
-                return false;
-            }
-            break;
+            case TRANSPORT_TCPv4:
+                if (!configureTcpTransport(qos)) {
+                    System.err.println(classLoggingString
+                            + " Failed to configure TCP plugin");
+                    return false;
+                }
+                break;
 
-        case TRANSPORT_TLSv4:
-            if (!configureTcpTransport(qos)) {
-                System.err.println(classLoggingString
-                        + " Failed to configure TCP - TLS plugin");
-                return false;
-            }
-            break;
+            case TRANSPORT_TLSv4:
+                if (!configureTcpTransport(qos)) {
+                    System.err.println(classLoggingString
+                            + " Failed to configure TCP - TLS plugin");
+                    return false;
+                }
+                break;
 
-        case TRANSPORT_DTLSv4:
-            configureDtlsTransport(qos);
-            break;
+            case TRANSPORT_DTLSv4:
+                configureDtlsTransport(qos);
+                break;
 
-        case TRANSPORT_WANv4:
-            if (!configureWanTransport(qos)) {
-                System.err.println(classLoggingString
-                        + " Failed to configure WAN plugin");
-                return false;
-            }
-            break;
+            case TRANSPORT_WANv4:
+                if (!configureWanTransport(qos)) {
+                    System.err.println(classLoggingString
+                            + " Failed to configure WAN plugin");
+                    return false;
+                }
+                break;
 
+            default:
+                /*
+                * If shared memory is enabled we want to set up its
+                * specific configuration
+                */
+                if ((qos.transport_builtin.mask & TransportBuiltinKind.SHMEM)
+                        != 0) {
+                    configureShmemTransport(qos);
+                }
+                break;
         } // Switch
 
         if (transportConfig.kind != Transport.TRANSPORT_NOT_SET
