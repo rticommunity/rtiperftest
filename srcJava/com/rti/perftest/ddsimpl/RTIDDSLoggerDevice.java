@@ -41,7 +41,7 @@ public class RTIDDSLoggerDevice implements LoggerDevice {
 
     }
 
-    boolean get_shmem_issue()
+    public boolean get_shmem_issue()
     {
        return this.shmem_issue;
     }

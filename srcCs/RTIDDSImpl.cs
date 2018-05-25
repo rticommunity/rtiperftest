@@ -8,9 +8,48 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using DDS;
+using NDDS;
 
 namespace PerformanceTest
 {
+    // ===========================================================================
+    class RTIDDSLoggerDevice : NDDS.LoggerDevice
+    {
+
+        private bool shmem_issue = false;
+        private static String SHMEM_ERROR =
+                "NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key";
+
+        public RTIDDSLoggerDevice()
+        {
+            shmem_issue = false;
+        }
+
+        public override void write(LogMessage message)
+        {
+            if (!shmem_issue) {
+                if (message.level == LogLevel.NDDS_CONFIG_LOG_LEVEL_ERROR) {
+                    if (message.text.Contains(SHMEM_ERROR)) {
+                        shmem_issue = true;
+                    }
+                }
+                if (!shmem_issue) {
+                    Console.Out.WriteLine(message.text);
+                }
+            }
+        }
+
+        public override void close()
+        {
+
+        }
+
+        public bool get_shmem_issue()
+        {
+           return shmem_issue;
+        }
+    }
+
     class RTIDDSImpl<T> : IMessaging where T : class, DDS.ICopyable<T>
     {
 
@@ -42,6 +81,10 @@ namespace PerformanceTest
                     DDS.DomainParticipantFactory.get_instance().delete_participant(ref _participant);
                     _participant = null;
                 }
+            }
+            // unregistered LoggerDevice
+            if (!NDDS.ConfigLogger.get_instance().set_output_device(null)) {
+                Console.Error.Write("Failed set_output_device for Logger.\n");
             }
         }
 
@@ -1461,6 +1504,12 @@ namespace PerformanceTest
                 }
             }
 
+            // Set LoggerDevice
+            if (!NDDS.ConfigLogger.get_instance().set_output_device(device)) {
+                Console.Error.Write("Failed set_output_device for Logger.\n");
+                return false;
+            }
+
             // Creates the participant
             _participant = _factory.create_participant(
                 _DomainID, qos, listener,
@@ -1469,8 +1518,14 @@ namespace PerformanceTest
                  DDS.StatusKind.OFFERED_INCOMPATIBLE_QOS_STATUS |
                  DDS.StatusKind.REQUESTED_INCOMPATIBLE_QOS_STATUS));
 
-            if (_participant == null)
-            {
+            if (_participant == null || device.get_shmem_issue()) {
+                if (device.get_shmem_issue()) {
+                    Console.Error.Write(
+                            "The participant creation failed due to issues in the Shared Memory configuration of your OS.\n" +
+                            "For more information about how to configure Shared Memory see: http://community.rti.com/kb/osx510 \n" +
+                            "If you want to skip the use of Shared memory in RTI Perftest, " +
+                            "specify the transport using \"-transport <kind>\", e.g. \"-transport UDPv4\".\n");
+                }
                 Console.Error.Write("Problem creating participant.\n");
                 return false;
             }
@@ -2309,5 +2364,6 @@ namespace PerformanceTest
         private ITypeHelper<T>                  _DataTypeHelper = null;
 
         private Semaphore _pongSemaphore = null;
+        private RTIDDSLoggerDevice  device = new RTIDDSLoggerDevice();
     }
 }
