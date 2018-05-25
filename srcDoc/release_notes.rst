@@ -51,14 +51,17 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
-`UDPv4 | SHMEM` by default instead of `UDPv4` (#80)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use default `UDPv4` + `SHMEM` as the default transport configuration (#80)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default *RTI Perftest* use UDPv4 as transport. After analyzing the performance
-in different scenarios, SHMEM improves the performance number.
-Thus *RTI Perftest* now use the default built-in transports mask, which is
-`UDPv4 | SHMEM`. This change improves the out of the box user experience, getting
-better numbers using the default configuration.
+*RTI Perftest* previous default was to use only the `UDPv4` transport.
+However this doesn't always lead to the best results when testing between
+applications within the same machine and it also differs from *RTI Connext DDS*
+default behavior, which is `UDPv4` + Shared Memory (`SHMEM`).
+Starting from this release *RTI Perftest* new default is to use `UDPv4` + `SHMEM`.
+
+This change improves the out of the box user experience, getting better numbers
+when using the default configuration.
 
 
 Print a summary with the main setting of the test *RTI Perftest* will run (#46)(#67)

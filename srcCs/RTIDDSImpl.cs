@@ -1505,7 +1505,7 @@ namespace PerformanceTest
             }
 
             // Set LoggerDevice
-            if (!NDDS.ConfigLogger.get_instance().set_output_device(device)) {
+            if (!NDDS.ConfigLogger.get_instance().set_output_device(_loggerDevice)) {
                 Console.Error.Write("Failed set_output_device for Logger.\n");
                 return false;
             }
@@ -1518,8 +1518,8 @@ namespace PerformanceTest
                  DDS.StatusKind.OFFERED_INCOMPATIBLE_QOS_STATUS |
                  DDS.StatusKind.REQUESTED_INCOMPATIBLE_QOS_STATUS));
 
-            if (_participant == null || device.get_shmem_issue()) {
-                if (device.get_shmem_issue()) {
+            if (_participant == null || _loggerDevice.get_shmem_issue()) {
+                if (_loggerDevice.get_shmem_issue()) {
                     Console.Error.Write(
                             "The participant creation failed due to issues in the Shared Memory configuration of your OS.\n" +
                             "For more information about how to configure Shared Memory see: http://community.rti.com/kb/osx510 \n" +
@@ -2364,6 +2364,6 @@ namespace PerformanceTest
         private ITypeHelper<T>                  _DataTypeHelper = null;
 
         private Semaphore _pongSemaphore = null;
-        private RTIDDSLoggerDevice  device = new RTIDDSLoggerDevice();
+        private RTIDDSLoggerDevice  _loggerDevice = new RTIDDSLoggerDevice();
     }
 }

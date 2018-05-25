@@ -96,7 +96,7 @@ class RTIDDSImpl : public IMessaging
         _typename = T::TypeSupport::get_type_name();
 
         _pongSemaphore = NULL;
-        device = RTIDDSLoggerDevice();
+        _loggerDevice = RTIDDSLoggerDevice();
     }
 
     ~RTIDDSImpl()
@@ -209,7 +209,7 @@ class RTIDDSImpl : public IMessaging
     const char                  *_typename;
 
     RTIOsapiSemaphore *_pongSemaphore;
-    RTIDDSLoggerDevice device;
+    RTIDDSLoggerDevice _loggerDevice;
 
   public:
 

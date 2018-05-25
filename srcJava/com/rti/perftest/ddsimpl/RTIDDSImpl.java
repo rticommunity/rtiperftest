@@ -143,7 +143,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private String _typename = null;
 
     private TypeHelper<T> _myDataType = null;
-    private RTIDDSLoggerDevice device = new RTIDDSLoggerDevice();
+    private RTIDDSLoggerDevice _loggerDevice = new RTIDDSLoggerDevice();
 
     // -----------------------------------------------------------------------
     // Public Methods
@@ -347,7 +347,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         // Set LoggerDevice
         try {
-            Logger.get_instance().set_output_device(device);
+            Logger.get_instance().set_output_device(_loggerDevice);
         } catch (Exception e) {
             System.err.print("Failed set_output_device for Logger.\n");
             return false;
@@ -361,8 +361,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
              StatusKind.OFFERED_INCOMPATIBLE_QOS_STATUS |
              StatusKind.REQUESTED_INCOMPATIBLE_QOS_STATUS));
 
-        if (_participant == null || device.get_shmem_issue()) {
-            if (device.get_shmem_issue()) {
+        if (_participant == null || _loggerDevice.get_shmem_issue()) {
+            if (_loggerDevice.get_shmem_issue()) {
                 System.err.print(
                         "The participant creation failed due to issues in the Shared Memory configuration of your OS.\n" +
                         "For more information about how to configure Shared Memory see: http://community.rti.com/kb/osx510 \n" +

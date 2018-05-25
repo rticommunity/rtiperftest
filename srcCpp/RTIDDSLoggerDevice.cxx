@@ -5,10 +5,7 @@
 
 #include "RTIDDSLoggerDevice.h"
 
-RTIDDSLoggerDevice::RTIDDSLoggerDevice()
-{
-    shmem_issue = false;
-}
+RTIDDSLoggerDevice::RTIDDSLoggerDevice() : shmem_issue(false) {}
 
 void RTIDDSLoggerDevice::write(const NDDS_Config_LogMessage *message)
 {
