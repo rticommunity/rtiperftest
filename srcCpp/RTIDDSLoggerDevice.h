@@ -16,9 +16,9 @@ const std::string SHMEM_ERROR =
 
 class RTIDDSLoggerDevice : public NDDSConfigLoggerDevice {
 
-  public:
+  private:
     bool shmem_issue;
-
+  public:
     RTIDDSLoggerDevice();
 
     virtual void write(const NDDS_Config_LogMessage *message);
