@@ -804,6 +804,33 @@ we could get into the following error:
 Known Issues
 ------------
 
+Running into SHMEM error on CPP Modern
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The default transport for *RTI Perftest* is `UDPv4` + `SHMEM`.
+In the case that the user is running a test on the same machine, thus using
+Shared Memory (`SHMEM`), and using CPP Modern. The user may get those errors
+message when running the application:
+
+::
+
+    [D0001|ENABLE]NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key 0x40894a
+    [D0001|ENABLE]NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key 0x40894c
+    [D0001|ENABLE]DDS_DomainParticipantPresentation_reserve_participant_index_entryports:!enable reserve participant index
+    [D0001|ENABLE]DDS_DomainParticipant_reserve_participant_index_entryports:Unusable shared memory transport. For a more in-depth explanation of the possible problem and solution, please visit http://community.rti.com/kb/osx510.
+    [D0001|ENABLE]DDS_DomainParticipant_enableI:Automatic participant index failed to initialize. PLEASE VERIFY CONSISTENT TRANSPORT / DISCOVERY CONFIGURATION.
+    [NOTE: If the participant is running on a machine where the network interfaces can change, you should manually set wire protocol's participant id]
+    DDSDomainParticipant_impl::createI:ERROR: Failed to auto-enable entity
+
+Those errors are caused by an insufficient number or size of shared memory
+segments allowed by the operating system. They are handled and filtered on others
+languages (CPP Traditional, Java, .Net) but not in CPP Modern.
+
+For more information about how to configure Shared Memory see http://community.rti.com/kb/osx510
+
+If you want to skip the use of Shared memory in RTI Perftest, specify the transport using `-transport <kind>`, e.g. `-transport UDPv4`.
+
+
 Building RTI Perftest Java API against RTI Connext DDS 5.2.0.x
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
