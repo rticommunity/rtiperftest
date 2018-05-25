@@ -12,6 +12,7 @@
 #include "MessagingIF.h"
 #include "perftestSupport.h"
 #include "PerftestTransport.h"
+#include "RTIDDSLoggerDevice.h"
 
 #define RTIPERFTEST_MAX_PEERS 1024
 
@@ -95,6 +96,7 @@ class RTIDDSImpl : public IMessaging
         _typename = T::TypeSupport::get_type_name();
 
         _pongSemaphore = NULL;
+        device = RTIDDSLoggerDevice();
     }
 
     ~RTIDDSImpl()
@@ -207,6 +209,7 @@ class RTIDDSImpl : public IMessaging
     const char                  *_typename;
 
     RTIOsapiSemaphore *_pongSemaphore;
+    RTIDDSLoggerDevice device;
 
   public:
 

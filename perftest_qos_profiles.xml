@@ -106,9 +106,11 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         For custom transport settings, modify this profile.
         -->
 
+        <!-- Using the default transport_builtin
         <transport_builtin>
-          <mask>UDPv4</mask>
+          <mask>UDPv4 | SHMEM</mask>
         </transport_builtin>
+        -->
 
         <property>
           <value>
