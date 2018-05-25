@@ -1,8 +1,8 @@
-#ifndef __RTILOGGERDEVICE_H__
-#define __RTILOGGERDEVICE_H__
+#ifndef __RTIDDSLOGGERDEVICE_H__
+#define __RTIDDSLOGGERDEVICE_H__
 
 /*
- * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
@@ -68,4 +68,4 @@ class RTIDDSLoggerDevice : public NDDSConfigLoggerDevice {
     bool get_shmem_issue();
 };
 
-#endif // __RTILOGGERDEVICE_H__
+#endif // __RTIDDSLOGGERDEVICE_H__

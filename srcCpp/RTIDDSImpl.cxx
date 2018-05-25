@@ -2256,7 +2256,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     if (!NDDSConfigLogger::get_instance()->set_output_device(&_loggerDevice)) {
-        fprintf(stderr,"Failed set_output_device for NDDSConfigLogger.\n");
+        fprintf(stderr,"Failed set_output_device for Logger.\n");
         return false;
     }
 
