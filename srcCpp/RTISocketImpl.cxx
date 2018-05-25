@@ -313,6 +313,7 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
         _DataLen = _scan_max_size;
     }
 
+    /* If no peer is given, assume a default one */
     if (_peer_host_count == 0) {
         if (_IsMulticast) {
             _peer_host[0] = _multicastAddrString;
@@ -320,6 +321,12 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
             _peer_host[0] = (char *)"127.0.0.1";
         }
         _peer_host_count = 1;
+    }
+
+    if (_peer_host_count != 1 || _NumSubscribers > 1) {
+        fprintf(stderr, "\tOne to many send option it's not supported."
+                "Please, set only one Subscriber and one Publisher\n");
+        return false;
     }
 
     if (_batchSize != 0 && _DataLen > _batchSize) {
@@ -354,7 +361,7 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
 class RTISocketPublisher : public IMessagingWriter{
   private:
     NDDS_Transport_Plugin *_plugin;
-    NDDS_Transport_SendResource_t _send_resource;
+    NDDS_Transport_SendResource_t _sendResource;
     NDDS_Transport_Address_t _dst_address;
     NDDS_Transport_Port_t _send_port;
     NDDS_Transport_Buffer_t _send_buffer;
@@ -388,7 +395,7 @@ class RTISocketPublisher : public IMessagingWriter{
             unsigned int batchBufferSize) {
 
         _plugin = plugin;
-        _send_resource = send_resource;
+        _sendResource = send_resource;
         _dst_address = dst_address;
         _send_port = send_port;
         _pongSemaphore = pongSemaphore;
@@ -436,8 +443,8 @@ class RTISocketPublisher : public IMessagingWriter{
 
     void Shutdown() {
 
-        if (_send_resource != NULL && _plugin != NULL) {
-            _plugin->destroy_sendresource_srEA(_plugin, &_send_resource);
+        if (_sendResource != NULL && _plugin != NULL) {
+            _plugin->destroy_sendresource_srEA(_plugin, &_sendResource);
         }
 
         if (_send_buffer.pointer != NULL) {
@@ -450,6 +457,8 @@ class RTISocketPublisher : public IMessagingWriter{
         /*
          * TODO: //Ask Fernando
          *
+         * In the case we want a one to many option:
+         *
          * The 1th option is be restrictive, and only allow one subscriber
          * per Peer.
          *
@@ -460,67 +469,32 @@ class RTISocketPublisher : public IMessagingWriter{
          * Peer.
          */
 
-        /*
-         * We don't know how many subscriber there are per Peer.
-         * So, we do as many sendmessage() as the maximum of subscribers that
-         * can be on a single peer.
-         */
-
-        int actual_port = 0;
-        unsigned int sendsPerPeer = 0;
-        bool isMulticat = false;
-
-        if (_plugin->property->allow_interfaces_list_length ==
-            _plugin->property->allow_multicast_interfaces_list_length) {
-            isMulticat = true;
-        }
-
         bool retCode = true;
 
-        for (unsigned int i = 0;  i < _peersMap.size(); ++i) {
 
-            actual_port = _send_port;
+        retCode = _plugin->send(
+                _plugin,
+                &_sendResource,
+                &_peersMap[0].first,
+                _send_port,
+                NDDS_TRANSPORT_PRIORITY_DEFAULT,
+                &_send_buffer,
+                1,
+                _worker);
 
-            sendsPerPeer = _peersMap[i].second;
-            /* If it's been use multicast, send only one time per peer*/
-            if (isMulticat) {
-                sendsPerPeer = 1;
-            } else if (_NumSubscribers != 0) {
-                /*
-                 * If the number of subscriber is set, send as many subs are
-                 * especified
-                 */
-                sendsPerPeer = _NumSubscribers;
-            }
-
-            for (unsigned int j = 0; j < sendsPerPeer; j++) {
-
-                actual_port += j * RTISocketImpl::resources_per_participant;
-                retCode = _plugin->send(
-                        _plugin,
-                        &_send_resource,
-                        &_peersMap[i].first,
-                        actual_port,
-                        NDDS_TRANSPORT_PRIORITY_DEFAULT,
-                        &_send_buffer,
-                        1,
-                        _worker);
-
-                if (!retCode) {
-                    /**
-                     * TODO: Ask Fernando
-                     *
-                     * Set a log with warning level???? Not clear
-                     *
-                     * Keep count on writes errors and then output on intervals.?
-                     *
-                     * use -> RTILog_printContextAndMsg??
-                     *
-                     */
-                    // fprintf(stderr, "Write error using sockets\n");
-                    // return false;
-                }
-            }
+        if (!retCode) {
+            /**
+             * TODO: Ask Fernando
+             *
+             * Set a log with warning level???? Not clear
+             *
+             * Keep count on writes errors and then output on intervals.?
+             *
+             * use -> RTILog_printContextAndMsg??
+             *
+             */
+            //fprintf(stderr, "Write error using sockets\n");
+            return false;
         }
 
         return retCode;
@@ -654,11 +628,11 @@ class RTISocketSubscriber : public IMessagingReader
 {
   private:
     NDDS_Transport_Plugin *_plugin;
-    NDDS_Transport_SendResource_t _recv_resource;
-    NDDS_Transport_Buffer_t _recv_buffer;
-    NDDS_Transport_Port_t _recv_port;
+    NDDS_Transport_SendResource_t _recvResource;
+    NDDS_Transport_Buffer_t _recvBuffer;
+    NDDS_Transport_Port_t _recvPort;
 
-    NDDS_Transport_Message_t _transp_message;
+    NDDS_Transport_Message_t _transportMessage;
 
     TestMessage _message;
 
@@ -671,7 +645,7 @@ class RTISocketSubscriber : public IMessagingReader
     RTIOsapiSemaphore *_pongSemaphore;
 
     struct RTICdrStream _stream;
-    bool _no_data;
+    bool _noData;
 
   public:
     RTISocketSubscriber(
@@ -681,33 +655,39 @@ class RTISocketSubscriber : public IMessagingReader
         struct REDAWorker *worker)
     {
         _plugin = plugin;
-        _recv_resource = recv_resource;
-        _recv_port = recv_port;
-        _recv_buffer.length = 0;
-        _recv_buffer.pointer = NULL;
+        _recvResource = recv_resource;
+        _recvPort = recv_port;
+        _recvBuffer.length = 0;
+        _recvBuffer.pointer = NULL;
         _worker = worker;
 
         // Similar to NDDS_Transport_Message_t message =
         //      NDDS_TRANSPORT_MESSAGE_INVALID;
-        _transp_message.buffer.pointer = NULL;
-        _transp_message.buffer.length = 0;
-        _transp_message.loaned_buffer_param = NULL;
+        _transportMessage.buffer.pointer = NULL;
+        _transportMessage.buffer.length = 0;
+        _transportMessage.loaned_buffer_param = NULL;
 
         /* Maximun size of UDP package*/
         RTIOsapiHeap_allocateBufferAligned(
-            &_recv_buffer.pointer,
+            &_recvBuffer.pointer,
             NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
             RTI_OSAPI_ALIGNMENT_DEFAULT);
 
-        if (_recv_buffer.pointer == NULL) {
+        /*
+         * TODO:
+         * What to do if the allocate fail?
+         * Create a initialize function?
+         */
+        if (_recvBuffer.pointer == NULL) {
             fprintf(stderr, "RTIOsapiHeap_allocateArray error\n");
+        } else {
+            _recvBuffer.length = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
         }
-        _recv_buffer.length = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
 
         _data.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
 
         RTICdrStream_init(&_stream);
-        _no_data = true;
+        _noData = true;
     }
 
     ~RTISocketSubscriber()
@@ -718,14 +698,14 @@ class RTISocketSubscriber : public IMessagingReader
     void Shutdown()
     {
 
-        //_plugin->unblock_receive_rrEA(_plugin, &_recv_resource, _worker);
+        //_plugin->unblock_receive_rrEA(_plugin, &_recvResource, _worker);
         //perftest_cpp::MilliSleep(5000);
-        if (_recv_buffer.pointer != NULL) {
-            RTIOsapiHeap_freeBufferAligned(_recv_buffer.pointer);
+        if (_recvBuffer.pointer != NULL) {
+            RTIOsapiHeap_freeBufferAligned(_recvBuffer.pointer);
         }
 
-        if (_recv_resource != NULL && _plugin != NULL) {
-            _plugin->destroy_recvresource_rrEA(_plugin, &_recv_resource);
+        if (_recvResource != NULL && _plugin != NULL) {
+            _plugin->destroy_recvresource_rrEA(_plugin, &_recvResource);
         }
     }
 
@@ -733,13 +713,13 @@ class RTISocketSubscriber : public IMessagingReader
 
 
         while (true) {
-            if (_no_data) {
+            if (_noData) {
 
                 bool result = _plugin->receive_rEA(
                         _plugin,
-                        &_transp_message,
-                        &_recv_buffer,
-                        &_recv_resource,
+                        &_transportMessage,
+                        &_recvBuffer,
+                        &_recvResource,
                         _worker);
                 if (!result) {
                     fprintf(stderr, "error receiving data\n");
@@ -747,26 +727,26 @@ class RTISocketSubscriber : public IMessagingReader
                 }
 
                 RTICdrStream_set(&_stream,
-                        (char *)_transp_message.buffer.pointer,
-                        _transp_message.buffer.length);
+                        (char *)_transportMessage.buffer.pointer,
+                        _transportMessage.buffer.length);
 
-                _no_data = false;
+                _noData = false;
             }
 
             // may have hit end condition
             if (RTICdrStream_getCurrentPositionOffset(&_stream)
-                    >= _transp_message.buffer.length) {
+                    >= _transportMessage.buffer.length) {
 
                 if (_plugin -> return_loaned_buffer_rEA != NULL
-                        && _transp_message.loaned_buffer_param != (void *)-1) {
+                        && _transportMessage.loaned_buffer_param != (void *)-1) {
                     _plugin->return_loaned_buffer_rEA(
                             _plugin,
-                            &_recv_resource,
-                            &_transp_message,
+                            &_recvResource,
+                            &_transportMessage,
                             _worker);
                 }
 
-                _no_data = true;
+                _noData = true;
                 continue;
             }
 
@@ -807,6 +787,11 @@ bool RTISocketImpl::Initialize(int argc, char *argv[]) {
     _pongSemaphore = _LatencyTest
         ? RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL)
         : NULL;
+
+    if (_LatencyTest && _pongSemaphore == NULL) {
+        fprintf(stderr, "Fail creating a Semaphore for RTISocketImpl\n");
+        return NULL;
+    }
 
     if (!ConfigureSocketsTransport()) {
         return false;
@@ -865,7 +850,6 @@ double RTISocketImpl::ObtainSerializeTimeCost(int iterations, unsigned int sampl
     testData.bin_data.loan_contiguous(
             (DDS_Octet *) buffer, sampleSize, sampleSize);
 
-
     /* Serialize time calculating */
     clock_gettime(CLOCK_REALTIME, &cgt1);
 
@@ -875,7 +859,9 @@ double RTISocketImpl::ObtainSerializeTimeCost(int iterations, unsigned int sampl
          * beggining
          */
         RTICdrStream_set(
-                &stream, buffer, NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+                &stream,
+                buffer,
+                NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
 
         TestData_tPlugin_serialize(
                 (PRESTypePluginEndpointData) &epd,
@@ -927,6 +913,7 @@ double ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize) {
                     RTICdrEncapsulation_getNativeCdrEncapsulationId(),
                     0);
 
+    /* Created a dummy data to serialize */
     TestData_t testData;
     testData.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
     testData.entity_id = 0;
@@ -935,8 +922,11 @@ double ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize) {
     testData.timestamp_usec = 0;
     testData.latency_ping = 0;
     testData.bin_data.loan_contiguous(
-            (DDS_Octet *) buffer, sampleSize, sampleSize);
+            (DDS_Octet *) buffer,
+            sampleSize,
+            sampleSize);
 
+    /* Serialize the data */
     TestData_tPlugin_serialize(
             (PRESTypePluginEndpointData) &epd,
             &testData,
@@ -946,16 +936,23 @@ double ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize) {
             RTI_TRUE,
             NULL);
 
-    /* Serialize time calculating */
+    /* Deserialize time calculations */
     clock_gettime(CLOCK_REALTIME, &cgt1);
 
     for (int i = 0; i < iterations; i++) {
 
         RTICdrStream_set(
-                &stream, buffer, NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+                &stream,
+                buffer,
+                NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
 
         TestData_tPlugin_deserialize_sample(
-                NULL, &testData, &stream, RTI_TRUE, RTI_TRUE, NULL);
+                NULL,
+                &testData,
+                &stream,
+                RTI_TRUE,
+                RTI_TRUE,
+                NULL);
     }
 
     clock_gettime(CLOCK_REALTIME, &cgt2);
@@ -1068,6 +1065,7 @@ IMessagingReader *RTISocketImpl::CreateReader(const char *topic_name, IMessaging
 }
 
 bool RTISocketImpl::ConfigureSocketsTransport() {
+
     struct NDDS_Transport_UDPv4_Property_t updv4_prop =
             NDDS_TRANSPORT_UDPV4_PROPERTY_DEFAULT;
     struct NDDS_Transport_Shmem_Property_t shmem_prop =
@@ -1082,14 +1080,14 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
 
     char *interface = DDS_String_dup(_transport.allowInterfaces.c_str());
 
-    /*Worker configure*/
+    /* Worker configure */
     _workerFactory = REDAWorkerFactory_new(256);
     if (_workerFactory == NULL) {
         fprintf(stderr, "Error creating Worker Factory\n");
         return false;
     }
 
-    _worker = REDAWorkerFactory_createWorker(_workerFactory, "RTISockerImpl");
+    _worker = REDAWorkerFactory_createWorker(_workerFactory, "RTISocketImpl");
 
     if (_worker == NULL) {
         fprintf(stderr, "Error creating Worker\n");
@@ -1104,6 +1102,7 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
 
     switch (_transport.transportConfig.kind) {
 
+    /* Transport configure */
     case TRANSPORT_DEFAULT:
         /*Default transport is UDPv4*/
 
@@ -1132,7 +1131,7 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
         updv4_prop.parent.gather_send_buffer_count_max =
                 NDDS_TRANSPORT_PROPERTY_GATHER_SEND_BUFFER_COUNT_MIN;
-        //updv4_prop.multicast_loopback_disabled = false;
+
         /*
          * updv4_prop.recv_socket_buffer_size = ;
          * updv4_prop.send_socket_buffer_size = ;
@@ -1145,31 +1144,39 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
          * This could be necessary to modify for large data.
          */
 
+        // Setting the transport properties
         _plugin = NDDS_Transport_UDPv4_new(&updv4_prop);
 
+        /*
+         * With this, It's avoid the translation from a interface name in to
+         * a address.
+         */
         udpPlugin = (struct NDDS_Transport_UDP*)_plugin;
         if (udpPlugin->_interfacesCount == 0) {
             fprintf(stderr, "Input interface (%s) not recognize\n", interface);
             return false;
         }
 
+
         _nicAddress = udpPlugin->_interfaceArray[0]._interface.address;
         if (_IsMulticast) {
             _multicastAddrTransp =
                     udpPlugin->_interfaceArray[1]._interface.address;
         }
-        if (_IsMulticast
-                && NDDS_Transport_UDPv4_get_num_multicast_interfaces(
+        if (_IsMulticast && NDDS_Transport_UDPv4_get_num_multicast_interfaces(
                         udpPlugin) <= 0) {
                 fprintf(stderr, "No multicast-enabled interfaces detected\n");
                 return false;
         }
 
-        /*TODO:
+        /*TODO: ??
          * Change the way it's parse the -peer option to allow a number of
          * peers.
          */
 
+        /* TODO: Remove on final version!
+         * I keep this part, may be helpfull if we decided to support 1-many
+         */
         /* Peers parse to NDDS_Transport_Address_t */
         NDDS_Transport_Address_t addr;
         for (int i = 0; i < _peer_host_count; i++) {
