@@ -73,7 +73,7 @@ namespace PerformanceTest
         }
 
         /*
-        *   @brief Close the logging device
+        *   @brief Close the logging device.
         */
         public override void close()
         {

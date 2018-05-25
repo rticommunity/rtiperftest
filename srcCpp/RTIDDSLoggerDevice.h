@@ -54,12 +54,12 @@ class RTIDDSLoggerDevice : public NDDSConfigLoggerDevice {
     *       shmem_issue will be set to 'True' if the log message is the known SHMEM issue.
     *   @param message \b In. Message to log.
     */
-    virtual void write(const NDDS_Config_LogMessage *message);
+    void write(const NDDS_Config_LogMessage *message);
 
     /*
-    *   @brief Close the logging device
+    *   @brief Close the logging device.
     */
-    virtual void close() ;
+    void close();
 
     /*
     *   @brief Get the value of the variable shmem_issue.

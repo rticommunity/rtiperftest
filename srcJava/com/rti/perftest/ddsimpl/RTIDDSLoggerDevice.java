@@ -67,7 +67,7 @@ import com.rti.ndds.config.LogLevel;
     }
 
     /*
-    *   @brief Close the logging device
+    *   @brief Close the logging device.
     */
     public void close()
     {
