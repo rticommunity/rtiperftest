@@ -208,7 +208,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
             "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
-            "\t                                (disabled on Latency-test or with dataLen > 4kB)\n" +
+            "\t                                (Disabled for LatencyTest mode or if dataLen > 4kB)\n" +
             "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
             "\t                                protocol, default use positive acks\n" +
             "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +
@@ -1574,9 +1574,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
              */
         } else if (_batchSize > 0 && _batchSize < _dataLen * 2){
             /*
-             * We don't want to use batching if the sample is the same size as
-             * the batch nor if the sample is bigger (in this case we avoid the
-             * checking in the middleware).
+             * We don't want to use batching if the batch size is not large
+             * enough to contain at least two samples (in this case we avoid the
+             * checking at the middleware level).
              */
             if (isBatchSizeProvided) {
                 System.err.println("Batching disabled: BatchSize (" + _batchSize

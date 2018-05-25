@@ -68,8 +68,8 @@ Added RTI Perftest and RTI Connext DDS information at beginning of the test(#54)
 Starting with this release, RTI Perftest will print at the beginning of the test
 its version and the version of RTI Connext DDS used to compile against.
 
-Enable batching for Throughput-Test mode with a 8kB value (#76)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Enable batching for Throughput-Test mode with a 8kB value (#76)(#67)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As part of the enhancements for the out-of-the-box experience for *RTI Perftest*,
 batching will be enabled by default for throughput tests where the datalen is
