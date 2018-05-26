@@ -184,6 +184,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _participant = null;
             }
         }
+        // Unregistered _loggerDevice
         try {
             Logger.get_instance().set_output_device(null);
         } catch (Exception e) {
@@ -345,7 +346,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     false);
         }
 
-        // Set LoggerDevice
+        // Registered _loggerDevice
         _loggerDevice = new RTIDDSLoggerDevice();
         try {
             Logger.get_instance().set_output_device(_loggerDevice);

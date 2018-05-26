@@ -122,7 +122,7 @@ namespace PerformanceTest
                     _participant = null;
                 }
             }
-            // unregistered LoggerDevice
+            // Unregistered _loggerDevice
             if (!NDDS.ConfigLogger.get_instance().set_output_device(null)) {
                 Console.Error.Write("Failed set_output_device for Logger.\n");
             }
@@ -1544,7 +1544,7 @@ namespace PerformanceTest
                 }
             }
 
-            // Set LoggerDevice
+            // Registered _loggerDevicee
             _loggerDevice = new RTIDDSLoggerDevice();
             if (!NDDS.ConfigLogger.get_instance().set_output_device(_loggerDevice)) {
                 Console.Error.Write("Failed set_output_device for Logger.\n");

@@ -130,6 +130,7 @@ void RTIDDSImpl<T>::Shutdown()
         RTIOsapiSemaphore_delete(_pongSemaphore);
         _pongSemaphore = NULL;
     }
+    // Unregistered _loggerDevice
     NDDSConfigLogger::finalize_instance();
     DDSDomainParticipantFactory::finalize_instance();
 }
@@ -2255,6 +2256,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
                 "dds.domain_participant.auto_throttle.enable", "true", false);
     }
 
+    // Registered _loggerDevice
     if (!NDDSConfigLogger::get_instance()->set_output_device(&_loggerDevice)) {
         fprintf(stderr,"Failed set_output_device for Logger.\n");
         return false;
