@@ -143,7 +143,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private String _typename = null;
 
     private TypeHelper<T> _myDataType = null;
-    private RTIDDSLoggerDevice _loggerDevice = new RTIDDSLoggerDevice();
+    private RTIDDSLoggerDevice _loggerDevice = null;
 
     // -----------------------------------------------------------------------
     // Public Methods
@@ -346,6 +346,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         // Set LoggerDevice
+        _loggerDevice = new RTIDDSLoggerDevice();
         try {
             Logger.get_instance().set_output_device(_loggerDevice);
         } catch (Exception e) {

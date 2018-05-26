@@ -51,8 +51,8 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
-Use default `UDPv4` + `SHMEM` as the default transport configuration (#80)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use `UDPv4` + `SHMEM` as the default transport configuration (#80)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* previous default was to use only the `UDPv4` transport.
 However this doesn't always lead to the best results when testing between
@@ -807,13 +807,13 @@ we could get into the following error:
 Known Issues
 ------------
 
-Running into SHMEM error on CPP Modern
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Shared Memory issues when running the Modern C++ API Implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The default transport for *RTI Perftest* is `UDPv4` + `SHMEM`.
-In the case that the user is running a test on the same machine, thus using
-Shared Memory (`SHMEM`), and using CPP Modern. The user may get those errors
-message when running the application:
+*RTI Perftest* uses `UDPv4` + `SHMEM` by default. Certain Operative Systems
+don't support Shared Memory, or the default configuration is not enough for
+*RTI Connext DDS* to work properly. In those cases *RTI Perftest* will show
+some errors trying to create the Participant entity:
 
 ::
 
@@ -825,9 +825,9 @@ message when running the application:
     [NOTE: If the participant is running on a machine where the network interfaces can change, you should manually set wire protocol's participant id]
     DDSDomainParticipant_impl::createI:ERROR: Failed to auto-enable entity
 
-Those errors are caused by an insufficient number or size of shared memory
-segments allowed by the operating system. They are handled and filtered on others
-languages (CPP Traditional, Java, .Net) but not in CPP Modern.
+These errors are handled and filtered in the *RTI Perftest* implementation for
+the Classic C++, Java and C# APIs, but this is still not possible with the
+Modern C++ API.
 
 For more information about how to configure Shared Memory see http://community.rti.com/kb/osx510
 

@@ -25,9 +25,9 @@
  *
  *  By using our own implementation of LoggerDevice, we can filter those errors.
  *  In the case that those errors appear, the execution will be stopped and
- *  a message, with two approaches, will be printed:
+ *  a message will be printed showing:
  *      - A link (http://community.rti.com/kb/osx510) about how to solve the issue
- *      - Explain how to set another different transport through command line parameter.
+ *      - How to setup a different transport via command-line parameters.
  */
 
 const std::string NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE =
@@ -37,34 +37,34 @@ class RTIDDSLoggerDevice : public NDDSConfigLoggerDevice {
 
   private:
     /*
-    *   shmem_issue: 'False' by default. In the case that SHMEM issues appear,
-    *       it will be set to 'True'.
-    */
+     *   shmem_issue: 'False' by default. In the case that SHMEM issues appear,
+     *       it will be set to 'True'.
+     */
     bool shmem_issue;
   public:
 
     /*
-    *   @brief This function is the constructor of our internal logging device.
-    */
+     *   @brief This function is the constructor of our internal logging device.
+     */
     RTIDDSLoggerDevice();
 
     /*
-    *   @brief This function is used to filter the log messages and write them
-    *       through the logger device.
-    *       shmem_issue will be set to 'True' if the log message is the known SHMEM issue.
-    *   @param message \b In. Message to log.
-    */
+     *   @brief This function is used to filter the log messages and write them
+     *       through the logger device.
+     *       shmem_issue will be set to 'True' if the log message is the known SHMEM issue.
+     *   @param message \b In. Message to log.
+     */
     void write(const NDDS_Config_LogMessage *message);
 
     /*
-    *   @brief Close the logging device.
-    */
+     *   @brief Close the logging device.
+     */
     void close();
 
     /*
-    *   @brief Get the value of the variable shmem_issue.
-    *   @return shmem_issue
-    */
+     *   @brief Get the value of the variable shmem_issue.
+     *   @return shmem_issue
+     */
     bool get_shmem_issue();
 };
 

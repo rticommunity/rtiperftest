@@ -23,35 +23,35 @@ import com.rti.ndds.config.LogLevel;
  *
  *  By using our own implementation of LoggerDevice, we can filter those errors.
  *  In the case that those errors appear, the execution will be stopped and
- *  a message, with two approaches, will be printed:
+ *  a message will be printed showing:
  *      - A link (http://community.rti.com/kb/osx510) about how to solve the issue
- *      - Explain how to set another different transport through command line parameter.
+ *      - How to setup a different transport via command-line parameters.
  */
 
  public class RTIDDSLoggerDevice implements LoggerDevice {
 
     /*
-    *   shmem_issue: 'False' by default. In the case that SHMEM issues appear,
-    *       it will be set to 'True'.
-    */
+     *   shmem_issue: 'False' by default. In the case that SHMEM issues appear,
+     *       it will be set to 'True'.
+     */
     private boolean shmem_issue = false;
     private static String NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE =
             "NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key";
 
     /*
-    *   @brief This function is the constructor of our internal logging device.
-    */
+     *   @brief This function is the constructor of our internal logging device.
+     */
     public RTIDDSLoggerDevice()
     {
     	this.shmem_issue = false;
     }
 
     /*
-    *   @brief This function is used to filter the log messages and write them
-    *       through the logger device.
-    *       shmem_issue will be set to 'True' if the log message is the known SHMEM issue.
-    *   @param message \b In. Message to log.
-    */
+     *   @brief This function is used to filter the log messages and write them
+     *       through the logger device.
+     *       shmem_issue will be set to 'True' if the log message is the known SHMEM issue.
+     *   @param message \b In. Message to log.
+     */
     public void write(LogMessage message)
     {
         if (!shmem_issue) {
@@ -67,17 +67,17 @@ import com.rti.ndds.config.LogLevel;
     }
 
     /*
-    *   @brief Close the logging device.
-    */
+     *   @brief Close the logging device.
+     */
     public void close()
     {
 
     }
 
     /*
-    *   @brief Get the value of the variable shmem_issue.
-    *   @return shmem_issue
-    */
+     *   @brief Get the value of the variable shmem_issue.
+     *   @return shmem_issue
+     */
     public boolean get_shmem_issue()
     {
        return this.shmem_issue;
