@@ -1779,7 +1779,7 @@ int perftest_cpp::RunPublisher()
         }
     }
 
-    std::cerr << "[Info] Waiting to discover " << _NumSubscribers << " subscribers..." << std::endl;
+    std::cerr << "[Info] Waiting to discover " << _NumSubscribers << " subscribers ..." << std::endl;
     writer->waitForReaders(_NumSubscribers);
 
     // We have to wait until every Subscriber sends an announcement message
@@ -1817,7 +1817,7 @@ int perftest_cpp::RunPublisher()
     }
     writer->flush();
 
-    std::cerr << "[Info] Publishing data..." << std::endl;
+    std::cerr << "[Info] Publishing data ..." << std::endl;
 
     // Set data size, account for other bytes in message
     message.size = (int)_DataLen - OVERHEAD_BYTES;

@@ -1123,7 +1123,7 @@ public final class PerfTest {
             }
         }
 
-        System.err.printf("Waiting to discover %1$d subscriber(s)...\n", _numSubscribers);
+        System.err.printf("Waiting to discover %1$d subscribers ...\n", _numSubscribers);
         writer.waitForReaders(_numSubscribers);
 
         // We have to wait until every Subscriber sends an announcement message
@@ -1158,7 +1158,7 @@ public final class PerfTest {
         }
         writer.flush();
 
-        System.err.print("Publishing data...\n");
+        System.err.print("Publishing data ...\n");
 
         // Set data size, account for other bytes in message
         message.size = (int)_dataLen - OVERHEAD_BYTES;

@@ -1851,7 +1851,7 @@ int perftest_cpp::Publisher()
         }
     }
 
-    fprintf(stderr,"Waiting to discover %d subscribers...\n", _NumSubscribers);
+    fprintf(stderr,"Waiting to discover %d subscribers ...\n", _NumSubscribers);
     fflush(stderr);
     writer->WaitForReaders(_NumSubscribers);
 
@@ -1891,7 +1891,7 @@ int perftest_cpp::Publisher()
     }
     writer->Flush();
 
-    fprintf(stderr,"Publishing data...\n");
+    fprintf(stderr,"Publishing data ...\n");
     fflush(stderr);
 
     // Set data size, account for other bytes in message

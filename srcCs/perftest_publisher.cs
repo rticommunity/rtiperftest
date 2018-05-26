@@ -2177,7 +2177,7 @@ namespace PerformanceTest {
                 }
             }
 
-            Console.Error.Write("Waiting to discover {0} subscribers...\n", _NumSubscribers);
+            Console.Error.Write("Waiting to discover {0} subscribers ...\n", _NumSubscribers);
             writer.WaitForReaders(_NumSubscribers);
 
             // We have to wait until every Subscriber sends an announcement message
@@ -2209,7 +2209,7 @@ namespace PerformanceTest {
             }
             writer.Flush();
 
-            Console.Error.Write("Publishing data...\n");
+            Console.Error.Write("Publishing data ...\n");
 
             // Set data size, account for other bytes in message
             message.size = (int)_DataLen - OVERHEAD_BYTES;
