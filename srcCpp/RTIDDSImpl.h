@@ -15,6 +15,19 @@
 
 #define RTIPERFTEST_MAX_PEERS 1024
 
+/* Class for the DDS_DynamicDataMemberId of the type of RTI Perftest*/
+class DynamicDataMembersId
+{
+  private:
+    std::map<std::string, int> membersId;
+    DynamicDataMembersId();
+
+  public:
+    ~DynamicDataMembersId();
+    static DynamicDataMembersId &GetInstance();
+    int at(std::string key);
+};
+
 template <typename T>
 class RTIDDSImpl : public IMessaging
 {
@@ -91,14 +104,20 @@ class RTIDDSImpl : public IMessaging
 
     void PrintCmdLineHelp();
 
-
     bool ParseConfig(int argc, char *argv[]);
+
+    std::string PrintConfiguration();
 
     bool Initialize(int argc, char *argv[]);
 
     void Shutdown();
 
-    unsigned int GetBatchSize() { return _BatchSize; }
+    unsigned int GetBatchSize()
+    {
+        return _BatchSize;
+    }
+
+    unsigned long GetInitializationSampleCount();
 
     IMessagingWriter *CreateWriter(const char *topic_name);
 
@@ -114,7 +133,7 @@ class RTIDDSImpl : public IMessaging
     // Specific functions to configure the Security plugin
   #ifdef RTI_SECURE_PERFTEST
     bool configureSecurePlugin(DDS_DomainParticipantQos& dpQos);
-    void printSecureArgs();
+    std::string printSecureArgs();
     bool validateSecureArgs();
   #endif
 

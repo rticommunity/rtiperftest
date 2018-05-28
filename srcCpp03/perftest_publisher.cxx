@@ -99,19 +99,14 @@ int perftest_cpp::Run(int argc, char *argv[]) {
 
     if (_useUnbounded == 0) { //unbounded is not set
         if (_isKeyed) {
-            std::cerr << "[Info] Using keyed Data." << std::endl;
             _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
         } else {
-            std::cerr << "[Info] Using unkeyed Data." << std::endl;
             _MessagingImpl = new RTIDDSImpl<TestData_t>();
         }
     } else {
-        std::cerr << "[Info] Using unbounded Sequences, allocation_threshold " << _useUnbounded << "." << std::endl;
         if (_isKeyed) {
-            std::cerr << "[Info] Using keyed Data." << std::endl;
             _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
         } else {
-              std::cerr << "[Info] Using unkeyed Data." << std::endl;
             _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
         }
     }
@@ -140,7 +135,7 @@ void perftest_cpp::PrintVersion()
     Perftest_ProductVersion_t perftestV = perftest_cpp::GetPerftestVersion();
     rti::core::ProductVersion ddsV = perftest_cpp::GetDDSVersion();
 
-    printf("RTI Perftest: %d.%d.%d",
+    printf("RTI Perftest %d.%d.%d",
             perftestV.major,
             perftestV.minor,
             perftestV.release);
@@ -699,13 +694,13 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                     std::cerr << "[Error] -pubRate value must have the format <samples/s>:<method>" << std::endl;
                     throw std::logic_error("[Error] Error parsing commands");
                 }
-                if (strstr(argv[i], "spin") != NULL) {
-                    std::cerr << "[Info] -pubRate method: spin."<< std::endl;
-                } else if (strstr(argv[i], "sleep") != NULL) {
+                if (strstr(argv[i], "sleep") != NULL) {
                     _pubRateMethodSpin = false;
-                    std::cerr << "[Info] -pubRate method: sleep."<< std::endl;
-                } else {
-                    std::cerr << "[Error] <samples/s>:<method> for pubRate '" << argv[i] <<"' is not valid. It must contain 'spin' or 'sleep'." << std::endl;
+                } else if (strstr(argv[i], "spin") == NULL) {
+                    std::cerr << "[Error] <samples/s>:<method> for pubRate '"
+                              << argv[i]
+                              << "' is not valid. It must contain 'spin' or 'sleep'."
+                              << std::endl;
                     throw std::logic_error("[Error] Error parsing commands");
                 }
             } else {
@@ -823,12 +818,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     }
 
     if (_isScan) {
-        if (_DataLen != 100) { // Different that the default value
-            std::cerr << "[Info] DataLen will be ignored since -scan is present." << std::endl;
-        }
         _DataLen = _scanDataLenSizes[_scanDataLenSizes.size() - 1]; // Max size
         if (_executionTime == 0){
-            std::cerr << "[Info] Setting timeout to 60 seconds (-scan)." << std::endl;
             _executionTime = 60;
         }
         // Check if large data or small data
@@ -855,6 +846,111 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
     }
     return true;
+}
+
+/*********************************************************
+ * PrintConfiguration
+ */
+void perftest_cpp::PrintConfiguration()
+{
+    // TODO: Print Perftest and Connext DDS versions
+
+    std::ostringstream stringStream;
+    // Throughput/Latency mode
+    if (_IsPub) {
+        stringStream << "\nMode: ";
+
+        if (_LatencyTest) {
+            stringStream << "LATENCY TEST (Ping-Pong test)\n";
+        } else {
+            stringStream << "THROUGHPUT TEST\n"
+                         << "      (Use \"-latencyTest\" for Latency Mode)\n";
+        }
+    }
+
+    // Reliable/Best Effort
+    stringStream << "\tReliability: ";
+    if (_IsReliable) {
+        stringStream << "Reliable\n";
+    } else {
+        stringStream << "Best Effort\n";
+    }
+
+    // Keyed/Unkeyed
+    stringStream << "\tKeyed: ";
+    if (_isKeyed) {
+        stringStream << "Yes\n";
+    } else {
+        stringStream << "No\n";
+    }
+
+    // Publisher/Subscriber and Entity ID
+    if (_IsPub) {
+        stringStream << "\tPublisher ID: " << _PubID << "\n";
+    } else {
+        stringStream << "\tSubscriber ID: " << _SubID << "\n";
+    }
+
+
+    if (_IsPub) {
+        // Latency Count
+        stringStream << "\tLatency count: 1 latency sample every "
+                     << _LatencyCount << " samples\n";
+
+        // Scan/Data Sizes
+        stringStream << "\tData Size: ";
+        if (_isScan) {
+            for (unsigned long i = 0; i < _scanDataLenSizes.size(); i++ ) {
+                stringStream << _scanDataLenSizes[i];
+                if (i == _scanDataLenSizes.size() - 1) {
+                    stringStream << "\n";
+                } else {
+                    stringStream << ", ";
+                }
+            }
+        } else {
+            stringStream << _DataLen << "\n";
+        }
+
+        // Batching
+        stringStream << "\tBatching: ";
+        if (_BatchSize != 0) {
+            stringStream << _BatchSize << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
+        } else {
+            stringStream << "No (Use \"-batchSize\" to setup batching)\n";
+        }
+
+        // Publication Rate
+        stringStream << "\tPublication Rate: ";
+        if (_pubRate > 0) {
+            stringStream << _pubRate << " Samples/s (";
+            if (_pubRateMethodSpin) {
+                stringStream << "Spin)\n";
+            } else {
+                stringStream << "Sleep)\n";
+            }
+        } else {
+            stringStream << "Unlimited (Not set)\n";
+        }
+        // Execution Time or Num Iter
+        if (_executionTime > 0) {
+            stringStream << "\tExecution time: " << _executionTime << " seconds\n";
+        } else {
+            stringStream << "\tNumber of samples: " << _NumIter << "\n";
+        }
+    }
+
+    // Listener/WaitSets
+    stringStream << "\tReceive using: ";
+    if (_UseReadThread) {
+        stringStream << "WaitSets\n";
+    } else {
+        stringStream << "Listeners\n";
+    }
+
+    stringStream << _MessagingImpl->PrintConfiguration();
+    std::cerr << stringStream.str() << std::endl;
+
 }
 
 /*********************************************************
@@ -1679,7 +1775,7 @@ int perftest_cpp::RunPublisher()
         }
     }
 
-    std::cerr << "[Info] Waiting to discover " << _NumSubscribers << " subscribers..." << std::endl;
+    std::cerr << "[Info] Waiting to discover " << _NumSubscribers << " subscribers ..." << std::endl;
     writer->waitForReaders(_NumSubscribers);
 
     // We have to wait until every Subscriber sends an announcement message
@@ -1696,7 +1792,6 @@ int perftest_cpp::RunPublisher()
     //message.size = std::max(_DataLen,LENGTH_CHANGED_SIZE);
     //message.bin_data.resize(std::max(_DataLen,LENGTH_CHANGED_SIZE));
 
-    std::cerr << "[Info] Sending initial pings..." << std::endl;
 
     if ( perftest_cpp::_showCpu && _PubID == 0) {
         reader_listener->cpu.initialize();
@@ -1708,16 +1803,35 @@ int perftest_cpp::RunPublisher()
     }
 
     message.size = INITIALIZE_SIZE;
-    //message.data.resize(message.size);
-    for (unsigned long i = 0;
-            i < (std::max)(_InstanceCount, announcementSampleCount);
-            i++) {
+
+    /*
+     * Initial burst of data:
+     *
+     * The purpose of this initial burst of Data is to ensure that most
+     * memory allocations in the critical path are done before the test begings,
+     * for both the Writer and the Reader that receives the samples.
+     * It will also serve to make sure that all the instances are registered
+     * in advance in the subscriber application.
+     *
+     * We query the MessagingImplementation class to get the suggested sample
+     * count that we should send. This number might be based on the reliability
+     * protocol implemented by the middleware behind. Then we choose between that
+     * number and the number of instances to be sent.
+     */
+    unsigned long initializeSampleCount = (std::max)(
+            _MessagingImpl->GetInitializationSampleCount(),
+            _InstanceCount);
+
+    std::cerr << "[Info] Sending " << initializeSampleCount
+              << " initialization pings ..." << std::endl;
+
+    for (unsigned long i = 0; i < initializeSampleCount; i++) {
         // Send test initialization message
         writer->send(message, true);
     }
     writer->flush();
 
-    std::cerr << "[Info] Publishing data..." << std::endl;
+    std::cerr << "[Info] Publishing data ..." << std::endl;
 
     // Set data size, account for other bytes in message
     message.size = (int)_DataLen - OVERHEAD_BYTES;
