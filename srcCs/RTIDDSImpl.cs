@@ -37,10 +37,10 @@ namespace PerformanceTest
     {
 
         /*
-         *   shmem_issue: 'False' by default. In the case that SHMEM issues appear,
+         *   _ShmemErrors: 'False' by default. In the case that SHMEM issues appear,
          *       it will be set to 'True'.
          */
-        private bool shmem_issue = false;
+        private bool _ShmemErrors = false;
         private static String NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE =
                 "NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key";
 
@@ -49,24 +49,25 @@ namespace PerformanceTest
          */
         public RTIDDSLoggerDevice()
         {
-            shmem_issue = false;
+            _ShmemErrors = false;
         }
 
         /*
          *   @brief This function is used to filter the log messages and write them
          *       through the logger device.
-         *       shmem_issue will be set to 'True' if the log message is the known SHMEM issue.
+         *       _ShmemErrors will be set to 'True' if the log message is the known SHMEM issue.
          *   @param message \b In. Message to log.
          */
         public override void write(LogMessage message)
         {
-            if (!shmem_issue) {
+            if (!_ShmemErrors) {
                 if (message.level == LogLevel.NDDS_CONFIG_LOG_LEVEL_ERROR) {
-                    if (message.text.Contains(NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE)) {
-                        shmem_issue = true;
+                    if (message.text.Contains(
+                            NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE)) {
+                        _ShmemErrors = true;
                     }
                 }
-                if (!shmem_issue) {
+                if (!_ShmemErrors) {
                     Console.Out.WriteLine(message.text);
                 }
             }
@@ -81,12 +82,12 @@ namespace PerformanceTest
         }
 
         /*
-         *   @brief Get the value of the variable shmem_issue.
-         *   @return shmem_issue
+         *   @brief Get the value of the variable _ShmemErrors.
+         *   @return _ShmemErrors
          */
-        public bool get_shmem_issue()
+        public bool CheckShmemErrors()
         {
-           return shmem_issue;
+           return _ShmemErrors;
         }
     }
 
@@ -122,7 +123,7 @@ namespace PerformanceTest
                     _participant = null;
                 }
             }
-            // Unregistered _loggerDevice
+            // Unregister _loggerDevice
             if (!NDDS.ConfigLogger.get_instance().set_output_device(null)) {
                 Console.Error.Write("Failed set_output_device for Logger.\n");
             }
@@ -1457,6 +1458,13 @@ namespace PerformanceTest
          */
         public bool Initialize(int argc, string[] argv)
         {
+            // Register _loggerDevicee
+            _loggerDevice = new RTIDDSLoggerDevice();
+            if (!NDDS.ConfigLogger.get_instance().set_output_device(_loggerDevice)) {
+                Console.Error.Write("Failed set_output_device for Logger.\n");
+                return false;
+            }
+
             _typename = _DataTypeHelper.getTypeSupport().get_type_name_untyped();
 
             DDS.DomainParticipantQos qos = new DDS.DomainParticipantQos();
@@ -1544,13 +1552,6 @@ namespace PerformanceTest
                 }
             }
 
-            // Registered _loggerDevicee
-            _loggerDevice = new RTIDDSLoggerDevice();
-            if (!NDDS.ConfigLogger.get_instance().set_output_device(_loggerDevice)) {
-                Console.Error.Write("Failed set_output_device for Logger.\n");
-                return false;
-            }
-
             // Creates the participant
             _participant = _factory.create_participant(
                 _DomainID, qos, listener,
@@ -1559,8 +1560,8 @@ namespace PerformanceTest
                  DDS.StatusKind.OFFERED_INCOMPATIBLE_QOS_STATUS |
                  DDS.StatusKind.REQUESTED_INCOMPATIBLE_QOS_STATUS));
 
-            if (_participant == null || _loggerDevice.get_shmem_issue()) {
-                if (_loggerDevice.get_shmem_issue()) {
+            if (_participant == null || _loggerDevice.CheckShmemErrors()) {
+                if (_loggerDevice.CheckShmemErrors()) {
                     Console.Error.Write(
                             "The participant creation failed due to issues in the Shared Memory configuration of your OS.\n" +
                             "For more information about how to configure Shared Memory see: http://community.rti.com/kb/osx510 \n" +

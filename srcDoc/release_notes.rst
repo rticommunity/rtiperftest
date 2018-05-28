@@ -51,14 +51,14 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
-Use `UDPv4` + `SHMEM` as the default transport configuration (#80)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use `UDPv4` and `Shared Memory` as the default transport configuration (#80)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* previous default was to use only the `UDPv4` transport.
 However this doesn't always lead to the best results when testing between
 applications within the same machine and it also differs from *RTI Connext DDS*
-default behavior, which is `UDPv4` + Shared Memory (`SHMEM`).
-Starting from this release *RTI Perftest* new default is to use `UDPv4` + `SHMEM`.
+default behavior, which is `UDPv4` and Shared Memory (`SHMEM`).
+Starting from this release *RTI Perftest* new default is to use `UDPv4` and `SHMEM`.
 
 This change improves the out of the box user experience, getting better numbers
 when using the default configuration.
@@ -810,7 +810,7 @@ Known Issues
 Shared Memory issues when running the Modern C++ API Implementation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*RTI Perftest* uses `UDPv4` + `SHMEM` by default. Certain Operative Systems
+*RTI Perftest* uses `UDPv4` and `SHMEM` by default. Certain Operative Systems
 don't support Shared Memory, or the default configuration is not enough for
 *RTI Connext DDS* to work properly. In those cases *RTI Perftest* will show
 some errors trying to create the Participant entity:

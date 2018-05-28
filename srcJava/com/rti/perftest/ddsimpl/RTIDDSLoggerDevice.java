@@ -31,10 +31,10 @@ import com.rti.ndds.config.LogLevel;
  public class RTIDDSLoggerDevice implements LoggerDevice {
 
     /*
-     *   shmem_issue: 'False' by default. In the case that SHMEM issues appear,
+     *   shmemErrors: 'False' by default. In the case that SHMEM issues appear,
      *       it will be set to 'True'.
      */
-    private boolean shmem_issue = false;
+    private boolean shmemErrors = false;
     private static String NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE =
             "NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key";
 
@@ -43,24 +43,25 @@ import com.rti.ndds.config.LogLevel;
      */
     public RTIDDSLoggerDevice()
     {
-    	this.shmem_issue = false;
+    	this.shmemErrors = false;
     }
 
     /*
      *   @brief This function is used to filter the log messages and write them
      *       through the logger device.
-     *       shmem_issue will be set to 'True' if the log message is the known SHMEM issue.
+     *       shmemErrors will be set to 'True' if the log message is the known SHMEM issue.
      *   @param message \b In. Message to log.
      */
     public void write(LogMessage message)
     {
-        if (!shmem_issue) {
+        if (!shmemErrors) {
             if (message.level == LogLevel.NDDS_CONFIG_LOG_LEVEL_ERROR) {
-                if (message.text.contains(NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE)) {
-                    shmem_issue = true;
+                if (message.text.contains(
+                        NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE)) {
+                    shmemErrors = true;
                 }
             }
-            if (!shmem_issue) {
+            if (!shmemErrors) {
                 System.out.print(message.text);
             }
         }
@@ -75,12 +76,12 @@ import com.rti.ndds.config.LogLevel;
     }
 
     /*
-     *   @brief Get the value of the variable shmem_issue.
-     *   @return shmem_issue
+     *   @brief Get the value of the variable shmemErrors.
+     *   @return shmemErrors
      */
-    public boolean get_shmem_issue()
+    public boolean checkShmemErrors()
     {
-       return this.shmem_issue;
+       return this.shmemErrors;
     }
 }
 

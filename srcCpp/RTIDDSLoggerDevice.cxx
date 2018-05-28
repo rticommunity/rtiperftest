@@ -5,25 +5,27 @@
 
 #include "RTIDDSLoggerDevice.h"
 
-RTIDDSLoggerDevice::RTIDDSLoggerDevice() : shmem_issue(false) {}
+RTIDDSLoggerDevice::RTIDDSLoggerDevice() : _shmemErrors(false) {}
 
 void RTIDDSLoggerDevice::write(const NDDS_Config_LogMessage *message)
 {
-    if (message && !shmem_issue) {
+    if (message && !_shmemErrors) {
         if (message->level == NDDS_CONFIG_LOG_LEVEL_ERROR) {
-            if (std::string(message->text).find(NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE) != std::string::npos) {
-                shmem_issue = true;
+            if (std::string(message->text).find(
+                    NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE)
+                    != std::string::npos) {
+                _shmemErrors = true;
             }
         }
-        if (!shmem_issue) {
+        if (!_shmemErrors) {
             printf("%s\n", message->text);
         }
     }
 }
 
-bool RTIDDSLoggerDevice::get_shmem_issue()
+bool RTIDDSLoggerDevice::checkShmemErrors()
 {
-    return shmem_issue;
+    return _shmemErrors;
 }
 
 void RTIDDSLoggerDevice::close()

@@ -184,7 +184,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _participant = null;
             }
         }
-        // Unregistered _loggerDevice
+        // Unregister _loggerDevice
         try {
             Logger.get_instance().set_output_device(null);
         } catch (Exception e) {
@@ -275,6 +275,15 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
     public boolean initialize(int argc, String[] argv) {
 
+        // Register _loggerDevice
+        _loggerDevice = new RTIDDSLoggerDevice();
+        try {
+            Logger.get_instance().set_output_device(_loggerDevice);
+        } catch (Exception e) {
+            System.err.print("Failed set_output_device for Logger.\n");
+            return false;
+        }
+
         _typename = _myDataType.getTypeSupport().get_type_nameI();
 
         _factory = DomainParticipantFactory.get_instance();
@@ -346,15 +355,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     false);
         }
 
-        // Registered _loggerDevice
-        _loggerDevice = new RTIDDSLoggerDevice();
-        try {
-            Logger.get_instance().set_output_device(_loggerDevice);
-        } catch (Exception e) {
-            System.err.print("Failed set_output_device for Logger.\n");
-            return false;
-        }
-
         // Creates the participant
         DomainParticipantListener listener = new DomainListener();
         _participant = _factory.create_participant(
@@ -363,8 +363,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
              StatusKind.OFFERED_INCOMPATIBLE_QOS_STATUS |
              StatusKind.REQUESTED_INCOMPATIBLE_QOS_STATUS));
 
-        if (_participant == null || _loggerDevice.get_shmem_issue()) {
-            if (_loggerDevice.get_shmem_issue()) {
+        if (_participant == null || _loggerDevice.checkShmemErrors()) {
+            if (_loggerDevice.checkShmemErrors()) {
                 System.err.print(
                         "The participant creation failed due to issues in the Shared Memory configuration of your OS.\n" +
                         "For more information about how to configure Shared Memory see: http://community.rti.com/kb/osx510 \n" +

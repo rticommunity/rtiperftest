@@ -35,7 +35,8 @@ class RTIDDSImpl : public IMessaging
   public:
 
     RTIDDSImpl() :
-        _transport()
+        _transport(),
+        _loggerDevice()
     {
         _SendQueueSize = 50;
         _DataLen = 100;
@@ -96,7 +97,6 @@ class RTIDDSImpl : public IMessaging
         _typename = T::TypeSupport::get_type_name();
 
         _pongSemaphore = NULL;
-        _loggerDevice = RTIDDSLoggerDevice();
     }
 
     ~RTIDDSImpl()

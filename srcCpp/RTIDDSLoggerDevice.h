@@ -37,10 +37,10 @@ class RTIDDSLoggerDevice : public NDDSConfigLoggerDevice {
 
   private:
     /*
-     *   shmem_issue: 'False' by default. In the case that SHMEM issues appear,
+     *   _shmemErrors: 'False' by default. In the case that SHMEM issues appear,
      *       it will be set to 'True'.
      */
-    bool shmem_issue;
+    bool _shmemErrors;
   public:
 
     /*
@@ -51,7 +51,7 @@ class RTIDDSLoggerDevice : public NDDSConfigLoggerDevice {
     /*
      *   @brief This function is used to filter the log messages and write them
      *       through the logger device.
-     *       shmem_issue will be set to 'True' if the log message is the known SHMEM issue.
+     *       _shmemErrors will be set to 'True' if the log message is the known SHMEM issue.
      *   @param message \b In. Message to log.
      */
     void write(const NDDS_Config_LogMessage *message);
@@ -62,10 +62,10 @@ class RTIDDSLoggerDevice : public NDDSConfigLoggerDevice {
     void close();
 
     /*
-     *   @brief Get the value of the variable shmem_issue.
-     *   @return shmem_issue
+     *   @brief Get the value of the variable _shmemErrors.
+     *   @return _shmemErrors
      */
-    bool get_shmem_issue();
+    bool checkShmemErrors();
 };
 
 #endif // __RTIDDSLOGGERDEVICE_H__
