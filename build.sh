@@ -211,18 +211,18 @@ function geneate_qos_string()
     # If PERL is in the path, generate the qos_string.h file.
     if [ "${BUILD_CPP}" -eq "1" ]; then
         if [ -z `which "${PERL}"` ]; then
-            echo -e "${YELLOW}[WARNING]:${NC} ${PERL} not found, ${classic_cpp_folder}/qos_string.h will not be update."
+            echo -e "${YELLOW}[WARNING]:${NC} ${PERL} not found, ${classic_cpp_folder}/qos_string.h will not be updated."
         else
             perl ${cStringifyFile_script} ${qos_file} PERFTEST_QOS_STRING > ${classic_cpp_folder}/qos_string.h
-            echo -e "${INFO_TAG} QoS String ${classic_cpp_folder}/qos_string.h generation successful"
+            echo -e "${INFO_TAG} QoS String ${classic_cpp_folder}/qos_string.h updated successfully"
         fi
     fi
     if [ "${BUILD_CPP03}" -eq "1" ]; then
         if [ -z `which "${MAKE_EXE}"` ]; then
-            echo -e "${YELLOW}[WARNING]:${NC} ${PERL} not found, ${modern_cpp_folder}/qos_string.h will not be update."
+            echo -e "${YELLOW}[WARNING]:${NC} ${PERL} not found, ${modern_cpp_folder}/qos_string.h will not be updated."
         else
             perl ${cStringifyFile_script} ${qos_file} PERFTEST_QOS_STRING > ${modern_cpp_folder}/qos_string.h
-            echo -e "${INFO_TAG} QoS String ${modern_cpp_folder}/qos_string.h generation successful"
+            echo -e "${INFO_TAG} QoS String ${modern_cpp_folder}/qos_string.h updated successfully"
         fi
     fi
 }
