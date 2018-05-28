@@ -138,6 +138,43 @@ namespace PerformanceTest
         }
 
         /*********************************************************
+         * GetInitializationSampleCount
+         */
+        public int GetInitializationSampleCount()
+        {
+            /*
+             * There is a minimum number of samples that we want to send no matter
+             * what the conditions are:
+             */
+            int initializeSampleCount = 50;
+
+            /*
+             * If we are using reliable, the maximum burst of that we can send is
+             * limited by max_send_window_size (or max samples, but we will assume
+             * this is not the case for this). In such case we should send
+             * max_send_window_size samples.
+             *
+             * If we are not using reliability this should not matter.
+             */
+            initializeSampleCount = Math.Max(
+                    initializeSampleCount,
+                    _SendQueueSize);
+
+            /*
+             * If we are using batching we need to take into account tha the Send
+             * Queue will be per-batch, therefore for the number of samples:
+             */
+            if (_BatchSize > 0)
+            {
+                initializeSampleCount = Math.Max(
+                        _SendQueueSize * (_BatchSize / (int)_DataLen),
+                        initializeSampleCount);
+            }
+
+            return initializeSampleCount;
+        }
+
+        /*********************************************************
          * PrintCmdLineHelp
          */
         public void PrintCmdLineHelp()

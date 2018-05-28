@@ -692,7 +692,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
         <!--
         Setting history.kind = KEEP_ALL, Connext will attempt to maintain
-        and deliver all the values of the instance to existing subscribers. 
+        and deliver all the values of the instance to existing subscribers.
         The resources that Connext can use to keep this history are limited
         by the settings of the RESOURCE_LIMITS.
         -->
@@ -701,11 +701,11 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </history>
 
         <!--
-        Setting reliability.kind = RELIABLE_RELIABILITY_QOS, data samples 
+        Setting reliability.kind = RELIABLE_RELIABILITY_QOS, data samples
         originating from a single DataWriter cannot be made available to the
-        DataReader if there are previous data samples that have not been 
+        DataReader if there are previous data samples that have not been
         received yet due to a communication error.
-        
+
         The default value of reliability.kind is RELIABLE_RELIABILITY_QOS.
         The reliability.kind can be modified to BEST_EFFORT_RELIABILITY_QOS
         by using the command-line option -bestEffort.
@@ -715,40 +715,41 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </reliability>
 
         <!--
-        DurabilityQos policy specifies whether or not Connext will store and 
-        deliver previously published data samples to new DataReaders 
+        DurabilityQos policy specifies whether or not Connext will store and
+        deliver previously published data samples to new DataReaders
         that join the network later.
-        
+
         Important: durability.kind and durability.direct_communication are configured
         automatically within the source code. To modify them, use the input commands
         -durability and -noDirectCommunication.
-        
+
         The default value of _DirectCommunication is true.
         The default value of _Durability is DDS_VOLATILE_DURABILITY_QOS.
-        
+
         <durability>
           <kind>_Durability</kind>
           <direct_communication>_DirectCommunication</direct_communication>
         </durability>
         -->
-        
+
         <resource_limits>
           <!--
-          The initial and maximum number of data samples for which the
-          middleware will allocate space. The parameters are set to the same
-          value to eliminate the overhead of dynamic memory-allocation while 
-          running the test. In a real-world application, you
-          may not be sure that you will use the full quota in max_samples 
-          (or max_samples may be unlimited), so you may want to set
-          initial_samples to a value smaller than max_samples and allow
-          the middleware to allocate the difference dynamically as needed.
+          The initial and maximum number of data samples. The middleware will
+          make sure to allocate space for the initial_samples, and then if
+          needed, it will grow the allocated memory up to a point where it
+          supports max_samples.
+
+          For the initial number of samples we choose a number that should be
+          enough for most use-cases (therefore no need to grow), but that
+          should not affect the memory consumption by reserving too much
+          memory.
           -->
           <max_samples>10000</max_samples>
-          <initial_samples>5000</initial_samples>
-          
+          <initial_samples>128</initial_samples>
+
           <!--
           The maximum number of samples that can be stored for a single
-          instance. Since the throughput topic is not keyed, there is only a
+          instance. If the throughput topic is not keyed, there is only a
           single instance, so this value should always be set the same
           as max_samples.
 
@@ -757,7 +758,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           -->
           <max_samples_per_instance>10000</max_samples_per_instance>
         </resource_limits>
-        
+
         <reader_resource_limits>
           <!--
           The maximum number of samples that Connext will store from a
@@ -787,7 +788,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           -->
           <max_samples_per_read>65536</max_samples_per_read>
         </reader_resource_limits>
-        
+
         <protocol>
           <rtps_reliable_reader>
             <!--

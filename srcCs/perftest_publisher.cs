@@ -1170,13 +1170,11 @@ namespace PerformanceTest {
                                 Console.Error.Write("Bad number for -pubRate\n");
                                 return false;
                             }
-                            if ("spin".Equals(st[1])){
-                                Console.Error.Write("-pubRate method: spin.\n");
-                            } else if ("sleep".Equals(st[1])){
+                            if ("sleep".Equals(st[1])){
                                 _pubRateMethodSpin = false;
-                                Console.Error.Write("-pubRate method: sleep.\n");
-                            } else {
-                                Console.Error.Write("<method> for pubRate '" + st[1] + "' is not valid. It must be 'spin' or 'sleep'.\n");
+                            } else if (!"spin".Equals(st[1])) {
+                                Console.Error.Write("<method> for pubRate '" + st[1]
+                                        + "' is not valid. It must be 'spin' or 'sleep'.\n");
                                 return false;
                             }
                         }
@@ -1328,21 +1326,19 @@ namespace PerformanceTest {
 
             StringBuilder sb = new StringBuilder();
 
-            sb.Append("\nPerftest Configuration:\n");
-
             // Throughput/Latency mode
             if (_IsPub) {
-                sb.Append("\tMode: ");
-                if (_LatencyTest) {
-                    sb.Append("Latency (Ping-Pong test)\n");
-                } else {
-                    sb.Append("Throughput (Use \"-latencyTest\" for Latency Mode)\n");
-                }
+                sb.Append("\nMode: ");
 
-                sb.Append("\tLatency count: 1 latency sample every ");
-                sb.Append(_LatencyCount);
-                sb.Append("\n");
+                if (_LatencyTest) {
+                    sb.Append("LATENCY TEST (Ping-Pong test)\n");
+                } else {
+                    sb.Append("THROUGHPUT TEST\n");
+                    sb.Append("      (Use \"-latencyTest\" for Latency Mode)\n");
+                }
             }
+
+            sb.Append("\nPerftest Configuration:\n");
 
             // Reliable/Best Effort
             sb.Append("\tReliability: ");
@@ -1371,41 +1367,38 @@ namespace PerformanceTest {
                 sb.Append("\n");
             }
 
-            // Scan/Data Sizes
-            sb.Append("\tData Size: ");
-            if (_isScan) {
-                for (int i = 0; i < _scanDataLenSizes.Count; i++ ) {
-                    sb.Append(_scanDataLenSizes[i]);
-                    if (i == _scanDataLenSizes.Count - 1) {
-                        sb.Append("\n");
-                    } else {
-                        sb.Append(", ");
-                    }
-                }
-            } else {
-                sb.Append(_DataLen);
-                sb.Append("\n");
-            }
-
-            // Batching
-            sb.Append("\tBatching: ");
-            if (_BatchSize != 0) {
-                sb.Append(_BatchSize);
-                sb.Append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
-            } else {
-                sb.Append("No (Use \"-batchSize\" to setup batching)\n");
-            }
-
-            // Listener/WaitSets
-            sb.Append("\tReceive using: ");
-            if (_UseReadThread) {
-                sb.Append("WaitSets\n");
-            } else {
-                sb.Append("Listeners\n");
-            }
-
-            // Publication Rate
             if (_IsPub) {
+
+                sb.Append("\tLatency count: 1 latency sample every ");
+                sb.Append(_LatencyCount);
+                sb.Append("\n");
+
+                // Scan/Data Sizes
+                sb.Append("\tData Size: ");
+                if (_isScan) {
+                    for (int i = 0; i < _scanDataLenSizes.Count; i++ ) {
+                        sb.Append(_scanDataLenSizes[i]);
+                        if (i == _scanDataLenSizes.Count - 1) {
+                            sb.Append("\n");
+                        } else {
+                            sb.Append(", ");
+                        }
+                    }
+                } else {
+                    sb.Append(_DataLen);
+                    sb.Append("\n");
+                }
+
+                // Batching
+                sb.Append("\tBatching: ");
+                if (_BatchSize != 0) {
+                    sb.Append(_BatchSize);
+                    sb.Append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
+                } else {
+                    sb.Append("No (Use \"-batchSize\" to setup batching)\n");
+                }
+
+                // Publication Rate
                 sb.Append("\tPublication Rate: ");
                 if (_pubRate > 0) {
                     sb.Append(_pubRate);
@@ -1418,17 +1411,25 @@ namespace PerformanceTest {
                 } else {
                     sb.Append("Unlimited (Not set)\n");
                 }
+
+                // Execution Time or Num Iter
+                if (_executionTime > 0) {
+                    sb.Append("\tExecution time: ");
+                    sb.Append(_executionTime);
+                    sb.Append(" seconds\n");
+                } else {
+                    sb.Append("\tNumber of samples: " );
+                    sb.Append(_NumIter);
+                    sb.Append("\n");
+                }
             }
 
-            // Execution Time or Num Iter
-            if (_executionTime > 0) {
-                sb.Append("\tExecution time: ");
-                sb.Append(_executionTime);
-                sb.Append(" seconds\n");
+            // Listener/WaitSets
+            sb.Append("\tReceive using: ");
+            if (_UseReadThread) {
+                sb.Append("WaitSets\n");
             } else {
-                sb.Append("\tNumber of samples: " );
-                sb.Append(_NumIter);
-                sb.Append("\n");
+                sb.Append("Listeners\n");
             }
 
             sb.Append(_MessagingImpl.PrintConfiguration());
@@ -2176,7 +2177,7 @@ namespace PerformanceTest {
                 }
             }
 
-            Console.Error.Write("Waiting to discover {0} subscribers...\n", _NumSubscribers);
+            Console.Error.Write("Waiting to discover {0} subscribers ...\n", _NumSubscribers);
             writer.WaitForReaders(_NumSubscribers);
 
             // We have to wait until every Subscriber sends an announcement message
@@ -2186,29 +2187,48 @@ namespace PerformanceTest {
                 System.Threading.Thread.Sleep(1000);
             }
 
+            if (_showCpu)
+            {
+                reader_listener.cpu.initialize();
+            }
+
             // Allocate data and set size
             TestMessage message = new TestMessage();
             message.entity_id = _PubID;
             message.data = new byte[Math.Max(_DataLen,LENGTH_CHANGED_SIZE)];
 
-            Console.Error.Write("Sending initial pings...\n");
-
-            if (_showCpu) {
-                reader_listener.cpu.initialize();
-            }
-
-            // initialize data pathways by sending some initial pings
             message.size = INITIALIZE_SIZE;
-            for (int i = 0;
-                    i < Math.Max(_InstanceCount, announcementSampleCount);
-                    i++)
+
+            /*
+             * Initial burst of data:
+             *
+             * The purpose of this initial burst of Data is to ensure that most
+             * memory allocations in the critical path are done before the test
+             * begings, for both the Writer and the Reader that receives the samples.
+             * It will also serve to make sure that all the instances are registered
+             * in advance in the subscriber application.
+             *
+             * We query the MessagingImplementation class to get the suggested sample
+             * count that we should send. This number might be based on the reliability
+             * protocol implemented by the middleware behind. Then we choose between that
+             * number and the number of instances to be sent.
+             */
+
+            int initializeSampleCount = Math.Max(
+                   _MessagingImpl.GetInitializationSampleCount(),
+                   _InstanceCount);
+
+            Console.Error.WriteLine(
+                    "Sending " + initializeSampleCount + " initialization pings ...");
+
+            for (int i = 0; i < initializeSampleCount; i++)
             {
                 // Send test initialization message
                 writer.Send(message, true);
             }
             writer.Flush();
 
-            Console.Error.Write("Publishing data...\n");
+            Console.Error.Write("Publishing data ...\n");
 
             // Set data size, account for other bytes in message
             message.size = (int)_DataLen - OVERHEAD_BYTES;

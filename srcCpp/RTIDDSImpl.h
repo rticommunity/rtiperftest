@@ -114,7 +114,12 @@ class RTIDDSImpl : public IMessaging
 
     void Shutdown();
 
-    unsigned int GetBatchSize() { return _BatchSize; }
+    unsigned int GetBatchSize()
+    {
+        return _BatchSize;
+    }
+
+    unsigned long GetInitializationSampleCount();
 
     IMessagingWriter *CreateWriter(const char *topic_name);
 

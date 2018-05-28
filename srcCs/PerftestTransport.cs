@@ -886,9 +886,7 @@ namespace PerformanceTest
 
         private void ConfigureShmemTransport(DDS.DomainParticipantQos qos) {
 
-            qos.transport_builtin.mask = (int) DDS.TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM;
-
-            // SHMEM transport properties
+            // Number of messages that can be buffered in the receive queue.
             int receivedMessageCountMax = 2 * 1024 * 1024 / (int) dataLen;
             if (receivedMessageCountMax < 1) {
                 receivedMessageCountMax = 1;
@@ -979,6 +977,7 @@ namespace PerformanceTest
                     break;
 
                 case Transport.TRANSPORT_SHMEM:
+                    qos.transport_builtin.mask = (int) DDS.TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM;
                     ConfigureShmemTransport(qos);
                     break;
 
@@ -1009,8 +1008,17 @@ namespace PerformanceTest
 
                 default:
 
-                    break;
+                    /*
+                    * If shared memory is enabled we want to set up its
+                    * specific configuration
+                    */
+                    if ((qos.transport_builtin.mask
+                            & (int)DDS.TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM)
+                                    != 0) {
+                        ConfigureShmemTransport(qos);
+                    }
 
+                    break;
             } // Switch
 
             if (transportConfig.kind != Transport.TRANSPORT_NOT_SET

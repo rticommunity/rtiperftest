@@ -622,13 +622,12 @@ public final class PerfTest {
                         return false;
                     }
                     // Validate pubRate <method> spin or sleep
-                    if (argv[i].contains("spin".toLowerCase())){
-                        System.err.println("-pubRate method: spin.");
-                    } else if (argv[i].contains("sleep".toLowerCase())){
+                    if (argv[i].contains("sleep".toLowerCase())){
                         _pubRateMethodSpin = false;
-                        System.err.println("-pubRate method: sleep.");
-                    } else {
-                        System.err.println("<samples/s>:<method> for pubRate '" + argv[i] + "' is not valid. It must contain 'spin' or 'sleep'.");
+                    } else if (!argv[i].contains("spin".toLowerCase())) {
+                        System.err.println("<samples/s>:<method> for pubRate '"
+                                + argv[i]
+                                + "' is not valid. It must contain 'spin' or 'sleep'.");
                         return false;
                     }
                 } else {
@@ -758,21 +757,19 @@ public final class PerfTest {
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("\nPerftest Configuration:\n");
-
         // Throughput/Latency mode
         if (_isPub) {
-            sb.append("\tMode: ");
-            if (_latencyTest) {
-                sb.append("Latency (Ping-Pong test)\n");
-            } else {
-                sb.append("Throughput (Use \"-latencyTest\" for Latency Mode)\n");
-            }
+            sb.append("\nMode: ");
 
-            sb.append("\tLatency count: 1 latency sample every ");
-            sb.append(_latencyCount);
-            sb.append("\n");
+            if (_latencyTest) {
+                sb.append("LATENCY TEST (Ping-Pong test)\n");
+            } else {
+                sb.append("THROUGHPUT TEST\n");
+                sb.append("      (Use \"-latencyTest\" for Latency Mode)\n");
+            }
         }
+
+        sb.append("\nPerftest Configuration:\n");
 
         // Reliable/Best Effort
         sb.append("\tReliability: ");
@@ -801,41 +798,38 @@ public final class PerfTest {
             sb.append("\n");
         }
 
-        // Scan/Data Sizes
-        sb.append("\tData Size: ");
-        if (_isScan) {
-            for (int i = 0; i < _scanDataLenSizes.size(); i++ ) {
-                sb.append(_scanDataLenSizes.get(i));
-                if (i == _scanDataLenSizes.size() - 1) {
-                    sb.append("\n");
-                } else {
-                    sb.append(", ");
-                }
-            }
-        } else {
-            sb.append(_dataLen);
-            sb.append("\n");
-        }
-
-        // Batching
-        sb.append("\tBatching: ");
-        if (_batchSize != 0) {
-            sb.append(_batchSize);
-            sb.append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
-        } else {
-            sb.append("No (Use \"-batchSize\" to setup batching)\n");
-        }
-
-        // Listener/WaitSets
-        sb.append("\tReceive using: ");
-        if (_useReadThread) {
-            sb.append("WaitSets\n");
-        } else {
-            sb.append("Listeners\n");
-        }
-
-        // Publication Rate
         if (_isPub) {
+
+            sb.append("\tLatency count: 1 latency sample every ");
+            sb.append(_latencyCount);
+            sb.append("\n");
+
+            // Scan/Data Sizes
+            sb.append("\tData Size: ");
+            if (_isScan) {
+                for (int i = 0; i < _scanDataLenSizes.size(); i++ ) {
+                    sb.append(_scanDataLenSizes.get(i));
+                    if (i == _scanDataLenSizes.size() - 1) {
+                        sb.append("\n");
+                    } else {
+                        sb.append(", ");
+                    }
+                }
+            } else {
+                sb.append(_dataLen);
+                sb.append("\n");
+            }
+
+            // Batching
+            sb.append("\tBatching: ");
+            if (_batchSize != 0) {
+                sb.append(_batchSize);
+                sb.append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
+            } else {
+                sb.append("No (Use \"-batchSize\" to setup batching)\n");
+            }
+
+            // Publication Rate
             sb.append("\tPublication Rate: ");
             if (_pubRate > 0) {
                 sb.append(_pubRate);
@@ -848,17 +842,25 @@ public final class PerfTest {
             } else {
                 sb.append("Unlimited (Not set)\n");
             }
+
+            // Execution Time or Num Iter
+            if (_executionTime > 0) {
+                sb.append("\tExecution time: ");
+                sb.append(_executionTime);
+                sb.append(" seconds\n");
+            } else {
+                sb.append("\tNumber of samples: " );
+                sb.append(_numIter);
+                sb.append("\n");
+            }
         }
 
-        // Execution Time or Num Iter
-        if (_executionTime > 0) {
-            sb.append("\tExecution time: ");
-            sb.append(_executionTime);
-            sb.append(" seconds\n");
+        // Listener/WaitSets
+        sb.append("\tReceive using: ");
+        if (_useReadThread) {
+            sb.append("WaitSets\n");
         } else {
-            sb.append("\tNumber of samples: " );
-            sb.append(_numIter);
-            sb.append("\n");
+            sb.append("Listeners\n");
         }
 
         sb.append(_messagingImpl.printConfiguration());
@@ -1121,7 +1123,7 @@ public final class PerfTest {
             }
         }
 
-        System.err.printf("Waiting to discover %1$d subscriber(s)...\n", _numSubscribers);
+        System.err.printf("Waiting to discover %1$d subscribers ...\n", _numSubscribers);
         writer.waitForReaders(_numSubscribers);
 
         // We have to wait until every Subscriber sends an announcement message
@@ -1137,26 +1139,41 @@ public final class PerfTest {
         message.entity_id = pubID;
         message.data = new byte[Math.max((int)_dataLen,LENGTH_CHANGED_SIZE)];
 
-        System.err.print("Sending initial pings...\n");
         message.size = INITIALIZE_SIZE;
-        for (int i = 0;
-                i < Math.max(_instanceCount, announcement_sample_count);
-                i++)
-        {
+
+        /*
+         * Initial burst of data:
+         *
+         * The purpose of this initial burst of Data is to ensure that most
+         * memory allocations in the critical path are done before the test
+         * begings, for both the Writer and the Reader that receives the samples.
+         * It will also serve to make sure that all the instances are registered
+         * in advance in the subscriber application.
+         *
+         * We query the MessagingImplementation class to get the suggested sample
+         * count that we should send. This number might be based on the reliability
+         * protocol implemented by the middleware behind. Then we choose between that
+         * number and the number of instances to be sent.
+         */
+
+         int initializeSampleCount = Math.max(
+                _messagingImpl.getInitializationSampleCount(),
+                _instanceCount);
+
+        System.err.println(
+                "Sending " + initializeSampleCount + " initialization pings ...");
+
+        for (int i = 0; i < initializeSampleCount; i++) {
             // Send test initialization message
             if (!writer.send(message, true)) {
-                System.out.println(
+                System.err.println(
                         "*** send() failure: initialization message");
                 return;
-            }
-
-            if (i % 10 == 0) {
-                sleep(1);
             }
         }
         writer.flush();
 
-        System.err.print("Publishing data...\n");
+        System.err.print("Publishing data ...\n");
 
         // Set data size, account for other bytes in message
         message.size = (int)_dataLen - OVERHEAD_BYTES;
