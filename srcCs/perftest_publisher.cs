@@ -2187,22 +2187,41 @@ namespace PerformanceTest {
                 System.Threading.Thread.Sleep(1000);
             }
 
+            if (_showCpu)
+            {
+                reader_listener.cpu.initialize();
+            }
+
             // Allocate data and set size
             TestMessage message = new TestMessage();
             message.entity_id = _PubID;
             message.data = new byte[Math.Max(_DataLen,LENGTH_CHANGED_SIZE)];
 
-            Console.Error.Write("Sending initial pings...\n");
-
-            if (_showCpu) {
-                reader_listener.cpu.initialize();
-            }
-
-            // initialize data pathways by sending some initial pings
             message.size = INITIALIZE_SIZE;
-            for (int i = 0;
-                    i < Math.Max(_InstanceCount, announcementSampleCount);
-                    i++)
+
+            /*
+             * Initial burst of data:
+             *
+             * The purpose of this initial burst of Data is to ensure that most
+             * memory allocations in the critical path are done before the test
+             * begings, for both the Writer and the Reader that receives the samples.
+             * It will also serve to make sure that all the instances are registered
+             * in advance in the subscriber application.
+             *
+             * We query the MessagingImplementation class to get the suggested sample
+             * count that we should send. This number might be based on the reliability
+             * protocol implemented by the middleware behind. Then we choose between that
+             * number and the number of instances to be sent.
+             */
+
+            int initializeSampleCount = Math.Max(
+                   _MessagingImpl.GetInitializationSampleCount(),
+                   _InstanceCount);
+
+            Console.Error.WriteLine(
+                    "Sending " + initializeSampleCount + " initialization pings ...");
+
+            for (int i = 0; i < initializeSampleCount; i++)
             {
                 // Send test initialization message
                 writer.Send(message, true);

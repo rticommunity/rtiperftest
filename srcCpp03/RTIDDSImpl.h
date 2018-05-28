@@ -59,6 +59,8 @@ class RTIDDSImpl : public IMessaging
         return _BatchSize;
     }
 
+    unsigned long GetInitializationSampleCount();
+
     IMessagingWriter *CreateWriter(const std::string &topic_name);
     // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
     // to get data

@@ -1796,7 +1796,6 @@ int perftest_cpp::RunPublisher()
     //message.size = std::max(_DataLen,LENGTH_CHANGED_SIZE);
     //message.bin_data.resize(std::max(_DataLen,LENGTH_CHANGED_SIZE));
 
-    std::cerr << "[Info] Sending initial pings..." << std::endl;
 
     if ( perftest_cpp::_showCpu && _PubID == 0) {
         reader_listener->cpu.initialize();
@@ -1808,10 +1807,29 @@ int perftest_cpp::RunPublisher()
     }
 
     message.size = INITIALIZE_SIZE;
-    //message.data.resize(message.size);
-    for (unsigned long i = 0;
-            i < (std::max)(_InstanceCount, announcementSampleCount);
-            i++) {
+
+    /*
+     * Initial burst of data:
+     *
+     * The purpose of this initial burst of Data is to ensure that most
+     * memory allocations in the critical path are done before the test begings,
+     * for both the Writer and the Reader that receives the samples.
+     * It will also serve to make sure that all the instances are registered
+     * in advance in the subscriber application.
+     *
+     * We query the MessagingImplementation class to get the suggested sample
+     * count that we should send. This number might be based on the reliability
+     * protocol implemented by the middleware behind. Then we choose between that
+     * number and the number of instances to be sent.
+     */
+    unsigned long initializeSampleCount = (std::max)(
+            _MessagingImpl->GetInitializationSampleCount(),
+            _InstanceCount);
+
+    std::cerr << "[Info] Sending " << initializeSampleCount
+              << " initialization pings ..." << std::endl;
+
+    for (unsigned long i = 0; i < initializeSampleCount; i++) {
         // Send test initialization message
         writer->send(message, true);
     }

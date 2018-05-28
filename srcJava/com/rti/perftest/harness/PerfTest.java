@@ -1139,21 +1139,36 @@ public final class PerfTest {
         message.entity_id = pubID;
         message.data = new byte[Math.max((int)_dataLen,LENGTH_CHANGED_SIZE)];
 
-        System.err.print("Sending initial pings...\n");
         message.size = INITIALIZE_SIZE;
-        for (int i = 0;
-                i < Math.max(_instanceCount, announcement_sample_count);
-                i++)
-        {
+
+        /*
+         * Initial burst of data:
+         *
+         * The purpose of this initial burst of Data is to ensure that most
+         * memory allocations in the critical path are done before the test
+         * begings, for both the Writer and the Reader that receives the samples.
+         * It will also serve to make sure that all the instances are registered
+         * in advance in the subscriber application.
+         *
+         * We query the MessagingImplementation class to get the suggested sample
+         * count that we should send. This number might be based on the reliability
+         * protocol implemented by the middleware behind. Then we choose between that
+         * number and the number of instances to be sent.
+         */
+
+         int initializeSampleCount = Math.max(
+                _messagingImpl.getInitializationSampleCount(),
+                _instanceCount);
+
+        System.err.println(
+                "Sending " + initializeSampleCount + " initialization pings ...");
+
+        for (int i = 0; i < initializeSampleCount; i++) {
             // Send test initialization message
             if (!writer.send(message, true)) {
-                System.out.println(
+                System.err.println(
                         "*** send() failure: initialization message");
                 return;
-            }
-
-            if (i % 10 == 0) {
-                sleep(1);
             }
         }
         writer.flush();
