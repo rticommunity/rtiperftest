@@ -51,6 +51,19 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+Use `UDPv4` and `Shared Memory` as the default transport configuration (#80)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* previous default was to use only the `UDPv4` transport.
+However this doesn't always lead to the best results when testing between
+applications within the same machine and it also differs from *RTI Connext DDS*
+default behavior, which is `UDPv4` and Shared Memory (`SHMEM`).
+Starting from this release *RTI Perftest* new default is to use `UDPv4` and `SHMEM`.
+
+This change improves the out of the box user experience, getting better numbers
+when using the default configuration.
+
+
 Print a summary with the main setting of the test *RTI Perftest* will run (#46)(#67)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -809,6 +822,33 @@ we could get into the following error:
 
 Known Issues
 ------------
+
+Shared Memory issues when running the Modern C++ API Implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*RTI Perftest* uses `UDPv4` and `SHMEM` by default. Certain Operative Systems
+don't support Shared Memory, or the default configuration is not enough for
+*RTI Connext DDS* to work properly. In those cases *RTI Perftest* will show
+some errors trying to create the Participant entity:
+
+::
+
+    [D0001|ENABLE]NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key 0x40894a
+    [D0001|ENABLE]NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key 0x40894c
+    [D0001|ENABLE]DDS_DomainParticipantPresentation_reserve_participant_index_entryports:!enable reserve participant index
+    [D0001|ENABLE]DDS_DomainParticipant_reserve_participant_index_entryports:Unusable shared memory transport. For a more in-depth explanation of the possible problem and solution, please visit http://community.rti.com/kb/osx510.
+    [D0001|ENABLE]DDS_DomainParticipant_enableI:Automatic participant index failed to initialize. PLEASE VERIFY CONSISTENT TRANSPORT / DISCOVERY CONFIGURATION.
+    [NOTE: If the participant is running on a machine where the network interfaces can change, you should manually set wire protocol's participant id]
+    DDSDomainParticipant_impl::createI:ERROR: Failed to auto-enable entity
+
+These errors are handled and filtered in the *RTI Perftest* implementation for
+the Classic C++, Java and C# APIs, but this is still not possible with the
+Modern C++ API.
+
+For more information about how to configure Shared Memory see http://community.rti.com/kb/osx510
+
+If you want to skip the use of Shared memory in RTI Perftest, specify the transport using `-transport <kind>`, e.g. `-transport UDPv4`.
+
 
 Building RTI Perftest Java API against RTI Connext DDS 5.2.0.x
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
