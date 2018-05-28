@@ -107,7 +107,6 @@ function clean()
     rm -rf "${script_location}"/srcJava/jar
     rm -rf "${script_location}"/srcJava/com/rti/perftest/gen
     rm -rf "${script_location}"/bin
-    rm -rf "${script_location}"/srcC*/qos_string.h
 
     echo ""
     echo "================================================================================"
@@ -212,7 +211,7 @@ function geneate_qos_string()
     # If PERL is in the path, generate the qos_string.h file.
     if [ "${BUILD_CPP}" -eq "1" ]; then
         if [ -z `which "${PERL}"` ]; then
-            echo -e "${YELLOW}[WARNING]:${NC} ${PERL} executable not found, ${classic_cpp_folder}/qos_string.h will not be generated."
+            echo -e "${YELLOW}[WARNING]:${NC} ${PERL} not found, ${classic_cpp_folder}/qos_string.h will not be update."
         else
             perl ${cStringifyFile_script} ${qos_file} PERFTEST_QOS_STRING > ${classic_cpp_folder}/qos_string.h
             echo -e "${INFO_TAG} QoS String ${classic_cpp_folder}/qos_string.h generation successful"
@@ -220,7 +219,7 @@ function geneate_qos_string()
     fi
     if [ "${BUILD_CPP03}" -eq "1" ]; then
         if [ -z `which "${MAKE_EXE}"` ]; then
-            echo -e "${YELLOW}[WARNING]:${NC} ${PERL} executable not found, ${modern_cpp_folder}/qos_string.h will not be generated."
+            echo -e "${YELLOW}[WARNING]:${NC} ${PERL} not found, ${modern_cpp_folder}/qos_string.h will not be update."
         else
             perl ${cStringifyFile_script} ${qos_file} PERFTEST_QOS_STRING > ${modern_cpp_folder}/qos_string.h
             echo -e "${INFO_TAG} QoS String ${modern_cpp_folder}/qos_string.h generation successful"
