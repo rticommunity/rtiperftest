@@ -16,6 +16,8 @@ public interface IMessaging {
 
     public void printCmdLineHelp();
 
+    String printConfiguration();
+
     public void shutdown();
 
     /**

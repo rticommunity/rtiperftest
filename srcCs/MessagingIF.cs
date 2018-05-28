@@ -57,6 +57,8 @@ namespace PerformanceTest
 
         void PrintCmdLineHelp();
 
+        string PrintConfiguration();
+
         void Shutdown();
 
         /*

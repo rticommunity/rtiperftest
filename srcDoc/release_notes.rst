@@ -51,6 +51,18 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+Print a summary with the main setting of the test *RTI Perftest* will run (#46)(#67)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* provides a great number of command-line parameters, plus the option
+of using the *xml configuration file* for modying *RTI Connext DDS QoS*. This could
+lead to some confusion with regards to the test that will run when executing the application.
+
+In order to make this clear, *RTI Perftest* now shows a summary at the beginning of
+the test with most of the relevant parameters being used for such test. This is done
+for both *Publisher* and *Subscriber* sides.
+
+
 Added command-line parameters to simplify single API build (#50)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -62,11 +74,25 @@ following command-line parameters:
     --cpp-build
     --cs-build
 
+What's Fixed in Master
+~~~~~~~~~~~~~~~~~~~~~~
+
 Added RTI Perftest and RTI Connext DDS information at beginning of the test(#54)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Starting with this release, RTI Perftest will print at the beginning of the test
 its version and the version of RTI Connext DDS used to compile against.
+
+Improve Dynamic Data Send() and Receive() operations (#55)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Dynamic Data Send() and Received() functions have been optimized
+reducing the time of setting and getting the samples.
+
+The result of these optimizations is that RTI Perftest now minimizes the time
+employed in the application-related tasks, therefore maximizing the time for
+sending and receiving calls. This allows to do a fair comparison between
+Dynamic Data results and Generated Type-Code Data results.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -95,6 +121,7 @@ the CPU and network intensively, potentially starving the subscriber side and ma
 test hang.
 
 This behavior has been fixed.
+>>>>>>> master
 
 Reduce memory consumption in the Subscriber side (#74)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -89,31 +89,54 @@ bool setAllowInterfacesList(
 {
     if (!transport.allowInterfaces.empty()) {
 
-        /*
-         * By default, if the transport is not set, it should be UDPv4, if it is not
-         * It means that we have modified the QOS, so we won't use the -nic param.
-         */
-        if (transport.transportConfig.kind == TRANSPORT_DEFAULT
-                && qos.transport_builtin.mask != DDS_TRANSPORTBUILTIN_UDPv4) {
-            fprintf(
-                    stderr,
-                    "%s Ignoring -nic option, "
-                    "Transport has been modified via QoS\n",
+        if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
+            fprintf(stderr,
+                    "%s Ignoring -nic/-allowInterfaces option\n",
                     classLoggingString.c_str());
             return true;
         }
 
-        std::string propertyName = transport.transportConfig.prefixString;
-        if (transport.transportConfig.kind == TRANSPORT_WANv4) {
-            propertyName += ".parent";
+        /*
+         * In these 2 specific cases, we are forced to add 2 properties, one
+         * for UDPv4 and another for UDPv6
+         */
+        if (transport.transportConfig.kind == TRANSPORT_UDPv4_UDPv6_SHMEM
+                || transport.transportConfig.kind == TRANSPORT_UDPv4_UDPv6) {
+
+            std::string propertyName =
+                    "dds.transport.UDPv4.builtin.parent.allow_interfaces";
+
+            if (!addPropertyToParticipantQos(
+                    qos,
+                    propertyName,
+                    transport.allowInterfaces)) {
+                return false;
+            }
+
+            propertyName =
+                    "dds.transport.UDPv6.builtin.parent.allow_interfaces";
+
+            if (!addPropertyToParticipantQos(
+                    qos,
+                    propertyName,
+                    transport.allowInterfaces)) {
+                return false;
+            }
+
+        } else {
+
+            std::string propertyName = transport.transportConfig.prefixString;
+            if (transport.transportConfig.kind == TRANSPORT_WANv4) {
+                propertyName += ".parent";
+            }
+
+            propertyName += ".parent.allow_interfaces";
+
+            return addPropertyToParticipantQos(
+                    qos,
+                    propertyName,
+                    transport.allowInterfaces);
         }
-
-        propertyName += ".parent.allow_interfaces";
-
-        return addPropertyToParticipantQos(
-                qos,
-                propertyName,
-                transport.allowInterfaces);
     }
 
     return true;
@@ -125,17 +148,9 @@ bool setTransportVerbosity(
 {
     if (!transport.verbosity.empty()) {
 
-        /*
-         * By default, if the transport is not set, it should be UDPv4, if it is not
-         * It means that we have modified the QOS, so we won't use the
-         * -transportVerbosity param.
-         */
-        if (transport.transportConfig.kind == TRANSPORT_DEFAULT
-                && qos.transport_builtin.mask != DDS_TRANSPORTBUILTIN_UDPv4) {
-            fprintf(
-                    stderr,
-                    "%s Ignoring -transportVerbosity option, "
-                    "Transport has been modified via QoS\n",
+        if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
+            fprintf(stderr,
+                    "%s Ignoring -transportVerbosity option\n",
                     classLoggingString.c_str());
             return true;
         }
@@ -149,7 +164,11 @@ bool setTransportVerbosity(
                     + ".logging_verbosity_bitmap";
         } else if (transport.transportConfig.kind == TRANSPORT_UDPv4
                 || transport.transportConfig.kind == TRANSPORT_UDPv6
-                || transport.transportConfig.kind == TRANSPORT_SHMEM) {
+                || transport.transportConfig.kind == TRANSPORT_SHMEM
+                || transport.transportConfig.kind == TRANSPORT_UDPv4_SHMEM
+                || transport.transportConfig.kind == TRANSPORT_UDPv6_SHMEM
+                || transport.transportConfig.kind == TRANSPORT_UDPv4_UDPv6
+                || transport.transportConfig.kind == TRANSPORT_UDPv4_UDPv6_SHMEM) {
             // We do not change logging for the builtin transports.
             return true;
         }
@@ -400,10 +419,7 @@ bool configureShmemTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos)
 {
-
-    qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_SHMEM;
-
-    // SHMEM transport properties
+    // Number of messages that can be buffered in the receive queue.
     int received_message_count_max = 1024 * 1024 * 2
             / (int) transport.dataLen;
     if (received_message_count_max < 1) {
@@ -414,8 +430,7 @@ bool configureShmemTransport(
     string_stream_object << received_message_count_max;
     if (!assertPropertyToParticipantQos(
             qos,
-            transport.transportConfig.prefixString
-                    + ".received_message_count_max",
+            "dds.transport.shmem.builtin.received_message_count_max",
             string_stream_object.str())) {
         return false;
     }
@@ -427,76 +442,149 @@ bool configureTransport(
         DDS_DomainParticipantQos &qos)
 {
 
+    /*
+     * If transportConfig.kind is not set, then we want to use the value
+     * provided by the Participant Qos, so first we read it from there and
+     * update the value of transportConfig.kind with whatever was already set.
+     */
+
+    if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
+
+        DDS_TransportBuiltinKindMask mask = qos.transport_builtin.mask;
+        switch (mask) {
+            case DDS_TRANSPORTBUILTIN_UDPv4:
+                transport.transportConfig = TransportConfig(
+                    TRANSPORT_UDPv4,
+                    "UDPv4",
+                    "dds.transport.UDPv4.builtin");
+                break;
+            case DDS_TRANSPORTBUILTIN_UDPv6:
+                transport.transportConfig = TransportConfig(
+                    TRANSPORT_UDPv6,
+                    "UDPv6",
+                    "dds.transport.UDPv6.builtin");
+                break;
+            case DDS_TRANSPORTBUILTIN_SHMEM:
+                transport.transportConfig = TransportConfig(
+                    TRANSPORT_SHMEM,
+                    "SHMEM",
+                    "dds.transport.shmem.builtin");
+                break;
+            case DDS_TRANSPORTBUILTIN_UDPv4|DDS_TRANSPORTBUILTIN_SHMEM:
+                transport.transportConfig = TransportConfig(
+                    TRANSPORT_UDPv4_SHMEM,
+                    "UDPv4 & SHMEM",
+                    "dds.transport.UDPv4.builtin");
+                break;
+            case DDS_TRANSPORTBUILTIN_UDPv4|DDS_TRANSPORTBUILTIN_UDPv6:
+                transport.transportConfig = TransportConfig(
+                    TRANSPORT_UDPv4_UDPv6,
+                    "UDPv4 & UDPv6",
+                    "dds.transport.UDPv4.builtin");
+                break;
+            case DDS_TRANSPORTBUILTIN_SHMEM|DDS_TRANSPORTBUILTIN_UDPv6:
+                transport.transportConfig = TransportConfig(
+                    TRANSPORT_UDPv6_SHMEM,
+                    "UDPv6 & SHMEM",
+                    "dds.transport.UDPv6.builtin");
+                break;
+            case DDS_TRANSPORTBUILTIN_UDPv4|DDS_TRANSPORTBUILTIN_UDPv6|DDS_TRANSPORTBUILTIN_SHMEM:
+                transport.transportConfig = TransportConfig(
+                    TRANSPORT_UDPv4_UDPv6_SHMEM,
+                    "UDPv4 & UDPv6 & SHMEM",
+                    "dds.transport.UDPv4.builtin");
+                break;
+            default:
+                /*
+                 * This would mean that the mask is either empty or a
+                 * different value that we do not support yet. So we keep
+                 * the value as "TRANSPORT_NOT_SET"
+                 */
+                break;
+        }
+        transport.transportConfig.takenFromQoS = true;
+    }
+
     switch (transport.transportConfig.kind) {
 
-    case TRANSPORT_DEFAULT:
-        /* fprintf(stderr,
-                "%s Using default configuration (xml)\n",
-                classLoggingString.c_str()); */
-        break;
+        case TRANSPORT_UDPv4:
+            qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;
+            break;
 
-    case TRANSPORT_UDPv4:
-        qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;
-        break;
+        case TRANSPORT_UDPv6:
+            qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv6;
+            break;
 
-    case TRANSPORT_UDPv6:
-        qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv6;
-        break;
+        case TRANSPORT_SHMEM:
+            qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_SHMEM;
+            if (!configureShmemTransport(transport, qos)) {
+                fprintf(stderr,
+                        "%s Failed to configure SHMEM plugin\n",
+                        classLoggingString.c_str());
+                return false;
+            }
+            break;
 
-    case TRANSPORT_SHMEM:
-        if (!configureShmemTransport(transport, qos)) {
-            fprintf(stderr,
-                    "%s Failed to configure SHMEM plugin\n",
-                    classLoggingString.c_str());
-            return false;
-        }
-        break;
+        case TRANSPORT_TCPv4:
+            if (!configureTcpTransport(transport, qos)) {
+                fprintf(stderr,
+                        "%s Failed to configure TCP plugin\n",
+                        classLoggingString.c_str());
+                return false;
+            }
+            break;
 
-    case TRANSPORT_TCPv4:
-        if (!configureTcpTransport(transport, qos)) {
-            fprintf(stderr,
-                    "%s Failed to configure TCP plugin\n",
-                    classLoggingString.c_str());
-            return false;
-        }
-        break;
+        case TRANSPORT_TLSv4:
+            if (!configureTcpTransport(transport, qos)) {
+                fprintf(stderr,
+                        "%s Failed to configure TCP + TLS plugin\n",
+                        classLoggingString.c_str());
+                return false;
+            }
+            break;
 
-    case TRANSPORT_TLSv4:
-        if (!configureTcpTransport(transport, qos)) {
-            fprintf(stderr,
-                    "%s Failed to configure TCP + TLS plugin\n",
-                    classLoggingString.c_str());
-            return false;
-        }
-        break;
+        case TRANSPORT_DTLSv4:
+            if (!configureDtlsTransport(transport, qos)) {
+                fprintf(stderr,
+                        "%s Failed to configure DTLS plugin\n",
+                        classLoggingString.c_str());
+                return false;
+            }
+            break;
 
-    case TRANSPORT_DTLSv4:
-        if (!configureDtlsTransport(transport, qos)) {
-            fprintf(stderr,
-                    "%s Failed to configure DTLS plugin\n",
-                    classLoggingString.c_str());
-            return false;
-        }
-        break;
+        case TRANSPORT_WANv4:
+            if (!configureWanTransport(transport, qos)) {
+                fprintf(stderr,
+                        "%s Failed to configure WAN plugin\n",
+                        classLoggingString.c_str());
+                return false;
+            }
+            break;
+        default:
 
-    case TRANSPORT_WANv4:
-        if (!configureWanTransport(transport, qos)) {
-            fprintf(stderr,
-                    "%s Failed to configure WAN plugin\n",
-                    classLoggingString.c_str());
-            return false;
-        }
-        break;
-
-    default:
-        fprintf(stderr,
-                "%s Transport is not supported\n",
-                classLoggingString.c_str());
-        return false;
-
+            /*
+             * If shared memory is enabled we want to set up its
+             * specific configuration
+             */
+            if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_SHMEM)
+                    != 0) {
+                if (!configureShmemTransport(transport, qos)) {
+                    fprintf(stderr,
+                            "%s Failed to configure SHMEM plugin\n",
+                            classLoggingString.c_str());
+                    return false;
+                }
+            }
+            break;
     } // Switch
 
-    if (transport.transportConfig.kind != TRANSPORT_SHMEM) {
+    /*
+     * If the transport is empty or if it is shmem, it does not make sense
+     * setting an interface, in those cases, if the allow interfaces is provided
+     * we empty it.
+     */
+    if (transport.transportConfig.kind != TRANSPORT_NOT_SET
+            && transport.transportConfig.kind != TRANSPORT_SHMEM) {
         if (!setAllowInterfacesList(transport, qos)) {
             return false;
         }
@@ -532,10 +620,10 @@ PerftestTransport::getTransportConfigMap()
 {
 
     if (transportConfigMap.empty()) {
-        transportConfigMap["Default"] = TransportConfig(
-                TRANSPORT_DEFAULT,
-                "Default (UDPv4) / Custom (Taken from QoS profile)",
-                "dds.transport.UDPv4.builtin");
+        transportConfigMap["Use XML"] = TransportConfig(
+                TRANSPORT_NOT_SET,
+                "--",
+                "--");
         transportConfigMap["UDPv4"] = TransportConfig(
                 TRANSPORT_UDPv4,
                 "UDPv4",
@@ -649,64 +737,70 @@ std::string PerftestTransport::helpMessageString()
 
     std::ostringstream oss;
     oss
-<< "\t===================== Transport Specific Options ======================\n"
-<< "\n"
-<< "\t-transport <kind>             - Set transport to be used. The rest of\n"
-<< "\t                                the transports will be disabled.\n"
-<< "\t                                Values:\n"
-<< "\t                                    UDPv4\n"
-<< "\t                                    UDPv6\n"
-<< "\t                                    SHMEM\n"
-<< "\t                                    TCP\n"
-<< "\t                                    TLS\n"
-<< "\t                                    DTLS\n"
-<< "\t                                    WAN\n"
-<< "\t                                Default: UDPv4\n"
-<< "\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n"
-<< "\t                                If not specified, use all available\n"
-<< "\t                                interfaces\n"
-<< "\t-transportVerbosity <level>   - Verbosity of the transport\n"
-<< "\t                                Default: 0 (errors only)\n"
-<< "\t-transportServerBindPort <p>  - Port used by the transport to accept\n"
-<< "\t                                TCP/TLS connections <optional>\n"
-<< "\t                                Default: 7400\n"
-<< "\t-transportWan                   Use TCP/TLS across LANs and Firewalls.\n"
-<< "\t                                Default: Not Set, LAN mode.\n"
-<< "\t-transportPublicAddress <ip>  - Public IP address and port (WAN address\n"
-<< "\t                                and port) (separated with ‘:’ ) related\n"
-<< "\t                                to the transport instantiation. This is\n"
-<< "\t                                required when using server mode.\n"
-<< "\t                                Default: Not Set.\n"
-<< "\t-transportWanServerAddress <a>- Address where to find the WAN Server\n"
-<< "\t                                Default: Not Set (Required)\n"
-<< "\t-transportWanServerPort <p>     Port where to find the WAN Server.\n"
-<< "\t                                Default: 3478.\n"
-<< "\t-transportWanId <id>          - Id to be used for the WAN transport.\n"
-<< "\t                                Default: Not Set (Required).\n"
-<< "\t-transportSecureWan           - Use WAN with security.\n"
-<< "\t                                Default: False.\n"
-<< "\t-transportCertAuthority <file>- Certificate authority file <optional>\n"
-<< "\t                                Default: \""
-<< TRANSPORT_CERTAUTHORITY_FILE << "\"\n"
-<< "\t-transportCertFile <file>     - Certificate file <optional>\n"
-<< "\t                                Default (Publisher): \""
-<< TRANSPORT_CERTIFICATE_FILE_PUB << "\"\n"
-<< "\t                                Default (Subscriber): \""
-<< TRANSPORT_CERTIFICATE_FILE_SUB << "\"\n"
-<< "\t-transportPrivateKey <file>   - Private key file <optional>\n"
-<< "\t                                Default (Publisher): \""
-<< TRANSPORT_PRIVATEKEY_FILE_PUB << "\"\n"
-<< "\t                                Default (Subscriber): \""
-<< TRANSPORT_PRIVATEKEY_FILE_SUB << "\"\n";
+    << "\t===================== Transport Specific Options ======================\n"
+    << "\n"
+    << "\t-transport <kind>             - Set transport to be used. The rest of\n"
+    << "\t                                the transports will be disabled.\n"
+    << "\t                                Values:\n"
+    << "\t                                    UDPv4\n"
+    << "\t                                    UDPv6\n"
+    << "\t                                    SHMEM\n"
+    << "\t                                    TCP\n"
+    << "\t                                    TLS\n"
+    << "\t                                    DTLS\n"
+    << "\t                                    WAN\n"
+    << "\t                                    Use XML\n"
+    << "\t                                Default: Use XML (UDPv4 if not changed).\n"
+    << "\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n"
+    << "\t                                If not specified, use all available\n"
+    << "\t                                interfaces\n"
+    << "\t-transportVerbosity <level>   - Verbosity of the transport\n"
+    << "\t                                Default: 0 (errors only)\n"
+    << "\t-transportServerBindPort <p>  - Port used by the transport to accept\n"
+    << "\t                                TCP/TLS connections <optional>\n"
+    << "\t                                Default: 7400\n"
+    << "\t-transportWan                   Use TCP/TLS across LANs and Firewalls.\n"
+    << "\t                                Default: Not Set, LAN mode.\n"
+    << "\t-transportPublicAddress <ip>  - Public IP address and port (WAN address\n"
+    << "\t                                and port) (separated with ‘:’ ) related\n"
+    << "\t                                to the transport instantiation. This is\n"
+    << "\t                                required when using server mode.\n"
+    << "\t                                Default: Not Set.\n"
+    << "\t-transportWanServerAddress <a>- Address where to find the WAN Server\n"
+    << "\t                                Default: Not Set (Required)\n"
+    << "\t-transportWanServerPort <p>     Port where to find the WAN Server.\n"
+    << "\t                                Default: 3478.\n"
+    << "\t-transportWanId <id>          - Id to be used for the WAN transport.\n"
+    << "\t                                Default: Not Set (Required).\n"
+    << "\t-transportSecureWan           - Use WAN with security.\n"
+    << "\t                                Default: False.\n"
+    << "\t-transportCertAuthority <file>- Certificate authority file <optional>\n"
+    << "\t                                Default: \""
+    << TRANSPORT_CERTAUTHORITY_FILE << "\"\n"
+    << "\t-transportCertFile <file>     - Certificate file <optional>\n"
+    << "\t                                Default (Publisher): \""
+    << TRANSPORT_CERTIFICATE_FILE_PUB << "\"\n"
+    << "\t                                Default (Subscriber): \""
+    << TRANSPORT_CERTIFICATE_FILE_SUB << "\"\n"
+    << "\t-transportPrivateKey <file>   - Private key file <optional>\n"
+    << "\t                                Default (Publisher): \""
+    << TRANSPORT_PRIVATEKEY_FILE_PUB << "\"\n"
+    << "\t                                Default (Subscriber): \""
+    << TRANSPORT_PRIVATEKEY_FILE_SUB << "\"\n";
+
     return oss.str();
 }
 
-void PerftestTransport::printTransportConfigurationSummary()
+std::string PerftestTransport::printTransportConfigurationSummary()
 {
 
     std::ostringstream stringStream;
-    stringStream << "Transport Information:\n";
-    stringStream << "\tKind: " << transportConfig.nameString << "\n";
+    stringStream << "Transport Configuration:\n";
+    stringStream << "\tKind: " << transportConfig.nameString;
+    if (transportConfig.takenFromQoS) {
+        stringStream << " (taken from QoS XML file)";
+    }
+    stringStream << "\n";
 
     if (!allowInterfaces.empty()) {
         stringStream << "\tNic: " << allowInterfaces << "\n";
@@ -752,15 +846,14 @@ void PerftestTransport::printTransportConfigurationSummary()
         stringStream << "\tVerbosity: " << verbosity << "\n";
     }
 
-    fprintf(stderr, "%s", stringStream.str().c_str());
-
+    return stringStream.str();
 }
 
 bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
 {
 
     bool isPublisher = false;
-    std::string transportString = "Default";
+    std::string transportString = "Use XML";
 
     // We will only parse the properties related with transports here.
     for (int i = 0; i < argc; ++i) {
