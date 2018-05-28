@@ -6,6 +6,7 @@
 
 #include "RTISocketImpl.h"
 
+/*TODO: check if this can be remove*/
 #ifdef RTI_SECURE_PERFTEST
 #include "security/security_default.h"
 #endif
@@ -20,9 +21,6 @@
 #define STRNCASECMP strncasecmp
 #endif
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
-
-int RTISocketImpl::_WaitsetEventCount = 5;
-unsigned int RTISocketImpl::_WaitsetDelayUsec = 100;
 
 std::string valid_flow_controller_socket[] = {"default", "1Gbps", "10Gbps"};
 
@@ -1024,6 +1022,7 @@ IMessagingReader *RTISocketImpl::CreateReader(const char *topic_name, IMessaging
         dst_multicast_addr = &_multicastAddrTransp;
     }
 
+    // We need different ports for the differents resources.
     int portOffset = 0;
     if (!strcmp(topic_name, perftest_cpp::_LatencyTopicName)) {
         portOffset += 1;
@@ -1032,15 +1031,22 @@ IMessagingReader *RTISocketImpl::CreateReader(const char *topic_name, IMessaging
         portOffset += 2;
     }
 
-    // parameters order (domain_id, participant_id, port_base, domain_id_gain, participant_id_gain, port_offset)
     recv_port = PRESRtps_getWellKnownUnicastPort(
-            _DomainID,
-            0,
-            7400,
-            250,
-            0,
-            portOffset);
+            _DomainID, // Domain id
+            0, // Participant id
+            7400, // Port base
+            250, // Domain id gain
+            0, // Participant id gain
+            portOffset); // Port offset
 
+    /*
+     * TODO:
+     * If a create receive resource fail, and take another port the correspond
+     * send resource will dont know where is the receiver.
+     *
+     * 1 -> Dont allow the receiver take differente port
+     * 2 -> Communicate the port to the 'publisher' via announcement chanel
+     */
     int result = 1;
     unsigned int count = 0;
     while(!_plugin->create_recvresource_rrEA(

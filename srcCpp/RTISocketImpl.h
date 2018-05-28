@@ -123,8 +123,6 @@ class RTISocketImpl : public IMessaging {
     int _NumSubscribers;
 
   public:
-    static int _WaitsetEventCount;
-    static unsigned int _WaitsetDelayUsec;
 
     /*
      * Resources reserved by a participant
