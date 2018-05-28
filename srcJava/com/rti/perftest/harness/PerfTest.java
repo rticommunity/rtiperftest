@@ -1161,7 +1161,7 @@ public final class PerfTest {
                 _instanceCount);
 
         System.err.println(
-                "Sending " + initializeSampleCount + " initialization pings...");
+                "Sending " + initializeSampleCount + " initialization pings ...");
 
         for (int i = 0; i < initializeSampleCount; i++) {
             // Send test initialization message

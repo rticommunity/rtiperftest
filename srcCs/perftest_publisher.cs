@@ -2196,7 +2196,7 @@ namespace PerformanceTest {
             TestMessage message = new TestMessage();
             message.entity_id = _PubID;
             message.data = new byte[Math.Max(_DataLen,LENGTH_CHANGED_SIZE)];
-            
+
             message.size = INITIALIZE_SIZE;
 
             /*
@@ -2217,9 +2217,9 @@ namespace PerformanceTest {
             int initializeSampleCount = Math.Max(
                    _MessagingImpl.GetInitializationSampleCount(),
                    _InstanceCount);
- 
+
             Console.Error.WriteLine(
-                    "Sending " + initializeSampleCount + " initialization pings...");
+                    "Sending " + initializeSampleCount + " initialization pings ...");
 
             for (int i = 0; i < initializeSampleCount; i++)
             {

@@ -1899,7 +1899,7 @@ int perftest_cpp::Publisher()
             _InstanceCount);
 
     fprintf(stderr,
-            "Sending %lu initialization pings...\n",
+            "Sending %lu initialization pings ...\n",
             initializeSampleCount);
     fflush(stderr);
 

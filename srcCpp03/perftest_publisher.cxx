@@ -1827,7 +1827,7 @@ int perftest_cpp::RunPublisher()
             _InstanceCount);
 
     std::cerr << "[Info] Sending " << initializeSampleCount
-              << " initialization pings..." << std::endl;
+              << " initialization pings ..." << std::endl;
 
     for (unsigned long i = 0; i < initializeSampleCount; i++) {
         // Send test initialization message
