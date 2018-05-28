@@ -80,12 +80,12 @@ Added RTI Perftest and RTI Connext DDS information at beginning of the test (#54
 Starting with this release, RTI Perftest will print at the beginning of the test
 its version and the version of RTI Connext DDS used to compile against.
 
-Update `qos_string.h` with the value of `perftest_qos_profiles.xml` in the build step(#63)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Automatically regenerate `qos_string.h` file if `perftest_qos_profiles.xml` is modified (#63)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Starting with this release, RTI Perftest will udpate the file `qos_string.h`
-with the value of `perftest_qos_profiles.xml` every time that *RTI Perftest* is
-built for C++ and C++ New PSM.
+Starting with this release, *RTI Perftest* will udpate `qos_string.h` file
+with the content of `perftest_qos_profiles.xml` every time that *RTI Perftest*
+is built for C++ and C++ New PSM.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~

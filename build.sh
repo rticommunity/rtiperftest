@@ -11,7 +11,7 @@ modern_cpp_folder="${script_location}/srcCpp03"
 java_folder="${script_location}/srcJava"
 java_scripts_folder="${script_location}/resource/java_scripts"
 bin_folder="${script_location}/bin"
-cStringifyFile_script="${script_location}/resource/perl_script/cStringifyFile.pl"
+cStringifyFile_script="${script_location}/resource/script/cStringifyFile.pl"
 qos_file="${script_location}/perftest_qos_profiles.xml"
 
 
@@ -20,7 +20,7 @@ BUILD_CPP=1
 BUILD_CPP03=1
 BUILD_JAVA=1
 MAKE_EXE=make
-PERL=perl
+PERL_EXEC=perl
 JAVAC_EXE=javac
 JAVA_EXE=java
 JAR_EXE=jar
@@ -64,6 +64,9 @@ function usage()
     echo "    --make <path>                Path to the GNU make executable. If this       "
     echo "                                 parameter is not present, GNU make variable    "
     echo "                                 should be available from your \$PATH variable. "
+    echo "    --perl <path>                Path to PERL executable. If this parameter is  "
+    echo "                                 not present, the path to PERL should be        "
+    echo "                                 available from your \$PATH variable.           "
     echo "    --java-home <path>           Path to the Java JDK home folder. If this      "
     echo "                                 parameter is not present, javac, jar and java  "
     echo "                                 executables should be available from your      "
@@ -208,20 +211,20 @@ function additional_defines_calculation()
 
 function geneate_qos_string()
 {
-    # If PERL is in the path, generate the qos_string.h file.
+    # If PERL_EXEC is in the path, generate the qos_string.h file.
     if [ "${BUILD_CPP}" -eq "1" ]; then
-        if [ -z `which "${PERL}"` ]; then
-            echo -e "${YELLOW}[WARNING]:${NC} ${PERL} not found, ${classic_cpp_folder}/qos_string.h will not be updated."
+        if [ -z `which "${PERL_EXEC}"` ]; then
+            echo -e "${YELLOW}[WARNING]:${NC} PERL not found, ${classic_cpp_folder}/qos_string.h will not be updated."
         else
-            perl ${cStringifyFile_script} ${qos_file} PERFTEST_QOS_STRING > ${classic_cpp_folder}/qos_string.h
+            ${PERL_EXEC} ${cStringifyFile_script} ${qos_file} PERFTEST_QOS_STRING > ${classic_cpp_folder}/qos_string.h
             echo -e "${INFO_TAG} QoS String ${classic_cpp_folder}/qos_string.h updated successfully"
         fi
     fi
     if [ "${BUILD_CPP03}" -eq "1" ]; then
-        if [ -z `which "${MAKE_EXE}"` ]; then
-            echo -e "${YELLOW}[WARNING]:${NC} ${PERL} not found, ${modern_cpp_folder}/qos_string.h will not be updated."
+        if [ -z `which "${PERL_EXEC}"` ]; then
+            echo -e "${YELLOW}[WARNING]:${NC} PERL not found, ${modern_cpp_folder}/qos_string.h will not be updated."
         else
-            perl ${cStringifyFile_script} ${qos_file} PERFTEST_QOS_STRING > ${modern_cpp_folder}/qos_string.h
+            ${PERL_EXEC} ${cStringifyFile_script} ${qos_file} PERFTEST_QOS_STRING > ${modern_cpp_folder}/qos_string.h
             echo -e "${INFO_TAG} QoS String ${modern_cpp_folder}/qos_string.h updated successfully"
         fi
     fi
@@ -459,6 +462,10 @@ while [ "$1" != "" ]; do
             ;;
         --make)
             MAKE_EXE=$2
+            shift
+            ;;
+        --perl)
+            PERL_EXEC=$2
             shift
             ;;
         --java-home)
