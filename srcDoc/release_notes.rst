@@ -74,14 +74,14 @@ following command-line parameters:
     --cpp-build
     --cs-build
 
-What's Fixed in Master
-~~~~~~~~~~~~~~~~~~~~~~
-
 Added RTI Perftest and RTI Connext DDS information at beginning of the test(#54)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Starting with this release, RTI Perftest will print at the beginning of the test
 its version and the version of RTI Connext DDS used to compile against.
+
+What's Fixed in Master
+~~~~~~~~~~~~~~~~~~~~~~
 
 Improve Dynamic Data Send() and Receive() operations (#55)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -93,9 +93,6 @@ The result of these optimizations is that RTI Perftest now minimizes the time
 employed in the application-related tasks, therefore maximizing the time for
 sending and receiving calls. This allows to do a fair comparison between
 Dynamic Data results and Generated Type-Code Data results.
-
-What's Fixed in Master
-~~~~~~~~~~~~~~~~~~~~~~
 
 Incorrect Latency maximum calculation in certain scenarios with low resolution clocks (#58)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -121,7 +118,6 @@ the CPU and network intensively, potentially starving the subscriber side and ma
 test hang.
 
 This behavior has been fixed.
->>>>>>> master
 
 Reduce memory consumption in the Subscriber side (#74)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
