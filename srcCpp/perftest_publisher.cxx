@@ -116,6 +116,8 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
+    PrintConfiguration();
+
     if (_IsPub) {
         return Publisher();
     } else {
@@ -913,8 +915,8 @@ void perftest_cpp::PrintConfiguration()
 
         // Batching
         stringStream << "\tBatching: ";
-        if (_BatchSize != 0) {
-            stringStream << _BatchSize << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
+        if (_MessagingImpl->GetBatchSize() != 0) {
+            stringStream << _MessagingImpl->GetBatchSize() << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
         } else {
             stringStream << "No (Use \"-batchSize\" to setup batching)\n";
         }
