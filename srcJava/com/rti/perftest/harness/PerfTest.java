@@ -810,8 +810,8 @@ public final class PerfTest {
 
             // Batching
             sb.append("\tBatching: ");
-            if (_batchSize != 0) {
-                sb.append(_batchSize);
+            if (_messagingImpl.getBatchSize() != 0) {
+                sb.append(_messagingImpl.getBatchSize());
                 sb.append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
             } else {
                 sb.append("No (Use \"-batchSize\" to setup batching)\n");

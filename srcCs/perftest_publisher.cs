@@ -666,6 +666,8 @@ namespace PerformanceTest {
                 return;
             }
 
+            PrintConfiguration();
+
             if (_IsPub) {
                 Publisher();
             } else {
@@ -1378,8 +1380,8 @@ namespace PerformanceTest {
 
                 // Batching
                 sb.Append("\tBatching: ");
-                if (_BatchSize != 0) {
-                    sb.Append(_BatchSize);
+                if (_MessagingImpl.GetBatchSize() != 0) {
+                    sb.Append(_MessagingImpl.GetBatchSize());
                     sb.Append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
                 } else {
                     sb.Append("No (Use \"-batchSize\" to setup batching)\n");
