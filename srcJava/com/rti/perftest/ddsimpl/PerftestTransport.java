@@ -166,7 +166,8 @@ public class PerftestTransport {
     sb.append("\t                                    TLS\n");
     sb.append("\t                                    DTLS\n");
     sb.append("\t                                    WAN\n");
-    sb.append("\t                                Default: UDPv4\n");
+    sb.append("\t                                    Use XML\n");
+    sb.append("\t                                Default: Use XML (UDPv4|SHMEM).\n");
     sb.append("\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n");
     sb.append("\t                                If not specified, use all available\n");
     sb.append("\t                                interfaces\n");
@@ -174,7 +175,7 @@ public class PerftestTransport {
     sb.append("\t                                will use a different address:\n");
     sb.append("\t                                <address> is optional, if unspecified:\n");
     for (Map.Entry<String, String> map : multicastAddrMap.entrySet()) {
-        sb.append("\t\t\t\t\t\t\t\t\t\t\t\t\t");
+        sb.append("                                            ");
         sb.append(map.getKey()).append(" ").append(map.getValue()).append("\n");
     }
     sb.append("\t-multicastAddr <address>      - Use multicast to send data and set\n");

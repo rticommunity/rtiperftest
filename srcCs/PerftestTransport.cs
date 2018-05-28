@@ -241,7 +241,7 @@ namespace PerformanceTest
             sb.Append("\t                                <address> is optional, if unspecified:\n");
             foreach(KeyValuePair<string, string> nameAddress in multicastAddrMap)
             {
-                sb.Append("\t\t\t\t\t\t\t\t\t\t\t\t\t");
+                sb.Append("                                            ");
                 sb.Append(nameAddress.Key).Append(" ").Append(nameAddress.Value).Append("\n");
             }
             sb.Append("\t-multicastAddr <address>      - Use multicast to send data and set\n");

@@ -592,7 +592,7 @@ std::string PerftestTransport::helpMessageString()
     << "\t                                    DTLS\n"
     << "\t                                    WAN\n"
     << "\t                                    Use XML\n"
-    << "\t                                Default: Use XML (UDPv4 if not changed).\n"
+    << "\t                                Default: Use XML (UDPv4|SHMEM).\n"
     << "\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n"
     << "\t                                If not specified, use all available\n"
     << "\t                                interfaces\n"
@@ -600,7 +600,7 @@ std::string PerftestTransport::helpMessageString()
     << "\t                                will use a different address:\n";
         for (std::map<std::string, std::string>::iterator it = multicastAddrMap.begin();
             it!=multicastAddrMap.end(); ++it) {
-                oss << "\t\t\t\t\t\t\t\t\t\t\t\t\t"
+                oss << "                                            "
                 << it->first << " " << it->second << "\n";
         }
     oss
