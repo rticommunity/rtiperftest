@@ -11,7 +11,7 @@ package com.rti.perftest.ddsimpl;
  * be used for the class RTIDDSImpl, PerfTest and PerftestTransport to retrieve the
  * corresponding address.
  */
-public class TOPIC_NAME {
+public class TopicName {
 
     public static final String THROUGHPUT = "Throughput";
     public static final String LATENCY = "Latency";

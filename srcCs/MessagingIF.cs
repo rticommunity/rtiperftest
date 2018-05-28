@@ -15,13 +15,16 @@ using System.Text;
  */
 public static class TopicName
 {
-   public static string LATENCY {
+   public static string LATENCY
+   {
         get { return "Latency"; }
    }
-   public static string ANNOUNCEMENT {
+   public static string ANNOUNCEMENT
+   {
         get { return "Announcement"; }
    }
-   public static string THROUGHPUT {
+   public static string THROUGHPUT
+   {
         get { return "Throughput"; }
    }
 }

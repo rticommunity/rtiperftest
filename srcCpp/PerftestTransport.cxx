@@ -4,7 +4,6 @@
  */
 
 #include "PerftestTransport.h"
-#include "perftest_cpp.h"
 
 /******************************************************************************/
 
@@ -520,9 +519,9 @@ PerftestTransport::PerftestTransport() :
         dataLen(100),
         useMulticast(false)
 {
-    multicastAddrMap[perftest_cpp::GetLatencyTopicName().c_str()] = "239.255.1.2";
-    multicastAddrMap[perftest_cpp::GetAnnouncementTopicName().c_str()] = "239.255.1.100";
-    multicastAddrMap[perftest_cpp::GetThroughputTopicName().c_str()] = "239.255.1.1";
+    multicastAddrMap[GetLatencyTopicName().c_str()] = "239.255.1.2";
+    multicastAddrMap[GetAnnouncementTopicName().c_str()] = "239.255.1.100";
+    multicastAddrMap[GetThroughputTopicName().c_str()] = "239.255.1.1";
 }
 
 PerftestTransport::~PerftestTransport()
@@ -673,16 +672,16 @@ std::string PerftestTransport::helpMessageString()
 << "\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n"
 << "\t                                If not specified, use all available\n"
 << "\t                                interfaces\n"
-<< "\t-multicastAddr <address>      - Use multicast to send data and set\n"
-<< "\t                                multicast <address>\n"
 << "\t-multicast <address>          - Use multicast to send data with default\n"
 << "\t                                addresses values:\n";
-for (std::map<std::string,std::string>::iterator it = multicastAddrMap.begin();
-    it!=multicastAddrMap.end(); ++it) {
-        oss << "\t                                                "
-        << it->first << " " << it->second << "\n";
-}
+    for (std::map<std::string, std::string>::iterator it = multicastAddrMap.begin();
+        it!=multicastAddrMap.end(); ++it) {
+            oss << "\t                                                "
+            << it->first << " " << it->second << "\n";
+    }
     oss
+<< "\t-multicastAddr <address>      - Use multicast to send data and set\n"
+<< "\t                                the input <address>\n"
 << "\t-transportVerbosity <level>   - Verbosity of the transport\n"
 << "\t                                Default: 0 (errors only)\n"
 << "\t-transportServerBindPort <p>  - Port used by the transport to accept\n"
@@ -979,12 +978,9 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
                         classLoggingString.c_str());
                 return false;
             }
-            multicastAddrMap[perftest_cpp::GetThroughputTopicName().c_str()] =
-                    argv[i];
-            multicastAddrMap[perftest_cpp::GetLatencyTopicName().c_str()] =
-                    argv[i];
-            multicastAddrMap[perftest_cpp::GetAnnouncementTopicName().c_str()] =
-                    argv[i];
+            multicastAddrMap[GetThroughputTopicName().c_str()] = argv[i];
+            multicastAddrMap[GetLatencyTopicName().c_str()] = argv[i];
+            multicastAddrMap[GetAnnouncementTopicName().c_str()] = argv[i];
 
         } else if (IS_OPTION(argv[i], "-nomulticast")) {
             useMulticast = false;
@@ -1008,7 +1004,8 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
     return true;
 }
 
-bool PerftestTransport::allowsMulticast() {
+bool PerftestTransport::allowsMulticast()
+{
     return (transportConfig.kind != TRANSPORT_TCPv4
             && transportConfig.kind != TRANSPORT_TLSv4
             && transportConfig.kind != TRANSPORT_WANv4
@@ -1016,7 +1013,8 @@ bool PerftestTransport::allowsMulticast() {
             && useMulticast);
 }
 
-const std::string PerftestTransport::getMulticastAddr(const char *topicName) {
+const std::string PerftestTransport::getMulticastAddr(const char *topicName)
+{
     std::string ret = multicastAddrMap[std::string(topicName)];
 
     if (ret.length() == 0) {
@@ -1024,7 +1022,6 @@ const std::string PerftestTransport::getMulticastAddr(const char *topicName) {
     }
 
     return ret;
-
 }
 
 

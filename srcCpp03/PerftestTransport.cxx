@@ -368,9 +368,9 @@ PerftestTransport::PerftestTransport() :
         dataLen(100),
         useMulticast(false)
 {
-    multicastAddrMap[LATENCY_TOPIC_NAME] = "239.255.1.2";
-    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = "239.255.1.100";
-    multicastAddrMap[THROUGHPUT_TOPIC_NAME] = "239.255.1.1";
+    multicastAddrMap[GetLatencyTopicName().c_str()] = "239.255.1.2";
+    multicastAddrMap[GetAnnouncementTopicName().c_str()] = "239.255.1.100";
+    multicastAddrMap[GetThroughputTopicName().c_str()] = "239.255.1.1";
 }
 
 PerftestTransport::~PerftestTransport()
@@ -494,8 +494,8 @@ std::map<std::string, unsigned int> PerftestTransport::getTransportCmdLineArgs()
     cmdLineArgsMap["-transportWanId"] = 1;
     cmdLineArgsMap["-transportSecureWan"] = 0;
     cmdLineArgsMap["-multicast"] = 0;
-    cmdLineArgsMap["-multicastAddr"] = 1;
     cmdLineArgsMap["-nomulticast"] = 0;
+    cmdLineArgsMap["-multicastAddr"] = 1;
 
 
     return cmdLineArgsMap;
@@ -522,15 +522,16 @@ std::string PerftestTransport::helpMessageString()
 << "\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n"
 << "\t                                If not specified, use all available\n"
 << "\t                                interfaces\n"
-<< "\t-multicast <address>          - Use multicast to send data.\n"
-<< "\t                                Default not to use multicast\n"
-<< "\t                                <address> is optional, if unspecified:\n";
+<< "\t-multicast <address>          - Use multicast to send data and use\n"
+<< "\t                                the following multicast <address>:\n";
     for (std::map<std::string, std::string>::iterator it = multicastAddrMap.begin();
-         it != multicastAddrMap.end(); ++it) {
-        oss << "\t                                                "
-        << it->first << " " << it->second << "\n";
+        it!=multicastAddrMap.end(); ++it) {
+            oss << "\t                                                "
+            << it->first << " " << it->second << "\n";
     }
     oss
+<< "\t-multicastAddr <address>      - Use multicast to send data and set\n"
+<< "\t                                the input <address>\n"
 << "\t-transportVerbosity <level>   - Verbosity of the transport\n"
 << "\t                                Default: 0 (errors only)\n"
 << "\t-transportServerBindPort <p>  - Port used by the transport to accept\n"
@@ -578,7 +579,8 @@ void PerftestTransport::printTransportConfigurationSummary()
         stringStream << "\tNic: " << allowInterfaces << "\n";
     }
 
-    stringStream << "\tUse Multicast: " << ((allowsMulticast()) ? "True" : "False");
+    stringStream << "\tUse Multicast: "
+            << ((allowsMulticast()) ? "True" : "False");
     if (!allowsMulticast() && useMulticast) {
         stringStream << "  (Multicast is not supported for "
                      << transportConfig.nameString << ")";
@@ -812,6 +814,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-transportSecureWan")) {
 
             wanOptions.secureWan = true;
+
         } else if (IS_OPTION(argv[i], "-multicast")) {
 
             useMulticast = true;
@@ -824,12 +827,11 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
                         classLoggingString.c_str());
                 return false;
             }
-            multicastAddrMap.find(THROUGHPUT_TOPIC_NAME)->second = 
-                    std::string(argv[i]);
-            multicastAddrMap.find(LATENCY_TOPIC_NAME)->second =
-                    std::string(argv[i]);
-            multicastAddrMap.find(ANNOUNCEMENT_TOPIC_NAME)->second =
-                    std::string(argv[i]);
+
+            multicastAddrMap[GetThroughputTopicName()] = argv[i];
+            multicastAddrMap[GetLatencyTopicName()] = argv[i];
+            multicastAddrMap[GetAnnouncementTopicName()] = argv[i];
+
         } else if (IS_OPTION(argv[i], "-nomulticast")) {
             useMulticast = false;
         }
@@ -863,12 +865,12 @@ bool PerftestTransport::allowsMulticast()
             && useMulticast);
 }
 
-const std::string PerftestTransport::getMulticastAddr(const std::string &topicName)
+const std::string
+PerftestTransport::getMulticastAddr(const std::string &topicName)
 {
     std::string ret = multicastAddrMap[topicName];
 
-    if (ret.length() == 0)
-    {
+    if (ret.length() == 0) {
         return NULL;
     }
 

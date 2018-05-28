@@ -3,17 +3,10 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-/*
- * Names of the topics for all the comunications, they will be used for the
- * class Perftest_cpp, RTIDDSImpl and PerftestTransport to retrieve the
- * corresponding address.
- */
-#define LATENCY_TOPIC_NAME "Latency"
-#define ANNOUNCEMENT_TOPIC_NAME "Announcement"
-#define THROUGHPUT_TOPIC_NAME "Throughput"
-
 #ifndef __MESSAGINGIF_H__
 #define __MESSAGINGIF_H__
+
+#include <string>
 
 class TestMessage
 {
@@ -120,5 +113,22 @@ class IMessaging
             IMessagingCB *callback) = 0;
 };
 
+/*
+ * Names of the topics for all the comunications, they will be used by
+ * Perftest_cpp, RTIDDSImpl and PerftestTransport classes to retrieve the
+ * corresponding addresses.
+ */
+static std::string GetLatencyTopicName()
+{
+    return std::string("Latency");
+};
+static std::string GetAnnouncementTopicName()
+{
+    return std::string("Announcement");
+};
+static std::string GetThroughputTopicName()
+{
+    return std::string("Throughput");
+};
 
 #endif // __MESSAGINGIF_H__

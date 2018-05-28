@@ -4,7 +4,7 @@
  */
 
 package com.rti.perftest.harness;
-import com.rti.perftest.ddsimpl.TOPIC_NAME;
+import com.rti.perftest.ddsimpl.TopicName;
 
 import com.rti.perftest.IMessaging;
 import com.rti.perftest.IMessagingReader;
@@ -763,7 +763,7 @@ public final class PerfTest {
         IMessagingWriter writer;
         IMessagingWriter announcement_writer;
 
-        writer = _messagingImpl.createWriter(TOPIC_NAME.LATENCY);
+        writer = _messagingImpl.createWriter(TopicName.LATENCY);
         if (writer == null) {
             System.err.print("Problem creating latency writer.\n");
             return;
@@ -773,13 +773,13 @@ public final class PerfTest {
         if (!_useReadThread) {
             // create latency pong reader
             reader_listener = new ThroughputListener(writer, _useCft, _numPublishers);
-            reader = _messagingImpl.createReader(TOPIC_NAME.THROUGHPUT, reader_listener);
+            reader = _messagingImpl.createReader(TopicName.THROUGHPUT, reader_listener);
             if (reader == null) {
                 System.err.print("Problem creating throughput reader.\n");
                 return;
             }
         } else {
-            reader = _messagingImpl.createReader(TOPIC_NAME.THROUGHPUT, null);
+            reader = _messagingImpl.createReader(TopicName.THROUGHPUT, null);
             if (reader == null) {
                 System.err.print("Problem creating throughput reader.\n");
                 return;
@@ -797,7 +797,7 @@ public final class PerfTest {
         }
 
         // Create announcement writer
-        announcement_writer = _messagingImpl.createWriter(TOPIC_NAME.ANNOUNCEMENT);
+        announcement_writer = _messagingImpl.createWriter(TopicName.ANNOUNCEMENT);
 
         if (announcement_writer == null) {
              System.err.print("Problem creating announcement writer.\n");
@@ -923,7 +923,7 @@ public final class PerfTest {
         int announcement_sample_count = 50;
 
         // create throughput/ping writer
-        writer = _messagingImpl.createWriter(TOPIC_NAME.THROUGHPUT);
+        writer = _messagingImpl.createWriter(TopicName.THROUGHPUT);
 
         if (writer == null) {
             System.err.print("Problem creating throughput writer.\n");
@@ -946,7 +946,7 @@ public final class PerfTest {
             if (!_useReadThread) {
                 // create latency pong reader
                 reader_listener = new LatencyListener(num_latency,_latencyTest?writer:null);
-                reader = _messagingImpl.createReader(TOPIC_NAME.LATENCY, reader_listener);
+                reader = _messagingImpl.createReader(TopicName.LATENCY, reader_listener);
                 if (reader == null)
                 {
                     System.err.print("Problem creating latency reader.\n");
@@ -955,7 +955,7 @@ public final class PerfTest {
             }
             else
             {
-                reader = _messagingImpl.createReader(TOPIC_NAME.LATENCY, null);
+                reader = _messagingImpl.createReader(TopicName.LATENCY, null);
                 if (reader == null)
                 {
                     System.err.print("Problem creating latency reader.\n");
@@ -982,7 +982,7 @@ public final class PerfTest {
          * every Publisher
          */
         announcement_reader_listener = new AnnouncementListener();
-        announcement_reader = _messagingImpl.createReader(TOPIC_NAME.ANNOUNCEMENT,
+        announcement_reader = _messagingImpl.createReader(TopicName.ANNOUNCEMENT,
                                                           announcement_reader_listener);
         if (announcement_reader == null)
         {

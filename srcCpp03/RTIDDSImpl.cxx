@@ -126,12 +126,6 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
             "\t                                default: perftest_qos_profiles.xml\n"
             "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n"
             "\t                                default: PerftestQosLibrary\n"
-            "\t-multicast <address>          - Use multicast to send data.\n" +
-            "\t                                Default not to use multicast\n" +
-            "\t                                <address> is optional, if unspecified:\n" +
-            "\t                                                latency 239.255.1.2,\n" +
-            "\t                                                announcement 239.255.1.100,\n" +
-            "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
             "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
             "\t                                (no batching)\n" +
@@ -1617,17 +1611,17 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     using namespace rti::core::policy;
 
     std::string qos_profile = "";
-    if (topic_name == THROUGHPUT_TOPIC_NAME) {
+    if (topic_name == GetThroughputTopicName()) {
         qos_profile = "ThroughputQos";
-    } else if (topic_name == LATENCY_TOPIC_NAME) {
+    } else if (topic_name == GetLatencyTopicName()) {
         qos_profile = "LatencyQos";
-    } else if (topic_name == ANNOUNCEMENT_TOPIC_NAME) {
+    } else if (topic_name == GetAnnouncementTopicName()) {
         qos_profile = "AnnouncementQos";
     } else {
         std::cerr << "[Error] Topic name must either be "
-                << THROUGHPUT_TOPIC_NAME << " or "
-                << LATENCY_TOPIC_NAME << " or "
-                << ANNOUNCEMENT_TOPIC_NAME << std::endl;
+                << GetThroughputTopicName() << " or "
+                << GetLatencyTopicName() << " or "
+                << GetAnnouncementTopicName() << std::endl;
         throw std::logic_error("[Error] Topic name");
     }
 
@@ -1677,7 +1671,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
    }
 
     // only force reliability on throughput/latency topics
-    if (topic_name != ANNOUNCEMENT_TOPIC_NAME) {
+    if (topic_name != GetAnnouncementTopicName()) {
         if (_IsReliable) {
             // default: use the setting specified in the qos profile
             // qos_reliability = Reliability::Reliable(dds::core::Duration::infinite());
@@ -1921,17 +1915,17 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     using namespace rti::core::policy;
 
     std::string qos_profile;
-    if (topic_name == THROUGHPUT_TOPIC_NAME) {
+    if (topic_name == GetThroughputTopicName()) {
         qos_profile = "ThroughputQos";
-    } else if (topic_name == LATENCY_TOPIC_NAME) {
+    } else if (topic_name == GetLatencyTopicName()) {
         qos_profile = "LatencyQos";
-    } else if (topic_name == ANNOUNCEMENT_TOPIC_NAME) {
+    } else if (topic_name == GetAnnouncementTopicName()) {
         qos_profile = "AnnouncementQos";
     } else {
         std::cerr << "[Error] Topic name must either be "
-                << THROUGHPUT_TOPIC_NAME << " or "
-                << LATENCY_TOPIC_NAME << " or "
-                << ANNOUNCEMENT_TOPIC_NAME << std::endl;
+                << GetThroughputTopicName() << " or "
+                << GetLatencyTopicName() << " or "
+                << GetAnnouncementTopicName() << std::endl;
         throw std::logic_error("[Error] Topic name");
     }
 
@@ -1952,7 +1946,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
             dr_qos.policy<Property>().get_all();
 
     // only force reliability on throughput/latency topics
-    if (topic_name != ANNOUNCEMENT_TOPIC_NAME) {
+    if (topic_name != GetAnnouncementTopicName()) {
         if (_IsReliable) {
             qos_reliability = dds::core::policy::Reliability::Reliable();
         } else {
@@ -2013,9 +2007,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         std::string multicastAddr = _transport.getMulticastAddr(topic_name);
         if (multicastAddr.length() == 0) {
             std::cerr << "[Error] Topic name must either be "
-                      << THROUGHPUT_TOPIC_NAME << " or "
-                      << LATENCY_TOPIC_NAME << " or "
-                      << ANNOUNCEMENT_TOPIC_NAME << std::endl;
+                      << GetThroughputTopicName() << " or "
+                      << GetLatencyTopicName() << " or "
+                      << GetAnnouncementTopicName() << std::endl;
             throw std::logic_error("[Error] Topic name");
             return NULL;
         }
@@ -2045,7 +2039,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         dds::sub::DataReader<T> reader(dds::core::null);
         ReceiverListener<T> *reader_listener = NULL;
 
-        if (topic_name == THROUGHPUT_TOPIC_NAME && _useCft) {
+        if (topic_name == GetThroughputTopicName() && _useCft) {
             /* Create CFT Topic */
             dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
                     topic_name,
@@ -2089,7 +2083,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 type);
         dds::sub::DataReader<DynamicData> reader(dds::core::null);
         DynamicDataReceiverListener *dynamic_data_reader_listener = NULL;
-        if (topic_name == THROUGHPUT_TOPIC_NAME && _useCft) {
+        if (topic_name == GetThroughputTopicName() && _useCft) {
             /* Create CFT Topic */
             dds::topic::ContentFilteredTopic<DynamicData> topicCft = CreateCft(
                     topic_name,

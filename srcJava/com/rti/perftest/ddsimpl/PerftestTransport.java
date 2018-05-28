@@ -111,9 +111,9 @@ public class PerftestTransport {
         secureOptions = new SecureTransportOptions();
         wanOptions = new WanTransportOptions();
 
-        multicastAddrMap.put(TOPIC_NAME.LATENCY, "239.255.1.1");
-        multicastAddrMap.put(TOPIC_NAME.ANNOUNCEMENT, "239.255.1.2");
-        multicastAddrMap.put(TOPIC_NAME.THROUGHPUT, "239.255.1.100");
+        multicastAddrMap.put(TopicName.LATENCY, "239.255.1.1");
+        multicastAddrMap.put(TopicName.ANNOUNCEMENT, "239.255.1.2");
+        multicastAddrMap.put(TopicName.THROUGHPUT, "239.255.1.100");
 
     }
 
@@ -448,12 +448,13 @@ public class PerftestTransport {
             else if ("-multicastAddr".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 useMulticast = true;
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.println(classLoggingString + " Missing <address> after -multicastAddr");
+                    System.err.println(classLoggingString
+                            + " Missing <address> after -multicastAddr");
                     return false;
                 }
-                multicastAddrMap.replace(TOPIC_NAME.THROUGHPUT, argv[i]);
-                multicastAddrMap.replace(TOPIC_NAME.LATENCY, argv[i]);
-                multicastAddrMap.replace(TOPIC_NAME.ANNOUNCEMENT, argv[i]);
+                multicastAddrMap.replace(TopicName.THROUGHPUT, argv[i]);
+                multicastAddrMap.replace(TopicName.LATENCY, argv[i]);
+                multicastAddrMap.replace(TopicName.ANNOUNCEMENT, argv[i]);
             }
         }
 
@@ -897,6 +898,4 @@ public class PerftestTransport {
         return multicastAddrMap.get(topicName).toString();
     }
 }
-
-
 //===========================================================================

@@ -116,8 +116,13 @@ public:
 
     bool parseTransportOptions(int argc, char *argv[]);
 
+    // Check if the transport allows the use of multicast.
     bool allowsMulticast();
 
+    /*
+     * Given the name of a Perftest-defined topic, returns the default multicast
+     * address for that topic.
+     */
     const std::string getMulticastAddr(const std::string &topic);
 
 private:

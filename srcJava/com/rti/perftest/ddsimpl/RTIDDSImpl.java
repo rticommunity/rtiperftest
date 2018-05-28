@@ -396,18 +396,18 @@ public final class RTIDDSImpl<T> implements IMessaging {
             return null;
         }
 
-        if (TOPIC_NAME.THROUGHPUT.equals(topicName)) {
+        if (TopicName.THROUGHPUT.equals(topicName)) {
             qosProfile = "ThroughputQos";
-        } else if (TOPIC_NAME.LATENCY.equals(topicName)) {
+        } else if (TopicName.LATENCY.equals(topicName)) {
             qosProfile = "LatencyQos";
-        } else if (TOPIC_NAME.ANNOUNCEMENT.equals(topicName)) {
+        } else if (TopicName.ANNOUNCEMENT.equals(topicName)) {
             qosProfile = "AnnouncementQos";
         } else {
             System.err.println(
                     "topic name must either be " +
-                    TOPIC_NAME.LATENCY + " or " +
-                    TOPIC_NAME.ANNOUNCEMENT  + " or " +
-                    TOPIC_NAME.THROUGHPUT);
+                    TopicName.LATENCY + " or " +
+                    TopicName.ANNOUNCEMENT  + " or " +
+                    TopicName.THROUGHPUT);
             return null;
         }
 
@@ -523,19 +523,19 @@ public final class RTIDDSImpl<T> implements IMessaging {
         TopicDescription  topic_desc = topic; // Used to create the DDS DataReader
 
         String qosProfile;
-        if (TOPIC_NAME.THROUGHPUT.equals(topicName)) {
+        if (TopicName.THROUGHPUT.equals(topicName)) {
             qosProfile = "ThroughputQos";
-        } else if (TOPIC_NAME.LATENCY.equals(topicName)) {
+        } else if (TopicName.LATENCY.equals(topicName)) {
             qosProfile = "LatencyQos";
-        } else if (TOPIC_NAME.ANNOUNCEMENT.equals(topicName)) {
+        } else if (TopicName.ANNOUNCEMENT.equals(topicName)) {
             qosProfile = "AnnouncementQos";
         }
         else {
             System.err.println(
                     "topic name must either be " +
-                    TOPIC_NAME.THROUGHPUT + " or " +
-                    TOPIC_NAME.LATENCY  + " or " +
-                    TOPIC_NAME.ANNOUNCEMENT);
+                    TopicName.THROUGHPUT + " or " +
+                    TopicName.LATENCY  + " or " +
+                    TopicName.ANNOUNCEMENT);
             return null;
         }
 
@@ -561,7 +561,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             statusFlag = StatusKind.DATA_AVAILABLE_STATUS;
         }
 
-        if (TOPIC_NAME.THROUGHPUT.equals(topicName) && _useCft) {
+        if (TopicName.THROUGHPUT.equals(topicName) && _useCft) {
             topic_desc = createCft(topicName, topic);
             if (topic_desc == null) {
                 System.err.println("create_contentfilteredtopic error");
@@ -579,8 +579,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
             return null;
         }
 
-        if (TOPIC_NAME.LATENCY.equals(topicName) ||
-            TOPIC_NAME.THROUGHPUT.equals(topicName)) {
+        if (TopicName.LATENCY.equals(topicName) ||
+            TopicName.THROUGHPUT.equals(topicName)) {
             _reader = reader;
         }
 
@@ -839,7 +839,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         // Configure reliability
-        if (!TOPIC_NAME.ANNOUNCEMENT.equals(topicName)) {
+        if (!TopicName.ANNOUNCEMENT.equals(topicName)) {
             if (_isReliable) {
                 // default: use the setting specified in the qos profile
                 // dwQos.reliability.kind = ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
@@ -976,7 +976,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         // Configure reliability
-        if (!TOPIC_NAME.ANNOUNCEMENT.equals(topicName)) {
+        if (!TopicName.ANNOUNCEMENT.equals(topicName)) {
             if (_isReliable) {
                 drQos.reliability.kind = ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
             } else {
@@ -1047,9 +1047,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
             String multicast_addr = _transport.getMulticastAddr(topicName);
             if (multicast_addr == null) {
                 System.err.println("topic name must either be "
-                        + TOPIC_NAME.THROUGHPUT + " or "
-                        + TOPIC_NAME.LATENCY + " or "
-                        + TOPIC_NAME.ANNOUNCEMENT);
+                        + TopicName.THROUGHPUT + " or "
+                        + TopicName.LATENCY + " or "
+                        + TopicName.ANNOUNCEMENT);
                 return ;
             }
 

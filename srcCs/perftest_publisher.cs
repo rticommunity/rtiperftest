@@ -1519,7 +1519,9 @@ namespace PerformanceTest {
             {
                 // create latency pong reader
                 reader_listener = new ThroughputListener(writer, _useCft, _NumPublishers);
-                reader = _MessagingImpl.CreateReader(TopicName.THROUGHPUT, reader_listener);
+                reader = _MessagingImpl.CreateReader(
+                        TopicName.THROUGHPUT,
+                        reader_listener);
                 if (reader == null)
                 {
                     Console.Error.Write("Problem creating throughput reader.\n");
@@ -1541,7 +1543,8 @@ namespace PerformanceTest {
             }
 
             // Create announcement writer
-            announcement_writer = _MessagingImpl.CreateWriter(TopicName.ANNOUNCEMENT);
+            announcement_writer =
+                    _MessagingImpl.CreateWriter(TopicName.ANNOUNCEMENT);
 
             if (announcement_writer == null) {
                 Console.Error.Write("Problem creating announcement writer.\n");
@@ -1951,7 +1954,9 @@ namespace PerformanceTest {
                 {
                     // create latency pong reader
                     reader_listener = new LatencyListener(_LatencyTest?writer:null, num_latency);
-                    reader = _MessagingImpl.CreateReader(TopicName.LATENCY, reader_listener);
+                    reader = _MessagingImpl.CreateReader(
+                            TopicName.LATENCY,
+                            reader_listener);
                     if (reader == null)
                     {
                         Console.Error.Write("Problem creating latency reader.\n");
@@ -1982,8 +1987,9 @@ namespace PerformanceTest {
              * every Publisher
              */
             announcement_reader_listener = new AnnouncementListener();
-            announcement_reader = _MessagingImpl.CreateReader(TopicName.ANNOUNCEMENT,
-                                                              announcement_reader_listener);
+            announcement_reader =
+                    _MessagingImpl.CreateReader(TopicName.ANNOUNCEMENT,
+                            announcement_reader_listener);
             if (announcement_reader == null)
             {
                 Console.Error.Write("Problem creating announcement reader.\n");
@@ -2340,7 +2346,7 @@ namespace PerformanceTest {
                     + perftestV.major + "."
                     + perftestV.minor + "."
                     + perftestV.release);
-            if (perftestV != 0) {
+            if (perftestV.revision != 0) {
                 Console.Write("." + perftestV.revision);
             }
             Console.Write(

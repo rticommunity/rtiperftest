@@ -1119,8 +1119,7 @@ int perftest_cpp::Subscriber()
     IMessagingWriter   *announcement_writer;
 
     // create latency pong writer
-    writer = _MessagingImpl->CreateWriter(
-            perftest_cpp::GetLatencyTopicName().c_str());
+    writer = _MessagingImpl->CreateWriter(GetLatencyTopicName().c_str());
 
     if (writer == NULL) {
         fprintf(stderr, "Problem creating latency writer.\n");
@@ -1133,7 +1132,7 @@ int perftest_cpp::Subscriber()
         // create latency pong reader
         reader_listener = new ThroughputListener(writer, NULL, _useCft, _NumPublishers);
         reader = _MessagingImpl->CreateReader(
-                perftest_cpp::GetThroughputTopicName().c_str(),
+                GetThroughputTopicName().c_str(),
                 reader_listener);
         if (reader == NULL)
         {
@@ -1144,7 +1143,7 @@ int perftest_cpp::Subscriber()
     else
     {
         reader = _MessagingImpl->CreateReader(
-                perftest_cpp::GetThroughputTopicName().c_str(),
+                GetThroughputTopicName().c_str(),
                 NULL);
         if (reader == NULL)
         {
@@ -1163,8 +1162,8 @@ int perftest_cpp::Subscriber()
     }
 
     // Create announcement writer
-    announcement_writer = _MessagingImpl->CreateWriter(
-            perftest_cpp::GetAnnouncementTopicName().c_str());
+    announcement_writer =
+            _MessagingImpl->CreateWriter(GetAnnouncementTopicName().c_str());
 
     if (announcement_writer == NULL) {
         fprintf(stderr, "Problem creating announcement writer.\n");
@@ -1655,7 +1654,7 @@ int perftest_cpp::Publisher()
 
     // create throughput/ping writer
     IMessagingWriter *writer = _MessagingImpl->CreateWriter(
-            perftest_cpp::GetThroughputTopicName().c_str());
+            GetThroughputTopicName().c_str());
 
     if (writer == NULL)
     {
@@ -1688,7 +1687,7 @@ int perftest_cpp::Publisher()
                     NULL,
                     _LatencyTest ? writer : NULL);
             reader = _MessagingImpl->CreateReader(
-                    perftest_cpp::GetLatencyTopicName().c_str(),
+                    GetLatencyTopicName().c_str(),
                     reader_listener);
             if (reader == NULL)
             {
@@ -1699,7 +1698,7 @@ int perftest_cpp::Publisher()
         else
         {
             reader = _MessagingImpl->CreateReader(
-                    perftest_cpp::GetLatencyTopicName().c_str(),
+                    GetLatencyTopicName().c_str(),
                     NULL);
             if (reader == NULL)
             {
@@ -1731,7 +1730,7 @@ int perftest_cpp::Publisher()
      */
     announcement_reader_listener = new AnnouncementListener();
     announcement_reader = _MessagingImpl->CreateReader(
-            perftest_cpp::GetAnnouncementTopicName().c_str(),
+            GetAnnouncementTopicName().c_str(),
             announcement_reader_listener);
     if (announcement_reader == NULL)
     {
@@ -2115,13 +2114,3 @@ inline void perftest_cpp::Timeout_scan(int sign) {
     _testCompleted_scan = true;
 }
 #endif
-
-std::string perftest_cpp::GetLatencyTopicName() {
-    return  std::string("Latency");
-};
-std::string perftest_cpp::GetAnnouncementTopicName() {
-    return  std::string("Announcement");
-};
-std::string perftest_cpp::GetThroughputTopicName() {
-    return  std::string("Throughput");
-};

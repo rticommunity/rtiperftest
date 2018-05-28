@@ -122,7 +122,7 @@ namespace PerformanceTest
         public bool useMulticast;
 
         public SortedDictionary<string, string> multicastAddrMap =
-            new SortedDictionary<string, string>();
+                new SortedDictionary<string, string>();
 
         /**************************************************************************/
         /* CLASS CONSTRUCTOR AND DESTRUCTOR */
@@ -286,10 +286,20 @@ namespace PerformanceTest
                 sb.Append("\tNic: ").Append(allowInterfaces).Append("\n");
             }
 
-            sb.Append( "\tUse Multicast: ").Append((AllowsMulticast()) ? "True" : "False");
-            if(!AllowsMulticast() && useMulticast){
-                sb.Append ("  (Multicast is not supported for " );
-                sb.Append( transportConfig.nameString ).Append(")");
+            sb.Append( "\tUse Multicast: ");
+
+            if (AllowsMulticast())
+            {
+                sb.Append("True");
+            }
+            else
+            {
+                sb.Append("False");
+                if (useMulticast)
+                {
+                    sb.Append("  (Multicast is not supported for " );
+                    sb.Append( transportConfig.nameString ).Append(")");
+                }
             }
             sb.Append("\n");
 
@@ -991,7 +1001,6 @@ namespace PerformanceTest
 
         public string getMulticastAddr(string topicName)
         {
-
             string ret;
             if (multicastAddrMap.TryGetValue(topicName, out ret)) {
                 return ret;
@@ -999,9 +1008,7 @@ namespace PerformanceTest
             else {
                 return null;
             }
-
         }
-
     }
 
 } // Perftest Namespace

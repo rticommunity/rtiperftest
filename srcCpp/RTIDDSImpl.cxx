@@ -2187,18 +2187,18 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (strcmp(topic_name,perftest_cpp::GetThroughputTopicName().c_str()) == 0) {
+    if (strcmp(topic_name,GetThroughputTopicName().c_str()) == 0) {
         qos_profile = "ThroughputQos";
-    } else if (strcmp(topic_name,perftest_cpp::GetLatencyTopicName().c_str()) == 0) {
+    } else if (strcmp(topic_name,GetLatencyTopicName().c_str()) == 0) {
         qos_profile = "LatencyQos";
-    } else if (strcmp(topic_name,perftest_cpp::GetAnnouncementTopicName().c_str()) == 0) {
+    } else if (strcmp(topic_name,GetAnnouncementTopicName().c_str()) == 0) {
         qos_profile = "AnnouncementQos";
     } else {
         fprintf(stderr,
                 "topic name must either be %s or %s or %s.\n",
-                perftest_cpp::GetThroughputTopicName().c_str(),
-                perftest_cpp::GetLatencyTopicName().c_str(),
-                perftest_cpp::GetAnnouncementTopicName().c_str());
+                GetThroughputTopicName().c_str(),
+                GetLatencyTopicName().c_str(),
+                GetAnnouncementTopicName().c_str());
         return NULL;
     }
 
@@ -2230,7 +2230,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     // only force reliability on throughput/latency topics
-    if (strcmp(topic_name, perftest_cpp::GetAnnouncementTopicName().c_str()) != 0) {
+    if (strcmp(topic_name, GetAnnouncementTopicName().c_str()) != 0) {
         if (_IsReliable) {
             // default: use the setting specified in the qos profile
             // dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
@@ -2468,18 +2468,18 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
     topic_desc = topic;
 
-    if (strcmp(topic_name, perftest_cpp::GetThroughputTopicName().c_str()) == 0) {
+    if (strcmp(topic_name, GetThroughputTopicName().c_str()) == 0) {
         qos_profile = "ThroughputQos";
-    } else if (strcmp(topic_name, perftest_cpp::GetLatencyTopicName().c_str()) == 0) {
+    } else if (strcmp(topic_name, GetLatencyTopicName().c_str()) == 0) {
         qos_profile = "LatencyQos";
-    } else if (strcmp(topic_name, perftest_cpp::GetAnnouncementTopicName().c_str()) == 0) {
+    } else if (strcmp(topic_name, GetAnnouncementTopicName().c_str()) == 0) {
         qos_profile = "AnnouncementQos";
     } else {
         fprintf(stderr,
                 "topic name must either be %s or %s or %s.\n",
-                perftest_cpp::GetThroughputTopicName().c_str(),
-                perftest_cpp::GetLatencyTopicName().c_str(),
-                perftest_cpp::GetAnnouncementTopicName().c_str());
+                GetThroughputTopicName().c_str(),
+                GetLatencyTopicName().c_str(),
+                GetAnnouncementTopicName().c_str());
         return NULL;
     }
 
@@ -2492,7 +2492,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     // only force reliability on throughput/latency topics
-    if (strcmp(topic_name, perftest_cpp::GetAnnouncementTopicName().c_str()) != 0)
+    if (strcmp(topic_name, GetAnnouncementTopicName().c_str()) != 0)
     {
         if (_IsReliable)
         {
@@ -2543,9 +2543,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         if (dr_qos.multicast.value[0].receive_address == NULL) {
             fprintf(stderr,
                     "topic name must either be %s or %s or %s.\n",
-                    perftest_cpp::GetThroughputTopicName().c_str(),
-                    perftest_cpp::GetLatencyTopicName().c_str(),
-                    perftest_cpp::GetAnnouncementTopicName().c_str());
+                    GetThroughputTopicName().c_str(),
+                    GetLatencyTopicName().c_str(),
+                    GetAnnouncementTopicName().c_str());
             return NULL;
         }
 
@@ -2562,7 +2562,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     /* Create CFT Topic */
-    if (strcmp(topic_name, perftest_cpp::GetThroughputTopicName().c_str()) == 0 && _useCft) {
+    if (strcmp(topic_name, GetThroughputTopicName().c_str()) == 0 && _useCft) {
         topic_desc = CreateCft(topic_name, topic);
         if (topic_desc == NULL) {
             printf("Create_contentfilteredtopic error\n");
@@ -2600,8 +2600,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-    if (!strcmp(topic_name, perftest_cpp::GetThroughputTopicName().c_str()) ||
-        !strcmp(topic_name, perftest_cpp::GetLatencyTopicName().c_str())) {
+    if (!strcmp(topic_name, GetThroughputTopicName().c_str()) ||
+        !strcmp(topic_name, GetLatencyTopicName().c_str())) {
         _reader = reader;
     }
 

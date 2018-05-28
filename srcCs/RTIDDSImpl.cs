@@ -2072,7 +2072,8 @@ namespace PerformanceTest
                 string multicast_addr;
 
                 multicast_addr = _transport.getMulticastAddr(topic_name);
-                if(multicast_addr == null){
+                if (multicast_addr == null)
+                {
                     Console.Error.WriteLine("topic name must either be "
                         + TopicName.THROUGHPUT
                         + " or " + TopicName.LATENCY
@@ -2105,7 +2106,8 @@ namespace PerformanceTest
                         _useUnbounded.ToString(), false);
             }
 
-            if ( _useCft && topic_name == TopicName.THROUGHPUT){
+            if ( _useCft && topic_name == TopicName.THROUGHPUT)
+            {
                 topic_desc = createCft(topic_name, topic);
                 if (topic_desc == null) {
                     Console.Error.WriteLine("Create_contentfilteredtopic error");
