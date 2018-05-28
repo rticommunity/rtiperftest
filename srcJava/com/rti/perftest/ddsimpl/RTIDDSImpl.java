@@ -143,6 +143,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private String _typename = null;
 
     private TypeHelper<T> _myDataType = null;
+    private RTIDDSLoggerDevice _loggerDevice = null;
 
     // -----------------------------------------------------------------------
     // Public Methods
@@ -182,6 +183,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
                         _participant);
                 _participant = null;
             }
+        }
+        // Unregister _loggerDevice
+        try {
+            Logger.get_instance().set_output_device(null);
+        } catch (Exception e) {
+            System.err.print("Failed set_output_device for Logger.\n");
         }
     }
 
@@ -301,6 +308,15 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
     public boolean initialize(int argc, String[] argv) {
 
+        // Register _loggerDevice
+        _loggerDevice = new RTIDDSLoggerDevice();
+        try {
+            Logger.get_instance().set_output_device(_loggerDevice);
+        } catch (Exception e) {
+            System.err.print("Failed set_output_device for Logger.\n");
+            return false;
+        }
+
         _typename = _myDataType.getTypeSupport().get_type_nameI();
 
         _factory = DomainParticipantFactory.get_instance();
@@ -380,7 +396,14 @@ public final class RTIDDSImpl<T> implements IMessaging {
              StatusKind.OFFERED_INCOMPATIBLE_QOS_STATUS |
              StatusKind.REQUESTED_INCOMPATIBLE_QOS_STATUS));
 
-        if (_participant == null) {
+        if (_participant == null || _loggerDevice.checkShmemErrors()) {
+            if (_loggerDevice.checkShmemErrors()) {
+                System.err.print(
+                        "The participant creation failed due to issues in the Shared Memory configuration of your OS.\n" +
+                        "For more information about how to configure Shared Memory see: http://community.rti.com/kb/osx510 \n" +
+                        "If you want to skip the use of Shared memory in RTI Perftest, " +
+                        "specify the transport using \"-transport <kind>\", e.g. \"-transport UDPv4\".\n");
+            }
             System.err.print("Problem creating participant.\n");
             return false;
         }
