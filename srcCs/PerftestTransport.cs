@@ -236,14 +236,17 @@ namespace PerformanceTest
             sb.Append("\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n");
             sb.Append("\t                                If not specified, use all available\n");
             sb.Append("\t                                interfaces\n");
-            sb.Append("\t-multicast <address>          - Use multicast to send data.\n");
-            sb.Append("\t                                Default not to use multicast\n");
+            sb.Append("\t-multicast                    - Use multicast to send data. Each topic");
+            sb.Append("\t                                will use a different address:\n");
             sb.Append("\t                                <address> is optional, if unspecified:\n");
             foreach(KeyValuePair<string, string> nameAddress in multicastAddrMap)
             {
-                sb.Append("\t                                                ");
+                sb.Append("\t\t\t\t\t\t\t\t\t\t\t\t\t");
                 sb.Append(nameAddress.Key).Append(" ").Append(nameAddress.Value).Append("\n");
             }
+            sb.Append("\t-multicastAddr <address>      - Use multicast to send data and set\n");
+            sb.Append("\t                                the input <address> as the multicast\n");
+            sb.Append("\t                                address for all the topics.\n");
             sb.Append("\t-transportVerbosity <level>   - Verbosity of the transport\n");
             sb.Append("\t                                Default: 0 (errors only)\n");
             sb.Append("\t-transportServerBindPort <p>  - Port used by the transport to accept\n");

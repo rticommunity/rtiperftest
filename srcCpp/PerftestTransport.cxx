@@ -761,8 +761,8 @@ std::string PerftestTransport::helpMessageString()
     << "\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n"
     << "\t                                If not specified, use all available\n"
     << "\t                                interfaces\n"
-    << "\t-multicast <address>          - Use multicast to send data with default\n"
-    << "\t                                addresses values:\n";
+    << "\t-multicast                    - Use multicast to send data. Each topic\n"
+    << "\t                                will use a different address:\n";
         for (std::map<std::string, std::string>::iterator it = multicastAddrMap.begin();
             it!=multicastAddrMap.end(); ++it) {
                 oss << "\t\t\t\t\t\t\t\t\t\t\t\t\t"
@@ -770,8 +770,8 @@ std::string PerftestTransport::helpMessageString()
         }
     oss
     << "\t-multicastAddr <address>      - Use multicast to send data and set\n"
-    << "\t                                the input <address> as the multicast address\n"
-    << "\t                                for all the topics.\n"
+    << "\t                                the input <address> as the multicast\n"
+    << "\t                                address for all the topics.\n"
     << "\t-transportVerbosity <level>   - Verbosity of the transport\n"
     << "\t                                Default: 0 (errors only)\n"
     << "\t-transportServerBindPort <p>  - Port used by the transport to accept\n"

@@ -238,12 +238,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t                                default: perftest_qos_profiles.xml\n" +
             "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
             "\t                                default: PerftestQosLibrary\n" +
-            "\t-multicast <address>          - Use multicast to send data.\n" +
-            "\t                                Default not to use multicast\n" +
-            "\t                                <address> is optional, if unspecified:\n" +
-            "\t                                                latency 239.255.1.2,\n" +
-            "\t                                                announcement 239.255.1.100,\n" +
-            "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
             "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
             "\t                                (no batching)\n" +

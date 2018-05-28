@@ -170,14 +170,16 @@ public class PerftestTransport {
     sb.append("\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n");
     sb.append("\t                                If not specified, use all available\n");
     sb.append("\t                                interfaces\n");
-    sb.append("\t-multicastAddr <address>      - Use multicast to send data and set\n");
-    sb.append("\t                                multicast <address>\n");
-    sb.append("\t-multicast                    - Use multicast to send data with.\n");
-    sb.append("\t                                default addresses values:\n");
+    sb.append("\t-multicast                    - Use multicast to send data. Each topic");
+    sb.append("\t                                will use a different address:\n");
+    sb.append("\t                                <address> is optional, if unspecified:\n");
     for (Map.Entry<String, String> map : multicastAddrMap.entrySet()) {
-        sb.append("\t                                                ");
+        sb.append("\t\t\t\t\t\t\t\t\t\t\t\t\t");
         sb.append(map.getKey()).append(" ").append(map.getValue()).append("\n");
     }
+    sb.append("\t-multicastAddr <address>      - Use multicast to send data and set\n");
+    sb.append("\t                                the input <address> as the multicast\n");
+    sb.append("\t                                address for all the topics.\n");
     sb.append("\t-transportVerbosity <level>   - Verbosity of the transport\n");
     sb.append("\t                                Default: 0 (errors only)\n");
     sb.append("\t-transportServerBindPort <p>  - Port used by the transport to accept\n");
