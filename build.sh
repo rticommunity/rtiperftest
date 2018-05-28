@@ -11,12 +11,16 @@ modern_cpp_folder="${script_location}/srcCpp03"
 java_folder="${script_location}/srcJava"
 java_scripts_folder="${script_location}/resource/java_scripts"
 bin_folder="${script_location}/bin"
+cStringifyFile_script="${script_location}/resource/perl_script/cStringifyFile.pl"
+qos_file="${script_location}/perftest_qos_profiles.xml"
+
 
 # Default values:
 BUILD_CPP=1
 BUILD_CPP03=1
 BUILD_JAVA=1
 MAKE_EXE=make
+PERL=perl
 JAVAC_EXE=javac
 JAVA_EXE=java
 JAR_EXE=jar
@@ -103,6 +107,7 @@ function clean()
     rm -rf "${script_location}"/srcJava/jar
     rm -rf "${script_location}"/srcJava/com/rti/perftest/gen
     rm -rf "${script_location}"/bin
+    rm -rf "${script_location}"/srcC*/qos_string.h
 
     echo ""
     echo "================================================================================"
@@ -202,11 +207,31 @@ function additional_defines_calculation()
     fi
 }
 
+function geneate_qos_string()
+{
+    # If PERL is in the path, generate the qos_string.h file.
+    if [ "${BUILD_CPP}" -eq "1" ]; then
+        if [ -z `which "${PERL}"` ]; then
+            echo -e "${YELLOW}[WARNING]:${NC} ${PERL} executable not found, ${classic_cpp_folder}/qos_string.h will not be generated."
+        else
+            perl ${cStringifyFile_script} ${qos_file} PERFTEST_QOS_STRING > ${classic_cpp_folder}/qos_string.h
+            echo -e "${INFO_TAG} QoS String ${classic_cpp_folder}/qos_string.h generation successful"
+        fi
+    fi
+    if [ "${BUILD_CPP03}" -eq "1" ]; then
+        if [ -z `which "${MAKE_EXE}"` ]; then
+            echo -e "${YELLOW}[WARNING]:${NC} ${PERL} executable not found, ${modern_cpp_folder}/qos_string.h will not be generated."
+        else
+            perl ${cStringifyFile_script} ${qos_file} PERFTEST_QOS_STRING > ${modern_cpp_folder}/qos_string.h
+            echo -e "${INFO_TAG} QoS String ${modern_cpp_folder}/qos_string.h generation successful"
+        fi
+    fi
+}
+
 function build_cpp()
 {
     additional_defines_calculation
-
-    ##############################################################################
+    ############################################################################
     # Generate files for srcCpp
 
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles  \"RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
@@ -481,6 +506,9 @@ rtiddsgen_executable="$NDDSHOME/bin/rtiddsgen"
 classic_cpp_lang_string=C++
 modern_cpp_lang_string=C++03
 java_lang_string=java
+############################################################################
+# Generate qos_string.h
+geneate_qos_string
 
 if [ "${BUILD_CPP}" -eq "1" ]; then
     library_sufix_calculation
