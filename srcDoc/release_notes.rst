@@ -51,6 +51,31 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+Use `UDPv4` and `Shared Memory` as the default transport configuration (#80)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* previous default was to use only the `UDPv4` transport.
+However this doesn't always lead to the best results when testing between
+applications within the same machine and it also differs from *RTI Connext DDS*
+default behavior, which is `UDPv4` and Shared Memory (`SHMEM`).
+Starting from this release *RTI Perftest* new default is to use `UDPv4` and `SHMEM`.
+
+This change improves the out of the box user experience, getting better numbers
+when using the default configuration.
+
+
+Print a summary with the main setting of the test *RTI Perftest* will run (#46)(#67)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* provides a great number of command-line parameters, plus the option
+of using the *xml configuration file* for modying *RTI Connext DDS QoS*. This could
+lead to some confusion with regards to the test that will run when executing the application.
+
+In order to make this clear, *RTI Perftest* now shows a summary at the beginning of
+the test with most of the relevant parameters being used for such test. This is done
+for both *Publisher* and *Subscriber* sides.
+
+
 Added command-line parameters to simplify single API build (#50)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -62,14 +87,25 @@ following command-line parameters:
     --cpp-build
     --cs-build
 
-Added RTI Perftest and RTI Connext DDS information at beginning of the test(#54)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Added RTI Perftest and RTI Connext DDS information at beginning of the test (#54)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Starting with this release, RTI Perftest will print at the beginning of the test
 its version and the version of RTI Connext DDS used to compile against.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
+
+Improve Dynamic Data Send() and Receive() operations (#55)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Dynamic Data Send() and Received() functions have been optimized
+reducing the time of setting and getting the samples.
+
+The result of these optimizations is that RTI Perftest now minimizes the time
+employed in the application-related tasks, therefore maximizing the time for
+sending and receiving calls. This allows to do a fair comparison between
+Dynamic Data results and Generated Type-Code Data results.
 
 Incorrect Latency maximum calculation in certain scenarios with low resolution clocks (#58)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -95,6 +131,22 @@ the CPU and network intensively, potentially starving the subscriber side and ma
 test hang.
 
 This behavior has been fixed.
+
+Reduce memory consumption in the Subscriber side (#74)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The *initial_samples* value for the *ThroughputQoS* QoS profile has been updated
+to a lower number. This profile is used by the Subscriber side to create a
+*DDS DataWriter*.
+
+The reason why this value has been updated is to decrease the memory consumption
+of the *RTI Perftest* Subscriber side.
+
+In order to ensure that this change does not affect to the overall performance of
+the application, the initial burst of samples sent by the Publisher side has been
+also reviewed, to always send a burst big enough to ensure that the allocations in
+both publisher and subscriber sides are done before the test starts.
+
 
 Release Notes 2.3.2
 -------------------
@@ -778,6 +830,33 @@ we could get into the following error:
 
 Known Issues
 ------------
+
+Shared Memory issues when running the Modern C++ API Implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*RTI Perftest* uses `UDPv4` and `SHMEM` by default. Certain Operative Systems
+don't support Shared Memory, or the default configuration is not enough for
+*RTI Connext DDS* to work properly. In those cases *RTI Perftest* will show
+some errors trying to create the Participant entity:
+
+::
+
+    [D0001|ENABLE]NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key 0x40894a
+    [D0001|ENABLE]NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key 0x40894c
+    [D0001|ENABLE]DDS_DomainParticipantPresentation_reserve_participant_index_entryports:!enable reserve participant index
+    [D0001|ENABLE]DDS_DomainParticipant_reserve_participant_index_entryports:Unusable shared memory transport. For a more in-depth explanation of the possible problem and solution, please visit http://community.rti.com/kb/osx510.
+    [D0001|ENABLE]DDS_DomainParticipant_enableI:Automatic participant index failed to initialize. PLEASE VERIFY CONSISTENT TRANSPORT / DISCOVERY CONFIGURATION.
+    [NOTE: If the participant is running on a machine where the network interfaces can change, you should manually set wire protocol's participant id]
+    DDSDomainParticipant_impl::createI:ERROR: Failed to auto-enable entity
+
+These errors are handled and filtered in the *RTI Perftest* implementation for
+the Classic C++, Java and C# APIs, but this is still not possible with the
+Modern C++ API.
+
+For more information about how to configure Shared Memory see http://community.rti.com/kb/osx510
+
+If you want to skip the use of Shared memory in RTI Perftest, specify the transport using `-transport <kind>`, e.g. `-transport UDPv4`.
+
 
 Building RTI Perftest Java API against RTI Connext DDS 5.2.0.x
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
