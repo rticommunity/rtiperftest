@@ -52,7 +52,7 @@ What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
 Use `UDPv4` and `Shared Memory` as the default transport configuration (#80)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* previous default was to use only the `UDPv4` transport.
 However this doesn't always lead to the best results when testing between
@@ -87,13 +87,8 @@ following command-line parameters:
     --cpp-build
     --cs-build
 
-<<<<<<< HEAD
-Added RTI Perftest and RTI Connext DDS information at beginning of the test(#54)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-=======
 Added RTI Perftest and RTI Connext DDS information at beginning of the test (#54)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
->>>>>>> master
 
 Starting with this release, RTI Perftest will print at the beginning of the test
 its version and the version of RTI Connext DDS used to compile against.
@@ -136,8 +131,6 @@ the CPU and network intensively, potentially starving the subscriber side and ma
 test hang.
 
 This behavior has been fixed.
-<<<<<<< HEAD
-=======
 
 Reduce memory consumption in the Subscriber side (#74)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -154,7 +147,6 @@ the application, the initial burst of samples sent by the Publisher side has bee
 also reviewed, to always send a burst big enough to ensure that the allocations in
 both publisher and subscriber sides are done before the test starts.
 
->>>>>>> master
 
 Release Notes 2.3.2
 -------------------
