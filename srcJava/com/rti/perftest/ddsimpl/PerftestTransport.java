@@ -15,7 +15,7 @@ import com.rti.dds.domain.DomainParticipantQos;
 public class PerftestTransport {
 
     /* Internal classes and enums */
-    
+
     public enum Transport {
         TRANSPORT_DEFAULT,
         TRANSPORT_UDPv4,
@@ -55,7 +55,6 @@ public class PerftestTransport {
     };
 
     public class TcpTransportOptions {
-        
         public String serverBindPort = "7400";
         public boolean wanNetwork = false;
         public String publicAddress = "";
@@ -99,7 +98,7 @@ public class PerftestTransport {
     private static String TRANSPORT_CERTIFICATE_FILE_SUB = "./resource/secure/sub.pem";
     private static String TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
 
-    Map<String,String> multicastAddrMap = new HashMap();
+    private static HashMap<String, String> multicastAddrMap = new HashMap<String, String>();
 
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
@@ -452,9 +451,9 @@ public class PerftestTransport {
                             + " Missing <address> after -multicastAddr");
                     return false;
                 }
-                multicastAddrMap.replace(TopicName.THROUGHPUT, argv[i]);
-                multicastAddrMap.replace(TopicName.LATENCY, argv[i]);
-                multicastAddrMap.replace(TopicName.ANNOUNCEMENT, argv[i]);
+                multicastAddrMap.put(TopicName.THROUGHPUT, argv[i]);
+                multicastAddrMap.put(TopicName.LATENCY, argv[i]);
+                multicastAddrMap.put(TopicName.ANNOUNCEMENT, argv[i]);
             }
         }
 
@@ -524,7 +523,7 @@ public class PerftestTransport {
         transportConfig = configMap.get(transportString);
 
         if (transportConfig == null) {
-            System.err.println(classLoggingString + " \"" 
+            System.err.println(classLoggingString + " \""
                     + transportString + "\" is not a valid transport. "
                     + "List of supported transport:");
             for (String key : configMap.keySet() ) {
