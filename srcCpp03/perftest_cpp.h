@@ -59,7 +59,8 @@ class perftest_cpp
 
     int Run(int argc, char *argv[]);
     bool ParseConfig(int argc, char *argv[]);
-    
+    void PrintConfiguration();
+
   private:
     int RunPublisher();
     int RunSubscriber();
@@ -160,7 +161,6 @@ class perftest_cpp
      * been reset.
      */
     static const unsigned long LATENCY_RESET_VALUE = ULONG_MAX;
-
 
    public:
     static unsigned long long GetTimeUsec();

@@ -6,6 +6,8 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
+#include <string>
+
 class TestMessage
 {
   public:
@@ -104,17 +106,30 @@ class IMessaging
 
     virtual void PrintCmdLineHelp() = 0;
 
+    virtual std::string PrintConfiguration() = 0;
+
     virtual void Shutdown() = 0;
 
-    // if the implementation supports batching and the test scenario is
-    // using batching, this function should return the size of the batch
-    // in bytes
+    /*
+     * If the implementation supports batching and the test scenario is
+     * using batching, this function should return the size of the batch
+     * in bytes.
+     */
     virtual unsigned int GetBatchSize() = 0;
+
+    /*
+     * Get an estimation of the minimum number of samples that need to be send
+     * before starting the test to ensure that most memory allocations will be
+     * done in the subscriber side (when sending a burst of that data).
+     */
+    virtual unsigned long GetInitializationSampleCount() = 0;
 
     virtual IMessagingWriter *CreateWriter(const char *topic_name) = 0;
 
-    // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
-    // to get data
+    /*
+     * Pass null for callback if using IMessagingReader.ReceiveMessage()
+     * to get data
+     */
     virtual IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback) = 0;
 };
 

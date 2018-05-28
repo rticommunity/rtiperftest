@@ -15,3 +15,4 @@ about: Suggest an idea for this project
 - [ ] Automatic install testing
 - [ ] Documentation
 - [ ] Full [Code Review]()
+- [ ] Final Merge into master
