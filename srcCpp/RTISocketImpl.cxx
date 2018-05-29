@@ -361,13 +361,12 @@ class RTISocketPublisher : public IMessagingWriter{
     NDDS_Transport_Port_t _send_port;
     NDDS_Transport_Buffer_t _send_buffer;
 
-    struct REDAWorker *_worker;
-
-    RTIOsapiSemaphore *_pongSemaphore;
-
     TestData_t _data;
 
     std::vector<std::pair<NDDS_Transport_Address_t, int> > _peersMap;
+
+    struct REDAWorker *_worker;
+    RTIOsapiSemaphore *_pongSemaphore;
 
     int _NumSubscribers;
 
@@ -668,16 +667,12 @@ class RTISocketSubscriber : public IMessagingReader
             NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
             RTI_OSAPI_ALIGNMENT_DEFAULT);
 
-        /*
-         * TODO:
-         * What to do if the allocate fail?
-         * Create a initialize function?
-         */
+
         if (_recvBuffer.pointer == NULL) {
-            fprintf(stderr, "RTIOsapiHeap_allocateArray error\n");
-        } else {
-            _recvBuffer.length = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
+            throw std::logic_error("RTIOsapiHeap_allocateArray Error\n");
         }
+
+        _recvBuffer.length = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
 
         _data.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
 
@@ -1041,7 +1036,7 @@ IMessagingReader *RTISocketImpl::CreateReader(const char *topic_name, IMessaging
      * If a create receive resource fail, and take another port the correspond
      * send resource will dont know where is the receiver.
      *
-     * 1 -> Dont allow the receiver take differente port
+     * 1 -> Dont allow the receiver take different port
      * 2 -> Communicate the port to the 'publisher' via announcement chanel
      */
     int result = 1;
@@ -1168,14 +1163,9 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
         }
         if (_IsMulticast && NDDS_Transport_UDPv4_get_num_multicast_interfaces(
                         udpPlugin) <= 0) {
-                fprintf(stderr, "No multicast-enabled interfaces detected\n");
-                return false;
+            fprintf(stderr, "No multicast-enabled interfaces detected\n");
+            return false;
         }
-
-        /*TODO: ??
-         * Change the way it's parse the -peer option to allow a number of
-         * peers.
-         */
 
         /* TODO: Remove on final version!
          * I keep this part, may be helpfull if we decided to support 1-many
@@ -1218,9 +1208,6 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
         shmem_prop.receive_buffer_size =
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX * 10;
-
-        // shmem_prop.parent.allow_interfaces_list = &interface;
-        // shmem_prop.parent.allow_interfaces_list_length = 1;
         shmem_prop.received_message_count_max =
                 shmem_prop.receive_buffer_size / perftest_cpp::OVERHEAD_BYTES;
         /*
@@ -1232,14 +1219,12 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
 
         _plugin = NDDS_Transport_Shmem_new(&shmem_prop);
 
-
         NDDS_Transport_Interface_t interface;
         RTI_INT32 foundMore;
         RTI_INT32 count;
         _plugin->get_receive_interfaces_cEA(
                 _plugin, &foundMore, &count, &interface, 1);
 
-        /*TODO: What if the user want force a diferent nic? Should be allow it */
         if (count != 1) {
             fprintf(stderr, "Any valid interface for SHMEM found\n");
             return false;
@@ -1260,7 +1245,7 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
         fprintf(stderr, "Socket transport only support UDPv4 & SHMEM\n");
         return false;
 
-    } // Switch
+    } // End Switch
 
     if (_plugin == NULL) {
         fprintf(stderr, "Error creating transport plugin\n");
@@ -1273,7 +1258,7 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
 }
 
 
-/* TODO: Actually dont used funtion. */
+/* TODO: Actually dont used function. */
 char *InterfaceNameToAddress(const char *nicName) {
 
     if (nicName == NULL) {
