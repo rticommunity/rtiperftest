@@ -231,8 +231,9 @@ public class PerftestTransport {
 
         sb.append( "\tUse Multicast: ").append((allowsMulticast()) ? "True" : "False");
         if (!allowsMulticast() && useMulticast) {
-            sb.append ("  (Multicast is not supported for " );
-            sb.append( transportConfig.nameString ).append(")");
+            sb.append ("  (Multicast is not supported for ");
+            sb.append( transportConfig.nameString );
+            sb.append(")");
         }
         sb.append( "\n");
 
@@ -282,8 +283,7 @@ public class PerftestTransport {
         return (transportConfig.kind != Transport.TRANSPORT_TCPv4
                 && transportConfig.kind != Transport.TRANSPORT_TLSv4
                 && transportConfig.kind != Transport.TRANSPORT_WANv4
-                && transportConfig.kind != Transport.TRANSPORT_SHMEM
-                && useMulticast);
+                && transportConfig.kind != Transport.TRANSPORT_SHMEM);
     }
 
     public boolean parseTransportOptions(int argc, String[] argv) {

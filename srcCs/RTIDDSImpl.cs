@@ -1899,9 +1899,9 @@ namespace PerformanceTest
             else
             {
                 Console.Error.WriteLine("topic name must either be "
-                    + THROUGHPUT_TOPIC_NAME.VALUE
-                    + " or " + LATENCY_TOPIC_NAME.VALUE
-                    + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
+                        + THROUGHPUT_TOPIC_NAME.VALUE
+                        + " or " + LATENCY_TOPIC_NAME.VALUE
+                        + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
                 return null;
             }
 
@@ -2209,9 +2209,9 @@ namespace PerformanceTest
             else
             {
                 Console.Error.WriteLine("topic name must either be "
-                    + THROUGHPUT_TOPIC_NAME.VALUE
-                    + " or " + LATENCY_TOPIC_NAME.VALUE
-                    + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
+                        + THROUGHPUT_TOPIC_NAME.VALUE
+                        + " or " + LATENCY_TOPIC_NAME.VALUE
+                        + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
                 return null;
             }
 
@@ -2280,9 +2280,9 @@ namespace PerformanceTest
                 if (multicast_addr == null)
                 {
                     Console.Error.WriteLine("topic name must either be "
-                        + THROUGHPUT_TOPIC_NAME.VALUE
-                        + " or " + LATENCY_TOPIC_NAME.VALUE
-                        + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
+                            + THROUGHPUT_TOPIC_NAME.VALUE
+                            + " or " + LATENCY_TOPIC_NAME.VALUE
+                            + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
                     return null;
                 }
 

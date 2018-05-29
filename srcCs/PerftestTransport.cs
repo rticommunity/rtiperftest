@@ -307,7 +307,8 @@ namespace PerformanceTest
                 if (useMulticast)
                 {
                     sb.Append("  (Multicast is not supported for " );
-                    sb.Append( transportConfig.nameString ).Append(")");
+                    sb.Append( transportConfig.nameString );
+                    sb.Append(")");
                 }
             }
             sb.Append("\n");
@@ -366,8 +367,7 @@ namespace PerformanceTest
             return (transportConfig.kind != Transport.TRANSPORT_TCPv4
                     && transportConfig.kind != Transport.TRANSPORT_TLSv4
                     && transportConfig.kind != Transport.TRANSPORT_WANv4
-                    && transportConfig.kind != Transport.TRANSPORT_SHMEM
-                    && useMulticast);
+                    && transportConfig.kind != Transport.TRANSPORT_SHMEM);
         }
 
         public bool ParseTransportOptions(string[] argv)

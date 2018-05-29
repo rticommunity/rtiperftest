@@ -659,7 +659,7 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     }
 
     stringStream << "\tUse Multicast: "
-            << ((allowsMulticast()) ? "True" : "False");
+                 << ((allowsMulticast()) ? "True" : "False");
     if (!allowsMulticast() && useMulticast) {
         stringStream << "  (Multicast is not supported for "
                      << transportConfig.nameString << ")";
@@ -895,7 +895,6 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
             wanOptions.secureWan = true;
 
         } else if (IS_OPTION(argv[i], "-multicast")) {
-
             useMulticast = true;
         } else if (IS_OPTION(argv[i], "-multicastAddr")) {
             useMulticast = true;
@@ -940,8 +939,7 @@ bool PerftestTransport::allowsMulticast()
     return (transportConfig.kind != TRANSPORT_TCPv4
             && transportConfig.kind != TRANSPORT_TLSv4
             && transportConfig.kind != TRANSPORT_WANv4
-            && transportConfig.kind != TRANSPORT_SHMEM
-            && useMulticast);
+            && transportConfig.kind != TRANSPORT_SHMEM);
 }
 
 const std::string PerftestTransport::getMulticastAddr(const char *topicName)

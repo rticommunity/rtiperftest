@@ -143,7 +143,7 @@ Test Parameters for Publishing and Subscribing Applications
    | **throughput:** ``239.255.1.1``
    | **announcement:** ``239.255.1.100``
 
-    See ``-multicastAddr <address>`` for how to change these ip addresses.
+    See ``-multicastAddr <address>`` for how to change these IP addresses.
 
    **Default:** Do not use multicast.
 

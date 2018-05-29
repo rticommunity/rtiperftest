@@ -190,9 +190,18 @@ the XML configurations when disabling positive Acks.
 Show message in sumary when -multicast is present but it wont be used (#44)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In previous versions, if the `-multicast` command line parameter was provided but
-the transport does not allow it, any information was given. This fix prints the
-message: `Use Multicast: False  (Multicast is not supported for TCP)`.
+In previous versions, if the `-multicast` command-line parameter was provided but
+the transport didn't allow the use of multicast, it would fail silently and no
+indication would be shown by RTI Perftest.
+
+Starting from this release, the use of multicast will be shown in the transport
+summary at the beginning of the test, and a message will be printed stating if
+multicast could not be applied for the transport.
+
+The `-multicast` parameter has been divided into 2: `-multicast` which enables
+multicast for a given transport using a set of default multicast addresses and
+`-multicastAddr <address>` which enables multicast and sets the multicast IPs to
+be the one provided.
 
 Update Security Certificates and Governance files (#49)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1820,9 +1820,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         qos_profile = "AnnouncementQos";
     } else {
         std::cerr << "[Error] Topic name must either be "
-                << THROUGHPUT_TOPIC_NAME << " or "
-                << LATENCY_TOPIC_NAME << " or "
-                << ANNOUNCEMENT_TOPIC_NAME << std::endl;
+                  << THROUGHPUT_TOPIC_NAME << " or "
+                  << LATENCY_TOPIC_NAME << " or "
+                  << ANNOUNCEMENT_TOPIC_NAME << std::endl;
         throw std::logic_error("[Error] Topic name");
     }
 
@@ -2119,9 +2119,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         qos_profile = "AnnouncementQos";
     } else {
         std::cerr << "[Error] Topic name must either be "
-                << THROUGHPUT_TOPIC_NAME << " or "
-                << LATENCY_TOPIC_NAME << " or "
-                << ANNOUNCEMENT_TOPIC_NAME << std::endl;
+                  << THROUGHPUT_TOPIC_NAME << " or "
+                  << LATENCY_TOPIC_NAME << " or "
+                  << ANNOUNCEMENT_TOPIC_NAME << std::endl;
         throw std::logic_error("[Error] Topic name");
     }
 
