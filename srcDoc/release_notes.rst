@@ -51,6 +51,14 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+
+Added % of lost packets for the summary and the intervals outputs  (#81)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* now print the percent of lost packets on each of the interval
+outputs and at the end of the test after the summary.
+
+
 Use `UDPv4` and `Shared Memory` as the default transport configuration (#80)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
