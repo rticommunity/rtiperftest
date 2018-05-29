@@ -802,6 +802,7 @@ class RTIPublisher : public IMessagingWriter
         RTI_CUSTOM_TYPE::TypeSupport::initialize_data(&data.custom_type);
         if (!initialize_custom_type_data(data.custom_type)) {
             fprintf(stderr, "initialize_custom_type_data failed.\n");
+            throw -1;
         }
       #endif
         _writer = T::DataWriter::narrow(writer);
@@ -833,12 +834,10 @@ class RTIPublisher : public IMessagingWriter
     }
 
     ~RTIPublisher() {
-      #ifdef RTI_CUSTOM_TYPE
-        if (!finalize_custom_type_data(data.custom_type)) {
-            fprintf(stderr, "finalize_custom_type_data failed.\n");
+        try {
+            Shutdown();
+        } catch (int e) {
         }
-      #endif
-        Shutdown();
     }
 
     void Shutdown() {
@@ -846,8 +845,14 @@ class RTIPublisher : public IMessagingWriter
             delete(_writer->get_listener());
             _writer->set_listener(NULL);
         }
-
         free(_instance_handles);
+      #ifdef RTI_CUSTOM_TYPE
+        if (!finalize_custom_type_data(data.custom_type)) {
+            fprintf(stderr, "finalize_custom_type_data failed.\n");
+        }
+      #endif
+        fprintf(stderr, "fail antonio \n");
+        throw -1;
     }
 
     void Flush()
@@ -960,7 +965,7 @@ class RTIPublisher : public IMessagingWriter
         }
     }
 
-    bool waitForPingResponse() 
+    bool waitForPingResponse()
     {
         if(_pongSemaphore != NULL)
         {
@@ -974,7 +979,7 @@ class RTIPublisher : public IMessagingWriter
     }
 
     /* time out in milliseconds */
-    bool waitForPingResponse(int timeout) 
+    bool waitForPingResponse(int timeout)
     {
         struct RTINtpTime blockDurationIn;
         RTINtpTime_packFromMillisec(blockDurationIn, 0, timeout);
@@ -988,9 +993,9 @@ class RTIPublisher : public IMessagingWriter
             }
         }
         return true;
-    }    
+    }
 
-    bool notifyPingResponse() 
+    bool notifyPingResponse()
     {
         if(_pongSemaphore != NULL)
         {
@@ -1078,6 +1083,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         // Initialize data
         if (!initialize_custom_type_dynamic_data(data)) {
             fprintf(stderr, "initialize_custom_type_dynamic_data failed.\n");
+            throw -1;
         }
       #endif
         _writer = DDSDynamicDataWriter::narrow(writer);
@@ -1123,12 +1129,10 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     }
 
     ~RTIDynamicDataPublisher() {
-        Shutdown();
-      #ifdef RTI_CUSTOM_TYPE
-        if (!finalize_custom_type_dynamic_data(data)) {
-            fprintf(stderr, "finalize_custom_type_dynamic_data failed.\n");
+        try {
+            Shutdown();
+        } catch (int e) {
         }
-      #endif
     }
 
     void Shutdown() {
@@ -1136,8 +1140,13 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             delete(_writer->get_listener());
             _writer->set_listener(NULL);
         }
-
         free(_instance_handles);
+      #ifdef RTI_CUSTOM_TYPE
+        if (!finalize_custom_type_dynamic_data(data)) {
+            fprintf(stderr, "finalize_custom_type_dynamic_data failed.\n");
+            throw -1;
+        }
+      #endif
     }
 
     void Flush()
@@ -2611,9 +2620,17 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     if (!_isDynamicData) {
-        return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore, _instancesToBeWritten);
+        try {
+            return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore, _instancesToBeWritten);
+        } catch (int n) {
+            return NULL;
+        }
     } else {
-        return new RTIDynamicDataPublisher(writer, _InstanceCount, _pongSemaphore, T::TypeSupport::get_typecode(), _instancesToBeWritten);
+        try{
+            return new RTIDynamicDataPublisher(writer, _InstanceCount, _pongSemaphore, T::TypeSupport::get_typecode(), _instancesToBeWritten);
+        } catch (int n) {
+            return NULL;
+        }
     }
 
 }
