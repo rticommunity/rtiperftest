@@ -1632,7 +1632,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 return false;
             }
             else {
-                _batchSize = 0;// Disable Batching
+                _batchSize = 0; // Disable Batching
             }
         }
 
@@ -1667,11 +1667,14 @@ public final class RTIDDSImpl<T> implements IMessaging {
              * checking at the middleware level).
              */
             if (isBatchSizeProvided) {
-                System.err.println("Batching disabled: BatchSize (" + _batchSize
-                        + ") is smaller than two times the sample size ("
-                        + _dataLen + ").");
+                /*
+                 * Batchsize disabled. A message will be print if
+                 * _batchsize < 0 in perftest_cpp::PrintConfiguration()
+                 */
+                _batchSize = -1;
+            } else {
+                _batchSize = 0;
             }
-            _batchSize = 0;
         }
 
         if (_dataLen > MAX_SYNCHRONOUS_SIZE.VALUE) {

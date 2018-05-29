@@ -914,11 +914,16 @@ void perftest_cpp::PrintConfiguration()
         }
 
         // Batching
+        int batchSize = _MessagingImpl->GetBatchSize();
         stringStream << "\tBatching: ";
-        if (_MessagingImpl->GetBatchSize() != 0) {
-            stringStream << _MessagingImpl->GetBatchSize() << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
-        } else {
+        if (batchSize > 0) {
+            stringStream << batchSize << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
+        } else if (batchSize == 0) {
             stringStream << "No (Use \"-batchSize\" to setup batching)\n";
+        } else if (batchSize == -1) {
+            stringStream << "\"Disabled by RTI Perftest.\"\n"
+                         << "\t\t  BatchSize is smaller than 2 times\n"
+                         << "\t\t  the sample size.\n";
         }
 
         // Publication Rate
@@ -1736,7 +1741,6 @@ int perftest_cpp::Publisher()
     IMessagingReader *announcement_reader;
     unsigned long num_latency;
     unsigned long announcementSampleCount = 50;
-    unsigned int batchSize = 0;
     unsigned int samplesPerBatch = 1;
 
     // create throughput/ping writer
@@ -1748,16 +1752,7 @@ int perftest_cpp::Publisher()
         return -1;
     }
 
-    batchSize = _MessagingImpl->GetBatchSize();
-
-    if (batchSize != 0) {
-        samplesPerBatch = batchSize / (int) _DataLen;
-        if (samplesPerBatch == 0) {
-            samplesPerBatch = 1;
-        }
-    } else {
-        samplesPerBatch = 1;
-    }
+    samplesPerBatch = GetSamplesPerBatch();
 
     // calculate number of latency pings that will be sent per data size
     num_latency = (unsigned long)((_NumIter/samplesPerBatch) / _LatencyCount);
@@ -2049,15 +2044,8 @@ int perftest_cpp::Publisher()
 
                     message.size = _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
                     /* Reset _SamplePerBatch */
-                    if (batchSize != 0) {
-                        samplesPerBatch =
-                                batchSize / (message.size + OVERHEAD_BYTES);
-                        if (samplesPerBatch == 0) {
-                            samplesPerBatch = 1;
-                        }
-                    } else {
-                        samplesPerBatch = 1;
-                    }
+                    samplesPerBatch = GetSamplesPerBatch();
+
                     ping_index_in_batch = 0;
                     current_index_in_batch = 0;
                 }
@@ -2202,6 +2190,22 @@ inline unsigned long long perftest_cpp::GetTimeUsec() {
             perftest_cpp::_Clock_usec,
             perftest_cpp::_ClockTime_aux);
     return perftest_cpp::_Clock_usec + 1000000 * perftest_cpp::_Clock_sec;
+}
+
+inline unsigned int perftest_cpp::GetSamplesPerBatch() {
+    int batchSize = _MessagingImpl->GetBatchSize();
+    unsigned int samplesPerBatch;
+
+    if (batchSize > 0) {
+        samplesPerBatch = batchSize / (int) _DataLen;
+        if (samplesPerBatch == 0) {
+            samplesPerBatch = 1;
+        }
+    } else {
+        samplesPerBatch = 1;
+    }
+
+    return samplesPerBatch;
 }
 
 #ifdef RTI_WIN32

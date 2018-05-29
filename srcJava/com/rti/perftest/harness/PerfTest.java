@@ -166,6 +166,22 @@ public final class PerfTest {
         }
     }
 
+    public int getSamplesPerBatch(){
+        int batchSize = _messagingImpl.getBatchSize();
+        int samplesPerBatch;
+
+        if (batchSize > 0) {
+            samplesPerBatch = batchSize / (int) _dataLen;
+            if (samplesPerBatch == 0) {
+                samplesPerBatch = 1;
+            }
+        } else {
+            samplesPerBatch = 1;
+        }
+
+        return samplesPerBatch;
+    }
+
     // -----------------------------------------------------------------------
     // Package Methods
     // -----------------------------------------------------------------------
@@ -809,12 +825,18 @@ public final class PerfTest {
             }
 
             // Batching
+            int batchSize = _messagingImpl.getBatchSize();
+
             sb.append("\tBatching: ");
-            if (_messagingImpl.getBatchSize() != 0) {
-                sb.append(_messagingImpl.getBatchSize());
+            if (batchSize > 0) {
+                sb.append(batchSize);
                 sb.append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
-            } else {
+            } else if (batchSize == 0) {
                 sb.append("No (Use \"-batchSize\" to setup batching)\n");
+            } else if (batchSize == -1) {
+                sb.append("\"Disabled by RTI Perftest.\"\n");
+                sb.append("\t\t  BatchSize is smaller than 2 times\n");
+                sb.append("\t\t  the sample size.\n");
             }
 
             // Publication Rate
@@ -1024,7 +1046,6 @@ public final class PerfTest {
         IMessagingReader announcement_reader;
         int num_latency;
         int announcement_sample_count = 50;
-        int batchSize = 0;
         int samplesPerBatch = 1;
 
         // create throughput/ping writer
@@ -1035,16 +1056,7 @@ public final class PerfTest {
             return;
         }
 
-        batchSize = _messagingImpl.getBatchSize();
-
-        if (batchSize != 0) {
-            samplesPerBatch = batchSize / (int) _dataLen;
-            if (samplesPerBatch == 0) {
-                samplesPerBatch = 1;
-            }
-        } else {
-            samplesPerBatch = 1;
-        }
+        samplesPerBatch = getSamplesPerBatch();
 
         num_latency = (((int)_numIter/samplesPerBatch) / _latencyCount);
         if ((num_latency/samplesPerBatch) % _latencyCount > 0) {
@@ -1320,14 +1332,7 @@ public final class PerfTest {
 
                         message.size = (int)(_scanDataLenSizes.get(scan_count++) - OVERHEAD_BYTES);
                         /* Reset _SamplePerBatch */
-                        if (batchSize != 0) {
-                            samplesPerBatch = batchSize / (message.size + OVERHEAD_BYTES);
-                            if (samplesPerBatch == 0) {
-                                samplesPerBatch = 1;
-                            }
-                        } else {
-                            samplesPerBatch = 1;
-                        }
+                        samplesPerBatch = getSamplesPerBatch();
                         ping_index_in_batch = 0;
                         current_index_in_batch = 0;
                     }

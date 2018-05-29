@@ -1379,12 +1379,18 @@ namespace PerformanceTest {
                 }
 
                 // Batching
+                int batchSize = _MessagingImpl.GetBatchSize();
+
                 sb.Append("\tBatching: ");
-                if (_MessagingImpl.GetBatchSize() != 0) {
-                    sb.Append(_MessagingImpl.GetBatchSize());
+                if (batchSize > 0) {
+                    sb.Append(batchSize);
                     sb.Append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
-                } else {
+                } else if (batchSize == 0) {
                     sb.Append("No (Use \"-batchSize\" to setup batching)\n");
+                } else if (batchSize == -1) {
+                    sb.Append("\"Disabled by RTI Perftest.\"\n");
+                    sb.Append("\t\t  BatchSize is smaller than 2 times\n");
+                    sb.Append("\t\t  the sample size.\n");
                 }
 
                 // Publication Rate
@@ -2081,7 +2087,6 @@ namespace PerformanceTest {
             AnnouncementListener  announcement_reader_listener = null;
             uint num_latency;
             int announcementSampleCount = 50;
-            int batchSize = 0;
             int samplesPerBatch = 1;
 
             // create throughput/ping writer
@@ -2093,16 +2098,7 @@ namespace PerformanceTest {
                 return;
             }
 
-            batchSize = _MessagingImpl.GetBatchSize();
-
-            if (batchSize != 0) {
-                samplesPerBatch = batchSize/(int)_DataLen;
-                if (samplesPerBatch == 0) {
-                   samplesPerBatch = 1;
-                }
-            } else {
-                samplesPerBatch = 1;
-            }
+            samplesPerBatch = GetSamplesPerBatch();
 
             num_latency = (uint)((_NumIter/(ulong)samplesPerBatch)
                     / (ulong)_LatencyCount);
@@ -2375,15 +2371,8 @@ namespace PerformanceTest {
                             }
                             message.size = (int)(_scanDataLenSizes[scan_count++] - OVERHEAD_BYTES);
                             /* Reset _SamplePerBatch */
-                            if (batchSize != 0) {
-                                samplesPerBatch = batchSize
-                                        / (message.size + OVERHEAD_BYTES);
-                                if (samplesPerBatch == 0) {
-                                    samplesPerBatch = 1;
-                                }
-                            } else {
-                                samplesPerBatch = 1;
-                            }
+                            samplesPerBatch = GetSamplesPerBatch();
+
                             ping_index_in_batch = 0;
                             current_index_in_batch = 0;
                         }
@@ -2516,6 +2505,25 @@ namespace PerformanceTest {
             }
         }
 
+        public int GetSamplesPerBatch()
+        {
+            int batchSize = _MessagingImpl.GetBatchSize();
+            int samplesPerBatch;
+
+            if (batchSize > 0)
+            {
+                samplesPerBatch = batchSize / (int) _DataLen;
+                if (samplesPerBatch == 0)
+                {
+                    samplesPerBatch = 1;
+                }
+            } else
+            {
+                samplesPerBatch = 1;
+            }
+
+            return samplesPerBatch;
+        }
 
         public ProductVersion_t GetDDSVersion()
         {

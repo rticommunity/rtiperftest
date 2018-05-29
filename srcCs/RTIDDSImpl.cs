@@ -875,19 +875,17 @@ namespace PerformanceTest
                  * mode, where we do want to enable batching by default in
                  * certain cases.
                  */
-            } else if (_BatchSize > 0 && _BatchSize < (int)_DataLen * 2){
+            } else if (_BatchSize > 0 && _BatchSize < (int)_DataLen * 2) {
                 /*
                  * We don't want to use batching if the batch size is not large
                  * enough to contain at least two samples (in this case we avoid
                  * the checking at the middleware level).
                  */
                 if (isBatchSizeProvided) {
-                    Console.Error.WriteLine("Batching disabled: BatchSize ("
-                            + _BatchSize +
-                            ") is smaller than two times the sample size ("
-                            + _DataLen + ").");
+                    _BatchSize = -1;
+                } else {
+                    _BatchSize = 0;
                 }
-                _BatchSize = 0;
             }
 
             if ((int)_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE)
@@ -2283,7 +2281,7 @@ namespace PerformanceTest
         private bool   _IsMulticast = false;
         private bool   _AutoThrottle = false;
         private bool   _TurboMode = false;
-        private int    _BatchSize = (int)DEFAULT_THROUGHPUT_BATCH_SIZE.VALUE;
+        private int    _BatchSize = (int)DEFAULT_THROUGHPUT_BATCH_SIZE.VALUE; // Default 8 kB
         private int    _InstanceCount = 1;
         private int    _InstanceMaxCountReader = -1;
         private int     _InstanceHashBuckets = -1;

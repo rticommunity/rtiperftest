@@ -416,16 +416,15 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 fprintf(stderr, "Missing <#bytes> after -batchSize\n");
                 return false;
             }
-            int readValue = strtol(argv[i], NULL, 10);
+            _BatchSize = strtol(argv[i], NULL, 10);
 
-            if (readValue < 0 || readValue > (int)MAX_SYNCHRONOUS_SIZE) {
+            if (_BatchSize < 0 || _BatchSize > (int)MAX_SYNCHRONOUS_SIZE) {
                 fprintf(stderr,
                         "Batch size '%d' should be between [0,%d]\n",
                         _BatchSize,
                         MAX_SYNCHRONOUS_SIZE);
                 return false;
             }
-            _BatchSize = readValue;
             isBatchSizeProvided = true;
         } else if (IS_OPTION(argv[i], "-keepDurationUsec")) {
             if ((i == (argc-1)) || *argv[++i] == '-') {
@@ -688,7 +687,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     }
 
     if (_LatencyTest) {
-        if (isBatchSizeProvided && _BatchSize != 0) {
+        if (isBatchSizeProvided && _BatchSize > 0) {
             fprintf(stderr, "Batching cannot be used with Latency test.\n");
             return false;
         } else {
@@ -726,13 +725,15 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
              * checking at the middleware level).
              */
         if (isBatchSizeProvided) {
-            fprintf(stderr,
-                    "Batching disabled: BatchSize (%d) is smaller than two "
-                    "times the sample size (%lu).\n",
-                    _BatchSize,
-                    _DataLen);
+            /*
+             * Batchsize disabled. A message will be print if _batchsize < 0 in
+             * perftest_cpp::PrintConfiguration()
+             */
+            _BatchSize = -1;
         }
-        _BatchSize = 0;
+        else {
+            _BatchSize = 0;
+        }
     }
 
     if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {

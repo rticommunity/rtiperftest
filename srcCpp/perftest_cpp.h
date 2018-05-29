@@ -55,6 +55,7 @@ class perftest_cpp
     int Run(int argc, char *argv[]);
     bool ParseConfig(int argc, char *argv[]);
     void PrintConfiguration();
+    unsigned int GetSamplesPerBatch();
 
   private:
     int Publisher();
