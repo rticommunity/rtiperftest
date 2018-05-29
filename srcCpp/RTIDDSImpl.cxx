@@ -849,10 +849,9 @@ class RTIPublisher : public IMessagingWriter
       #ifdef RTI_CUSTOM_TYPE
         if (!finalize_custom_type_data(data.custom_type)) {
             fprintf(stderr, "finalize_custom_type_data failed.\n");
+            throw -1;
         }
       #endif
-        fprintf(stderr, "fail antonio \n");
-        throw -1;
     }
 
     void Flush()
