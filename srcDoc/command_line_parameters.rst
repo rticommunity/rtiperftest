@@ -292,12 +292,16 @@ Test Parameters for Publishing and Subscribing Applications
 Transport Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+By default, *RTI Perftest* will try to use the transport settings provided via the
+`xml` configuration file. However, it is possible to override these values directly
+by using the `Transport` spececific command-line parameters.
+
 -  ``-transport <TRANSPORT NAME>``
 
    Set the transport to be used. The rest of the transports will be disabled.
    
    | **Options:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS`` and ``WAN``.
-   | **Default:** ``Transport defined in the XML profile. (UDPv4 if no changes).``  
+   | **Default:** ``Transport defined in the XML profile. (UDPv4 and SHMEM if no changes).``  
    
 -  ``-nic <ipaddr>``
 
