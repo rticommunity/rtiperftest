@@ -2362,11 +2362,11 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (strcmp(topic_name,THROUGHPUT_TOPIC_NAME) == 0) {
+    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0) {
         qos_profile = "ThroughputQos";
-    } else if (strcmp(topic_name,LATENCY_TOPIC_NAME) == 0) {
+    } else if (strcmp(topic_name, LATENCY_TOPIC_NAME) == 0) {
         qos_profile = "LatencyQos";
-    } else if (strcmp(topic_name,ANNOUNCEMENT_TOPIC_NAME) == 0) {
+    } else if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) == 0) {
         qos_profile = "AnnouncementQos";
     } else {
         fprintf(stderr,

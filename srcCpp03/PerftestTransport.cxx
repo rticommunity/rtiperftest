@@ -598,11 +598,11 @@ std::string PerftestTransport::helpMessageString()
     << "\t                                interfaces\n"
     << "\t-multicast                    - Use multicast to send data. Each topic\n"
     << "\t                                will use a different address:\n";
-        for (std::map<std::string, std::string>::iterator it = multicastAddrMap.begin();
-            it!=multicastAddrMap.end(); ++it) {
-                oss << "                                            "
-                << it->first << " " << it->second << "\n";
-        }
+    for (std::map<std::string, std::string>::iterator it = multicastAddrMap.begin();
+        it!=multicastAddrMap.end(); ++it) {
+            oss << "                                            "
+            << it->first << " " << it->second << "\n";
+    }
     oss
     << "\t-multicastAddr <address>      - Use multicast to send data and set\n"
     << "\t                                the input <address> as the multicast\n"
@@ -944,16 +944,15 @@ bool PerftestTransport::allowsMulticast()
             && useMulticast);
 }
 
-const std::string
-PerftestTransport::getMulticastAddr(const std::string &topicName)
+const std::string PerftestTransport::getMulticastAddr(const char *topicName)
 {
-    std::string ret = multicastAddrMap[topicName];
+    std::string address = multicastAddrMap[std::string(topicName)];
 
-    if (ret.length() == 0) {
+    if (address.length() == 0) {
         return NULL;
     }
 
-    return ret;
+    return address;
 }
 
 /******************************************************************************/

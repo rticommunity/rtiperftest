@@ -763,11 +763,11 @@ std::string PerftestTransport::helpMessageString()
     << "\t                                interfaces\n"
     << "\t-multicast                    - Use multicast to send data. Each topic\n"
     << "\t                                will use a different address:\n";
-        for (std::map<std::string, std::string>::iterator it = multicastAddrMap.begin();
-            it!=multicastAddrMap.end(); ++it) {
-                oss << "                                            "
-                << it->first << " " << it->second << "\n";
-        }
+    for (std::map<std::string, std::string>::iterator it = multicastAddrMap.begin();
+        it!=multicastAddrMap.end(); ++it) {
+            oss << "                                            "
+            << it->first << " " << it->second << "\n";
+    }
     oss
     << "\t-multicastAddr <address>      - Use multicast to send data and set\n"
     << "\t                                the input <address> as the multicast\n"
@@ -1060,9 +1060,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
             wanOptions.secureWan = true;
 
         } else if (IS_OPTION(argv[i], "-multicast")) {
-
             useMulticast = true;
-
         } else if (IS_OPTION(argv[i], "-multicastAddr")) {
             useMulticast = true;
             if ((i == (argc - 1)) || *argv[++i] == '-') {
@@ -1103,19 +1101,18 @@ bool PerftestTransport::allowsMulticast()
     return (transportConfig.kind != TRANSPORT_TCPv4
             && transportConfig.kind != TRANSPORT_TLSv4
             && transportConfig.kind != TRANSPORT_WANv4
-            && transportConfig.kind != TRANSPORT_SHMEM
-            && useMulticast);
+            && transportConfig.kind != TRANSPORT_SHMEM);
 }
 
 const std::string PerftestTransport::getMulticastAddr(const char *topicName)
 {
-    std::string ret = multicastAddrMap[std::string(topicName)];
+    std::string address = multicastAddrMap[std::string(topicName)];
 
-    if (ret.length() == 0) {
+    if (address.length() == 0) {
         return NULL;
     }
 
-    return ret;
+    return address;
 }
 
 /******************************************************************************/

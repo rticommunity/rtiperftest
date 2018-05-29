@@ -2200,7 +2200,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
         dds::core::StringSeq transports;
         transports.push_back("udpv4");
-        std::string multicastAddr = _transport.getMulticastAddr(topic_name);
+        std::string multicastAddr =
+                _transport.getMulticastAddr(topic_name.c_str());
         if (multicastAddr.length() == 0) {
             std::cerr << "[Error] Topic name must either be "
                       << THROUGHPUT_TOPIC_NAME << " or "
@@ -2210,7 +2211,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
             return NULL;
         }
         rti::core::TransportMulticastSettings multicast_settings(
-                transports, _transport.getMulticastAddr(topic_name), 0);
+                transports,
+                _transport.getMulticastAddr(topic_name.c_str()), 0);
         rti::core::TransportMulticastSettingsSeq multicast_seq;
         multicast_seq.push_back(multicast_settings);
 

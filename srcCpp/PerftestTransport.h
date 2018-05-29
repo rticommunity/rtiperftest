@@ -127,10 +127,10 @@ public:
     bool allowsMulticast();
 
     /*
-     * Given the name of a Perftest-defined topic, returns the default multicast
-     * address for that topic.
+     * Given the name of a Perftest-defined topic, returns its multicast
+     * address.
      */
-    const std::string getMulticastAddr(const char * topic);
+    const std::string getMulticastAddr(const char *topic);
 
 private:
 
