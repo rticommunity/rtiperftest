@@ -7,9 +7,6 @@
 #include "RTISocketImpl.h"
 
 /*TODO: check if this can be remove*/
-#ifdef RTI_SECURE_PERFTEST
-#include "security/security_default.h"
-#endif
 
 #if defined(RTI_WIN32)
 #pragma warning(push)
