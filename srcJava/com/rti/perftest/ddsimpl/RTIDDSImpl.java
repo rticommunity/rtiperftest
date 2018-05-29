@@ -1084,7 +1084,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
         }
 
-        if (_transport.allowsMulticast()) {
+        if (_transport.useMulticast && _transport.allowsMulticast()) {
             String multicast_addr = _transport.getMulticastAddr(topicName);
             if (multicast_addr == null) {
                 System.err.println("topic name must either be "

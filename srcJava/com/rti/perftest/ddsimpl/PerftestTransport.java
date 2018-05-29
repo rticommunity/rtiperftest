@@ -229,9 +229,10 @@ public class PerftestTransport {
             sb.append("\tNic: ").append(allowInterfaces).append("\n");
         }
 
-        sb.append( "\tUse Multicast: ").append((allowsMulticast()) ? "True" : "False");
+        sb.append( "\tUse Multicast: ");
+        sb.append((allowsMulticast() && useMulticast) ? "True" : "False");
         if (!allowsMulticast() && useMulticast) {
-            sb.append ("  (Multicast is not supported for ");
+            sb.append (" (Multicast is not supported for ");
             sb.append( transportConfig.nameString );
             sb.append(")");
         }

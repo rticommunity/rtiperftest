@@ -297,7 +297,7 @@ namespace PerformanceTest
 
             sb.Append( "\tUse Multicast: ");
 
-            if (AllowsMulticast())
+            if (AllowsMulticast() && useMulticast)
             {
                 sb.Append("True");
             }
@@ -306,7 +306,7 @@ namespace PerformanceTest
                 sb.Append("False");
                 if (useMulticast)
                 {
-                    sb.Append("  (Multicast is not supported for " );
+                    sb.Append(" (Multicast is not supported for " );
                     sb.Append( transportConfig.nameString );
                     sb.Append(")");
                 }

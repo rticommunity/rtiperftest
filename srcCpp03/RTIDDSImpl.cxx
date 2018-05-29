@@ -2196,7 +2196,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (_transport.allowsMulticast()) {
+    if (_transport.useMulticast && _transport.allowsMulticast()) {
 
         dds::core::StringSeq transports;
         transports.push_back("udpv4");

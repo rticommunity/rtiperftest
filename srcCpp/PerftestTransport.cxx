@@ -825,9 +825,9 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     }
 
     stringStream << "\tUse Multicast: "
-                 << ((allowsMulticast()) ? "True" : "False");
+                 << ((allowsMulticast() && useMulticast) ? "True" : "False");
     if (!allowsMulticast() && useMulticast) {
-        stringStream << "  (Multicast is not supported for "
+        stringStream << " (Multicast is not supported for "
                      << transportConfig.nameString << ")";
     }
     stringStream << "\n";

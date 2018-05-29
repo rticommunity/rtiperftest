@@ -2272,7 +2272,7 @@ namespace PerformanceTest
                 }
             }
 
-            if (_transport.AllowsMulticast())
+            if (_transport.useMulticast && _transport.AllowsMulticast())
             {
                 string multicast_addr;
 
