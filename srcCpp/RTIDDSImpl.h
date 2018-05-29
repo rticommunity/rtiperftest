@@ -47,7 +47,7 @@ class RTIDDSImpl : public IMessaging
         _UseXmlQos = true;
         _IsReliable = true;
         _IsMulticast = false;
-        _BatchSize = 0;
+        _BatchSize = DEFAULT_THROUGHPUT_BATCH_SIZE; // Default: 8 kBytes
         _InstanceCount = 1;
         _InstanceMaxCountReader = DDS_LENGTH_UNLIMITED;
         _InstanceHashBuckets = -1;
@@ -114,7 +114,7 @@ class RTIDDSImpl : public IMessaging
 
     void Shutdown();
 
-    unsigned int GetBatchSize()
+    int GetBatchSize()
     {
         return _BatchSize;
     }
@@ -149,7 +149,7 @@ class RTIDDSImpl : public IMessaging
     bool         _AutoThrottle;
     bool         _IsReliable;
     bool         _IsMulticast;
-    unsigned int _BatchSize;
+    int _BatchSize;
     unsigned long _InstanceCount;
     long _InstanceMaxCountReader;
     int          _InstanceHashBuckets;

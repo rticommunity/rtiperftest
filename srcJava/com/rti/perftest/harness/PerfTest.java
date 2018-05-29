@@ -91,8 +91,6 @@ public final class PerfTest {
     //private static boolean _isDebug = false;
 
     private long     _dataLen = 100;
-    private int     _batchSize = 0;
-    private int     _samplesPerBatch = 1;
     private long    _numIter = 100000000;
     private boolean _isPub = false;
     private boolean _isScan = false;
@@ -168,6 +166,22 @@ public final class PerfTest {
         }
     }
 
+    public int getSamplesPerBatch(){
+        int batchSize = _messagingImpl.getBatchSize();
+        int samplesPerBatch;
+
+        if (batchSize > 0) {
+            samplesPerBatch = batchSize / (int) _dataLen;
+            if (samplesPerBatch == 0) {
+                samplesPerBatch = 1;
+            }
+        } else {
+            samplesPerBatch = 1;
+        }
+
+        return samplesPerBatch;
+    }
+
     // -----------------------------------------------------------------------
     // Package Methods
     // -----------------------------------------------------------------------
@@ -202,16 +216,6 @@ public final class PerfTest {
 
         if ( !_messagingImpl.initialize(_messagingArgc, _messagingArgv) ) {
             return;
-        }
-        _batchSize = _messagingImpl.getBatchSize();
-
-        if (_batchSize != 0) {
-            _samplesPerBatch = _batchSize/(int)_dataLen;
-            if (_samplesPerBatch == 0) {
-                _samplesPerBatch = 1;
-            }
-        } else {
-            _samplesPerBatch = 1;
         }
 
         printConfiguration();
@@ -821,12 +825,18 @@ public final class PerfTest {
             }
 
             // Batching
+            int batchSize = _messagingImpl.getBatchSize();
+
             sb.append("\tBatching: ");
-            if (_batchSize != 0) {
-                sb.append(_batchSize);
+            if (batchSize > 0) {
+                sb.append(batchSize);
                 sb.append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
-            } else {
+            } else if (batchSize == 0) {
                 sb.append("No (Use \"-batchSize\" to setup batching)\n");
+            } else if (batchSize == -1) {
+                sb.append("\"Disabled by RTI Perftest.\"\n");
+                sb.append("\t\t  BatchSize is smaller than 2 times\n");
+                sb.append("\t\t  the sample size.\n");
             }
 
             // Publication Rate
@@ -1036,6 +1046,7 @@ public final class PerfTest {
         IMessagingReader announcement_reader;
         int num_latency;
         int announcement_sample_count = 50;
+        int samplesPerBatch = 1;
 
         // create throughput/ping writer
         writer = _messagingImpl.createWriter(THROUGHPUT_TOPIC_NAME);
@@ -1045,13 +1056,15 @@ public final class PerfTest {
             return;
         }
 
-        num_latency = (((int)_numIter/_samplesPerBatch) / _latencyCount);
-        if ((num_latency/_samplesPerBatch) % _latencyCount > 0) {
+        samplesPerBatch = getSamplesPerBatch();
+
+        num_latency = (((int)_numIter/samplesPerBatch) / _latencyCount);
+        if ((num_latency/samplesPerBatch) % _latencyCount > 0) {
             num_latency++;
         }
 
         // in batch mode, might have to send another ping
-        if (_samplesPerBatch > 1) {
+        if (samplesPerBatch > 1) {
           ++num_latency;
         }
 
@@ -1259,7 +1272,7 @@ public final class PerfTest {
 
             // only send latency pings if is publisher with ID 0
             // In batch mode, latency pings are sent once every LatencyCount batches
-            if ( (pubID == 0) && (((loop/_samplesPerBatch) %_latencyCount) == 0) )
+            if ( (pubID == 0) && (((loop/samplesPerBatch) %_latencyCount) == 0) )
             {
 
                 /* In batch mode only send a single ping in a batch.
@@ -1319,14 +1332,7 @@ public final class PerfTest {
 
                         message.size = (int)(_scanDataLenSizes.get(scan_count++) - OVERHEAD_BYTES);
                         /* Reset _SamplePerBatch */
-                        if (_batchSize != 0) {
-                            _samplesPerBatch = _batchSize / (message.size + OVERHEAD_BYTES);
-                            if (_samplesPerBatch == 0) {
-                                _samplesPerBatch = 1;
-                            }
-                        } else {
-                            _samplesPerBatch = 1;
-                        }
+                        samplesPerBatch = getSamplesPerBatch();
                         ping_index_in_batch = 0;
                         current_index_in_batch = 0;
                     }
@@ -1343,7 +1349,7 @@ public final class PerfTest {
                     message.timestamp_usec = (int) now;         // low int
 
                     ++num_pings;
-                    ping_index_in_batch = (ping_index_in_batch + 1) % _samplesPerBatch;
+                    ping_index_in_batch = (ping_index_in_batch + 1) % samplesPerBatch;
                     sentPing = true;
 
                     if (_displayWriterStats && printIntervals) {
@@ -1354,7 +1360,7 @@ public final class PerfTest {
                 }
             }
 
-            current_index_in_batch = (current_index_in_batch + 1) % _samplesPerBatch;
+            current_index_in_batch = (current_index_in_batch + 1) % samplesPerBatch;
 
             message.seq_num = (int)loop;
             message.latency_ping = pingID;

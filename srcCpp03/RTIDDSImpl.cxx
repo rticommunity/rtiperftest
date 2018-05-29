@@ -87,7 +87,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _AutoThrottle(false),
         _IsReliable(true),
         _IsMulticast(false),
-        _BatchSize(0),
+        _BatchSize(DEFAULT_THROUGHPUT_BATCH_SIZE),
         _InstanceCount(1),
         _InstanceMaxCountReader(dds::core::LENGTH_UNLIMITED), //(-1)
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED), //(-1)
@@ -165,8 +165,8 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
             "\t                                                announcement 239.255.1.100,\n" +
             "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
-            "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
-            "\t                                (no batching)\n" +
+            "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
+            "\t                                (Disabled for LatencyTest mode or if dataLen > 4kB)\n" +
             "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
             "\t                                protocol, default use positive acks\n" +
             "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +
@@ -235,10 +235,11 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
 template <typename T>
 bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 {
+    unsigned long _scan_max_size = 0;
+    bool isBatchSizeProvided = false;
     int i;
     int sec = 0;
     unsigned int nanosec = 0;
-    unsigned long _scan_max_size = 0;
 
     // now load everything else, command line params override config file
     for (i = 0; i < argc; ++i) {
@@ -446,12 +447,13 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
             _BatchSize = strtol(argv[i], NULL, 10);
 
-            if (_BatchSize < 0 || _BatchSize > (unsigned int)MAX_SYNCHRONOUS_SIZE) {
-                std::cerr << "[Error] Batch size '" << _BatchSize <<
-                        "' should be between [0," << MAX_SYNCHRONOUS_SIZE <<
-                        "]" << std::endl;
+            if (_BatchSize < 0 || _BatchSize > (int)MAX_SYNCHRONOUS_SIZE) {
+                std::cerr << "[Error] Batch size '" << _BatchSize
+                          << "' should be between [0," << MAX_SYNCHRONOUS_SIZE
+                          << "]" << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
+            isBatchSizeProvided = true;
         } else if (IS_OPTION(argv[i], "-keepDurationUsec")) {
             if ((i == (argc - 1)) || *argv[++i] == '-') {
                 std::cerr << "[Error] Missing <usec> after -keepDurationUsec"
@@ -705,8 +707,18 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
+    if (_LatencyTest) {
+        if (isBatchSizeProvided && _BatchSize != 0) {
+            std::cerr << "[Error] Batching cannot be used with Latency test."
+                    << std::endl;
+            return false;
+        } else {
+            _BatchSize = 0; //Disable Batching
+        }
+    }
+
     if (_IsAsynchronous && _BatchSize > 0) {
-        std::cerr << "[Error] Batching cannnot be used with asynchronous writing."
+        std::cerr << "[Error] Batching cannot be used with asynchronous writing."
                 << std::endl;
         throw std::logic_error("[Error] Error parsing commands");
     }
@@ -719,33 +731,41 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
             }
             _isLargeData = true;
-        } else if (_scan_max_size <= (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+        } else {
             _useUnbounded = 0;
             _isLargeData = false;
-        } else {
-            return false;
         }
-        if (_isLargeData && _BatchSize > 0) {
-            std::cerr << "[Error] Batching cannnot be used with asynchronous writing."
-                    << std::endl;
-            return false;
-        }
-    } else { // If not Scan, compare sizes of Batching and dataLen
+    /*
+     * If not Scan, compare sizes of Batching and dataLen
+     * At this point we have checked that we are not in a latency test mode,
+     * therefore we are sure we are in throughput test mode, where we do want
+     * to enable batching by default in certain cases
+     */
+    } else if (_BatchSize > 0 && (unsigned long)_BatchSize < _DataLen * 2) {
         /*
-         * We don't want to use batching if the sample is the same size as the batch
-         * nor if the sample is bigger (in this case we avoid the checking in the
-         * middleware).
+         * We don't want to use batching if the batch size is not large enough
+         * to contain at least two samples (in this case we avoid the checking
+         * at the middleware level).
          */
-         if (_BatchSize > 0 && (unsigned long)_BatchSize <= _DataLen) {
-             std::cerr << "[Info] Batching disabled: BatchSize (" << _BatchSize
-                       << ") is equal or smaller than the sample size (" << _DataLen
-                       << ")."  << std::endl;
-             _BatchSize = 0;
-         }
+        if (isBatchSizeProvided) {
+            /*
+             * Batchsize disabled. A message will be print if _batchsize < 0 in
+             * perftest_cpp::PrintConfiguration()
+             */
+            _BatchSize = -1;
+        } else {
+            _BatchSize = 0;
+        }
     }
 
     if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
         _isLargeData = true;
+    }
+
+    if (_isLargeData && _BatchSize > 0) {
+        std::cerr << "[Error] Batching cannot be used with asynchronous writing."
+                << std::endl;
+        return false;
     }
 
     if (_TurboMode) {

@@ -102,7 +102,7 @@ class IMessaging
      * using batching, this function should return the size of the batch
      * in bytes.
      */
-    virtual unsigned int GetBatchSize() = 0;
+    virtual int GetBatchSize() = 0;
 
     /*
      * Get an estimation of the minimum number of samples that need to be send

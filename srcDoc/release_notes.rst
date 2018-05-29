@@ -100,6 +100,16 @@ Starting with this release, *RTI Perftest* will udpate `qos_string.h` file
 with the content of `perftest_qos_profiles.xml` every time that *RTI Perftest*
 is built for C++ and C++ New PSM.
 
+Enable batching for Throughput-Test mode with a 8kB value (#76)(#67)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As part of the enhancements for the out-of-the-box experience for *RTI Perftest*,
+batching will be enabled by default for throughput tests where the datalen is
+equal or smaller than 4kB, and the *Batch size* value will be set to 8kB.
+
+This will be automatically disabled if LatencyTest mode is set or if the
+`-batchSize` is lower than two times the `-dataLen`.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
