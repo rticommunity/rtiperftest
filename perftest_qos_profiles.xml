@@ -40,7 +40,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
     <qos_profile name="BaseProfileQos">
       <participant_qos>
-        <!-- === Participant Configuration: ================================ 
+        <!-- === Participant Configuration: ================================
 
         The base configuration of the DomainParticipant object.
 
@@ -50,23 +50,23 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         here will pick up the documented default value.
         -->
         <receiver_pool>
-          <!-- 
+          <!--
           The receive buffer is used by the receive thread to store the raw data
           that arrives over the transport.
-          
+
           The ReceiverPoolQosPolicy's buffer_size should be set to be the same value
           as the maximum ::NDDS_Transport_Property_t::message_size_max across all of
-          the transports being used. 
+          the transports being used.
           -->
           <buffer_size>65536</buffer_size>
         </receiver_pool>
-          
+
         <resource_limits>
-          <!-- 
+          <!--
           Maximum size of a serialized type code.
 
           This parameter limits the size of the type code that a DomainParticipant
-          is able to store and propagate for data types. 
+          is able to store and propagate for data types.
           -->
           <type_code_max_serialized_length>2048</type_code_max_serialized_length>
 
@@ -88,32 +88,39 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           -->
           <contentfilter_property_max_length>512</contentfilter_property_max_length>
         </resource_limits>
-          
-        <!-- 
+
+        <!--
         Specifies which built-in transports are used.
 
         Three different transport plug-ins are built into the Connext core
         libraries (for most supported target platforms): UDPv4, shared memory, and
         UDPv6.
 
-        By default RTI Perftest uses UDPv4, which is set in this profile.
-        UDPv6, TCPv4 and SHMEM can be also be configured by using:
-         
-        -enableUDPv6
-        -enableTCP
-        -enableSharedMemory
-        
+        By default RTI Perftest uses UDPv4|SHMEM, default values for RTI
+        Connext DDS. By using the command-line option -transport we enabled
+        the use of:
+
+        - UDPv4
+        - UDPv6
+        - SHMEM
+        - TCP
+        - TLS
+        - DTLS
+        - WAN
+
         For custom transport settings, modify this profile.
         -->
 
+        <!--
         <transport_builtin>
-          <mask>UDPv4</mask>
+          <mask>UDPv4|SHMEM</mask>
         </transport_builtin>
+        -->
 
         <property>
           <value>
 
-            <!-- 
+            <!--
             Specifies the configuration to be used with the UDPv4 built-in transport.
             -->
             <element>
@@ -129,14 +136,14 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
               <value>2097152</value>
             </element>
 
-            <!-- 
+            <!--
             Specifies the configuration to be used with the SHMEM built-in transport.
 
-            Important: The commented setting is configured automatically within the 
+            Important: The commented setting is configured automatically within the
             source code. The default value of _DataLen is 100.
-              
+
             Value set in the source code:
-            
+
             <element>
               <name>dds.transport.shmem.builtin.received_message_count_max</name>
               <value>2097152/_DataLen</value>
@@ -151,19 +158,19 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
               <value>2097152</value>
             </element>
 
-            <!-- 
+            <!--
             Specifies the configuration to be used with the TCP transport.
-            
-            If TCP is enabled using -useTcpOnly, the load_plugins property is set
+
+            If TCP is enabled using -transport TCP, the load_plugins property is set
             within the source code.
-            
+
             Important: nddstransporttcp.dll is located in NDDSHOME/lib/<architecture>.
             That folder must be added to the PATH on Windows systems and LD_LIBRARY_PATH
-            on UNIX-based systems in order to load this library properly. If you are 
-            compiling PerfTest using CSHARP, you must also add the folder 
+            on UNIX-based systems in order to load this library properly. If you are
+            compiling PerfTest using CSHARP, you must also add the folder
             NDDSHOME/lib/i86Win32VS<version> or NDDSHOME/lib/x64Win64VS<version> depending
             on the machine.
-            
+
             <element>
               <name>dds.transport.load_plugins</name>
               <value>dds.transport.TCPv4.tcp1</value>
@@ -232,7 +239,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
           </value>
         </property>
-        
+
         <!--
         Specifies the participant name. This setting is useful when using monitoring
         applications.
@@ -240,7 +247,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         <participant_name>
           <name>PerfTest Participant</name>
         </participant_name>
-          
+
       </participant_qos>
 
       <!-- === Publisher Configuration: ================================= 

@@ -126,12 +126,12 @@ void RTIDDSImpl<T>::Shutdown()
         _participant->delete_contained_entities();
         DDSTheParticipantFactory->delete_participant(_participant);
     }
-
     if(_pongSemaphore != NULL) {
         RTIOsapiSemaphore_delete(_pongSemaphore);
         _pongSemaphore = NULL;
     }
-
+    // Unregister _loggerDevice
+    NDDSConfigLogger::finalize_instance();
     DDSDomainParticipantFactory::finalize_instance();
 }
 
@@ -2193,6 +2193,12 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     DDS_DomainParticipantFactoryQos factory_qos;
     DomainListener *listener = new DomainListener();
 
+    // Register _loggerDevice
+    if (!NDDSConfigLogger::get_instance()->set_output_device(&_loggerDevice)) {
+        fprintf(stderr,"Failed set_output_device for Logger.\n");
+        return false;
+    }
+
     _factory = DDSDomainParticipantFactory::get_instance();
 
     if (!ParseConfig(argc, argv))
@@ -2281,8 +2287,15 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
         DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
 
-    if (_participant == NULL)
-    {
+    if (_participant == NULL || _loggerDevice.checkShmemErrors()) {
+        if (_loggerDevice.checkShmemErrors()) {
+            fprintf(
+                    stderr,
+                    "The participant creation failed due to issues in the Shared Memory configuration of your OS.\n"
+                    "For more information about how to configure Shared Memory see: http://community.rti.com/kb/osx510 \n"
+                    "If you want to skip the use of Shared memory in RTI Perftest, "
+                    "specify the transport using \"-transport <kind>\", e.g. \"-transport UDPv4\".\n");
+        }
         fprintf(stderr,"Problem creating participant.\n");
         return false;
     }

@@ -301,7 +301,7 @@ by using the `Transport` spececific command-line parameters.
    Set the transport to be used. The rest of the transports will be disabled.
    
    | **Options:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS`` and ``WAN``.
-   | **Default:** ``Transport defined in the XML profile. (UDPv4 if no changes).``  
+   | **Default:** ``Transport defined in the XML profile. (UDPv4 and SHMEM if no changes).``  
    
 -  ``-nic <ipaddr>``
 

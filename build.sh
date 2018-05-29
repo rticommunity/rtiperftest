@@ -11,12 +11,16 @@ modern_cpp_folder="${script_location}/srcCpp03"
 java_folder="${script_location}/srcJava"
 java_scripts_folder="${script_location}/resource/java_scripts"
 bin_folder="${script_location}/bin"
+cStringifyFile_script="${script_location}/resource/script/cStringifyFile.pl"
+qos_file="${script_location}/perftest_qos_profiles.xml"
+
 
 # Default values:
 BUILD_CPP=1
 BUILD_CPP03=1
 BUILD_JAVA=1
 MAKE_EXE=make
+PERL_EXEC=perl
 JAVAC_EXE=javac
 JAVA_EXE=java
 JAR_EXE=jar
@@ -60,6 +64,9 @@ function usage()
     echo "    --make <path>                Path to the GNU make executable. If this       "
     echo "                                 parameter is not present, GNU make variable    "
     echo "                                 should be available from your \$PATH variable. "
+    echo "    --perl <path>                Path to PERL executable. If this parameter is  "
+    echo "                                 not present, the path to PERL should be        "
+    echo "                                 available from your \$PATH variable.           "
     echo "    --java-home <path>           Path to the Java JDK home folder. If this      "
     echo "                                 parameter is not present, javac, jar and java  "
     echo "                                 executables should be available from your      "
@@ -202,14 +209,34 @@ function additional_defines_calculation()
     fi
 }
 
+function geneate_qos_string()
+{
+    # If PERL_EXEC is in the path, generate the qos_string.h file.
+    if [ "${BUILD_CPP}" -eq "1" ]; then
+        if [ -z `which "${PERL_EXEC}"` ]; then
+            echo -e "${YELLOW}[WARNING]:${NC} PERL not found, ${classic_cpp_folder}/qos_string.h will not be updated."
+        else
+            ${PERL_EXEC} ${cStringifyFile_script} ${qos_file} PERFTEST_QOS_STRING > ${classic_cpp_folder}/qos_string.h
+            echo -e "${INFO_TAG} QoS String ${classic_cpp_folder}/qos_string.h updated successfully"
+        fi
+    fi
+    if [ "${BUILD_CPP03}" -eq "1" ]; then
+        if [ -z `which "${PERL_EXEC}"` ]; then
+            echo -e "${YELLOW}[WARNING]:${NC} PERL not found, ${modern_cpp_folder}/qos_string.h will not be updated."
+        else
+            ${PERL_EXEC} ${cStringifyFile_script} ${qos_file} PERFTEST_QOS_STRING > ${modern_cpp_folder}/qos_string.h
+            echo -e "${INFO_TAG} QoS String ${modern_cpp_folder}/qos_string.h updated successfully"
+        fi
+    fi
+}
+
 function build_cpp()
 {
     additional_defines_calculation
-
-    ##############################################################################
+    ############################################################################
     # Generate files for srcCpp
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles  \"RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles  \"RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${classic_cpp_lang_string}."
@@ -437,6 +464,10 @@ while [ "$1" != "" ]; do
             MAKE_EXE=$2
             shift
             ;;
+        --perl)
+            PERL_EXEC=$2
+            shift
+            ;;
         --java-home)
             JAVA_HOME=$2
             JAVAC_EXE="${JAVA_HOME}/bin/javac"
@@ -481,6 +512,9 @@ rtiddsgen_executable="$NDDSHOME/bin/rtiddsgen"
 classic_cpp_lang_string=C++
 modern_cpp_lang_string=C++03
 java_lang_string=java
+############################################################################
+# Generate qos_string.h
+geneate_qos_string
 
 if [ "${BUILD_CPP}" -eq "1" ]; then
     library_sufix_calculation

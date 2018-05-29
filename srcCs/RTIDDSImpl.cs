@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using DDS;
+using NDDS;
 
 namespace PerformanceTest
 {
@@ -1513,8 +1514,14 @@ namespace PerformanceTest
                  DDS.StatusKind.OFFERED_INCOMPATIBLE_QOS_STATUS |
                  DDS.StatusKind.REQUESTED_INCOMPATIBLE_QOS_STATUS));
 
-            if (_participant == null)
-            {
+            if (_participant == null || _loggerDevice.CheckShmemErrors()) {
+                if (_loggerDevice.CheckShmemErrors()) {
+                    Console.Error.Write(
+                            "The participant creation failed due to issues in the Shared Memory configuration of your OS.\n" +
+                            "For more information about how to configure Shared Memory see: http://community.rti.com/kb/osx510 \n" +
+                            "If you want to skip the use of Shared memory in RTI Perftest, " +
+                            "specify the transport using \"-transport <kind>\", e.g. \"-transport UDPv4\".\n");
+                }
                 Console.Error.Write("Problem creating participant.\n");
                 return false;
             }
