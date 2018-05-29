@@ -62,7 +62,7 @@ class perftest_cpp
     void PrintConfiguration();
     unsigned int GetSamplesPerBatch();
 
-private:
+  private:
     int RunPublisher();
     int RunSubscriber();
 
