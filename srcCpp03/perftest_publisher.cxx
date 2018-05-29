@@ -988,6 +988,7 @@ public:
     unsigned long long interval_bytes_received;
     unsigned long long interval_missing_packets;
     unsigned long long interval_time, begin_time;
+    float missing_packets_percent;
 
     IMessagingWriter *_writer;
     IMessagingReader *_reader;
@@ -1014,6 +1015,7 @@ public:
                 interval_missing_packets(0),
                 interval_time(0),
                 begin_time(0),
+                missing_packets_percent(0.0),
                 _writer(writer),
                 _reader(reader),
                 _last_seq_num(numPublishers),
@@ -1154,13 +1156,10 @@ public:
             interval_bytes_received = bytes_received;
             interval_missing_packets = missing_packets;
             interval_data_length = last_data_length;
-
-            float missing_packets_percent = 0;
+            missing_packets_percent = 0.0;
 
             // Calculations of missing package percent
-            if (interval_packets_received + interval_missing_packets == 0) {
-                missing_packets_percent = 0.0;
-            } else {
+            if (interval_packets_received + interval_missing_packets != 0) {
                 missing_packets_percent = (interval_missing_packets * 100.0)
                         / (float) (interval_packets_received
                         + interval_missing_packets);
@@ -1180,7 +1179,7 @@ public:
                    outputCpu.c_str()
             );
 
-            printf("Lost Packages (%%): %1.2f %%\n", missing_packets_percent);
+            printf("Lost Packets (%%): %1.2f%%\n", missing_packets_percent);
             fflush(stdout);
         }
 
@@ -1282,7 +1281,7 @@ int perftest_cpp::RunSubscriber()
     unsigned long long mps = 0, bps = 0;
     double mps_ave = 0.0, bps_ave = 0.0;
     unsigned long long msgsent, bytes, last_msgs, last_bytes;
-    float missing_packets_percent = 0;
+    float missing_packets_percent = 0.0;
 
     if (perftest_cpp::_showCpu) {
          reader_listener->cpu.initialize();
@@ -1353,7 +1352,7 @@ int perftest_cpp::RunSubscriber()
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
                 printf("Packets: %8llu  Packets/s: %7llu  Packets/s(ave): %7.0lf  "
-                       "Mbps: %7.1lf  Mbps(ave): %7.1lf  Lost: %llu (%1.2f %%) %s\n",
+                       "Mbps: %7.1lf  Mbps(ave): %7.1lf  Lost: %7llu (%1.2f%%) %s\n",
                         last_msgs, mps, mps_ave, bps * 8.0 / 1000.0 / 1000.0,
                         bps_ave * 8.0 / 1000.0 / 1000.0,
                         reader_listener->missing_packets,

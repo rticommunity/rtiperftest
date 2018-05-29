@@ -952,6 +952,7 @@ public final class PerfTest {
         long  mps, bps;
         double mps_ave = 0.0, bps_ave = 0.0;
         long  msgsent, bytes, last_msgs, last_bytes;
+        double missingPacketsPercent = 0.0;
 
 
         now = getTimeUsec();
@@ -1004,13 +1005,23 @@ public final class PerfTest {
                 bps_ave = bps_ave + (bps - bps_ave) / ave_count;
                 mps_ave = mps_ave + (mps - mps_ave) / ave_count;
 
+                // Calculations of missing package percent
+                if (last_msgs + reader_listener.missingPackets == 0) {
+                    reader_listener.missingPacketsPercent = 0.0;
+                } else {
+                    reader_listener.missingPacketsPercent =
+                            (reader_listener.missingPackets * 100.0)
+                            / (float) (last_msgs + reader_listener.missingPackets);
+                }
+
                 if (last_msgs > 0) {
                     System.out.printf(
                             "Packets: %1$8d  Packets/s: %2$7d  Packets/s(ave): %3$7.0f  " +
-                            "Mbps: %4$7.1f  Mbps(ave): %5$7.1f  Lost: %6$d " + outputCpu + "\n",
+                            "Mbps: %4$7.1f  Mbps(ave): %5$7.1f  Lost: %6$7d (%7$1.2f%%)" + outputCpu + "\n",
                             last_msgs, mps, mps_ave,
                             bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
-                            reader_listener.missingPackets
+                            reader_listener.missingPackets,
+                            reader_listener.missingPacketsPercent
                     );
                 }
             }
