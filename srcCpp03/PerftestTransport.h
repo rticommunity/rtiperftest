@@ -9,8 +9,8 @@
 #include <string>
 #include <map>
 #include <sstream>
+#include "perftest.hpp"
 #include <dds/dds.hpp>
-#include "MessagingIF.h"
 
 /******************************************************************************/
 

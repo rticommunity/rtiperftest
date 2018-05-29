@@ -9,6 +9,13 @@ const long MAX_PERFTEST_SAMPLE_SIZE = 2147483128; // 2GB-512B-8B (RTPS Header)
 const long MAX_CFT_VALUE = 65535;
 const long KEY_SIZE = 4;
 
+/*
+ * Topic Names for the different channel RTI Perftest will use
+ */
+const string THROUGHPUT_TOPIC_NAME = "Throughput";
+const string LATENCY_TOPIC_NAME = "Latency";
+const string ANNOUNCEMENT_TOPIC_NAME = "Announcement";
+
 struct TestData_t {
     octet key[KEY_SIZE];
 

@@ -1677,7 +1677,7 @@ namespace PerformanceTest {
             IMessagingWriter   announcement_writer;
 
             // create latency pong writer
-            writer = _MessagingImpl.CreateWriter(TopicName.LATENCY);
+            writer = _MessagingImpl.CreateWriter(LATENCY_TOPIC_NAME.VALUE);
 
             if (writer == null) {
                 Console.Error.Write("Problem creating latency writer.\n");
@@ -1690,7 +1690,7 @@ namespace PerformanceTest {
                 // create latency pong reader
                 reader_listener = new ThroughputListener(writer, _useCft, _NumPublishers);
                 reader = _MessagingImpl.CreateReader(
-                        TopicName.THROUGHPUT,
+                        THROUGHPUT_TOPIC_NAME.VALUE,
                         reader_listener);
                 if (reader == null)
                 {
@@ -1700,7 +1700,7 @@ namespace PerformanceTest {
             }
             else
             {
-                reader = _MessagingImpl.CreateReader(TopicName.THROUGHPUT, null);
+                reader = _MessagingImpl.CreateReader(THROUGHPUT_TOPIC_NAME.VALUE, null);
                 if (reader == null)
                 {
                     Console.Error.Write("Problem creating throughput reader.\n");
@@ -1714,7 +1714,7 @@ namespace PerformanceTest {
 
             // Create announcement writer
             announcement_writer =
-                    _MessagingImpl.CreateWriter(TopicName.ANNOUNCEMENT);
+                    _MessagingImpl.CreateWriter(ANNOUNCEMENT_TOPIC_NAME.VALUE);
 
             if (announcement_writer == null) {
                 Console.Error.Write("Problem creating announcement writer.\n");
@@ -2097,7 +2097,7 @@ namespace PerformanceTest {
             int announcementSampleCount = 50;
 
             // create throughput/ping writer
-            writer = _MessagingImpl.CreateWriter(TopicName.THROUGHPUT);
+            writer = _MessagingImpl.CreateWriter(THROUGHPUT_TOPIC_NAME.VALUE);
 
             if (writer == null)
             {
@@ -2125,7 +2125,7 @@ namespace PerformanceTest {
                     // create latency pong reader
                     reader_listener = new LatencyListener(_LatencyTest?writer:null, num_latency);
                     reader = _MessagingImpl.CreateReader(
-                            TopicName.LATENCY,
+                            LATENCY_TOPIC_NAME.VALUE,
                             reader_listener);
                     if (reader == null)
                     {
@@ -2135,7 +2135,7 @@ namespace PerformanceTest {
                 }
                 else
                 {
-                    reader = _MessagingImpl.CreateReader(TopicName.LATENCY, null);
+                    reader = _MessagingImpl.CreateReader(LATENCY_TOPIC_NAME.VALUE, null);
                     if (reader == null)
                     {
                         Console.Error.Write("Problem creating latency reader.\n");
@@ -2158,7 +2158,7 @@ namespace PerformanceTest {
              */
             announcement_reader_listener = new AnnouncementListener();
             announcement_reader =
-                    _MessagingImpl.CreateReader(TopicName.ANNOUNCEMENT,
+                    _MessagingImpl.CreateReader(ANNOUNCEMENT_TOPIC_NAME.VALUE,
                             announcement_reader_listener);
             if (announcement_reader == null)
             {

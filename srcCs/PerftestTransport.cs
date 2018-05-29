@@ -181,9 +181,9 @@ namespace PerformanceTest
 
             useMulticast = false;
 
-            multicastAddrMap.Add(TopicName.LATENCY, "239.255.1.2");
-            multicastAddrMap.Add(TopicName.ANNOUNCEMENT, "239.255.1.100");
-            multicastAddrMap.Add(TopicName.THROUGHPUT, "239.255.1.1");
+            multicastAddrMap.Add(LATENCY_TOPIC_NAME.VALUE, "239.255.1.2");
+            multicastAddrMap.Add(ANNOUNCEMENT_TOPIC_NAME.VALUE, "239.255.1.100");
+            multicastAddrMap.Add(THROUGHPUT_TOPIC_NAME.VALUE, "239.255.1.1");
         }
 
         /**************************************************************************/
@@ -562,9 +562,9 @@ namespace PerformanceTest
                                 + " Missing <address> after -multicastAddr");
                         return false;
                     }
-                    multicastAddrMap[TopicName.THROUGHPUT] = argv[i];
-                    multicastAddrMap[TopicName.LATENCY] = argv[i];
-                    multicastAddrMap[TopicName.ANNOUNCEMENT] = argv[i];
+                    multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = argv[i];
+                    multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] = argv[i];
+                    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE] = argv[i];
                 }
                 else if ("-multicast".StartsWith(argv[i], true, null))
                 {

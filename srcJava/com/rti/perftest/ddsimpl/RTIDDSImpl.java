@@ -43,6 +43,9 @@ import com.rti.perftest.TestMessage;
 import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 import com.rti.perftest.gen.MAX_CFT_VALUE;
+import com.rti.perftest.gen.THROUGHPUT_TOPIC_NAME;
+import com.rti.perftest.gen.LATENCY_TOPIC_NAME;
+import com.rti.perftest.gen.ANNOUNCEMENT_TOPIC_NAME;
 import com.rti.perftest.gen.KEY_SIZE;
 import com.rti.perftest.harness.PerfTest;
 
@@ -442,18 +445,18 @@ public final class RTIDDSImpl<T> implements IMessaging {
             return null;
         }
 
-        if (TopicName.THROUGHPUT.equals(topicName)) {
+        if (THROUGHPUT_TOPIC_NAME.VALUE.equals(topicName)) {
             qosProfile = "ThroughputQos";
-        } else if (TopicName.LATENCY.equals(topicName)) {
+        } else if (LATENCY_TOPIC_NAME.VALUE.equals(topicName)) {
             qosProfile = "LatencyQos";
-        } else if (TopicName.ANNOUNCEMENT.equals(topicName)) {
+        } else if (ANNOUNCEMENT_TOPIC_NAME.VALUE.equals(topicName)) {
             qosProfile = "AnnouncementQos";
         } else {
             System.err.println(
                     "topic name must either be " +
-                    TopicName.LATENCY + " or " +
-                    TopicName.ANNOUNCEMENT  + " or " +
-                    TopicName.THROUGHPUT);
+                    LATENCY_TOPIC_NAME.VALUE + " or " +
+                    ANNOUNCEMENT_TOPIC_NAME.VALUE  + " or " +
+                    THROUGHPUT_TOPIC_NAME.VALUE);
             return null;
         }
 
@@ -569,19 +572,19 @@ public final class RTIDDSImpl<T> implements IMessaging {
         TopicDescription  topic_desc = topic; // Used to create the DDS DataReader
 
         String qosProfile;
-        if (TopicName.THROUGHPUT.equals(topicName)) {
+        if (THROUGHPUT_TOPIC_NAME.VALUE.equals(topicName)) {
             qosProfile = "ThroughputQos";
-        } else if (TopicName.LATENCY.equals(topicName)) {
+        } else if (LATENCY_TOPIC_NAME.VALUE.equals(topicName)) {
             qosProfile = "LatencyQos";
-        } else if (TopicName.ANNOUNCEMENT.equals(topicName)) {
+        } else if (ANNOUNCEMENT_TOPIC_NAME.VALUE.equals(topicName)) {
             qosProfile = "AnnouncementQos";
         }
         else {
             System.err.println(
                     "topic name must either be " +
-                    TopicName.THROUGHPUT + " or " +
-                    TopicName.LATENCY  + " or " +
-                    TopicName.ANNOUNCEMENT);
+                    THROUGHPUT_TOPIC_NAME.VALUE + " or " +
+                    LATENCY_TOPIC_NAME.VALUE  + " or " +
+                    ANNOUNCEMENT_TOPIC_NAME.VALUE);
             return null;
         }
 
@@ -607,7 +610,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             statusFlag = StatusKind.DATA_AVAILABLE_STATUS;
         }
 
-        if (TopicName.THROUGHPUT.equals(topicName) && _useCft) {
+        if (THROUGHPUT_TOPIC_NAME.VALUE.equals(topicName) && _useCft) {
             topic_desc = createCft(topicName, topic);
             if (topic_desc == null) {
                 System.err.println("create_contentfilteredtopic error");
@@ -625,8 +628,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
             return null;
         }
 
-        if (TopicName.LATENCY.equals(topicName) ||
-            TopicName.THROUGHPUT.equals(topicName)) {
+        if (LATENCY_TOPIC_NAME.VALUE.equals(topicName) ||
+            THROUGHPUT_TOPIC_NAME.VALUE.equals(topicName)) {
             _reader = reader;
         }
 
@@ -878,7 +881,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         // Configure reliability
-        if (!TopicName.ANNOUNCEMENT.equals(topicName)) {
+        if (!ANNOUNCEMENT_TOPIC_NAME.VALUE.equals(topicName)) {
             if (_isReliable) {
                 // default: use the setting specified in the qos profile
                 // dwQos.reliability.kind = ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
@@ -1014,7 +1017,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         // Configure reliability
-        if (!TopicName.ANNOUNCEMENT.equals(topicName)) {
+        if (!ANNOUNCEMENT_TOPIC_NAME.VALUE.equals(topicName)) {
             if (_isReliable) {
                 drQos.reliability.kind = ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
             } else {
@@ -1085,9 +1088,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
             String multicast_addr = _transport.getMulticastAddr(topicName);
             if (multicast_addr == null) {
                 System.err.println("topic name must either be "
-                        + TopicName.THROUGHPUT + " or "
-                        + TopicName.LATENCY + " or "
-                        + TopicName.ANNOUNCEMENT);
+                        + THROUGHPUT_TOPIC_NAME.VALUE + " or "
+                        + LATENCY_TOPIC_NAME.VALUE + " or "
+                        + ANNOUNCEMENT_TOPIC_NAME.VALUE);
                 return ;
             }
 

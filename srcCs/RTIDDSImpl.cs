@@ -1884,24 +1884,24 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (topic_name == TopicName.THROUGHPUT)
+            if (topic_name == THROUGHPUT_TOPIC_NAME.VALUE)
             {
                 qos_profile = "ThroughputQos";
             }
-            else if (topic_name == TopicName.LATENCY)
+            else if (topic_name == LATENCY_TOPIC_NAME.VALUE)
             {
                 qos_profile = "LatencyQos";
             }
-            else if (topic_name == TopicName.ANNOUNCEMENT)
+            else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.VALUE)
             {
                 qos_profile = "AnnouncementQos";
             }
             else
             {
                 Console.Error.WriteLine("topic name must either be "
-                    + TopicName.THROUGHPUT
-                    + " or " + TopicName.LATENCY
-                    + " or " + TopicName.ANNOUNCEMENT);
+                    + THROUGHPUT_TOPIC_NAME.VALUE
+                    + " or " + LATENCY_TOPIC_NAME.VALUE
+                    + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
                 return null;
             }
 
@@ -1937,7 +1937,7 @@ namespace PerformanceTest
             }
 
             // only force reliability on throughput/latency topics
-            if (topic_name != TopicName.ANNOUNCEMENT)
+            if (topic_name != ANNOUNCEMENT_TOPIC_NAME.VALUE)
             {
                 if (_IsReliable)
                 {
@@ -2194,24 +2194,24 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (topic_name == TopicName.THROUGHPUT)
+            if (topic_name == THROUGHPUT_TOPIC_NAME.VALUE)
             {
                 qos_profile = "ThroughputQos";
             }
-            else if (topic_name == TopicName.LATENCY)
+            else if (topic_name == LATENCY_TOPIC_NAME.VALUE)
             {
                 qos_profile = "LatencyQos";
             }
-            else if (topic_name == TopicName.ANNOUNCEMENT)
+            else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.VALUE)
             {
                 qos_profile = "AnnouncementQos";
             }
             else
             {
                 Console.Error.WriteLine("topic name must either be "
-                    + TopicName.THROUGHPUT
-                    + " or " + TopicName.LATENCY
-                    + " or " + TopicName.ANNOUNCEMENT);
+                    + THROUGHPUT_TOPIC_NAME.VALUE
+                    + " or " + LATENCY_TOPIC_NAME.VALUE
+                    + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
                 return null;
             }
 
@@ -2228,7 +2228,7 @@ namespace PerformanceTest
             }
 
             // only force reliability on throughput/latency topics
-            if (topic_name != TopicName.ANNOUNCEMENT)
+            if (topic_name != ANNOUNCEMENT_TOPIC_NAME.VALUE)
             {
                 if (_IsReliable)
                 {
@@ -2280,9 +2280,9 @@ namespace PerformanceTest
                 if (multicast_addr == null)
                 {
                     Console.Error.WriteLine("topic name must either be "
-                        + TopicName.THROUGHPUT
-                        + " or " + TopicName.LATENCY
-                        + " or " + TopicName.ANNOUNCEMENT);
+                        + THROUGHPUT_TOPIC_NAME.VALUE
+                        + " or " + LATENCY_TOPIC_NAME.VALUE
+                        + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
                     return null;
                 }
 
@@ -2311,7 +2311,7 @@ namespace PerformanceTest
                         _useUnbounded.ToString(), false);
             }
 
-            if ( _useCft && topic_name == TopicName.THROUGHPUT)
+            if ( _useCft && topic_name == THROUGHPUT_TOPIC_NAME.VALUE)
             {
                 topic_desc = createCft(topic_name, topic);
                 if (topic_desc == null) {

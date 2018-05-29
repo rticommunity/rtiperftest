@@ -7,10 +7,12 @@ package com.rti.perftest.ddsimpl;
 
 import java.nio.file.WatchEvent.Kind;
 import java.util.HashMap;
-import java.util.Map;
 import com.rti.dds.infrastructure.PropertyQosPolicyHelper;
 import com.rti.dds.infrastructure.TransportBuiltinKind;
 import com.rti.dds.domain.DomainParticipantQos;
+import com.rti.perftest.gen.THROUGHPUT_TOPIC_NAME;
+import com.rti.perftest.gen.LATENCY_TOPIC_NAME;
+import com.rti.perftest.gen.ANNOUNCEMENT_TOPIC_NAME;
 
 public class PerftestTransport {
 
@@ -115,9 +117,9 @@ public class PerftestTransport {
         secureOptions = new SecureTransportOptions();
         wanOptions = new WanTransportOptions();
 
-        multicastAddrMap.put(TopicName.LATENCY, "239.255.1.1");
-        multicastAddrMap.put(TopicName.ANNOUNCEMENT, "239.255.1.2");
-        multicastAddrMap.put(TopicName.THROUGHPUT, "239.255.1.100");
+        multicastAddrMap.put(LATENCY_TOPIC_NAME.VALUE, "239.255.1.1");
+        multicastAddrMap.put(ANNOUNCEMENT_TOPIC_NAME.VALUE, "239.255.1.2");
+        multicastAddrMap.put(THROUGHPUT_TOPIC_NAME.VALUE, "239.255.1.100");
 
     }
 
@@ -174,7 +176,7 @@ public class PerftestTransport {
     sb.append("\t-multicast                    - Use multicast to send data. Each topic");
     sb.append("\t                                will use a different address:\n");
     sb.append("\t                                <address> is optional, if unspecified:\n");
-    for (Map.Entry<String, String> map : multicastAddrMap.entrySet()) {
+    for (HashMap.Entry<String, String> map : multicastAddrMap.entrySet()) {
         sb.append("                                            ");
         sb.append(map.getKey()).append(" ").append(map.getValue()).append("\n");
     }
@@ -459,9 +461,9 @@ public class PerftestTransport {
                             + " Missing <address> after -multicastAddr");
                     return false;
                 }
-                multicastAddrMap.put(TopicName.THROUGHPUT, argv[i]);
-                multicastAddrMap.put(TopicName.LATENCY, argv[i]);
-                multicastAddrMap.put(TopicName.ANNOUNCEMENT, argv[i]);
+                multicastAddrMap.put(THROUGHPUT_TOPIC_NAME.VALUE, argv[i]);
+                multicastAddrMap.put(LATENCY_TOPIC_NAME.VALUE, argv[i]);
+                multicastAddrMap.put(ANNOUNCEMENT_TOPIC_NAME.VALUE, argv[i]);
             }
         }
 

@@ -441,9 +441,9 @@ PerftestTransport::PerftestTransport() :
         dataLen(100),
         useMulticast(false)
 {
-    multicastAddrMap[GetLatencyTopicName().c_str()] = "239.255.1.2";
-    multicastAddrMap[GetAnnouncementTopicName().c_str()] = "239.255.1.100";
-    multicastAddrMap[GetThroughputTopicName().c_str()] = "239.255.1.1";
+    multicastAddrMap[LATENCY_TOPIC_NAME] = "239.255.1.2";
+    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = "239.255.1.100";
+    multicastAddrMap[THROUGHPUT_TOPIC_NAME] = "239.255.1.1";
 }
 
 PerftestTransport::~PerftestTransport()
@@ -907,9 +907,9 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
                 return false;
             }
 
-            multicastAddrMap[GetThroughputTopicName()] = argv[i];
-            multicastAddrMap[GetLatencyTopicName()] = argv[i];
-            multicastAddrMap[GetAnnouncementTopicName()] = argv[i];
+            multicastAddrMap[THROUGHPUT_TOPIC_NAME] = argv[i];
+            multicastAddrMap[LATENCY_TOPIC_NAME] = argv[i];
+            multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = argv[i];
 
         } else if (IS_OPTION(argv[i], "-nomulticast")) {
             useMulticast = false;
