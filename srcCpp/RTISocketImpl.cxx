@@ -1219,17 +1219,25 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
 
         _plugin = NDDS_Transport_Shmem_new(&shmem_prop);
 
-        NDDS_Transport_Interface_t interface;
+        NDDS_Transport_Interface_t transportInterface;
+        RTIOsapiMemory_zero(
+                &transportInterface,
+                sizeof(NDDS_Transport_Interface_t));
+
         RTI_INT32 foundMore;
         RTI_INT32 count;
         _plugin->get_receive_interfaces_cEA(
-                _plugin, &foundMore, &count, &interface, 1);
+                _plugin,
+                &foundMore,
+                &count,
+                &transportInterface,
+                1);
 
         if (count != 1) {
             fprintf(stderr, "Any valid interface for SHMEM found\n");
             return false;
         }
-        _nicAddress = interface.address;
+        _nicAddress = transportInterface.address;
 
         _peersMap.push_back(std::pair<NDDS_Transport_Address_t, int>(
                 _nicAddress, 1));

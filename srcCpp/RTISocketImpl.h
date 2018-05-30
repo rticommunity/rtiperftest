@@ -49,7 +49,9 @@ class RTISocketImpl : public IMessaging {
         _worker = NULL;
         _workerFactory = NULL;
         _exclusiveArea = NULL;
-        // _nicAddress = NDDS_TRANSPORT_ADDRESS_INVALID;
+
+        // TODO: Decided how initialize this variables, not clear.
+        //_nicAddress = NDDS_TRANSPORT_ADDRESS_INVALID;
         // _multicastAddrTransp = NDDS_TRANSPORT_ADDRESS_INVALID;
 
         _NumPublishers = 1;
