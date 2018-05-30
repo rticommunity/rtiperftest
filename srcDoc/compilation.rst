@@ -120,6 +120,12 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | variable should be available from |
 |                      |           | your ``$PATH`` variable.          |
 +----------------------+-----------+-----------------------------------+
+| --perl               | Optional  | Path to ``PERL`` executable.      |
+|                      |           | If this parameter is not present, |
+|                      |           | not present, the path to PERL     |
+|                      |           | should be available from your     |
+|                      |           | ``$PATH`` variable.               |
++----------------------+-----------+-----------------------------------+
 | --java-home          | Optional  | Path to the Java ``JDK`` home     |
 |                      |           | folder. If this parameter is not  |
 |                      |           | present, ``javac``, ``jar`` and   |

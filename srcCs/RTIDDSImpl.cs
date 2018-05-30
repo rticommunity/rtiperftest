@@ -12,85 +12,6 @@ using NDDS;
 
 namespace PerformanceTest
 {
-    // ===========================================================================
-
-    /*
-     *  After setting "UPDv4 | SHMEM" as default transport_builtin mask. The user may
-     *  get the following error running a default scenario:
-     *
-     *      [D0001|ENABLE]NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key 0x40894a
-     *      [D0001|ENABLE]NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key 0x40894c
-     *      [D0001|ENABLE]DDS_DomainParticipantPresentation_reserve_participant_index_entryports:!enable reserve participant index
-     *      [D0001|ENABLE]DDS_DomainParticipant_reserve_participant_index_entryports:Unusable shared memory transport. For a more in-depth explanation of the possible problem and solution, please visit http://community.rti.com/kb/osx510.
-     *      [D0001|ENABLE]DDS_DomainParticipant_enableI:Automatic participant index failed to initialize. PLEASE VERIFY CONSISTENT TRANSPORT / DISCOVERY CONFIGURATION.
-     *      [NOTE: If the participant is running on a machine where the network interfaces can change, you should manually set wire protocol's participant id]
-     *      DDSDomainParticipant_impl::createI:ERROR: Failed to auto-enable entity.
-     *
-     *  By using our own implementation of LoggerDevice, we can filter those errors.
-     *  In the case that those errors appear, the execution will be stopped and
-     *  a message will be printed showing:
-     *      - A link (http://community.rti.com/kb/osx510) about how to solve the issue
-     *      - How to setup a different transport via command-line parameters.
-     */
-
-    class RTIDDSLoggerDevice : NDDS.LoggerDevice
-    {
-
-        /*
-         *   _ShmemErrors: 'False' by default. In the case that SHMEM issues appear,
-         *       it will be set to 'True'.
-         */
-        private bool _ShmemErrors = false;
-        private static String NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE =
-                "NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key";
-
-        /*
-         *   @brief This function is the constructor of our internal logging device.
-         */
-        public RTIDDSLoggerDevice()
-        {
-            _ShmemErrors = false;
-        }
-
-        /*
-         *   @brief This function is used to filter the log messages and write them
-         *       through the logger device.
-         *       _ShmemErrors will be set to 'True' if the log message is the known SHMEM issue.
-         *   @param message \b In. Message to log.
-         */
-        public override void write(LogMessage message)
-        {
-            if (!_ShmemErrors) {
-                if (message.level == LogLevel.NDDS_CONFIG_LOG_LEVEL_ERROR) {
-                    if (message.text.Contains(
-                            NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE)) {
-                        _ShmemErrors = true;
-                    }
-                }
-                if (!_ShmemErrors) {
-                    Console.Out.WriteLine(message.text);
-                }
-            }
-        }
-
-        /*
-         *   @brief Close the logging device.
-         */
-        public override void close()
-        {
-
-        }
-
-        /*
-         *   @brief Get the value of the variable _ShmemErrors.
-         *   @return _ShmemErrors
-         */
-        public bool CheckShmemErrors()
-        {
-           return _ShmemErrors;
-        }
-    }
-
     class RTIDDSImpl<T> : IMessaging where T : class, DDS.ICopyable<T>
     {
 
@@ -122,10 +43,6 @@ namespace PerformanceTest
                     DDS.DomainParticipantFactory.get_instance().delete_participant(ref _participant);
                     _participant = null;
                 }
-            }
-            // Unregister _loggerDevice
-            if (!NDDS.ConfigLogger.get_instance().set_output_device(null)) {
-                Console.Error.Write("Failed set_output_device for Logger.\n");
             }
         }
 
@@ -188,8 +105,8 @@ namespace PerformanceTest
             "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
             "\t                                default: PerftestQosLibrary\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
-            "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
-            "\t                                (no batching)\n" +
+            "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
+            "\t                                (Disabled for LatencyTest mode or if dataLen > 4kB)\n" +
             "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
             "\t                                protocol, default use positive acks\n" +
             "\t-keepDurationUsec <usec>      - Minimum time (us) to keep samples when\n" +
@@ -344,6 +261,8 @@ namespace PerformanceTest
         bool ParseConfig(int argc, string[] argv)
         {
             ulong _scan_max_size = 0;
+            bool isBatchSizeProvided = false;
+
             for (int i = 0; i < argc; ++i)
             {
                 if ("-pub".StartsWith(argv[i], true, null))
@@ -597,6 +516,7 @@ namespace PerformanceTest
                                 "]\n");
                         return false;
                     }
+                    isBatchSizeProvided = true;
                 }
                 else if ("-keepDurationUsec".StartsWith(argv[i], true, null))
                 {
@@ -912,7 +832,7 @@ namespace PerformanceTest
             }
 
             if (_IsAsynchronous && _BatchSize > 0) {
-                Console.Error.WriteLine("Batching cannnot be used with asynchronous writing.");
+                Console.Error.WriteLine("Batching cannot be used with asynchronous writing.");
                 return false;
             }
 
@@ -924,27 +844,26 @@ namespace PerformanceTest
                         _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
                     }
                     _isLargeData = true;
-                } else if (_scan_max_size <= (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                } else {
                     _useUnbounded = 0;
                     _isLargeData = false;
-                } else {
-                    return false;
                 }
-                if (_isLargeData && _BatchSize > 0) {
-                    Console.Error.WriteLine("Batching cannnot be used with asynchronous writing.");
-                    return false;
-                }
-            } else { // If not Scan, compare sizes of Batching and dataLen
                 /*
-                 * We don't want to use batching if the sample is the same size as the batch
-                 * nor if the sample is bigger (in this case we avoid the checking in the
-                 * middleware).
+                 * If not Scan, compare sizes of Batching and dataLen
+                 * At this point we have checked that we are not in a latency
+                 * test mode, therefore we are sure we are in throughput test
+                 * mode, where we do want to enable batching by default in
+                 * certain cases.
                  */
-                if (_BatchSize > 0 && _BatchSize <= (int)_DataLen)
-                {
-                    Console.Error.WriteLine("Batching disabled: BatchSize (" + _BatchSize
-                            + ") is equal or smaller than the sample size (" + _DataLen
-                            + ").");
+            } else if (_BatchSize > 0 && _BatchSize < (int)_DataLen * 2) {
+                /*
+                 * We don't want to use batching if the batch size is not large
+                 * enough to contain at least two samples (in this case we avoid
+                 * the checking at the middleware level).
+                 */
+                if (isBatchSizeProvided) {
+                    _BatchSize = -1;
+                } else {
                     _BatchSize = 0;
                 }
             }
@@ -952,6 +871,11 @@ namespace PerformanceTest
             if ((int)_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE)
             {
                 _isLargeData = true;
+            }
+
+            if (_isLargeData && _BatchSize > 0) {
+                Console.Error.WriteLine("Batching cannot be used with asynchronous writing.");
+                return false;
             }
 
             if (_TurboMode) {
@@ -1474,13 +1398,6 @@ namespace PerformanceTest
          */
         public bool Initialize(int argc, string[] argv)
         {
-            // Register _loggerDevicee
-            _loggerDevice = new RTIDDSLoggerDevice();
-            if (!NDDS.ConfigLogger.get_instance().set_output_device(_loggerDevice)) {
-                Console.Error.Write("Failed set_output_device for Logger.\n");
-                return false;
-            }
-
             _typename = _DataTypeHelper.getTypeSupport().get_type_name_untyped();
 
             DDS.DomainParticipantQos qos = new DDS.DomainParticipantQos();
@@ -2337,6 +2254,8 @@ namespace PerformanceTest
             return new RTISubscriber<T>(reader, _DataTypeHelper.clone());
         }
 
+        static int RTIPERFTEST_MAX_PEERS = 1024;
+
         private int    _SendQueueSize = 50;
         private ulong    _DataLen = 100;
         private ulong     _useUnbounded = 0;
@@ -2345,7 +2264,7 @@ namespace PerformanceTest
         private bool   _IsReliable = true;
         private bool   _AutoThrottle = false;
         private bool   _TurboMode = false;
-        private int    _BatchSize = 0;
+        private int    _BatchSize = (int)DEFAULT_THROUGHPUT_BATCH_SIZE.VALUE; // Default 8 kB
         private int    _InstanceCount = 1;
         private int    _InstanceMaxCountReader = -1;
         private int     _InstanceHashBuckets = -1;
@@ -2361,7 +2280,6 @@ namespace PerformanceTest
         private bool _isDynamicData = false;
         private string _FlowControllerCustom = "default";
         string[] valid_flow_controller = { "default", "1Gbps", "10Gbps" };
-        static int             RTIPERFTEST_MAX_PEERS = 1024;
         private int     _peer_host_count = 0;
         private string[] _peer_host = new string[RTIPERFTEST_MAX_PEERS];
         private bool    _useCft = false;
@@ -2416,6 +2334,5 @@ namespace PerformanceTest
         private ITypeHelper<T>                  _DataTypeHelper = null;
 
         private Semaphore _pongSemaphore = null;
-        private RTIDDSLoggerDevice  _loggerDevice = null;
     }
 }
