@@ -51,27 +51,6 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
-
-Added % of lost packets for the summary and the intervals outputs  (#81)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-*RTI Perftest* now print the percent of lost packets on each of the interval
-outputs and at the end of the test after the summary.
-
-
-Use `UDPv4` and `Shared Memory` as the default transport configuration (#80)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-*RTI Perftest* previous default was to use only the `UDPv4` transport.
-However this doesn't always lead to the best results when testing between
-applications within the same machine and it also differs from *RTI Connext DDS*
-default behavior, which is `UDPv4` and Shared Memory (`SHMEM`).
-Starting from this release *RTI Perftest* new default is to use `UDPv4` and `SHMEM`.
-
-This change improves the out of the box user experience, getting better numbers
-when using the default configuration.
-
-
 Print a summary with the main setting of the test *RTI Perftest* will run (#46)(#67)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -100,6 +79,26 @@ Added RTI Perftest and RTI Connext DDS information at beginning of the test (#54
 
 Starting with this release, RTI Perftest will print at the beginning of the test
 its version and the version of RTI Connext DDS used to compile against.
+
+Use `UDPv4` and `Shared Memory` as the default transport configuration (#80)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* previous default was to use only the `UDPv4` transport.
+However this doesn't always lead to the best results when testing between
+applications within the same machine and it also differs from *RTI Connext DDS*
+default behavior, which is `UDPv4` and Shared Memory (`SHMEM`).
+Starting from this release *RTI Perftest* new default is to use `UDPv4` and `SHMEM`.
+
+This change improves the out of the box user experience, getting better numbers
+when using the default configuration.
+
+
+Show percentage of packets lost in the subscriber side output (#81)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* now displays the percentage of lost packets in addition to the total
+number of packets lost. This number is displayed once per second with the rest of
+the statistics in the subscriber side, as well as at the end of the test.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
