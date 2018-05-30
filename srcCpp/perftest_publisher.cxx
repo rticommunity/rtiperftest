@@ -31,9 +31,6 @@ RTI_UINT64 perftest_cpp::_Clock_usec = 0;
 
 bool perftest_cpp::_testCompleted = false;
 bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan test
-const char *perftest_cpp::_LatencyTopicName = "Latency";
-const char *perftest_cpp::_AnnouncementTopicName = "Announcement";
-const char *perftest_cpp::_ThroughputTopicName = "Throughput";
 const int timeout_wait_for_ack_sec = 0;
 const unsigned int timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {2, 3, 2, 0};
@@ -1214,7 +1211,7 @@ int perftest_cpp::Subscriber()
     IMessagingWriter   *announcement_writer;
 
     // create latency pong writer
-    writer = _MessagingImpl->CreateWriter(_LatencyTopicName);
+    writer = _MessagingImpl->CreateWriter(LATENCY_TOPIC_NAME);
 
     if (writer == NULL) {
         fprintf(stderr, "Problem creating latency writer.\n");
@@ -1226,7 +1223,9 @@ int perftest_cpp::Subscriber()
     {
         // create latency pong reader
         reader_listener = new ThroughputListener(writer, NULL, _useCft, _NumPublishers);
-        reader = _MessagingImpl->CreateReader(_ThroughputTopicName, reader_listener);
+        reader = _MessagingImpl->CreateReader(
+                THROUGHPUT_TOPIC_NAME,
+                reader_listener);
         if (reader == NULL)
         {
             fprintf(stderr, "Problem creating throughput reader.\n");
@@ -1235,7 +1234,9 @@ int perftest_cpp::Subscriber()
     }
     else
     {
-        reader = _MessagingImpl->CreateReader(_ThroughputTopicName, NULL);
+        reader = _MessagingImpl->CreateReader(
+                THROUGHPUT_TOPIC_NAME,
+                NULL);
         if (reader == NULL)
         {
             fprintf(stderr, "Problem creating throughput reader.\n");
@@ -1253,7 +1254,8 @@ int perftest_cpp::Subscriber()
     }
 
     // Create announcement writer
-    announcement_writer = _MessagingImpl->CreateWriter(_AnnouncementTopicName);
+    announcement_writer = _MessagingImpl->CreateWriter(
+            ANNOUNCEMENT_TOPIC_NAME);
 
     if (announcement_writer == NULL) {
         fprintf(stderr, "Problem creating announcement writer.\n");
@@ -1744,7 +1746,8 @@ int perftest_cpp::Publisher()
     unsigned int samplesPerBatch = 1;
 
     // create throughput/ping writer
-    IMessagingWriter *writer = _MessagingImpl->CreateWriter(_ThroughputTopicName);
+    IMessagingWriter *writer = _MessagingImpl->CreateWriter(
+            THROUGHPUT_TOPIC_NAME);
 
     if (writer == NULL)
     {
@@ -1779,7 +1782,7 @@ int perftest_cpp::Publisher()
                     NULL,
                     _LatencyTest ? writer : NULL);
             reader = _MessagingImpl->CreateReader(
-                    _LatencyTopicName,
+                    LATENCY_TOPIC_NAME,
                     reader_listener);
             if (reader == NULL)
             {
@@ -1789,7 +1792,9 @@ int perftest_cpp::Publisher()
         }
         else
         {
-            reader = _MessagingImpl->CreateReader(_LatencyTopicName, NULL);
+            reader = _MessagingImpl->CreateReader(
+                    LATENCY_TOPIC_NAME,
+                    NULL);
             if (reader == NULL)
             {
                 fprintf(stderr,"Problem creating latency reader.\n");
@@ -1819,7 +1824,8 @@ int perftest_cpp::Publisher()
      * every Publisher
      */
     announcement_reader_listener = new AnnouncementListener();
-    announcement_reader = _MessagingImpl->CreateReader(_AnnouncementTopicName,
+    announcement_reader = _MessagingImpl->CreateReader(
+            ANNOUNCEMENT_TOPIC_NAME,
             announcement_reader_listener);
     if (announcement_reader == NULL)
     {

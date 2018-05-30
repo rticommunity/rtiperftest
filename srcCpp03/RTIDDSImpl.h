@@ -141,9 +141,6 @@ class RTIDDSImpl : public IMessaging
     dds::core::Duration   _HeartbeatPeriod;
     dds::core::Duration   _FastHeartbeatPeriod;
 
-    const char          *THROUGHPUT_MULTICAST_ADDR;
-    const char          *LATENCY_MULTICAST_ADDR;
-    const char          *ANNOUNCEMENT_MULTICAST_ADDR;
     const char          *_ProfileLibraryName;
 
     dds::domain::DomainParticipant _participant;

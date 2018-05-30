@@ -43,6 +43,9 @@ import com.rti.perftest.TestMessage;
 import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 import com.rti.perftest.gen.MAX_CFT_VALUE;
+import com.rti.perftest.gen.THROUGHPUT_TOPIC_NAME;
+import com.rti.perftest.gen.LATENCY_TOPIC_NAME;
+import com.rti.perftest.gen.ANNOUNCEMENT_TOPIC_NAME;
 import com.rti.perftest.gen.KEY_SIZE;
 import com.rti.perftest.gen.DEFAULT_THROUGHPUT_BATCH_SIZE;
 import com.rti.perftest.harness.PerfTest;
@@ -90,7 +93,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private int     _domainID = 1;
     private String  _profileFile = "perftest_qos_profiles.xml";
     private boolean _isReliable = true;
-    private boolean _isMulticast = false;
     private boolean _AutoThrottle = false;
     private boolean _TurboMode = false;
     private int     _instanceCount = 1;
@@ -241,12 +243,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t                                default: perftest_qos_profiles.xml\n" +
             "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
             "\t                                default: PerftestQosLibrary\n" +
-            "\t-multicast <address>          - Use multicast to send data.\n" +
-            "\t                                Default not to use multicast\n" +
-            "\t                                <address> is optional, if unspecified:\n" +
-            "\t                                                latency 239.255.1.2,\n" +
-            "\t                                                announcement 239.255.1.100,\n" +
-            "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
             "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
             "\t                                (Disabled for LatencyTest mode or if dataLen > 4kB)\n" +
@@ -451,18 +447,18 @@ public final class RTIDDSImpl<T> implements IMessaging {
             return null;
         }
 
-        if (PerfTest.THROUGHPUT_TOPIC_NAME.equals(topicName)) {
+        if (THROUGHPUT_TOPIC_NAME.VALUE.equals(topicName)) {
             qosProfile = "ThroughputQos";
-        } else if (PerfTest.LATENCY_TOPIC_NAME.equals(topicName)) {
+        } else if (LATENCY_TOPIC_NAME.VALUE.equals(topicName)) {
             qosProfile = "LatencyQos";
-        } else if (PerfTest.ANNOUNCEMENT_TOPIC_NAME.equals(topicName)) {
+        } else if (ANNOUNCEMENT_TOPIC_NAME.VALUE.equals(topicName)) {
             qosProfile = "AnnouncementQos";
         } else {
             System.err.println(
                     "topic name must either be " +
-                    PerfTest.THROUGHPUT_TOPIC_NAME + " or " +
-                    PerfTest.LATENCY_TOPIC_NAME  + " or " +
-                    PerfTest.ANNOUNCEMENT_TOPIC_NAME);
+                    LATENCY_TOPIC_NAME.VALUE + " or " +
+                    ANNOUNCEMENT_TOPIC_NAME.VALUE  + " or " +
+                    THROUGHPUT_TOPIC_NAME.VALUE);
             return null;
         }
 
@@ -578,19 +574,19 @@ public final class RTIDDSImpl<T> implements IMessaging {
         TopicDescription  topic_desc = topic; // Used to create the DDS DataReader
 
         String qosProfile;
-        if (PerfTest.THROUGHPUT_TOPIC_NAME.equals(topicName)) {
+        if (THROUGHPUT_TOPIC_NAME.VALUE.equals(topicName)) {
             qosProfile = "ThroughputQos";
-        } else if (PerfTest.LATENCY_TOPIC_NAME.equals(topicName)) {
+        } else if (LATENCY_TOPIC_NAME.VALUE.equals(topicName)) {
             qosProfile = "LatencyQos";
-        } else if (PerfTest.ANNOUNCEMENT_TOPIC_NAME.equals(topicName)) {
+        } else if (ANNOUNCEMENT_TOPIC_NAME.VALUE.equals(topicName)) {
             qosProfile = "AnnouncementQos";
         }
         else {
             System.err.println(
                     "topic name must either be " +
-                    PerfTest.THROUGHPUT_TOPIC_NAME + " or " +
-                    PerfTest.LATENCY_TOPIC_NAME  + " or " +
-                    PerfTest.ANNOUNCEMENT_TOPIC_NAME);
+                    THROUGHPUT_TOPIC_NAME.VALUE + " or " +
+                    LATENCY_TOPIC_NAME.VALUE  + " or " +
+                    ANNOUNCEMENT_TOPIC_NAME.VALUE);
             return null;
         }
 
@@ -616,7 +612,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             statusFlag = StatusKind.DATA_AVAILABLE_STATUS;
         }
 
-        if (PerfTest.THROUGHPUT_TOPIC_NAME.equals(topicName) && _useCft) {
+        if (THROUGHPUT_TOPIC_NAME.VALUE.equals(topicName) && _useCft) {
             topic_desc = createCft(topicName, topic);
             if (topic_desc == null) {
                 System.err.println("create_contentfilteredtopic error");
@@ -634,8 +630,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
             return null;
         }
 
-        if (PerfTest.LATENCY_TOPIC_NAME.equals(topicName) ||
-            PerfTest.THROUGHPUT_TOPIC_NAME.equals(topicName)) {
+        if (LATENCY_TOPIC_NAME.VALUE.equals(topicName) ||
+            THROUGHPUT_TOPIC_NAME.VALUE.equals(topicName)) {
             _reader = reader;
         }
 
@@ -887,7 +883,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         // Configure reliability
-        if (!PerfTest.ANNOUNCEMENT_TOPIC_NAME.equals(topicName)) {
+        if (!ANNOUNCEMENT_TOPIC_NAME.VALUE.equals(topicName)) {
             if (_isReliable) {
                 // default: use the setting specified in the qos profile
                 // dwQos.reliability.kind = ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
@@ -902,7 +898,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         // These QOS's are only set for the Throughput datawriter
         if ("ThroughputQos".equals(qosProfile)) {
 
-            if (_isMulticast) {
+            if (_transport.useMulticast) {
                 dwQos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat = true;
             }
 
@@ -1023,7 +1019,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         // Configure reliability
-        if (!PerfTest.ANNOUNCEMENT_TOPIC_NAME.equals(topicName)) {
+        if (!ANNOUNCEMENT_TOPIC_NAME.VALUE.equals(topicName)) {
             if (_isReliable) {
                 drQos.reliability.kind = ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
             } else {
@@ -1090,15 +1086,14 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
         }
 
-        if (_transport.allowsMulticast() && _isMulticast) {
-            String multicast_addr;
-
-            if (PerfTest.THROUGHPUT_TOPIC_NAME.equals(topicName)) {
-                multicast_addr = THROUGHPUT_MULTICAST_ADDR;
-            } else if (PerfTest.LATENCY_TOPIC_NAME.equals(topicName)) {
-                multicast_addr = LATENCY_MULTICAST_ADDR;
-            } else {
-                multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
+        if (_transport.useMulticast && _transport.allowsMulticast()) {
+            String multicast_addr = _transport.getMulticastAddr(topicName);
+            if (multicast_addr == null) {
+                System.err.println("topic name must either be "
+                        + THROUGHPUT_TOPIC_NAME.VALUE + " or "
+                        + LATENCY_TOPIC_NAME.VALUE + " or "
+                        + ANNOUNCEMENT_TOPIC_NAME.VALUE);
+                return ;
             }
 
             TransportMulticastSettings_t multicast_setting =
@@ -1323,16 +1318,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     return false;
                 }
                 PROFILE_LIBRARY_NAME = argv[i];
-            } else if ("-nomulticast".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                _isMulticast = false;
-            } else if ("-multicast".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                _isMulticast = true;
-                if ((i != (argc - 1)) && !argv[1+i].startsWith("-")) {
-                    i++;
-                    THROUGHPUT_MULTICAST_ADDR = argv[i];
-                    LATENCY_MULTICAST_ADDR = argv[i];
-                    ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
-                }
             } else if ("-bestEffort".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isReliable = false;
             } else if ("-durability".toLowerCase().startsWith(argv[i].toLowerCase()))

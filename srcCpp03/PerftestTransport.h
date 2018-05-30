@@ -9,6 +9,7 @@
 #include <string>
 #include <map>
 #include <sstream>
+#include "perftest.hpp"
 #include <dds/dds.hpp>
 
 /******************************************************************************/
@@ -102,6 +103,7 @@ public:
     WanTransportOptions wanOptions;
 
     unsigned long dataLen;
+    bool useMulticast;
 
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
@@ -121,9 +123,20 @@ public:
 
     bool parseTransportOptions(int argc, char *argv[]);
 
+    // Check if the transport allows the use of multicast.
+    bool allowsMulticast();
+
+    /*
+     * Given the name of a Perftest-defined topic, returns its multicast
+     * address.
+     */
+    const std::string getMulticastAddr(const char *topic);
+
 private:
 
     static std::map<std::string, TransportConfig> transportConfigMap;
+
+    std::map<std::string, std::string> multicastAddrMap;
 
     /**************************************************************************/
 

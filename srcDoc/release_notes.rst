@@ -204,6 +204,22 @@ instead, *RTI Perftest* would always use the default value set up via code.
 This behavior has been fixed. We also took the oportunity to simplify and clarify
 the XML configurations when disabling positive Acks.
 
+Show message in sumary when -multicast is present but it wont be used (#44)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous versions, if the `-multicast` command-line parameter was provided but
+the transport didn't allow the use of multicast, it would fail silently and no
+indication would be shown by RTI Perftest.
+
+Starting from this release, the use of multicast will be shown in the transport
+summary at the beginning of the test, and a message will be printed stating if
+multicast could not be applied for the transport.
+
+The `-multicast` parameter has been divided into 2: `-multicast` which enables
+multicast for a given transport using a set of default multicast addresses and
+`-multicastAddr <address>` which enables multicast and sets the multicast IPs to
+be the one provided.
+
 Update Security Certificates and Governance files (#49)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -212,6 +228,7 @@ in RTI Perftest have been regenerated and signed again, since they had expired.
 
 The script used for updating the files has been improved to generate certificates
 valid for a longer period of time (from one year to ten years).
+
 
 Release Notes 2.3.1
 --------------------

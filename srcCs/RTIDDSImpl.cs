@@ -104,12 +104,6 @@ namespace PerformanceTest
             "\t                                default: perftest_qos_profiles.xml\n" +
             "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
             "\t                                default: PerftestQosLibrary\n" +
-            "\t-multicast <address>          - Use multicast to send data.\n" +
-            "\t                                Default not to use multicast\n" +
-            "\t                                <address> is optional, if unspecified:\n" +
-            "\t                                                latency 239.255.1.2,\n" +
-            "\t                                                announcement 239.255.1.100,\n" +
-            "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
             "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
             "\t                                (Disabled for LatencyTest mode or if dataLen > 4kB)\n" +
@@ -437,21 +431,6 @@ namespace PerformanceTest
                         return false;
                     }
                     _ProfileLibraryName = argv[i];
-                }
-                else if ("-multicast".StartsWith(argv[i], true, null))
-                {
-                    _IsMulticast = true;
-                    if ((i != (argc - 1)) && !argv[1+i].StartsWith("-"))
-                    {
-                        i++;
-                        THROUGHPUT_MULTICAST_ADDR = argv[i];
-                        LATENCY_MULTICAST_ADDR = argv[i];
-                        ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
-                    }
-                }
-                else if ("-nomulticast".StartsWith(argv[i], true, null))
-                {
-                    _IsMulticast = false;
                 }
                 else if ("-bestEffort".StartsWith(argv[i], true, null))
                 {
@@ -1822,24 +1801,24 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (topic_name == perftest_cs._ThroughputTopicName)
+            if (topic_name == THROUGHPUT_TOPIC_NAME.VALUE)
             {
                 qos_profile = "ThroughputQos";
             }
-            else if (topic_name == perftest_cs._LatencyTopicName)
+            else if (topic_name == LATENCY_TOPIC_NAME.VALUE)
             {
                 qos_profile = "LatencyQos";
             }
-            else if (topic_name == perftest_cs._AnnouncementTopicName)
+            else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.VALUE)
             {
                 qos_profile = "AnnouncementQos";
             }
             else
             {
                 Console.Error.WriteLine("topic name must either be "
-                    + perftest_cs._ThroughputTopicName
-                    + " or " + perftest_cs._LatencyTopicName
-                    + " or " + perftest_cs._AnnouncementTopicName);
+                        + THROUGHPUT_TOPIC_NAME.VALUE
+                        + " or " + LATENCY_TOPIC_NAME.VALUE
+                        + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
                 return null;
             }
 
@@ -1875,7 +1854,7 @@ namespace PerformanceTest
             }
 
             // only force reliability on throughput/latency topics
-            if (topic_name != perftest_cs._AnnouncementTopicName)
+            if (topic_name != ANNOUNCEMENT_TOPIC_NAME.VALUE)
             {
                 if (_IsReliable)
                 {
@@ -1893,7 +1872,7 @@ namespace PerformanceTest
             if (qos_profile == "ThroughputQos")
             {
 
-                if (_IsMulticast) {
+                if (_transport.useMulticast) {
                     dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat = true;
                 }
 
@@ -2132,24 +2111,24 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (topic_name == perftest_cs._ThroughputTopicName)
+            if (topic_name == THROUGHPUT_TOPIC_NAME.VALUE)
             {
                 qos_profile = "ThroughputQos";
             }
-            else if (topic_name == perftest_cs._LatencyTopicName)
+            else if (topic_name == LATENCY_TOPIC_NAME.VALUE)
             {
                 qos_profile = "LatencyQos";
             }
-            else if (topic_name == perftest_cs._AnnouncementTopicName)
+            else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.VALUE)
             {
                 qos_profile = "AnnouncementQos";
             }
             else
             {
                 Console.Error.WriteLine("topic name must either be "
-                    + perftest_cs._ThroughputTopicName
-                    + " or " + perftest_cs._LatencyTopicName
-                    + " or " + perftest_cs._AnnouncementTopicName);
+                        + THROUGHPUT_TOPIC_NAME.VALUE
+                        + " or " + LATENCY_TOPIC_NAME.VALUE
+                        + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
                 return null;
             }
 
@@ -2166,7 +2145,7 @@ namespace PerformanceTest
             }
 
             // only force reliability on throughput/latency topics
-            if (topic_name != perftest_cs._AnnouncementTopicName)
+            if (topic_name != ANNOUNCEMENT_TOPIC_NAME.VALUE)
             {
                 if (_IsReliable)
                 {
@@ -2210,21 +2189,18 @@ namespace PerformanceTest
                 }
             }
 
-            if (_transport.AllowsMulticast() && _IsMulticast)
+            if (_transport.useMulticast && _transport.AllowsMulticast())
             {
                 string multicast_addr;
 
-                if (topic_name == perftest_cs._ThroughputTopicName)
+                multicast_addr = _transport.getMulticastAddr(topic_name);
+                if (multicast_addr == null)
                 {
-                    multicast_addr = THROUGHPUT_MULTICAST_ADDR;
-                }
-                else if (topic_name == perftest_cs._LatencyTopicName)
-                {
-                    multicast_addr = LATENCY_MULTICAST_ADDR;
-                }
-                else
-                {
-                    multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
+                    Console.Error.WriteLine("topic name must either be "
+                            + THROUGHPUT_TOPIC_NAME.VALUE
+                            + " or " + LATENCY_TOPIC_NAME.VALUE
+                            + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
+                    return null;
                 }
 
                 DDS.TransportMulticastSettings_t multicast_setting = new DDS.TransportMulticastSettings_t();
@@ -2252,7 +2228,8 @@ namespace PerformanceTest
                         _useUnbounded.ToString(), false);
             }
 
-            if ( _useCft && topic_name == perftest_cs._ThroughputTopicName){
+            if ( _useCft && topic_name == THROUGHPUT_TOPIC_NAME.VALUE)
+            {
                 topic_desc = createCft(topic_name, topic);
                 if (topic_desc == null) {
                     Console.Error.WriteLine("Create_contentfilteredtopic error");
@@ -2285,7 +2262,6 @@ namespace PerformanceTest
         private int    _DomainID = 1;
         private string _ProfileFile = "perftest_qos_profiles.xml";
         private bool   _IsReliable = true;
-        private bool   _IsMulticast = false;
         private bool   _AutoThrottle = false;
         private bool   _TurboMode = false;
         private int    _BatchSize = (int)DEFAULT_THROUGHPUT_BATCH_SIZE.VALUE; // Default 8 kB
@@ -2338,9 +2314,6 @@ namespace PerformanceTest
         private static int   _WaitsetEventCount = 5;
         private static uint  _WaitsetDelayUsec = 100;
 
-        private static string THROUGHPUT_MULTICAST_ADDR = "239.255.1.1";
-        private static string LATENCY_MULTICAST_ADDR = "239.255.1.2";
-        private static string ANNOUNCEMENT_MULTICAST_ADDR = "239.255.1.100";
         private static string SECUREPRIVATEKEYFILEPUB = "./resource/secure/pubkey.pem";
         private static string SECUREPRIVATEKEYFILESUB = "./resource/secure/subkey.pem";
         private static string SECURECERTIFICATEFILEPUB = "./resource/secure/pub.pem";

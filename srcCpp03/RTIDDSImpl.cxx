@@ -121,9 +121,6 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _WaitsetDelayUsec(100),
         _HeartbeatPeriod(dds::core::Duration::zero()),
         _FastHeartbeatPeriod(dds::core::Duration::zero()),
-        THROUGHPUT_MULTICAST_ADDR("239.255.1.1"),
-        LATENCY_MULTICAST_ADDR("239.255.1.2"),
-        ANNOUNCEMENT_MULTICAST_ADDR("239.255.1.100"),
         _ProfileLibraryName("PerftestQosLibrary"),
         _participant(dds::core::null),
         _subscriber(dds::core::null),
@@ -158,12 +155,6 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
             "\t                                default: perftest_qos_profiles.xml\n"
             "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n"
             "\t                                default: PerftestQosLibrary\n"
-            "\t-multicast <address>          - Use multicast to send data.\n" +
-            "\t                                Default not to use multicast\n" +
-            "\t                                <address> is optional, if unspecified:\n" +
-            "\t                                                latency 239.255.1.2,\n" +
-            "\t                                                announcement 239.255.1.100,\n" +
-            "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
             "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
             "\t                                (Disabled for LatencyTest mode or if dataLen > 4kB)\n" +
@@ -379,16 +370,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 throw std::logic_error("[Error] Error parsing commands");
             }
             _ProfileLibraryName = argv[i];
-        } else if (IS_OPTION(argv[i], "-multicast")) {
-            _IsMulticast = true;
-            if ((i != (argc-1)) && *argv[i+1] != '-') {
-                i++;
-                THROUGHPUT_MULTICAST_ADDR = argv[i];
-                LATENCY_MULTICAST_ADDR = argv[i];
-                ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
-            }
-        } else if (IS_OPTION(argv[i], "-nomulticast")) {
-            _IsMulticast = false;
         } else if (IS_OPTION(argv[i], "-bestEffort")) {
             _IsReliable = false;
         } else if (IS_OPTION(argv[i], "-durability")) {
@@ -1852,17 +1833,17 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     using namespace rti::core::policy;
 
     std::string qos_profile = "";
-    if (topic_name == perftest_cpp::_ThroughputTopicName) {
+    if (topic_name == THROUGHPUT_TOPIC_NAME.c_str()) {
         qos_profile = "ThroughputQos";
-    } else if (topic_name == perftest_cpp::_LatencyTopicName) {
+    } else if (topic_name == LATENCY_TOPIC_NAME.c_str()) {
         qos_profile = "LatencyQos";
-    } else if (topic_name == perftest_cpp::_AnnouncementTopicName) {
+    } else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.c_str()) {
         qos_profile = "AnnouncementQos";
     } else {
         std::cerr << "[Error] Topic name must either be "
-                << perftest_cpp::_ThroughputTopicName << " or "
-                << perftest_cpp::_LatencyTopicName << " or "
-                << perftest_cpp::_AnnouncementTopicName << std::endl;
+                  << THROUGHPUT_TOPIC_NAME << " or "
+                  << LATENCY_TOPIC_NAME << " or "
+                  << ANNOUNCEMENT_TOPIC_NAME << std::endl;
         throw std::logic_error("[Error] Topic name");
     }
 
@@ -1907,7 +1888,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
    }
 
     // only force reliability on throughput/latency topics
-    if (topic_name != perftest_cpp::_AnnouncementTopicName) {
+    if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
         if (_IsReliable) {
             // default: use the setting specified in the qos profile
             // qos_reliability = Reliability::Reliable(dds::core::Duration::infinite());
@@ -1920,7 +1901,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     // These QOS's are only set for the Throughput datawriter
     if (qos_profile == "ThroughputQos") {
 
-        if (_IsMulticast) {
+        if (_transport.useMulticast) {
             dw_reliableWriterProtocol.enable_multicast_periodic_heartbeat(true);
         }
 
@@ -2151,17 +2132,17 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     using namespace rti::core::policy;
 
     std::string qos_profile;
-    if (topic_name == perftest_cpp::_ThroughputTopicName) {
+    if (topic_name == THROUGHPUT_TOPIC_NAME.c_str()) {
         qos_profile = "ThroughputQos";
-    } else if (topic_name == perftest_cpp::_LatencyTopicName) {
+    } else if (topic_name == LATENCY_TOPIC_NAME.c_str()) {
         qos_profile = "LatencyQos";
-    } else if (topic_name == perftest_cpp::_AnnouncementTopicName) {
+    } else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.c_str()) {
         qos_profile = "AnnouncementQos";
     } else {
         std::cerr << "[Error] Topic name must either be "
-                << perftest_cpp::_ThroughputTopicName << " or "
-                << perftest_cpp::_LatencyTopicName << " or "
-                << perftest_cpp::_AnnouncementTopicName << std::endl;
+                  << THROUGHPUT_TOPIC_NAME << " or "
+                  << LATENCY_TOPIC_NAME << " or "
+                  << ANNOUNCEMENT_TOPIC_NAME << std::endl;
         throw std::logic_error("[Error] Topic name");
     }
 
@@ -2182,7 +2163,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
             dr_qos.policy<Property>().get_all();
 
     // only force reliability on throughput/latency topics
-    if (topic_name != perftest_cpp::_AnnouncementTopicName) {
+    if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
         if (_IsReliable) {
             qos_reliability = dds::core::policy::Reliability::Reliable();
         } else {
@@ -2236,26 +2217,23 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (_transport.transportConfig.kind != TRANSPORT_TCPv4
-            && _transport.transportConfig.kind != TRANSPORT_TLSv4
-            && _transport.transportConfig.kind != TRANSPORT_WANv4
-            && _transport.transportConfig.kind != TRANSPORT_SHMEM
-            && _IsMulticast) {
-
-       const char *multicast_addr;
-
-        if (topic_name == perftest_cpp::_ThroughputTopicName) {
-            multicast_addr = THROUGHPUT_MULTICAST_ADDR;
-        } else if (topic_name == perftest_cpp::_LatencyTopicName) {
-            multicast_addr = LATENCY_MULTICAST_ADDR;
-        } else {
-            multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
-        }
+    if (_transport.useMulticast && _transport.allowsMulticast()) {
 
         dds::core::StringSeq transports;
         transports.push_back("udpv4");
+        std::string multicastAddr =
+                _transport.getMulticastAddr(topic_name.c_str());
+        if (multicastAddr.length() == 0) {
+            std::cerr << "[Error] Topic name must either be "
+                      << THROUGHPUT_TOPIC_NAME << " or "
+                      << LATENCY_TOPIC_NAME << " or "
+                      << ANNOUNCEMENT_TOPIC_NAME << std::endl;
+            throw std::logic_error("[Error] Topic name");
+            return NULL;
+        }
         rti::core::TransportMulticastSettings multicast_settings(
-                transports, multicast_addr, 0);
+                transports,
+                _transport.getMulticastAddr(topic_name.c_str()), 0);
         rti::core::TransportMulticastSettingsSeq multicast_seq;
         multicast_seq.push_back(multicast_settings);
 
@@ -2280,7 +2258,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         dds::sub::DataReader<T> reader(dds::core::null);
         ReceiverListener<T> *reader_listener = NULL;
 
-        if (topic_name == perftest_cpp::_ThroughputTopicName && _useCft) {
+        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _useCft) {
             /* Create CFT Topic */
             dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
                     topic_name,
@@ -2324,7 +2302,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 type);
         dds::sub::DataReader<DynamicData> reader(dds::core::null);
         DynamicDataReceiverListener *dynamic_data_reader_listener = NULL;
-        if (topic_name == perftest_cpp::_ThroughputTopicName && _useCft) {
+        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _useCft) {
             /* Create CFT Topic */
             dds::topic::ContentFilteredTopic<DynamicData> topicCft = CreateCft(
                     topic_name,

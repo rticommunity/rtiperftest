@@ -84,9 +84,6 @@ class RTIDDSImpl : public IMessaging
         _FastHeartbeatPeriod.sec = 0;
         _FastHeartbeatPeriod.nanosec = 0;
 
-        THROUGHPUT_MULTICAST_ADDR = "239.255.1.1";
-        LATENCY_MULTICAST_ADDR = "239.255.1.2";
-        ANNOUNCEMENT_MULTICAST_ADDR = "239.255.1.100";
         _ProfileLibraryName = "PerftestQosLibrary";
 
         _factory = NULL;
@@ -201,9 +198,6 @@ class RTIDDSImpl : public IMessaging
     DDS_Duration_t   _HeartbeatPeriod;
     DDS_Duration_t   _FastHeartbeatPeriod;
 
-    const char          *THROUGHPUT_MULTICAST_ADDR;
-    const char          *LATENCY_MULTICAST_ADDR;
-    const char          *ANNOUNCEMENT_MULTICAST_ADDR;
     const char          *_ProfileLibraryName;
 
     DDSDomainParticipantFactory *_factory;

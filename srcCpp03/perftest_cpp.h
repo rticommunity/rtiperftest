@@ -139,10 +139,6 @@ class perftest_cpp
     static RTI_UINT64 _Clock_sec;
     static RTI_UINT64 _Clock_usec;
 
-    static const std::string _LatencyTopicName;
-    static const std::string _ThroughputTopicName;
-    static const std::string _AnnouncementTopicName;
-
   #ifdef RTI_WIN32
     static LARGE_INTEGER _ClockFrequency;
   #endif

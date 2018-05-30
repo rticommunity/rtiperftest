@@ -125,6 +125,11 @@ namespace PerformanceTest
         private const string TRANSPORT_CERTIFICATE_FILE_SUB = "./resource/secure/sub.pem";
         private const string TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
 
+        public bool useMulticast;
+
+        public SortedDictionary<string, string> multicastAddrMap =
+                new SortedDictionary<string, string>();
+
         /**************************************************************************/
         /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 
@@ -166,13 +171,19 @@ namespace PerformanceTest
                     "dds.transport.shmem.builtin")}
             };
         }
-        
+
         public PerftestTransport()
         {
             transportConfig = new TransportConfig();
             tcpOptions = new TcpTransportOptions();
             secureOptions = new SecureTransportOptions();
             wanOptions = new WanTransportOptions();
+
+            useMulticast = false;
+
+            multicastAddrMap.Add(LATENCY_TOPIC_NAME.VALUE, "239.255.1.2");
+            multicastAddrMap.Add(ANNOUNCEMENT_TOPIC_NAME.VALUE, "239.255.1.100");
+            multicastAddrMap.Add(THROUGHPUT_TOPIC_NAME.VALUE, "239.255.1.1");
         }
 
         /**************************************************************************/
@@ -199,6 +210,9 @@ namespace PerformanceTest
             cmdLineArgsMap.Add("-transportWanServerPort", 1);
             cmdLineArgsMap.Add("-transportWanId", 1);
             cmdLineArgsMap.Add("-transportSecureWan", 0);
+            cmdLineArgsMap.Add("-multicast", 0);
+            cmdLineArgsMap.Add("-multicastAddr", 1);
+            cmdLineArgsMap.Add("-nomulticast", 0);
 
             return cmdLineArgsMap;
         }
@@ -222,6 +236,17 @@ namespace PerformanceTest
             sb.Append("\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n");
             sb.Append("\t                                If not specified, use all available\n");
             sb.Append("\t                                interfaces\n");
+            sb.Append("\t-multicast                    - Use multicast to send data. Each topic");
+            sb.Append("\t                                will use a different address:\n");
+            sb.Append("\t                                <address> is optional, if unspecified:\n");
+            foreach(KeyValuePair<string, string> nameAddress in multicastAddrMap)
+            {
+                sb.Append("                                            ");
+                sb.Append(nameAddress.Key).Append(" ").Append(nameAddress.Value).Append("\n");
+            }
+            sb.Append("\t-multicastAddr <address>      - Use multicast to send data and set\n");
+            sb.Append("\t                                the input <address> as the multicast\n");
+            sb.Append("\t                                address for all the topics.\n");
             sb.Append("\t-transportVerbosity <level>   - Verbosity of the transport\n");
             sb.Append("\t                                Default: 0 (errors only)\n");
             sb.Append("\t-transportServerBindPort <p>  - Port used by the transport to accept\n");
@@ -269,6 +294,24 @@ namespace PerformanceTest
             {
                 sb.Append("\tNic: ").Append(allowInterfaces).Append("\n");
             }
+
+            sb.Append( "\tUse Multicast: ");
+
+            if (AllowsMulticast() && useMulticast)
+            {
+                sb.Append("True");
+            }
+            else
+            {
+                sb.Append("False");
+                if (useMulticast)
+                {
+                    sb.Append(" (Multicast is not supported for " );
+                    sb.Append( transportConfig.nameString );
+                    sb.Append(")");
+                }
+            }
+            sb.Append("\n");
 
             if (transportConfig.kind == Transport.TRANSPORT_TCPv4
                     || transportConfig.kind == Transport.TRANSPORT_TLSv4)
@@ -509,6 +552,27 @@ namespace PerformanceTest
                 else if ("-transportSecureWan".StartsWith(argv[i], true, null))
                 {
                     wanOptions.secureWan = true;
+                }
+                else if ("-multicastAddr".StartsWith(argv[i], true, null))
+                {
+                    useMulticast = true;
+                    if ((i == (argv.Length - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write(classLoggingString
+                                + " Missing <address> after -multicastAddr");
+                        return false;
+                    }
+                    multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = argv[i];
+                    multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] = argv[i];
+                    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE] = argv[i];
+                }
+                else if ("-multicast".StartsWith(argv[i], true, null))
+                {
+                    useMulticast = true;
+                }
+                else if ("-nomulticast".StartsWith(argv[i], true, null))
+                {
+                    useMulticast = false;
                 }
             }
 
@@ -1032,6 +1096,17 @@ namespace PerformanceTest
             SetTransportVerbosity(qos);
 
             return true;
+        }
+
+        public string getMulticastAddr(string topicName)
+        {
+            string address;
+            if (multicastAddrMap.TryGetValue(topicName, out address)) {
+                return address;
+            }
+            else {
+                return null;
+            }
         }
     }
 
