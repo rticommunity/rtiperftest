@@ -10,6 +10,9 @@ import java.util.HashMap;
 import com.rti.dds.infrastructure.PropertyQosPolicyHelper;
 import com.rti.dds.infrastructure.TransportBuiltinKind;
 import com.rti.dds.domain.DomainParticipantQos;
+import com.rti.perftest.gen.THROUGHPUT_TOPIC_NAME;
+import com.rti.perftest.gen.LATENCY_TOPIC_NAME;
+import com.rti.perftest.gen.ANNOUNCEMENT_TOPIC_NAME;
 
 public class PerftestTransport {
 
@@ -59,7 +62,6 @@ public class PerftestTransport {
     };
 
     public class TcpTransportOptions {
-
         public String serverBindPort = "7400";
         public boolean wanNetwork = false;
         public String publicAddress = "";
@@ -86,6 +88,7 @@ public class PerftestTransport {
     public WanTransportOptions wanOptions = null;
 
     public long dataLen = 100;
+    public boolean useMulticast = false;
 
     /**************************************************************************/
     /* PRIVATE CLASS MEMBERS*/
@@ -102,6 +105,8 @@ public class PerftestTransport {
     private static String TRANSPORT_CERTIFICATE_FILE_SUB = "./resource/secure/sub.pem";
     private static String TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
 
+    private static HashMap<String, String> multicastAddrMap = new HashMap<String, String>();
+
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 
@@ -111,6 +116,11 @@ public class PerftestTransport {
         tcpOptions = new TcpTransportOptions();
         secureOptions = new SecureTransportOptions();
         wanOptions = new WanTransportOptions();
+
+        multicastAddrMap.put(LATENCY_TOPIC_NAME.VALUE, "239.255.1.1");
+        multicastAddrMap.put(ANNOUNCEMENT_TOPIC_NAME.VALUE, "239.255.1.2");
+        multicastAddrMap.put(THROUGHPUT_TOPIC_NAME.VALUE, "239.255.1.100");
+
     }
 
     /**************************************************************************/
@@ -136,6 +146,9 @@ public class PerftestTransport {
         cmdLineArgsMap.put("-transportWanServerPort", new Integer(1));
         cmdLineArgsMap.put("-transportWanId", new Integer(1));
         cmdLineArgsMap.put("-transportSecureWan", new Integer(0));
+        cmdLineArgsMap.put("-multicast", new Integer(0));
+        cmdLineArgsMap.put("-multicastAddr", new Integer(1));
+        cmdLineArgsMap.put("-nomulticast", new Integer(0));
 
         return cmdLineArgsMap;
     }
@@ -155,10 +168,21 @@ public class PerftestTransport {
     sb.append("\t                                    TLS\n");
     sb.append("\t                                    DTLS\n");
     sb.append("\t                                    WAN\n");
-    sb.append("\t                                Default: UDPv4\n");
+    sb.append("\t                                    Use XML\n");
+    sb.append("\t                                Default: Use XML (UDPv4|SHMEM).\n");
     sb.append("\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n");
     sb.append("\t                                If not specified, use all available\n");
     sb.append("\t                                interfaces\n");
+    sb.append("\t-multicast                    - Use multicast to send data. Each topic");
+    sb.append("\t                                will use a different address:\n");
+    sb.append("\t                                <address> is optional, if unspecified:\n");
+    for (HashMap.Entry<String, String> map : multicastAddrMap.entrySet()) {
+        sb.append("                                            ");
+        sb.append(map.getKey()).append(" ").append(map.getValue()).append("\n");
+    }
+    sb.append("\t-multicastAddr <address>      - Use multicast to send data and set\n");
+    sb.append("\t                                the input <address> as the multicast\n");
+    sb.append("\t                                address for all the topics.\n");
     sb.append("\t-transportVerbosity <level>   - Verbosity of the transport\n");
     sb.append("\t                                Default: 0 (errors only)\n");
     sb.append("\t-transportServerBindPort <p>  - Port used by the transport to accept\n");
@@ -205,6 +229,15 @@ public class PerftestTransport {
             sb.append("\tNic: ").append(allowInterfaces).append("\n");
         }
 
+        sb.append( "\tUse Multicast: ");
+        sb.append((allowsMulticast() && useMulticast) ? "True" : "False");
+        if (!allowsMulticast() && useMulticast) {
+            sb.append (" (Multicast is not supported for ");
+            sb.append( transportConfig.nameString );
+            sb.append(")");
+        }
+        sb.append( "\n");
+
         if (transportConfig.kind == Transport.TRANSPORT_TCPv4
                 || transportConfig.kind == Transport.TRANSPORT_TLSv4) {
 
@@ -248,14 +281,10 @@ public class PerftestTransport {
     }
 
     public boolean allowsMulticast() {
-        if (transportConfig.kind != Transport.TRANSPORT_TCPv4
+        return (transportConfig.kind != Transport.TRANSPORT_TCPv4
                 && transportConfig.kind != Transport.TRANSPORT_TLSv4
                 && transportConfig.kind != Transport.TRANSPORT_WANv4
-                && transportConfig.kind != Transport.TRANSPORT_SHMEM) {
-            return true;
-        } else {
-            return false;
-        }
+                && transportConfig.kind != Transport.TRANSPORT_SHMEM);
     }
 
     public boolean parseTransportOptions(int argc, String[] argv) {
@@ -421,6 +450,21 @@ public class PerftestTransport {
             } else if ("-transportSecureWan".toLowerCase().startsWith(argv[i].toLowerCase())) {
 
                 wanOptions.secureWan = true;
+            } else if ("-nomulticast".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                useMulticast = false;
+            } else if ("-multicast".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                useMulticast = true;
+            }
+            else if ("-multicastAddr".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                useMulticast = true;
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.println(classLoggingString
+                            + " Missing <address> after -multicastAddr");
+                    return false;
+                }
+                multicastAddrMap.put(THROUGHPUT_TOPIC_NAME.VALUE, argv[i]);
+                multicastAddrMap.put(LATENCY_TOPIC_NAME.VALUE, argv[i]);
+                multicastAddrMap.put(ANNOUNCEMENT_TOPIC_NAME.VALUE, argv[i]);
             }
         }
 
@@ -944,5 +988,10 @@ public class PerftestTransport {
         return true;
     }
 
+    public String getMulticastAddr(String topicName)
+    {
+        //get() function return null if the map contains no mapping for the key
+        return multicastAddrMap.get(topicName).toString();
+    }
 }
 //===========================================================================

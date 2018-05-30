@@ -62,7 +62,6 @@ In order to make this clear, *RTI Perftest* now shows a summary at the beginning
 the test with most of the relevant parameters being used for such test. This is done
 for both *Publisher* and *Subscriber* sides.
 
-
 Added command-line parameters to simplify single API build (#50)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -80,6 +79,23 @@ Added RTI Perftest and RTI Connext DDS information at beginning of the test (#54
 Starting with this release, RTI Perftest will print at the beginning of the test
 its version and the version of RTI Connext DDS used to compile against.
 
+Automatically regenerate `qos_string.h` file if `perftest_qos_profiles.xml` is modified (#63)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting with this release, *RTI Perftest* will udpate `qos_string.h` file
+with the content of `perftest_qos_profiles.xml` every time that *RTI Perftest*
+is built for C++ and C++ New PSM.
+
+Enable batching for Throughput-Test mode with a 8kB value (#76)(#67)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As part of the enhancements for the out-of-the-box experience for *RTI Perftest*,
+batching will be enabled by default for throughput tests where the datalen is
+equal or smaller than 4kB, and the *Batch size* value will be set to 8kB.
+
+This will be automatically disabled if LatencyTest mode is set or if the
+`-batchSize` is lower than two times the `-dataLen`.
+
 Use `UDPv4` and `Shared Memory` as the default transport configuration (#80)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -91,7 +107,6 @@ Starting from this release *RTI Perftest* new default is to use `UDPv4` and `SHM
 
 This change improves the out of the box user experience, getting better numbers
 when using the default configuration.
-
 
 Show percentage of packets lost in the subscriber side output (#81)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -194,6 +209,22 @@ instead, *RTI Perftest* would always use the default value set up via code.
 This behavior has been fixed. We also took the oportunity to simplify and clarify
 the XML configurations when disabling positive Acks.
 
+Show message in sumary when -multicast is present but it wont be used (#44)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous versions, if the `-multicast` command-line parameter was provided but
+the transport didn't allow the use of multicast, it would fail silently and no
+indication would be shown by RTI Perftest.
+
+Starting from this release, the use of multicast will be shown in the transport
+summary at the beginning of the test, and a message will be printed stating if
+multicast could not be applied for the transport.
+
+The `-multicast` parameter has been divided into 2: `-multicast` which enables
+multicast for a given transport using a set of default multicast addresses and
+`-multicastAddr <address>` which enables multicast and sets the multicast IPs to
+be the one provided.
+
 Update Security Certificates and Governance files (#49)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -202,6 +233,7 @@ in RTI Perftest have been regenerated and signed again, since they had expired.
 
 The script used for updating the files has been improved to generate certificates
 valid for a longer period of time (from one year to ten years).
+
 
 Release Notes 2.3.1
 --------------------
@@ -830,8 +862,8 @@ we could get into the following error:
 Known Issues
 ------------
 
-Shared Memory issues when running the Modern C++ API Implementation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Shared Memory issues when running the Modern C++ API or .Net Implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *RTI Perftest* uses `UDPv4` and `SHMEM` by default. Certain Operative Systems
 don't support Shared Memory, or the default configuration is not enough for
@@ -849,8 +881,8 @@ some errors trying to create the Participant entity:
     DDSDomainParticipant_impl::createI:ERROR: Failed to auto-enable entity
 
 These errors are handled and filtered in the *RTI Perftest* implementation for
-the Classic C++, Java and C# APIs, but this is still not possible with the
-Modern C++ API.
+the Classic C++ and Java APIs, but this is still not possible with the
+Modern C++ and .Net API.
 
 For more information about how to configure Shared Memory see http://community.rti.com/kb/osx510
 

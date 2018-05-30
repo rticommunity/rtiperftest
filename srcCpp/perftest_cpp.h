@@ -55,6 +55,7 @@ class perftest_cpp
     int Run(int argc, char *argv[]);
     bool ParseConfig(int argc, char *argv[]);
     void PrintConfiguration();
+    unsigned int GetSamplesPerBatch();
 
   private:
     int Publisher();
@@ -86,8 +87,6 @@ class perftest_cpp
 
   private:
     unsigned long  _DataLen;
-    unsigned int  _BatchSize;
-    int  _SamplesPerBatch;
     unsigned long long _NumIter;
     bool _IsPub;
     bool _isScan;
@@ -135,10 +134,6 @@ class perftest_cpp
     static struct RTINtpTime _ClockTime_aux;
     static RTI_UINT64 _Clock_sec;
     static RTI_UINT64 _Clock_usec;
-
-    static const char *_LatencyTopicName;
-    static const char *_ThroughputTopicName;
-    static const char *_AnnouncementTopicName;
 
   #ifdef RTI_WIN32
     static LARGE_INTEGER _ClockFrequency;

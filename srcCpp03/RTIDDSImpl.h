@@ -54,7 +54,7 @@ class RTIDDSImpl : public IMessaging
 
     void Shutdown();
 
-    unsigned int GetBatchSize()
+    int GetBatchSize()
     {
         return _BatchSize;
     }
@@ -86,7 +86,7 @@ class RTIDDSImpl : public IMessaging
     bool         _AutoThrottle;
     bool         _IsReliable;
     bool         _IsMulticast;
-    unsigned int _BatchSize;
+    int _BatchSize;
     unsigned long _InstanceCount;
     long _InstanceMaxCountReader;
     int          _InstanceHashBuckets;
@@ -141,9 +141,6 @@ class RTIDDSImpl : public IMessaging
     dds::core::Duration   _HeartbeatPeriod;
     dds::core::Duration   _FastHeartbeatPeriod;
 
-    const char          *THROUGHPUT_MULTICAST_ADDR;
-    const char          *LATENCY_MULTICAST_ADDR;
-    const char          *ANNOUNCEMENT_MULTICAST_ADDR;
     const char          *_ProfileLibraryName;
 
     dds::domain::DomainParticipant _participant;

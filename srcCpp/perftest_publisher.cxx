@@ -31,9 +31,6 @@ RTI_UINT64 perftest_cpp::_Clock_usec = 0;
 
 bool perftest_cpp::_testCompleted = false;
 bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan test
-const char *perftest_cpp::_LatencyTopicName = "Latency";
-const char *perftest_cpp::_AnnouncementTopicName = "Announcement";
-const char *perftest_cpp::_ThroughputTopicName = "Throughput";
 const int timeout_wait_for_ack_sec = 0;
 const unsigned int timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {2, 3, 2, 0};
@@ -114,17 +111,6 @@ int perftest_cpp::Run(int argc, char *argv[])
     if (!_MessagingImpl->Initialize(_MessagingArgc, _MessagingArgv))
     {
         return -1;
-    }
-
-    _BatchSize = _MessagingImpl->GetBatchSize();
-
-    if (_BatchSize != 0) {
-        _SamplesPerBatch = _BatchSize/(int)_DataLen;
-        if (_SamplesPerBatch == 0) {
-            _SamplesPerBatch = 1;
-        }
-    } else {
-        _SamplesPerBatch = 1;
     }
 
     PrintConfiguration();
@@ -224,8 +210,6 @@ perftest_cpp::~perftest_cpp()
 perftest_cpp::perftest_cpp()
 {
     _DataLen = 100;
-    _BatchSize = 0;
-    _SamplesPerBatch = 1;
     _NumIter = 100000000;
     _IsPub = false;
     _isScan = false;
@@ -927,11 +911,16 @@ void perftest_cpp::PrintConfiguration()
         }
 
         // Batching
+        int batchSize = _MessagingImpl->GetBatchSize();
         stringStream << "\tBatching: ";
-        if (_BatchSize != 0) {
-            stringStream << _BatchSize << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
-        } else {
+        if (batchSize > 0) {
+            stringStream << batchSize << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
+        } else if (batchSize == 0) {
             stringStream << "No (Use \"-batchSize\" to setup batching)\n";
+        } else if (batchSize == -1) {
+            stringStream << "\"Disabled by RTI Perftest.\"\n"
+                         << "\t\t  BatchSize is smaller than 2 times\n"
+                         << "\t\t  the sample size.\n";
         }
 
         // Publication Rate
@@ -1233,7 +1222,7 @@ int perftest_cpp::Subscriber()
     IMessagingWriter   *announcement_writer;
 
     // create latency pong writer
-    writer = _MessagingImpl->CreateWriter(_LatencyTopicName);
+    writer = _MessagingImpl->CreateWriter(LATENCY_TOPIC_NAME);
 
     if (writer == NULL) {
         fprintf(stderr, "Problem creating latency writer.\n");
@@ -1245,7 +1234,9 @@ int perftest_cpp::Subscriber()
     {
         // create latency pong reader
         reader_listener = new ThroughputListener(writer, NULL, _useCft, _NumPublishers);
-        reader = _MessagingImpl->CreateReader(_ThroughputTopicName, reader_listener);
+        reader = _MessagingImpl->CreateReader(
+                THROUGHPUT_TOPIC_NAME,
+                reader_listener);
         if (reader == NULL)
         {
             fprintf(stderr, "Problem creating throughput reader.\n");
@@ -1254,7 +1245,9 @@ int perftest_cpp::Subscriber()
     }
     else
     {
-        reader = _MessagingImpl->CreateReader(_ThroughputTopicName, NULL);
+        reader = _MessagingImpl->CreateReader(
+                THROUGHPUT_TOPIC_NAME,
+                NULL);
         if (reader == NULL)
         {
             fprintf(stderr, "Problem creating throughput reader.\n");
@@ -1272,7 +1265,8 @@ int perftest_cpp::Subscriber()
     }
 
     // Create announcement writer
-    announcement_writer = _MessagingImpl->CreateWriter(_AnnouncementTopicName);
+    announcement_writer = _MessagingImpl->CreateWriter(
+            ANNOUNCEMENT_TOPIC_NAME);
 
     if (announcement_writer == NULL) {
         fprintf(stderr, "Problem creating announcement writer.\n");
@@ -1771,9 +1765,11 @@ int perftest_cpp::Publisher()
     IMessagingReader *announcement_reader;
     unsigned long num_latency;
     unsigned long announcementSampleCount = 50;
+    unsigned int samplesPerBatch = 1;
 
     // create throughput/ping writer
-    IMessagingWriter *writer = _MessagingImpl->CreateWriter(_ThroughputTopicName);
+    IMessagingWriter *writer = _MessagingImpl->CreateWriter(
+            THROUGHPUT_TOPIC_NAME);
 
     if (writer == NULL)
     {
@@ -1781,13 +1777,15 @@ int perftest_cpp::Publisher()
         return -1;
     }
 
+    samplesPerBatch = GetSamplesPerBatch();
+
     // calculate number of latency pings that will be sent per data size
-    num_latency = (unsigned long)((_NumIter/_SamplesPerBatch) / _LatencyCount);
-    if ((_NumIter/_SamplesPerBatch) % _LatencyCount > 0) {
+    num_latency = (unsigned long)((_NumIter/samplesPerBatch) / _LatencyCount);
+    if ((_NumIter/samplesPerBatch) % _LatencyCount > 0) {
         num_latency++;
     }
 
-    if (_SamplesPerBatch > 1) {
+    if (samplesPerBatch > 1) {
         // in batch mode, might have to send another ping
         ++num_latency;
     }
@@ -1806,7 +1804,7 @@ int perftest_cpp::Publisher()
                     NULL,
                     _LatencyTest ? writer : NULL);
             reader = _MessagingImpl->CreateReader(
-                    _LatencyTopicName,
+                    LATENCY_TOPIC_NAME,
                     reader_listener);
             if (reader == NULL)
             {
@@ -1816,7 +1814,9 @@ int perftest_cpp::Publisher()
         }
         else
         {
-            reader = _MessagingImpl->CreateReader(_LatencyTopicName, NULL);
+            reader = _MessagingImpl->CreateReader(
+                    LATENCY_TOPIC_NAME,
+                    NULL);
             if (reader == NULL)
             {
                 fprintf(stderr,"Problem creating latency reader.\n");
@@ -1846,7 +1846,8 @@ int perftest_cpp::Publisher()
      * every Publisher
      */
     announcement_reader_listener = new AnnouncementListener();
-    announcement_reader = _MessagingImpl->CreateReader(_AnnouncementTopicName,
+    announcement_reader = _MessagingImpl->CreateReader(
+            ANNOUNCEMENT_TOPIC_NAME,
             announcement_reader_listener);
     if (announcement_reader == NULL)
     {
@@ -2012,8 +2013,8 @@ int perftest_cpp::Publisher()
 
         // only send latency pings if is publisher with ID 0
         // In batch mode, latency pings are sent once every LatencyCount batches
-        if ( (_PubID == 0) && (((loop/_SamplesPerBatch) % (unsigned long long)_LatencyCount) == 0) )
-        {
+        if ( (_PubID == 0) && (((loop/samplesPerBatch)
+                % (unsigned long long)_LatencyCount) == 0) ) {
 
             /* In batch mode only send a single ping in a batch.
              *
@@ -2071,14 +2072,8 @@ int perftest_cpp::Publisher()
 
                     message.size = _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
                     /* Reset _SamplePerBatch */
-                    if (_BatchSize != 0) {
-                        _SamplesPerBatch = _BatchSize / (message.size + OVERHEAD_BYTES);
-                        if (_SamplesPerBatch == 0) {
-                            _SamplesPerBatch = 1;
-                        }
-                    } else {
-                        _SamplesPerBatch = 1;
-                    }
+                    samplesPerBatch = GetSamplesPerBatch();
+
                     ping_index_in_batch = 0;
                     current_index_in_batch = 0;
                 }
@@ -2089,7 +2084,7 @@ int perftest_cpp::Publisher()
                 message.timestamp_sec = (int)((now >> 32) & 0xFFFFFFFF);
                 message.timestamp_usec = (unsigned int)(now & 0xFFFFFFFF);
                 ++num_pings;
-                ping_index_in_batch = (ping_index_in_batch + 1) % _SamplesPerBatch;
+                ping_index_in_batch = (ping_index_in_batch + 1) % samplesPerBatch;
                 sentPing = true;
 
                 if (_displayWriterStats && _PrintIntervals) {
@@ -2097,7 +2092,7 @@ int perftest_cpp::Publisher()
                 }
             }
         }
-        current_index_in_batch = (current_index_in_batch + 1) % _SamplesPerBatch;
+        current_index_in_batch = (current_index_in_batch + 1) % samplesPerBatch;
 
         message.seq_num = (unsigned long) loop;
         message.latency_ping = pingID;
@@ -2223,6 +2218,22 @@ inline unsigned long long perftest_cpp::GetTimeUsec() {
             perftest_cpp::_Clock_usec,
             perftest_cpp::_ClockTime_aux);
     return perftest_cpp::_Clock_usec + 1000000 * perftest_cpp::_Clock_sec;
+}
+
+inline unsigned int perftest_cpp::GetSamplesPerBatch() {
+    int batchSize = _MessagingImpl->GetBatchSize();
+    unsigned int samplesPerBatch;
+
+    if (batchSize > 0) {
+        samplesPerBatch = batchSize / (int) _DataLen;
+        if (samplesPerBatch == 0) {
+            samplesPerBatch = 1;
+        }
+    } else {
+        samplesPerBatch = 1;
+    }
+
+    return samplesPerBatch;
 }
 
 #ifdef RTI_WIN32
