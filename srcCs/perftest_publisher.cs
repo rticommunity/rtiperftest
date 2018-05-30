@@ -1394,7 +1394,7 @@ namespace PerformanceTest {
                         sb.Append("\t\t  the minimum sample size.\n");
                     }
                     if (batchSize == -2) {
-                        sb.Append("\t\t  BatchSize will not be used with\n");
+                        sb.Append("\t\t  BatchSize cannot be used with\n");
                         sb.Append("\t\t  Large Data.\n");
                     }
                 }

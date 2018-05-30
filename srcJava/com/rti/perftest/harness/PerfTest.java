@@ -844,7 +844,7 @@ public final class PerfTest {
                     sb.append("\t\t  the minimum sample size.\n");
                 }
                 if (batchSize == -2) {
-                    sb.append("\t\t  BatchSize will not be used with\n");
+                    sb.append("\t\t  BatchSize cannot be used with\n");
                     sb.append("\t\t  Large Data.\n");
                 }
             }

@@ -1645,16 +1645,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
         }
 
-        if (_latencyTest) {
-            if (isBatchSizeProvided && _batchSize != 0) {
-                System.err.println("Batching cannot be used with Latency test.");
-                return false;
-            }
-            else {
-                _batchSize = 0; // Disable Batching
-            }
-        }
-
         /* If we are using scan, we get the minimum and set it in Datalen */
         if (_isScan) {
             _dataLen = minScanSize;
@@ -1673,30 +1663,47 @@ public final class RTIDDSImpl<T> implements IMessaging {
             _isLargeData = false;
         }
 
-        /*
-         * Large Data + batching cannot be set. But batching is enabled by default,
-         * so in that case, we just disabled batching, else, the customer set it up,
-         * so we explitly fail
-         */
-        if (_isLargeData && _batchSize > 0) {
-            if (isBatchSizeProvided) {
-                System.err.println(
-                    "Batching cannot be used with asynchronous writing.");
-                return false;
-            } else {
-                _batchSize = -2;
-            }
-        }
-
-        /* If we are using batching (no Large data, we checked that already */
+        /* If we are using batching */
         if (_batchSize > 0) {
 
+            /* We will not use batching for a latency test */
+            if (_latencyTest) {
+                if (isBatchSizeProvided) {
+                    System.err.println(
+                            "Batching cannot be used in a Latency test.");
+                    return false;
+                }
+                else {
+                    _batchSize = 0; // Disable Batching
+                }
+            }
+
+            /* Check if using asynchronous */
+            if (_IsAsynchronous) {
+                System.err.println(
+                        "Batching cannot be used with asynchronous writing.\n");
+                return false;
+            }
+
             /*
-             * We don't want to use batching if the batch size is not large
-             * enough to contain at least two samples (in this case we avoid the
-             * checking at the middleware level).
+             * Large Data + batching cannot be set. But batching is enabled by default,
+             * so in that case, we just disabled batching, else, the customer set it up,
+             * so we explitly fail
              */
-            if (_batchSize < _dataLen * 2) {
+            if (_isLargeData) {
+                if (isBatchSizeProvided) {
+                    System.err.println(
+                        "Batching cannot be used with asynchronous writing.");
+                    return false;
+                } else {
+                    _batchSize = -2;
+                }
+            } else if (_batchSize < _dataLen * 2) {
+                /*
+                 * We don't want to use batching if the batch size is not large
+                 * enough to contain at least two samples (in this case we avoid the
+                 * checking at the middleware level).
+                 */
                 if (isBatchSizeProvided || _isScan) {
                     /*
                      * Batchsize disabled. A message will be print if _batchSize < 0 in

@@ -821,13 +821,13 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             _executionTime = 60;
         }
         // Check if large data or small data
-        if (_scanDataLenSizes[0] > (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
-                && _scanDataLenSizes[_scanDataLenSizes.size() - 1] > (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+        if (_scanDataLenSizes[0] > (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
+                && _scanDataLenSizes[_scanDataLenSizes.size() - 1] > (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
             if (_useUnbounded == 0) {
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
             }
-        } else if (_scanDataLenSizes[0] <= (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
-                && _scanDataLenSizes[_scanDataLenSizes.size() - 1] <= (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+        } else if (_scanDataLenSizes[0] <= (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
+                && _scanDataLenSizes[_scanDataLenSizes.size() - 1] <= (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
             if (_useUnbounded != 0) {
                 fprintf(stderr, "Unbounded will be ignored since -scan is present.\n");
                 _useUnbounded = 0;
@@ -923,7 +923,7 @@ void perftest_cpp::PrintConfiguration()
                 stringStream << "\t\t  BatchSize is smaller than 2 times\n"
                              << "\t\t  the minimum sample size.\n";
             } else if (batchSize == -2) {
-                stringStream << "\t\t  BatchSize will not be used with\n"
+                stringStream << "\t\t  BatchSize cannot be used with\n"
                              << "\t\t  Large Data.\n";
             }
         }

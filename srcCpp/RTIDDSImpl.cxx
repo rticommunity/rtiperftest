@@ -680,24 +680,15 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_LatencyTest) {
-        if (isBatchSizeProvided && _BatchSize > 0) {
-            fprintf(stderr, "Batching cannot be used with Latency test.\n");
-            return false;
-        } else {
-            _BatchSize = 0; //Disable Batching
-        }
-    }
-
     /* If we are using scan, we get the minimum and set it in Datalen */
     if (_isScan) {
         _DataLen = minScanSize;
     }
 
     /* Check if we need to enable Large Data. This works also for -scan */
-    if (_DataLen > (unsigned long)(std::min)(
-            MAX_SYNCHRONOUS_SIZE,
-            MAX_BOUNDED_SEQ_SIZE)) {
+    if (_DataLen > (unsigned long) (std::min)(
+                MAX_SYNCHRONOUS_SIZE,
+                MAX_BOUNDED_SEQ_SIZE)) {
         _isLargeData = true;
         if (_useUnbounded == 0) {
             _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
@@ -707,29 +698,43 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         _isLargeData = false;
     }
 
-    /*
-     * Large Data + batching cannot be set. But batching is enabled by default,
-     * so in that case, we just disabled batching, else, the customer set it up,
-     * so we explitly fail
-     */
-    if (_isLargeData && _BatchSize > 0) {
-        if (isBatchSizeProvided) {
-            fprintf(stderr, "Batching cannot be used with asynchronous writing.\n");
-            return false;
-        } else {
-            _BatchSize = -2;
-        }
-    }
-
-    /* If we are using batching (no Large data, we checked that already */
+    /* If we are using batching */
     if (_BatchSize > 0) {
 
+        /* We will not use batching for a latency test */
+        if (_LatencyTest) {
+            if (isBatchSizeProvided) {
+                fprintf(stderr, "Batching cannot be used in a Latency test.\n");
+                return false;
+            } else {
+                _BatchSize = 0; //Disable Batching
+            }
+        }
+
+        /* Check if using asynchronous */
+        if (_IsAsynchronous) {
+            fprintf(stderr, "Batching cannot be used with asynchronous writing.\n");
+            return false;
+        }
+
         /*
-         * We don't want to use batching if the batch size is not large
-         * enough to contain at least two samples (in this case we avoid the
-         * checking at the middleware level).
+         * Large Data + batching cannot be set. But batching is enabled by default,
+         * so in that case, we just disabled batching, else, the customer set it up,
+         * so we explitly fail
          */
-        if ((unsigned long)_BatchSize < _DataLen * 2) {
+        if (_isLargeData) {
+            if (isBatchSizeProvided) {
+                fprintf(stderr, "Batching cannot be used with Large Data.\n");
+                return false;
+            } else {
+                _BatchSize = -2;
+            }
+        } else if ((unsigned long) _BatchSize < _DataLen * 2) {
+            /*
+             * We don't want to use batching if the batch size is not large
+             * enough to contain at least two samples (in this case we avoid the
+             * checking at the middleware level).
+             */
             if (isBatchSizeProvided || _isScan) {
                 /*
                  * Batchsize disabled. A message will be print if _batchsize < 0 in
