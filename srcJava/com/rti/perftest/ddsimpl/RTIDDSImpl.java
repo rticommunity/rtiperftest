@@ -48,6 +48,7 @@ import com.rti.perftest.gen.LATENCY_TOPIC_NAME;
 import com.rti.perftest.gen.ANNOUNCEMENT_TOPIC_NAME;
 import com.rti.perftest.gen.KEY_SIZE;
 import com.rti.perftest.gen.DEFAULT_THROUGHPUT_BATCH_SIZE;
+import com.rti.perftest.gen.MAX_PERFTEST_SAMPLE_SIZE;
 import com.rti.perftest.harness.PerfTest;
 
 
@@ -1181,26 +1182,36 @@ public final class RTIDDSImpl<T> implements IMessaging {
     }
 
     private boolean parseConfig(int argc, String[] argv) {
-        long _scan_max_size = 0;
+        long minScanSize = MAX_PERFTEST_SAMPLE_SIZE.VALUE;
         boolean isBatchSizeProvided = false;
 
         for (int i = 0; i < argc; ++i) {
 
             if ("-scan".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isScan = true;
+                /*
+                * Check if we have custom scan values. In such case we are just
+                * interested in the minimum one.
+                */
                 if ((i != (argc - 1)) && !argv[1+i].startsWith("-")) {
                     ++i;
-                    long aux_scan;
+                    long auxScan = 0;
                     StringTokenizer st = new StringTokenizer(argv[i], ":", true);
                     while (st.hasMoreTokens()) {
                         String s = st.nextToken();
                         if (!s.equals(":")) {
-                            aux_scan = Long.parseLong(s);
-                            if (aux_scan >= _scan_max_size) {
-                                _scan_max_size = aux_scan;
+                            auxScan = Long.parseLong(s);
+                            if (auxScan < minScanSize) {
+                                minScanSize = auxScan;
                             }
                         }
                     }
+                /*
+                 * If we do not specify any custom value for the -scan, we would
+                 * set minScanSize to the minimum size in the default set for -scan.
+                 */
+                } else {
+                    minScanSize = 32;
                 }
             }
             else if ("-pub".toLowerCase().startsWith(argv[i].toLowerCase())) {
@@ -1644,55 +1655,59 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
         }
 
-        if (_IsAsynchronous && _batchSize > 0) {
-            System.err.println(
-                        "Batching cannot be used with asynchronous writing.");
-            return false;
+        /* If we are using scan, we get the minimum and set it in Datalen */
+        if (_isScan) {
+            _dataLen = minScanSize;
         }
 
-        if (_isScan) {
-            _dataLen = _scan_max_size;
-            // Check if large data or small data
-            if (_scan_max_size > Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
-                if (_useUnbounded == 0) {
-                    _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
-                }
-                _isLargeData = true;
-            } else {
-                _useUnbounded = 0;
-                _isLargeData = false;
+        /* Check if we need to enable Large Data. This works also for -scan */
+        if (_dataLen > Math.min(
+                MAX_SYNCHRONOUS_SIZE.VALUE,
+                MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+            _isLargeData = true;
+            if (_useUnbounded == 0) {
+                _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
             }
-            /*
-             * If not Scan, compare sizes of Batching and dataLen At this point
-             * we have checked that we are not in a latency test mode, therefore
-             * we are sure we are in throughput test mode, where we do want to
-             * enable batching by default in certain cases
-             */
-        } else if (_batchSize > 0 && _batchSize < _dataLen * 2){
+        } else { /* No Large Data */
+            _useUnbounded = 0;
+            _isLargeData = false;
+        }
+
+        /*
+         * Large Data + batching cannot be set. But batching is enabled by default,
+         * so in that case, we just disabled batching, else, the customer set it up,
+         * so we explitly fail
+         */
+        if (_isLargeData && _batchSize > 0) {
+            if (isBatchSizeProvided) {
+                System.err.println(
+                    "Batching cannot be used with asynchronous writing.");
+                return false;
+            } else {
+                _batchSize = -2;
+            }
+        }
+
+        /* If we are using batching (no Large data, we checked that already */
+        if (_batchSize > 0) {
+
             /*
              * We don't want to use batching if the batch size is not large
              * enough to contain at least two samples (in this case we avoid the
              * checking at the middleware level).
              */
-            if (isBatchSizeProvided) {
-                /*
-                 * Batchsize disabled. A message will be print if
-                 * _batchsize < 0 in perftest_cpp::PrintConfiguration()
-                 */
-                _batchSize = -1;
-            } else {
-                _batchSize = 0;
+            if (_batchSize < _dataLen * 2) {
+                if (isBatchSizeProvided || _isScan) {
+                    /*
+                     * Batchsize disabled. A message will be print if _batchSize < 0 in
+                     * perftest_cpp::PrintConfiguration()
+                     */
+                    _batchSize = -1;
+                }
+                else {
+                    _batchSize = 0;
+                }
             }
-        }
-
-        if (_dataLen > MAX_SYNCHRONOUS_SIZE.VALUE) {
-            _isLargeData = true;
-        }
-
-        if (_isLargeData && _batchSize > 0) {
-            System.err.println(
-                        "Batching cannot be used with asynchronous writing.");
-            return false;
         }
 
         if (_TurboMode) {
