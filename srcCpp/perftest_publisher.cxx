@@ -1262,8 +1262,8 @@ int perftest_cpp::Subscriber()
     }
 
     // Create announcement writer
-    announcement_writer =
-            _MessagingImpl->CreateWriter(ANNOUNCEMENT_TOPIC_NAME);
+    announcement_writer = _MessagingImpl->CreateWriter(
+            ANNOUNCEMENT_TOPIC_NAME);
 
     if (announcement_writer == NULL) {
         fprintf(stderr, "Problem creating announcement writer.\n");

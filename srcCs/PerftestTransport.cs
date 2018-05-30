@@ -1100,9 +1100,9 @@ namespace PerformanceTest
 
         public string getMulticastAddr(string topicName)
         {
-            string ret;
-            if (multicastAddrMap.TryGetValue(topicName, out ret)) {
-                return ret;
+            string address;
+            if (multicastAddrMap.TryGetValue(topicName, out address)) {
+                return address;
             }
             else {
                 return null;

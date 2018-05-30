@@ -2157,9 +2157,9 @@ namespace PerformanceTest {
              * every Publisher
              */
             announcement_reader_listener = new AnnouncementListener();
-            announcement_reader =
-                    _MessagingImpl.CreateReader(ANNOUNCEMENT_TOPIC_NAME.VALUE,
-                            announcement_reader_listener);
+            announcement_reader = _MessagingImpl.CreateReader(
+                    ANNOUNCEMENT_TOPIC_NAME.VALUE,
+                    announcement_reader_listener);
             if (announcement_reader == null)
             {
                 Console.Error.Write("Problem creating announcement reader.\n");
