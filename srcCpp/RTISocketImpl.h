@@ -40,6 +40,7 @@ class RTISocketImpl : public IMessaging {
         _isPublisher = false;
         _peer_host_count = 0;
         _batchSize = 0;
+        _basePort = 7400;
 
         _multicastAddrString = (char *)"239.255.1.1";
 
@@ -81,6 +82,14 @@ class RTISocketImpl : public IMessaging {
 
     bool ConfigureSocketsTransport();
 
+    /*
+     * This function calculate the port depending of the resource we want to
+     * create and the domain. Similar behaviour to
+     * PRESRtps_getWellKnownUnicastPort()
+     */
+    unsigned int GetUnicastPort(const char *topicName);
+
+    /*TODO: Ask fernando if merge this two function */
     static double ObtainSerializeTimeCost(int iterations, unsigned int sampleSize);
     static double ObtainDeSerializeTimeCost(int iterations, unsigned int sampleSize);
 
@@ -99,6 +108,7 @@ class RTISocketImpl : public IMessaging {
     unsigned int _batchSize;
     int _peer_host_count;
     char *_peer_host[RTIPERFTEST_MAX_PEERS];
+    unsigned int _basePort;
 
     /*TODO: Others solution to this:
      * 1 -> Use a unorderedMap (C++11) not possible
@@ -130,7 +140,7 @@ class RTISocketImpl : public IMessaging {
      * Resources reserved by a participant
      * It's use to calculate the offset between the ports
      */
-    static const int resources_per_participant;
+    static const int RESOURCES_PER_PARTICIPANT;
 };
 
 char *InterfaceNameToAddress(const char *nicName);

@@ -1093,7 +1093,16 @@ class ThroughputListener : public IMessagingCB
                    interval_missing_packets,
                    outputCpu.c_str()
             );
-            fflush(stdout);
+
+            printf("Serialize Time %f\n",
+                   RTISocketImpl::ObtainSerializeTimeCost(
+                           interval_data_length + perftest_cpp::OVERHEAD_BYTES,
+                           1000));
+            printf("Deserialize Time %f\n",
+                   RTISocketImpl::ObtainDeSerializeTimeCost(
+                           interval_data_length + perftest_cpp::OVERHEAD_BYTES,
+                           1000));
+                    fflush(stdout);
         }
 
         packets_received = 0;
@@ -1275,7 +1284,6 @@ int perftest_cpp::Subscriber()
                 ave_count = 0;
                 continue;
             }
-
             last_msgs = reader_listener->packets_received;
             last_bytes = reader_listener->bytes_received;
             msgsent = last_msgs - prev_count;
@@ -1716,6 +1724,7 @@ int perftest_cpp::Publisher()
 
     IMessagingReader *reader;
     // Only publisher with ID 0 will send/receive pings
+    struct RTIOsapiThread * thread1 = NULL;
     if (_PubID == 0)
     {
         // Check if using callbacks or read thread
@@ -1749,13 +1758,14 @@ int perftest_cpp::Publisher()
                     reader,
                     _LatencyTest ? writer : NULL);
 
-            RTIOsapiThread_new("ReceiverThread",
-                                RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-                                RTI_OSAPI_THREAD_OPTION_DEFAULT,
-                                RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                                NULL,
-                                ReadThread<LatencyListener>,
-                                reader_listener);
+            thread1 = RTIOsapiThread_new(
+                    "ReceiverThread",
+                    RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
+                    RTI_OSAPI_THREAD_OPTION_DEFAULT,
+                    RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                    NULL,
+                    ReadThread<LatencyListener>,
+                    reader_listener);
         }
     }
     else
@@ -2083,6 +2093,11 @@ int perftest_cpp::Publisher()
 
     if (reader_listener != NULL) {
         delete(reader_listener);
+    }
+
+    //TODO: Change name to the variable and check for DDS
+    if (thread1 != NULL) {
+        RTIOsapiThread_delete(thread1);
     }
 
     if (reader != NULL) {

@@ -21,7 +21,7 @@
 
 std::string valid_flow_controller_socket[] = {"default", "1Gbps", "10Gbps"};
 
-const int RTISocketImpl::resources_per_participant = 3;
+const int RTISocketImpl::RESOURCES_PER_PARTICIPANT = 3;
 
 /*********************************************************
  * Shutdown
@@ -33,11 +33,11 @@ void RTISocketImpl::Shutdown()
         _plugin->delete_cEA(_plugin, NULL);
     }
 
-    if (_workerFactory != NULL && _worker != NULL) {
-        REDAWorkerFactory_destroyWorker(_workerFactory, _worker);
-    }
     if (_exclusiveArea != NULL){
         REDAWorkerFactory_destroyExclusiveArea(_workerFactory, _exclusiveArea);
+    }
+    if (_workerFactory != NULL && _worker != NULL) {
+        REDAWorkerFactory_destroyWorker(_workerFactory, _worker);
     }
     if (_workerFactory != NULL) {
         REDAWorkerFactory_delete(_workerFactory);
@@ -794,8 +794,9 @@ bool RTISocketImpl::Initialize(int argc, char *argv[]) {
  * ObtainSerializeTime
  */
 
-double RTISocketImpl::ObtainSerializeTimeCost(int iterations, unsigned int sampleSize){
-
+double
+RTISocketImpl::ObtainSerializeTimeCost(int iterations, unsigned int sampleSize)
+{
     struct timespec cgt1, cgt2;
     double serializeTime;
 
@@ -873,7 +874,10 @@ double RTISocketImpl::ObtainSerializeTimeCost(int iterations, unsigned int sampl
  * ObtainDeserializeTime
  */
 
-double ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize) {
+double RTISocketImpl::ObtainDeSerializeTimeCost(
+        int iterations,
+        unsigned int sampleSize)
+{
     struct timespec cgt1, cgt2;
     double deSerializeTime;
 
@@ -952,10 +956,28 @@ double ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize) {
     return deSerializeTime /= iterations;
 }
 
+unsigned int RTISocketImpl::GetUnicastPort(const char *topicName) {
+    unsigned int portBase = 7400; //TODO: Set it as class variable
+
+    int portOffset = 0;
+    if (!strcmp(topicName, perftest_cpp::_LatencyTopicName)) {
+        portOffset += 1;
+    }
+    if (!strcmp(topicName, perftest_cpp::_ThroughputTopicName)) {
+        portOffset += 2;
+    }
+
+    unsigned int finalPort = portBase
+            + (_DomainID * RTISocketImpl::RESOURCES_PER_PARTICIPANT)
+            + portOffset;
+
+    return finalPort;
+}
+
 /*********************************************************
  * CreateWriter
  */
-IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
+IMessagingWriter *RTISocketImpl::CreateWriter(const char *topicName)
 {
 
     int result = 0;
@@ -963,21 +985,8 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
     NDDS_Transport_SendResource_t send_resource = NULL;
     NDDS_Transport_Port_t send_port = 0;
 
-    int portOffset = 0;
-    if (!strcmp(topic_name, perftest_cpp::_LatencyTopicName)) {
-        portOffset += 1;
-    }
-    if (!strcmp(topic_name, perftest_cpp::_ThroughputTopicName)) {
-        portOffset += 2;
-    }
-
-    send_port = PRESRtps_getWellKnownUnicastPort(
-            _DomainID,
-            0,
-            7400,
-            250,
-            2,
-            portOffset);
+    // TODO: Allow the user to use a custom port if he want?
+    send_port = GetUnicastPort(topicName);
 
     result = _plugin->create_sendresource_srEA(
             _plugin,
@@ -1005,7 +1014,9 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topic_name)
 /*********************************************************
  * CreateReader
  */
-IMessagingReader *RTISocketImpl::CreateReader(const char *topic_name, IMessagingCB *callback) {
+IMessagingReader *
+RTISocketImpl::CreateReader(const char *topicName, IMessagingCB *callback)
+{
     NDDS_Transport_RecvResource_t recv_resource = NULL;
     NDDS_Transport_Port_t recv_port = 0;
     NDDS_Transport_Address_t * dst_multicast_addr = NULL;
@@ -1014,47 +1025,18 @@ IMessagingReader *RTISocketImpl::CreateReader(const char *topic_name, IMessaging
         dst_multicast_addr = &_multicastAddrTransp;
     }
 
-    // We need different ports for the differents resources.
-    int portOffset = 0;
-    if (!strcmp(topic_name, perftest_cpp::_LatencyTopicName)) {
-        portOffset += 1;
-    }
-    if (!strcmp(topic_name, perftest_cpp::_ThroughputTopicName)) {
-        portOffset += 2;
-    }
+    // TODO: Allow the user to use a custom port if he want?
+    recv_port = GetUnicastPort(topicName);
 
-    recv_port = PRESRtps_getWellKnownUnicastPort(
-            _DomainID, // Domain id
-            0, // Participant id
-            7400, // Port base
-            250, // Domain id gain
-            0, // Participant id gain
-            portOffset); // Port offset
+    bool result = true;
+    result = _plugin->create_recvresource_rrEA(
+            _plugin,
+            &recv_resource,
+            &recv_port,
+            dst_multicast_addr,
+            NDDS_TRANSPORT_PRIORITY_DEFAULT);
 
-    /*
-     * TODO:
-     * If a create receive resource fail, and take another port the correspond
-     * send resource will dont know where is the receiver.
-     *
-     * 1 -> Dont allow the receiver take different port
-     * 2 -> Communicate the port to the 'publisher' via announcement chanel
-     */
-    int result = 1;
-    unsigned int count = 0;
-    while(!_plugin->create_recvresource_rrEA(
-                _plugin,
-                &recv_resource,
-                &recv_port,
-                dst_multicast_addr,
-                NDDS_TRANSPORT_PRIORITY_DEFAULT)) {
-        recv_port += RTISocketImpl::resources_per_participant;
-        if (++count == RTIPERFTEST_MAX_PORT_ATTEMPT) {
-            result = 0;
-            break;
-        }
-    }
-
-    if (result != 1) {
+    if (!result) {
         fprintf(stderr, "Create_recvresource_rrEA error\n");
         return NULL;
     }
@@ -1224,6 +1206,7 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
                 &transportInterface,
                 sizeof(NDDS_Transport_Interface_t));
 
+        /* This will allways return a address full of zeros*/
         RTI_INT32 foundMore;
         RTI_INT32 count;
         _plugin->get_receive_interfaces_cEA(
@@ -1233,14 +1216,23 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
                 &transportInterface,
                 1);
 
+        /* No real need of check it */
         if (count != 1) {
             fprintf(stderr, "Any valid interface for SHMEM found\n");
             return false;
         }
         _nicAddress = transportInterface.address;
 
+        /*TODO: Maybe change all of this for a Full Zeros address*/
+
         _peersMap.push_back(std::pair<NDDS_Transport_Address_t, int>(
                 _nicAddress, 1));
+
+        /*
+         * For SHMEM we dont want to print any interface on the
+         * printTransportConfigurationSummary()
+         */
+        _transport.allowInterfaces = std::string();
 
         break;
 
