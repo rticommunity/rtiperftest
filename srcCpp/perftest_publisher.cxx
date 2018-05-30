@@ -917,10 +917,15 @@ void perftest_cpp::PrintConfiguration()
             stringStream << batchSize << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
         } else if (batchSize == 0) {
             stringStream << "No (Use \"-batchSize\" to setup batching)\n";
-        } else if (batchSize == -1) {
-            stringStream << "\"Disabled by RTI Perftest.\"\n"
-                         << "\t\t  BatchSize is smaller than 2 times\n"
-                         << "\t\t  the sample size.\n";
+        } else { // < 0
+            stringStream << "Disabled by RTI Perftest.\n";
+            if (batchSize == -1) {
+                stringStream << "\t\t  BatchSize is smaller than 2 times\n"
+                             << "\t\t  the minimum sample size.\n";
+            } else if (batchSize == -2) {
+                stringStream << "\t\t  BatchSize will not be used with\n"
+                             << "\t\t  Large Data.\n";
+            }
         }
 
         // Publication Rate
