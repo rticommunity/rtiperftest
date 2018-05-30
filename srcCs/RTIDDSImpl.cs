@@ -260,7 +260,7 @@ namespace PerformanceTest
          */
         bool ParseConfig(int argc, string[] argv)
         {
-            ulong minScanSize = MAX_PERFTEST_SAMPLE_SIZE.VALUE;
+            ulong minScanSize = (ulong) MAX_PERFTEST_SAMPLE_SIZE.VALUE;
             bool isBatchSizeProvided = false;
 
             for (int i = 0; i < argc; ++i)
@@ -862,7 +862,7 @@ namespace PerformanceTest
                     MAX_BOUNDED_SEQ_SIZE.VALUE)) {
                 _isLargeData = true;
                 if (_useUnbounded == 0) {
-                    _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+                    _useUnbounded = (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE;
                 }
             } else { /* No Large Data */
                 _useUnbounded = 0;
@@ -892,7 +892,7 @@ namespace PerformanceTest
                 * enough to contain at least two samples (in this case we avoid the
                 * checking at the middleware level).
                 */
-                if ((unsigned long)_BatchSize < _DataLen * 2) {
+                if ((ulong) _BatchSize < _DataLen * 2) {
                     if (isBatchSizeProvided || _isScan) {
                         /*
                         * Batchsize disabled. A message will be print if _batchsize < 0 in
@@ -1521,14 +1521,7 @@ namespace PerformanceTest
                  DDS.StatusKind.OFFERED_INCOMPATIBLE_QOS_STATUS |
                  DDS.StatusKind.REQUESTED_INCOMPATIBLE_QOS_STATUS));
 
-            if (_participant == null || _loggerDevice.CheckShmemErrors()) {
-                if (_loggerDevice.CheckShmemErrors()) {
-                    Console.Error.Write(
-                            "The participant creation failed due to issues in the Shared Memory configuration of your OS.\n" +
-                            "For more information about how to configure Shared Memory see: http://community.rti.com/kb/osx510 \n" +
-                            "If you want to skip the use of Shared memory in RTI Perftest, " +
-                            "specify the transport using \"-transport <kind>\", e.g. \"-transport UDPv4\".\n");
-                }
+            if (_participant == null) {
                 Console.Error.Write("Problem creating participant.\n");
                 return false;
             }
