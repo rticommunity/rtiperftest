@@ -6,6 +6,7 @@
 package com.rti.perftest.ddsimpl;
 
 import java.nio.file.WatchEvent.Kind;
+import java.util.Map;
 import java.util.HashMap;
 import com.rti.dds.infrastructure.PropertyQosPolicyHelper;
 import com.rti.dds.infrastructure.TransportBuiltinKind;
@@ -176,7 +177,7 @@ public class PerftestTransport {
     sb.append("\t-multicast                    - Use multicast to send data. Each topic");
     sb.append("\t                                will use a different address:\n");
     sb.append("\t                                <address> is optional, if unspecified:\n");
-    for (HashMap.Entry<String, String> map : multicastAddrMap.entrySet()) {
+    for (Map.Entry<String, String> map : multicastAddrMap.entrySet()) {
         sb.append("                                            ");
         sb.append(map.getKey()).append(" ").append(map.getValue()).append("\n");
     }
