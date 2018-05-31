@@ -18,8 +18,9 @@
 
 #ifdef RTI_WIN32
   #include <windows.h>
-#else
+#elif defined(RTI_VXWORKS)
   #include <sys/time.h>
+#else
   #include <sched.h>
   #include <fcntl.h>
   #include <unistd.h>
