@@ -1693,7 +1693,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             if (_isLargeData) {
                 if (isBatchSizeProvided) {
                     System.err.println(
-                        "Batching cannot be used with asynchronous writing.");
+                            "Batching cannot be used with Large Data.");
                     return false;
                 } else {
                     _batchSize = -2;
