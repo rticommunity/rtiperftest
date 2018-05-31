@@ -837,10 +837,16 @@ public final class PerfTest {
                 sb.append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
             } else if (batchSize == 0) {
                 sb.append("No (Use \"-batchSize\" to setup batching)\n");
-            } else if (batchSize == -1) {
+            } else { // < 0 (Meaning, Disabled by RTI Perftest)
                 sb.append("\"Disabled by RTI Perftest.\"\n");
-                sb.append("\t\t  BatchSize is smaller than 2 times\n");
-                sb.append("\t\t  the sample size.\n");
+                if (batchSize == -1) {
+                    sb.append("\t\t  BatchSize is smaller than 2 times\n");
+                    sb.append("\t\t  the minimum sample size.\n");
+                }
+                if (batchSize == -2) {
+                    sb.append("\t\t  BatchSize cannot be used with\n");
+                    sb.append("\t\t  Large Data.\n");
+                }
             }
 
             // Publication Rate

@@ -260,7 +260,7 @@ namespace PerformanceTest
          */
         bool ParseConfig(int argc, string[] argv)
         {
-            ulong _scan_max_size = 0;
+            ulong minScanSize = (ulong) MAX_PERFTEST_SAMPLE_SIZE.VALUE;
             bool isBatchSizeProvided = false;
 
             for (int i = 0; i < argc; ++i)
@@ -280,20 +280,30 @@ namespace PerformanceTest
                 else if ("-scan".StartsWith(argv[i], true, null))
                 {
                     _isScan = true;
+                    /*
+                    * Check if we have custom scan values. In such case we are just
+                    * interested in the minimum one.
+                    */
                     if ((i != (argc - 1)) && !argv[1+i].StartsWith("-")) {
                         ++i;
-                        ulong aux_scan;
-                        String[] list_scan = argv[i].Split(':');
-                        for( int j = 0; j < list_scan.Length; j++) {
-                            if (!UInt64.TryParse(list_scan[j], out aux_scan)) {
+                        ulong auxScan = 0;
+                        String[] listScan = argv[i].Split(':');
+                        for (int j = 0; j < listScan.Length; j++) {
+                            if (!UInt64.TryParse(listScan[j], out auxScan)) {
                                 Console.Error.Write(
                                         "-scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'\n");
                                 return false;
                             }
-                            if (aux_scan >= _scan_max_size) {
-                                _scan_max_size = aux_scan;
+                            if (auxScan < minScanSize) {
+                                minScanSize = auxScan;
                             }
                         }
+                    /*
+                     * If we do not specify any custom value for the -scan, we would
+                     * set minScanSize to the minimum size in the default set for -scan.
+                     */
+                    } else {
+                        minScanSize = 32;
                     }
                 } else if ("-dataLen".StartsWith(argv[i], true, null))
                 {
@@ -831,51 +841,75 @@ namespace PerformanceTest
                 }
             }
 
-            if (_IsAsynchronous && _BatchSize > 0) {
-                Console.Error.WriteLine("Batching cannot be used with asynchronous writing.");
-                return false;
-            }
-
+            /* If we are using scan, we get the minimum and set it in Datalen */
             if (_isScan) {
-                _DataLen = _scan_max_size;
-                // Check if large data or small data
-                if (_scan_max_size > (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
-                    if (_useUnbounded == 0) {
-                        _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
-                    }
-                    _isLargeData = true;
-                } else {
-                    _useUnbounded = 0;
-                    _isLargeData = false;
-                }
-                /*
-                 * If not Scan, compare sizes of Batching and dataLen
-                 * At this point we have checked that we are not in a latency
-                 * test mode, therefore we are sure we are in throughput test
-                 * mode, where we do want to enable batching by default in
-                 * certain cases.
-                 */
-            } else if (_BatchSize > 0 && _BatchSize < (int)_DataLen * 2) {
-                /*
-                 * We don't want to use batching if the batch size is not large
-                 * enough to contain at least two samples (in this case we avoid
-                 * the checking at the middleware level).
-                 */
-                if (isBatchSizeProvided) {
-                    _BatchSize = -1;
-                } else {
-                    _BatchSize = 0;
-                }
+                _DataLen = minScanSize;
             }
 
-            if ((int)_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE)
-            {
+            /* Check if we need to enable Large Data. This works also for -scan */
+            if (_DataLen > (ulong) Math.Min(
+                        MAX_SYNCHRONOUS_SIZE.VALUE,
+                        MAX_BOUNDED_SEQ_SIZE.VALUE)) {
                 _isLargeData = true;
+                if (_useUnbounded == 0) {
+                    _useUnbounded = (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE;
+                }
+            } else { /* No Large Data */
+                _useUnbounded = 0;
+                _isLargeData = false;
             }
 
-            if (_isLargeData && _BatchSize > 0) {
-                Console.Error.WriteLine("Batching cannot be used with asynchronous writing.");
-                return false;
+            /* If we are using batching */
+            if (_BatchSize > 0) {
+
+                /* We will not use batching for a latency test */
+                if (_LatencyTest) {
+                    if (isBatchSizeProvided) {
+                        Console.Error.WriteLine(
+                                "Batching cannot be used in a Latency test.");
+                        return false;
+                    } else {
+                        _BatchSize = 0; //Disable Batching
+                    }
+                }
+
+                /* Check if using asynchronous */
+                if (_IsAsynchronous) {
+                    Console.Error.WriteLine(
+                            "Batching cannot be used with asynchronous writing.\n");
+                    return false;
+                }
+
+                /*
+                 * Large Data + batching cannot be set. But batching is enabled by default,
+                 * so in that case, we just disabled batching, else, the customer set it up,
+                 * so we explitly fail
+                 */
+                if (_isLargeData) {
+                    if (isBatchSizeProvided) {
+                        Console.Error.WriteLine(
+                                "Batching cannot be used with Large Data.");
+                        return false;
+                    } else {
+                        _BatchSize = -2;
+                    }
+                } else if ((ulong) _BatchSize < _DataLen * 2) {
+                    /*
+                     * We don't want to use batching if the batch size is not large
+                     * enough to contain at least two samples (in this case we avoid the
+                     * checking at the middleware level).
+                     */
+                    if (isBatchSizeProvided || _isScan) {
+                        /*
+                        * Batchsize disabled. A message will be print if _batchsize < 0 in
+                        * perftest_cpp::PrintConfiguration()
+                        */
+                        _BatchSize = -1;
+                    }
+                    else {
+                        _BatchSize = 0;
+                    }
+                }
             }
 
             if (_TurboMode) {
@@ -1493,14 +1527,7 @@ namespace PerformanceTest
                  DDS.StatusKind.OFFERED_INCOMPATIBLE_QOS_STATUS |
                  DDS.StatusKind.REQUESTED_INCOMPATIBLE_QOS_STATUS));
 
-            if (_participant == null || _loggerDevice.CheckShmemErrors()) {
-                if (_loggerDevice.CheckShmemErrors()) {
-                    Console.Error.Write(
-                            "The participant creation failed due to issues in the Shared Memory configuration of your OS.\n" +
-                            "For more information about how to configure Shared Memory see: http://community.rti.com/kb/osx510 \n" +
-                            "If you want to skip the use of Shared memory in RTI Perftest, " +
-                            "specify the transport using \"-transport <kind>\", e.g. \"-transport UDPv4\".\n");
-                }
+            if (_participant == null) {
                 Console.Error.Write("Problem creating participant.\n");
                 return false;
             }
