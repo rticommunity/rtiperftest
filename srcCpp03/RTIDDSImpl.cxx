@@ -226,7 +226,7 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
 template <typename T>
 bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 {
-    unsigned long _scan_max_size = 0;
+    unsigned long minScanSize = MAX_PERFTEST_SAMPLE_SIZE;
     bool isBatchSizeProvided = false;
     int i;
     int sec = 0;
@@ -238,21 +238,31 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _isPublisher = true;
         } else if (IS_OPTION(argv[i], "-scan")) {
             _isScan = true;
+
+            /*
+             * Check if we have custom scan values. In such case we are just
+             * interested in the minimum one.
+             */
             if ((i != (argc-1)) && *argv[1+i] != '-') {
                 ++i;
-                unsigned long aux_scan;
-                char * pch;
+                unsigned long auxScan = 0;
+                char *pch = NULL;
                 pch = strtok (argv[i], ":");
                 while (pch != NULL) {
-                    if (sscanf(pch, "%lu", &aux_scan) != 1) {
-                        std::cerr << "[Error] -scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'" << std::endl;
+                    if (sscanf(pch, "%lu", &auxScan) != 1) {
                         return false;
                     }
                     pch = strtok (NULL, ":");
-                    if (aux_scan >= _scan_max_size) {
-                        _scan_max_size = aux_scan;
+                    if (auxScan < minScanSize) {
+                        minScanSize = auxScan;
                     }
                 }
+            /*
+             * If we do not specify any custom value for the -scan, we would
+             * set minScanSize to the minimum size in the default set for -scan.
+             */
+            } else {
+                minScanSize = 32;
             }
         } else if (IS_OPTION(argv[i], "-dataLen")) {
 
@@ -688,65 +698,72 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_LatencyTest) {
-        if (isBatchSizeProvided && _BatchSize != 0) {
-            std::cerr << "[Error] Batching cannot be used with Latency test."
-                    << std::endl;
-            return false;
-        } else {
-            _BatchSize = 0; //Disable Batching
-        }
-    }
-
-    if (_IsAsynchronous && _BatchSize > 0) {
-        std::cerr << "[Error] Batching cannot be used with asynchronous writing."
-                << std::endl;
-        throw std::logic_error("[Error] Error parsing commands");
-    }
-
+    /* If we are using scan, we get the minimum and set it in Datalen */
     if (_isScan) {
-        _DataLen = _scan_max_size;
-        // Check if large data or small data
-        if (_scan_max_size > (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
-            if (_useUnbounded == 0) {
-                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
-            }
-            _isLargeData = true;
-        } else {
-            _useUnbounded = 0;
-            _isLargeData = false;
-        }
-    /*
-     * If not Scan, compare sizes of Batching and dataLen
-     * At this point we have checked that we are not in a latency test mode,
-     * therefore we are sure we are in throughput test mode, where we do want
-     * to enable batching by default in certain cases
-     */
-    } else if (_BatchSize > 0 && (unsigned long)_BatchSize < _DataLen * 2) {
-        /*
-         * We don't want to use batching if the batch size is not large enough
-         * to contain at least two samples (in this case we avoid the checking
-         * at the middleware level).
-         */
-        if (isBatchSizeProvided) {
-            /*
-             * Batchsize disabled. A message will be print if _batchsize < 0 in
-             * perftest_cpp::PrintConfiguration()
-             */
-            _BatchSize = -1;
-        } else {
-            _BatchSize = 0;
-        }
+        _DataLen = minScanSize;
     }
 
-    if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
+    /* Check if we need to enable Large Data. This works also for -scan */
+    if (_DataLen > (unsigned long) (std::min)(
+                MAX_SYNCHRONOUS_SIZE,
+                MAX_BOUNDED_SEQ_SIZE)) {
         _isLargeData = true;
+        if (_useUnbounded == 0) {
+            _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+        }
+    } else { /* No Large Data */
+        _useUnbounded = 0;
+        _isLargeData = false;
     }
 
-    if (_isLargeData && _BatchSize > 0) {
-        std::cerr << "[Error] Batching cannot be used with asynchronous writing."
-                << std::endl;
-        return false;
+    /* If we are using batching */
+    if (_BatchSize > 0) {
+
+        /* We will not use batching for a latency test */
+        if (_LatencyTest) {
+            if (isBatchSizeProvided) {
+                fprintf(stderr, "Batching cannot be used in a Latency test.\n");
+                return false;
+            } else {
+                _BatchSize = 0; //Disable Batching
+            }
+        }
+
+        /* Check if using asynchronous */
+        if (_IsAsynchronous) {
+            fprintf(stderr, "Batching cannot be used with asynchronous writing.\n");
+            return false;
+        }
+
+        /*
+         * Large Data + batching cannot be set. But batching is enabled by default,
+         * so in that case, we just disabled batching, else, the customer set it up,
+         * so we explitly fail
+         */
+        if (_isLargeData) {
+            if (isBatchSizeProvided) {
+                fprintf(stderr, "Batching cannot be used with Large Data.\n");
+                return false;
+            } else {
+                _BatchSize = -2;
+            }
+        } else if ((unsigned long) _BatchSize < _DataLen * 2) {
+            /*
+             * We don't want to use batching if the batch size is not large
+             * enough to contain at least two samples (in this case we avoid the
+             * checking at the middleware level).
+             */
+            if (isBatchSizeProvided || _isScan) {
+                /*
+                 * Batchsize disabled. A message will be print if _batchsize < 0 in
+                 * perftest_cpp::PrintConfiguration()
+                 */
+                _BatchSize = -1;
+            }
+            else {
+                _BatchSize = 0;
+            }
+        }
     }
 
     if (_TurboMode) {
