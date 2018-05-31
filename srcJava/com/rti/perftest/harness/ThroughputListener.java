@@ -36,6 +36,7 @@ import com.rti.perftest.TestMessage;
     public long intervalBytesReceived = 0;
     public long intervalMissingPackets = 0;
     public long intervalTime = 0;
+    public double missingPacketsPercent = 0.0;
     public CpuMonitor CpuMonitor = new CpuMonitor();
     public boolean change_size = false;
 
@@ -223,6 +224,14 @@ import com.rti.perftest.TestMessage;
             intervalBytesReceived = bytesReceived;
             intervalMissingPackets = missingPackets;
             intervalDataLength = lastDataLength;
+            missingPacketsPercent = 0.0;
+
+            // Calculations of missing package percent
+            if (intervalPacketsReceived + intervalMissingPackets != 0) {
+                missingPacketsPercent = (intervalMissingPackets * 100.0)
+                        / (float) (intervalPacketsReceived
+                        + intervalMissingPackets);
+            }
 
             String outputCpu = "";
             if (PerfTest._showCpu) {
@@ -236,6 +245,9 @@ import com.rti.perftest.TestMessage;
                     intervalBytesReceived * 1000000.0 / intervalTime *8.0/1000.0/1000.0,
                     intervalMissingPackets
             );
+
+            System.out.printf("Lost Packets (%%): %1.2f%%\n",
+                    missingPacketsPercent);
             System.out.flush();
         }
 

@@ -1459,6 +1459,7 @@ namespace PerformanceTest {
             public ulong interval_bytes_received = 0;
             public ulong interval_missing_packets = 0;
             public ulong interval_time = 0, begin_time = 0;
+            double missing_packets_percent = 0.0;
 
             private IMessagingWriter _writer = null;
             private IMessagingReader _reader = null;
@@ -1641,6 +1642,16 @@ namespace PerformanceTest {
                     interval_bytes_received = bytes_received;
                     interval_missing_packets = missing_packets;
                     interval_data_length = last_data_length;
+                    missing_packets_percent = 0.0;
+
+                    // Calculations of missing package percent
+                    if (interval_packets_received
+                            + interval_missing_packets != 0) {
+                        missing_packets_percent =
+                                (interval_missing_packets)
+                                / (double) (interval_packets_received
+                                + interval_missing_packets);
+                    }
 
                     String outputCpu = "";
                     if (_showCpu) {
@@ -1655,7 +1666,12 @@ namespace PerformanceTest {
                                   interval_missing_packets,
                                   outputCpu
                     );
+
+                    Console.Write("Lost Packets (%): {0,1:p1}\n",
+                                  missing_packets_percent);
                 }
+
+
 
                 packets_received = 0;
                 bytes_received = 0;
@@ -1746,6 +1762,7 @@ namespace PerformanceTest {
             ulong  mps, bps;
             double mps_ave = 0.0, bps_ave = 0.0;
             ulong  msgsent, bytes, last_msgs, last_bytes;
+            double missing_packets_percent = 0;
 
             if (_showCpu) {
                 reader_listener.cpu.initialize();
@@ -1803,6 +1820,16 @@ namespace PerformanceTest {
                     bps_ave = bps_ave + (double)(bps - bps_ave) / (double)ave_count;
                     mps_ave = mps_ave + (double)(mps - mps_ave) / (double)ave_count;
 
+                    // Calculations of missing package percent
+                    if (last_msgs + reader_listener.missing_packets == 0) {
+                        missing_packets_percent = 0.0;
+                    } else {
+                        missing_packets_percent =
+                                (reader_listener.missing_packets)
+                                / (float) (last_msgs
+                                + reader_listener.missing_packets);
+                    }
+
                     if (last_msgs > 0)
                     {
                         String outputCpu = "";
@@ -1810,10 +1837,12 @@ namespace PerformanceTest {
                             outputCpu = reader_listener.cpu.get_cpu_instant();
                         }
                         Console.Write("Packets: {0,8}  Packets/s: {1,7}  Packets/s(ave): {2,7:F0}  " +
-                                     "Mbps: {3,7:F1}  Mbps(ave): {4,7:F1}  Lost: {5}{6}\n",
+                                     "Mbps: {3,7:F1}  Mbps(ave): {4,7:F1}  Lost: {5,7} ({6,1:p1}){7}\n",
                                      last_msgs, mps, mps_ave,
-                                    bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
-                                     reader_listener.missing_packets,outputCpu);
+                                     bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
+                                     reader_listener.missing_packets,
+                                     missing_packets_percent,
+                                     outputCpu);
                     }
                 }
             }

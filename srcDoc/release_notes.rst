@@ -51,19 +51,6 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
-Use `UDPv4` and `Shared Memory` as the default transport configuration (#80)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-*RTI Perftest* previous default was to use only the `UDPv4` transport.
-However this doesn't always lead to the best results when testing between
-applications within the same machine and it also differs from *RTI Connext DDS*
-default behavior, which is `UDPv4` and Shared Memory (`SHMEM`).
-Starting from this release *RTI Perftest* new default is to use `UDPv4` and `SHMEM`.
-
-This change improves the out of the box user experience, getting better numbers
-when using the default configuration.
-
-
 Print a summary with the main setting of the test *RTI Perftest* will run (#46)(#67)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -74,7 +61,6 @@ lead to some confusion with regards to the test that will run when executing the
 In order to make this clear, *RTI Perftest* now shows a summary at the beginning of
 the test with most of the relevant parameters being used for such test. This is done
 for both *Publisher* and *Subscriber* sides.
-
 
 Added command-line parameters to simplify single API build (#50)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -109,6 +95,25 @@ equal or smaller than 4kB, and the *Batch size* value will be set to 8kB.
 
 This will be automatically disabled if LatencyTest mode is set or if the
 `-batchSize` is lower than two times the `-dataLen`.
+
+Use `UDPv4` and `Shared Memory` as the default transport configuration (#80)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* previous default was to use only the `UDPv4` transport.
+However this doesn't always lead to the best results when testing between
+applications within the same machine and it also differs from *RTI Connext DDS*
+default behavior, which is `UDPv4` and Shared Memory (`SHMEM`).
+Starting from this release *RTI Perftest* new default is to use `UDPv4` and `SHMEM`.
+
+This change improves the out of the box user experience, getting better numbers
+when using the default configuration.
+
+Show percentage of packets lost in the subscriber side output (#81)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* now displays the percentage of lost packets in addition to the total
+number of packets lost. This number is displayed once per second with the rest of
+the statistics in the subscriber side, as well as at the end of the test.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
