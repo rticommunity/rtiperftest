@@ -875,9 +875,13 @@ namespace PerformanceTest
 
                 /* Check if using asynchronous */
                 if (_IsAsynchronous) {
-                    Console.Error.WriteLine(
-                            "Batching cannot be used with asynchronous writing.\n");
-                    return false;
+                    if (isBatchSizeProvided) {
+                        Console.Error.WriteLine(
+                                "Batching cannot be used with asynchronous writing.\n");
+                        return false;
+                    } else {
+                        _BatchSize = 0; //Disable Batching
+                    }
                 }
 
                 /*

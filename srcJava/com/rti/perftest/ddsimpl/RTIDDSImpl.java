@@ -1680,9 +1680,14 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
             /* Check if using asynchronous */
             if (_IsAsynchronous) {
-                System.err.println(
-                        "Batching cannot be used with asynchronous writing.\n");
-                return false;
+                if (isBatchSizeProvided) {
+                    System.err.println(
+                            "Batching cannot be used with asynchronous writing.\n");
+                    return false;
+                }
+                else {
+                    _batchSize = 0; // Disable Batching
+                }
             }
 
             /*

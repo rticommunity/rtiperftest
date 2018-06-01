@@ -715,8 +715,13 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 
         /* Check if using asynchronous */
         if (_IsAsynchronous) {
-            fprintf(stderr, "Batching cannot be used with asynchronous writing.\n");
-            return false;
+            if (isBatchSizeProvided) {
+                fprintf(stderr,
+                        "Batching cannot be used with asynchronous writing.\n");
+                return false;
+            } else {
+                _BatchSize = 0; //Disable Batching
+            }
         }
 
         /*
