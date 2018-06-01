@@ -131,7 +131,9 @@ void RTIDDSImpl<T>::Shutdown()
         _pongSemaphore = NULL;
     }
     // Unregister _loggerDevice
-    NDDSConfigLogger::finalize_instance();
+    if (NDDSConfigLogger::get_instance()->get_output_device() != NULL) {
+        NDDSConfigLogger::finalize_instance();
+    }
     DDSDomainParticipantFactory::finalize_instance();
 }
 
