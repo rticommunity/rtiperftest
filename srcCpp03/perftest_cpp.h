@@ -25,7 +25,7 @@
 
 #ifdef RTI_WIN32
   #include <windows.h>
-#elif defined(RTI_VXWORKS)
+#elif !defined(RTI_VXWORKS)
   #include <sys/time.h>
 #else
   #include <sched.h>
