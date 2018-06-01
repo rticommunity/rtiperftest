@@ -896,6 +896,28 @@ For more information about how to configure Shared Memory see http://community.r
 
 If you want to skip the use of Shared memory in RTI Perftest, specify the transport using `-transport <kind>`, e.g. `-transport UDPv4`.
 
+Warning when compiling the Classic C++ API *RTI Perftest* Implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*RTI Perftest* might show these warnings when compiling the Classic C++ API implementation:
+
+::
+
+    In file included from perftestSupport.h:15:0,
+                    from perftestSupport.cxx:11:
+    perftest.h:29:25: warning: ‘THROUGHPUT_TOPIC_NAME’ defined but not used [-Wunused-variable]
+    static const DDS_Char * THROUGHPUT_TOPIC_NAME= "Throughput";
+                            ^
+    perftest.h:30:25: warning: ‘LATENCY_TOPIC_NAME’ defined but not used [-Wunused-variable]
+    static const DDS_Char * LATENCY_TOPIC_NAME= "Latency";
+                            ^
+    perftest.h:31:25: warning: ‘ANNOUNCEMENT_TOPIC_NAME’ defined but not used [-Wunused-variable]
+    static const DDS_Char * ANNOUNCEMENT_TOPIC_NAME= "Announcement";
+                            ^
+
+This warning is due to a known issue in *RTIDDSGen* (CODEGENII-873) related to the way in which
+the code for a const string is generated. It will be fixed in future releases of *RTI Connext DDS*.
+
 
 Building RTI Perftest Java API against RTI Connext DDS 5.2.0.x
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
