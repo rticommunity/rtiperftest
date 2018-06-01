@@ -1161,9 +1161,9 @@ class ThroughputListener : public IMessagingCB
 
             // Calculations of missing package percent
             if (interval_packets_received + interval_missing_packets != 0) {
-                missing_packets_percent = (interval_missing_packets * 100.0)
+                missing_packets_percent = (float) ((interval_missing_packets * 100.0)
                         / (float) (interval_packets_received
-                        + interval_missing_packets);
+                        + interval_missing_packets));
             }
 
             std::string outputCpu = "";
@@ -1376,9 +1376,9 @@ int perftest_cpp::Subscriber()
             if (last_msgs + reader_listener->missing_packets == 0) {
                 missing_packets_percent = 0.0;
             } else {
-                missing_packets_percent =
-                        (reader_listener->missing_packets * 100.0)
-                        / (float) (last_msgs + reader_listener->missing_packets);
+                missing_packets_percent = (float)
+                        ((reader_listener->missing_packets * 100.0)
+                        / (float) (last_msgs + reader_listener->missing_packets));
             }
 
             if (last_msgs > 0) {
