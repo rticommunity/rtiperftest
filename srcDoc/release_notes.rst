@@ -3,8 +3,8 @@
 Release Notes
 =============
 
-Compatibility Master
---------------------
+Compatibility 2.4
+-----------------
 
 Using Security
 ~~~~~~~~~~~~~~
@@ -45,11 +45,11 @@ releases:
    supported. You can disable this by adding the ``--skip-cs-build``
    flag.
 
-Release Notes Master
---------------------
+Release Notes 2.4
+-----------------
 
-What's New in Master
-~~~~~~~~~~~~~~~~~~~~
+What's New in 2.4
+~~~~~~~~~~~~~~~~~
 
 Print a summary with the main setting of the test *RTI Perftest* will run (#46)(#67)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -115,8 +115,8 @@ Show percentage of packets lost in the subscriber side output (#81)
 number of packets lost. This number is displayed once per second with the rest of
 the statistics in the subscriber side, as well as at the end of the test.
 
-What's Fixed in Master
-~~~~~~~~~~~~~~~~~~~~~~
+What's Fixed in 2.4
+~~~~~~~~~~~~~~~~~~~
 
 Improve Dynamic Data Send() and Receive() operations (#55)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
