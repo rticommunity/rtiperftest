@@ -169,6 +169,14 @@ the application, the initial burst of samples sent by the Publisher side has bee
 also reviewed, to always send a burst big enough to ensure that the allocations in
 both publisher and subscriber sides are done before the test starts.
 
+Fix compilation in Certain VxWork platforms (#93)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases the *Classic* and *Modern* C++ implementations were trying to
+include `sys/time.h`, this file might not exist for certain Operative Systems. This
+is the case of certain VxWorks platforms.
+
+This issue has been corrected, as this library is not needed for the VxWorks platforms.
 
 Release Notes 2.3.2
 -------------------
