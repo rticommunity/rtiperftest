@@ -867,6 +867,8 @@ void perftest_cpp::PrintConfiguration()
         }
     }
 
+    stringStream << "\nPerftest Configuration:\n";
+
     // Reliable/Best Effort
     stringStream << "\tReliability: ";
     if (_IsReliable) {
