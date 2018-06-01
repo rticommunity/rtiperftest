@@ -13,7 +13,8 @@ java_scripts_folder="${script_location}/resource/java_scripts"
 bin_folder="${script_location}/bin"
 cStringifyFile_script="${script_location}/resource/script/cStringifyFile.pl"
 qos_file="${script_location}/perftest_qos_profiles.xml"
-
+build_documentation_folder="${script_location}/resource/script/build_documentation"
+doc_folder="${script_location}/srcDoc"
 
 # Default values:
 BUILD_CPP=1
@@ -75,6 +76,7 @@ function usage()
     echo "                                 will clean all the generated code and binaries "
     echo "    --debug                      Compile against the RTI Connext Debug          "
     echo "                                 libraries. Default is against release ones.    "
+    echo "    --build-doc                  Generate the HTML and PDF documentation.       "
     echo "    --dynamic                    Compile against the RTI Connext Dynamic        "
     echo "                                 libraries. Default is against static ones.     "
     echo "    --secure                     Enable the security options for compilation.   "
@@ -417,6 +419,61 @@ function build_java()
 }
 
 ################################################################################
+function clean_documentation_extra_files()
+{
+    #Remove all the *.rst file in ${build_documentation_folder}
+    for file in ${doc_folder}/*.rst
+    do
+        if [ -f $file ]; then
+            name_file=$(basename $file)
+            rm -f "${build_documentation_folder}/${name_file}"
+        fi
+    done
+}
+
+function build_documentation()
+{
+    clean_documentation_extra_files
+    # Remove the content of ${build_documentation_folder}/_build
+    rm -rf ${build_documentation_folder}/_build/*
+    #Update the documentation
+    cp -rf ${doc_folder}/*rst ${build_documentation_folder}
+
+    # Generate HTML
+    echo ""
+    echo -e "${INFO_TAG} Generating HTML documentation"
+    cd ${build_documentation_folder}
+    ${MAKE_EXE} -f Makefile html
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating HTML documentation"
+        echo -e "${ERROR_TAG} You will need to install:
+            sudo pip install -U sphinx
+            sudo pip install sphinx_rtd_theme"
+        clean_documentation_extra_files
+        exit -1
+    fi
+    echo -e "${INFO_TAG} HTML Generation successful. You will find it under:
+        ${build_documentation_folder}/_build/html/index.html"
+
+    # Generate PDF
+    echo ""
+    echo -e "${INFO_TAG} Generating PDF documentation"
+    cd ${build_documentation_folder}
+    ${MAKE_EXE} -f Makefile latexpdf
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating PDF documentation"
+        echo -e "${ERROR_TAG} You will need to install:
+            sudo apt-get install texlive-full"
+        clean_documentation_extra_files
+        exit -1
+    fi
+    echo -e "${INFO_TAG} PDF Generation successful. You will find it under:
+        ${build_documentation_folder}/_build/latex/RTI_Perftest.pdf"
+
+    clean_documentation_extra_files
+}
+
+################################################################################
 # Initial message
 echo ""
 echo "================================ RTI PERFTEST: ================================="
@@ -491,6 +548,10 @@ while [ "$1" != "" ]; do
             ;;
         --secure)
             USE_SECURE_LIBS=1
+            ;;
+        --build-doc)
+            build_documentation
+            exit 0
             ;;
         --openssl-home)
             RTI_OPENSSLHOME=$2
