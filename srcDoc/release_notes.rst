@@ -48,8 +48,24 @@ releases:
 Release Notes Master
 --------------------
 
-What's New in Master
-~~~~~~~~~~~~~~~~~~~~
+What's Fixed in Master
+~~~~~~~~~~~~~~~~~~~~~~
+
+Fix incorrect parsing of the `-executionTime` command-line parameter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, for the Classic and Modern C++ API implementations,
+the `-executionTime <sec>` command-line parameter would ignore any Invalid
+value for the `<sec>` parameter without any notification to the user.
+
+This behavior has been fixed and unified for all the API implementations,
+showing now an error when finding a wrong value for the `<sec>` option.
+
+Release Notes 2.4
+-----------------
+
+What's New in 2.4
+~~~~~~~~~~~~~~~~~
 
 Print a summary with the main setting of the test *RTI Perftest* will run (#46)(#67)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -115,8 +131,8 @@ Show percentage of packets lost in the subscriber side output (#81)
 number of packets lost. This number is displayed once per second with the rest of
 the statistics in the subscriber side, as well as at the end of the test.
 
-What's Fixed in Master
-~~~~~~~~~~~~~~~~~~~~~~
+What's Fixed in 2.4
+~~~~~~~~~~~~~~~~~~~
 
 Improve Dynamic Data Send() and Receive() operations (#55)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

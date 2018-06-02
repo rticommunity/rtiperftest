@@ -666,7 +666,8 @@ public final class PerfTest {
                 try {
                     _executionTime = (long)Integer.parseInt(argv[i]);
                 } catch (NumberFormatException nfx) {
-                    System.err.print("Bad executionTime\n");
+                    System.err.print(
+                            "-executionTime value must be a positive number greater than 0\n");
                     return false;
                 }
             }
