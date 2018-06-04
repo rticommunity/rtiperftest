@@ -65,7 +65,7 @@ class IMessagingReader
     }
 
     virtual double
-    ObtainDeSerializeTimeCost(int iterations, unsigned int sampleSize) {
+    ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize) {
         return 0;
     }
 };

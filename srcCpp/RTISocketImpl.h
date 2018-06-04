@@ -41,6 +41,7 @@ class RTISocketImpl : public IMessaging {
         _peer_host_count = 0;
         _batchSize = 0;
         _basePort = 7400;
+        _useBlocking = true;
 
         _multicastAddrString = (char *)"239.255.1.1";
 
@@ -89,9 +90,13 @@ class RTISocketImpl : public IMessaging {
      */
     unsigned int GetUnicastPort(const char *topicName);
 
-    /*TODO: Ask fernando if merge this two function */
+    /*TODO: This could be merge into one function */
+    /*
+     * Those two functions calculate the time cost on serialization,
+     * with a precision of microseconds.
+     */
     static double ObtainSerializeTimeCost(int iterations, unsigned int sampleSize);
-    static double ObtainDeSerializeTimeCost(int iterations, unsigned int sampleSize);
+    static double ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize);
 
   private:
     unsigned long _DataLen;
@@ -109,6 +114,7 @@ class RTISocketImpl : public IMessaging {
     int _peer_host_count;
     char *_peer_host[RTIPERFTEST_MAX_PEERS];
     unsigned int _basePort;
+    bool _useBlocking;
 
     /*TODO: Others solution to this:
      * 1 -> Use a unorderedMap (C++11) not possible

@@ -332,7 +332,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     {
         fprintf(stderr, "%s", usage_string);
         fflush(stderr);
+
+        /*TODO: Any way to only print sockets help when it been used ?*/
         RTIDDSImpl<TestData_t>().PrintCmdLineHelp();
+        RTISocketImpl().PrintCmdLineHelp();
+
         return false;
     }
 
@@ -343,6 +347,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             fprintf(stderr, "%s", usage_string);
             fflush(stderr);
             RTIDDSImpl<TestData_t>().PrintCmdLineHelp();
+            RTISocketImpl().PrintCmdLineHelp();
+
             return false;
         }
     }
@@ -1093,16 +1099,8 @@ class ThroughputListener : public IMessagingCB
                    interval_missing_packets,
                    outputCpu.c_str()
             );
+            fflush(stdout);
 
-            printf("Serialize Time %f\n",
-                   RTISocketImpl::ObtainSerializeTimeCost(
-                           interval_data_length + perftest_cpp::OVERHEAD_BYTES,
-                           1000));
-            printf("Deserialize Time %f\n",
-                   RTISocketImpl::ObtainDeSerializeTimeCost(
-                           interval_data_length + perftest_cpp::OVERHEAD_BYTES,
-                           1000));
-                    fflush(stdout);
         }
 
         packets_received = 0;
@@ -1506,6 +1504,15 @@ class LatencyListener : public IMessagingCB
         );
         fflush(stdout);
 
+            printf("Serialization time per sample: %0.3f us\n",
+                    RTISocketImpl::ObtainSerializeTimeCost(
+                           10000,
+                           last_data_length + perftest_cpp::OVERHEAD_BYTES));
+            printf("Deserialization time per sample: %0.3f us\n",
+                    RTISocketImpl::ObtainDeserializeTimeCost(
+                            10000,
+                            last_data_length + perftest_cpp::OVERHEAD_BYTES));
+
         latency_sum = 0;
         latency_sum_square = 0;
         latency_min = 0;
@@ -1724,7 +1731,7 @@ int perftest_cpp::Publisher()
 
     IMessagingReader *reader;
     // Only publisher with ID 0 will send/receive pings
-    struct RTIOsapiThread * thread1 = NULL;
+    struct RTIOsapiThread * listenerThread = NULL;
     if (_PubID == 0)
     {
         // Check if using callbacks or read thread
@@ -1758,7 +1765,7 @@ int perftest_cpp::Publisher()
                     reader,
                     _LatencyTest ? writer : NULL);
 
-            thread1 = RTIOsapiThread_new(
+            listenerThread = RTIOsapiThread_new(
                     "ReceiverThread",
                     RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
                     RTI_OSAPI_THREAD_OPTION_DEFAULT,
@@ -1791,13 +1798,14 @@ int perftest_cpp::Publisher()
     {
         announcement_reader_listener = new AnnouncementListener(announcement_reader);
 
-        RTIOsapiThread_new("AnnouncementThread",
-                           RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-                           RTI_OSAPI_THREAD_OPTION_DEFAULT,
-                           RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                           NULL,
-                           ReadThread<AnnouncementListener>,
-                           announcement_reader_listener);
+        RTIOsapiThread_new(
+                "AnnouncementThread",
+                RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
+                RTI_OSAPI_THREAD_OPTION_DEFAULT,
+                RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                NULL,
+                ReadThread<AnnouncementListener>,
+                announcement_reader_listener);
     }
 
     unsigned long long spinPerUsec = 0;
@@ -1832,7 +1840,10 @@ int perftest_cpp::Publisher()
         MilliSleep(1000);
     }
     if (_useSockets && !_isScan) {
-        /* Necessary to finish the AnnouncementReadThread */
+        /*
+         * Necessary to finish the AnnouncementReadThread execpt if scan is
+         * been use. Scan will use the announcement channel later
+         */
         announcement_reader_listener->end_test = true;
     }
 
@@ -2091,14 +2102,14 @@ int perftest_cpp::Publisher()
         printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
     }
 
+    if (listenerThread != NULL) {
+        RTIOsapiThread_delete(listenerThread);
+    }
+
     if (reader_listener != NULL) {
         delete(reader_listener);
     }
 
-    //TODO: Change name to the variable and check for DDS
-    if (thread1 != NULL) {
-        RTIOsapiThread_delete(thread1);
-    }
 
     if (reader != NULL) {
         delete(reader);
@@ -2155,7 +2166,7 @@ inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds,
     }
 }
 
-inline unsigned long long perftest_cpp::GetTimeUsec() {
+unsigned long long perftest_cpp::GetTimeUsec() {
     perftest_cpp::_Clock->getTime(
             perftest_cpp::_Clock,
             &perftest_cpp::_ClockTime_aux);

@@ -64,6 +64,10 @@ void RTISocketImpl::PrintCmdLineHelp() {
             "\t                                Default: \"default\" (If using asynchronous).\n" +
             "\t-peer <address>               - Adds a peer to the peer host address list.\n" +
             "\t                                This argument may be repeated to indicate multiple peers\n" +
+            "\t-noBlockingSockets            - Control blocking behavior of send sockets to never block.\n" +
+            "\t                                CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT PERFORMANCE PROBLEMS.\n" +
+            "\t-socketsBasePort              - Changes the base port from where the 3 ports\n"
+            "\t                                used in each test are calculated.\n" +
             "\n";
     usage_string += _transport.helpMessageString();
 
@@ -239,6 +243,9 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
         else if (IS_OPTION(argv[i], "-latencyTest")) {
             _LatencyTest = true;
         }
+        else if (IS_OPTION(argv[i], "-noBlockingSockets")) {
+            _useBlocking = false;
+        }
         else if (IS_OPTION(argv[i], "-peer")) {
             if ((i == (argc-1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <address> after -peer\n");
@@ -264,6 +271,13 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
                 return false;
             }
             _NumSubscribers = strtol(argv[i], NULL, 10);
+        }
+        else if (IS_OPTION(argv[i], "-socketsBasePort")) {
+            if ((i == (argc - 1)) || *argv[++i] == '-') {
+                fprintf(stderr, "Missing <port_number> after -socketsBasePort\n");
+                return false;
+            }
+            _basePort = strtol(argv[i], NULL, 10);
         }
         else if (IS_OPTION(argv[i], "-batchSize")) {
 
@@ -688,13 +702,12 @@ class RTISocketSubscriber : public IMessagingReader
     void Shutdown()
     {
 
-        //_plugin->unblock_receive_rrEA(_plugin, &_recvResource, _worker);
-        //perftest_cpp::MilliSleep(5000);
         if (_recvBuffer.pointer != NULL) {
             RTIOsapiHeap_freeBufferAligned(_recvBuffer.pointer);
         }
 
-        if (_recvResource != NULL && _plugin != NULL) {
+        if (&_recvResource != NULL && _plugin != NULL && _worker != NULL) {
+            _plugin->unblock_receive_rrEA(_plugin, &_recvResource, _worker);
             _plugin->destroy_recvresource_rrEA(_plugin, &_recvResource);
         }
     }
@@ -797,7 +810,8 @@ bool RTISocketImpl::Initialize(int argc, char *argv[]) {
 double
 RTISocketImpl::ObtainSerializeTimeCost(int iterations, unsigned int sampleSize)
 {
-    struct timespec cgt1, cgt2;
+    double timeInit = 0;
+    double timeFinish = 0;
     double serializeTime;
 
     struct RTICdrStream stream;
@@ -830,7 +844,7 @@ RTISocketImpl::ObtainSerializeTimeCost(int iterations, unsigned int sampleSize)
 
     /* Created a dummy data to serialize*/
     TestData_t testData;
-    testData.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+    testData.bin_data.maximum(0);
     testData.entity_id = 0;
     testData.seq_num = 0;
     testData.timestamp_sec = 0;
@@ -842,7 +856,7 @@ RTISocketImpl::ObtainSerializeTimeCost(int iterations, unsigned int sampleSize)
             (DDS_Octet *) buffer, sampleSize, sampleSize);
 
     /* Serialize time calculating */
-    clock_gettime(CLOCK_REALTIME, &cgt1);
+    timeInit =  perftest_cpp::GetTimeUsec();
 
     for (int i = 0; i < iterations; i++) {
         /*
@@ -864,22 +878,29 @@ RTISocketImpl::ObtainSerializeTimeCost(int iterations, unsigned int sampleSize)
                 NULL);
     }
 
-    clock_gettime(CLOCK_REALTIME, &cgt2);
-    serializeTime = (double) (cgt2.tv_sec - cgt1.tv_sec)
-            + (double) ((cgt2.tv_nsec - cgt1.tv_nsec) / (1.e+9));
+    timeFinish = perftest_cpp::GetTimeUsec();
 
-    return serializeTime /= iterations;
+    serializeTime = timeFinish - timeInit;
+
+    testData.bin_data.unloan();
+
+    if (buffer != NULL) {
+        RTIOsapiHeap_freeBuffer(buffer);
+    }
+
+    return serializeTime / (float)iterations;
 }
 /*********************************************************
  * ObtainDeserializeTime
  */
 
-double RTISocketImpl::ObtainDeSerializeTimeCost(
+double RTISocketImpl::ObtainDeserializeTimeCost(
         int iterations,
         unsigned int sampleSize)
 {
-    struct timespec cgt1, cgt2;
-    double deSerializeTime;
+    double timeInit = 0;
+    double timeFinish = 0;
+    double deserializeTime;
 
     struct RTICdrStream stream;
     struct PRESTypePluginDefaultEndpointData epd;
@@ -894,7 +915,7 @@ double RTISocketImpl::ObtainDeSerializeTimeCost(
     if (buffer == NULL) {
         fprintf(stderr,
                 "Error allocating memory for buffer on "
-                "ObtainDeSerializeTimeCost\n");
+                "ObtainDeserializeTimeCost\n");
     }
 
     RTICdrStream_init(&stream);
@@ -908,14 +929,14 @@ double RTISocketImpl::ObtainDeSerializeTimeCost(
                     0);
 
     /* Created a dummy data to serialize */
-    TestData_t testData;
-    testData.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
-    testData.entity_id = 0;
-    testData.seq_num = 0;
-    testData.timestamp_sec = 0;
-    testData.timestamp_usec = 0;
-    testData.latency_ping = 0;
-    testData.bin_data.loan_contiguous(
+    TestData_t testDataSerialize;
+    testDataSerialize.bin_data.maximum(0);
+    testDataSerialize.entity_id = 0;
+    testDataSerialize.seq_num = 0;
+    testDataSerialize.timestamp_sec = 0;
+    testDataSerialize.timestamp_usec = 0;
+    testDataSerialize.latency_ping = 0;
+    testDataSerialize.bin_data.loan_contiguous(
             (DDS_Octet *) buffer,
             sampleSize,
             sampleSize);
@@ -923,15 +944,18 @@ double RTISocketImpl::ObtainDeSerializeTimeCost(
     /* Serialize the data */
     TestData_tPlugin_serialize(
             (PRESTypePluginEndpointData) &epd,
-            &testData,
+            &testDataSerialize,
             &stream,
             RTI_TRUE,
             RTICdrEncapsulation_getNativeCdrEncapsulationId(),
             RTI_TRUE,
             NULL);
 
+    /* Deserialize data n times */
+    TestData_t testDataDeserialize;
+    testDataDeserialize.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
     /* Deserialize time calculations */
-    clock_gettime(CLOCK_REALTIME, &cgt1);
+    timeInit = perftest_cpp::GetTimeUsec();
 
     for (int i = 0; i < iterations; i++) {
 
@@ -942,22 +966,27 @@ double RTISocketImpl::ObtainDeSerializeTimeCost(
 
         TestData_tPlugin_deserialize_sample(
                 NULL,
-                &testData,
+                &testDataDeserialize,
                 &stream,
                 RTI_TRUE,
                 RTI_TRUE,
                 NULL);
     }
 
-    clock_gettime(CLOCK_REALTIME, &cgt2);
-    deSerializeTime = (double) (cgt2.tv_sec - cgt1.tv_sec)
-            + (double) ((cgt2.tv_nsec - cgt1.tv_nsec) / (1.e+9));
+    timeFinish = perftest_cpp::GetTimeUsec();
 
-    return deSerializeTime /= iterations;
+    deserializeTime = timeFinish - timeInit;
+
+    testDataSerialize.bin_data.unloan();
+
+    if (buffer != NULL) {
+        RTIOsapiHeap_freeBuffer(buffer);
+    }
+
+    return deserializeTime / (float) iterations;
 }
 
 unsigned int RTISocketImpl::GetUnicastPort(const char *topicName) {
-    unsigned int portBase = 7400; //TODO: Set it as class variable
 
     int portOffset = 0;
     if (!strcmp(topicName, perftest_cpp::_LatencyTopicName)) {
@@ -967,7 +996,7 @@ unsigned int RTISocketImpl::GetUnicastPort(const char *topicName) {
         portOffset += 2;
     }
 
-    unsigned int finalPort = portBase
+    unsigned int finalPort = _basePort
             + (_DomainID * RTISocketImpl::RESOURCES_PER_PARTICIPANT)
             + portOffset;
 
@@ -1089,8 +1118,8 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
     case TRANSPORT_UDPv4:
 
         /*_Plugin properties configure for UDPv4*/
-        updv4_prop.parent.properties_bitmap |=
-                NDDS_TRANSPORT_PROPERTY_BIT_POLLED;
+        // updv4_prop.parent.properties_bitmap |=
+        //         NDDS_TRANSPORT_PROPERTY_BIT_POLLED;
 
         updv4_prop.parent.allow_interfaces_list = &interface;
         updv4_prop.parent.allow_interfaces_list_length = 1;
@@ -1102,11 +1131,14 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
             updv4_prop.multicast_enabled = 1;
         }
 
-        /*
-         * updv4_prop.send_blocking = NDDS_TRANSPORT_UDPV4_BLOCKING_ALWAYS;
-         * This will reduce the package loss but affect on the performance.
-         */
-        updv4_prop.no_zero_copy = false;
+        if (_useBlocking) {
+            // This will reduce the package loss but affect on the performance.
+            updv4_prop.send_blocking = NDDS_TRANSPORT_UDPV4_BLOCKING_ALWAYS;
+        } else {
+            updv4_prop.send_blocking = NDDS_TRANSPORT_UDPV4_BLOCKING_NEVER;
+        }
+
+            updv4_prop.no_zero_copy = false;
         updv4_prop.parent.message_size_max =
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
         updv4_prop.parent.gather_send_buffer_count_max =
@@ -1184,8 +1216,8 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
 
         /*_Plugin configure for shared memory*/
 
-        shmem_prop.parent.properties_bitmap |=
-                NDDS_TRANSPORT_PROPERTY_BIT_POLLED;
+        // shmem_prop.parent.properties_bitmap |=
+        //         NDDS_TRANSPORT_PROPERTY_BIT_POLLED;
         shmem_prop.parent.message_size_max =
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
         shmem_prop.receive_buffer_size =
