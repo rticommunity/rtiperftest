@@ -683,7 +683,7 @@ class RTISocketSubscriber : public IMessagingReader
 
 
         if (_recvBuffer.pointer == NULL) {
-            throw std::logic_error("RTIOsapiHeap_allocateArray Error\n");
+            throw std::logic_error(std::string("RTIOsapiHeap_allocateBuffer Error\n"));
         }
 
         _recvBuffer.length = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
