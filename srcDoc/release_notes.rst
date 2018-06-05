@@ -121,7 +121,7 @@ What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Improved Dynamic Data Send() and Receive() operations (#55)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Dynamic Data Send() and Received() functions have been optimized
 reducing the time spent setting and getting the samples.
@@ -950,7 +950,7 @@ To avoid this compilation error, two changes are needed:
 
 -  In the ``srcIdl/perftest.idl`` file, modify the ``TestDataLarge_t``
    and ``TestDataLargeKeyed_t`` types, and add a bound to the
-``bin_data`` member: ``sequence<octet,LIMIT> bin_data;``.
+   ``bin_data`` member: ``sequence<octet,LIMIT> bin_data;``.
 
 Publication rate precision on Windows systems when using "sleep" instead of "spin"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
