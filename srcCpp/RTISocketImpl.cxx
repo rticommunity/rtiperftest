@@ -56,18 +56,13 @@ void RTISocketImpl::Shutdown()
 void RTISocketImpl::PrintCmdLineHelp() {
     /**************************************************************************/
     std::string usage_string = std::string(
-            "\t-sendQueueSize <number>       - Sets number of samples (or batches) in send\n") +
-            "\t                                queue, default 50\n" +
-            "\t-domain <ID>                  - RTI DDS Domain, default 1\n" +
-            "\t-bestEffort                   - Run test in best effort mode, default reliable\n"
-            "\t                                " +
+            "\t-domain <ID>                  - RTI DDS Domain, default 1\n") +
+            "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
             "\t                                Default: \"default\" (If using asynchronous).\n" +
             "\t-peer <address>               - Adds a peer to the peer host address list.\n" +
             "\t                                This argument may be repeated to indicate multiple peers\n" +
             "\t-noBlockingSockets            - Control blocking behavior of send sockets to never block.\n" +
             "\t                                CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT PERFORMANCE PROBLEMS.\n" +
-            "\t-socketsBasePort              - Changes the base port from where the 3 ports\n"
-            "\t                                used in each test are calculated.\n" +
             "\n";
     usage_string += _transport.helpMessageString();
 
@@ -271,13 +266,6 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
                 return false;
             }
             _NumSubscribers = strtol(argv[i], NULL, 10);
-        }
-        else if (IS_OPTION(argv[i], "-socketsBasePort")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <port_number> after -socketsBasePort\n");
-                return false;
-            }
-            _basePort = strtol(argv[i], NULL, 10);
         }
         else if (IS_OPTION(argv[i], "-batchSize")) {
 
@@ -683,7 +671,7 @@ class RTISocketSubscriber : public IMessagingReader
 
 
         if (_recvBuffer.pointer == NULL) {
-            //throw std::logic_error(std::string("RTIOsapiHeap_allocateBuffer Error\n"));
+            throw std::logic_error(std::string("RTIOsapiHeap_allocateBuffer Error\n"));
         }
 
         _recvBuffer.length = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
@@ -996,11 +984,21 @@ unsigned int RTISocketImpl::GetUnicastPort(const char *topicName) {
         portOffset += 2;
     }
 
-    unsigned int finalPort = _basePort
-            + (_DomainID * RTISocketImpl::RESOURCES_PER_PARTICIPANT)
-            + portOffset;
+    struct DDS_RtpsWellKnownPorts_t wellKnownPorts =
+            DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
 
-    return finalPort;
+    unsigned int defaultUnicastPort = 0;
+
+    /*TODO: Unable to use the sames port of DDS*/
+    defaultUnicastPort = PRESRtps_getWellKnownUnicastPort(
+            _DomainID, /* domainId */
+            _isPublisher ? perftest_cpp::_PubID : perftest_cpp::_SubID, /* participantId */
+            wellKnownPorts.port_base,
+            wellKnownPorts.domain_id_gain,
+            wellKnownPorts.participant_id_gain,
+            wellKnownPorts.builtin_unicast_port_offset + portOffset);
+
+    return defaultUnicastPort;
 }
 
 /*********************************************************

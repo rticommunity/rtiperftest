@@ -242,8 +242,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 {
     _MessagingArgc = 0;
     _MessagingArgv = new char*[argc];
-    int _MessagingSocketsArgc = 0;
-    char **_MessagingSocketsArgv = new char*[argc];
 
     if (_MessagingArgv == NULL) {
         fprintf(stderr, "Problem allocating memory\n");
@@ -343,11 +341,21 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     int i;
     for (i = 1; i < argc; ++i)
     {
+        if (IS_OPTION(argv[i], "-sockets")) {
+            _useSockets = true;
+            _UseReadThread = true;
+        }
+    }
+    for (i = 1; i < argc; ++i)
+    {
         if (IS_OPTION(argv[i], "-help")) {
             fprintf(stderr, "%s", usage_string);
             fflush(stderr);
-            RTIDDSImpl<TestData_t>().PrintCmdLineHelp();
-            RTISocketImpl().PrintCmdLineHelp();
+            if (_useSockets) {
+                RTISocketImpl().PrintCmdLineHelp();
+            } else {
+                RTIDDSImpl<TestData_t>().PrintCmdLineHelp();
+            }
 
             return false;
         }
@@ -542,11 +550,16 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _NumSubscribers = strtol(argv[i], NULL, 10);
-            _MessagingSocketsArgv[_MessagingSocketsArgc] =
-                    DDS_String_dup(argv[i - 1]);
-            _MessagingSocketsArgv[++_MessagingSocketsArgc] =
-                    DDS_String_dup(argv[i]);
-            _MessagingSocketsArgc++;
+            if (_useSockets) {
+                _MessagingArgv[_MessagingArgc++] = DDS_String_dup(argv[i - 1]);
+                _MessagingArgv[_MessagingArgc++] = DDS_String_dup(argv[i]);
+
+                if (_MessagingArgv[_MessagingArgc - 1] == NULL
+                    || _MessagingArgv[_MessagingArgc - 2] == NULL) {
+                    fprintf(stderr, "Problem allocating memory\n");
+                    return false;
+                }
+            }
         }
         else if (IS_OPTION(argv[i], "-numPublishers"))
         {
@@ -556,11 +569,16 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _NumPublishers = strtol(argv[i], NULL, 10);
-            _MessagingSocketsArgv[_MessagingSocketsArgc] =
-                    DDS_String_dup(argv[i - 1]);
-            _MessagingSocketsArgv[++_MessagingSocketsArgc] =
-                    DDS_String_dup(argv[i]);
-            _MessagingSocketsArgc++;
+            if (_useSockets) {
+                _MessagingArgv[_MessagingArgc++] = DDS_String_dup(argv[i - 1]);
+                _MessagingArgv[_MessagingArgc++] = DDS_String_dup(argv[i]);
+
+                if (_MessagingArgv[_MessagingArgc - 1] == NULL
+                    || _MessagingArgv[_MessagingArgc - 2] == NULL) {
+                    fprintf(stderr, "Problem allocating memory\n");
+                    return false;
+                }
+            }
         }
         else if (IS_OPTION(argv[i], "-scan"))
         {
@@ -865,26 +883,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             fprintf(stderr, "] should be either all smaller or all bigger than %d.\n",
                     (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE));
             return false;
-        }
-    }
-
-    if (_useSockets) {
-        int count = 0;
-        if (_NumSubscribers != 1) {
-            _MessagingArgv[_MessagingArgc] =
-                    DDS_String_dup(_MessagingSocketsArgv[count]);
-            _MessagingArgv[++_MessagingArgc] =
-                    DDS_String_dup(_MessagingSocketsArgv[++count]);
-            _MessagingArgc++;
-            count++;
-        }
-        if (_NumPublishers != 1) {
-            _MessagingArgv[_MessagingArgc] =
-                    DDS_String_dup(_MessagingSocketsArgv[count]);
-            _MessagingArgv[++_MessagingArgc] =
-                    DDS_String_dup(_MessagingSocketsArgv[++count]);
-            _MessagingArgc++;
-            count++;
         }
     }
 
@@ -1975,7 +1973,7 @@ int perftest_cpp::Publisher()
                 // after _executionTime
                 if (_isScan && _testCompleted_scan) {
                     /* Give time to the subscriber to catch the publisher */
-                    if(_useSockets){
+                    if (_useSockets) {
                         MilliSleep(1000);
                     }
                     _testCompleted_scan = false;
