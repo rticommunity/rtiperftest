@@ -139,6 +139,10 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | binaries from previous            |
 |                      |           | executions.                       |
 +----------------------+-----------+-----------------------------------+
+| --build-doc          | Optional  | Generate the HTML and PDF         |
+|                      |           | documentation.                    |
+|                      |           | It is only avaialble on build.sh  |
++----------------------+-----------+-----------------------------------+
 | --help -h            | Optional  | If this option is present, the    |
 |                      |           | ``build.sh`` script will display  |
 |                      |           | a help description and exit.      |

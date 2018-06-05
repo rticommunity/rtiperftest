@@ -23,4 +23,4 @@
 .suo
 *.VC.db
 *.VC.opendb
-resource/script/build_documentation/_build/*
+srcDoc/doc

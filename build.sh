@@ -13,7 +13,6 @@ java_scripts_folder="${script_location}/resource/java_scripts"
 bin_folder="${script_location}/bin"
 cStringifyFile_script="${script_location}/resource/script/cStringifyFile.pl"
 qos_file="${script_location}/perftest_qos_profiles.xml"
-build_documentation_folder="${script_location}/resource/script/build_documentation"
 doc_folder="${script_location}/srcDoc"
 
 # Default values:
@@ -419,58 +418,55 @@ function build_java()
 }
 
 ################################################################################
-function clean_documentation_extra_files()
+function clean_documentation()
 {
-    #Remove all the *.rst file in ${build_documentation_folder}
-    for file in ${doc_folder}/*.rst
-    do
-        if [ -f $file ]; then
-            name_file=$(basename $file)
-            rm -f "${build_documentation_folder}/${name_file}"
-        fi
-    done
+    # Remove the content of ${doc_folder}/_build
+    rm -rf ${doc_folder}/_build
 }
 
 function build_documentation()
 {
-    clean_documentation_extra_files
-    # Remove the content of ${build_documentation_folder}/_build
-    rm -rf ${build_documentation_folder}/_build/*
-    #Update the documentation
-    cp -rf ${doc_folder}/*rst ${build_documentation_folder}
+    clean_documentation
 
     # Generate HTML
     echo ""
     echo -e "${INFO_TAG} Generating HTML documentation"
-    cd ${build_documentation_folder}
-    ${MAKE_EXE} -f Makefile html
+    cd ${doc_folder}
+    ${MAKE_EXE} -f Makefile html > /dev/null 2>&1
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating HTML documentation"
         echo -e "${ERROR_TAG} You will need to install:
             sudo pip install -U sphinx
             sudo pip install sphinx_rtd_theme"
-        clean_documentation_extra_files
+        clean_documentation
         exit -1
     fi
+    rm -rf ${doc_folder}/doc/html
+    mkdir -p ${doc_folder}/doc/html
+    cp -rf ${doc_folder}/_build/html ${doc_folder}/doc/
     echo -e "${INFO_TAG} HTML Generation successful. You will find it under:
-        ${build_documentation_folder}/_build/html/index.html"
+        ${doc_folder}/doc/html/index.html"
+
 
     # Generate PDF
     echo ""
     echo -e "${INFO_TAG} Generating PDF documentation"
-    cd ${build_documentation_folder}
-    ${MAKE_EXE} -f Makefile latexpdf
+    cd ${doc_folder}
+    ${MAKE_EXE} -f Makefile latexpdf > /dev/null 2>&1
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating PDF documentation"
         echo -e "${ERROR_TAG} You will need to install:
             sudo apt-get install texlive-full"
-        clean_documentation_extra_files
+        clean_documentation
         exit -1
     fi
+    rm -rf ${doc_folder}/doc/pdf
+    mkdir -p ${doc_folder}/doc/pdf
+    cp -rf ${doc_folder}/_build/latex/RTI_Perftest.pdf ${doc_folder}/doc/pdf/RTI_Perftest.pdf
     echo -e "${INFO_TAG} PDF Generation successful. You will find it under:
-        ${build_documentation_folder}/_build/latex/RTI_Perftest.pdf"
+        ${build_documentation_folder}/doc/pdf/RTI_Perftest.pdf"
 
-    clean_documentation_extra_files
+    clean_documentation
 }
 
 ################################################################################
