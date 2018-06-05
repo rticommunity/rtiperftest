@@ -51,16 +51,17 @@ Release Notes 2.4
 What's New in 2.4
 ~~~~~~~~~~~~~~~~~
 
-Print a summary with the main setting of the test *RTI Perftest* will run (#46)(#67)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Summary of test parameters printed before RTI Perftest runs (#46)(#67)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* provides a great number of command-line parameters, plus the option
-of using the *xml configuration file* for modying *RTI Connext DDS QoS*. This could
-lead to some confusion with regards to the test that will run when executing the application.
+of using the *xml configuration* file for modifying the RTI Connext DDS QoS. This
+could lead to some confusion with regards to the test that will run when executing
+the application.
 
 In order to make this clear, *RTI Perftest* now shows a summary at the beginning of
-the test with most of the relevant parameters being used for such test. This is done
-for both *Publisher* and *Subscriber* sides.
+the test with most of the relevant parameters being used for thetest. The
+summary is done for both Publisher and Subscriber sides.
 
 Added command-line parameters to simplify single API build (#50)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -73,110 +74,114 @@ following command-line parameters:
     --cpp-build
     --cs-build
 
-Added RTI Perftest and RTI Connext DDS information at beginning of the test (#54)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Added RTI Perftest and RTI Connext DDS information at beginning of test (#54)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Starting with this release, RTI Perftest will print at the beginning of the test
-its version and the version of RTI Connext DDS used to compile against.
+*RTI Perftest* now prints at the beginning of the test
+its version and the version of *RTI Connext DDS* against which *RTI Perftest* is
+compiled.
 
 Automatically regenerate `qos_string.h` file if `perftest_qos_profiles.xml` is modified (#63)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Starting with this release, *RTI Perftest* will udpate `qos_string.h` file
-with the content of `perftest_qos_profiles.xml` every time that *RTI Perftest*
-is built for C++ and C++ New PSM.
+*RTI Perftest* now udpates the `qos_string.h` file with the content of
+`perftest_qos_profiles.xml` every time *RTI Perftest* is built for C++
+and C++ New PSM.
 
-Enable batching for Throughput-Test mode with a 8kB value (#76)(#67)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Enable batching for Throughput-Test mode with 8kB value (#76)(#67)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-As part of the enhancements for the out-of-the-box experience for *RTI Perftest*,
-batching will be enabled by default for throughput tests where the datalen is
-equal or smaller than 4kB, and the *Batch size* value will be set to 8kB.
+As part of the enhanced out-of-the-box experience for *RTI Perftest*,
+batching is now enabled by default for throughput tests where the datalen is
+equal or smaller to 4kB. In such case, the *Batch size* value will be set to 8kB.
 
-This will be automatically disabled if LatencyTest mode is set or if the
+Batching will be disabled automatically if *LatencyTest* mode is set or if the
 `-batchSize` is lower than two times the `-dataLen`.
 
-Use `UDPv4` and `Shared Memory` as the default transport configuration (#80)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use `UDPv4` and `Shared Memory` as default transport configuration (#80)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-*RTI Perftest* previous default was to use only the `UDPv4` transport.
-However this doesn't always lead to the best results when testing between
-applications within the same machine and it also differs from *RTI Connext DDS*
-default behavior, which is `UDPv4` and Shared Memory (`SHMEM`).
-Starting from this release *RTI Perftest* new default is to use `UDPv4` and `SHMEM`.
+Previously, the *RTI Perftest* default was to use only the `UDPv4` transport.
+This did not, however, always lead to the best results when testing between
+applications within the same machine; it also differed from *RTI Connext DDS*
+default behavior, which enables the use of both `UDPv4` and Shared Memory (`SHMEM`).
+Now, *RTI Perftest*'s new default behavior is the same as *RTI Connext DDS*'s one.
 
-This change improves the out of the box user experience, getting better numbers
+This change improves the out-of-the-box user experience, getting better numbers
 when using the default configuration.
 
-Show percentage of packets lost in the subscriber side output (#81)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Show percentage of packets lost in subscriber side output (#81)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* now displays the percentage of lost packets in addition to the total
-number of packets lost. This number is displayed once per second with the rest of
-the statistics in the subscriber side, as well as at the end of the test.
+number of packets lost. This percentage is displayed once per second with the rest of
+the statistics in the *Subscriber* side, as well as at the end of the test.
 
 What's Fixed in 2.4
 ~~~~~~~~~~~~~~~~~~~
 
-Improve Dynamic Data Send() and Receive() operations (#55)
+Improved Dynamic Data Send() and Receive() operations (#55)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Dynamic Data Send() and Received() functions have been optimized
-reducing the time of setting and getting the samples.
+reducing the time spent setting and getting the samples.
 
-The result of these optimizations is that RTI Perftest now minimizes the time
-employed in the application-related tasks, therefore maximizing the time for
-sending and receiving calls. This allows to do a fair comparison between
+As a result of these optimizations *RTI Perftest* now minimizes the time
+employed in application-related tasks, therefore maximizing the time spent
+sending and receiving calls. This allows a fair comparison between
 Dynamic Data results and Generated Type-Code Data results.
 
-Incorrect Latency maximum calculation in certain scenarios with low resolution clocks (#58)
+Corrected Latency maximum calculation in certain scenarios with low resolution clocks (#58)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In previous releases, if the clock provided by the system had low resolution, many of the
 *Latency* times calculated by sending and receiving back samples would end up being `0us`.
-*RTI Perftest* would assume in those cases this value was a initialization value and it
+*RTI Perftest* would assume in those cases that this value was an initialization value and it
 would reset the maximum latency.
 
-This behavior has been fixed.
+This problem has been fixed. *RTI Perftest* now correctly supports the case where the
+latency reported is `0us` by not using it as a control/reset value.
 
-Improve behavior when using the `-scan` command-line option and Best Effort (#59)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Improved behavior when using the `-scan` command-line option and Best Effort (#59)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In previous releases, the use of `-scan` in combination with *Best Effort* would cause
-to send too many times certain packets used to signalize the change of sizes and the
+In previous releases, the use of `-scan` in combination with *Best Effort* would result
+in sending too many times certain packets used to signal the change of sizes and the
 initialization and finalization of the test.
 
-In certain scenarios, mostly local tests where *RTI Perftest* Publishers and Subscribers
-were in the same machine and that machine had limitations with respect to the CPU, this
-would cause the *Scan* test to not work properly, since the *Publisher* would make use of
-the CPU and network intensively, potentially starving the subscriber side and making the
-test hang.
+In certain scenarios -- mostly local tests where *RTI Perftest* Publishers and Subscribers
+were in the same machine and that machine had limitations with respect to the CPU -- this
+problem would cause the *Scan* test to not work properly, since the *Publisher* would make
+use of the CPU and network intensively, potentially starving the *Subscriber* side and
+making the test hang.
 
-This behavior has been fixed.
+This problem has been fixed.
 
-Reduce memory consumption in the Subscriber side (#74)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Reduced memory consumption on Subscriber side (#74)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The *initial_samples* value for the *ThroughputQoS* QoS profile has been updated
-to a lower number. This profile is used by the Subscriber side to create a
+to a lower number. This profile is used by the *Subscriber* side to create a
 *DDS DataWriter*.
 
-The reason why this value has been updated is to decrease the memory consumption
-of the *RTI Perftest* Subscriber side.
+This value has been updated in order to decrease memory consumption on
+the *RTI Perftest* *Subscriber* side.
 
-In order to ensure that this change does not affect to the overall performance of
-the application, the initial burst of samples sent by the Publisher side has been
-also reviewed, to always send a burst big enough to ensure that the allocations in
-both publisher and subscriber sides are done before the test starts.
+In order to ensure that this change does not affect the overall performance of
+the application, the initial burst of samples sent by the *Publisher* side has been
+also reviewed.  The *Publisher* side now always send a burst big enough to ensure
+that the allocations in both *Publisher* and *Subscriber* sides are done before
+the test starts.
 
-Fix compilation in Certain VxWork platforms (#93)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Fixed compilation in Certain VxWorks platforms (#93)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In previous releases the *Classic* and *Modern* C++ implementations were trying to
-include `sys/time.h`, this file might not exist for certain Operative Systems. This
-is the case of certain VxWorks platforms.
+In previous releases the *Traditional* and *Modern* C++ implementations were tried to
+include `sys/time.h`, but this file might not exist in certain operating systems including
+certain VxWorks platforms.
 
-This issue has been corrected, as this library is not needed for the VxWorks platforms.
+This issue has been fixed, as this library is not needed in *RTI Perftest* for VxWorks
+platforms anymore.
 
 Release Notes 2.3.2
 -------------------
@@ -278,7 +283,7 @@ Added Support for TLS
 ^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* now supports the use of *TLS* on top of the *TCP* plugin.
-The out of the box configuration allows the application to work using *TLS*
+The out-of-the-box configuration allows the application to work using *TLS*
 by just specifying ``-transport TLS``, however we also included command-line
 parameters to specify:
 
@@ -873,10 +878,10 @@ Known Issues
 Shared Memory issues when running the Modern C++ API or .Net Implementation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*RTI Perftest* uses `UDPv4` and `SHMEM` by default. Certain Operative Systems
-don't support Shared Memory, or the default configuration is not enough for
-*RTI Connext DDS* to work properly. In those cases *RTI Perftest* will show
-some errors trying to create the Participant entity:
+*RTI Perftest* uses `UDPv4` and `SHMEM` by default; however certain operating
+systems don't support Shared Memory, or the default configuration is not enough for
+*RTI Connext DDS* to work properly. In these cases *RTI Perftest* will show
+errors when trying to create the Participant entity:
 
 ::
 
@@ -889,17 +894,17 @@ some errors trying to create the Participant entity:
     DDSDomainParticipant_impl::createI:ERROR: Failed to auto-enable entity
 
 These errors are handled and filtered in the *RTI Perftest* implementation for
-the Classic C++ and Java APIs, but this is still not possible with the
-Modern C++ and .Net API.
+the *Traditional* C++ and Java APIs, but this is still not possible for the
+*Modern* C++ and .Net API.
 
-For more information about how to configure Shared Memory see http://community.rti.com/kb/osx510
+For more information about how to configure Shared Memory, see http://community.rti.com/kb/osx510.
 
-If you want to skip the use of Shared memory in RTI Perftest, specify the transport using `-transport <kind>`, e.g. `-transport UDPv4`.
+If you want to skip the use of Shared Memory in *RTI Perftest*, specify the transport using `-transport <kind>`, for example, `-transport UDPv4`.
 
-Warning when compiling the Classic C++ API *RTI Perftest* Implementation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Warning when compiling the *Traditional* C++ API Implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*RTI Perftest* might show these warnings when compiling the Classic C++ API implementation:
+*RTI Perftest* might show these warnings when compiling the *Traditional* C++ API implementation:
 
 ::
 
@@ -915,14 +920,14 @@ Warning when compiling the Classic C++ API *RTI Perftest* Implementation
     static const DDS_Char * ANNOUNCEMENT_TOPIC_NAME= "Announcement";
                             ^
 
-This warning is due to a known issue in *RTIDDSGen* (CODEGENII-873) related to the way in which
-the code for a const string is generated. It will be fixed in future releases of *RTI Connext DDS*.
+These warnings are the result of a known issue in *RTI Code Generator (rtiddsgen)* (CODEGENII-873) related to the way in which
+the code for a const string is generated. This issue will be fixed in future releases of *RTI Connext DDS*.
 
 
 Building RTI Perftest Java API against RTI Connext DDS 5.2.0.x
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Due to the changes added in order to support larger data sizes, *RTI
+Due to the changes added to support larger data sizes, *RTI
 Perftest* now makes use of *Unbounded Sequences*. This feature was not
 added to *RTI Connext DDS* in *5.2.0.x*, so the following error will be
 reported when trying to compile the Java API:
@@ -938,28 +943,28 @@ reported when trying to compile the Java API:
     INFO com.rti.ndds.nddsgen.Main Done (failures)
     [ERROR]: Failure generating code for java.
 
-In order to avoid this compilation error, 2 changes are needed:
+To avoid this compilation error, two changes are needed:
 
 -  In the ``build.sh`` or ``build.bat`` scripts, modify the call for
-   *Rtiddsgen* and remove the ``-unboundedSupport`` flag.
+   *rtiddsgen* and remove the ``-unboundedSupport`` flag.
 
 -  In the ``srcIdl/perftest.idl`` file, modify the ``TestDataLarge_t``
-   and ``TestDataLargeKeyed_t`` types and add a bound to the
-   ``bin_data`` member: ``sequence<octet,LIMIT> bin_data;``.
+   and ``TestDataLargeKeyed_t`` types, and add a bound to the
+``bin_data`` member: ``sequence<octet,LIMIT> bin_data;``.
 
-Publication rate precision on Windows Systems when using "sleep" instead of "spin"
+Publication rate precision on Windows systems when using "sleep" instead of "spin"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When using the ``-pubRate <#>:sleep`` or ``-sleep`` command-line
-parameters on Windows Systems the ``sleep()`` precision will be accurate
+parameters on Windows systems, the ``sleep()`` precision will be accurate
 up to 10 milliseconds. This means that for publication rates of more
-than 10000 samples per second we recommend using the "<#>:spin" option
+than 10,000 samples per second we recommend using the "<#>:spin" option
 instead.
 
-Compiling manually on Windows Systems when using the *RTI Security* plugin
+Compiling manually on Windows systems when using the *RTI Security* plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*rtiddsgen* generated solutions for Windows Systems allow 4 different
+*rtiddsgen*-generated solutions for Windows systems allow four different
 configurations:
 
 -  Debug
@@ -967,6 +972,6 @@ configurations:
 -  Release
 -  Release DLL
 
-However, the new *RTI Perftest* build system is focused on only
-compiling one of those modes at a time. To choose the compilation mode,
+The new *RTI Perftest* build system, however, is focused on compiling
+only one of those modes at a time. To choose the compilation mode,
 use the ``-debug`` and ``-dynamic`` flags.

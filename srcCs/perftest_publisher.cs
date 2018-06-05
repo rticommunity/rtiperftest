@@ -1658,17 +1658,15 @@ namespace PerformanceTest {
                         outputCpu = cpu.get_cpu_average();
                     }
                     Console.Write("Length: {0,5}  Packets: {1,8}  Packets/s(ave): {2,7:F0}  " +
-                                  "Mbps(ave): {3,7:F1}  Lost: {4}{5}\n",
+                                  "Mbps(ave): {3,7:F1}  Lost: {4,5} ({5,1:p1}){6}\n",
                                   interval_data_length + OVERHEAD_BYTES,
                                   interval_packets_received,
                                   interval_packets_received * 1000000 / interval_time,
                                   interval_bytes_received * 1000000.0 / interval_time * 8.0 / 1000.0 / 1000.0,
                                   interval_missing_packets,
+                                  missing_packets_percent,
                                   outputCpu
                     );
-
-                    Console.Write("Lost Packets (%): {0,1:p1}\n",
-                                  missing_packets_percent);
                 }
 
 
@@ -1837,7 +1835,7 @@ namespace PerformanceTest {
                             outputCpu = reader_listener.cpu.get_cpu_instant();
                         }
                         Console.Write("Packets: {0,8}  Packets/s: {1,7}  Packets/s(ave): {2,7:F0}  " +
-                                     "Mbps: {3,7:F1}  Mbps(ave): {4,7:F1}  Lost: {5,7} ({6,1:p1}){7}\n",
+                                     "Mbps: {3,7:F1}  Mbps(ave): {4,7:F1}  Lost: {5,5} ({6,1:p1}){7}\n",
                                      last_msgs, mps, mps_ave,
                                      bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
                                      reader_listener.missing_packets,
