@@ -51,6 +51,17 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+Print a summary with the main setting of the test *RTI Perftest* will run (#46)(#67)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* provides a great number of command-line parameters, plus the option
+of using the *xml configuration file* for modying *RTI Connext DDS QoS*. This could
+lead to some confusion with regards to the test that will run when executing the application.
+
+In order to make this clear, *RTI Perftest* now shows a summary at the beginning of
+the test with most of the relevant parameters being used for such test. This is done
+for both *Publisher* and *Subscriber* sides.
+
 Added command-line parameters to simplify single API build (#50)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -62,8 +73,71 @@ following command-line parameters:
     --cpp-build
     --cs-build
 
+Added RTI Perftest and RTI Connext DDS information at beginning of the test (#54)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting with this release, RTI Perftest will print at the beginning of the test
+its version and the version of RTI Connext DDS used to compile against.
+
+Automatically regenerate `qos_string.h` file if `perftest_qos_profiles.xml` is modified (#63)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting with this release, *RTI Perftest* will udpate `qos_string.h` file
+with the content of `perftest_qos_profiles.xml` every time that *RTI Perftest*
+is built for C++ and C++ New PSM.
+
+Enable batching for Throughput-Test mode with a 8kB value (#76)(#67)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As part of the enhancements for the out-of-the-box experience for *RTI Perftest*,
+batching will be enabled by default for throughput tests where the datalen is
+equal or smaller than 4kB, and the *Batch size* value will be set to 8kB.
+
+This will be automatically disabled if LatencyTest mode is set or if the
+`-batchSize` is lower than two times the `-dataLen`.
+
+Use `UDPv4` and `Shared Memory` as the default transport configuration (#80)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* previous default was to use only the `UDPv4` transport.
+However this doesn't always lead to the best results when testing between
+applications within the same machine and it also differs from *RTI Connext DDS*
+default behavior, which is `UDPv4` and Shared Memory (`SHMEM`).
+Starting from this release *RTI Perftest* new default is to use `UDPv4` and `SHMEM`.
+
+This change improves the out of the box user experience, getting better numbers
+when using the default configuration.
+
+Show percentage of packets lost in the subscriber side output (#81)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* now displays the percentage of lost packets in addition to the total
+number of packets lost. This number is displayed once per second with the rest of
+the statistics in the subscriber side, as well as at the end of the test.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
+
+Improve Dynamic Data Send() and Receive() operations (#55)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Dynamic Data Send() and Received() functions have been optimized
+reducing the time of setting and getting the samples.
+
+The result of these optimizations is that RTI Perftest now minimizes the time
+employed in the application-related tasks, therefore maximizing the time for
+sending and receiving calls. This allows to do a fair comparison between
+Dynamic Data results and Generated Type-Code Data results.
+
+Incorrect Latency maximum calculation in certain scenarios with low resolution clocks (#58)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, if the clock provided by the system had low resolution, many of the
+*Latency* times calculated by sending and receiving back samples would end up being `0us`.
+*RTI Perftest* would assume in those cases this value was a initialization value and it
+would reset the maximum latency.
+
+This behavior has been fixed.
 
 Improve behavior when using the `-scan` command-line option and Best Effort (#59)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -79,6 +153,30 @@ the CPU and network intensively, potentially starving the subscriber side and ma
 test hang.
 
 This behavior has been fixed.
+
+Reduce memory consumption in the Subscriber side (#74)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The *initial_samples* value for the *ThroughputQoS* QoS profile has been updated
+to a lower number. This profile is used by the Subscriber side to create a
+*DDS DataWriter*.
+
+The reason why this value has been updated is to decrease the memory consumption
+of the *RTI Perftest* Subscriber side.
+
+In order to ensure that this change does not affect to the overall performance of
+the application, the initial burst of samples sent by the Publisher side has been
+also reviewed, to always send a burst big enough to ensure that the allocations in
+both publisher and subscriber sides are done before the test starts.
+
+Fix compilation in Certain VxWork platforms (#93)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases the *Classic* and *Modern* C++ implementations were trying to
+include `sys/time.h`, this file might not exist for certain Operative Systems. This
+is the case of certain VxWorks platforms.
+
+This issue has been corrected, as this library is not needed for the VxWorks platforms.
 
 Release Notes 2.3.2
 -------------------
@@ -119,6 +217,22 @@ instead, *RTI Perftest* would always use the default value set up via code.
 This behavior has been fixed. We also took the oportunity to simplify and clarify
 the XML configurations when disabling positive Acks.
 
+Show message in sumary when -multicast is present but it wont be used (#44)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous versions, if the `-multicast` command-line parameter was provided but
+the transport didn't allow the use of multicast, it would fail silently and no
+indication would be shown by RTI Perftest.
+
+Starting from this release, the use of multicast will be shown in the transport
+summary at the beginning of the test, and a message will be printed stating if
+multicast could not be applied for the transport.
+
+The `-multicast` parameter has been divided into 2: `-multicast` which enables
+multicast for a given transport using a set of default multicast addresses and
+`-multicastAddr <address>` which enables multicast and sets the multicast IPs to
+be the one provided.
+
 Update Security Certificates and Governance files (#49)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -127,6 +241,7 @@ in RTI Perftest have been regenerated and signed again, since they had expired.
 
 The script used for updating the files has been improved to generate certificates
 valid for a longer period of time (from one year to ten years).
+
 
 Release Notes 2.3.1
 --------------------
@@ -754,6 +869,55 @@ we could get into the following error:
 
 Known Issues
 ------------
+
+Shared Memory issues when running the Modern C++ API or .Net Implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*RTI Perftest* uses `UDPv4` and `SHMEM` by default. Certain Operative Systems
+don't support Shared Memory, or the default configuration is not enough for
+*RTI Connext DDS* to work properly. In those cases *RTI Perftest* will show
+some errors trying to create the Participant entity:
+
+::
+
+    [D0001|ENABLE]NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key 0x40894a
+    [D0001|ENABLE]NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key 0x40894c
+    [D0001|ENABLE]DDS_DomainParticipantPresentation_reserve_participant_index_entryports:!enable reserve participant index
+    [D0001|ENABLE]DDS_DomainParticipant_reserve_participant_index_entryports:Unusable shared memory transport. For a more in-depth explanation of the possible problem and solution, please visit http://community.rti.com/kb/osx510.
+    [D0001|ENABLE]DDS_DomainParticipant_enableI:Automatic participant index failed to initialize. PLEASE VERIFY CONSISTENT TRANSPORT / DISCOVERY CONFIGURATION.
+    [NOTE: If the participant is running on a machine where the network interfaces can change, you should manually set wire protocol's participant id]
+    DDSDomainParticipant_impl::createI:ERROR: Failed to auto-enable entity
+
+These errors are handled and filtered in the *RTI Perftest* implementation for
+the Classic C++ and Java APIs, but this is still not possible with the
+Modern C++ and .Net API.
+
+For more information about how to configure Shared Memory see http://community.rti.com/kb/osx510
+
+If you want to skip the use of Shared memory in RTI Perftest, specify the transport using `-transport <kind>`, e.g. `-transport UDPv4`.
+
+Warning when compiling the Classic C++ API *RTI Perftest* Implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*RTI Perftest* might show these warnings when compiling the Classic C++ API implementation:
+
+::
+
+    In file included from perftestSupport.h:15:0,
+                    from perftestSupport.cxx:11:
+    perftest.h:29:25: warning: ‘THROUGHPUT_TOPIC_NAME’ defined but not used [-Wunused-variable]
+    static const DDS_Char * THROUGHPUT_TOPIC_NAME= "Throughput";
+                            ^
+    perftest.h:30:25: warning: ‘LATENCY_TOPIC_NAME’ defined but not used [-Wunused-variable]
+    static const DDS_Char * LATENCY_TOPIC_NAME= "Latency";
+                            ^
+    perftest.h:31:25: warning: ‘ANNOUNCEMENT_TOPIC_NAME’ defined but not used [-Wunused-variable]
+    static const DDS_Char * ANNOUNCEMENT_TOPIC_NAME= "Announcement";
+                            ^
+
+This warning is due to a known issue in *RTIDDSGen* (CODEGENII-873) related to the way in which
+the code for a const string is generated. It will be fixed in future releases of *RTI Connext DDS*.
+
 
 Building RTI Perftest Java API against RTI Connext DDS 5.2.0.x
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

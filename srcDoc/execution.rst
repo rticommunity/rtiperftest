@@ -203,20 +203,80 @@ test.
 
 ::
 
-    > perftest_cpp -pub -noPrint -domain 27 -sendQueueSize 50 -latencyCount 10000 -scan Waiting to discover 1 subscribers... 
+    > perftest_cpp -pub -noPrint -domain 27 -latencyCount 100000 -scan 32:64:256:1024:8192:32768:63000 -exec 30 -nic lo0
+    RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+
+    Mode: THROUGHPUT TEST
+        (Use "-latencyTest" for Latency Mode)
+
+    Perftest Configuration:
+        Reliability: Reliable
+        Keyed: No
+        Publisher ID: 0
+        Latency count: 1 latency sample every 100000 samples
+        Data Size: 32, 64, 256, 1024, 8192, 32768, 63000
+        Batching: 8192 Bytes (Use "-batchSize 0" to disable batching)
+        Publication Rate: Unlimited (Not set)
+        Execution time: 30 seconds
+        Receive using: Listeners
+        Domain: 27
+        Dynamic Data: No
+        Asynchronous Publishing: No
+        XML File: perftest_qos_profiles.xml
+
+    Transport Configuration:
+        Kind: UDPv4 & SHMEM (taken from QoS XML file)
+        Use Multicast: False
+
+    Waiting to discover 1 subscribers ...
     Waiting for subscribers announcement ...
-    Publishing data...
-    Length: 32 Latency: Ave 396 us Std 48.9 us Min 83 us Max 538 us 50% 401 us 90% 459 us 99% 510 us 99.99% 538 us 99.9999% 538 us
-    Length: 64 Latency: Ave 399 us Std 53.1 us Min 88 us Max 1062 us 50% 403 us 90% 461 us 99% 537 us 99.99% 1062 us 99.9999% 1062 us
-    ...
+    Sending 50 initialization pings ...
+    Publishing data ...
+    Length:    32  Latency: Ave    100 us  Std  202.5 us  Min     62 us  Max   5543 us  50%     88 us  90%    107 us  99%    180 us  99.99%   5543 us  99.9999%   5543 us
+    Length:    64  Latency: Ave     70 us  Std   53.7 us  Min     45 us  Max   1076 us  50%     63 us  90%     84 us  99%    142 us  99.99%   1076 us  99.9999%   1076 us
+    Length:   256  Latency: Ave     45 us  Std   12.0 us  Min     32 us  Max    106 us  50%     41 us  90%     69 us  99%     78 us  99.99%    106 us  99.9999%    106 us
+    Length:  1024  Latency: Ave     28 us  Std    4.5 us  Min     25 us  Max     68 us  50%     27 us  90%     31 us  99%     52 us  99.99%     68 us  99.9999%     68 us
+    Length:  8192  Latency: Ave     33 us  Std   12.6 us  Min     28 us  Max     86 us  50%     29 us  90%     34 us  99%     86 us  99.99%     86 us  99.9999%     86 us
+    Length: 32768  Latency: Ave     46 us  Std   32.9 us  Min     35 us  Max    172 us  50%     36 us  90%     53 us  99%    172 us  99.99%    172 us  99.9999%    172 us
+    Length: 63000  Latency: Ave     57 us  Std   25.2 us  Min     45 us  Max    136 us  50%     48 us  90%     55 us  99%    136 us  99.99%    136 us  99.9999%    136 us
+    Finishing test...
+    Test ended.
 
 -  Subscriber
 
 ::
 
-    > perftest_cpp -sub -noPrint -domain 27
+    > perftest_cpp -noPrint -domain 27
+    RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+
+    Perftest Configuration:
+        Reliability: Reliable
+        Keyed: No
+        Subscriber ID: 0
+        Receive using: Listeners
+        Domain: 27
+        Dynamic Data: No
+        XML File: perftest_qos_profiles.xml
+
+    Transport Configuration:
+        Kind: UDPv4 & SHMEM (taken from QoS XML file)
+        Use Multicast: False
+
     Waiting to discover 1 publishers ...
     Waiting for data...
-    Length: 32 Packets: 10000000 Packets/s(ave): 47913 Mbps(ave): 12.3 Lost: 0
-    Length: 64 Packets: 10000000 Packets/s(ave): 47580 Mbps(ave): 24.4 Lost: 0
-    ...
+    Length:    32  Packets: 85900000  Packets/s(ave): 2880385  Mbps(ave):   737.4  Lost: 0
+    Lost Packets (%): 0.00%
+    Length:    64  Packets: 66500000  Packets/s(ave): 2232093  Mbps(ave):  1142.8  Lost: 0
+    Lost Packets (%): 0.00%
+    Length:   256  Packets: 37200000  Packets/s(ave): 1248203  Mbps(ave):  2556.3  Lost: 0
+    Lost Packets (%): 0.00%
+    Length:  1024  Packets: 15200000  Packets/s(ave):  506920  Mbps(ave):  4152.7  Lost: 0
+    Lost Packets (%): 0.00%
+    Length:  8192  Packets:  1900000  Packets/s(ave):   60350  Mbps(ave):  3955.2  Lost: 0
+    Lost Packets (%): 0.00%
+    Length: 32768  Packets:  1600000  Packets/s(ave):   52506  Mbps(ave): 13764.4  Lost: 0
+    Lost Packets (%): 0.00%
+    Length: 63000  Packets:  1100000  Packets/s(ave):   35481  Mbps(ave): 17882.6  Lost: 0
+    Lost Packets (%): 0.00%
+    Finishing test...
+    Test ended.

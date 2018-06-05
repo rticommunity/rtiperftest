@@ -9,28 +9,35 @@
 #include <string>
 #include <map>
 #include <sstream>
+#include "perftest.h"
 #include "ndds/ndds_cpp.h"
 
 /******************************************************************************/
 
 enum Transport {
-    TRANSPORT_DEFAULT,
+    TRANSPORT_NOT_SET,
     TRANSPORT_UDPv4,
     TRANSPORT_UDPv6,
     TRANSPORT_TCPv4,
     TRANSPORT_TLSv4,
     TRANSPORT_DTLSv4,
     TRANSPORT_WANv4,
-    TRANSPORT_SHMEM
+    TRANSPORT_SHMEM,
+    TRANSPORT_UDPv4_SHMEM,
+    TRANSPORT_UDPv4_UDPv6,
+    TRANSPORT_UDPv6_SHMEM,
+    TRANSPORT_UDPv4_UDPv6_SHMEM
 };
 
 struct TransportConfig {
     Transport kind;
     std::string nameString;
     std::string prefixString;
+    bool takenFromQoS;
 
     TransportConfig()
-            : kind(TRANSPORT_DEFAULT)
+            : kind(TRANSPORT_NOT_SET),
+              takenFromQoS(false)
     {
     }
 
@@ -41,7 +48,8 @@ struct TransportConfig {
             :
             kind(inputKind),
             nameString(inputNameString),
-            prefixString(inputPrefixString)
+            prefixString(inputPrefixString),
+            takenFromQoS(false)
     {
     }
 };
@@ -95,6 +103,7 @@ public:
     WanTransportOptions wanOptions;
 
     unsigned long dataLen;
+    bool useMulticast;
 
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
@@ -110,13 +119,24 @@ public:
 
     std::string helpMessageString();
 
-    void printTransportConfigurationSummary();
+    std::string printTransportConfigurationSummary();
 
     bool parseTransportOptions(int argc, char *argv[]);
+
+    // Check if the transport allows the use of multicast.
+    bool allowsMulticast();
+
+    /*
+     * Given the name of a Perftest-defined topic, returns its multicast
+     * address.
+     */
+    const std::string getMulticastAddr(const char *topic);
 
 private:
 
     static std::map<std::string, TransportConfig> transportConfigMap;
+
+    std::map<std::string, std::string> multicastAddrMap;
 
     /**************************************************************************/
 

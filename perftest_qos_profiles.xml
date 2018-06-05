@@ -40,7 +40,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
     <qos_profile name="BaseProfileQos">
       <participant_qos>
-        <!-- === Participant Configuration: ================================ 
+        <!-- === Participant Configuration: ================================
 
         The base configuration of the DomainParticipant object.
 
@@ -50,23 +50,23 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         here will pick up the documented default value.
         -->
         <receiver_pool>
-          <!-- 
+          <!--
           The receive buffer is used by the receive thread to store the raw data
           that arrives over the transport.
-          
+
           The ReceiverPoolQosPolicy's buffer_size should be set to be the same value
           as the maximum ::NDDS_Transport_Property_t::message_size_max across all of
-          the transports being used. 
+          the transports being used.
           -->
           <buffer_size>65536</buffer_size>
         </receiver_pool>
-          
+
         <resource_limits>
-          <!-- 
+          <!--
           Maximum size of a serialized type code.
 
           This parameter limits the size of the type code that a DomainParticipant
-          is able to store and propagate for data types. 
+          is able to store and propagate for data types.
           -->
           <type_code_max_serialized_length>2048</type_code_max_serialized_length>
 
@@ -88,32 +88,39 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           -->
           <contentfilter_property_max_length>512</contentfilter_property_max_length>
         </resource_limits>
-          
-        <!-- 
+
+        <!--
         Specifies which built-in transports are used.
 
         Three different transport plug-ins are built into the Connext core
         libraries (for most supported target platforms): UDPv4, shared memory, and
         UDPv6.
 
-        By default RTI Perftest uses UDPv4, which is set in this profile.
-        UDPv6, TCPv4 and SHMEM can be also be configured by using:
-         
-        -enableUDPv6
-        -enableTCP
-        -enableSharedMemory
-        
+        By default RTI Perftest uses UDPv4|SHMEM, default values for RTI
+        Connext DDS. By using the command-line option -transport we enabled
+        the use of:
+
+        - UDPv4
+        - UDPv6
+        - SHMEM
+        - TCP
+        - TLS
+        - DTLS
+        - WAN
+
         For custom transport settings, modify this profile.
         -->
 
+        <!--
         <transport_builtin>
-          <mask>UDPv4</mask>
+          <mask>UDPv4|SHMEM</mask>
         </transport_builtin>
+        -->
 
         <property>
           <value>
 
-            <!-- 
+            <!--
             Specifies the configuration to be used with the UDPv4 built-in transport.
             -->
             <element>
@@ -129,14 +136,14 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
               <value>2097152</value>
             </element>
 
-            <!-- 
+            <!--
             Specifies the configuration to be used with the SHMEM built-in transport.
 
-            Important: The commented setting is configured automatically within the 
+            Important: The commented setting is configured automatically within the
             source code. The default value of _DataLen is 100.
-              
+
             Value set in the source code:
-            
+
             <element>
               <name>dds.transport.shmem.builtin.received_message_count_max</name>
               <value>2097152/_DataLen</value>
@@ -151,19 +158,19 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
               <value>2097152</value>
             </element>
 
-            <!-- 
+            <!--
             Specifies the configuration to be used with the TCP transport.
-            
-            If TCP is enabled using -useTcpOnly, the load_plugins property is set
+
+            If TCP is enabled using -transport TCP, the load_plugins property is set
             within the source code.
-            
+
             Important: nddstransporttcp.dll is located in NDDSHOME/lib/<architecture>.
             That folder must be added to the PATH on Windows systems and LD_LIBRARY_PATH
-            on UNIX-based systems in order to load this library properly. If you are 
-            compiling PerfTest using CSHARP, you must also add the folder 
+            on UNIX-based systems in order to load this library properly. If you are
+            compiling PerfTest using CSHARP, you must also add the folder
             NDDSHOME/lib/i86Win32VS<version> or NDDSHOME/lib/x64Win64VS<version> depending
             on the machine.
-            
+
             <element>
               <name>dds.transport.load_plugins</name>
               <value>dds.transport.TCPv4.tcp1</value>
@@ -232,7 +239,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
           </value>
         </property>
-        
+
         <!--
         Specifies the participant name. This setting is useful when using monitoring
         applications.
@@ -240,7 +247,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         <participant_name>
           <name>PerfTest Participant</name>
         </participant_name>
-          
+
       </participant_qos>
 
       <!-- === Publisher Configuration: ================================= 
@@ -689,7 +696,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
         <!--
         Setting history.kind = KEEP_ALL, Connext will attempt to maintain
-        and deliver all the values of the instance to existing subscribers. 
+        and deliver all the values of the instance to existing subscribers.
         The resources that Connext can use to keep this history are limited
         by the settings of the RESOURCE_LIMITS.
         -->
@@ -698,11 +705,11 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </history>
 
         <!--
-        Setting reliability.kind = RELIABLE_RELIABILITY_QOS, data samples 
+        Setting reliability.kind = RELIABLE_RELIABILITY_QOS, data samples
         originating from a single DataWriter cannot be made available to the
-        DataReader if there are previous data samples that have not been 
+        DataReader if there are previous data samples that have not been
         received yet due to a communication error.
-        
+
         The default value of reliability.kind is RELIABLE_RELIABILITY_QOS.
         The reliability.kind can be modified to BEST_EFFORT_RELIABILITY_QOS
         by using the command-line option -bestEffort.
@@ -712,40 +719,41 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </reliability>
 
         <!--
-        DurabilityQos policy specifies whether or not Connext will store and 
-        deliver previously published data samples to new DataReaders 
+        DurabilityQos policy specifies whether or not Connext will store and
+        deliver previously published data samples to new DataReaders
         that join the network later.
-        
+
         Important: durability.kind and durability.direct_communication are configured
         automatically within the source code. To modify them, use the input commands
         -durability and -noDirectCommunication.
-        
+
         The default value of _DirectCommunication is true.
         The default value of _Durability is DDS_VOLATILE_DURABILITY_QOS.
-        
+
         <durability>
           <kind>_Durability</kind>
           <direct_communication>_DirectCommunication</direct_communication>
         </durability>
         -->
-        
+
         <resource_limits>
           <!--
-          The initial and maximum number of data samples for which the
-          middleware will allocate space. The parameters are set to the same
-          value to eliminate the overhead of dynamic memory-allocation while 
-          running the test. In a real-world application, you
-          may not be sure that you will use the full quota in max_samples 
-          (or max_samples may be unlimited), so you may want to set
-          initial_samples to a value smaller than max_samples and allow
-          the middleware to allocate the difference dynamically as needed.
+          The initial and maximum number of data samples. The middleware will
+          make sure to allocate space for the initial_samples, and then if
+          needed, it will grow the allocated memory up to a point where it
+          supports max_samples.
+
+          For the initial number of samples we choose a number that should be
+          enough for most use-cases (therefore no need to grow), but that
+          should not affect the memory consumption by reserving too much
+          memory.
           -->
           <max_samples>10000</max_samples>
-          <initial_samples>5000</initial_samples>
-          
+          <initial_samples>128</initial_samples>
+
           <!--
           The maximum number of samples that can be stored for a single
-          instance. Since the throughput topic is not keyed, there is only a
+          instance. If the throughput topic is not keyed, there is only a
           single instance, so this value should always be set the same
           as max_samples.
 
@@ -754,7 +762,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           -->
           <max_samples_per_instance>10000</max_samples_per_instance>
         </resource_limits>
-        
+
         <reader_resource_limits>
           <!--
           The maximum number of samples that Connext will store from a
@@ -784,7 +792,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           -->
           <max_samples_per_read>65536</max_samples_per_read>
         </reader_resource_limits>
-        
+
         <protocol>
           <rtps_reliable_reader>
             <!--

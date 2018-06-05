@@ -48,6 +48,34 @@ const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME = "nddssecurity";
 
 std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
 
+/* Perftest DynamicDataMembersId class */
+DynamicDataMembersId::DynamicDataMembersId()
+{
+    membersId["key"] = 1;
+    membersId["entity_id"] = 2;
+    membersId["seq_num"] = 3;
+    membersId["timestamp_sec"] = 4;
+    membersId["timestamp_usec"] = 5;
+    membersId["latency_ping"] = 6;
+    membersId["bin_data"] = 7;
+}
+
+DynamicDataMembersId::~DynamicDataMembersId()
+{
+    membersId.clear();
+}
+
+DynamicDataMembersId &DynamicDataMembersId::GetInstance()
+{
+    static DynamicDataMembersId instance;
+    return instance;
+}
+
+int DynamicDataMembersId::at(std::string key)
+{
+   return membersId.at(key);
+}
+
 template <typename T>
 RTIDDSImpl<T>::RTIDDSImpl():
         _SendQueueSize(50),
@@ -59,7 +87,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _AutoThrottle(false),
         _IsReliable(true),
         _IsMulticast(false),
-        _BatchSize(0),
+        _BatchSize(DEFAULT_THROUGHPUT_BATCH_SIZE),
         _InstanceCount(1),
         _InstanceMaxCountReader(dds::core::LENGTH_UNLIMITED), //(-1)
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED), //(-1)
@@ -93,9 +121,6 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _WaitsetDelayUsec(100),
         _HeartbeatPeriod(dds::core::Duration::zero()),
         _FastHeartbeatPeriod(dds::core::Duration::zero()),
-        THROUGHPUT_MULTICAST_ADDR("239.255.1.1"),
-        LATENCY_MULTICAST_ADDR("239.255.1.2"),
-        ANNOUNCEMENT_MULTICAST_ADDR("239.255.1.100"),
         _ProfileLibraryName("PerftestQosLibrary"),
         _participant(dds::core::null),
         _subscriber(dds::core::null),
@@ -130,15 +155,9 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
             "\t                                default: perftest_qos_profiles.xml\n"
             "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n"
             "\t                                default: PerftestQosLibrary\n"
-            "\t-multicast <address>          - Use multicast to send data.\n" +
-            "\t                                Default not to use multicast\n" +
-            "\t                                <address> is optional, if unspecified:\n" +
-            "\t                                                latency 239.255.1.2,\n" +
-            "\t                                                announcement 239.255.1.100,\n" +
-            "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
-            "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
-            "\t                                (no batching)\n" +
+            "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
+            "\t                                (Disabled for LatencyTest mode or if dataLen > 4kB)\n" +
             "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
             "\t                                protocol, default use positive acks\n" +
             "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +
@@ -207,10 +226,11 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
 template <typename T>
 bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 {
+    unsigned long minScanSize = MAX_PERFTEST_SAMPLE_SIZE;
+    bool isBatchSizeProvided = false;
     int i;
     int sec = 0;
     unsigned int nanosec = 0;
-    unsigned long _scan_max_size = 0;
 
     // now load everything else, command line params override config file
     for (i = 0; i < argc; ++i) {
@@ -218,21 +238,31 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _isPublisher = true;
         } else if (IS_OPTION(argv[i], "-scan")) {
             _isScan = true;
+
+            /*
+             * Check if we have custom scan values. In such case we are just
+             * interested in the minimum one.
+             */
             if ((i != (argc-1)) && *argv[1+i] != '-') {
                 ++i;
-                unsigned long aux_scan;
-                char * pch;
+                unsigned long auxScan = 0;
+                char *pch = NULL;
                 pch = strtok (argv[i], ":");
                 while (pch != NULL) {
-                    if (sscanf(pch, "%lu", &aux_scan) != 1) {
-                        std::cerr << "[Error] -scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'" << std::endl;
+                    if (sscanf(pch, "%lu", &auxScan) != 1) {
                         return false;
                     }
                     pch = strtok (NULL, ":");
-                    if (aux_scan >= _scan_max_size) {
-                        _scan_max_size = aux_scan;
+                    if (auxScan < minScanSize) {
+                        minScanSize = auxScan;
                     }
                 }
+            /*
+             * If we do not specify any custom value for the -scan, we would
+             * set minScanSize to the minimum size in the default set for -scan.
+             */
+            } else {
+                minScanSize = 32;
             }
         } else if (IS_OPTION(argv[i], "-dataLen")) {
 
@@ -350,16 +380,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 throw std::logic_error("[Error] Error parsing commands");
             }
             _ProfileLibraryName = argv[i];
-        } else if (IS_OPTION(argv[i], "-multicast")) {
-            _IsMulticast = true;
-            if ((i != (argc-1)) && *argv[i+1] != '-') {
-                i++;
-                THROUGHPUT_MULTICAST_ADDR = argv[i];
-                LATENCY_MULTICAST_ADDR = argv[i];
-                ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
-            }
-        } else if (IS_OPTION(argv[i], "-nomulticast")) {
-            _IsMulticast = false;
         } else if (IS_OPTION(argv[i], "-bestEffort")) {
             _IsReliable = false;
         } else if (IS_OPTION(argv[i], "-durability")) {
@@ -378,7 +398,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
         } else if (IS_OPTION(argv[i], "-dynamicData")) {
             _isDynamicData = true;
-            std::cerr << "[Info] Using Dynamic Data." << std::endl;
         } else if (IS_OPTION(argv[i], "-noDirectCommunication")) {
             _DirectCommunication = false;
         } else if (IS_OPTION(argv[i], "-instances")) {
@@ -419,12 +438,13 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
             _BatchSize = strtol(argv[i], NULL, 10);
 
-            if (_BatchSize < 0 || _BatchSize > (unsigned int)MAX_SYNCHRONOUS_SIZE) {
-                std::cerr << "[Error] Batch size '" << _BatchSize <<
-                        "' should be between [0," << MAX_SYNCHRONOUS_SIZE <<
-                        "]" << std::endl;
+            if (_BatchSize < 0 || _BatchSize > (int)MAX_SYNCHRONOUS_SIZE) {
+                std::cerr << "[Error] Batch size '" << _BatchSize
+                          << "' should be between [0," << MAX_SYNCHRONOUS_SIZE
+                          << "]" << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
+            isBatchSizeProvided = true;
         } else if (IS_OPTION(argv[i], "-keepDurationUsec")) {
             if ((i == (argc - 1)) || *argv[++i] == '-') {
                 std::cerr << "[Error] Missing <usec> after -keepDurationUsec"
@@ -492,14 +512,11 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-latencyTest")) {
             _LatencyTest = true;
         } else if (IS_OPTION(argv[i], "-enableAutoThrottle")) {
-            std::cerr << "[Info] Auto Throttling enabled. Automatically "
-                    "adjusting the DataWriter\'s writing rate" << std::endl;
             _AutoThrottle = true;
         } else if (IS_OPTION(argv[i], "-enableTurboMode")) {
             _TurboMode = true;
         } else if (IS_OPTION(argv[i], "-noXmlQos") ) {
             _UseXmlQos = false;
-            std::cerr << "[Info] Not using xml file for QoS." << std::endl;
         }
         else if (IS_OPTION(argv[i], "-asynchronous") )
         {
@@ -681,48 +698,77 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_IsAsynchronous && _BatchSize > 0) {
-        std::cerr << "[Error] Batching cannnot be used with asynchronous writing."
-                << std::endl;
-        throw std::logic_error("[Error] Error parsing commands");
-    }
-
+    /* If we are using scan, we get the minimum and set it in Datalen */
     if (_isScan) {
-        _DataLen = _scan_max_size;
-        // Check if large data or small data
-        if (_scan_max_size > (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
-            if (_useUnbounded == 0) {
-                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
-            }
-            _isLargeData = true;
-        } else if (_scan_max_size <= (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
-            _useUnbounded = 0;
-            _isLargeData = false;
-        } else {
-            return false;
-        }
-        if (_isLargeData && _BatchSize > 0) {
-            std::cerr << "[Error] Batching cannnot be used with asynchronous writing."
-                    << std::endl;
-            return false;
-        }
-    } else { // If not Scan, compare sizes of Batching and dataLen
-        /*
-         * We don't want to use batching if the sample is the same size as the batch
-         * nor if the sample is bigger (in this case we avoid the checking in the
-         * middleware).
-         */
-         if (_BatchSize > 0 && (unsigned long)_BatchSize <= _DataLen) {
-             std::cerr << "[Info] Batching disabled: BatchSize (" << _BatchSize
-                       << ") is equal or smaller than the sample size (" << _DataLen
-                       << ")."  << std::endl;
-             _BatchSize = 0;
-         }
+        _DataLen = minScanSize;
     }
 
-    if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
-        std::cerr << "[Info] Large data settings enabled." << std::endl;
+    /* Check if we need to enable Large Data. This works also for -scan */
+    if (_DataLen > (unsigned long) (std::min)(
+                MAX_SYNCHRONOUS_SIZE,
+                MAX_BOUNDED_SEQ_SIZE)) {
         _isLargeData = true;
+        if (_useUnbounded == 0) {
+            _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+        }
+    } else { /* No Large Data */
+        _useUnbounded = 0;
+        _isLargeData = false;
+    }
+
+    /* If we are using batching */
+    if (_BatchSize > 0) {
+
+        /* We will not use batching for a latency test */
+        if (_LatencyTest) {
+            if (isBatchSizeProvided) {
+                fprintf(stderr, "Batching cannot be used in a Latency test.\n");
+                return false;
+            } else {
+                _BatchSize = 0; //Disable Batching
+            }
+        }
+
+        /* Check if using asynchronous */
+        if (_IsAsynchronous) {
+            if (isBatchSizeProvided) {
+                fprintf(stderr,
+                        "Batching cannot be used with asynchronous writing.\n");
+                return false;
+            } else {
+                _BatchSize = 0; //Disable Batching
+            }
+        }
+
+        /*
+         * Large Data + batching cannot be set. But batching is enabled by default,
+         * so in that case, we just disabled batching, else, the customer set it up,
+         * so we explitly fail
+         */
+        if (_isLargeData) {
+            if (isBatchSizeProvided) {
+                fprintf(stderr, "Batching cannot be used with Large Data.\n");
+                return false;
+            } else {
+                _BatchSize = -2;
+            }
+        } else if ((unsigned long) _BatchSize < _DataLen * 2) {
+            /*
+             * We don't want to use batching if the batch size is not large
+             * enough to contain at least two samples (in this case we avoid the
+             * checking at the middleware level).
+             */
+            if (isBatchSizeProvided || _isScan) {
+                /*
+                 * Batchsize disabled. A message will be print if _batchsize < 0 in
+                 * perftest_cpp::PrintConfiguration()
+                 */
+                _BatchSize = -1;
+            }
+            else {
+                _BatchSize = 0;
+            }
+        }
     }
 
     if (_TurboMode) {
@@ -757,6 +803,81 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     };
 
     return true;
+}
+
+
+/*********************************************************
+ * PrintConfiguration
+ */
+template <typename T>
+std::string RTIDDSImpl<T>::PrintConfiguration()
+{
+
+    std::ostringstream stringStream;
+
+    // Domain ID
+    stringStream << "\tDomain: " << _DomainID << "\n";
+
+    // Dynamic Data
+    stringStream << "\tDynamic Data: ";
+    if (_isDynamicData) {
+        stringStream << "Yes\n";
+    } else {
+        stringStream << "No\n";
+    }
+
+    // Dynamic Data
+    if (_isPublisher) {
+        stringStream << "\tAsynchronous Publishing: ";
+        if (_isLargeData || _IsAsynchronous) {
+            stringStream << "Yes\n";
+            stringStream << "\tFlow Controller: "
+                         << _FlowControllerCustom
+                         << "\n";
+        } else {
+            stringStream << "No\n";
+        }
+    }
+
+    // Turbo Mode / AutoThrottle
+    if (_TurboMode) {
+        stringStream << "\tTurbo Mode: Enabled\n";
+    }
+    if (_AutoThrottle) {
+        stringStream << "\tAutoThrottle: Enabled\n";
+    }
+
+    // XML File
+    stringStream << "\tXML File: ";
+    if (!_UseXmlQos) {
+        stringStream << "Disabled\n";
+    } else {
+        stringStream << _ProfileFile << "\n";
+    }
+
+    stringStream << "\n" << _transport.printTransportConfigurationSummary();
+
+
+    // set initial peers and not use multicast
+    if (_peer_host_count > 0) {
+        stringStream << "\tInitial peers: ";
+        for (int i = 0; i < _peer_host_count; ++i) {
+            stringStream << _peer_host[i];
+            if (i == _peer_host_count - 1) {
+                stringStream << "\n";
+            } else {
+                stringStream << ", ";
+            }
+        }
+    }
+
+   #ifdef RTI_SECURE_PERFTEST
+   if (_secureUseSecure) {
+        stringStream << "\n" << printSecureArgs();
+   }
+   #endif
+
+    return stringStream.str();
 }
 
 /*********************************************************
@@ -955,6 +1076,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DynamicData> {
 
 protected:
     DynamicData data;
+    int _last_message_size;
 
 public:
     RTIDynamicDataPublisher(
@@ -971,49 +1093,62 @@ public:
                     pongSemaphore,
                     useSemaphore,
                     instancesToBeWritten),
-            data(typeCode)
+            data(typeCode),
+            _last_message_size(0)
     {
-
+        std::vector<uint8_t> key_octets(KEY_SIZE);
         for (unsigned long i = 0; i < this->_num_instances; ++i) {
-            std::vector<uint8_t> key_octets;
             for (int c = 0; c < KEY_SIZE; c++) {
-                key_octets.push_back((uint8_t) (i >> c * 8));
+                key_octets[c] = (uint8_t) (i >> c * 8);
             }
-            this->data.set_values("key",key_octets);
-
+            this->data.set_values(
+                    DynamicDataMembersId::GetInstance().at("key"),
+                    key_octets);
             this->_instance_handles.push_back(
                     this->_writer.register_instance(this->data));
         }
         // Register the key of MAX_CFT_VALUE
-        std::vector<uint8_t> key_octets;
         for (int c = 0; c < KEY_SIZE; c++) {
-            key_octets.push_back((uint8_t)(MAX_CFT_VALUE >> c * 8));
+            key_octets[c] = (uint8_t)(MAX_CFT_VALUE >> c * 8);
         }
-        this->data.set_values("key",key_octets);
+        this->data.set_values(
+                    DynamicDataMembersId::GetInstance().at("key"),
+                    key_octets);
         this->_instance_handles.push_back(
                 this->_writer.register_instance(this->data));
     }
 
     inline bool send(TestMessage &message, bool isCftWildCardKey) {
-
-        this->data.clear_all_members();
-        this->data.value("entity_id", message.entity_id);
-        this->data.value("seq_num", message.seq_num);
-        this->data.value("timestamp_sec", message.timestamp_sec);
-        this->data.value("timestamp_usec", message.timestamp_usec);
-        this->data.value("latency_ping", message.latency_ping);
-
-        std::vector<uint8_t> octec_seq;
-        octec_seq.resize(message.size);
-        this->data.set_values("bin_data", octec_seq);
+        if (_last_message_size != message.size) {
+            this->data.clear_all_members();
+            std::vector<uint8_t> octec_seq(message.size);
+            this->data.set_values(
+                    DynamicDataMembersId::GetInstance().at("bin_data"),
+                    octec_seq);
+        }
+        this->data.value(
+                DynamicDataMembersId::GetInstance().at("entity_id"),
+                message.entity_id);
+        this->data.value(
+                DynamicDataMembersId::GetInstance().at("seq_num"),
+                message.seq_num);
+        this->data.value(
+                DynamicDataMembersId::GetInstance().at("timestamp_sec"),
+                message.timestamp_sec);
+        this->data.value(
+                DynamicDataMembersId::GetInstance().at("timestamp_usec"),
+                message.timestamp_usec);
+        this->data.value(
+                DynamicDataMembersId::GetInstance().at("latency_ping"),
+                message.latency_ping);
 
         long key = 0;
-        std::vector<uint8_t> key_octets;
+        std::vector<uint8_t> key_octets(KEY_SIZE);
         if (!isCftWildCardKey) {
             if (this->_num_instances > 1) {
                 if (this->_instancesToBeWritten == -1) {
                     key = this->_instance_counter++ % this->_num_instances;
-                } else { // send sample to a specific subscriber
+                } else { // Send sample to a specific subscriber
                     key = this->_instancesToBeWritten;
                 }
             }
@@ -1021,9 +1156,11 @@ public:
             key = MAX_CFT_VALUE;
         }
         for (int c = 0; c < KEY_SIZE; c++) {
-            key_octets.push_back((uint8_t) (key >> c * 8));
+            key_octets[c] = (uint8_t) (key >> c * 8);
         }
-        this->data.set_values("key", key_octets);
+        this->data.set_values(
+                DynamicDataMembersId::GetInstance().at("key"),
+                key_octets);
         if (!isCftWildCardKey) {
             this->_writer.write(this->data, this->_instance_handles[key]);
         } else {
@@ -1096,18 +1233,18 @@ public:
             if (this->samples[i].info().valid()) {
                 DynamicData& sample =
                         const_cast<DynamicData&>(this->samples[i].data());
-                this->_message.entity_id =
-                        sample.value<int32_t>("entity_id");
-                this->_message.seq_num =
-                        sample.value<uint32_t>("seq_num");
-                this->_message.timestamp_sec =
-                        sample.value<int32_t>("timestamp_sec");
-                this->_message.timestamp_usec =
-                        sample.value<uint32_t>("timestamp_usec");
-                this->_message.latency_ping =
-                        sample.value<int32_t>("latency_ping");
-                this->_message.size =
-                        (int)(sample.get_values<uint8_t>("bin_data")).size();
+                this->_message.entity_id = sample.value<int32_t>(
+                        DynamicDataMembersId::GetInstance().at("entity_id"));
+                this->_message.seq_num = sample.value<uint32_t>(
+                        DynamicDataMembersId::GetInstance().at("seq_num"));
+                this->_message.timestamp_sec = sample.value<int32_t>(
+                        DynamicDataMembersId::GetInstance().at("timestamp_sec"));
+                this->_message.timestamp_usec = sample.value<uint32_t>(
+                        DynamicDataMembersId::GetInstance().at("timestamp_usec"));
+                this->_message.latency_ping = sample.value<int32_t>(
+                        DynamicDataMembersId::GetInstance().at("latency_ping"));
+                this->_message.size = (int)(sample.get_values<uint8_t>(
+                        DynamicDataMembersId::GetInstance().at("bin_data")).size());
 
                 //_message.data = sample.bin_data();
                 _callback->ProcessMessage(this->_message);
@@ -1286,8 +1423,7 @@ public:
                 this->_waitset.wait(dds::core::Duration::infinite());
             }
 
-            dds::sub::LoanedSamples<DynamicData> samples =
-                    this->_reader.take();
+            dds::sub::LoanedSamples<DynamicData> samples = this->_reader.take();
             this->_data_idx = 0;
             this->_no_data = false;
 
@@ -1306,15 +1442,20 @@ public:
                 continue;
             }
 
-            DynamicData& sample =
-                    const_cast<DynamicData&>(
-                            samples[this->_data_idx].data());
-            this->_message.entity_id = sample.value<int32_t>("entity_id");
-            this->_message.seq_num = sample.value<uint32_t>("seq_num");
-            this->_message.timestamp_sec = sample.value<int32_t>("timestamp_sec");
-            this->_message.timestamp_usec = sample.value<uint32_t>("timestamp_usec");
-            this->_message.latency_ping = sample.value<int32_t>("latency_ping");
-            this->_message.size = (int)(sample.get_values<uint8_t>("bin_data")).size();
+            DynamicData& sample = const_cast<DynamicData&>(
+                    samples[this->_data_idx].data());
+            this->_message.entity_id = sample.value<int32_t>(
+                    DynamicDataMembersId::GetInstance().at("entity_id"));
+            this->_message.seq_num = sample.value<uint32_t>(
+                    DynamicDataMembersId::GetInstance().at("seq_num"));
+            this->_message.timestamp_sec = sample.value<int32_t>(
+                    DynamicDataMembersId::GetInstance().at("timestamp_sec"));
+            this->_message.timestamp_usec = sample.value<uint32_t>(
+                    DynamicDataMembersId::GetInstance().at("timestamp_usec"));
+            this->_message.latency_ping = sample.value<int32_t>(
+                    DynamicDataMembersId::GetInstance().at("latency_ping"));
+            this->_message.size = (int)(sample.get_values<uint8_t>(
+                    DynamicDataMembersId::GetInstance().at("bin_data")).size());
 
             ++(this->_data_idx);
             return &_message;
@@ -1334,16 +1475,22 @@ public:
                     DynamicData& sample =
                             const_cast<DynamicData&>(
                                     samples[i].data());
-                    this->_message.entity_id = sample.value<int32_t>("entity_id");
-                    this->_message.seq_num = sample.value<uint32_t>("seq_num");
-                    this->_message.timestamp_sec =
-                            sample.value<int32_t>("timestamp_sec");
-                    this->_message.timestamp_usec =
-                            sample.value<uint32_t>("timestamp_usec");
-                    this->_message.latency_ping =
-                            sample.value<int32_t>("latency_ping");
-                    this->_message.size =
-                            (int)(sample.get_values<uint8_t>("bin_data")).size();
+                    this->_message.entity_id = sample.value<int32_t>(
+                            DynamicDataMembersId::GetInstance().at(
+                                    "entity_id"));
+                    this->_message.seq_num = sample.value<uint32_t>(
+                            DynamicDataMembersId::GetInstance().at(
+                                    "seq_num"));
+                    this->_message.timestamp_sec = sample.value<int32_t>(
+                            DynamicDataMembersId::GetInstance().at(
+                                    "timestamp_sec"));
+                    this->_message.timestamp_usec = sample.value<uint32_t>(
+                            DynamicDataMembersId::GetInstance().at(
+                                    "timestamp_usec"));
+                    this->_message.latency_ping = sample.value<int32_t>(
+                            DynamicDataMembersId::GetInstance().at("latency_ping"));
+                    this->_message.size = (int)(sample.get_values<uint8_t>(
+                            DynamicDataMembersId::GetInstance().at("bin_data")).size());
                     //_message.data = sample.bin_data();
                     listener->ProcessMessage(this->_message);
                 }
@@ -1359,9 +1506,6 @@ public:
 template<typename T>
 void RTIDDSImpl<T>::configureSecurePlugin(
         std::map<std::string, std::string> &dpQosProperties) {
-
-    // print arguments
-    printSecureArgs();
 
     // load plugin
     dpQosProperties["com.rti.serv.load_plugin"] = "com.rti.serv.secure";
@@ -1392,30 +1536,27 @@ void RTIDDSImpl<T>::configureSecurePlugin(
     // check if governance file provided
     if (_secureGovernanceFile.empty()) {
         // choose a pre-built governance file
-        std::string governance_file = "./resource/secure/signed_PerftestGovernance_";
+        _secureGovernanceFile = "./resource/secure/signed_PerftestGovernance_";
         if (_secureIsDiscoveryEncrypted) {
-            governance_file += "Discovery";
+            _secureGovernanceFile += "Discovery";
         }
 
         if (_secureIsSigned) {
-            governance_file += "Sign";
+            _secureGovernanceFile += "Sign";
         }
 
         if (_secureIsDataEncrypted && _secureIsSMEncrypted) {
-            governance_file += "EncryptBoth";
+            _secureGovernanceFile += "EncryptBoth";
         } else if (_secureIsDataEncrypted) {
-            governance_file += "EncryptData";
+            _secureGovernanceFile += "EncryptData";
         } else if (_secureIsSMEncrypted) {
-            governance_file += "EncryptSubmessage";
+            _secureGovernanceFile += "EncryptSubmessage";
         }
 
-        governance_file = governance_file + ".xml";
+        _secureGovernanceFile += ".xml";
 
-        std::cout << "[Info] Secure: using pre-built governance file: "
-                  << governance_file
-                  << std::endl;
         dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
-                governance_file;
+                _secureGovernanceFile;
     } else {
         dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
                 _secureGovernanceFile;
@@ -1490,35 +1631,86 @@ void RTIDDSImpl<T>::validateSecureArgs()
 }
 
 template <typename T>
-void RTIDDSImpl<T>::printSecureArgs()
+std::string RTIDDSImpl<T>::printSecureArgs()
 {
-    std::cout << "[Info] Secure Arguments:\n"
-              << "\t encrypt discovery: "
-              << (_secureIsDiscoveryEncrypted ? "true\n" : "false\n")
-              << "\t encrypt topic (user) data: "
-              << (_secureIsDataEncrypted ? "true\n" : "false\n")
-              << "\t encrypt submessage: "
-              << (_secureIsSMEncrypted ? "true\n" : "false\n")
-              << "\t sign data: "
-              << (_secureIsSigned ? "true\n" : "false\n")
-              << "\t governance file: "
-              << (_secureGovernanceFile.empty() ? "not specified" : _secureGovernanceFile)
-              << "\n\t permissions file: "
-              << (_securePermissionsFile.empty() ? "not specified" : _securePermissionsFile)
-              << "\n\t private key file: "
-              << (_securePrivateKeyFile.empty() ? "not specified" : _securePrivateKeyFile)
-              << "\n\t certificate file: "
-              << (_secureCertificateFile.empty() ? "not specified" : _secureCertificateFile)
-              << "\n\t certificate authority file: "
-              << (_secureCertAuthorityFile.empty() ? "not specified" : _secureCertAuthorityFile)
-              << "\n\t plugin library: "
-              << (_secureLibrary.empty() ? "not specified" : _secureLibrary)
-              << std::endl;
-    if( _secureDebugLevel != -1 ){
-        std::cout << "\t debug level: "
-                  << _secureDebugLevel
-                  << std::endl;
+    std::ostringstream stringStream;
+    stringStream << "Secure Configuration:\n";
+
+    stringStream << "\tEncrypt discovery: ";
+    if (_secureIsDiscoveryEncrypted) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
     }
+
+    stringStream << "\tEncrypt topic (user) data: ";
+    if (_secureIsDataEncrypted) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
+    }
+
+    stringStream << "\tEncrypt submessage: ";
+    if (_secureIsSMEncrypted) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
+    }
+
+    stringStream << "\tSign data: ";
+    if (_secureIsSigned) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
+    }
+
+    stringStream << "\tGovernance file: ";
+    if (_secureGovernanceFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureGovernanceFile << "\n";
+    }
+
+    stringStream << "\tPermissions file: ";
+    if (_securePermissionsFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _securePermissionsFile << "\n";
+    }
+
+    stringStream << "\tPrivate key file: ";
+    if (_securePrivateKeyFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _securePrivateKeyFile << "\n";
+    }
+
+    stringStream << "\tCertificate file: ";
+    if (_secureCertificateFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureCertificateFile << "\n";
+    }
+
+    stringStream << "\tCertificate authority file: ";
+    if (_secureCertAuthorityFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureCertAuthorityFile << "\n";
+    }
+
+    stringStream << "\tPlugin library: ";
+    if (_secureLibrary.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureLibrary << "\n";
+    }
+
+    if (_secureDebugLevel != -1) {
+        stringStream << "\tDebug level: " <<  _secureDebugLevel << "\n";
+    }
+
+    return stringStream.str();
 }
 
 #endif
@@ -1578,11 +1770,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     Discovery qos_discovery = qos.policy<Discovery>(); //get all the Discovery
     // set initial peers and not use multicast
-    if ( _peer_host_count > 0 ) {
-        std::cout << "Initial peers:" << std::endl;
-        for ( int i =0; i< _peer_host_count; ++i) {
-            std::cout << "\t" << _peer_host[i] << std::endl;
-        }
+    if (_peer_host_count > 0) {
         _peer_host.resize(_peer_host_count);
         qos_discovery.initial_peers(_peer_host);
         qos_discovery.multicast_receive_addresses(dds::core::StringSeq());
@@ -1591,7 +1779,6 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     if (!configureTransport(_transport, qos, properties)){
         return false;
     };
-    _transport.printTransportConfigurationSummary();
 
     if (_AutoThrottle) {
         properties["dds.domain_participant.auto_throttle.enable"] = "true";
@@ -1622,6 +1809,43 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 }
 
 /*********************************************************
+ * GetInitializationSampleCount
+ */
+template <typename T>
+unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
+{
+    /*
+     * There is a minimum number of samples that we want to send no matter what
+     * the conditions are:
+     */
+    unsigned long initializeSampleCount = 50;
+
+    /*
+     * If we are using reliable, the maximum burst of that we can send is limited
+     * by max_send_window_size (or max samples, but we will assume this is not
+     * the case for this). In such case we should send max_send_window_size
+     * samples.
+     *
+     * If we are not using reliability this should not matter.
+     */
+    initializeSampleCount = (std::max)(
+            initializeSampleCount,
+            (unsigned long) _SendQueueSize);
+
+    /*
+     * If we are using batching we need to take into account tha the Send Queue
+     * will be per-batch, therefore for the number of samples:
+     */
+    if (_BatchSize > 0) {
+        initializeSampleCount = (std::max)(
+                _SendQueueSize * (_BatchSize / _DataLen),
+                initializeSampleCount);
+    }
+
+    return initializeSampleCount;
+}
+
+/*********************************************************
  * CreateWriter
  */
 template <typename T>
@@ -1631,17 +1855,17 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     using namespace rti::core::policy;
 
     std::string qos_profile = "";
-    if (topic_name == perftest_cpp::_ThroughputTopicName) {
+    if (topic_name == THROUGHPUT_TOPIC_NAME.c_str()) {
         qos_profile = "ThroughputQos";
-    } else if (topic_name == perftest_cpp::_LatencyTopicName) {
+    } else if (topic_name == LATENCY_TOPIC_NAME.c_str()) {
         qos_profile = "LatencyQos";
-    } else if (topic_name == perftest_cpp::_AnnouncementTopicName) {
+    } else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.c_str()) {
         qos_profile = "AnnouncementQos";
     } else {
         std::cerr << "[Error] Topic name must either be "
-                << perftest_cpp::_ThroughputTopicName << " or "
-                << perftest_cpp::_LatencyTopicName << " or "
-                << perftest_cpp::_AnnouncementTopicName << std::endl;
+                  << THROUGHPUT_TOPIC_NAME << " or "
+                  << LATENCY_TOPIC_NAME << " or "
+                  << ANNOUNCEMENT_TOPIC_NAME << std::endl;
         throw std::logic_error("[Error] Topic name");
     }
 
@@ -1667,7 +1891,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     std::map<std::string, std::string> properties =
             dw_qos.policy<Property>().get_all();
 
-    if (!_UsePositiveAcks 
+    if (!_UsePositiveAcks
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_dataWriterProtocol.disable_positive_acks(true);
         if (_KeepDurationUsec != -1) {
@@ -1677,21 +1901,16 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     }
 
     if (_isLargeData || _IsAsynchronous) {
-        std::cerr << "[Info] Using asynchronous write for "
-                  << topic_name << std::endl;
-
        if (_FlowControllerCustom!= "default") {
            dwPublishMode = PublishMode::Asynchronous(
                "dds.flow_controller.token_bucket."+_FlowControllerCustom);
        } else{
            dwPublishMode = PublishMode::Asynchronous();
        }
-       std::cerr << "[Info] Using flow controller "
-                 << _FlowControllerCustom << std::endl;
    }
 
     // only force reliability on throughput/latency topics
-    if (topic_name != perftest_cpp::_AnnouncementTopicName) {
+    if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
         if (_IsReliable) {
             // default: use the setting specified in the qos profile
             // qos_reliability = Reliability::Reliable(dds::core::Duration::infinite());
@@ -1704,7 +1923,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     // These QOS's are only set for the Throughput datawriter
     if (qos_profile == "ThroughputQos") {
 
-        if (_IsMulticast) {
+        if (_transport.useMulticast) {
             dw_reliableWriterProtocol.enable_multicast_periodic_heartbeat(true);
         }
 
@@ -1935,17 +2154,17 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     using namespace rti::core::policy;
 
     std::string qos_profile;
-    if (topic_name == perftest_cpp::_ThroughputTopicName) {
+    if (topic_name == THROUGHPUT_TOPIC_NAME.c_str()) {
         qos_profile = "ThroughputQos";
-    } else if (topic_name == perftest_cpp::_LatencyTopicName) {
+    } else if (topic_name == LATENCY_TOPIC_NAME.c_str()) {
         qos_profile = "LatencyQos";
-    } else if (topic_name == perftest_cpp::_AnnouncementTopicName) {
+    } else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.c_str()) {
         qos_profile = "AnnouncementQos";
     } else {
         std::cerr << "[Error] Topic name must either be "
-                << perftest_cpp::_ThroughputTopicName << " or "
-                << perftest_cpp::_LatencyTopicName << " or "
-                << perftest_cpp::_AnnouncementTopicName << std::endl;
+                  << THROUGHPUT_TOPIC_NAME << " or "
+                  << LATENCY_TOPIC_NAME << " or "
+                  << ANNOUNCEMENT_TOPIC_NAME << std::endl;
         throw std::logic_error("[Error] Topic name");
     }
 
@@ -1966,7 +2185,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
             dr_qos.policy<Property>().get_all();
 
     // only force reliability on throughput/latency topics
-    if (topic_name != perftest_cpp::_AnnouncementTopicName) {
+    if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
         if (_IsReliable) {
             qos_reliability = dds::core::policy::Reliability::Reliable();
         } else {
@@ -2020,26 +2239,23 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (_transport.transportConfig.kind != TRANSPORT_TCPv4
-            && _transport.transportConfig.kind != TRANSPORT_TLSv4
-            && _transport.transportConfig.kind != TRANSPORT_WANv4
-            && _transport.transportConfig.kind != TRANSPORT_SHMEM
-            && _IsMulticast) {
-
-       const char *multicast_addr;
-
-        if (topic_name == perftest_cpp::_ThroughputTopicName) {
-            multicast_addr = THROUGHPUT_MULTICAST_ADDR;
-        } else if (topic_name == perftest_cpp::_LatencyTopicName) {
-            multicast_addr = LATENCY_MULTICAST_ADDR;
-        } else {
-            multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
-        }
+    if (_transport.useMulticast && _transport.allowsMulticast()) {
 
         dds::core::StringSeq transports;
         transports.push_back("udpv4");
+        std::string multicastAddr =
+                _transport.getMulticastAddr(topic_name.c_str());
+        if (multicastAddr.length() == 0) {
+            std::cerr << "[Error] Topic name must either be "
+                      << THROUGHPUT_TOPIC_NAME << " or "
+                      << LATENCY_TOPIC_NAME << " or "
+                      << ANNOUNCEMENT_TOPIC_NAME << std::endl;
+            throw std::logic_error("[Error] Topic name");
+            return NULL;
+        }
         rti::core::TransportMulticastSettings multicast_settings(
-                transports, multicast_addr, 0);
+                transports,
+                _transport.getMulticastAddr(topic_name.c_str()), 0);
         rti::core::TransportMulticastSettingsSeq multicast_seq;
         multicast_seq.push_back(multicast_settings);
 
@@ -2064,7 +2280,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         dds::sub::DataReader<T> reader(dds::core::null);
         ReceiverListener<T> *reader_listener = NULL;
 
-        if (topic_name == perftest_cpp::_ThroughputTopicName && _useCft) {
+        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _useCft) {
             /* Create CFT Topic */
             dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
                     topic_name,
@@ -2108,7 +2324,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 type);
         dds::sub::DataReader<DynamicData> reader(dds::core::null);
         DynamicDataReceiverListener *dynamic_data_reader_listener = NULL;
-        if (topic_name == perftest_cpp::_ThroughputTopicName && _useCft) {
+        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _useCft) {
             /* Create CFT Topic */
             dds::topic::ContentFilteredTopic<DynamicData> topicCft = CreateCft(
                     topic_name,

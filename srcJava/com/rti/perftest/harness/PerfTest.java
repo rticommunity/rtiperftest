@@ -4,6 +4,9 @@
  */
 
 package com.rti.perftest.harness;
+import com.rti.perftest.gen.THROUGHPUT_TOPIC_NAME;
+import com.rti.perftest.gen.LATENCY_TOPIC_NAME;
+import com.rti.perftest.gen.ANNOUNCEMENT_TOPIC_NAME;
 
 import com.rti.perftest.IMessaging;
 import com.rti.perftest.IMessagingReader;
@@ -13,7 +16,15 @@ import com.rti.perftest.harness.PerftestTimerTask;
 import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 import com.rti.perftest.gen.MAX_PERFTEST_SAMPLE_SIZE;
+
+import com.rti.perftest.gen.THROUGHPUT_TOPIC_NAME;
+import com.rti.perftest.gen.LATENCY_TOPIC_NAME;
+import com.rti.perftest.gen.ANNOUNCEMENT_TOPIC_NAME;
+
+import com.rti.perftest.ddsimpl.PerftestVersion;
 import com.rti.ndds.Utility;
+import com.rti.dds.infrastructure.ProductVersion_t;
+import com.rti.ndds.config.Version;
 
 import java.util.StringTokenizer;
 import java.util.ArrayList;
@@ -32,10 +43,6 @@ public final class PerfTest {
     // Public Fields
     // -----------------------------------------------------------------------
 
-    public static final String LATENCY_TOPIC_NAME = "Latency";
-    public static final String THROUGHPUT_TOPIC_NAME = "Throughput";
-    public static final String ANNOUNCEMENT_TOPIC_NAME = "Announcement";
-    
     public static final int timeout_wait_for_ack_sec = 0;
     public static final int timeout_wait_for_ack_nsec = 10000000;
 
@@ -69,6 +76,9 @@ public final class PerfTest {
     // Flag used to indicate end of test
     public static final int LENGTH_CHANGED_SIZE = 1236;
 
+    // Value used to compare against to check if the latency_min has
+    // been reset.
+    public static final int LATENCY_RESET_VALUE = Integer.MAX_VALUE;
 
     /*package*/ static int subID = 0;
 
@@ -85,8 +95,6 @@ public final class PerfTest {
     //private static boolean _isDebug = false;
 
     private long     _dataLen = 100;
-    private int     _batchSize = 0;
-    private int     _samplesPerBatch = 1;
     private long    _numIter = 100000000;
     private boolean _isPub = false;
     private boolean _isScan = false;
@@ -104,7 +112,8 @@ public final class PerfTest {
     private boolean  _latencyTest = false;
     private boolean  _isReliable = true;
     private long     _pubRate = 0;
-    private boolean _pubRateMethodSpin = true;
+    private boolean  _isKeyed = false;
+    private boolean  _pubRateMethodSpin = true;
     private long     _executionTime = 0;
     private boolean  _displayWriterStats = false;
     private boolean  _useCft = false;
@@ -161,6 +170,22 @@ public final class PerfTest {
         }
     }
 
+    public int getSamplesPerBatch(){
+        int batchSize = _messagingImpl.getBatchSize();
+        int samplesPerBatch;
+
+        if (batchSize > 0) {
+            samplesPerBatch = batchSize / (int) _dataLen;
+            if (samplesPerBatch == 0) {
+                samplesPerBatch = 1;
+            }
+        } else {
+            samplesPerBatch = 1;
+        }
+
+        return samplesPerBatch;
+    }
+
     // -----------------------------------------------------------------------
     // Package Methods
     // -----------------------------------------------------------------------
@@ -185,6 +210,8 @@ public final class PerfTest {
     private void run(IMessaging messagingImpl,
                      String[] argv) {
 
+        printVersion();
+
         _messagingImpl = messagingImpl;
 
         if ( !parseConfig(argv) ) {
@@ -194,16 +221,8 @@ public final class PerfTest {
         if ( !_messagingImpl.initialize(_messagingArgc, _messagingArgv) ) {
             return;
         }
-        _batchSize = _messagingImpl.getBatchSize();
 
-        if (_batchSize != 0) {
-            _samplesPerBatch = _batchSize/(int)_dataLen;
-            if (_samplesPerBatch == 0) {
-                _samplesPerBatch = 1;
-            }
-        } else {
-            _samplesPerBatch = 1;
-        }
+        printConfiguration();
 
         if (_isPub) {
             publisher();
@@ -212,6 +231,40 @@ public final class PerfTest {
         }
     }
 
+    private ProductVersion_t getDDSVersion() {
+        return Version.get_instance().get_product_version();
+    }
+
+    private ProductVersion_t getPerftestVersion() {
+        return PerftestVersion.getInstance().getProductVersion();
+    }
+
+    private void printVersion() {
+        ProductVersion_t perftestV = getPerftestVersion();
+        ProductVersion_t ddsV = getDDSVersion();
+
+        StringBuffer perftestVString = new StringBuffer(128);
+        perftestVString.append((int)perftestV.major).append(".");
+        perftestVString.append((int)perftestV.minor).append(".");
+        perftestVString.append((int)perftestV.release);
+
+        if( perftestV.revision != 0 ) {
+            perftestVString.append(".").append((int) perftestV.revision);
+        }
+
+        StringBuffer ddsVString = new StringBuffer(128);
+        ddsVString.append((int)ddsV.major).append(".");
+        ddsVString.append((int)ddsV.minor).append(".");
+        ddsVString.append((int)ddsV.release);
+
+
+        System.out.print(
+                "RTI Perftest "
+                + perftestVString.toString()
+                + " (RTI Connext DDS "
+                + ddsVString.toString()
+                + ")\n");
+    }
 
     private boolean parseConfig(String[] argv) {
 
@@ -521,8 +574,7 @@ public final class PerfTest {
             }
             else if ("-keyed".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
-                // Do nothing, the keyed option has already been parsed, but we still
-                // need to account it as a valid option.
+                _isKeyed = true;
             }
             else if ("-bestEffort".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isReliable = false;
@@ -578,13 +630,12 @@ public final class PerfTest {
                         return false;
                     }
                     // Validate pubRate <method> spin or sleep
-                    if (argv[i].contains("spin".toLowerCase())){
-                        System.err.println("-pubRate method: spin.");
-                    } else if (argv[i].contains("sleep".toLowerCase())){
+                    if (argv[i].contains("sleep".toLowerCase())){
                         _pubRateMethodSpin = false;
-                        System.err.println("-pubRate method: sleep.");
-                    } else {
-                        System.err.println("<samples/s>:<method> for pubRate '" + argv[i] + "' is not valid. It must contain 'spin' or 'sleep'.");
+                    } else if (!argv[i].contains("spin".toLowerCase())) {
+                        System.err.println("<samples/s>:<method> for pubRate '"
+                                + argv[i]
+                                + "' is not valid. It must contain 'spin' or 'sleep'.");
                         return false;
                     }
                 } else {
@@ -650,7 +701,7 @@ public final class PerfTest {
             if(_latencyCount == -1) {
                 _latencyCount = 1;
             }
-            
+
             /*
              * PERFTEST-108
              * If we are in a latency test, the default value for _NumIter has
@@ -690,12 +741,8 @@ public final class PerfTest {
         }
 
         if (_isScan) {
-            if (_dataLen != 100) { // Different that the default value
-                System.err.printf("DataLen will be ignored since -scan is present.\n");
-            }
             _dataLen = _scanDataLenSizes.get(_scanDataLenSizes.size() - 1); // Max size
             if (_executionTime == 0){
-                System.err.printf("Setting timeout to 60 seconds (-scan).\n");
                 _executionTime = 60;
             }
             // Check if large data or small data
@@ -714,6 +761,133 @@ public final class PerfTest {
         return true;
     }
 
+    private void printConfiguration() {
+
+        StringBuilder sb = new StringBuilder();
+
+        // Throughput/Latency mode
+        if (_isPub) {
+            sb.append("\nMode: ");
+
+            if (_latencyTest) {
+                sb.append("LATENCY TEST (Ping-Pong test)\n");
+            } else {
+                sb.append("THROUGHPUT TEST\n");
+                sb.append("      (Use \"-latencyTest\" for Latency Mode)\n");
+            }
+        }
+
+        sb.append("\nPerftest Configuration:\n");
+
+        // Reliable/Best Effort
+        sb.append("\tReliability: ");
+        if (_isReliable) {
+            sb.append("Reliable\n");
+        } else {
+            sb.append("Best Effort\n");
+        }
+
+        // Keyed/Unkeyed
+        sb.append("\tKeyed: ");
+        if (_isKeyed) {
+            sb.append("Yes\n");
+        } else {
+            sb.append("No\n");
+        }
+
+        // Publisher/Subscriber and Entity ID
+        if (_isPub) {
+            sb.append("\tPublisher ID: ");
+            sb.append(pubID);
+            sb.append("\n");
+        } else {
+            sb.append("\tSubscriber ID: ");
+            sb.append(subID);
+            sb.append("\n");
+        }
+
+        if (_isPub) {
+
+            sb.append("\tLatency count: 1 latency sample every ");
+            sb.append(_latencyCount);
+            sb.append("\n");
+
+            // Scan/Data Sizes
+            sb.append("\tData Size: ");
+            if (_isScan) {
+                for (int i = 0; i < _scanDataLenSizes.size(); i++ ) {
+                    sb.append(_scanDataLenSizes.get(i));
+                    if (i == _scanDataLenSizes.size() - 1) {
+                        sb.append("\n");
+                    } else {
+                        sb.append(", ");
+                    }
+                }
+            } else {
+                sb.append(_dataLen);
+                sb.append("\n");
+            }
+
+            // Batching
+            int batchSize = _messagingImpl.getBatchSize();
+
+            sb.append("\tBatching: ");
+            if (batchSize > 0) {
+                sb.append(batchSize);
+                sb.append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
+            } else if (batchSize == 0) {
+                sb.append("No (Use \"-batchSize\" to setup batching)\n");
+            } else { // < 0 (Meaning, Disabled by RTI Perftest)
+                sb.append("\"Disabled by RTI Perftest.\"\n");
+                if (batchSize == -1) {
+                    sb.append("\t\t  BatchSize is smaller than 2 times\n");
+                    sb.append("\t\t  the minimum sample size.\n");
+                }
+                if (batchSize == -2) {
+                    sb.append("\t\t  BatchSize cannot be used with\n");
+                    sb.append("\t\t  Large Data.\n");
+                }
+            }
+
+            // Publication Rate
+            sb.append("\tPublication Rate: ");
+            if (_pubRate > 0) {
+                sb.append(_pubRate);
+                sb.append(" Samples/s (");
+                if (_pubRateMethodSpin) {
+                    sb.append("Spin)\n");
+                } else {
+                    sb.append("Sleep)\n");
+                }
+            } else {
+                sb.append("Unlimited (Not set)\n");
+            }
+
+            // Execution Time or Num Iter
+            if (_executionTime > 0) {
+                sb.append("\tExecution time: ");
+                sb.append(_executionTime);
+                sb.append(" seconds\n");
+            } else {
+                sb.append("\tNumber of samples: " );
+                sb.append(_numIter);
+                sb.append("\n");
+            }
+        }
+
+        // Listener/WaitSets
+        sb.append("\tReceive using: ");
+        if (_useReadThread) {
+            sb.append("WaitSets\n");
+        } else {
+            sb.append("Listeners\n");
+        }
+
+        sb.append(_messagingImpl.printConfiguration());
+
+        System.err.println(sb.toString());
+    }
+
     /**
      * Subscriber
      */
@@ -724,7 +898,7 @@ public final class PerfTest {
         IMessagingWriter writer;
         IMessagingWriter announcement_writer;
 
-        writer = _messagingImpl.createWriter(LATENCY_TOPIC_NAME);
+        writer = _messagingImpl.createWriter(LATENCY_TOPIC_NAME.VALUE);
         if (writer == null) {
             System.err.print("Problem creating latency writer.\n");
             return;
@@ -734,13 +908,13 @@ public final class PerfTest {
         if (!_useReadThread) {
             // create latency pong reader
             reader_listener = new ThroughputListener(writer, _useCft, _numPublishers);
-            reader = _messagingImpl.createReader(THROUGHPUT_TOPIC_NAME, reader_listener);
+            reader = _messagingImpl.createReader(THROUGHPUT_TOPIC_NAME.VALUE, reader_listener);
             if (reader == null) {
                 System.err.print("Problem creating throughput reader.\n");
                 return;
             }
         } else {
-            reader = _messagingImpl.createReader(THROUGHPUT_TOPIC_NAME, null);
+            reader = _messagingImpl.createReader(THROUGHPUT_TOPIC_NAME.VALUE, null);
             if (reader == null) {
                 System.err.print("Problem creating throughput reader.\n");
                 return;
@@ -758,7 +932,7 @@ public final class PerfTest {
         }
 
         // Create announcement writer
-        announcement_writer = _messagingImpl.createWriter(ANNOUNCEMENT_TOPIC_NAME);
+        announcement_writer = _messagingImpl.createWriter(ANNOUNCEMENT_TOPIC_NAME.VALUE);
 
         if (announcement_writer == null) {
              System.err.print("Problem creating announcement writer.\n");
@@ -798,6 +972,7 @@ public final class PerfTest {
         long  mps, bps;
         double mps_ave = 0.0, bps_ave = 0.0;
         long  msgsent, bytes, last_msgs, last_bytes;
+        double missingPacketsPercent = 0.0;
 
 
         now = getTimeUsec();
@@ -850,13 +1025,23 @@ public final class PerfTest {
                 bps_ave = bps_ave + (bps - bps_ave) / ave_count;
                 mps_ave = mps_ave + (mps - mps_ave) / ave_count;
 
+                // Calculations of missing package percent
+                if (last_msgs + reader_listener.missingPackets == 0) {
+                    reader_listener.missingPacketsPercent = 0.0;
+                } else {
+                    reader_listener.missingPacketsPercent =
+                            (reader_listener.missingPackets * 100.0)
+                            / (float) (last_msgs + reader_listener.missingPackets);
+                }
+
                 if (last_msgs > 0) {
                     System.out.printf(
                             "Packets: %1$8d  Packets/s: %2$7d  Packets/s(ave): %3$7.0f  " +
-                            "Mbps: %4$7.1f  Mbps(ave): %5$7.1f  Lost: %6$d " + outputCpu + "\n",
+                            "Mbps: %4$7.1f  Mbps(ave): %5$7.1f  Lost: %6$7d (%7$1.2f%%)" + outputCpu + "\n",
                             last_msgs, mps, mps_ave,
                             bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
-                            reader_listener.missingPackets
+                            reader_listener.missingPackets,
+                            reader_listener.missingPacketsPercent
                     );
                 }
             }
@@ -882,22 +1067,25 @@ public final class PerfTest {
         IMessagingReader announcement_reader;
         int num_latency;
         int announcement_sample_count = 50;
+        int samplesPerBatch = 1;
 
         // create throughput/ping writer
-        writer = _messagingImpl.createWriter(THROUGHPUT_TOPIC_NAME);
+        writer = _messagingImpl.createWriter(THROUGHPUT_TOPIC_NAME.VALUE);
 
         if (writer == null) {
             System.err.print("Problem creating throughput writer.\n");
             return;
         }
 
-        num_latency = (((int)_numIter/_samplesPerBatch) / _latencyCount);
-        if ((num_latency/_samplesPerBatch) % _latencyCount > 0) {
+        samplesPerBatch = getSamplesPerBatch();
+
+        num_latency = (((int)_numIter/samplesPerBatch) / _latencyCount);
+        if ((num_latency/samplesPerBatch) % _latencyCount > 0) {
             num_latency++;
         }
 
         // in batch mode, might have to send another ping
-        if (_samplesPerBatch > 1) {
+        if (samplesPerBatch > 1) {
           ++num_latency;
         }
 
@@ -907,7 +1095,7 @@ public final class PerfTest {
             if (!_useReadThread) {
                 // create latency pong reader
                 reader_listener = new LatencyListener(num_latency,_latencyTest?writer:null);
-                reader = _messagingImpl.createReader(LATENCY_TOPIC_NAME, reader_listener);
+                reader = _messagingImpl.createReader(LATENCY_TOPIC_NAME.VALUE, reader_listener);
                 if (reader == null)
                 {
                     System.err.print("Problem creating latency reader.\n");
@@ -916,7 +1104,7 @@ public final class PerfTest {
             }
             else
             {
-                reader = _messagingImpl.createReader(LATENCY_TOPIC_NAME, null);
+                reader = _messagingImpl.createReader(LATENCY_TOPIC_NAME.VALUE, null);
                 if (reader == null)
                 {
                     System.err.print("Problem creating latency reader.\n");
@@ -943,7 +1131,7 @@ public final class PerfTest {
          * every Publisher
          */
         announcement_reader_listener = new AnnouncementListener();
-        announcement_reader = _messagingImpl.createReader(ANNOUNCEMENT_TOPIC_NAME,
+        announcement_reader = _messagingImpl.createReader(ANNOUNCEMENT_TOPIC_NAME.VALUE,
                                                           announcement_reader_listener);
         if (announcement_reader == null)
         {
@@ -969,7 +1157,7 @@ public final class PerfTest {
             }
         }
 
-        System.err.printf("Waiting to discover %1$d subscriber(s)...\n", _numSubscribers);
+        System.err.printf("Waiting to discover %1$d subscribers ...\n", _numSubscribers);
         writer.waitForReaders(_numSubscribers);
 
         // We have to wait until every Subscriber sends an announcement message
@@ -985,26 +1173,41 @@ public final class PerfTest {
         message.entity_id = pubID;
         message.data = new byte[Math.max((int)_dataLen,LENGTH_CHANGED_SIZE)];
 
-        System.err.print("Sending initial pings...\n");
         message.size = INITIALIZE_SIZE;
-        for (int i = 0;
-                i < Math.max(_instanceCount, announcement_sample_count);
-                i++)
-        {
+
+        /*
+         * Initial burst of data:
+         *
+         * The purpose of this initial burst of Data is to ensure that most
+         * memory allocations in the critical path are done before the test
+         * begings, for both the Writer and the Reader that receives the samples.
+         * It will also serve to make sure that all the instances are registered
+         * in advance in the subscriber application.
+         *
+         * We query the MessagingImplementation class to get the suggested sample
+         * count that we should send. This number might be based on the reliability
+         * protocol implemented by the middleware behind. Then we choose between that
+         * number and the number of instances to be sent.
+         */
+
+         int initializeSampleCount = Math.max(
+                _messagingImpl.getInitializationSampleCount(),
+                _instanceCount);
+
+        System.err.println(
+                "Sending " + initializeSampleCount + " initialization pings ...");
+
+        for (int i = 0; i < initializeSampleCount; i++) {
             // Send test initialization message
             if (!writer.send(message, true)) {
-                System.out.println(
+                System.err.println(
                         "*** send() failure: initialization message");
                 return;
-            }
-
-            if (i % 10 == 0) {
-                sleep(1);
             }
         }
         writer.flush();
 
-        System.err.print("Publishing data...\n");
+        System.err.print("Publishing data ...\n");
 
         // Set data size, account for other bytes in message
         message.size = (int)_dataLen - OVERHEAD_BYTES;
@@ -1090,7 +1293,7 @@ public final class PerfTest {
 
             // only send latency pings if is publisher with ID 0
             // In batch mode, latency pings are sent once every LatencyCount batches
-            if ( (pubID == 0) && (((loop/_samplesPerBatch) %_latencyCount) == 0) )
+            if ( (pubID == 0) && (((loop/samplesPerBatch) %_latencyCount) == 0) )
             {
 
                 /* In batch mode only send a single ping in a batch.
@@ -1150,14 +1353,7 @@ public final class PerfTest {
 
                         message.size = (int)(_scanDataLenSizes.get(scan_count++) - OVERHEAD_BYTES);
                         /* Reset _SamplePerBatch */
-                        if (_batchSize != 0) {
-                            _samplesPerBatch = _batchSize / (message.size + OVERHEAD_BYTES);
-                            if (_samplesPerBatch == 0) {
-                                _samplesPerBatch = 1;
-                            }
-                        } else {
-                            _samplesPerBatch = 1;
-                        }
+                        samplesPerBatch = getSamplesPerBatch();
                         ping_index_in_batch = 0;
                         current_index_in_batch = 0;
                     }
@@ -1174,7 +1370,7 @@ public final class PerfTest {
                     message.timestamp_usec = (int) now;         // low int
 
                     ++num_pings;
-                    ping_index_in_batch = (ping_index_in_batch + 1) % _samplesPerBatch;
+                    ping_index_in_batch = (ping_index_in_batch + 1) % samplesPerBatch;
                     sentPing = true;
 
                     if (_displayWriterStats && printIntervals) {
@@ -1185,7 +1381,7 @@ public final class PerfTest {
                 }
             }
 
-            current_index_in_batch = (current_index_in_batch + 1) % _samplesPerBatch;
+            current_index_in_batch = (current_index_in_batch + 1) % samplesPerBatch;
 
             message.seq_num = (int)loop;
             message.latency_ping = pingID;

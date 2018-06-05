@@ -402,49 +402,101 @@ namespace PerformanceTest {
 
     }
 
+    class DynamicDataMembersId
+    {
+        private static DynamicDataMembersId _instance = new DynamicDataMembersId();
+        private Dictionary<string, int> membersId;
+
+        private DynamicDataMembersId(){
+            membersId = new Dictionary<string, int>();
+            membersId.Add("key", 1);
+            membersId.Add("entity_id", 2);
+            membersId.Add("seq_num", 3);
+            membersId.Add("timestamp_sec", 4);
+            membersId.Add("timestamp_usec", 5);
+            membersId.Add("latency_ping", 6);
+            membersId.Add("bin_data", 7);
+        }
+        public static DynamicDataMembersId Instance
+        {
+            get
+            {
+                return _instance;
+            }
+        }
+
+        public int at(string key) {
+            return membersId[key];
+        }
+    }
+
     class DynamicDataTypeHelper : ITypeHelper<DynamicData>
     {
-
         bool _isKeyed;
         DynamicData _myData;
         ulong _maxPerftestSampleSize = perftest_cs.getMaxPerftestSampleSizeCS();
+        Byte[] _byteArray;
+        int _last_message_size;
 
         public DynamicDataTypeHelper(DDS.TypeCode typeCode, bool isKeyed, ulong maxPerftestSampleSize)
         {
             _isKeyed = isKeyed;
             _myData = new DynamicData(typeCode, DynamicData.DYNAMIC_DATA_PROPERTY_DEFAULT);
             _maxPerftestSampleSize = maxPerftestSampleSize;
+            _byteArray = new Byte[KEY_SIZE.VALUE];
         }
 
         public DynamicDataTypeHelper(DynamicData myData, ulong maxPerftestSampleSize)
         {
             _myData = myData;
             _maxPerftestSampleSize = maxPerftestSampleSize;
+            _byteArray = new Byte[KEY_SIZE.VALUE];
         }
 
         public void fillKey(int value)
         {
-            Byte[] byteArray = new Byte[4];
-            byteArray[0] = (byte)(value);
-            byteArray[1] = (byte)(value >> 8);
-            byteArray[2] = (byte)(value >> 16);
-            byteArray[3] = (byte)(value >> 24);
-            _myData.set_byte_array("key", 1, byteArray);
+            _byteArray[0] = (byte)(value);
+            _byteArray[1] = (byte)(value >> 8);
+            _byteArray[2] = (byte)(value >> 16);
+            _byteArray[3] = (byte)(value >> 24);
+            _myData.set_byte_array(
+                    "key",
+                    DynamicDataMembersId.Instance.at("key"),
+                    _byteArray);
         }
 
         public void copyFromMessage(TestMessage message)
         {
-
-            ByteSeq my_byteSeq = new ByteSeq();
-            my_byteSeq.ensure_length(message.size, message.size);
-
-            _myData.clear_all_members();
-            _myData.set_int("entity_id", 2, message.entity_id);
-            _myData.set_uint("seq_num", 3, message.seq_num);
-            _myData.set_int("timestamp_sec", 4, message.timestamp_sec);
-            _myData.set_uint("timestamp_usec", 5, message.timestamp_usec);
-            _myData.set_int("latency_ping", 6, message.latency_ping);
-            _myData.set_byte_seq("bin_data", 7, my_byteSeq);
+            if (_last_message_size != message.size) {
+                ByteSeq bin_data = new ByteSeq();
+                bin_data.ensure_length(message.size, message.size);
+                _myData.clear_all_members();
+                _myData.set_byte_seq(
+                    "bin_data",
+                    DynamicDataMembersId.Instance.at("bin_data"),
+                    bin_data);
+                _last_message_size = message.size;
+            }
+            _myData.set_int(
+                    "entity_id",
+                    DynamicDataMembersId.Instance.at("entity_id"),
+                    message.entity_id);
+            _myData.set_uint(
+                    "seq_num",
+                    DynamicDataMembersId.Instance.at("seq_num"),
+                    message.seq_num);
+            _myData.set_int(
+                    "timestamp_sec",
+                    DynamicDataMembersId.Instance.at("timestamp_sec"),
+                    message.timestamp_sec);
+            _myData.set_uint(
+                    "timestamp_usec",
+                    DynamicDataMembersId.Instance.at("timestamp_usec"),
+                    message.timestamp_usec);
+            _myData.set_int(
+                    "latency_ping",
+                    DynamicDataMembersId.Instance.at("latency_ping"),
+                    message.latency_ping);
         }
 
         public TestMessage copyFromSeqToMessage(LoanableSequence<DynamicData> data_sequence, int index)
@@ -453,16 +505,31 @@ namespace PerformanceTest {
             DynamicData msg = ((DynamicDataSeq)data_sequence).get_at(index);
             TestMessage message = new TestMessage();
 
-            message.entity_id = msg.get_int("entity_id", 2);
-            message.seq_num = msg.get_uint("seq_num", 3);
-            message.timestamp_sec = msg.get_int("timestamp_sec", 4);
-            message.timestamp_usec = msg.get_uint("timestamp_usec", 5);
-            message.latency_ping = msg.get_int("latency_ping", 6);
+            message.entity_id = msg.get_int(
+                    "entity_id",
+                    DynamicDataMembersId.Instance.at("entity_id"));
+            message.seq_num = msg.get_uint(
+                    "seq_num",
+                    DynamicDataMembersId.Instance.at("seq_num"));
+            message.timestamp_sec = msg.get_int(
+                    "timestamp_sec",
+                    DynamicDataMembersId.Instance.at("timestamp_sec"));
+            message.timestamp_usec = msg.get_uint(
+                    "timestamp_usec",
+                    DynamicDataMembersId.Instance.at("timestamp_usec"));
+            message.latency_ping = msg.get_int(
+                    "latency_ping",
+                    DynamicDataMembersId.Instance.at("latency_ping"));
 
             ByteSeq bin_data = new ByteSeq();
-            msg.get_byte_seq(bin_data, "bin_data", 7);
-            message.data = new byte[bin_data.length];
-            bin_data.to_array(message.data);
+            msg.get_byte_seq(
+                    bin_data,
+                    "bin_data",
+                    DynamicDataMembersId.Instance.at("bin_data"));
+            // message.data is not necesary becasue in the copyFromMessage
+            // it is not used. I used ensure_length with the size
+            // message.data = new byte[bin_data.length];
+            // bin_data already has the size, not necessary to call toArrayByte()
             message.size = bin_data.length;
 
             return message;
@@ -479,15 +546,12 @@ namespace PerformanceTest {
 
         public AbstractTypedTypeSupport<DynamicData> getTypeSupport()
         {
-
-            if (!_isKeyed)
-            {
+            if (!_isKeyed) {
                 return new DynamicDataTypeSupport(
                         TestData_tTypeSupport.get_typecode(),
                         DynamicDataTypeProperty_t.DYNAMIC_DATA_TYPE_PROPERTY_DEFAULT);
             }
-            else
-            {
+            else {
                 return new DynamicDataTypeSupport(
                         TestDataKeyed_tTypeSupport.get_typecode(),
                         DynamicDataTypeProperty_t.DYNAMIC_DATA_TYPE_PROPERTY_DEFAULT);
@@ -507,7 +571,10 @@ namespace PerformanceTest {
         public void setBinDataMax(int newMax)
         {
             ByteSeq bin_data = new ByteSeq();
-            _myData.get_byte_seq(bin_data, "bin_data", 7);
+            _myData.get_byte_seq(
+                    bin_data,
+                    "bin_data",
+                    DynamicDataMembersId.Instance.at("bin_data"));
             bin_data.maximum = newMax;
         }
 
@@ -540,19 +607,19 @@ namespace PerformanceTest {
 
         void Run(string[] argv)
         {
+            PrintVersion();
+
             if (!ParseConfig(argv))
             {
                 return;
             }
             ulong _maxPerftestSampleSize = Math.Max(_DataLen,LENGTH_CHANGED_SIZE);
-            if (_useUnbounded > 0) {
-                Console.Write("Using unbounded Sequences, allocation_threshold " + _useUnbounded.ToString() + ".\n");
+            if (_useUnbounded > 0)
+            {
                 if (_isKeyed)
                 {
-                    Console.Error.Write("Using keyed Data.\n");
                     if (_isDynamicData)
                     {
-                        Console.Error.Write("Using Dynamic Data.\n");
                         _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyedLarge_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
@@ -561,10 +628,8 @@ namespace PerformanceTest {
                     }
                 }
                 else {
-                    Console.Error.Write("Using unkeyed Data.\n");
                     if (_isDynamicData)
                     {
-                        Console.Error.Write("Using Dynamic Data.\n");
                         _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataLarge_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
@@ -575,10 +640,8 @@ namespace PerformanceTest {
             } else {
                 if (_isKeyed)
                 {
-                    Console.Error.Write("Using keyed Data.\n");
                     if (_isDynamicData)
                     {
-                        Console.Error.Write("Using Dynamic Data.\n");
                         _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestDataKeyed_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
@@ -587,10 +650,8 @@ namespace PerformanceTest {
                     }
                 }
                 else {
-                    Console.Error.Write("Using unkeyed Data.\n");
                     if (_isDynamicData)
                     {
-                        Console.Error.Write("Using Dynamic Data.\n");
                         _MessagingImpl = new RTIDDSImpl<DynamicData>(new DynamicDataTypeHelper(TestData_t.get_typecode(),_isKeyed,_maxPerftestSampleSize));
                     }
                     else
@@ -605,16 +666,7 @@ namespace PerformanceTest {
                 return;
             }
 
-            _BatchSize = _MessagingImpl.GetBatchSize();
-
-            if (_BatchSize != 0) {
-                _SamplesPerBatch = _BatchSize/(int)_DataLen;
-                if (_SamplesPerBatch == 0) {
-                   _SamplesPerBatch = 1;
-                }
-            } else {
-                _SamplesPerBatch = 1;
-            }
+            PrintConfiguration();
 
             if (_IsPub) {
                 Publisher();
@@ -1107,13 +1159,11 @@ namespace PerformanceTest {
                                 Console.Error.Write("Bad number for -pubRate\n");
                                 return false;
                             }
-                            if ("spin".Equals(st[1])){
-                                Console.Error.Write("-pubRate method: spin.\n");
-                            } else if ("sleep".Equals(st[1])){
+                            if ("sleep".Equals(st[1])){
                                 _pubRateMethodSpin = false;
-                                Console.Error.Write("-pubRate method: sleep.\n");
-                            } else {
-                                Console.Error.Write("<method> for pubRate '" + st[1] + "' is not valid. It must be 'spin' or 'sleep'.\n");
+                            } else if (!"spin".Equals(st[1])) {
+                                Console.Error.Write("<method> for pubRate '" + st[1]
+                                        + "' is not valid. It must be 'spin' or 'sleep'.\n");
                                 return false;
                             }
                         }
@@ -1230,12 +1280,8 @@ namespace PerformanceTest {
             }
 
             if (_isScan) {
-                if (_DataLen != 100) { // Different that the default value
-                    Console.Error.Write("DataLen will be ignored since -scan is present.\n");
-                }
                 _DataLen = _scanDataLenSizes[_scanDataLenSizes.Count - 1]; // Max size
                 if (_executionTime == 0){
-                    Console.Error.Write("Setting timeout to 60 seconds (-scan).\n");
                     _executionTime = 60;
                 }
                 // Check if large data or small data
@@ -1265,6 +1311,133 @@ namespace PerformanceTest {
             return true;
         }
 
+        private void PrintConfiguration() {
+
+            StringBuilder sb = new StringBuilder();
+
+            // Throughput/Latency mode
+            if (_IsPub) {
+                sb.Append("\nMode: ");
+
+                if (_LatencyTest) {
+                    sb.Append("LATENCY TEST (Ping-Pong test)\n");
+                } else {
+                    sb.Append("THROUGHPUT TEST\n");
+                    sb.Append("      (Use \"-latencyTest\" for Latency Mode)\n");
+                }
+            }
+
+            sb.Append("\nPerftest Configuration:\n");
+
+            // Reliable/Best Effort
+            sb.Append("\tReliability: ");
+            if (_isReliable) {
+                sb.Append("Reliable\n");
+            } else {
+                sb.Append("Best Effort\n");
+            }
+
+            // Keyed/Unkeyed
+            sb.Append("\tKeyed: ");
+            if (_isKeyed) {
+                sb.Append("Yes\n");
+            } else {
+                sb.Append("No\n");
+            }
+
+            // Publisher/Subscriber and Entity ID
+            if (_IsPub) {
+                sb.Append("\tPublisher ID: ");
+                sb.Append(_PubID);
+                sb.Append("\n");
+            } else {
+                sb.Append("\tSubscriber ID: ");
+                sb.Append(_SubID);
+                sb.Append("\n");
+            }
+
+            if (_IsPub) {
+
+                sb.Append("\tLatency count: 1 latency sample every ");
+                sb.Append(_LatencyCount);
+                sb.Append("\n");
+
+                // Scan/Data Sizes
+                sb.Append("\tData Size: ");
+                if (_isScan) {
+                    for (int i = 0; i < _scanDataLenSizes.Count; i++ ) {
+                        sb.Append(_scanDataLenSizes[i]);
+                        if (i == _scanDataLenSizes.Count - 1) {
+                            sb.Append("\n");
+                        } else {
+                            sb.Append(", ");
+                        }
+                    }
+                } else {
+                    sb.Append(_DataLen);
+                    sb.Append("\n");
+                }
+
+                // Batching
+                int batchSize = _MessagingImpl.GetBatchSize();
+
+                sb.Append("\tBatching: ");
+                if (batchSize > 0) {
+                    sb.Append(batchSize);
+                    sb.Append(" Bytes (Use \"-batchSize 0\" to disable batching)\n");
+                } else if (batchSize == 0) {
+                    sb.Append("No (Use \"-batchSize\" to setup batching)\n");
+                } else { // < 0 (Meaning, Disabled by RTI Perftest)
+                    sb.Append("\"Disabled by RTI Perftest.\"\n");
+                    if (batchSize == -1) {
+                        sb.Append("\t\t  BatchSize is smaller than 2 times\n");
+                        sb.Append("\t\t  the minimum sample size.\n");
+                    }
+                    if (batchSize == -2) {
+                        sb.Append("\t\t  BatchSize cannot be used with\n");
+                        sb.Append("\t\t  Large Data.\n");
+                    }
+                }
+
+                // Publication Rate
+                sb.Append("\tPublication Rate: ");
+                if (_pubRate > 0) {
+                    sb.Append(_pubRate);
+                    sb.Append(" Samples/s (");
+                    if (_pubRateMethodSpin) {
+                        sb.Append("Spin)\n");
+                    } else {
+                        sb.Append("Sleep)\n");
+                    }
+                } else {
+                    sb.Append("Unlimited (Not set)\n");
+                }
+
+                // Execution Time or Num Iter
+                if (_executionTime > 0) {
+                    sb.Append("\tExecution time: ");
+                    sb.Append(_executionTime);
+                    sb.Append(" seconds\n");
+                } else {
+                    sb.Append("\tNumber of samples: " );
+                    sb.Append(_NumIter);
+                    sb.Append("\n");
+                }
+            }
+
+            // Listener/WaitSets
+            sb.Append("\tReceive using: ");
+            if (_UseReadThread) {
+                sb.Append("WaitSets\n");
+            } else {
+                sb.Append("Listeners\n");
+            }
+
+            sb.Append(_MessagingImpl.PrintConfiguration());
+
+            Console.Error.WriteLine(sb.ToString());
+        }
+
         /*********************************************************
          * Listener for the Subscriber side
          *
@@ -1286,6 +1459,7 @@ namespace PerformanceTest {
             public ulong interval_bytes_received = 0;
             public ulong interval_missing_packets = 0;
             public ulong interval_time = 0, begin_time = 0;
+            double missing_packets_percent = 0.0;
 
             private IMessagingWriter _writer = null;
             private IMessagingReader _reader = null;
@@ -1468,6 +1642,16 @@ namespace PerformanceTest {
                     interval_bytes_received = bytes_received;
                     interval_missing_packets = missing_packets;
                     interval_data_length = last_data_length;
+                    missing_packets_percent = 0.0;
+
+                    // Calculations of missing package percent
+                    if (interval_packets_received
+                            + interval_missing_packets != 0) {
+                        missing_packets_percent =
+                                (interval_missing_packets)
+                                / (double) (interval_packets_received
+                                + interval_missing_packets);
+                    }
 
                     String outputCpu = "";
                     if (_showCpu) {
@@ -1482,7 +1666,12 @@ namespace PerformanceTest {
                                   interval_missing_packets,
                                   outputCpu
                     );
+
+                    Console.Write("Lost Packets (%): {0,1:p1}\n",
+                                  missing_packets_percent);
                 }
+
+
 
                 packets_received = 0;
                 bytes_received = 0;
@@ -1505,7 +1694,7 @@ namespace PerformanceTest {
             IMessagingWriter   announcement_writer;
 
             // create latency pong writer
-            writer = _MessagingImpl.CreateWriter(_LatencyTopicName);
+            writer = _MessagingImpl.CreateWriter(LATENCY_TOPIC_NAME.VALUE);
 
             if (writer == null) {
                 Console.Error.Write("Problem creating latency writer.\n");
@@ -1517,7 +1706,9 @@ namespace PerformanceTest {
             {
                 // create latency pong reader
                 reader_listener = new ThroughputListener(writer, _useCft, _NumPublishers);
-                reader = _MessagingImpl.CreateReader(_ThroughputTopicName, reader_listener);
+                reader = _MessagingImpl.CreateReader(
+                        THROUGHPUT_TOPIC_NAME.VALUE,
+                        reader_listener);
                 if (reader == null)
                 {
                     Console.Error.Write("Problem creating throughput reader.\n");
@@ -1526,7 +1717,7 @@ namespace PerformanceTest {
             }
             else
             {
-                reader = _MessagingImpl.CreateReader(_ThroughputTopicName, null);
+                reader = _MessagingImpl.CreateReader(THROUGHPUT_TOPIC_NAME.VALUE, null);
                 if (reader == null)
                 {
                     Console.Error.Write("Problem creating throughput reader.\n");
@@ -1539,7 +1730,8 @@ namespace PerformanceTest {
             }
 
             // Create announcement writer
-            announcement_writer = _MessagingImpl.CreateWriter(_AnnouncementTopicName);
+            announcement_writer =
+                    _MessagingImpl.CreateWriter(ANNOUNCEMENT_TOPIC_NAME.VALUE);
 
             if (announcement_writer == null) {
                 Console.Error.Write("Problem creating announcement writer.\n");
@@ -1570,6 +1762,7 @@ namespace PerformanceTest {
             ulong  mps, bps;
             double mps_ave = 0.0, bps_ave = 0.0;
             ulong  msgsent, bytes, last_msgs, last_bytes;
+            double missing_packets_percent = 0;
 
             if (_showCpu) {
                 reader_listener.cpu.initialize();
@@ -1627,6 +1820,16 @@ namespace PerformanceTest {
                     bps_ave = bps_ave + (double)(bps - bps_ave) / (double)ave_count;
                     mps_ave = mps_ave + (double)(mps - mps_ave) / (double)ave_count;
 
+                    // Calculations of missing package percent
+                    if (last_msgs + reader_listener.missing_packets == 0) {
+                        missing_packets_percent = 0.0;
+                    } else {
+                        missing_packets_percent =
+                                (reader_listener.missing_packets)
+                                / (float) (last_msgs
+                                + reader_listener.missing_packets);
+                    }
+
                     if (last_msgs > 0)
                     {
                         String outputCpu = "";
@@ -1634,10 +1837,12 @@ namespace PerformanceTest {
                             outputCpu = reader_listener.cpu.get_cpu_instant();
                         }
                         Console.Write("Packets: {0,8}  Packets/s: {1,7}  Packets/s(ave): {2,7:F0}  " +
-                                     "Mbps: {3,7:F1}  Mbps(ave): {4,7:F1}  Lost: {5}{6}\n",
+                                     "Mbps: {3,7:F1}  Mbps(ave): {4,7:F1}  Lost: {5,7} ({6,1:p1}){7}\n",
                                      last_msgs, mps, mps_ave,
-                                    bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
-                                     reader_listener.missing_packets,outputCpu);
+                                     bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
+                                     reader_listener.missing_packets,
+                                     missing_packets_percent,
+                                     outputCpu);
                     }
                 }
             }
@@ -1699,7 +1904,7 @@ namespace PerformanceTest {
             private ulong latency_sum = 0;
             private ulong latency_sum_square = 0;
             private ulong count = 0;
-            private uint  latency_min = 0;
+            private uint  latency_min = perftest_cs.LATENCY_RESET_VALUE;
             private uint  latency_max = 0;
             private int   last_data_length = 0;
             public  bool  end_test = false;
@@ -1800,19 +2005,13 @@ namespace PerformanceTest {
                     }
                 }
 
-                if (latency_min == 0)
-                {
+                if (latency_min == perftest_cs.LATENCY_RESET_VALUE) {
                     latency_min = latency;
                     latency_max = latency;
-                }
-                else
-                {
-                    if (latency < latency_min)
-                    {
+                } else {
+                    if (latency < latency_min) {
                         latency_min = latency;
-                    }
-                    if (latency > latency_max)
-                    {
+                    } else if (latency > latency_max) {
                         latency_max = latency;
                     }
                 }
@@ -1907,7 +2106,7 @@ namespace PerformanceTest {
                 Console.Out.Flush();
                 latency_sum = 0;
                 latency_sum_square = 0;
-                latency_min = 0;
+                latency_min = perftest_cs.LATENCY_RESET_VALUE;
                 latency_max = 0;
                 count = 0;
                 clock_skew_count = 0;
@@ -1926,9 +2125,10 @@ namespace PerformanceTest {
             AnnouncementListener  announcement_reader_listener = null;
             uint num_latency;
             int announcementSampleCount = 50;
+            int samplesPerBatch = 1;
 
             // create throughput/ping writer
-            writer = _MessagingImpl.CreateWriter(_ThroughputTopicName);
+            writer = _MessagingImpl.CreateWriter(THROUGHPUT_TOPIC_NAME.VALUE);
 
             if (writer == null)
             {
@@ -1936,14 +2136,18 @@ namespace PerformanceTest {
                 return;
             }
 
-            num_latency = (uint)((_NumIter/(ulong)_SamplesPerBatch) / (ulong)_LatencyCount);
+            samplesPerBatch = GetSamplesPerBatch();
 
-            if ((num_latency / (ulong)_SamplesPerBatch) % (ulong)_LatencyCount > 0) {
+            num_latency = (uint)((_NumIter/(ulong)samplesPerBatch)
+                    / (ulong)_LatencyCount);
+
+            if ((num_latency / (ulong)samplesPerBatch)
+                    % (ulong)_LatencyCount > 0) {
                 num_latency++;
             }
 
             // in batch mode, might have to send another ping
-            if (_SamplesPerBatch > 1) {
+            if (samplesPerBatch > 1) {
                 ++num_latency;
             }
 
@@ -1955,7 +2159,9 @@ namespace PerformanceTest {
                 {
                     // create latency pong reader
                     reader_listener = new LatencyListener(_LatencyTest?writer:null, num_latency);
-                    reader = _MessagingImpl.CreateReader(_LatencyTopicName, reader_listener);
+                    reader = _MessagingImpl.CreateReader(
+                            LATENCY_TOPIC_NAME.VALUE,
+                            reader_listener);
                     if (reader == null)
                     {
                         Console.Error.Write("Problem creating latency reader.\n");
@@ -1964,7 +2170,7 @@ namespace PerformanceTest {
                 }
                 else
                 {
-                    reader = _MessagingImpl.CreateReader(_LatencyTopicName, null);
+                    reader = _MessagingImpl.CreateReader(LATENCY_TOPIC_NAME.VALUE, null);
                     if (reader == null)
                     {
                         Console.Error.Write("Problem creating latency reader.\n");
@@ -1986,8 +2192,9 @@ namespace PerformanceTest {
              * every Publisher
              */
             announcement_reader_listener = new AnnouncementListener();
-            announcement_reader = _MessagingImpl.CreateReader(_AnnouncementTopicName,
-                                                              announcement_reader_listener);
+            announcement_reader = _MessagingImpl.CreateReader(
+                    ANNOUNCEMENT_TOPIC_NAME.VALUE,
+                    announcement_reader_listener);
             if (announcement_reader == null)
             {
                 Console.Error.Write("Problem creating announcement reader.\n");
@@ -2011,7 +2218,7 @@ namespace PerformanceTest {
                 }
             }
 
-            Console.Error.Write("Waiting to discover {0} subscribers...\n", _NumSubscribers);
+            Console.Error.Write("Waiting to discover {0} subscribers ...\n", _NumSubscribers);
             writer.WaitForReaders(_NumSubscribers);
 
             // We have to wait until every Subscriber sends an announcement message
@@ -2021,29 +2228,48 @@ namespace PerformanceTest {
                 System.Threading.Thread.Sleep(1000);
             }
 
+            if (_showCpu)
+            {
+                reader_listener.cpu.initialize();
+            }
+
             // Allocate data and set size
             TestMessage message = new TestMessage();
             message.entity_id = _PubID;
             message.data = new byte[Math.Max(_DataLen,LENGTH_CHANGED_SIZE)];
 
-            Console.Error.Write("Sending initial pings...\n");
-
-            if (_showCpu) {
-                reader_listener.cpu.initialize();
-            }
-
-            // initialize data pathways by sending some initial pings
             message.size = INITIALIZE_SIZE;
-            for (int i = 0;
-                    i < Math.Max(_InstanceCount, announcementSampleCount);
-                    i++)
+
+            /*
+             * Initial burst of data:
+             *
+             * The purpose of this initial burst of Data is to ensure that most
+             * memory allocations in the critical path are done before the test
+             * begings, for both the Writer and the Reader that receives the samples.
+             * It will also serve to make sure that all the instances are registered
+             * in advance in the subscriber application.
+             *
+             * We query the MessagingImplementation class to get the suggested sample
+             * count that we should send. This number might be based on the reliability
+             * protocol implemented by the middleware behind. Then we choose between that
+             * number and the number of instances to be sent.
+             */
+
+            int initializeSampleCount = Math.Max(
+                   _MessagingImpl.GetInitializationSampleCount(),
+                   _InstanceCount);
+
+            Console.Error.WriteLine(
+                    "Sending " + initializeSampleCount + " initialization pings ...");
+
+            for (int i = 0; i < initializeSampleCount; i++)
             {
                 // Send test initialization message
                 writer.Send(message, true);
             }
             writer.Flush();
 
-            Console.Error.Write("Publishing data...\n");
+            Console.Error.Write("Publishing data ...\n");
 
             // Set data size, account for other bytes in message
             message.size = (int)_DataLen - OVERHEAD_BYTES;
@@ -2126,7 +2352,8 @@ namespace PerformanceTest {
 
                 // only send latency pings if is publisher with ID 0
                 // In batch mode, latency pings are sent once every LatencyCount batches
-                if ( (_PubID == 0) && (((loop/(ulong)_SamplesPerBatch) % (ulong)_LatencyCount) == 0) )
+                if ( (_PubID == 0) && (((loop/(ulong)samplesPerBatch)
+                        % (ulong)_LatencyCount) == 0) )
                 {
 
                     /* In batch mode only send a single ping in a batch.
@@ -2185,14 +2412,8 @@ namespace PerformanceTest {
                             }
                             message.size = (int)(_scanDataLenSizes[scan_count++] - OVERHEAD_BYTES);
                             /* Reset _SamplePerBatch */
-                            if (_BatchSize != 0) {
-                                _SamplesPerBatch = _BatchSize / (message.size + OVERHEAD_BYTES);
-                                if (_SamplesPerBatch == 0) {
-                                    _SamplesPerBatch = 1;
-                                }
-                            } else {
-                                _SamplesPerBatch = 1;
-                            }
+                            samplesPerBatch = GetSamplesPerBatch();
+
                             ping_index_in_batch = 0;
                             current_index_in_batch = 0;
                         }
@@ -2204,7 +2425,8 @@ namespace PerformanceTest {
                         message.timestamp_usec = (uint)(now & 0xFFFFFFFF);
 
                         ++num_pings;
-                        ping_index_in_batch = (ping_index_in_batch + 1) % _SamplesPerBatch;
+                        ping_index_in_batch =
+                                (ping_index_in_batch + 1) % samplesPerBatch;
                         sentPing = true;
 
                         if (_displayWriterStats && _PrintIntervals) {
@@ -2213,7 +2435,8 @@ namespace PerformanceTest {
                     }
                 }
 
-                current_index_in_batch = (current_index_in_batch + 1) % _SamplesPerBatch;
+                current_index_in_batch =
+                        (current_index_in_batch + 1) % samplesPerBatch;
 
                 message.seq_num = (uint)loop;
                 message.latency_ping = pingID;
@@ -2323,10 +2546,78 @@ namespace PerformanceTest {
             }
         }
 
+        public int GetSamplesPerBatch()
+        {
+            int batchSize = _MessagingImpl.GetBatchSize();
+            int samplesPerBatch;
+
+            if (batchSize > 0)
+            {
+                samplesPerBatch = batchSize / (int) _DataLen;
+                if (samplesPerBatch == 0)
+                {
+                    samplesPerBatch = 1;
+                }
+            } else
+            {
+                samplesPerBatch = 1;
+            }
+
+            return samplesPerBatch;
+        }
+
+        public ProductVersion_t GetDDSVersion()
+        {
+            return NDDS.ConfigVersion.get_instance().get_product_version();
+        }
+
+        public Perftest_ProductVersion_t GetPerftestVersion()
+        {
+            return _version;
+        }
+
+        public void PrintVersion()
+        {
+            Perftest_ProductVersion_t perftestV = GetPerftestVersion();
+            ProductVersion_t ddsV = GetDDSVersion();
+
+            Console.Write(
+                    "RTI Perftest "
+                    + perftestV.major + "."
+                    + perftestV.minor + "."
+                    + perftestV.release);
+            if (perftestV.revision != 0) {
+                Console.Write("." + perftestV.revision);
+            }
+            Console.Write(
+                    " (RTI Connext DDS: "
+                    + ddsV.major + "."
+                    + ddsV.minor + "."
+                    + ddsV.release + ")\n");
+        }
+
+        public struct Perftest_ProductVersion_t
+        {
+            public uint  major;
+            public uint minor;
+            public uint release;
+            public uint revision;
+
+            public Perftest_ProductVersion_t (
+                    uint major,
+                    uint minor,
+                    uint release,
+                    uint revision)
+            {
+                this.major = major;
+                this.minor = minor;
+                this.release = release;
+                this.revision = revision;
+            }
+        }
+
         private ulong  _DataLen = 100;
         private ulong _useUnbounded = 0;
-        private int  _BatchSize = 0;
-        private int  _SamplesPerBatch = 1;
 
         private ulong _NumIter = 100000000;
         private bool _IsPub = false;
@@ -2358,11 +2649,10 @@ namespace PerformanceTest {
         private static long _ClockFrequency = 0;
         private static bool _testCompleted = false;
         private static bool _testCompletedScan = true;
-        public const string _LatencyTopicName = "Latency";
-        public const string _ThroughputTopicName = "Throughput";
-        public const string _AnnouncementTopicName = "Announcement";
         public const int timeout_wait_for_ack_sec = 0;
         public const uint timeout_wait_for_ack_nsec = 10000000;
+        public static readonly Perftest_ProductVersion_t _version =
+                new Perftest_ProductVersion_t(2, 3, 2, 0);
 
 
         /*
@@ -2387,6 +2677,12 @@ namespace PerformanceTest {
         private const int FINISHED_SIZE = 1235;
         // Flag used to indicate end of test
         public const int LENGTH_CHANGED_SIZE = 1236;
+
+        /*
+         * Value used to compare against to check if the latency_min has
+         * been reset.
+         */
+        public const uint LATENCY_RESET_VALUE = uint.MaxValue;
 
         static public ulong getMaxPerftestSampleSizeCS(){
             if (MAX_PERFTEST_SAMPLE_SIZE.VALUE > 2147483591){

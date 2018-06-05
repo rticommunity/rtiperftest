@@ -132,19 +132,30 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** ``Unkeyed`` type.
 
--  ``-multicast <address>``
+-  ``-multicast``
 
    Use multicast to receive data. In addition, the Datawriter heartbeats
    will be sent using multicast instead of unicast.
 
-   <address> is optional. If unspecified. The following default addresses will
-   be used for each of the topics::
+   The following default multicast addresses will be used for each of the topics::
 
    | **latency:** ``239.255.1.2``
    | **throughput:** ``239.255.1.1``
    | **announcement:** ``239.255.1.100``
 
-   **Default:** do not use multicast.
+    See ``-multicastAddr <address>`` for how to change these IP addresses.
+
+   **Default:** Do not use multicast.
+
+-  ``-multicastAddr <address>``
+
+   Enable the use of multicast. In addition, the Datawriter heartbeats
+   will be sent using multicast instead of unicast.
+
+   The <address> will be used by the 3 topics **latency:**, **throughput:**
+   and **announcement:**.
+
+   **Default:** Do not use multicast.
 
 -  ``-noDirectCommunication``
 
@@ -292,12 +303,16 @@ Test Parameters for Publishing and Subscribing Applications
 Transport Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+By default, *RTI Perftest* will try to use the transport settings provided via the
+`xml` configuration file. However, it is possible to override these values directly
+by using the `Transport` spececific command-line parameters.
+
 -  ``-transport <TRANSPORT NAME>``
 
    Set the transport to be used. The rest of the transports will be disabled.
    
    | **Options:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS`` and ``WAN``.
-   | **Default:** ``Transport defined in the XML profile. (UDPv4 if no changes).``  
+   | **Default:** ``Transport defined in the XML profile. (UDPv4 and SHMEM if no changes).``  
    
 -  ``-nic <ipaddr>``
 

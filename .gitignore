@@ -4,6 +4,8 @@
 /srcC*/perftest_subscriber.*
 /srcC*/makefile_*
 /srcC*/objs
+/srcCs/bin
+/srcCs/obj
 /srcC*/*.vcxproj*
 /srcC*/*.vcproj*
 /srcC*/*.csproj
@@ -18,3 +20,6 @@
 .cproject
 .project
 .vscode
+.suo
+*.VC.db
+*.VC.opendb
