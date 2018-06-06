@@ -801,8 +801,7 @@ class RTIPublisher : public IMessagingWriter
         // Initialize data
         RTI_CUSTOM_TYPE::TypeSupport::initialize_data(&data.custom_type);
         if (!initialize_custom_type_data(data.custom_type)) {
-            fprintf(stderr, "initialize_custom_type_data failed.\n");
-            throw -1;
+            throw std::logic_error("initialize_custom_type_data failed");
         }
       #endif
         _writer = T::DataWriter::narrow(writer);
@@ -836,7 +835,8 @@ class RTIPublisher : public IMessagingWriter
     ~RTIPublisher() {
         try {
             Shutdown();
-        } catch (int e) {
+        } catch (const std::exception &ex) {
+            fprintf(stderr, "Exception in RTIPublisher::~RTIPublisher(): %s.\n", ex.what());
         }
     }
 
@@ -848,8 +848,7 @@ class RTIPublisher : public IMessagingWriter
         free(_instance_handles);
       #ifdef RTI_CUSTOM_TYPE
         if (!finalize_custom_type_data(data.custom_type)) {
-            fprintf(stderr, "finalize_custom_type_data failed.\n");
-            throw -1;
+            throw std::logic_error("finalize_custom_type_data failed");
         }
       #endif
     }
@@ -1081,8 +1080,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         }
         // Initialize data
         if (!initialize_custom_type_dynamic_data(data)) {
-            fprintf(stderr, "initialize_custom_type_dynamic_data failed.\n");
-            throw -1;
+            throw std::logic_error("initialize_custom_type_dynamic_data failed");
         }
       #endif
         _writer = DDSDynamicDataWriter::narrow(writer);
@@ -1130,7 +1128,8 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     ~RTIDynamicDataPublisher() {
         try {
             Shutdown();
-        } catch (int e) {
+        } catch (const std::exception &ex) {
+            fprintf(stderr, "Exception in RTIDynamicDataPublisher::~RTIDynamicDataPublisher(): %s.\n", ex.what());
         }
     }
 
@@ -1142,8 +1141,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         free(_instance_handles);
       #ifdef RTI_CUSTOM_TYPE
         if (!finalize_custom_type_dynamic_data(data)) {
-            fprintf(stderr, "finalize_custom_type_dynamic_data failed.\n");
-            throw -1;
+            throw std::logic_error("finalize_custom_type_dynamic_data failed");
         }
       #endif
     }
@@ -2621,13 +2619,15 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     if (!_isDynamicData) {
         try {
             return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore, _instancesToBeWritten);
-        } catch (int n) {
+        } catch (const std::exception &ex) {
+            fprintf(stderr, "Exception in RTIDDSImpl<T>::CreateWriter(): %s.\n", ex.what());
             return NULL;
         }
     } else {
         try{
             return new RTIDynamicDataPublisher(writer, _InstanceCount, _pongSemaphore, T::TypeSupport::get_typecode(), _instancesToBeWritten);
-        } catch (int n) {
+        } catch (const std::exception &ex) {
+            fprintf(stderr, "Exception in RTIDDSImpl<T>::CreateWriter(): %s.\n", ex.what());
             return NULL;
         }
     }
