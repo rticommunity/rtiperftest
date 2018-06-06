@@ -105,7 +105,8 @@ Previously, the *RTI Perftest* default was to use only the `UDPv4` transport.
 This did not, however, always lead to the best results when testing between
 applications within the same machine; it also differed from *RTI Connext DDS*
 default behavior, which enables the use of both `UDPv4` and Shared Memory (`SHMEM`).
-Now, *RTI Perftest*'s new default behavior is the same as *RTI Connext DDS*'s one.
+Now, *RTI Perftest*'s new default behavior is the same as *RTI Connext DDS*: It
+enables the use of both `UDPv4` and `SHMEM`.
 
 This change improves the out-of-the-box user experience, getting better numbers
 when using the default configuration.
@@ -180,8 +181,8 @@ In previous releases the *Traditional* and *Modern* C++ implementations were tri
 include `sys/time.h`, but this file might not exist in certain operating systems including
 certain VxWorks platforms.
 
-This issue has been fixed, as this library is not needed in *RTI Perftest* for VxWorks
-platforms anymore.
+This issue has been fixed, since this library is not needed in the *VxWorks* platforms,
+*RTI Perftest* excludes `sys/time.h` when compiling for *VxWorks*.
 
 Release Notes 2.3.2
 -------------------
