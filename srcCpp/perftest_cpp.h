@@ -113,8 +113,9 @@ class perftest_cpp
     bool _displayWriterStats;
     bool _useCft;
     bool _useSockets;
+    static const Perftest_ProductVersion_t _version;
 
-  private:
+private:
     static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);
 
     /* The following three members are used in a static callback

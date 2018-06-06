@@ -358,6 +358,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
     int i;
     for (i = 1; i < argc; ++i)
+    //TODO:
     {
         if (IS_OPTION(argv[i], "-sockets")) {
             _useSockets = true;
@@ -1359,7 +1360,7 @@ int perftest_cpp::Subscriber()
     TestMessage message;
     message.entity_id = _SubID;
 
-    if (_useSockets) {
+    if (!_MessagingImpl->SupportDiscovery()) {
         while (reader_listener->packets_received == 0 && !reader_listener->change_size){
             announcement_writer->Send(announcement_msg);
             announcement_writer->Flush();
@@ -1657,14 +1658,12 @@ class LatencyListener : public IMessagingCB
         );
         fflush(stdout);
 
-            printf("Serialization time per sample: %0.3f us\n",
-                    RTISocketImpl::ObtainSerializeTimeCost(
-                           10000,
-                           last_data_length + perftest_cpp::OVERHEAD_BYTES));
-            printf("Deserialization time per sample: %0.3f us\n",
-                    RTISocketImpl::ObtainDeserializeTimeCost(
-                            10000,
-                            last_data_length + perftest_cpp::OVERHEAD_BYTES));
+        printf("Serialization time per sample: %0.3f us\n",
+               RTIDDSImpl<TestData_t>::ObtainSerializeTimeCost(
+                       10000, last_data_length + perftest_cpp::OVERHEAD_BYTES));
+        printf("Deserialization time per sample: %0.3f us\n",
+               RTIDDSImpl<TestData_t>::ObtainDeserializeTimeCost(
+                       10000, last_data_length + perftest_cpp::OVERHEAD_BYTES));
 
         latency_sum = 0;
         latency_sum_square = 0;
@@ -1815,7 +1814,7 @@ class LatencyListener : public IMessagingCB
  * Used for receiving data using a thread instead of callback
  *
  */
-template<class T>
+template<class T> //TODO: listenerType
 static void *ReadThread(void *arg)
 {
     T *listener = static_cast<T *>(arg);
@@ -1949,7 +1948,7 @@ int perftest_cpp::Publisher()
         return -1;
     }
 
-    if (_useSockets)
+    if (!_MessagingImpl->SupportListener())
     {
         announcement_reader_listener = new AnnouncementListener(announcement_reader);
 
@@ -1994,13 +1993,13 @@ int perftest_cpp::Publisher()
             > (int)announcement_reader_listener->subscriber_list.size()) {
         MilliSleep(1000);
     }
-    if (_useSockets && !_isScan) {
+    if (!_MessagingImpl->SupportListener() && !_isScan) {
         /*
          * Necessary to finish the AnnouncementReadThread execpt if scan is
          * been use. Scan will use the announcement channel later
          */
         announcement_reader_listener->end_test = true;
-    }
+    } //TODO: needed at the end of the test??
 
     // Allocate data and set size
     TestMessage message;
@@ -2150,7 +2149,7 @@ int perftest_cpp::Publisher()
                     /* Give time to the subscriber to catch the publisher */
                     if (_useSockets) {
                         MilliSleep(1000);
-                    }
+                    } //TODO: check if is needed
                     _testCompleted_scan = false;
                     SetTimeout(_executionTime, _isScan);
 

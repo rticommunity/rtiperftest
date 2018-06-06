@@ -2385,6 +2385,177 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
 }
 
 /*********************************************************
+ * ObtainSerializeTime
+ */
+template <typename T>
+double
+RTIDDSImpl<T>::ObtainSerializeTimeCost(int iterations, unsigned int sampleSize)
+{
+    double timeInit = 0;
+    double timeFinish = 0;
+    double serializeTime;
+
+    struct RTICdrStream stream;
+    struct PRESTypePluginDefaultEndpointData epd;
+
+    char *buffer;
+
+    RTIOsapiHeap_allocateBuffer(
+            &buffer,
+            NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
+            RTI_OSAPI_ALIGNMENT_DEFAULT);
+
+    if (buffer == NULL) {
+        fprintf(stderr,
+                "Error allocating memory for buffer on ObtainSerializeTimeCost\n");
+        return 0;
+    }
+
+    RTICdrStream_init(&stream);
+    RTICdrStream_set(&stream, buffer, NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+
+    epd._maxSizeSerializedSample =
+            TestData_tPlugin_get_serialized_sample_max_size(
+                    NULL,
+                    RTI_TRUE,
+                    RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+                    0);
+
+    /* Created a dummy data to serialize*/
+    TestData_t testData;
+    testData.bin_data.maximum(0);
+    testData.entity_id = 0;
+    testData.seq_num = 0;
+    testData.timestamp_sec = 0;
+    testData.timestamp_usec = 0;
+    testData.latency_ping = 0;
+
+    /* The buffer can be reuse, does not matter what it's inside */
+    testData.bin_data.loan_contiguous(
+            (DDS_Octet *) buffer, sampleSize, sampleSize);
+
+    /* Serialize time calculating */
+    timeInit = perftest_cpp::GetTimeUsec();
+
+    for (int i = 0; i < iterations; i++) {
+        /*
+         * Reset the stream to allocate the serialize data always at the
+         * beggining
+         */
+        RTICdrStream_set(
+                &stream, buffer, NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+
+        TestData_tPlugin_serialize(
+                (PRESTypePluginEndpointData) &epd,
+                &testData,
+                &stream,
+                RTI_TRUE,
+                RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+                RTI_TRUE,
+                NULL);
+    }
+
+    timeFinish = perftest_cpp::GetTimeUsec();
+
+    serializeTime = timeFinish - timeInit;
+
+    testData.bin_data.unloan();
+
+    if (buffer != NULL) {
+        RTIOsapiHeap_freeBuffer(buffer);
+    }
+
+    return serializeTime / (float) iterations;
+}
+/*********************************************************
+ * ObtainDeserializeTime
+ */
+
+/*TODO: Apply templated data correctly */
+template <typename T>
+double RTIDDSImpl<T>::ObtainDeserializeTimeCost(
+        int iterations,
+        unsigned int sampleSize)
+{
+    double timeInit = 0;
+    double timeFinish = 0;
+    double deserializeTime;
+
+    struct RTICdrStream stream;
+    struct PRESTypePluginDefaultEndpointData epd;
+
+    char *buffer;
+
+    RTIOsapiHeap_allocateBuffer(
+            &buffer,
+            NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
+            RTI_OSAPI_ALIGNMENT_DEFAULT);
+
+    if (buffer == NULL) {
+        fprintf(stderr,
+                "Error allocating memory for buffer on "
+                "ObtainDeserializeTimeCost\n");
+    }
+
+    RTICdrStream_init(&stream);
+    RTICdrStream_set(&stream, buffer, NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+
+    epd._maxSizeSerializedSample =
+            TestData_tPlugin_get_serialized_sample_max_size(
+                    NULL,
+                    RTI_TRUE,
+                    RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+                    0);
+
+    /* Created a dummy data to serialize */
+    TestData_t testDataSerialize;
+    testDataSerialize.bin_data.maximum(0);
+    testDataSerialize.entity_id = 0;
+    testDataSerialize.seq_num = 0;
+    testDataSerialize.timestamp_sec = 0;
+    testDataSerialize.timestamp_usec = 0;
+    testDataSerialize.latency_ping = 0;
+    testDataSerialize.bin_data.loan_contiguous(
+            (DDS_Octet *) buffer, sampleSize, sampleSize);
+
+    /* Serialize the data */
+    TestData_tPlugin_serialize(
+            (PRESTypePluginEndpointData) &epd,
+            &testDataSerialize,
+            &stream,
+            RTI_TRUE,
+            RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+            RTI_TRUE,
+            NULL);
+
+    /* Deserialize data n times */
+    TestData_t testDataDeserialize;
+    testDataDeserialize.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+    /* Deserialize time calculations */
+    timeInit = perftest_cpp::GetTimeUsec();
+
+    for (int i = 0; i < iterations; i++) {
+        RTICdrStream_set(
+                &stream, buffer, NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+
+        TestData_tPlugin_deserialize_sample(
+                NULL, &testDataDeserialize, &stream, RTI_TRUE, RTI_TRUE, NULL);
+    }
+
+    timeFinish = perftest_cpp::GetTimeUsec();
+
+    deserializeTime = timeFinish - timeInit;
+
+    testDataSerialize.bin_data.unloan();
+
+    if (buffer != NULL) {
+        RTIOsapiHeap_freeBuffer(buffer);
+    }
+
+    return deserializeTime / (float) iterations;
+}
+
+/*********************************************************
  * CreateWriter
  */
 template <typename T>

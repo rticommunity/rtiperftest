@@ -126,10 +126,26 @@ class RTIDDSImpl : public IMessaging
 
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
 
-    void ObtainSerializeTime();
+    /*
+     * Those two functions calculate the time cost on serialization,
+     * with a precision of microseconds.
+     */
+    static double
+    ObtainSerializeTimeCost(int iterations, unsigned int sampleSize);
+    static double
+    ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize);
 
+    bool SupportListener()
+    {
+        return true;
+    };
 
-  private:
+    bool SupportDiscovery()
+    {
+        return true;
+    };
+
+private:
 
     // Specific functions to configure the Security plugin
   #ifdef RTI_SECURE_PERFTEST

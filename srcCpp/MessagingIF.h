@@ -60,16 +60,6 @@ class IMessagingReader
     // only used for non-callback test to cleanup
     // the thread
     virtual void Shutdown() {}
-
-    virtual double
-    ObtainSerializeTimeCost(int iterations, unsigned int sampleSize) {
-        return 0;
-    }
-
-    virtual double
-    ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize) {
-        return 0;
-    }
 };
 
 class IMessagingWriter
@@ -141,6 +131,25 @@ class IMessaging
      * to get data
      */
     virtual IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback) = 0;
+
+    /*
+     * Get information about witch features are supported by the medleware
+     */
+    virtual bool SupportListener() = 0;
+    virtual bool SupportDiscovery() = 0;
+
+
+    // virtual double
+    // ObtainSerializeTimeCost(int iterations, unsigned int sampleSize)
+    // {
+    //     return 0;
+    // }
+
+    // virtual double
+    // ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize)
+    // {
+    //     return 0;
+    // }
 };
 
 

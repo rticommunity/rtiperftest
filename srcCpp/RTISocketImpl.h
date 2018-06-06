@@ -11,21 +11,25 @@
 #include <string>
 #include "MessagingIF.h"
 #include "PerftestTransport.h"
-#include "RTIDDSImpl.h"
+#include "RTIDDSImpl.h" //TODO: remove
 #include "perftest.h"
 #include "perftestSupport.h"
 #include "perftest_cpp.h"
 #include "transport/transport_socketutil.h"
 #include "transport/transport_udpv4.h"
 #include "transport_tcp/transport_tcp_socketutil.h"
-#include "transport_tcp/transport_tcp_tcpv4.h"
+#include "transport_tcp/transport_tcp_tcpv4.h"//TODO: remove
 
 #include "perftestPlugin.h"
 
 #define RTIPERFTEST_MAX_PEERS 1024
 #define RTIPERFTEST_MAX_PORT_ATTEMPT 1024
 
-class RTISocketImpl : public IMessaging {
+class RTISocketPublisher;
+class RTISocketSubscriber;
+class RTISocketImpl : public IMessaging { //TODO: move to cxx
+  friend RTISocketPublisher; //TODO: remove
+  friend RTISocketSubscriber;
   public:
     RTISocketImpl() : _transport() {
         _DataLen = 100;
@@ -43,8 +47,6 @@ class RTISocketImpl : public IMessaging {
         _basePort = 7400;
         _useBlocking = true;
 
-        _multicastAddrString = (char *)"239.255.1.1";
-
         _pongSemaphore = NULL;
 
         _plugin = NULL;
@@ -52,9 +54,11 @@ class RTISocketImpl : public IMessaging {
         _workerFactory = NULL;
         _exclusiveArea = NULL;
 
-        // TODO: Decided how initialize this variables, not clear.
-        //_nicAddress = NDDS_TRANSPORT_ADDRESS_INVALID;
-        // _multicastAddrTransp = NDDS_TRANSPORT_ADDRESS_INVALID;
+        // Similar to NDDS_TRANSPORT_ADDRESS_INVALID
+        RTIOsapiMemory_zero(&_nicAddress, sizeof(NDDS_Transport_Address_t));
+        RTIOsapiMemory_zero(
+                &_multicastAddrTransp,
+                sizeof(NDDS_Transport_Address_t));
 
         _NumPublishers = 1;
         _NumSubscribers = 1;
@@ -66,11 +70,28 @@ class RTISocketImpl : public IMessaging {
 
     bool ParseConfig(int argc, char *argv[]);
 
+    std::string PrintConfiguration();
+
     bool Initialize(int argc, char *argv[]);
 
     void Shutdown();
 
-    unsigned int GetBatchSize() { return 0; }
+    int GetBatchSize() {
+        return _batchSize;
+    }
+
+    unsigned long GetInitializationSampleCount() {
+        return 0;
+    };
+
+    bool SupportListener(){
+        return false;
+    };
+
+    bool SupportDiscovery()
+    {
+        return false;
+    };
 
     IMessagingWriter *CreateWriter(const char *topic_name);
 
@@ -79,24 +100,19 @@ class RTISocketImpl : public IMessaging {
     IMessagingReader *
     CreateReader(const char *topic_name, IMessagingCB *callback);
 
-    DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
+    DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic); //TODO: remove
 
     bool ConfigureSocketsTransport();
 
     /*
      * This function calculate the port depending of the resource we want to
-     * create and the domain. Similar behaviour to
-     * PRESRtps_getWellKnownUnicastPort()
+     * create and the domain.
      */
     unsigned int GetUnicastPort(const char *topicName);
 
-    /*TODO: This could be merge into one function */
-    /*
-     * Those two functions calculate the time cost on serialization,
-     * with a precision of microseconds.
-     */
-    static double ObtainSerializeTimeCost(int iterations, unsigned int sampleSize);
-    static double ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize);
+    bool GetMulticastTransportAddr(
+            const char *topicName,
+            NDDS_Transport_Address_t &addr);
 
   private:
     unsigned long _DataLen;
