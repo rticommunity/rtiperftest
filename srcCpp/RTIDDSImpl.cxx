@@ -801,7 +801,7 @@ class RTIPublisher : public IMessagingWriter
         // Initialize data
         RTI_CUSTOM_TYPE::TypeSupport::initialize_data(&data.custom_type);
         if (!initialize_custom_type_data(data.custom_type)) {
-            throw std::logic_error("initialize_custom_type_data failed");
+            throw std::runtime_error("initialize_custom_type_data failed");
         }
       #endif
         _writer = T::DataWriter::narrow(writer);
@@ -848,7 +848,7 @@ class RTIPublisher : public IMessagingWriter
         free(_instance_handles);
       #ifdef RTI_CUSTOM_TYPE
         if (!finalize_custom_type_data(data.custom_type)) {
-            throw std::logic_error("finalize_custom_type_data failed");
+            throw std::runtime_error("finalize_custom_type_data failed");
         }
       #endif
     }
@@ -1080,7 +1080,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         }
         // Initialize data
         if (!initialize_custom_type_dynamic_data(data)) {
-            throw std::logic_error("initialize_custom_type_dynamic_data failed");
+            throw std::runtime_error("initialize_custom_type_dynamic_data failed");
         }
       #endif
         _writer = DDSDynamicDataWriter::narrow(writer);
@@ -1141,7 +1141,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         free(_instance_handles);
       #ifdef RTI_CUSTOM_TYPE
         if (!finalize_custom_type_dynamic_data(data)) {
-            throw std::logic_error("finalize_custom_type_dynamic_data failed");
+            throw std::runtime_error("finalize_custom_type_dynamic_data failed");
         }
       #endif
     }
