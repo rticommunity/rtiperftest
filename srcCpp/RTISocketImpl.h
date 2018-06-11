@@ -11,58 +11,22 @@
 #include <string>
 #include "MessagingIF.h"
 #include "PerftestTransport.h"
-#include "RTIDDSImpl.h" //TODO: remove
 #include "perftest.h"
 #include "perftestSupport.h"
 #include "perftest_cpp.h"
 #include "transport/transport_socketutil.h"
 #include "transport/transport_udpv4.h"
-#include "transport_tcp/transport_tcp_socketutil.h"
-#include "transport_tcp/transport_tcp_tcpv4.h"//TODO: remove
 
 #include "perftestPlugin.h"
 
 #define RTIPERFTEST_MAX_PEERS 1024
 #define RTIPERFTEST_MAX_PORT_ATTEMPT 1024
 
-class RTISocketPublisher;
-class RTISocketSubscriber;
-class RTISocketImpl : public IMessaging { //TODO: move to cxx
-  friend RTISocketPublisher; //TODO: remove
-  friend RTISocketSubscriber;
+//TODO: typedef std::vector<NDDS_Transport_Resource_t> vectorTransportResources;
+
+class RTISocketImpl : public IMessaging {
   public:
-    RTISocketImpl() : _transport() {
-        _DataLen = 100;
-        _DomainID = 1;
-        _IsReliable = false;
-        _IsMulticast = false;
-        _DirectCommunication = true;
-        _LatencyTest = false;
-        _IsDebug = false;
-        _isLargeData = false;
-        _isScan = false;
-        _isPublisher = false;
-        _peer_host_count = 0;
-        _batchSize = 0;
-        _basePort = 7400;
-        _useBlocking = true;
-
-        _pongSemaphore = NULL;
-
-        _plugin = NULL;
-        _worker = NULL;
-        _workerFactory = NULL;
-        _exclusiveArea = NULL;
-
-        // Similar to NDDS_TRANSPORT_ADDRESS_INVALID
-        RTIOsapiMemory_zero(&_nicAddress, sizeof(NDDS_Transport_Address_t));
-        RTIOsapiMemory_zero(
-                &_multicastAddrTransp,
-                sizeof(NDDS_Transport_Address_t));
-
-        _NumPublishers = 1;
-        _NumSubscribers = 1;
-    }
+    RTISocketImpl();
 
     ~RTISocketImpl() { Shutdown(); }
 
@@ -100,27 +64,27 @@ class RTISocketImpl : public IMessaging { //TODO: move to cxx
     IMessagingReader *
     CreateReader(const char *topic_name, IMessagingCB *callback);
 
-    DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic); //TODO: remove
-
     bool ConfigureSocketsTransport();
 
     /*
      * This function calculate the port depending of the resource we want to
      * create and the domain.
      */
-    unsigned int GetUnicastPort(const char *topicName);
+    unsigned int GetUnicastPort(const char *topicName, int idProvided = -1);
 
     bool GetMulticastTransportAddr(
             const char *topicName,
             NDDS_Transport_Address_t &addr);
 
+    bool IsMulticast()
+    {
+        return _transport.useMulticast && _transport.allowsMulticast();
+    }
+
   private:
     unsigned long _DataLen;
     int _DomainID;
-    bool _IsMulticast;
     bool _IsReliable;
-    int _Durability;
-    bool _DirectCommunication;
     bool _LatencyTest;
     bool _IsDebug;
     bool _isLargeData;
@@ -132,17 +96,9 @@ class RTISocketImpl : public IMessaging { //TODO: move to cxx
     unsigned int _basePort;
     bool _useBlocking;
 
-    /*TODO: Others solution to this:
-     * 1 -> Use a unorderedMap (C++11) not possible
-     * 2 -> Use a map with a custom comparator operator for the
-     *      NDDS_Transport_Address_t type.
-     *      std::map<NDDS_Transport_Address_t, int, dummyCmpStruct>
-     */
     std::vector<std::pair<NDDS_Transport_Address_t, int> > _peersMap;
 
     PerftestTransport _transport;
-
-    char *_multicastAddrString;
 
     RTIOsapiSemaphore *_pongSemaphore;
 
@@ -151,12 +107,34 @@ class RTISocketImpl : public IMessaging { //TODO: move to cxx
     struct REDAWorkerFactory *_workerFactory;
     struct REDAExclusiveArea *_exclusiveArea;
     NDDS_Transport_Address_t _nicAddress;
-    NDDS_Transport_Address_t _multicastAddrTransp;
-
-    int _NumPublishers;
-    int _NumSubscribers;
 
   public:
+
+    std::vector<NDDS_Transport_SendResource_t> _resourcesList;
+    struct peerInfo {
+        // Each resource it's pointing to one on resourceList
+        NDDS_Transport_SendResource_t *resource;
+        NDDS_Transport_Address_t transportAddr;
+        unsigned int port;
+
+        peerInfo()
+        {
+            resource = NULL;
+            RTIOsapiMemory_zero(
+                    &transportAddr, sizeof(NDDS_Transport_Address_t));
+            port = 0;
+        }
+        peerInfo(
+                NDDS_Transport_SendResource_t *res,
+                NDDS_Transport_Address_t addr,
+                unsigned int p)
+        {
+            resource = res;
+            transportAddr = addr;
+            port = p;
+        }
+    };
+    std::vector<peerInfo> _peersInfoList;
 
     /*
      * Resources reserved by a participant

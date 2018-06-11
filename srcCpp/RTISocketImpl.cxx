@@ -22,6 +22,38 @@
 const int RTISocketImpl::RESOURCES_PER_PARTICIPANT = 3;
 
 /*********************************************************
+ * Constructor
+ */
+RTISocketImpl::RTISocketImpl() :
+        _DataLen(100),
+        _DomainID(1),
+        _IsReliable(false),
+        _LatencyTest(false),
+        _IsDebug(false),
+        _isLargeData(false),
+        _isScan(false),
+        _isPublisher(false),
+        _batchSize(0),
+        _peer_host_count(0),
+        _basePort(7400),
+        _useBlocking(true),
+        _transport(),
+        _pongSemaphore(NULL),
+        _plugin(NULL),
+        _worker(NULL),
+        _workerFactory(NULL),
+        _exclusiveArea(NULL)
+{
+
+    // Similar to NDDS_TRANSPORT_ADDRESS_INVALID
+    RTIOsapiMemory_zero(&_nicAddress, sizeof(NDDS_Transport_Address_t));
+
+    // Set default interface
+    _transport.allowInterfaces = std::string("127.0.0.1");
+
+}
+
+/*********************************************************
  * Shutdown
  */
 void RTISocketImpl::Shutdown()
@@ -241,20 +273,6 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
                 return false;
             }
         }
-        else if (IS_OPTION(argv[i], "-numPublishers")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <count> after -numPublishers\n");
-                return false;
-            }
-            _NumPublishers = strtol(argv[i], NULL, 10);
-        }
-        else if (IS_OPTION(argv[i], "-numSubscribers")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <count> after -numSubscribers\n");
-                return false;
-            }
-            _NumSubscribers = strtol(argv[i], NULL, 10);
-        }
         else if (IS_OPTION(argv[i], "-batchSize")) {
 
             if ((i == (argc-1)) || *argv[++i] == '-')
@@ -298,14 +316,6 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
         _DataLen = _scan_max_size;
     }
 
-    /* If no peer is given, assume a default one */
-    if (_peer_host_count == 0) {
-        _peer_host[0] = (char *)"127.0.0.1";
-        _peer_host_count = 1;
-    }
-
-
-
     if (_batchSize != 0 && _DataLen > _batchSize) {
         fprintf(stderr, "\t -batchSize must be bigger or equal than -datalen\n");
         return false;
@@ -329,10 +339,9 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
         return false;
     }
 
-    if (!_transport.useMulticast && (_peer_host_count != 1 || _NumSubscribers > 1)) {
+    if (_transport.useMulticast && (_peer_host_count > 0)) {
         fprintf(stderr,
-                "\tOne to many send option with out multicast it's not supported.\n"
-                "\tPlease, set only one Subscriber and one Publisher\n");
+                "\tFor multicast, set only one Subscriber and one Publisher\n");
         return false;
     }
 
@@ -390,19 +399,14 @@ class RTISocketPublisher : public IMessagingWriter{
   private:
     RTISocketImpl *_parent;
     NDDS_Transport_Plugin *_plugin;
-    NDDS_Transport_SendResource_t _sendResource;
-    NDDS_Transport_Address_t _dst_address;
-    NDDS_Transport_Port_t _send_port;
-    NDDS_Transport_Buffer_t _send_buffer;
+    NDDS_Transport_Buffer_t _sendBuffer;
+
+    std::vector<RTISocketImpl::peerInfo> _peersInfoList;
 
     TestData_t _data;
 
-    std::vector<std::pair<NDDS_Transport_Address_t, int> > _peersMap;
-
     struct REDAWorker *_worker;
     RTIOsapiSemaphore *_pongSemaphore;
-
-    int _NumSubscribers;
 
     unsigned int _batchBufferSize;
     bool _useBatching;
@@ -414,49 +418,40 @@ class RTISocketPublisher : public IMessagingWriter{
     RTISocketPublisher(
             RTISocketImpl *parent,
             NDDS_Transport_Plugin *plugin,
-            NDDS_Transport_SendResource_t send_resource,
-            NDDS_Transport_Address_t dst_address,
-            NDDS_Transport_Port_t send_port,
+            std::vector<RTISocketImpl::peerInfo> peersInfoList,
             RTIOsapiSemaphore *pongSemaphore,
-            std::vector<std::pair<NDDS_Transport_Address_t, int> > peersMap,
-            int numSubscribers,
-            struct REDAWorker *worker,
-            unsigned int batchBufferSize)
+            struct REDAWorker *worker)
     {
         _parent = parent;
         _plugin = plugin;
-        _sendResource = send_resource;
-        _dst_address = dst_address;
-        _send_port = send_port;
+        _peersInfoList = peersInfoList;
         _pongSemaphore = pongSemaphore;
-
-        _NumSubscribers = numSubscribers;
-
         _worker = worker;
 
-        _peersMap = peersMap;
-
-        if (batchBufferSize == 0){
+        if (parent->GetBatchSize() == 0){
             _batchBufferSize = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
             _useBatching = false;
         } else {
-            _batchBufferSize = batchBufferSize;
+            _batchBufferSize = parent->GetBatchSize();
             _useBatching = true;
         }
 
         RTIOsapiHeap_allocateBuffer(
-            &_send_buffer.pointer,
+            &_sendBuffer.pointer,
             NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
             RTI_OSAPI_ALIGNMENT_DEFAULT);
 
-        if (_send_buffer.pointer == NULL) {
-            fprintf(stderr, "Error allocating memory for the send buffer\n");
+        if (_sendBuffer.pointer == NULL) {
+            throw std::runtime_error(
+                    "Error allocating memory for the send buffer\n");
         }
-        _send_buffer.length = 0;
+        _sendBuffer.length = 0;
 
 
         RTICdrStream_init(&_stream);
-        RTICdrStream_set(&_stream, (char *)_send_buffer.pointer,
+        RTICdrStream_set(
+                &_stream,
+                (char *)_sendBuffer.pointer,
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
 
         _epd._maxSizeSerializedSample =
@@ -473,61 +468,36 @@ class RTISocketPublisher : public IMessagingWriter{
 
     void Shutdown() {
 
-        if (_sendResource != NULL && _plugin != NULL) {
-            _plugin->destroy_sendresource_srEA(_plugin, &_sendResource);
+        for(unsigned int i = 0; i < _peersInfoList.size(); i++) {
+            if (_peersInfoList[i].resource != NULL && _plugin != NULL) {
+                _plugin->destroy_sendresource_srEA(
+                        _plugin,
+                        _peersInfoList[i].resource);
+            }
         }
 
-        if (_send_buffer.pointer != NULL) {
-            RTIOsapiHeap_freeBuffer(_send_buffer.pointer);
+        if (_sendBuffer.pointer != NULL) {
+            RTIOsapiHeap_freeBuffer(_sendBuffer.pointer);
         }
     }
 
     bool SendMessage() {
 
-        /*
-         * TODO: //Ask Fernando
-         *
-         * In the case we want a one to many option:
-         *
-         * The 1th option is be restrictive, and only allow one subscriber
-         * per Peer.
-         *
-         * The 2th options is identify how many subscriber are per Peer
-         * on the command line parameters like -peer x.x.x.x N
-         *
-         * The 3th option is always have the same numbers of subscriber per
-         * Peer.
-         */
-
         bool retCode = true;
-        bool multicast = false;
-        if (_parent->_transport.useMulticast) {
-            multicast = true;
+        for(unsigned int i = 0; i < _peersInfoList.size(); i++) {
+            retCode = _plugin->send(
+                    _plugin,
+                    _peersInfoList[i].resource,
+                    &_peersInfoList[i].transportAddr,
+                    _peersInfoList[i].port,
+                    NDDS_TRANSPORT_PRIORITY_DEFAULT,
+                    &_sendBuffer,
+                    1,
+                    _worker);
         }
 
-        retCode = _plugin->send(
-                _plugin,
-                &_sendResource,
-                ((multicast) ? &_dst_address : (&_peersMap[0].first)),
-                _send_port,
-                NDDS_TRANSPORT_PRIORITY_DEFAULT,
-                &_send_buffer,
-                1,
-                _worker);
-
         if (!retCode) {
-            /**
-             * TODO: Ask Fernando
-             *
-             * Set a log with warning level???? Not clear
-             *
-             * Keep count on writes errors and then output on intervals.?
-             *
-             * use -> RTILog_printContextAndMsg??
-             *
-             */
-            //fprintf(stderr, "Write error using sockets\n");
-            //NO print any thing here 
+            //No need of print error. This wil be represented of loss packets
             return false;
         }
 
@@ -538,22 +508,21 @@ class RTISocketPublisher : public IMessagingWriter{
     void Flush() {
 
         /* If there is no data, no need to flush */
-        if (_send_buffer.length == 0) {
+        if (_sendBuffer.length == 0) {
             return;
         }
 
         if (SendMessage() != 1) {
-            //TODO: the same as sendMessage print problem.
-            //fprintf(stderr, "Fail in flush() -> sendMessage()\n");
+            // No need of print error. This wil be represented as loss packets
         }
 
         /* If the send it's done, reset the stream to fill the buffer again */
         RTICdrStream_set(
                 &_stream,
-                (char *)_send_buffer.pointer,
+                (char *)_sendBuffer.pointer,
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
 
-        _send_buffer.length = 0;
+        _sendBuffer.length = 0;
     }
 
     bool Send(const TestMessage &message, bool isCftWildCardKey) {
@@ -574,7 +543,7 @@ class RTISocketPublisher : public IMessagingWriter{
                 + perftest_cpp::OVERHEAD_BYTES
                 + RTI_CDR_ENCAPSULATION_HEADER_SIZE;
 
-        if ((unsigned int)(serialize_size + _send_buffer.length)
+        if ((unsigned int)(serialize_size + _sendBuffer.length)
                 > _batchBufferSize) {
             Flush();
         }
@@ -595,9 +564,9 @@ class RTISocketPublisher : public IMessagingWriter{
 
         _data.bin_data.unloan();
 
-        _send_buffer.length = RTICdrStream_getCurrentPositionOffset(&_stream);
+        _sendBuffer.length = RTICdrStream_getCurrentPositionOffset(&_stream);
 
-        if (_useBatching && ((unsigned int)_send_buffer.length <= _batchBufferSize)) {
+        if (_useBatching && ((unsigned int)_sendBuffer.length <= _batchBufferSize)) {
             return true;
         }
 
@@ -712,7 +681,7 @@ class RTISocketSubscriber : public IMessagingReader
 
 
         if (_recvBuffer.pointer == NULL) {
-            throw std::logic_error(std::string("RTIOsapiHeap_allocateBuffer Error\n"));
+            throw std::runtime_error("RTIOsapiHeap_allocateBuffer Error\n");
         }
 
         _recvBuffer.length = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
@@ -835,7 +804,7 @@ bool RTISocketImpl::Initialize(int argc, char *argv[]) {
 /*********************************************************
  * GetUnicastPort
  */
-unsigned int RTISocketImpl::GetUnicastPort(const char *topicName)
+unsigned int RTISocketImpl::GetUnicastPort(const char *topicName, int idProvided)
 {
 
     int portOffset = 0;
@@ -851,14 +820,17 @@ unsigned int RTISocketImpl::GetUnicastPort(const char *topicName)
 
     int participantID = 0;
     if (!_transport.useMulticast) {
-        participantID =
+        if (idProvided >= 0) {
+            participantID = idProvided;
+        } else {
+            participantID =
                 _isPublisher ? perftest_cpp::_PubID : perftest_cpp::_SubID;
+        }
     }
 
 
     unsigned int defaultUnicastPort = 0;
 
-    /*TODO: Unable to use the sames port of DDS*/
     defaultUnicastPort = PRESRtps_getWellKnownUnicastPort(
             _DomainID, /* domainId */
             participantID, /* participantId */
@@ -907,10 +879,7 @@ bool RTISocketImpl::GetMulticastTransportAddr(
 IMessagingWriter *RTISocketImpl::CreateWriter(const char *topicName)
 {
 
-    int result = 0;
-
-    NDDS_Transport_SendResource_t send_resource = NULL;
-    NDDS_Transport_Port_t send_port = 0;
+    NDDS_Transport_SendResource_t sendResource = NULL;
     NDDS_Transport_Address_t multicastAddr;
     bool isMulticastAddr = false;
 
@@ -922,30 +891,50 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topicName)
         return NULL;
     }
 
-    send_port = GetUnicastPort(topicName);
+    NDDS_Transport_Address_t actualAddr;
+    int actualPort = 0;
+    bool shared = false;
+    for (int i = 0; i < _peer_host_count; i++) {
+        shared = false;
+        actualAddr = (isMulticastAddr) ? multicastAddr : _peersMap[i].first;
+        actualPort = GetUnicastPort(topicName, _peersMap[i].second);
 
-    result = _plugin->create_sendresource_srEA(
-            _plugin,
-            &send_resource,
-            (isMulticastAddr) ? &multicastAddr : &_peersMap[0].first,
-            send_port,
-            NDDS_TRANSPORT_PRIORITY_DEFAULT);
-    if (result != 1) {
-        fprintf(stderr, "create_sendresource_srEA error\n");
-        return NULL;
+        unsigned int j;
+        for (j = 0; j < _resourcesList.size() && !shared; j++) {
+            shared = _plugin->share_sendresource_srEA(
+                    _plugin,
+                    &_resourcesList[j],
+                    &actualAddr,
+                    actualPort,
+                    NDDS_TRANSPORT_PRIORITY_DEFAULT);
+        }
+        if (!shared) {
+            if (!_plugin->create_sendresource_srEA(
+                        _plugin,
+                        &sendResource,
+                        &actualAddr,
+                        actualPort,
+                        NDDS_TRANSPORT_PRIORITY_DEFAULT)) {
+                fprintf(stderr, "create_sendresource_srEA error\n");
+                return NULL;
+            }
+            _resourcesList.push_back(sendResource);
+
+        }
+
+        _peersInfoList.push_back(
+                peerInfo(
+                        shared ? &_resourcesList[j] : &_resourcesList.back(),
+                        actualAddr,
+                        actualPort));
     }
 
     return new RTISocketPublisher(
             this,
             _plugin,
-            send_resource,
-            (isMulticastAddr) ? multicastAddr : _peersMap[0].first,
-            send_port,
+            _peersInfoList,
             _pongSemaphore,
-            _peersMap,
-            _NumSubscribers,
-            _worker,
-            _batchSize);
+            _worker);
 }
 
 /*********************************************************
@@ -999,11 +988,6 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
 
     struct NDDS_Transport_UDP *udpPlugin;
 
-    /* If none -nic parameter has been received, assume the default interface */
-    if (_transport.allowInterfaces.empty()) {
-        _transport.allowInterfaces = std::string("127.0.0.1");
-    }
-
     char *interface = NULL;
     interface = DDS_String_dup(_transport.allowInterfaces.c_str());
     if (interface == NULL) {
@@ -1040,12 +1024,11 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
         _transport.transportConfig.kind = TRANSPORT_UDPv4;
 
     case TRANSPORT_UDPv4:
+    {
 
         /*_Plugin properties configure for UDPv4*/
         udpv4_prop.parent.allow_interfaces_list = &interface;
         udpv4_prop.parent.allow_interfaces_list_length = 1;
-        udpv4_prop.parent.properties_bitmap |=
-                NDDS_TRANSPORT_PROPERTY_BIT_POLLED;
 
         if (_transport.useMulticast) {
 
@@ -1054,7 +1037,6 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
             udpv4_prop.reuse_multicast_receive_resource = 1;
             udpv4_prop.multicast_enabled = 1;
             udpv4_prop.unicast_enabled = 0;
-
             udpv4_prop.multicast_ttl =1;
         }
 
@@ -1086,6 +1068,11 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
         // Setting the transport properties
         _plugin = NDDS_Transport_UDPv4_new(&udpv4_prop);
 
+        if (_plugin == NULL) {
+            fprintf(stderr, "Error creating transport plugin\n");
+            return false;
+        }
+
         /*
          * With this, It's avoid the translation from a interface name in to
          * a address.
@@ -1105,27 +1092,28 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
             return false;
         }
 
-        /* TODO: Remove on final version!
-         * I keep this part, may be helpfull if we decided to support 1-many
-         */
+        /* If no peer is given, assume a default one */
+        if (_peer_host_count == 0) {
+            _peer_host[0] = (char *) "127.0.0.1";
+            _peer_host_count = 1;
+        }
+
         /* Peers parse to NDDS_Transport_Address_t */
         NDDS_Transport_Address_t addr;
+        char addr_sub[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
+        int id_sub = 0;
+
         for (int i = 0; i < _peer_host_count; i++) {
+            id_sub = 0;
+            sscanf(_peer_host[i], "%[^:]:%d", addr_sub, &id_sub);
+
             if (NDDS_Transport_UDP_string_to_address_cEA(
                         _plugin,
                         &addr,
-                        _peer_host[i])) {
-                unsigned int j;
-                for (j = 0; j < _peersMap.size(); j++) {
-                    if (_peersMap[j].first.network_ordered_value
-                            == addr.network_ordered_value) {
-                        _peersMap[j].second++;
-                    }
-                }
-                if (j+1 == _peersMap.size() || _peersMap.size() == 0) {
-                    _peersMap.push_back(
-                            std::pair<NDDS_Transport_Address_t, int> (addr,1));
-                }
+                        addr_sub)) {
+
+                _peersMap.push_back(
+                        std::pair<NDDS_Transport_Address_t, int>(addr, id_sub));
             }
         }
 
@@ -1135,13 +1123,11 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
         }
 
         break;
+    }
 
     case TRANSPORT_SHMEM:
 
         /*_Plugin configure for shared memory*/
-
-        // shmem_prop.parent.properties_bitmap |=
-        //         NDDS_TRANSPORT_PROPERTY_BIT_POLLED;
         shmem_prop.parent.message_size_max =
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
         shmem_prop.receive_buffer_size =
@@ -1150,12 +1136,17 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
                 shmem_prop.receive_buffer_size / perftest_cpp::OVERHEAD_BYTES;
         /*
          * The total number of bytes that can be buffered in the receive
-         * queue is:
+         * queue is calculated with the following formula:
          * size = receive_buffer_size + message_size_max +
          *          received_message_count_max * fixedOverhead
          */
 
         _plugin = NDDS_Transport_Shmem_new(&shmem_prop);
+
+        if (_plugin == NULL) {
+            fprintf(stderr, "Error creating transport plugin\n");
+            return false;
+        }
 
         NDDS_Transport_Interface_t transportInterface;
         RTIOsapiMemory_zero(
@@ -1163,8 +1154,8 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
                 sizeof(NDDS_Transport_Interface_t));
 
         /* This will allways return a address full of zeros*/
-        RTI_INT32 foundMore;
-        RTI_INT32 count;
+        int foundMore;
+        int count;
         _plugin->get_receive_interfaces_cEA(
                 _plugin,
                 &foundMore,
@@ -1202,11 +1193,6 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
         return false;
 
     } // End Switch
-
-    if (_plugin == NULL) {
-        fprintf(stderr, "Error creating transport plugin\n");
-        return false;
-    }
 
     _transport.printTransportConfigurationSummary();
 

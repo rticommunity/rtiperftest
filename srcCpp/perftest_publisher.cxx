@@ -357,16 +357,13 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     }
 
     int i;
-    for (i = 1; i < argc; ++i)
-    //TODO:
-    {
+    for (i = 1; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-sockets")) {
             _useSockets = true;
             _UseReadThread = true;
         }
     }
-    for (i = 1; i < argc; ++i)
-    {
+    for (i = 1; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-help")) {
             fprintf(stderr, "%s", usage_string);
             fflush(stderr);
@@ -1814,10 +1811,10 @@ class LatencyListener : public IMessagingCB
  * Used for receiving data using a thread instead of callback
  *
  */
-template<class T> //TODO: listenerType
+template<class ListenerType>
 static void *ReadThread(void *arg)
 {
-    T *listener = static_cast<T *>(arg);
+    ListenerType *listener = static_cast<ListenerType *>(arg);
     TestMessage *message = NULL;
 
     while (!listener->end_test)
@@ -1993,13 +1990,6 @@ int perftest_cpp::Publisher()
             > (int)announcement_reader_listener->subscriber_list.size()) {
         MilliSleep(1000);
     }
-    if (!_MessagingImpl->SupportListener() && !_isScan) {
-        /*
-         * Necessary to finish the AnnouncementReadThread execpt if scan is
-         * been use. Scan will use the announcement channel later
-         */
-        announcement_reader_listener->end_test = true;
-    } //TODO: needed at the end of the test??
 
     // Allocate data and set size
     TestMessage message;
@@ -2146,10 +2136,6 @@ int perftest_cpp::Publisher()
                 // If running in scan mode, dataLen under test is changed
                 // after _executionTime
                 if (_isScan && _testCompleted_scan) {
-                    /* Give time to the subscriber to catch the publisher */
-                    if (_useSockets) {
-                        MilliSleep(1000);
-                    } //TODO: check if is needed
                     _testCompleted_scan = false;
                     SetTimeout(_executionTime, _isScan);
 
