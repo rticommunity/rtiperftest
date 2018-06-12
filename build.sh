@@ -113,6 +113,7 @@ function clean()
     rm -rf "${script_location}"/srcJava/jar
     rm -rf "${script_location}"/srcJava/com/rti/perftest/gen
     rm -rf "${script_location}"/bin
+    clean_documentation
 
     echo ""
     echo "================================================================================"
@@ -424,11 +425,11 @@ function clean_documentation()
 {
     # Remove the content of ${doc_folder}/_build
     rm -rf ${doc_folder}/_build
+    rm -rf ${generate_doc_folder}
 }
 
 function build_documentation()
 {
-    clean_documentation
 
     # Generate HTML
     echo ""
@@ -440,7 +441,6 @@ function build_documentation()
         echo -e "${ERROR_TAG} You will need to install:
             sudo pip install -U sphinx
             sudo pip install sphinx_rtd_theme"
-        clean_documentation
         exit -1
     fi
     rm -rf ${generate_doc_folder}/html
@@ -458,7 +458,6 @@ function build_documentation()
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating PDF documentation"
         echo -e "${ERROR_TAG} On Linux systems you might need to install 'texlive-full'."
-        clean_documentation
         exit -1
     fi
     rm -rf ${generate_doc_folder}/pdf
@@ -467,7 +466,6 @@ function build_documentation()
     echo -e "${INFO_TAG} PDF Generation successful. You will find it under:
         ${generate_doc_folder}/pdf/RTI_Perftest.pdf"
 
-    clean_documentation
 }
 
 ################################################################################
