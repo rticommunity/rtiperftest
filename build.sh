@@ -14,6 +14,8 @@ bin_folder="${script_location}/bin"
 cStringifyFile_script="${script_location}/resource/script/cStringifyFile.pl"
 qos_file="${script_location}/perftest_qos_profiles.xml"
 doc_folder="${script_location}/srcDoc"
+generate_doc_folder="${script_location}/doc"
+
 
 # Default values:
 BUILD_CPP=1
@@ -441,11 +443,11 @@ function build_documentation()
         clean_documentation
         exit -1
     fi
-    rm -rf ${doc_folder}/doc/html
-    mkdir -p ${doc_folder}/doc/html
-    cp -rf ${doc_folder}/_build/html ${doc_folder}/doc/
+    rm -rf ${generate_doc_folder}/html
+    mkdir -p ${generate_doc_folder}/html
+    cp -rf ${doc_folder}/_build/html ${generate_doc_folder}/
     echo -e "${INFO_TAG} HTML Generation successful. You will find it under:
-        ${doc_folder}/doc/html/index.html"
+        ${generate_doc_folder}/html/index.html"
 
 
     # Generate PDF
@@ -455,16 +457,15 @@ function build_documentation()
     ${MAKE_EXE} -f Makefile latexpdf > /dev/null 2>&1
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating PDF documentation"
-        echo -e "${ERROR_TAG} You will need to install:
-            sudo apt-get install texlive-full"
+        echo -e "${ERROR_TAG} On Linux systems you might need to install 'texlive-full'."
         clean_documentation
         exit -1
     fi
-    rm -rf ${doc_folder}/doc/pdf
-    mkdir -p ${doc_folder}/doc/pdf
-    cp -rf ${doc_folder}/_build/latex/RTI_Perftest.pdf ${doc_folder}/doc/pdf/RTI_Perftest.pdf
+    rm -rf ${generate_doc_folder}/pdf
+    mkdir -p ${generate_doc_folder}/pdf
+    cp -rf ${doc_folder}/_build/latex/RTI_Perftest.pdf ${generate_doc_folder}/pdf/RTI_Perftest_UsersManual.pdf
     echo -e "${INFO_TAG} PDF Generation successful. You will find it under:
-        ${build_documentation_folder}/doc/pdf/RTI_Perftest.pdf"
+        ${generate_doc_folder}/pdf/RTI_Perftest.pdf"
 
     clean_documentation
 }
