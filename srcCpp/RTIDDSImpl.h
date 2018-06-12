@@ -6,12 +6,14 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
+#include <stdexcept> // This header is part of the error handling library.
 #include <string>
 #include <algorithm>
 #include <map>
 #include "MessagingIF.h"
 #include "perftestSupport.h"
 #include "PerftestTransport.h"
+
 
 #ifdef RTI_CUSTOM_TYPE
 #include "CustomType.h"
