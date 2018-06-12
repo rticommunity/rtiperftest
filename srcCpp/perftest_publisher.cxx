@@ -566,16 +566,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _NumSubscribers = strtol(argv[i], NULL, 10);
-            if (_useSockets) {
-                _MessagingArgv[_MessagingArgc++] = DDS_String_dup(argv[i - 1]);
-                _MessagingArgv[_MessagingArgc++] = DDS_String_dup(argv[i]);
-
-                if (_MessagingArgv[_MessagingArgc - 1] == NULL
-                    || _MessagingArgv[_MessagingArgc - 2] == NULL) {
-                    fprintf(stderr, "Problem allocating memory\n");
-                    return false;
-                }
-            }
         }
         else if (IS_OPTION(argv[i], "-numPublishers"))
         {
@@ -583,17 +573,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             {
                 fprintf(stderr, "Missing <count> after -numPublishers\n");
                 return false;
-            }
-            _NumPublishers = strtol(argv[i], NULL, 10);
-            if (_useSockets) {
-                _MessagingArgv[_MessagingArgc++] = DDS_String_dup(argv[i - 1]);
-                _MessagingArgv[_MessagingArgc++] = DDS_String_dup(argv[i]);
-
-                if (_MessagingArgv[_MessagingArgc - 1] == NULL
-                    || _MessagingArgv[_MessagingArgc - 2] == NULL) {
-                    fprintf(stderr, "Problem allocating memory\n");
-                    return false;
-                }
             }
         }
         else if (IS_OPTION(argv[i], "-scan"))
@@ -1655,12 +1634,15 @@ class LatencyListener : public IMessagingCB
         );
         fflush(stdout);
 
-        printf("Serialization time per sample: %0.3f us\n",
+        //TODO: made it work with custom data etc..
+        unsigned int iterations = 10000;
+        printf("Serialization/Deserialization time per sample: %0.3f / %0.3f us\n",
                RTIDDSImpl<TestData_t>::ObtainSerializeTimeCost(
-                       10000, last_data_length + perftest_cpp::OVERHEAD_BYTES));
-        printf("Deserialization time per sample: %0.3f us\n",
+                       iterations,
+                       last_data_length + perftest_cpp::OVERHEAD_BYTES),
                RTIDDSImpl<TestData_t>::ObtainDeserializeTimeCost(
-                       10000, last_data_length + perftest_cpp::OVERHEAD_BYTES));
+                       iterations,
+                       last_data_length + perftest_cpp::OVERHEAD_BYTES));
 
         latency_sum = 0;
         latency_sum_square = 0;
@@ -1945,11 +1927,12 @@ int perftest_cpp::Publisher()
         return -1;
     }
 
+    struct RTIOsapiThread * announcementThread = NULL;
     if (!_MessagingImpl->SupportListener())
     {
         announcement_reader_listener = new AnnouncementListener(announcement_reader);
 
-        RTIOsapiThread_new(
+        announcementThread = RTIOsapiThread_new(
                 "AnnouncementThread",
                 RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
                 RTI_OSAPI_THREAD_OPTION_DEFAULT,
@@ -2254,29 +2237,38 @@ int perftest_cpp::Publisher()
         printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
     }
 
+    announcement_reader_listener->end_test = true;
+    reader_listener->end_test = true;
+
+    if (announcement_reader != NULL) {
+        delete (announcement_reader);
+    }
+
+    if (reader != NULL) {
+        delete (reader);
+    }
+
+    if (writer != NULL) {
+        delete (writer);
+    }
+
+    if (reader_listener != NULL) {
+        delete (reader_listener);
+    }
+
+    //TODO: Look for a solution for this.
+    perftest_cpp::MilliSleep(1000);
+
+    if (announcement_reader_listener != NULL) {
+        delete (announcement_reader_listener);
+    }
+
     if (listenerThread != NULL) {
         RTIOsapiThread_delete(listenerThread);
     }
 
-    if (reader_listener != NULL) {
-        delete(reader_listener);
-    }
-
-
-    if (reader != NULL) {
-        delete(reader);
-    }
-
-    if (writer != NULL) {
-        delete(writer);
-    }
-
-    if (announcement_reader != NULL) {
-        delete(announcement_reader);
-    }
-
-    if (announcement_reader_listener != NULL) {
-        delete(announcement_reader_listener);
+    if (announcementThread != NULL) {
+        RTIOsapiThread_delete(announcementThread);
     }
 
     delete []message.data;

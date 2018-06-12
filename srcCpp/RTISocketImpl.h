@@ -24,6 +24,7 @@
 
 //TODO: typedef std::vector<NDDS_Transport_Resource_t> vectorTransportResources;
 
+struct peerData;
 class RTISocketImpl : public IMessaging {
   public:
     RTISocketImpl();
@@ -110,31 +111,7 @@ class RTISocketImpl : public IMessaging {
 
   public:
 
-    std::vector<NDDS_Transport_SendResource_t> _resourcesList;
-    struct peerInfo {
-        // Each resource it's pointing to one on resourceList
-        NDDS_Transport_SendResource_t *resource;
-        NDDS_Transport_Address_t transportAddr;
-        unsigned int port;
-
-        peerInfo()
-        {
-            resource = NULL;
-            RTIOsapiMemory_zero(
-                    &transportAddr, sizeof(NDDS_Transport_Address_t));
-            port = 0;
-        }
-        peerInfo(
-                NDDS_Transport_SendResource_t *res,
-                NDDS_Transport_Address_t addr,
-                unsigned int p)
-        {
-            resource = res;
-            transportAddr = addr;
-            port = p;
-        }
-    };
-    std::vector<peerInfo> _peersInfoList;
+    std::vector<peerData> _peersInfoList;
 
     /*
      * Resources reserved by a participant
@@ -143,9 +120,35 @@ class RTISocketImpl : public IMessaging {
     static const int RESOURCES_PER_PARTICIPANT;
 };
 
+struct peerData {
+    public:
+        // The resources created
+        static std::vector<NDDS_Transport_SendResource_t> resourcesList;
+
+        // Each resource it's pointing to one on resourceList
+        NDDS_Transport_SendResource_t *resource;
+        NDDS_Transport_Address_t transportAddr;
+        unsigned int port;
+
+        peerData()
+        {
+            resource = NULL;
+            RTIOsapiMemory_zero(&transportAddr, sizeof(NDDS_Transport_Address_t));
+            port = 0;
+        }
+        peerData(
+                NDDS_Transport_SendResource_t *res,
+                NDDS_Transport_Address_t addr,
+                unsigned int p)
+        {
+            resource = res;
+            transportAddr = addr;
+            port = p;
+        }
+};
+
 char *InterfaceNameToAddress(const char *nicName);
 
-int NDDS_Transport_UDPv4_get_num_multicast_interfaces(
-        struct NDDS_Transport_UDP *plugin);
+int GetNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin);
 
 #endif // __RTISOCKETIMPL_H__
