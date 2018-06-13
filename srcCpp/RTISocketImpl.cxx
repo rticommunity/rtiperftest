@@ -1,12 +1,10 @@
 /*
- * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
 
 #include "RTISocketImpl.h"
-
-/*TODO: check if this can be remove*/
 
 #if defined(RTI_WIN32)
 #pragma warning(push)
@@ -35,7 +33,7 @@ RTISocketImpl::RTISocketImpl() :
         _isScan(false),
         _isPublisher(false),
         _batchSize(0),
-        _peer_host_count(0),
+        _peerHostCount(0),
         _basePort(7400),
         _useBlocking(true),
         _transport(),
@@ -52,6 +50,7 @@ RTISocketImpl::RTISocketImpl() :
     // Set default interface
     _transport.allowInterfaces = std::string("127.0.0.1");
 
+    // Reserve space for the peers
     peerData::resourcesList.reserve(RTIPERFTEST_MAX_PEERS);
 
 }
@@ -61,7 +60,6 @@ RTISocketImpl::RTISocketImpl() :
  */
 void RTISocketImpl::Shutdown()
 {
-    //TODO: Check errors
     if (_plugin != NULL) {
         _plugin->delete_cEA(_plugin, NULL);
     }
@@ -106,67 +104,68 @@ void RTISocketImpl::PrintCmdLineHelp() {
  * ParseConfig
  */
 bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
-    unsigned long _scan_max_size = 0;
+    unsigned long _scanMaxSize = 0;
     int i;
 
+    bool found = false;
+    std::vector<std::string>::iterator it;
+
     /* Parameters not supported by sockets */
-    std::vector<std::string> no_socket_params_v;
+    std::vector<std::string> noSocketParamsV;
 
     /*C++98 dont support extended initializer lists*/
-    no_socket_params_v.push_back(std::string("-unbounded"));
-    no_socket_params_v.push_back(std::string("-sendQueueSize"));
-    no_socket_params_v.push_back(std::string("-heartbeatPeriod"));
-    no_socket_params_v.push_back(std::string("-fastHeartbeatPeriod"));
-    no_socket_params_v.push_back(std::string("-qosFile"));
-    no_socket_params_v.push_back(std::string("-qosLibrary"));
-    no_socket_params_v.push_back(std::string("-durability"));
-    no_socket_params_v.push_back(std::string("-dynamicData"));
-    no_socket_params_v.push_back(std::string("-noDirectCommunication"));
-    no_socket_params_v.push_back(std::string("-instances"));
-    no_socket_params_v.push_back(std::string("-instanceHashBuckets"));
-    no_socket_params_v.push_back(std::string("-keepDurationUsec"));
-    no_socket_params_v.push_back(std::string("-noPositiveAcks"));
-    no_socket_params_v.push_back(std::string("-waitsetDelayUsec"));
-    no_socket_params_v.push_back(std::string("-waitsetEventCount"));
-    no_socket_params_v.push_back(std::string("-enableAutoThrottle"));
-    no_socket_params_v.push_back(std::string("-enableTurboMode"));
-    no_socket_params_v.push_back(std::string("-noXmlQos"));
-    no_socket_params_v.push_back(std::string("-asynchronous"));
-    no_socket_params_v.push_back(std::string("-flowController"));
-    no_socket_params_v.push_back(std::string("-cft"));
-    no_socket_params_v.push_back(std::string("-writeInstance"));
-    no_socket_params_v.push_back(std::string("-enableTCP"));
-    no_socket_params_v.push_back(std::string("-enableUDPv6"));
-    no_socket_params_v.push_back(std::string("-allowInterfaces"));
-    no_socket_params_v.push_back(std::string("-transportServerBindPort"));
-    no_socket_params_v.push_back(std::string("-transportWan"));
-    no_socket_params_v.push_back(std::string("-transportCertAuthority"));
-    no_socket_params_v.push_back(std::string("-transportCertFile"));
-    no_socket_params_v.push_back(std::string("-transportPrivateKey"));
-    no_socket_params_v.push_back(std::string("-transportWanServerAddress"));
-    no_socket_params_v.push_back(std::string("-transportWanServerPort"));
-    no_socket_params_v.push_back(std::string("-transportWanId"));
-    no_socket_params_v.push_back(std::string("-transportSecureWan"));
+    noSocketParamsV.push_back(std::string("-unbounded"));
+    noSocketParamsV.push_back(std::string("-sendQueueSize"));
+    noSocketParamsV.push_back(std::string("-heartbeatPeriod"));
+    noSocketParamsV.push_back(std::string("-fastHeartbeatPeriod"));
+    noSocketParamsV.push_back(std::string("-qosFile"));
+    noSocketParamsV.push_back(std::string("-qosLibrary"));
+    noSocketParamsV.push_back(std::string("-durability"));
+    noSocketParamsV.push_back(std::string("-dynamicData"));
+    noSocketParamsV.push_back(std::string("-noDirectCommunication"));
+    noSocketParamsV.push_back(std::string("-instances"));
+    noSocketParamsV.push_back(std::string("-instanceHashBuckets"));
+    noSocketParamsV.push_back(std::string("-keepDurationUsec"));
+    noSocketParamsV.push_back(std::string("-noPositiveAcks"));
+    noSocketParamsV.push_back(std::string("-waitsetDelayUsec"));
+    noSocketParamsV.push_back(std::string("-waitsetEventCount"));
+    noSocketParamsV.push_back(std::string("-enableAutoThrottle"));
+    noSocketParamsV.push_back(std::string("-enableTurboMode"));
+    noSocketParamsV.push_back(std::string("-noXmlQos"));
+    noSocketParamsV.push_back(std::string("-asynchronous"));
+    noSocketParamsV.push_back(std::string("-flowController"));
+    noSocketParamsV.push_back(std::string("-cft"));
+    noSocketParamsV.push_back(std::string("-writeInstance"));
+    noSocketParamsV.push_back(std::string("-enableTCP"));
+    noSocketParamsV.push_back(std::string("-enableUDPv6"));
+    noSocketParamsV.push_back(std::string("-allowInterfaces"));
+    noSocketParamsV.push_back(std::string("-transportServerBindPort"));
+    noSocketParamsV.push_back(std::string("-transportWan"));
+    noSocketParamsV.push_back(std::string("-transportCertAuthority"));
+    noSocketParamsV.push_back(std::string("-transportCertFile"));
+    noSocketParamsV.push_back(std::string("-transportPrivateKey"));
+    noSocketParamsV.push_back(std::string("-transportWanServerAddress"));
+    noSocketParamsV.push_back(std::string("-transportWanServerPort"));
+    noSocketParamsV.push_back(std::string("-transportWanId"));
+    noSocketParamsV.push_back(std::string("-transportSecureWan"));
 
-    std::string params_info = std::string(
+    std::string paramsInfo = std::string(
             "Parameters not supported by sockets: (Delete them and try again)\n");
 
     /* Print all the non compatibles params together and return */
-    bool found = false;
-    std::vector<std::string>::iterator it;
-    for (int i = 0; i < argc; ++i ) {
+    for (int j = 0; j < argc; ++j ) {
         it = find(
-                no_socket_params_v.begin(),
-                no_socket_params_v.end(),
-                argv[i]);
-        if (it != no_socket_params_v.end()) {
-            params_info += std::string("\t" + std::string(argv[i]) + "\n" );
+                noSocketParamsV.begin(),
+                noSocketParamsV.end(),
+                argv[j]);
+        if (it != noSocketParamsV.end()) {
+            paramsInfo += std::string("\t" + std::string(argv[j]) + "\n" );
             found = true;
         }
     }
 
     if (found) {
-        fprintf(stderr, "%s", params_info.c_str());
+        fprintf(stderr, "%s", paramsInfo.c_str());
         return false;
     }
 
@@ -180,17 +179,20 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
             _isScan = true;
             if ((i != (argc - 1)) && *argv[1 + i] != '-') {
                 ++i;
-                unsigned long aux_scan;
+                unsigned long auxScan;
                 char *pch;
                 pch = strtok(argv[i], ":");
                 while (pch != NULL) {
-                    if (sscanf(pch, "%lu", &aux_scan) != 1) {
-                        fprintf(stderr, "-scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'\n");
+                    if (sscanf(pch, "%lu", &auxScan) != 1) {
+                        fprintf(
+                                stderr,
+                                "-scan <size> value must have the format '-scan"
+                                " <size1>:<size2>:...:<sizeN>'\n");
                         return false;
                     }
                     pch = strtok(NULL, ":");
-                    if (aux_scan >= _scan_max_size) {
-                        _scan_max_size = aux_scan;
+                    if (auxScan >= _scanMaxSize) {
+                        _scanMaxSize = auxScan;
                     }
                 }
             }
@@ -205,12 +207,18 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
             _DataLen = strtol(argv[i], NULL, 10);
 
             if (_DataLen < (unsigned long)perftest_cpp::OVERHEAD_BYTES) {
-                fprintf(stderr, "-dataLen must be >= %d\n", perftest_cpp::OVERHEAD_BYTES);
+                fprintf(
+                        stderr,
+                        "-dataLen must be >= %d\n",
+                        perftest_cpp::OVERHEAD_BYTES);
                 return false;
             }
 
             if (_DataLen > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE) {
-                fprintf(stderr, "-dataLen must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
+                fprintf(
+                        stderr,
+                        "-dataLen must be <= %d\n",
+                        MAX_PERFTEST_SAMPLE_SIZE);
                 return false;
             }
 
@@ -236,24 +244,30 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
 
             switch (verbosityLevel) {
             case 0:
-                NDDSConfigLogger::get_instance()->set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_SILENT);
+                NDDSConfigLogger::get_instance()->set_verbosity(
+                        NDDS_CONFIG_LOG_VERBOSITY_SILENT);
                 fprintf(stderr, "Setting verbosity to SILENT\n");
                 break;
             case 1:
-                NDDSConfigLogger::get_instance()->set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_ERROR);
+                NDDSConfigLogger::get_instance()->set_verbosity(
+                        NDDS_CONFIG_LOG_VERBOSITY_ERROR);
                 fprintf(stderr, "Setting verbosity to ERROR\n");
                 break;
             case 2:
-                NDDSConfigLogger::get_instance()->set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_WARNING);
+                NDDSConfigLogger::get_instance()->set_verbosity(
+                        NDDS_CONFIG_LOG_VERBOSITY_WARNING);
                 fprintf(stderr, "Setting verbosity to WARNING\n");
                 break;
             case 3:
-                NDDSConfigLogger::get_instance()->set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+                NDDSConfigLogger::get_instance()->set_verbosity(
+                        NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
                 fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
                 break;
             default:
-                fprintf(stderr,
-                        "Invalid value for the verbosity parameter. Setting verbosity to ERROR (1)\n");
+                fprintf(
+                        stderr,
+                        "Invalid value for the verbosity parameter. "
+                        "Setting verbosity to ERROR (1)\n");
                 verbosityLevel = 1;
                 break;
             }
@@ -269,10 +283,13 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
                 fprintf(stderr, "Missing <address> after -peer\n");
                 return false;
             }
-            if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
-                _peer_host[_peer_host_count++] = DDS_String_dup(argv[i]);
+            if (_peerHostCount +1 < RTIPERFTEST_MAX_PEERS) {
+                _peer_host[_peerHostCount++] = DDS_String_dup(argv[i]);
             } else {
-                fprintf(stderr,"The maximun of -initial peers is %d\n", RTIPERFTEST_MAX_PEERS);
+                fprintf(
+                        stderr,
+                        "The maximun of -initial peers is %d\n",
+                        RTIPERFTEST_MAX_PEERS);
                 return false;
             }
         }
@@ -285,8 +302,11 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
             }
             _batchSize = strtol(argv[i], NULL, 10);
 
-            if (_batchSize < 0 || _batchSize > (unsigned int)MAX_SYNCHRONOUS_SIZE) {
-                fprintf(stderr, "Batch size '%d' should be between [0,%d]\n",
+            if (_batchSize < 0
+                    || _batchSize > (unsigned int) MAX_SYNCHRONOUS_SIZE) {
+                fprintf(
+                        stderr,
+                        "Batch size '%d' should be between [0,%d]\n",
                         _batchSize,
                         MAX_SYNCHRONOUS_SIZE);
                 return false;
@@ -316,7 +336,7 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
     }
 
     if (_isScan) {
-        _DataLen = _scan_max_size;
+        _DataLen = _scanMaxSize;
     }
 
     if (_batchSize != 0 && _DataLen > _batchSize) {
@@ -342,7 +362,7 @@ bool RTISocketImpl::ParseConfig(int argc, char *argv[]) {
         return false;
     }
 
-    if (_transport.useMulticast && (_peer_host_count > 0)) {
+    if (_transport.useMulticast && (_peerHostCount > 0)) {
         fprintf(stderr,
                 "\tFor multicast, set only one Subscriber and one Publisher\n");
         return false;
@@ -374,18 +394,18 @@ std::string RTISocketImpl::PrintConfiguration()
     // Ports
     stringStream << "\tThe following ports will be used: ";
     if (_isPublisher) {
-        stringStream << GetUnicastPort(ANNOUNCEMENT_TOPIC_NAME) << " - "
-                     << GetUnicastPort(LATENCY_TOPIC_NAME) << "\n";
+        stringStream << GetReceiveUnicastPort(ANNOUNCEMENT_TOPIC_NAME) << " - "
+                     << GetReceiveUnicastPort(LATENCY_TOPIC_NAME) << "\n";
     } else {
-        stringStream << GetUnicastPort(THROUGHPUT_TOPIC_NAME) << "\n";
+        stringStream << GetReceiveUnicastPort(THROUGHPUT_TOPIC_NAME) << "\n";
     }
 
     // set initial peers and not use multicast
-    if (_peer_host_count > 0) {
+    if (_peerHostCount > 0) {
         stringStream << "\tInitial peers: ";
-        for (int i = 0; i < _peer_host_count; ++i) {
+        for (int i = 0; i < _peerHostCount; ++i) {
             stringStream << _peer_host[i];
-            if (i == _peer_host_count - 1) {
+            if (i == _peerHostCount - 1) {
                 stringStream << "\n";
             } else {
                 stringStream << ", ";
@@ -817,64 +837,13 @@ bool RTISocketImpl::Initialize(int argc, char *argv[]) {
 /*********************************************************
  * GetUnicastPort
  */
-unsigned int RTISocketImpl::GetUnicastPort(const char *topicName, int idProvided) //subscriberId
-{
-
-    int participantID = 0;
-
-    if (!_transport.useMulticast) {
-        if (idProvided >= 0) {
-            participantID = idProvided;
-        } else {
-            participantID =
-                    _isPublisher ? perftest_cpp::_PubID : perftest_cpp::_SubID;
-        }
-    }
-
-    int portOffset = 0;
-    if (_isPublisher){
-        if (!strcmp(topicName, LATENCY_TOPIC_NAME)) {
-            portOffset += 0;
-        }
-        if (!strcmp(topicName, ANNOUNCEMENT_TOPIC_NAME)) {
-            portOffset += 1;
-        }
-
-    } else {
-        if (!strcmp(topicName, LATENCY_TOPIC_NAME)) {
-            portOffset += 0;
-            participantID = 0; //Pub always will be with ID 0
-        }
-        if (!strcmp(topicName, ANNOUNCEMENT_TOPIC_NAME)) {
-            portOffset += 1;
-            participantID = 0; // Pub always will be with ID 0
-        }
-    }
-
-    if (!strcmp(topicName, THROUGHPUT_TOPIC_NAME)) {
-        portOffset += 2;
-    }
-
-    struct DDS_RtpsWellKnownPorts_t wellKnownPorts =
-            DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
-
-    return PRESRtps_getWellKnownUnicastPort(
-            _DomainID, /* domainId */
-            participantID, /* participantId */
-            wellKnownPorts.port_base,
-            wellKnownPorts.domain_id_gain,
-            wellKnownPorts.participant_id_gain,
-            wellKnownPorts.builtin_unicast_port_offset + portOffset);
-}
 unsigned int
 RTISocketImpl::GetSendUnicastPort(const char *topicName, unsigned int subId)
 {
-    
-    if (!strcmp(topicName, LATENCY_TOPIC_NAME)) {
-        portOffset += 0;
-    }
+    unsigned int portOffset = 0;
+
     if (!strcmp(topicName, ANNOUNCEMENT_TOPIC_NAME)) {
-        portOffset += 1;
+        portOffset = 1;
     }
 
     struct DDS_RtpsWellKnownPorts_t wellKnownPorts =
@@ -882,7 +851,7 @@ RTISocketImpl::GetSendUnicastPort(const char *topicName, unsigned int subId)
 
     return PRESRtps_getWellKnownUnicastPort(
             _DomainID, /* domainId */
-            subId, /* participantId */
+            _isPublisher ? subId + 1 : 0, /* participantId */
             wellKnownPorts.port_base,
             wellKnownPorts.domain_id_gain,
             wellKnownPorts.participant_id_gain,
@@ -894,6 +863,9 @@ RTISocketImpl::GetReceiveUnicastPort(const char *topicName)
 
     unsigned int portOffset = 0;
 
+    if (!strcmp(topicName, ANNOUNCEMENT_TOPIC_NAME)) {
+        portOffset = 1;
+    }
 
     struct DDS_RtpsWellKnownPorts_t wellKnownPorts =
             DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
@@ -934,7 +906,9 @@ bool RTISocketImpl::GetMulticastTransportAddr(
     }
 
     retCode = NDDS_Transport_UDP_string_to_address_cEA(
-            _plugin, &addr, _transport.getMulticastAddr(topicName).c_str());
+            _plugin,
+            &addr,
+            _transport.getMulticastAddr(topicName).c_str());
 
     return retCode;
 }
@@ -959,11 +933,11 @@ IMessagingWriter *RTISocketImpl::CreateWriter(const char *topicName)
     NDDS_Transport_Address_t actualAddr;
     int actualPort = 0;
     bool shared = false;
-    for (int i = 0; i < _peer_host_count; i++) {
+    for (int i = 0; i < _peerHostCount; i++) {
         unsigned int j;
         shared = false;
         actualAddr = (isMulticastAddr) ? multicastAddr : _peersMap[i].first;
-        actualPort = GetUnicastPort(topicName, _peersMap[i].second);
+        actualPort = GetSendUnicastPort(topicName, _peersMap[i].second);
 
         for (j = 0; j < peerData::resourcesList.size() && !shared; ++j) {
             shared = _plugin->share_sendresource_srEA(
@@ -1023,7 +997,7 @@ RTISocketImpl::CreateReader(const char *topicName, IMessagingCB *callback)
         return NULL;
     }
 
-    recv_port = GetUnicastPort(topicName);
+    recv_port = GetReceiveUnicastPort(topicName);
 
     bool result = true;
     result = _plugin->create_recvresource_rrEA(
@@ -1058,15 +1032,16 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
     char *interface = NULL;
     interface = DDS_String_dup(_transport.allowInterfaces.c_str());
     if (interface == NULL) {
-        fprintf(stderr,
+        fprintf(
+                stderr,
                 "Problem allocating memory on ConfigureSocketsTransport\n");
         return false;
     }
 
     /* If no peer is given, assume a default one */
-    if (_peer_host_count == 0) {
+    if (_peerHostCount == 0) {
         _peer_host[0] = (char *) "127.0.0.1";
-        _peer_host_count = 1;
+        _peerHostCount = 1;
     }
 
     /* Worker configure */
@@ -1175,7 +1150,7 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
             char addr_sub[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
             int id_sub = 0;
 
-            for (int i = 0; i < _peer_host_count; i++) {
+            for (int i = 0; i < _peerHostCount; i++) {
                 id_sub = 0;
                 sscanf(_peer_host[i], "%[^:]:%d", addr_sub, &id_sub);
 
@@ -1196,6 +1171,7 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
     }
 
     case TRANSPORT_SHMEM:
+    {
 
         /*_Plugin configure for shared memory*/
         shmem_prop.parent.message_size_max =
@@ -1218,40 +1194,14 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
             return false;
         }
 
-        NDDS_Transport_Interface_t transportInterface;
-        RTIOsapiMemory_zero(
-                &transportInterface,
-                sizeof(NDDS_Transport_Interface_t));
-
-        /* This will allways return a address full of zeros*/
-        int foundMore;
-        int count;
-        _plugin->get_receive_interfaces_cEA(
-                _plugin,
-                &foundMore,
-                &count,
-                &transportInterface,
-                1);
-
-        /* No real need of check it */
-        if (count != 1) {
-            fprintf(stderr, "Any valid interface for SHMEM found\n");
-            return false;
-        }
-        _nicAddress = transportInterface.address;
-
-        /*TODO: Maybe change all of this for a Full Zeros address*/
-
-        _peersMap.push_back(std::pair<NDDS_Transport_Address_t, int>(
-                _nicAddress, 0));
-
         /*
          * For SHMEM we dont want to print any interface on the
          * printTransportConfigurationSummary()
          */
-        //_transport.allowInterfaces = std::string();
+        _transport.allowInterfaces = std::string();
 
         break;
+    }
 
     case TRANSPORT_UDPv6:
     case TRANSPORT_TCPv4:
@@ -1263,6 +1213,8 @@ bool RTISocketImpl::ConfigureSocketsTransport() {
         return false;
 
     } // End Switch
+
+
 
     _transport.printTransportConfigurationSummary();
 

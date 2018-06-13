@@ -20,9 +20,6 @@
 #include "perftestPlugin.h"
 
 #define RTIPERFTEST_MAX_PEERS 1024
-#define RTIPERFTEST_MAX_PORT_ATTEMPT 1024
-
-//TODO: typedef std::vector<NDDS_Transport_Resource_t> vectorTransportResources;
 
 struct peerData;
 class RTISocketImpl : public IMessaging {
@@ -70,7 +67,8 @@ class RTISocketImpl : public IMessaging {
     /*
      * This function calculate the port depending of the Id of the subscriber.
      */
-    unsigned int GetSendUnicastPort(const char *topicName, int subId = 0);
+    unsigned int
+    GetSendUnicastPort(const char *topicName, unsigned int subId = 0);
     /*
      * This function calculate the ports thats it gonna be use for receive
      * resources
@@ -96,7 +94,7 @@ class RTISocketImpl : public IMessaging {
     bool _isScan;
     bool _isPublisher;
     unsigned int _batchSize;
-    int _peer_host_count;
+    int _peerHostCount;
     char *_peer_host[RTIPERFTEST_MAX_PEERS];
     unsigned int _basePort;
     bool _useBlocking;
