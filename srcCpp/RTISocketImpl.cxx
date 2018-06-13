@@ -866,6 +866,47 @@ unsigned int RTISocketImpl::GetUnicastPort(const char *topicName, int idProvided
             wellKnownPorts.participant_id_gain,
             wellKnownPorts.builtin_unicast_port_offset + portOffset);
 }
+unsigned int
+RTISocketImpl::GetSendUnicastPort(const char *topicName, unsigned int subId)
+{
+    
+    if (!strcmp(topicName, LATENCY_TOPIC_NAME)) {
+        portOffset += 0;
+    }
+    if (!strcmp(topicName, ANNOUNCEMENT_TOPIC_NAME)) {
+        portOffset += 1;
+    }
+
+    struct DDS_RtpsWellKnownPorts_t wellKnownPorts =
+            DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
+
+    return PRESRtps_getWellKnownUnicastPort(
+            _DomainID, /* domainId */
+            subId, /* participantId */
+            wellKnownPorts.port_base,
+            wellKnownPorts.domain_id_gain,
+            wellKnownPorts.participant_id_gain,
+            wellKnownPorts.builtin_unicast_port_offset + portOffset);
+}
+unsigned int
+RTISocketImpl::GetReceiveUnicastPort(const char *topicName)
+{
+
+    unsigned int portOffset = 0;
+
+
+    struct DDS_RtpsWellKnownPorts_t wellKnownPorts =
+            DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
+
+    return PRESRtps_getWellKnownUnicastPort(
+            _DomainID, /* domainId */
+            _isPublisher ? 0 : perftest_cpp::_SubID + 1, /* participantId */
+            wellKnownPorts.port_base,
+            wellKnownPorts.domain_id_gain,
+            wellKnownPorts.participant_id_gain,
+            wellKnownPorts.builtin_unicast_port_offset + portOffset);
+}
+
 
 /*********************************************************
  * GetMulticastTransportAddr

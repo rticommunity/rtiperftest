@@ -68,10 +68,14 @@ class RTISocketImpl : public IMessaging {
     bool ConfigureSocketsTransport();
 
     /*
-     * This function calculate the port depending of the resource we want to
-     * create and the domain.
+     * This function calculate the port depending of the Id of the subscriber.
      */
-    unsigned int GetUnicastPort(const char *topicName, int idProvided = -1);
+    unsigned int GetSendUnicastPort(const char *topicName, int subId = 0);
+    /*
+     * This function calculate the ports thats it gonna be use for receive
+     * resources
+     */
+    unsigned int GetReceiveUnicastPort(const char *topicName);
 
     bool GetMulticastTransportAddr(
             const char *topicName,
