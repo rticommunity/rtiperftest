@@ -1201,7 +1201,8 @@ namespace PerformanceTest {
 
                     if (!UInt64.TryParse(argv[i], out _executionTime))
                     {
-                        Console.Error.Write("Bad number for -executionTime\n");
+                        Console.Error.Write(
+                                "-executionTime value must be a positive number greater than 0\n");
                         return false;
                     }
                 }

@@ -726,6 +726,12 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             }
             _executionTime = (unsigned int) strtol(argv[i], NULL, 10);
 
+            if (_executionTime <= 0) {
+                fprintf(stderr,
+                        "-executionTime value must be a positive number greater than 0\n");
+                return false;
+            }
+
         } else if (IS_OPTION(argv[i], "-cpu"))
         {
             _showCpu = true;

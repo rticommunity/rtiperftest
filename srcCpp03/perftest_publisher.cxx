@@ -722,13 +722,20 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-executionTime"))
         {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
                 std::cerr << "[Error] Missing <seconds> after -executionTime" << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
 
             }
+
             _executionTime = (unsigned int) strtol(argv[i], NULL, 10);
+
+            if (_executionTime <= 0) {
+                std::cerr << "[Error] -executionTime value must be a positive number "
+                          << "greater than 0"
+                          << std::endl;
+                return false;
+            }
 
         } else if (IS_OPTION(argv[i], "-cpu"))
         {
