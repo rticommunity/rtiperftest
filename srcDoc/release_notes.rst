@@ -51,8 +51,8 @@ Release Notes Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Fix incorrect parsing of the `-executionTime` command-line parameter
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Fix incorrect parsing of the `-executionTime` command-line parameter (#102)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In previous releases, for the Classic and Modern C++ API implementations,
 the `-executionTime <sec>` command-line parameter would ignore any Invalid
