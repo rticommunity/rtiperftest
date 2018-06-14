@@ -23,7 +23,7 @@ public:
     bool useSecurity;
     bool signPackages;
     bool dataEncrypted; // user data
-    bool subMessageEncrypted;   // submessage
+    bool subMessageEncrypted; // submessage
     bool discoveryEncrypted;
     std::string certAuthorityFile;
     std::string certificateFile;
@@ -42,11 +42,9 @@ public:
     /* PUBLIC METHODS */
 
     static std::map<std::string, unsigned int> getSecurityCmdLineArgs();
-
     std::string helpMessageString();
-
     bool parseSecurityOptions(int argc, char *argv[]);
-    bool validateSecureArgs(bool _isPublisher);
+    bool validateSecureArgs(bool isPublisher);
     void printSecurityConfigurationSummary();
 
 };

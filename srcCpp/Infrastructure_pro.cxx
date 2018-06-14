@@ -612,23 +612,22 @@ bool PerftestConfigureSecurity(
             file += "EncryptSubmessage";
         }
 
-        file = file + ".xml";
+        file += ".xml";
 
-        fprintf(
-                stdout,
+        fprintf(stdout,
                 "\tUsing pre-built governance file: \n\t./%s\n",
                 file.c_str());
         retcode = DDSPropertyQosPolicyHelper::add_property(
-                    qos.property,
-                    "com.rti.serv.secure.access_control.governance_file",
-                    file.c_str(),
-                    false);
+                qos.property,
+                "com.rti.serv.secure.access_control.governance_file",
+                file.c_str(),
+                false);
     } else {
         retcode = DDSPropertyQosPolicyHelper::add_property(
-                    qos.property,
-                    "com.rti.serv.secure.access_control.governance_file",
-                    security.governanceFile.c_str(),
-                    false);
+                qos.property,
+                "com.rti.serv.secure.access_control.governance_file",
+                security.governanceFile.c_str(),
+                false);
     }
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
@@ -638,10 +637,10 @@ bool PerftestConfigureSecurity(
 
     // permissions file
     retcode = DDSPropertyQosPolicyHelper::add_property(
-                qos.property,
-                "com.rti.serv.secure.access_control.permissions_file",
-                security.permissionsFile.c_str(),
-                false);
+            qos.property,
+            "com.rti.serv.secure.access_control.permissions_file",
+            security.permissionsFile.c_str(),
+            false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
                 "com.rti.serv.secure.access_control.permissions_file\n");
@@ -650,10 +649,10 @@ bool PerftestConfigureSecurity(
 
     // permissions authority file
     retcode = DDSPropertyQosPolicyHelper::add_property(
-                qos.property,
-                "com.rti.serv.secure.access_control.permissions_authority_file",
-                security.certAuthorityFile.c_str(),
-                false);
+            qos.property,
+            "com.rti.serv.secure.access_control.permissions_authority_file",
+            security.certAuthorityFile.c_str(),
+            false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
                 "com.rti.serv.secure.access_control.permissions_authority_file\n");
@@ -662,10 +661,10 @@ bool PerftestConfigureSecurity(
 
     // certificate authority
     retcode = DDSPropertyQosPolicyHelper::add_property(
-                qos.property,
-                "com.rti.serv.secure.authentication.ca_file",
-                security.certAuthorityFile.c_str(),
-                false);
+            qos.property,
+            "com.rti.serv.secure.authentication.ca_file",
+            security.certAuthorityFile.c_str(),
+            false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
                 "com.rti.serv.secure.authentication.ca_file\n");
@@ -674,10 +673,10 @@ bool PerftestConfigureSecurity(
 
     // public key
     retcode = DDSPropertyQosPolicyHelper::add_property(
-                qos.property,
-                "com.rti.serv.secure.authentication.certificate_file",
-                security.certificateFile.c_str(),
-                false);
+            qos.property,
+            "com.rti.serv.secure.authentication.certificate_file",
+            security.certificateFile.c_str(),
+            false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
                 "com.rti.serv.secure.authentication.certificate_file\n");
@@ -686,10 +685,10 @@ bool PerftestConfigureSecurity(
 
     // private key
     retcode = DDSPropertyQosPolicyHelper::add_property(
-                qos.property,
-                "com.rti.serv.secure.authentication.private_key_file",
-                security.privateKeyFile.c_str(),
-                false);
+            qos.property,
+            "com.rti.serv.secure.authentication.private_key_file",
+            security.privateKeyFile.c_str(),
+            false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
                 "com.rti.serv.secure.authentication.private_key_file\n");
@@ -700,10 +699,10 @@ bool PerftestConfigureSecurity(
         char buf[16];
         sprintf(buf, "%d", security.debugLevel);
         retcode = DDSPropertyQosPolicyHelper::add_property(
-                    qos.property,
-                    "com.rti.serv.secure.logging.log_level",
-                    buf,
-                    false);
+                qos.property,
+                "com.rti.serv.secure.logging.log_level",
+                buf,
+                false);
         if (retcode != DDS_RETCODE_OK) {
             printf("Failed to add property "
                     "com.rti.serv.secure.logging.log_level\n");

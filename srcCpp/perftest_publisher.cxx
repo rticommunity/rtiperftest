@@ -1909,9 +1909,8 @@ int perftest_cpp::Publisher()
         reader_listener->print_summary_latency();
         reader_listener->end_test = true;
     } else {
-        fprintf(
-            stderr,
-            "Latency results are only shown when -pidMultiPubTest = 0\n");
+        fprintf(stderr,
+                "Latency results are only shown when -pidMultiPubTest = 0\n");
     }
 
     if (_displayWriterStats) {

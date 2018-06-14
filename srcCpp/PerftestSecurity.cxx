@@ -3,7 +3,6 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-#ifdef RTI_SECURE_PERFTEST
 
 #include "PerftestSecurity.h"
 #include "Infrastructure_common.h"
@@ -45,7 +44,10 @@ PerftestSecurity::PerftestSecurity() :
 
 std::map<std::string, unsigned int> PerftestSecurity::getSecurityCmdLineArgs()
 {
-
+    /*
+     * This map specifies if a parameter will be followed by another argument.
+     * It is used to increment the index while parsing the parameters
+     */
     std::map<std::string, unsigned int> cmdLineArgsMap;
 
     cmdLineArgsMap["-secureEncryptDiscovery"] = 1;
@@ -90,7 +92,7 @@ std::string PerftestSecurity::helpMessageString()
 
 bool PerftestSecurity::parseSecurityOptions(int argc, char *argv[])
 {
-    // We will only parse the properties related with transports here.
+    // We will only parse the properties related with security here.
     for (int i = 0; i < argc; ++i) {
 
         if (IS_OPTION(argv[i], "-secureSign")) {
@@ -176,11 +178,11 @@ bool PerftestSecurity::parseSecurityOptions(int argc, char *argv[])
     return true;
 }
 
-bool PerftestSecurity::validateSecureArgs(bool _isPublisher)
+bool PerftestSecurity::validateSecureArgs(bool isPublisher)
 {
     if (useSecurity) {
         if (privateKeyFile.empty()) {
-            if (_isPublisher) {
+            if (isPublisher) {
                 privateKeyFile = SECURE_PRIVATEKEY_FILE_PUB;
             } else {
                 privateKeyFile = SECURE_PRIVATEKEY_FILE_SUB;
@@ -188,7 +190,7 @@ bool PerftestSecurity::validateSecureArgs(bool _isPublisher)
         }
 
         if (certificateFile.empty()) {
-            if (_isPublisher) {
+            if (isPublisher) {
                 certificateFile = SECURE_CERTIFICATE_FILE_PUB;
             } else {
                 certificateFile = SECURE_CERTIFICATE_FILE_SUB;
@@ -200,7 +202,7 @@ bool PerftestSecurity::validateSecureArgs(bool _isPublisher)
         }
 
         if (permissionsFile.empty()) {
-            if (_isPublisher) {
+            if (isPublisher) {
                 permissionsFile = SECURE_PERMISION_FILE_PUB;
             } else {
                 permissionsFile = SECURE_PERMISION_FILE_SUB;
@@ -263,7 +265,7 @@ void PerftestSecurity::printSecurityConfigurationSummary()
                  << (library.empty() ? "Not Specified" : library)
                  << "\n";
 
-    if( debugLevel != -1 ){
+    if (debugLevel != -1) {
         stringStream << "\tDebug level: " << debugLevel << "\n";
     }
 

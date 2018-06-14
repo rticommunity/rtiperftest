@@ -590,12 +590,11 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     };
 
   #ifdef RTI_SECURE_PERFTEST
-    if(!_security.parseSecurityOptions(argc, argv)) {
-        fprintf(stderr,
-                "Failure parsing the security options.\n");
+    if (!_security.parseSecurityOptions(argc, argv)) {
+        fprintf(stderr, "Failure parsing the security options.\n");
         return false;
     };
-  #endif
+#endif
 
     return true;
 }
@@ -1642,14 +1641,14 @@ bool RTIDDSImpl<T>::ConfigureDomainParticipantQos(DDS_DomainParticipantQos &qos)
     }
 
     // Set initial peers and not use multicast
-    if ( _peer_host_count > 0 ) {
+    if (_peer_host_count > 0) {
         printf("Initial peers:\n");
-        for ( int i = 0; i < _peer_host_count; ++i) {
+        for (int i = 0; i < _peer_host_count; ++i) {
             printf("\t%s\n", _peer_host[i]);
         }
         qos.discovery.initial_peers.from_array(
-            (const char **)_peer_host,
-            _peer_host_count);
+                (const char **)_peer_host,
+                _peer_host_count);
         qos.discovery.multicast_receive_addresses.length(0);
     }
 
@@ -1670,8 +1669,11 @@ bool RTIDDSImpl<T>::ConfigureDomainParticipantQos(DDS_DomainParticipantQos &qos)
   #endif // RTI_SECURE_PERFTEST
 
     if (_AutoThrottle) {
-        DDSPropertyQosPolicyHelper::add_property(qos.property,
-                "dds.domain_participant.auto_throttle.enable", "true", false);
+        DDSPropertyQosPolicyHelper::add_property(
+                qos.property,
+                "dds.domain_participant.auto_throttle.enable",
+                "true",
+                false);
     }
 
 
@@ -1701,18 +1703,20 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         return false;
     }
 
-    // only if we run the latency test we need to wait
-    // for pongs after sending pings
-    _pongSemaphore = _LatencyTest ?
-        PerftestSemaphore_new() :
-        NULL;
+    /*
+     * Only if we run the latency test we need to wait
+     * for pongs after sending pings
+     */
+    _pongSemaphore = _LatencyTest ? PerftestSemaphore_new() : NULL;
 
     if (!ConfigureDomainParticipantQos(qos)) {
         return false;
     }
 
     _participant = _factory->create_participant(
-        (DDS_DomainId_t)_DomainID, qos, listener,
+        (DDS_DomainId_t) _DomainID,
+        qos,
+        listener,
         DDS_INCONSISTENT_TOPIC_STATUS |
         DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
         DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
@@ -1828,8 +1832,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         if (_IsReliable) {
             // default: use the setting specified in the qos profile
             // dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
-        }
-        else {
+        } else {
             // override to best-effort
             dw_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
         }
@@ -1921,9 +1924,11 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     if (_useUnbounded > 0) {
         char buf[10];
         sprintf(buf, "%lu", _useUnbounded);
-        DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
-               "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
-               buf, false);
+        DDSPropertyQosPolicyHelper::add_property(
+                dw_qos.property,
+                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
+                buf,
+                false);
     }
 
     if (_InstanceCount > 1) {
@@ -2089,8 +2094,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) != 0)  {
         if (_IsReliable) {
             dr_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
-        }
-        else {
+        } else {
             dr_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
         }
     }
@@ -2153,9 +2157,12 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     if (_useUnbounded > 0) {
         char buf[10];
         sprintf(buf, "%lu", _useUnbounded);
-                DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
-                "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
-                buf, false);
+        DDSPropertyQosPolicyHelper::add_property(
+                dr_qos.property,
+                "dds.data_reader.history.memory_manager.fast_pool."
+                "pool_buffer_max_size",
+                buf,
+                false);
     }
 
     /* Create CFT Topic */

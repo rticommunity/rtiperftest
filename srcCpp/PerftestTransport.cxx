@@ -4,9 +4,6 @@
  */
 
 #include "PerftestTransport.h"
-// #ifdef RTI_SECURE_PERFTEST
-//   #include "PerftestSecurity.h"
-// #endif
 
 #include "Infrastructure_common.h"
 

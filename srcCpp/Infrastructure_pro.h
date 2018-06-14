@@ -32,7 +32,8 @@
  */
 
 #define PerftestSemaphore RTIOsapiSemaphore
-#define PerftestSemaphore_new() RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL)
+#define PerftestSemaphore_new() \
+        RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL)
 #define PerftestSemaphore_delete RTIOsapiSemaphore_delete
 #define PERFTEST_SEMAPHORE_TIMEOUT_INFINITE -1
 
