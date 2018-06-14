@@ -4,7 +4,7 @@
  */
 
 #include "RTIDDSImpl.h"
-#include "RTISocketImpl.h"
+#include "RTIRawTransportImpl.h"
 #include "perftest_cpp.h"
 #include "CpuMonitor.h"
 
@@ -95,8 +95,8 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
-    if (_useSockets) {
-        _MessagingImpl = new RTISocketImpl();
+    if (_useRawTransport) {
+        _MessagingImpl = new RTIRawTransportImpl();
     }
     else{
         if (_useUnbounded == 0) { //unbounded is not set
@@ -339,7 +339,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                          Specify 2 parameters: <start> and <end> to receive samples with a key in that range.\n"
         "\t                          Specify only 1 parameter to receive samples with that exact key.\n"
         "\t                          Default: Not set\n"
-        "\t-sockets                - Use sockets as a transport instead of DDS protocol.\n"
+        "\t-rawTransport           - Use sockets as a transport instead of DDS protocol.\n"
         "\t                          Support UDPv4 and Shared Memory (SHMEM). Default: UDPv4\n"
         "\t                          Many of the parameters are not supported with sockets.\n";
 
@@ -351,15 +351,15 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
         /*TODO: Any way to only print sockets help when it been used ?*/
         RTIDDSImpl<TestData_t>().PrintCmdLineHelp();
-        RTISocketImpl().PrintCmdLineHelp();
+        RTIRawTransportImpl().PrintCmdLineHelp();
 
         return false;
     }
 
     int i;
     for (i = 1; i < argc; ++i) {
-        if (IS_OPTION(argv[i], "-sockets")) {
-            _useSockets = true;
+        if (IS_OPTION(argv[i], "-rawTransport")) {
+            _useRawTransport = true;
             _UseReadThread = true;
         }
     }
@@ -367,8 +367,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         if (IS_OPTION(argv[i], "-help")) {
             fprintf(stderr, "%s", usage_string);
             fflush(stderr);
-            if (_useSockets) {
-                RTISocketImpl().PrintCmdLineHelp();
+            if (_useRawTransport) {
+                RTIRawTransportImpl().PrintCmdLineHelp();
             } else {
                 RTIDDSImpl<TestData_t>().PrintCmdLineHelp();
             }
@@ -399,9 +399,9 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         {
             _IsPub = false;
         }
-        else if (IS_OPTION(argv[i], "-sockets"))
+        else if (IS_OPTION(argv[i], "-rawTransport"))
         {
-            _useSockets = true;
+            _useRawTransport = true;
             _UseReadThread = true;
         }
         else if (IS_OPTION(argv[i], "-sidMultiSubTest"))
@@ -1916,7 +1916,10 @@ int perftest_cpp::Publisher()
      * A Subscriber will send a message on this channel once it discovers
      * every Publisher
      */
-    announcement_reader_listener = new AnnouncementListener();
+    if(_MessagingImpl->SupportListener()) {
+        announcement_reader_listener = new AnnouncementListener();
+    }
+
     announcement_reader = _MessagingImpl->CreateReader(
             ANNOUNCEMENT_TOPIC_NAME,
             announcement_reader_listener);
@@ -2240,36 +2243,41 @@ int perftest_cpp::Publisher()
     announcement_reader_listener->end_test = true;
     reader_listener->end_test = true;
 
+    /*TODO: Remove all this printf when found a real solution to the problem*/
     if (announcement_reader != NULL) {
         delete (announcement_reader);
     }
+    printf("----> announcement_reader deleted\n");
 
     if (reader != NULL) {
         delete (reader);
     }
+    printf("----> reader deleted\n");
 
     if (writer != NULL) {
         delete (writer);
     }
+    printf("----> writer deleted\n");
 
     if (reader_listener != NULL) {
         delete (reader_listener);
     }
-
-    //TODO: Look for a solution for this.
-    perftest_cpp::MilliSleep(1000);
+    printf("----> reader_listener deleted\n");
 
     if (announcement_reader_listener != NULL) {
         delete (announcement_reader_listener);
     }
+    printf("----> announcement_reader_listener deleted\n");
 
     if (listenerThread != NULL) {
         RTIOsapiThread_delete(listenerThread);
     }
+    printf("----> listenerThread deleted\n");
 
     if (announcementThread != NULL) {
         RTIOsapiThread_delete(announcementThread);
     }
+    printf("----> announcementThread deleted\n");
 
     delete []message.data;
 

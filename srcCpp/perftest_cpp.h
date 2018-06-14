@@ -112,7 +112,7 @@ class perftest_cpp
     unsigned int _executionTime;
     bool _displayWriterStats;
     bool _useCft;
-    bool _useSockets;
+    bool _useRawTransport;
     static const Perftest_ProductVersion_t _version;
 
 private:

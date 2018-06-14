@@ -1,5 +1,5 @@
-#ifndef __RTISOCKETIMPL_H__
-#define __RTISOCKETIMPL_H__
+#ifndef __RTIRawTransportImpl_H__
+#define __RTIRawTransportImpl_H__
 
 /*
  * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <map>
 #include <string>
+#include <stdexcept>
 #include "MessagingIF.h"
 #include "PerftestTransport.h"
 #include "perftest.h"
@@ -19,14 +20,15 @@
 
 #include "perftestPlugin.h"
 
+//TODO: maybe move this to perftest.cpp or the .idl
 #define RTIPERFTEST_MAX_PEERS 1024
 
 struct peerData;
-class RTISocketImpl : public IMessaging {
+class RTIRawTransportImpl : public IMessaging {
   public:
-    RTISocketImpl();
+    RTIRawTransportImpl();
 
-    ~RTISocketImpl() { Shutdown(); }
+    ~RTIRawTransportImpl() { Shutdown(); }
 
     void PrintCmdLineHelp();
 
@@ -57,22 +59,17 @@ class RTISocketImpl : public IMessaging {
 
     IMessagingWriter *CreateWriter(const char *topic_name);
 
-    // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
-    // to get data
+    // This implementation dont support listener so callback is ignore.
     IMessagingReader *
     CreateReader(const char *topic_name, IMessagingCB *callback);
 
     bool ConfigureSocketsTransport();
 
-    /*
-     * This function calculate the port depending of the Id of the subscriber.
-     */
+    /* Calculate the port depending of the Id of the subscriber.*/
     unsigned int
     GetSendUnicastPort(const char *topicName, unsigned int subId = 0);
-    /*
-     * This function calculate the ports thats it gonna be use for receive
-     * resources
-     */
+
+    /* Calculate the ports thats it will be use for receive data */
     unsigned int GetReceiveUnicastPort(const char *topicName);
 
     bool GetMulticastTransportAddr(
@@ -95,7 +92,7 @@ class RTISocketImpl : public IMessaging {
     bool _isPublisher;
     unsigned int _batchSize;
     int _peerHostCount;
-    char *_peer_host[RTIPERFTEST_MAX_PEERS];
+    char *_peerHost[RTIPERFTEST_MAX_PEERS];
     unsigned int _basePort;
     bool _useBlocking;
 
@@ -109,7 +106,6 @@ class RTISocketImpl : public IMessaging {
     struct REDAWorker *_worker;
     struct REDAWorkerFactory *_workerFactory;
     struct REDAExclusiveArea *_exclusiveArea;
-    NDDS_Transport_Address_t _nicAddress;
 
   public:
 
@@ -118,6 +114,7 @@ class RTISocketImpl : public IMessaging {
     /*
      * Resources reserved by a participant
      * It's use to calculate the offset between the ports
+     * Any use right now
      */
     static const int RESOURCES_PER_PARTICIPANT;
 };
@@ -153,4 +150,4 @@ char *InterfaceNameToAddress(const char *nicName);
 
 int GetNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin);
 
-#endif // __RTISOCKETIMPL_H__
+#endif // __RTIRawTransportImpl_H__
