@@ -48,6 +48,15 @@ releases:
 Release Notes Master
 --------------------
 
+What's New in Master
+~~~~~~~~~~~~~~~~~~~~
+
+Build HTML and PDF documentation (#94)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+RTI Perftest build script for linux now offers the option to generate the HTML
+and PDF documentation from the rst files in srcDoc.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
