@@ -553,22 +553,22 @@ namespace PerformanceTest
                 {
                     wanOptions.secureWan = true;
                 }
+                else if ("-multicast".StartsWith(argv[i], true, null))
+                {
+                    useMulticast = true;
+                }
                 else if ("-multicastAddr".StartsWith(argv[i], true, null))
                 {
                     useMulticast = true;
                     if ((i == (argv.Length - 1)) || argv[++i].StartsWith("-"))
                     {
-                        Console.Error.Write(classLoggingString
+                        Console.Error.WriteLine(classLoggingString
                                 + " Missing <address> after -multicastAddr");
                         return false;
                     }
                     multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = argv[i];
                     multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] = argv[i];
                     multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE] = argv[i];
-                }
-                else if ("-multicast".StartsWith(argv[i], true, null))
-                {
-                    useMulticast = true;
                 }
                 else if ("-nomulticast".StartsWith(argv[i], true, null))
                 {
