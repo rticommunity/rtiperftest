@@ -4,7 +4,6 @@
  */
 
 #include "PerftestTransport.h"
-
 #include "Infrastructure_common.h"
 
 // Default location of the security related files

@@ -67,17 +67,17 @@ class PerftestClock
 
   private:
     RTIClock *clock;
-    RTINtpTime clock_time_aux;
-    RTI_UINT64 clock_sec;
-    RTI_UINT64 clock_usec;
+    RTINtpTime clockTimeAux;
+    RTI_UINT64 clockSec;
+    RTI_UINT64 clockUsec;
 
   public:
     PerftestClock();
     ~PerftestClock();
 
-    static PerftestClock &GetInstance();
-    unsigned long long GetTimeUsec();
-    static void MilliSleep(unsigned int millisec);
+    static PerftestClock &getInstance();
+    unsigned long long getTimeUsec();
+    static void milliSleep(unsigned int millisec);
 };
 
 bool PerftestConfigureTransport(
@@ -90,12 +90,5 @@ bool PerftestCreateThread(
         void *threadParam);
 
 void PerftestConfigureVerbosity(int verbosityLevel);
-
-#ifdef RTI_SECURE_PERFTEST
-bool PerftestConfigureSecurity(
-        PerftestSecurity &security,
-        DDS_DomainParticipantQos &qos);
-#endif
-
 
 #endif /* INFRASTRUCTURE_PRO_H_ */

@@ -13,10 +13,10 @@ PerftestClock::PerftestClock()
     if (clock == NULL) {
         throw std::bad_alloc();
     }
-    RTINtpTime_setZero(&clock_time_aux);
+    RTINtpTime_setZero(&clockTimeAux);
 
-    clock_sec = 0;
-    clock_usec = 0;
+    clockSec = 0;
+    clockUsec = 0;
 }
 
 PerftestClock::~PerftestClock()
@@ -24,23 +24,23 @@ PerftestClock::~PerftestClock()
     RTIHighResolutionClock_delete(clock);
 }
 
-PerftestClock &PerftestClock::GetInstance()
+PerftestClock &PerftestClock::getInstance()
 {
     static PerftestClock instance;
     return instance;
 }
 
-unsigned long long PerftestClock::GetTimeUsec()
+unsigned long long PerftestClock::getTimeUsec()
 {
-    clock->getTime(clock, &clock_time_aux);
+    clock->getTime(clock, &clockTimeAux);
     RTINtpTime_unpackToMicrosec(
-            clock_sec,
-            clock_usec,
-            clock_time_aux);
-    return clock_usec + 1000000 * clock_sec;
+            clockSec,
+            clockUsec,
+            clockTimeAux);
+    return clockUsec + 1000000 * clockSec;
 }
 
-void PerftestClock::MilliSleep(unsigned int millisec)
+void PerftestClock::milliSleep(unsigned int millisec)
 {
   #if defined(RTI_WIN32)
     Sleep(millisec);
@@ -527,7 +527,7 @@ bool PerftestConfigureTransport(
 }
 
 #ifdef RTI_SECURE_PERFTEST
-bool PerftestConfigureSecurity(
+bool ConfigureSecurity(
         PerftestSecurity &security,
         DDS_DomainParticipantQos &qos)
 {

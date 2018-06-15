@@ -12,7 +12,7 @@ LARGE_INTEGER PerftestTimer::_ClockFrequency = {0, 0};
 HANDLE PerftestTimer::_hTimerQueue = NULL;
 HANDLE PerftestTimer::_hTimer = NULL;
 #endif
-void (*PerftestTimer::handler_function)(void) = NULL;
+void (*PerftestTimer::_handlerFunction)(void) = NULL;
 
 PerftestTimer::PerftestTimer()
 {
@@ -22,7 +22,7 @@ PerftestTimer::PerftestTimer()
     }
     QueryPerformanceFrequency(&_ClockFrequency);
   #endif
-    handler_function = NULL;
+    _handlerFunction = NULL;
 }
 
 PerftestTimer::~PerftestTimer()
@@ -34,44 +34,44 @@ PerftestTimer::~PerftestTimer()
   #endif
 }
 
-PerftestTimer &PerftestTimer::GetInstance() {
+PerftestTimer &PerftestTimer::getInstance() {
     static PerftestTimer instance;
     return instance;
 }
 
-void PerftestTimer::SetTimeout(unsigned int executionTimeInSeconds,
+void PerftestTimer::setTimeout(unsigned int executionTimeInSeconds,
         void (*function)(void)) {
 
-    handler_function = function;
+    _handlerFunction = function;
 
   #ifdef RTI_WIN32
     CreateTimerQueueTimer(
             &_hTimer,
             _hTimerQueue,
-            (WAITORTIMERCALLBACK)PerftestTimer::TimeoutTask,
+            (WAITORTIMERCALLBACK)PerftestTimer::timeoutTask,
             NULL,
             executionTimeInSeconds * 1000,
             0,
             0);
   #else
-    signal(SIGALRM, PerftestTimer::TimeoutTask);
+    signal(SIGALRM, PerftestTimer::timeoutTask);
     alarm(executionTimeInSeconds);
   #endif
 }
 
 #ifdef RTI_WIN32
 
-VOID CALLBACK PerftestTimer::TimeoutTask(PVOID lpParam, BOOLEAN timerOrWaitFired) {
+VOID CALLBACK PerftestTimer::timeoutTask(PVOID lpParam, BOOLEAN timerOrWaitFired) {
     /* This is to avoid the warning of non using lpParam */
     (void) lpParam;
-    PerftestTimer::handler_function();
+    PerftestTimer::_handlerFunction();
 }
 #pragma warning(pop)
 
 #else
 
-void PerftestTimer::TimeoutTask(int sign) {
-    PerftestTimer::handler_function();
+void PerftestTimer::timeoutTask(int sign) {
+    PerftestTimer::_handlerFunction();
 }
 
 #endif

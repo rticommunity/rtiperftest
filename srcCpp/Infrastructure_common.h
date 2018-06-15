@@ -6,7 +6,9 @@
 #ifndef INFRASTRUCTURE_COMMON_H_
 #define INFRASTRUCTURE_COMMON_H_
 
-#ifndef RTI_MICRO
+#ifdef RTI_MICRO
+  #include "Infrastructure_micro.h"
+#else
   #include "Infrastructure_pro.h"
 #endif
 
@@ -43,18 +45,24 @@ private:
     static HANDLE _hTimer;
     static LARGE_INTEGER _ClockFrequency;
   #endif
-    static void (*handler_function)(void);
+    static void (*_handlerFunction)(void);
 
 public:
     PerftestTimer();
     ~PerftestTimer();
-    static PerftestTimer &GetInstance();
-    void SetTimeout(unsigned int executionTimeInSeconds, void (*function)(void));
+    static PerftestTimer &getInstance();
+    void setTimeout(unsigned int executionTimeInSeconds, void (*function)(void));
   #ifdef RTI_WIN32
-    static VOID CALLBACK TimeoutTask(PVOID lpParam, BOOLEAN timerOrWaitFired);
+    static VOID CALLBACK timeoutTask(PVOID lpParam, BOOLEAN timerOrWaitFired);
   #else
-    static void TimeoutTask(int sign);
+    static void timeoutTask(int sign);
   #endif
 };
+
+#ifdef RTI_SECURE_PERFTEST
+bool ConfigureSecurity(
+        PerftestSecurity &security,
+        DDS_DomainParticipantQos &qos);
+#endif
 
 #endif /* INFRASTRUCTURE_COMMON_H_ */

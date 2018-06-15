@@ -38,7 +38,17 @@ class RTIDDSImpl : public IMessaging
         _IsMulticast = false;
         _BatchSize = 0;
         _InstanceCount = 1;
+      #ifndef RTI_MICRO
         _InstanceMaxCountReader = DDS_LENGTH_UNLIMITED;
+      #else
+        /*
+         * For micro we want to restrict the use of memory, and since we need
+         * to set a maximum (other than DDS_LENGTH_UNLIMITED), we decided to use
+         * a default of 1. This means that for Micro, we need to specify the
+         * number of instances that will be received in the reader side.
+         */
+        _InstanceMaxCountReader = 1;
+      #endif
         _InstanceHashBuckets = -1;
         _Durability = DDS_VOLATILE_DURABILITY_QOS;
         _DirectCommunication = true;
@@ -101,9 +111,11 @@ class RTIDDSImpl : public IMessaging
     // to get data
     IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
 
+  #ifndef RTI_MICRO
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
+  #endif
 
-    bool ConfigureDomainParticipantQos(DDS_DomainParticipantQos &qos);
+    bool configureDomainParticipantQos(DDS_DomainParticipantQos &qos);
 
   private:
 

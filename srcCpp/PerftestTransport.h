@@ -12,9 +12,6 @@
 
 /******************************************************************************/
 
-// Tag used when adding logging output.
-const std::string classLoggingString = "PerftestTransport:";
-
 enum Transport {
     TRANSPORT_DEFAULT,
     TRANSPORT_UDPv4,
@@ -127,5 +124,8 @@ private:
     void populateSecurityFiles(bool isPublisher);
 
 };
+
+// Tag used when adding logging output.
+const std::string classLoggingString = "PerftestTransport:";
 
 #endif /* PERFTEST_2_0_SRCCPP_PERFTESTTRANSPORT_H_ */

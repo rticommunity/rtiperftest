@@ -12,11 +12,15 @@ java_folder="${script_location}/srcJava"
 java_scripts_folder="${script_location}/resource/java_scripts"
 bin_folder="${script_location}/bin"
 
+# By default we will build pro, not micro
+BUILD_MICRO=0
+
 # Default values:
 BUILD_CPP=1
 BUILD_CPP03=1
 BUILD_JAVA=1
 MAKE_EXE=make
+CMAKE_EXE=cmake
 JAVAC_EXE=javac
 JAVA_EXE=java
 JAR_EXE=jar
@@ -44,15 +48,25 @@ function usage()
     echo ""
     echo "This scripts accepts the following parameters:                                  "
     echo "                                                                                "
+    echo "    --micro                      Build RTI Perftest for RTI Connext Micro       "
+    echo "                                 By default RTI Perftest will assume it will be "
+    echo "                                 built against RTI Connext DDS Professional     "
     echo "    --platform <your_arch>       Platform for which build.sh is going to compile"
     echo "                                 RTI Perftest.                                  "
-    echo "    --nddshome <path>            Path to the *RTI Connext DDS installation*. If "
-    echo "                                 this parameter is not present, the \$NDDSHOME  "
-    echo "                                 variable should be set.                        "
+    echo "    --nddshome <path>            Path to the *RTI Connext DDS Professional      "
+    echo "                                 installation*. If this parameter is not present"
+    echo "                                 the \$NDDSHOME variable should be set.         "
+    echo "                                 If provided when building micro, it will be    "
+    echo "                                 used as \$RTIMEHOME                            "
+    echo "    --rtimehome <path>           Path to the *RTI Connext DDS Micro*            "
+    echo "                                 installation*. If this parameter is not present"
+    echo "                                 the \$RTIMEHOME variable should be set.        "
     echo "    --skip-java-build            Avoid Java ByteCode generation creation.       "
+    echo "                                 (No effect when building for Micro)            "
     echo "    --skip-cpp-build             Avoid C++ code generation and compilation.     "
     echo "    --skip-cpp03-build           Avoid C++ New PSM code generation and          "
     echo "                                 compilation.                                   "
+    echo "                                 (No effect when building for Micro)            "
     echo "    --java-build                 Only Java ByteCode generation creation.        "
     echo "    --cpp-build                  Only C++ code generation and compilation.      "
     echo "    --cpp03-build                Only C++ New PSM code generation and           "
@@ -60,21 +74,29 @@ function usage()
     echo "    --make <path>                Path to the GNU make executable. If this       "
     echo "                                 parameter is not present, GNU make variable    "
     echo "                                 should be available from your \$PATH variable. "
+    echo "    --cmake <path>               Path to the cmake executable. If this          "
+    echo "                                 parameter is not present, cmake executable     "
+    echo "                                 should be available from your \$PATH variable. "
+    echo "                                 will clean all the generated code and binaries "
     echo "    --java-home <path>           Path to the Java JDK home folder. If this      "
     echo "                                 parameter is not present, javac, jar and java  "
     echo "                                 executables should be available from your      "
     echo "                                 \$PATH variable.                               "
+    echo "                                 (No effect when building for Micro)            "
     echo "    --clean                      If this option is present, the build.sh script "
     echo "                                 will clean all the generated code and binaries "
     echo "    --debug                      Compile against the RTI Connext Debug          "
     echo "                                 libraries. Default is against release ones.    "
     echo "    --dynamic                    Compile against the RTI Connext Dynamic        "
     echo "                                 libraries. Default is against static ones.     "
+    echo "                                 (No effect when building for Micro)            "
     echo "    --secure                     Enable the security options for compilation.   "
     echo "                                 Default is not enabled.                        "
+    echo "                                 (No effect when building for Micro)            "
     echo "    --openssl-home <path>        Path to the openssl home. This will be used    "
     echo "                                 when compiling statically and using security   "
     echo "                                 Default is an empty string (current folder).   "
+    echo "                                 (No effect when building for Micro)            "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
@@ -103,6 +125,10 @@ function clean()
     rm -rf "${script_location}"/srcJava/jar
     rm -rf "${script_location}"/srcJava/com/rti/perftest/gen
     rm -rf "${script_location}"/bin
+    rm -f  "${script_location}"/srcCpp/*.txt
+    rm -rf "${script_location}"/srcCpp/gen
+    rm -rf "${script_location}"/srcCpp/perftest_build
+    rm -rf "${script_location}"/srcCpp/perftestApplication.*
 
     echo ""
     echo "================================================================================"
@@ -112,12 +138,6 @@ function clean()
 
 function executable_checking()
 {
-    # Is NDDSHOME set?
-    if [ -z "${NDDSHOME}" ]; then
-        echo -e "${ERROR_TAG} The NDDSHOME variable is not set"
-        usage
-        exit -1
-    fi
 
     # Is platform specified?
     if [ -z "${platform}" ]; then
@@ -126,35 +146,80 @@ function executable_checking()
         exit -1
     fi
 
-    # Is MAKE in the path?
-    if [ "${BUILD_CPP}" -eq "1" ]; then
-        if [ -z `which "${MAKE_EXE}"` ]
-        then
-            echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp will not be built."
-        fi
-    fi
-    if [ "${BUILD_CPP03}" -eq "1" ]; then
-        if [ -z `which "${MAKE_EXE}"` ]
-        then
-            echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp03 will not be built."
-        fi
-    fi
+    # If we are Building MICRO
+    if [ "${BUILD_MICRO}" -eq "1" ]; then
 
-    # Is JAVA in the path?
-    if [ "${BUILD_JAVA}" -eq "1" ]; then
-        if [ -z `which "${JAVAC_EXE}"` ]; then
-            echo -e "${YELLOW}[WARNING]:${NC} javac executable not found, perftest_java will not be built."
-            BUILD_JAVA=0
+        # Is RTIMEHOME set?
+        if [ -z "${RTIMEHOME}" ]; then
+            # Is NDDSHOME set?
+            if [ -z "${NDDSHOME}" ]; then
+                echo -e "${ERROR_TAG} Nor RTIMEHOME nor NDDSHOME variables are set"
+                usage
+                exit -1
+            else
+                echo -e "${INFO_TAG} The RTIMEHOME variable is not set, using NDDSHOME"
+            fi
+        else
+            export NDDSHOME="${RTIMEHOME}"
         fi
-        if [ -z `which "${JAVA_EXE}"` ]; then
-            echo -e "${YELLOW}[WARNING]:${NC} java executable not found, perftest_java will not be built."
-            BUILD_JAVA=0
+
+        # Is CMAKE in the path?
+        if [ -z `which "${CMAKE_EXE}"` ]
+        then
+            echo -e "${YELLOW}[WARNING]:${NC} ${CMAKE_EXE} executable not found, perftest_cpp will not be built."
         fi
-        if [ -z `which "${JAR_EXE}"` ]; then
-            echo -e "${YELLOW}[WARNING]:${NC} jar executable not found, perftest_java will not be built."
-            BUILD_JAVA=0
+
+        # Is MAKE in the path?
+        if [ "${BUILD_CPP}" -eq "1" ]; then
+            if [ -z `which "${MAKE_EXE}"` ]
+            then
+                echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp will not be built."
+            fi
         fi
-    fi
+    else # If building pro
+
+        # Is NDDSHOME set?
+        if [ -z "${NDDSHOME}" ]; then
+            echo -e "${ERROR_TAG} The NDDSHOME variable is not set"
+            usage
+            exit -1
+        fi
+
+        # Is MAKE in the path?
+        if [ "${BUILD_CPP}" -eq "1" ]; then
+            if [ -z `which "${MAKE_EXE}"` ]
+            then
+                echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp will not be built."
+            fi
+        fi
+
+        # Is MAKE in the path?
+        if [ "${BUILD_CPP03}" -eq "1" ]; then
+            if [ -z `which "${MAKE_EXE}"` ]
+            then
+                echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp03 will not be built."
+            fi
+        fi
+
+        # Is JAVA in the path?
+        if [ "${BUILD_JAVA}" -eq "1" ]; then
+            if [ -z `which "${JAVAC_EXE}"` ]; then
+                echo -e "${YELLOW}[WARNING]:${NC} javac executable not found, perftest_java will not be built."
+                BUILD_JAVA=0
+            fi
+            if [ -z `which "${JAVA_EXE}"` ]; then
+                echo -e "${YELLOW}[WARNING]:${NC} java executable not found, perftest_java will not be built."
+                BUILD_JAVA=0
+            fi
+            if [ -z `which "${JAR_EXE}"` ]; then
+                echo -e "${YELLOW}[WARNING]:${NC} jar executable not found, perftest_java will not be built."
+                BUILD_JAVA=0
+            fi
+        fi
+
+    fi #Micro/Pro
+
+
 }
 
 function library_sufix_calculation()
@@ -398,6 +463,94 @@ function build_java()
 
 }
 
+function additional_defines_calculation_micro()
+{
+    if [[ $platform == *"Darwin"* ]]; then
+        additional_defines=" RTI_DARWIN"
+    else
+        if [[ $platform == *"Linux"* ]]; then
+            additional_defines=" RTI_LINUX"
+            additional_included_libraries"nsl;rt;"
+        fi
+    fi
+    additional_defines="RTI_MICRO O3"${additional_defines}
+}
+
+function build_micro_cpp()
+{
+    additional_defines_calculation_micro
+
+    ##############################################################################
+    # Generate files for srcCpp
+
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} -replace -create typefiles -create makefiles -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h\" -additionalSourceFiles \"RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+
+    echo ""
+    echo -e "${INFO_TAG} Generating types and makefiles for ${classic_cpp_lang_string}."
+    echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+
+    # Executing RTIDDSGEN command here.
+    eval $rtiddsgen_command
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
+        exit -1
+    fi
+    cp "${classic_cpp_folder}/perftest_publisher.cxx" "${classic_cpp_folder}/perftest_subscriber.cxx"
+    cp "${idl_location}/perftest.idl" "${classic_cpp_folder}/perftest.idl"
+    touch "${classic_cpp_folder}/perftestApplication.cxx"
+    touch "${classic_cpp_folder}/perftestApplication.h"
+
+    ##############################################################################
+    # Compile srcCpp code
+    echo ""
+    echo -e "${INFO_TAG} Compiling perftest_cpp"
+    cd "${classic_cpp_folder}"
+
+    cmake_generate_command="${CMAKE_EXE} -DCMAKE_BUILD_TYPE=${RELEASE_DEBUG} -G \"Unix Makefiles\" -B./perftest_build -H. -DRTIME_TARGET_NAME=${platform} -DPLATFORM_LIBS=\"dl;m;pthread;${additional_included_libraries}\""
+
+	echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
+    eval $cmake_generate_command
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating unix makefiles with cmake for ${classic_cpp_lang_string}."
+        cd ..
+        exit -1
+    fi
+
+	cmake_build_command="${CMAKE_EXE} --build ./perftest_build --config ${RELEASE_DEBUG} --target perftest_publisher"
+    	echo -e "${INFO_TAG} Cmake Build Command: $cmake_build_command"
+    eval $cmake_build_command
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure compiling code for ${classic_cpp_lang_string}."
+        cd ..
+        exit -1
+    fi
+
+    echo -e "${INFO_TAG} Compilation successful"
+    cd ..
+
+    echo ""
+    echo -e "${INFO_TAG} Copying executable into: \"bin/${platform}/${RELEASE_DEBUG}\" folder"
+
+    # Create bin folder if not exists and copy executables, since this command
+    # has to work for several different architectures, we will try to find the
+    # executable name with different line endings.
+    perftest_cpp_name_beginning="${classic_cpp_folder}/objs/${platform}/perftest_publisher"
+    executable_extension=""
+    destination_folder="${bin_folder}/${platform}/${RELEASE_DEBUG}"
+    mkdir -p "${bin_folder}/${platform}/${RELEASE_DEBUG}"
+
+    if [ -e "$perftest_cpp_name_beginning" ]; then
+        executable_extension=""
+    elif [ -e "${perftest_cpp_name_beginning}.so" ]; then
+        executable_extension=".so"
+    elif [ -e "${perftest_cpp_name_beginning}.vxe" ]; then
+        executable_extension=".vxe"
+    fi
+    cp -f "${perftest_cpp_name_beginning}${executable_extension}" \
+    "${destination_folder}/perftest_cpp_micro${executable_extension}"
+}
+
+
 ################################################################################
 # Initial message
 echo ""
@@ -420,6 +573,9 @@ while [ "$1" != "" ]; do
             ;;
         --skip-java-build)
             BUILD_JAVA=0
+            ;;
+        --micro)
+            BUILD_MICRO=1
             ;;
         --skip-cpp-build)
             BUILD_CPP=0
@@ -446,6 +602,10 @@ while [ "$1" != "" ]; do
             MAKE_EXE=$2
             shift
             ;;
+        --cmake)
+            CMAKE_EXE=$2
+            shift
+            ;;
         --java-home)
             JAVA_HOME=$2
             JAVAC_EXE="${JAVA_HOME}/bin/javac"
@@ -459,6 +619,10 @@ while [ "$1" != "" ]; do
             ;;
         --nddshome)
             export NDDSHOME=$2
+            shift
+            ;;
+        --rtimehome)
+            export RTIMEHOME=$2
             shift
             ;;
         --debug)
@@ -485,24 +649,38 @@ done
 
 executable_checking
 
-rtiddsgen_executable="$NDDSHOME/bin/rtiddsgen"
+if [ "${BUILD_MICRO}" -eq "1" ]; then
 
-classic_cpp_lang_string=C++
-modern_cpp_lang_string=C++03
-java_lang_string=java
+    rtiddsgen_executable="$RTIMEHOME/rtiddsgen/scripts/rtiddsgen"
 
-if [ "${BUILD_CPP}" -eq "1" ]; then
-    library_sufix_calculation
-    build_cpp
-fi
+    classic_cpp_lang_string=C++
+    if [ "${BUILD_CPP}" -eq "1" ]; then
+        library_sufix_calculation
+        build_micro_cpp
+    fi
 
-if [ "${BUILD_CPP03}" -eq "1" ]; then
-    library_sufix_calculation
-    build_cpp03
-fi
+else
 
-if [ "${BUILD_JAVA}" -eq "1" ]; then
-    build_java
+    rtiddsgen_executable="$NDDSHOME/bin/rtiddsgen"
+
+    classic_cpp_lang_string=C++
+    modern_cpp_lang_string=C++03
+    java_lang_string=java
+
+    if [ "${BUILD_CPP}" -eq "1" ]; then
+        library_sufix_calculation
+        build_cpp
+    fi
+
+    if [ "${BUILD_CPP03}" -eq "1" ]; then
+        library_sufix_calculation
+        build_cpp03
+    fi
+
+    if [ "${BUILD_JAVA}" -eq "1" ]; then
+        build_java
+    fi
+
 fi
 
 echo ""

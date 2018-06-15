@@ -19,3 +19,8 @@
 .project
 .settings
 .vscode
+srcCpp/perftest_build/*
+srcCpp/gen/*
+srcCpp/CMakeLists.txt
+srcCpp/README.txt
+srcCpp/perftestApplication.*

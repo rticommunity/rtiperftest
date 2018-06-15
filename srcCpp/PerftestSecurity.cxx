@@ -3,6 +3,7 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
+#ifdef RTI_SECURE_PERFTEST
 
 #include "PerftestSecurity.h"
 #include "Infrastructure_common.h"
