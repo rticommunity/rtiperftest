@@ -20,10 +20,10 @@
 
 #include "perftestPlugin.h"
 
-//TODO: maybe move this to perftest.cpp or the .idl
+//TODO: maybe move this to perftest.cpp or the .idl || Postpone to new parser
 #define RTIPERFTEST_MAX_PEERS 1024
 
-struct peerData;
+class peerData;
 class RTIRawTransportImpl : public IMessaging {
   public:
     RTIRawTransportImpl();
@@ -111,15 +111,9 @@ class RTIRawTransportImpl : public IMessaging {
 
     std::vector<peerData> _peersInfoList;
 
-    /*
-     * Resources reserved by a participant
-     * It's use to calculate the offset between the ports
-     * Any use right now
-     */
-    static const int RESOURCES_PER_PARTICIPANT;
 };
 
-struct peerData {
+class peerData {
     public:
         // The resources created
         static std::vector<NDDS_Transport_SendResource_t> resourcesList;
@@ -129,7 +123,7 @@ struct peerData {
         NDDS_Transport_Address_t transportAddr;
         unsigned int port;
 
-        peerData()
+        peerData()// use Constructor member list
         {
             resource = NULL;
             RTIOsapiMemory_zero(&transportAddr, sizeof(NDDS_Transport_Address_t));
@@ -145,8 +139,6 @@ struct peerData {
             port = p;
         }
 };
-
-char *InterfaceNameToAddress(const char *nicName);
 
 int GetNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin);
 

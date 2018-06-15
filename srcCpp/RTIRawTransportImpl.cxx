@@ -17,7 +17,6 @@
 #endif
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 
-const int RTIRawTransportImpl::RESOURCES_PER_PARTICIPANT = 3;
 std::vector<NDDS_Transport_SendResource_t> peerData::resourcesList;
 
 /*********************************************************
@@ -283,7 +282,7 @@ bool RTIRawTransportImpl::ParseConfig(int argc, char *argv[]) {
                 if (_peerHost[_peerHostCount++] == NULL) {
                     fprintf(
                             stderr,
-                            "Fail allocating memory on ParseConfig()\n");
+                            "Fail to allocate memory on ParseConfig()\n");
                 }
             } else {
                 fprintf(
@@ -424,18 +423,18 @@ std::string RTIRawTransportImpl::PrintConfiguration()
 class RTIRawTransportPublisher : public IMessagingWriter{
   private:
     RTIRawTransportImpl *_parent;
-    NDDS_Transport_Plugin *_plugin;
+    NDDS_Transport_Plugin *_plugin; // Parent
     NDDS_Transport_Buffer_t _sendBuffer;
 
-    std::vector<peerData> _peersInfoList;
+    std::vector<peerData> _peersInfoList; // Parent
 
     TestData_t _data;
 
-    struct REDAWorker *_worker;
-    RTIOsapiSemaphore *_pongSemaphore;
+    struct REDAWorker *_worker; //Parent
+    RTIOsapiSemaphore *_pongSemaphore; // Parent
 
     unsigned int _batchBufferSize;
-    bool _useBatching;
+    bool _useBatching; // Parent
 
     struct RTICdrStream _stream;
     struct PRESTypePluginDefaultEndpointData _epd;
@@ -510,9 +509,9 @@ class RTIRawTransportPublisher : public IMessagingWriter{
 
     bool SendMessage() {
 
-        bool retCode = true;
+        bool success = true;
         for(unsigned int i = 0; i < _peersInfoList.size(); i++) {
-            retCode = _plugin->send(
+            if(!_plugin->send(
                     _plugin,
                     _peersInfoList[i].resource,
                     &_peersInfoList[i].transportAddr,
@@ -520,16 +519,14 @@ class RTIRawTransportPublisher : public IMessagingWriter{
                     NDDS_TRANSPORT_PRIORITY_DEFAULT,
                     &_sendBuffer,
                     1,
-                    _worker);
+                    _worker)){
+                success = false;
+                // No need of print error. This wil be represented as loss packets
         }
 
-        if (!retCode) {
-            //No need of print error. This will be represented of loss packets
-            return false;
         }
 
-        return retCode;
-
+        return success;
     }
 
     void Flush() {
@@ -554,7 +551,10 @@ class RTIRawTransportPublisher : public IMessagingWriter{
 
     bool Send(const TestMessage &message, bool isCftWildCardKey) {
 
-        bool retCode = RTI_FALSE;
+        bool success = false;
+        int serializeSize =  message.size
+                + perftest_cpp::OVERHEAD_BYTES
+                + RTI_CDR_ENCAPSULATION_HEADER_SIZE;
 
         _data.entity_id = message.entity_id;
         _data.seq_num = message.seq_num;
@@ -566,17 +566,18 @@ class RTIRawTransportPublisher : public IMessagingWriter{
                 message.size,
                 message.size);
 
-        int serialize_size =  message.size
-                + perftest_cpp::OVERHEAD_BYTES
-                + RTI_CDR_ENCAPSULATION_HEADER_SIZE;
 
-        if ((unsigned int)(serialize_size + _sendBuffer.length)
+        /*
+         * If there is no more space on the buffer to allocate the new message
+         * flush before add a new one.
+         */
+        if ((unsigned int) (serializeSize + _sendBuffer.length)
                 > _batchBufferSize) {
             Flush();
         }
 
-        retCode = TestData_tPlugin_serialize(
-                (PRESTypePluginEndpointData)&_epd,
+        success = TestData_tPlugin_serialize(
+                (PRESTypePluginEndpointData) &_epd,
                 &_data,
                 &_stream,
                 RTI_TRUE,
@@ -584,27 +585,24 @@ class RTIRawTransportPublisher : public IMessagingWriter{
                 RTI_TRUE,
                 NULL);
 
-        if (!retCode){
-            fprintf(stderr, "Fail serializing data\n");
+        if (!success) {
+            fprintf(stderr, "Fail to serialize data\n");
             return false;
         }
 
+        // _data is been serialize (copied). It's right to unloan then.
         _data.bin_data.unloan();
 
         _sendBuffer.length = RTICdrStream_getCurrentPositionOffset(&_stream);
 
-        if (_useBatching
-                & ((unsigned int) _sendBuffer.length <= _batchBufferSize)) {
-            return true;
+        if (!_useBatching) {
+            Flush();
         }
 
-        Flush();
-
-        return true;
+            return true;
     }
 
     void WaitForReaders(int numSubscribers) {
-        perftest_cpp::MilliSleep(1000);
         /*Dummy Function*/
     }
 
@@ -736,6 +734,7 @@ class RTIRawTransportSubscriber : public IMessagingReader
         if (&_recvResource != NULL && _plugin != NULL && _worker != NULL) {
             _plugin->unblock_receive_rrEA(_plugin, &_recvResource, _worker);
             /* TODO: Temporal solution */perftest_cpp::MilliSleep(1000);
+            //TODO: add shemaphore
             _plugin->destroy_recvresource_rrEA(_plugin, &_recvResource);
         }
     }
@@ -759,7 +758,7 @@ class RTIRawTransportSubscriber : public IMessagingReader
                      * not a error
                      */
                     if (_transportMessage.buffer.length != 0) {
-                        fprintf(stderr, "error receiving data\n");
+                        fprintf(stderr, "Fail to receive data\n");
                     }
                     return NULL;
                 }
@@ -822,13 +821,16 @@ bool RTIRawTransportImpl::Initialize(int argc, char *argv[]) {
     printf("-- Using SOCKETS --\n");
 
     // Only if we run latency test we need to wait for pongs after sending pings
-    _pongSemaphore = _LatencyTest
-        ? RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL)
-        : NULL;
+    if (_LatencyTest) {
+        _pongSemaphore =
+                RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL);
 
-    if (_LatencyTest && _pongSemaphore == NULL) {
-        fprintf(stderr, "Fail creating a Semaphore for RTIRawTransportImpl\n");
-        return NULL;
+        if (_pongSemaphore == NULL) {
+            fprintf(
+                    stderr,
+                    "Fail to create a Semaphore for RTIRawTransportImpl\n");
+            return NULL;
+        }
     }
 
     if (!ConfigureSocketsTransport()) {
@@ -1053,19 +1055,19 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport() {
     /* Worker configure */
     _workerFactory = REDAWorkerFactory_new(256);
     if (_workerFactory == NULL) {
-        fprintf(stderr, "Error creating Worker Factory\n");
+        fprintf(stderr, "Fail to create Worker Factory\n");
         return false;
     }
 
     _worker = REDAWorkerFactory_createWorker(_workerFactory, "RTIRawTransport");
     if (_worker == NULL) {
-        fprintf(stderr, "Error creating Worker\n");
+        fprintf(stderr, "Fail to create Worker\n");
         return false;
     }
 
     _exclusiveArea = REDAWorkerFactory_createExclusiveArea(_workerFactory, 1);
     if (_exclusiveArea == NULL) {
-        fprintf(stderr, "Error creating exclusive area\n");
+        fprintf(stderr, "Fail to create exclusive area\n");
         return false;
     }
 
@@ -1129,7 +1131,7 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport() {
             _plugin = NDDS_Transport_UDPv4_new(&udpv4_prop);
 
             if (_plugin == NULL) {
-                fprintf(stderr, "Error creating transport plugin\n");
+                fprintf(stderr, "Fail to create transport plugin\n");
                 return false;
             }
 
@@ -1206,7 +1208,7 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport() {
         _plugin = NDDS_Transport_Shmem_new(&shmem_prop);
 
         if (_plugin == NULL) {
-            fprintf(stderr, "Error creating transport plugin\n");
+            fprintf(stderr, "Fail to create transport plugin\n");
             return false;
         }
 
@@ -1248,73 +1250,6 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport() {
     _transport.printTransportConfigurationSummary();
 
     return true;
-}
-
-
-/* TODO: Actually dont used function. */
-char *InterfaceNameToAddress(const char *nicName)
-{
-
-    if (nicName == NULL) {
-        return NULL;
-    }
-
-    char * address = DDS_String_dup(nicName);
-    if (address == NULL) {
-        fprintf(stderr, "Fail allocating memory on InterfaceNameToAddress\n");
-        return NULL;
-    }
-
-    char *outInterfaceBuffer = NULL;
-    int outInterfaceBufferSize = 0;
-    RTIOsapiSocket_InterfaceDescription *outInterfaceArray = NULL;
-    int outInterfaceCount = 0;
-
-    NDDS_Transport_Address_t transportAddress = NDDS_TRANSPORT_ADDRESS_INVALID;
-    bool found = false;
-
-    /* Interface to address translation */
-    /*
-     * TODO:
-     * Check for windows, this function may not work.
-     */
-    /*Get all the interfaces on the current PC*/
-    RTIOsapiSocket_getInterfaces(
-            &outInterfaceBuffer,
-            &outInterfaceBufferSize,
-            &outInterfaceArray,
-            &outInterfaceCount,
-            RTI_OSAPI_SOCKET_AF_INET,
-            0,
-            0,
-            0);
-
-    /* Compare the list of interfaces with the input -nic*/
-    for (int i = 0; i < outInterfaceCount; i++) {
-        if (!strcmp(outInterfaceArray[i].name, address)) {
-            NDDS_Transport_SocketUtil_Address_to_transportAddress(
-                    outInterfaceArray[i].address,
-                    &transportAddress,
-                    RTI_OSAPI_SOCKET_AF_INET);
-            found = true;
-        }
-    }
-
-    /* Check if it is a valid IPv4 address */
-    if (!NDDS_Transport_Address_is_ipv4(&transportAddress)) {
-        fprintf(stderr, "The interface it's not recognize\n");
-        return NULL;
-    }
-
-    if (found) {
-        NDDS_Transport_Address_to_string(
-                &transportAddress,
-                address,
-                NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE);
-    }
-
-    return address;
-
 }
 
 int GetNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin)
