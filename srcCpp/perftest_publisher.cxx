@@ -86,13 +86,21 @@ int subscriber_main()
 
 int perftest_cpp::Run(int argc, char *argv[])
 {
-
-    PrintVersion();
-
-    if (!ParseConfig(argc, argv))
-    {
+    parameterManager.initialize();
+    if (parameterManager.checkHelp(argc, argv)) {
+        return 0;
+    }
+    if (!parameterManager.parse(argc, argv)){
         return -1;
     }
+    printf("batching: %d,\n",parameterManager.query<int>("batching"));
+    printf("nic: %s,\n",parameterManager.query<std::string>("nic").c_str());
+    printf("pub: %d,\n",parameterManager.query<bool>("pub"));
+    printf("flowController: %s,\n",parameterManager.query<std::string>("flowController").c_str());
+
+    return 0;
+
+    PrintVersion();
 
     if (_useUnbounded == 0) { //unbounded is not set
         if (_isKeyed) {

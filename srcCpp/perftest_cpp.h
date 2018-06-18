@@ -27,6 +27,7 @@
   #include <unistd.h>
   #include <signal.h>
 #endif
+#include "ParameterManager.h"
 
 /*
  * This is needed by MilliSleep in VxWorks, since in some versions the usleep
@@ -39,6 +40,7 @@
 #include "MessagingIF.h"
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
+
 
 struct Perftest_ProductVersion_t
 {
@@ -88,6 +90,7 @@ class perftest_cpp
     }
 
   private:
+    ParameterManager parameterManager;
     unsigned long  _DataLen;
     unsigned long long _NumIter;
     bool _IsPub;
