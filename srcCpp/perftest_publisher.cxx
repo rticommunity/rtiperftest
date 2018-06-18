@@ -86,17 +86,24 @@ int subscriber_main()
 
 int perftest_cpp::Run(int argc, char *argv[])
 {
-    parameterManager.initialize();
+    if (!parameterManager.initialize()) {
+        return -1;
+    }
     if (parameterManager.checkHelp(argc, argv)) {
         return 0;
     }
-    if (!parameterManager.parse(argc, argv)){
+    if (!parameterManager.parse(argc, argv)) {
         return -1;
     }
-    printf("batching: %d,\n",parameterManager.query<int>("batching"));
-    printf("nic: %s,\n",parameterManager.query<std::string>("nic").c_str());
-    printf("pub: %d,\n",parameterManager.query<bool>("pub"));
-    printf("flowController: %s,\n",parameterManager.query<std::string>("flowController").c_str());
+    printf("batching: %d,\n", parameterManager.query<int>("batching"));
+    printf("nic: %s,\n", parameterManager.query<std::string>("nic").c_str());
+    printf("pub: %d,\n", parameterManager.query<bool>("pub"));
+    printf("flowController: %s,\n", parameterManager.query<std::string>("flowController").c_str());
+    std::vector<std::string> peer = parameterManager.queryVector<std::string>("peer");
+    printf("peer: \n");
+    for (unsigned int i = 0; i < peer.size(); i++) {
+        printf("\t%s\n", peer[i].c_str());
+    }
 
     return 0;
 

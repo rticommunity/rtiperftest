@@ -74,6 +74,19 @@ class ParameterManager
                 fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
                 return false;
             }
+
+            try {
+                ParameterVector<std::string> * peer = new ParameterVector<std::string>();
+                peer->setCommandLineArgument(std::make_pair("-peer","<address>"));
+                peer->setDescription("Adds a peer to the peer host address list.\nThis argument may be repeated to indicate multiple peers");
+                peer->setType(t_vector_string_push);
+                peer->setNumArguments(1);
+                listParameter["peer"] = peer;
+            } catch(std::bad_alloc &ex) {
+                fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
+                return false;
+            }
+            return true;
         }
 
 
@@ -85,9 +98,25 @@ class ParameterManager
             it = listParameter.find(parameterKey);
             if (it != listParameter.end()) {
                 Parameter_base* p = listParameter[parameterKey];
-                return ((Parameter<T>*)p)->getValue();
+                    return ((Parameter<T>*)p)->getValue();
             } else {
                 return T(); // Return the default
+                // TODO throw exception
+            }
+        }
+
+        // Get a vector with the values of a parameter
+        template <typename T>
+        std::vector<T> queryVector(std::string parameterKey)
+        {
+            std::map<std::string, Parameter_base*>::iterator it;
+            it = listParameter.find(parameterKey);
+            if (it != listParameter.end()) {
+                Parameter_base* p = listParameter[parameterKey];
+                return ((ParameterVector<T>*)p)->getValue();
+
+            } else {
+                return std::vector<T>(); // Return the default
                 // TODO throw exception
             }
         }
@@ -136,6 +165,14 @@ class ParameterManager
                                 }
                                 ((Parameter<int>*)it->second)->setValue(var);
                             }
+                            // Type is t_vector_string_push
+                            else if (it->second->getType() == t_vector_string_push) {
+                                if (!it->second->validateStrRange(allArgs[i])){
+                                    success = false;
+                                }
+                                ((ParameterVector<std::string>*)it->second)->setValue(allArgs[i]);
+                            }
+
                         }
                         it->second->setIsSet(true);
                         break;

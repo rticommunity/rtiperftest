@@ -7,7 +7,7 @@
 #include <utility>      // std::pair, std::make_pair
 #include <vector>
 
-enum TYPE {t_NULL, t_int, t_string, t_bool};
+enum TYPE {t_NULL, t_int, t_string, t_bool, t_vector_string_push};
 
 
 class Parameter_base  {
@@ -218,6 +218,43 @@ class Parameter : public Parameter_base {
 
     private:
         void getValueInternal(T &var)
+        {
+            var = value;
+        }
+};
+
+
+template <typename T>
+class ParameterVector : public Parameter_base {
+    private:
+        std::vector<T> value;
+
+    public:
+        ParameterVector()
+        {
+        }
+        ~ParameterVector()
+        {
+            value.clear();
+        }
+        ParameterVector(Parameter_base& p)
+        {
+        }
+
+        std::vector<T> getValue()
+        {
+            std::vector<T> var;
+            getValueInternal(var);
+            return var;
+        }
+
+        void setValue(T var)
+        {
+            value.push_back(var);
+        }
+
+    private:
+        void getValueInternal(std::vector<T> &var)
         {
             var = value;
         }
