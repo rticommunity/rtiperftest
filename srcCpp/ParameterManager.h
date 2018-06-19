@@ -265,9 +265,9 @@ class ParameterManager
         bool checkHelp(int argc, char *argv[])
         {
             std::vector<std::string> allArgs(argv, argv + argc);
-            for(unsigned int i = 1; i < allArgs.size(); i++) {
+            for (unsigned int i = 1; i < allArgs.size(); i++) {
                 if (allArgs[i] == "-help" || allArgs[i] == "-h") {
-                    std::cout <<  displayHelp() <<'\n';
+                    std::cout << displayHelp() <<'\n';
                     return true;
                 }
             }
