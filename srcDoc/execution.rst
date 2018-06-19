@@ -264,19 +264,12 @@ test.
 
     Waiting to discover 1 publishers ...
     Waiting for data...
-    Length:    32  Packets: 85900000  Packets/s(ave): 2880385  Mbps(ave):   737.4  Lost: 0
-    Lost Packets (%): 0.00%
-    Length:    64  Packets: 66500000  Packets/s(ave): 2232093  Mbps(ave):  1142.8  Lost: 0
-    Lost Packets (%): 0.00%
-    Length:   256  Packets: 37200000  Packets/s(ave): 1248203  Mbps(ave):  2556.3  Lost: 0
-    Lost Packets (%): 0.00%
-    Length:  1024  Packets: 15200000  Packets/s(ave):  506920  Mbps(ave):  4152.7  Lost: 0
-    Lost Packets (%): 0.00%
-    Length:  8192  Packets:  1900000  Packets/s(ave):   60350  Mbps(ave):  3955.2  Lost: 0
-    Lost Packets (%): 0.00%
-    Length: 32768  Packets:  1600000  Packets/s(ave):   52506  Mbps(ave): 13764.4  Lost: 0
-    Lost Packets (%): 0.00%
-    Length: 63000  Packets:  1100000  Packets/s(ave):   35481  Mbps(ave): 17882.6  Lost: 0
-    Lost Packets (%): 0.00%
+    Length:    32  Packets: 85900000  Packets/s(ave): 2880385  Mbps(ave):   737.4  Lost: 0 (0.00%)
+    Length:    64  Packets: 66500000  Packets/s(ave): 2232093  Mbps(ave):  1142.8  Lost: 0 (0.00%)
+    Length:   256  Packets: 37200000  Packets/s(ave): 1248203  Mbps(ave):  2556.3  Lost: 0 (0.00%)
+    Length:  1024  Packets: 15200000  Packets/s(ave):  506920  Mbps(ave):  4152.7  Lost: 0 (0.00%)
+    Length:  8192  Packets:  1900000  Packets/s(ave):   60350  Mbps(ave):  3955.2  Lost: 0 (0.00%)
+    Length: 32768  Packets:  1600000  Packets/s(ave):   52506  Mbps(ave): 13764.4  Lost: 0 (0.00%)
+    Length: 63000  Packets:  1100000  Packets/s(ave):   35481  Mbps(ave): 17882.6  Lost: 0 (0.00%)
     Finishing test...
     Test ended.

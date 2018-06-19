@@ -759,6 +759,12 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             }
             _executionTime = (unsigned int) strtol(argv[i], NULL, 10);
 
+            if (_executionTime <= 0) {
+                fprintf(stderr,
+                        "-executionTime value must be a positive number greater than 0\n");
+                return false;
+            }
+
         } else if (IS_OPTION(argv[i], "-cpu"))
         {
             _showCpu = true;
@@ -1204,15 +1210,15 @@ class ThroughputListener : public IMessagingCB
                 outputCpu = cpu.get_cpu_average();
             }
             printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
-                   "Mbps(ave): %7.1lf  Lost: %llu %s\n",
+                   "Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%) %s\n",
                    interval_data_length + perftest_cpp::OVERHEAD_BYTES,
                    interval_packets_received,
                    interval_packets_received*1000000/interval_time,
                    interval_bytes_received*1000000.0/interval_time*8.0/1000.0/1000.0,
                    interval_missing_packets,
+                   missing_packets_percent,
                    outputCpu.c_str()
             );
-            printf("Lost Packets (%%): %1.2f%%\n", missing_packets_percent);
             fflush(stdout);
 
         }
@@ -1432,7 +1438,7 @@ int perftest_cpp::Subscriber()
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
                 printf("Packets: %8llu  Packets/s: %7llu  Packets/s(ave): %7.0lf  "
-                       "Mbps: %7.1lf  Mbps(ave): %7.1lf  Lost: %7llu (%1.2f%%) %s\n",
+                       "Mbps: %7.1lf  Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%) %s\n",
                         last_msgs, mps, mps_ave,
                         bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
                         reader_listener->missing_packets,

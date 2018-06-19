@@ -13,6 +13,8 @@ java_scripts_folder="${script_location}/resource/java_scripts"
 bin_folder="${script_location}/bin"
 cStringifyFile_script="${script_location}/resource/script/cStringifyFile.pl"
 qos_file="${script_location}/perftest_qos_profiles.xml"
+doc_folder="${script_location}/srcDoc"
+generate_doc_folder="${script_location}/doc"
 
 
 # Default values:
@@ -75,6 +77,7 @@ function usage()
     echo "                                 will clean all the generated code and binaries "
     echo "    --debug                      Compile against the RTI Connext Debug          "
     echo "                                 libraries. Default is against release ones.    "
+    echo "    --build-doc                  Generate the HTML and PDF documentation.       "
     echo "    --dynamic                    Compile against the RTI Connext Dynamic        "
     echo "                                 libraries. Default is against static ones.     "
     echo "    --secure                     Enable the security options for compilation.   "
@@ -110,6 +113,7 @@ function clean()
     rm -rf "${script_location}"/srcJava/jar
     rm -rf "${script_location}"/srcJava/com/rti/perftest/gen
     rm -rf "${script_location}"/bin
+    clean_documentation
 
     echo ""
     echo "================================================================================"
@@ -417,6 +421,54 @@ function build_java()
 }
 
 ################################################################################
+function clean_documentation()
+{
+    # Remove the content of ${doc_folder}/_build
+    rm -rf ${doc_folder}/_build
+    rm -rf ${generate_doc_folder}
+}
+
+function build_documentation()
+{
+
+    # Generate HTML
+    echo ""
+    echo -e "${INFO_TAG} Generating HTML documentation"
+    cd ${doc_folder}
+    ${MAKE_EXE} -f Makefile html > /dev/null 2>&1
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating HTML documentation"
+        echo -e "${ERROR_TAG} You will need to install:
+            sudo pip install -U sphinx
+            sudo pip install sphinx_rtd_theme"
+        exit -1
+    fi
+    rm -rf ${generate_doc_folder}/html
+    mkdir -p ${generate_doc_folder}/html
+    cp -rf ${doc_folder}/_build/html ${generate_doc_folder}/
+    echo -e "${INFO_TAG} HTML Generation successful. You will find it under:
+        ${generate_doc_folder}/html/index.html"
+
+
+    # Generate PDF
+    echo ""
+    echo -e "${INFO_TAG} Generating PDF documentation"
+    cd ${doc_folder}
+    ${MAKE_EXE} -f Makefile latexpdf > /dev/null 2>&1
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating PDF documentation"
+        echo -e "${ERROR_TAG} On Linux systems you might need to install 'texlive-full'."
+        exit -1
+    fi
+    rm -rf ${generate_doc_folder}/pdf
+    mkdir -p ${generate_doc_folder}/pdf
+    cp -rf ${doc_folder}/_build/latex/RTI_Perftest.pdf ${generate_doc_folder}/pdf/RTI_Perftest_UsersManual.pdf
+    echo -e "${INFO_TAG} PDF Generation successful. You will find it under:
+        ${generate_doc_folder}/pdf/RTI_Perftest.pdf"
+
+}
+
+################################################################################
 # Initial message
 echo ""
 echo "================================ RTI PERFTEST: ================================="
@@ -491,6 +543,10 @@ while [ "$1" != "" ]; do
             ;;
         --secure)
             USE_SECURE_LIBS=1
+            ;;
+        --build-doc)
+            build_documentation
+            exit 0
             ;;
         --openssl-home)
             RTI_OPENSSLHOME=$2

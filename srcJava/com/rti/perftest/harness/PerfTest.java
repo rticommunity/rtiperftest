@@ -666,7 +666,8 @@ public final class PerfTest {
                 try {
                     _executionTime = (long)Integer.parseInt(argv[i]);
                 } catch (NumberFormatException nfx) {
-                    System.err.print("Bad executionTime\n");
+                    System.err.print(
+                            "-executionTime value must be a positive number greater than 0\n");
                     return false;
                 }
             }
@@ -1037,7 +1038,7 @@ public final class PerfTest {
                 if (last_msgs > 0) {
                     System.out.printf(
                             "Packets: %1$8d  Packets/s: %2$7d  Packets/s(ave): %3$7.0f  " +
-                            "Mbps: %4$7.1f  Mbps(ave): %5$7.1f  Lost: %6$7d (%7$1.2f%%)" + outputCpu + "\n",
+                            "Mbps: %4$7.1f  Mbps(ave): %5$7.1f  Lost: %6$5d (%7$1.2f%%)" + outputCpu + "\n",
                             last_msgs, mps, mps_ave,
                             bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
                             reader_listener.missingPackets,
