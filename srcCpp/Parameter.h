@@ -8,17 +8,24 @@
 #include <vector>
 
 enum TYPE {
-        T_NULL,           // Default type
-        T_NUMERIC,        // Numeric type, unsigned long long
-        T_STR,            // std::string tpy
-        T_BOOL,           // bool type
-        T_VECTOR_NUMERIC, // std::vector<unsigened long long>
-        T_VECTOR_STR      // std::vector<std::string>
+    T_NULL,           // Default type
+    T_NUMERIC,        // Numeric type, unsigned long long
+    T_STR,            // std::string tpy
+    T_BOOL,           // bool type
+    T_VECTOR_NUMERIC, // std::vector<unsigened long long>
+    T_VECTOR_STR      // std::vector<std::string>
 };
 
 enum PARSEMETHOD {
-        NOSPLIT,          // If the value is not splited into the vector
-        SPLIT             // If the value is splited into the vector
+    NOSPLIT,          // If the value is not splited into the vector
+    SPLIT             // If the value is splited into the vector
+};
+
+// This specifies if a parameter will be followed by one extra argument.
+enum EXTRAARGUMENT {
+    NO,               // There is not extra argument
+    OPTIONAL,         // It is possible to have one extra argument
+    YES              // There is not one extra argument
 };
 class Parameter_base  {
     private:
@@ -26,7 +33,7 @@ class Parameter_base  {
         std::string description;
         bool isSet;
         TYPE type;
-        int  numArguments; // This specifies if a parameter will be followed by another argument.
+        EXTRAARGUMENT  extraArgument;
         bool internal; // Does not have description
 
         // Only used for numeric argument
@@ -42,7 +49,7 @@ class Parameter_base  {
             internal = false;
             isSet = false;
             type = T_NULL;
-            numArguments = 0;
+            extraArgument = NO;
             rangeStart = 0;
             rangeEnd = ULLONG_MAX;
         }
@@ -52,7 +59,7 @@ class Parameter_base  {
             description.clear();
             isSet = false;
             type = T_NULL;
-            numArguments = 0;
+            extraArgument = NO;
             commandLineArgument.first.clear();
             commandLineArgument.second.clear();
             rangeStart = 0;
@@ -115,9 +122,9 @@ class Parameter_base  {
             type = var;
         }
 
-        virtual void setNumArguments(int var)
+        virtual void setExtraArgument(EXTRAARGUMENT var)
         {
-            numArguments = var;
+            extraArgument = var;
         }
 
         virtual void setRangeStart(unsigned long long var)
@@ -167,9 +174,9 @@ class Parameter_base  {
             return type;
         }
 
-        virtual int getnumArguments()
+        virtual EXTRAARGUMENT getExtraArgument()
         {
-            return numArguments;
+            return extraArgument;
         }
 
         virtual bool getInternal()
@@ -258,7 +265,6 @@ class ParameterVector : public Parameter_base {
         void setValue(T var)
         {
             value.push_back(var);
-            std::sort(value.begin(), value.end());
         }
 
         void setParseMethod(PARSEMETHOD var)

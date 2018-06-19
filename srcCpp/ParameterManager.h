@@ -10,24 +10,23 @@
 class ParameterManager
 {
     private:
-        std::map<std::string, Parameter_base*> listParameter;
+        std::map<std::string, Parameter_base*> parameterList;
 
     public:
         ParameterManager()
         {
-
         }
-        bool initialize(){
-            // check for error
+        bool initialize()
+        {
             try {
                 Parameter<unsigned long long> *batching = new Parameter<unsigned long long>();
                 batching->setCommandLineArgument(std::make_pair("-batchsize","<bytes>"));
                 batching->setDescription("Size in bytes of batched message, default 8kB.\n(Disabled for LatencyTest mode or if dataLen > 4kB)");
                 batching->setType(T_NUMERIC);
                 batching->setValue(0);
-                batching->setNumArguments(1);
+                batching->setExtraArgument(YES);
                 batching->setRange(0, 63000);
-                listParameter["batching"] = batching;
+                parameterList["batching"] = batching;
             } catch(std::bad_alloc &ex) {
                 fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
                 return false;
@@ -39,11 +38,11 @@ class ParameterManager
                 flowController->setDescription("In the case asynchronous writer use a specific flow controller.\nThere are several flow controller predefined:\n\t{'default', '1Gbps', '10Gbps'}\nDefault: \"default\" (If using asynchronous).");
                 flowController->setType(T_STR);
                 flowController->setValue("default");
-                flowController->setNumArguments(1);
+                flowController->setExtraArgument(YES);
                 flowController->addValidStrValues("default");
                 flowController->addValidStrValues("1Gbps");
                 flowController->addValidStrValues("10Gbps");
-                listParameter["flowController"] = flowController;
+                parameterList["flowController"] = flowController;
             } catch(std::bad_alloc &ex) {
                 fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
                 return false;
@@ -55,8 +54,8 @@ class ParameterManager
                 nic->setDescription("Use only the nic specified by <ipaddr>.\nIf not specified, use all available interfaces");
                 nic->setType(T_STR);
                 nic->setValue("");
-                nic->setNumArguments(1);
-                listParameter["nic"] = nic;
+                nic->setExtraArgument(YES);
+                parameterList["nic"] = nic;
             } catch(std::bad_alloc &ex) {
                 fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
                 return false;
@@ -67,9 +66,9 @@ class ParameterManager
                 pub->setCommandLineArgument(std::make_pair("-pub",""));
                 pub->setDescription("Set test to be a publisher");
                 pub->setType(T_BOOL);
-                pub->setNumArguments(0);
+                pub->setExtraArgument(NO);
                 pub->setValue(false);
-                listParameter["pub"] = pub;
+                parameterList["pub"] = pub;
             } catch(std::bad_alloc &ex) {
                 fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
                 return false;
@@ -80,8 +79,8 @@ class ParameterManager
                 peer->setCommandLineArgument(std::make_pair("-peer","<address>"));
                 peer->setDescription("Adds a peer to the peer host address list.\nThis argument may be repeated to indicate multiple peers");
                 peer->setType(T_VECTOR_STR);
-                peer->setNumArguments(1);
-                listParameter["peer"] = peer;
+                peer->setExtraArgument(YES);
+                parameterList["peer"] = peer;
             } catch(std::bad_alloc &ex) {
                 fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
                 return false;
@@ -92,10 +91,24 @@ class ParameterManager
                 scan->setCommandLineArgument(std::make_pair("-scan","<size1>:<size2>:...:<sizeN>"));
                 scan->setDescription("Run test in scan mode, traversing\na range of sample data sizes from\n[32,63000] or [63001,2147483128] bytes,\nin the case that you are using large data or not.\nThe list of sizes is optional.\nDefault values are '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\nDefault: Not set\n");
                 scan->setType(T_VECTOR_NUMERIC);
-                scan->setNumArguments(1);
+                scan->setExtraArgument(YES);
                 scan->setRange(32, 2147483128);
                 scan->setParseMethod(SPLIT);
-                listParameter["scan"] = scan;
+                parameterList["scan"] = scan;
+            } catch(std::bad_alloc &ex) {
+                fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
+                return false;
+            }
+
+            try {
+                Parameter<unsigned long long> *unbounded = new Parameter<unsigned long long>();
+                unbounded->setCommandLineArgument(std::make_pair("-unbounded","<allocation_threshold>"));
+                unbounded->setDescription("Use unbounded Sequences\n<allocation_threshold> is optional, default 63000 Bytes.");
+                unbounded->setType(T_NUMERIC);
+                unbounded->setValue(63000);
+                unbounded->setExtraArgument(OPTIONAL);
+                unbounded->setRange(0, 2147483128);
+                parameterList["unbounded"] = unbounded;
             } catch(std::bad_alloc &ex) {
                 fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
                 return false;
@@ -110,9 +123,9 @@ class ParameterManager
         T query(std::string parameterKey)
         {
             std::map<std::string, Parameter_base*>::iterator it;
-            it = listParameter.find(parameterKey);
-            if (it != listParameter.end()) {
-                Parameter_base* p = listParameter[parameterKey];
+            it = parameterList.find(parameterKey);
+            if (it != parameterList.end()) {
+                Parameter_base* p = parameterList[parameterKey];
                     return ((Parameter<T>*)p)->getValue();
             } else {
                 return T(); // Return the default
@@ -125,9 +138,9 @@ class ParameterManager
         std::vector<T> queryVector(std::string parameterKey)
         {
             std::map<std::string, Parameter_base*>::iterator it;
-            it = listParameter.find(parameterKey);
-            if (it != listParameter.end()) {
-                Parameter_base* p = listParameter[parameterKey];
+            it = parameterList.find(parameterKey);
+            if (it != parameterList.end()) {
+                Parameter_base* p = parameterList[parameterKey];
                 return ((ParameterVector<T>*)p)->getValue();
 
             } else {
@@ -143,28 +156,35 @@ class ParameterManager
             bool success = true;
             // Copy all arguments into a container of strings
             std::vector<std::string> allArgs(argv, argv + argc);
+
             std::map<std::string, Parameter_base *>::iterator it;
-            for(unsigned int i = 1; i < allArgs.size(); i++) {
-                for (it = listParameter.begin(); it != listParameter.end(); it++) {
-                    if (allArgs[i] == it->second->getCommandLineArgument().first) { // check for small string compare
+            for (unsigned int i = 1; i < allArgs.size(); i++) {
+                for (it = parameterList.begin(); it != parameterList.end(); it++) {
+                    if (allArgs[i] == it->second->getCommandLineArgument().first) { // TODO check for small string compare
+                        it->second->setIsSet(true);
                         // NumArguments == 0
-                        if (it->second->getnumArguments() == 0){
+                        if (it->second->getExtraArgument() == NO) {
                             // Type is T_BOOL
                             if (it->second->getType() == T_BOOL) {
                                 ((Parameter<bool>*)it->second)->setValue(true);
                             }
-                        // NumArguments == 1
-                        } else if (it->second->getnumArguments() == 1) {
+                        // NumArguments is 1 or optional
+                        } else if (it->second->getExtraArgument() > NO) {
                             // Check for error in num of arguments
-                            if (++i >= allArgs.size() || allArgs[i].find("-") == 0) {
-                                fprintf(stderr, "Missing '%s' after '%s'\n",
+                            if (i+1 >= allArgs.size() || allArgs[i+1].find("-") == 0) {
+                                if (it->second->getExtraArgument() == YES) {
+                                    fprintf(stderr, "Missing '%s' after '%s'\n",
                                         it->second->getCommandLineArgument().second.c_str(),
                                         it->second->getCommandLineArgument().first.c_str());
-                                return false;
+                                    return false;
+                                } else if (it->second->getExtraArgument() == OPTIONAL) {
+                                    break;
+                                }
                             }
+                            ++i;
                             // Type is T_STR
                             if (it->second->getType() == T_STR) {
-                                if (!it->second->validateStrRange(allArgs[i])){
+                                if (!it->second->validateStrRange(allArgs[i])) {
                                     success = false;
                                 }
                                 ((Parameter<std::string>*)it->second)->setValue(allArgs[i]);
@@ -177,7 +197,7 @@ class ParameterManager
                                             it->second->getCommandLineArgument().first.c_str());
                                     success = false;
                                 }
-                                if (!it->second->validateNumericRange(var)){
+                                if (!it->second->validateNumericRange(var)) {
                                     success = false;
                                 }
                                 ((Parameter<unsigned long long>*)it->second)->setValue(var);
@@ -185,7 +205,7 @@ class ParameterManager
                             // Type is T_VECTOR_STR
                             else if (it->second->getType() == T_VECTOR_STR) {
                                 if (NOSPLIT == ((ParameterVector<std::string>*)it->second)->getParseMethod()) {
-                                    if (!it->second->validateStrRange(allArgs[i])){
+                                    if (!it->second->validateStrRange(allArgs[i])) {
                                         success = false;
                                     }
                                     ((ParameterVector<std::string>*)it->second)->setValue(allArgs[i]);
@@ -202,7 +222,7 @@ class ParameterManager
                                                     it->second->getCommandLineArgument().first.c_str());
                                             success = false;
                                         }
-                                        if (!it->second->validateNumericRange(var)){
+                                        if (!it->second->validateNumericRange(var)) {
                                             success = false;
                                         }
                                         ((ParameterVector<unsigned long long>*)it->second)->setValue(var);
@@ -210,7 +230,6 @@ class ParameterManager
                                 }
                             }
                         }
-                        it->second->setIsSet(true);
                         break;
                     }
                 }
@@ -226,7 +245,7 @@ class ParameterManager
             oss << "/**********************************************************************************************/\n"
                 << "Usage:\t perftest_cpp [options]\n"
                 << "Where [options] are:\n\n";
-            for (it = listParameter.begin(); it != listParameter.end(); it++){
+            for (it = parameterList.begin(); it != parameterList.end(); it++) {
                 if (!it->second->getInternal()) {
                     oss << printCommandLineParameter(it->second);
                 }
@@ -251,27 +270,23 @@ class ParameterManager
         ~ParameterManager()
         {
             std::map<std::string, Parameter_base *>::iterator it;
-            for (it = listParameter.begin(); it != listParameter.end(); it++) {
+            for (it = parameterList.begin(); it != parameterList.end(); it++) {
                 delete it->second;
             }
-            listParameter.clear();
+            parameterList.clear();
         }
 
         // check if a variable has been set
         bool isSet(std::string parameterKey)
         {
             std::map<std::string, Parameter_base*>::iterator it;
-            it = listParameter.find(parameterKey);
-            if (it != listParameter.end()) {
-                return listParameter[parameterKey]->getIsSet();
+            it = parameterList.find(parameterKey);
+            if (it != parameterList.end()) {
+                return parameterList[parameterKey]->getIsSet();
             } else {
                 return false;
             }
         }
-
-        // // validate the listParameter
-        // //bool validate(map<string,description> listParameiterDescriptipon) {
-        // //}
 
 
     private:
