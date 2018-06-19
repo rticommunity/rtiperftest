@@ -7,9 +7,19 @@
 #include <utility>      // std::pair, std::make_pair
 #include <vector>
 
-enum TYPE {t_NULL, t_int, t_string, t_bool, t_vector_string_push, t_vector_int_regex};
+enum TYPE {
+        T_NULL,           // Default type
+        T_NUMERIC,        // Numeric type, unsigned long long
+        T_STR,            // std::string tpy
+        T_BOOL,           // bool type
+        T_VECTOR_NUMERIC, // std::vector<unsigened long long>
+        T_VECTOR_STR      // std::vector<std::string>
+};
 
-
+enum PARSEMETHOD {
+        NOSPLIT,          // If the value is not splited into the vector
+        SPLIT             // If the value is splited into the vector
+};
 class Parameter_base  {
     private:
         std::pair <std::string, std::string> commandLineArgument;
@@ -31,7 +41,7 @@ class Parameter_base  {
         {
             internal = false;
             isSet = false;
-            type = t_NULL;
+            type = T_NULL;
             numArguments = 0;
             rangeStart = 0;
             rangeEnd = ULLONG_MAX;
@@ -41,7 +51,7 @@ class Parameter_base  {
             internal = false;
             description.clear();
             isSet = false;
-            type = t_NULL;
+            type = T_NULL;
             numArguments = 0;
             commandLineArgument.first.clear();
             commandLineArgument.second.clear();
@@ -167,13 +177,21 @@ class Parameter_base  {
             return internal;
         }
 
-        // Todo create one per type
-        virtual void getValue(int &var) {}
+        // TODO create one per type
+        virtual void getValue(unsigned long long &var) {}
         virtual void getValue(std::string &var) {}
 
-        // Todo create one per type
-        virtual void setValue(int var) {}
+        // TODO create one per type
+        virtual void setValue(unsigned long long var) {}
         virtual void setValue(std::string var) {}
+
+        // set and get parseMethod only for T_VECTOR
+        virtual void setParseMethod(PARSEMETHOD var) {}
+        virtual PARSEMETHOD getParseMethod()
+        {
+            return NOSPLIT;
+        }
+
 };
 
 template <typename T>
@@ -211,15 +229,16 @@ class Parameter : public Parameter_base {
         }
 };
 
-
 template <typename T>
 class ParameterVector : public Parameter_base {
     private:
         std::vector<T> value;
+        PARSEMETHOD parseMethod;
 
     public:
         ParameterVector()
         {
+            parseMethod = NOSPLIT;
         }
         ~ParameterVector()
         {
@@ -241,6 +260,17 @@ class ParameterVector : public Parameter_base {
             value.push_back(var);
             std::sort(value.begin(), value.end());
         }
+
+        void setParseMethod(PARSEMETHOD var)
+        {
+            parseMethod = var;
+        }
+
+        PARSEMETHOD getParseMethod()
+        {
+            return parseMethod;
+        }
+
 
     private:
         void getValueInternal(std::vector<T> &var)
