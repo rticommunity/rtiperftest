@@ -21,6 +21,7 @@
 #include "perftestPlugin.h"
 
 //TODO: maybe move this to perftest.cpp or the .idl || Postpone to new parser
+//TODO: Postpone until the parameter manager
 #define RTIPERFTEST_MAX_PEERS 1024
 
 class peerData;
@@ -40,22 +41,32 @@ class RTIRawTransportImpl : public IMessaging {
 
     void Shutdown();
 
-    int GetBatchSize() {
-        return _batchSize;
-    }
+    int GetBatchSize();
 
-    unsigned long GetInitializationSampleCount() {
-        return 0;
-    };
+    unsigned long GetInitializationSampleCount();
 
-    bool SupportListener(){
-        return false;
-    };
+    NDDS_Transport_Plugin *GetPlugin();
 
-    bool SupportDiscovery()
-    {
-        return false;
-    };
+    std::vector<peerData> GetPeersData();
+
+    RTIOsapiSemaphore *GetPongSemaphore();
+
+    struct REDAWorker *GetWorker();
+
+    /* Calculate the port depending of the Id of the subscriber.*/
+    unsigned int
+    GetSendUnicastPort(const char *topicName, unsigned int subId = 0);
+
+    bool GetMulticastTransportAddr(
+            const char *topicName,
+            NDDS_Transport_Address_t &addr);
+
+    /* Calculate the ports thats it will be use for receive data */
+    unsigned int GetReceiveUnicastPort(const char *topicName);
+
+    bool SupportListener();
+
+    bool SupportDiscovery();
 
     IMessagingWriter *CreateWriter(const char *topic_name);
 
@@ -65,28 +76,16 @@ class RTIRawTransportImpl : public IMessaging {
 
     bool ConfigureSocketsTransport();
 
-    /* Calculate the port depending of the Id of the subscriber.*/
-    unsigned int
-    GetSendUnicastPort(const char *topicName, unsigned int subId = 0);
-
-    /* Calculate the ports thats it will be use for receive data */
-    unsigned int GetReceiveUnicastPort(const char *topicName);
-
-    bool GetMulticastTransportAddr(
-            const char *topicName,
-            NDDS_Transport_Address_t &addr);
-
     bool IsMulticast()
     {
         return _transport.useMulticast && _transport.allowsMulticast();
     }
 
   private:
-    unsigned long _DataLen;
-    int _DomainID;
-    bool _IsReliable;
-    bool _LatencyTest;
-    bool _IsDebug;
+    unsigned long _dataLen;
+    int _domainID;
+    bool _latencyTest;
+    bool _isDebug;
     bool _isLargeData;
     bool _isScan;
     bool _isPublisher;
@@ -109,7 +108,7 @@ class RTIRawTransportImpl : public IMessaging {
 
   public:
 
-    std::vector<peerData> _peersInfoList;
+    std::vector<peerData> _peersDataList;
 
 };
 

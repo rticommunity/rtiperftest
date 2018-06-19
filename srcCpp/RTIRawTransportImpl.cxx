@@ -23,11 +23,11 @@ std::vector<NDDS_Transport_SendResource_t> peerData::resourcesList;
  * Constructor
  */
 RTIRawTransportImpl::RTIRawTransportImpl() :
-        _DataLen(100),
-        _DomainID(1),
+        _dataLen(100),
+        _domainID(1),
         _IsReliable(false),
-        _LatencyTest(false),
-        _IsDebug(false),
+        _latencyTest(false),
+        _isDebug(false),
         _isLargeData(false),
         _isScan(false),
         _isPublisher(false),
@@ -56,6 +56,15 @@ RTIRawTransportImpl::RTIRawTransportImpl() :
  */
 void RTIRawTransportImpl::Shutdown()
 {
+
+    for (unsigned int i = 0; i < peerData::resourcesList.size(); i++) {
+        if (peerData::resourcesList[i] != NULL && _plugin != NULL) {
+            _plugin->destroy_sendresource_srEA(
+                    _plugin, _peersDataList[i].resource);
+            peerData::resourcesList[i] = NULL;
+        }
+    }
+
     if (_plugin != NULL && _worker != NULL) {
         _plugin->delete_cEA(_plugin, _worker);
     }
@@ -74,6 +83,54 @@ void RTIRawTransportImpl::Shutdown()
     }
 
 }
+
+
+/*********************************************************
+ * Getters
+ */
+int RTIRawTransportImpl::GetBatchSize()
+{
+    return _batchSize;
+}
+
+unsigned long RTIRawTransportImpl::GetInitializationSampleCount()
+{
+    return 0;
+}
+
+NDDS_Transport_Plugin *RTIRawTransportImpl::GetPlugin()
+{
+    return _plugin;
+}
+
+std::vector<peerData> RTIRawTransportImpl::GetPeersData()
+{
+    return _peersDataList;
+}
+
+RTIOsapiSemaphore *RTIRawTransportImpl::GetPongSemaphore()
+{
+    return _pongSemaphore;
+}
+
+struct REDAWorker *RTIRawTransportImpl::GetWorker()
+{
+    return _worker;
+}
+
+/*********************************************************
+ * SupportFunctions
+ */
+bool RTIRawTransportImpl::SupportListener()
+{
+    return false;
+}
+
+bool RTIRawTransportImpl::SupportDiscovery()
+{
+    return false;
+}
+
 
 /*********************************************************
  * PrintCmdLineHelp
@@ -198,9 +255,9 @@ bool RTIRawTransportImpl::ParseConfig(int argc, char *argv[]) {
                 return false;
             }
 
-            _DataLen = strtol(argv[i], NULL, 10);
+            _dataLen = strtol(argv[i], NULL, 10);
 
-            if (_DataLen < (unsigned long)perftest_cpp::OVERHEAD_BYTES) {
+            if (_dataLen < (unsigned long)perftest_cpp::OVERHEAD_BYTES) {
                 fprintf(
                         stderr,
                         "-dataLen must be >= %d\n",
@@ -208,7 +265,7 @@ bool RTIRawTransportImpl::ParseConfig(int argc, char *argv[]) {
                 return false;
             }
 
-            if (_DataLen > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE) {
+            if (_dataLen > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE) {
                 fprintf(
                         stderr,
                         "-dataLen must be <= %d\n",
@@ -222,10 +279,13 @@ bool RTIRawTransportImpl::ParseConfig(int argc, char *argv[]) {
                 fprintf(stderr, "Missing <id> after -domain\n");
                 return false;
             }
-            _DomainID = strtol(argv[i], NULL, 10);
+            _domainID = strtol(argv[i], NULL, 10);
         }
         else if (IS_OPTION(argv[i], "-bestEffort")) {
-            _IsReliable = false;
+            /*
+             * RawTransport only support bestEffort
+             * This is just for accept the parameter if is provided
+             */
         }
         else if (IS_OPTION(argv[i], "-verbosity")) {
             errno = 0;
@@ -267,7 +327,7 @@ bool RTIRawTransportImpl::ParseConfig(int argc, char *argv[]) {
             }
         }
         else if (IS_OPTION(argv[i], "-latencyTest")) {
-            _LatencyTest = true;
+            _latencyTest = true;
         }
         else if (IS_OPTION(argv[i], "-noBlockingSockets")) {
             _useBlocking = false;
@@ -279,10 +339,11 @@ bool RTIRawTransportImpl::ParseConfig(int argc, char *argv[]) {
             }
             if (_peerHostCount +1 < RTIPERFTEST_MAX_PEERS) {
                 _peerHost[_peerHostCount++] = DDS_String_dup(argv[i]);
-                if (_peerHost[_peerHostCount++] == NULL) {
+                if (_peerHost[_peerHostCount-1] == NULL) {
                     fprintf(
                             stderr,
                             "Fail to allocate memory on ParseConfig()\n");
+                    return false;
                 }
             } else {
                 fprintf(
@@ -335,15 +396,15 @@ bool RTIRawTransportImpl::ParseConfig(int argc, char *argv[]) {
     }
 
     if (_isScan) {
-        _DataLen = _scanMaxSize;
+        _dataLen = _scanMaxSize;
     }
 
-    if (_batchSize != 0 && _DataLen > _batchSize) {
+    if (_batchSize != 0 && _dataLen > _batchSize) {
         fprintf(stderr, "\t -batchSize must be bigger or equal than -datalen\n");
         return false;
     }
 
-    if (_batchSize != 0 && _LatencyTest) {
+    if (_batchSize != 0 && _latencyTest) {
         fprintf(
                 stderr,
                 "\t -latencyTest not supported with batchign. (Remove "
@@ -351,7 +412,7 @@ bool RTIRawTransportImpl::ParseConfig(int argc, char *argv[]) {
         return false;
     }
 
-    if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
+    if (_dataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
         fprintf(stderr, "Large data settings enabled.\n");
         _isLargeData = true;
     }
@@ -380,7 +441,7 @@ std::string RTIRawTransportImpl::PrintConfiguration()
     std::ostringstream stringStream;
 
     // Domain ID
-    stringStream << "\tDomain: " << _DomainID << "\n";
+    stringStream << "\tDomain: " << _domainID << "\n";
 
     stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
@@ -423,35 +484,30 @@ std::string RTIRawTransportImpl::PrintConfiguration()
 class RTIRawTransportPublisher : public IMessagingWriter{
   private:
     RTIRawTransportImpl *_parent;
-    NDDS_Transport_Plugin *_plugin; // Parent
+    NDDS_Transport_Plugin *_plugin;
     NDDS_Transport_Buffer_t _sendBuffer;
 
-    std::vector<peerData> _peersInfoList; // Parent
+    std::vector<peerData> _peersDataList;
 
     TestData_t _data;
 
-    struct REDAWorker *_worker; //Parent
-    RTIOsapiSemaphore *_pongSemaphore; // Parent
+    struct REDAWorker *_worker;
+    RTIOsapiSemaphore *_pongSemaphore;
 
     unsigned int _batchBufferSize;
-    bool _useBatching; // Parent
+    bool _useBatching;
 
     struct RTICdrStream _stream;
     struct PRESTypePluginDefaultEndpointData _epd;
 
   public:
-    RTIRawTransportPublisher(
-            RTIRawTransportImpl *parent,
-            NDDS_Transport_Plugin *plugin,
-            std::vector<peerData> peersInfoList,
-            RTIOsapiSemaphore *pongSemaphore,
-            struct REDAWorker *worker)
+    RTIRawTransportPublisher(RTIRawTransportImpl *parent)
     {
         _parent = parent;
-        _plugin = plugin;
-        _peersInfoList = peersInfoList;
-        _pongSemaphore = pongSemaphore;
-        _worker = worker;
+        _plugin = parent->GetPlugin();
+        _peersDataList = parent->GetPeersData();
+        _pongSemaphore = parent->GetPongSemaphore();
+        _worker = parent->GetWorker();
 
         if (parent->GetBatchSize() == 0){
             _batchBufferSize = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
@@ -493,29 +549,23 @@ class RTIRawTransportPublisher : public IMessagingWriter{
     }
 
     void Shutdown() {
-        for (unsigned int i = 0; i < peerData::resourcesList.size(); i++) {
-            if (peerData::resourcesList[i] != NULL && _plugin != NULL) {
-                _plugin->destroy_sendresource_srEA(
-                        _plugin,
-                        _peersInfoList[i].resource);
-                peerData::resourcesList[i] = NULL;
-            }
-        }
 
         if (_sendBuffer.pointer != NULL) {
             RTIOsapiHeap_freeBuffer(_sendBuffer.pointer);
+            _sendBuffer.pointer = NULL;
         }
+
     }
 
     bool SendMessage() {
 
         bool success = true;
-        for(unsigned int i = 0; i < _peersInfoList.size(); i++) {
+        for(unsigned int i = 0; i < _peersDataList.size(); i++) {
             if(!_plugin->send(
                     _plugin,
-                    _peersInfoList[i].resource,
-                    &_peersInfoList[i].transportAddr,
-                    _peersInfoList[i].port,
+                    _peersDataList[i].resource,
+                    &_peersDataList[i].transportAddr,
+                    _peersDataList[i].port,
                     NDDS_TRANSPORT_PRIORITY_DEFAULT,
                     &_sendBuffer,
                     1,
@@ -672,26 +722,26 @@ class RTIRawTransportSubscriber : public IMessagingReader
     char *_payload;
     int _payload_size;
 
-    RTIOsapiSemaphore *_pongSemaphore;
-
+    struct RTIOsapiSemaphore *_readThreadSemaphore;
     struct RTICdrStream _stream;
     bool _noData;
 
   public:
     RTIRawTransportSubscriber(
         RTIRawTransportImpl * parent,
-        NDDS_Transport_Plugin *plugin,
         NDDS_Transport_SendResource_t recvResource,
-        NDDS_Transport_Port_t recvPort,
-        struct REDAWorker *worker)
+        NDDS_Transport_Port_t recvPort)
     {
         _parent = parent;
-        _plugin = plugin;
+        _plugin = parent->GetPlugin();
+        _worker = parent->GetWorker();
+
+        _readThreadSemaphore = NULL;
+
         _recvResource = recvResource;
         _recvPort = recvPort;
         _recvBuffer.length = 0;
         _recvBuffer.pointer = NULL;
-        _worker = worker;
 
         // Similar to NDDS_Transport_Message_t message =
         //      NDDS_TRANSPORT_MESSAGE_INVALID;
@@ -729,13 +779,26 @@ class RTIRawTransportSubscriber : public IMessagingReader
 
         if (_recvBuffer.pointer != NULL) {
             RTIOsapiHeap_freeBufferAligned(_recvBuffer.pointer);
+            _recvBuffer.pointer = NULL;
         }
 
         if (&_recvResource != NULL && _plugin != NULL && _worker != NULL) {
             _plugin->unblock_receive_rrEA(_plugin, &_recvResource, _worker);
-            /* TODO: Temporal solution */perftest_cpp::MilliSleep(1000);
-            //TODO: add shemaphore
+
+            if (_readThreadSemaphore != NULL) {
+                if (RTIOsapiSemaphore_take(_readThreadSemaphore, NULL)
+                        != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+                    fprintf(stderr, "Unexpected error taking semaphore\n");
+                    return;
+                }
+            }
+
             _plugin->destroy_recvresource_rrEA(_plugin, &_recvResource);
+        }
+
+        if (_readThreadSemaphore != NULL) {
+            RTIOsapiSemaphore_delete(_readThreadSemaphore);
+            _readThreadSemaphore = NULL;
         }
     }
 
@@ -804,6 +867,22 @@ class RTIRawTransportSubscriber : public IMessagingReader
 
     }
 
+    struct RTIOsapiSemaphore *GetReadThreadSemaphore()
+    {
+        if (_readThreadSemaphore == NULL) {
+            _readThreadSemaphore = RTIOsapiSemaphore_new(
+                    RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL);
+
+            if (_readThreadSemaphore == NULL) {
+                fprintf(
+                        stderr,
+                        "Fail to create a Semaphore for RTIRawTransportImpl\n");
+                return NULL;
+            }
+        }
+
+        return _readThreadSemaphore;
+    }
 
     void WaitForWriters(int numPublishers) {
         /*Dummy Function*/
@@ -821,7 +900,7 @@ bool RTIRawTransportImpl::Initialize(int argc, char *argv[]) {
     printf("-- Using SOCKETS --\n");
 
     // Only if we run latency test we need to wait for pongs after sending pings
-    if (_LatencyTest) {
+    if (_latencyTest) {
         _pongSemaphore =
                 RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL);
 
@@ -859,7 +938,7 @@ unsigned int RTIRawTransportImpl::GetSendUnicastPort(
             DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
 
     return PRESRtps_getWellKnownUnicastPort(
-            _DomainID, /* domainId */
+            _domainID, /* domainId */
             _isPublisher ? subId + 1 : 0, /* participantId */
             wellKnownPorts.port_base,
             wellKnownPorts.domain_id_gain,
@@ -880,7 +959,7 @@ RTIRawTransportImpl::GetReceiveUnicastPort(const char *topicName)
             DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
 
     return PRESRtps_getWellKnownUnicastPort(
-            _DomainID, /* domainId */
+            _domainID, /* domainId */
             _isPublisher ? 0 : perftest_cpp::_SubID + 1, /* participantId */
             wellKnownPorts.port_base,
             wellKnownPorts.domain_id_gain,
@@ -931,6 +1010,12 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
     NDDS_Transport_Address_t multicastAddr;
     bool isMulticastAddr = false;
 
+    NDDS_Transport_Address_t actualAddr;
+    int actualPort = 0;
+    bool shared = false;
+    unsigned int j = 0;
+
+
     if (_transport.useMulticast
         && GetMulticastTransportAddr(topicName, multicastAddr)) {
         isMulticastAddr = true;
@@ -939,11 +1024,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
         return NULL;
     }
 
-    NDDS_Transport_Address_t actualAddr;
-    int actualPort = 0;
-    bool shared = false;
     for (int i = 0; i < _peerHostCount; i++) {
-        unsigned int j;
         shared = false;
         actualAddr = (isMulticastAddr) ? multicastAddr : _peersMap[i].first;
         actualPort = GetSendUnicastPort(topicName, _peersMap[i].second);
@@ -957,12 +1038,12 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
                     NDDS_TRANSPORT_PRIORITY_DEFAULT);
         }
         if (!shared) {
-            peerData::resourcesList.push_back(
-                    new NDDS_Transport_SendResource_t(NULL));
+
+            NDDS_Transport_SendResource_t resource;
 
             if (!_plugin->create_sendresource_srEA(
                         _plugin,
-                        &peerData::resourcesList.back(),
+                        &resource,
                         &actualAddr,
                         actualPort,
                         NDDS_TRANSPORT_PRIORITY_DEFAULT)) {
@@ -972,8 +1053,9 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
                 return NULL;
             }
 
+            peerData::resourcesList.push_back(resource);
         }
-        _peersInfoList.push_back(
+        _peersDataList.push_back(
                 peerData(
                         shared ? &peerData::resourcesList[j-1]
                                 : &peerData::resourcesList.back(),
@@ -981,12 +1063,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
                         actualPort));
     }
 
-    return new RTIRawTransportPublisher(
-            this,
-            _plugin,
-            _peersInfoList,
-            _pongSemaphore,
-            _worker);
+    return new RTIRawTransportPublisher(this);
 }
 
 /*********************************************************
@@ -1029,10 +1106,8 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
 
     return new RTIRawTransportSubscriber(
             this,
-            _plugin,
             recvResource,
-            recvPort,
-            _worker);
+            recvPort);
 }
 
 bool RTIRawTransportImpl::ConfigureSocketsTransport() {
@@ -1248,6 +1323,8 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport() {
 
 
     _transport.printTransportConfigurationSummary();
+
+    delete interface;
 
     return true;
 }

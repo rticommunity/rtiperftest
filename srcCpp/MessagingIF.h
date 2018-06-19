@@ -7,6 +7,7 @@
  */
 
 #include <string>
+#include "osapi/osapi_semaphore.h"
 
 class TestMessage
 {
@@ -56,6 +57,12 @@ class IMessagingReader
 
     // only used for non-callback test
     virtual TestMessage *ReceiveMessage() = 0;
+
+    /*
+     * Used by rawTransport actually
+     * Prevent delete the receive resource meanwhile it's been use by a listener
+     */
+    RTIOsapiSemaphore *GetReadThreadSemaphore() {return NULL;}
 
     // only used for non-callback test to cleanup
     // the thread

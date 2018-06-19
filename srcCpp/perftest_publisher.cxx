@@ -1246,7 +1246,6 @@ static void *ThroughputReadThread(void *arg)
             listener->ProcessMessage(*message);
         }
     }
-
     return NULL;
 }
 
@@ -1799,14 +1798,23 @@ static void *ReadThread(void *arg)
 {
     ListenerType *listener = static_cast<ListenerType *>(arg);
     TestMessage *message = NULL;
+    RTIOsapiSemaphore *semaphore = listener->_reader->GetReadThreadSemaphore();
+
+    // Meanwhile it's been use the reader, avoid the destruction of it.
+    if (semaphore != NULL) {
+        if (RTIOsapiSemaphore_take(semaphore, NULL)
+            != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+            fprintf(stderr, "Unexpected error taking semaphore\n");
+            return NULL;
+        }
+    }
 
     while (!listener->end_test)
     {
         // Receive message should block until a message is received
         message = listener->_reader->ReceiveMessage();
 
-        if (message != NULL)
-        {
+        if (message != NULL) {
             listener->ProcessMessage(*message);
         }
 
@@ -1819,6 +1827,15 @@ static void *ReadThread(void *arg)
     * inside RTIDDSImpl.cxx
     *
     */
+    }
+
+    // This allow the reader to delete the reader participant
+    if (semaphore != NULL) {
+        if (RTIOsapiSemaphore_give(semaphore)
+            != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+            fprintf(stderr, "Unexpected error giving semaphore\n");
+            return NULL;
+        }
     }
 
     return NULL;
@@ -2244,41 +2261,33 @@ int perftest_cpp::Publisher()
     announcement_reader_listener->end_test = true;
     reader_listener->end_test = true;
 
-    /*TODO: Remove all this printf when found a real solution to the problem*/
     if (announcement_reader != NULL) {
         delete (announcement_reader);
     }
-    printf("----> announcement_reader deleted\n");
 
     if (reader != NULL) {
         delete (reader);
     }
-    printf("----> reader deleted\n");
 
     if (writer != NULL) {
         delete (writer);
     }
-    printf("----> writer deleted\n");
 
     if (reader_listener != NULL) {
         delete (reader_listener);
     }
-    printf("----> reader_listener deleted\n");
 
     if (announcement_reader_listener != NULL) {
         delete (announcement_reader_listener);
     }
-    printf("----> announcement_reader_listener deleted\n");
 
     if (listenerThread != NULL) {
         RTIOsapiThread_delete(listenerThread);
     }
-    printf("----> listenerThread deleted\n");
 
     if (announcementThread != NULL) {
         RTIOsapiThread_delete(announcementThread);
     }
-    printf("----> announcementThread deleted\n");
 
     delete []message.data;
 
