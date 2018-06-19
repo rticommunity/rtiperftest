@@ -86,6 +86,20 @@ class ParameterManager
                 fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
                 return false;
             }
+
+            try {
+                ParameterVector<int> * scan = new ParameterVector<int>();
+                scan->setCommandLineArgument(std::make_pair("-scan","<size1>:<size2>:...:<sizeN>"));
+                scan->setDescription("Run test in scan mode, traversing\na range of sample data sizes from\n[32,63000] or [63001,2147483128] bytes,\nin the case that you are using large data or not.\nThe list of sizes is optional.\nDefault values are '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\nDefault: Not set\n");
+                scan->setType(t_vector_int_regex);
+                scan->setNumArguments(1);
+                scan->setRange(32, 2147483128);
+                listParameter["scan"] = scan;
+            } catch(std::bad_alloc &ex) {
+                fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
+                return false;
+            }
+
             return true;
         }
 
@@ -124,6 +138,7 @@ class ParameterManager
         // Parse the command line parameters and set the value
         bool parse(int argc, char *argv[])
         {
+            int var;
             bool success = true;
             // Copy all arguments into a container of strings
             std::vector<std::string> allArgs(argv, argv + argc);
@@ -153,11 +168,12 @@ class ParameterManager
                                 }
                                 ((Parameter<std::string>*)it->second)->setValue(allArgs[i]);
                             }
-                            // Type is t_string
+                            // Type is t_int
                             else if (it->second->getType() == t_int) {
-                                int var;
                                 if (sscanf(allArgs[i].c_str(), "%d", &var) != 1) {
-                                    fprintf(stderr, "%s\n", it->second->getErrorMessage().c_str());
+                                    fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
+                                            it->second->getCommandLineArgument().second.c_str(),
+                                            it->second->getCommandLineArgument().first.c_str());
                                     success = false;
                                 }
                                 if (!it->second->validateNumericRange(var)){
@@ -172,7 +188,22 @@ class ParameterManager
                                 }
                                 ((ParameterVector<std::string>*)it->second)->setValue(allArgs[i]);
                             }
-
+                            // Type is t_vector_int_regex
+                            else if (it->second->getType() == t_vector_int_regex) {
+                                std::vector<std::string> v = split(allArgs[i]);
+                                for (unsigned int j = 0; j < v.size(); j++) {
+                                    if (sscanf(v[j].c_str(), "%d", &var) != 1) {
+                                        fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
+                                                it->second->getCommandLineArgument().second.c_str(),
+                                                it->second->getCommandLineArgument().first.c_str());
+                                        success = false;
+                                    }
+                                    if (!it->second->validateNumericRange(var)){
+                                        success = false;
+                                    }
+                                    ((ParameterVector<int>*)it->second)->setValue(var);
+                                }
+                            }
                         }
                         it->second->setIsSet(true);
                         break;
@@ -259,6 +290,20 @@ class ParameterManager
                 << description
                 << "\n";
             return oss.str();
+        }
+
+        std::vector<std::string> split(std::string str, char delimiter = ':')
+        {
+            std::vector<std::string> v;
+            std::size_t current, previous = 0;
+            current = str.find_first_of(delimiter);
+            while (current != std::string::npos) {
+                v.push_back(str.substr(previous, current - previous));
+                previous = current + 1;
+                current = str.find_first_of(delimiter, previous);
+            }
+            v.push_back(str.substr(previous, current - previous));
+            return v;
         }
 
 };

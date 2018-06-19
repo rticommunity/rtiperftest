@@ -104,6 +104,11 @@ int perftest_cpp::Run(int argc, char *argv[])
     for (unsigned int i = 0; i < peer.size(); i++) {
         printf("\t%s\n", peer[i].c_str());
     }
+    std::vector<int> scan = parameterManager.queryVector<int>("scan");
+    printf("scan: \n");
+    for (unsigned int i = 0; i < scan.size(); i++) {
+        printf("\t%d\n", scan[i]);
+    }
 
     return 0;
 

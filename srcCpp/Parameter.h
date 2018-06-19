@@ -7,7 +7,7 @@
 #include <utility>      // std::pair, std::make_pair
 #include <vector>
 
-enum TYPE {t_NULL, t_int, t_string, t_bool, t_vector_string_push};
+enum TYPE {t_NULL, t_int, t_string, t_bool, t_vector_string_push, t_vector_int_regex};
 
 
 class Parameter_base  {
@@ -17,7 +17,6 @@ class Parameter_base  {
         bool isSet;
         TYPE type;
         int  numArguments; // This specifies if a parameter will be followed by another argument.
-        std::string errorMessage;
         bool internal; // Does not have description
 
         // Only used for numeric argument
@@ -46,7 +45,6 @@ class Parameter_base  {
             numArguments = 0;
             commandLineArgument.first.clear();
             commandLineArgument.second.clear();
-            errorMessage.clear();
             rangeStart = 0;
             rangeEnd = 0;
             validStrValues.clear();
@@ -112,11 +110,6 @@ class Parameter_base  {
             numArguments = var;
         }
 
-        virtual void setErrorMessage(std::string var)
-        {
-            errorMessage = var;
-        }
-
         virtual void setRangeStart(unsigned long long var)
         {
             rangeStart = var;
@@ -144,11 +137,6 @@ class Parameter_base  {
         }
 
         // Get members
-        virtual std::string getErrorMessage()
-        {
-            return errorMessage;
-        }
-
         virtual std::pair <std::string, std::string> getCommandLineArgument()
         {
             return commandLineArgument;
@@ -251,6 +239,7 @@ class ParameterVector : public Parameter_base {
         void setValue(T var)
         {
             value.push_back(var);
+            std::sort(value.begin(), value.end());
         }
 
     private:
