@@ -95,10 +95,10 @@ int perftest_cpp::Run(int argc, char *argv[])
     if (!parameterManager.parse(argc, argv)) {
         return -1;
     }
-    printf("batching: %d,\n", parameterManager.query<int>("batching"));
-    printf("nic: %s,\n", parameterManager.query<std::string>("nic").c_str());
-    printf("pub: %d,\n", parameterManager.query<bool>("pub"));
-    printf("flowController: %s,\n", parameterManager.query<std::string>("flowController").c_str());
+    printf("batching: %d\n", parameterManager.query<int>("batching"));
+    printf("nic: %s\n", parameterManager.query<std::string>("nic").c_str());
+    printf("pub: %d\n", parameterManager.query<bool>("pub"));
+    printf("flowController: %s\n", parameterManager.query<std::string>("flowController").c_str());
     std::vector<std::string> peer = parameterManager.queryVector<std::string>("peer");
     printf("peer: \n");
     for (unsigned int i = 0; i < peer.size(); i++) {
@@ -109,7 +109,7 @@ int perftest_cpp::Run(int argc, char *argv[])
     for (unsigned int i = 0; i < scan.size(); i++) {
         printf("\t%llu\n", scan[i]);
     }
-    printf("unbounded: %d,\n", parameterManager.query<int>("unbounded"));
+    printf("unbounded: %d\n", parameterManager.query<int>("unbounded"));
 
     
 

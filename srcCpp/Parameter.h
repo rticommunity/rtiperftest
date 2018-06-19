@@ -68,7 +68,8 @@ class Parameter_base  {
         }
 
         // Validate range
-        bool validateNumericRange(unsigned long long var) {
+        bool validateNumericRange(unsigned long long var)
+        {
             if (rangeEnd < var || rangeStart > var) {
                 fprintf(stderr, "In the argument '%s', '%s' should be in the range [%llu, %llu]\n",
                         commandLineArgument.first.c_str(),
@@ -81,8 +82,9 @@ class Parameter_base  {
             }
         }
 
-        // Validate str Values
-        bool validateStrRange(std::string var) {
+        // Validate str Valuesi if not empty
+        bool validateStrRange(std::string var)
+        {
             if (!validStrValues.empty()) {
                 bool validStr = false;
                 for (unsigned int i = 0; i < validStrValues.size(); i++) {
@@ -143,7 +145,7 @@ class Parameter_base  {
             this->rangeEnd = rangeEnd;
         }
 
-        virtual void addValidStrValues(std::string validStrValue)
+        virtual void addValidStrValue(std::string validStrValue)
         {
             this->validStrValues.push_back(validStrValue);
         }
@@ -184,11 +186,11 @@ class Parameter_base  {
             return internal;
         }
 
-        // TODO create one per type
+        // create one per type
         virtual void getValue(unsigned long long &var) {}
         virtual void getValue(std::string &var) {}
 
-        // TODO create one per type
+        // create one per type
         virtual void setValue(unsigned long long var) {}
         virtual void setValue(std::string var) {}
 
@@ -210,6 +212,11 @@ class Parameter : public Parameter_base {
         Parameter()
         {
         }
+
+        Parameter(T var)
+        {
+            value = var;
+        }
         ~Parameter()
         {
         }
@@ -227,6 +234,7 @@ class Parameter : public Parameter_base {
         void setValue(T var)
         {
             value = var;
+            setIsSet(true);
         }
 
     private:
@@ -247,6 +255,17 @@ class ParameterVector : public Parameter_base {
         {
             parseMethod = NOSPLIT;
         }
+        ParameterVector(T var)
+        {
+            parseMethod = NOSPLIT;
+            value.clear();
+            value.push_back(var);
+        }
+        ParameterVector(std::vector<T> var)
+        {
+            parseMethod = NOSPLIT;
+            value.insert(value.begin(),var.begin(), var.end());
+        }
         ~ParameterVector()
         {
             value.clear();
@@ -264,7 +283,12 @@ class ParameterVector : public Parameter_base {
 
         void setValue(T var)
         {
+            if (!getIsSet()) {
+                // In the case of is not set, remove default values.
+                value.clear();
+            }
             value.push_back(var);
+            setIsSet(true);
         }
 
         void setParseMethod(PARSEMETHOD var)
