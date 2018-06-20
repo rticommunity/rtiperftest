@@ -1838,7 +1838,7 @@ static void *ReadThread(void *arg)
     // This allow the reader to delete the reader participant
     if (semaphore != NULL) {
         if (RTIOsapiSemaphore_give(semaphore)
-            != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+                != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
             fprintf(stderr, "Unexpected error giving semaphore\n");
             return NULL;
         }

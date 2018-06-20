@@ -57,6 +57,7 @@ class RTIRawTransportImpl : public IMessaging {
     unsigned int
     GetSendUnicastPort(const char *topicName, unsigned int subId = 0);
 
+    /* Get the multicast address that match to the topic name */
     bool GetMulticastTransportAddr(
             const char *topicName,
             NDDS_Transport_Address_t &addr);
@@ -96,6 +97,7 @@ class RTIRawTransportImpl : public IMessaging {
     bool _useBlocking;
 
     std::vector<std::pair<NDDS_Transport_Address_t, int> > _peersMap;
+    std::vector<peerData> _peersDataList;
 
     PerftestTransport _transport;
 
@@ -103,12 +105,9 @@ class RTIRawTransportImpl : public IMessaging {
 
     NDDS_Transport_Plugin *_plugin;
     struct REDAWorker *_worker;
+    //TODO: struct REDAWorkerPerThread * _workerPerThread;
     struct REDAWorkerFactory *_workerFactory;
     struct REDAExclusiveArea *_exclusiveArea;
-
-  public:
-
-    std::vector<peerData> _peersDataList;
 
 };
 

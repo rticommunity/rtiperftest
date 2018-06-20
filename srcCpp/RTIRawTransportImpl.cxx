@@ -25,7 +25,6 @@ std::vector<NDDS_Transport_SendResource_t> peerData::resourcesList;
 RTIRawTransportImpl::RTIRawTransportImpl() :
         _dataLen(100),
         _domainID(1),
-        _IsReliable(false),
         _latencyTest(false),
         _isDebug(false),
         _isLargeData(false),
@@ -440,6 +439,9 @@ std::string RTIRawTransportImpl::PrintConfiguration()
 {
     std::ostringstream stringStream;
 
+    // Meedleware
+    stringStream << "\tMiddleware: RawTransport\n";
+
     // Domain ID
     stringStream << "\tDomain: " << _domainID << "\n";
 
@@ -544,12 +546,13 @@ class RTIRawTransportPublisher : public IMessagingWriter{
 
     }
 
-    ~RTIRawTransportPublisher() {
+    ~RTIRawTransportPublisher()
+    {
         Shutdown();
     }
 
-    void Shutdown() {
-
+    void Shutdown()
+    {
         if (_sendBuffer.pointer != NULL) {
             RTIOsapiHeap_freeBuffer(_sendBuffer.pointer);
             _sendBuffer.pointer = NULL;
@@ -557,8 +560,8 @@ class RTIRawTransportPublisher : public IMessagingWriter{
 
     }
 
-    bool SendMessage() {
-
+    bool SendMessage()
+    {
         bool success = true;
         for(unsigned int i = 0; i < _peersDataList.size(); i++) {
             if(!_plugin->send(
@@ -579,8 +582,8 @@ class RTIRawTransportPublisher : public IMessagingWriter{
         return success;
     }
 
-    void Flush() {
-
+    void Flush()
+    {
         /* If there is no data, no need to flush */
         if (_sendBuffer.length == 0) {
             return;
@@ -599,7 +602,8 @@ class RTIRawTransportPublisher : public IMessagingWriter{
         _sendBuffer.length = 0;
     }
 
-    bool Send(const TestMessage &message, bool isCftWildCardKey) {
+    bool Send(const TestMessage &message, bool isCftWildCardKey)
+    {
 
         bool success = false;
         int serializeSize =  message.size
@@ -892,12 +896,11 @@ class RTIRawTransportSubscriber : public IMessagingReader
 /*********************************************************
  * Initialize
  */
-bool RTIRawTransportImpl::Initialize(int argc, char *argv[]) {
+bool RTIRawTransportImpl::Initialize(int argc, char *argv[])
+{
     if (!ParseConfig(argc, argv)) {
         return false;
     }
-
-    printf("-- Using SOCKETS --\n");
 
     // Only if we run latency test we need to wait for pongs after sending pings
     if (_latencyTest) {
@@ -955,6 +958,7 @@ RTIRawTransportImpl::GetReceiveUnicastPort(const char *topicName)
         portOffset = 1;
     }
 
+    // Get the default values to calculate the port the same way as do DDS
     struct DDS_RtpsWellKnownPorts_t wellKnownPorts =
             DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
 
@@ -975,6 +979,10 @@ bool RTIRawTransportImpl::GetMulticastTransportAddr(
         const char *topicName,
         NDDS_Transport_Address_t &addr)
 {
+    if (!IsMulticast()) { // Precondition
+        return false;
+    }
+
     bool retCode = true;
     RTIOsapiMemory_zero(&addr, sizeof(NDDS_Transport_Address_t));
 
@@ -986,10 +994,6 @@ bool RTIRawTransportImpl::GetMulticastTransportAddr(
                 THROUGHPUT_TOPIC_NAME,
                 LATENCY_TOPIC_NAME,
                 ANNOUNCEMENT_TOPIC_NAME);
-        return false;
-    }
-
-    if (!_transport.useMulticast || !_transport.allowsMulticast()) {
         return false;
     }
 
@@ -1015,7 +1019,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
     bool shared = false;
     unsigned int j = 0;
 
-
+    // If multicat, then take the multicast address.
     if (_transport.useMulticast
         && GetMulticastTransportAddr(topicName, multicastAddr)) {
         isMulticastAddr = true;
@@ -1024,12 +1028,16 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
         return NULL;
     }
 
+    // _peerHostCount is garanteed to be 1 if multicast is enabled
     for (int i = 0; i < _peerHostCount; i++) {
         shared = false;
         actualAddr = (isMulticastAddr) ? multicastAddr : _peersMap[i].first;
+
+        // Calculate the port of the new send resource.
         actualPort = GetSendUnicastPort(topicName, _peersMap[i].second);
 
         for (j = 0; j < peerData::resourcesList.size() && !shared; ++j) {
+            // Try to share the resource
             shared = _plugin->share_sendresource_srEA(
                     _plugin,
                     &peerData::resourcesList[j],
@@ -1038,9 +1046,8 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
                     NDDS_TRANSPORT_PRIORITY_DEFAULT);
         }
         if (!shared) {
-
+            // If the resource is not shared, then create a new one and store it
             NDDS_Transport_SendResource_t resource;
-
             if (!_plugin->create_sendresource_srEA(
                         _plugin,
                         &resource,
@@ -1055,6 +1062,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
 
             peerData::resourcesList.push_back(resource);
         }
+        // This data will be use by the writer to send to multiples peers.
         _peersDataList.push_back(
                 peerData(
                         shared ? &peerData::resourcesList[j-1]
@@ -1076,7 +1084,9 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
     NDDS_Transport_Port_t recvPort = 0;
     NDDS_Transport_Address_t multicastAddr;
     bool isMulticastAddr = false;
+    bool result = true;
 
+    // If multicat, then take the multicast address.
     if (_transport.useMulticast
             && GetMulticastTransportAddr(topicName, multicastAddr)) {
         isMulticastAddr = true;
@@ -1085,9 +1095,9 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
         return NULL;
     }
 
+    // Calculate the port of the new receive resource.
     recvPort = GetReceiveUnicastPort(topicName);
 
-    bool result = true;
     result = _plugin->create_recvresource_rrEA(
             _plugin,
             &recvResource,
@@ -1110,8 +1120,8 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
             recvPort);
 }
 
-bool RTIRawTransportImpl::ConfigureSocketsTransport() {
-
+bool RTIRawTransportImpl::ConfigureSocketsTransport()
+{
     char *interface = NULL;
     interface = DDS_String_dup(_transport.allowInterfaces.c_str());
     if (interface == NULL) {
@@ -1128,11 +1138,15 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport() {
     }
 
     /* Worker configure */
-    _workerFactory = REDAWorkerFactory_new(256);
+    _workerFactory = REDAWorkerFactory_new(16); // Number of worker to store
     if (_workerFactory == NULL) {
         fprintf(stderr, "Fail to create Worker Factory\n");
         return false;
     }
+
+    // TODO:
+    // _workerPerThread = REDAWorkerPerThread_new(_workerFactory);
+    // if (_workerPerThread == )
 
     _worker = REDAWorkerFactory_createWorker(_workerFactory, "RTIRawTransport");
     if (_worker == NULL) {
@@ -1213,7 +1227,11 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport() {
             /*
              * This is to avoid the translation from a interface name in to
              * a address and then check if the given nic is correct.
-             * 
+             *
+             * If you want to retrieve the address/name of the
+             * interface:
+             *      udpPlugin->_interfaceArray[0]._interface.address;
+             *      udpPlugin->_interfaceArray[0]._interfaceName;
              */
             struct NDDS_Transport_UDP *udpPlugin;
             udpPlugin = (struct NDDS_Transport_UDP *) _plugin;
@@ -1225,15 +1243,13 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport() {
                 return false;
             }
 
-            /*
-             * If you want to retrieve the address of the interface:
-             *      udpPlugin->_interfaceArray[0]._interface.address;
-             */
-
             /* Check if the multicast addres is correct */
             if (_transport.useMulticast
                     && GetNumMulticastInterfaces(udpPlugin) <= 0) {
-                fprintf(stderr, "No multicast-enabled interfaces detected\n");
+                fprintf(
+                        stderr,
+                        "The interface (%s) does not have multicast-enabled\n",
+                        interface);
                 return false;
             }
 
@@ -1332,12 +1348,14 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport() {
 int GetNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin)
 {
     int count = 0;
-    int i;
 
-    for (i=0; i<plugin->_interfacesCount; i++) {
+    if (plugin == NULL) {
+        return count;
+    }
 
-        if (plugin->_interfaceArray[i]._interfaceFlags &
-                RTI_OSAPI_SOCKET_INTERFACE_FLAG_MULTICAST ) {
+    for (int i = 0; i < plugin->_interfacesCount; i++) {
+        if (plugin->_interfaceArray[i]._interfaceFlags
+            & RTI_OSAPI_SOCKET_INTERFACE_FLAG_MULTICAST) {
             ++count;
         }
     }
