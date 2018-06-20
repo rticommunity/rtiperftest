@@ -470,7 +470,7 @@ function additional_defines_calculation_micro()
     else
         if [[ $platform == *"Linux"* ]]; then
             additional_defines=" RTI_LINUX"
-            additional_included_libraries"nsl;rt;"
+            additional_included_libraries="nsl;rt;"
         fi
     fi
     additional_defines="RTI_MICRO O3"${additional_defines}

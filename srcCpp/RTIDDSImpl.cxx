@@ -2334,13 +2334,13 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
          * a lower value than max_samples, so we can grow if needed. For micro
          * however we do not have the initial_samples parameter, therefore we
          * must choose a value for max_samples since the beginning. We chose to
-         * use 1000. This value should be large enough to handle most of the
+         * use 10000. This value should be large enough to handle most of the
          * communications.
          *
          * We could potentially modify this with a new command line parameter
          */
-        dr_qos.resource_limits.max_samples = 1000;
-        dr_qos.resource_limits.max_samples_per_instance = 1000;
+        dr_qos.resource_limits.max_samples = 10000;
+        dr_qos.resource_limits.max_samples_per_instance = 10000;
 
         /*
          * In micro we don't have keep all, this means we need to set the
@@ -2348,7 +2348,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
          * we can
          */
         dr_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
-        dr_qos.history.depth = 1000;
+        dr_qos.history.depth = 10000;
 
     } else { // "LatencyQos" or "AnnouncementQos"
 
@@ -2358,7 +2358,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
          * LENGTH_UNLIMITED. In Micro we will use a lower number due to
          * memory restrictions.
          */
-        dr_qos.resource_limits.max_samples = 100;
+        dr_qos.resource_limits.max_samples = 1000;
     }
 
     /*
