@@ -5,7 +5,7 @@
 
 #include "Parameter.h"
 
-Parameter_base::Parameter_base()
+ParameterBase::ParameterBase()
 {
     internal = false;
     isSet = false;
@@ -15,7 +15,7 @@ Parameter_base::Parameter_base()
     rangeEnd = ULLONG_MAX;
 }
 
-Parameter_base::~Parameter_base()
+ParameterBase::~ParameterBase()
 {
     internal = false;
     description.clear();
@@ -30,7 +30,7 @@ Parameter_base::~Parameter_base()
 }
 
 // Validate range
-bool Parameter_base::validateNumericRange(unsigned long long var)
+bool ParameterBase::validateNumericRange(unsigned long long var)
 {
     if (rangeEnd < var || rangeStart > var) {
         fprintf(stderr, "In the argument '%s', '%s' should be in the range [%llu, %llu]\n",
@@ -45,7 +45,7 @@ bool Parameter_base::validateNumericRange(unsigned long long var)
 }
 
 // Validate str Valuesi if not empty
-bool Parameter_base::validateStrRange(std::string var)
+bool ParameterBase::validateStrRange(std::string var)
 {
     if (!validStrValues.empty()) {
         bool validStr = false;
@@ -66,95 +66,95 @@ bool Parameter_base::validateStrRange(std::string var)
 }
 
 // Set members
-void Parameter_base::setCommandLineArgument(std::pair <std::string, std::string> var)
+void ParameterBase::setCommandLineArgument(std::pair <std::string, std::string> var)
 {
     commandLineArgument = var;
 }
 
-void Parameter_base::setDescription(std::string var)
+void ParameterBase::setDescription(std::string var)
 {
     description = var;
 }
 
-void Parameter_base::setIsSet(bool var)
+void ParameterBase::setIsSet(bool var)
 {
     isSet = var;
 }
 
-void Parameter_base::setType(TYPE var)
+void ParameterBase::setType(TYPE var)
 {
     type = var;
 }
 
-void Parameter_base::setExtraArgument(EXTRAARGUMENT var)
+void ParameterBase::setExtraArgument(EXTRAARGUMENT var)
 {
     extraArgument = var;
 }
 
-void Parameter_base::setRangeStart(unsigned long long var)
+void ParameterBase::setRangeStart(unsigned long long var)
 {
     rangeStart = var;
 }
 
-void Parameter_base::setRangeEnd(unsigned long long var)
+void ParameterBase::setRangeEnd(unsigned long long var)
 {
     rangeEnd = var;
 }
 
-void Parameter_base::setRange(unsigned long long rangeStart, unsigned long long rangeEnd)
+void ParameterBase::setRange(unsigned long long rangeStart, unsigned long long rangeEnd)
 {
     this->rangeStart = rangeStart;
     this->rangeEnd = rangeEnd;
 }
 
-void Parameter_base::addValidStrValue(std::string validStrValue)
+void ParameterBase::addValidStrValue(std::string validStrValue)
 {
     this->validStrValues.push_back(validStrValue);
 }
 
-void Parameter_base::setInternal(bool var)
+void ParameterBase::setInternal(bool var)
 {
     internal = var;
 }
 
 // Get members
-std::pair <std::string, std::string> Parameter_base::getCommandLineArgument()
+std::pair <std::string, std::string> ParameterBase::getCommandLineArgument()
 {
     return commandLineArgument;
 }
 
-std::string Parameter_base::getDescription()
+std::string ParameterBase::getDescription()
 {
     return description;
 }
 
-bool Parameter_base::getIsSet()
+bool ParameterBase::getIsSet()
 {
     return isSet;
 }
 
-TYPE Parameter_base::getType()
+TYPE ParameterBase::getType()
 {
     return type;
 }
 
-EXTRAARGUMENT Parameter_base::getExtraArgument()
+EXTRAARGUMENT ParameterBase::getExtraArgument()
 {
     return extraArgument;
 }
 
-bool Parameter_base::getInternal()
+bool ParameterBase::getInternal()
 {
     return internal;
 }
 
-PARSEMETHOD Parameter_base::getParseMethod()
+PARSEMETHOD ParameterBase::getParseMethod()
 {
     return NOSPLIT;
 }
 
 // Get the help message
-std::string Parameter_base::printCommandLineParameter()
+std::string ParameterBase::printCommandLineParameter()
 {
     const std::string spaces (42, ' ');
     std::string description = getDescription();
@@ -163,9 +163,10 @@ std::string Parameter_base::printCommandLineParameter()
         description.insert(foundPosition + 1, spaces);
         foundPosition = description.find("\n", foundPosition + 1);
     }
+    // std::setw set the width
     std::ostringstream oss;
     oss << "\t"
-        <<  getCommandLineArgument().first
+        << getCommandLineArgument().first
         << " "
         << getCommandLineArgument().second
         << std::string(32 - (getCommandLineArgument().first.size() + getCommandLineArgument().second.size()), ' ' )

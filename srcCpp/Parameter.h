@@ -35,7 +35,7 @@ enum EXTRAARGUMENT {
     OPTIONAL,         // It is possible to have one extra argument
     YES              // There is not one extra argument
 };
-class Parameter_base  {
+class ParameterBase  {
     private:
         std::pair <std::string, std::string> commandLineArgument;
         std::string description;
@@ -52,8 +52,8 @@ class Parameter_base  {
         std::vector<std::string> validStrValues;
 
     public:
-        Parameter_base();
-        virtual ~Parameter_base();
+        ParameterBase();
+        virtual ~ParameterBase();
 
         // Validate range
         bool validateNumericRange(unsigned long long var);
@@ -74,10 +74,6 @@ class Parameter_base  {
         virtual void setRange(unsigned long long rangeStart, unsigned long long rangeEnd);
         virtual void addValidStrValue(std::string validStrValue);
         virtual void setInternal(bool var);
-        // create one per type
-        virtual void setValue(unsigned long long var) {}
-        virtual void setValue(std::string var) {}
-        // set and get parseMethod only for T_VECTOR
         virtual void setParseMethod(PARSEMETHOD var) {}
 
         // Get members
@@ -88,14 +84,10 @@ class Parameter_base  {
         virtual EXTRAARGUMENT getExtraArgument();
         virtual bool getInternal();
         virtual PARSEMETHOD getParseMethod();
-        // create one per type
-        virtual void getValue(unsigned long long &var) {}
-        virtual void getValue(std::string &var) {}
-
 };
 
 template <typename T>
-class Parameter : public Parameter_base {
+class Parameter : public ParameterBase {
     private:
         T value;
 
@@ -111,15 +103,13 @@ class Parameter : public Parameter_base {
         ~Parameter()
         {
         }
-        Parameter(Parameter_base& p)
+        Parameter(ParameterBase& p)
         {
         }
 
         T getValue()
         {
-            T var;
-            getValueInternal(var);
-            return var;
+            return value;
         }
 
         void setValue(T var)
@@ -127,16 +117,10 @@ class Parameter : public Parameter_base {
             value = var;
             setIsSet(true);
         }
-
-    private:
-        void getValueInternal(T &var)
-        {
-            var = value;
-        }
 };
 
 template <typename T>
-class ParameterVector : public Parameter_base {
+class ParameterVector : public ParameterBase {
     private:
         std::vector<T> value;
         PARSEMETHOD parseMethod;
@@ -161,15 +145,13 @@ class ParameterVector : public Parameter_base {
         {
             value.clear();
         }
-        ParameterVector(Parameter_base& p)
+        ParameterVector(ParameterBase& p)
         {
         }
 
         std::vector<T> getValue()
         {
-            std::vector<T> var;
-            getValueInternal(var);
-            return var;
+            return value;
         }
 
         void setValue(T var)
@@ -190,12 +172,6 @@ class ParameterVector : public Parameter_base {
         PARSEMETHOD getParseMethod()
         {
             return parseMethod;
-        }
-
-    private:
-        void getValueInternal(std::vector<T> &var)
-        {
-            var = value;
         }
 };
 

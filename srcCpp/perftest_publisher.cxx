@@ -86,9 +86,16 @@ int subscriber_main()
 
 int perftest_cpp::Run(int argc, char *argv[])
 {
-    if (!parameterManager.initialize()) {
+    try {
+        parameterManager.initialize();
+    } catch(std::exception &ex) {
+        // call destructor
+        // p.shutdown();
+        fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
         return -1;
     }
+
+    // }
     if (parameterManager.checkHelp(argc, argv)) {
         return 0;
     }

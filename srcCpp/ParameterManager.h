@@ -12,22 +12,21 @@
 class ParameterManager
 {
     private:
-        std::map<std::string, Parameter_base*> parameterList;
+        std::map<std::string, ParameterBase*> parameterList;
 
     public:
         ParameterManager();
-        bool initialize();
+        void initialize();
         ~ParameterManager();
 
         // Get the value of a parameter
         template <typename T>
         T query(std::string parameterKey)
         {
-            std::map<std::string, Parameter_base*>::iterator it;
+            std::map<std::string, ParameterBase*>::iterator it;
             it = parameterList.find(parameterKey);
             if (it != parameterList.end()) {
-                Parameter_base* p = parameterList[parameterKey];
-                    return ((Parameter<T>*)p)->getValue();
+                return (static_cast<Parameter<T>*>(parameterList[parameterKey]))->getValue();
             } else {
                 return T(); // Return the default
                 // TODO throw exception
@@ -38,11 +37,10 @@ class ParameterManager
         template <typename T>
         std::vector<T> queryVector(std::string parameterKey)
         {
-            std::map<std::string, Parameter_base*>::iterator it;
+            std::map<std::string, ParameterBase*>::iterator it;
             it = parameterList.find(parameterKey);
             if (it != parameterList.end()) {
-                Parameter_base* p = parameterList[parameterKey];
-                return ((ParameterVector<T>*)p)->getValue();
+                return (static_cast<ParameterVector<T>*>(parameterList[parameterKey]))->getValue();
 
             } else {
                 return std::vector<T>(); // Return the default
@@ -65,7 +63,7 @@ class ParameterManager
 
     private:
         // Get the help message
-        std::string printCommandLineParameter(Parameter_base *parameterValue);
+        std::string printCommandLineParameter(ParameterBase *parameterValue);
         std::vector<std::string> split(std::string str, char delimiter = ':');
 
 };
