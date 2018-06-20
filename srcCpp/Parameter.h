@@ -6,6 +6,8 @@
 #include <string>
 #include <utility>      // std::pair, std::make_pair
 #include <vector>
+#include <iostream>
+#include <sstream>
 
 enum TYPE {
     T_NULL,           // Default type
@@ -44,162 +46,45 @@ class Parameter_base  {
         std::vector<std::string> validStrValues;
 
     public:
-        Parameter_base()
-        {
-            internal = false;
-            isSet = false;
-            type = T_NULL;
-            extraArgument = NO;
-            rangeStart = 0;
-            rangeEnd = ULLONG_MAX;
-        }
-        virtual ~Parameter_base()
-        {
-            internal = false;
-            description.clear();
-            isSet = false;
-            type = T_NULL;
-            extraArgument = NO;
-            commandLineArgument.first.clear();
-            commandLineArgument.second.clear();
-            rangeStart = 0;
-            rangeEnd = 0;
-            validStrValues.clear();
-        }
+        Parameter_base();
+        virtual ~Parameter_base();
 
         // Validate range
-        bool validateNumericRange(unsigned long long var)
-        {
-            if (rangeEnd < var || rangeStart > var) {
-                fprintf(stderr, "In the argument '%s', '%s' should be in the range [%llu, %llu]\n",
-                        commandLineArgument.first.c_str(),
-                        commandLineArgument.second.c_str(),
-                        rangeStart,
-                        rangeEnd);
-                return false;
-            } else {
-                return true;
-            }
-        }
+        bool validateNumericRange(unsigned long long var);
 
         // Validate str Valuesi if not empty
-        bool validateStrRange(std::string var)
-        {
-            if (!validStrValues.empty()) {
-                bool validStr = false;
-                for (unsigned int i = 0; i < validStrValues.size(); i++) {
-                    if (var == validStrValues[i]) {
-                        return true;
-                    }
-                }
-                if (!validStr) {
-                    fprintf(stderr, "In the argument '%s', incorrect '%s':  %s\n",
-                        commandLineArgument.first.c_str(),
-                        commandLineArgument.second.c_str(),
-                        var.c_str());
-                    return false;
-                }
-            }
-            return true;
-        }
+        bool validateStrRange(std::string var);
+
+        std::string printCommandLineParameter();
 
         // Set members
-        virtual void setCommandLineArgument(std::pair <std::string, std::string> var)
-        {
-            commandLineArgument = var;
-        }
-
-        virtual void setDescription(std::string var)
-        {
-            description = var;
-        }
-
-        virtual void setIsSet(bool var)
-        {
-            isSet = var;
-        }
-
-        virtual void setType(TYPE var)
-        {
-            type = var;
-        }
-
-        virtual void setExtraArgument(EXTRAARGUMENT var)
-        {
-            extraArgument = var;
-        }
-
-        virtual void setRangeStart(unsigned long long var)
-        {
-            rangeStart = var;
-        }
-
-        virtual void setRangeEnd(unsigned long long var)
-        {
-            rangeEnd = var;
-        }
-
-        virtual void setRange(unsigned long long rangeStart, unsigned long long rangeEnd)
-        {
-            this->rangeStart = rangeStart;
-            this->rangeEnd = rangeEnd;
-        }
-
-        virtual void addValidStrValue(std::string validStrValue)
-        {
-            this->validStrValues.push_back(validStrValue);
-        }
-
-        virtual void setInternal(bool var)
-        {
-            internal = var;
-        }
-
-        // Get members
-        virtual std::pair <std::string, std::string> getCommandLineArgument()
-        {
-            return commandLineArgument;
-        }
-
-        virtual std::string getDescription()
-        {
-            return description;
-        }
-
-        virtual bool getIsSet()
-        {
-            return isSet;
-        }
-
-        virtual TYPE getType()
-        {
-            return type;
-        }
-
-        virtual EXTRAARGUMENT getExtraArgument()
-        {
-            return extraArgument;
-        }
-
-        virtual bool getInternal()
-        {
-            return internal;
-        }
-
-        // create one per type
-        virtual void getValue(unsigned long long &var) {}
-        virtual void getValue(std::string &var) {}
-
+        virtual void setCommandLineArgument(std::pair <std::string, std::string> var);
+        virtual void setDescription(std::string var);
+        virtual void setIsSet(bool var);
+        virtual void setType(TYPE var);
+        virtual void setExtraArgument(EXTRAARGUMENT var);
+        virtual void setRangeStart(unsigned long long var);
+        virtual void setRangeEnd(unsigned long long var);
+        virtual void setRange(unsigned long long rangeStart, unsigned long long rangeEnd);
+        virtual void addValidStrValue(std::string validStrValue);
+        virtual void setInternal(bool var);
         // create one per type
         virtual void setValue(unsigned long long var) {}
         virtual void setValue(std::string var) {}
-
         // set and get parseMethod only for T_VECTOR
         virtual void setParseMethod(PARSEMETHOD var) {}
-        virtual PARSEMETHOD getParseMethod()
-        {
-            return NOSPLIT;
-        }
+
+        // Get members
+        virtual std::pair <std::string, std::string> getCommandLineArgument();
+        virtual std::string getDescription();
+        virtual bool getIsSet();
+        virtual TYPE getType();
+        virtual EXTRAARGUMENT getExtraArgument();
+        virtual bool getInternal();
+        virtual PARSEMETHOD getParseMethod();
+        // create one per type
+        virtual void getValue(unsigned long long &var) {}
+        virtual void getValue(std::string &var) {}
 
 };
 
@@ -300,7 +185,6 @@ class ParameterVector : public Parameter_base {
         {
             return parseMethod;
         }
-
 
     private:
         void getValueInternal(std::vector<T> &var)
