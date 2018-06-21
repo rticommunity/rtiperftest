@@ -62,7 +62,7 @@ class IMessagingReader
      * Used by rawTransport actually
      * Prevent delete the receive resource meanwhile it's been use by a listener
      */
-    RTIOsapiSemaphore *GetReadThreadSemaphore() {return NULL;}
+    virtual RTIOsapiSemaphore *GetReadThreadSemaphore() {return NULL;}
 
     // only used for non-callback test to cleanup
     // the thread
@@ -145,6 +145,7 @@ class IMessaging
     virtual bool SupportListener() = 0;
     virtual bool SupportDiscovery() = 0;
 
+    //TODO:
     // virtual double
     // ObtainSerializeTimeCost(int iterations, unsigned int sampleSize)
     // {

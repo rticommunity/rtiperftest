@@ -33,37 +33,38 @@ class RTIRawTransportImpl : public IMessaging {
 
     void PrintCmdLineHelp();
 
-    bool ParseConfig(int argc, char *argv[]);
+    bool parseConfig(int argc, char *argv[]);
 
     std::string PrintConfiguration();
 
     bool Initialize(int argc, char *argv[]);
 
     void Shutdown();
-
     int GetBatchSize();
 
     unsigned long GetInitializationSampleCount();
 
-    NDDS_Transport_Plugin *GetPlugin();
+    NDDS_Transport_Plugin *getPlugin();
 
-    std::vector<peerData> GetPeersData();
+    std::vector<peerData> getPeersData();
 
-    RTIOsapiSemaphore *GetPongSemaphore();
+    RTIOsapiSemaphore *getPongSemaphore();
 
-    struct REDAWorker *GetWorker();
+    struct REDAWorkerFactory *getWorkerFactory();
+
+    RTIOsapiThreadTssFactory *getTssFactory();
 
     /* Calculate the port depending of the Id of the subscriber.*/
     unsigned int
-    GetSendUnicastPort(const char *topicName, unsigned int subId = 0);
+    getSendUnicastPort(const char *topicName, unsigned int subId = 0);
 
     /* Get the multicast address that match to the topic name */
-    bool GetMulticastTransportAddr(
+    bool getMulticastTransportAddr(
             const char *topicName,
             NDDS_Transport_Address_t &addr);
 
     /* Calculate the ports thats it will be use for receive data */
-    unsigned int GetReceiveUnicastPort(const char *topicName);
+    unsigned int getReceiveUnicastPort(const char *topicName);
 
     bool SupportListener();
 
@@ -75,9 +76,9 @@ class RTIRawTransportImpl : public IMessaging {
     IMessagingReader *
     CreateReader(const char *topic_name, IMessagingCB *callback);
 
-    bool ConfigureSocketsTransport();
+    bool configureSocketsTransport();
 
-    bool IsMulticast()
+    bool isMulticast()
     {
         return _transport.useMulticast && _transport.allowsMulticast();
     }
@@ -98,17 +99,12 @@ class RTIRawTransportImpl : public IMessaging {
 
     std::vector<std::pair<NDDS_Transport_Address_t, int> > _peersMap;
     std::vector<peerData> _peersDataList;
-
     PerftestTransport _transport;
-
     RTIOsapiSemaphore *_pongSemaphore;
-
     NDDS_Transport_Plugin *_plugin;
-    struct REDAWorker *_worker;
-    //TODO: struct REDAWorkerPerThread * _workerPerThread;
     struct REDAWorkerFactory *_workerFactory;
     struct REDAExclusiveArea *_exclusiveArea;
-
+    RTIOsapiThreadTssFactory *_tssFactory;
 };
 
 class peerData {
@@ -121,23 +117,24 @@ class peerData {
         NDDS_Transport_Address_t transportAddr;
         unsigned int port;
 
-        peerData()// use Constructor member list
+        peerData() : resource(NULL), port(0)
         {
-            resource = NULL;
             RTIOsapiMemory_zero(&transportAddr, sizeof(NDDS_Transport_Address_t));
-            port = 0;
         }
         peerData(
                 NDDS_Transport_SendResource_t *res,
                 NDDS_Transport_Address_t addr,
                 unsigned int p)
-        {
-            resource = res;
-            transportAddr = addr;
-            port = p;
-        }
+                : resource(res), transportAddr(addr), port(p)
+        {}
 };
 
-int GetNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin);
+int getNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin);
+
+/* Generate a different worker per thread. */
+struct REDAWorker *RawTransport_get_worker_per_threadI(
+        REDAWorkerFactory *workerFactory,
+        RTIOsapiThreadTssFactory *tssFactory,
+        unsigned int *workerTssKey);
 
 #endif // __RTIRawTransportImpl_H__

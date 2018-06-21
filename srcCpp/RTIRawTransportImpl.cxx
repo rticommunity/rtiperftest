@@ -22,24 +22,24 @@ std::vector<NDDS_Transport_SendResource_t> peerData::resourcesList;
 /*********************************************************
  * Constructor
  */
-RTIRawTransportImpl::RTIRawTransportImpl() :
-        _dataLen(100),
-        _domainID(1),
-        _latencyTest(false),
-        _isDebug(false),
-        _isLargeData(false),
-        _isScan(false),
-        _isPublisher(false),
-        _batchSize(0),
-        _peerHostCount(0),
-        _basePort(7400),
-        _useBlocking(true),
-        _transport(),
-        _pongSemaphore(NULL),
-        _plugin(NULL),
-        _worker(NULL),
-        _workerFactory(NULL),
-        _exclusiveArea(NULL)
+RTIRawTransportImpl::RTIRawTransportImpl()
+        : _dataLen(100),
+          _domainID(1),
+          _latencyTest(false),
+          _isDebug(false),
+          _isLargeData(false),
+          _isScan(false),
+          _isPublisher(false),
+          _batchSize(0),
+          _peerHostCount(0),
+          _basePort(7400),
+          _useBlocking(true),
+          _transport(),
+          _pongSemaphore(NULL),
+          _plugin(NULL),
+          _workerFactory(NULL),
+          _exclusiveArea(NULL),
+          _tssFactory(NULL)
 {
 
     // Set default interface
@@ -64,17 +64,17 @@ void RTIRawTransportImpl::Shutdown()
         }
     }
 
-    if (_plugin != NULL && _worker != NULL) {
-        _plugin->delete_cEA(_plugin, _worker);
+    if (_plugin != NULL) {
+        _plugin->delete_cEA(_plugin, NULL);
     }
     if (_exclusiveArea != NULL){
         REDAWorkerFactory_destroyExclusiveArea(_workerFactory, _exclusiveArea);
     }
-    if (_workerFactory != NULL && _worker != NULL) {
-        REDAWorkerFactory_destroyWorker(_workerFactory, _worker);
-    }
     if (_workerFactory != NULL) {
         REDAWorkerFactory_delete(_workerFactory);
+    }
+    if (_tssFactory != NULL){
+        RTIOsapiThread_deleteTssFactory(_tssFactory);
     }
     if (_pongSemaphore != NULL) {
         RTIOsapiSemaphore_delete(_pongSemaphore);
@@ -97,24 +97,28 @@ unsigned long RTIRawTransportImpl::GetInitializationSampleCount()
     return 0;
 }
 
-NDDS_Transport_Plugin *RTIRawTransportImpl::GetPlugin()
+NDDS_Transport_Plugin *RTIRawTransportImpl::getPlugin()
 {
     return _plugin;
 }
 
-std::vector<peerData> RTIRawTransportImpl::GetPeersData()
+std::vector<peerData> RTIRawTransportImpl::getPeersData()
 {
     return _peersDataList;
 }
 
-RTIOsapiSemaphore *RTIRawTransportImpl::GetPongSemaphore()
+RTIOsapiSemaphore *RTIRawTransportImpl::getPongSemaphore()
 {
     return _pongSemaphore;
 }
-
-struct REDAWorker *RTIRawTransportImpl::GetWorker()
+struct REDAWorkerFactory *RTIRawTransportImpl::getWorkerFactory()
 {
-    return _worker;
+    return _workerFactory;
+}
+
+RTIOsapiThreadTssFactory *RTIRawTransportImpl::getTssFactory()
+{
+    return _tssFactory;
 }
 
 /*********************************************************
@@ -129,7 +133,6 @@ bool RTIRawTransportImpl::SupportDiscovery()
 {
     return false;
 }
-
 
 /*********************************************************
  * PrintCmdLineHelp
@@ -151,9 +154,9 @@ void RTIRawTransportImpl::PrintCmdLineHelp() {
 }
 
 /*********************************************************
- * ParseConfig
+ * parseConfig
  */
-bool RTIRawTransportImpl::ParseConfig(int argc, char *argv[]) {
+bool RTIRawTransportImpl::parseConfig(int argc, char *argv[]) {
     unsigned long _scanMaxSize = 0;
     int i;
 
@@ -341,7 +344,7 @@ bool RTIRawTransportImpl::ParseConfig(int argc, char *argv[]) {
                 if (_peerHost[_peerHostCount-1] == NULL) {
                     fprintf(
                             stderr,
-                            "Fail to allocate memory on ParseConfig()\n");
+                            "Fail to allocate memory on parseConfig()\n");
                     return false;
                 }
             } else {
@@ -458,10 +461,10 @@ std::string RTIRawTransportImpl::PrintConfiguration()
     // Ports
     stringStream << "\tThe following ports will be used: ";
     if (_isPublisher) {
-        stringStream << GetReceiveUnicastPort(ANNOUNCEMENT_TOPIC_NAME) << " - "
-                     << GetReceiveUnicastPort(LATENCY_TOPIC_NAME) << "\n";
+        stringStream << getReceiveUnicastPort(ANNOUNCEMENT_TOPIC_NAME) << " - "
+                     << getReceiveUnicastPort(LATENCY_TOPIC_NAME) << "\n";
     } else {
-        stringStream << GetReceiveUnicastPort(THROUGHPUT_TOPIC_NAME) << "\n";
+        stringStream << getReceiveUnicastPort(THROUGHPUT_TOPIC_NAME) << "\n";
     }
 
     // set initial peers and not use multicast
@@ -485,31 +488,37 @@ std::string RTIRawTransportImpl::PrintConfiguration()
  */
 class RTIRawTransportPublisher : public IMessagingWriter{
   private:
+
+    /* --- Transport members --- */
     RTIRawTransportImpl *_parent;
     NDDS_Transport_Plugin *_plugin;
     NDDS_Transport_Buffer_t _sendBuffer;
-
-    std::vector<peerData> _peersDataList;
-
-    TestData_t _data;
-
     struct REDAWorker *_worker;
+    unsigned int _workerTssKey;
+
+    /* --- Perftest members --- */
+    std::vector<peerData> _peersDataList;
+    TestData_t _data;
     RTIOsapiSemaphore *_pongSemaphore;
 
+    /* --- Buffers management --- */
     unsigned int _batchBufferSize;
     bool _useBatching;
-
     struct RTICdrStream _stream;
-    struct PRESTypePluginDefaultEndpointData _epd;
+    struct PRESTypePluginDefaultEndpointData _endPointData;
+
 
   public:
     RTIRawTransportPublisher(RTIRawTransportImpl *parent)
     {
         _parent = parent;
-        _plugin = parent->GetPlugin();
-        _peersDataList = parent->GetPeersData();
-        _pongSemaphore = parent->GetPongSemaphore();
-        _worker = parent->GetWorker();
+        _plugin = parent->getPlugin();
+        _peersDataList = parent->getPeersData();
+        _pongSemaphore = parent->getPongSemaphore();
+        _workerTssKey = 0;
+
+        /* This worker will be create when the sendmessage function is called. */
+        _worker = NULL;
 
         if (parent->GetBatchSize() == 0){
             _batchBufferSize = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
@@ -538,12 +547,12 @@ class RTIRawTransportPublisher : public IMessagingWriter{
                 (char *)_sendBuffer.pointer,
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
 
-        _epd._maxSizeSerializedSample =
-                TestData_tPlugin_get_serialized_sample_max_size(
+        _endPointData._maxSizeSerializedSample
+                = TestData_tPlugin_get_serialized_sample_max_size(
                         NULL,
                         RTI_TRUE,
-                        RTICdrEncapsulation_getNativeCdrEncapsulationId(), 0);
-
+                        RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+                        0);
     }
 
     ~RTIRawTransportPublisher()
@@ -558,11 +567,23 @@ class RTIRawTransportPublisher : public IMessagingWriter{
             _sendBuffer.pointer = NULL;
         }
 
+        if (_parent->getWorkerFactory() != NULL && _worker != NULL) {
+            REDAWorkerFactory_destroyWorker(
+                    _parent->getWorkerFactory(), _worker);
+        }
     }
 
     bool SendMessage()
     {
         bool success = true;
+
+        if (_worker == NULL) {
+            _worker = RawTransport_get_worker_per_threadI(
+                    _parent->getWorkerFactory(),
+                    _parent->getTssFactory(),
+                    &_workerTssKey);
+        }
+
         for(unsigned int i = 0; i < _peersDataList.size(); i++) {
             if(!_plugin->send(
                     _plugin,
@@ -571,11 +592,14 @@ class RTIRawTransportPublisher : public IMessagingWriter{
                     _peersDataList[i].port,
                     NDDS_TRANSPORT_PRIORITY_DEFAULT,
                     &_sendBuffer,
-                    1,
+                    1, /* Number of buffer on buffer_in (_sendBuffer) */
                     _worker)){
                 success = false;
-                // No need of print error. This wil be represented as loss packets
-        }
+                /*
+                 * No need of print error. This wil be represented as loss
+                 * packets
+                 */
+            }
 
         }
 
@@ -589,8 +613,8 @@ class RTIRawTransportPublisher : public IMessagingWriter{
             return;
         }
 
-        if (SendMessage() != 1) {
-            // No need of print error. This wil be represented as loss packets
+        if (!SendMessage()) {
+            /* No need of print error. This will be represented as loss packets */
         }
 
         /* If the send it's done, reset the stream to fill the buffer again */
@@ -616,7 +640,7 @@ class RTIRawTransportPublisher : public IMessagingWriter{
         _data.timestamp_usec = message.timestamp_usec;
         _data.latency_ping = message.latency_ping;
         _data.bin_data.loan_contiguous(
-                (DDS_Octet *)message.data,
+                (DDS_Octet *) message.data,
                 message.size,
                 message.size);
 
@@ -625,13 +649,13 @@ class RTIRawTransportPublisher : public IMessagingWriter{
          * If there is no more space on the buffer to allocate the new message
          * flush before add a new one.
          */
-        if ((unsigned int) (serializeSize + _sendBuffer.length)
+        if ((unsigned int) (_sendBuffer.length + serializeSize)
                 > _batchBufferSize) {
             Flush();
         }
 
         success = TestData_tPlugin_serialize(
-                (PRESTypePluginEndpointData) &_epd,
+                (PRESTypePluginEndpointData) &_endPointData,
                 &_data,
                 &_stream,
                 RTI_TRUE,
@@ -644,7 +668,7 @@ class RTIRawTransportPublisher : public IMessagingWriter{
             return false;
         }
 
-        // _data is been serialize (copied). It's right to unloan then.
+        /* _data is been serialize (copied). It's right to unloan then. */
         _data.bin_data.unloan();
 
         _sendBuffer.length = RTICdrStream_getCurrentPositionOffset(&_stream);
@@ -653,11 +677,11 @@ class RTIRawTransportPublisher : public IMessagingWriter{
             Flush();
         }
 
-            return true;
+        return true;
     }
 
     void WaitForReaders(int numSubscribers) {
-        /*Dummy Function*/
+        /* --- Dummy Function --- */
     }
 
     bool waitForPingResponse() {
@@ -695,12 +719,12 @@ class RTIRawTransportPublisher : public IMessagingWriter{
     }
 
     unsigned int getPulledSampleCount() {
-        /*Dummy Function*/
+        /* --- Dummy Function --- */
         return 0;
     };
 
     void wait_for_acknowledgments(long sec, unsigned long nsec) {
-        /*Dummy Function*/
+        /* --- Dummy Function --- */
     }
 };
 
@@ -710,56 +734,63 @@ class RTIRawTransportPublisher : public IMessagingWriter{
 class RTIRawTransportSubscriber : public IMessagingReader
 {
   private:
+    /* --- Transport members --- */
     RTIRawTransportImpl *_parent;
     NDDS_Transport_Plugin *_plugin;
     NDDS_Transport_SendResource_t _recvResource;
     NDDS_Transport_Buffer_t _recvBuffer;
     NDDS_Transport_Port_t _recvPort;
-
     NDDS_Transport_Message_t _transportMessage;
-
-    TestMessage _message;
-
     struct REDAWorker *_worker;
+    unsigned int _workerTssKey;
 
+    /* --- Perftest members --- */
+    TestMessage _message;
     TestData_t _data;
     char *_payload;
     int _payload_size;
-
     struct RTIOsapiSemaphore *_readThreadSemaphore;
+
+    /* --- Buffer Management --- */
     struct RTICdrStream _stream;
     bool _noData;
 
-  public:
+
+public:
     RTIRawTransportSubscriber(
         RTIRawTransportImpl * parent,
         NDDS_Transport_SendResource_t recvResource,
         NDDS_Transport_Port_t recvPort)
     {
+        /* --- Parents Members --- */
         _parent = parent;
-        _plugin = parent->GetPlugin();
-        _worker = parent->GetWorker();
+        _plugin = parent->getPlugin();
+        _workerTssKey = 0;
+
+        /* This worker will be create when the sendmessage function is called.*/
+        _worker = NULL;
 
         _readThreadSemaphore = NULL;
 
+        /* --- Buffer Management --- */
         _recvResource = recvResource;
         _recvPort = recvPort;
         _recvBuffer.length = 0;
         _recvBuffer.pointer = NULL;
 
-        // Similar to NDDS_Transport_Message_t message =
-        //      NDDS_TRANSPORT_MESSAGE_INVALID;
+        /*
+         * Similar to NDDS_Transport_Message_t message =
+         *      NDDS_TRANSPORT_MESSAGE_INVALID;
+         */
         _transportMessage.buffer.pointer = NULL;
         _transportMessage.buffer.length = 0;
         _transportMessage.loaned_buffer_param = NULL;
 
-        /* Maximun size of UDP package*/
+        /* --- Maximun size of UDP package --- */
         RTIOsapiHeap_allocateBufferAligned(
             &_recvBuffer.pointer,
             NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
             RTI_OSAPI_ALIGNMENT_DEFAULT);
-
-
         if (_recvBuffer.pointer == NULL) {
             Shutdown();
             throw std::runtime_error("RTIOsapiHeap_allocateBuffer Error\n");
@@ -767,7 +798,8 @@ class RTIRawTransportSubscriber : public IMessagingReader
 
         _recvBuffer.length = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
 
-        _data.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+        _data.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX
+                - perftest_cpp::OVERHEAD_BYTES);
 
         RTICdrStream_init(&_stream);
         _noData = true;
@@ -786,7 +818,7 @@ class RTIRawTransportSubscriber : public IMessagingReader
             _recvBuffer.pointer = NULL;
         }
 
-        if (&_recvResource != NULL && _plugin != NULL && _worker != NULL) {
+        if (_recvResource != NULL && _plugin != NULL && _worker != NULL) {
             _plugin->unblock_receive_rrEA(_plugin, &_recvResource, _worker);
 
             if (_readThreadSemaphore != NULL) {
@@ -796,13 +828,26 @@ class RTIRawTransportSubscriber : public IMessagingReader
                     return;
                 }
             }
-
             _plugin->destroy_recvresource_rrEA(_plugin, &_recvResource);
+
+            /* Make a give before destroy the semaphore */
+            if (_readThreadSemaphore != NULL) {
+                if (RTIOsapiSemaphore_give(_readThreadSemaphore)
+                        != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+                    fprintf(stderr, "Unexpected error giving semaphore\n");
+                    return;
+                }
+            }
         }
 
         if (_readThreadSemaphore != NULL) {
             RTIOsapiSemaphore_delete(_readThreadSemaphore);
             _readThreadSemaphore = NULL;
+        }
+
+        if (_parent->getWorkerFactory() != NULL && _worker != NULL) {
+            REDAWorkerFactory_destroyWorker(
+                    _parent->getWorkerFactory(), _worker);
         }
     }
 
@@ -811,6 +856,12 @@ class RTIRawTransportSubscriber : public IMessagingReader
 
         while (true) {
             if (_noData) {
+                if (_worker == NULL){
+                    _worker = RawTransport_get_worker_per_threadI(
+                            _parent->getWorkerFactory(),
+                            _parent->getTssFactory(),
+                            &_workerTssKey);
+                }
 
                 bool result = _plugin->receive_rEA(
                         _plugin,
@@ -820,9 +871,9 @@ class RTIRawTransportSubscriber : public IMessagingReader
                         _worker);
                 if (!result) {
                     /*
-                     * If the _transportMessage.buffer.length == 0, this method
-                     * was unblocked by the unblock_receive_rrEA() call. So it's
-                     * not a error
+                     * If the _transportMessage.buffer.length == 0, this
+                     * method was unblocked by the unblock_receive_rrEA() call.
+                     * So it's not an error.
                      */
                     if (_transportMessage.buffer.length != 0) {
                         fprintf(stderr, "Fail to receive data\n");
@@ -837,12 +888,11 @@ class RTIRawTransportSubscriber : public IMessagingReader
                 _noData = false;
             }
 
-            // may have hit end condition
+            /* May have hit end condition */
             if (RTICdrStream_getCurrentPositionOffset(&_stream)
                     >= _transportMessage.buffer.length) {
-
-                if (_plugin -> return_loaned_buffer_rEA != NULL
-                        && _transportMessage.loaned_buffer_param != (void *)-1) {
+                if (_plugin->return_loaned_buffer_rEA != NULL
+                    && _transportMessage.loaned_buffer_param != (void *) -1) {
                     _plugin->return_loaned_buffer_rEA(
                             _plugin,
                             &_recvResource,
@@ -883,6 +933,11 @@ class RTIRawTransportSubscriber : public IMessagingReader
                         "Fail to create a Semaphore for RTIRawTransportImpl\n");
                 return NULL;
             }
+            if (RTIOsapiSemaphore_give(_readThreadSemaphore)
+                    != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+                fprintf(stderr, "Unexpected error giving semaphore\n");
+                return NULL;
+            }
         }
 
         return _readThreadSemaphore;
@@ -898,11 +953,11 @@ class RTIRawTransportSubscriber : public IMessagingReader
  */
 bool RTIRawTransportImpl::Initialize(int argc, char *argv[])
 {
-    if (!ParseConfig(argc, argv)) {
+    if (!parseConfig(argc, argv)) {
         return false;
     }
 
-    // Only if we run latency test we need to wait for pongs after sending pings
+    /* Only if we run latency test we need to wait for pongs after sending pings */
     if (_latencyTest) {
         _pongSemaphore =
                 RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL);
@@ -915,7 +970,7 @@ bool RTIRawTransportImpl::Initialize(int argc, char *argv[])
         }
     }
 
-    if (!ConfigureSocketsTransport()) {
+    if (!configureSocketsTransport()) {
         return false;
     }
 
@@ -925,11 +980,11 @@ bool RTIRawTransportImpl::Initialize(int argc, char *argv[])
 /*********************************************************
  * GetUnicastPort
  */
-unsigned int RTIRawTransportImpl::GetSendUnicastPort(
+unsigned int RTIRawTransportImpl::getSendUnicastPort(
         const char *topicName,
         unsigned int subId)
 {
-    // subId = 0  by default
+    /* subId = 0  by default */
 
     unsigned int portOffset = 0;
 
@@ -948,8 +1003,9 @@ unsigned int RTIRawTransportImpl::GetSendUnicastPort(
             wellKnownPorts.participant_id_gain,
             wellKnownPorts.builtin_unicast_port_offset + portOffset);
 }
+
 unsigned int
-RTIRawTransportImpl::GetReceiveUnicastPort(const char *topicName)
+RTIRawTransportImpl::getReceiveUnicastPort(const char *topicName)
 {
 
     unsigned int portOffset = 0;
@@ -958,7 +1014,7 @@ RTIRawTransportImpl::GetReceiveUnicastPort(const char *topicName)
         portOffset = 1;
     }
 
-    // Get the default values to calculate the port the same way as do DDS
+    /* Get the default values to calculate the port the same way as do DDS */
     struct DDS_RtpsWellKnownPorts_t wellKnownPorts =
             DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
 
@@ -973,17 +1029,18 @@ RTIRawTransportImpl::GetReceiveUnicastPort(const char *topicName)
 
 
 /*********************************************************
- * GetMulticastTransportAddr
+ * getMulticastTransportAddr
  */
-bool RTIRawTransportImpl::GetMulticastTransportAddr(
+bool RTIRawTransportImpl::getMulticastTransportAddr(
         const char *topicName,
         NDDS_Transport_Address_t &addr)
 {
-    if (!IsMulticast()) { // Precondition
+    /*  Precondition */
+    if (!isMulticast()) {
         return false;
     }
 
-    bool retCode = true;
+    bool success = true;
     RTIOsapiMemory_zero(&addr, sizeof(NDDS_Transport_Address_t));
 
     if (strcmp(topicName, THROUGHPUT_TOPIC_NAME) != 0
@@ -997,12 +1054,12 @@ bool RTIRawTransportImpl::GetMulticastTransportAddr(
         return false;
     }
 
-    retCode = NDDS_Transport_UDP_string_to_address_cEA(
+    success = NDDS_Transport_UDP_string_to_address_cEA(
             _plugin,
             &addr,
             _transport.getMulticastAddr(topicName).c_str());
 
-    return retCode;
+    return success;
 }
 
 /*********************************************************
@@ -1021,20 +1078,20 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
 
     // If multicat, then take the multicast address.
     if (_transport.useMulticast
-        && GetMulticastTransportAddr(topicName, multicastAddr)) {
+            && getMulticastTransportAddr(topicName, multicastAddr)) {
         isMulticastAddr = true;
     } else if (_transport.useMulticast) {
         fprintf(stderr, "Bad configuration for multicast (sockets)\n");
         return NULL;
     }
 
-    // _peerHostCount is garanteed to be 1 if multicast is enabled
+    /* _peerHostCount is garanteed to be 1 if multicast is enabled */
     for (int i = 0; i < _peerHostCount; i++) {
         shared = false;
-        actualAddr = (isMulticastAddr) ? multicastAddr : _peersMap[i].first;
+        actualAddr = isMulticastAddr ? multicastAddr : _peersMap[i].first;
 
         // Calculate the port of the new send resource.
-        actualPort = GetSendUnicastPort(topicName, _peersMap[i].second);
+        actualPort = getSendUnicastPort(topicName, _peersMap[i].second);
 
         for (j = 0; j < peerData::resourcesList.size() && !shared; ++j) {
             // Try to share the resource
@@ -1046,7 +1103,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
                     NDDS_TRANSPORT_PRIORITY_DEFAULT);
         }
         if (!shared) {
-            // If the resource is not shared, then create a new one and store it
+            /* If the resource is not shared, then create a new one and store it */
             NDDS_Transport_SendResource_t resource;
             if (!_plugin->create_sendresource_srEA(
                         _plugin,
@@ -1062,7 +1119,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
 
             peerData::resourcesList.push_back(resource);
         }
-        // This data will be use by the writer to send to multiples peers.
+        /* This data will be use by the writer to send to multiples peers. */
         _peersDataList.push_back(
                 peerData(
                         shared ? &peerData::resourcesList[j-1]
@@ -1086,17 +1143,17 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
     bool isMulticastAddr = false;
     bool result = true;
 
-    // If multicat, then take the multicast address.
+    /* If multicat, then take the multicast address. */
     if (_transport.useMulticast
-            && GetMulticastTransportAddr(topicName, multicastAddr)) {
+            && getMulticastTransportAddr(topicName, multicastAddr)) {
         isMulticastAddr = true;
     } else if (_transport.useMulticast) {
         fprintf(stderr, "Bad configuration for multicast (RawTransport)\n");
         return NULL;
     }
 
-    // Calculate the port of the new receive resource.
-    recvPort = GetReceiveUnicastPort(topicName);
+    /* Calculate the port of the new receive resource. */
+    recvPort = getReceiveUnicastPort(topicName);
 
     result = _plugin->create_recvresource_rrEA(
             _plugin,
@@ -1120,14 +1177,14 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
             recvPort);
 }
 
-bool RTIRawTransportImpl::ConfigureSocketsTransport()
+bool RTIRawTransportImpl::configureSocketsTransport()
 {
     char *interface = NULL;
     interface = DDS_String_dup(_transport.allowInterfaces.c_str());
     if (interface == NULL) {
         fprintf(
                 stderr,
-                "Fail allocating memory on ConfigureSocketsTransport\n");
+                "Fail allocating memory on configureSocketsTransport\n");
         return false;
     }
 
@@ -1137,20 +1194,10 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport()
         _peerHostCount = 1;
     }
 
-    /* Worker configure */
-    _workerFactory = REDAWorkerFactory_new(16); // Number of worker to store
+    /* --- Worker configure --- */
+    _workerFactory = REDAWorkerFactory_new(128); // Number of worker to store
     if (_workerFactory == NULL) {
         fprintf(stderr, "Fail to create Worker Factory\n");
-        return false;
-    }
-
-    // TODO:
-    // _workerPerThread = REDAWorkerPerThread_new(_workerFactory);
-    // if (_workerPerThread == )
-
-    _worker = REDAWorkerFactory_createWorker(_workerFactory, "RTIRawTransport");
-    if (_worker == NULL) {
-        fprintf(stderr, "Fail to create Worker\n");
         return false;
     }
 
@@ -1160,9 +1207,16 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport()
         return false;
     }
 
+    /* --- TssFactory --- */
+    _tssFactory = RTIOsapiThread_createTssFactory();
+    if (_tssFactory == NULL) {
+        fprintf(stderr, "Fail to create thread-specific storage factory\n");
+        return false;
+    }
+
     switch (_transport.transportConfig.kind) {
 
-    /* Transport configure */
+    /* --- Transport configure --- */
     case TRANSPORT_NOT_SET:
         /*Default transport for sockets is UDPv4*/
         _transport.transportConfig.kind = TRANSPORT_UDPv4;
@@ -1245,7 +1299,7 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport()
 
             /* Check if the multicast addres is correct */
             if (_transport.useMulticast
-                    && GetNumMulticastInterfaces(udpPlugin) <= 0) {
+                    && getNumMulticastInterfaces(udpPlugin) <= 0) {
                 fprintf(
                         stderr,
                         "The interface (%s) does not have multicast-enabled\n",
@@ -1256,7 +1310,7 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport()
             /* Peers address and ID parse to NDDS_Transport_Address_t */
             for (int i = 0; i < _peerHostCount; i++) {
                 id_sub = 0;
-                // Regular expression to identify ADDRESS:ID
+                /* Regular expression to identify ADDRESS:ID */
                 sscanf(_peerHost[i], "%[^:]:%d", addr_sub, &id_sub);
 
                 if (NDDS_Transport_UDP_string_to_address_cEA(
@@ -1282,7 +1336,7 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport()
         struct NDDS_Transport_Shmem_Property_t shmem_prop =
                 NDDS_TRANSPORT_SHMEM_PROPERTY_DEFAULT;
 
-        /*_Plugin configure for shared memory*/
+        /* _Plugin configure for shared memory */
         shmem_prop.parent.message_size_max =
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
         shmem_prop.receive_buffer_size =
@@ -1334,7 +1388,7 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport()
         fprintf(stderr, "RawTransport only support UDPv4 & SHMEM\n");
         return false;
 
-    } // End Switch
+    } /* End Switch */
 
 
 
@@ -1345,7 +1399,7 @@ bool RTIRawTransportImpl::ConfigureSocketsTransport()
     return true;
 }
 
-int GetNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin)
+int getNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin)
 {
     int count = 0;
 
@@ -1360,6 +1414,64 @@ int GetNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin)
         }
     }
     return count;
+}
+
+struct REDAWorker *RawTransport_get_worker_per_threadI(
+        REDAWorkerFactory *workerFactory,
+        RTIOsapiThreadTssFactory *tssFactory,
+        unsigned int *workerTssKey)
+{
+    bool workerSet = false;
+    struct REDAWorker *worker = NULL;
+
+    /* --- Test preconditions --- */
+    if (workerFactory == NULL) {
+        fprintf(stderr, "Fail precondition, workerFactory == NULL\n");
+        return NULL;
+    }
+    if (tssFactory == NULL) {
+        fprintf(stderr, "Fail precondition, tssFactory == NULL\n");
+        return NULL;
+    }
+
+    /* --- Get tssKey --- */
+    if (*workerTssKey == 0) {
+        /* Create a TssKey */
+        if (!RTIOsapiThread_createKey(workerTssKey, tssFactory)) {
+            fprintf(stderr, "Fail to get thread-specific key\n");
+            return NULL;
+        }
+    }
+
+    /* --- Get worker --- */
+    worker = (struct REDAWorker *) RTIOsapiThread_getTss(*workerTssKey);
+    if (worker == NULL) {
+        char workerName[20];
+        /* Print 16 digits long hexadecimal (016lx). We use "l" to support
+           the new 64-bit threadID data-type */
+        sprintf(workerName, "U%016llx", RTIOsapiThread_getCurrentThreadID());
+        /* No worker: create a new one */
+        worker = REDAWorkerFactory_createWorker(workerFactory, workerName);
+        if (worker == NULL) {
+            /* failed to create worker */
+            fprintf(stderr, "Fail to create a worker\n");
+            return NULL;
+        } else {
+            /* worker created successfully: add to TSS */
+            workerSet = RTIOsapiThread_setTss(*workerTssKey, worker);
+            if (!workerSet) {
+                /*Failed to add to TSS: pretend it was never created.*/
+                if (worker != NULL) {
+                    REDAWorkerFactory_destroyWorker(
+                            workerFactory,
+                            worker);
+                }
+                worker = NULL;
+            }
+        }
+    }
+
+    return worker;
 }
 
 

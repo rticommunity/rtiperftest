@@ -2267,6 +2267,14 @@ int perftest_cpp::Publisher()
     announcement_reader_listener->end_test = true;
     reader_listener->end_test = true;
 
+    if (listenerThread != NULL) {
+        RTIOsapiThread_delete(listenerThread);
+    }
+
+    if (announcementThread != NULL) {
+        RTIOsapiThread_delete(announcementThread);
+    }
+
     if (announcement_reader != NULL) {
         delete (announcement_reader);
     }
@@ -2287,13 +2295,6 @@ int perftest_cpp::Publisher()
         delete (announcement_reader_listener);
     }
 
-    if (listenerThread != NULL) {
-        RTIOsapiThread_delete(listenerThread);
-    }
-
-    if (announcementThread != NULL) {
-        RTIOsapiThread_delete(announcementThread);
-    }
 
     delete []message.data;
 
