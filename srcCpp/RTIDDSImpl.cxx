@@ -1669,11 +1669,17 @@ bool RTIDDSImpl<T>::ConfigureDomainParticipantQos(DDS_DomainParticipantQos &qos)
   #endif // RTI_SECURE_PERFTEST
 
     if (_AutoThrottle) {
-        DDSPropertyQosPolicyHelper::add_property(
+        DDS_ReturnCode_t retcode = DDSPropertyQosPolicyHelper::add_property(
                 qos.property,
                 "dds.domain_participant.auto_throttle.enable",
                 "true",
                 false);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr,
+                    "Not able to add property auto_throttle. Retcode %d\n",
+                    retcode);
+            return false;
+        }
     }
 
 
@@ -1772,18 +1778,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     DDSDataWriter *writer = NULL;
     DDS_DataWriterQos dw_qos;
     std::string qos_profile;
-
-    DDSTopic *topic = _participant->create_topic(
-                       topic_name,
-                       _typename,
-                       DDS_TOPIC_QOS_DEFAULT,
-                       NULL,
-                       DDS_STATUS_MASK_NONE);
-
-    if (topic == NULL) {
-        fprintf(stderr,"Problem creating topic %s.\n", topic_name);
-        return NULL;
-    }
+    DDS_ReturnCode_t retcode;
 
     if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0) {
         qos_profile = "ThroughputQos";
@@ -1871,13 +1866,31 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         }
 
         if (_AutoThrottle) {
-            DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
-                    "dds.data_writer.auto_throttle.enable", "true", false);
+            retcode = DDSPropertyQosPolicyHelper::add_property(
+                    dw_qos.property,
+                    "dds.data_writer.auto_throttle.enable",
+                    "true",
+                    false);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "Not able to add property auto_throttle. Retcode %d\n",
+                        retcode);
+                return NULL;
+            }
         }
 
         if (_TurboMode) {
-            DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
-                    "dds.data_writer.enable_turbo_mode", "true", false);
+            retcode = DDSPropertyQosPolicyHelper::add_property(
+                    dw_qos.property,
+                    "dds.data_writer.enable_turbo_mode",
+                    "true",
+                    false);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "Not able to add property enable_turbo_mode. Retcode "
+                        "%d\n",
+                        retcode);
+            }
             dw_qos.batch.enable = false;
             dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
             dw_qos.writer_resource_limits.max_batches = _SendQueueSize;
@@ -1924,11 +1937,18 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     if (_useUnbounded > 0) {
         char buf[10];
         sprintf(buf, "%lu", _useUnbounded);
-        DDSPropertyQosPolicyHelper::add_property(
+        retcode = DDSPropertyQosPolicyHelper::add_property(
                 dw_qos.property,
                 "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf,
                 false);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr,
+                    "Not able to add property pool_buffer_max_size. Retcode "
+                    "%d\n",
+                    retcode);
+            return NULL;
+        }
     }
 
     if (_InstanceCount > 1) {
@@ -1940,13 +1960,30 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         }
     }
 
+    DDSTopic *topic = _participant->create_topic(
+            topic_name,
+            _typename,
+            DDS_TOPIC_QOS_DEFAULT,
+            NULL,
+            DDS_STATUS_MASK_NONE);
+
+    if (topic == NULL) {
+        fprintf(stderr,"Problem creating topic %s.\n", topic_name);
+        return NULL;
+    }
+
     writer = _publisher->create_datawriter(
         topic, dw_qos, NULL,
         DDS_STATUS_MASK_NONE);
 
-    if (writer == NULL)
-    {
+    if (writer == NULL) {
         fprintf(stderr,"Problem creating writer.\n");
+        retcode = _participant->delete_topic(topic);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr,
+                    "Failure _participant->delete(topic). Retcode: %d\n",
+                    retcode);
+        }
         return NULL;
     }
 
@@ -2054,18 +2091,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     DDSDataReader *reader = NULL;
     DDS_DataReaderQos dr_qos;
     std::string qos_profile;
+    DDSTopic *topic = NULL;
     DDSTopicDescription* topic_desc = NULL; // Used to create the DDS DataReader
-
-    DDSTopic *topic = _participant->create_topic(
-                       topic_name, _typename,
-                       DDS_TOPIC_QOS_DEFAULT, NULL,
-                       DDS_STATUS_MASK_NONE);
-
-    if (topic == NULL) {
-        fprintf(stderr,"Problem creating topic %s.\n", topic_name);
-        return NULL;
-    }
-    topic_desc = topic;
+    DDS_ReturnCode_t retcode;
 
     if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0) {
         qos_profile = "ThroughputQos";
@@ -2157,19 +2185,46 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     if (_useUnbounded > 0) {
         char buf[10];
         sprintf(buf, "%lu", _useUnbounded);
-        DDSPropertyQosPolicyHelper::add_property(
+        retcode = DDSPropertyQosPolicyHelper::add_property(
                 dr_qos.property,
                 "dds.data_reader.history.memory_manager.fast_pool."
                 "pool_buffer_max_size",
                 buf,
                 false);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr,
+                    "Not able to add property pool_buffer_max_size. Retcode "
+                    "%d\n",
+                    retcode);
+            return NULL;
+        }
     }
 
+    topic = _participant->create_topic(
+            topic_name,
+            _typename,
+            DDS_TOPIC_QOS_DEFAULT,
+            NULL,
+            DDS_STATUS_MASK_NONE);
+    if (topic == NULL) {
+        fprintf(stderr,"Problem creating topic %s.\n", topic_name);
+        return NULL;
+    }
+    topic_desc = topic;
+
     /* Create CFT Topic */
-    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0 && _useCft) {
+    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0
+            && _useCft) {
         topic_desc = CreateCft(topic_name, topic);
         if (topic_desc == NULL) {
-            printf("Create_contentfilteredtopic error\n");
+            printf("CreateCft error\n");
+            retcode = _participant->delete_topic(topic);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "Error in _participant->delete_topic(topic). Retcode "
+                        "%d\n",
+                        retcode);
+            }
             return NULL;
         }
     }
@@ -2201,6 +2256,26 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     if (reader == NULL)
     {
         fprintf(stderr,"Problem creating reader.\n");
+        // Delete the cft before leaving
+        if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0
+                && _useCft) {
+            retcode = _participant->delete_contentfilteredtopic(
+                    (DDSContentFilteredTopic *)topic_desc);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "Error in _participant->delete_contentfilteredtopic"
+                        "(topic). Retcode %d\n",
+                        retcode);
+            }
+        }
+        // Also delete the topic
+        retcode = _participant->delete_topic(topic);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr,
+                    "Error in _participant-delete_topic(topic). Retcode "
+                    "%d\n",
+                    retcode);
+        }
         return NULL;
     }
 
