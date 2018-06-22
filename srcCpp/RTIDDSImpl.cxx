@@ -1720,12 +1720,12 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     _participant = _factory->create_participant(
-        (DDS_DomainId_t) _DomainID,
-        qos,
-        listener,
-        DDS_INCONSISTENT_TOPIC_STATUS |
-        DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
-        DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
+            (DDS_DomainId_t) _DomainID,
+            qos,
+            listener,
+            DDS_INCONSISTENT_TOPIC_STATUS |
+            DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
+            DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
 
     if (_participant == NULL) {
         fprintf(stderr,"Problem creating participant.\n");
