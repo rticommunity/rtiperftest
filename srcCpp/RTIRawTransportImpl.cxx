@@ -1336,6 +1336,12 @@ bool RTIRawTransportImpl::configureSocketsTransport()
         struct NDDS_Transport_Shmem_Property_t shmem_prop =
                 NDDS_TRANSPORT_SHMEM_PROPERTY_DEFAULT;
 
+        //TODO: move to validate function when parameter manager merge
+        if (!_useBlocking) {
+            fprintf(stderr, "SHMEM dont support -noBlockingSockets\n");
+            return false;
+        }
+
         /* _Plugin configure for shared memory */
         shmem_prop.parent.message_size_max =
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;

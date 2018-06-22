@@ -7,6 +7,7 @@
 #include "RTIRawTransportImpl.h"
 #include "perftest_cpp.h"
 #include "CpuMonitor.h"
+#include <typeinfo>
 
 #if defined(RTI_WIN32)
   #pragma warning(push)
@@ -123,6 +124,8 @@ int perftest_cpp::Run(int argc, char *argv[])
     {
         return -1;
     }
+
+    printf("type %s\n", typeid(_MessagingImpl).name());
 
     PrintConfiguration();
 
@@ -2294,7 +2297,6 @@ int perftest_cpp::Publisher()
     if (announcement_reader_listener != NULL) {
         delete (announcement_reader_listener);
     }
-
 
     delete []message.data;
 

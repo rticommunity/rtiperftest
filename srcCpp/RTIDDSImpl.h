@@ -132,6 +132,17 @@ class RTIDDSImpl : public IMessaging
      */
     static double
     ObtainSerializeTimeCost(int iterations, unsigned int sampleSize);
+
+    static double ObtainDDSSerializeTimeCost(
+        T data,
+        unsigned int sampleSize,
+        unsigned int iters);
+
+    static double ObtainDDSDeserializeTimeCost(
+        T data,
+        unsigned int sampleSize,
+        unsigned int iters);
+
     static double
     ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize);
 

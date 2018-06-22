@@ -2384,6 +2384,165 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
     return initializeSampleCount;
 }
 
+template <typename T>
+double RTIDDSImpl<T>::ObtainDDSSerializeTimeCost(
+        T data,
+        unsigned int sampleSize,
+        unsigned int iters)
+{
+    double timeInit = 0;
+    double timeFinish = 0;
+    double serializeTime;
+
+    unsigned int maxSizeSerializedSample = 0;
+    char *buffer;
+
+    RTIOsapiHeap_allocateBuffer(
+            &buffer,
+            NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
+            RTI_OSAPI_ALIGNMENT_DEFAULT);
+
+    if (buffer == NULL) {
+        fprintf(stderr,
+                "Error allocating memory for buffer on "
+                "ObtainSerializeTimeCost\n");
+        return 0;
+    }
+
+    /* --- Initialize data --- */
+    data.bin_data.maximum(0);
+    data.entity_id = 0;
+    data.seq_num = 0;
+    data.timestamp_sec = 0;
+    data.timestamp_usec = 0;
+    data.latency_ping = 0;
+
+    /* The buffer can be reuse, does not matter what it's inside */
+    data.bin_data.loan_contiguous(
+            (DDS_Octet *) buffer,
+            sampleSize,
+            sampleSize);
+
+    if (!T::TypeSupport::serialize_data_to_cdr_buffer(
+            NULL,
+            maxSizeSerializedSample,
+            &data)){
+        fprintf(
+                stderr,
+                "Fail to serialize sample on ObtainDDSSerializeTimeCost\n");
+        return 0;
+    };
+
+    /* Serialize time calculating */
+    timeInit = perftest_cpp::GetTimeUsec();
+
+    for (unsigned int i = 0; i < iters; i++) {
+        if (!T::TypeSupport::serialize_data_to_cdr_buffer(
+                buffer,
+                maxSizeSerializedSample,
+                &data)){
+            fprintf(
+                    stderr,
+                    "Fail to serialize sample on ObtainDDSSerializeTimeCost\n");
+            return 0;
+        }
+    }
+
+    timeFinish = perftest_cpp::GetTimeUsec();
+
+    serializeTime = timeFinish - timeInit;
+
+    data.bin_data.unloan();
+
+    if (buffer != NULL) {
+        RTIOsapiHeap_freeBuffer(buffer);
+    }
+
+    return serializeTime / (float) iters;
+}
+
+template <typename T>
+double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
+        T data,
+        unsigned int sampleSize,
+        unsigned int iters)
+{
+    double timeInit = 0;
+    double timeFinish = 0;
+    double deSerializeTime;
+
+    unsigned int maxSizeSerializedSample = 0;
+    char *buffer;
+
+    RTIOsapiHeap_allocateBuffer(
+            &buffer,
+            NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
+            RTI_OSAPI_ALIGNMENT_DEFAULT);
+
+    if (buffer == NULL) {
+        fprintf(stderr,
+                "Error allocating memory for buffer on "
+                "ObtainDDSDeserializeTimeCost\n");
+        return 0;
+    }
+
+    /* --- Initialize data --- */
+    data.bin_data.maximum(0);
+    data.entity_id = 0;
+    data.seq_num = 0;
+    data.timestamp_sec = 0;
+    data.timestamp_usec = 0;
+    data.latency_ping = 0;
+
+    /* The buffer can be reuse, does not matter what it's inside */
+    data.bin_data.loan_contiguous((DDS_Octet *) buffer, sampleSize, sampleSize);
+
+    if (!T::TypeSupport::serialize_data_to_cdr_buffer(
+                NULL,
+                maxSizeSerializedSample,
+                &data)) {
+        fprintf(stderr,
+                "Fail to serialize sample on ObtainDDSDeserializeTimeCost\n");
+        return 0;
+    }
+
+    if (!T::TypeSupport::serialize_data_to_cdr_buffer(
+                buffer,
+                maxSizeSerializedSample,
+                &data)) {
+        fprintf(stderr,
+                "Fail to serialize sample on ObtainDDSDeserializeTimeCost\n");
+        return 0;
+    }
+
+    /* Serialize time calculating */
+    timeInit = perftest_cpp::GetTimeUsec();
+
+    for (unsigned int i = 0; i < iters; i++) {
+        if (!T::TypeSupport::deserialize_data_from_cdr_buffer(
+                    &data,
+                    buffer,
+                    maxSizeSerializedSample)) {
+            fprintf(stderr,
+                    "Fail to deserialize sample on "
+                    "ObtainDDSDeserializeTimeCost\n");
+            return 0;
+        }
+    }
+
+    timeFinish = perftest_cpp::GetTimeUsec();
+
+    deSerializeTime = timeFinish - timeInit;
+
+    data.bin_data.unloan();
+
+    if (buffer != NULL) {
+        RTIOsapiHeap_freeBuffer(buffer);
+    }
+
+    return deSerializeTime / (float) iters;
+}
+
 /*********************************************************
  * ObtainSerializeTime
  */
