@@ -510,15 +510,13 @@ class RTIRawTransportPublisher : public IMessagingWriter{
 
   public:
     RTIRawTransportPublisher(RTIRawTransportImpl *parent)
+            : _parent(parent),
+            _worker(NULL),
+            _workerTssKey(0)
     {
-        _parent = parent;
         _plugin = parent->getPlugin();
         _peersDataList = parent->getPeersData();
         _pongSemaphore = parent->getPongSemaphore();
-        _workerTssKey = 0;
-
-        /* This worker will be create when the sendmessage function is called. */
-        _worker = NULL;
 
         if (parent->GetBatchSize() == 0){
             _batchBufferSize = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
@@ -761,20 +759,18 @@ public:
         RTIRawTransportImpl * parent,
         NDDS_Transport_SendResource_t recvResource,
         NDDS_Transport_Port_t recvPort)
+                : _parent(parent),
+                _recvResource(recvResource),
+                _recvPort(recvPort),
+                _worker(NULL),
+                _workerTssKey(0),
+                _readThreadSemaphore(NULL),
+                _noData(true)
     {
         /* --- Parents Members --- */
-        _parent = parent;
         _plugin = parent->getPlugin();
-        _workerTssKey = 0;
-
-        /* This worker will be create when the sendmessage function is called.*/
-        _worker = NULL;
-
-        _readThreadSemaphore = NULL;
 
         /* --- Buffer Management --- */
-        _recvResource = recvResource;
-        _recvPort = recvPort;
         _recvBuffer.length = 0;
         _recvBuffer.pointer = NULL;
 
@@ -802,7 +798,6 @@ public:
                 - perftest_cpp::OVERHEAD_BYTES);
 
         RTICdrStream_init(&_stream);
-        _noData = true;
     }
 
     ~RTIRawTransportSubscriber()
