@@ -146,12 +146,12 @@ class RTIDDSImpl : public IMessaging
     static double
     ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize);
 
-    bool SupportListener()
+    bool SupportsListener()
     {
         return true;
     };
 
-    bool SupportDiscovery()
+    bool SupportsDiscovery()
     {
         return true;
     };

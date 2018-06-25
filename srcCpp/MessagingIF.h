@@ -142,8 +142,8 @@ class IMessaging
     /*
      * Get information about witch features are supported by the medleware
      */
-    virtual bool SupportListener() = 0;
-    virtual bool SupportDiscovery() = 0;
+    virtual bool SupportsListener() = 0;
+    virtual bool SupportsDiscovery() = 0;
 
     //TODO:
     // virtual double

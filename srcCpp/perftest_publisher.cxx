@@ -1344,7 +1344,7 @@ int perftest_cpp::Subscriber()
     TestMessage message;
     message.entity_id = _SubID;
 
-    if (!_MessagingImpl->SupportDiscovery()) {
+    if (!_MessagingImpl->SupportsDiscovery()) {
         while (reader_listener->packets_received == 0
                 && !reader_listener->change_size){
             announcement_writer->Send(announcement_msg);
@@ -1943,7 +1943,7 @@ int perftest_cpp::Publisher()
      * A Subscriber will send a message on this channel once it discovers
      * every Publisher
      */
-    if(_MessagingImpl->SupportListener()) {
+    if(_MessagingImpl->SupportsListener()) {
         announcement_reader_listener = new AnnouncementListener();
     }
 
@@ -1958,7 +1958,7 @@ int perftest_cpp::Publisher()
     }
 
     struct RTIOsapiThread * announcementThread = NULL;
-    if (!_MessagingImpl->SupportListener())
+    if (!_MessagingImpl->SupportsListener())
     {
         announcement_reader_listener = new AnnouncementListener(announcement_reader);
 

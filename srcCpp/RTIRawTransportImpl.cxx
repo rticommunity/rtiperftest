@@ -124,12 +124,12 @@ RTIOsapiThreadTssFactory *RTIRawTransportImpl::getTssFactory()
 /*********************************************************
  * SupportFunctions
  */
-bool RTIRawTransportImpl::SupportListener()
+bool RTIRawTransportImpl::SupportsListener()
 {
     return false;
 }
 
-bool RTIRawTransportImpl::SupportDiscovery()
+bool RTIRawTransportImpl::SupportsDiscovery()
 {
     return false;
 }
@@ -518,7 +518,7 @@ class RTIRawTransportPublisher : public IMessagingWriter{
         _peersDataList = parent->getPeersData();
         _pongSemaphore = parent->getPongSemaphore();
 
-        if (parent->GetBatchSize() == 0){
+        if (parent->GetBatchSize() == 0) {
             _batchBufferSize = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
             _useBatching = false;
         } else {
@@ -565,9 +565,15 @@ class RTIRawTransportPublisher : public IMessagingWriter{
             _sendBuffer.pointer = NULL;
         }
 
-        if (_parent->getWorkerFactory() != NULL && _worker != NULL) {
-            REDAWorkerFactory_destroyWorker(
-                    _parent->getWorkerFactory(), _worker);
+        if (_worker != NULL) {
+            if (_parent->getWorkerFactory() != NULL) {
+                REDAWorkerFactory_destroyWorker(
+                        _parent->getWorkerFactory(),
+                        _worker);
+            } else {
+                fprintf(stderr, "Error, workerFactory destroy before worker\n");
+                return false;
+            }
         }
     }
 
@@ -576,7 +582,7 @@ class RTIRawTransportPublisher : public IMessagingWriter{
         bool success = true;
 
         if (_worker == NULL) {
-            _worker = RawTransport_get_worker_per_threadI(
+            _worker = RawTransportGetWorkerPerThread(
                     _parent->getWorkerFactory(),
                     _parent->getTssFactory(),
                     &_workerTssKey);
@@ -594,7 +600,7 @@ class RTIRawTransportPublisher : public IMessagingWriter{
                     _worker)){
                 success = false;
                 /*
-                 * No need of print error. This wil be represented as loss
+                 * No need of print error. This wil be represented as lost
                  * packets
                  */
             }
@@ -611,11 +617,10 @@ class RTIRawTransportPublisher : public IMessagingWriter{
             return;
         }
 
-        if (!SendMessage()) {
-            /* No need of print error. This will be represented as loss packets */
-        }
+        SendMessage();
+        /* No need of print error. This will be represented as lost packets */
 
-        /* If the send it's done, reset the stream to fill the buffer again */
+        /* If the send is done, reset the stream to fill the buffer again */
         RTICdrStream_set(
                 &_stream,
                 (char *)_sendBuffer.pointer,
@@ -840,23 +845,29 @@ public:
             _readThreadSemaphore = NULL;
         }
 
-        if (_parent->getWorkerFactory() != NULL && _worker != NULL) {
-            REDAWorkerFactory_destroyWorker(
-                    _parent->getWorkerFactory(), _worker);
+        if (_worker != NULL) {
+            if (_parent->getWorkerFactory() != NULL) {
+                REDAWorkerFactory_destroyWorker(
+                        _parent->getWorkerFactory(),
+                        _worker);
+            } else {
+                fprintf(stderr, "Error, workerFactory destroy before worker\n");
+                return false;
+            }
         }
     }
 
     TestMessage *ReceiveMessage() {
 
+        if (_worker == NULL) {
+            _worker = RawTransportGetWorkerPerThread(
+                    _parent->getWorkerFactory(),
+                    _parent->getTssFactory(),
+                    &_workerTssKey);
+        }
 
         while (true) {
             if (_noData) {
-                if (_worker == NULL){
-                    _worker = RawTransport_get_worker_per_threadI(
-                            _parent->getWorkerFactory(),
-                            _parent->getTssFactory(),
-                            &_workerTssKey);
-                }
 
                 bool result = _plugin->receive_rEA(
                         _plugin,
@@ -1241,7 +1252,7 @@ bool RTIRawTransportImpl::configureSocketsTransport()
             if (_useBlocking) {
                 udpv4_prop.send_blocking = NDDS_TRANSPORT_UDPV4_BLOCKING_ALWAYS;
             } else {
-                // This will reduce the package loss but affect on the
+                // This will reduce the package lost but affect on the
                 // performance.
                 udpv4_prop.send_blocking = NDDS_TRANSPORT_UDPV4_BLOCKING_NEVER;
             }
@@ -1417,7 +1428,11 @@ int getNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin)
     return count;
 }
 
-struct REDAWorker *RawTransport_get_worker_per_threadI(
+/*
+ * Get the worker for the current thread, creating it if necessary.
+ * This simulate the DDS_DomainParticipantGlobals_get_worker_per_threadI function
+ */
+struct REDAWorker *RawTransportGetWorkerPerThread(
         REDAWorkerFactory *workerFactory,
         RTIOsapiThreadTssFactory *tssFactory,
         unsigned int *workerTssKey)
@@ -1448,8 +1463,10 @@ struct REDAWorker *RawTransport_get_worker_per_threadI(
     worker = (struct REDAWorker *) RTIOsapiThread_getTss(*workerTssKey);
     if (worker == NULL) {
         char workerName[20];
-        /* Print 16 digits long hexadecimal (016lx). We use "l" to support
-           the new 64-bit threadID data-type */
+        /*
+         * Print 16 digits long hexadecimal (016lx). We use "l" to support
+         * the new 64-bit threadID data-type
+         */
         sprintf(workerName, "U%016llx", RTIOsapiThread_getCurrentThreadID());
         /* No worker: create a new one */
         worker = REDAWorkerFactory_createWorker(workerFactory, workerName);
@@ -1461,7 +1478,7 @@ struct REDAWorker *RawTransport_get_worker_per_threadI(
             /* worker created successfully: add to TSS */
             workerSet = RTIOsapiThread_setTss(*workerTssKey, worker);
             if (!workerSet) {
-                /*Failed to add to TSS: pretend it was never created.*/
+                /* Failed to add to TSS: pretend it was never created. */
                 if (worker != NULL) {
                     REDAWorkerFactory_destroyWorker(
                             workerFactory,

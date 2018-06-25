@@ -66,9 +66,9 @@ class RTIRawTransportImpl : public IMessaging {
     /* Calculate the ports thats it will be use for receive data */
     unsigned int getReceiveUnicastPort(const char *topicName);
 
-    bool SupportListener();
+    bool SupportsListener();
 
-    bool SupportDiscovery();
+    bool SupportsDiscovery();
 
     IMessagingWriter *CreateWriter(const char *topic_name);
 
@@ -132,7 +132,7 @@ class peerData {
 int getNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin);
 
 /* Generate a different worker per thread. */
-struct REDAWorker *RawTransport_get_worker_per_threadI(
+struct REDAWorker *RawTransportGetWorkerPerThread(
         REDAWorkerFactory *workerFactory,
         RTIOsapiThreadTssFactory *tssFactory,
         unsigned int *workerTssKey);
