@@ -216,6 +216,7 @@ class RTIDDSImpl : public IMessaging
     static unsigned int _WaitsetDelayUsec;
 };
 
+std::string getQosProfile(const char *topicName);
 
 #endif // __RTIDDSIMPL_H__
 

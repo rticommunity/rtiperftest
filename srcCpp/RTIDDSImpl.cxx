@@ -2406,18 +2406,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0) {
-        qos_profile = "ThroughputQos";
-    } else if (strcmp(topic_name, LATENCY_TOPIC_NAME) == 0) {
-        qos_profile = "LatencyQos";
-    } else if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) == 0) {
-        qos_profile = "AnnouncementQos";
-    } else {
-        fprintf(stderr,
-                "topic name must either be %s or %s or %s.\n",
-                THROUGHPUT_TOPIC_NAME,
-                LATENCY_TOPIC_NAME,
-                ANNOUNCEMENT_TOPIC_NAME);
+    qos_profile = getQosProfile(topic_name);
+    if (qos_profile.empty()) {
+        fprintf(stderr, "Problem getting qos profile.\n");
         return NULL;
     }
 
@@ -2685,18 +2676,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
     topic_desc = topic;
 
-    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0) {
-        qos_profile = "ThroughputQos";
-    } else if (strcmp(topic_name, LATENCY_TOPIC_NAME) == 0) {
-        qos_profile = "LatencyQos";
-    } else if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) == 0) {
-        qos_profile = "AnnouncementQos";
-    } else {
-        fprintf(stderr,
-                "topic name must either be %s or %s or %s.\n",
-                THROUGHPUT_TOPIC_NAME,
-                LATENCY_TOPIC_NAME,
-                ANNOUNCEMENT_TOPIC_NAME);
+    qos_profile = getQosProfile(topic_name);
+    if (qos_profile.empty()) {
+        fprintf(stderr, "Problem getting qos profile.\n");
         return NULL;
     }
 
@@ -2827,6 +2809,25 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     } else {
         return new RTIDynamicDataSubscriber<T>(reader);
     }
+}
+
+std::string getQosProfile(const char *topicName)
+{
+    std::string qosProfile;
+    if (strcmp(topicName, THROUGHPUT_TOPIC_NAME) == 0) {
+        qosProfile = "ThroughputQos";
+    } else if (strcmp(topicName, LATENCY_TOPIC_NAME) == 0) {
+        qosProfile = "LatencyQos";
+    } else if (strcmp(topicName, ANNOUNCEMENT_TOPIC_NAME) == 0) {
+        qosProfile = "AnnouncementQos";
+    } else {
+        fprintf(stderr,
+                "topic name must either be %s or %s or %s.\n",
+                THROUGHPUT_TOPIC_NAME,
+                LATENCY_TOPIC_NAME,
+                ANNOUNCEMENT_TOPIC_NAME);
+    }
+    return qosProfile;
 }
 
 #ifdef RTI_WIN32
