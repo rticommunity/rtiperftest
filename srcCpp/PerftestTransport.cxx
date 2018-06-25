@@ -772,8 +772,8 @@ std::string PerftestTransport::helpMessageString()
     oss
     << "\t-multicastAddr <address>      - Use multicast to send data and set\n"
     << "\t                                the input <address>|<addr,addr,addr>\n"
-    << "\t                                as the multicast addresses for all the "
-    << "\t                                three topics.\n"
+    << "\t                                as the multicast addresses for the "
+    << "\t                                three topics in the application.\n"
     << "\t                                If only one address is set, the next "
     << "\t                                ones will be increase by one. The address\n"
     << "\t                                must be lower than X.X.X.253\n"
