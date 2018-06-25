@@ -5,8 +5,8 @@
 #include "CustomType.h"
 
 /*
- * It is the source code file that contain the implementation of API required
- * to work with Custom Type.
+ * This is the source code file that contains the implementation of the API
+ * required to work with the Custom type.
  */
 
 bool initialize_custom_type_data(RTI_CUSTOM_TYPE &data)

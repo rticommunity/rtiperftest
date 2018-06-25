@@ -204,7 +204,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     int sec = 0;
     unsigned int nanosec = 0;
 
-    // Command line params
+    // Command-line params
     for (i = 0; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-pub")) {
             _isPublisher = true;

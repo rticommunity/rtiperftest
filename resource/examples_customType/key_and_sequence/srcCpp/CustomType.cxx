@@ -5,8 +5,8 @@
 #include "CustomType.h"
 
 /*
- * It is the source code file that contain the implementation of API required
- * to work with Custom Type.
+ * This is the source code file that contains the implementation of the API
+ * required to work with the Custom type.
  */
 
 DDS_OctetSeq octect_seq;

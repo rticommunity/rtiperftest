@@ -11,7 +11,7 @@ tmp_build_file="${tmp_folder}/tmp_build.txt"
 custom_type_location="${rtiperftest_folder}/srcIdl/customType"
 executable=""
 timeout="20"
-custom_type="Test" # TODO add from the command line parameter
+custom_type="Test" # TODO add from the command-line parameter
 pub_pid=""
 sub_pid=""
 test=(key_large key_no_large no_key_large no_key_no_large RTIPerftest_type key_and_sequence)
@@ -42,7 +42,7 @@ function usage()
     echo "                                 this parameter is not present, the \$NDDSHOME  "
     echo "                                 variable should be set.                        "
     echo "    --make <path>                Path to the GNU make executable. If this       "
-    echo "                                 parameter is not present, GNU make variable    "
+    echo "                                 parameter is not present, the GNU make variable    "
     echo "                                 should be available from your \$PATH variable. "
     echo "    --help -h                    Display help message.                          "
     echo "================================================================================"

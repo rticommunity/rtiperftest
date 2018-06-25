@@ -212,7 +212,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     unsigned int nanosec = 0;
     unsigned long _scan_max_size = 0;
 
-    // now load everything else, command line params override config file
+    // now load everything else, command-line params override config file
     for (i = 0; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-pub")) {
             _isPublisher = true;

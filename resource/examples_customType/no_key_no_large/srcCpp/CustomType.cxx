@@ -7,9 +7,10 @@
 #ifdef RTI_WIN32
   #define snprintf sprintf_s
 #endif
+
 /*
- * It is the source code file that contain the implementation of API required
- * to work with Custom Type.
+ * This is the source code file that contains the implementation of the API
+ * required to work with the Custom type.
  */
 
 DDS_LongSeq long_seq;

@@ -12,7 +12,7 @@ different use cases.
 
 -  The tests below print final results only; if you want to see
    intermediate values, remove the ``-noprint`` argument from the
-   command line.
+   command-line.
 
 -  If you are running on 2 unequal machines, i.e., one machine is faster
    (has better processors) than another, you will see better performance
@@ -604,16 +604,16 @@ Maximum Throughput -- 2 *Routing Service*
 Using Custom Types
 ------------------
 
-The Custom Types feature allows the use of customized types instead of the one
-provided by RTI Perftest. It is designed in a way in which the number of changes
-in the code and configuration files is minimal.
+The Custom Types feature allows you to use your own customized types instead of
+the one provided by *RTI Perftest*. It is designed in such a way that the number
+of changes in the code and configuration files is minimal.
 
-Briefly, the necesary steps that you need to use your type in *RTI Perftest* are:
+Briefly, the steps you need to perform to use your custom type in *RTI Perftest* are as follows:
 
 -  Copy your IDL files into `~/rtiperftest/srcIdl/custom/`
 -  Implement the API custom type functions of customtype.cxx
--  Run the build script with the command line paramiter ``--customType <type>``
--  Now, you can run *RTI Perftest* as usual.
+-  Run the build script with the command-line paramiter ``--customType <type>``
+-  Run *RTI Perftest* as usual.
 
 Full example using Custom Types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -641,8 +641,9 @@ The custom type that will be used for this example is the following:
         StringTest test_string;
     };//@Extensibility FINAL_EXTENSIBILITY
 
-These are the steps needed to use the previously described type in RTI Perftest
-for the C++ (Traditional) API:
+These are the steps needed to use the above type in *RTI Perftest* for the
+C++ (Traditional) API:
+
 
 1. Copy the IDL files into `~/rtiperftest/srcIdl/custom/` folder.
 
@@ -651,10 +652,11 @@ initialize and set the Custom Type structures.
 
 - **initialize_custom_type_data**:
     This function is used to initialize your data.
-    The user will be able to allocate memory or set an immutable field of the data.
+    Using this function, you will be able to allocate memory or set an immutable
+    field of the data.
     The function takes one argument:
 
-        - A reference to the customer type data.
+        - A reference to custom type data.
 
 ::
 
@@ -669,13 +671,13 @@ initialize and set the Custom Type structures.
     }
 
 - **register_custom_type_data**:
-    This function is used to set your data before being register. It is only
-    required for key types. The user will set the key field of the data,
-    base on the key input. There is a one to one mapping between an input key
+    This function is used to set your data before being registered. It is only
+    required for key types. Set the key filed of the data based on the key input.
+    There is a one-to-one mapping between an input key
     and an instance.
     The function takes two arguments:
 
-        - A reference to the customer type data.
+        - A reference to custom type data.
         - A specific number unique for every key.
 
 ::
@@ -686,17 +688,17 @@ initialize and set the Custom Type structures.
     }
 
 - **set_custom_type_data**:
-    This function is used to set your data before being sent.
-    It is called everytime that data is sent.
-    It is the responsibility of the user to set the custom type data before been
-    sent with the right "key" value and the "target_data_len".
+    This function is used to set your data before it is sent.
+    It is called every time the data is sent.
+    You must set the Custom type data before it is sent with the right
+    "key" value and the "target_data_len".
     The function takes three arguments:
 
-        - A reference to the customer type data.
+        - A reference to custom type data.
         - A specific number unique for every key.
-        - The target size set by the command line parameter ``-dataLen <bytes>``
-        minus the overhead of RTI Perftest. If applicable, the user can use this
-        value to set the content of the data.
+        - The target size set by the command-line parameter ``-dataLen <bytes>``
+        minus the overhead of *RTI Perftest*.
+        If applicable, you can use this value to set the content of the data.
 
 ::
 
@@ -717,7 +719,7 @@ initialize and set the Custom Type structures.
     This function is used to remove your data. It is called in the destructor.
     The function takes one argument:
 
-        - A reference to the customer type data.
+        - A reference to custom type data.
 
 ::
 
@@ -728,10 +730,11 @@ initialize and set the Custom Type structures.
 
 - **initialize_custom_type_dynamic_data**:
     This function is used to initialize your DynamicData.
-    The user will be able to allocate memory or set an immutable field of the data.
+    Using this function, you will be able to allocate memory or set an immutable
+    field of the data.
     The function takes one argument:
 
-        - A reference to the full DDS_DynamicData object including custom_type.
+        - A reference to the full DDS_DynamicData object that includes custom_type.
 
 ::
 
@@ -745,13 +748,13 @@ initialize and set the Custom Type structures.
     }
 
 - **register_custom_type_dynamic_data**:
-    This function is used to set your DynamicData before been register. It is
-    only required for key types.
-    The user will set the key field of the data, base on the key input.
-    There is a one to one mapping between an input key and an instance.
+    This function is used to set your DynamicData before it has been registered.
+    It is only required for key types.
+    Set the key field of the data based on the key input.
+    There is a one-to-one mapping between an input key and an instance.
     The function takes two arguments:
 
-        - A reference to the full DDS_DynamicData object including custom_type.
+        - A reference to the full DDS_DynamicData object that includes custom_type.
         - A specific number unique for every key.
 
 ::
@@ -769,17 +772,17 @@ initialize and set the Custom Type structures.
     }
 
 - **set_custom_type_dynamic_data**:
-    This function is used to set your DynamicData before been sent.
-    It is called everytime that data is sent. It is the responsibility of the
-    user to set the custom type data before been sent with the right "key"
+    This function is used to set your DynamicData before it is sent.
+    It is called every time the data is sent.
+    Set the Custom type data before it is sent with the right "key"
     value and the "target_data_len".
     The function takes three arguments:
 
-        - A reference to the full DDS_DynamicData object including custom_type.
+        - A reference to the full DDS_DynamicData object that includes custom_type.
         - A specific number unique for every key.
-        - The target size set by the command line parameter ``-dataLen <bytes>``
-        minus the overhead of RTI Perftest. If applicable, the user can use this
-        value to set the content of the data.
+        - The target size set by the command-line parameter ``-dataLen <bytes>``
+        minus the overhead of *RTI Perftest*.
+        If applicable, you can use this value to set the content of the data.
 ::
 
     bool set_custom_type_dynamic_data(
@@ -871,7 +874,7 @@ initialize and set the Custom Type structures.
     This function is used to remove your data. It is called in the destructor.
     The function takes one argument:
 
-        - A reference to the full DDS_DynamicData object including custom_type.
+        - A reference to the full DDS_DynamicData object that includes custom_type.
 
 ::
 
@@ -889,13 +892,13 @@ initialize and set the Custom Type structures.
         return success;
     }
 
-3. Build *RTI Perftest* using ``--customType <type>``
+3. Build *RTI Perftest* using ``--customType <type>``.
 
 ::
 
     ./build.sh --platform x64Linux3gcc5.4.0 --nddshome /home/rti_connext_dds-5.3.0 --cpp-build --customType Test
 
-4. Launching *RTI Perftest*
+4. Launch *RTI Perftest*.
 
 ::
 
@@ -925,7 +928,7 @@ initialize and set the Custom Type structures.
     Test ended.
 
 
-4. Launching *RTI Perftest* with DynamicData
+5. Launch *RTI Perftest* with DynamicData.
 
 ::
 

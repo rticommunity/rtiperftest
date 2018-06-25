@@ -98,7 +98,7 @@ if NOT "%1"=="" (
 				SET USE_CUSTOM_TYPE=1
 				SET "custom_type=%2"
 				if "!custom_type!"== "" (
-					echo [ERROR]: --customType should be follow by the name of the type.
+					echo [ERROR]: --customType should be followed by the name of the type.
 					call:help
 					exit /b 1
 				)
@@ -507,7 +507,7 @@ GOTO:EOF
 	echo.                           compilation.
 	echo.    --skip-cs-build        Avoid C Sharp code generation and compilation.
 	echo.    --make  path           Path to the GNU make executable. If this
-	echo.                           parameter is not present, GNU make variable
+	echo.                           parameter is not present, the GNU make variable
 	echo.                           should be available from your $PATH variable.
 	echo.    --java-home path       Path to the Java JDK home folder. If this
 	echo.                           parameter is not present, javac, jar and java
@@ -525,8 +525,8 @@ GOTO:EOF
 	echo.                           will clean all the generated code and binaries
 	echo.                           from previous executions.
 	echo.    --customType type      Use the Custom type feature with your type.
-	echo.                           See detailed documentation and examples of use
-	echo.                           in the documentation.
+	echo.                           See details and examples of use in the
+	echo.                           documentation.
 	echo.    --help -h              Display this message.
 	echo[
 	echo ================================================================================

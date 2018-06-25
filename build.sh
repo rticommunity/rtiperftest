@@ -63,7 +63,7 @@ function usage()
     echo "    --skip-cpp03-build           Avoid C++ New PSM code generation and          "
     echo "                                 compilation.                                   "
     echo "    --make <path>                Path to the GNU make executable. If this       "
-    echo "                                 parameter is not present, GNU make variable    "
+    echo "                                 parameter is not present, the GNU make variable"
     echo "                                 should be available from your \$PATH variable. "
     echo "    --java-home <path>           Path to the Java JDK home folder. If this      "
     echo "                                 parameter is not present, javac, jar and java  "
@@ -81,8 +81,8 @@ function usage()
     echo "                                 when compiling statically and using security   "
     echo "                                 Default is an empty string (current folder).   "
     echo "    --customType <type>          Use the Custom type feature with your type.    "
-    echo "                                 See detailed documentation and examples of use "
-    echo "                                 in the documentation.                          "
+    echo "                                 See details and examples of use in the         "
+    echo "                                 documentation.                                 "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
@@ -232,7 +232,7 @@ function additional_defines_calculation()
 }
 
 # Generate code for the type of the customer.
-# Fill additional source and hearder files for custom type.
+# Fill additional source and header files for custom type.
 function build_cpp_custom_type()
 {
     # Search the file which contains "Struct ${custom_type} {" and include it to ${custom_idl_file}
@@ -269,7 +269,7 @@ function build_cpp_custom_type()
                 echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string} with the file ${file}."
                 exit -1
             fi
-            # Adding the generated file as additional HearderFiles and SourceFiles
+            # Adding the generated file as additional HeaderFiles and SourceFiles
             name_file=$(basename $file)
             name_file="${name_file%.*}"
             additional_header_files_custom_type="${name_file}Plugin.h ${name_file}.h ${name_file}Support.h "$additional_header_files_custom_type
@@ -536,7 +536,7 @@ while [ "$1" != "" ]; do
             USE_CUSTOM_TYPE=1
             custom_type=$2
             if [ -z "${custom_type}" ]; then
-                echo -e "${ERROR_TAG} --customType should be follow by the name of the type."
+                echo -e "${ERROR_TAG} --customType should be followed by the name of the type."
                 usage
                 exit -1
             fi

@@ -17,5 +17,5 @@ Find all the information about RTI Perftest in the following documents:
         6.2.1 [Large Samples](srcDoc/examples.rst#large-samples)  
         6.2.2 [Content-Filtered Topics](srcDoc/examples.rst#content-filtered-topics)  
         6.2.3 [RTI Routing-Service](srcDoc/examples.rst#rti-routing-service)  
-        6.2.4 [Using Custom Types](srcDoc/examples.rst#using-custom-types)  
+        6.2.4 [Custom Types](srcDoc/examples.rst#using-custom-types)  
 7.  [Release Notes](srcDoc/release_notes.rst)
