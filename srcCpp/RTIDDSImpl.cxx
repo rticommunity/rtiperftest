@@ -2406,7 +2406,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    qos_profile = getQosProfile(topic_name);
+    qos_profile = getQoSProfileName(topic_name);
     if (qos_profile.empty()) {
         fprintf(stderr, "Problem getting qos profile.\n");
         return NULL;
@@ -2676,7 +2676,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
     topic_desc = topic;
 
-    qos_profile = getQosProfile(topic_name);
+    qos_profile = getQoSProfileName(topic_name);
     if (qos_profile.empty()) {
         fprintf(stderr, "Problem getting qos profile.\n");
         return NULL;
@@ -2811,9 +2811,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 }
 
-std::string getQosProfile(const char *topicName)
+std::string getQoSProfileName(const char *topicName)
 {
-    std::string qosProfile;
+    std::string qosProfile = std::string("");
     if (strcmp(topicName, THROUGHPUT_TOPIC_NAME) == 0) {
         qosProfile = "ThroughputQos";
     } else if (strcmp(topicName, LATENCY_TOPIC_NAME) == 0) {
