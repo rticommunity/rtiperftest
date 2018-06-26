@@ -74,13 +74,13 @@ does not improve throughput, at least for 1-Gig networks.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -pub -noPrint -nic <ipaddr> -dataLen 200 -batchSize <bytes> -sendQueueSize <number> -pubRate <count> -multicast -executionTime 100
+    bin/<arch>/release/perftest_cpp -pub -noPrint -nic <ipaddr> -dataLen 200 -batchSize <bytes> -sendQueueSize <number> -pubRate <count> -transport UDPv4 -multicast -executionTime 100
 
 -  Subscriber
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -nic <ipaddr> -multicast
+    bin/<arch>/release/perftest_cpp -sub -noPrint -nic <ipaddr> -transport UDPv4 -multicast
 
 To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
@@ -91,16 +91,16 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -pub -noPrint -sendQueueSize 32 -latencyCount 10000 -scan -multicast
+    bin/<arch>/release/perftest_cpp -pub -noPrint -sendQueueSize 32 -latencyCount 10000 -scan -transport UDPv4 -multicast
 
 -  Subscriber:
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -multicast
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -multicast
 
-1-to-1, Unicast, Best-Effort, UDPv4, 1 Size
--------------------------------------------
+1-to-1, Unicast, Best-Effort, UDPv4|SHMEM, 1 Size
+-------------------------------------------------
 
 -  Publisher:
 
@@ -121,13 +121,13 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -pub -noPrint -sendQueueSize 32 -latencyCount 1000 -dataLen 200 -batchSize 6400  -multicast -executionTime 100
+    bin/<arch>/release/perftest_cpp -pub -noPrint -sendQueueSize 32 -latencyCount 1000 -dataLen 200 -batchSize 6400 -transport UDPv4 -multicast -executionTime 100
 
 -  Subscriber:
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 200 -batchSize 6400 -multicast
+    bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 200 -batchSize 6400 -transport UDPv4 -multicast
 
 1-to-2, Multicast, Reliable, UDPv4
 ----------------------------------
@@ -136,19 +136,19 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -pub -noPrint -pidMultiPubTest 0 -sendQueueSize 32 -numSubscribers 2 -latencyCount 1000 -dataLen 200 -multicast -executionTime 100
+    bin/<arch>/release/perftest_cpp -pub -noPrint -pidMultiPubTest 0 -sendQueueSize 32 -numSubscribers 2 -latencyCount 1000 -dataLen 200 -transport UDPv4 -multicast -executionTime 100
 
 -  Subscriber 1:
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -multicast -sidMultiSubTest 0
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -multicast -sidMultiSubTest 0
 
 -  Subscriber 2:
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -multicast -sidMultiSubTest 1
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -multicast -sidMultiSubTest 1
 
 2-to-1, Multicast, Reliable, UDPv4
 ----------------------------------
@@ -171,8 +171,8 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
     bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 200 -numPublishers 2 -sidMultiSubTest 0 -multicast
 
-1-to-1, Unicast, Reliable, UDPv4, Using Security: Signing Packages, Encrypting Data
------------------------------------------------------------------------------------
+1-to-1, Unicast, Reliable Using Security: Signing Packages, Encrypting Data
+---------------------------------------------------------------------------
 
 -  Publisher:
 

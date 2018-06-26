@@ -67,6 +67,38 @@ const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME =
 
 std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
 
+/* Perftest DynamicDataMembersId class */
+DynamicDataMembersId::DynamicDataMembersId()
+{
+    membersId["key"] = 1;
+    membersId["entity_id"] = 2;
+    membersId["seq_num"] = 3;
+    membersId["timestamp_sec"] = 4;
+    membersId["timestamp_usec"] = 5;
+    membersId["latency_ping"] = 6;
+    membersId["bin_data"] = 7;
+#ifdef RTI_CUSTOM_TYPE
+    membersId["custom_type"] = 8;
+    membersId["custom_type_size"] = 8;
+#endif
+}
+
+DynamicDataMembersId::~DynamicDataMembersId()
+{
+    membersId.clear();
+}
+
+DynamicDataMembersId &DynamicDataMembersId::GetInstance()
+{
+    static DynamicDataMembersId instance;
+    return instance;
+}
+
+int DynamicDataMembersId::at(std::string key)
+{
+   return membersId.at(key);
+}
+
 /*********************************************************
  * Shutdown
  */
@@ -98,12 +130,14 @@ void RTIDDSImpl<T>::Shutdown()
         _participant->delete_contained_entities();
         DDSTheParticipantFactory->delete_participant(_participant);
     }
-
     if(_pongSemaphore != NULL) {
-	RTIOsapiSemaphore_delete(_pongSemaphore);
-	_pongSemaphore = NULL;
+        RTIOsapiSemaphore_delete(_pongSemaphore);
+        _pongSemaphore = NULL;
     }
-
+    // Unregister _loggerDevice
+    if (NDDSConfigLogger::get_instance()->get_output_device() != NULL) {
+        NDDSConfigLogger::finalize_instance();
+    }
     DDSDomainParticipantFactory::finalize_instance();
 }
 
@@ -122,15 +156,9 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t                                default: perftest_qos_profiles.xml\n" +
             "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
             "\t                                default: PerftestQosLibrary\n" +
-            "\t-multicast <address>          - Use multicast to send data.\n" +
-            "\t                                Default not to use multicast\n" +
-            "\t                                <address> is optional, if unspecified:\n" +
-            "\t                                                latency 239.255.1.2,\n" +
-            "\t                                                announcement 239.255.1.100,\n" +
-            "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
-            "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
-            "\t                                (no batching)\n" +
+            "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
+            "\t                                (Disabled for LatencyTest mode or if dataLen > 4kB)\n" +
             "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
             "\t                                protocol, default use positive acks\n" +
             "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +
@@ -199,7 +227,8 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
 template <typename T>
 bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 {
-    unsigned long _scan_max_size = 0;
+    unsigned long minScanSize = MAX_PERFTEST_SAMPLE_SIZE;
+    bool isBatchSizeProvided = false;
     int i;
     int sec = 0;
     unsigned int nanosec = 0;
@@ -210,21 +239,31 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _isPublisher = true;
         } else if (IS_OPTION(argv[i], "-scan")) {
             _isScan = true;
+
+            /*
+             * Check if we have custom scan values. In such case we are just
+             * interested in the minimum one.
+             */
             if ((i != (argc-1)) && *argv[1+i] != '-') {
                 ++i;
-                unsigned long aux_scan;
-                char * pch;
+                unsigned long auxScan = 0;
+                char *pch = NULL;
                 pch = strtok (argv[i], ":");
                 while (pch != NULL) {
-                    if (sscanf(pch, "%lu", &aux_scan) != 1) {
-                        fprintf(stderr, "-scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'\n");
+                    if (sscanf(pch, "%lu", &auxScan) != 1) {
                         return false;
                     }
                     pch = strtok (NULL, ":");
-                    if (aux_scan >= _scan_max_size) {
-                        _scan_max_size = aux_scan;
+                    if (auxScan < minScanSize) {
+                        minScanSize = auxScan;
                     }
                 }
+            /*
+             * If we do not specify any custom value for the -scan, we would
+             * set minScanSize to the minimum size in the default set for -scan.
+             */
+            } else {
+                minScanSize = 32;
             }
         } else if (IS_OPTION(argv[i], "-dataLen")) {
 
@@ -318,7 +357,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
             _DomainID = strtol(argv[i], NULL, 10);
         } else if (IS_OPTION(argv[i], "-qosFile")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') 
+            if ((i == (argc-1)) || *argv[++i] == '-')
             {
                 fprintf(stderr, "Missing <filename> after -qosFile\n");
                 return false;
@@ -331,23 +370,13 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 return false;
             }
             _ProfileLibraryName = argv[i];
-        } else if (IS_OPTION(argv[i], "-multicast")) {
-            _IsMulticast = true;
-            if ((i != (argc-1)) && *argv[i+1] != '-') {
-                i++;
-                THROUGHPUT_MULTICAST_ADDR = argv[i];
-                LATENCY_MULTICAST_ADDR = argv[i];
-                ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
-            }
-        } else if (IS_OPTION(argv[i], "-nomulticast")) {
-            _IsMulticast = false;
         } else if (IS_OPTION(argv[i], "-bestEffort")) {
             _IsReliable = false;
         } else if (IS_OPTION(argv[i], "-durability")) {
             if ((i == (argc-1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <kind> after -durability\n");
                 return false;
-            }       
+            }
             _Durability = strtol(argv[i], NULL, 10);
 
             if ((_Durability < 0) || (_Durability > 3)) {
@@ -356,7 +385,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
         } else if (IS_OPTION(argv[i], "-dynamicData")) {
             _isDynamicData = true;
-            fprintf(stderr, "Using Dynamic Data.\n");
         } else if (IS_OPTION(argv[i], "-noDirectCommunication")) {
             _DirectCommunication = false;
         } else if (IS_OPTION(argv[i], "-instances")) {
@@ -384,19 +412,20 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
         } else if (IS_OPTION(argv[i], "-batchSize")) {
 
-            if ((i == (argc-1)) || *argv[++i] == '-') 
-            {
+            if ((i == (argc-1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <#bytes> after -batchSize\n");
                 return false;
             }
             _BatchSize = strtol(argv[i], NULL, 10);
 
-            if (_BatchSize < 0 || _BatchSize > (unsigned int)MAX_SYNCHRONOUS_SIZE) {
-                fprintf(stderr, "Batch size '%d' should be between [0,%d]\n",
+            if (_BatchSize < 0 || _BatchSize > (int)MAX_SYNCHRONOUS_SIZE) {
+                fprintf(stderr,
+                        "Batch size '%d' should be between [0,%d]\n",
                         _BatchSize,
                         MAX_SYNCHRONOUS_SIZE);
                 return false;
             }
+            isBatchSizeProvided = true;
         } else if (IS_OPTION(argv[i], "-keepDurationUsec")) {
             if ((i == (argc-1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <usec> after -keepDurationUsec\n");
@@ -440,7 +469,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
         }
         else if (IS_OPTION(argv[i], "-waitsetDelayUsec")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') 
+            if ((i == (argc-1)) || *argv[++i] == '-')
             {
                 fprintf(stderr, "Missing <usec> after -waitsetDelayUsec\n");
                 return false;
@@ -448,25 +477,24 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _WaitsetDelayUsec = (unsigned int) strtol (argv[i], NULL, 10);
         }
         else if (IS_OPTION(argv[i], "-waitsetEventCount")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') 
+            if ((i == (argc-1)) || *argv[++i] == '-')
             {
                 fprintf(stderr, "Missing <count> after -waitsetEventCount\n");
                 return false;
             }
             _WaitsetEventCount = strtol (argv[i], NULL, 10);
-            if (_WaitsetEventCount < 0) 
+            if (_WaitsetEventCount < 0)
             {
                 fprintf(stderr, "waitset event count cannot be negative\n");
                 return false;
             }
-        } 
+        }
         else if (IS_OPTION(argv[i], "-latencyTest"))
         {
             _LatencyTest = true;
         }
         else if (IS_OPTION(argv[i], "-enableAutoThrottle"))
         {
-            fprintf(stderr, "Auto Throttling enabled. Automatically adjusting the DataWriter\'s writing rate\n");
             _AutoThrottle = true;
         }
         else if (IS_OPTION(argv[i], "-enableTurboMode") )
@@ -658,48 +686,77 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_IsAsynchronous && _BatchSize > 0) {
-        fprintf(stderr, "Batching cannnot be used with asynchronous writing.\n");
-        return false;
-    }
-
+    /* If we are using scan, we get the minimum and set it in Datalen */
     if (_isScan) {
-        _DataLen = _scan_max_size;
-        // Check if large data or small data
-        if (_scan_max_size > (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
-            if (_useUnbounded == 0) {
-                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
-            }
-            _isLargeData = true;
-        } else if (_scan_max_size <= (unsigned long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
-            _useUnbounded = 0;
-            _isLargeData = false;
-        } else {
-            return false;
-        }
-        if (_isLargeData && _BatchSize > 0) {
-            fprintf(stderr, "Batching cannnot be used with asynchronous writing.\n");
-            return false;
-        }
-    } else { // If not Scan, compare sizes of Batching and dataLen
-        /*
-         * We don't want to use batching if the sample is the same size as the batch
-         * nor if the sample is bigger (in this case we avoid the checking in the
-         * middleware).
-         */
-        if (_BatchSize > 0 && (unsigned long)_BatchSize <= _DataLen) {
-            fprintf(stderr,
-                    "Batching disabled: BatchSize (%d) is equal or smaller "
-                    "than the sample size (%lu).\n",
-                    _BatchSize,
-                    _DataLen);
-            _BatchSize = 0;
-        }
+        _DataLen = minScanSize;
     }
 
-    if (_DataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
-        fprintf(stderr, "Large data settings enabled.\n");
+    /* Check if we need to enable Large Data. This works also for -scan */
+    if (_DataLen > (unsigned long) (std::min)(
+                MAX_SYNCHRONOUS_SIZE,
+                MAX_BOUNDED_SEQ_SIZE)) {
         _isLargeData = true;
+        if (_useUnbounded == 0) {
+            _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+        }
+    } else { /* No Large Data */
+        _useUnbounded = 0;
+        _isLargeData = false;
+    }
+
+    /* If we are using batching */
+    if (_BatchSize > 0) {
+
+        /* We will not use batching for a latency test */
+        if (_LatencyTest) {
+            if (isBatchSizeProvided) {
+                fprintf(stderr, "Batching cannot be used in a Latency test.\n");
+                return false;
+            } else {
+                _BatchSize = 0; //Disable Batching
+            }
+        }
+
+        /* Check if using asynchronous */
+        if (_IsAsynchronous) {
+            if (isBatchSizeProvided) {
+                fprintf(stderr,
+                        "Batching cannot be used with asynchronous writing.\n");
+                return false;
+            } else {
+                _BatchSize = 0; //Disable Batching
+            }
+        }
+
+        /*
+         * Large Data + batching cannot be set. But batching is enabled by default,
+         * so in that case, we just disabled batching, else, the customer set it up,
+         * so we explitly fail
+         */
+        if (_isLargeData) {
+            if (isBatchSizeProvided) {
+                fprintf(stderr, "Batching cannot be used with Large Data.\n");
+                return false;
+            } else {
+                _BatchSize = -2;
+            }
+        } else if ((unsigned long) _BatchSize < _DataLen * 2) {
+            /*
+             * We don't want to use batching if the batch size is not large
+             * enough to contain at least two samples (in this case we avoid the
+             * checking at the middleware level).
+             */
+            if (isBatchSizeProvided || _isScan) {
+                /*
+                 * Batchsize disabled. A message will be print if _batchsize < 0 in
+                 * perftest_cpp::PrintConfiguration()
+                 */
+                _BatchSize = -1;
+            }
+            else {
+                _BatchSize = 0;
+            }
+        }
     }
 
     if (_TurboMode) {
@@ -735,6 +792,80 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     };
 
     return true;
+}
+
+/*********************************************************
+ * PrintConfiguration
+ */
+template <typename T>
+std::string RTIDDSImpl<T>::PrintConfiguration()
+{
+
+    std::ostringstream stringStream;
+
+    // Domain ID
+    stringStream << "\tDomain: " << _DomainID << "\n";
+
+    // Dynamic Data
+    stringStream << "\tDynamic Data: ";
+    if (_isDynamicData) {
+        stringStream << "Yes\n";
+    } else {
+        stringStream << "No\n";
+    }
+
+    // Dynamic Data
+    if (_isPublisher) {
+        stringStream << "\tAsynchronous Publishing: ";
+        if (_isLargeData || _IsAsynchronous) {
+            stringStream << "Yes\n";
+            stringStream << "\tFlow Controller: "
+                         << _FlowControllerCustom
+                         << "\n";
+        } else {
+            stringStream << "No\n";
+        }
+    }
+
+    // Turbo Mode / AutoThrottle
+    if (_TurboMode) {
+        stringStream << "\tTurbo Mode: Enabled\n";
+    }
+    if (_AutoThrottle) {
+        stringStream << "\tAutoThrottle: Enabled\n";
+    }
+
+    // XML File
+    stringStream << "\tXML File: ";
+    if (!_UseXmlQos) {
+        stringStream << "Disabled\n";
+    } else {
+        stringStream << _ProfileFile << "\n";
+    }
+
+    stringStream << "\n" << _transport.printTransportConfigurationSummary();
+
+
+    // set initial peers and not use multicast
+    if (_peer_host_count > 0) {
+        stringStream << "\tInitial peers: ";
+        for (int i = 0; i < _peer_host_count; ++i) {
+            stringStream << _peer_host[i];
+            if (i == _peer_host_count - 1) {
+                stringStream << "\n";
+            } else {
+                stringStream << ", ";
+            }
+        }
+    }
+
+   #ifdef RTI_SECURE_PERFTEST
+   if (_secureUseSecure) {
+        stringStream << "\n" << printSecureArgs();
+   }
+   #endif
+
+    return stringStream.str();
 }
 
 /*********************************************************
@@ -788,6 +919,7 @@ class RTIPublisher : public IMessagingWriter
     unsigned int last_message_size;
     unsigned int min_custom_type_serialize_size;
   #endif
+    bool _isReliable;
 
  public:
     RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
@@ -812,6 +944,7 @@ class RTIPublisher : public IMessagingWriter
       #endif
         _writer = T::DataWriter::narrow(writer);
         if (!data.bin_data.maximum(0)){
+            Shutdown();
             throw std::runtime_error("bin_data.maximum failed");
         }
         _num_instances = num_instances;
@@ -843,6 +976,10 @@ class RTIPublisher : public IMessagingWriter
         register_custom_type_data(data.custom_type, MAX_CFT_VALUE);
       #endif
         _instance_handles[_num_instances] = _writer->register_instance(data);
+
+        DDS_DataWriterQos qos;
+        _writer->get_qos(qos);
+        _isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
     }
 
     ~RTIPublisher() {
@@ -981,11 +1118,10 @@ class RTIPublisher : public IMessagingWriter
 
     bool waitForPingResponse()
     {
-        if(_pongSemaphore != NULL)
-        {
-            if(!RTIOsapiSemaphore_take(_pongSemaphore, NULL))
-            {
-                fprintf(stderr,"Unexpected error taking semaphore\n");
+        if(_pongSemaphore != NULL) {
+            if(RTIOsapiSemaphore_take(_pongSemaphore, NULL)
+                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
+                fprintf(stderr, "Unexpected error taking semaphore\n");
                 return false;
             }
         }
@@ -998,11 +1134,10 @@ class RTIPublisher : public IMessagingWriter
         struct RTINtpTime blockDurationIn;
         RTINtpTime_packFromMillisec(blockDurationIn, 0, timeout);
 
-        if(_pongSemaphore != NULL)
-        {
-        if(!RTIOsapiSemaphore_take(_pongSemaphore, &blockDurationIn))
-            {
-                fprintf(stderr,"Unexpected error taking semaphore\n");
+        if(_pongSemaphore != NULL) {
+            if (RTIOsapiSemaphore_take(_pongSemaphore, &blockDurationIn)
+                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
+                fprintf(stderr, "Unexpected error taking semaphore\n");
                 return false;
             }
         }
@@ -1011,10 +1146,9 @@ class RTIPublisher : public IMessagingWriter
 
     bool notifyPingResponse()
     {
-        if(_pongSemaphore != NULL)
-        {
-            if(!RTIOsapiSemaphore_give(_pongSemaphore))
-            {
+        if(_pongSemaphore != NULL) {
+            if(RTIOsapiSemaphore_give(_pongSemaphore)
+                    != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
                 fprintf(stderr,"Unexpected error giving semaphore\n");
                 return false;
             }
@@ -1028,9 +1162,13 @@ class RTIPublisher : public IMessagingWriter
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec) {
-        DDS_Duration_t timeout = {sec, nsec};
-        _writer->wait_for_acknowledgments(timeout);
+    void waitForAck(int sec, unsigned int nsec) {
+        if (_isReliable) {
+            DDS_Duration_t timeout = {sec, nsec};
+            _writer->wait_for_acknowledgments(timeout);
+        } else {
+            perftest_cpp::MilliSleep(nsec / 1000000);
+        }
     }
 
 #ifdef RTI_CUSTOM_TYPE
@@ -1069,10 +1207,11 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     RTIOsapiSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
   #ifdef RTI_CUSTOM_TYPE
-    unsigned int last_message_size;
     unsigned int custom_type_size;
     unsigned int min_custom_type_serialize_size;
   #endif
+    int _last_message_size;
+    bool _isReliable;
 
   public:
     RTIDynamicDataPublisher(
@@ -1084,11 +1223,9 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT)
 
     {
-        DDS_OctetSeq octetSeq;
         DDS_ReturnCode_t retcode;
 
       #ifdef RTI_CUSTOM_TYPE
-        last_message_size = 0;
         custom_type_size = 0;
         // Calculate size_alignment_type of DDS_DynamicData object
         if (!get_serialize_size_custom_type_data(min_custom_type_serialize_size)) {
@@ -1101,6 +1238,9 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         }
       #endif
         _writer = DDSDynamicDataWriter::narrow(writer);
+        DDS_Octet key_octets[KEY_SIZE];
+
+        _last_message_size = 0;
         _num_instances = num_instances;
         _instance_counter = 0;
         _instancesToBeWritten = instancesToBeWritten;
@@ -1114,13 +1254,16 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         _pongSemaphore = pongSemaphore;
 
         for (unsigned long i = 0; i < _num_instances; ++i) {
-            DDS_Octet key_octets[4];
             for (int c = 0; c < KEY_SIZE; c++) {
                 key_octets[c] = (unsigned char) (i >> c * 8);
             }
-            retcode = data.set_octet_array("key",
-                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED, 4, key_octets);
+            retcode = data.set_octet_array(
+                    "key",
+                    DynamicDataMembersId::GetInstance().at("key"),
+                    KEY_SIZE,
+                    key_octets);
             if (retcode != DDS_RETCODE_OK) {
+                Shutdown();
                 char errorMessage[21 + 21]; // enough to hold all numbers
                 sprintf(errorMessage, "set_octet_array(key) failed: %d", retcode);
                 throw std::runtime_error(errorMessage);
@@ -1131,13 +1274,16 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             _instance_handles[i] = _writer->register_instance(data);
         }
         // Register the key of MAX_CFT_VALUE
-        DDS_Octet key_octets[4];
         for (int c = 0; c < KEY_SIZE; c++) {
             key_octets[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
         }
-        retcode = data.set_octet_array("key",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED, 4, key_octets);
+        retcode = data.set_octet_array(
+                    "key",
+                    DynamicDataMembersId::GetInstance().at("key"),
+                    KEY_SIZE,
+                    key_octets);
         if (retcode != DDS_RETCODE_OK) {
+            Shutdown();
             char errorMessage[21 + 21]; // enough to hold all numbers
             sprintf(errorMessage, "set_octet_array(key) failed: %d", retcode);
             throw std::runtime_error(errorMessage);
@@ -1146,6 +1292,10 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         register_custom_type_dynamic_data(data, MAX_CFT_VALUE);
       #endif
         _instance_handles[_num_instances] = _writer->register_instance(data);
+
+        DDS_DataWriterQos qos;
+        _writer->get_qos(qos);
+        _isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
     }
 
     ~RTIDynamicDataPublisher() {
@@ -1180,6 +1330,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     bool Send(const TestMessage &message, bool isCftWildCardKey)
     {
         DDS_ReturnCode_t retcode;
+        DDS_Octet key_octets[KEY_SIZE];
         long key = 0;
         if (!isCftWildCardKey) {
             if (_num_instances > 1) {
@@ -1192,51 +1343,62 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         } else {
             key = MAX_CFT_VALUE;
         }
-
-        data.clear_all_members();
-        DDS_Octet key_octets[4];
         for (int c = 0; c < KEY_SIZE; c++) {
             key_octets[c] = (unsigned char) (key >> c * 8);
         }
-        retcode = data.set_octet_array(
-                "key",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                4,
-                key_octets);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
+
+        if (_last_message_size != message.size) {
+            //Cannot use data.clear_member("bind_data") because:
+            //DDS_DynamicData_clear_member:unsupported for non-sparse types
+            data.clear_all_members();
+          #ifndef RTI_CUSTOM_TYPE
+            DDS_OctetSeq octetSeq;
+            bool succeeded = octetSeq.from_array(
+                    (DDS_Octet *) message.data,
+                    message.size);
+            if (!succeeded) {
+                fprintf(stderr, "from_array() failed.\n");
+            }
+            retcode = data.set_octet_seq(
+                    "bin_data",
+                    DynamicDataMembersId::GetInstance().at("bin_data"),
+                    octetSeq);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
+            }
+          #endif
         }
         retcode = data.set_long(
                 "entity_id",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                DynamicDataMembersId::GetInstance().at("entity_id"),
                 message.entity_id);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_long(entity_id) failed: %d.\n", retcode);
         }
         retcode = data.set_ulong(
                 "seq_num",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                DynamicDataMembersId::GetInstance().at("seq_num"),
                 message.seq_num);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_ulong(seq_num) failed: %d.\n", retcode);
         }
         retcode = data.set_long(
                 "timestamp_sec",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                DynamicDataMembersId::GetInstance().at("timestamp_sec"),
                 message.timestamp_sec);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_long(timestamp_sec) failed: %d.\n", retcode);
         }
         retcode = data.set_ulong(
                 "timestamp_usec",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                DynamicDataMembersId::GetInstance().at("timestamp_usec"),
                 message.timestamp_usec);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_ulong(timestamp_usec) failed: %d.\n", retcode);
         }
         retcode = data.set_long(
                 "latency_ping",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                DynamicDataMembersId::GetInstance().at("latency_ping"),
                 message.latency_ping);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_long(latency_ping) failed: %d.\n", retcode);
@@ -1256,7 +1418,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         if (is_setinel_size(message.size)) {
             retcode = data.set_long(
                     "custom_type_size",
-                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                    DynamicDataMembersId::GetInstance().at("custom_type_size"),
                     message.size);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr, "set_long(custom_type_size) failed: %d.\n", retcode);
@@ -1270,39 +1432,31 @@ class RTIDynamicDataPublisher : public IMessagingWriter
                 fprintf(stderr, "set_custom_type_dynamic_data failed.\n");
                 return false;
             }
-            if ((unsigned int) message.size != last_message_size) {
+            if (message.size != _last_message_size) {
                 if (!get_serialize_size_custom_type_data(custom_type_size)) {
                     fprintf(stderr, "get_serialize_size_custom_type_data.\n");
                 }
-                last_message_size = message.size;
             }
             retcode = data.set_long(
                     "custom_type_size",
-                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                    DynamicDataMembersId::GetInstance().at("custom_type_size"),
                     custom_type_size);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr, "set_long(custom_type_size) failed: %d.\n", retcode);
                 return false;
             }
         }
-      #else
-        DDS_OctetSeq octetSeq;
-        bool succeeded = octetSeq.from_array(
-                (DDS_Octet *) message.data,
-                message.size);
-        if (!succeeded) {
-            fprintf(stderr, "from_array() failed.\n");
-            return false;
-        }
-        retcode = data.set_octet_seq(
-                "bin_data",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                octetSeq);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
-            return false;
-        }
       #endif
+        _last_message_size = message.size;
+        retcode = data.set_octet_array(
+                "key",
+                DynamicDataMembersId::GetInstance().at("key"),
+                KEY_SIZE,
+                key_octets);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
+        }
+
         if (!isCftWildCardKey) {
             retcode = _writer->write(data, _instance_handles[key]);
         } else {
@@ -1320,7 +1474,8 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         DDS_PublicationMatchedStatus status;
 
         while (true) {
-            DDS_ReturnCode_t retcode = _writer->get_publication_matched_status(status);
+            DDS_ReturnCode_t retcode = _writer->get_publication_matched_status(
+                    status);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
                         "WaitForReaders _writer->get_publication_matched_status "
@@ -1336,7 +1491,8 @@ class RTIDynamicDataPublisher : public IMessagingWriter
 
     bool waitForPingResponse() {
         if (_pongSemaphore != NULL) {
-            if (!RTIOsapiSemaphore_take(_pongSemaphore, NULL)) {
+            if (RTIOsapiSemaphore_take(_pongSemaphore, NULL)
+                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
                 fprintf(stderr, "Unexpected error taking semaphore\n");
                 return false;
             }
@@ -1350,7 +1506,8 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         RTINtpTime_packFromMillisec(blockDuration, 0, timeout);
 
         if (_pongSemaphore != NULL) {
-            if (!RTIOsapiSemaphore_take(_pongSemaphore, &blockDuration)) {
+            if (RTIOsapiSemaphore_take(_pongSemaphore, &blockDuration)
+                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
                 fprintf(stderr, "Unexpected error taking semaphore\n");
                 return false;
             }
@@ -1360,7 +1517,8 @@ class RTIDynamicDataPublisher : public IMessagingWriter
 
     bool notifyPingResponse() {
         if (_pongSemaphore != NULL) {
-            if (!RTIOsapiSemaphore_give(_pongSemaphore)) {
+            if (RTIOsapiSemaphore_give(_pongSemaphore)
+                    != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
                 fprintf(stderr, "Unexpected error giving semaphore\n");
                 return false;
             }
@@ -1374,9 +1532,13 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         return (unsigned int)status.pulled_sample_count;
     };
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec) {
-        DDS_Duration_t timeout = {sec, nsec};
-        _writer->wait_for_acknowledgments(timeout);
+    void waitForAck(int sec, unsigned int nsec) {
+        if (_isReliable) {
+            DDS_Duration_t timeout = {sec, nsec};
+            _writer->wait_for_acknowledgments(timeout);
+        } else {
+            perftest_cpp::MilliSleep(nsec / 1000000);
+        }
     }
 #ifdef RTI_CUSTOM_TYPE
   private:
@@ -1510,14 +1672,12 @@ class ReceiverListener : public DDSDataReaderListener
 class DynamicDataReceiverListener : public DDSDataReaderListener
 {
   private:
-
     DDS_DynamicDataSeq _data_seq;
     DDS_SampleInfoSeq _info_seq;
     TestMessage _message;
     IMessagingCB *_callback;
 
   public:
-
     DynamicDataReceiverListener(IMessagingCB *callback): _message()
     {
         _callback = callback;
@@ -1532,7 +1692,8 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
         }
 
         DDS_ReturnCode_t retcode = datareader->take(
-                _data_seq, _info_seq,
+                _data_seq,
+                _info_seq,
                 DDS_LENGTH_UNLIMITED,
                 DDS_ANY_SAMPLE_STATE,
                 DDS_ANY_VIEW_STATE,
@@ -1546,14 +1707,13 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
             return;
         }
 
-        int seq_length = _data_seq.length();
         DDS_OctetSeq octetSeq;
-        for (int i = 0; i < seq_length; ++i) {
+        for (int i = 0; i < _data_seq.length(); ++i) {
             if (_info_seq[i].valid_data) {
                 retcode = _data_seq[i].get_long(
                         _message.entity_id,
                         "entity_id",
-                        2);
+                        DynamicDataMembersId::GetInstance().at("entity_id"));
                 if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_long(entity_id) failed: %d.\n",
@@ -1563,9 +1723,8 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                 retcode = _data_seq[i].get_ulong(
                         _message.seq_num,
                         "seq_num",
-                        3);
-                if (retcode != DDS_RETCODE_OK)
-                {
+                        DynamicDataMembersId::GetInstance().at("seq_num"));
+                if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_ulong(seq_num) failed: %d.\n",
                             retcode);
@@ -1574,9 +1733,8 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                 retcode = _data_seq[i].get_long(
                         _message.timestamp_sec,
                         "timestamp_sec",
-                        4);
-                if (retcode != DDS_RETCODE_OK)
-                {
+                        DynamicDataMembersId::GetInstance().at("timestamp_sec"));
+                if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_long(timestamp_sec) failed: %d.\n",
                             retcode);
@@ -1585,9 +1743,8 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                 retcode = _data_seq[i].get_ulong(
                         _message.timestamp_usec,
                         "timestamp_usec",
-                        5);
-                if (retcode != DDS_RETCODE_OK)
-                {
+                        DynamicDataMembersId::GetInstance().at("timestamp_usec"));
+                if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_ulong(timestamp_usec) failed: %d.\n",
                             retcode);
@@ -1596,29 +1753,18 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                 retcode = _data_seq[i].get_long(
                         _message.latency_ping,
                         "latency_ping",
-                        6);
-                if (retcode != DDS_RETCODE_OK)
-                {
+                        DynamicDataMembersId::GetInstance().at("latency_ping"));
+                if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_long(latency_ping) failed: %d.\n",
                             retcode);
                     _message.latency_ping = 0;
                 }
-                retcode = _data_seq[i].get_octet_seq(
-                        octetSeq,
-                        "bin_data",
-                        7);
-                if (retcode != DDS_RETCODE_OK)
-                {
-                    fprintf(stderr,
-                            "on_data_available() get_octet_seq(bin_data) failed: %d.\n",
-                            retcode);
-                }
               #ifdef RTI_CUSTOM_TYPE
                 retcode = _data_seq[i].get_long(
                         _message.size,
                         "custom_type_size",
-                        8);
+                        DynamicDataMembersId::GetInstance().at("custom_type"));
                 if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_long(size) failed: %d.\n",
@@ -1626,6 +1772,15 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                     _message.size = 0;
                 }
               #else
+                retcode = _data_seq[i].get_octet_seq(
+                        octetSeq,
+                        "bin_data",
+                        DynamicDataMembersId::GetInstance().at("bin_data"));
+                if (retcode != DDS_RETCODE_OK) {
+                    fprintf(stderr,
+                            "on_data_available() get_octet_seq(bin_data) failed: %d.\n",
+                            retcode);
+                }
                 _message.size = octetSeq.length();
                 _message.data = (char *)octetSeq.get_contiguous_buffer();
               #endif
@@ -1715,7 +1870,7 @@ class RTISubscriber : public IMessagingReader
                     //printf("Read thread woke up but no data\n.");
                     //return NULL;
                     continue;
-                }   
+                }
 
                 retcode = _reader->take(
                     _data_seq, _info_seq,
@@ -1749,13 +1904,15 @@ class RTISubscriber : public IMessagingReader
             }
 
             // skip non-valid data
-            while ( (_info_seq[_data_idx].valid_data == false) && 
-                    (++_data_idx < seq_length)){
+            while ( (_info_seq[_data_idx].valid_data == false)
+                        && (++_data_idx < seq_length)){
                 //No operation required
             }
 
-             // may have hit end condition
-             if (_data_idx == seq_length) { continue; }
+            // may have hit end condition
+            if (_data_idx == seq_length) {
+                continue;
+            }
 
             _message.entity_id = _data_seq[_data_idx].entity_id;
             _message.seq_num = _data_seq[_data_idx].seq_num;
@@ -1827,9 +1984,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
                     (int) RTIDDSImpl<T>::_WaitsetDelayUsec / 1000000;
             property.max_event_delay.nanosec = (RTIDDSImpl<T>::_WaitsetDelayUsec
                     % 1000000) * 1000;
-
             _waitset = new DDSWaitSet(property);
-
             DDSStatusCondition *reader_status;
             reader_status = reader->get_statuscondition();
             reader_status->set_enabled_statuses(DDS_DATA_AVAILABLE_STATUS);
@@ -1856,6 +2011,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
     {
         DDS_ReturnCode_t retcode;
         int seq_length;
+        DDS_OctetSeq octetSeq;
 
         while (true) {
             // no outstanding reads
@@ -1869,11 +2025,12 @@ class RTIDynamicDataSubscriber : public IMessagingReader
                 }
 
                 retcode = _reader->take(
-                    _data_seq, _info_seq,
-                    DDS_LENGTH_UNLIMITED,
-                    DDS_ANY_SAMPLE_STATE,
-                    DDS_ANY_VIEW_STATE,
-                    DDS_ANY_INSTANCE_STATE);
+                        _data_seq,
+                        _info_seq,
+                        DDS_LENGTH_UNLIMITED,
+                        DDS_ANY_SAMPLE_STATE,
+                        DDS_ANY_VIEW_STATE,
+                        DDS_ANY_INSTANCE_STATE);
                 if (retcode == DDS_RETCODE_NO_DATA)
                 {
                     //printf("Called back no data.\n");
@@ -1905,77 +2062,62 @@ class RTIDynamicDataSubscriber : public IMessagingReader
                 //No operation required
             }
 
-             // may have hit end condition
-             if (_data_idx == seq_length) { continue; }
+            // may have hit end condition
+            if (_data_idx == seq_length) {
+                continue;
+            }
 
-
-             retcode = _data_seq[_data_idx].get_long(
-                     _message.entity_id,
-                     "entity_id",
-                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
-             if (retcode != DDS_RETCODE_OK)
-             {
-                 fprintf(stderr,
-                         "ReceiveMessage() get_long(entity_id) failed: %d.\n",
-                         retcode);
-                 _message.entity_id = 0;
-             }
-             retcode = _data_seq[_data_idx].get_ulong(
-                     _message.seq_num,
-                     "seq_num",
-                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
-             if (retcode != DDS_RETCODE_OK)
-             {
-                 fprintf(stderr,
-                         "ReceiveMessage() get_ulong(seq_num) failed: %d.\n",
-                         retcode);
-                 _message.seq_num = 0;
-             }
-             retcode = _data_seq[_data_idx].get_long(
-                     _message.timestamp_sec,
-                     "timestamp_sec",
-                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);;
-             if (retcode != DDS_RETCODE_OK)
-             {
-                 fprintf(stderr,
-                         "ReceiveMessage() get_long(timestamp_sec) failed: %d.\n",
-                         retcode);
-                 _message.timestamp_sec = 0;
-             }
-             retcode = _data_seq[_data_idx].get_ulong(
-                     _message.timestamp_usec,
-                     "timestamp_usec",
-                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);;
-             if (retcode != DDS_RETCODE_OK)
-             {
-                 fprintf(stderr,
-                         "ReceiveMessage() get_ulong(timestamp_usec) failed: %d.\n",
-                         retcode);
-                 _message.timestamp_usec = 0;
-             }
-             retcode = _data_seq[_data_idx].get_long(
-                     _message.latency_ping,
-                     "latency_ping",
-                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);;
-             if (retcode != DDS_RETCODE_OK)
-             {
-                 fprintf(stderr,
-                         "ReceiveMessage() get_long(latency_ping) failed: %d.\n",
-                         retcode);
-                 _message.latency_ping = 0;
-             }
-             DDS_OctetSeq octetSeq;
-             retcode = _data_seq[_data_idx].get_octet_seq(
-                     octetSeq,
-                     "bin_data",
-                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
-             if (retcode != DDS_RETCODE_OK)
-             {
-                 fprintf(stderr,
-                         "ReceiveMessage() get_octet_seq(bin_data) failed: %d.\n",
-                         retcode);
-             }
-          #ifdef RTI_CUSTOM_TYPE
+            retcode = _data_seq[_data_idx].get_long(
+                _message.entity_id,
+                "entity_id",
+                DynamicDataMembersId::GetInstance().at("entity_id"));
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "ReceiveMessage() get_long(entity_id) failed: %d.\n",
+                        retcode);
+                _message.entity_id = 0;
+            }
+            retcode = _data_seq[_data_idx].get_ulong(
+                _message.seq_num,
+                "seq_num",
+                DynamicDataMembersId::GetInstance().at("seq_num"));
+            if (retcode != DDS_RETCODE_OK){
+                fprintf(stderr,
+                        "ReceiveMessage() get_ulong(seq_num) failed: %d.\n",
+                        retcode);
+                _message.seq_num = 0;
+            }
+            retcode = _data_seq[_data_idx].get_long(
+                _message.timestamp_sec,
+                "timestamp_sec",
+                DynamicDataMembersId::GetInstance().at("timestamp_sec"));
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "ReceiveMessage() get_long(timestamp_sec) failed: %d.\n",
+                        retcode);
+                _message.timestamp_sec = 0;
+            }
+            retcode = _data_seq[_data_idx].get_ulong(
+                _message.timestamp_usec,
+                "timestamp_usec",
+                DynamicDataMembersId::GetInstance().at("timestamp_usec"));
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "ReceiveMessage() get_ulong(timestamp_usec) failed: %d.\n",
+                        retcode);
+                _message.timestamp_usec = 0;
+            }
+            retcode = _data_seq[_data_idx].get_long(
+                _message.latency_ping,
+                "latency_ping",
+                DynamicDataMembersId::GetInstance().at("latency_ping"));
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "ReceiveMessage() get_long(latency_ping) failed: %d.\n",
+                        retcode);
+                _message.latency_ping = 0;
+            }
+            #ifdef RTI_CUSTOM_TYPE
             retcode = _data_seq[_data_idx].get_long(
                     _message.size,
                     "custom_type_size",
@@ -1987,6 +2129,15 @@ class RTIDynamicDataSubscriber : public IMessagingReader
                 _message.size = 0;
             }
           #else
+            retcode = _data_seq[_data_idx].get_octet_seq(
+                    octetSeq,
+                    "bin_data",
+                    DynamicDataMembersId::GetInstance().at("bin_data"));
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "ReceiveMessage() get_octet_seq(bin_data) failed: %d.\n",
+                        retcode);
+            }
             _message.size = octetSeq.length();
             _message.data = (char *)octetSeq.get_contiguous_buffer();
           #endif
@@ -2022,8 +2173,6 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     // configure use of security plugins, based on provided arguments
 
     DDS_ReturnCode_t retcode;
-    // print arguments
-    printSecureArgs();
 
     // load plugin
     retcode = DDSPropertyQosPolicyHelper::add_property(
@@ -2084,33 +2233,29 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     // check if governance file provided
     if (_secureGovernanceFile.empty()) {
         // choose a pre-built governance file
-        std::string file = "resource/secure/signed_PerftestGovernance_";
+        _secureGovernanceFile = "./resource/secure/signed_PerftestGovernance_";
         if (_secureIsDiscoveryEncrypted) {
-            file += "Discovery";
+            _secureGovernanceFile += "Discovery";
         }
 
         if (_secureIsSigned) {
-            file += "Sign";
+            _secureGovernanceFile += "Sign";
         }
 
         if (_secureIsDataEncrypted && _secureIsSMEncrypted) {
-            file += "EncryptBoth";
+            _secureGovernanceFile += "EncryptBoth";
         } else if (_secureIsDataEncrypted) {
-            file += "EncryptData";
+            _secureGovernanceFile += "EncryptData";
         } else if (_secureIsSMEncrypted) {
-            file += "EncryptSubmessage";
+            _secureGovernanceFile += "EncryptSubmessage";
         }
 
-        file = file + ".xml";
+        _secureGovernanceFile += ".xml";
 
-        fprintf(
-                stdout,
-                "\tUsing pre-built governance file: \n\t./%s\n",
-                file.c_str());
         retcode = DDSPropertyQosPolicyHelper::add_property(
                 dpQos.property,
                 "com.rti.serv.secure.access_control.governance_file",
-                file.c_str(),
+                _secureGovernanceFile.c_str(),
                 false);
     } else {
         retcode = DDSPropertyQosPolicyHelper::add_property(
@@ -2247,49 +2392,86 @@ bool RTIDDSImpl<T>::validateSecureArgs()
 }
 
 template <typename T>
-void RTIDDSImpl<T>::printSecureArgs()
+std::string RTIDDSImpl<T>::printSecureArgs()
 {
-    printf("Secure Arguments:\n");
+    std::ostringstream stringStream;
+    stringStream << "Secure Configuration:\n";
 
-    printf("\tEncrypt discovery: %s\n",
-            _secureIsDiscoveryEncrypted ? "True" : "False");
-
-    printf("\tEncrypt topic (user) data: %s\n",
-            _secureIsDataEncrypted ? "True" : "False");
-
-    printf("\tEncrypt submessage: %s\n",
-            _secureIsSMEncrypted ? "True" : "False");
-
-    printf("\tSign data: %s\n",
-            _secureIsSigned ? "True" : "False");
-
-    printf("\tGovernance file: %s\n",
-            _secureGovernanceFile.empty() ?
-                    "Not Specified" : _secureGovernanceFile.c_str());
-
-    printf("\tPermissions file: %s\n",
-            _securePermissionsFile.empty() ?
-                    "Not Specified" : _securePermissionsFile.c_str());
-
-    printf("\tPrivate key file: %s\n",
-            _securePrivateKeyFile.empty() ?
-                    "Not Specified" : _securePrivateKeyFile.c_str());
-
-    printf("\tCertificate file: %s\n",
-            _secureCertificateFile.empty() ?
-                    "Not Specified" : _secureCertificateFile.c_str());
-
-    printf("\tCertificate authority file: %s\n",
-            _secureCertAuthorityFile.empty() ?
-                    "Not Specified" : _secureCertAuthorityFile.c_str());
-
-    printf("\tPlugin library : %s\n",
-            _secureLibrary.empty() ? "Not Specified" : _secureLibrary.c_str());
-
-    if( _secureDebugLevel != -1 ){
-        printf("\tDebug level: %d\n", _secureDebugLevel);
+    stringStream << "\tEncrypt discovery: ";
+    if (_secureIsDiscoveryEncrypted) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
     }
 
+    stringStream << "\tEncrypt topic (user) data: ";
+    if (_secureIsDataEncrypted) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
+    }
+
+    stringStream << "\tEncrypt submessage: ";
+    if (_secureIsSMEncrypted) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
+    }
+
+    stringStream << "\tSign data: ";
+    if (_secureIsSigned) {
+        stringStream << "True\n";
+    } else {
+        stringStream << "False\n";
+    }
+
+    stringStream << "\tGovernance file: ";
+    if (_secureGovernanceFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureGovernanceFile << "\n";
+    }
+
+    stringStream << "\tPermissions file: ";
+    if (_securePermissionsFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _securePermissionsFile << "\n";
+    }
+
+    stringStream << "\tPrivate key file: ";
+    if (_securePrivateKeyFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _securePrivateKeyFile << "\n";
+    }
+
+    stringStream << "\tCertificate file: ";
+    if (_secureCertificateFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureCertificateFile << "\n";
+    }
+
+    stringStream << "\tCertificate authority file: ";
+    if (_secureCertAuthorityFile.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureCertAuthorityFile << "\n";
+    }
+
+    stringStream << "\tPlugin library: ";
+    if (_secureLibrary.empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _secureLibrary << "\n";
+    }
+
+    if (_secureDebugLevel != -1) {
+        stringStream << "\tDebug level: " <<  _secureDebugLevel << "\n";
+    }
+
+    return stringStream.str();
 }
 
 #endif
@@ -2300,9 +2482,15 @@ void RTIDDSImpl<T>::printSecureArgs()
 template <typename T>
 bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 {
-    DDS_DomainParticipantQos qos; 
+    DDS_DomainParticipantQos qos;
     DDS_DomainParticipantFactoryQos factory_qos;
     DomainListener *listener = new DomainListener();
+
+    // Register _loggerDevice
+    if (!NDDSConfigLogger::get_instance()->set_output_device(&_loggerDevice)) {
+        fprintf(stderr,"Failed set_output_device for Logger.\n");
+        return false;
+    }
 
     _factory = DDSDomainParticipantFactory::get_instance();
 
@@ -2311,7 +2499,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         return false;
     }
 
-    // only if we run the latency test we need to wait 
+    // only if we run the latency test we need to wait
     // for pongs after sending pings
     _pongSemaphore = _LatencyTest ?
         RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL) :
@@ -2323,20 +2511,19 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         factory_qos.profile.url_profile.ensure_length(1, 1);
         factory_qos.profile.url_profile[0] = DDS_String_dup(_ProfileFile);
     } else {
-        fprintf(stderr,"Not using xml file for QoS.\n");
         factory_qos.profile.string_profile.from_array(
                 PERFTEST_QOS_STRING,
                 PERFTEST_QOS_STRING_SIZE);
     }
     _factory->set_qos(factory_qos);
 
-    if (_factory->reload_profiles() != DDS_RETCODE_OK) 
+    if (_factory->reload_profiles() != DDS_RETCODE_OK)
     {
         fprintf(stderr,"Problem opening QOS profiles file %s.\n", _ProfileFile);
         return false;
     }
 
-    if (_factory->set_default_library(_ProfileLibraryName) != DDS_RETCODE_OK) 
+    if (_factory->set_default_library(_ProfileLibraryName) != DDS_RETCODE_OK)
     {
         fprintf(stderr,"No QOS Library named \"%s\" found in %s.\n",
                _ProfileLibraryName, _ProfileFile);
@@ -2370,11 +2557,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
   #endif
 
     // set initial peers and not use multicast
-    if ( _peer_host_count > 0 ) {
-        printf("Initial peers:\n");
-        for ( int i = 0; i< _peer_host_count; ++i) {
-            printf("\t%s\n", _peer_host[i]);
-        }
+    if (_peer_host_count > 0) {
         qos.discovery.initial_peers.from_array(
             (const char **)_peer_host,
             _peer_host_count);
@@ -2384,7 +2567,6 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     if (!configureTransport(_transport, qos)){
         return false;
     };
-    _transport.printTransportConfigurationSummary();
 
     if (_AutoThrottle) {
         DDSPropertyQosPolicyHelper::add_property(qos.property,
@@ -2398,8 +2580,15 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
         DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
 
-    if (_participant == NULL)
-    {
+    if (_participant == NULL || _loggerDevice.checkShmemErrors()) {
+        if (_loggerDevice.checkShmemErrors()) {
+            fprintf(
+                    stderr,
+                    "The participant creation failed due to issues in the Shared Memory configuration of your OS.\n"
+                    "For more information about how to configure Shared Memory see: http://community.rti.com/kb/osx510 \n"
+                    "If you want to skip the use of Shared memory in RTI Perftest, "
+                    "specify the transport using \"-transport <kind>\", e.g. \"-transport UDPv4\".\n");
+        }
         fprintf(stderr,"Problem creating participant.\n");
         return false;
     }
@@ -2442,6 +2631,43 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 }
 
 /*********************************************************
+ * GetInitializationSampleCount
+ */
+template <typename T>
+unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
+{
+    /*
+     * There is a minimum number of samples that we want to send no matter what
+     * the conditions are:
+     */
+    unsigned long initializeSampleCount = 50;
+
+    /*
+     * If we are using reliable, the maximum burst of that we can send is limited
+     * by max_send_window_size (or max samples, but we will assume this is not
+     * the case for this). In such case we should send max_send_window_size
+     * samples.
+     *
+     * If we are not using reliability this should not matter.
+     */
+    initializeSampleCount = (std::max)(
+            initializeSampleCount,
+            (unsigned long) _SendQueueSize);
+
+    /*
+     * If we are using batching we need to take into account tha the Send Queue
+     * will be per-batch, therefore for the number of samples:
+     */
+    if (_BatchSize > 0) {
+        initializeSampleCount = (std::max)(
+                _SendQueueSize * (_BatchSize / _DataLen),
+                initializeSampleCount);
+    }
+
+    return initializeSampleCount;
+}
+
+/*********************************************************
  * CreateWriter
  */
 template <typename T>
@@ -2458,38 +2684,23 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                        NULL,
                        DDS_STATUS_MASK_NONE);
 
-    if (topic == NULL)
-    {
+    if (topic == NULL) {
         fprintf(stderr,"Problem creating topic %s.\n", topic_name);
         return NULL;
     }
 
-    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0)
-    {
-        if (_UsePositiveAcks)
-        {
-            qos_profile = "ThroughputQos";
-        }
-        else
-        {
-            qos_profile = "NoAckThroughputQos";
-        }
-    } else if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0) {
-        if (_UsePositiveAcks)
-        {
-            qos_profile = "LatencyQos";
-        }
-        else
-        {
-            qos_profile = "NoAckLatencyQos";
-        }
-    } else if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) == 0)
-    {
+    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0) {
+        qos_profile = "ThroughputQos";
+    } else if (strcmp(topic_name, LATENCY_TOPIC_NAME) == 0) {
+        qos_profile = "LatencyQos";
+    } else if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) == 0) {
         qos_profile = "AnnouncementQos";
     } else {
-        fprintf(stderr,"topic name must either be %s or %s or %s.\n",
-               perftest_cpp::_ThroughputTopicName, perftest_cpp::_LatencyTopicName,
-               perftest_cpp::_AnnouncementTopicName);
+        fprintf(stderr,
+                "topic name must either be %s or %s or %s.\n",
+                THROUGHPUT_TOPIC_NAME,
+                LATENCY_TOPIC_NAME,
+                ANNOUNCEMENT_TOPIC_NAME);
         return NULL;
     }
 
@@ -2500,24 +2711,26 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                 qos_profile.c_str(), _ProfileLibraryName, _ProfileFile);
         return NULL;
     }
-    
-    if (_UsePositiveAcks) {
-        dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (int)_KeepDurationUsec/1000000;
-        dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = _KeepDurationUsec%1000000;
+
+    if (!_UsePositiveAcks
+            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
+        dw_qos.protocol.disable_positive_acks = true;
+        if (_KeepDurationUsec != -1) {
+            dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
+                DDS_Duration_t::from_micros(_KeepDurationUsec);
+        }
     }
 
     if (_isLargeData || _IsAsynchronous) {
-        fprintf(stderr, "Using asynchronous write for %s\n", topic_name);
         dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
         if (_FlowControllerCustom != "default") {
             dw_qos.publish_mode.flow_controller_name =
                     DDS_String_dup(("dds.flow_controller.token_bucket."+_FlowControllerCustom).c_str());
         }
-        fprintf(stderr, "Using flow controller %s\n", _FlowControllerCustom.c_str());
     }
 
     // only force reliability on throughput/latency topics
-    if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) != 0) {
+    if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0) {
         if (_IsReliable) {
             // default: use the setting specified in the qos profile
             // dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
@@ -2529,11 +2742,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     // These QOS's are only set for the Throughput datawriter
-    if (qos_profile == "ThroughputQos" ||
-        qos_profile =="NoAckThroughputQos")
-    {
+    if (qos_profile == "ThroughputQos") {
 
-        if (_IsMulticast) {
+        if (_transport.useMulticast) {
             dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
                     RTI_TRUE;
         }
@@ -2602,11 +2813,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         dw_qos.protocol.rtps_reliable_writer.min_send_window_size = _SendQueueSize;
     }
 
-    if ((qos_profile == "LatencyQos" ||
-        qos_profile == "NoAckLatencyQos") &&
-        !_DirectCommunication && 
-        (_Durability == DDS_TRANSIENT_DURABILITY_QOS ||
-         _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
+    if (qos_profile == "LatencyQos"
+            && !_DirectCommunication
+            && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
+                || _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
         dw_qos.durability.kind = (DDS_DurabilityQosPolicyKind)_Durability;
         dw_qos.durability.direct_communication = _DirectCommunication;
     }
@@ -2762,44 +2972,24 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                        DDS_TOPIC_QOS_DEFAULT, NULL,
                        DDS_STATUS_MASK_NONE);
 
-    if (topic == NULL)
-    {
+    if (topic == NULL) {
         fprintf(stderr,"Problem creating topic %s.\n", topic_name);
         return NULL;
     }
     topic_desc = topic;
 
-    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0)
-    {
-        if (_UsePositiveAcks)
-        {
-            qos_profile = "ThroughputQos";
-        }
-        else
-        {
-            qos_profile = "NoAckThroughputQos";
-        }
-    }
-    else if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0)
-    {
-        if (_UsePositiveAcks)
-        {
-            qos_profile = "LatencyQos";
-        }
-        else
-        {
-            qos_profile = "NoAckLatencyQos";
-        }
-    }
-    else if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) == 0)
-    {
+    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0) {
+        qos_profile = "ThroughputQos";
+    } else if (strcmp(topic_name, LATENCY_TOPIC_NAME) == 0) {
+        qos_profile = "LatencyQos";
+    } else if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) == 0) {
         qos_profile = "AnnouncementQos";
-    }
-    else
-    {
-        fprintf(stderr,"topic name must either be %s or %s or %s.\n",
-               perftest_cpp::_ThroughputTopicName, perftest_cpp::_LatencyTopicName,
-               perftest_cpp::_AnnouncementTopicName);
+    } else {
+        fprintf(stderr,
+                "topic name must either be %s or %s or %s.\n",
+                THROUGHPUT_TOPIC_NAME,
+                LATENCY_TOPIC_NAME,
+                ANNOUNCEMENT_TOPIC_NAME);
         return NULL;
     }
 
@@ -2812,7 +3002,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     // only force reliability on throughput/latency topics
-    if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) != 0)
+    if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0)
     {
         if (_IsReliable)
         {
@@ -2824,17 +3014,17 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    // only apply durability on Throughput datareader
-    if (qos_profile == "ThroughputQos" || qos_profile == "NoAckThroughputQos")
-    {
-        dr_qos.durability.kind = (DDS_DurabilityQosPolicyKind)_Durability;
-        dr_qos.durability.direct_communication = _DirectCommunication;
+    if (!_UsePositiveAcks
+            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
+        dr_qos.protocol.disable_positive_acks = true;
     }
 
-    if ((qos_profile == "LatencyQos" || qos_profile == "NoAckLatencyQos")
-            && !_DirectCommunication
-            && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
-                    || _Durability == DDS_PERSISTENT_DURABILITY_QOS))
+    // only apply durability on Throughput datareader
+    if (qos_profile == "ThroughputQos"
+            || (qos_profile == "LatencyQos"
+                    && !_DirectCommunication
+                    && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
+                            || _Durability == DDS_PERSISTENT_DURABILITY_QOS)))
     {
         dr_qos.durability.kind = (DDS_DurabilityQosPolicyKind) _Durability;
         dr_qos.durability.direct_communication = _DirectCommunication;
@@ -2845,7 +3035,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         _InstanceMaxCountReader++;
     }
     dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
-    
+
     if (_InstanceCount > 1) {
         if (_InstanceHashBuckets > 0) {
             dr_qos.resource_limits.instance_hash_buckets =
@@ -2855,25 +3045,20 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (_transport.transportConfig.kind != TRANSPORT_TCPv4
-            && _transport.transportConfig.kind != TRANSPORT_TLSv4
-            && _transport.transportConfig.kind != TRANSPORT_WANv4
-            && _transport.transportConfig.kind != TRANSPORT_SHMEM
-            && _IsMulticast) {
-
-        const char *multicast_addr;
-
-        if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0) {
-            multicast_addr = THROUGHPUT_MULTICAST_ADDR;
-        } else if (strcmp(topic_name, perftest_cpp::_LatencyTopicName) == 0) {
-            multicast_addr = LATENCY_MULTICAST_ADDR;
-        } else {
-            multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
-        }
-
+    if (_transport.useMulticast && _transport.allowsMulticast()) {
         dr_qos.multicast.value.ensure_length(1, 1);
         dr_qos.multicast.value[0].receive_address = DDS_String_dup(
-                multicast_addr);
+                _transport.getMulticastAddr(topic_name).c_str());
+
+        if (dr_qos.multicast.value[0].receive_address == NULL) {
+            fprintf(stderr,
+                    "topic name must either be %s or %s or %s.\n",
+                    THROUGHPUT_TOPIC_NAME,
+                    LATENCY_TOPIC_NAME,
+                    ANNOUNCEMENT_TOPIC_NAME);
+            return NULL;
+        }
+
         dr_qos.multicast.value[0].receive_port = 0;
         dr_qos.multicast.value[0].transports.length(0);
     }
@@ -2887,7 +3072,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     /* Create CFT Topic */
-    if (strcmp(topic_name, perftest_cpp::_ThroughputTopicName) == 0 && _useCft) {
+    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && _useCft) {
         topic_desc = CreateCft(topic_name, topic);
         if (topic_desc == NULL) {
             printf("Create_contentfilteredtopic error\n");
@@ -2925,8 +3110,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-    if (!strcmp(topic_name, perftest_cpp::_ThroughputTopicName) ||
-        !strcmp(topic_name, perftest_cpp::_LatencyTopicName)) {
+    if (!strcmp(topic_name, THROUGHPUT_TOPIC_NAME) ||
+        !strcmp(topic_name, LATENCY_TOPIC_NAME)) {
         _reader = reader;
     }
 

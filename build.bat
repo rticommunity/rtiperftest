@@ -10,6 +10,8 @@ set "cs_folder=%script_location%srcCs"
 set "java_folder=%script_location%srcJava"
 set "java_scripts_folder=%script_location%resource\java_scripts"
 set "bin_folder=%script_location%bin"
+set "cStringifyFile_script=%script_location%resource\script\cStringifyFile.pl"
+set "qos_file=%script_location%perftest_qos_profiles.xml"
 
 @REM # Default values:
 set BUILD_CPP=1
@@ -20,6 +22,7 @@ set MSBUILD_EXE=msbuild
 set JAVAC_EXE=javac
 set JAVA_EXE=java
 set JAR_EXE=jar
+set PERL_EXEC=perl
 
 set RELEASE_DEBUG=release
 set STATIC_DYNAMIC=static
@@ -71,6 +74,26 @@ if NOT "%1"=="" (
 				SET BUILD_CPP03=0
 		) ELSE if "%1"=="--skip-cs-build" (
 				SET BUILD_CS=0
+		) ELSE if "%1"=="--java-build" (
+				SET BUILD_JAVA=1
+				SET BUILD_CPP=0
+				SET BUILD_CPP03=0
+				SET BUILD_CS=0
+		) ELSE if "%1"=="--cpp-build" (
+				SET BUILD_JAVA=0
+				SET BUILD_CPP=1
+				SET BUILD_CPP03=0
+				SET BUILD_CS=0
+		) ELSE if "%1"=="--cpp03-build" (
+				SET BUILD_JAVA=0
+				SET BUILD_CPP=0
+				SET BUILD_CPP03=1
+				SET BUILD_CS=0
+		) ELSE if "%1"=="--cs-build" (
+				SET BUILD_JAVA=0
+				SET BUILD_CPP=0
+				SET BUILD_CPP03=0
+				SET BUILD_CS=1
 		) ELSE if "%1"=="--debug" (
 				SET RELEASE_DEBUG=debug
 		) ELSE if "%1"=="--dynamic" (
@@ -79,6 +102,9 @@ if NOT "%1"=="" (
 				SET USE_SECURE_LIBS=1
 		) ELSE if "%1"=="--msbuild" (
 				SET MSBUILD_EXE=%2
+				SHIFT
+		) ELSE if "%1"=="--perl" (
+				SET PERL_EXEC=%2
 				SHIFT
 		) ELSE if "%1"=="--java-home" (
 				SET "JAVAC_EXE=%2\bin\javac"
@@ -148,6 +174,28 @@ if !BUILD_JAVA! == 1 (
 		set BUILD_JAVA=0
 	)
 )
+::------------------------------------------------------------------------------
+
+if !BUILD_CPP! == 1 (
+	call !PERL_EXEC! -version > nul 2>nul
+	if not !ERRORLEVEL! == 0 (
+		echo [WARNING]: PERL not found, !classic_cpp_folder!\qos_string.h will not be updated.
+	) else (
+		!PERL_EXEC! !cStringifyFile_script! !qos_file! PERFTEST_QOS_STRING > !classic_cpp_folder!\qos_string.h
+		echo [INFO]: QoS String !classic_cpp_folder!\qos_string.h updated successfully.
+	)
+)
+
+if !BUILD_CPP03! == 1 (
+	call !PERL_EXEC! -version > nul 2>nul
+	if not !ERRORLEVEL! == 0 (
+		echo [WARNING]: PERL not found, !modern_cpp_folder!\qos_string.h will not be updated.
+	) else (
+		!PERL_EXEC! !cStringifyFile_script! !qos_file! PERFTEST_QOS_STRING > !modern_cpp_folder!\qos_string.h
+		echo [INFO]: QoS String !modern_cpp_folder!\qos_string.h updated successfully.
+	)
+)
+
 ::------------------------------------------------------------------------------
 
 @REM # This calls the function in charge of getting the name of the solution for C++
@@ -233,8 +281,8 @@ if !BUILD_CPP! == 1 (
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
-	-additionalHeaderFiles "!additional_header_files_custom_type!MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
-	-additionalSourceFiles "!additional_source_files_custom_type!RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
+	-additionalHeaderFiles "!additional_header_files_custom_type!RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
+	-additionalSourceFiles "!additional_source_files_custom_type!RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
 	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
@@ -506,9 +554,17 @@ GOTO:EOF
 	echo.    --skip-cpp03-build     Avoid C++ New PSM code generation and
 	echo.                           compilation.
 	echo.    --skip-cs-build        Avoid C Sharp code generation and compilation.
+	echo.    --java-build           Only Java ByteCode generation creation.
+	echo.    --cpp-build            Only C++ code generation and compilation.
+	echo.    --cpp03-build          Only C++ New PSM code generation and
+	echo.                           compilation.
+	echo.    --cs-build             Only C Sharp code generation and compilation.
 	echo.    --make  path           Path to the GNU make executable. If this
 	echo.                           parameter is not present, the GNU make variable
 	echo.                           should be available from your $PATH variable.
+	echo.    --perl path            Path to PERL executable. If this parameter is
+	echo.                           not present, the path to PERL should be
+	echo.                           available from your \$PATH variable.
 	echo.    --java-home path       Path to the Java JDK home folder. If this
 	echo.                           parameter is not present, javac, jar and java
 	echo.                           executables should be available from your

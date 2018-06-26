@@ -13,23 +13,28 @@ namespace PerformanceTest
 {
     public enum Transport
     {
-        TRANSPORT_DEFAULT,
+        TRANSPORT_NOT_SET,
         TRANSPORT_UDPv4,
         TRANSPORT_UDPv6,
         TRANSPORT_TCPv4,
         TRANSPORT_TLSv4,
         TRANSPORT_DTLSv4,
         TRANSPORT_WANv4,
-        TRANSPORT_SHMEM
+        TRANSPORT_SHMEM,
+        TRANSPORT_UDPv4_SHMEM,
+        TRANSPORT_UDPv4_UDPv6,
+        TRANSPORT_UDPv6_SHMEM,
+        TRANSPORT_UDPv4_UDPv6_SHMEM
     }
 
     public class TransportConfig
     {
         public TransportConfig()
         {
-            kind = Transport.TRANSPORT_DEFAULT;
+            kind = Transport.TRANSPORT_NOT_SET;
             nameString = string.Empty;
             prefixString = string.Empty;
+            takenFromQoS = false;
         }
 
         public TransportConfig(
@@ -45,6 +50,7 @@ namespace PerformanceTest
         public Transport kind { set; get; }
         public string nameString { set; get; }
         public string prefixString { set; get; }
+        public bool takenFromQoS { set; get; }
     }
 
     public class SecureTransportOptions
@@ -119,6 +125,11 @@ namespace PerformanceTest
         private const string TRANSPORT_CERTIFICATE_FILE_SUB = "./resource/secure/sub.pem";
         private const string TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
 
+        public bool useMulticast;
+
+        public SortedDictionary<string, string> multicastAddrMap =
+                new SortedDictionary<string, string>();
+
         /**************************************************************************/
         /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 
@@ -127,9 +138,9 @@ namespace PerformanceTest
             transportConfigMap = new Dictionary<string, TransportConfig>()
             {
                 { "Default", new TransportConfig(
-                    Transport.TRANSPORT_DEFAULT,
-                    "Default (UDPv4) / Custom (Taken from QoS profile)",
-                    "dds.transport.UDPv4.builtin")},
+                    Transport.TRANSPORT_NOT_SET,
+                    "--",
+                    "--")},
                 { "UDPv4", new TransportConfig(
                     Transport.TRANSPORT_UDPv4,
                     "UDPv4",
@@ -160,13 +171,19 @@ namespace PerformanceTest
                     "dds.transport.shmem.builtin")}
             };
         }
-        
+
         public PerftestTransport()
         {
             transportConfig = new TransportConfig();
             tcpOptions = new TcpTransportOptions();
             secureOptions = new SecureTransportOptions();
             wanOptions = new WanTransportOptions();
+
+            useMulticast = false;
+
+            multicastAddrMap.Add(LATENCY_TOPIC_NAME.VALUE, "239.255.1.2");
+            multicastAddrMap.Add(ANNOUNCEMENT_TOPIC_NAME.VALUE, "239.255.1.100");
+            multicastAddrMap.Add(THROUGHPUT_TOPIC_NAME.VALUE, "239.255.1.1");
         }
 
         /**************************************************************************/
@@ -193,6 +210,9 @@ namespace PerformanceTest
             cmdLineArgsMap.Add("-transportWanServerPort", 1);
             cmdLineArgsMap.Add("-transportWanId", 1);
             cmdLineArgsMap.Add("-transportSecureWan", 0);
+            cmdLineArgsMap.Add("-multicast", 0);
+            cmdLineArgsMap.Add("-multicastAddr", 1);
+            cmdLineArgsMap.Add("-nomulticast", 0);
 
             return cmdLineArgsMap;
         }
@@ -216,6 +236,17 @@ namespace PerformanceTest
             sb.Append("\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n");
             sb.Append("\t                                If not specified, use all available\n");
             sb.Append("\t                                interfaces\n");
+            sb.Append("\t-multicast                    - Use multicast to send data. Each topic");
+            sb.Append("\t                                will use a different address:\n");
+            sb.Append("\t                                <address> is optional, if unspecified:\n");
+            foreach(KeyValuePair<string, string> nameAddress in multicastAddrMap)
+            {
+                sb.Append("                                            ");
+                sb.Append(nameAddress.Key).Append(" ").Append(nameAddress.Value).Append("\n");
+            }
+            sb.Append("\t-multicastAddr <address>      - Use multicast to send data and set\n");
+            sb.Append("\t                                the input <address> as the multicast\n");
+            sb.Append("\t                                address for all the topics.\n");
             sb.Append("\t-transportVerbosity <level>   - Verbosity of the transport\n");
             sb.Append("\t                                Default: 0 (errors only)\n");
             sb.Append("\t-transportServerBindPort <p>  - Port used by the transport to accept\n");
@@ -253,7 +284,7 @@ namespace PerformanceTest
             return sb.ToString();
         }
 
-        public void PrintTransportConfigurationSummary()
+        public string PrintTransportConfigurationSummary()
         {
 
             StringBuilder sb = new StringBuilder("Transport Information:\n");
@@ -263,6 +294,24 @@ namespace PerformanceTest
             {
                 sb.Append("\tNic: ").Append(allowInterfaces).Append("\n");
             }
+
+            sb.Append( "\tUse Multicast: ");
+
+            if (AllowsMulticast() && useMulticast)
+            {
+                sb.Append("True");
+            }
+            else
+            {
+                sb.Append("False");
+                if (useMulticast)
+                {
+                    sb.Append(" (Multicast is not supported for " );
+                    sb.Append( transportConfig.nameString );
+                    sb.Append(")");
+                }
+            }
+            sb.Append("\n");
 
             if (transportConfig.kind == Transport.TRANSPORT_TCPv4
                     || transportConfig.kind == Transport.TRANSPORT_TLSv4)
@@ -310,7 +359,7 @@ namespace PerformanceTest
                 sb.Append("\tVerbosity: ").Append(verbosity).Append("\n");
             }
 
-            Console.Error.Write(sb.ToString());
+            return sb.ToString();
         }
 
         public bool AllowsMulticast()
@@ -504,6 +553,27 @@ namespace PerformanceTest
                 {
                     wanOptions.secureWan = true;
                 }
+                else if ("-multicast".StartsWith(argv[i], true, null))
+                {
+                    useMulticast = true;
+                }
+                else if ("-multicastAddr".StartsWith(argv[i], true, null))
+                {
+                    useMulticast = true;
+                    if ((i == (argv.Length - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.WriteLine(classLoggingString
+                                + " Missing <address> after -multicastAddr");
+                        return false;
+                    }
+                    multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = argv[i];
+                    multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] = argv[i];
+                    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE] = argv[i];
+                }
+                else if ("-nomulticast".StartsWith(argv[i], true, null))
+                {
+                    useMulticast = false;
+                }
             }
 
             if (!setTransport(transportString))
@@ -588,32 +658,54 @@ namespace PerformanceTest
         {
             if (!string.IsNullOrEmpty(allowInterfaces))
             {
-                /*
-                 * By default, if the transport is not set, it should be UDPv4, if it is not
-                 * It means that we have modified the QOS, so we won't use the -nic param.
-                 */
-                if (transportConfig.kind == Transport.TRANSPORT_DEFAULT
-                        && qos.transport_builtin.mask 
-                            != (int) DDS.TransportBuiltinKind.TRANSPORTBUILTIN_UDPv4) {
-                    Console.Error.Write(classLoggingString
-                           + " Ignoring -nic option, Transport has been modified via QoS");
+                if (transportConfig.kind == Transport.TRANSPORT_NOT_SET)
+                {
+                    Console.Error.WriteLine(classLoggingString
+                           + " Ignoring -nic/-allowInterfaces option.");
                     return;
                 }
 
-                string propertyName = transportConfig.prefixString;
-
-                if (transportConfig.kind == Transport.TRANSPORT_WANv4)
+                if (transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6_SHMEM
+                        || transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6)
                 {
-                    propertyName += ".parent";
+
+                    string propertyName =
+                            "dds.transport.UDPv4.builtin.parent.allow_interfaces";
+
+                    DDS.PropertyQosPolicyHelper.add_property(
+                            qos.property_qos,
+                            propertyName,
+                            allowInterfaces,
+                            false);
+
+                    propertyName =
+                            "dds.transport.UDPv6.builtin.parent.allow_interfaces";
+
+                    DDS.PropertyQosPolicyHelper.add_property(
+                            qos.property_qos,
+                            propertyName,
+                            allowInterfaces,
+                            false);
+
                 }
+                else
+                {
 
-                propertyName += ".parent.allow_interfaces";
+                    string propertyName = transportConfig.prefixString;
 
-                DDS.PropertyQosPolicyHelper.add_property(
-                        qos.property_qos,
-                        propertyName,
-                        allowInterfaces,
-                        false);
+                    if (transportConfig.kind == Transport.TRANSPORT_WANv4)
+                    {
+                        propertyName += ".parent";
+                    }
+
+                    propertyName += ".parent.allow_interfaces";
+
+                    DDS.PropertyQosPolicyHelper.add_property(
+                            qos.property_qos,
+                            propertyName,
+                            allowInterfaces,
+                            false);
+                }
             }
         }
 
@@ -622,16 +714,10 @@ namespace PerformanceTest
 
             if (!string.IsNullOrEmpty(verbosity))
             {
-                /*
-                 * By default, if the transport is not set, it should be UDPv4,
-                 * if it is not it means that we have modified the QOS, so we won't
-                 * use the -transportVerbosity param.
-                 */
-                 if (transportConfig.kind == Transport.TRANSPORT_DEFAULT
-                         && qos.transport_builtin.mask 
-                             != (int) DDS.TransportBuiltinKind.TRANSPORTBUILTIN_UDPv4) {
+                if (transportConfig.kind == Transport.TRANSPORT_NOT_SET)
+                {
                      Console.Error.Write(classLoggingString
-                            + " Ignoring -transportVerbosity option, Transport has been modified via QoS");
+                            + " Ignoring -transportVerbosity option.");
                      return;
                  }
 
@@ -643,8 +729,12 @@ namespace PerformanceTest
                     propertyName = transportConfig.prefixString + ".logging_verbosity_bitmap";
                 }
                 else if (transportConfig.kind == Transport.TRANSPORT_UDPv4
-                      || transportConfig.kind == Transport.TRANSPORT_UDPv6
-                      || transportConfig.kind == Transport.TRANSPORT_SHMEM)
+                        || transportConfig.kind == Transport.TRANSPORT_UDPv6
+                        || transportConfig.kind == Transport.TRANSPORT_SHMEM
+                        || transportConfig.kind == Transport.TRANSPORT_UDPv4_SHMEM
+                        || transportConfig.kind == Transport.TRANSPORT_UDPv6_SHMEM
+                        || transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6
+                        || transportConfig.kind == Transport.TRANSPORT_UDPv4_UDPv6_SHMEM)
                 {
                     // We do not change logging for the builtin transports.
                     return;
@@ -860,9 +950,7 @@ namespace PerformanceTest
 
         private void ConfigureShmemTransport(DDS.DomainParticipantQos qos) {
 
-            qos.transport_builtin.mask = (int) DDS.TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM;
-
-            // SHMEM transport properties
+            // Number of messages that can be buffered in the receive queue.
             int receivedMessageCountMax = 2 * 1024 * 1024 / (int) dataLen;
             if (receivedMessageCountMax < 1) {
                 receivedMessageCountMax = 1;
@@ -877,56 +965,128 @@ namespace PerformanceTest
 
         public bool ConfigureTransport(DDS.DomainParticipantQos qos) {
 
+            /*
+             * If transportConfig.kind is not set, then we want to use the value
+             * provided by the Participant Qos, so first we read it from there and
+             * update the value of transportConfig.kind with whatever was already set.
+             */
+            if (transportConfig.kind == Transport.TRANSPORT_NOT_SET)
+            {
+                int mask = qos.transport_builtin.mask;
+                switch (mask)
+                {
+                    case (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv4:
+                        transportConfig = new TransportConfig(
+                                Transport.TRANSPORT_UDPv4,
+                                "UDPv4",
+                                "dds.transport.UDPv4.builtin");
+                        break;
+                    case (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv6:
+                        transportConfig = new TransportConfig(
+                                Transport.TRANSPORT_UDPv6,
+                                "UDPv6",
+                                "dds.transport.UDPv6.builtin");
+                        break;
+                    case (int)TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM:
+                        transportConfig = new TransportConfig(
+                                Transport.TRANSPORT_SHMEM,
+                                "SHMEM",
+                                "dds.transport.shmem.builtin");
+                        break;
+                    case (int)TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM | (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv4:
+                        transportConfig = new TransportConfig(
+                                Transport.TRANSPORT_UDPv4_SHMEM,
+                                "UDPv4 & SHMEM",
+                                "dds.transport.UDPv4.builtin");
+                        break;
+                    case (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv6 | (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv4:
+                        transportConfig = new TransportConfig(
+                                Transport.TRANSPORT_UDPv4_UDPv6,
+                                "UDPv4 & UDPv6",
+                                "dds.transport.UDPv4.builtin");
+                        break;
+                    case (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv6 | (int)TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM:
+                        transportConfig = new TransportConfig(
+                                Transport.TRANSPORT_UDPv6_SHMEM,
+                                "UDPv6 & SHMEM",
+                                "dds.transport.UDPv6.builtin");
+                        break;
+                    case (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv4
+                            | (int)TransportBuiltinKind.TRANSPORTBUILTIN_UDPv6
+                            | (int)TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM:
+                        transportConfig = new TransportConfig(
+                                Transport.TRANSPORT_UDPv4_UDPv6_SHMEM,
+                                "UDPv4 & UDPv6 & SHMEM",
+                                "dds.transport.UDPv4.builtin");
+                        break;
+                    default:
+                        /*
+                         * This would mean that the mask is either empty or a
+                         * different value that we do not support yet. So we keep
+                         * the value as "TRANSPORT_NOT_SET"
+                         */
+                        break;
+                }
+                transportConfig.takenFromQoS = true;
+            }
+
             switch (transportConfig.kind) {
 
-            case Transport.TRANSPORT_DEFAULT:
-                // We do not set any transport_builtin mask, either is UDPv4 or is something custom writen in the xml.
-                break;
+                case Transport.TRANSPORT_UDPv4:
+                    qos.transport_builtin.mask = (int) DDS.TransportBuiltinKind.TRANSPORTBUILTIN_UDPv4;
+                    break;
 
-            case Transport.TRANSPORT_UDPv4:
-                qos.transport_builtin.mask = (int) DDS.TransportBuiltinKind.TRANSPORTBUILTIN_UDPv4;
-                break;
+                case Transport.TRANSPORT_UDPv6:
+                    qos.transport_builtin.mask = (int) DDS.TransportBuiltinKind.TRANSPORTBUILTIN_UDPv6;
+                    break;
 
-            case Transport.TRANSPORT_UDPv6:
-                qos.transport_builtin.mask = (int) DDS.TransportBuiltinKind.TRANSPORTBUILTIN_UDPv6;
-                break;
+                case Transport.TRANSPORT_SHMEM:
+                    qos.transport_builtin.mask = (int) DDS.TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM;
+                    ConfigureShmemTransport(qos);
+                    break;
 
-            case Transport.TRANSPORT_SHMEM:
-                ConfigureShmemTransport(qos);
-                break;
+                case Transport.TRANSPORT_TCPv4:
+                    if (!ConfigureTcpTransport(qos)) {
+                        Console.Error.Write(classLoggingString + " Failed to configure TCP plugin");
+                        return false;
+                    }
+                    break;
 
-            case Transport.TRANSPORT_TCPv4:
-                if (!ConfigureTcpTransport(qos)) {
-                    Console.Error.Write(classLoggingString + " Failed to configure TCP plugin");
-                    return false;
-                }
-                break;
+                case Transport.TRANSPORT_TLSv4:
+                    if (!ConfigureTcpTransport(qos)) {
+                        Console.Error.Write(classLoggingString + " Failed to configure TCP - TLS plugin");
+                        return false;
+                    }
+                    break;
 
-            case Transport.TRANSPORT_TLSv4:
-                if (!ConfigureTcpTransport(qos)) {
-                    Console.Error.Write(classLoggingString + " Failed to configure TCP - TLS plugin");
-                    return false;
-                }
-                break;
+                case Transport.TRANSPORT_DTLSv4:
+                    ConfigureDtlsTransport(qos);
+                    break;
 
-            case Transport.TRANSPORT_DTLSv4:
-                ConfigureDtlsTransport(qos);
-                break;
+                case Transport.TRANSPORT_WANv4:
+                    if (!ConfigureWanTransport(qos)) {
+                        Console.Error.Write(classLoggingString + " Failed to configure WAN plugin");
+                        return false;
+                    }
+                    break;
 
-            case Transport.TRANSPORT_WANv4:
-                if (!ConfigureWanTransport(qos)) {
-                    Console.Error.Write(classLoggingString + " Failed to configure WAN plugin");
-                    return false;
-                }
-                break;
+                default:
 
-            default:
-                Console.Error.Write(classLoggingString + " Transport is not supported");
-                return false;
+                    /*
+                    * If shared memory is enabled we want to set up its
+                    * specific configuration
+                    */
+                    if ((qos.transport_builtin.mask
+                            & (int)DDS.TransportBuiltinKind.TRANSPORTBUILTIN_SHMEM)
+                                    != 0) {
+                        ConfigureShmemTransport(qos);
+                    }
 
+                    break;
             } // Switch
 
-            if (transportConfig.kind != Transport.TRANSPORT_SHMEM) {
+            if (transportConfig.kind != Transport.TRANSPORT_NOT_SET
+                    && transportConfig.kind != Transport.TRANSPORT_SHMEM) {
                 SetAllowInterfacesList(qos);
             } else {
                 // We are not using the allow interface string, so we clear it
@@ -936,6 +1096,17 @@ namespace PerformanceTest
             SetTransportVerbosity(qos);
 
             return true;
+        }
+
+        public string getMulticastAddr(string topicName)
+        {
+            string address;
+            if (multicastAddrMap.TryGetValue(topicName, out address)) {
+                return address;
+            }
+            else {
+                return null;
+            }
         }
     }
 

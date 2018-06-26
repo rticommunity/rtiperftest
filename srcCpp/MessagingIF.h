@@ -6,6 +6,8 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
+#include <string>
+
 class TestMessage
 {
   public:
@@ -40,7 +42,7 @@ class IMessagingCB
   public:
     bool  end_test;
 
-  public: 
+  public:
     virtual ~IMessagingCB() {}
     virtual void ProcessMessage(TestMessage &message) = 0;
 };
@@ -55,7 +57,7 @@ class IMessagingReader
     // only used for non-callback test
     virtual TestMessage *ReceiveMessage() = 0;
 
-    // only used for non-callback test to cleanup  
+    // only used for non-callback test to cleanup
     // the thread
     virtual void Shutdown() {}
 };
@@ -74,7 +76,7 @@ class IMessagingWriter
         // a binary semaphore TAKE operation
         return true;
     };
-    virtual bool waitForPingResponse(int timeout) {
+    virtual bool waitForPingResponse(int /*timeout*/) {
         // Implementation required only if
         // support for LatencyTest is desired.
         // The implementation may consist of just
@@ -91,7 +93,7 @@ class IMessagingWriter
     virtual unsigned int getPulledSampleCount() {
         return 0;
     };
-    virtual void wait_for_acknowledgments(long sec, unsigned long nsec) {
+    virtual void waitForAck(int /*sec*/, unsigned int /*nsec*/) {
     };
 #ifdef RTI_CUSTOM_TYPE
   private:
@@ -112,17 +114,30 @@ class IMessaging
 
     virtual void PrintCmdLineHelp() = 0;
 
+    virtual std::string PrintConfiguration() = 0;
+
     virtual void Shutdown() = 0;
 
-    // if the implementation supports batching and the test scenario is
-    // using batching, this function should return the size of the batch
-    // in bytes
-    virtual unsigned int GetBatchSize() = 0;
+    /*
+     * If the implementation supports batching and the test scenario is
+     * using batching, this function should return the size of the batch
+     * in bytes.
+     */
+    virtual int GetBatchSize() = 0;
+
+    /*
+     * Get an estimation of the minimum number of samples that need to be send
+     * before starting the test to ensure that most memory allocations will be
+     * done in the subscriber side (when sending a burst of that data).
+     */
+    virtual unsigned long GetInitializationSampleCount() = 0;
 
     virtual IMessagingWriter *CreateWriter(const char *topic_name) = 0;
 
-    // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
-    // to get data
+    /*
+     * Pass null for callback if using IMessagingReader.ReceiveMessage()
+     * to get data
+     */
     virtual IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback) = 0;
 };
 

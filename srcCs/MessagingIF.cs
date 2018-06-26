@@ -48,7 +48,7 @@ namespace PerformanceTest
         bool WaitForPingResponse();
         bool WaitForPingResponse(int timeout);
         long getPulledSampleCount();
-        void wait_for_acknowledgments(int sec, uint nsec);
+        void waitForAck(int sec, uint nsec);
     }
 
     public interface IMessaging : IDisposable
@@ -57,17 +57,30 @@ namespace PerformanceTest
 
         void PrintCmdLineHelp();
 
+        string PrintConfiguration();
+
         void Shutdown();
 
-        // if the implementation supports batching and the test scenario is
-        // using batching, this function should return the size of the batch
-        // in bytes
+        /*
+         * If the implementation supports batching and the test scenario is
+         * using batching, this function should return the size of the batch
+         * in bytes.
+         */
         int GetBatchSize();
+
+        /*
+         * Get an estimation of the minimum number of samples that need to be send
+         * before starting the test to ensure that most memory allocations will be
+         * done in the subscriber side (when sending a burst of that data).
+         */
+        int GetInitializationSampleCount();
 
         IMessagingWriter CreateWriter(string topic_name);
 
-        // Pass null for callback if using IMessagingReader.ReceiveMessage()
-        // to get data
+        /*
+         * Pass null for callback if using IMessagingReader.ReceiveMessage()
+         * to get data
+         */
         IMessagingReader CreateReader(string topic_name, IMessagingCB callback);
     }
 

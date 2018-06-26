@@ -19,6 +19,19 @@
 
 #define RTIPERFTEST_MAX_PEERS 1024
 
+/* Class for the DDS_DynamicDataMemberId of the type of RTI Perftest*/
+class DynamicDataMembersId
+{
+  private:
+    std::map<std::string, int> membersId;
+    DynamicDataMembersId();
+
+  public:
+    ~DynamicDataMembersId();
+    static DynamicDataMembersId &GetInstance();
+    int at(std::string key);
+};
+
 template <typename T>
 class RTIDDSImpl : public IMessaging
 {
@@ -26,7 +39,7 @@ class RTIDDSImpl : public IMessaging
 
     RTIDDSImpl();
 
-    ~RTIDDSImpl() 
+    ~RTIDDSImpl()
     {
         Shutdown();
     }
@@ -35,14 +48,18 @@ class RTIDDSImpl : public IMessaging
 
     bool ParseConfig(int argc, char *argv[]);
 
+    std::string PrintConfiguration();
+
     bool Initialize(int argc, char *argv[]);
 
     void Shutdown();
 
-    unsigned int GetBatchSize()
+    int GetBatchSize()
     {
         return _BatchSize;
     }
+
+    unsigned long GetInitializationSampleCount();
 
     IMessagingWriter *CreateWriter(const std::string &topic_name);
     // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
@@ -69,13 +86,13 @@ class RTIDDSImpl : public IMessaging
     bool         _AutoThrottle;
     bool         _IsReliable;
     bool         _IsMulticast;
-    unsigned int _BatchSize;
+    int _BatchSize;
     unsigned long _InstanceCount;
-    unsigned long _InstanceMaxCountReader;
+    long _InstanceMaxCountReader;
     int          _InstanceHashBuckets;
     int          _Durability;
     bool         _DirectCommunication;
-    unsigned int _KeepDurationUsec;
+    int          _KeepDurationUsec;
     bool         _UsePositiveAcks;
     bool         _LatencyTest;
     bool         _IsDebug;
@@ -124,9 +141,6 @@ class RTIDDSImpl : public IMessaging
     dds::core::Duration   _HeartbeatPeriod;
     dds::core::Duration   _FastHeartbeatPeriod;
 
-    const char          *THROUGHPUT_MULTICAST_ADDR;
-    const char          *LATENCY_MULTICAST_ADDR;
-    const char          *ANNOUNCEMENT_MULTICAST_ADDR;
     const char          *_ProfileLibraryName;
 
     dds::domain::DomainParticipant _participant;
@@ -137,7 +151,7 @@ class RTIDDSImpl : public IMessaging
 
   #ifdef RTI_SECURE_PERFTEST
     void configureSecurePlugin(std::map<std::string, std::string> &dpQosProperties);
-    void printSecureArgs();
+    std::string printSecureArgs();
     void validateSecureArgs();
   #endif
 

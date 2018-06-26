@@ -16,6 +16,8 @@ public interface IMessaging {
 
     public void printCmdLineHelp();
 
+    String printConfiguration();
+
     public void shutdown();
 
     /**
@@ -25,15 +27,22 @@ public interface IMessaging {
      */
     public int getBatchSize();
 
+    /**
+     * Get an estimation of the minimum number of samples that need to be send
+     * before starting the test to ensure that most memory allocations will be
+     * done in the subscriber side (when sending a burst of that data).
+     */
+    public int getInitializationSampleCount();
+
     public IMessagingWriter createWriter(String topicName);
-    
+
     /**
      * Pass null for callback if using IMessagingReader.ReceiveMessage()
-     * to get data.
+     * to get data
      */
     public IMessagingReader createReader(
             String topicName, IMessagingCB callback);
-    
+
     public void dispose();
 
 }

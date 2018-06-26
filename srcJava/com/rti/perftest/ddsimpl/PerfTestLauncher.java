@@ -37,12 +37,8 @@ public final class PerfTestLauncher {
                 PerfTest.LENGTH_CHANGED_SIZE);
 
         if(_useUnbounded > 0) {
-            System.err.println("Using unbounded Sequences, allocation_threshold " + Long.toString(_useUnbounded) + ".");
             if (_isKeyed) {
-                System.err.println("Using keyed Data.");
-
                 if (_isDynamicData) {
-                    System.err.println("Using Dynamic Data.");
                     PerfTest.runTest(
                             new RTIDDSImpl<DynamicData>(
                                     new DynamicDataTypeHelper(
@@ -58,10 +54,7 @@ public final class PerfTestLauncher {
                             argv);
                 }
             } else {
-                System.err.println("Using unkeyed Data.");
-
                 if (_isDynamicData) {
-                    System.err.println("Using Dynamic Data.");
                     PerfTest.runTest(
                             new RTIDDSImpl<DynamicData>(
                                     new DynamicDataTypeHelper(
@@ -79,10 +72,7 @@ public final class PerfTestLauncher {
             }
         } else {
             if (_isKeyed) {
-                System.err.println("Using keyed Data.");
-
                 if (_isDynamicData) {
-                    System.err.println("Using Dynamic Data.");
                     PerfTest.runTest(
                             new RTIDDSImpl<DynamicData>(
                                     new DynamicDataTypeHelper(
@@ -98,10 +88,7 @@ public final class PerfTestLauncher {
                             argv);
                 }
             } else {
-                System.err.println("Using unkeyed Data.");
-
                 if (_isDynamicData) {
-                    System.err.println("Using Dynamic Data.");
                     PerfTest.runTest(
                             new RTIDDSImpl<DynamicData>(
                                     new DynamicDataTypeHelper(

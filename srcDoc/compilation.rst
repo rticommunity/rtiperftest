@@ -85,6 +85,15 @@ The ``build.sh`` script accepts the following list of parameters:
 | --skip-cpp03-build   | Optional  | Avoid C++ New PSM code generation |
 |                      |           | and compilation.                  |
 +----------------------+-----------+-----------------------------------+
+| --java-build         | Optional  | Only ``Java ByteCode``            |
+|                      |           | generation and ``.jar`` creation. |
++----------------------+-----------+-----------------------------------+
+| --cpp-build          | Optional  | Only C++ code generation and      |
+|                      |           | compilation.                      |
++----------------------+-----------+-----------------------------------+
+| --cpp03-build        | Optional  | Only C++ New PSM code generation  |
+|                      |           | and compilation.                  |
++----------------------+-----------+-----------------------------------+
 | --dynamic            | Optional  | Compile using the RTI Connext DDS |
 |                      |           | dynamic libraries. Default:       |
 |                      |           | Static Libraries.                 |
@@ -111,6 +120,12 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | variable should be available from |
 |                      |           | your ``$PATH`` variable.          |
 +----------------------+-----------+-----------------------------------+
+| --perl               | Optional  | Path to ``PERL`` executable.      |
+|                      |           | If this parameter is not present, |
+|                      |           | not present, the path to PERL     |
+|                      |           | should be available from your     |
+|                      |           | ``$PATH`` variable.               |
++----------------------+-----------+-----------------------------------+
 | --java-home          | Optional  | Path to the Java ``JDK`` home     |
 |                      |           | folder. If this parameter is not  |
 |                      |           | present, ``javac``, ``jar`` and   |
@@ -123,6 +138,10 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | all the generated code and        |
 |                      |           | binaries from previous            |
 |                      |           | executions.                       |
++----------------------+-----------+-----------------------------------+
+| --build-doc          | Optional  | Generate the HTML and PDF         |
+|                      |           | documentation.                    |
+|                      |           | It is only avaialble on build.sh  |
 +----------------------+-----------+-----------------------------------+
 | --help -h            | Optional  | If this option is present, the    |
 |                      |           | ``build.sh`` script will display  |
@@ -149,6 +168,13 @@ examples:
    ::
 
        ./build.sh --platform x64Darwin15clang7.0 --skip-java-build
+
+-  Generation and compilation for a single given architecture
+   (``x64Darwin15clang7.0``) just for java.
+
+   ::
+
+       ./build.sh --platform x64Darwin15clang7.0 --java-build
 
 -  Generation and compilation for a given architecture
    (``x64Darwin15clang7.0``) for all supported languages and linking
@@ -262,6 +288,18 @@ The ``build.bat`` script accepts the following list of parameters:
 | --skip-cs-build      | Optional  | Avoid C# code generation and      |
 |                      |           | compilation.                      |
 +----------------------+-----------+-----------------------------------+
+| --java-build         | Optional  | Only ``Java ByteCode``            |
+|                      |           | generation and ``.jar`` creation. |
++----------------------+-----------+-----------------------------------+
+| --cpp-build          | Optional  | Only C++ code generation and      |
+|                      |           | compilation.                      |
++----------------------+-----------+-----------------------------------+
+| --cpp03-build        | Optional  | Only C++ New PSM code generation  |
+|                      |           | and compilation.                  |
++----------------------+-----------+-----------------------------------+
+| --cs-build           | Optional  | Only C# code generation and       |
+|                      |           | compilation.                      |
++----------------------+-----------+-----------------------------------+
 | --dynamic            | Optional  | Compile using the RTI Connext DDS |
 |                      |           | dynamic libraries. Default:       |
 |                      |           | Static Libraries.                 |
@@ -322,6 +360,12 @@ examples:
 
 -  Simple generation and compilation for a given architecture
    (``x64Win64VS2012``) just for C#.
+
+   ::
+
+       build.bat --platform x64Win64VS2012 --cs-build
+
+   Alternatively this can be achieved by using:
 
    ::
 

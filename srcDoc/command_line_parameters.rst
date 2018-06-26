@@ -132,19 +132,30 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** ``Unkeyed`` type.
 
--  ``-multicast <address>``
+-  ``-multicast``
 
    Use multicast to receive data. In addition, the Datawriter heartbeats
    will be sent using multicast instead of unicast.
 
-   <address> is optional. If unspecified. The following default addresses will
-   be used for each of the topics::
+   The following default multicast addresses will be used for each of the topics::
 
    | **latency:** ``239.255.1.2``
    | **throughput:** ``239.255.1.1``
    | **announcement:** ``239.255.1.100``
 
-   **Default:** do not use multicast.
+    See ``-multicastAddr <address>`` for how to change these IP addresses.
+
+   **Default:** Do not use multicast.
+
+-  ``-multicastAddr <address>``
+
+   Enable the use of multicast. In addition, the Datawriter heartbeats
+   will be sent using multicast instead of unicast.
+
+   The <address> will be used by the 3 topics **latency:**, **throughput:**
+   and **announcement:**.
+
+   **Default:** Do not use multicast.
 
 -  ``-noDirectCommunication``
 
@@ -189,8 +200,6 @@ Test Parameters for Publishing and Subscribing Applications
    | The default file contains these QoS profiles:
    | The ``ThroughputQos``, ``LatencyQos``, and ``AnnouncementQos``
      profiles are used by default.
-   | The ``NoAckThroughputQos`` and ``NoAckLatencyQos`` profiles are
-     used if you specify ``-noPositiveAcks``.
 
    **Note:** some QoS values are ‘hard-coded’ in the application,
    therefore setting them in the XML file has no effect; see the See
@@ -294,18 +303,24 @@ Test Parameters for Publishing and Subscribing Applications
 Transport Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+By default, *RTI Perftest* will try to use the transport settings provided via the
+`xml` configuration file. However, it is possible to override these values directly
+by using the `Transport` spececific command-line parameters.
+
 -  ``-transport <TRANSPORT NAME>``
 
    Set the transport to be used. The rest of the transports will be disabled.
-   
+
    | **Options:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS`` and ``WAN``.
-   | **Default:** ``Transport defined in the XML profile. (UDPv4 if no changes).``  
-   
+   | **Default:** ``Transport defined in the XML profile. (UDPv4 and SHMEM if no changes).``
+
 -  ``-nic <ipaddr>``
 
   Restrict RTI Connext DDS to sending output through this interface.
-  This can be the IP address of any available network interface on the
-  machine.
+  The value should be the IP address assigned to any of the available network
+  interfaces on the machine. On UNIX systems the name of the interface is also
+  valid. This command line parameter is mapped to the "allow_interfaces_list"
+  property in RTI Connext DDS.
 
   By default, RTI Connext DDS will attempt to contact all possible
   subscribing nodes on all available network interfaces. Even on a

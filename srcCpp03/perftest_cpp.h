@@ -12,9 +12,12 @@
 #include <string.h>
 #include <algorithm>
 #include <iostream>
+#include <limits.h>
 
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
+
+#include <rti/config/Version.hpp>
 
 #include "RTIDDSImpl.h"
 #include "MessagingIF.h"
@@ -23,7 +26,9 @@
 #ifdef RTI_WIN32
   #include <windows.h>
 #else
-  #include <sys/time.h>
+  #ifndef RTI_VXWORKS
+    #include <sys/time.h>
+  #endif
   #include <sched.h>
   #include <fcntl.h>
   #include <unistd.h>
@@ -40,6 +45,14 @@
 
 #include "MessagingIF.h"
 
+struct Perftest_ProductVersion_t
+{
+  char major;
+  char minor;
+  char release;
+  char revision;
+};
+
 class perftest_cpp
 {
   public:
@@ -48,7 +61,9 @@ class perftest_cpp
 
     int Run(int argc, char *argv[]);
     bool ParseConfig(int argc, char *argv[]);
-    
+    void PrintConfiguration();
+    unsigned int GetSamplesPerBatch();
+
   private:
     int RunPublisher();
     int RunSubscriber();
@@ -64,6 +79,10 @@ class perftest_cpp
       #endif
     }
 
+    static const rti::core::ProductVersion GetDDSVersion();
+    static const Perftest_ProductVersion_t GetPerftestVersion();
+    static void PrintVersion();
+
     static void ThreadYield() {
   #ifdef RTI_WIN32
         Sleep(0);
@@ -74,8 +93,6 @@ class perftest_cpp
 
   private:
     unsigned long _DataLen;
-    unsigned int  _BatchSize;
-    int  _SamplesPerBatch;
     unsigned long long _NumIter;
     bool _IsPub;
     bool _isScan;
@@ -99,6 +116,7 @@ class perftest_cpp
     unsigned int _executionTime;
     bool _displayWriterStats;
     bool _useCft;
+    static const Perftest_ProductVersion_t _version;
 
   private:
     static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);
@@ -123,14 +141,10 @@ class perftest_cpp
     static RTI_UINT64 _Clock_sec;
     static RTI_UINT64 _Clock_usec;
 
-    static const std::string _LatencyTopicName;
-    static const std::string _ThroughputTopicName;
-    static const std::string _AnnouncementTopicName;
-
   #ifdef RTI_WIN32
     static LARGE_INTEGER _ClockFrequency;
   #endif
-    
+
     // Number of bytes sent in messages besides user data
     static const int OVERHEAD_BYTES = 28;
 
@@ -140,6 +154,12 @@ class perftest_cpp
     static const int FINISHED_SIZE = 1235;
     // Flag used to data packet length is changing
     static const int LENGTH_CHANGED_SIZE = 1236;
+
+    /*
+     * Value used to compare against to check if the latency_min has
+     * been reset.
+     */
+    static const unsigned long LATENCY_RESET_VALUE = ULONG_MAX;
 
    public:
     static unsigned long long GetTimeUsec();

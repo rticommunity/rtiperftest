@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using DDS;
+using NDDS;
 
 namespace PerformanceTest
 {
@@ -54,6 +55,43 @@ namespace PerformanceTest
         }
 
         /*********************************************************
+         * GetInitializationSampleCount
+         */
+        public int GetInitializationSampleCount()
+        {
+            /*
+             * There is a minimum number of samples that we want to send no matter
+             * what the conditions are:
+             */
+            int initializeSampleCount = 50;
+
+            /*
+             * If we are using reliable, the maximum burst of that we can send is
+             * limited by max_send_window_size (or max samples, but we will assume
+             * this is not the case for this). In such case we should send
+             * max_send_window_size samples.
+             *
+             * If we are not using reliability this should not matter.
+             */
+            initializeSampleCount = Math.Max(
+                    initializeSampleCount,
+                    _SendQueueSize);
+
+            /*
+             * If we are using batching we need to take into account tha the Send
+             * Queue will be per-batch, therefore for the number of samples:
+             */
+            if (_BatchSize > 0)
+            {
+                initializeSampleCount = Math.Max(
+                        _SendQueueSize * (_BatchSize / (int)_DataLen),
+                        initializeSampleCount);
+            }
+
+            return initializeSampleCount;
+        }
+
+        /*********************************************************
          * PrintCmdLineHelp
          */
         public void PrintCmdLineHelp()
@@ -66,15 +104,9 @@ namespace PerformanceTest
             "\t                                default: perftest_qos_profiles.xml\n" +
             "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
             "\t                                default: PerftestQosLibrary\n" +
-            "\t-multicast <address>          - Use multicast to send data.\n" +
-            "\t                                Default not to use multicast\n" +
-            "\t                                <address> is optional, if unspecified:\n" +
-            "\t                                                latency 239.255.1.2,\n" +
-            "\t                                                announcement 239.255.1.100,\n" +
-            "\t                                                throughput 239.255.1.1\n" +
             "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
-            "\t-batchSize <bytes>            - Size in bytes of batched message, default 0\n" +
-            "\t                                (no batching)\n" +
+            "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
+            "\t                                (Disabled for LatencyTest mode or if dataLen > 4kB)\n" +
             "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
             "\t                                protocol, default use positive acks\n" +
             "\t-keepDurationUsec <usec>      - Minimum time (us) to keep samples when\n" +
@@ -137,11 +169,100 @@ namespace PerformanceTest
         }
 
         /*********************************************************
+         * PrintConfiguration
+         */
+        public string PrintConfiguration()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            // Domain ID
+            sb.Append("\tDomain: ");
+            sb.Append(_DomainID);
+            sb.Append("\n");
+
+            // Dynamic Data
+            sb.Append("\tDynamic Data: ");
+            if (_isDynamicData)
+            {
+                sb.Append("Yes\n");
+            }
+            else
+            {
+                sb.Append("No\n");
+            }
+
+            // Dynamic Data
+            if (_isPublisher)
+            {
+                sb.Append("\tAsynchronous Publishing: ");
+                if (_isLargeData || _IsAsynchronous)
+                {
+                    sb.Append("Yes\n");
+                    sb.Append("\tFlow Controller: ");
+                    sb.Append(_FlowControllerCustom);
+                    sb.Append("\n");
+                }
+                else
+                {
+                    sb.Append("No\n");
+                }
+            }
+
+            // Turbo Mode / AutoThrottle
+            if (_TurboMode)
+            {
+                sb.Append("\tTurbo Mode: Enabled\n");
+            }
+            if (_AutoThrottle)
+            {
+                sb.Append("\tAutoThrottle: Enabled\n");
+            }
+
+            // XML File
+            sb.Append("\tXML File: ");
+            sb.Append(_ProfileFile);
+            sb.Append("\n");
+
+
+            sb.Append("\n");
+            sb.Append(_transport.PrintTransportConfigurationSummary());
+
+
+            // set initial peers and not use multicast
+            if (_peer_host_count > 0)
+            {
+                sb.Append("Initial peers: ");
+                for (int i = 0; i < _peer_host_count; ++i)
+                {
+                    sb.Append(_peer_host[i]);
+                    if (i == _peer_host_count - 1)
+                    {
+                        sb.Append("\n");
+                    }
+                    else
+                    {
+                        sb.Append(", ");
+                    }
+                }
+            }
+
+            if (_secureUseSecure)
+            {
+                sb.Append("\n");
+                sb.Append(PrintSecureArgs());
+            }
+
+            return sb.ToString();
+        }
+
+        /*********************************************************
          * ParseConfig
          */
         bool ParseConfig(int argc, string[] argv)
         {
-            ulong _scan_max_size = 0;
+            ulong minScanSize = (ulong) MAX_PERFTEST_SAMPLE_SIZE.VALUE;
+            bool isBatchSizeProvided = false;
+
             for (int i = 0; i < argc; ++i)
             {
                 if ("-pub".StartsWith(argv[i], true, null))
@@ -152,23 +273,37 @@ namespace PerformanceTest
                 {
                     _isPublisher = false;
                 }
+                else if ("-dynamicData".StartsWith(argv[i], true, null))
+                {
+                    _isDynamicData = true;
+                }
                 else if ("-scan".StartsWith(argv[i], true, null))
                 {
                     _isScan = true;
+                    /*
+                    * Check if we have custom scan values. In such case we are just
+                    * interested in the minimum one.
+                    */
                     if ((i != (argc - 1)) && !argv[1+i].StartsWith("-")) {
                         ++i;
-                        ulong aux_scan;
-                        String[] list_scan = argv[i].Split(':');
-                        for( int j = 0; j < list_scan.Length; j++) {
-                            if (!UInt64.TryParse(list_scan[j], out aux_scan)) {
+                        ulong auxScan = 0;
+                        String[] listScan = argv[i].Split(':');
+                        for (int j = 0; j < listScan.Length; j++) {
+                            if (!UInt64.TryParse(listScan[j], out auxScan)) {
                                 Console.Error.Write(
                                         "-scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'\n");
                                 return false;
                             }
-                            if (aux_scan >= _scan_max_size) {
-                                _scan_max_size = aux_scan;
+                            if (auxScan < minScanSize) {
+                                minScanSize = auxScan;
                             }
                         }
+                    /*
+                     * If we do not specify any custom value for the -scan, we would
+                     * set minScanSize to the minimum size in the default set for -scan.
+                     */
+                    } else {
+                        minScanSize = 32;
                     }
                 } else if ("-dataLen".StartsWith(argv[i], true, null))
                 {
@@ -307,21 +442,6 @@ namespace PerformanceTest
                     }
                     _ProfileLibraryName = argv[i];
                 }
-                else if ("-multicast".StartsWith(argv[i], true, null))
-                {
-                    _IsMulticast = true;
-                    if ((i != (argc - 1)) && !argv[1+i].StartsWith("-"))
-                    {
-                        i++;
-                        THROUGHPUT_MULTICAST_ADDR = argv[i];
-                        LATENCY_MULTICAST_ADDR = argv[i];
-                        ANNOUNCEMENT_MULTICAST_ADDR = argv[i];
-                    }
-                }
-                else if ("-nomulticast".StartsWith(argv[i], true, null))
-                {
-                    _IsMulticast = false;
-                }
                 else if ("-bestEffort".StartsWith(argv[i], true, null))
                 {
                     _IsReliable = false;
@@ -406,6 +526,7 @@ namespace PerformanceTest
                                 "]\n");
                         return false;
                     }
+                    isBatchSizeProvided = true;
                 }
                 else if ("-keepDurationUsec".StartsWith(argv[i], true, null))
                 {
@@ -414,14 +535,9 @@ namespace PerformanceTest
                         Console.Error.Write("Missing <usec> after -keepDurationUsec\n");
                         return false;
                     }
-                    if (!UInt32.TryParse(argv[i], out _KeepDurationUsec))
+                    if (!Int64.TryParse(argv[i], out _KeepDurationUsec))
                     {
                         Console.Error.Write("Bad usec for keep duration\n");
-                        return false;
-                    }
-                    if (_KeepDurationUsec < 0)
-                    {
-                        Console.Error.Write(" keep duration usec cannot be negative or null\n");
                         return false;
                     }
                 }
@@ -503,7 +619,6 @@ namespace PerformanceTest
                 }
                 else if ("-enableAutoThrottle".StartsWith(argv[i], true, null))
                 {
-                    Console.Error.Write("Auto Throttling enabled. Automatically adjusting the DataWriter\'s writing rate\n");
                     _AutoThrottle = true;
                 }
                 else if ("-enableTurboMode".StartsWith(argv[i], true, null))
@@ -726,48 +841,79 @@ namespace PerformanceTest
                 }
             }
 
-            if (_IsAsynchronous && _BatchSize > 0) {
-                Console.Error.WriteLine("Batching cannnot be used with asynchronous writing.");
-                return false;
-            }
-
+            /* If we are using scan, we get the minimum and set it in Datalen */
             if (_isScan) {
-                _DataLen = _scan_max_size;
-                // Check if large data or small data
-                if (_scan_max_size > (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
-                    if (_useUnbounded == 0) {
-                        _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
-                    }
-                    _isLargeData = true;
-                } else if (_scan_max_size <= (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
-                    _useUnbounded = 0;
-                    _isLargeData = false;
-                } else {
-                    return false;
-                }
-                if (_isLargeData && _BatchSize > 0) {
-                    Console.Error.WriteLine("Batching cannnot be used with asynchronous writing.");
-                    return false;
-                }
-            } else { // If not Scan, compare sizes of Batching and dataLen
-                /*
-                 * We don't want to use batching if the sample is the same size as the batch
-                 * nor if the sample is bigger (in this case we avoid the checking in the
-                 * middleware).
-                 */
-                if (_BatchSize > 0 && _BatchSize <= (int)_DataLen)
-                {
-                    Console.Error.WriteLine("Batching dissabled: BatchSize (" + _BatchSize
-                            + ") is equal or smaller than the sample size (" + _DataLen
-                            + ").");
-                    _BatchSize = 0;
-                }
+                _DataLen = minScanSize;
             }
 
-            if ((int)_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE)
-            {
-                Console.Error.WriteLine("Large data settings enabled.");
+            /* Check if we need to enable Large Data. This works also for -scan */
+            if (_DataLen > (ulong) Math.Min(
+                        MAX_SYNCHRONOUS_SIZE.VALUE,
+                        MAX_BOUNDED_SEQ_SIZE.VALUE)) {
                 _isLargeData = true;
+                if (_useUnbounded == 0) {
+                    _useUnbounded = (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE;
+                }
+            } else { /* No Large Data */
+                _useUnbounded = 0;
+                _isLargeData = false;
+            }
+
+            /* If we are using batching */
+            if (_BatchSize > 0) {
+
+                /* We will not use batching for a latency test */
+                if (_LatencyTest) {
+                    if (isBatchSizeProvided) {
+                        Console.Error.WriteLine(
+                                "Batching cannot be used in a Latency test.");
+                        return false;
+                    } else {
+                        _BatchSize = 0; //Disable Batching
+                    }
+                }
+
+                /* Check if using asynchronous */
+                if (_IsAsynchronous) {
+                    if (isBatchSizeProvided) {
+                        Console.Error.WriteLine(
+                                "Batching cannot be used with asynchronous writing.\n");
+                        return false;
+                    } else {
+                        _BatchSize = 0; //Disable Batching
+                    }
+                }
+
+                /*
+                 * Large Data + batching cannot be set. But batching is enabled by default,
+                 * so in that case, we just disabled batching, else, the customer set it up,
+                 * so we explitly fail
+                 */
+                if (_isLargeData) {
+                    if (isBatchSizeProvided) {
+                        Console.Error.WriteLine(
+                                "Batching cannot be used with Large Data.");
+                        return false;
+                    } else {
+                        _BatchSize = -2;
+                    }
+                } else if ((ulong) _BatchSize < _DataLen * 2) {
+                    /*
+                     * We don't want to use batching if the batch size is not large
+                     * enough to contain at least two samples (in this case we avoid the
+                     * checking at the middleware level).
+                     */
+                    if (isBatchSizeProvided || _isScan) {
+                        /*
+                        * Batchsize disabled. A message will be print if _batchsize < 0 in
+                        * perftest_cpp::PrintConfiguration()
+                        */
+                        _BatchSize = -1;
+                    }
+                    else {
+                        _BatchSize = 0;
+                    }
+                }
             }
 
             if (_TurboMode) {
@@ -855,6 +1001,7 @@ namespace PerformanceTest
             protected InstanceHandle_t[] _instance_handles;
             protected Semaphore _pongSemaphore = null;
             protected int _instancesToBeWritten = -1;
+            protected bool _isReliable = false;
 
             public RTIPublisher(
                     DataWriter writer,
@@ -884,6 +1031,11 @@ namespace PerformanceTest
                 _DataType.fillKey(MAX_CFT_VALUE.VALUE);
                 _instance_handles[_num_instances] = writer.register_instance_untyped(
                         _DataType.getData());
+
+                DDS.DataWriterQos dw_qos = new DDS.DataWriterQos();
+                _writer.get_qos(dw_qos);
+                _isReliable = (dw_qos.reliability.kind 
+                                == DDS.ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS);
             }
 
             public void Flush()
@@ -996,14 +1148,16 @@ namespace PerformanceTest
                 return status.pulled_sample_count;
             }
 
-            public void wait_for_acknowledgments(int sec, uint nsec) {
-                try {
-                    Duration_t duration = new Duration_t();
-                    duration.sec = sec;
-                    duration.nanosec = nsec;
-                    _writer.wait_for_acknowledgments(duration);
-                } catch (DDS.Retcode_Timeout) { // Expected exception
-                    // nothing to do
+            public void waitForAck(int sec, uint nsec) {
+                if (_isReliable) {
+                    try {
+                        Duration_t duration = new Duration_t();
+                        duration.sec = sec;
+                        duration.nanosec = nsec;
+                        _writer.wait_for_acknowledgments(duration);
+                    } catch (DDS.Retcode_Timeout) {} // Expected exception
+                } else {
+                    System.Threading.Thread.Sleep((int)nsec / 1000000);
                 }
             }
         }
@@ -1343,11 +1497,7 @@ namespace PerformanceTest
             }
 
             // set initial peers and not use multicast
-            if ( _peer_host_count > 0 ) {
-                Console.Error.WriteLine("Initial peers:");
-                for ( int i =0; i< _peer_host_count; ++i) {
-                    Console.Error.WriteLine("\t" + _peer_host[i]);
-                }
+            if (_peer_host_count > 0) {
                 qos.discovery.initial_peers.ensure_length(_peer_host_count, _peer_host_count);
                 qos.discovery.initial_peers.from_array(_peer_host);
                 qos.discovery.multicast_receive_addresses = new DDS.StringSeq();
@@ -1357,7 +1507,6 @@ namespace PerformanceTest
             {
                 return false;
             }
-            _transport.PrintTransportConfigurationSummary();
 
             if (_AutoThrottle) {
             	try
@@ -1382,8 +1531,7 @@ namespace PerformanceTest
                  DDS.StatusKind.OFFERED_INCOMPATIBLE_QOS_STATUS |
                  DDS.StatusKind.REQUESTED_INCOMPATIBLE_QOS_STATUS));
 
-            if (_participant == null)
-            {
+            if (_participant == null) {
                 Console.Error.Write("Problem creating participant.\n");
                 return false;
             }
@@ -1462,7 +1610,7 @@ namespace PerformanceTest
         /*********************************************************
          * printSecureArgs
          */
-        private void PrintSecureArgs()
+        private string PrintSecureArgs()
         {
 
             string secure_arguments_string =
@@ -1535,7 +1683,7 @@ namespace PerformanceTest
             {
                 secure_arguments_string += "\t debug level: " + _secureDebugLevel + "\n";
             }
-            Console.Error.Write(secure_arguments_string);
+            return secure_arguments_string;
         }
 
         /*********************************************************
@@ -1544,9 +1692,6 @@ namespace PerformanceTest
         private void ConfigureSecurePlugin(DDS.DomainParticipantQos dpQos)
         {
             // configure use of security plugins, based on provided arguments
-
-            // print arguments
-            PrintSecureArgs();
 
             // load plugin
             DDS.PropertyQosPolicyHelper.add_property(
@@ -1580,39 +1725,37 @@ namespace PerformanceTest
             if (_secureGovernanceFile == null)
             {
                 // choose a pre-built governance file
-                StringBuilder file = new StringBuilder("resource/secure/signed_PerftestGovernance_");
+                _secureGovernanceFile = "resource/secure/signed_PerftestGovernance_";
 
                 if (_secureIsDiscoveryEncrypted)
                 {
-                    file.Append("Discovery");
+                    _secureGovernanceFile += "Discovery";
                 }
 
                 if (_secureIsSigned)
                 {
-                    file.Append("Sign");
+                    _secureGovernanceFile += "Sign";
                 }
 
                 if (_secureIsDataEncrypted && _secureIsSMEncrypted)
                 {
-                    file.Append("EncryptBoth");
+                    _secureGovernanceFile += "EncryptBoth";
                 }
                 else if (_secureIsDataEncrypted)
                 {
-                    file.Append("EncryptData");
+                    _secureGovernanceFile += "EncryptData";
                 }
                 else if (_secureIsSMEncrypted)
                 {
-                    file.Append("EncryptSubmessage");
+                    _secureGovernanceFile += "EncryptSubmessage";
                 }
 
-                file.Append(".xml");
-
-                Console.Error.WriteLine("Secure: using pre-built governance file:" +
-                        file.ToString());
+                _secureGovernanceFile += ".xml";
+                
                 DDS.PropertyQosPolicyHelper.add_property(
                         dpQos.property_qos,
                         "com.rti.serv.secure.access_control.governance_file",
-                        file.ToString(),
+                        _secureGovernanceFile,
                         false);
             }
             else
@@ -1689,38 +1832,24 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (topic_name == perftest_cs._ThroughputTopicName)
+            if (topic_name == THROUGHPUT_TOPIC_NAME.VALUE)
             {
-                if (_UsePositiveAcks)
-                {
-                    qos_profile = "ThroughputQos";
-                }
-                else
-                {
-                    qos_profile = "NoAckThroughputQos";
-                }
+                qos_profile = "ThroughputQos";
             }
-            else if (topic_name == perftest_cs._LatencyTopicName)
+            else if (topic_name == LATENCY_TOPIC_NAME.VALUE)
             {
-                if (_UsePositiveAcks)
-                {
-                    qos_profile = "LatencyQos";
-                }
-                else
-                {
-                    qos_profile = "NoAckLatencyQos";
-                }
+                qos_profile = "LatencyQos";
             }
-            else if (topic_name == perftest_cs._AnnouncementTopicName)
+            else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.VALUE)
             {
                 qos_profile = "AnnouncementQos";
             }
             else
             {
                 Console.Error.WriteLine("topic name must either be "
-                    + perftest_cs._ThroughputTopicName
-                    + " or " + perftest_cs._LatencyTopicName
-                    + " or " + perftest_cs._AnnouncementTopicName);
+                        + THROUGHPUT_TOPIC_NAME.VALUE
+                        + " or " + LATENCY_TOPIC_NAME.VALUE
+                        + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
                 return null;
             }
 
@@ -1736,25 +1865,27 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (_UsePositiveAcks)
-            {
-                dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.sec = (int)_KeepDurationUsec/1000000;
-                dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration.nanosec = _KeepDurationUsec%1000000;
+            if (!_UsePositiveAcks 
+                    && (qos_profile == "ThroughputQos"
+                        || qos_profile == "LatencyQos")) {
+                dw_qos.protocol.disable_positive_acks = true;
+                if (_KeepDurationUsec != -1) {
+                    dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
+                        DDS.Duration_t.from_micros((ulong)_KeepDurationUsec);
+                }
             }
 
             if (_isLargeData || _IsAsynchronous)
             {
-                Console.Error.Write("Using asynchronous write for " + topic_name + ".\n");
                 dw_qos.publish_mode.kind = DDS.PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
                 if (!_FlowControllerCustom.StartsWith("default", true, null))
                 {
                     dw_qos.publish_mode.flow_controller_name = "dds.flow_controller.token_bucket." + _FlowControllerCustom;
                 }
-                Console.Error.Write("Using flow controller " + _FlowControllerCustom + ".\n");
             }
 
             // only force reliability on throughput/latency topics
-            if (topic_name != perftest_cs._AnnouncementTopicName)
+            if (topic_name != ANNOUNCEMENT_TOPIC_NAME.VALUE)
             {
                 if (_IsReliable)
                 {
@@ -1769,10 +1900,10 @@ namespace PerformanceTest
             }
 
             // These QOS's are only set for the Throughput datawriter
-            if ((qos_profile == "ThroughputQos") || (qos_profile == "NoAckThroughputQos"))
+            if (qos_profile == "ThroughputQos")
             {
 
-                if (_IsMulticast) {
+                if (_transport.useMulticast) {
                     dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat = true;
                 }
 
@@ -1861,11 +1992,12 @@ namespace PerformanceTest
             }
 
 
-            if (("LatencyQos" == qos_profile ||
-                 "NoAckLatencyQos"  == qos_profile) &&
-                 !_DirectCommunication &&
-                (_Durability == 2 ||
-                 _Durability == 3)){
+            if ("LatencyQos" == qos_profile
+                    && !_DirectCommunication
+                    && ((DDS.DurabilityQosPolicyKind)_Durability 
+                            == DDS.DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS
+                        || (DDS.DurabilityQosPolicyKind)_Durability 
+                            == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS)) {
 
                 dw_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
                 dw_qos.durability.direct_communication = _DirectCommunication;
@@ -2010,38 +2142,24 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (topic_name == perftest_cs._ThroughputTopicName)
+            if (topic_name == THROUGHPUT_TOPIC_NAME.VALUE)
             {
-                if (_UsePositiveAcks)
-                {
-                    qos_profile = "ThroughputQos";
-                }
-                else
-                {
-                    qos_profile = "NoAckThroughputQos";
-                }
+                qos_profile = "ThroughputQos";
             }
-            else if (topic_name == perftest_cs._LatencyTopicName)
+            else if (topic_name == LATENCY_TOPIC_NAME.VALUE)
             {
-                if (_UsePositiveAcks)
-                {
-                    qos_profile = "LatencyQos";
-                }
-                else
-                {
-                    qos_profile = "NoAckLatencyQos";
-                }
+                qos_profile = "LatencyQos";
             }
-            else if (topic_name == perftest_cs._AnnouncementTopicName)
+            else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.VALUE)
             {
                 qos_profile = "AnnouncementQos";
             }
             else
             {
                 Console.Error.WriteLine("topic name must either be "
-                    + perftest_cs._ThroughputTopicName
-                    + " or " + perftest_cs._LatencyTopicName
-                    + " or " + perftest_cs._AnnouncementTopicName);
+                        + THROUGHPUT_TOPIC_NAME.VALUE
+                        + " or " + LATENCY_TOPIC_NAME.VALUE
+                        + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
                 return null;
             }
 
@@ -2058,7 +2176,7 @@ namespace PerformanceTest
             }
 
             // only force reliability on throughput/latency topics
-            if (topic_name != perftest_cs._AnnouncementTopicName)
+            if (topic_name != ANNOUNCEMENT_TOPIC_NAME.VALUE)
             {
                 if (_IsReliable)
                 {
@@ -2070,17 +2188,19 @@ namespace PerformanceTest
                 }
             }
 
-            if ("ThroughputQos" == qos_profile ||
-                "NoAckThroughputQos" == qos_profile) {
-                dr_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
-                dr_qos.durability.direct_communication = _DirectCommunication;
+            if (!_UsePositiveAcks 
+                    && (qos_profile == "ThroughputQos"
+                            || qos_profile == "LatencyQos")) {
+                dr_qos.protocol.disable_positive_acks = true;
             }
 
-            if (("LatencyQos" == qos_profile ||
-                "NoAckLatencyQos" == qos_profile) &&
-                !_DirectCommunication &&
-                (_Durability == 2 ||
-                 _Durability == 3)){
+            if ("ThroughputQos" == qos_profile 
+                    || ("LatencyQos" == qos_profile
+                        && !_DirectCommunication
+                        && ((DDS.DurabilityQosPolicyKind)_Durability 
+                                == DDS.DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS
+                            || (DDS.DurabilityQosPolicyKind)_Durability 
+                                == DDS.DurabilityQosPolicyKind.PERSISTENT_DURABILITY_QOS))) {
 
                 dr_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
                 dr_qos.durability.direct_communication = _DirectCommunication;
@@ -2100,21 +2220,18 @@ namespace PerformanceTest
                 }
             }
 
-            if (_transport.AllowsMulticast() && _IsMulticast)
+            if (_transport.useMulticast && _transport.AllowsMulticast())
             {
                 string multicast_addr;
 
-                if (topic_name == perftest_cs._ThroughputTopicName)
+                multicast_addr = _transport.getMulticastAddr(topic_name);
+                if (multicast_addr == null)
                 {
-                    multicast_addr = THROUGHPUT_MULTICAST_ADDR;
-                }
-                else if (topic_name == perftest_cs._LatencyTopicName)
-                {
-                    multicast_addr = LATENCY_MULTICAST_ADDR;
-                }
-                else
-                {
-                    multicast_addr = ANNOUNCEMENT_MULTICAST_ADDR;
+                    Console.Error.WriteLine("topic name must either be "
+                            + THROUGHPUT_TOPIC_NAME.VALUE
+                            + " or " + LATENCY_TOPIC_NAME.VALUE
+                            + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
+                    return null;
                 }
 
                 DDS.TransportMulticastSettings_t multicast_setting = new DDS.TransportMulticastSettings_t();
@@ -2142,7 +2259,8 @@ namespace PerformanceTest
                         _useUnbounded.ToString(), false);
             }
 
-            if ( _useCft && topic_name == perftest_cs._ThroughputTopicName){
+            if ( _useCft && topic_name == THROUGHPUT_TOPIC_NAME.VALUE)
+            {
                 topic_desc = createCft(topic_name, topic);
                 if (topic_desc == null) {
                     Console.Error.WriteLine("Create_contentfilteredtopic error");
@@ -2167,31 +2285,32 @@ namespace PerformanceTest
             return new RTISubscriber<T>(reader, _DataTypeHelper.clone());
         }
 
+        static int RTIPERFTEST_MAX_PEERS = 1024;
+
         private int    _SendQueueSize = 50;
         private ulong    _DataLen = 100;
         private ulong     _useUnbounded = 0;
         private int    _DomainID = 1;
         private string _ProfileFile = "perftest_qos_profiles.xml";
         private bool   _IsReliable = true;
-        private bool   _IsMulticast = false;
         private bool   _AutoThrottle = false;
         private bool   _TurboMode = false;
-        private int    _BatchSize = 0;
+        private int    _BatchSize = (int)DEFAULT_THROUGHPUT_BATCH_SIZE.VALUE; // Default 8 kB
         private int    _InstanceCount = 1;
         private int    _InstanceMaxCountReader = -1;
         private int     _InstanceHashBuckets = -1;
         private int     _Durability = 0;
         private bool    _DirectCommunication = true;
-        private uint   _KeepDurationUsec = 1000;
+        private long    _KeepDurationUsec = -1;
         private bool   _UsePositiveAcks = true;
         private bool    _LatencyTest = false;
         private bool   _isLargeData = false;
         private bool   _isScan = false;
         private bool   _isPublisher = false;
         private bool _IsAsynchronous = false;
+        private bool _isDynamicData = false;
         private string _FlowControllerCustom = "default";
         string[] valid_flow_controller = { "default", "1Gbps", "10Gbps" };
-        static int             RTIPERFTEST_MAX_PEERS = 1024;
         private int     _peer_host_count = 0;
         private string[] _peer_host = new string[RTIPERFTEST_MAX_PEERS];
         private bool    _useCft = false;
@@ -2226,9 +2345,6 @@ namespace PerformanceTest
         private static int   _WaitsetEventCount = 5;
         private static uint  _WaitsetDelayUsec = 100;
 
-        private static string THROUGHPUT_MULTICAST_ADDR = "239.255.1.1";
-        private static string LATENCY_MULTICAST_ADDR = "239.255.1.2";
-        private static string ANNOUNCEMENT_MULTICAST_ADDR = "239.255.1.100";
         private static string SECUREPRIVATEKEYFILEPUB = "./resource/secure/pubkey.pem";
         private static string SECUREPRIVATEKEYFILESUB = "./resource/secure/subkey.pem";
         private static string SECURECERTIFICATEFILEPUB = "./resource/secure/pub.pem";
