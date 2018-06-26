@@ -57,6 +57,84 @@ Build HTML and PDF documentation (#94)
 RTI Perftest build script for linux now offers the option to generate the HTML
 and PDF documentation from the rst files in srcDoc.
 
+Raw Transport Support (#77)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* now support a raw transport communication. This allow it to
+make tests skipping DDS protocol to calculate overhead and time differences.
+
+To run a test with this feature, ``-rawTransport`` command line option has been
+added.
+
+RawTransport feature support two kind of transport protocols, UDPv4 and
+Shared Memory
+
+The nexts kind of test are aviable:
+
+-  `Multicast` (Only for UDPv4)
+-  `One-to-many communication` (Pub -> Sub)
+-  `Latency Test` / `Throughput Test`
+-  `Scan`
+
+Many of the command line parameter that exist for DDS are not supported if
+``-rawTransport`` is use:
+
+-  ``-unbounded``
+-  ``-sendQueueSize``
+-  ``-heartbeatPeriod``
+-  ``-fastHeartbeatPeriod``
+-  ``-qosFile``
+-  ``-qosLibrary``
+-  ``-durability``
+-  ``-dynamicData``
+-  ``-noDirectCommunication``
+-  ``-instances``
+-  ``-instanceHashBuckets``
+-  ``-keepDurationUsec``
+-  ``-noPositiveAcks``
+-  ``-waitsetDelayUsec``
+-  ``-waitsetEventCount``
+-  ``-enableAutoThrottle``
+-  ``-enableTurboMode``
+-  ``-noXmlQos``
+-  ``-asynchronous``
+-  ``-flowController``
+-  ``-cft``
+-  ``-writeInstance``
+-  ``-enableTCP``
+-  ``-enableUDPv6``
+-  ``-allowInterfaces``
+-  ``-transportServerBindPort``
+-  ``-transportWan``
+-  ``-transportCertAuthority``
+-  ``-transportCertFile``
+-  ``-transportPrivateKey``
+-  ``-transportWanServerAddress``
+-  ``-transportWanServerPort``
+-  ``-transportWanId``
+-  ``-transportSecureWan``
+
+Other commands like ``-peer`` has been change his behavior when it's been use
+with ``-rawTransport``.
+
+    Sintax: -peer <x.x.x.x>|<x.x.x.x:id>
+
+    If no id is provided, it's set as zero.
+
+    Any number of peer can be set until 1024 that correspond to RTIPERFTEST_MAX_PEERS.
+
+::
+
+    perftest_cpp -pub -rawTransport -peer 127.0.0.1:5 -peer 127.0.0.1:6
+
+
+A new commands line parameters `-noBlockingSockets` has been added:
+
+-  It only aviable with RawTransport with UDPv4 as protocol.
+-  Change the blocking behavior of send sockets to `never block`.
+-  Potencialy it can reduce the lost packets.
+-  CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT PERFORMANCE PROBLEMS.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
