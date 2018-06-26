@@ -572,7 +572,6 @@ class RTIRawTransportPublisher : public IMessagingWriter{
                         _worker);
             } else {
                 fprintf(stderr, "Error, workerFactory destroy before worker\n");
-                return false;
             }
         }
     }
@@ -852,7 +851,6 @@ public:
                         _worker);
             } else {
                 fprintf(stderr, "Error, workerFactory destroy before worker\n");
-                return false;
             }
         }
     }
