@@ -2,7 +2,8 @@
  * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
-
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
 #include "RTIDDSImpl.h"
 #include "perftest_cpp.h"
 #include "CpuMonitor.h"
@@ -858,6 +859,12 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 void perftest_cpp::PrintConfiguration()
 {
     std::ostringstream stringStream;
+
+  #ifdef RTI_CUSTOM_TYPE
+    stringStream << "\nUsing CustomType with the type <"
+                 << TOSTRING(RTI_CUSTOM_TYPE)
+                 << ">\n";
+  #endif
 
     // Throughput/Latency mode
     if (_IsPub) {

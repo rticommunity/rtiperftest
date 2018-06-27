@@ -637,8 +637,8 @@ The custom type that will be used for this example is the following:
     struct Test {
         long test_long;
         TestEnum test_enum;
-        SeqTest test_seq;
         StringTest test_string;
+        SeqTest test_seq;
     };//@Extensibility FINAL_EXTENSIBILITY
 
 These are the steps needed to use the above type in *RTI Perftest* for the
@@ -797,8 +797,19 @@ initialize and set the Custom Type structures.
         DDS_DynamicData custom_type_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
         DDS_DynamicData test_seq_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
 
-        retcode = data.set_long(
-                "custom_type.test_long",
+        retcode = data.bind_complex_member(
+                custom_type_data,
+                "custom_type",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr,
+                    "bind_complex_member(custom_type) failed: %d.\n",
+                    retcode);
+            success = false;
+        }
+
+        retcode = custom_type_data.set_long(
+                "test_long",
                 DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
                 key);
         if (retcode != DDS_RETCODE_OK) {
@@ -806,20 +817,8 @@ initialize and set the Custom Type structures.
             success = false;
         }
 
-        if (snprintf(test_string, SIZE_TEST_STRING, "Hello World! %lu", key) < 0) {
-            success = false;
-        }
-        retcode = data.set_string(
-                "custom_type.test_string.test_string",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                test_string);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_string(test_string) failed: %d.\n", retcode);
-            success = false;
-        }
-
-        retcode = data.set_long(
-                "custom_type.test_enum",
+        retcode = custom_type_data.set_long(
+                "test_enum",
                 DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
                 ENUM1);
         if (retcode != DDS_RETCODE_OK) {
@@ -827,20 +826,24 @@ initialize and set the Custom Type structures.
             success = false;
         }
 
-        retcode = data.bind_complex_member(custom_type_data, "custom_type",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(
-                    stderr,
-                    "bind_complex_member(custom_type) failed: %d.\n",
-                    retcode);
+        if (snprintf(test_string, SIZE_TEST_STRING, "Hello World! %lu", key) < 0) {
             success = false;
         }
-        retcode = custom_type_data.bind_complex_member(test_seq_data, "test_seq",
+        retcode = custom_type_data.set_string(
+                "test_string.test_string",
+                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                test_string);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_string(test_string) failed: %d.\n", retcode);
+            success = false;
+        }
+
+        retcode = custom_type_data.bind_complex_member(
+                test_seq_data,
+                "test_seq",
                 DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
         if (retcode != DDS_RETCODE_OK) {
-            fprintf(
-                    stderr,
+            fprintf(stderr,
                     "bind_complex_member(test_seq_data) failed: %d.\n",
                     retcode);
             success = false;
@@ -855,16 +858,14 @@ initialize and set the Custom Type structures.
         }
         retcode = custom_type_data.unbind_complex_member(test_seq_data);
         if (retcode != DDS_RETCODE_OK) {
-            fprintf(
-                    stderr,
+            fprintf(stderr,
                     "unbind_complex_member(test_seq_data) failed: %d.\n",
                     retcode);
             success = false;
         }
         retcode = data.unbind_complex_member(custom_type_data);
         if (retcode != DDS_RETCODE_OK) {
-            fprintf(
-                    stderr,
+            fprintf(stderr,
                     "unbind_complex_member(custom_type) failed: %d.\n",
                     retcode);
             success = false;
@@ -905,29 +906,69 @@ initialize and set the Custom Type structures.
 ::
 
     ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint
-    Using Unkeyed Data.
-    Transport Information:
-        Kind: Default (UDPv4) / Custom (Taken from QoS profile)
-    Waiting to discover 1 subscribers...
+    RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+
+    Using CustomType with the type <Test>
+
+    Mode: THROUGHPUT TEST
+        (Use "-latencyTest" for Latency Mode)
+
+    Perftest Configuration:
+        Reliability: Reliable
+        Keyed: No
+        Publisher ID: 0
+        Latency count: 1 latency sample every 10000 samples
+        Data Size: 100
+        Batching: 8192 Bytes (Use "-batchSize 0" to disable batching)
+        Publication Rate: Unlimited (Not set)
+        Execution time: 60 seconds
+        Receive using: Listeners
+        Domain: 1
+        Dynamic Data: No
+        Asynchronous Publishing: No
+        XML File: perftest_qos_profiles.xml
+
+    Transport Configuration:
+        Kind: UDPv4 & SHMEM (taken from QoS XML file)
+        Use Multicast: False
+
+    Waiting to discover 1 subscribers ...
     Waiting for subscribers announcement ...
-    Publishing data...
+    Sending 4050 initialization pings ...
+    Publishing data ...
     Setting timeout to 60 seconds
-    Length:   463  Latency: Ave    266 us  Std   70.3 us  Min     28 us  Max    777 us  50%    260 us  90%    341 us  99%    465 us  99.99%    777 us  99.9999%    777 us 
+    Length:   464  Latency: Ave     39 us  Std   30.7 us  Min     21 us  Max    276 us  50%     30 us  90%     60 us  99%    276 us  99.99%    276 us  99.9999%    276 us
     Finishing test due to timer...
     Test ended.
+
 
 
 ::
 
     ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint
-    Using Unkeyed Data.
-    Transport Information:
-        Kind: Default (UDPv4) / Custom (Taken from QoS profile)
+    RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+
+    Using CustomType with the type <Test>
+
+    Perftest Configuration:
+        Reliability: Reliable
+        Keyed: No
+        Subscriber ID: 0
+        Receive using: Listeners
+        Domain: 1
+        Dynamic Data: No
+        XML File: perftest_qos_profiles.xml
+
+    Transport Configuration:
+        Kind: UDPv4 & SHMEM (taken from QoS XML file)
+        Use Multicast: False
+
     Waiting to discover 1 publishers ...
     Waiting for data...
-    Length:   463  Packets:  4990501  Packets/s(ave):   83175  Mbps(ave):   308.1  Lost: 0
+    Length:   464  Packets: 68081040  Packets/s(ave): 1134692  Mbps(ave):  4212.0  Lost:     0 (0.00%)
     Finishing test...
     Test ended.
+
 
 
 5. Launch *RTI Perftest* with DynamicData.
@@ -935,29 +976,66 @@ initialize and set the Custom Type structures.
 ::
 
     ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint -dynamicData
-    Using Unkeyed Data.
-    Using Dynamic Data.
-    Transport Information:
-        Kind: Default (UDPv4) / Custom (Taken from QoS profile)
-    Waiting to discover 1 subscribers...
+    RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+
+    Using CustomType with the type <Test>
+
+    Mode: THROUGHPUT TEST
+        (Use "-latencyTest" for Latency Mode)
+
+    Perftest Configuration:
+        Reliability: Reliable
+        Keyed: No
+        Publisher ID: 0
+        Latency count: 1 latency sample every 10000 samples
+        Data Size: 100
+        Batching: 8192 Bytes (Use "-batchSize 0" to disable batching)
+        Publication Rate: Unlimited (Not set)
+        Execution time: 60 seconds
+        Receive using: Listeners
+        Domain: 1
+        Dynamic Data: Yes
+        Asynchronous Publishing: No
+        XML File: perftest_qos_profiles.xml
+
+    Transport Configuration:
+        Kind: UDPv4 & SHMEM (taken from QoS XML file)
+        Use Multicast: False
+
+    Waiting to discover 1 subscribers ...
     Waiting for subscribers announcement ...
-    Publishing data...
+    Sending 4050 initialization pings ...
+    Publishing data ...
     Setting timeout to 60 seconds
-    Length:   463  Latency: Ave    107 us  Std   92.6 us  Min     68 us  Max    836 us  50%     93 us  90%    125 us  99%    733 us  99.99%    836 us  99.9999%    836 us
+    Length:   464  Latency: Ave    158 us  Std  166.5 us  Min     71 us  Max    678 us  50%    105 us  90%    169 us  99%    678 us  99.99%    678 us  99.9999%    678 us
     Finishing test due to timer...
     Test ended.
+
 
 
 
 ::
 
     ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint -dynamicData
-    Using Unkeyed Data.
-    Using Dynamic Data.
-    Transport Information:
-        Kind: Default (UDPv4) / Custom (Taken from QoS profile)
+    RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+
+    Using CustomType with the type <Test>
+
+    Perftest Configuration:
+        Reliability: Reliable
+        Keyed: No
+        Subscriber ID: 0
+        Receive using: Listeners
+        Domain: 1
+        Dynamic Data: Yes
+        XML File: perftest_qos_profiles.xml
+
+    Transport Configuration:
+        Kind: UDPv4 & SHMEM (taken from QoS XML file)
+        Use Multicast: False
+
     Waiting to discover 1 publishers ...
     Waiting for data...
-    Length:   463  Packets:  1137454  Packets/s(ave):   18957  Mbps(ave):    70.2  Lost: 0
+    Length:   464  Packets:  8146078  Packets/s(ave):  135770  Mbps(ave):   504.0  Lost:     0 (0.00%)
     Finishing test...
     Test ended.
