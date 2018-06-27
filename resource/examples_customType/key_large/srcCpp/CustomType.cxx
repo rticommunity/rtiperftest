@@ -54,9 +54,10 @@ bool finalize_custom_type_data(RTI_CUSTOM_TYPE &data)
 
 bool initialize_custom_type_dynamic_data(DDS_DynamicData &data)
 {
-    bool success = long_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ);
-    if (!success) {
-        fprintf(stderr, "long_seq.maximum failed.\n");
+    bool success = true;
+    if (!long_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
+        success = false;
+        fprintf(stderr, "long_seq.ensure_length failed.\n");
     }
     return success;
 }
@@ -83,8 +84,19 @@ bool set_custom_type_dynamic_data(
     DDS_DynamicData custom_type_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
     DDS_DynamicData test_seq_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
 
-    retcode = data.set_long(
-            "custom_type.test_long",
+    retcode = data.bind_complex_member(
+            custom_type_data,
+            "custom_type",
+            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "bind_complex_member(custom_type) failed: %d.\n",
+                retcode);
+        success = false;
+    }
+
+    retcode = custom_type_data.set_long(
+            "test_long",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
             key);
     if (retcode != DDS_RETCODE_OK) {
@@ -92,20 +104,8 @@ bool set_custom_type_dynamic_data(
         success = false;
     }
 
-    if (snprintf(test_string, SIZE_TEST_STRING, "Hello World! %lu", key) < 0) {
-        success = false;
-    }
-    retcode = data.set_string(
-            "custom_type.test_string.test_string",
-            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-            test_string);
-    if (retcode != DDS_RETCODE_OK) {
-        fprintf(stderr, "set_string(test_string) failed: %d.\n", retcode);
-        success = false;
-    }
-
-    retcode = data.set_long(
-            "custom_type.test_enum",
+    retcode = custom_type_data.set_long(
+            "test_enum",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
             ENUM1);
     if (retcode != DDS_RETCODE_OK) {
@@ -113,20 +113,24 @@ bool set_custom_type_dynamic_data(
         success = false;
     }
 
-    retcode = data.bind_complex_member(custom_type_data, "custom_type",
-            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
-    if (retcode != DDS_RETCODE_OK) {
-        fprintf(
-                stderr,
-                "bind_complex_member(custom_type) failed: %d.\n",
-                retcode);
+    if (snprintf(test_string, SIZE_TEST_STRING, "Hello World! %lu", key) < 0) {
         success = false;
     }
-    retcode = custom_type_data.bind_complex_member(test_seq_data, "test_seq",
+    retcode = custom_type_data.set_string(
+            "test_string.test_string",
+            DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+            test_string);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "set_string(test_string) failed: %d.\n", retcode);
+        success = false;
+    }
+
+    retcode = custom_type_data.bind_complex_member(
+            test_seq_data,
+            "test_seq",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
     if (retcode != DDS_RETCODE_OK) {
-        fprintf(
-                stderr,
+        fprintf(stderr,
                 "bind_complex_member(test_seq_data) failed: %d.\n",
                 retcode);
         success = false;
@@ -141,16 +145,15 @@ bool set_custom_type_dynamic_data(
     }
     retcode = custom_type_data.unbind_complex_member(test_seq_data);
     if (retcode != DDS_RETCODE_OK) {
-        fprintf(
-                stderr,
-                "bind_complex_member(test_seq_data) failed: %d.\n",
+        fprintf(stderr,
+                "unbind_complex_member(test_seq_data) failed: %d.\n",
                 retcode);
+        success = false;
     }
     retcode = data.unbind_complex_member(custom_type_data);
     if (retcode != DDS_RETCODE_OK) {
-        fprintf(
-                stderr,
-                "bind_complex_member(custom_type) failed: %d.\n",
+        fprintf(stderr,
+                "unbind_complex_member(custom_type) failed: %d.\n",
                 retcode);
         success = false;
     }

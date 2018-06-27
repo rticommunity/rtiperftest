@@ -5,6 +5,6 @@
 struct Test {
     long test_long;
     TestEnum test_enum;
-    SeqTest test_seq;
     StringTest test_string;
+    SeqTest test_seq;
 };//@Extensibility FINAL_EXTENSIBILITY

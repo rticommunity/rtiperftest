@@ -612,7 +612,7 @@ Briefly, the steps you need to perform to use your custom type in *RTI Perftest*
 
 -  Copy your IDL files into `~/rtiperftest/srcIdl/custom/`
 -  Implement the API custom type functions of customtype.cxx
--  Run the build script with the command-line paramiter ``--customType <type>``
+-  Run the build script with the command-line parameter ``--customType <type>``
 -  Run *RTI Perftest* as usual.
 
 Full example using Custom Types
@@ -672,7 +672,7 @@ initialize and set the Custom Type structures.
 
 - **register_custom_type_data**:
     This function is used to set your data before being registered. It is only
-    required for key types. Set the key filed of the data based on the key input.
+    required for key types. Set the key field of the data based on the key input.
     There is a one-to-one mapping between an input key
     and an instance.
     The function takes two arguments:
@@ -740,9 +740,10 @@ initialize and set the Custom Type structures.
 
     bool initialize_custom_type_dynamic_data(DDS_DynamicData & data)
     {
-        bool success = long_seq.maximum(0);
-        if (!success) {
-            fprintf(stderr, "long_seq.maximum failed.\n");
+        bool success = true;
+        if (!long_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
+            success = false;
+            fprintf(stderr, "long_seq.ensure_length failed.\n");
         }
         return success;
     }
@@ -856,14 +857,15 @@ initialize and set the Custom Type structures.
         if (retcode != DDS_RETCODE_OK) {
             fprintf(
                     stderr,
-                    "bind_complex_member(test_seq_data) failed: %d.\n",
+                    "unbind_complex_member(test_seq_data) failed: %d.\n",
                     retcode);
+            success = false;
         }
         retcode = data.unbind_complex_member(custom_type_data);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(
                     stderr,
-                    "bind_complex_member(custom_type) failed: %d.\n",
+                    "unbind_complex_member(custom_type) failed: %d.\n",
                     retcode);
             success = false;
         }

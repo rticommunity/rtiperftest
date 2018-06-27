@@ -31,10 +31,10 @@ struct TestData_t {
     long latency_ping;
     sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE
+    RTI_CUSTOM_TYPE custom_type;
     // custom_type_size is the serialize size of the field custom_type
     // in the the sample that we send on the wire
     long custom_type_size;
-    RTI_CUSTOM_TYPE custom_type;
   #endif
 
 }; //@Extensibility FINAL_EXTENSIBILITY
@@ -50,8 +50,8 @@ struct TestDataKeyed_t {
     long latency_ping;
     sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE
-    long custom_type_size;
     RTI_CUSTOM_TYPE custom_type; //@key
+    long custom_type_size;
   #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 
@@ -65,8 +65,8 @@ struct TestDataLarge_t {
     long latency_ping;
     sequence<octet> bin_data;
   #ifdef RTI_CUSTOM_TYPE
-    long custom_type_size;
     RTI_CUSTOM_TYPE custom_type;
+    long custom_type_size;
   #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 
@@ -80,8 +80,8 @@ struct TestDataKeyedLarge_t {
     long latency_ping;
     sequence<octet> bin_data;
   #ifdef RTI_CUSTOM_TYPE
-    long custom_type_size;
     RTI_CUSTOM_TYPE custom_type; //@key
+    long custom_type_size;
   #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 

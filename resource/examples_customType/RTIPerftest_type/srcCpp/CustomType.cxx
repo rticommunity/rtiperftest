@@ -89,7 +89,7 @@ bool set_custom_type_dynamic_data(
     if (retcode != DDS_RETCODE_OK) {
         fprintf(
                 stderr,
-                "bind_complex_member(custom_type) failed: %d.\n",
+                "unbind_complex_member(custom_type) failed: %d.\n",
                 retcode);
         success = false;
     }

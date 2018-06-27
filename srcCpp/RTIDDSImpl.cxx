@@ -79,7 +79,8 @@ DynamicDataMembersId::DynamicDataMembersId()
     membersId["bin_data"] = 7;
 #ifdef RTI_CUSTOM_TYPE
     membersId["custom_type"] = 8;
-    membersId["custom_type_size"] = 8;
+    membersId["custom_type_size"] = 9;
+
 #endif
 }
 
@@ -1351,22 +1352,14 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             //Cannot use data.clear_member("bind_data") because:
             //DDS_DynamicData_clear_member:unsupported for non-sparse types
             data.clear_all_members();
-          #ifndef RTI_CUSTOM_TYPE
-            DDS_OctetSeq octetSeq;
-            bool succeeded = octetSeq.from_array(
-                    (DDS_Octet *) message.data,
-                    message.size);
-            if (!succeeded) {
-                fprintf(stderr, "from_array() failed.\n");
-            }
-            retcode = data.set_octet_seq(
-                    "bin_data",
-                    DynamicDataMembersId::GetInstance().at("bin_data"),
-                    octetSeq);
-            if (retcode != DDS_RETCODE_OK) {
-                fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
-            }
-          #endif
+        }
+        retcode = data.set_octet_array(
+                "key",
+                DynamicDataMembersId::GetInstance().at("key"),
+                KEY_SIZE,
+                key_octets);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
         }
         retcode = data.set_long(
                 "entity_id",
@@ -1403,7 +1396,24 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_long(latency_ping) failed: %d.\n", retcode);
         }
-      #ifdef RTI_CUSTOM_TYPE
+     #ifndef RTI_CUSTOM_TYPE
+        if (_last_message_size != message.size) {
+            DDS_OctetSeq octetSeq;
+            bool succeeded = octetSeq.from_array(
+                    (DDS_Octet *) message.data,
+                    message.size);
+            if (!succeeded) {
+                fprintf(stderr, "from_array() failed.\n");
+            }
+            retcode = data.set_octet_seq(
+                "bin_data",
+                DynamicDataMembersId::GetInstance().at("bin_data"),
+                octetSeq);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
+            }
+        }
+      #else
         /**
          * Using custom type the size of the data is set in data.custom_type_size:
          *    If the message.size is a sentinel size value used to handle the test:
@@ -1448,14 +1458,6 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         }
       #endif
         _last_message_size = message.size;
-        retcode = data.set_octet_array(
-                "key",
-                DynamicDataMembersId::GetInstance().at("key"),
-                KEY_SIZE,
-                key_octets);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
-        }
 
         if (!isCftWildCardKey) {
             retcode = _writer->write(data, _instance_handles[key]);
@@ -1764,7 +1766,7 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                 retcode = _data_seq[i].get_long(
                         _message.size,
                         "custom_type_size",
-                        DynamicDataMembersId::GetInstance().at("custom_type"));
+                        DynamicDataMembersId::GetInstance().at("custom_type_size"));
                 if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_long(size) failed: %d.\n",
@@ -2121,7 +2123,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
             retcode = _data_seq[_data_idx].get_long(
                     _message.size,
                     "custom_type_size",
-                    8);
+                    DynamicDataMembersId::GetInstance().at("custom_type_size"));
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
                         "on_data_available() get_long(size) failed: %d.\n",
