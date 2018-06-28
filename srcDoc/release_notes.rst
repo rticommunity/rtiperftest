@@ -66,8 +66,8 @@ make tests skipping DDS protocol to calculate overhead and time differences.
 To run a test with this feature, ``-rawTransport`` command line option has been
 added.
 
-RawTransport feature support two kind of transport protocols, UDPv4 and
-Shared Memory
+RawTransport feature it's only aviable for C++ and support two kind of transport
+protocols, UDPv4 and Shared Memory
 
 The nexts kind of test are aviable:
 
@@ -77,7 +77,7 @@ The nexts kind of test are aviable:
 -  `Scan`
 
 Many of the command line parameter that exist for DDS are not supported if
-``-rawTransport`` is use:
+``-rawTransport`` is used:
 
 -  ``-unbounded``
 -  ``-sendQueueSize``
@@ -123,6 +123,8 @@ with ``-rawTransport``.
 
     Any number of peer can be set until 1024 that correspond to RTIPERFTEST_MAX_PEERS.
 
+    Example:
+
 ::
 
     perftest_cpp -pub -rawTransport -peer 127.0.0.1:5 -peer 127.0.0.1:6
@@ -130,8 +132,8 @@ with ``-rawTransport``.
 
 A new commands line parameters `-noBlockingSockets` has been added:
 
+-  This command change the blocking behavior of send sockets to `never block`.
 -  It only aviable with RawTransport with UDPv4 as protocol.
--  Change the blocking behavior of send sockets to `never block`.
 -  Potencialy it can reduce the lost packets.
 -  CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT PERFORMANCE PROBLEMS.
 
