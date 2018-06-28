@@ -1179,9 +1179,9 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
 
 bool RTIRawTransportImpl::configureSocketsTransport()
 {
-    char *interface = NULL;
-    interface = DDS_String_dup(_transport.allowInterfaces.c_str());
-    if (interface == NULL) {
+    char *interfaceAddr = NULL; /*WARNING: interface is a reserved word on VS*/
+    interfaceAddr = DDS_String_dup(_transport.allowInterfaces.c_str());
+    if (interfaceAddr == NULL) {
         fprintf(
                 stderr,
                 "Fail allocating memory on configureSocketsTransport\n");
@@ -1231,11 +1231,11 @@ bool RTIRawTransportImpl::configureSocketsTransport()
             int id_sub = 0;
 
             /*_Plugin properties configure for UDPv4*/
-            udpv4_prop.parent.allow_interfaces_list = &interface;
+            udpv4_prop.parent.allow_interfaces_list = &interfaceAddr;
             udpv4_prop.parent.allow_interfaces_list_length = 1;
 
             if (_transport.useMulticast) {
-                udpv4_prop.parent.allow_multicast_interfaces_list = &interface;
+                udpv4_prop.parent.allow_multicast_interfaces_list = &interfaceAddr;
                 udpv4_prop.parent.allow_multicast_interfaces_list_length = 1;
                 udpv4_prop.reuse_multicast_receive_resource = 1;
                 udpv4_prop.multicast_enabled = 1;
@@ -1293,7 +1293,7 @@ bool RTIRawTransportImpl::configureSocketsTransport()
                 fprintf(
                         stderr,
                         "Input interface (%s) not recognize\n",
-                        interface);
+                        interfaceAddr);
                 return false;
             }
 
@@ -1303,7 +1303,7 @@ bool RTIRawTransportImpl::configureSocketsTransport()
                 fprintf(
                         stderr,
                         "The interface (%s) does not have multicast-enabled\n",
-                        interface);
+                        interfaceAddr);
                 return false;
             }
 
@@ -1400,7 +1400,7 @@ bool RTIRawTransportImpl::configureSocketsTransport()
 
     _transport.printTransportConfigurationSummary();
 
-    delete interface;
+    delete interfaceAddr;
 
     return true;
 }
