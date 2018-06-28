@@ -468,15 +468,11 @@ std::string RTIRawTransportImpl::PrintConfiguration()
     }
 
     // set initial peers and not use multicast
-    if (_peerHostCount > 0) {
+    if (_peerHostCount > 0 && !isMulticast()) {
         stringStream << "\tInitial peers: ";
         for (int i = 0; i < _peerHostCount; ++i) {
             stringStream << _peerHost[i];
-            if (i == _peerHostCount - 1) {
-                stringStream << "\n";
-            } else {
-                stringStream << ", ";
-            }
+            stringStream << ((i+1 == _peerHostCount)? "\n" : ", ");
         }
     }
 

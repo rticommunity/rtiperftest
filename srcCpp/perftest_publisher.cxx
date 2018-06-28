@@ -1644,14 +1644,17 @@ class LatencyListener : public IMessagingCB
         fflush(stdout);
 
         //TODO: made it work with custom data etc..
+        /*TODO: all declaration at the top. (waiting to solve the template problem)*/
         unsigned int iterations = 10000;
-        printf("Serialization/Deserialization time per sample: %0.3f / %0.3f us\n",
-               RTIDDSImpl<TestData_t>::ObtainSerializeTimeCost(
-                       iterations,
-                       last_data_length + perftest_cpp::OVERHEAD_BYTES),
-               RTIDDSImpl<TestData_t>::ObtainDeserializeTimeCost(
-                       iterations,
-                       last_data_length + perftest_cpp::OVERHEAD_BYTES));
+        float seriTime = ObtainSerializeTimeCost(
+                iterations, last_data_length + perftest_cpp::OVERHEAD_BYTES);
+        float deseriTime = ObtainDeserializeTimeCost(
+                iterations, last_data_length + perftest_cpp::OVERHEAD_BYTES);
+        printf("Serialization time per sample: %0.3f / Deserialization time per "
+               "sample: %0.3f us / TOTAL: %0.3f us\n",
+               seriTime,
+               deseriTime,
+               seriTime + deseriTime);
 
         latency_sum = 0;
         latency_sum_square = 0;

@@ -130,8 +130,7 @@ class RTIDDSImpl : public IMessaging
      * Those two functions calculate the time cost on serialization,
      * with a precision of microseconds.
      */
-    static double
-    ObtainSerializeTimeCost(int iterations, unsigned int sampleSize);
+
 
     static double ObtainDDSSerializeTimeCost(
         T data,
@@ -142,9 +141,6 @@ class RTIDDSImpl : public IMessaging
         T data,
         unsigned int sampleSize,
         unsigned int iters);
-
-    static double
-    ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize);
 
     bool SupportsListener()
     {
@@ -245,6 +241,9 @@ private:
     static unsigned int _WaitsetDelayUsec;
 };
 
+double ObtainSerializeTimeCost(int iterations, unsigned int sampleSize);
+
+double ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize);
 
 #endif // __RTIDDSIMPL_H__
 

@@ -2546,9 +2546,9 @@ double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
 /*********************************************************
  * ObtainSerializeTime
  */
-template <typename T>
-double
-RTIDDSImpl<T>::ObtainSerializeTimeCost(int iterations, unsigned int sampleSize)
+double ObtainSerializeTimeCost(
+        int iterations,
+        unsigned int sampleSize)
 {
     double timeInit = 0;
     double timeFinish = 0;
@@ -2631,8 +2631,7 @@ RTIDDSImpl<T>::ObtainSerializeTimeCost(int iterations, unsigned int sampleSize)
  */
 
 /*TODO: Apply templated data correctly */
-template <typename T>
-double RTIDDSImpl<T>::ObtainDeserializeTimeCost(
+double ObtainDeserializeTimeCost(
         int iterations,
         unsigned int sampleSize)
 {
