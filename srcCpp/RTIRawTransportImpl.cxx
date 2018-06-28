@@ -627,7 +627,7 @@ class RTIRawTransportPublisher : public IMessagingWriter{
     bool Send(const TestMessage &message, bool isCftWildCardKey)
     {
 
-        bool success = false;
+        int success = false; //Declarated as int to avoid warning on VS
         int serializeSize =  message.size
                 + perftest_cpp::OVERHEAD_BYTES
                 + RTI_CDR_ENCAPSULATION_HEADER_SIZE;
@@ -853,6 +853,8 @@ public:
 
     TestMessage *ReceiveMessage() {
 
+        int result = 0;
+
         if (_worker == NULL) {
             _worker = RawTransportGetWorkerPerThread(
                     _parent->getWorkerFactory(),
@@ -862,8 +864,8 @@ public:
 
         while (true) {
             if (_noData) {
-
-                bool result = _plugin->receive_rEA(
+                result = 0;
+                result = _plugin->receive_rEA(
                         _plugin,
                         &_transportMessage,
                         &_recvBuffer,
@@ -1040,7 +1042,7 @@ bool RTIRawTransportImpl::getMulticastTransportAddr(
         return false;
     }
 
-    bool success = true;
+    int success = true;
     RTIOsapiMemory_zero(&addr, sizeof(NDDS_Transport_Address_t));
 
     if (strcmp(topicName, THROUGHPUT_TOPIC_NAME) != 0
@@ -1059,7 +1061,7 @@ bool RTIRawTransportImpl::getMulticastTransportAddr(
             &addr,
             _transport.getMulticastAddr(topicName).c_str());
 
-    return success;
+    return success == 1;
 }
 
 /*********************************************************
@@ -1073,7 +1075,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
 
     NDDS_Transport_Address_t actualAddr;
     int actualPort = 0;
-    bool shared = false;
+    int shared = false;
     unsigned int j = 0;
 
     // If multicat, then take the multicast address.
@@ -1141,7 +1143,7 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
     NDDS_Transport_Port_t recvPort = 0;
     NDDS_Transport_Address_t multicastAddr;
     bool isMulticastAddr = false;
-    bool result = true;
+    int result = true;
 
     /* If multicat, then take the multicast address. */
     if (_transport.useMulticast
@@ -1431,7 +1433,7 @@ struct REDAWorker *RawTransportGetWorkerPerThread(
         RTIOsapiThreadTssFactory *tssFactory,
         unsigned int *workerTssKey)
 {
-    bool workerSet = false;
+    int workerSet = false;
     struct REDAWorker *worker = NULL;
 
     /* --- Test preconditions --- */
