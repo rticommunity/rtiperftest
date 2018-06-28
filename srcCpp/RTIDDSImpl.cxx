@@ -2434,7 +2434,7 @@ double RTIDDSImpl<T>::ObtainDDSSerializeTimeCost(
     };
 
     /* Serialize time calculating */
-    timeInit = perftest_cpp::GetTimeUsec();
+    timeInit = (unsigned int) perftest_cpp::GetTimeUsec();
 
     for (unsigned int i = 0; i < iters; i++) {
         if (!T::TypeSupport::serialize_data_to_cdr_buffer(
@@ -2448,7 +2448,7 @@ double RTIDDSImpl<T>::ObtainDDSSerializeTimeCost(
         }
     }
 
-    timeFinish = perftest_cpp::GetTimeUsec();
+    timeFinish = (unsigned int) perftest_cpp::GetTimeUsec();
 
     serializeTime = timeFinish - timeInit;
 
@@ -2516,7 +2516,7 @@ double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
     }
 
     /* Serialize time calculating */
-    timeInit = perftest_cpp::GetTimeUsec();
+    timeInit = (unsigned int) perftest_cpp::GetTimeUsec();
 
     for (unsigned int i = 0; i < iters; i++) {
         if (!T::TypeSupport::deserialize_data_from_cdr_buffer(
@@ -2530,7 +2530,7 @@ double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
         }
     }
 
-    timeFinish = perftest_cpp::GetTimeUsec();
+    timeFinish = (unsigned int) perftest_cpp::GetTimeUsec();
 
     deSerializeTime = timeFinish - timeInit;
 
@@ -2550,8 +2550,8 @@ double ObtainSerializeTimeCost(
         int iterations,
         unsigned int sampleSize)
 {
-    double timeInit = 0;
-    double timeFinish = 0;
+    unsigned int timeInit = 0;
+    unsigned int timeFinish = 0;
     double serializeTime;
 
     struct RTICdrStream stream;
@@ -2594,7 +2594,7 @@ double ObtainSerializeTimeCost(
             (DDS_Octet *) buffer, sampleSize, sampleSize);
 
     /* Serialize time calculating */
-    timeInit = perftest_cpp::GetTimeUsec();
+    timeInit = (unsigned int) perftest_cpp::GetTimeUsec();
 
     for (int i = 0; i < iterations; i++) {
         /*
@@ -2614,9 +2614,9 @@ double ObtainSerializeTimeCost(
                 NULL);
     }
 
-    timeFinish = perftest_cpp::GetTimeUsec();
+    timeFinish = (unsigned int) perftest_cpp::GetTimeUsec();
 
-    serializeTime = timeFinish - timeInit;
+    serializeTime = (double) (timeFinish - timeInit);
 
     testData.bin_data.unloan();
 
@@ -2635,8 +2635,8 @@ double ObtainDeserializeTimeCost(
         int iterations,
         unsigned int sampleSize)
 {
-    double timeInit = 0;
-    double timeFinish = 0;
+    unsigned int timeInit = 0;
+    unsigned int timeFinish = 0;
     double deserializeTime;
 
     struct RTICdrStream stream;
@@ -2690,7 +2690,7 @@ double ObtainDeserializeTimeCost(
     TestData_t testDataDeserialize;
     testDataDeserialize.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
     /* Deserialize time calculations */
-    timeInit = perftest_cpp::GetTimeUsec();
+    timeInit = (unsigned int) perftest_cpp::GetTimeUsec();
 
     for (int i = 0; i < iterations; i++) {
         RTICdrStream_set(
@@ -2700,9 +2700,9 @@ double ObtainDeserializeTimeCost(
                 NULL, &testDataDeserialize, &stream, RTI_TRUE, RTI_TRUE, NULL);
     }
 
-    timeFinish = perftest_cpp::GetTimeUsec();
+    timeFinish =  (unsigned int) perftest_cpp::GetTimeUsec();
 
-    deserializeTime = timeFinish - timeInit;
+    deserializeTime = (double) (timeFinish - timeInit);
 
     testDataSerialize.bin_data.unloan();
 

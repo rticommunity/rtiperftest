@@ -1646,9 +1646,9 @@ class LatencyListener : public IMessagingCB
         //TODO: made it work with custom data etc..
         /*TODO: all declaration at the top. (waiting to solve the template problem)*/
         unsigned int iterations = 10000;
-        float seriTime = ObtainSerializeTimeCost(
+        double seriTime = ObtainSerializeTimeCost(
                 iterations, last_data_length + perftest_cpp::OVERHEAD_BYTES);
-        float deseriTime = ObtainDeserializeTimeCost(
+        double deseriTime = ObtainDeserializeTimeCost(
                 iterations, last_data_length + perftest_cpp::OVERHEAD_BYTES);
         printf("Serialization time per sample: %0.3f / Deserialization time per "
                "sample: %0.3f us / TOTAL: %0.3f us\n",
