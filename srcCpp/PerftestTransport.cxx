@@ -772,11 +772,12 @@ std::string PerftestTransport::helpMessageString()
     oss
     << "\t-multicastAddr <address>      - Use multicast to send data and set\n"
     << "\t                                the input <address>|<addr,addr,addr>\n"
-    << "\t                                as the multicast addresses for the "
+    << "\t                                as the multicast addresses for the\n"
     << "\t                                three topics in the application.\n"
-    << "\t                                If only one address is set, the next "
-    << "\t                                ones will be increase by one. The address\n"
-    << "\t                                must be lower than X.X.X.253\n"
+    << "\t                                If only one address is provided, that\n"
+    << "\t                                one and the 2 consecutive ones will be\n"
+    << "\t                                used for the 3 topics used by Perftest.\n"
+    << "\t                                The address must be lower than X.X.X.253\n"
     << "\t-transportVerbosity <level>   - Verbosity of the transport\n"
     << "\t                                Default: 0 (errors only)\n"
     << "\t-transportServerBindPort <p>  - Port used by the transport to accept\n"
@@ -1134,19 +1135,19 @@ const std::string PerftestTransport::getMulticastAddr(const char *topicName)
 
 bool PerftestTransport::parseCustomMulticastAddresses(char *arg)
 {
-    char thro[15];
-    char laten[15];
-    char annon[15];
+    char throughput[15];
+    char latency[15];
+    char annonuncement[15];
     char rest;
     unsigned int a, b, c, d;
     std::stringstream addrMergeLatency;
     std::stringstream addrMergeAnnounc;
 
     /* If 3 addresses are given */
-    if (sscanf(arg, "%[^,],%[^,],%s", thro, laten, annon) == 3) {
-        multicastAddrMap[THROUGHPUT_TOPIC_NAME] = thro;
-        multicastAddrMap[LATENCY_TOPIC_NAME] = laten;
-        multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = annon;
+    if (sscanf(arg, "%[^,],%[^,],%s", throughput, latency, annonuncement) == 3) {
+        multicastAddrMap[THROUGHPUT_TOPIC_NAME] = throughput;
+        multicastAddrMap[LATENCY_TOPIC_NAME] = latency;
+        multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = annonuncement;
 
     /*
      * If no 3 addresses are give, check for only one.
