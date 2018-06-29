@@ -16,7 +16,7 @@ void ParameterManager::initialize()
     batching->setType(T_NUMERIC);
     batching->setExtraArgument(YES);
     batching->setRange(0, 63000);
-    parameterList["batching"] = batching;
+    parameterList["batching"] = AnyParameter(batching);
 
     Parameter<std::string> *flowController = new Parameter<std::string>("default");
     flowController->setCommandLineArgument(std::make_pair("-flowController", "<flow>"));
@@ -26,28 +26,29 @@ void ParameterManager::initialize()
     flowController->addValidStrValue("default");
     flowController->addValidStrValue("1Gbps");
     flowController->addValidStrValue("10Gbps");
-    parameterList["flowController"] = flowController;
+    parameterList["flowController"] = AnyParameter(flowController);
 
-    Parameter<std::string> *nic = new Parameter<std::string>("");
+    Parameter<std::string> *nic = new Parameter<std::string>("blabla");
     nic->setCommandLineArgument(std::make_pair("-nic","<ipaddr>"));
     nic->setDescription("Use only the nic specified by <ipaddr>.\nIf not specified, use all available interfaces");
     nic->setType(T_STR);
     nic->setExtraArgument(YES);
-    parameterList["nic"] = nic;
+    parameterList["nic"] = AnyParameter(nic);
 
     Parameter<bool> * pub = new Parameter<bool>(false);
     pub->setCommandLineArgument(std::make_pair("-pub",""));
     pub->setDescription("Set test to be a publisher");
     pub->setType(T_BOOL);
     pub->setExtraArgument(NO);
-    parameterList["pub"] = pub;
+    parameterList["pub"] = AnyParameter(pub);
+
 
     ParameterVector<std::string> * peer = new ParameterVector<std::string>();
     peer->setCommandLineArgument(std::make_pair("-peer","<address>"));
     peer->setDescription("Adds a peer to the peer host address list.\nThis argument may be repeated to indicate multiple peers");
     peer->setType(T_VECTOR_STR);
     peer->setExtraArgument(YES);
-    parameterList["peer"] = peer;
+    parameterList["peer"] = AnyParameter(peer);
 
     std::vector<unsigned long long> _scanDataLenSizes;
     _scanDataLenSizes.push_back(32);
@@ -69,7 +70,8 @@ void ParameterManager::initialize()
     scan->setExtraArgument(OPTIONAL);
     scan->setRange(32, 2147483128);
     scan->setParseMethod(SPLIT);
-    parameterList["scan"] = scan;
+    parameterList["scan"] = AnyParameter(scan);
+
 
     Parameter<unsigned long long> *unbounded = new Parameter<unsigned long long>(63000);
     unbounded->setCommandLineArgument(std::make_pair("-unbounded","<allocation_threshold>"));
@@ -77,7 +79,8 @@ void ParameterManager::initialize()
     unbounded->setType(T_NUMERIC);
     unbounded->setExtraArgument(OPTIONAL);
     unbounded->setRange(0, 2147483128);
-    parameterList["unbounded"] = unbounded;
+    parameterList["unbounded"] = AnyParameter(unbounded);
+
 }
 
 
@@ -89,74 +92,74 @@ bool ParameterManager::parse(int argc, char *argv[])
     // Copy all arguments into a container of strings
     std::vector<std::string> allArgs(argv, argv + argc);
 
-    std::map<std::string, ParameterBase *>::iterator it;
+    std::map<std::string, AnyParameter>::iterator it;
     for (unsigned int i = 1; i < allArgs.size(); i++) {
         for (it = parameterList.begin(); it != parameterList.end(); it++) {
-            if (allArgs[i] == it->second->getCommandLineArgument().first) { // TODO check for small string compare
+            if (allArgs[i] == it->second.get()->getCommandLineArgument().first) { // TODO check for small string compare
                 // NumArguments == 0
-                if (it->second->getExtraArgument() == NO) {
+                if (it->second.get()->getExtraArgument() == NO) {
                     // Type is T_BOOL
-                    if (it->second->getType() == T_BOOL) {
-                        (static_cast<Parameter<bool>*>(it->second))->setValue(true);
+                    if (it->second.get()->getType() == T_BOOL) {
+                        (static_cast<Parameter<bool>*>(it->second.get<bool>()))->setValue(true);
                     }
                 // NumArguments is 1 or optional
-                } else if (it->second->getExtraArgument() > NO) {
+                } else if (it->second.get()->getExtraArgument() > NO) {
                     // Check for error in num of arguments
                     if (i+1 >= allArgs.size() || allArgs[i+1].find("-") == 0) {
-                        if (it->second->getExtraArgument() == YES) {
+                        if (it->second.get()->getExtraArgument() == YES) {
                             fprintf(stderr, "Missing '%s' after '%s'\n",
-                                it->second->getCommandLineArgument().second.c_str(),
-                                it->second->getCommandLineArgument().first.c_str());
+                                it->second.get()->getCommandLineArgument().second.c_str(),
+                                it->second.get()->getCommandLineArgument().first.c_str());
                             return false;
-                        } else if (it->second->getExtraArgument() == OPTIONAL) {
+                        } else if (it->second.get()->getExtraArgument() == OPTIONAL) {
                             break;
                         }
                     }
                     ++i;
                     // Type is T_STR
-                    if (it->second->getType() == T_STR) {
-                        if (!it->second->validateStrRange(allArgs[i])) {
+                    if (it->second.get()->getType() == T_STR) {
+                        if (!it->second.get()->validateStrRange(allArgs[i])) {
                             success = false;
                         }
-                        (static_cast<Parameter<std::string>*>(it->second))->setValue(allArgs[i]);
+                        (static_cast<Parameter<std::string>*>(it->second.get<std::string>()))->setValue(allArgs[i]);
                     }
                     // Type is T_NUMERIC
-                    else if (it->second->getType() == T_NUMERIC) {
+                    else if (it->second.get()->getType() == T_NUMERIC) {
                         if (sscanf(allArgs[i].c_str(), "%llu", &var) != 1) {
                             fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
-                                    it->second->getCommandLineArgument().second.c_str(),
-                                    it->second->getCommandLineArgument().first.c_str());
+                                    it->second.get()->getCommandLineArgument().second.c_str(),
+                                    it->second.get()->getCommandLineArgument().first.c_str());
                             success = false;
                         }
-                        if (!it->second->validateNumericRange(var)) {
+                        if (!it->second.get()->validateNumericRange(var)) {
                             success = false;
                         }
-                        (static_cast<Parameter<unsigned long long>*>(it->second))->setValue(var);
+                        (static_cast<Parameter<unsigned long long>*>(it->second.get<unsigned long long>()))->setValue(var);
                     }
                     // Type is T_VECTOR_STR
-                    else if (it->second->getType() == T_VECTOR_STR) {
-                        if (NOSPLIT == ((ParameterVector<std::string>*)it->second)->getParseMethod()) {
-                            if (!it->second->validateStrRange(allArgs[i])) {
+                    else if (it->second.get()->getType() == T_VECTOR_STR) {
+                        if (NOSPLIT == ((ParameterVector<std::string>*)it->second.getVector<std::string>())->getParseMethod()) {
+                            if (!it->second.get()->validateStrRange(allArgs[i])) {
                                 success = false;
                             }
-                            (static_cast<ParameterVector<std::string>*>(it->second))->setValue(allArgs[i]);
+                            (static_cast<ParameterVector<std::string>*>(it->second.getVector<std::string>()))->setValue(allArgs[i]);
                         }
                     }
                     // Type is T_VECTOR_NUMERIC
-                    else if (it->second->getType() == T_VECTOR_NUMERIC) {
-                        if (SPLIT == ((ParameterVector<unsigned long long>*)it->second)->getParseMethod()) {
+                    else if (it->second.get()->getType() == T_VECTOR_NUMERIC) {
+                        if (SPLIT == ((ParameterVector<unsigned long long>*)it->second.getVector<unsigned long long>())->getParseMethod()) {
                             std::vector<std::string> v = split(allArgs[i]);
                             for (unsigned int j = 0; j < v.size(); j++) {
                                 if (sscanf(v[j].c_str(), "%llu", &var) != 1) {
                                     fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
-                                            it->second->getCommandLineArgument().second.c_str(),
-                                            it->second->getCommandLineArgument().first.c_str());
+                                            it->second.get()->getCommandLineArgument().second.c_str(),
+                                            it->second.get()->getCommandLineArgument().first.c_str());
                                     success = false;
                                 }
-                                if (!it->second->validateNumericRange(var)) {
+                                if (!it->second.get()->validateNumericRange(var)) {
                                     success = false;
                                 }
-                                (static_cast<ParameterVector<unsigned long long>*>(it->second))->setValue(var);
+                                (static_cast<ParameterVector<unsigned long long>*>(it->second.getVector<unsigned long long>()))->setValue(var);
                             }
                         }
                     }
@@ -171,14 +174,14 @@ bool ParameterManager::parse(int argc, char *argv[])
 // Get the help message
 std::string ParameterManager::displayHelp()
 {
-    std::map<std::string, ParameterBase *>::iterator it;
+    std::map<std::string, AnyParameter>::iterator it;
     std::ostringstream oss;
     oss << "/**********************************************************************************************/\n"
         << "Usage:\t perftest_cpp [options]\n"
         << "Where [options] are:\n\n";
     for (it = parameterList.begin(); it != parameterList.end(); it++) {
-        if (!it->second->getInternal()) {
-            oss << it->second->printCommandLineParameter();
+        if (!it->second.get()->getInternal()) {
+            oss << it->second.get()->printCommandLineParameter();
         }
     }
     oss << "/**********************************************************************************************/\n";
@@ -200,22 +203,16 @@ bool ParameterManager::checkHelp(int argc, char *argv[])
 
 ParameterManager::~ParameterManager()
 {
-    std::map<std::string, ParameterBase *>::iterator it;
-    for (it = parameterList.begin(); it != parameterList.end(); it++) {
-        if (it->second != NULL ){
-            delete it->second;
-        }
-    }
     parameterList.clear();
 }
 
 // check if a variable has been set
 bool ParameterManager::isSet(std::string parameterKey)
 {
-    std::map<std::string, ParameterBase*>::iterator it;
+    std::map<std::string, AnyParameter>::iterator it;
     it = parameterList.find(parameterKey);
     if (it != parameterList.end()) {
-        return parameterList[parameterKey]->getIsSet();
+        return parameterList[parameterKey].get()->getIsSet();
     } else {
         return false;
     }

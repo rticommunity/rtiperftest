@@ -35,6 +35,7 @@ enum EXTRAARGUMENT {
     OPTIONAL,         // It is possible to have one extra argument
     YES              // There is not one extra argument
 };
+
 class ParameterBase  {
     private:
         std::pair <std::string, std::string> commandLineArgument;
@@ -175,5 +176,45 @@ class ParameterVector : public ParameterBase {
         }
 };
 
+class AnyParameter {
+    private:
+        ParameterBase* param;
+    public:
+        AnyParameter()
+        {
+            param = NULL;
+        }
+
+        template <typename T>
+        AnyParameter(Parameter<T> *var) : param(var) {}
+
+        template <typename T>
+        AnyParameter(ParameterVector<T> *var) : param(var) {}
+
+        ParameterBase* get()
+        {
+            return static_cast<ParameterBase*>(param);
+        }
+
+        template <typename T>
+        Parameter<T>* get()
+        {
+            return static_cast<Parameter<T>*>(param);
+        }
+
+        template <typename T>
+        ParameterVector<T>* getVector()
+        {
+            return static_cast<ParameterVector<T>*>(param);
+        }
+
+        ~AnyParameter()
+        {
+            if (param != NULL) {
+                delete param;
+                param = NULL;
+            }
+        }
+};
 
 #endif // __PARAMETER_H__

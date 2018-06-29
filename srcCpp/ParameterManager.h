@@ -12,7 +12,7 @@
 class ParameterManager
 {
     private:
-        std::map<std::string, ParameterBase*> parameterList;
+        std::map<std::string, AnyParameter> parameterList;
 
     public:
         ParameterManager();
@@ -23,10 +23,10 @@ class ParameterManager
         template <typename T>
         T query(std::string parameterKey)
         {
-            std::map<std::string, ParameterBase*>::iterator it;
+            std::map<std::string, AnyParameter>::iterator it;
             it = parameterList.find(parameterKey);
             if (it != parameterList.end()) {
-                return (static_cast<Parameter<T>*>(parameterList[parameterKey]))->getValue();
+                return (static_cast<Parameter<T>*>(parameterList[parameterKey].get<T>()))->getValue();
             } else {
                 return T(); // Return the default
                 // TODO throw exception
@@ -37,11 +37,10 @@ class ParameterManager
         template <typename T>
         std::vector<T> queryVector(std::string parameterKey)
         {
-            std::map<std::string, ParameterBase*>::iterator it;
+          std::map<std::string, AnyParameter>::iterator it;
             it = parameterList.find(parameterKey);
             if (it != parameterList.end()) {
-                return (static_cast<ParameterVector<T>*>(parameterList[parameterKey]))->getValue();
-
+                return (static_cast<ParameterVector<T>*>(parameterList[parameterKey].getVector<T>()))->getValue();
             } else {
                 return std::vector<T>(); // Return the default
                 // TODO throw exception

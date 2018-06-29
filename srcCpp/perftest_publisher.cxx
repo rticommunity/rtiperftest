@@ -94,8 +94,6 @@ int perftest_cpp::Run(int argc, char *argv[])
         fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
         return -1;
     }
-
-    // }
     if (parameterManager.checkHelp(argc, argv)) {
         return 0;
     }
@@ -117,8 +115,6 @@ int perftest_cpp::Run(int argc, char *argv[])
         printf("\t%llu\n", scan[i]);
     }
     printf("unbounded: %d\n", parameterManager.query<int>("unbounded"));
-
-    
 
     return 0;
 
