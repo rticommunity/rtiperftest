@@ -28,7 +28,7 @@ void ParameterManager::initialize()
     flowController->addValidStrValue("10Gbps");
     parameterList["flowController"] = AnyParameter(flowController);
 
-    Parameter<std::string> *nic = new Parameter<std::string>("blabla");
+    Parameter<std::string> *nic = new Parameter<std::string>("");
     nic->setCommandLineArgument(std::make_pair("-nic","<ipaddr>"));
     nic->setDescription("Use only the nic specified by <ipaddr>.\nIf not specified, use all available interfaces");
     nic->setType(T_STR);
@@ -41,7 +41,6 @@ void ParameterManager::initialize()
     pub->setType(T_BOOL);
     pub->setExtraArgument(NO);
     parameterList["pub"] = AnyParameter(pub);
-
 
     ParameterVector<std::string> * peer = new ParameterVector<std::string>();
     peer->setCommandLineArgument(std::make_pair("-peer","<address>"));
@@ -72,7 +71,6 @@ void ParameterManager::initialize()
     scan->setParseMethod(SPLIT);
     parameterList["scan"] = AnyParameter(scan);
 
-
     Parameter<unsigned long long> *unbounded = new Parameter<unsigned long long>(63000);
     unbounded->setCommandLineArgument(std::make_pair("-unbounded","<allocation_threshold>"));
     unbounded->setDescription("Use unbounded Sequences\n<allocation_threshold> is optional, default 63000 Bytes.");
@@ -80,7 +78,6 @@ void ParameterManager::initialize()
     unbounded->setExtraArgument(OPTIONAL);
     unbounded->setRange(0, 2147483128);
     parameterList["unbounded"] = AnyParameter(unbounded);
-
 }
 
 

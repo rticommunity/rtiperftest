@@ -208,6 +208,13 @@ class AnyParameter {
             return static_cast<ParameterVector<T>*>(param);
         }
 
+        AnyParameter& operator=(AnyParameter other)
+        {
+            param = other.param;
+            other.param = NULL;
+            return *this;
+        };
+
         ~AnyParameter()
         {
             if (param != NULL) {
