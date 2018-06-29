@@ -626,8 +626,7 @@ class RTIRawTransportPublisher : public IMessagingWriter{
 
     bool Send(const TestMessage &message, bool isCftWildCardKey)
     {
-
-        int success = false; //Declarated as int to avoid warning on VS
+        RTIBool success = false;
         int serializeSize =  message.size
                 + perftest_cpp::OVERHEAD_BYTES
                 + RTI_CDR_ENCAPSULATION_HEADER_SIZE;
@@ -1042,7 +1041,7 @@ bool RTIRawTransportImpl::getMulticastTransportAddr(
         return false;
     }
 
-    int success = true;
+    RTIBool success = true;
     RTIOsapiMemory_zero(&addr, sizeof(NDDS_Transport_Address_t));
 
     if (strcmp(topicName, THROUGHPUT_TOPIC_NAME) != 0
@@ -1075,7 +1074,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
 
     NDDS_Transport_Address_t actualAddr;
     int actualPort = 0;
-    int shared = false;
+    RTIBool shared = false;
     unsigned int j = 0;
 
     // If multicat, then take the multicast address.
@@ -1143,7 +1142,7 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
     NDDS_Transport_Port_t recvPort = 0;
     NDDS_Transport_Address_t multicastAddr;
     bool isMulticastAddr = false;
-    int result = true;
+    RTIBool result = true;
 
     /* If multicat, then take the multicast address. */
     if (_transport.useMulticast
@@ -1168,7 +1167,7 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
         fprintf(
             stderr,
             "Create_recvresource_rrEA error. Maybe the port %d is been use.\n"
-            "Check if you have other sub with the same id\n",
+            "Check if you have other pub/sub with the same id\n",
             recvPort);
         return NULL;
     }
@@ -1433,7 +1432,7 @@ struct REDAWorker *RawTransportGetWorkerPerThread(
         RTIOsapiThreadTssFactory *tssFactory,
         unsigned int *workerTssKey)
 {
-    int workerSet = false;
+    RTIBool workerSet = false;
     struct REDAWorker *worker = NULL;
 
     /* --- Test preconditions --- */

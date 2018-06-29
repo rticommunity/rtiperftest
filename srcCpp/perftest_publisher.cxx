@@ -125,8 +125,6 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
-    printf("type %s\n", typeid(_MessagingImpl).name());
-
     PrintConfiguration();
 
     if (_IsPub) {
