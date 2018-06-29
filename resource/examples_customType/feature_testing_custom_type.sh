@@ -259,6 +259,8 @@ for i in ${test[@]};do
     echo "======================================"
 done
 
+rm -rf ${tmp_folder}
+
 echo ""
 echo -e "${INFO_TAG} The full feature testing was success."
 echo "================================================================================"

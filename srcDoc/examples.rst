@@ -645,397 +645,403 @@ These are the steps needed to use the above type in *RTI Perftest* for the
 C++ (Traditional) API:
 
 
-1. Copy the IDL files into `~/rtiperftest/srcIdl/custom/` folder.
+
+1. Copy your IDL files into `~/rtiperftest/srcIdl/custom/` folder.
 
 2. The following functions should be implemented (optionally) to properly
-initialize and set the Custom Type structures.
+   initialize and set the Custom Type structures.
 
-- **initialize_custom_type_data**:
-    This function is used to initialize your data.
-    Using this function, you will be able to allocate memory or set an immutable
-    field of the data.
-    The function takes one argument:
+    - **initialize_custom_type_data**:
+        This function is used to initialize your data.
+        Using this function, you will be able to allocate memory or set an immutable
+        field of the data.
+        The function takes one argument:
 
-        - A reference to custom type data.
+            - A reference to custom type data.
 
-::
+    ::
 
-    bool initialize_custom_type_data(RTI_CUSTOM_TYPE & data)
-    {
-        bool success = true;
-        if (! data.test_seq.test_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
-            success = false;
-        }
-        data.test_enum = ENUM1;
-        return success;
-    }
-
-- **register_custom_type_data**:
-    This function is used to set your data before being registered. It is only
-    required for key types. Set the key field of the data based on the key input.
-    There is a one-to-one mapping between an input key
-    and an instance.
-    The function takes two arguments:
-
-        - A reference to custom type data.
-        - A specific number unique for every key.
-
-::
-
-    void register_custom_type_data(RTI_CUSTOM_TYPE & data, unsigned long key)
-    {
-        data.test_long = key;
-    }
-
-- **set_custom_type_data**:
-    This function is used to set your data before it is sent.
-    It is called every time the data is sent.
-    You must set the Custom type data before it is sent with the right
-    "key" value and the "target_data_len".
-    The function takes three arguments:
-
-        - A reference to custom type data.
-        - A specific number unique for every key.
-        - The target size set by the command-line parameter ``-dataLen <bytes>``
-        minus the overhead of *RTI Perftest*.
-        If applicable, you can use this value to set the content of the data.
-
-::
-
-    bool set_custom_type_data(
-            RTI_CUSTOM_TYPE & data,
-            unsigned long key,
-            int target_data_len)
-    {
-        bool success = true;
-        data.test_long = key;
-        if (sprintf(data.test_string.test_string, "Hello World! %lu", key) < 0) {
-            success = false;
-        }
-        return success;
-    }
-
-- **finalize_custom_type_data**:
-    This function is used to remove your data. It is called in the destructor.
-    The function takes one argument:
-
-        - A reference to custom type data.
-
-::
-
-    bool finalize_custom_type_data(RTI_CUSTOM_TYPE & data)
-    {
-        return true;
-    }
-
-- **initialize_custom_type_dynamic_data**:
-    This function is used to initialize your DynamicData.
-    Using this function, you will be able to allocate memory or set an immutable
-    field of the data.
-    The function takes one argument:
-
-        - A reference to the full DDS_DynamicData object that includes custom_type.
-
-::
-
-    bool initialize_custom_type_dynamic_data(DDS_DynamicData & data)
-    {
-        bool success = true;
-        if (!long_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
-            success = false;
-            fprintf(stderr, "long_seq.ensure_length failed.\n");
-        }
-        return success;
-    }
-
-- **register_custom_type_dynamic_data**:
-    This function is used to set your DynamicData before it has been registered.
-    It is only required for key types.
-    Set the key field of the data based on the key input.
-    There is a one-to-one mapping between an input key and an instance.
-    The function takes two arguments:
-
-        - A reference to the full DDS_DynamicData object that includes custom_type.
-        - A specific number unique for every key.
-
-::
-
-    void register_custom_type_dynamic_data(DDS_DynamicData & data, unsigned long key)
-    {
-        // TODO initialize DDS_DynamicData object to be registered
-        DDS_ReturnCode_t retcode = data.set_long(
-                "custom_type.test_long",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                key);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_long(test_long) failed: %d.\n", retcode);
-        }
-    }
-
-- **set_custom_type_dynamic_data**:
-    This function is used to set your DynamicData before it is sent.
-    It is called every time the data is sent.
-    Set the Custom type data before it is sent with the right "key"
-    value and the "target_data_len".
-    The function takes three arguments:
-
-        - A reference to the full DDS_DynamicData object that includes custom_type.
-        - A specific number unique for every key.
-        - The target size set by the command-line parameter ``-dataLen <bytes>``
-        minus the overhead of *RTI Perftest*.
-        If applicable, you can use this value to set the content of the data.
-::
-
-    bool set_custom_type_dynamic_data(
-            DDS_DynamicData & data,
-            unsigned long key,
-            int target_data_len)
-    {
-        DDS_ReturnCode_t retcode;
-        char test_string[SIZE_TEST_STRING]; //size of member_name
-        bool success = true;
-        DDS_DynamicData custom_type_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
-        DDS_DynamicData test_seq_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
-
-        retcode = data.bind_complex_member(
-                custom_type_data,
-                "custom_type",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr,
-                    "bind_complex_member(custom_type) failed: %d.\n",
-                    retcode);
-            success = false;
+        bool initialize_custom_type_data(RTI_CUSTOM_TYPE &data)
+        {
+            bool success = true;
+            if (!data.test_seq.test_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
+                success = false;
+            }
+            data.test_enum = ENUM1;
+            return success;
         }
 
-        retcode = custom_type_data.set_long(
-                "test_long",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                key);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_long(test_long) failed: %d.\n", retcode);
-            success = false;
+    - **register_custom_type_data**:
+        This function is used to set your data before being registered. It is only
+        required for key types. Set the key field of the data based on the key input.
+        There is a one-to-one mapping between an input key
+        and an instance.
+        The function takes two arguments:
+
+            - A reference to custom type data.
+            - A specific number unique for every key.
+
+    ::
+
+        void register_custom_type_data(RTI_CUSTOM_TYPE & data, unsigned long key)
+        {
+            data.test_long = key;
         }
 
-        retcode = custom_type_data.set_long(
-                "test_enum",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                ENUM1);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_long(test_enum) failed: %d.\n", retcode);
-            success = false;
+    - **set_custom_type_data**:
+        This function is used to set your data before it is sent.
+        It is called every time the data is sent.
+        You must set the Custom type data before it is sent with the right
+        "key" value and the "target_data_len".
+        The function takes three arguments:
+
+            - A reference to custom type data.
+            - A specific number unique for every key.
+            - The target size set by the command-line parameter ``-dataLen <bytes>``
+              minus the overhead of *RTI Perftest*. If applicable, you can use this
+              value to set the content of the data.
+
+    ::
+
+        bool set_custom_type_data(
+                RTI_CUSTOM_TYPE & data,
+                unsigned long key,
+                int target_data_len)
+        {
+            bool success = true;
+            data.test_long = key;
+            if (sprintf(data.test_string.test_string, "Hello World! %lu", key) < 0) {
+                success = false;
+            }
+            return success;
         }
 
-        if (snprintf(test_string, SIZE_TEST_STRING, "Hello World! %lu", key) < 0) {
-            success = false;
-        }
-        retcode = custom_type_data.set_string(
-                "test_string.test_string",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                test_string);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_string(test_string) failed: %d.\n", retcode);
-            success = false;
+    - **finalize_custom_type_data**:
+        This function is used to remove your data. It is called in the destructor.
+        The function takes one argument:
+
+            - A reference to custom type data.
+
+    ::
+
+        bool finalize_custom_type_data(RTI_CUSTOM_TYPE & data)
+        {
+            bool success = true;
+            if (!data.test_seq.test_seq.maximum(0)) {
+                success = false;
+            }
+            return success;
         }
 
-        retcode = custom_type_data.bind_complex_member(
-                test_seq_data,
-                "test_seq",
-                DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr,
-                    "bind_complex_member(test_seq_data) failed: %d.\n",
-                    retcode);
-            success = false;
+    - **initialize_custom_type_dynamic_data**:
+        This function is used to initialize your DynamicData.
+        Using this function, you will be able to allocate memory or set an immutable
+        field of the data.
+        The function takes one argument:
+
+            - A reference to the full DDS_DynamicData object that includes custom_type.
+
+    ::
+
+        bool initialize_custom_type_dynamic_data(DDS_DynamicData & data)
+        {
+            bool success = true;
+            if (!long_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
+                success = false;
+                fprintf(stderr, "long_seq.ensure_length failed.\n");
+            }
+            return success;
         }
-        retcode = test_seq_data.set_long_seq(
-                    "test_seq",
+
+    - **register_custom_type_dynamic_data**:
+        This function is used to set your DynamicData before it has been registered.
+        It is only required for key types.
+        Set the key field of the data based on the key input.
+        There is a one-to-one mapping between an input key and an instance.
+        The function takes two arguments:
+
+            - A reference to the full DDS_DynamicData object that includes custom_type.
+            - A specific number unique for every key.
+
+    ::
+
+        void register_custom_type_dynamic_data(DDS_DynamicData & data, unsigned long key)
+        {
+            DDS_ReturnCode_t retcode = data.set_long(
+                    "custom_type.test_long",
                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                    long_seq);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_long(test_seq) failed: %d.\n", retcode);
-            success = false;
+                    key);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_long(test_long) failed: %d.\n", retcode);
+            }
         }
-        retcode = custom_type_data.unbind_complex_member(test_seq_data);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr,
-                    "unbind_complex_member(test_seq_data) failed: %d.\n",
-                    retcode);
-            success = false;
-        }
-        retcode = data.unbind_complex_member(custom_type_data);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr,
-                    "unbind_complex_member(custom_type) failed: %d.\n",
-                    retcode);
-            success = false;
-        }
-        return success;
-    }
 
-- **finalize_custom_type_dynamic_data**:
-    This function is used to remove your data. It is called in the destructor.
-    The function takes one argument:
+    - **set_custom_type_dynamic_data**:
+        This function is used to set your DynamicData before it is sent.
+        It is called every time the data is sent.
+        Set the Custom type data before it is sent with the right "key"
+        value and the "target_data_len".
+        The function takes three arguments:
 
-        - A reference to the full DDS_DynamicData object that includes custom_type.
+            - A reference to the full DDS_DynamicData object that includes custom_type.
+            - A specific number unique for every key.
+            - The target size set by the command-line parameter ``-dataLen <bytes>``
+              minus the overhead of *RTI Perftest*. If applicable, you can use this
+              value to set the content of the data.
 
-::
+    ::
 
-    bool finalize_custom_type_dynamic_data(DDS_DynamicData & data)
-    {
-        bool success = long_seq.ensure_length(0, 0);
-        if (!success) {
-            fprintf(stderr, "long_seq.ensure_length failed.\n");
+        bool set_custom_type_dynamic_data(
+                DDS_DynamicData & data,
+                unsigned long key,
+                int target_data_len)
+        {
+            DDS_ReturnCode_t retcode;
+            char test_string[SIZE_TEST_STRING]; //size of member_name
+            bool success = true;
+            DDS_DynamicData custom_type_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
+            DDS_DynamicData test_seq_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
+
+            retcode = data.bind_complex_member(
+                    custom_type_data,
+                    "custom_type",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "bind_complex_member(custom_type) failed: %d.\n",
+                        retcode);
+                success = false;
+            }
+
+            retcode = custom_type_data.set_long(
+                    "test_long",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                    key);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_long(test_long) failed: %d.\n", retcode);
+                success = false;
+            }
+
+            retcode = custom_type_data.set_long(
+                    "test_enum",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                    ENUM1);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_long(test_enum) failed: %d.\n", retcode);
+                success = false;
+            }
+
+            if (snprintf(test_string, SIZE_TEST_STRING, "Hello World! %lu", key) < 0) {
+                success = false;
+            }
+            retcode = custom_type_data.set_string(
+                    "test_string.test_string",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                    test_string);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_string(test_string) failed: %d.\n", retcode);
+                success = false;
+            }
+
+            retcode = custom_type_data.bind_complex_member(
+                    test_seq_data,
+                    "test_seq",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "bind_complex_member(test_seq_data) failed: %d.\n",
+                        retcode);
+                success = false;
+            }
+            retcode = test_seq_data.set_long_seq(
+                        "test_seq",
+                        DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                        long_seq);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_long(test_seq) failed: %d.\n", retcode);
+                success = false;
+            }
+            retcode = custom_type_data.unbind_complex_member(test_seq_data);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "unbind_complex_member(test_seq_data) failed: %d.\n",
+                        retcode);
+                success = false;
+            }
+            retcode = data.unbind_complex_member(custom_type_data);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "unbind_complex_member(custom_type) failed: %d.\n",
+                        retcode);
+                success = false;
+            }
+            return success;
         }
-        DDS_ReturnCode_t retcode = data.clear_all_members();
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "clear_all_members failed: %d.\n", retcode);
-            success = false;
+
+    - **finalize_custom_type_dynamic_data**:
+        This function is used to remove your data. It is called in the destructor.
+        The function takes one argument:
+
+            - A reference to the full DDS_DynamicData object that includes custom_type.
+
+    ::
+
+        bool finalize_custom_type_dynamic_data(DDS_DynamicData & data)
+        {
+            bool success = true;
+            if (!long_seq.ensure_length(0, 0)) {
+                success = false;
+                fprintf(stderr, "long_seq.ensure_length failed.\n");
+            }
+            DDS_ReturnCode_t retcode = data.clear_all_members();
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "clear_all_members failed: %d.\n", retcode);
+                success = false;
+            }
+            return success;
         }
-        return success;
-    }
 
 3. Build *RTI Perftest* using ``--customType <type>``.
 
-::
+    ::
 
-    ./build.sh --platform x64Linux3gcc5.4.0 --nddshome /home/rti_connext_dds-5.3.0 --cpp-build --customType Test
+        ./build.sh --platform x64Linux3gcc5.4.0 --nddshome /home/rti_connext_dds-5.3.0 --cpp-build --customType Test
 
 4. Launch *RTI Perftest*.
 
-::
+    ::
 
-    ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint
-    RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+        ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint
+        RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
 
-    Using CustomType with the type <Test>
+        Using user provided type 'Test'
 
-    Mode: THROUGHPUT TEST
-        (Use "-latencyTest" for Latency Mode)
+        Mode: THROUGHPUT TEST
+            (Use "-latencyTest" for Latency Mode)
 
-    Perftest Configuration:
-        Reliability: Reliable
-        Keyed: No
-        Publisher ID: 0
-        Latency count: 1 latency sample every 10000 samples
-        Data Size: 100
-        Batching: 8192 Bytes (Use "-batchSize 0" to disable batching)
-        Publication Rate: Unlimited (Not set)
-        Execution time: 60 seconds
-        Receive using: Listeners
-        Domain: 1
-        Dynamic Data: No
-        Asynchronous Publishing: No
-        XML File: perftest_qos_profiles.xml
+        Perftest Configuration:
+            Reliability: Reliable
+            Keyed: No
+            Publisher ID: 0
+            Latency count: 1 latency sample every 10000 samples
+            Data Size: 100
+            Batching: 8192 Bytes (Use "-batchSize 0" to disable batching)
+            Publication Rate: Unlimited (Not set)
+            Execution time: 60 seconds
+            Receive using: Listeners
+            Domain: 1
+            Dynamic Data: No
+            Asynchronous Publishing: No
+            XML File: perftest_qos_profiles.xml
 
-    Transport Configuration:
-        Kind: UDPv4 & SHMEM (taken from QoS XML file)
-        Use Multicast: False
+        Transport Configuration:
+            Kind: UDPv4 & SHMEM (taken from QoS XML file)
+            Use Multicast: False
 
-    Waiting to discover 1 subscribers ...
-    Waiting for subscribers announcement ...
-    Sending 4050 initialization pings ...
-    Publishing data ...
-    Setting timeout to 60 seconds
-    Length:   464  Latency: Ave     39 us  Std   30.7 us  Min     21 us  Max    276 us  50%     30 us  90%     60 us  99%    276 us  99.99%    276 us  99.9999%    276 us
-    Finishing test due to timer...
-    Test ended.
+        Waiting to discover 1 subscribers ...
+        Waiting for subscribers announcement ...
+        Sending 4050 initialization pings ...
+        Publishing data ...
+        Setting timeout to 60 seconds
+        Length:   464  Latency: Ave     39 us  Std   30.7 us  Min     21 us  Max    276 us  50%     30 us  90%     60 us  99%    276 us  99.99%    276 us  99.9999%    276 us
+        Finishing test due to timer...
+        Test ended.
 
 
 
-::
+    ::
 
-    ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint
-    RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+        ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint
+        RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
 
-    Using CustomType with the type <Test>
+        Using user provided type 'Test'
 
-    Perftest Configuration:
-        Reliability: Reliable
-        Keyed: No
-        Subscriber ID: 0
-        Receive using: Listeners
-        Domain: 1
-        Dynamic Data: No
-        XML File: perftest_qos_profiles.xml
+        Perftest Configuration:
+            Reliability: Reliable
+            Keyed: No
+            Subscriber ID: 0
+            Receive using: Listeners
+            Domain: 1
+            Dynamic Data: No
+            XML File: perftest_qos_profiles.xml
 
-    Transport Configuration:
-        Kind: UDPv4 & SHMEM (taken from QoS XML file)
-        Use Multicast: False
+        Transport Configuration:
+            Kind: UDPv4 & SHMEM (taken from QoS XML file)
+            Use Multicast: False
 
-    Waiting to discover 1 publishers ...
-    Waiting for data...
-    Length:   464  Packets: 68081040  Packets/s(ave): 1134692  Mbps(ave):  4212.0  Lost:     0 (0.00%)
-    Finishing test...
-    Test ended.
+        Waiting to discover 1 publishers ...
+        Waiting for data...
+        Length:   464  Packets: 68081040  Packets/s(ave): 1134692  Mbps(ave):  4212.0  Lost:     0 (0.00%)
+        Finishing test...
+        Test ended.
 
 
 
 5. Launch *RTI Perftest* with DynamicData.
 
-::
+    ::
 
-    ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint -dynamicData
-    RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+        ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint -dynamicData
+        RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
 
-    Using CustomType with the type <Test>
+        Using user provided type 'Test'
 
-    Mode: THROUGHPUT TEST
-        (Use "-latencyTest" for Latency Mode)
+        Mode: THROUGHPUT TEST
+            (Use "-latencyTest" for Latency Mode)
 
-    Perftest Configuration:
-        Reliability: Reliable
-        Keyed: No
-        Publisher ID: 0
-        Latency count: 1 latency sample every 10000 samples
-        Data Size: 100
-        Batching: 8192 Bytes (Use "-batchSize 0" to disable batching)
-        Publication Rate: Unlimited (Not set)
-        Execution time: 60 seconds
-        Receive using: Listeners
-        Domain: 1
-        Dynamic Data: Yes
-        Asynchronous Publishing: No
-        XML File: perftest_qos_profiles.xml
+        Perftest Configuration:
+            Reliability: Reliable
+            Keyed: No
+            Publisher ID: 0
+            Latency count: 1 latency sample every 10000 samples
+            Data Size: 100
+            Batching: 8192 Bytes (Use "-batchSize 0" to disable batching)
+            Publication Rate: Unlimited (Not set)
+            Execution time: 60 seconds
+            Receive using: Listeners
+            Domain: 1
+            Dynamic Data: Yes
+            Asynchronous Publishing: No
+            XML File: perftest_qos_profiles.xml
 
-    Transport Configuration:
-        Kind: UDPv4 & SHMEM (taken from QoS XML file)
-        Use Multicast: False
+        Transport Configuration:
+            Kind: UDPv4 & SHMEM (taken from QoS XML file)
+            Use Multicast: False
 
-    Waiting to discover 1 subscribers ...
-    Waiting for subscribers announcement ...
-    Sending 4050 initialization pings ...
-    Publishing data ...
-    Setting timeout to 60 seconds
-    Length:   464  Latency: Ave    158 us  Std  166.5 us  Min     71 us  Max    678 us  50%    105 us  90%    169 us  99%    678 us  99.99%    678 us  99.9999%    678 us
-    Finishing test due to timer...
-    Test ended.
-
-
+        Waiting to discover 1 subscribers ...
+        Waiting for subscribers announcement ...
+        Sending 4050 initialization pings ...
+        Publishing data ...
+        Setting timeout to 60 seconds
+        Length:   464  Latency: Ave    158 us  Std  166.5 us  Min     71 us  Max    678 us  50%    105 us  90%    169 us  99%    678 us  99.99%    678 us  99.9999%    678 us
+        Finishing test due to timer...
+        Test ended.
 
 
-::
 
-    ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint -dynamicData
-    RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
 
-    Using CustomType with the type <Test>
+    ::
 
-    Perftest Configuration:
-        Reliability: Reliable
-        Keyed: No
-        Subscriber ID: 0
-        Receive using: Listeners
-        Domain: 1
-        Dynamic Data: Yes
-        XML File: perftest_qos_profiles.xml
+        ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint -dynamicData
+        RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
 
-    Transport Configuration:
-        Kind: UDPv4 & SHMEM (taken from QoS XML file)
-        Use Multicast: False
+        Using user provided type 'Test'
 
-    Waiting to discover 1 publishers ...
-    Waiting for data...
-    Length:   464  Packets:  8146078  Packets/s(ave):  135770  Mbps(ave):   504.0  Lost:     0 (0.00%)
-    Finishing test...
-    Test ended.
+        Perftest Configuration:
+            Reliability: Reliable
+            Keyed: No
+            Subscriber ID: 0
+            Receive using: Listeners
+            Domain: 1
+            Dynamic Data: Yes
+            XML File: perftest_qos_profiles.xml
+
+        Transport Configuration:
+            Kind: UDPv4 & SHMEM (taken from QoS XML file)
+            Use Multicast: False
+
+        Waiting to discover 1 publishers ...
+        Waiting for data...
+        Length:   464  Packets:  8146078  Packets/s(ave):  135770  Mbps(ave):   504.0  Lost:     0 (0.00%)
+        Finishing test...
+        Test ended.

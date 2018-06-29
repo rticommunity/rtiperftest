@@ -3,7 +3,7 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TO_STRING(x) STRINGIFY(x)
 #include "RTIDDSImpl.h"
 #include "perftest_cpp.h"
 #include "CpuMonitor.h"
@@ -861,9 +861,9 @@ void perftest_cpp::PrintConfiguration()
     std::ostringstream stringStream;
 
   #ifdef RTI_CUSTOM_TYPE
-    stringStream << "\nUsing CustomType with the type <"
-                 << TOSTRING(RTI_CUSTOM_TYPE)
-                 << ">\n";
+    stringStream << "\nUsing user provided type '"
+                 << TO_STRING(RTI_CUSTOM_TYPE)
+                 << "'\n";
   #endif
 
     // Throughput/Latency mode

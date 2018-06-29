@@ -160,11 +160,11 @@ bool set_custom_type_dynamic_data(
     return success;
 }
 
-
 bool finalize_custom_type_dynamic_data(DDS_DynamicData &data)
 {
-    bool success = long_seq.ensure_length(0, 0);
-    if (!success) {
+    bool success = true;
+    if (!long_seq.ensure_length(0, 0)) {
+        success = false;
         fprintf(stderr, "long_seq.ensure_length failed.\n");
     }
     DDS_ReturnCode_t retcode = data.clear_all_members();

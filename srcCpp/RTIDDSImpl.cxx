@@ -80,7 +80,6 @@ DynamicDataMembersId::DynamicDataMembersId()
 #ifdef RTI_CUSTOM_TYPE
     membersId["custom_type"] = 8;
     membersId["custom_type_size"] = 9;
-
 #endif
 }
 
@@ -944,7 +943,7 @@ class RTIPublisher : public IMessagingWriter
         }
       #endif
         _writer = T::DataWriter::narrow(writer);
-        if (!data.bin_data.maximum(0)){
+        if (!data.bin_data.maximum(0)) {
             Shutdown();
             throw std::runtime_error("bin_data.maximum failed");
         }
