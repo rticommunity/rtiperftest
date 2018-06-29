@@ -2811,23 +2811,19 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 }
 
-std::string getQoSProfileName(const char *topicName)
+template <typename T>
+const std::string RTIDDSImpl<T>::getQoSProfileName(const char *topicName)
 {
-    std::string qosProfile = std::string("");
-    if (strcmp(topicName, THROUGHPUT_TOPIC_NAME) == 0) {
-        qosProfile = "ThroughputQos";
-    } else if (strcmp(topicName, LATENCY_TOPIC_NAME) == 0) {
-        qosProfile = "LatencyQos";
-    } else if (strcmp(topicName, ANNOUNCEMENT_TOPIC_NAME) == 0) {
-        qosProfile = "AnnouncementQos";
-    } else {
+    if (_qoSProfileNameMap[std::string(topicName)].empty()) {
         fprintf(stderr,
                 "topic name must either be %s or %s or %s.\n",
                 THROUGHPUT_TOPIC_NAME,
                 LATENCY_TOPIC_NAME,
                 ANNOUNCEMENT_TOPIC_NAME);
     }
-    return qosProfile;
+
+    /* If the topic name dont match any key return a empty string */
+    return _qoSProfileNameMap[std::string(topicName)];
 }
 
 #ifdef RTI_WIN32
