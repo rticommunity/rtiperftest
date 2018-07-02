@@ -1700,7 +1700,15 @@ class RTIDynamicDataSubscriber : public IMessagingReader
     {
         _reader = DDSDynamicDataReader::narrow(reader);
         if (_reader == NULL) {
-            fprintf(stderr,"DDSDynamicDataReader::narrow(reader) error.\n");
+            fprintf(stderr, "DDSDynamicDataReader::narrow(reader) error.\n");
+            /*
+             * Nothing was created at this point, shutdown() is called for
+             * maintain consistency.
+             */
+            Shutdown();
+            throw std::runtime_error(
+                    "Fail to narrow the given DDSDataReader pointer to "
+                    "DDSDynamicDataReader pointer\n");
         }
         _data_idx = 0;
         _no_data = false;
@@ -1729,12 +1737,14 @@ class RTIDynamicDataSubscriber : public IMessagingReader
 
     void Shutdown()
     {
-        if (_reader->get_listener() != NULL) {
-            delete(_reader->get_listener());
-            _reader->set_listener(NULL);
+        if (_reader != NULL) {
+            if (_reader->get_listener() != NULL) {
+                delete (_reader->get_listener());
+                _reader->set_listener(NULL);
+            }
+            // loan may be outstanding during shutdown
+            _reader->return_loan(_data_seq, _info_seq);
         }
-        // loan may be outstanding during shutdown
-        _reader->return_loan(_data_seq, _info_seq);
     }
 
     TestMessage *ReceiveMessage()
