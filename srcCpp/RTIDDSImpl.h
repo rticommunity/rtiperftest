@@ -9,6 +9,7 @@
 #include <string>
 #include <algorithm>
 #include <map>
+#include <stdexcept> 
 #include "MessagingIF.h"
 #include "perftestSupport.h"
 #include "PerftestTransport.h"
