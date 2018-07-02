@@ -163,14 +163,15 @@ std::string ParameterBase::printCommandLineParameter()
         description.insert(foundPosition + 1, spaces);
         foundPosition = description.find("\n", foundPosition + 1);
     }
-    // std::setw set the width
     std::ostringstream oss;
-    oss << "\t"
-        << getCommandLineArgument().first
-        << " "
-        << getCommandLineArgument().second
-        << std::string(32 - (getCommandLineArgument().first.size() + getCommandLineArgument().second.size()), ' ' )
-        << "- "
+    oss.fill(' ');
+    oss.width(33);
+    oss << std::left
+        << std::string("\t")
+        + getCommandLineArgument().first
+        + std::string(" ")
+        + getCommandLineArgument().second;
+    oss << "- "
         << description
         << "\n";
     return oss.str();
