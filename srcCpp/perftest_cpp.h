@@ -40,6 +40,10 @@
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
 
+class ThroughputListener;
+class LatencyListener;
+class AnnouncementListener;
+
 struct Perftest_ProductVersion_t
 {
   char major;
@@ -114,7 +118,16 @@ class perftest_cpp
     bool _useCft;
     static const Perftest_ProductVersion_t _version;
 
-  private:
+    /* Members for publisher and subscriber */
+    ThroughputListener *_throughput_reader_listener;
+    LatencyListener *_latency_reader_listener;
+    AnnouncementListener *_announcement_reader_listener;
+    IMessagingReader *_reader;
+    IMessagingWriter *_writer;
+    IMessagingReader *_announcement_reader;
+    IMessagingWriter *_announcement_writer;
+
+private:
     static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);
 
     /* The following three members are used in a static callback

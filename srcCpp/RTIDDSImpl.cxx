@@ -1167,9 +1167,11 @@ public:
     }
 
     void Shutdown() {
-        if (_writer->get_listener() != NULL) {
-            delete(_writer->get_listener());
-            _writer->set_listener(NULL);
+        if (_writer != NULL) {
+            if (_writer->get_listener() != NULL) {
+                delete(_writer->get_listener());
+                _writer->set_listener(NULL);
+            }
         }
 
         free(_instance_handles);
@@ -1606,12 +1608,14 @@ class RTISubscriber : public IMessagingReader
 
     void Shutdown()
     {
-        if (_reader->get_listener() != NULL) {
-            delete(_reader->get_listener());
-            _reader->set_listener(NULL);
+        if (_reader != NULL) {
+            if (_reader->get_listener() != NULL) {
+                delete(_reader->get_listener());
+                _reader->set_listener(NULL);
+            }
+            // loan may be outstanding during shutdown
+            _reader->return_loan(_data_seq, _info_seq);
         }
-        // loan may be outstanding during shutdown
-        _reader->return_loan(_data_seq, _info_seq);
     }
 
     TestMessage *ReceiveMessage()
