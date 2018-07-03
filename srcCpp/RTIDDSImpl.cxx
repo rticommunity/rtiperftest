@@ -108,15 +108,6 @@ void RTIDDSImpl<T>::Shutdown()
     }
 
     if (_participant != NULL) {
-        perftest_cpp::MilliSleep(2000);
-
-        if (_reader != NULL) {
-            DDSDataReaderListener* reader_listener = _reader->get_listener();
-            if (reader_listener != NULL) {
-                delete(reader_listener);
-            }
-            _subscriber->delete_datareader(_reader);
-        }
 
         DDSDomainParticipantListener* participant_listener = _participant->get_listener();
         if (participant_listener != NULL) {
@@ -917,6 +908,17 @@ class RTIPublisher : public IMessagingWriter
     RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
     {
         _writer = T::DataWriter::narrow(writer);
+        if (_writer == NULL) {
+            fprintf(stderr, "DataWriter::narrow(writer) error.\n");
+            /*
+             * Nothing was created at this point, shutdown() is called for
+             * maintain consistency.
+             */
+            Shutdown();
+            throw std::runtime_error(
+                    "Fail to narrow the given DDSDataWriter pointer to "
+                    "T::DataWriter pointer\n");
+        }
         data.bin_data.maximum(0);
         _num_instances = num_instances;
         _instance_counter = 0;
@@ -947,9 +949,11 @@ class RTIPublisher : public IMessagingWriter
     }
 
     void Shutdown() {
-        if (_writer->get_listener() != NULL) {
-            delete(_writer->get_listener());
-            _writer->set_listener(NULL);
+        if (_writer != NULL) {
+            if (_writer->get_listener() != NULL) {
+                delete(_writer->get_listener());
+                _writer->set_listener(NULL);
+            }
         }
 
         free(_instance_handles);
@@ -1098,6 +1102,18 @@ public:
 
     {
         _writer = DDSDynamicDataWriter::narrow(writer);
+        if (_writer == NULL) {
+            fprintf(stderr, "DDSDynamicDataWriter::narrow(writer) error.\n");
+            /*
+             * Nothing was created at this point, shutdown() is called for
+             * maintain consistency.
+             */
+            Shutdown();
+            throw std::runtime_error(
+                    "Fail to narrow the given DDSDataWriter pointer to "
+                    "DDSDynamicDataWriter pointer\n");
+        }
+
         DDS_Octet key_octets[KEY_SIZE];
         DDS_ReturnCode_t retcode;
 
@@ -1553,6 +1569,17 @@ class RTISubscriber : public IMessagingReader
     RTISubscriber(DDSDataReader *reader): _message()
     {
         _reader = T::DataReader::narrow(reader);
+        if (_reader == NULL) {
+            fprintf(stderr, "T::DataReader::narrow(reader) error.\n");
+            /*
+             * Nothing was created at this point, shutdown() is called for
+             * maintain consistency.
+             */
+            Shutdown();
+            throw std::runtime_error(
+                    "Fail to narrow the given DDSDataReader pointer to "
+                    "DataReader pointer\n");
+        }
         _data_idx = 0;
         _no_data = false;
 
@@ -2578,10 +2605,17 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (!_isDynamicData) {
-        return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore, _instancesToBeWritten);
-    } else {
-        return new RTIDynamicDataPublisher(writer, _InstanceCount, _pongSemaphore, T::TypeSupport::get_typecode(), _instancesToBeWritten);
+    try {
+        if (!_isDynamicData) {
+            return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore, _instancesToBeWritten);
+        } else {
+            return new RTIDynamicDataPublisher(writer, _InstanceCount, _pongSemaphore, T::TypeSupport::get_typecode(), _instancesToBeWritten);
+        }
+    } catch (const std::exception &ex) {
+        fprintf(stderr,
+                "Exception in RTIDDSImpl::CreateWriter: %s.\n",
+                ex.what());
+        return NULL;
     }
 
 }
@@ -2827,15 +2861,17 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-    if (!strcmp(topic_name, THROUGHPUT_TOPIC_NAME) ||
-        !strcmp(topic_name, LATENCY_TOPIC_NAME)) {
-        _reader = reader;
-    }
-
-    if (!_isDynamicData) {
-        return new RTISubscriber<T>(reader);
-    } else {
-        return new RTIDynamicDataSubscriber<T>(reader);
+    try{
+        if (!_isDynamicData) {
+            return new RTISubscriber<T>(reader);
+        } else {
+            return new RTIDynamicDataSubscriber<T>(reader);
+        }
+    } catch (const std::exception &ex) {
+        fprintf(stderr,
+                "Exception in RTIDDSImpl::CreateReader: %s.\n",
+                ex.what());
+        return NULL;
     }
 }
 

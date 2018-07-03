@@ -91,7 +91,6 @@ class RTIDDSImpl : public IMessaging
         _participant = NULL;
         _subscriber = NULL;
         _publisher = NULL;
-        _reader = NULL;
         _typename = T::TypeSupport::get_type_name();
 
         _pongSemaphore = NULL;
@@ -205,7 +204,6 @@ class RTIDDSImpl : public IMessaging
     DDSDomainParticipant        *_participant;
     DDSSubscriber               *_subscriber;
     DDSPublisher                *_publisher;
-    DDSDataReader               *_reader;
     const char                  *_typename;
 
     RTIOsapiSemaphore *_pongSemaphore;
