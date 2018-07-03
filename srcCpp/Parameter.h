@@ -36,6 +36,15 @@ enum EXTRAARGUMENT {
     YES              // There is not one extra argument
 };
 
+enum GROUP {
+    GENERAL,
+    PUB,
+    SUB,
+    TRANSPORT,
+    SECURE,
+    RAWTRANSPORT
+};
+
 class ParameterBase  {
     private:
         std::pair <std::string, std::string> commandLineArgument;
@@ -44,6 +53,7 @@ class ParameterBase  {
         TYPE type;
         EXTRAARGUMENT  extraArgument;
         bool internal; // Does not have description
+        GROUP group;
 
         // Only used for numeric argument
         unsigned long long rangeStart;
@@ -70,11 +80,12 @@ class ParameterBase  {
         virtual void setIsSet(bool var);
         virtual void setType(TYPE var);
         virtual void setExtraArgument(EXTRAARGUMENT var);
+        virtual void setInternal(bool var);
+        virtual void setGroup(GROUP var);
         virtual void setRangeStart(unsigned long long var);
         virtual void setRangeEnd(unsigned long long var);
         virtual void setRange(unsigned long long rangeStart, unsigned long long rangeEnd);
         virtual void addValidStrValue(std::string validStrValue);
-        virtual void setInternal(bool var);
         virtual void setParseMethod(PARSEMETHOD var) {}
 
         // Get members
@@ -84,6 +95,7 @@ class ParameterBase  {
         virtual TYPE getType();
         virtual EXTRAARGUMENT getExtraArgument();
         virtual bool getInternal();
+        virtual GROUP getGroup();
         virtual PARSEMETHOD getParseMethod();
 };
 

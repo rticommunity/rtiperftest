@@ -16,6 +16,7 @@ void ParameterManager::initialize()
     batching->setType(T_NUMERIC);
     batching->setExtraArgument(YES);
     batching->setRange(0, 63000);
+    batching->setGroup(PUB);
     parameterList["batching"] = AnyParameter(batching);
 
     Parameter<std::string> *flowController = new Parameter<std::string>("default");
@@ -26,6 +27,7 @@ void ParameterManager::initialize()
     flowController->addValidStrValue("default");
     flowController->addValidStrValue("1Gbps");
     flowController->addValidStrValue("10Gbps");
+    flowController->setGroup(PUB);
     parameterList["flowController"] = AnyParameter(flowController);
 
     Parameter<std::string> *nic = new Parameter<std::string>("");
@@ -33,6 +35,7 @@ void ParameterManager::initialize()
     nic->setDescription("Use only the nic specified by <ipaddr>.\nIf not specified, use all available interfaces");
     nic->setType(T_STR);
     nic->setExtraArgument(YES);
+    nic->setGroup(TRANSPORT);
     parameterList["nic"] = AnyParameter(nic);
 
     Parameter<bool> * pub = new Parameter<bool>(false);
@@ -40,6 +43,7 @@ void ParameterManager::initialize()
     pub->setDescription("Set test to be a publisher");
     pub->setType(T_BOOL);
     pub->setExtraArgument(NO);
+    pub->setGroup(GENERAL);
     parameterList["pub"] = AnyParameter(pub);
 
     ParameterVector<std::string> * peer = new ParameterVector<std::string>();
@@ -47,6 +51,7 @@ void ParameterManager::initialize()
     peer->setDescription("Adds a peer to the peer host address list.\nThis argument may be repeated to indicate multiple peers");
     peer->setType(T_VECTOR_STR);
     peer->setExtraArgument(YES);
+    peer->setGroup(TRANSPORT);
     parameterList["peer"] = AnyParameter(peer);
 
     std::vector<unsigned long long> _scanDataLenSizes;
@@ -69,6 +74,7 @@ void ParameterManager::initialize()
     scan->setExtraArgument(OPTIONAL);
     scan->setRange(32, 2147483128);
     scan->setParseMethod(SPLIT);
+    scan->setGroup(PUB);
     parameterList["scan"] = AnyParameter(scan);
 
     Parameter<unsigned long long> *unbounded = new Parameter<unsigned long long>(63000);
@@ -77,7 +83,50 @@ void ParameterManager::initialize()
     unbounded->setType(T_NUMERIC);
     unbounded->setExtraArgument(OPTIONAL);
     unbounded->setRange(0, 2147483128);
+    unbounded->setGroup(GENERAL);
     parameterList["unbounded"] = AnyParameter(unbounded);
+
+    Parameter<unsigned long long> *sendQueueSize = new Parameter<unsigned long long>(50);
+    sendQueueSize->setCommandLineArgument(std::make_pair("-sendQueueSize","<number>"));
+    sendQueueSize->setDescription("Sets number of samples (or batches) in send\nqueue. Default: 50");
+    sendQueueSize->setType(T_NUMERIC);
+    sendQueueSize->setExtraArgument(YES);
+    sendQueueSize->setGroup(PUB);
+    sendQueueSize->setRange(0, 2147483128);
+    parameterList["sendQueueSize"] = AnyParameter(sendQueueSize);
+
+    Parameter<unsigned long long> *domain = new Parameter<unsigned long long>(1);
+    domain->setCommandLineArgument(std::make_pair("-domain","<id>"));
+    domain->setDescription("RTI DDS Domain. Default: 1");
+    domain->setType(T_NUMERIC);
+    domain->setExtraArgument(YES);
+    domain->setRange(0, 250);
+    domain->setGroup(GENERAL);
+    parameterList["domain"] = AnyParameter(domain);
+
+    Parameter<std::string> *qosFile = new Parameter<std::string>("perftest_qos_profiles.xml");
+    qosFile->setCommandLineArgument(std::make_pair("-qosFile","<filename>"));
+    qosFile->setDescription("Name of XML file for DDS Qos profiles.\nDefault: perftest_qos_profiles.xml");
+    qosFile->setType(T_STR);
+    qosFile->setExtraArgument(YES);
+    qosFile->setGroup(GENERAL);
+    parameterList["qosFile"] = AnyParameter(qosFile);
+
+    Parameter<std::string> *qosLibrary = new Parameter<std::string>("PerftestQosLibrary");
+    qosLibrary->setCommandLineArgument(std::make_pair("-qosLibrary","<lib name>"));
+    qosLibrary->setDescription("Name of QoS Library for DDS Qos profiles.\nDefault: PerftestQosLibrary");
+    qosLibrary->setType(T_STR);
+    qosLibrary->setExtraArgument(YES);
+    qosLibrary->setGroup(GENERAL);
+    parameterList["qosLibrary"] = AnyParameter(qosLibrary);
+
+    Parameter<bool> *bestEffort = new Parameter<bool>(false);
+    bestEffort->setCommandLineArgument(std::make_pair("-bestEffort",""));
+    bestEffort->setDescription("Run test in best effort mode. Default: reliable");
+    bestEffort->setType(T_BOOL);
+    bestEffort->setExtraArgument(NO);
+    bestEffort->setGroup(GENERAL);
+    parameterList["bestEffort"] = AnyParameter(bestEffort);
 }
 
 
@@ -173,13 +222,46 @@ std::string ParameterManager::displayHelp()
 {
     std::map<std::string, AnyParameter>::iterator it;
     std::ostringstream oss;
+    std::map<GROUP, std::string> output;
+    for (int i = GENERAL; i != RAWTRANSPORT+1; i++) {
+        output[static_cast<GROUP>(i)] += "\n\n\t=========================== ";
+        switch (static_cast<GROUP>(i)) {
+            case GENERAL:
+                output[static_cast<GROUP>(i)] += "GENERAL";
+                break;
+            case PUB:
+                output[static_cast<GROUP>(i)] += "PUBLISHER";
+                break;
+            case SUB:
+                output[static_cast<GROUP>(i)] += "SUBSCRIBER";
+                break;
+            case TRANSPORT:
+                output[static_cast<GROUP>(i)] += "TRANSPORT";
+                break;
+            case SECURE:
+                output[static_cast<GROUP>(i)] += "SECURE";
+                break;
+            case RAWTRANSPORT:
+                output[static_cast<GROUP>(i)] += "RAWTRANSPORT";
+                break;
+            default:
+                break;
+        }
+        output[static_cast<GROUP>(i)] += " Specific Options ===========================\n\n";
+    }
+
     oss << "/**********************************************************************************************/\n"
         << "Usage:\t perftest_cpp [options]\n"
         << "Where [options] are:\n\n";
     for (it = parameterList.begin(); it != parameterList.end(); it++) {
         if (!it->second.get()->getInternal()) {
-            oss << it->second.get()->printCommandLineParameter();
+            output[it->second.get()->getGroup()] +=
+                    it->second.get()->printCommandLineParameter();
         }
+    }
+    std::map<GROUP, std::string>::iterator itOutput;
+    for (itOutput = output.begin(); itOutput != output.end(); itOutput++) {
+        oss << itOutput->second;
     }
     oss << "/**********************************************************************************************/\n";
     return oss.str();

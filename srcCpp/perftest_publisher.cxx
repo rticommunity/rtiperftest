@@ -115,6 +115,12 @@ int perftest_cpp::Run(int argc, char *argv[])
         printf("\t%llu\n", scan[i]);
     }
     printf("unbounded: %d\n", parameterManager.query<int>("unbounded"));
+    printf("sendQueueSize: %d\n", parameterManager.query<int>("sendQueueSize"));
+    printf("domain: %d\n", parameterManager.query<int>("domain"));
+    printf("qosFile: %s\n", parameterManager.query<std::string>("qosFile").c_str());
+    printf("qosLibrary: %s\n", parameterManager.query<std::string>("qosLibrary").c_str());
+    printf("bestEffort: %d\n", parameterManager.query<bool>("bestEffort"));
+
 
     return 0;
 

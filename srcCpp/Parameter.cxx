@@ -13,6 +13,7 @@ ParameterBase::ParameterBase()
     extraArgument = NO;
     rangeStart = 0;
     rangeEnd = ULLONG_MAX;
+    group = GENERAL;
 }
 
 ParameterBase::~ParameterBase()
@@ -117,6 +118,11 @@ void ParameterBase::setInternal(bool var)
     internal = var;
 }
 
+void ParameterBase::setGroup(GROUP var)
+{
+    group = var;
+}
+
 // Get members
 std::pair <std::string, std::string> ParameterBase::getCommandLineArgument()
 {
@@ -146,6 +152,11 @@ EXTRAARGUMENT ParameterBase::getExtraArgument()
 bool ParameterBase::getInternal()
 {
     return internal;
+}
+
+GROUP ParameterBase::getGroup()
+{
+    return group;
 }
 
 PARSEMETHOD ParameterBase::getParseMethod()
