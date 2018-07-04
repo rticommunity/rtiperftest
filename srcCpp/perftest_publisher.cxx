@@ -215,6 +215,67 @@ perftest_cpp::perftest_cpp()
 #endif
 };
 
+/*********************************************************
+ * Destructor
+ */
+perftest_cpp::~perftest_cpp()
+{
+    for (int i = 0; i < _MessagingArgc; ++i) {
+        if (_MessagingArgv[i] != NULL) {
+            DDS_String_free(_MessagingArgv[i]);
+        }
+    }
+
+    if (_MessagingArgv != NULL) {
+        delete[] _MessagingArgv;
+    }
+
+    if (_throughput_reader_listener != NULL) {
+        delete (_throughput_reader_listener);
+    }
+
+    if (_latency_reader_listener != NULL) {
+        delete (_latency_reader_listener);
+    }
+
+    if (_announcement_reader_listener != NULL) {
+        delete (_announcement_reader_listener);
+    }
+
+    if (_reader != NULL) {
+        delete (_reader);
+    }
+
+    if (_writer != NULL) {
+        delete (_writer);
+    }
+
+    if (_announcement_reader != NULL) {
+        delete (_announcement_reader);
+    }
+
+    if (_announcement_writer != NULL) {
+        delete (_announcement_writer);
+    }
+
+    if (_MessagingImpl != NULL) {
+        delete _MessagingImpl;
+    }
+
+    if (perftest_cpp::_Clock != NULL) {
+        RTIHighResolutionClock_delete(perftest_cpp::_Clock);
+    }
+
+#ifdef RTI_WIN32
+    if (_hTimerQueue != NULL) {
+        DeleteTimerQueue(_hTimerQueue);
+    }
+#endif
+
+
+    fprintf(stderr, "Test ended.\n");
+    fflush(stderr);
+}
 
 /*********************************************************
  * ParseArgs
@@ -942,255 +1003,33 @@ void perftest_cpp::PrintConfiguration()
 }
 
 /*********************************************************
- * Listener for the Subscriber side
- *
- * Keeps stats on data received per second.
- * Returns a ping for latency packets
- */
-class ThroughputListener : public IMessagingCB
-{
-  public:
-
-    unsigned long long packets_received;
-    unsigned long long bytes_received;
-    unsigned long long missing_packets;
-    int                last_data_length;
-
-    // store info for the last data set
-    int                interval_data_length;
-    unsigned long long interval_packets_received;
-    unsigned long long interval_bytes_received;
-    unsigned long long interval_missing_packets;
-    unsigned long long interval_time, begin_time;
-    float missing_packets_percent;
-
-    IMessagingWriter *_writer;
-    IMessagingReader *_reader;
-    unsigned long * _last_seq_num;
-
-    int _num_publishers;
-    std::vector<int> _finished_publishers;
-    CpuMonitor cpu;
-    bool _useCft;
-    bool change_size;
-
-  public:
-
-    ThroughputListener(IMessagingWriter *writer, IMessagingReader *reader = NULL, bool UseCft = false, int numPublishers = 1)
-    {
-        packets_received = 0;
-        bytes_received = 0;
-        missing_packets = 0;
-        end_test = false;
-        change_size = false;
-        last_data_length = -1;
-        interval_data_length = -1;
-        interval_packets_received = 0;
-        interval_bytes_received = 0;
-        interval_missing_packets = 0;
-        interval_time = 0;
-        missing_packets_percent = 0.0;
-        begin_time = 0;
-        _writer = writer;
-        _reader = reader;
-        _last_seq_num = new unsigned long[numPublishers];
-        _useCft = UseCft;
-
-        for (int i=0; i<numPublishers; i++) {
-            _last_seq_num[i] = 0;
-        }
-
-        _num_publishers = numPublishers;
-    }
-
-    ~ThroughputListener() {
-        if (_last_seq_num != NULL) {
-            delete []_last_seq_num;
-        }
-    }
-
-    void ProcessMessage(TestMessage &message)
-    {
-        if (message.entity_id >= _num_publishers ||
-            message.entity_id < 0) {
-            printf("ProcessMessage: message content no valid. message.entity_id out of bounds\n");
-            return;
-        }
-        // Check for test initialization messages
-        if (message.size == perftest_cpp::INITIALIZE_SIZE)
-        {
-            _writer->Send(message);
-            _writer->Flush();
-            return;
-        }
-        else if (message.size == perftest_cpp::FINISHED_SIZE)
-        {
-            /*
-             * PERFTEST-97
-             * We check the entity_id of the publisher to see if it has already
-             * send a FINISHED_SIZE message. If he has we ignore any new one.
-             * Else, we add it to a vector. Once that vector contains all the
-             * ids of the publishers the subscriber is suppose to know, that
-             * means that all the publishers have finished sending data samples,
-             * so it is time to finish the subscriber.
-             */
-            if (std::find(
-                        _finished_publishers.begin(),
-                        _finished_publishers.end(),
-                        message.entity_id)
-                != _finished_publishers.end()) {
-                return;
-            }
-
-            if (end_test)
-            {
-                return;
-            }
-
-            _finished_publishers.push_back(message.entity_id);
-
-            if (_finished_publishers.size() >= (unsigned int)_num_publishers) {
-                print_summary(message);
-                end_test = true;
-            }
-            return;
-        }
-
-        // Send back a packet if this is a ping
-        if ((message.latency_ping == perftest_cpp::_SubID)  ||
-                (_useCft && message.latency_ping != -1)) {
-            _writer->Send(message);
-            _writer->Flush();
-        }
-
-        // Always check if need to reset internals
-        if (message.size == perftest_cpp::LENGTH_CHANGED_SIZE)
-        {
-            print_summary(message);
-            change_size = true;
-            return;
-        }
-
-        // case where not running a scan
-        if (message.size != last_data_length)
-        {
-            packets_received = 0;
-            bytes_received = 0;
-            missing_packets = 0;
-
-            for (int i=0; i<_num_publishers; i++) {
-                _last_seq_num[i] = 0;
-            }
-
-            begin_time = perftest_cpp::GetTimeUsec();
-
-            if (perftest_cpp::_PrintIntervals) {
-                printf("\n\n********** New data length is %d\n",
-                       message.size + perftest_cpp::OVERHEAD_BYTES);
-                fflush(stdout);
-            }
-        }
-
-        last_data_length = message.size;
-        ++packets_received;
-        bytes_received += (unsigned long long) (message.size + perftest_cpp::OVERHEAD_BYTES);
-
-        if (!_useCft) {
-            // detect missing packets
-            if (_last_seq_num[message.entity_id] == 0) {
-                _last_seq_num[message.entity_id] = message.seq_num;
-            } else {
-                if (message.seq_num != ++_last_seq_num[message.entity_id]) {
-                    // only track if skipped, might have restarted pub
-                    if (message.seq_num > _last_seq_num[message.entity_id])
-                    {
-                        missing_packets +=
-                                message.seq_num - _last_seq_num[message.entity_id];
-                    }
-                    _last_seq_num[message.entity_id] = message.seq_num;
-                }
-            }
-        }
-    }
-
-    void print_summary(TestMessage &message){
-
-        // store the info for this interval
-        unsigned long long now = perftest_cpp::GetTimeUsec();
-
-        if (interval_data_length != last_data_length) {
-
-            if (!_useCft) {
-                // detect missing packets
-                if (message.seq_num != _last_seq_num[message.entity_id]) {
-                    // only track if skipped, might have restarted pub
-                    if (message.seq_num > _last_seq_num[message.entity_id])
-                    {
-                        missing_packets +=
-                                message.seq_num - _last_seq_num[message.entity_id];
-                    }
-                }
-            }
-
-            interval_time = now - begin_time;
-            interval_packets_received = packets_received;
-            interval_bytes_received = bytes_received;
-            interval_missing_packets = missing_packets;
-            interval_data_length = last_data_length;
-            missing_packets_percent = 0;
-
-            // Calculations of missing package percent
-            if (interval_packets_received + interval_missing_packets != 0) {
-                missing_packets_percent = (float) ((interval_missing_packets * 100.0)
-                        / (float) (interval_packets_received
-                        + interval_missing_packets));
-            }
-
-            std::string outputCpu = "";
-            if (perftest_cpp::_showCpu) {
-                outputCpu = cpu.get_cpu_average();
-            }
-            printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
-                   "Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%) %s\n",
-                   interval_data_length + perftest_cpp::OVERHEAD_BYTES,
-                   interval_packets_received,
-                   interval_packets_received*1000000/interval_time,
-                   interval_bytes_received*1000000.0/interval_time*8.0/1000.0/1000.0,
-                   interval_missing_packets,
-                   missing_packets_percent,
-                   outputCpu.c_str()
-            );
-            fflush(stdout);
-        }
-
-        packets_received = 0;
-        bytes_received = 0;
-        missing_packets = 0;
-        // length changed only used in scan mode in which case
-        // there is only 1 publisher with ID 0
-        _last_seq_num[0] = 0;
-        begin_time = now;
-    }
-};
-
-/*********************************************************
  * Used for receiving data using a thread instead of callback
  *
  */
-static void *ThroughputReadThread(void *arg)
+template<class ListenerType>
+static void *readThread(void *arg)
 {
-    ThroughputListener *listener = static_cast<ThroughputListener *>(arg);
+    ListenerType *listener = static_cast<ListenerType *>(arg);
     TestMessage *message = NULL;
 
-    while (!listener->end_test)
-    {
+    while (!listener->end_test) {
         // Receive message should block until a message is received
-        message = listener->_reader->ReceiveMessage();
+        message = listener->get_reader()->ReceiveMessage();
 
         if (message != NULL)
         {
             listener->ProcessMessage(*message);
         }
+
+    /*
+    * TODO:
+    *
+    * To support -latencyTest plus -useReadThread we need to signal
+    * --HERE-- the internal semaphore used in RTIDDSImpl.cxx as
+    * we now do in the listener on_data_available callback
+    * inside RTIDDSImpl.cxx
+    *
+    */
     }
 
     return NULL;
@@ -1235,13 +1074,14 @@ int perftest_cpp::Subscriber()
         }
         _throughput_reader_listener = new ThroughputListener(_writer, _reader, _useCft, _NumPublishers);
 
-        RTIOsapiThread_new("ReceiverThread",
-                            RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-                            RTI_OSAPI_THREAD_OPTION_DEFAULT,
-                            RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                            NULL,
-                            ThroughputReadThread,
-                            _throughput_reader_listener);
+        RTIOsapiThread_new(
+                "ReceiverThread",
+                RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
+                RTI_OSAPI_THREAD_OPTION_DEFAULT,
+                RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                NULL,
+                readThread<ThroughputListener>,
+                _throughput_reader_listener);
     }
 
     // Create announcement _writer
@@ -1286,11 +1126,11 @@ int perftest_cpp::Subscriber()
     unsigned long long prev_count = 0;
     unsigned long long prev_bytes = 0;
     unsigned long long ave_count = 0;
-    int last_data_length = -1;
+    int lastDataLength = -1;
     unsigned long long mps = 0, bps = 0;
     double mps_ave = 0.0, bps_ave = 0.0;
     unsigned long long msgsent, bytes, last_msgs, last_bytes;
-    float missing_packets_percent = 0;
+    float missingPacketsPercent = 0;
 
     if (perftest_cpp::_showCpu) {
          _throughput_reader_listener->cpu.initialize();
@@ -1303,12 +1143,12 @@ int perftest_cpp::Subscriber()
         MilliSleep(1000);
         now = GetTimeUsec();
 
-        if (_throughput_reader_listener->change_size) { // ACK change_size
+        if (_throughput_reader_listener->changeSize) { // ACK changeSize
             announcement_msg.entity_id = _SubID;
             announcement_msg.size =  LENGTH_CHANGED_SIZE;
             _announcement_writer->Send(announcement_msg);
             _announcement_writer->Flush();
-            _throughput_reader_listener->change_size = false;
+            _throughput_reader_listener->changeSize = false;
         }
 
         if (_throughput_reader_listener->end_test) { // ACK end_test
@@ -1321,19 +1161,19 @@ int perftest_cpp::Subscriber()
 
         if (_PrintIntervals)
         {
-            if (last_data_length != _throughput_reader_listener->last_data_length)
+            if (lastDataLength != _throughput_reader_listener->lastDataLength)
             {
-                last_data_length = _throughput_reader_listener->last_data_length;
-                prev_count = _throughput_reader_listener->packets_received;
-                prev_bytes = _throughput_reader_listener->bytes_received;
+                lastDataLength = _throughput_reader_listener->lastDataLength;
+                prev_count = _throughput_reader_listener->packetsReceived;
+                prev_bytes = _throughput_reader_listener->bytesReceived;
                 bps_ave = 0;
                 mps_ave = 0;
                 ave_count = 0;
                 continue;
             }
 
-            last_msgs = _throughput_reader_listener->packets_received;
-            last_bytes = _throughput_reader_listener->bytes_received;
+            last_msgs = _throughput_reader_listener->packetsReceived;
+            last_bytes = _throughput_reader_listener->bytesReceived;
             msgsent = last_msgs - prev_count;
             bytes = last_bytes - prev_bytes;
             prev_count = last_msgs;
@@ -1348,12 +1188,12 @@ int perftest_cpp::Subscriber()
             mps_ave = mps_ave + (double)(mps - mps_ave) / (double)ave_count;
 
             // Calculations of missing package percent
-            if (last_msgs + _throughput_reader_listener->missing_packets == 0) {
-                missing_packets_percent = 0.0;
+            if (last_msgs + _throughput_reader_listener->missingPackets == 0) {
+                missingPacketsPercent = 0.0;
             } else {
-                missing_packets_percent = (float)
-                        ((_throughput_reader_listener->missing_packets * 100.0)
-                        / (float) (last_msgs + _throughput_reader_listener->missing_packets));
+                missingPacketsPercent = (float)
+                        ((_throughput_reader_listener->missingPackets * 100.0)
+                        / (float) (last_msgs + _throughput_reader_listener->missingPackets));
             }
 
             if (last_msgs > 0) {
@@ -1365,8 +1205,8 @@ int perftest_cpp::Subscriber()
                        "Mbps: %7.1lf  Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%) %s\n",
                         last_msgs, mps, mps_ave,
                         bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
-                        _throughput_reader_listener->missing_packets,
-                        missing_packets_percent,
+                        _throughput_reader_listener->missingPackets,
+                        missingPacketsPercent,
                         outputCpu.c_str()
                 );
                 fflush(stdout);
@@ -1384,338 +1224,6 @@ int perftest_cpp::Subscriber()
     return 0;
 }
 
-/*********************************************************
- * Data listener for the Announcement
- *
- * Receives an announcement message from a Subscriber once
- * the subscriber has discovered every Publisher.
- */
-class AnnouncementListener : public IMessagingCB
-{
-  public:
-    std::vector<int> subscriber_list;
-
-    AnnouncementListener() {
-    }
-
-    void ProcessMessage(TestMessage& message) {
-        /*
-         * The subscriber_list vector contains the list of discovered subscribers.
-         *
-         * - If the message.size is INITIALIZE or LENGTH_CHANGED and the
-         *   subscriber is not in the list, it will be added.
-         * - If the message.size is FINISHED_SIZE and the
-         *   subscriber is in the list, it will be removed.
-         *
-         * The publisher access to this list to verify:
-         * - If all the subscribers are discovered or notified about the length
-         *   being changed.
-         * - If all the subscribers are notified that the test has finished.
-         */
-        if ((message.size == perftest_cpp::INITIALIZE_SIZE
-                || message.size == perftest_cpp::LENGTH_CHANGED_SIZE)
-                && std::find(
-                        subscriber_list.begin(),
-                        subscriber_list.end(),
-                        message.entity_id)
-                    == subscriber_list.end()) {
-            subscriber_list.push_back(message.entity_id);
-        } else if (message.size == perftest_cpp::FINISHED_SIZE) {
-            std::vector<int>::iterator position = std::find(
-                    subscriber_list.begin(),
-                    subscriber_list.end(),
-                    message.entity_id);
-            if (position != subscriber_list.end()) {
-                subscriber_list.erase(position);
-            }
-        }
-    }
-};
-
-/*********************************************************
- * Data listener for the Publisher side.
- *
- * Receives latency ping from Subscriber and does
- * round trip latency calculations
- */
-class LatencyListener : public IMessagingCB
-{
-  private:
-
-    unsigned long long latency_sum ;
-    unsigned long long latency_sum_square;
-    unsigned long long count;
-    unsigned long      latency_min;
-    unsigned long      latency_max;
-    int                last_data_length;
-    unsigned long     *_latency_history;
-    unsigned long      clock_skew_count;
-    unsigned int       _num_latency;
-    IMessagingWriter *_writer;
- public:
-    IMessagingReader *_reader;
-    CpuMonitor cpu;
-
-  public:
-
-    LatencyListener(unsigned int num_latency, IMessagingReader *reader,
-            IMessagingWriter *writer)
-    {
-        latency_sum = 0;
-        latency_sum_square = 0;
-        count = 0;
-        latency_min = perftest_cpp::LATENCY_RESET_VALUE;
-        latency_max = 0;
-        last_data_length = 0;
-        clock_skew_count = 0;
-
-        if (num_latency > 0)
-        {
-            _num_latency = num_latency;
-
-            /*
-             * PERFTEST-109
-             * _num_latency can be a big number, so this "new array" could easily
-             * return a bad_alloc exception (specially in embedded platforms
-             * with low memory settings). Therefore we catch the exception to
-             * log this specific problem and then rethrow it.
-             */
-            try {
-                _latency_history = new unsigned long[_num_latency];
-            } catch(const std::bad_alloc&) {
-                fprintf(
-                        stderr,
-                        "LatencyListener: Not able to allocate %ul "
-                        "elements in _latency_history array",
-                        _num_latency);
-                throw;
-            }
-
-        } else {
-            _latency_history = NULL;
-            _num_latency = 0;
-        }
-
-        end_test = false;
-        _reader = reader;
-        _writer = writer;
-    }
-
-    void print_summary_latency(){
-
-        double latency_ave;
-        double latency_std;
-        std::string outputCpu = "";
-        if (count == 0)
-        {
-            return;
-        }
-
-        if (clock_skew_count != 0) {
-            fprintf(stderr,"The following latency result may not be accurate because clock skew happens %lu times\n",
-                        clock_skew_count);
-            fflush(stderr);
-        }
-
-        // sort the array (in ascending order)
-        std::sort(_latency_history, _latency_history+count);
-        latency_ave = (double)latency_sum / count;
-        latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
-
-        if (perftest_cpp::_showCpu) {
-            outputCpu = cpu.get_cpu_average();
-        }
-
-        printf("Length: %5d  Latency: Ave %6.0lf us  Std %6.1lf us  "
-               "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us  99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
-               last_data_length + perftest_cpp::OVERHEAD_BYTES,
-               latency_ave, latency_std, latency_min, latency_max,
-               _latency_history[count*50/100],
-               _latency_history[count*90/100],
-               _latency_history[count*99/100],
-               _latency_history[(int)(count*(9999.0/10000))],
-               _latency_history[(int)(count*(999999.0/1000000))],
-               outputCpu.c_str()
-        );
-        fflush(stdout);
-
-        latency_sum = 0;
-        latency_sum_square = 0;
-        latency_min = perftest_cpp::LATENCY_RESET_VALUE;
-        latency_max = 0;
-        count = 0;
-        clock_skew_count = 0;
-
-        return;
-    }
-
-    ~LatencyListener()
-    {
-        if (_latency_history != NULL) {
-            delete []_latency_history;
-        }
-    }
-
-    void ProcessMessage(TestMessage &message)
-    {
-        unsigned long long now, sentTime;
-        unsigned long latency;
-        int sec;
-        unsigned int usec;
-        double latency_ave;
-        double latency_std;
-        std::string outputCpu = "";
-
-        now = perftest_cpp::GetTimeUsec();
-
-        switch (message.size)
-        {
-            // Initializing message, don't process
-            case perftest_cpp::INITIALIZE_SIZE:
-                return;
-
-            // Test finished message
-            case perftest_cpp::FINISHED_SIZE:
-                return;
-
-            // Data length is changing size
-            case perftest_cpp::LENGTH_CHANGED_SIZE:
-                print_summary_latency();
-                return;
-
-            default:
-                break;
-        }
-
-        if (last_data_length != message.size)
-        {
-            latency_sum = 0;
-            latency_sum_square = 0;
-            latency_min = perftest_cpp::LATENCY_RESET_VALUE;
-            latency_max = 0;
-            count = 0;
-        }
-
-        sec = message.timestamp_sec;
-        usec = message.timestamp_usec;
-        sentTime = ((unsigned long long)sec << 32) | (unsigned long long)usec;
-
-        if (now >= sentTime)
-        {
-            latency = (unsigned long)(now - sentTime);
-
-            // keep track of one-way latency
-            latency /= 2;
-        }
-        else
-        {
-            fprintf(stderr,"Clock skew suspected: received time %llu usec, sent time %llu usec",
-                            now, sentTime);
-                ++clock_skew_count;
-            return;
-        }
-
-        // store value for percentile calculations
-        if (_latency_history != NULL)
-        {
-            if (count >= _num_latency)
-            {
-                fprintf(stderr,"Too many latency pongs received.  Do you have more than 1 app with -pidMultiPubTest = 0 or -sidMultiSubTest 0?\n");
-                return;
-            }
-            else
-            {
-                _latency_history[count] = latency;
-            }
-        }
-
-        if (latency_min == perftest_cpp::LATENCY_RESET_VALUE) {
-            latency_min = latency;
-            latency_max = latency;
-        }
-        else {
-            if (latency < latency_min) {
-                latency_min = latency;
-            } else if (latency > latency_max) {
-                latency_max = latency;
-            }
-        }
-
-        ++count;
-        latency_sum += latency;
-        latency_sum_square += ((unsigned long long)latency * (unsigned long long)latency);
-
-        // if data sized changed, print out stats and zero counters
-        if (last_data_length != message.size)
-        {
-            last_data_length = message.size;
-
-            if (perftest_cpp::_PrintIntervals)
-            {
-                printf("\n\n********** New data length is %d\n",
-                       last_data_length + perftest_cpp::OVERHEAD_BYTES);
-            }
-        }
-        else
-        {
-            if (perftest_cpp::_PrintIntervals)
-            {
-                latency_ave = (double)latency_sum / (double)count;
-                latency_std = sqrt(
-                    (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
-
-                if (perftest_cpp::_showCpu) {
-                    outputCpu = cpu.get_cpu_instant();
-                }
-                printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us  Min %6lu us  Max %6lu %s\n",
-                       latency,
-                       latency_ave,
-                       latency_std,
-                       latency_min,
-                       latency_max,
-                       outputCpu.c_str()
-                );
-            }
-        }
-
-        if(_writer != NULL) {
-            _writer->notifyPingResponse();
-        }
-    }
-};
-
-/*********************************************************
- * Used for receiving data using a thread instead of callback
- *
- */
-static void *LatencyReadThread(void *arg)
-{
-    LatencyListener *listener = static_cast<LatencyListener *>(arg);
-    TestMessage *message = NULL;
-
-    while (!listener->end_test)
-    {
-        // Receive message should block until a message is received
-        message = listener->_reader->ReceiveMessage();
-
-        if (message != NULL)
-        {
-            listener->ProcessMessage(*message);
-        }
-
-    /*
-    * TODO:
-    *
-    * To support -latencyTest plus -useReadThread we need to signal
-    * --HERE-- the internal semaphore used in RTIDDSImpl.cxx as
-    * we now do in the listener on_data_available callback
-    * inside RTIDDSImpl.cxx
-    *
-    */
-    }
-
-    return NULL;
-}
 
 /*********************************************************
  * Publisher
@@ -1784,13 +1292,14 @@ int perftest_cpp::Publisher()
                     _reader,
                     _LatencyTest ? _writer : NULL);
 
-            RTIOsapiThread_new("ReceiverThread",
-                                RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-                                RTI_OSAPI_THREAD_OPTION_DEFAULT,
-                                RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                                NULL,
-                                LatencyReadThread,
-                                _latency_reader_listener);
+            RTIOsapiThread_new(
+                    "ReceiverThread",
+                    RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
+                    RTI_OSAPI_THREAD_OPTION_DEFAULT,
+                    RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                    NULL,
+                    readThread<LatencyListener>,
+                    _latency_reader_listener);
         }
     }
     else
@@ -1840,7 +1349,7 @@ int perftest_cpp::Publisher()
     fprintf(stderr,"Waiting for subscribers announcement ...\n");
     fflush(stderr);
     while (_NumSubscribers
-            > (int)_announcement_reader_listener->subscriber_list.size()) {
+            > (int)_announcement_reader_listener->subscriberList.size()) {
         MilliSleep(1000);
     }
 
@@ -2017,8 +1526,8 @@ int perftest_cpp::Publisher()
                      * We can prevent this by adding a small sleep() if the test is best
                      * effort.
                      */
-                    _announcement_reader_listener->subscriber_list.clear();
-                    while ((int)_announcement_reader_listener->subscriber_list.size()
+                    _announcement_reader_listener->subscriberList.clear();
+                    while ((int)_announcement_reader_listener->subscriberList.size()
                             < _NumSubscribers) {
                         _writer->Send(message, true);
                         _writer->Flush();
@@ -2084,7 +1593,7 @@ int perftest_cpp::Publisher()
 
     message.size = FINISHED_SIZE;
     unsigned long i = 0;
-    while (_announcement_reader_listener->subscriber_list.size() > 0
+    while (_announcement_reader_listener->subscriberList.size() > 0
             && i < announcementSampleCount) {
         _writer->Send(message, true);
         _writer->Flush();
@@ -2119,73 +1628,6 @@ int perftest_cpp::Publisher()
     return 0;
 }
 
-/*TODO: The destructor was move below definition of
- *      ThroughputListener, Lat, and announcement classes to make this work.
- *      The right solution is implement the declaration of the full classes
- *      into a .h
- */
-/*********************************************************
- * Destructor
- */
-perftest_cpp::~perftest_cpp()
-{
-    for (int i = 0; i < _MessagingArgc; ++i) {
-        if (_MessagingArgv[i] != NULL) {
-            DDS_String_free(_MessagingArgv[i]);
-        }
-    }
-
-    if (_MessagingArgv != NULL) {
-        delete[] _MessagingArgv;
-    }
-
-    if (_throughput_reader_listener != NULL) {
-        delete (_throughput_reader_listener);
-    }
-
-    if (_latency_reader_listener != NULL) {
-        delete (_latency_reader_listener);
-    }
-
-    if (_announcement_reader_listener != NULL) {
-        delete (_announcement_reader_listener);
-    }
-
-    if (_reader != NULL) {
-        delete (_reader);
-    }
-
-    if (_writer != NULL) {
-        delete (_writer);
-    }
-
-    if (_announcement_reader != NULL) {
-        delete (_announcement_reader);
-    }
-
-    if (_announcement_writer != NULL) {
-        delete (_announcement_writer);
-    }
-
-    if (_MessagingImpl != NULL) {
-        delete _MessagingImpl;
-    }
-
-    if (perftest_cpp::_Clock != NULL) {
-        RTIHighResolutionClock_delete(perftest_cpp::_Clock);
-    }
-
-#ifdef RTI_WIN32
-    if (_hTimerQueue != NULL) {
-        DeleteTimerQueue(_hTimerQueue);
-    }
-#endif
-
-
-    fprintf(stderr, "Test ended.\n");
-    fflush(stderr);
-}
-
 /*********************************************************
  * Utility functions
  */
@@ -2212,7 +1654,7 @@ inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds,
     }
 }
 
-inline unsigned long long perftest_cpp::GetTimeUsec() {
+unsigned long long perftest_cpp::GetTimeUsec() {
     perftest_cpp::_Clock->getTime(
             perftest_cpp::_Clock,
             &perftest_cpp::_ClockTime_aux);

@@ -5,7 +5,6 @@
  * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -28,21 +27,14 @@
   #include <signal.h>
 #endif
 
-/*
- * This is needed by MilliSleep in VxWorks, since in some versions the usleep
- * function does not exist. In the rest of OS we won't make use of it.
- */
-#if defined(RTI_VXWORKS)
-  #include "ndds/ndds_cpp.h"
-#endif
-
 #include "MessagingIF.h"
+#include "ndds/ndds_cpp.h" /* Necessary for DDS_ProductVersion_t*/
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
 
 class ThroughputListener;
-class LatencyListener;
 class AnnouncementListener;
+class LatencyListener;
 
 struct Perftest_ProductVersion_t
 {
@@ -181,5 +173,7 @@ private:
   #endif
 
 };
+
+#include "perftestReadersListeners.h"
 
 #endif // __PERFTEST_CPP_H__
