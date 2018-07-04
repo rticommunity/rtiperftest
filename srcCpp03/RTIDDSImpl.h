@@ -75,6 +75,9 @@ class RTIDDSImpl : public IMessaging
         const std::string &topic_name,
         const dds::topic::Topic<U> &topic);
 
+    const std::string getQoSProfileName(std::string topicName);
+
+
   private:
 
     int          _SendQueueSize;
@@ -148,6 +151,8 @@ class RTIDDSImpl : public IMessaging
     dds::pub::Publisher _publisher;
 
     rti::core::Semaphore _pongSemaphore;
+
+    std::map<std::string, std::string> _qoSProfileNameMap;
 
   #ifdef RTI_SECURE_PERFTEST
     void configureSecurePlugin(std::map<std::string, std::string> &dpQosProperties);

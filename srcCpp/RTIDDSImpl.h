@@ -19,11 +19,11 @@
 /* Class for the DDS_DynamicDataMemberId of the type of RTI Perftest*/
 class DynamicDataMembersId
 {
-  private:
+private:
     std::map<std::string, int> membersId;
     DynamicDataMembersId();
 
-  public:
+public:
     ~DynamicDataMembersId();
     static DynamicDataMembersId &GetInstance();
     int at(std::string key);
@@ -32,7 +32,7 @@ class DynamicDataMembersId
 template <typename T>
 class RTIDDSImpl : public IMessaging
 {
-  public:
+public:
 
     RTIDDSImpl() :
         _transport(),
@@ -219,7 +219,7 @@ private:
 
     std::map<std::string, std::string> _qoSProfileNameMap;
 
-  public:
+public:
 
     static int          _WaitsetEventCount;
     static unsigned int _WaitsetDelayUsec;
