@@ -692,7 +692,7 @@ C++ (Traditional) API:
         This function is used to set your data before it is sent.
         It is called every time the data is sent.
         You must set the Custom type data before it is sent with the right
-        "key" value and the "target_data_len".
+        "key" value and the "targetDataLen".
         The function takes three arguments:
 
             - A reference to custom type data.
@@ -706,7 +706,7 @@ C++ (Traditional) API:
         bool set_custom_type_data(
                 RTI_CUSTOM_TYPE & data,
                 unsigned long key,
-                int target_data_len)
+                int targetDataLen)
         {
             bool success = true;
             data.test_long = key;
@@ -746,9 +746,9 @@ C++ (Traditional) API:
         bool initialize_custom_type_dynamic_data(DDS_DynamicData & data)
         {
             bool success = true;
-            if (!long_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
+            if (!longSeq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
                 success = false;
-                fprintf(stderr, "long_seq.ensure_length failed.\n");
+                fprintf(stderr, "longSeq.ensure_length failed.\n");
             }
             return success;
         }
@@ -780,7 +780,7 @@ C++ (Traditional) API:
         This function is used to set your DynamicData before it is sent.
         It is called every time the data is sent.
         Set the Custom type data before it is sent with the right "key"
-        value and the "target_data_len".
+        value and the "targetDataLen".
         The function takes three arguments:
 
             - A reference to the full DDS_DynamicData object that includes custom_type.
@@ -794,16 +794,16 @@ C++ (Traditional) API:
         bool set_custom_type_dynamic_data(
                 DDS_DynamicData & data,
                 unsigned long key,
-                int target_data_len)
+                int targetDataLen)
         {
             DDS_ReturnCode_t retcode;
             char test_string[SIZE_TEST_STRING]; //size of member_name
             bool success = true;
-            DDS_DynamicData custom_type_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
-            DDS_DynamicData test_seq_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
+            DDS_DynamicData customTypeData(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
+            DDS_DynamicData testSeqData(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
 
             retcode = data.bind_complex_member(
-                    custom_type_data,
+                    customTypeData,
                     "custom_type",
                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
             if (retcode != DDS_RETCODE_OK) {
@@ -813,7 +813,7 @@ C++ (Traditional) API:
                 success = false;
             }
 
-            retcode = custom_type_data.set_long(
+            retcode = customTypeData.set_long(
                     "test_long",
                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
                     key);
@@ -822,7 +822,7 @@ C++ (Traditional) API:
                 success = false;
             }
 
-            retcode = custom_type_data.set_long(
+            retcode = customTypeData.set_long(
                     "test_enum",
                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
                     ENUM1);
@@ -834,7 +834,7 @@ C++ (Traditional) API:
             if (snprintf(test_string, SIZE_TEST_STRING, "Hello World! %lu", key) < 0) {
                 success = false;
             }
-            retcode = custom_type_data.set_string(
+            retcode = customTypeData.set_string(
                     "test_string.test_string",
                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
                     test_string);
@@ -843,28 +843,28 @@ C++ (Traditional) API:
                 success = false;
             }
 
-            retcode = custom_type_data.bind_complex_member(
-                    test_seq_data,
+            retcode = customTypeData.bind_complex_member(
+                    testSeqData,
                     "test_seq",
                     DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
-                        "bind_complex_member(test_seq_data) failed: %d.\n",
+                        "bind_complex_member(testSeqData) failed: %d.\n",
                         retcode);
                 success = false;
             }
-            retcode = test_seq_data.set_long_seq(
+            retcode = testSeqData.set_long_seq(
                         "test_seq",
                         DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-                        long_seq);
+                        longSeq);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr, "set_long(test_seq) failed: %d.\n", retcode);
                 success = false;
             }
-            retcode = custom_type_data.unbind_complex_member(test_seq_data);
+            retcode = customTypeData.unbind_complex_member(testSeqData);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
-                        "unbind_complex_member(test_seq_data) failed: %d.\n",
+                        "unbind_complex_member(testSeqData) failed: %d.\n",
                         retcode);
                 success = false;
             }
@@ -889,9 +889,9 @@ C++ (Traditional) API:
         bool finalize_custom_type_dynamic_data(DDS_DynamicData & data)
         {
             bool success = true;
-            if (!long_seq.ensure_length(0, 0)) {
+            if (!longSeq.ensure_length(0, 0)) {
                 success = false;
-                fprintf(stderr, "long_seq.ensure_length failed.\n");
+                fprintf(stderr, "longSeq.ensure_length failed.\n");
             }
             DDS_ReturnCode_t retcode = data.clear_all_members();
             if (retcode != DDS_RETCODE_OK) {

@@ -916,8 +916,8 @@ class RTIPublisher : public IMessagingWriter
     RTIOsapiSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
   #ifdef RTI_CUSTOM_TYPE
-    unsigned int last_message_size;
-    unsigned int min_custom_type_serialize_size;
+    unsigned int _lastMessageSize;
+    unsigned int _minCustomTypeSerializeSize;
   #endif
     bool _isReliable;
 
@@ -925,9 +925,9 @@ class RTIPublisher : public IMessagingWriter
     RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
     {
       #ifdef RTI_CUSTOM_TYPE
-        last_message_size = 0;
-        // Calculate min_custom_type_serialize_size
-        if (!get_serialize_size_custom_type_data(min_custom_type_serialize_size)) {
+        _lastMessageSize = 0;
+        // Calculate _minCustomTypeSerializeSize
+        if (!get_serialize_size_custom_type_data(_minCustomTypeSerializeSize)) {
             throw std::runtime_error("get_serialize_size_custom_type_data failed");
         }
         // Initialize data
@@ -1056,17 +1056,17 @@ class RTIPublisher : public IMessagingWriter
             if (!set_custom_type_data(
                     data.custom_type,
                     key,
-                    message.size - min_custom_type_serialize_size)) {
+                    message.size - _minCustomTypeSerializeSize)) {
                 fprintf(stderr, "set_custom_type_data failed.\n");
                 return false;
             }
-            if ((unsigned int)message.size != last_message_size) {
+            if ((unsigned int)message.size != _lastMessageSize) {
                 success = get_serialize_size_custom_type_data(
                         (unsigned int &)data.custom_type_size);
                 if (!success) {
                     return false;
                 }
-                last_message_size = message.size;
+                _lastMessageSize = message.size;
             }
         }
       #else
@@ -1207,10 +1207,10 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     RTIOsapiSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
   #ifdef RTI_CUSTOM_TYPE
-    unsigned int custom_type_size;
-    unsigned int min_custom_type_serialize_size;
+    unsigned int _minCustomTypeSerializeSize;
+    unsigned int _customTypeSize;
   #endif
-    int _last_message_size;
+    int _lastMessageSize;
     bool _isReliable;
 
   public:
@@ -1226,9 +1226,8 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         DDS_ReturnCode_t retcode;
 
       #ifdef RTI_CUSTOM_TYPE
-        custom_type_size = 0;
         // Calculate size_alignment_type of DDS_DynamicData object
-        if (!get_serialize_size_custom_type_data(min_custom_type_serialize_size)) {
+        if (!get_serialize_size_custom_type_data(_minCustomTypeSerializeSize)) {
             throw std::runtime_error("get_serialize_size_custom_type_data failed");
         }
         // Initialize data
@@ -1240,7 +1239,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         _writer = DDSDynamicDataWriter::narrow(writer);
         DDS_Octet key_octets[KEY_SIZE];
 
-        _last_message_size = 0;
+        _lastMessageSize = 0;
         _num_instances = num_instances;
         _instance_counter = 0;
         _instancesToBeWritten = instancesToBeWritten;
@@ -1347,7 +1346,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             key_octets[c] = (unsigned char) (key >> c * 8);
         }
 
-        if (_last_message_size != message.size) {
+        if (_lastMessageSize != message.size) {
             //Cannot use data.clear_member("bind_data") because:
             //DDS_DynamicData_clear_member:unsupported for non-sparse types
             data.clear_all_members();
@@ -1396,7 +1395,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             fprintf(stderr, "set_long(latency_ping) failed: %d.\n", retcode);
         }
      #ifndef RTI_CUSTOM_TYPE
-        if (_last_message_size != message.size) {
+        if (_lastMessageSize != message.size) {
             DDS_OctetSeq octetSeq;
             bool succeeded = octetSeq.from_array(
                     (DDS_Octet *) message.data,
@@ -1437,26 +1436,26 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             if (!set_custom_type_dynamic_data(
                     data,
                     key,
-                    message.size - min_custom_type_serialize_size)) {
+                    message.size - _minCustomTypeSerializeSize)) {
                 fprintf(stderr, "set_custom_type_dynamic_data failed.\n");
                 return false;
             }
-            if (message.size != _last_message_size) {
-                if (!get_serialize_size_custom_type_data(custom_type_size)) {
+            if (message.size != _lastMessageSize) {
+                if (!get_serialize_size_custom_type_data(_customTypeSize)) {
                     fprintf(stderr, "get_serialize_size_custom_type_data.\n");
                 }
             }
             retcode = data.set_long(
                     "custom_type_size",
                     DynamicDataMembersId::GetInstance().at("custom_type_size"),
-                    custom_type_size);
+                    _customTypeSize);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr, "set_long(custom_type_size) failed: %d.\n", retcode);
                 return false;
             }
         }
       #endif
-        _last_message_size = message.size;
+        _lastMessageSize = message.size;
 
         if (!isCftWildCardKey) {
             retcode = _writer->write(data, _instance_handles[key]);

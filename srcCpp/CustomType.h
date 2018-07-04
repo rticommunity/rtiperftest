@@ -54,7 +54,7 @@ void register_custom_type_data(RTI_CUSTOM_TYPE &data, unsigned long key);
 *   @brief This function is used to set your data before it is sent.
 *       It is called every time the data is sent.
 *       You must set the Custom type data before it is sent with the right
-*       "key" value and the "target_data_len".
+*       "key" value and the "targetDataLen".
 *   @param data \b InOut. A reference to the custom type data.
 *   @param key \b In. A specific number unique for every key.
 *   @param targe_data_len \b In. Value of the command-line parameter
@@ -65,7 +65,7 @@ void register_custom_type_data(RTI_CUSTOM_TYPE &data, unsigned long key);
 bool set_custom_type_data(
         RTI_CUSTOM_TYPE &data,
         unsigned long key,
-        int target_data_len);
+        int targetDataLen);
 
 /*
 *   @brief This function is used to remove your data. It is called in the destructor.
@@ -100,7 +100,7 @@ void register_custom_type_dynamic_data(DDS_DynamicData &data, unsigned long key)
 *   @brief This function is used to set your DynamicData before it is sent.
 *       It is called every time the data is sent.
 *       You must set the Custom type data before it is sent with the right
-*       "key" value and the "target_data_len".
+*       "key" value and the "targetDataLen".
 *   @param data \b InOut. A reference to the full DDS_DynamicData object
 *       that includes custom_type.
 *   @param key \b In. A specific number unique for every key.
@@ -112,7 +112,7 @@ void register_custom_type_dynamic_data(DDS_DynamicData &data, unsigned long key)
 bool set_custom_type_dynamic_data(
         DDS_DynamicData &data,
         unsigned long key,
-        int target_data_len);
+        int targetDataLen);
 
 /*
 *   @brief This function is used to remove your data. It is called in the destructor.

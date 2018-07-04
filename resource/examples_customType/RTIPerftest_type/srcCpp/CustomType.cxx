@@ -9,8 +9,8 @@
  * required to work with the Custom type.
  */
 
-DDS_OctetSeq octect_seq;
-int old_dynamic_target_data_len = 0;
+DDS_OctetSeq octectSet;
+int oldDynamicTargetDataLen = 0;
 
 bool initialize_custom_type_data(RTI_CUSTOM_TYPE &data)
 {
@@ -24,10 +24,10 @@ void register_custom_type_data(RTI_CUSTOM_TYPE &data, unsigned long key)
 bool set_custom_type_data(
         RTI_CUSTOM_TYPE &data,
         unsigned long key,
-        int target_data_len)
+        int targetDataLen)
 {
     bool success = true;
-    if (!data.test_seq.ensure_length(target_data_len, target_data_len)) {
+    if (!data.test_seq.ensure_length(targetDataLen, targetDataLen)) {
         success = false;
     }
     return success;
@@ -41,9 +41,9 @@ bool finalize_custom_type_data(RTI_CUSTOM_TYPE &data)
 
 bool initialize_custom_type_dynamic_data(DDS_DynamicData &data)
 {
-    bool success = octect_seq.maximum(0);
+    bool success = octectSet.maximum(0);
     if (!success) {
-        fprintf(stderr, "octect_seq.maximum failed.\n");
+        fprintf(stderr, "octectSet.maximum failed.\n");
     }
     return success;
 }
@@ -55,20 +55,20 @@ void register_custom_type_dynamic_data(DDS_DynamicData &data, unsigned long key)
 bool set_custom_type_dynamic_data(
         DDS_DynamicData &data,
         unsigned long key,
-        int target_data_len)
+        int targetDataLen)
 {
     DDS_ReturnCode_t retcode;
-    DDS_DynamicData custom_type_data(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
+    DDS_DynamicData customTypeData(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
     bool success = true;
-    if (old_dynamic_target_data_len != target_data_len) {
-        success = octect_seq.ensure_length(target_data_len, target_data_len);
+    if (oldDynamicTargetDataLen != targetDataLen) {
+        success = octectSet.ensure_length(targetDataLen, targetDataLen);
         if (!success) {
-            fprintf(stderr, "octect_seq.ensure_length failed.\n");
+            fprintf(stderr, "octectSet.ensure_length failed.\n");
         }
-        old_dynamic_target_data_len = target_data_len;
+        oldDynamicTargetDataLen = targetDataLen;
     }
 
-    retcode = data.bind_complex_member(custom_type_data, "custom_type",
+    retcode = data.bind_complex_member(customTypeData, "custom_type",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
     if (retcode != DDS_RETCODE_OK) {
         fprintf(
@@ -77,15 +77,15 @@ bool set_custom_type_dynamic_data(
                 retcode);
         success = false;
     }
-    retcode = custom_type_data.set_octet_seq(
+    retcode = customTypeData.set_octet_seq(
             "test_seq",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
-            octect_seq);
+            octectSet);
     if (retcode != DDS_RETCODE_OK) {
         fprintf(stderr, "set_octet_seq(test_seq) failed: %d.\n", retcode);
         success = false;
     }
-    retcode = data.unbind_complex_member(custom_type_data);
+    retcode = data.unbind_complex_member(customTypeData);
     if (retcode != DDS_RETCODE_OK) {
         fprintf(
                 stderr,
@@ -98,9 +98,9 @@ bool set_custom_type_dynamic_data(
 
 bool finalize_custom_type_dynamic_data(DDS_DynamicData &data)
 {
-    bool success = octect_seq.ensure_length(0, 0);
+    bool success = octectSet.ensure_length(0, 0);
     if (!success) {
-        fprintf(stderr, "octect_seq.ensure_length failed.\n");
+        fprintf(stderr, "octectSet.ensure_length failed.\n");
     }
     DDS_ReturnCode_t retcode = data.clear_all_members();
     if (retcode != DDS_RETCODE_OK) {
