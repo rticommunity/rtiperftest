@@ -120,6 +120,12 @@ int perftest_cpp::Run(int argc, char *argv[])
     printf("qosFile: %s\n", parameterManager.query<std::string>("qosFile").c_str());
     printf("qosLibrary: %s\n", parameterManager.query<std::string>("qosLibrary").c_str());
     printf("bestEffort: %d\n", parameterManager.query<bool>("bestEffort"));
+    printf("noPositiveAcks: %d\n", parameterManager.query<bool>("noPositiveAcks"));
+    std::vector<unsigned long long> cft = parameterManager.queryVector<unsigned long long>("cft");
+    printf("cft: \n");
+    for (unsigned int i = 0; i < cft.size(); i++) {
+        printf("\t%llu\n", cft[i]);
+    }
 
 
     return 0;

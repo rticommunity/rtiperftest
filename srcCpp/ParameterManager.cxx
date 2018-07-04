@@ -127,6 +127,24 @@ void ParameterManager::initialize()
     bestEffort->setExtraArgument(NO);
     bestEffort->setGroup(GENERAL);
     parameterList["bestEffort"] = AnyParameter(bestEffort);
+
+    Parameter<bool> *noPositiveAcks = new Parameter<bool>(false);
+    noPositiveAcks->setCommandLineArgument(std::make_pair("-noPositiveAcks",""));
+    noPositiveAcks->setDescription("Disable use of positive acks in reliable \nprotocol. Default use positive acks");
+    noPositiveAcks->setType(T_BOOL);
+    noPositiveAcks->setExtraArgument(NO);
+    noPositiveAcks->setGroup(GENERAL);
+    parameterList["noPositiveAcks"] = AnyParameter(noPositiveAcks);
+
+    ParameterVector<unsigned long long> * cft = new ParameterVector<unsigned long long>();
+    cft->setCommandLineArgument(std::make_pair("-cft","<start>:<end>"));
+    cft->setDescription("Use a Content Filtered Topic for the Throughput topic in the subscriber side.\nSpecify 2 parameters: <start> and <end> to receive samples with a key in that range.\nSpecify only 1 parameter to receive samples with that exact key.\nDefault: Not set");
+    cft->setType(T_VECTOR_NUMERIC);
+    cft->setExtraArgument(YES);
+    cft->setRange(0, 2147483128);
+    cft->setParseMethod(SPLIT);
+    cft->setGroup(SUB);
+    parameterList["cft"] = AnyParameter(cft);
 }
 
 
