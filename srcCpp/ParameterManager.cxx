@@ -150,13 +150,164 @@ void ParameterManager::initialize()
     ParameterPair<unsigned long long, std::string> *pubRate = new ParameterPair<unsigned long long, std::string>(0,"sleep");
     pubRate->setCommandLineArgument(std::make_pair("-pubRate","<samples/s>:<method>"));
     pubRate->setDescription("Limit the throughput to the specified number\nof samples/s. Default 0 (don't limit)\n[OPTIONAL] Method to control the throughput can be:\n'spin' or 'sleep'\nDefault method: spin\n");
-    pubRate->setType(T_PAIR);
+    pubRate->setType(T_PAIR_NUMERIC_STR);
     pubRate->setExtraArgument(YES);
     pubRate->setGroup(PUB);
     pubRate->setRange(0, 10000000);
     pubRate->addValidStrValue("sleep");
     pubRate->addValidStrValue("spin");
     parameterList["pubRate"] = AnyParameter(pubRate);
+
+    Parameter<unsigned long long> *durability = new Parameter<unsigned long long>(0);
+    durability->setCommandLineArgument(std::make_pair("-durability","<0|1|2|3>"));
+    durability->setDescription("Set durability QOS, 0 - volatile,\n1 - transient local, 2 - transient, \n3 - persistent. Default: 0");
+    durability->setType(T_NUMERIC);
+    durability->setExtraArgument(YES);
+    durability->setGroup(GENERAL);
+    durability->setRange(0, 3);
+    parameterList["durability"] = AnyParameter(durability);
+
+    Parameter<bool> *dynamicData = new Parameter<bool>(false);
+    dynamicData->setCommandLineArgument(std::make_pair("-dynamicData",""));
+    dynamicData->setDescription("Makes use of the Dynamic Data APIs instead\nof using the generated types.");
+    dynamicData->setType(T_BOOL);
+    dynamicData->setExtraArgument(NO);
+    dynamicData->setGroup(GENERAL);
+    parameterList["dynamicData"] = AnyParameter(dynamicData);
+
+    Parameter<bool> *noDirectCommunication = new Parameter<bool>(false);
+    noDirectCommunication->setCommandLineArgument(std::make_pair("-noDirectCommunication",""));
+    noDirectCommunication->setDescription("Use brokered mode for persistent durability");
+    noDirectCommunication->setType(T_BOOL);
+    noDirectCommunication->setExtraArgument(NO);
+    noDirectCommunication->setGroup(GENERAL);
+    parameterList["noDirectCommunication"] = AnyParameter(noDirectCommunication);
+
+    Parameter<unsigned long long> *waitsetDelayUsec = new Parameter<unsigned long long>(100);
+    waitsetDelayUsec->setCommandLineArgument(std::make_pair("-waitsetDelayUsec","<usec>"));
+    waitsetDelayUsec->setDescription("UseReadThread related. Allows you to\nprocess incoming data in groups, based on the\ntime rather than individually. It can be used\ncombined with -waitsetEventCount.\nDefault 100 usec");
+    waitsetDelayUsec->setType(T_NUMERIC);
+    waitsetDelayUsec->setExtraArgument(YES);
+    waitsetDelayUsec->setGroup(GENERAL);
+    waitsetDelayUsec->setRange(0, ULLONG_MAX);
+    parameterList["waitsetDelayUsec"] = AnyParameter(waitsetDelayUsec);
+
+    Parameter<unsigned long long> *waitsetEventCount = new Parameter<unsigned long long>(5);
+    waitsetEventCount->setCommandLineArgument(std::make_pair("-waitsetDelayUsec","<count>"));
+    waitsetEventCount->setDescription("UseReadThread related. Allows you to\nprocess incoming data in groups, based on the\nnumber of samples rather than individually. It\ncan be used combined with -waitsetDelayUsec.\nDefault 5");
+    waitsetEventCount->setType(T_NUMERIC);
+    waitsetEventCount->setExtraArgument(YES);
+    waitsetEventCount->setGroup(GENERAL);
+    waitsetEventCount->setRange(0, ULLONG_MAX);
+    parameterList["waitsetEventCount"] = AnyParameter(waitsetEventCount);
+
+    Parameter<bool> *enableAutoThrottle = new Parameter<bool>(false);
+    enableAutoThrottle->setCommandLineArgument(std::make_pair("-enableAutoThrottle",""));
+    enableAutoThrottle->setDescription("Enables the AutoThrottling feature in the\nthroughput DataWriter (pub)");
+    enableAutoThrottle->setType(T_BOOL);
+    enableAutoThrottle->setExtraArgument(NO);
+    enableAutoThrottle->setGroup(PUB);
+    parameterList["enableAutoThrottle"] = AnyParameter(enableAutoThrottle);
+
+    Parameter<bool> *enableTurboMode = new Parameter<bool>(false);
+    enableTurboMode->setCommandLineArgument(std::make_pair("-enableTurboMode",""));
+    enableTurboMode->setDescription("Enables the TurboMode feature in the\nthroughput DataWriter (pub)");
+    enableTurboMode->setType(T_BOOL);
+    enableTurboMode->setExtraArgument(NO);
+    enableTurboMode->setGroup(PUB);
+    parameterList["enableTurboMode"] = AnyParameter(enableTurboMode);
+
+    Parameter<bool> *noXmlQos = new Parameter<bool>(false);
+    noXmlQos->setCommandLineArgument(std::make_pair("-noXmlQos",""));
+    noXmlQos->setDescription("Skip loading the qos profiles from the xml\nprofile");
+    noXmlQos->setType(T_BOOL);
+    noXmlQos->setExtraArgument(NO);
+    noXmlQos->setGroup(GENERAL);
+    parameterList["noXmlQos"] = AnyParameter(noXmlQos);
+
+    Parameter<bool> *asynchronous = new Parameter<bool>(false);
+    asynchronous->setCommandLineArgument(std::make_pair("-asynchronous",""));
+    asynchronous->setDescription("Use asynchronous writer. \nDefault: Not set");
+    asynchronous->setType(T_BOOL);
+    asynchronous->setExtraArgument(NO);
+    asynchronous->setGroup(PUB);
+    parameterList["asynchronous"] = AnyParameter(asynchronous);
+
+
+
+  #ifdef RTI_SECURE_PERFTEST
+    Parameter<bool> *secureEncryptDiscovery = new Parameter<bool>(false);
+    secureEncryptDiscovery->setCommandLineArgument(std::make_pair("-secureEncryptDiscovery",""));
+    secureEncryptDiscovery->setDescription("Encrypt discovery traffic");
+    secureEncryptDiscovery->setType(T_BOOL);
+    secureEncryptDiscovery->setExtraArgument(NO);
+    secureEncryptDiscovery->setGroup(SECURE);
+    parameterList["secureEncryptDiscovery"] = AnyParameter(secureEncryptDiscovery);
+
+    Parameter<bool> *secureSign = new Parameter<bool>(false);
+    secureSign->setCommandLineArgument(std::make_pair("-secureSign",""));
+    secureSign->setDescription("Sign (HMAC) discovery and user data");
+    secureSign->setType(T_BOOL);
+    secureSign->setExtraArgument(NO);
+    secureSign->setGroup(SECURE);
+    parameterList["secureSign"] = AnyParameter(secureSign);
+
+    Parameter<bool> *secureEncryptData = new Parameter<bool>(false);
+    secureEncryptData->setCommandLineArgument(std::make_pair("-secureEncryptData",""));
+    secureEncryptData->setDescription("Encrypt topic (user) data");
+    secureEncryptData->setType(T_BOOL);
+    secureEncryptData->setExtraArgument(NO);
+    secureEncryptData->setGroup(SECURE);
+    parameterList["secureEncryptData"] = AnyParameter(secureEncryptData);
+
+    Parameter<bool> *secureEncryptSM = new Parameter<bool>(false);
+    secureEncryptSM->setCommandLineArgument(std::make_pair("-secureEncryptSM",""));
+    secureEncryptSM->setDescription("Encrypt RTPS submessages");
+    secureEncryptSM->setType(T_BOOL);
+    secureEncryptSM->setExtraArgument(NO);
+    secureEncryptSM->setGroup(SECURE);
+    parameterList["secureEncryptSM"] = AnyParameter(secureEncryptSM);
+
+    Parameter<std::string> *secureGovernanceFile = new Parameter<std::string>("");
+    secureGovernanceFile->setCommandLineArgument(std::make_pair("-secureGovernanceFile","<file>"));
+    secureGovernanceFile->setDescription("Governance file. If specified, the authentication,\nsigning, and encryption arguments are ignored. The\ngovernance document configuration will be used instead.\nDefault: built using the secure options.");
+    secureGovernanceFile->setType(T_STR);
+    secureGovernanceFile->setExtraArgument(YES);
+    secureGovernanceFile->setGroup(SECURE);
+    parameterList["secureGovernanceFile"] = AnyParameter(secureGovernanceFile);
+
+    Parameter<std::string> *securePermissionsFile = new Parameter<std::string>("");
+    securePermissionsFile->setCommandLineArgument(std::make_pair("-securePermissionsFile","<file>"));
+    securePermissionsFile->setDescription("Permissions file <optional>.\nDefault: \"./resource/secure/signed_PerftestPermissionsSub.xml\"");
+    securePermissionsFile->setType(T_STR);
+    securePermissionsFile->setExtraArgument(YES);
+    securePermissionsFile->setGroup(SECURE);
+    parameterList["securePermissionsFile"] = AnyParameter(securePermissionsFile);
+
+    Parameter<std::string> *secureCertAuthority = new Parameter<std::string>("");
+    secureCertAuthority->setCommandLineArgument(std::make_pair("-secureCertAuthority","<file>"));
+    secureCertAuthority->setDescription("Certificate authority file <optional>.\nDefault: \"./resource/secure/cacert.pem\"");
+    secureCertAuthority->setType(T_STR);
+    secureCertAuthority->setExtraArgument(YES);
+    secureCertAuthority->setGroup(SECURE);
+    parameterList["secureCertAuthority"] = AnyParameter(secureCertAuthority);
+
+    Parameter<std::string> *secureCertFile = new Parameter<std::string>("");
+    secureCertFile->setCommandLineArgument(std::make_pair("-secureCertFile","<file>"));
+    secureCertFile->setDescription("Certificate file <optional>.\nDefault: \"./resource/secure/sub.pem\"");
+    secureCertFile->setType(T_STR);
+    secureCertFile->setExtraArgument(YES);
+    secureCertFile->setGroup(SECURE);
+    parameterList["secureCertFile"] = AnyParameter(secureCertFile);
+
+    Parameter<std::string> *securePrivateKey = new Parameter<std::string>("");
+    securePrivateKey->setCommandLineArgument(std::make_pair("-securePrivateKey","<file>"));
+    securePrivateKey->setDescription("Private key file <optional>.\nDefault: \"./resource/secure/subkey.pem\"");
+    securePrivateKey->setType(T_STR);
+    securePrivateKey->setExtraArgument(YES);
+    securePrivateKey->setGroup(SECURE);
+    parameterList["securePrivateKey"] = AnyParameter(securePrivateKey);
+  #endif
 }
 
 
@@ -267,6 +418,11 @@ bool ParameterManager::parse(int argc, char *argv[])
                 break;
             }
         }
+        if (it == parameterList.end()) {
+            fprintf(stderr, "Cannot parse '%s', invalid input.\n",
+                    allArgs[i].c_str());
+            success = false;
+        }
     }
     return success;
 }
@@ -278,35 +434,44 @@ std::string ParameterManager::displayHelp()
     std::ostringstream oss;
     std::map<GROUP, std::string> output;
     for (int i = GENERAL; i != RAWTRANSPORT+1; i++) {
-        output[static_cast<GROUP>(i)] += "\n\n\t=========================== ";
         switch (static_cast<GROUP>(i)) {
             case GENERAL:
-                output[static_cast<GROUP>(i)] += "GENERAL";
+                output[static_cast<GROUP>(i)] +=
+                        "\n\n\t=========================== GENERAL Specific Options ===========================\n\n";
+                // TODO center "GENERAL Specific Options" and the rest fill with "="
                 break;
             case PUB:
-                output[static_cast<GROUP>(i)] += "PUBLISHER";
+                output[static_cast<GROUP>(i)] +=
+                        "\n\n\t=========================== PUBLISHER Specific Options ===========================\n\n";
                 break;
             case SUB:
-                output[static_cast<GROUP>(i)] += "SUBSCRIBER";
+                output[static_cast<GROUP>(i)] +=
+                        "\n\n\t=========================== SUBSCRIBER Specific Options ===========================\n\n";
                 break;
             case TRANSPORT:
-                output[static_cast<GROUP>(i)] += "TRANSPORT";
+                output[static_cast<GROUP>(i)] +=
+                        "\n\n\t=========================== TRANSPORT Specific Options ===========================\n\n";
                 break;
+          #ifdef RTI_SECURE_PERFTEST
             case SECURE:
-                output[static_cast<GROUP>(i)] += "SECURE";
+                output[static_cast<GROUP>(i)] +=
+                        "\n\n\t=========================== SECURE Specific Options ===========================\n\n";
                 break;
+          #endif
             case RAWTRANSPORT:
-                output[static_cast<GROUP>(i)] += "RAWTRANSPORT";
+                output[static_cast<GROUP>(i)] +=
+                        "\n\n\t=========================== RAWTRANSPORT Specific Options ===========================\n\n";
                 break;
             default:
                 break;
         }
-        output[static_cast<GROUP>(i)] += " Specific Options ===========================\n\n";
     }
 
     oss << "/**********************************************************************************************/\n"
         << "Usage:\t perftest_cpp [options]\n"
         << "Where [options] are:\n\n";
+    output[GENERAL] +="\t-help                           - Print this usage message and exit\n";
+
     for (it = parameterList.begin(); it != parameterList.end(); it++) {
         if (!it->second.get()->getInternal()) {
             output[it->second.get()->getGroup()] +=

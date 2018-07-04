@@ -127,7 +127,26 @@ int perftest_cpp::Run(int argc, char *argv[])
         printf("\t%llu\n", cft[i]);
     }
     printf("pubRate: %d : %s\n", parameterManager.queryPair<int, std::string>("pubRate").first, parameterManager.queryPair<int, std::string>("pubRate").second.c_str());
-
+    printf("durability: %d\n", parameterManager.query<int>("durability"));
+    printf("dynamicData: %d\n", parameterManager.query<bool>("dynamicData"));
+    printf("noDirectCommunication: %d\n", parameterManager.query<bool>("noDirectCommunication"));
+    printf("durability: %d\n", parameterManager.query<int>("durability"));
+    printf("waitsetDelayUsec: %d\n", parameterManager.query<int>("waitsetDelayUsec"));
+    printf("waitsetEventCount: %d\n", parameterManager.query<int>("waitsetEventCount"));
+    printf("enableAutoThrottle: %d\n", parameterManager.query<bool>("enableAutoThrottle"));
+    printf("enableTurboMode: %d\n", parameterManager.query<bool>("enableTurboMode"));
+    printf("noXmlQos: %d\n", parameterManager.query<bool>("noXmlQos"));
+    printf("asynchronous: %d\n", parameterManager.query<bool>("asynchronous"));
+  #ifdef RTI_SECURE_PERFTEST
+    printf("secureEncryptDiscovery: %d\n", parameterManager.query<bool>("secureEncryptDiscovery"));
+    printf("secureSign: %d\n", parameterManager.query<bool>("secureSign"));
+    printf("secureEncryptData: %d\n", parameterManager.query<bool>("secureEncryptData"));
+    printf("secureGovernanceFile: %s\n", parameterManager.query<std::string>("secureGovernanceFile").c_str());
+    printf("securePermissionsFile: %s\n", parameterManager.query<std::string>("securePermissionsFile").c_str());
+    printf("secureCertAuthority: %s\n", parameterManager.query<std::string>("secureCertAuthority").c_str());
+    printf("secureCertFile: %s\n", parameterManager.query<std::string>("secureCertFile").c_str());
+    printf("securePrivateKey: %s\n", parameterManager.query<std::string>("securePrivateKey").c_str());
+  #endif
 
 
 
