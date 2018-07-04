@@ -1746,15 +1746,15 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
     public String getQoSProfileName(String topicName) {
         // get() function return null if the map contains no mapping for the key
-        String profileName = _qoSProfileNameMap.get(topicName).toString();
-        if(profileName == null){
+        if(_qoSProfileNameMap.get(topicName) == null){
             System.err.println(
                     "topic name must either be " +
                     LATENCY_TOPIC_NAME.VALUE + " or " +
                     ANNOUNCEMENT_TOPIC_NAME.VALUE  + " or " +
                     THROUGHPUT_TOPIC_NAME.VALUE);
+            return null;
         }
-        return profileName;
+        return _qoSProfileNameMap.get(topicName).toString();
     }
 
 }
