@@ -136,7 +136,7 @@ void ParameterManager::initialize()
     noPositiveAcks->setGroup(GENERAL);
     parameterList["noPositiveAcks"] = AnyParameter(noPositiveAcks);
 
-    ParameterVector<unsigned long long> * cft = new ParameterVector<unsigned long long>();
+    ParameterVector<unsigned long long> *cft = new ParameterVector<unsigned long long>();
     cft->setCommandLineArgument(std::make_pair("-cft","<start>:<end>"));
     cft->setDescription("Use a Content Filtered Topic for the Throughput topic in the subscriber side.\nSpecify 2 parameters: <start> and <end> to receive samples with a key in that range.\nSpecify only 1 parameter to receive samples with that exact key.\nDefault: Not set");
     cft->setType(T_VECTOR_NUMERIC);
@@ -145,6 +145,18 @@ void ParameterManager::initialize()
     cft->setParseMethod(SPLIT);
     cft->setGroup(SUB);
     parameterList["cft"] = AnyParameter(cft);
+
+
+    ParameterPair<unsigned long long, std::string> *pubRate = new ParameterPair<unsigned long long, std::string>(0,"sleep");
+    pubRate->setCommandLineArgument(std::make_pair("-pubRate","<samples/s>:<method>"));
+    pubRate->setDescription("Limit the throughput to the specified number\nof samples/s. Default 0 (don't limit)\n[OPTIONAL] Method to control the throughput can be:\n'spin' or 'sleep'\nDefault method: spin\n");
+    pubRate->setType(T_PAIR);
+    pubRate->setExtraArgument(YES);
+    pubRate->setGroup(PUB);
+    pubRate->setRange(0, 10000000);
+    pubRate->addValidStrValue("sleep");
+    pubRate->addValidStrValue("spin");
+    parameterList["pubRate"] = AnyParameter(pubRate);
 }
 
 
@@ -225,6 +237,30 @@ bool ParameterManager::parse(int argc, char *argv[])
                                 }
                                 (static_cast<ParameterVector<unsigned long long>*>(it->second.getVector<unsigned long long>()))->setValue(var);
                             }
+                        }
+                    }
+                    // Type is T_PAIR_NUMERIC_STR
+                    else if (it->second.get()->getType() == T_PAIR_NUMERIC_STR) {
+                        std::vector<std::string> v = split(allArgs[i]);
+                        if (v.size() != 2) {
+                            fprintf(stderr, "Missing '%s' after '%s'\n",
+                                it->second.get()->getCommandLineArgument().second.c_str(),
+                                it->second.get()->getCommandLineArgument().first.c_str());
+                            return false;
+                        } else {
+                            if (sscanf(v[0].c_str(), "%llu", &var) != 1) {
+                                fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
+                                        it->second.get()->getCommandLineArgument().second.c_str(),
+                                        it->second.get()->getCommandLineArgument().first.c_str());
+                                success = false;
+                            }
+                            if (!it->second.get()->validateNumericRange(var)) {
+                                success = false;
+                            }
+                            if (!it->second.get()->validateStrRange(v[1])) {
+                                success = false;
+                            }
+                            (static_cast<ParameterPair<unsigned long long, std::string>*>(it->second.getPair<unsigned long long, std::string>()))->setValue(var, v[1]);
                         }
                     }
                 }

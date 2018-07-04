@@ -67,7 +67,7 @@ bool ParameterBase::validateStrRange(std::string var)
 }
 
 // Set members
-void ParameterBase::setCommandLineArgument(std::pair <std::string, std::string> var)
+void ParameterBase::setCommandLineArgument(std::pair<std::string, std::string> var)
 {
     commandLineArgument = var;
 }

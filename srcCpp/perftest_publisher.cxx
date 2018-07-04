@@ -126,6 +126,9 @@ int perftest_cpp::Run(int argc, char *argv[])
     for (unsigned int i = 0; i < cft.size(); i++) {
         printf("\t%llu\n", cft[i]);
     }
+    printf("pubRate: %d : %s\n", parameterManager.queryPair<int, std::string>("pubRate").first, parameterManager.queryPair<int, std::string>("pubRate").second.c_str());
+
+
 
 
     return 0;

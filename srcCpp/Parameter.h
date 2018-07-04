@@ -21,7 +21,8 @@ enum TYPE {
     T_STR,            // std::string tpy
     T_BOOL,           // bool type
     T_VECTOR_NUMERIC, // std::vector<unsigened long long>
-    T_VECTOR_STR      // std::vector<std::string>
+    T_VECTOR_STR,      // std::vector<std::string>
+    T_PAIR_NUMERIC_STR // std::pair<unsigened long long, std::string>
 };
 
 enum PARSEMETHOD {
@@ -188,6 +189,41 @@ class ParameterVector : public ParameterBase {
         }
 };
 
+
+
+template <typename K, typename V>
+class ParameterPair : public ParameterBase {
+    private:
+        std::pair <K, V> value;
+
+    public:
+        ParameterPair()
+        {
+        }
+        ParameterPair(K key, V val)
+        {
+            value = std::make_pair(key, val);
+        }
+        ~ParameterPair()
+        {
+        }
+        ParameterPair(ParameterBase& p)
+        {
+        }
+
+        std::pair<K,V> getValue()
+        {
+            return value;
+        }
+
+        void setValue(K key, V val)
+        {
+
+            value = std::make_pair(key, val);
+            setIsSet(true);
+        }
+};
+
 class AnyParameter {
     private:
         ParameterBase* param;
@@ -202,6 +238,9 @@ class AnyParameter {
 
         template <typename T>
         AnyParameter(ParameterVector<T> *var) : param(var) {}
+
+        template <typename K, typename V>
+        AnyParameter(ParameterPair<K,V> *var) : param(var) {}
 
         ParameterBase* get()
         {
@@ -218,6 +257,12 @@ class AnyParameter {
         ParameterVector<T>* getVector()
         {
             return static_cast<ParameterVector<T>*>(param);
+        }
+
+        template <typename K, typename V>
+        ParameterPair<K,V>* getPair()
+        {
+            return static_cast<ParameterPair<K,V>*>(param);
         }
 
         AnyParameter& operator=(AnyParameter other)
