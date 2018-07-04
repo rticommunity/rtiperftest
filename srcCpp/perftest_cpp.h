@@ -32,6 +32,12 @@
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
 
+/*
+ * perftestReaderListener.h have some dependencies from this class. Also
+ * perftest_cpp.h needs some classes from perftestReadersListener.h So, add the
+ * include of perftestReaderListener.h at the end and define the tree needed
+ * classes here.
+ */
 class ThroughputListener;
 class AnnouncementListener;
 class LatencyListener;
