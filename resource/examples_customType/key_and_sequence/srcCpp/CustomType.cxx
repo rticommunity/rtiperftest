@@ -80,8 +80,7 @@ bool set_custom_type_dynamic_data(
     retcode = data.bind_complex_member(customTypeData, "custom_type",
             DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
     if (retcode != DDS_RETCODE_OK) {
-        fprintf(
-                stderr,
+        fprintf(stderr,
                 "bind_complex_member(custom_type) failed: %d.\n",
                 retcode);
         success = false;
@@ -96,8 +95,7 @@ bool set_custom_type_dynamic_data(
     }
     retcode = data.unbind_complex_member(customTypeData);
     if (retcode != DDS_RETCODE_OK) {
-        fprintf(
-                stderr,
+        fprintf(stderr,
                 "unbind_complex_member(custom_type) failed: %d.\n",
                 retcode);
         success = false;
