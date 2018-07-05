@@ -745,31 +745,24 @@ std::string ParameterManager::displayHelp()
     for (int i = GENERAL; i != RAWTRANSPORT+1; i++) {
         switch (static_cast<GROUP>(i)) {
             case GENERAL:
-                output[static_cast<GROUP>(i)] +=
-                        "\n\n\t=========================== GENERAL Specific Options ===========================\n\n";
-                // TODO center "GENERAL Specific Options" and the rest fill with "="
+                output[static_cast<GROUP>(i)] += getCenterHeaderHelpLine("GENERAL");
                 break;
             case PUB:
-                output[static_cast<GROUP>(i)] +=
-                        "\n\n\t=========================== PUBLISHER Specific Options ===========================\n\n";
+                output[static_cast<GROUP>(i)] += getCenterHeaderHelpLine("PUBLISHER");
                 break;
             case SUB:
-                output[static_cast<GROUP>(i)] +=
-                        "\n\n\t=========================== SUBSCRIBER Specific Options ===========================\n\n";
+                output[static_cast<GROUP>(i)] += getCenterHeaderHelpLine("SUBSCRIBER");
                 break;
             case TRANSPORT:
-                output[static_cast<GROUP>(i)] +=
-                        "\n\n\t=========================== TRANSPORT Specific Options ===========================\n\n";
+                output[static_cast<GROUP>(i)] += getCenterHeaderHelpLine("TRANSPORT");
                 break;
           #ifdef RTI_SECURE_PERFTEST
             case SECURE:
-                output[static_cast<GROUP>(i)] +=
-                        "\n\n\t=========================== SECURE Specific Options ===========================\n\n";
+                output[static_cast<GROUP>(i)] += getCenterHeaderHelpLine("SECURE");
                 break;
           #endif
             case RAWTRANSPORT:
-                output[static_cast<GROUP>(i)] +=
-                        "\n\n\t=========================== RAWTRANSPORT Specific Options ===========================\n\n";
+                output[static_cast<GROUP>(i)] += getCenterHeaderHelpLine("RAWTRANSPORT");
                 break;
             default:
                 break;
@@ -837,4 +830,17 @@ std::vector<std::string> ParameterManager::split(std::string str, char delimiter
     }
     v.push_back(str.substr(previous, current - previous));
     return v;
+}
+
+std::string ParameterManager::getCenterHeaderHelpLine(std::string name){
+    name += "Specific Options";
+    std::stringstream line;
+    unsigned int maxWithLine = 80;
+    std::string separatorBar =
+            std::string((int) ((maxWithLine - name.length() - 2) / 2), '=');
+    line << "\n\n\t" << separatorBar << " " << name << " " << separatorBar << "\n\n";
+    if (line.str().length() < maxWithLine) { //If name is odd, then add one more '='
+        line << '=';
+    }
+    return line.str();
 }

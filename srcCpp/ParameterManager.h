@@ -91,6 +91,7 @@ class ParameterManager
         // Get the help message
         std::string printCommandLineParameter(ParameterBase *parameterValue);
         std::vector<std::string> split(std::string str, char delimiter = ':');
+        std::string getCenterHeaderHelpLine(std::string name);
 
 };
 
