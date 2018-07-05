@@ -174,8 +174,9 @@ void ThroughputListener::print_summary(TestMessage &message)
 
         // Calculations of missing package percent
         if (intervalPacketsReceived + intervalMissingPackets != 0) {
-            missingPacketsPercent
-                    = (float) ((intervalMissingPackets * 100.0) / (float) (intervalPacketsReceived + intervalMissingPackets));
+            missingPacketsPercent = (float) ((intervalMissingPackets * 100.0)
+                    / (float) (intervalPacketsReceived
+                    + intervalMissingPackets));
         }
 
         std::string outputCpu = "";

@@ -171,6 +171,68 @@ void set_default_scan_values(
 }
 
 /*********************************************************
+ * Destructor
+ */
+perftest_cpp::~perftest_cpp()
+{
+
+    for (int i = 0; i < _MessagingArgc; ++i) {
+        if (_MessagingArgv[i] != NULL) {
+            DDS_String_free(_MessagingArgv[i]);
+        }
+    }
+
+    if (_MessagingArgv != NULL) {
+        delete[] _MessagingArgv;
+    }
+
+    if (_throughputReaderListener != NULL) {
+        delete (_throughputReaderListener);
+    }
+
+    if (_latencyReaderListener != NULL) {
+        delete (_latencyReaderListener);
+    }
+
+    if (_announcementReaderListener != NULL) {
+        delete (_announcementReaderListener);
+    }
+
+    if (_reader != NULL) {
+        delete (_reader);
+    }
+
+    if (_writer != NULL) {
+        delete (_writer);
+    }
+
+    if (_announcementReader != NULL) {
+        delete (_announcementReader);
+    }
+
+    if (_announcementWriter != NULL) {
+        delete (_announcementWriter);
+    }
+
+    if (_MessagingImpl != NULL) {
+        delete _MessagingImpl;
+    }
+
+    if (perftest_cpp::_Clock != NULL) {
+        RTIHighResolutionClock_delete(perftest_cpp::_Clock);
+    }
+
+#ifdef RTI_WIN32
+    if (_hTimerQueue != NULL) {
+        DeleteTimerQueue(_hTimerQueue);
+    }
+#endif
+
+    fprintf(stderr, "Test ended.\n");
+    fflush(stderr);
+}
+
+/*********************************************************
  * Constructor
  */
 perftest_cpp::perftest_cpp()
@@ -198,14 +260,13 @@ perftest_cpp::perftest_cpp()
     _displayWriterStats = false;
     _pubRateMethodSpin = true;
     _useCft = false;
-
-    _throughput_reader_listener = NULL;
-    _latency_reader_listener = NULL;
-    _announcement_reader_listener = NULL;
+    _throughputReaderListener = NULL;
+    _latencyReaderListener = NULL;
+    _announcementReaderListener = NULL;
     _reader = NULL;
     _writer = NULL;
-    _announcement_reader = NULL;
-    _announcement_writer = NULL;
+    _announcementReader = NULL;
+    _announcementWriter = NULL;
 
 #ifdef RTI_WIN32
     if (_hTimerQueue == NULL) {
@@ -215,67 +276,6 @@ perftest_cpp::perftest_cpp()
 #endif
 };
 
-/*********************************************************
- * Destructor
- */
-perftest_cpp::~perftest_cpp()
-{
-    for (int i = 0; i < _MessagingArgc; ++i) {
-        if (_MessagingArgv[i] != NULL) {
-            DDS_String_free(_MessagingArgv[i]);
-        }
-    }
-
-    if (_MessagingArgv != NULL) {
-        delete[] _MessagingArgv;
-    }
-
-    if (_throughput_reader_listener != NULL) {
-        delete (_throughput_reader_listener);
-    }
-
-    if (_latency_reader_listener != NULL) {
-        delete (_latency_reader_listener);
-    }
-
-    if (_announcement_reader_listener != NULL) {
-        delete (_announcement_reader_listener);
-    }
-
-    if (_reader != NULL) {
-        delete (_reader);
-    }
-
-    if (_writer != NULL) {
-        delete (_writer);
-    }
-
-    if (_announcement_reader != NULL) {
-        delete (_announcement_reader);
-    }
-
-    if (_announcement_writer != NULL) {
-        delete (_announcement_writer);
-    }
-
-    if (_MessagingImpl != NULL) {
-        delete _MessagingImpl;
-    }
-
-    if (perftest_cpp::_Clock != NULL) {
-        RTIHighResolutionClock_delete(perftest_cpp::_Clock);
-    }
-
-#ifdef RTI_WIN32
-    if (_hTimerQueue != NULL) {
-        DeleteTimerQueue(_hTimerQueue);
-    }
-#endif
-
-
-    fprintf(stderr, "Test ended.\n");
-    fflush(stderr);
-}
 
 /*********************************************************
  * ParseArgs
@@ -1052,10 +1052,13 @@ int perftest_cpp::Subscriber()
     if (!_UseReadThread)
     {
         // create latency pong _reader
-        _throughput_reader_listener = new ThroughputListener(_writer, NULL, _useCft, _NumPublishers);
+        _throughputReaderListener = new ThroughputListener(
+                _writer,
+                NULL,
+                _useCft,
+                _NumPublishers);
         _reader = _MessagingImpl->CreateReader(
-                THROUGHPUT_TOPIC_NAME,
-                _throughput_reader_listener);
+                THROUGHPUT_TOPIC_NAME, _throughputReaderListener);
         if (_reader == NULL)
         {
             fprintf(stderr, "Problem creating throughput _reader.\n");
@@ -1072,7 +1075,11 @@ int perftest_cpp::Subscriber()
             fprintf(stderr, "Problem creating throughput _reader.\n");
             return -1;
         }
-        _throughput_reader_listener = new ThroughputListener(_writer, _reader, _useCft, _NumPublishers);
+        _throughputReaderListener = new ThroughputListener(
+                _writer,
+                _reader,
+                _useCft,
+                _NumPublishers);
 
         RTIOsapiThread_new(
                 "ReceiverThread",
@@ -1081,14 +1088,14 @@ int perftest_cpp::Subscriber()
                 RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
                 NULL,
                 readThread<ThroughputListener>,
-                _throughput_reader_listener);
+                _throughputReaderListener);
     }
 
     // Create announcement _writer
-    _announcement_writer = _MessagingImpl->CreateWriter(
+    _announcementWriter = _MessagingImpl->CreateWriter(
             ANNOUNCEMENT_TOPIC_NAME);
 
-    if (_announcement_writer == NULL) {
+    if (_announcementWriter == NULL) {
         fprintf(stderr, "Problem creating announcement _writer.\n");
         return -1;
     }
@@ -1097,10 +1104,10 @@ int perftest_cpp::Subscriber()
     fprintf(stderr,"Waiting to discover %d publishers ...\n", _NumPublishers);
     fflush(stderr);
     _reader->WaitForWriters(_NumPublishers);
-    _announcement_writer->WaitForReaders(_NumPublishers);
+    _announcementWriter->WaitForReaders(_NumPublishers);
 
     /*
-     * Announcement message that will be used by the _announcement_writer
+     * Announcement message that will be used by the _announcementWriter
      * to send information to the Publisher. This message size will indicate
      * different things.
      *
@@ -1114,8 +1121,8 @@ int perftest_cpp::Subscriber()
     announcement_msg.data = new char[LENGTH_CHANGED_SIZE];
 
     // Send announcement message
-    _announcement_writer->Send(announcement_msg);
-    _announcement_writer->Flush();
+    _announcementWriter->Send(announcement_msg);
+    _announcementWriter->Flush();
 
 
     fprintf(stderr,"Waiting for data...\n");
@@ -1133,7 +1140,7 @@ int perftest_cpp::Subscriber()
     float missingPacketsPercent = 0;
 
     if (perftest_cpp::_showCpu) {
-         _throughput_reader_listener->cpu.initialize();
+         _throughputReaderListener->cpu.initialize();
     }
 
     now = GetTimeUsec();
@@ -1143,37 +1150,37 @@ int perftest_cpp::Subscriber()
         MilliSleep(1000);
         now = GetTimeUsec();
 
-        if (_throughput_reader_listener->changeSize) { // ACK changeSize
+        if (_throughputReaderListener->changeSize) { // ACK changeSize
             announcement_msg.entity_id = _SubID;
             announcement_msg.size =  LENGTH_CHANGED_SIZE;
-            _announcement_writer->Send(announcement_msg);
-            _announcement_writer->Flush();
-            _throughput_reader_listener->changeSize = false;
+            _announcementWriter->Send(announcement_msg);
+            _announcementWriter->Flush();
+            _throughputReaderListener->changeSize = false;
         }
 
-        if (_throughput_reader_listener->end_test) { // ACK end_test
+        if (_throughputReaderListener->end_test) { // ACK end_test
             announcement_msg.entity_id = _SubID;
             announcement_msg.size = FINISHED_SIZE;
-            _announcement_writer->Send(announcement_msg);
-            _announcement_writer->Flush();
+            _announcementWriter->Send(announcement_msg);
+            _announcementWriter->Flush();
             break;
         }
 
         if (_PrintIntervals)
         {
-            if (lastDataLength != _throughput_reader_listener->lastDataLength)
+            if (lastDataLength != _throughputReaderListener->lastDataLength)
             {
-                lastDataLength = _throughput_reader_listener->lastDataLength;
-                prev_count = _throughput_reader_listener->packetsReceived;
-                prev_bytes = _throughput_reader_listener->bytesReceived;
+                lastDataLength = _throughputReaderListener->lastDataLength;
+                prev_count = _throughputReaderListener->packetsReceived;
+                prev_bytes = _throughputReaderListener->bytesReceived;
                 bps_ave = 0;
                 mps_ave = 0;
                 ave_count = 0;
                 continue;
             }
 
-            last_msgs = _throughput_reader_listener->packetsReceived;
-            last_bytes = _throughput_reader_listener->bytesReceived;
+            last_msgs = _throughputReaderListener->packetsReceived;
+            last_bytes = _throughputReaderListener->bytesReceived;
             msgsent = last_msgs - prev_count;
             bytes = last_bytes - prev_bytes;
             prev_count = last_msgs;
@@ -1188,24 +1195,25 @@ int perftest_cpp::Subscriber()
             mps_ave = mps_ave + (double)(mps - mps_ave) / (double)ave_count;
 
             // Calculations of missing package percent
-            if (last_msgs + _throughput_reader_listener->missingPackets == 0) {
+            if (last_msgs + _throughputReaderListener->missingPackets == 0) {
                 missingPacketsPercent = 0.0;
             } else {
                 missingPacketsPercent = (float)
-                        ((_throughput_reader_listener->missingPackets * 100.0)
-                        / (float) (last_msgs + _throughput_reader_listener->missingPackets));
+                        ((_throughputReaderListener->missingPackets * 100.0)
+                        / (float) (last_msgs
+                        + _throughputReaderListener->missingPackets));
             }
 
             if (last_msgs > 0) {
                 std::string outputCpu = "";
                 if (perftest_cpp::_showCpu) {
-                    outputCpu = _throughput_reader_listener->cpu.get_cpu_instant();
+                    outputCpu = _throughputReaderListener->cpu.get_cpu_instant();
                 }
                 printf("Packets: %8llu  Packets/s: %7llu  Packets/s(ave): %7.0lf  "
                        "Mbps: %7.1lf  Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%) %s\n",
                         last_msgs, mps, mps_ave,
                         bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
-                        _throughput_reader_listener->missingPackets,
+                        _throughputReaderListener->missingPackets,
                         missingPacketsPercent,
                         outputCpu.c_str()
                 );
@@ -1264,13 +1272,13 @@ int perftest_cpp::Publisher()
         {
             // create latency pong _reader
             // the _writer is passed for ping-pong notification in LatencyTest
-            _latency_reader_listener = new LatencyListener(
+            _latencyReaderListener = new LatencyListener(
                     num_latency,
                     NULL,
                     _LatencyTest ? _writer : NULL);
             _reader = _MessagingImpl->CreateReader(
                     LATENCY_TOPIC_NAME,
-                    _latency_reader_listener);
+                    _latencyReaderListener);
             if (_reader == NULL)
             {
                 fprintf(stderr,"Problem creating latency _reader.\n");
@@ -1287,7 +1295,7 @@ int perftest_cpp::Publisher()
                 fprintf(stderr,"Problem creating latency _reader.\n");
                 return -1;
             }
-            _latency_reader_listener = new LatencyListener(
+            _latencyReaderListener = new LatencyListener(
                     num_latency,
                     _reader,
                     _LatencyTest ? _writer : NULL);
@@ -1299,7 +1307,7 @@ int perftest_cpp::Publisher()
                     RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
                     NULL,
                     readThread<LatencyListener>,
-                    _latency_reader_listener);
+                    _latencyReaderListener);
         }
     }
     else
@@ -1311,11 +1319,11 @@ int perftest_cpp::Publisher()
      * A Subscriber will send a message on this channel once it discovers
      * every Publisher
      */
-    _announcement_reader_listener = new AnnouncementListener();
-    _announcement_reader = _MessagingImpl->CreateReader(
+    _announcementReaderListener = new AnnouncementListener();
+    _announcementReader = _MessagingImpl->CreateReader(
             ANNOUNCEMENT_TOPIC_NAME,
-            _announcement_reader_listener);
-    if (_announcement_reader == NULL)
+            _announcementReaderListener);
+    if (_announcementReader == NULL)
     {
         fprintf(stderr,"Problem creating announcement _reader.\n");
         return -1;
@@ -1349,7 +1357,7 @@ int perftest_cpp::Publisher()
     fprintf(stderr,"Waiting for subscribers announcement ...\n");
     fflush(stderr);
     while (_NumSubscribers
-            > (int)_announcement_reader_listener->subscriberList.size()) {
+            > (int)_announcementReaderListener->subscriberList.size()) {
         MilliSleep(1000);
     }
 
@@ -1359,7 +1367,7 @@ int perftest_cpp::Publisher()
     message.data = new char[(std::max)((int)_DataLen, (int)LENGTH_CHANGED_SIZE)];
 
     if ( perftest_cpp::_showCpu && _PubID == 0) {
-        _latency_reader_listener->cpu.initialize();
+        _latencyReaderListener->cpu.initialize();
     }
 
     if (INITIALIZE_SIZE > MAX_PERFTEST_SAMPLE_SIZE) {
@@ -1374,7 +1382,7 @@ int perftest_cpp::Publisher()
      *
      * The purpose of this initial burst of Data is to ensure that most
      * memory allocations in the critical path are done before the test begings,
-     * for both the _Writer and the _Reader that receives the samples.
+     * for both the Writer and the Reader that receives the samples.
      * It will also serve to make sure that all the instances are registered
      * in advance in the subscriber application.
      *
@@ -1526,8 +1534,8 @@ int perftest_cpp::Publisher()
                      * We can prevent this by adding a small sleep() if the test is best
                      * effort.
                      */
-                    _announcement_reader_listener->subscriberList.clear();
-                    while ((int)_announcement_reader_listener->subscriberList.size()
+                    _announcementReaderListener->subscriberList.clear();
+                    while ((int)_announcementReaderListener->subscriberList.size()
                             < _NumSubscribers) {
                         _writer->Send(message, true);
                         _writer->Flush();
@@ -1554,7 +1562,8 @@ int perftest_cpp::Publisher()
                 sentPing = true;
 
                 if (_displayWriterStats && _PrintIntervals) {
-                    printf("Pulled samples: %7d\n", _writer->getPulledSampleCount());
+                    printf("Pulled samples: %7d\n",
+                           _writer->getPulledSampleCount());
                 }
             }
         }
@@ -1593,7 +1602,7 @@ int perftest_cpp::Publisher()
 
     message.size = FINISHED_SIZE;
     unsigned long i = 0;
-    while (_announcement_reader_listener->subscriberList.size() > 0
+    while (_announcementReaderListener->subscriberList.size() > 0
             && i < announcementSampleCount) {
         _writer->Send(message, true);
         _writer->Flush();
@@ -1604,8 +1613,8 @@ int perftest_cpp::Publisher()
     }
 
     if (_PubID == 0) {
-        _latency_reader_listener->print_summary_latency();
-        _latency_reader_listener->end_test = true;
+        _latencyReaderListener->print_summary_latency();
+        _latencyReaderListener->end_test = true;
     } else {
         fprintf(
             stderr,

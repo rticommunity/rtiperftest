@@ -33,10 +33,11 @@
 #include "osapi/osapi_ntptime.h"
 
 /*
- * perftestReaderListener.h have some dependencies from this class. Also
- * perftest_cpp.h needs some classes from perftestReadersListener.h So, add the
- * include of perftestReaderListener.h at the end and define the tree needed
- * classes here.
+ * perftestReaderListener.h have some dependencies from this class.
+ * Also perftest_cpp.h needs the tree following classes from
+ * perftestReadersListener.h.
+ * As solution, the include of perftestReaderListener.h has been moved to the
+ * end of this file and the tree classes has been defined here.
  */
 class ThroughputListener;
 class AnnouncementListener;
@@ -116,14 +117,14 @@ class perftest_cpp
     bool _useCft;
     static const Perftest_ProductVersion_t _version;
 
-    /* Members for publisher and subscriber */
-    ThroughputListener *_throughput_reader_listener;
-    LatencyListener *_latency_reader_listener;
-    AnnouncementListener *_announcement_reader_listener;
+    /* Members used by publisher and subscriber functions */
+    ThroughputListener *_throughputReaderListener;
+    LatencyListener *_latencyReaderListener;
+    AnnouncementListener *_announcementReaderListener;
     IMessagingReader *_reader;
     IMessagingWriter *_writer;
-    IMessagingReader *_announcement_reader;
-    IMessagingWriter *_announcement_writer;
+    IMessagingReader *_announcementReader;
+    IMessagingWriter *_announcementWriter;
 
 private:
     static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);
