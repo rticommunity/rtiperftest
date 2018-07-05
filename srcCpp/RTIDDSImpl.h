@@ -51,7 +51,6 @@ class RTIDDSImpl : public IMessaging
         _InstanceCount = 1;
         _InstanceMaxCountReader = DDS_LENGTH_UNLIMITED;
         _InstanceHashBuckets = -1;
-        _Durability = DDS_VOLATILE_DURABILITY_QOS;
         _DirectCommunication = true;
         _KeepDurationUsec = -1;
         _UsePositiveAcks = true;
@@ -150,7 +149,6 @@ class RTIDDSImpl : public IMessaging
     unsigned long _InstanceCount;
     long _InstanceMaxCountReader;
     int          _InstanceHashBuckets;
-    int          _Durability;
     bool         _DirectCommunication;
     int          _KeepDurationUsec;
     bool         _UsePositiveAcks;

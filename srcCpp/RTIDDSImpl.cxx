@@ -369,16 +369,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-bestEffort")) {
             _IsReliable = false;
         } else if (IS_OPTION(argv[i], "-durability")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <kind> after -durability\n");
-                return false;
-            }
-            _Durability = strtol(argv[i], NULL, 10);
-
-            if ((_Durability < 0) || (_Durability > 3)) {
-                fprintf(stderr, "durability kind must be 0(volatile), 1(transient local), 2(transient), or 3(persistent) \n");
-                return false;
-            }
+            ++i;
         } else if (IS_OPTION(argv[i], "-dynamicData")) {
             _isDynamicData = true;
         } else if (IS_OPTION(argv[i], "-noDirectCommunication")) {
@@ -2507,7 +2498,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         dw_qos.resource_limits.max_samples_per_instance
             = dw_qos.resource_limits.max_samples;
 
-        dw_qos.durability.kind = (DDS_DurabilityQosPolicyKind)_Durability;
+        dw_qos.durability.kind =
+                (DDS_DurabilityQosPolicyKind)ParameterManager::GetInstance().query<int>("durability");
         dw_qos.durability.direct_communication = _DirectCommunication;
 
         dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples = _SendQueueSize / 10;
@@ -2532,9 +2524,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 
     if (qos_profile == "LatencyQos"
             && !_DirectCommunication
-            && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
-                || _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
-        dw_qos.durability.kind = (DDS_DurabilityQosPolicyKind)_Durability;
+            && (ParameterManager::GetInstance().query<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+                    || ParameterManager::GetInstance().query<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
+        dw_qos.durability.kind =
+                (DDS_DurabilityQosPolicyKind)ParameterManager::GetInstance().query<int>("durability");
         dw_qos.durability.direct_communication = _DirectCommunication;
     }
 
@@ -2730,10 +2723,11 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     if (qos_profile == "ThroughputQos"
             || (qos_profile == "LatencyQos"
                     && !_DirectCommunication
-                    && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
-                            || _Durability == DDS_PERSISTENT_DURABILITY_QOS)))
+                    && (ParameterManager::GetInstance().query<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+                            || ParameterManager::GetInstance().query<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)))
     {
-        dr_qos.durability.kind = (DDS_DurabilityQosPolicyKind) _Durability;
+        dr_qos.durability.kind =
+                (DDS_DurabilityQosPolicyKind) ParameterManager::GetInstance().query<int>("durability");
         dr_qos.durability.direct_communication = _DirectCommunication;
     }
 

@@ -100,91 +100,91 @@ int perftest_cpp::Run(int argc, char *argv[])
     if (!ParameterManager::GetInstance().parse(argc, argv)) {
         return -1;
     }
-    printf("batching: %d\n", ParameterManager::GetInstance().query<int>("batching"));
-    printf("pub: %d\n", ParameterManager::GetInstance().query<bool>("pub"));
-    printf("sub: %d\n", ParameterManager::GetInstance().query<bool>("sub"));
-    printf("flowController: %s\n", ParameterManager::GetInstance().query<std::string>("flowController").c_str());
-    std::vector<unsigned long long> scan = ParameterManager::GetInstance().queryVector<unsigned long long>("scan");
-    printf("scan: \n");
-    for (unsigned int i = 0; i < scan.size(); i++) {
-        printf("\t%llu\n", scan[i]);
-    }
-    printf("unbounded: %d\n", ParameterManager::GetInstance().query<int>("unbounded"));
-    printf("sendQueueSize: %d\n", ParameterManager::GetInstance().query<int>("sendQueueSize"));
-    printf("domain: %d\n", ParameterManager::GetInstance().query<int>("domain"));
-    printf("qosFile: %s\n", ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
-    printf("qosLibrary: %s\n", ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str());
-    printf("bestEffort: %d\n", ParameterManager::GetInstance().query<bool>("bestEffort"));
-    printf("noPositiveAcks: %d\n", ParameterManager::GetInstance().query<bool>("noPositiveAcks"));
-    std::vector<unsigned long long> cft = ParameterManager::GetInstance().queryVector<unsigned long long>("cft");
-    printf("cft: \n");
-    for (unsigned int i = 0; i < cft.size(); i++) {
-        printf("\t%llu\n", cft[i]);
-    }
-    printf("pubRate: %d : %s\n", ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").first, ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").second.c_str());
-    printf("durability: %d\n", ParameterManager::GetInstance().query<int>("durability"));
-    printf("dynamicData: %d\n", ParameterManager::GetInstance().query<bool>("dynamicData"));
-    printf("noDirectCommunication: %d\n", ParameterManager::GetInstance().query<bool>("noDirectCommunication"));
-    printf("waitsetDelayUsec: %d\n", ParameterManager::GetInstance().query<int>("waitsetDelayUsec"));
-    printf("waitsetEventCount: %d\n", ParameterManager::GetInstance().query<int>("waitsetEventCount"));
-    printf("enableAutoThrottle: %d\n", ParameterManager::GetInstance().query<bool>("enableAutoThrottle"));
-    printf("enableTurboMode: %d\n", ParameterManager::GetInstance().query<bool>("enableTurboMode"));
-    printf("noXmlQos: %d\n", ParameterManager::GetInstance().query<bool>("noXmlQos"));
-    printf("asynchronous: %d\n", ParameterManager::GetInstance().query<bool>("asynchronous"));
+//     printf("batching: %d\n", ParameterManager::GetInstance().query<int>("batching"));
+//     printf("pub: %d\n", ParameterManager::GetInstance().query<bool>("pub"));
+//     printf("sub: %d\n", ParameterManager::GetInstance().query<bool>("sub"));
+//     printf("flowController: %s\n", ParameterManager::GetInstance().query<std::string>("flowController").c_str());
+//     std::vector<unsigned long long> scan = ParameterManager::GetInstance().queryVector<unsigned long long>("scan");
+//     printf("scan: \n");
+//     for (unsigned int i = 0; i < scan.size(); i++) {
+//         printf("\t%llu\n", scan[i]);
+//     }
+//     printf("unbounded: %d\n", ParameterManager::GetInstance().query<int>("unbounded"));
+//     printf("sendQueueSize: %d\n", ParameterManager::GetInstance().query<int>("sendQueueSize"));
+//     printf("domain: %d\n", ParameterManager::GetInstance().query<int>("domain"));
+//     printf("qosFile: %s\n", ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
+//     printf("qosLibrary: %s\n", ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str());
+//     printf("bestEffort: %d\n", ParameterManager::GetInstance().query<bool>("bestEffort"));
+//     printf("noPositiveAcks: %d\n", ParameterManager::GetInstance().query<bool>("noPositiveAcks"));
+//     std::vector<unsigned long long> cft = ParameterManager::GetInstance().queryVector<unsigned long long>("cft");
+//     printf("cft: \n");
+//     for (unsigned int i = 0; i < cft.size(); i++) {
+//         printf("\t%llu\n", cft[i]);
+//     }
+//     printf("pubRate: %d : %s\n", ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").first, ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").second.c_str());
+//     printf("durability: %d\n", ParameterManager::GetInstance().query<int>("durability"));
+//     printf("dynamicData: %d\n", ParameterManager::GetInstance().query<bool>("dynamicData"));
+//     printf("noDirectCommunication: %d\n", ParameterManager::GetInstance().query<bool>("noDirectCommunication"));
+//     printf("waitsetDelayUsec: %d\n", ParameterManager::GetInstance().query<int>("waitsetDelayUsec"));
+//     printf("waitsetEventCount: %d\n", ParameterManager::GetInstance().query<int>("waitsetEventCount"));
+//     printf("enableAutoThrottle: %d\n", ParameterManager::GetInstance().query<bool>("enableAutoThrottle"));
+//     printf("enableTurboMode: %d\n", ParameterManager::GetInstance().query<bool>("enableTurboMode"));
+//     printf("noXmlQos: %d\n", ParameterManager::GetInstance().query<bool>("noXmlQos"));
+//     printf("asynchronous: %d\n", ParameterManager::GetInstance().query<bool>("asynchronous"));
 
 
-    printf("sidMultiSubTest: %d\n", ParameterManager::GetInstance().query<int>("sidMultiSubTest"));
-    printf("pidMultiPubTest: %d\n", ParameterManager::GetInstance().query<int>("pidMultiPubTest"));
-    printf("dataLen: %d\n", ParameterManager::GetInstance().query<int>("dataLen"));
-    printf("numIter: %d\n", ParameterManager::GetInstance().query<int>("numIter"));
-    printf("instances: %d\n", ParameterManager::GetInstance().query<int>("instances"));
-    printf("writeInstance: %d\n", ParameterManager::GetInstance().query<int>("writeInstance"));
-    printf("sleep: %d\n", ParameterManager::GetInstance().query<int>("sleep"));
-    printf("latencyCount: %d\n", ParameterManager::GetInstance().query<int>("latencyCount"));
-    printf("numSubscribers: %d\n", ParameterManager::GetInstance().query<int>("numSubscribers"));
-    printf("numPublishers: %d\n", ParameterManager::GetInstance().query<int>("numPublishers"));
-    printf("noPrintIntervals: %d\n", ParameterManager::GetInstance().query<bool>("noPrintIntervals"));
-    printf("useReadThread: %d\n", ParameterManager::GetInstance().query<bool>("useReadThread"));
-    printf("verbosity: %d\n", ParameterManager::GetInstance().query<int>("verbosity"));
-    printf("cpu: %d\n", ParameterManager::GetInstance().query<bool>("cpu"));
-    printf("writerStats: %d\n", ParameterManager::GetInstance().query<bool>("writerStats"));
-    printf("executionTime: %d\n", ParameterManager::GetInstance().query<int>("executionTime"));
-    printf("keyed: %d\n", ParameterManager::GetInstance().query<bool>("keyed"));
-    printf("latencyTest: %d\n", ParameterManager::GetInstance().query<bool>("latencyTest"));
+//     printf("sidMultiSubTest: %d\n", ParameterManager::GetInstance().query<int>("sidMultiSubTest"));
+//     printf("pidMultiPubTest: %d\n", ParameterManager::GetInstance().query<int>("pidMultiPubTest"));
+//     printf("dataLen: %d\n", ParameterManager::GetInstance().query<int>("dataLen"));
+//     printf("numIter: %d\n", ParameterManager::GetInstance().query<int>("numIter"));
+//     printf("instances: %d\n", ParameterManager::GetInstance().query<int>("instances"));
+//     printf("writeInstance: %d\n", ParameterManager::GetInstance().query<int>("writeInstance"));
+//     printf("sleep: %d\n", ParameterManager::GetInstance().query<int>("sleep"));
+//     printf("latencyCount: %d\n", ParameterManager::GetInstance().query<int>("latencyCount"));
+//     printf("numSubscribers: %d\n", ParameterManager::GetInstance().query<int>("numSubscribers"));
+//     printf("numPublishers: %d\n", ParameterManager::GetInstance().query<int>("numPublishers"));
+//     printf("noPrintIntervals: %d\n", ParameterManager::GetInstance().query<bool>("noPrintIntervals"));
+//     printf("useReadThread: %d\n", ParameterManager::GetInstance().query<bool>("useReadThread"));
+//     printf("verbosity: %d\n", ParameterManager::GetInstance().query<int>("verbosity"));
+//     printf("cpu: %d\n", ParameterManager::GetInstance().query<bool>("cpu"));
+//     printf("writerStats: %d\n", ParameterManager::GetInstance().query<bool>("writerStats"));
+//     printf("executionTime: %d\n", ParameterManager::GetInstance().query<int>("executionTime"));
+//     printf("keyed: %d\n", ParameterManager::GetInstance().query<bool>("keyed"));
+//     printf("latencyTest: %d\n", ParameterManager::GetInstance().query<bool>("latencyTest"));
 
-    //TRANSPORT
-    printf("nic: %s\n", ParameterManager::GetInstance().query<std::string>("nic").c_str());
-    std::vector<std::string> peer = ParameterManager::GetInstance().queryVector<std::string>("peer");
-    printf("peer: \n");
-    for (unsigned int i = 0; i < peer.size(); i++) {
-        printf("\t%s\n", peer[i].c_str());
-    }
-    printf("transport: %s\n", ParameterManager::GetInstance().query<std::string>("transport").c_str());
-    printf("multicast: %d\n", ParameterManager::GetInstance().query<bool>("multicast"));
-    printf("multicastAddr: %s\n", ParameterManager::GetInstance().query<std::string>("multicastAddr").c_str());
-    printf("transportVerbosity: %s\n", ParameterManager::GetInstance().query<std::string>("transportVerbosity").c_str());
-    printf("transportServerBindPort: %s\n", ParameterManager::GetInstance().query<std::string>("transportServerBindPort").c_str());
-    printf("transportWan: %s\n", ParameterManager::GetInstance().query<std::string>("transportWan").c_str());
-    printf("transportWanServerPort: %s\n", ParameterManager::GetInstance().query<std::string>("transportWanServerPort").c_str());
-    printf("transportWanId: %s\n", ParameterManager::GetInstance().query<std::string>("transportWanId").c_str());
-    printf("transportSecureWan: %d\n", ParameterManager::GetInstance().query<bool>("transportSecureWan"));
-    printf("transportPublicAddress: %s\n", ParameterManager::GetInstance().query<std::string>("transportPublicAddress").c_str());
-    printf("transportWanServerAddress: %s\n", ParameterManager::GetInstance().query<std::string>("transportWanServerAddress").c_str());
-    printf("transportCertAuthority: %s\n", ParameterManager::GetInstance().query<std::string>("transportCertAuthority").c_str());
-    printf("transportCertFile: %s\n", ParameterManager::GetInstance().query<std::string>("transportCertFile").c_str());
-    printf("transportPrivateKey: %s\n", ParameterManager::GetInstance().query<std::string>("transportPrivateKey").c_str());
+//     //TRANSPORT
+//     printf("nic: %s\n", ParameterManager::GetInstance().query<std::string>("nic").c_str());
+//     std::vector<std::string> peer = ParameterManager::GetInstance().queryVector<std::string>("peer");
+//     printf("peer: \n");
+//     for (unsigned int i = 0; i < peer.size(); i++) {
+//         printf("\t%s\n", peer[i].c_str());
+//     }
+//     printf("transport: %s\n", ParameterManager::GetInstance().query<std::string>("transport").c_str());
+//     printf("multicast: %d\n", ParameterManager::GetInstance().query<bool>("multicast"));
+//     printf("multicastAddr: %s\n", ParameterManager::GetInstance().query<std::string>("multicastAddr").c_str());
+//     printf("transportVerbosity: %s\n", ParameterManager::GetInstance().query<std::string>("transportVerbosity").c_str());
+//     printf("transportServerBindPort: %s\n", ParameterManager::GetInstance().query<std::string>("transportServerBindPort").c_str());
+//     printf("transportWan: %s\n", ParameterManager::GetInstance().query<std::string>("transportWan").c_str());
+//     printf("transportWanServerPort: %s\n", ParameterManager::GetInstance().query<std::string>("transportWanServerPort").c_str());
+//     printf("transportWanId: %s\n", ParameterManager::GetInstance().query<std::string>("transportWanId").c_str());
+//     printf("transportSecureWan: %d\n", ParameterManager::GetInstance().query<bool>("transportSecureWan"));
+//     printf("transportPublicAddress: %s\n", ParameterManager::GetInstance().query<std::string>("transportPublicAddress").c_str());
+//     printf("transportWanServerAddress: %s\n", ParameterManager::GetInstance().query<std::string>("transportWanServerAddress").c_str());
+//     printf("transportCertAuthority: %s\n", ParameterManager::GetInstance().query<std::string>("transportCertAuthority").c_str());
+//     printf("transportCertFile: %s\n", ParameterManager::GetInstance().query<std::string>("transportCertFile").c_str());
+//     printf("transportPrivateKey: %s\n", ParameterManager::GetInstance().query<std::string>("transportPrivateKey").c_str());
 
-  #ifdef RTI_SECURE_PERFTEST
-    printf("secureEncryptDiscovery: %d\n", ParameterManager::GetInstance().query<bool>("secureEncryptDiscovery"));
-    printf("secureSign: %d\n", ParameterManager::GetInstance().query<bool>("secureSign"));
-    printf("secureEncryptData: %d\n", ParameterManager::GetInstance().query<bool>("secureEncryptData"));
-    printf("secureGovernanceFile: %s\n", ParameterManager::GetInstance().query<std::string>("secureGovernanceFile").c_str());
-    printf("securePermissionsFile: %s\n", ParameterManager::GetInstance().query<std::string>("securePermissionsFile").c_str());
-    printf("secureCertAuthority: %s\n", ParameterManager::GetInstance().query<std::string>("secureCertAuthority").c_str());
-    printf("secureCertFile: %s\n", ParameterManager::GetInstance().query<std::string>("secureCertFile").c_str());
-    printf("securePrivateKey: %s\n", ParameterManager::GetInstance().query<std::string>("securePrivateKey").c_str());
-  #endif
-    return 0;
+//   #ifdef RTI_SECURE_PERFTEST
+//     printf("secureEncryptDiscovery: %d\n", ParameterManager::GetInstance().query<bool>("secureEncryptDiscovery"));
+//     printf("secureSign: %d\n", ParameterManager::GetInstance().query<bool>("secureSign"));
+//     printf("secureEncryptData: %d\n", ParameterManager::GetInstance().query<bool>("secureEncryptData"));
+//     printf("secureGovernanceFile: %s\n", ParameterManager::GetInstance().query<std::string>("secureGovernanceFile").c_str());
+//     printf("securePermissionsFile: %s\n", ParameterManager::GetInstance().query<std::string>("securePermissionsFile").c_str());
+//     printf("secureCertAuthority: %s\n", ParameterManager::GetInstance().query<std::string>("secureCertAuthority").c_str());
+//     printf("secureCertFile: %s\n", ParameterManager::GetInstance().query<std::string>("secureCertFile").c_str());
+//     printf("securePrivateKey: %s\n", ParameterManager::GetInstance().query<std::string>("securePrivateKey").c_str());
+//   #endif
+//     return 0;
 
     PrintVersion();
 
