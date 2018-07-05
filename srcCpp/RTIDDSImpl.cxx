@@ -367,7 +367,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
             _ProfileLibraryName = argv[i];
         } else if (IS_OPTION(argv[i], "-bestEffort")) {
-            _IsReliable = false;
         } else if (IS_OPTION(argv[i], "-durability")) {
             ++i;
         } else if (IS_OPTION(argv[i], "-dynamicData")) {
@@ -2439,7 +2438,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 
     // only force reliability on throughput/latency topics
     if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0) {
-        if (_IsReliable) {
+        if (!ParameterManager::GetInstance().query<bool>("bestEffort")) {
             // default: use the setting specified in the qos profile
             // dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         }
@@ -2704,7 +2703,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     // only force reliability on throughput/latency topics
     if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0)
     {
-        if (_IsReliable)
+        if (!ParameterManager::GetInstance().query<bool>("bestEffort"))
         {
             dr_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         }

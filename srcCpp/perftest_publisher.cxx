@@ -322,7 +322,6 @@ perftest_cpp::perftest_cpp()
     _MessagingArgv = NULL;
     _MessagingArgc = 0;
     _LatencyTest = false;
-    _IsReliable = true;
     _pubRate = 0;
     _isKeyed = false;
     _useUnbounded = 0;
@@ -695,20 +694,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         {
             _UseReadThread = true;
         }
-        else if (IS_OPTION(argv[i], "-bestEffort"))
-        {
-            _IsReliable = false;
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-        }
-        else if (IS_OPTION(argv[i], "-latencyTest"))
+        else if (IS_OPTION(argv[i], "-bestEffort")) {
+        } else if (IS_OPTION(argv[i], "-latencyTest"))
         {
             _LatencyTest = true;
 
@@ -973,7 +960,7 @@ void perftest_cpp::PrintConfiguration()
 
     // Reliable/Best Effort
     stringStream << "\tReliability: ";
-    if (_IsReliable) {
+    if (!ParameterManager::GetInstance().query<bool>("bestEffort")) {
         stringStream << "Reliable\n";
     } else {
         stringStream << "Best Effort\n";
@@ -2207,7 +2194,7 @@ int perftest_cpp::Publisher()
         message.latency_ping = pingID;
         writer->Send(message);
         if(_LatencyTest && sentPing) {
-            if (_IsReliable) {
+            if (!ParameterManager::GetInstance().query<bool>("bestEffort")) {
                 writer->waitForPingResponse();
             }
             else {

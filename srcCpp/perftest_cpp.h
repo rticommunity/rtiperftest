@@ -106,7 +106,6 @@ class perftest_cpp
     char **_MessagingArgv;
     int _MessagingArgc;
     bool _LatencyTest;
-    bool _IsReliable;
     int _pubRate;
     bool _pubRateMethodSpin;
     bool _isKeyed;
