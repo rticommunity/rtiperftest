@@ -353,12 +353,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
             _DomainID = strtol(argv[i], NULL, 10);
         } else if (IS_OPTION(argv[i], "-qosFile")) {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <filename> after -qosFile\n");
-                return false;
-            }
-            _ProfileFile = argv[i];
+            ++i;
         } else if (IS_OPTION(argv[i], "-qosLibrary")) {
             if ((i == (argc-1)) || *argv[++i] == '-')
             {
@@ -826,7 +821,8 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     if (!_UseXmlQos) {
         stringStream << "Disabled\n";
     } else {
-        stringStream << _ProfileFile << "\n";
+        stringStream << ParameterManager::GetInstance().query<std::string>("qosFile")
+                     << "\n";
     }
 
     stringStream << "\n" << _transport.printTransportConfigurationSummary();
@@ -2216,7 +2212,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     _factory->get_qos(factory_qos);
     if (_UseXmlQos) {
         factory_qos.profile.url_profile.ensure_length(1, 1);
-        factory_qos.profile.url_profile[0] = DDS_String_dup(_ProfileFile);
+        factory_qos.profile.url_profile[0] = DDS_String_dup(ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
     } else {
         factory_qos.profile.string_profile.from_array(
                 PERFTEST_QOS_STRING,
@@ -2226,14 +2222,16 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     if (_factory->reload_profiles() != DDS_RETCODE_OK)
     {
-        fprintf(stderr,"Problem opening QOS profiles file %s.\n", _ProfileFile);
+        fprintf(stderr,"Problem opening QOS profiles file %s.\n",
+                ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
         return false;
     }
 
     if (_factory->set_default_library(_ProfileLibraryName) != DDS_RETCODE_OK)
     {
         fprintf(stderr,"No QOS Library named \"%s\" found in %s.\n",
-               _ProfileLibraryName, _ProfileFile);
+               _ProfileLibraryName,
+               ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
         return false;
     }
 
@@ -2415,7 +2413,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
             qos_profile.c_str())
         != DDS_RETCODE_OK) {
         fprintf(stderr,"No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
-                qos_profile.c_str(), _ProfileLibraryName, _ProfileFile);
+                qos_profile.c_str(),
+                _ProfileLibraryName,
+                ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
         return NULL;
     }
 
@@ -2696,7 +2696,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         != DDS_RETCODE_OK)
     {
         fprintf(stderr,"No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
-                qos_profile.c_str(), _ProfileLibraryName, _ProfileFile);
+                qos_profile.c_str(),
+                _ProfileLibraryName,
+                ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
         return NULL;
     }
 
