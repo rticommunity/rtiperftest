@@ -38,8 +38,6 @@
  * Returns a ping for latency packets
  */
 class ThroughputListener : public IMessagingCB {
-    /*TODO: check which member should be private */
-    /*TODO: fix name convention */
 public:
     unsigned long long packetsReceived;
     unsigned long long bytesReceived;
