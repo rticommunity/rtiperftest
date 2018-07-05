@@ -10,6 +10,17 @@
 #include "Parameter.h"
 #include <map>
 
+#if defined(RTI_WIN32)
+  #pragma warning(push)
+  #pragma warning(disable : 4996)
+  #define STRNCASECMP _strnicmp
+#elif defined(RTI_VXWORKS)
+  #define STRNCASECMP strncmp
+#else
+  #define STRNCASECMP strncasecmp
+#endif
+#define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
+
 class ParameterManager
 {
     private:
@@ -18,6 +29,7 @@ class ParameterManager
     public:
         ParameterManager();
         void initialize();
+        static ParameterManager &GetInstance();
         ~ParameterManager();
 
         // Get the value of a parameter

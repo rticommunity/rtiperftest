@@ -9,6 +9,13 @@
 ParameterManager::ParameterManager()
 {
 }
+
+ParameterManager &ParameterManager::GetInstance()
+{
+    static ParameterManager instance;
+    return instance;
+}
+
 void ParameterManager::initialize()
 {
     // GENERAL PARAMETER
@@ -624,7 +631,7 @@ bool ParameterManager::parse(int argc, char *argv[])
     std::map<std::string, AnyParameter>::iterator it;
     for (unsigned int i = 1; i < allArgs.size(); i++) {
         for (it = parameterList.begin(); it != parameterList.end(); it++) {
-            if (allArgs[i] == it->second.get()->getCommandLineArgument().first) { // TODO check for small string compare
+            if (IS_OPTION(allArgs[i].c_str(), it->second.get()->getCommandLineArgument().first.c_str())) { // TODO check for small string compare
                 // NumArguments == 0
                 if (it->second.get()->getExtraArgument() == NO) {
                     // Type is T_BOOL

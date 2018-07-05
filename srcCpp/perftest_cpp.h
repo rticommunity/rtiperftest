@@ -90,7 +90,6 @@ class perftest_cpp
     }
 
   private:
-    ParameterManager parameterManager;
     unsigned long  _DataLen;
     unsigned long long _NumIter;
     bool _IsPub;
