@@ -101,14 +101,9 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
     printf("batching: %d\n", parameterManager.query<int>("batching"));
-    printf("nic: %s\n", parameterManager.query<std::string>("nic").c_str());
     printf("pub: %d\n", parameterManager.query<bool>("pub"));
+    printf("sub: %d\n", parameterManager.query<bool>("sub"));
     printf("flowController: %s\n", parameterManager.query<std::string>("flowController").c_str());
-    std::vector<std::string> peer = parameterManager.queryVector<std::string>("peer");
-    printf("peer: \n");
-    for (unsigned int i = 0; i < peer.size(); i++) {
-        printf("\t%s\n", peer[i].c_str());
-    }
     std::vector<unsigned long long> scan = parameterManager.queryVector<unsigned long long>("scan");
     printf("scan: \n");
     for (unsigned int i = 0; i < scan.size(); i++) {
@@ -130,13 +125,55 @@ int perftest_cpp::Run(int argc, char *argv[])
     printf("durability: %d\n", parameterManager.query<int>("durability"));
     printf("dynamicData: %d\n", parameterManager.query<bool>("dynamicData"));
     printf("noDirectCommunication: %d\n", parameterManager.query<bool>("noDirectCommunication"));
-    printf("durability: %d\n", parameterManager.query<int>("durability"));
     printf("waitsetDelayUsec: %d\n", parameterManager.query<int>("waitsetDelayUsec"));
     printf("waitsetEventCount: %d\n", parameterManager.query<int>("waitsetEventCount"));
     printf("enableAutoThrottle: %d\n", parameterManager.query<bool>("enableAutoThrottle"));
     printf("enableTurboMode: %d\n", parameterManager.query<bool>("enableTurboMode"));
     printf("noXmlQos: %d\n", parameterManager.query<bool>("noXmlQos"));
     printf("asynchronous: %d\n", parameterManager.query<bool>("asynchronous"));
+
+
+    printf("sidMultiSubTest: %d\n", parameterManager.query<int>("sidMultiSubTest"));
+    printf("pidMultiPubTest: %d\n", parameterManager.query<int>("pidMultiPubTest"));
+    printf("dataLen: %d\n", parameterManager.query<int>("dataLen"));
+    printf("numIter: %d\n", parameterManager.query<int>("numIter"));
+    printf("instances: %d\n", parameterManager.query<int>("instances"));
+    printf("writeInstance: %d\n", parameterManager.query<int>("writeInstance"));
+    printf("sleep: %d\n", parameterManager.query<int>("sleep"));
+    printf("latencyCount: %d\n", parameterManager.query<int>("latencyCount"));
+    printf("numSubscribers: %d\n", parameterManager.query<int>("numSubscribers"));
+    printf("numPublishers: %d\n", parameterManager.query<int>("numPublishers"));
+    printf("noPrintIntervals: %d\n", parameterManager.query<bool>("noPrintIntervals"));
+    printf("useReadThread: %d\n", parameterManager.query<bool>("useReadThread"));
+    printf("verbosity: %d\n", parameterManager.query<int>("verbosity"));
+    printf("cpu: %d\n", parameterManager.query<bool>("cpu"));
+    printf("writerStats: %d\n", parameterManager.query<bool>("writerStats"));
+    printf("executionTime: %d\n", parameterManager.query<int>("executionTime"));
+    printf("keyed: %d\n", parameterManager.query<bool>("keyed"));
+    printf("latencyTest: %d\n", parameterManager.query<bool>("latencyTest"));
+
+    //TRANSPORT
+    printf("nic: %s\n", parameterManager.query<std::string>("nic").c_str());
+    std::vector<std::string> peer = parameterManager.queryVector<std::string>("peer");
+    printf("peer: \n");
+    for (unsigned int i = 0; i < peer.size(); i++) {
+        printf("\t%s\n", peer[i].c_str());
+    }
+    printf("transport: %s\n", parameterManager.query<std::string>("transport").c_str());
+    printf("multicast: %d\n", parameterManager.query<bool>("multicast"));
+    printf("multicastAddr: %s\n", parameterManager.query<std::string>("multicastAddr").c_str());
+    printf("transportVerbosity: %d\n", parameterManager.query<int>("transportVerbosity"));
+    printf("transportServerBindPort: %d\n", parameterManager.query<int>("transportServerBindPort"));
+    printf("transportWan: %d\n", parameterManager.query<int>("transportWan"));
+    printf("transportWanServerPort: %d\n", parameterManager.query<int>("transportWanServerPort"));
+    printf("transportWanId: %d\n", parameterManager.query<int>("transportWanId"));
+    printf("transportSecureWan: %d\n", parameterManager.query<bool>("transportSecureWan"));
+    printf("transportPublicAddress: %s\n", parameterManager.query<std::string>("transportPublicAddress").c_str());
+    printf("transportWanServerAddress: %s\n", parameterManager.query<std::string>("transportWanServerAddress").c_str());
+    printf("transportCertAuthority: %s\n", parameterManager.query<std::string>("transportCertAuthority").c_str());
+    printf("transportCertFile: %s\n", parameterManager.query<std::string>("transportCertFile").c_str());
+    printf("transportPrivateKey: %s\n", parameterManager.query<std::string>("transportPrivateKey").c_str());
+
   #ifdef RTI_SECURE_PERFTEST
     printf("secureEncryptDiscovery: %d\n", parameterManager.query<bool>("secureEncryptDiscovery"));
     printf("secureSign: %d\n", parameterManager.query<bool>("secureSign"));

@@ -30,29 +30,21 @@ void ParameterManager::initialize()
     flowController->setGroup(PUB);
     parameterList["flowController"] = AnyParameter(flowController);
 
-    Parameter<std::string> *nic = new Parameter<std::string>("");
-    nic->setCommandLineArgument(std::make_pair("-nic","<ipaddr>"));
-    nic->setDescription("Use only the nic specified by <ipaddr>.\nIf not specified, use all available interfaces");
-    nic->setType(T_STR);
-    nic->setExtraArgument(YES);
-    nic->setGroup(TRANSPORT);
-    parameterList["nic"] = AnyParameter(nic);
-
     Parameter<bool> * pub = new Parameter<bool>(false);
     pub->setCommandLineArgument(std::make_pair("-pub",""));
     pub->setDescription("Set test to be a publisher");
     pub->setType(T_BOOL);
     pub->setExtraArgument(NO);
-    pub->setGroup(GENERAL);
+    pub->setGroup(PUB);
     parameterList["pub"] = AnyParameter(pub);
 
-    ParameterVector<std::string> * peer = new ParameterVector<std::string>();
-    peer->setCommandLineArgument(std::make_pair("-peer","<address>"));
-    peer->setDescription("Adds a peer to the peer host address list.\nThis argument may be repeated to indicate multiple peers");
-    peer->setType(T_VECTOR_STR);
-    peer->setExtraArgument(YES);
-    peer->setGroup(TRANSPORT);
-    parameterList["peer"] = AnyParameter(peer);
+    Parameter<bool> * sub = new Parameter<bool>(false);
+    sub->setCommandLineArgument(std::make_pair("-sub",""));
+    sub->setDescription("Set test to be a subscriber");
+    sub->setType(T_BOOL);
+    sub->setExtraArgument(NO);
+    sub->setGroup(SUB);
+    parameterList["sub"] = AnyParameter(sub);
 
     std::vector<unsigned long long> _scanDataLenSizes;
     _scanDataLenSizes.push_back(32);
@@ -146,7 +138,6 @@ void ParameterManager::initialize()
     cft->setGroup(SUB);
     parameterList["cft"] = AnyParameter(cft);
 
-
     ParameterPair<unsigned long long, std::string> *pubRate = new ParameterPair<unsigned long long, std::string>(0,"sleep");
     pubRate->setCommandLineArgument(std::make_pair("-pubRate","<samples/s>:<method>"));
     pubRate->setDescription("Limit the throughput to the specified number\nof samples/s. Default 0 (don't limit)\n[OPTIONAL] Method to control the throughput can be:\n'spin' or 'sleep'\nDefault method: spin\n");
@@ -233,6 +224,308 @@ void ParameterManager::initialize()
     asynchronous->setGroup(PUB);
     parameterList["asynchronous"] = AnyParameter(asynchronous);
 
+    Parameter<unsigned long long> *sidMultiSubTest = new Parameter<unsigned long long>(0);
+    sidMultiSubTest->setCommandLineArgument(std::make_pair("-sidMultiSubTest","<bytes>"));
+    sidMultiSubTest->setDescription("Set the id of the subscriber in a\nmulti-subscriber test. Default: 0");
+    sidMultiSubTest->setType(T_NUMERIC);
+    sidMultiSubTest->setExtraArgument(YES);
+    sidMultiSubTest->setRange(0, ULLONG_MAX);
+    sidMultiSubTest->setGroup(SUB);
+    parameterList["sidMultiSubTest"] = AnyParameter(sidMultiSubTest);
+
+    Parameter<unsigned long long> *pidMultiPubTest = new Parameter<unsigned long long>(0);
+    pidMultiPubTest->setCommandLineArgument(std::make_pair("-pidMultiPubTest","<bytes>"));
+    pidMultiPubTest->setDescription("Set id of the publisher in a multi-publisher test.\n Only publisher 0 sends \n latency pings Default: 0");
+    pidMultiPubTest->setType(T_NUMERIC);
+    pidMultiPubTest->setExtraArgument(YES);
+    pidMultiPubTest->setRange(0, ULLONG_MAX);
+    pidMultiPubTest->setGroup(PUB);
+    parameterList["pidMultiPubTest"] = AnyParameter(pidMultiPubTest);
+
+    Parameter<unsigned long long> *dataLen = new Parameter<unsigned long long>(100);
+    dataLen->setCommandLineArgument(std::make_pair("-dataLen","<bytes>"));
+    dataLen->setDescription("Set length of payload for each send.\nDefault: 100");
+    dataLen->setType(T_NUMERIC);
+    dataLen->setExtraArgument(YES);
+    dataLen->setRange(28, 2147483128);
+    dataLen->setGroup(GENERAL);
+    parameterList["dataLen"] = AnyParameter(dataLen);
+
+    Parameter<unsigned long long> *numIter = new Parameter<unsigned long long>(100);
+    numIter->setCommandLineArgument(std::make_pair("-numIter","<count>"));
+    numIter->setDescription("Set number of messages to send, default is\n100000000 for Throughput tests or 10000000\nfor Latency tests. See -executionTime.");
+    numIter->setType(T_NUMERIC);
+    numIter->setExtraArgument(YES);
+    numIter->setRange(1, ULLONG_MAX);
+    numIter->setGroup(GENERAL);
+    parameterList["numIter"] = AnyParameter(numIter);
+
+    Parameter<unsigned long long> *instances = new Parameter<unsigned long long>(1);
+    instances->setCommandLineArgument(std::make_pair("-instances","<count>"));
+    instances->setDescription("Set the number of instances (keys) to iterate\nover when publishing. Default: 1");
+    instances->setType(T_NUMERIC);
+    instances->setExtraArgument(YES);
+    instances->setRange(0, ULLONG_MAX);
+    instances->setGroup(GENERAL);
+    parameterList["instances"] = AnyParameter(instances);
+
+    Parameter<unsigned long long> *writeInstance = new Parameter<unsigned long long>(0);
+    writeInstance->setCommandLineArgument(std::make_pair("-writeInstance","<instance>"));
+    writeInstance->setDescription("Set the instance number to be sent. \n-WriteInstance parameter cannot be bigger than the number of instances.\nDefault: 'Round-Robin schedule");
+    writeInstance->setType(T_NUMERIC);
+    writeInstance->setExtraArgument(YES);
+    writeInstance->setRange(0, ULLONG_MAX);
+    writeInstance->setGroup(GENERAL);
+    parameterList["writeInstance"] = AnyParameter(writeInstance);
+
+    // TODO convert into NanoSec
+    Parameter<unsigned long long> *sleep = new Parameter<unsigned long long>(0);
+    sleep->setCommandLineArgument(std::make_pair("-sleep","<millisec>"));
+    sleep->setDescription("Time to sleep between each send. Default: 0");
+    sleep->setType(T_NUMERIC);
+    sleep->setExtraArgument(YES);
+    sleep->setRange(0, ULLONG_MAX);
+    sleep->setGroup(GENERAL);
+    parameterList["sleep"] = AnyParameter(sleep);
+
+    Parameter<unsigned long long> *latencyCount = new Parameter<unsigned long long>(10000);
+    latencyCount->setCommandLineArgument(std::make_pair("-latencyCount","<count>"));
+    latencyCount->setDescription("Number of samples (or batches) to send before\na latency ping packet is sent. Default:\n10000 if -latencyTest is not specified,\n1 if -latencyTest is specified");
+    latencyCount->setType(T_NUMERIC);
+    latencyCount->setExtraArgument(YES);
+    latencyCount->setRange(0, ULLONG_MAX);
+    latencyCount->setGroup(PUB);
+    parameterList["latencyCount"] = AnyParameter(latencyCount);
+
+    Parameter<unsigned long long> *numSubscribers = new Parameter<unsigned long long>(1);
+    numSubscribers->setCommandLineArgument(std::make_pair("-numSubscribers","<count>"));
+    numSubscribers->setDescription("Number of subscribers running in test.\nDefault: 1");
+    numSubscribers->setType(T_NUMERIC);
+    numSubscribers->setExtraArgument(YES);
+    numSubscribers->setRange(0, ULLONG_MAX);
+    numSubscribers->setGroup(PUB);
+    parameterList["numSubscribers"] = AnyParameter(numSubscribers);
+
+    Parameter<unsigned long long> *numPublishers = new Parameter<unsigned long long>(1);
+    numPublishers->setCommandLineArgument(std::make_pair("-numPublishers","<count>"));
+    numPublishers->setDescription("Number of publishers running in test.\nDefault: 1");
+    numPublishers->setType(T_NUMERIC);
+    numPublishers->setExtraArgument(YES);
+    numPublishers->setRange(0, ULLONG_MAX);
+    numPublishers->setGroup(PUB);
+    parameterList["numPublishers"] = AnyParameter(numPublishers);
+
+    Parameter<bool> *noPrintIntervals = new Parameter<bool>(false);
+    noPrintIntervals->setCommandLineArgument(std::make_pair("-noPrintIntervals",""));
+    noPrintIntervals->setDescription("Don't print statistics at intervals during\ntest");
+    noPrintIntervals->setType(T_BOOL);
+    noPrintIntervals->setExtraArgument(NO);
+    noPrintIntervals->setGroup(GENERAL);
+    parameterList["noPrintIntervals"] = AnyParameter(noPrintIntervals);
+
+    Parameter<bool> *useReadThread = new Parameter<bool>(false);
+    useReadThread->setCommandLineArgument(std::make_pair("-useReadThread",""));
+    useReadThread->setDescription("Use separate thread instead of callback to\nread data");
+    useReadThread->setType(T_BOOL);
+    useReadThread->setExtraArgument(NO);
+    useReadThread->setGroup(GENERAL);
+    parameterList["useReadThread"] = AnyParameter(useReadThread);
+
+    Parameter<bool> *latencyTest = new Parameter<bool>(false);
+    latencyTest->setCommandLineArgument(std::make_pair("-latencyTest",""));
+    latencyTest->setDescription("Run a latency test consisting of a ping-pong\nsynchronous communication");
+    latencyTest->setType(T_BOOL);
+    latencyTest->setExtraArgument(NO);
+    latencyTest->setGroup(PUB);
+    parameterList["latencyTest"] = AnyParameter(latencyTest);
+
+    Parameter<unsigned long long> *verbosity = new Parameter<unsigned long long>(1);
+    verbosity->setCommandLineArgument(std::make_pair("-verbosity","<level>"));
+    verbosity->setDescription("Run with different levels of verbosity:\n0 - SILENT, 1 - ERROR, 2 - WARNING,\n3 - ALL. Default: 1");
+    verbosity->setType(T_NUMERIC);
+    verbosity->setExtraArgument(YES);
+    verbosity->setRange(0, ULLONG_MAX);
+    verbosity->setGroup(PUB);
+    parameterList["verbosity"] = AnyParameter(verbosity);
+
+    Parameter<bool> *keyed = new Parameter<bool>(false);
+    keyed->setCommandLineArgument(std::make_pair("-keyed",""));
+    keyed->setDescription("Use keyed data. Default: unkeyed");
+    keyed->setType(T_BOOL);
+    keyed->setExtraArgument(NO);
+    keyed->setGroup(PUB);
+    parameterList["keyed"] = AnyParameter(keyed);
+
+    Parameter<unsigned long long> *executionTime = new Parameter<unsigned long long>(0);
+    executionTime->setCommandLineArgument(std::make_pair("-executionTime","<sec>"));
+    executionTime->setDescription("Set a maximum duration for the test. The\nfirst condition triggered will finish the\ntest: number of samples or execution time.\nDefault 0 (don't set execution time)");
+    executionTime->setType(T_NUMERIC);
+    executionTime->setExtraArgument(YES);
+    executionTime->setRange(0, ULLONG_MAX);
+    executionTime->setGroup(PUB);
+    parameterList["executionTime"] = AnyParameter(executionTime);
+
+    Parameter<bool> *writerStats = new Parameter<bool>(false);
+    writerStats->setCommandLineArgument(std::make_pair("-writerStats",""));
+    writerStats->setDescription("Display the Pulled Sample count stats for\nreliable protocol debugging purposes.\nDefault: Not set");
+    writerStats->setType(T_BOOL);
+    writerStats->setExtraArgument(NO);
+    writerStats->setGroup(GENERAL);
+    parameterList["writerStats"] = AnyParameter(writerStats);
+
+    Parameter<bool> *cpu = new Parameter<bool>(false);
+    cpu->setCommandLineArgument(std::make_pair("-cpu",""));
+    cpu->setDescription("Display the cpu percent use by the process\nDefault: Not set");
+    cpu->setType(T_BOOL);
+    cpu->setExtraArgument(NO);
+    cpu->setGroup(GENERAL);
+    parameterList["cpu"] = AnyParameter(cpu);
+
+    // TRANSPORT ARGUMENT:
+    Parameter<std::string> *nic = new Parameter<std::string>("");
+    nic->setCommandLineArgument(std::make_pair("-nic","<ipaddr>"));
+    nic->setDescription("Use only the nic specified by <ipaddr>.\nIf not specified, use all available interfaces");
+    nic->setType(T_STR);
+    nic->setExtraArgument(YES);
+    nic->setGroup(TRANSPORT);
+    parameterList["nic"] = AnyParameter(nic);
+
+    ParameterVector<std::string> * peer = new ParameterVector<std::string>();
+    peer->setCommandLineArgument(std::make_pair("-peer","<address>"));
+    peer->setDescription("Adds a peer to the peer host address list.\nThis argument may be repeated to indicate multiple peers");
+    peer->setType(T_VECTOR_STR);
+    peer->setExtraArgument(YES);
+    peer->setGroup(TRANSPORT);
+    parameterList["peer"] = AnyParameter(peer);
+
+
+    Parameter<std::string> * transport = new Parameter<std::string>();
+    transport->setCommandLineArgument(std::make_pair("-transport","<kind>"));
+    transport->setDescription("Set transport to be used. The rest of\nthe transports will be disabled.\nValues:\nUDPv4\nUDPv6\nSHMEM\nTCP\nTLS\nDTLS\nWAN\nUse XML\nDefault: Use XML (UDPv4|SHMEM)");
+    transport->setType(T_STR);
+    transport->setExtraArgument(YES);
+    transport->setGroup(TRANSPORT);
+    transport->addValidStrValue("UDPv4");
+    transport->addValidStrValue("UDPv6");
+    transport->addValidStrValue("SHMEM");
+    transport->addValidStrValue("TCP");
+    transport->addValidStrValue("TLS");
+    transport->addValidStrValue("DTLS");
+    transport->addValidStrValue("WAN");
+    parameterList["transport"] = AnyParameter(transport);
+
+    /*
+     * // TODO add the ip to the description
+     *    for (std::map<std::string, std::string>::iterator it = multicastAddrMap.begin();
+     *       it!=multicastAddrMap.end(); ++it) {
+     *       oss << "                                            "
+     *       << it->first << " " << it->second << "\n";
+     *    }
+     */
+    Parameter<bool> *multicast = new Parameter<bool>(false);
+    multicast->setCommandLineArgument(std::make_pair("-multicast",""));
+    multicast->setDescription("Use multicast to send data. Each topic\nwill use a different address");
+    multicast->setType(T_BOOL);
+    multicast->setExtraArgument(NO);
+    multicast->setGroup(GENERAL);
+    parameterList["multicast"] = AnyParameter(multicast);
+
+    Parameter<std::string> * multicastAddr = new Parameter<std::string>();
+    multicastAddr->setCommandLineArgument(std::make_pair("-multicastAddr","<address>"));
+    multicastAddr->setDescription("Use multicast to send data and set\nthe input <address> as the multicast\naddress for all the topics.");
+    multicastAddr->setType(T_STR);
+    multicastAddr->setExtraArgument(YES);
+    multicastAddr->setGroup(TRANSPORT);
+    parameterList["multicastAddr"] = AnyParameter(multicastAddr);
+
+    Parameter<unsigned long long> *transportVerbosity = new Parameter<unsigned long long>(0);
+    transportVerbosity->setCommandLineArgument(std::make_pair("-transportVerbosity","<level>"));
+    transportVerbosity->setDescription("Verbosity of the transport.\nDefault: 0 (errors only");
+    transportVerbosity->setType(T_NUMERIC);
+    transportVerbosity->setExtraArgument(YES);
+    transportVerbosity->setRange(0, ULLONG_MAX);
+    transportVerbosity->setGroup(TRANSPORT);
+    parameterList["transportVerbosity"] = AnyParameter(transportVerbosity);
+
+    Parameter<unsigned long long> * transportServerBindPort = new Parameter<unsigned long long>(7400);
+    transportServerBindPort->setCommandLineArgument(std::make_pair("-transportServerBindPort","<p>"));
+    transportServerBindPort->setDescription("Port used by the transport to accept\nTCP/TLS connections <optional>.\nDefault: 7400");
+    transportServerBindPort->setType(T_NUMERIC);
+    transportServerBindPort->setExtraArgument(YES);
+    transportServerBindPort->setGroup(TRANSPORT);
+    parameterList["transportServerBindPort"] = AnyParameter(transportServerBindPort);
+
+    Parameter<bool> *transportWan = new Parameter<bool>(false);
+    transportWan->setCommandLineArgument(std::make_pair("-transportWan",""));
+    transportWan->setDescription("Use TCP/TLS across LANs and Firewalls.\nDefault: Not Set, LAN mode.");
+    transportWan->setType(T_BOOL);
+    transportWan->setExtraArgument(NO);
+    transportWan->setGroup(GENERAL);
+    parameterList["transportWan"] = AnyParameter(transportWan);
+
+    Parameter<std::string> * transportPublicAddress = new Parameter<std::string>();
+    transportPublicAddress->setCommandLineArgument(std::make_pair("-transportPublicAddress","<ip>"));
+    transportPublicAddress->setDescription("Public IP address and port (WAN address\nand port) (separated with ‘:’ ) related\nto the transport instantiation. This is\nrequired when using server mode.\nDefault: Not Set.");
+    transportPublicAddress->setType(T_STR);
+    transportPublicAddress->setExtraArgument(YES);
+    transportPublicAddress->setGroup(TRANSPORT);
+    parameterList["transportPublicAddress"] = AnyParameter(transportPublicAddress);
+
+    Parameter<std::string> * transportWanServerAddress = new Parameter<std::string>();
+    transportWanServerAddress->setCommandLineArgument(std::make_pair("-transportWanServerAddress","<a>"));
+    transportWanServerAddress->setDescription("Address where to find the WAN Server\nDefault: Not Set (Required)\n");
+    transportWanServerAddress->setType(T_STR);
+    transportWanServerAddress->setExtraArgument(YES);
+    transportWanServerAddress->setGroup(TRANSPORT);
+    parameterList["transportWanServerAddress"] = AnyParameter(transportWanServerAddress);
+
+    Parameter<unsigned long long> * transportWanServerPort = new Parameter<unsigned long long>(3478);
+    transportWanServerPort->setCommandLineArgument(std::make_pair("-transportWanServerPort","<p>"));
+    transportWanServerPort->setDescription("Port where to find the WAN Server.\nDefault: 3478.");
+    transportWanServerPort->setType(T_NUMERIC);
+    transportWanServerPort->setExtraArgument(YES);
+    transportWanServerPort->setGroup(TRANSPORT);
+    parameterList["transportWanServerPort"] = AnyParameter(transportWanServerPort);
+
+    Parameter<unsigned long long> * transportWanId = new Parameter<unsigned long long>(3478);
+    transportWanId->setCommandLineArgument(std::make_pair("-transportWanId","<id>"));
+    transportWanId->setDescription("Id to be used for the WAN transport.\nDefault: Not Set (Required)");
+    transportWanId->setType(T_NUMERIC);
+    transportWanId->setExtraArgument(YES);
+    transportWanId->setGroup(TRANSPORT);
+    parameterList["transportWanId"] = AnyParameter(transportWanId);
+
+    Parameter<bool> *transportSecureWan = new Parameter<bool>(false);
+    transportSecureWan->setCommandLineArgument(std::make_pair("-transportSecureWan",""));
+    transportSecureWan->setDescription("Use WAN with security.\nDefault: False.");
+    transportSecureWan->setType(T_BOOL);
+    transportSecureWan->setExtraArgument(NO);
+    transportSecureWan->setGroup(GENERAL);
+    parameterList["transportSecureWan"] = AnyParameter(transportSecureWan);
+
+    Parameter<std::string> * transportCertAuthority = new Parameter<std::string>(TRANSPORT_CERTAUTHORITY_FILE);
+    transportCertAuthority->setCommandLineArgument(std::make_pair("-transportCertAuthority","<file>"));
+    transportCertAuthority->setDescription("Certificate authority file <optional>.\nDefault: \"" + TRANSPORT_CERTAUTHORITY_FILE + "\"");
+    transportCertAuthority->setType(T_STR);
+    transportCertAuthority->setExtraArgument(YES);
+    transportCertAuthority->setGroup(TRANSPORT);
+    parameterList["transportCertAuthority"] = AnyParameter(transportCertAuthority);
+
+    Parameter<std::string> * transportCertFile = new Parameter<std::string>(TRANSPORT_CERTIFICATE_FILE_PUB);
+    transportCertFile->setCommandLineArgument(std::make_pair("-transportCertFile","<file>"));
+    transportCertFile->setDescription("Certificate file <optional>.\nDefault (Publisher): \"" + TRANSPORT_CERTIFICATE_FILE_PUB + "\"\nDefault (Subscriber): \"" + TRANSPORT_CERTIFICATE_FILE_SUB + "\"\n");
+    transportCertFile->setType(T_STR);
+    transportCertFile->setExtraArgument(YES);
+    transportCertFile->setGroup(TRANSPORT);
+    parameterList["transportCertFile"] = AnyParameter(transportCertFile);
+
+    Parameter<std::string> * transportPrivateKey = new Parameter<std::string>(TRANSPORT_CERTIFICATE_FILE_PUB);
+    transportPrivateKey->setCommandLineArgument(std::make_pair("-transportPrivateKey","<file>"));
+    transportPrivateKey->setDescription("Private key file <optional>.\nDefault (Publisher): \"" + TRANSPORT_PRIVATEKEY_FILE_PUB + "\"\nDefault (Subscriber): \"" + TRANSPORT_PRIVATEKEY_FILE_SUB + "\"\n");
+    transportPrivateKey->setType(T_STR);
+    transportPrivateKey->setExtraArgument(YES);
+    transportPrivateKey->setGroup(TRANSPORT);
+    parameterList["transportPrivateKey"] = AnyParameter(transportPrivateKey);
 
 
   #ifdef RTI_SECURE_PERFTEST

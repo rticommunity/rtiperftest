@@ -23,13 +23,6 @@
 // Tag used when adding logging output.
 const std::string classLoggingString = "PerftestTransport:";
 
-// Default location of the security related files
-const std::string TRANSPORT_PRIVATEKEY_FILE_PUB = "./resource/secure/pubkey.pem";
-const std::string TRANSPORT_PRIVATEKEY_FILE_SUB = "./resource/secure/subkey.pem";
-const std::string TRANSPORT_CERTIFICATE_FILE_PUB = "./resource/secure/pub.pem";
-const std::string TRANSPORT_CERTIFICATE_FILE_SUB = "./resource/secure/sub.pem";
-const std::string TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
-
 std::map<std::string, TransportConfig> PerftestTransport::transportConfigMap;
 
 /******************************************************************************/
