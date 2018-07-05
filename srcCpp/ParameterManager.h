@@ -6,6 +6,7 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 #include "PerftestTransport.h"
+#include "RTIDDSImpl.h"
 #include "Parameter.h"
 #include <map>
 

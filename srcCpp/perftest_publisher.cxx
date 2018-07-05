@@ -162,11 +162,11 @@ int perftest_cpp::Run(int argc, char *argv[])
     printf("transport: %s\n", parameterManager.query<std::string>("transport").c_str());
     printf("multicast: %d\n", parameterManager.query<bool>("multicast"));
     printf("multicastAddr: %s\n", parameterManager.query<std::string>("multicastAddr").c_str());
-    printf("transportVerbosity: %d\n", parameterManager.query<int>("transportVerbosity"));
-    printf("transportServerBindPort: %d\n", parameterManager.query<int>("transportServerBindPort"));
-    printf("transportWan: %d\n", parameterManager.query<int>("transportWan"));
-    printf("transportWanServerPort: %d\n", parameterManager.query<int>("transportWanServerPort"));
-    printf("transportWanId: %d\n", parameterManager.query<int>("transportWanId"));
+    printf("transportVerbosity: %s\n", parameterManager.query<std::string>("transportVerbosity").c_str());
+    printf("transportServerBindPort: %s\n", parameterManager.query<std::string>("transportServerBindPort").c_str());
+    printf("transportWan: %s\n", parameterManager.query<std::string>("transportWan").c_str());
+    printf("transportWanServerPort: %s\n", parameterManager.query<std::string>("transportWanServerPort").c_str());
+    printf("transportWanId: %s\n", parameterManager.query<std::string>("transportWanId").c_str());
     printf("transportSecureWan: %d\n", parameterManager.query<bool>("transportSecureWan"));
     printf("transportPublicAddress: %s\n", parameterManager.query<std::string>("transportPublicAddress").c_str());
     printf("transportWanServerAddress: %s\n", parameterManager.query<std::string>("transportWanServerAddress").c_str());
