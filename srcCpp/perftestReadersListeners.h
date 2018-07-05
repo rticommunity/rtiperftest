@@ -8,7 +8,6 @@
 
 #include "MessagingIF.h"
 #include "CpuMonitor.h"
-#include "perftest_cpp.h"
 #include <iostream>
 #include <math.h>
 #include <stdio.h>
@@ -135,5 +134,13 @@ public:
     void ProcessMessage(TestMessage &message);
 };
 
+
+/*
+ * perftestReaderListener.cxx have some dependencies from perftest_cpp.h.
+ * Also perftest_cpp.h needs the tree classes defined here.
+ * As solution, the include of perftest_cpp.h has been moved to the
+ * end of this file.
+ */
+#include "perftest_cpp.h"
 
 #endif

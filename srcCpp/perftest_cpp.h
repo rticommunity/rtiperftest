@@ -28,20 +28,10 @@
 #endif
 
 #include "MessagingIF.h"
+#include "perftestReadersListeners.h"
 #include "ndds/ndds_cpp.h" /* Necessary for DDS_ProductVersion_t*/
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
-
-/*
- * perftestReaderListener.h have some dependencies from this class.
- * Also perftest_cpp.h needs the tree following classes from
- * perftestReadersListener.h.
- * As solution, the include of perftestReaderListener.h has been moved to the
- * end of this file and the tree classes has been defined here.
- */
-class ThroughputListener;
-class AnnouncementListener;
-class LatencyListener;
 
 struct Perftest_ProductVersion_t
 {
@@ -180,7 +170,5 @@ private:
   #endif
 
 };
-
-#include "perftestReadersListeners.h"
 
 #endif // __PERFTEST_CPP_H__
