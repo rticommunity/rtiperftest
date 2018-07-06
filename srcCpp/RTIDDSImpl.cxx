@@ -101,11 +101,6 @@ int DynamicDataMembersId::at(std::string key)
 template <typename T>
 void RTIDDSImpl<T>::Shutdown()
 {
-    //delete array of peers
-    for (int i = 0; i < _peer_host_count; ++i) {
-        DDS_String_free(_peer_host[i]);
-        _peer_host[i] = NULL;
-    }
 
     if (_participant != NULL) {
         perftest_cpp::MilliSleep(2000);
@@ -513,17 +508,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
         }
         else if (IS_OPTION(argv[i], "-peer")) {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <address> after -peer\n");
-                return false;
-            }
-            if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
-                _peer_host[_peer_host_count++] = DDS_String_dup(argv[i]);
-            } else {
-                fprintf(stderr,"The maximun of -initial peers is %d\n", RTIPERFTEST_MAX_PEERS);
-                return false;
-            }
+            ++i;
         } else if (IS_OPTION(argv[i], "-cft")) {
             _useCft = true;
             if ((i == (argc-1)) || *argv[++i] == '-')
@@ -665,6 +650,14 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 return false;
             }
         }
+    }
+
+    // Validation
+    //Peers
+    if (ParameterManager::GetInstance().queryVector<std::string>("peer").size()
+            >= RTIPERFTEST_MAX_PEERS) {
+        fprintf(stderr,"The maximun of 'initial_peers' is %d\n", RTIPERFTEST_MAX_PEERS);
+        return false;
     }
 
     /* If we are using scan, we get the minimum and set it in Datalen */
@@ -829,11 +822,13 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
 
     // set initial peers and not use multicast
-    if (_peer_host_count > 0) {
+    std::vector<std::string> _peerList =
+            ParameterManager::GetInstance().queryVector<std::string>("peer");
+    if (!_peerList.empty()) {
         stringStream << "\tInitial peers: ";
-        for (int i = 0; i < _peer_host_count; ++i) {
-            stringStream << _peer_host[i];
-            if (i == _peer_host_count - 1) {
+        for (size_t i = 0; i < _peerList.size(); ++i) {
+            stringStream << _peerList[i];
+            if (i == _peerList.size() - 1) {
                 stringStream << "\n";
             } else {
                 stringStream << ", ";
@@ -2262,10 +2257,16 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
   #endif
 
     // set initial peers and not use multicast
-    if (_peer_host_count > 0) {
+    std::vector<std::string> _peerList =
+            ParameterManager::GetInstance().queryVector<std::string>("peer");
+    if (!_peerList.empty()) {
+        std::vector<char*> cstrings;
+        cstrings.reserve(_peerList.size());
+        for(size_t i = 0; i < _peerList.size(); ++i)
+            cstrings.push_back(const_cast<char*>(_peerList[i].c_str()));
         qos.discovery.initial_peers.from_array(
-            (const char **)_peer_host,
-            _peer_host_count);
+            (const char **)&cstrings[0],
+            _peerList.size());
         qos.discovery.multicast_receive_addresses.length(0);
     }
 

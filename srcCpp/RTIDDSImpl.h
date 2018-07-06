@@ -61,7 +61,6 @@ class RTIDDSImpl : public IMessaging
         _IsAsynchronous = false;
         _FlowControllerCustom = "default";
         _useUnbounded = 0;
-        _peer_host_count = 0;
         _useCft = false;
         _instancesToBeWritten = -1; // By default use round-robin (-1)
         _CFTRange[0] = 0;
@@ -157,8 +156,6 @@ class RTIDDSImpl : public IMessaging
     bool         _IsAsynchronous;
     std::string  _FlowControllerCustom;
     unsigned long _useUnbounded;
-    int          _peer_host_count;
-    char *       _peer_host[RTIPERFTEST_MAX_PEERS];
     bool         _useCft;
     long _instancesToBeWritten;
     unsigned int _CFTRange[2];
