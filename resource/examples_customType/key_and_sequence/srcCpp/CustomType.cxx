@@ -117,3 +117,5 @@ bool finalize_custom_type_dynamic_data(DDS_DynamicData &data)
     }
     return success;
 }
+
+#endif // RTI_CUSTOM_TYPE
