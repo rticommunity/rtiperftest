@@ -413,36 +413,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-verbosity"))
         {
-            errno = 0;
-            int verbosityLevel = strtol(argv[++i], NULL, 10);
-
-            if (errno) {
-                fprintf(stderr, "Unexpected value after -verbosity\n");
-                return false;
-            }
-
-            switch (verbosityLevel) {
-                case 0: NDDSConfigLogger::get_instance()->
-                            set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_SILENT);
-                        fprintf(stderr, "Setting verbosity to SILENT\n");
-                        break;
-                case 1: NDDSConfigLogger::get_instance()->
-                            set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_ERROR);
-                        fprintf(stderr, "Setting verbosity to ERROR\n");
-                        break;
-                case 2: NDDSConfigLogger::get_instance()->
-                            set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_WARNING);
-                        fprintf(stderr, "Setting verbosity to WARNING\n");
-                        break;
-                case 3: NDDSConfigLogger::get_instance()->
-                            set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
-                        fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
-                        break;
-                default: fprintf(stderr,
-                            "Invalid value for the verbosity parameter. Setting verbosity to ERROR (1)\n");
-                        verbosityLevel = 1;
-                        break;
-            }
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-waitsetDelayUsec")) {
             if ((i == (argc-1)) || *argv[++i] == '-')
@@ -764,6 +735,30 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 "Failure parsing the transport options.\n");
         return false;
     };
+
+    // Setting verbosity
+    switch (ParameterManager::GetInstance().query<int>("verbosity")) {
+        case 0: NDDSConfigLogger::get_instance()->
+                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_SILENT);
+                fprintf(stderr, "Setting verbosity to SILENT\n");
+                break;
+        case 1: NDDSConfigLogger::get_instance()->
+                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_ERROR);
+                fprintf(stderr, "Setting verbosity to ERROR\n");
+                break;
+        case 2: NDDSConfigLogger::get_instance()->
+                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_WARNING);
+                fprintf(stderr, "Setting verbosity to WARNING\n");
+                break;
+        case 3: NDDSConfigLogger::get_instance()->
+                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
+                break;
+        default:
+            fprintf(stderr, "Invalid value for the verbosity parameter\n");
+                return false;
+
+    }
 
     return true;
 }

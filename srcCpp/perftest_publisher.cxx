@@ -744,25 +744,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-verbosity"))
         {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-            _MessagingArgc++;
-
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <level> after -verbosity\n");
-                return false;
-            }
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-            _MessagingArgc++;
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-pubRate")) {
 
