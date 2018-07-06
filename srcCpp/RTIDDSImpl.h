@@ -40,7 +40,6 @@ class RTIDDSImpl : public IMessaging
     {
         _SendQueueSize = 50;
         _DataLen = 100;
-        _DomainID = 1;
         _AutoThrottle = false;
         _TurboMode = false;
         _UseXmlQos = true;
@@ -134,7 +133,6 @@ class RTIDDSImpl : public IMessaging
 
     int          _SendQueueSize;
     unsigned long _DataLen;
-    int          _DomainID;
     bool         _TurboMode;
     bool         _UseXmlQos;
     bool         _AutoThrottle;

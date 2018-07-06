@@ -342,11 +342,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 _FastHeartbeatPeriod.nanosec = nanosec;
             }
         } else if (IS_OPTION(argv[i], "-domain")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <id> after -domain\n");
-                return false;
-            }
-            _DomainID = strtol(argv[i], NULL, 10);
+            ++i;
         } else if (IS_OPTION(argv[i], "-qosFile")) {
             ++i;
         } else if (IS_OPTION(argv[i], "-qosLibrary")) {
@@ -772,7 +768,9 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     std::ostringstream stringStream;
 
     // Domain ID
-    stringStream << "\tDomain: " << _DomainID << "\n";
+    stringStream << "\tDomain: "
+                 << ParameterManager::GetInstance().query<int>("domain")
+                 << "\n";
 
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
@@ -2275,7 +2273,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // Creates the participant
     _participant = _factory->create_participant(
-        _DomainID, qos, listener,
+        ParameterManager::GetInstance().query<int>("domain"), qos, listener,
         DDS_INCONSISTENT_TOPIC_STATUS |
         DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
         DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);

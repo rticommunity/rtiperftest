@@ -111,10 +111,7 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     }
 //     printf("unbounded: %d\n", ParameterManager::GetInstance().query<int>("unbounded"));
 //     printf("sendQueueSize: %d\n", ParameterManager::GetInstance().query<int>("sendQueueSize"));
-//     printf("domain: %d\n", ParameterManager::GetInstance().query<int>("domain"));
-//     printf("qosFile: %s\n", ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
 //     printf("qosLibrary: %s\n", ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str());
-//     printf("bestEffort: %d\n", ParameterManager::GetInstance().query<bool>("bestEffort"));
 //     printf("noPositiveAcks: %d\n", ParameterManager::GetInstance().query<bool>("noPositiveAcks"));
 //     std::vector<unsigned long long> cft = ParameterManager::GetInstance().queryVector<unsigned long long>("cft");
 //     printf("cft: \n");
@@ -122,8 +119,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //         printf("\t%llu\n", cft[i]);
 //     }
 //     printf("pubRate: %d : %s\n", ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").first, ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").second.c_str());
-//     printf("durability: %d\n", ParameterManager::GetInstance().query<int>("durability"));
-//     printf("dynamicData: %d\n", ParameterManager::GetInstance().query<bool>("dynamicData"));
 //     printf("noDirectCommunication: %d\n", ParameterManager::GetInstance().query<bool>("noDirectCommunication"));
 //     printf("waitsetDelayUsec: %d\n", ParameterManager::GetInstance().query<int>("waitsetDelayUsec"));
 //     printf("waitsetEventCount: %d\n", ParameterManager::GetInstance().query<int>("waitsetEventCount"));
@@ -154,11 +149,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 
 //     //TRANSPORT
 //     printf("nic: %s\n", ParameterManager::GetInstance().query<std::string>("nic").c_str());
-//     std::vector<std::string> peer = ParameterManager::GetInstance().queryVector<std::string>("peer");
-//     printf("peer: \n");
-//     for (unsigned int i = 0; i < peer.size(); i++) {
-//         printf("\t%s\n", peer[i].c_str());
-//     }
 //     printf("transport: %s\n", ParameterManager::GetInstance().query<std::string>("transport").c_str());
 //     printf("multicast: %d\n", ParameterManager::GetInstance().query<bool>("multicast"));
 //     printf("multicastAddr: %s\n", ParameterManager::GetInstance().query<std::string>("multicastAddr").c_str());
