@@ -119,7 +119,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //         printf("\t%llu\n", cft[i]);
 //     }
 //     printf("pubRate: %d : %s\n", ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").first, ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").second.c_str());
-//     printf("noDirectCommunication: %d\n", ParameterManager::GetInstance().query<bool>("noDirectCommunication"));
 //     printf("waitsetDelayUsec: %d\n", ParameterManager::GetInstance().query<int>("waitsetDelayUsec"));
 //     printf("waitsetEventCount: %d\n", ParameterManager::GetInstance().query<int>("waitsetEventCount"));
 //     printf("enableAutoThrottle: %d\n", ParameterManager::GetInstance().query<bool>("enableAutoThrottle"));
