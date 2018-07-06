@@ -2,6 +2,7 @@
  * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
+#ifdef RTI_CUSTOM_TYPE
 #include "CustomType.h"
 
 /*

@@ -2,6 +2,7 @@
  * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
+#ifdef RTI_CUSTOM_TYPE
 #include "CustomType.h"
 
 #ifdef RTI_WIN32
@@ -174,3 +175,5 @@ bool finalize_custom_type_dynamic_data(DDS_DynamicData &data)
     }
     return success;
 }
+
+#endif // RTI_CUSTOM_TYPE

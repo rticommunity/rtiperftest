@@ -1,3 +1,4 @@
+#ifdef RTI_CUSTOM_TYPE
 #ifndef __CUSTOMTYPE_H__
 #define __CUSTOMTYPE_H__
 /*
@@ -123,3 +124,4 @@ bool set_custom_type_dynamic_data(
 bool finalize_custom_type_dynamic_data(DDS_DynamicData &data);
 
 #endif // __CUSTOMTYPE_H__
+#endif // RTI_CUSTOM_TYPE

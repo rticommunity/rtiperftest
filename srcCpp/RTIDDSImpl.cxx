@@ -96,7 +96,7 @@ DynamicDataMembersId &DynamicDataMembersId::GetInstance()
 
 int DynamicDataMembersId::at(std::string key)
 {
-   return membersId[key];
+   return membersId.at(key);
 }
 
 /*********************************************************
@@ -1050,7 +1050,7 @@ class RTIPublisher : public IMessagingWriter
          *          Else:
          *              data.custom_type_size is the same as the last iteration
         */
-        if (is_setinel_size(message.size)) {
+        if (is_sentinel_size(message.size)) {
             data.custom_type_size = message.size;
         } else {
             if (!set_custom_type_data(
@@ -1173,7 +1173,7 @@ class RTIPublisher : public IMessagingWriter
 
 #ifdef RTI_CUSTOM_TYPE
   private:
-    bool is_setinel_size(int size) {
+    bool is_sentinel_size(int size) {
         return size == perftest_cpp::INITIALIZE_SIZE
                 || size == perftest_cpp::FINISHED_SIZE
                 || size == perftest_cpp::LENGTH_CHANGED_SIZE
@@ -1423,7 +1423,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
          *          Else:
          *              data.custom_type_size is the same as the last iteration
         */
-        if (is_setinel_size(message.size)) {
+        if (is_sentinel_size(message.size)) {
             retcode = data.set_long(
                     "custom_type_size",
                     DynamicDataMembersId::GetInstance().at("custom_type_size"),
@@ -1542,7 +1542,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     }
 #ifdef RTI_CUSTOM_TYPE
   private:
-    bool is_setinel_size(int size) {
+    bool is_sentinel_size(int size) {
         return size == perftest_cpp::INITIALIZE_SIZE
                 || size == perftest_cpp::FINISHED_SIZE
                 || size == perftest_cpp::LENGTH_CHANGED_SIZE
@@ -1562,7 +1562,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         RTIOsapiHeap_allocateBufferAligned(
                 &buffer,
                 size,
-                RTIOsapiAlignment_getAlignmentOf(void *));
+                RTIOsapiAlignment_getAlignmentOf(char *));
         if (buffer == NULL) {
             fprintf(stderr, "RTIOsapiHeap_allocateBufferAligned failed.\n");
             success = false;
