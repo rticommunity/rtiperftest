@@ -360,7 +360,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-durability")) {
             ++i;
         } else if (IS_OPTION(argv[i], "-dynamicData")) {
-            _isDynamicData = true;
         } else if (IS_OPTION(argv[i], "-noDirectCommunication")) {
             _DirectCommunication = false;
         } else if (IS_OPTION(argv[i], "-instances")) {
@@ -777,7 +776,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
-    if (_isDynamicData) {
+    if (ParameterManager::GetInstance().query<bool>("dynamicData")) {
         stringStream << "Yes\n";
     } else {
         stringStream << "No\n";
@@ -2295,7 +2294,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     // Register the types and create the topics
-    if (!_isDynamicData) {
+    if (!ParameterManager::GetInstance().query<bool>("dynamicData")) {
         T::TypeSupport::register_type(_participant, _typename);
     } else {
         DDSDynamicDataTypeSupport* dynamicDataTypeSupportObject =
@@ -2556,7 +2555,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (!_isDynamicData) {
+    if (!ParameterManager::GetInstance().query<bool>("dynamicData")) {
         return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore, _instancesToBeWritten);
     } else {
         return new RTIDynamicDataPublisher(writer, _InstanceCount, _pongSemaphore, T::TypeSupport::get_typecode(), _instancesToBeWritten);
@@ -2780,7 +2779,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
     if (callback != NULL) {
 
-        if (!_isDynamicData) {
+        if (!ParameterManager::GetInstance().query<bool>("dynamicData")) {
             reader = _subscriber->create_datareader(
                     topic_desc,
                     dr_qos,
@@ -2813,7 +2812,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         _reader = reader;
     }
 
-    if (!_isDynamicData) {
+    if (!ParameterManager::GetInstance().query<bool>("dynamicData")) {
         return new RTISubscriber<T>(reader);
     } else {
         return new RTIDynamicDataSubscriber<T>(reader);
