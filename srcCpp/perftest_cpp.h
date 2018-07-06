@@ -108,7 +108,6 @@ class perftest_cpp
     bool _LatencyTest;
     int _pubRate;
     bool _pubRateMethodSpin;
-    bool _isKeyed;
     unsigned long _useUnbounded;
     unsigned int _executionTime;
     bool _displayWriterStats;

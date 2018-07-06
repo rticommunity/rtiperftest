@@ -732,28 +732,30 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     };
 
     // Setting verbosity
-    switch (ParameterManager::GetInstance().query<int>("verbosity")) {
-        case 0: NDDSConfigLogger::get_instance()->
-                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_SILENT);
-                fprintf(stderr, "Setting verbosity to SILENT\n");
-                break;
-        case 1: NDDSConfigLogger::get_instance()->
-                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_ERROR);
-                fprintf(stderr, "Setting verbosity to ERROR\n");
-                break;
-        case 2: NDDSConfigLogger::get_instance()->
-                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_WARNING);
-                fprintf(stderr, "Setting verbosity to WARNING\n");
-                break;
-        case 3: NDDSConfigLogger::get_instance()->
-                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
-                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
-                break;
-        default:
-            fprintf(stderr, "Invalid value for the verbosity parameter\n");
-                return false;
-
+    if (ParameterManager::GetInstance().isSet("verbosity")) {
+        switch (ParameterManager::GetInstance().query<int>("verbosity")) {
+            case 0: NDDSConfigLogger::get_instance()->
+                        set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_SILENT);
+                    fprintf(stderr, "Setting verbosity to SILENT\n");
+                    break;
+            case 1: NDDSConfigLogger::get_instance()->
+                        set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_ERROR);
+                    fprintf(stderr, "Setting verbosity to ERROR\n");
+                    break;
+            case 2: NDDSConfigLogger::get_instance()->
+                        set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_WARNING);
+                    fprintf(stderr, "Setting verbosity to WARNING\n");
+                    break;
+            case 3: NDDSConfigLogger::get_instance()->
+                        set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+                    fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
+                    break;
+            default:
+                fprintf(stderr, "Invalid value for the verbosity parameter\n");
+                    return false;
+        }
     }
+
 
     return true;
 }

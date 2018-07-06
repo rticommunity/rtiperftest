@@ -144,7 +144,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     printf("cpu: %d\n", ParameterManager::GetInstance().query<bool>("cpu"));
 //     printf("writerStats: %d\n", ParameterManager::GetInstance().query<bool>("writerStats"));
 //     printf("executionTime: %d\n", ParameterManager::GetInstance().query<int>("executionTime"));
-//     printf("keyed: %d\n", ParameterManager::GetInstance().query<bool>("keyed"));
 //     printf("latencyTest: %d\n", ParameterManager::GetInstance().query<bool>("latencyTest"));
 
 //     //TRANSPORT
@@ -183,13 +182,13 @@ int perftest_cpp::Run(int argc, char *argv[])
     }
 
     if (_useUnbounded == 0) { //unbounded is not set
-        if (_isKeyed) {
+        if (ParameterManager::GetInstance().query<bool>("keyed")) {
             _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
         } else {
             _MessagingImpl = new RTIDDSImpl<TestData_t>();
         }
     } else {
-        if (_isKeyed) {
+        if (ParameterManager::GetInstance().query<bool>("keyed")) {
             _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
         } else {
             _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
@@ -313,7 +312,6 @@ perftest_cpp::perftest_cpp()
     _MessagingArgc = 0;
     _LatencyTest = false;
     _pubRate = 0;
-    _isKeyed = false;
     _useUnbounded = 0;
     _executionTime = 0;
     _displayWriterStats = false;
@@ -769,7 +767,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             }
         }
         else if (IS_OPTION(argv[i], "-keyed")) {
-            _isKeyed = true;
         }
         else if (IS_OPTION(argv[i], "-writerStats")) {
             _displayWriterStats = true;
@@ -940,7 +937,7 @@ void perftest_cpp::PrintConfiguration()
 
     // Keyed/Unkeyed
     stringStream << "\tKeyed: ";
-    if (_isKeyed) {
+    if (ParameterManager::GetInstance().query<bool>("keyed")) {
         stringStream << "Yes\n";
     } else {
         stringStream << "No\n";
