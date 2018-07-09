@@ -49,7 +49,6 @@ class RTIDDSImpl : public IMessaging
         _InstanceMaxCountReader = DDS_LENGTH_UNLIMITED;
         _InstanceHashBuckets = -1;
         _KeepDurationUsec = -1;
-        _UsePositiveAcks = true;
         _LatencyTest = false;
         _IsDebug = false;
         _isLargeData = false;
@@ -141,7 +140,6 @@ class RTIDDSImpl : public IMessaging
     long _InstanceMaxCountReader;
     int          _InstanceHashBuckets;
     int          _KeepDurationUsec;
-    bool         _UsePositiveAcks;
     bool         _LatencyTest;
     bool         _IsDebug;
     bool         _isLargeData;

@@ -403,7 +403,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
             _KeepDurationUsec = strtol(argv[i], NULL, 10);
         } else if (IS_OPTION(argv[i], "-noPositiveAcks")) {
-            _UsePositiveAcks = false;
         }
         else if (IS_OPTION(argv[i], "-verbosity"))
         {
@@ -2412,7 +2411,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (!_UsePositiveAcks
+    if (ParameterManager::GetInstance().query<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_qos.protocol.disable_positive_acks = true;
         if (_KeepDurationUsec != -1) {
@@ -2709,7 +2708,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (!_UsePositiveAcks
+    if (ParameterManager::GetInstance().query<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dr_qos.protocol.disable_positive_acks = true;
     }
