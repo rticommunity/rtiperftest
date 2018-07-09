@@ -110,7 +110,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     }
 //     printf("unbounded: %d\n", ParameterManager::GetInstance().query<int>("unbounded"));
 //     printf("sendQueueSize: %d\n", ParameterManager::GetInstance().query<int>("sendQueueSize"));
-//     printf("qosLibrary: %s\n", ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str());
 //     std::vector<unsigned long long> cft = ParameterManager::GetInstance().queryVector<unsigned long long>("cft");
 //     printf("cft: \n");
 //     for (unsigned int i = 0; i < cft.size(); i++) {

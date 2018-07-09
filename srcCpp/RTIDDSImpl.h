@@ -76,8 +76,6 @@ class RTIDDSImpl : public IMessaging
         _FastHeartbeatPeriod.sec = 0;
         _FastHeartbeatPeriod.nanosec = 0;
 
-        _ProfileLibraryName = "PerftestQosLibrary";
-
         _factory = NULL;
         _participant = NULL;
         _subscriber = NULL;
@@ -180,8 +178,6 @@ class RTIDDSImpl : public IMessaging
 
     DDS_Duration_t   _HeartbeatPeriod;
     DDS_Duration_t   _FastHeartbeatPeriod;
-
-    const char          *_ProfileLibraryName;
 
     DDSDomainParticipantFactory *_factory;
     DDSDomainParticipant        *_participant;

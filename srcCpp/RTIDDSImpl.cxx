@@ -346,12 +346,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-qosFile")) {
             ++i;
         } else if (IS_OPTION(argv[i], "-qosLibrary")) {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <library name> after -qosLibrary\n");
-                return false;
-            }
-            _ProfileLibraryName = argv[i];
+            ++i;
         } else if (IS_OPTION(argv[i], "-bestEffort")) {
         } else if (IS_OPTION(argv[i], "-durability")) {
             ++i;
@@ -2213,10 +2208,10 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         return false;
     }
 
-    if (_factory->set_default_library(_ProfileLibraryName) != DDS_RETCODE_OK)
-    {
+    if (_factory->set_default_library(ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str())
+             != DDS_RETCODE_OK) {
         fprintf(stderr,"No QOS Library named \"%s\" found in %s.\n",
-               _ProfileLibraryName,
+               ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
                ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
         return false;
     }
@@ -2224,12 +2219,11 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     // Configure DDSDomainParticipant QOS
     if (_factory->get_participant_qos_from_profile(
             qos,
-            _ProfileLibraryName,
+            ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
             "BaseProfileQos") != DDS_RETCODE_OK) {
-        fprintf(
-                stderr,
+        fprintf(stderr,
                 "Problem setting QoS Library \"%s::BaseProfileQos\" for participant_qos.\n",
-                _ProfileLibraryName);
+                ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str());
     }
 
   #ifdef RTI_SECURE_PERFTEST
@@ -2303,7 +2297,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // Create the DDSPublisher and DDSSubscriber
     _publisher = _participant->create_publisher_with_profile(
-            _ProfileLibraryName,
+            ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
             "BaseProfileQos",
             NULL,
             DDS_STATUS_MASK_NONE);
@@ -2314,7 +2308,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     _subscriber = _participant->create_subscriber_with_profile(
-            _ProfileLibraryName,
+            ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
             "BaseProfileQos",
             NULL,
             DDS_STATUS_MASK_NONE);
@@ -2401,12 +2395,14 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (_factory->get_datawriter_qos_from_profile(dw_qos, _ProfileLibraryName,
+    if (_factory->get_datawriter_qos_from_profile(dw_qos,
+            ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
             qos_profile.c_str())
         != DDS_RETCODE_OK) {
-        fprintf(stderr,"No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
+        fprintf(stderr,
+                "No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
                 qos_profile.c_str(),
-                _ProfileLibraryName,
+                ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
                 ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
         return NULL;
     }
@@ -2685,12 +2681,14 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-    if (_factory->get_datareader_qos_from_profile(dr_qos, _ProfileLibraryName, qos_profile.c_str())
-        != DDS_RETCODE_OK)
-    {
-        fprintf(stderr,"No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
+    if (_factory->get_datareader_qos_from_profile(dr_qos,
+            ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
+            qos_profile.c_str())
+            != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
                 qos_profile.c_str(),
-                _ProfileLibraryName,
+                ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
                 ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
         return NULL;
     }
