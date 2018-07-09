@@ -423,25 +423,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-flowController"))
         {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <flow Controller Name> after -flowController\n");
-                return false;
-            }
-            _FlowControllerCustom = argv[i];
-
-            // verify if the flow controller name is correct, else use "default"
-            bool valid_flow_control = false;
-            for(unsigned int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
-                if (_FlowControllerCustom == valid_flow_controller[i]) {
-                    valid_flow_control = true;
-                }
-            }
-
-            if (!valid_flow_control)
-            {
-                fprintf(stderr, "Bad <flow> '%s' for custom flow controller\n",_FlowControllerCustom.c_str());
-                _FlowControllerCustom = "default";
-            }
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-peer")) {
             ++i;
@@ -758,7 +740,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
                 || ParameterManager::GetInstance().query<bool>("asynchronous")) {
             stringStream << "Yes\n";
             stringStream << "\tFlow Controller: "
-                         << _FlowControllerCustom
+                         << ParameterManager::GetInstance().query<std::string>("flowController")
                          << "\n";
         } else {
             stringStream << "No\n";
@@ -2401,9 +2383,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     if (_isLargeData
             || ParameterManager::GetInstance().query<bool>("asynchronous")) {
         dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
-        if (_FlowControllerCustom != "default") {
+        if (ParameterManager::GetInstance().query<std::string>("flowController")
+                != "default") {
             dw_qos.publish_mode.flow_controller_name =
-                    DDS_String_dup(("dds.flow_controller.token_bucket."+_FlowControllerCustom).c_str());
+                    DDS_String_dup(("dds.flow_controller.token_bucket." + ParameterManager::GetInstance().query<std::string>("flowController")).c_str());
         }
     }
 

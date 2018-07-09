@@ -53,7 +53,6 @@ class RTIDDSImpl : public IMessaging
         _isLargeData = false;
         _isScan = false;
         _isPublisher = false;
-        _FlowControllerCustom = "default";
         _useUnbounded = 0;
         _useCft = false;
         _instancesToBeWritten = -1; // By default use round-robin (-1)
@@ -140,7 +139,6 @@ class RTIDDSImpl : public IMessaging
     bool         _isLargeData;
     bool         _isScan;
     bool         _isPublisher;
-    std::string  _FlowControllerCustom;
     unsigned long _useUnbounded;
     bool         _useCft;
     long _instancesToBeWritten;
