@@ -1550,14 +1550,13 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     }
 
     bool get_serialize_size_custom_type_data(unsigned int &size) {
-        bool success = true;
         char *buffer = NULL;
         DDS_ReturnCode_t retcode = data.to_cdr_buffer(
                 NULL,
                 (unsigned int &)size);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "to_cdr_buffer failed: %d.\n", retcode);
-            success = false;
+            return false;
         }
         RTIOsapiHeap_allocateBufferAligned(
                 &buffer,
@@ -1565,14 +1564,14 @@ class RTIDynamicDataPublisher : public IMessagingWriter
                 RTIOsapiAlignment_getAlignmentOf(char *));
         if (buffer == NULL) {
             fprintf(stderr, "RTIOsapiHeap_allocateBufferAligned failed.\n");
-            success = false;
+            return false;
         }
         retcode = data.to_cdr_buffer(
                 buffer,
                 (unsigned int &)size);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "to_cdr_buffer failed: %d.\n", retcode);
-            success = false;
+            return false;
         }
         if (buffer != NULL) {
             RTIOsapiHeap_freeBufferAligned(buffer);
@@ -1580,7 +1579,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         }
         size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
         size -= perftest_cpp::OVERHEAD_BYTES;
-        return success;
+        return true;
     }
 #endif
 };
