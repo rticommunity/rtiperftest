@@ -20,7 +20,6 @@
 
 int  perftest_cpp::_SubID = 0;
 int  perftest_cpp::_PubID = 0;
-bool perftest_cpp::_showCpu = false;
 
 /* Clock related variables */
 struct RTIClock* perftest_cpp::_Clock = RTIHighResolutionClock_new();
@@ -130,7 +129,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     printf("numSubscribers: %d\n", ParameterManager::GetInstance().query<int>("numSubscribers"));
 //     printf("numPublishers: %d\n", ParameterManager::GetInstance().query<int>("numPublishers"));
 //     printf("verbosity: %d\n", ParameterManager::GetInstance().query<int>("verbosity"));
-//     printf("cpu: %d\n", ParameterManager::GetInstance().query<bool>("cpu"));
 //     printf("writerStats: %d\n", ParameterManager::GetInstance().query<bool>("writerStats"));
 //     printf("executionTime: %d\n", ParameterManager::GetInstance().query<int>("executionTime"));
 //     printf("latencyTest: %d\n", ParameterManager::GetInstance().query<bool>("latencyTest"));
@@ -773,7 +771,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
         } else if (IS_OPTION(argv[i], "-cpu"))
         {
-            _showCpu = true;
         } else if (IS_OPTION(argv[i], "-cft"))
         {
             _useCft = true;
@@ -1212,7 +1209,7 @@ class ThroughputListener : public IMessagingCB
             }
 
             std::string outputCpu = "";
-            if (perftest_cpp::_showCpu) {
+            if (ParameterManager::GetInstance().query<bool>("cpu")) {
                 outputCpu = cpu.get_cpu_average();
             }
             printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
@@ -1359,7 +1356,7 @@ int perftest_cpp::Subscriber()
     unsigned long long msgsent, bytes, last_msgs, last_bytes;
     float missing_packets_percent = 0;
 
-    if (perftest_cpp::_showCpu) {
+    if (ParameterManager::GetInstance().query<bool>("cpu")) {
          reader_listener->cpu.initialize();
     }
 
@@ -1424,7 +1421,7 @@ int perftest_cpp::Subscriber()
 
             if (last_msgs > 0) {
                 std::string outputCpu = "";
-                if (perftest_cpp::_showCpu) {
+                if (ParameterManager::GetInstance().query<bool>("cpu")) {
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
                 printf("Packets: %8llu  Packets/s: %7llu  Packets/s(ave): %7.0lf  "
@@ -1606,7 +1603,7 @@ class LatencyListener : public IMessagingCB
         latency_ave = (double)latency_sum / count;
         latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-        if (perftest_cpp::_showCpu) {
+        if (ParameterManager::GetInstance().query<bool>("cpu")) {
             outputCpu = cpu.get_cpu_average();
         }
 
@@ -1745,7 +1742,7 @@ class LatencyListener : public IMessagingCB
                 latency_std = sqrt(
                         (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-                if (perftest_cpp::_showCpu) {
+                if (ParameterManager::GetInstance().query<bool>("cpu")) {
                     outputCpu = cpu.get_cpu_instant();
                 }
                 printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us  Min %6lu us  Max %6lu %s\n",
@@ -1934,7 +1931,7 @@ int perftest_cpp::Publisher()
     message.entity_id = _PubID;
     message.data = new char[(std::max)((int)_DataLen, (int)LENGTH_CHANGED_SIZE)];
 
-    if ( perftest_cpp::_showCpu && _PubID == 0) {
+    if (ParameterManager::GetInstance().query<bool>("cpu") && _PubID == 0) {
         reader_listener->cpu.initialize();
     }
 
