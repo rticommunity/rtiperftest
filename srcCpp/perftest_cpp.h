@@ -95,7 +95,6 @@ class perftest_cpp
     bool _IsPub;
     bool _isScan;
     std::vector<unsigned long> _scanDataLenSizes;
-    bool _UseReadThread;
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
     int  _LatencyCount;

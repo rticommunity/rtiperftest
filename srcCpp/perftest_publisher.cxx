@@ -133,7 +133,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     printf("latencyCount: %d\n", ParameterManager::GetInstance().query<int>("latencyCount"));
 //     printf("numSubscribers: %d\n", ParameterManager::GetInstance().query<int>("numSubscribers"));
 //     printf("numPublishers: %d\n", ParameterManager::GetInstance().query<int>("numPublishers"));
-//     printf("useReadThread: %d\n", ParameterManager::GetInstance().query<bool>("useReadThread"));
 //     printf("verbosity: %d\n", ParameterManager::GetInstance().query<int>("verbosity"));
 //     printf("cpu: %d\n", ParameterManager::GetInstance().query<bool>("cpu"));
 //     printf("writerStats: %d\n", ParameterManager::GetInstance().query<bool>("writerStats"));
@@ -294,7 +293,6 @@ perftest_cpp::perftest_cpp()
     _NumIter = 100000000;
     _IsPub = false;
     _isScan = false;
-    _UseReadThread = false;
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
     _LatencyCount = -1;
@@ -672,7 +670,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-useReadThread") )
         {
-            _UseReadThread = true;
         }
         else if (IS_OPTION(argv[i], "-bestEffort")) {
         } else if (IS_OPTION(argv[i], "-latencyTest"))
@@ -1002,7 +999,7 @@ void perftest_cpp::PrintConfiguration()
 
     // Listener/WaitSets
     stringStream << "\tReceive using: ";
-    if (_UseReadThread) {
+    if (ParameterManager::GetInstance().query<bool>("useReadThread")) {
         stringStream << "WaitSets\n";
     } else {
         stringStream << "Listeners\n";
@@ -1287,8 +1284,7 @@ int perftest_cpp::Subscriber()
     }
 
     // Check if using callbacks or read thread
-    if (!_UseReadThread)
-    {
+    if (!ParameterManager::GetInstance().query<bool>("useReadThread")) {
         // create latency pong reader
         reader_listener = new ThroughputListener(writer, NULL, _useCft, _NumPublishers);
         reader = _MessagingImpl->CreateReader(
@@ -1299,9 +1295,7 @@ int perftest_cpp::Subscriber()
             fprintf(stderr, "Problem creating throughput reader.\n");
             return -1;
         }
-    }
-    else
-    {
+    } else {
         reader = _MessagingImpl->CreateReader(
                 THROUGHPUT_TOPIC_NAME,
                 NULL);
@@ -1848,8 +1842,7 @@ int perftest_cpp::Publisher()
     if (_PubID == 0)
     {
         // Check if using callbacks or read thread
-        if (!_UseReadThread)
-        {
+        if (!ParameterManager::GetInstance().query<bool>("useReadThread")) {
             // create latency pong reader
             // the writer is passed for ping-pong notification in LatencyTest
             reader_listener = new LatencyListener(
