@@ -778,6 +778,7 @@ std::string PerftestTransport::helpMessageString()
     << "\t                                one and the 2 consecutive ones will be\n"
     << "\t                                used for the 3 topics used by Perftest.\n"
     << "\t                                The address must be lower than X.X.X.253\n"
+    << "\t                                on IPv4 or the equivalent for IPv6\n"
     << "\t-transportVerbosity <level>   - Verbosity of the transport\n"
     << "\t                                Default: 0 (errors only)\n"
     << "\t-transportServerBindPort <p>  - Port used by the transport to accept\n"
