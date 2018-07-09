@@ -53,7 +53,6 @@ class RTIDDSImpl : public IMessaging
         _isLargeData = false;
         _isScan = false;
         _isPublisher = false;
-        _IsAsynchronous = false;
         _FlowControllerCustom = "default";
         _useUnbounded = 0;
         _useCft = false;
@@ -141,7 +140,6 @@ class RTIDDSImpl : public IMessaging
     bool         _isLargeData;
     bool         _isScan;
     bool         _isPublisher;
-    bool         _IsAsynchronous;
     std::string  _FlowControllerCustom;
     unsigned long _useUnbounded;
     bool         _useCft;

@@ -420,7 +420,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-asynchronous") )
         {
-            _IsAsynchronous = true;
         }
         else if (IS_OPTION(argv[i], "-flowController"))
         {
@@ -629,7 +628,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
 
         /* Check if using asynchronous */
-        if (_IsAsynchronous) {
+        if (ParameterManager::GetInstance().query<bool>("asynchronous")) {
             if (isBatchSizeProvided) {
                 fprintf(stderr,
                         "Batching cannot be used with asynchronous writing.\n");
@@ -671,7 +670,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     }
 
     if (_TurboMode) {
-        if (_IsAsynchronous) {
+        if (ParameterManager::GetInstance().query<bool>("asynchronous")) {
             fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing.\n");
             return false;
         }
@@ -755,7 +754,8 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     // Dynamic Data
     if (_isPublisher) {
         stringStream << "\tAsynchronous Publishing: ";
-        if (_isLargeData || _IsAsynchronous) {
+        if (_isLargeData
+                || ParameterManager::GetInstance().query<bool>("asynchronous")) {
             stringStream << "Yes\n";
             stringStream << "\tFlow Controller: "
                          << _FlowControllerCustom
@@ -2398,7 +2398,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         }
     }
 
-    if (_isLargeData || _IsAsynchronous) {
+    if (_isLargeData
+            || ParameterManager::GetInstance().query<bool>("asynchronous")) {
         dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
         if (_FlowControllerCustom != "default") {
             dw_qos.publish_mode.flow_controller_name =
