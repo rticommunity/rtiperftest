@@ -1861,7 +1861,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     using namespace rti::core::policy;
 
     std::string qos_profile = "";
-    qos_profile = getQoSProfileName(topic_name);
+    qos_profile = get_qos_profile_name(topic_name);
     if (qos_profile.empty()) {
         throw std::logic_error("[Error] Topic name");
     }
@@ -2151,7 +2151,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     using namespace rti::core::policy;
 
     std::string qos_profile;
-    qos_profile = getQoSProfileName(topic_name);
+    qos_profile = get_qos_profile_name(topic_name);
     if (qos_profile.empty()) {
         throw std::logic_error("[Error] Topic name");
     }
@@ -2359,7 +2359,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 }
 
 template <typename T>
-const std::string RTIDDSImpl<T>::getQoSProfileName(std::string topicName)
+const std::string RTIDDSImpl<T>::get_qos_profile_name(std::string topicName)
 {
     if (_qoSProfileNameMap[topicName].empty()) {
         fprintf(stderr,

@@ -132,7 +132,7 @@ public:
 
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
 
-    const std::string getQoSProfileName(const char *topicName);
+    const std::string get_qos_profile_name(const char *topicName);
 
 private:
 

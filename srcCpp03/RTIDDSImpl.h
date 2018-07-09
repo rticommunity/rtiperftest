@@ -75,7 +75,7 @@ class RTIDDSImpl : public IMessaging
         const std::string &topic_name,
         const dds::topic::Topic<U> &topic);
 
-    const std::string getQoSProfileName(std::string topicName);
+    const std::string get_qos_profile_name(std::string topicName);
 
 
   private:

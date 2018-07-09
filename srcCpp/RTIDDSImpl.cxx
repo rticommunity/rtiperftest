@@ -2406,7 +2406,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    qos_profile = getQoSProfileName(topic_name);
+    qos_profile = get_qos_profile_name(topic_name);
     if (qos_profile.empty()) {
         fprintf(stderr, "Problem getting qos profile.\n");
         return NULL;
@@ -2676,7 +2676,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
     topic_desc = topic;
 
-    qos_profile = getQoSProfileName(topic_name);
+    qos_profile = get_qos_profile_name(topic_name);
     if (qos_profile.empty()) {
         fprintf(stderr, "Problem getting qos profile.\n");
         return NULL;
@@ -2812,7 +2812,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 }
 
 template <typename T>
-const std::string RTIDDSImpl<T>::getQoSProfileName(const char *topicName)
+const std::string RTIDDSImpl<T>::get_qos_profile_name(const char *topicName)
 {
     if (_qoSProfileNameMap[std::string(topicName)].empty()) {
         fprintf(stderr,
