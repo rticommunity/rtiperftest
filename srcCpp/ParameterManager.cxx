@@ -154,7 +154,7 @@ void ParameterManager::initialize()
     parameterList["waitsetDelayUsec"] = AnyParameter(waitsetDelayUsec);
 
     Parameter<unsigned long long> *waitsetEventCount = new Parameter<unsigned long long>(5);
-    waitsetEventCount->setCommandLineArgument(std::make_pair("-waitsetDelayUsec","<count>"));
+    waitsetEventCount->setCommandLineArgument(std::make_pair("-waitsetEventCount","<count>"));
     waitsetEventCount->setDescription("UseReadThread related. Allows you to\nprocess incoming data in groups, based on the\nnumber of samples rather than individually. It\ncan be used combined with -waitsetDelayUsec.\nDefault: 5");
     waitsetEventCount->setType(T_NUMERIC);
     waitsetEventCount->setExtraArgument(YES);

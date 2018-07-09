@@ -33,11 +33,6 @@ template class RTIDDSImpl<TestData_t>;
 template class RTIDDSImpl<TestDataKeyedLarge_t>;
 template class RTIDDSImpl<TestDataLarge_t>;
 
-template <typename T>
-int RTIDDSImpl<T>::_WaitsetEventCount = 5;
-template <typename T>
-unsigned int RTIDDSImpl<T>::_WaitsetDelayUsec = 100;
-
 #ifdef RTI_SECURE_PERFTEST
 template <typename T>
 const std::string RTIDDSImpl<T>::SECURE_PRIVATEKEY_FILE_PUB =
@@ -404,25 +399,10 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             ++i;
         }
         else if (IS_OPTION(argv[i], "-waitsetDelayUsec")) {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <usec> after -waitsetDelayUsec\n");
-                return false;
-            }
-            _WaitsetDelayUsec = (unsigned int) strtol (argv[i], NULL, 10);
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-waitsetEventCount")) {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <count> after -waitsetEventCount\n");
-                return false;
-            }
-            _WaitsetEventCount = strtol (argv[i], NULL, 10);
-            if (_WaitsetEventCount < 0)
-            {
-                fprintf(stderr, "waitset event count cannot be negative\n");
-                return false;
-            }
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-latencyTest"))
         {
@@ -1524,9 +1504,12 @@ class RTISubscriber : public IMessagingReader
         // null listener means using receive thread
         if (_reader->get_listener() == NULL) {
             DDS_WaitSetProperty_t property;
-            property.max_event_count         = RTIDDSImpl<T>::_WaitsetEventCount;
-            property.max_event_delay.sec     = (int)RTIDDSImpl<T>::_WaitsetDelayUsec / 1000000;
-            property.max_event_delay.nanosec = (RTIDDSImpl<T>::_WaitsetDelayUsec % 1000000) * 1000;
+            property.max_event_count         =
+                    ParameterManager::GetInstance().query<int>("waitsetEventCount");
+            property.max_event_delay.sec     =
+                    ParameterManager::GetInstance().query<unsigned int>("waitsetDelayUsec") / 1000000;
+            property.max_event_delay.nanosec =
+                    (ParameterManager::GetInstance().query<unsigned int>("waitsetDelayUsec") % 1000000) * 1000;
 
             _waitset = new DDSWaitSet(property);
 
@@ -1674,11 +1657,12 @@ class RTIDynamicDataSubscriber : public IMessagingReader
         if (_reader->get_listener() == NULL) {
 
             DDS_WaitSetProperty_t property;
-            property.max_event_count = RTIDDSImpl<T>::_WaitsetEventCount;
+            property.max_event_count =
+                    ParameterManager::GetInstance().query<int>("waitsetEventCount");
             property.max_event_delay.sec =
-                    (int) RTIDDSImpl<T>::_WaitsetDelayUsec / 1000000;
-            property.max_event_delay.nanosec = (RTIDDSImpl<T>::_WaitsetDelayUsec
-                    % 1000000) * 1000;
+                    ParameterManager::GetInstance().query<unsigned int>("waitsetDelayUsec") / 1000000;
+            property.max_event_delay.nanosec =
+                    (ParameterManager::GetInstance().query<unsigned int>("waitsetDelayUsec") % 1000000) * 1000;
             _waitset = new DDSWaitSet(property);
             DDSStatusCondition *reader_status;
             reader_status = reader->get_statuscondition();

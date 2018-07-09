@@ -186,11 +186,6 @@ class RTIDDSImpl : public IMessaging
 
     RTIOsapiSemaphore *_pongSemaphore;
     RTIDDSLoggerDevice _loggerDevice;
-
-  public:
-
-    static int          _WaitsetEventCount;
-    static unsigned int _WaitsetDelayUsec;
 };
 
 
