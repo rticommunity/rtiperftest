@@ -20,7 +20,6 @@
 
 int  perftest_cpp::_SubID = 0;
 int  perftest_cpp::_PubID = 0;
-bool perftest_cpp::_PrintIntervals = true;
 bool perftest_cpp::_showCpu = false;
 
 /* Clock related variables */
@@ -136,7 +135,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     printf("latencyCount: %d\n", ParameterManager::GetInstance().query<int>("latencyCount"));
 //     printf("numSubscribers: %d\n", ParameterManager::GetInstance().query<int>("numSubscribers"));
 //     printf("numPublishers: %d\n", ParameterManager::GetInstance().query<int>("numPublishers"));
-//     printf("noPrintIntervals: %d\n", ParameterManager::GetInstance().query<bool>("noPrintIntervals"));
 //     printf("useReadThread: %d\n", ParameterManager::GetInstance().query<bool>("useReadThread"));
 //     printf("verbosity: %d\n", ParameterManager::GetInstance().query<int>("verbosity"));
 //     printf("cpu: %d\n", ParameterManager::GetInstance().query<bool>("cpu"));
@@ -672,9 +670,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 set_default_scan_values(_scanDataLenSizes);
             }
         }
-        else if (IS_OPTION(argv[i], "-noPrintIntervals") )
-        {
-            _PrintIntervals = false;
+        else if (IS_OPTION(argv[i], "-noPrintIntervals") ) {
         }
         else if (IS_OPTION(argv[i], "-useReadThread") )
         {
@@ -1162,7 +1158,7 @@ class ThroughputListener : public IMessagingCB
 
             begin_time = perftest_cpp::GetTimeUsec();
 
-            if (perftest_cpp::_PrintIntervals) {
+            if (!ParameterManager::GetInstance().query<bool>("noPrintIntervals")) {
                 printf("\n\n********** New data length is %d\n",
                        message.size + perftest_cpp::OVERHEAD_BYTES);
                 fflush(stdout);
@@ -1402,8 +1398,7 @@ int perftest_cpp::Subscriber()
             break;
         }
 
-        if (_PrintIntervals)
-        {
+        if (!ParameterManager::GetInstance().query<bool>("noPrintIntervals")) {
             if (last_data_length != reader_listener->last_data_length)
             {
                 last_data_length = reader_listener->last_data_length;
@@ -1751,30 +1746,27 @@ class LatencyListener : public IMessagingCB
         {
             last_data_length = message.size;
 
-            if (perftest_cpp::_PrintIntervals)
-            {
+            if (!ParameterManager::GetInstance().query<bool>("noPrintIntervals")) {
                 printf("\n\n********** New data length is %d\n",
                        last_data_length + perftest_cpp::OVERHEAD_BYTES);
             }
         }
-        else
-        {
-            if (perftest_cpp::_PrintIntervals)
-            {
+        else {
+            if (!ParameterManager::GetInstance().query<bool>("noPrintIntervals")) {
                 latency_ave = (double)latency_sum / (double)count;
                 latency_std = sqrt(
-                    (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
+                        (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
                 if (perftest_cpp::_showCpu) {
                     outputCpu = cpu.get_cpu_instant();
                 }
                 printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us  Min %6lu us  Max %6lu %s\n",
-                       latency,
-                       latency_ave,
-                       latency_std,
-                       latency_min,
-                       latency_max,
-                       outputCpu.c_str()
+                        latency,
+                        latency_ave,
+                        latency_std,
+                        latency_min,
+                        latency_max,
+                        outputCpu.c_str()
                 );
             }
         }
@@ -2150,7 +2142,8 @@ int perftest_cpp::Publisher()
                 ping_index_in_batch = (ping_index_in_batch + 1) % samplesPerBatch;
                 sentPing = true;
 
-                if (_displayWriterStats && _PrintIntervals) {
+                if (_displayWriterStats &&
+                        !ParameterManager::GetInstance().query<bool>("noPrintIntervals")) {
                     printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
                 }
             }
