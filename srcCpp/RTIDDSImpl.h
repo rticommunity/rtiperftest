@@ -42,7 +42,6 @@ class RTIDDSImpl : public IMessaging
         _DataLen = 100;
         _AutoThrottle = false;
         _TurboMode = false;
-        _UseXmlQos = true;
         _IsMulticast = false;
         _BatchSize = DEFAULT_THROUGHPUT_BATCH_SIZE; // Default: 8 kBytes
         _InstanceCount = 1;
@@ -130,7 +129,6 @@ class RTIDDSImpl : public IMessaging
     int          _SendQueueSize;
     unsigned long _DataLen;
     bool         _TurboMode;
-    bool         _UseXmlQos;
     bool         _AutoThrottle;
     bool         _IsMulticast;
     int _BatchSize;

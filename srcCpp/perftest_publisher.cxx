@@ -120,7 +120,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     printf("waitsetEventCount: %d\n", ParameterManager::GetInstance().query<int>("waitsetEventCount"));
 //     printf("enableAutoThrottle: %d\n", ParameterManager::GetInstance().query<bool>("enableAutoThrottle"));
 //     printf("enableTurboMode: %d\n", ParameterManager::GetInstance().query<bool>("enableTurboMode"));
-//     printf("noXmlQos: %d\n", ParameterManager::GetInstance().query<bool>("noXmlQos"));
 //     printf("asynchronous: %d\n", ParameterManager::GetInstance().query<bool>("asynchronous"));
 
 

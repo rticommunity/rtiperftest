@@ -436,9 +436,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         {
             _TurboMode = true;
         }
-        else if (IS_OPTION(argv[i], "-noXmlQos") )
-        {
-            _UseXmlQos = false;
+        else if (IS_OPTION(argv[i], "-noXmlQos") ) {
         }
         else if (IS_OPTION(argv[i], "-asynchronous") )
         {
@@ -797,7 +795,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
     // XML File
     stringStream << "\tXML File: ";
-    if (!_UseXmlQos) {
+    if (ParameterManager::GetInstance().query<bool>("noXmlQos")) {
         stringStream << "Disabled\n";
     } else {
         stringStream << ParameterManager::GetInstance().query<std::string>("qosFile")
@@ -2191,7 +2189,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // setup the QOS profile file to be loaded
     _factory->get_qos(factory_qos);
-    if (_UseXmlQos) {
+    if (!ParameterManager::GetInstance().query<bool>("noXmlQos")) {
         factory_qos.profile.url_profile.ensure_length(1, 1);
         factory_qos.profile.url_profile[0] = DDS_String_dup(ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
     } else {
