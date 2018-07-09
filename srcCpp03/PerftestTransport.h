@@ -104,6 +104,7 @@ public:
 
     unsigned long dataLen;
     bool useMulticast;
+    bool customMulticastAddrSet;
 
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
@@ -143,7 +144,7 @@ private:
     static const std::map<std::string, TransportConfig>& getTransportConfigMap();
     bool setTransport(std::string transportString);
     void populateSecurityFiles(bool isPublisher);
-
+    bool parse_custom_multicast_addresses(char *arg);
 };
 
 bool configureTransport(

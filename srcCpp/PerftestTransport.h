@@ -144,7 +144,8 @@ private:
     static const std::map<std::string, TransportConfig>& getTransportConfigMap();
     bool setTransport(std::string transportString);
     void populateSecurityFiles(bool isPublisher);
-    bool parseCustomMulticastAddresses(char *arg);
+    bool parse_custom_multicast_addresses(char *arg);
+    bool increase_address_by_one(const std::string addr, std::string &nextAddr);
 };
 
 bool configureTransport(

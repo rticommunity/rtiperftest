@@ -1087,8 +1087,8 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
                 return false;
             }
 
-            if (!parseCustomMulticastAddresses(argv[i])){
-                fprintf(stderr, "Error parsing address from -multicastAddr\n");
+            if (!parse_custom_multicast_addresses(argv[i])){
+                fprintf(stderr, "Error parsing -multicastAddr\n");
                 return false;
             }
 
@@ -1133,53 +1133,127 @@ const std::string PerftestTransport::getMulticastAddr(const char *topicName)
     return address;
 }
 
-bool PerftestTransport::parseCustomMulticastAddresses(char *arg)
+bool PerftestTransport::increase_address_by_one(
+        const std::string addr,
+        std::string &nextAddr)
 {
-    char throughput[15];
-    char latency[15];
-    char annonuncement[15];
-    char rest;
-    unsigned int a, b, c, d;
-    std::stringstream addrMergeLatency;
-    std::stringstream addrMergeAnnounc;
+    bool success = false;
+    bool isIPv4 = false; /* true = IPv4 // false = IPv6 */
+    NDDS_Transport_Address_t transportAddress;
+    char buffer[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
 
-    /* If 3 addresses are given */
-    if (sscanf(arg, "%[^,],%[^,],%s", throughput, latency, annonuncement) == 3) {
+    if (!NDDS_Transport_Address_from_string(&transportAddress, addr.c_str())) {
+        fprintf(stderr, "Fail to get a transport address from string\n");
+        return false;
+    }
+
+    if (NDDS_Transport_Address_is_ipv4(&transportAddress)) {
+        isIPv4 = true;
+    }
+
+    /*
+     * Increase the full address by one value.
+     * if the Address is 255.255.255.255 (or the equivalent for IPv6) this
+     * function will FAIL
+     */
+    for (int i = NDDS_TRANSPORT_ADDRESS_LENGTH - 1; i >= 0 && !success; i--) {
+        if (isIPv4 && i < 13) {
+            /* If the user set a IPv4 higher than 255.255.255.253 fail here*/
+            break;
+        }
+        if (transportAddress.network_ordered_value[i] != 255) {
+            /* Increase the value and exit */
+            transportAddress.network_ordered_value[i]++;
+            success = true;
+        }
+    }
+
+    if (!success) {
+        fprintf(stderr,
+                "IP value too high. Please use -help for more information "
+                "about -multicastAddr command line\n");
+        return false;
+    }
+
+    /* Try to get a IPv4 string format */
+    if (!NDDS_Transport_Address_to_string_with_protocol_family_format(
+            &transportAddress,
+            buffer,
+            NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE,
+            isIPv4 ? RTI_OSAPI_SOCKET_AF_INET : RTI_OSAPI_SOCKET_AF_INET6)) {
+        fprintf(stderr, "Fail to retrieve a ip string format\n");
+        return false;
+    }
+
+    nextAddr = buffer;
+
+    return true;
+}
+
+bool PerftestTransport::parse_custom_multicast_addresses(char *arg)
+{
+    char throughput[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
+    char latency[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
+    char annonuncement[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
+    unsigned int numberOfAddressess = 0;
+
+    /* Get number of addresses on the string */
+    if (!NDDS_Transport_get_number_of_addresses_in_string(
+            arg,
+            &numberOfAddressess)) {
+        fprintf(stderr, "Error parsing Address for -multicastAddr option\n");
+        return false;
+    }
+
+    /* If tree addresses are given */
+    if (numberOfAddressess == 3) {
+        if (!NDDS_Transport_get_address(arg, 0, throughput)
+                || !NDDS_Transport_get_address(arg, 1, latency)
+                || !NDDS_Transport_get_address(arg, 2, annonuncement)){
+            fprintf(stderr,
+                    "Error parsing Address for -multicastAddr option\n");
+            return false;
+        }
+
         multicastAddrMap[THROUGHPUT_TOPIC_NAME] = throughput;
         multicastAddrMap[LATENCY_TOPIC_NAME] = latency;
         multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = annonuncement;
 
-    /*
-     * If no 3 addresses are give, check for only one.
-     * If sscanf fill the 5 arguments, some character left over.
-     */
-    } else if (sscanf(arg, "%u.%u.%u.%u%c", &a, &b, &c, &d, &rest) == 4) {
-
-        if (d > 253) {
+    } else if (numberOfAddressess == 1) {
+        /* If only one address are give */
+        if (!NDDS_Transport_get_address(arg, 0, throughput)) {
             fprintf(stderr,
-                    "Error parsing Address for -multicastAddr option\n"
-                    "The address can not be higher than x.x.x.253\n");
+                    "Error parsing Address for -multicastAddr option\n");
+            return false;
+        }
+        multicastAddrMap[THROUGHPUT_TOPIC_NAME] = throughput;
+
+        /* Calculate the consecutive one */
+        if (!increase_address_by_one(
+                multicastAddrMap[THROUGHPUT_TOPIC_NAME],
+                multicastAddrMap[LATENCY_TOPIC_NAME])) {
+            fprintf(stderr,
+                    "Fail to increase the value of IP addres given\n");
             return false;
         }
 
-        /* Increase the addresses by one per topic */
-        multicastAddrMap[THROUGHPUT_TOPIC_NAME] = arg;
-
-        addrMergeLatency << a << '.' << b << '.' << c << '.' << ++d;
-        multicastAddrMap[LATENCY_TOPIC_NAME] = addrMergeLatency.str().c_str();
-
-        addrMergeAnnounc << a << '.' << b << '.' << c << '.' << ++d;
-        multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME]
-                = addrMergeAnnounc.str().c_str();
+        /* Calculate the consecutive one */
+        if (!increase_address_by_one(
+                multicastAddrMap[LATENCY_TOPIC_NAME],
+                multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME])) {
+            fprintf(stderr,
+                    "Fail to increase the value of IP addres given\n");
+            return false;
+        }
 
     } else {
-        fprintf(
-                stderr,
-                "Error parsing Address/es %s for -multicastAddr option\n"
+        fprintf(stderr,
+                "Error parsing Address/es '%s' for -multicastAddr option\n"
                 "Use -help option to see the correct sintax\n",
                 arg);
         return false;
     }
+
     return true;
 }
 /******************************************************************************/

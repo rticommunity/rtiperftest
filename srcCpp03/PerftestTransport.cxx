@@ -439,7 +439,8 @@ bool configureTransport(
 
 PerftestTransport::PerftestTransport() :
         dataLen(100),
-        useMulticast(false)
+        useMulticast(false),
+        customMulticastAddrSet(false)
 {
     multicastAddrMap[LATENCY_TOPIC_NAME] = "239.255.1.2";
     multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = "239.255.1.100";
@@ -605,8 +606,13 @@ std::string PerftestTransport::helpMessageString()
     }
     oss
     << "\t-multicastAddr <address>      - Use multicast to send data and set\n"
-    << "\t                                the input <address> as the multicast\n"
-    << "\t                                address for all the topics.\n"
+    << "\t                                the input <address>|<addr,addr,addr>\n"
+    << "\t                                as the multicast addresses for the\n"
+    << "\t                                three topics in the application.\n"
+    << "\t                                If only one address is provided, that\n"
+    << "\t                                one and the 2 consecutive ones will be\n"
+    << "\t                                used for the 3 topics used by Perftest.\n"
+    << "\t                                The address must be lower than X.X.X.253\n"
     << "\t-transportVerbosity <level>   - Verbosity of the transport\n"
     << "\t                                Default: 0 (errors only)\n"
     << "\t-transportServerBindPort <p>  - Port used by the transport to accept\n"
@@ -665,6 +671,16 @@ std::string PerftestTransport::printTransportConfigurationSummary()
                      << transportConfig.nameString << ")";
     }
     stringStream << "\n";
+
+    if (customMulticastAddrSet) {
+    stringStream << "\tCustom Multicast Addresses:"
+            << "\n\t\tThroughtput Address: "
+            << multicastAddrMap[THROUGHPUT_TOPIC_NAME].c_str()
+            << "\n\t\tLatency Address: "
+            << multicastAddrMap[LATENCY_TOPIC_NAME].c_str()
+            << "\n\t\tAnnouncement Address: "
+            << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str();
+    }
 
     if (transportConfig.kind == TRANSPORT_TCPv4
             || transportConfig.kind == TRANSPORT_TLSv4) {
@@ -898,6 +914,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
             useMulticast = true;
         } else if (IS_OPTION(argv[i], "-multicastAddr")) {
             useMulticast = true;
+            customMulticastAddrSet = true;
             if ((i == (argc - 1)) || *argv[++i] == '-') {
                 fprintf(stderr,
                         "%s Missing <address> after "
@@ -906,9 +923,10 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
                 return false;
             }
 
-            multicastAddrMap[THROUGHPUT_TOPIC_NAME] = argv[i];
-            multicastAddrMap[LATENCY_TOPIC_NAME] = argv[i];
-            multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = argv[i];
+            if (!parse_custom_multicast_addresses(argv[i])) {
+                fprintf(stderr, "Error parsing -multicastAddr\n");
+                return false;
+            }
 
         } else if (IS_OPTION(argv[i], "-nomulticast")) {
             useMulticast = false;
@@ -953,4 +971,52 @@ const std::string PerftestTransport::getMulticastAddr(const char *topicName)
     return address;
 }
 
+bool PerftestTransport::parse_custom_multicast_addresses(char *arg)
+{
+    char throughput[15];
+    char latency[15];
+    char annonuncement[15];
+    char rest;
+    unsigned int a, b, c, d;
+    std::stringstream addrMergeLatency;
+    std::stringstream addrMergeAnnounc;
+
+    /* If 3 addresses are given */
+    if (sscanf(arg, "%[^,],%[^,],%s", throughput, latency, annonuncement)
+        == 3) {
+        multicastAddrMap[THROUGHPUT_TOPIC_NAME] = throughput;
+        multicastAddrMap[LATENCY_TOPIC_NAME] = latency;
+        multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = annonuncement;
+
+        /*
+         * If no 3 addresses are given, check for only one.
+         * If sscanf fill the 5 arguments, some character left over.
+         */
+    } else if (sscanf(arg, "%u.%u.%u.%u%c", &a, &b, &c, &d, &rest) == 4) {
+        if (d > 253) {
+            fprintf(stderr,
+                    "Error parsing Address for -multicastAddr option\n"
+                    "The address can not be higher than x.x.x.253\n");
+            return false;
+        }
+
+        /* Increase the addresses by one per topic */
+        multicastAddrMap[THROUGHPUT_TOPIC_NAME] = arg;
+
+        addrMergeLatency << a << '.' << b << '.' << c << '.' << ++d;
+        multicastAddrMap[LATENCY_TOPIC_NAME] = addrMergeLatency.str().c_str();
+
+        addrMergeAnnounc << a << '.' << b << '.' << c << '.' << ++d;
+        multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME]
+                = addrMergeAnnounc.str().c_str();
+
+    } else {
+        fprintf(stderr,
+                "Error parsing Address/es '%s' for -multicastAddr option\n"
+                "Use -help option to see the correct sintax\n",
+                arg);
+        return false;
+    }
+    return true;
+}
 /******************************************************************************/
