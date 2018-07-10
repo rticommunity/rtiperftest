@@ -91,7 +91,6 @@ class perftest_cpp
 
   private:
     unsigned long  _DataLen;
-    unsigned long long _NumIter;
     bool _isScan;
     std::vector<unsigned long> _scanDataLenSizes;
     unsigned long long _SpinLoopCount;

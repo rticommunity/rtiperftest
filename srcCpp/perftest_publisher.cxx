@@ -104,9 +104,6 @@ int perftest_cpp::Run(int argc, char *argv[])
     }
 
 //     printf("batching: %d\n", PM::GetInstance().get<int>("batching"));
-//     printf("pub: %d\n", PM::GetInstance().get<bool>("pub"));
-//     printf("sub: %d\n", PM::GetInstance().get<bool>("sub"));
-//     printf("flowController: %s\n", PM::GetInstance().get<std::string>("flowController").c_str());
 //     std::vector<unsigned long long> scan = PM::GetInstance().get_vector<unsigned long long>("scan");
 //     printf("scan: \n");
 //     for (unsigned int i = 0; i < scan.size(); i++) {
@@ -123,7 +120,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     printf("sidMultiSubTest: %d\n", PM::GetInstance().get<int>("sidMultiSubTest"));
 //     printf("pidMultiPubTest: %d\n", PM::GetInstance().get<int>("pidMultiPubTest"));
 //     printf("dataLen: %d\n", PM::GetInstance().get<int>("dataLen"));
-//     printf("numIter: %d\n", PM::GetInstance().get<int>("numIter"));
 //     printf("instances: %d\n", PM::GetInstance().get<int>("instances"));
 //     printf("writeInstance: %d\n", PM::GetInstance().get<int>("writeInstance"));
 //     printf("sleep: %d\n", PM::GetInstance().get<int>("sleep"));
@@ -283,7 +279,6 @@ perftest_cpp::~perftest_cpp()
 perftest_cpp::perftest_cpp()
 {
     _DataLen = 100;
-    _NumIter = 100000000;
     _isScan = false;
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
@@ -413,15 +408,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
     }
 
-    /*
-     * PERFTEST-108
-     * We add this boolean value to check if we are explicity changing the
-     * number of iterations via command line paramenter. This will only be
-     * used if this is a latency test to decrease or not the default number
-     * of iterations.
-     */
-    bool numIterSet = false;
-
     // Load command line parameters.
     for (i = 0; i < argc; ++i)
     {
@@ -459,18 +445,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-numIter"))
         {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <iter> after -numIter\n");
-                return false;
-            }
-            _NumIter = (unsigned long long)strtol(argv[i], NULL, 10);
-
-            if (_NumIter < 1) {
-                fprintf(stderr,"-numIter must be > 0\n");
-                return false;
-            }
-
-            numIterSet = true;
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-dataLen"))
         {
@@ -754,8 +729,10 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
          * Therefore, unless we explicitly changed the _NumIter value we will
          * use a smaller default: "numIterDefaultLatencyTest"
          */
-        if (!numIterSet) {
-            _NumIter = numIterDefaultLatencyTest;
+        if (!PM::GetInstance().is_set("numIter")) {
+            PM::GetInstance().set<unsigned long long>(
+                    "numIter",
+                    numIterDefaultLatencyTest);
         }
     }
 
@@ -763,10 +740,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         PM::GetInstance().set<unsigned long long>("latencyCount",10000);
     }
 
-    if (_NumIter < PM::GetInstance().get<unsigned long long>("latencyCount")) {
+    if (PM::GetInstance().get<unsigned long long>("numIter") <
+            PM::GetInstance().get<unsigned long long>("latencyCount")) {
         fprintf(stderr,
                 "numIter (%llu) must be greater than latencyCount (%llu).\n",
-                _NumIter,
+                PM::GetInstance().get<unsigned long long>("numIter"),
                 PM::GetInstance().get<unsigned long long>("latencyCount"));
         return false;
     }
@@ -931,7 +909,9 @@ void perftest_cpp::PrintConfiguration()
                          << PM::GetInstance().get<unsigned long long>("executionTime")
                          << " seconds\n";
         } else {
-            stringStream << "\tNumber of samples: " << _NumIter << "\n";
+            stringStream << "\tNumber of samples: "
+                         << PM::GetInstance().get<unsigned long long>("numIter")
+                         << "\n";
         }
     }
 
@@ -1765,9 +1745,11 @@ int perftest_cpp::Publisher()
     samplesPerBatch = GetSamplesPerBatch();
 
     // calculate number of latency pings that will be sent per data size
-    num_latency = (unsigned long)((_NumIter/samplesPerBatch) /
+    num_latency = (unsigned long)((PM::GetInstance().get<unsigned long long>("numIter") /
+            samplesPerBatch) /
             PM::GetInstance().get<unsigned long long>("latencyCount"));
-    if ((_NumIter/samplesPerBatch) %
+    if ((PM::GetInstance().get<unsigned long long>("numIter") /
+            samplesPerBatch) %
             PM::GetInstance().get<unsigned long long>("latencyCount") > 0) {
         num_latency++;
     }
@@ -1953,8 +1935,10 @@ int perftest_cpp::Publisher()
     /********************
      *  Main sending loop
      */
-    for ( unsigned long long loop = 0; ((_isScan) || (loop < _NumIter)) &&
-                                     (!_testCompleted) ; ++loop ) {
+    for (unsigned long long loop = 0;
+            (_isScan || (loop < PM::GetInstance().get<unsigned long long>("numIter")))
+                    && (!_testCompleted);
+            ++loop) {
 
         /* This if has been included to perform the control loop
            that modifies the publication rate according to -pubRate */
