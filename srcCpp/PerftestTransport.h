@@ -68,12 +68,10 @@ struct SecureTransportOptions {
 };
 
 struct TcpTransportOptions {
-    std::string serverBindPort;
     bool wanNetwork;
     std::string publicAddress;
 
     TcpTransportOptions() :
-        serverBindPort("7400"),
         wanNetwork(false)
     {}
 };
@@ -109,7 +107,6 @@ public:
     WanTransportOptions wanOptions;
 
     unsigned long dataLen;
-    bool useMulticast;
 
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */

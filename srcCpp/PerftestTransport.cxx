@@ -215,7 +215,7 @@ bool configureTcpTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos)
 {
-
+    std::string serverBindPort = ParameterManager::GetInstance().query<std::string>("transportServerBindPort");
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
 
     if (!addPropertyToParticipantQos(
@@ -225,11 +225,11 @@ bool configureTcpTransport(
         return false;
     }
 
-    if (!transport.tcpOptions.serverBindPort.empty()) {
+    if (!serverBindPort.empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".server_bind_port",
-                transport.tcpOptions.serverBindPort)) {
+                serverBindPort)) {
             return false;
         }
     }
@@ -244,7 +244,7 @@ bool configureTcpTransport(
             return false;
         }
 
-        if (transport.tcpOptions.serverBindPort != "0") {
+        if (serverBindPort != "0") {
             if (!transport.tcpOptions.publicAddress.empty()) {
                 if (!addPropertyToParticipantQos(
                         qos,
@@ -597,8 +597,7 @@ bool configureTransport(
 /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 
 PerftestTransport::PerftestTransport() :
-        dataLen(100),
-        useMulticast(false)
+        dataLen(100)
 {
     multicastAddrMap[LATENCY_TOPIC_NAME] = "239.255.1.2";
     multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = "239.255.1.100";
@@ -804,8 +803,8 @@ std::string PerftestTransport::helpMessageString()
 
 std::string PerftestTransport::printTransportConfigurationSummary()
 {
-
-    std::ostringstream stringStream;
+    bool useMulticast = ParameterManager::GetInstance().query<bool>("multicast");
+                                std::ostringstream stringStream;
     stringStream << "Transport Configuration:\n";
     stringStream << "\tKind: " << transportConfig.nameString;
     if (transportConfig.takenFromQoS) {
@@ -827,9 +826,10 @@ std::string PerftestTransport::printTransportConfigurationSummary()
 
     if (transportConfig.kind == TRANSPORT_TCPv4
             || transportConfig.kind == TRANSPORT_TLSv4) {
-
         stringStream << "\tTCP Server Bind Port: "
-                     << tcpOptions.serverBindPort << "\n";
+                     << ParameterManager::GetInstance().query<std::string>(
+                                "transportServerBindPort")
+                     << "\n";
 
         stringStream << "\tTCP LAN/WAN mode: "
                      << (tcpOptions.wanNetwork ? "WAN\n" : "LAN\n");
@@ -916,15 +916,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
 
         } else if (IS_OPTION(argv[i], "-transportServerBindPort")) {
 
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr,
-                        "%s Missing <number> after "
-                        "-transportServerBindPort\n",
-                        classLoggingString.c_str());
-                return false;
-            }
-
-            tcpOptions.serverBindPort = std::string(argv[i]);
+            i++;
 
         } else if (IS_OPTION(argv[i], "-transportWan")) {
 
@@ -1016,9 +1008,9 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
             wanOptions.secureWan = true;
 
         } else if (IS_OPTION(argv[i], "-multicast")) {
-            useMulticast = true;
+            i++;
         } else if (IS_OPTION(argv[i], "-multicastAddr")) {
-            useMulticast = true;
+            ParameterManager::GetInstance().setValue("multicast", true);
             if ((i == (argc - 1)) || *argv[++i] == '-') {
                 fprintf(stderr,
                         "%s Missing <address> after "
@@ -1029,9 +1021,6 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
             multicastAddrMap[THROUGHPUT_TOPIC_NAME] = argv[i];
             multicastAddrMap[LATENCY_TOPIC_NAME] = argv[i];
             multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = argv[i];
-
-        } else if (IS_OPTION(argv[i], "-nomulticast")) {
-            useMulticast = false;
         }
     }
 

@@ -105,4 +105,6 @@ class ParameterManager
 
 };
 
+typedef ParameterManager PM;
+
 #endif // __PARAMETERMANAGER_H__

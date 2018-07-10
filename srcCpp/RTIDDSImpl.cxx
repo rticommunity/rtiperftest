@@ -2382,7 +2382,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     // These QOS's are only set for the Throughput datawriter
     if (qos_profile == "ThroughputQos") {
 
-        if (_transport.useMulticast) {
+        if (ParameterManager::GetInstance().query<bool>("multicast")) {
             dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
                     RTI_TRUE;
         }
@@ -2682,7 +2682,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (_transport.useMulticast && _transport.allowsMulticast()) {
+    if (ParameterManager::GetInstance().query<bool>("multicast")
+            && _transport.allowsMulticast()) {
         dr_qos.multicast.value.ensure_length(1, 1);
         dr_qos.multicast.value[0].receive_address = DDS_String_dup(
                 _transport.getMulticastAddr(topic_name).c_str());
