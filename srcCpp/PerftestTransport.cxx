@@ -583,8 +583,7 @@ bool configureTransport(
         }
     } else {
         // We are not using the allow interface string, so we clear it
-        ParameterManager::GetInstance().query<std::string>("allowInterfaces").clear();
-        printf("allowInterfaces: %s\n", ParameterManager::GetInstance().query<std::string>("allowInterfaces").c_str());
+        ParameterManager::GetInstance().setValue<std::string>("allowInterfaces", std::string(""));
     }
 
     if (!setTransportVerbosity(transport, qos)) {
@@ -873,7 +872,6 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
 {
 
     bool isPublisher = false;
-    std::string transportString = "Use XML";
 
     // We will only parse the properties related with transports here.
     for (int i = 0; i < argc; ++i) {
@@ -895,29 +893,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
 
         } else if (IS_OPTION(argv[i], "-transport")) {
 
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr,
-                        "%s Missing <kind> after -transport\n",
-                        classLoggingString.c_str());
-                return false;
-            }
-
-            transportString = std::string(argv[i]);
-
-        } else if (IS_OPTION(argv[i], "-enableTCP")) {
-
-            /* Legacy option */
-            transportString = "TCP";
-
-        } else if (IS_OPTION(argv[i], "-enableUDPv6")) {
-
-            /* Legacy option */
-            transportString = "UDPv6";
-
-        } else if (IS_OPTION(argv[i], "-enableSharedMemory")) {
-
-            /* Legacy option */
-            transportString = "SHMEM";
+            i++;
 
         } else if (IS_OPTION(argv[i], "-nic")) {
 
@@ -1059,7 +1035,16 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
         }
     }
 
-    if (!setTransport(transportString)) {
+    if (ParameterManager::GetInstance()
+                .query<std::string>("allowInterfaces")
+                .empty()) {
+            ParameterManager::GetInstance().setValue<std::string>(
+                    "allowInterfaces",
+                    ParameterManager::GetInstance().query<std::string>("nic"));
+    }
+
+    if (!setTransport(ParameterManager::GetInstance().query<std::string>(
+                "transport"))) {
         fprintf(stderr,
                 "%s Error Setting the transport\n",
                 classLoggingString.c_str());
