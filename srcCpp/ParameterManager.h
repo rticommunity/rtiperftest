@@ -96,6 +96,13 @@ class ParameterManager
         // check if a variable has been set
         bool isSet(std::string parameterKey);
 
+        /*
+         * Validate:
+         *     That if -pub not use parameter of SUB group
+         *     That if -sub not use parameter of PUB group
+         */
+        bool validateGroup();
+
 
     private:
         // Get the help message

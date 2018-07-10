@@ -222,7 +222,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     // Command line params
     for (i = 0; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-pub")) {
-            _isPublisher = true;
         } else if (IS_OPTION(argv[i], "-scan")) {
             _isScan = true;
 
@@ -395,7 +394,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-enableTurboMode") )
         {
-            _TurboMode = true;
         }
         else if (IS_OPTION(argv[i], "-noXmlQos") ) {
         }
@@ -628,14 +626,14 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_TurboMode) {
+    if (ParameterManager::GetInstance().query<bool>("enableTurboMode")) {
         if (ParameterManager::GetInstance().query<bool>("asynchronous")) {
             fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing.\n");
             return false;
         }
         if (_isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
-            _TurboMode = false;
+            ParameterManager::GetInstance().setValue<bool>("enableTurboMode",false);
         }
     }
 
@@ -649,7 +647,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             return false;
         }
     }
-    if (_isPublisher && _useCft) {
+    if (ParameterManager::GetInstance().query<bool>("pub") && _useCft) {
         fprintf(stderr,
                 "Content Filtered Topic is not a parameter in the publisher side.\n");
     }
@@ -711,7 +709,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
     // Dynamic Data
-    if (_isPublisher) {
+    if (ParameterManager::GetInstance().query<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
         if (_isLargeData
                 || ParameterManager::GetInstance().query<bool>("asynchronous")) {
@@ -725,7 +723,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
     // Turbo Mode / AutoThrottle
-    if (_TurboMode) {
+    if (ParameterManager::GetInstance().query<bool>("enableTurboMode")) {
         stringStream << "\tTurbo Mode: Enabled\n";
     }
     if (ParameterManager::GetInstance().query<bool>("enableAutoThrottle")) {
@@ -1978,7 +1976,7 @@ bool RTIDDSImpl<T>::validateSecureArgs()
 {
     if (_secureUseSecure) {
         if (_securePrivateKeyFile.empty()) {
-            if (_isPublisher) {
+            if (ParameterManager::GetInstance().query<bool>("pub")) {
                 _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_PUB;
             } else {
                 _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_SUB;
@@ -1986,7 +1984,7 @@ bool RTIDDSImpl<T>::validateSecureArgs()
         }
 
         if (_secureCertificateFile.empty()) {
-            if (_isPublisher) {
+            if (ParameterManager::GetInstance().query<bool>("pub")) {
                 _secureCertificateFile = SECURE_CERTIFICATE_FILE_PUB;
             } else {
                 _secureCertificateFile = SECURE_CERTIFICATE_FILE_SUB;
@@ -1998,7 +1996,7 @@ bool RTIDDSImpl<T>::validateSecureArgs()
         }
 
         if (_securePermissionsFile.empty()) {
-            if (_isPublisher) {
+            if (ParameterManager::GetInstance().query<bool>("pub")) {
                 _securePermissionsFile = SECURE_PERMISION_FILE_PUB;
             } else {
                 _securePermissionsFile = SECURE_PERMISION_FILE_SUB;
@@ -2416,7 +2414,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                     "dds.data_writer.auto_throttle.enable", "true", false);
         }
 
-        if (_TurboMode) {
+        if (ParameterManager::GetInstance().query<bool>("enableTurboMode")) {
             DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.enable_turbo_mode", "true", false);
             dw_qos.batch.enable = false;
