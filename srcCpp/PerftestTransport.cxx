@@ -244,12 +244,15 @@ bool configureTcpTransport(
         }
 
         if (serverBindPort != "0") {
-            if (!transport.tcpOptions.publicAddress.empty()) {
+            if (!PM::GetInstance()
+                         .query<std::string>("transportPublicAddress")
+                         .empty()) {
                 if (!addPropertyToParticipantQos(
                         qos,
                         transport.transportConfig.prefixString
                                 + ".public_address",
-                        transport.tcpOptions.publicAddress)) {
+                        PM::GetInstance().query<std::string>(
+                                "transportPublicAddress"))) {
                     return false;
                 }
             } else {
@@ -834,7 +837,8 @@ std::string PerftestTransport::printTransportConfigurationSummary()
                             ? "WAN\n" : "LAN\n");
         if (PM::GetInstance().query<bool>("transportWan")) {
             stringStream << "\tTCP Public Address: "
-                         << tcpOptions.publicAddress << "\n";
+                         << PM::GetInstance().query<std::string>(
+                                "transportPublicAddress") << "\n";
         }
     }
 
@@ -918,15 +922,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
 
         } else if (IS_OPTION(argv[i], "-transportPublicAddress")) {
 
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr,
-                        "%s Missing <address> after "
-                        "-transportPublicAddress\n",
-                        classLoggingString.c_str());
-                return false;
-            }
-
-            tcpOptions.publicAddress = std::string(argv[i]);
+            i++;
 
         }  else if (IS_OPTION(argv[i], "-transportCertAuthority")) {
 

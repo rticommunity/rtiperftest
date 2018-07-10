@@ -67,13 +67,6 @@ struct SecureTransportOptions {
     std::string privateKeyFile;
 };
 
-struct TcpTransportOptions {
-    std::string publicAddress;
-
-    TcpTransportOptions()
-    {}
-};
-
 struct WanTransportOptions {
     std::string wanServerAddress;
     std::string wanServerPort;
@@ -96,8 +89,6 @@ public:
     /* PUBLIC CLASS MEMBERS */
 
     TransportConfig transportConfig;
-    // TCP specific options
-    TcpTransportOptions tcpOptions;
     // Security files
     SecureTransportOptions secureOptions;
     // Wan specific options
