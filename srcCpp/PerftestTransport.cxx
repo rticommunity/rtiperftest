@@ -355,11 +355,14 @@ bool configureWanTransport(
         return false;
     }
 
-    if (!transport.wanOptions.wanServerAddress.empty()) {
+    if (!PM::GetInstance()
+            .query<std::string>("transportWanServerAddress")
+            .empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".server",
-                transport.wanOptions.wanServerAddress)) {
+                PM::GetInstance().query<std::string>(
+                        "transportWanServerAddress"))) {
             return false;
         }
     } else {
@@ -845,7 +848,8 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     if (transportConfig.kind == TRANSPORT_WANv4) {
 
         stringStream << "\tWAN Server Address: "
-                     << wanOptions.wanServerAddress << ":"
+                     << PM::GetInstance().query<std::string>(
+                            "transportWanServerAddress") << ":"
                      << wanOptions.wanServerPort << "\n";
         stringStream << "\tWAN Id: "
                      << wanOptions.wanId << "\n";
@@ -959,15 +963,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
 
         } else if (IS_OPTION(argv[i], "-transportWanServerAddress")) {
 
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr,
-                        "%s Missing <address> after "
-                        "-transportWanServerAddress\n",
-                        classLoggingString.c_str());
-                return false;
-            }
-
-            wanOptions.wanServerAddress = std::string(argv[i]);
+            i++;
 
         } else if (IS_OPTION(argv[i], "-transportWanServerPort")) {
 

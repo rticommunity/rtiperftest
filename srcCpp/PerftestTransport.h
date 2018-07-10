@@ -68,7 +68,6 @@ struct SecureTransportOptions {
 };
 
 struct WanTransportOptions {
-    std::string wanServerAddress;
     std::string wanServerPort;
     std::string wanId;
     bool secureWan;

@@ -135,31 +135,31 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     printf("latencyTest: %d\n", ParameterManager::GetInstance().query<bool>("latencyTest"));
 
 //     //TRANSPORT
-//     printf("nic: %s\n", ParameterManager::GetInstance().query<std::string>("nic").c_str());
-//     printf("transport: %s\n", ParameterManager::GetInstance().query<std::string>("transport").c_str());
-//     printf("multicast: %d\n", ParameterManager::GetInstance().query<bool>("multicast"));
-//     printf("multicastAddr: %s\n", ParameterManager::GetInstance().query<std::string>("multicastAddr").c_str());
-//     printf("transportVerbosity: %s\n", ParameterManager::GetInstance().query<std::string>("transportVerbosity").c_str());
-//     printf("transportServerBindPort: %s\n", ParameterManager::GetInstance().query<std::string>("transportServerBindPort").c_str());
-//     printf("transportWan: %s\n", ParameterManager::GetInstance().query<std::string>("transportWan").c_str());
-//     printf("transportWanServerPort: %s\n", ParameterManager::GetInstance().query<std::string>("transportWanServerPort").c_str());
-//     printf("transportWanId: %s\n", ParameterManager::GetInstance().query<std::string>("transportWanId").c_str());
-//     printf("transportSecureWan: %d\n", ParameterManager::GetInstance().query<bool>("transportSecureWan"));
-//     printf("transportPublicAddress: %s\n", ParameterManager::GetInstance().query<std::string>("transportPublicAddress").c_str());
-//     printf("transportWanServerAddress: %s\n", ParameterManager::GetInstance().query<std::string>("transportWanServerAddress").c_str());
-//     printf("transportCertAuthority: %s\n", ParameterManager::GetInstance().query<std::string>("transportCertAuthority").c_str());
-//     printf("transportCertFile: %s\n", ParameterManager::GetInstance().query<std::string>("transportCertFile").c_str());
-//     printf("transportPrivateKey: %s\n", ParameterManager::GetInstance().query<std::string>("transportPrivateKey").c_str());
+//     printf("nic: %s\n", PM::GetInstance().query<std::string>("nic").c_str());
+//     printf("transport: %s\n", PM::GetInstance().query<std::string>("transport").c_str());
+//     printf("multicast: %d\n", PM::GetInstance().query<bool>("multicast"));
+//     printf("multicastAddr: %s\n", PM::GetInstance().query<std::string>("multicastAddr").c_str());
+//     printf("transportVerbosity: %s\n", PM::GetInstance().query<std::string>("transportVerbosity").c_str());
+//     printf("transportServerBindPort: %s\n", PM::GetInstance().query<std::string>("transportServerBindPort").c_str());
+//     printf("transportWan: %s\n", PM::GetInstance().query<std::string>("transportWan").c_str());
+//     printf("transportWanServerPort: %s\n", PM::GetInstance().query<std::string>("transportWanServerPort").c_str());
+//     printf("transportWanId: %s\n", PM::GetInstance().query<std::string>("transportWanId").c_str());
+//     printf("transportSecureWan: %d\n", PM::GetInstance().query<bool>("transportSecureWan"));
+//     printf("transportPublicAddress: %s\n", PM::GetInstance().query<std::string>("transportPublicAddress").c_str());
+//     printf("transportWanServerAddress: %s\n", PM::GetInstance().query<std::string>("transportWanServerAddress").c_str());
+//     printf("transportCertAuthority: %s\n", PM::GetInstance().query<std::string>("transportCertAuthority").c_str());
+//     printf("transportCertFile: %s\n", PM::GetInstance().query<std::string>("transportCertFile").c_str());
+//     printf("transportPrivateKey: %s\n", PM::GetInstance().query<std::string>("transportPrivateKey").c_str());
 
 //   #ifdef RTI_SECURE_PERFTEST
-//     printf("secureEncryptDiscovery: %d\n", ParameterManager::GetInstance().query<bool>("secureEncryptDiscovery"));
-//     printf("secureSign: %d\n", ParameterManager::GetInstance().query<bool>("secureSign"));
-//     printf("secureEncryptData: %d\n", ParameterManager::GetInstance().query<bool>("secureEncryptData"));
-//     printf("secureGovernanceFile: %s\n", ParameterManager::GetInstance().query<std::string>("secureGovernanceFile").c_str());
-//     printf("securePermissionsFile: %s\n", ParameterManager::GetInstance().query<std::string>("securePermissionsFile").c_str());
-//     printf("secureCertAuthority: %s\n", ParameterManager::GetInstance().query<std::string>("secureCertAuthority").c_str());
-//     printf("secureCertFile: %s\n", ParameterManager::GetInstance().query<std::string>("secureCertFile").c_str());
-//     printf("securePrivateKey: %s\n", ParameterManager::GetInstance().query<std::string>("securePrivateKey").c_str());
+//     printf("secureEncryptDiscovery: %d\n", PM::GetInstance().query<bool>("secureEncryptDiscovery"));
+//     printf("secureSign: %d\n", PM::GetInstance().query<bool>("secureSign"));
+//     printf("secureEncryptData: %d\n", PM::GetInstance().query<bool>("secureEncryptData"));
+//     printf("secureGovernanceFile: %s\n", PM::GetInstance().query<std::string>("secureGovernanceFile").c_str());
+//     printf("securePermissionsFile: %s\n", PM::GetInstance().query<std::string>("securePermissionsFile").c_str());
+//     printf("secureCertAuthority: %s\n", PM::GetInstance().query<std::string>("secureCertAuthority").c_str());
+//     printf("secureCertFile: %s\n", PM::GetInstance().query<std::string>("secureCertFile").c_str());
+//     printf("securePrivateKey: %s\n", PM::GetInstance().query<std::string>("securePrivateKey").c_str());
 //   #endif
 //     return 0;
 
