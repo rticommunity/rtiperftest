@@ -392,7 +392,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-enableAutoThrottle"))
         {
-            _AutoThrottle = true;
         }
         else if (IS_OPTION(argv[i], "-enableTurboMode") )
         {
@@ -729,7 +728,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     if (_TurboMode) {
         stringStream << "\tTurbo Mode: Enabled\n";
     }
-    if (_AutoThrottle) {
+    if (ParameterManager::GetInstance().query<bool>("enableAutoThrottle")) {
         stringStream << "\tAutoThrottle: Enabled\n";
     }
 
@@ -2201,7 +2200,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         return false;
     };
 
-    if (_AutoThrottle) {
+    if (ParameterManager::GetInstance().query<bool>("enableAutoThrottle")) {
         DDSPropertyQosPolicyHelper::add_property(qos.property,
                 "dds.domain_participant.auto_throttle.enable", "true", false);
     }
@@ -2412,7 +2411,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                 _FastHeartbeatPeriod;
         }
 
-        if (_AutoThrottle) {
+        if (ParameterManager::GetInstance().query<bool>("enableAutoThrottle")) {
             DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.auto_throttle.enable", "true", false);
         }

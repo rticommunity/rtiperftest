@@ -98,6 +98,9 @@ int perftest_cpp::Run(int argc, char *argv[])
     if (!ParameterManager::GetInstance().parse(argc, argv)) {
         return -1;
     }
+    // TODO validate that if -pub not use parameter of SUB group
+    // TODO validate that if -sub not use parameter of PUB group
+
 //     printf("batching: %d\n", ParameterManager::GetInstance().query<int>("batching"));
 //     printf("pub: %d\n", ParameterManager::GetInstance().query<bool>("pub"));
 //     printf("sub: %d\n", ParameterManager::GetInstance().query<bool>("sub"));
@@ -114,7 +117,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //         printf("\t%llu\n", cft[i]);
 //     }
 //     printf("pubRate: %d : %s\n", ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").first, ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").second.c_str());
-//     printf("enableAutoThrottle: %d\n", ParameterManager::GetInstance().query<bool>("enableAutoThrottle"));
 //     printf("enableTurboMode: %d\n", ParameterManager::GetInstance().query<bool>("enableTurboMode"));
 
 //     printf("sidMultiSubTest: %d\n", ParameterManager::GetInstance().query<int>("sidMultiSubTest"));
