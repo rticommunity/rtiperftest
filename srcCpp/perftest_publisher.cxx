@@ -107,7 +107,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     for (unsigned int i = 0; i < scan.size(); i++) {
 //         printf("\t%llu\n", scan[i]);
 //     }
-//     printf("unbounded: %d\n", ParameterManager::GetInstance().query<int>("unbounded"));
 //     printf("sendQueueSize: %d\n", ParameterManager::GetInstance().query<int>("sendQueueSize"));
 //     std::vector<unsigned long long> cft = ParameterManager::GetInstance().queryVector<unsigned long long>("cft");
 //     printf("cft: \n");
@@ -168,7 +167,7 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
-    if (_useUnbounded == 0) { //unbounded is not set
+    if (ParameterManager::GetInstance().query<int>("unbounded") == 0) {
         if (ParameterManager::GetInstance().query<bool>("keyed")) {
             _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
         } else {
@@ -298,7 +297,6 @@ perftest_cpp::perftest_cpp()
     _MessagingArgc = 0;
     _LatencyTest = false;
     _pubRate = 0;
-    _useUnbounded = 0;
     _executionTime = 0;
     _displayWriterStats = false;
     _pubRateMethodSpin = true;
@@ -520,49 +518,12 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 fprintf(stderr,"-dataLen must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
                 return false;
             }
-
-            if (_useUnbounded == 0 && _DataLen > (unsigned long)MAX_BOUNDED_SEQ_SIZE) {
-                _useUnbounded = (std::min)(
-                        2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
-            }
         }
         else if (IS_OPTION(argv[i], "-unbounded")) {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
             if ((i == (argc-1)) || *argv[i+1] == '-')
             {
-                _useUnbounded = (std::min)(
-                        2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
             } else {
                 ++i;
-                _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-                if (_MessagingArgv[_MessagingArgc] == NULL) {
-                    fprintf(stderr, "Problem allocating memory\n");
-                    return false;
-                }
-
-                _MessagingArgc++;
-
-                _useUnbounded = strtol(argv[i], NULL, 10);
-
-                if (_useUnbounded < (unsigned long)OVERHEAD_BYTES)
-                {
-                    fprintf(stderr, "-unbounded <allocation_threshold> must be >= %d\n", OVERHEAD_BYTES);
-                    return false;
-                }
-                if (_useUnbounded > (unsigned long)MAX_BOUNDED_SEQ_SIZE)
-                {
-                    fprintf(stderr,"-unbounded <allocation_threshold> must be <= %d\n", MAX_BOUNDED_SEQ_SIZE);
-                    return false;
-                }
             }
         }
         else if (IS_OPTION(argv[i], "-spin"))
@@ -857,24 +818,24 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
     }
 
+    // Manage the parameter: -unbounded
+    if (ParameterManager::GetInstance().isSet("unbounded")) {
+        if (ParameterManager::GetInstance().query<int>("unbounded") == 0) {
+            ParameterManager::GetInstance().setValue<unsigned long long>(
+                    "unbounded",
+                    (std::min)(2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE));
+        }
+    }
+
     if (_isScan) {
+        // TODO sort the scan vector
         _DataLen = _scanDataLenSizes[_scanDataLenSizes.size() - 1]; // Max size
         if (_executionTime == 0){
             _executionTime = 60;
         }
         // Check if large data or small data
-        if (_scanDataLenSizes[0] > (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
+        if (_scanDataLenSizes[0] < (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
                 && _scanDataLenSizes[_scanDataLenSizes.size() - 1] > (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
-            if (_useUnbounded == 0) {
-                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
-            }
-        } else if (_scanDataLenSizes[0] <= (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
-                && _scanDataLenSizes[_scanDataLenSizes.size() - 1] <= (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
-            if (_useUnbounded != 0) {
-                fprintf(stderr, "Unbounded will be ignored since -scan is present.\n");
-                _useUnbounded = 0;
-            }
-        } else {
             fprintf(stderr, "The sizes of -scan [");
             for (unsigned int i = 0; i < _scanDataLenSizes.size(); i++) {
                 fprintf(stderr, "%lu ", _scanDataLenSizes[i]);
@@ -882,6 +843,20 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             fprintf(stderr, "] should be either all smaller or all bigger than %d.\n",
                     (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE));
             return false;
+        }
+    }
+
+    /* Check if we need to enable Large Data. This works also for -scan */
+    if (_DataLen > (unsigned long) (std::min)(
+            MAX_SYNCHRONOUS_SIZE,
+            MAX_BOUNDED_SEQ_SIZE)) {
+        if (ParameterManager::GetInstance().query<int>("unbounded") == 0) {
+            ParameterManager::GetInstance().setValue<unsigned long long>("unbounded", MAX_BOUNDED_SEQ_SIZE);
+        }
+    } else { /* No Large Data */
+        if (ParameterManager::GetInstance().query<int>("unbounded") != 0) {
+            fprintf(stderr, "Unbounded will be ignored since large data is not presented.\n");
+            ParameterManager::GetInstance().setValue<unsigned long long>("unbounded", 0);
         }
     }
 
