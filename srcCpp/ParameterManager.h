@@ -34,7 +34,7 @@ class ParameterManager
 
         // Set the value of a parameter
         template <typename T>
-        void setValue(std::string parameterKey, T var){
+        void set(std::string parameterKey, T var){
             std::map<std::string, AnyParameter>::iterator it;
             it = parameterList.find(parameterKey);
             if (it != parameterList.end()) {
@@ -44,7 +44,7 @@ class ParameterManager
 
         // Get the value of a parameter
         template <typename T>
-        T query(std::string parameterKey)
+        T get(std::string parameterKey)
         {
             std::map<std::string, AnyParameter>::iterator it;
             it = parameterList.find(parameterKey);
@@ -58,7 +58,7 @@ class ParameterManager
 
         // Get a vector with the values of a parameter
         template <typename T>
-        std::vector<T> queryVector(std::string parameterKey)
+        std::vector<T> get_vector(std::string parameterKey)
         {
           std::map<std::string, AnyParameter>::iterator it;
             it = parameterList.find(parameterKey);
@@ -72,7 +72,7 @@ class ParameterManager
 
         // Get a vector with the values of a parameter
         template <typename K, typename V>
-        std::pair<K,V> queryPair(std::string parameterKey)
+        std::pair<K,V> get_pair(std::string parameterKey)
         {
           std::map<std::string, AnyParameter>::iterator it;
             it = parameterList.find(parameterKey);
@@ -88,27 +88,27 @@ class ParameterManager
         bool parse(int argc, char *argv[]);
 
         // Get the help message
-        std::string displayHelp();
+        std::string display_help();
 
         // check -help option
-        bool checkHelp(int argc, char *argv[]);
+        bool check_help(int argc, char *argv[]);
 
         // check if a variable has been set
-        bool isSet(std::string parameterKey);
+        bool is_set(std::string parameterKey);
 
         /*
          * Validate:
          *     That if -pub not use parameter of SUB group
          *     That if -sub not use parameter of PUB group
          */
-        bool validateGroup();
+        bool validate_group();
 
 
     private:
         // Get the help message
-        std::string printCommandLineParameter(ParameterBase *parameterValue);
+        std::string print_command_line_parameter(ParameterBase *parameterValue);
         std::vector<std::string> split(std::string str, char delimiter = ':');
-        std::string getCenterHeaderHelpLine(std::string name);
+        std::string get_center_header_help_line(std::string name);
 
 };
 

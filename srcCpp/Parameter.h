@@ -73,7 +73,7 @@ class ParameterBase  {
         // Validate str Valuesi if not empty
         bool validateStrRange(std::string var);
 
-        std::string printCommandLineParameter();
+        std::string print_command_line_parameter();
 
         // Set members
         virtual void setCommandLineArgument(std::pair <std::string, std::string> var);

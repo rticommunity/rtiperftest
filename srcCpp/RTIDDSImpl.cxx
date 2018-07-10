@@ -551,7 +551,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 
     // Validation
     //Peers
-    if (ParameterManager::GetInstance().queryVector<std::string>("peer").size()
+    if (PM::GetInstance().get_vector<std::string>("peer").size()
             >= RTIPERFTEST_MAX_PEERS) {
         fprintf(stderr,"The maximun of 'initial_peers' is %d\n", RTIPERFTEST_MAX_PEERS);
         return false;
@@ -585,7 +585,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
 
         /* Check if using asynchronous */
-        if (ParameterManager::GetInstance().query<bool>("asynchronous")) {
+        if (PM::GetInstance().get<bool>("asynchronous")) {
             if (isBatchSizeProvided) {
                 fprintf(stderr,
                         "Batching cannot be used with asynchronous writing.\n");
@@ -626,14 +626,14 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (ParameterManager::GetInstance().query<bool>("enableTurboMode")) {
-        if (ParameterManager::GetInstance().query<bool>("asynchronous")) {
+    if (PM::GetInstance().get<bool>("enableTurboMode")) {
+        if (PM::GetInstance().get<bool>("asynchronous")) {
             fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing.\n");
             return false;
         }
         if (_isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
-            ParameterManager::GetInstance().setValue<bool>("enableTurboMode",false);
+            PM::GetInstance().set<bool>("enableTurboMode",false);
         }
     }
 
@@ -647,7 +647,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             return false;
         }
     }
-    if (ParameterManager::GetInstance().query<bool>("pub") && _useCft) {
+    if (PM::GetInstance().get<bool>("pub") && _useCft) {
         fprintf(stderr,
                 "Content Filtered Topic is not a parameter in the publisher side.\n");
     }
@@ -659,8 +659,8 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     };
 
     // Setting verbosity
-    if (ParameterManager::GetInstance().isSet("verbosity")) {
-        switch (ParameterManager::GetInstance().query<int>("verbosity")) {
+    if (PM::GetInstance().is_set("verbosity")) {
+        switch (PM::GetInstance().get<int>("verbosity")) {
             case 0: NDDSConfigLogger::get_instance()->
                         set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_SILENT);
                     fprintf(stderr, "Setting verbosity to SILENT\n");
@@ -697,25 +697,25 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
     // Domain ID
     stringStream << "\tDomain: "
-                 << ParameterManager::GetInstance().query<int>("domain")
+                 << PM::GetInstance().get<int>("domain")
                  << "\n";
 
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
-    if (ParameterManager::GetInstance().query<bool>("dynamicData")) {
+    if (PM::GetInstance().get<bool>("dynamicData")) {
         stringStream << "Yes\n";
     } else {
         stringStream << "No\n";
     }
 
     // Dynamic Data
-    if (ParameterManager::GetInstance().query<bool>("pub")) {
+    if (PM::GetInstance().get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
         if (_isLargeData
-                || ParameterManager::GetInstance().query<bool>("asynchronous")) {
+                || PM::GetInstance().get<bool>("asynchronous")) {
             stringStream << "Yes\n";
             stringStream << "\tFlow Controller: "
-                         << ParameterManager::GetInstance().query<std::string>("flowController")
+                         << PM::GetInstance().get<std::string>("flowController")
                          << "\n";
         } else {
             stringStream << "No\n";
@@ -723,19 +723,19 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
     // Turbo Mode / AutoThrottle
-    if (ParameterManager::GetInstance().query<bool>("enableTurboMode")) {
+    if (PM::GetInstance().get<bool>("enableTurboMode")) {
         stringStream << "\tTurbo Mode: Enabled\n";
     }
-    if (ParameterManager::GetInstance().query<bool>("enableAutoThrottle")) {
+    if (PM::GetInstance().get<bool>("enableAutoThrottle")) {
         stringStream << "\tAutoThrottle: Enabled\n";
     }
 
     // XML File
     stringStream << "\tXML File: ";
-    if (ParameterManager::GetInstance().query<bool>("noXmlQos")) {
+    if (PM::GetInstance().get<bool>("noXmlQos")) {
         stringStream << "Disabled\n";
     } else {
-        stringStream << ParameterManager::GetInstance().query<std::string>("qosFile")
+        stringStream << PM::GetInstance().get<std::string>("qosFile")
                      << "\n";
     }
 
@@ -744,7 +744,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
     // set initial peers and not use multicast
     std::vector<std::string> _peerList =
-            ParameterManager::GetInstance().queryVector<std::string>("peer");
+            PM::GetInstance().get_vector<std::string>("peer");
     if (!_peerList.empty()) {
         stringStream << "\tInitial peers: ";
         for (size_t i = 0; i < _peerList.size(); ++i) {
@@ -1462,11 +1462,11 @@ class RTISubscriber : public IMessagingReader
         if (_reader->get_listener() == NULL) {
             DDS_WaitSetProperty_t property;
             property.max_event_count         =
-                    ParameterManager::GetInstance().query<int>("waitsetEventCount");
+                    PM::GetInstance().get<int>("waitsetEventCount");
             property.max_event_delay.sec     =
-                    ParameterManager::GetInstance().query<unsigned int>("waitsetDelayUsec") / 1000000;
+                    PM::GetInstance().get<unsigned int>("waitsetDelayUsec") / 1000000;
             property.max_event_delay.nanosec =
-                    (ParameterManager::GetInstance().query<unsigned int>("waitsetDelayUsec") % 1000000) * 1000;
+                    (PM::GetInstance().get<unsigned int>("waitsetDelayUsec") % 1000000) * 1000;
 
             _waitset = new DDSWaitSet(property);
 
@@ -1615,11 +1615,11 @@ class RTIDynamicDataSubscriber : public IMessagingReader
 
             DDS_WaitSetProperty_t property;
             property.max_event_count =
-                    ParameterManager::GetInstance().query<int>("waitsetEventCount");
+                    PM::GetInstance().get<int>("waitsetEventCount");
             property.max_event_delay.sec =
-                    ParameterManager::GetInstance().query<unsigned int>("waitsetDelayUsec") / 1000000;
+                    PM::GetInstance().get<unsigned int>("waitsetDelayUsec") / 1000000;
             property.max_event_delay.nanosec =
-                    (ParameterManager::GetInstance().query<unsigned int>("waitsetDelayUsec") % 1000000) * 1000;
+                    (PM::GetInstance().get<unsigned int>("waitsetDelayUsec") % 1000000) * 1000;
             _waitset = new DDSWaitSet(property);
             DDSStatusCondition *reader_status;
             reader_status = reader->get_statuscondition();
@@ -1976,7 +1976,7 @@ bool RTIDDSImpl<T>::validateSecureArgs()
 {
     if (_secureUseSecure) {
         if (_securePrivateKeyFile.empty()) {
-            if (ParameterManager::GetInstance().query<bool>("pub")) {
+            if (PM::GetInstance().get<bool>("pub")) {
                 _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_PUB;
             } else {
                 _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_SUB;
@@ -1984,7 +1984,7 @@ bool RTIDDSImpl<T>::validateSecureArgs()
         }
 
         if (_secureCertificateFile.empty()) {
-            if (ParameterManager::GetInstance().query<bool>("pub")) {
+            if (PM::GetInstance().get<bool>("pub")) {
                 _secureCertificateFile = SECURE_CERTIFICATE_FILE_PUB;
             } else {
                 _secureCertificateFile = SECURE_CERTIFICATE_FILE_SUB;
@@ -1996,7 +1996,7 @@ bool RTIDDSImpl<T>::validateSecureArgs()
         }
 
         if (_securePermissionsFile.empty()) {
-            if (ParameterManager::GetInstance().query<bool>("pub")) {
+            if (PM::GetInstance().get<bool>("pub")) {
                 _securePermissionsFile = SECURE_PERMISION_FILE_PUB;
             } else {
                 _securePermissionsFile = SECURE_PERMISION_FILE_SUB;
@@ -2130,9 +2130,9 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // setup the QOS profile file to be loaded
     _factory->get_qos(factory_qos);
-    if (!ParameterManager::GetInstance().query<bool>("noXmlQos")) {
+    if (!PM::GetInstance().get<bool>("noXmlQos")) {
         factory_qos.profile.url_profile.ensure_length(1, 1);
-        factory_qos.profile.url_profile[0] = DDS_String_dup(ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
+        factory_qos.profile.url_profile[0] = DDS_String_dup(PM::GetInstance().get<std::string>("qosFile").c_str());
     } else {
         factory_qos.profile.string_profile.from_array(
                 PERFTEST_QOS_STRING,
@@ -2143,26 +2143,26 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     if (_factory->reload_profiles() != DDS_RETCODE_OK)
     {
         fprintf(stderr,"Problem opening QOS profiles file %s.\n",
-                ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
+                PM::GetInstance().get<std::string>("qosFile").c_str());
         return false;
     }
 
-    if (_factory->set_default_library(ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str())
+    if (_factory->set_default_library(PM::GetInstance().get<std::string>("qosLibrary").c_str())
              != DDS_RETCODE_OK) {
         fprintf(stderr,"No QOS Library named \"%s\" found in %s.\n",
-               ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
-               ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
+               PM::GetInstance().get<std::string>("qosLibrary").c_str(),
+               PM::GetInstance().get<std::string>("qosFile").c_str());
         return false;
     }
 
     // Configure DDSDomainParticipant QOS
     if (_factory->get_participant_qos_from_profile(
             qos,
-            ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
+            PM::GetInstance().get<std::string>("qosLibrary").c_str(),
             "BaseProfileQos") != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "Problem setting QoS Library \"%s::BaseProfileQos\" for participant_qos.\n",
-                ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str());
+                PM::GetInstance().get<std::string>("qosLibrary").c_str());
     }
 
   #ifdef RTI_SECURE_PERFTEST
@@ -2182,7 +2182,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // set initial peers and not use multicast
     std::vector<std::string> _peerList =
-            ParameterManager::GetInstance().queryVector<std::string>("peer");
+            PM::GetInstance().get_vector<std::string>("peer");
     if (!_peerList.empty()) {
         std::vector<char*> cstrings;
         cstrings.reserve(_peerList.size());
@@ -2198,14 +2198,14 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         return false;
     };
 
-    if (ParameterManager::GetInstance().query<bool>("enableAutoThrottle")) {
+    if (PM::GetInstance().get<bool>("enableAutoThrottle")) {
         DDSPropertyQosPolicyHelper::add_property(qos.property,
                 "dds.domain_participant.auto_throttle.enable", "true", false);
     }
 
     // Creates the participant
     _participant = _factory->create_participant(
-        ParameterManager::GetInstance().query<int>("domain"), qos, listener,
+        PM::GetInstance().get<int>("domain"), qos, listener,
         DDS_INCONSISTENT_TOPIC_STATUS |
         DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
         DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
@@ -2224,7 +2224,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     // Register the types and create the topics
-    if (!ParameterManager::GetInstance().query<bool>("dynamicData")) {
+    if (!PM::GetInstance().get<bool>("dynamicData")) {
         T::TypeSupport::register_type(_participant, _typename);
     } else {
         DDSDynamicDataTypeSupport* dynamicDataTypeSupportObject =
@@ -2236,7 +2236,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // Create the DDSPublisher and DDSSubscriber
     _publisher = _participant->create_publisher_with_profile(
-            ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
+            PM::GetInstance().get<std::string>("qosLibrary").c_str(),
             "BaseProfileQos",
             NULL,
             DDS_STATUS_MASK_NONE);
@@ -2247,7 +2247,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
     _subscriber = _participant->create_subscriber_with_profile(
-            ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
+            PM::GetInstance().get<std::string>("qosLibrary").c_str(),
             "BaseProfileQos",
             NULL,
             DDS_STATUS_MASK_NONE);
@@ -2335,18 +2335,18 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     if (_factory->get_datawriter_qos_from_profile(dw_qos,
-            ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
+            PM::GetInstance().get<std::string>("qosLibrary").c_str(),
             qos_profile.c_str())
         != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
                 qos_profile.c_str(),
-                ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
-                ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
+                PM::GetInstance().get<std::string>("qosLibrary").c_str(),
+                PM::GetInstance().get<std::string>("qosFile").c_str());
         return NULL;
     }
 
-    if (ParameterManager::GetInstance().query<bool>("noPositiveAcks")
+    if (PM::GetInstance().get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_qos.protocol.disable_positive_acks = true;
         if (_KeepDurationUsec != -1) {
@@ -2356,18 +2356,18 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     if (_isLargeData
-            || ParameterManager::GetInstance().query<bool>("asynchronous")) {
+            || PM::GetInstance().get<bool>("asynchronous")) {
         dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
-        if (ParameterManager::GetInstance().query<std::string>("flowController")
+        if (PM::GetInstance().get<std::string>("flowController")
                 != "default") {
             dw_qos.publish_mode.flow_controller_name =
-                    DDS_String_dup(("dds.flow_controller.token_bucket." + ParameterManager::GetInstance().query<std::string>("flowController")).c_str());
+                    DDS_String_dup(("dds.flow_controller.token_bucket." + PM::GetInstance().get<std::string>("flowController")).c_str());
         }
     }
 
     // only force reliability on throughput/latency topics
     if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0) {
-        if (!ParameterManager::GetInstance().query<bool>("bestEffort")) {
+        if (!PM::GetInstance().get<bool>("bestEffort")) {
             // default: use the setting specified in the qos profile
             // dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         }
@@ -2380,7 +2380,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     // These QOS's are only set for the Throughput datawriter
     if (qos_profile == "ThroughputQos") {
 
-        if (ParameterManager::GetInstance().query<bool>("multicast")) {
+        if (PM::GetInstance().get<bool>("multicast")) {
             dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
                     RTI_TRUE;
         }
@@ -2409,12 +2409,12 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                 _FastHeartbeatPeriod;
         }
 
-        if (ParameterManager::GetInstance().query<bool>("enableAutoThrottle")) {
+        if (PM::GetInstance().get<bool>("enableAutoThrottle")) {
             DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.auto_throttle.enable", "true", false);
         }
 
-        if (ParameterManager::GetInstance().query<bool>("enableTurboMode")) {
+        if (PM::GetInstance().get<bool>("enableTurboMode")) {
             DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.enable_turbo_mode", "true", false);
             dw_qos.batch.enable = false;
@@ -2427,9 +2427,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
             = dw_qos.resource_limits.max_samples;
 
         dw_qos.durability.kind =
-                (DDS_DurabilityQosPolicyKind)ParameterManager::GetInstance().query<int>("durability");
+                (DDS_DurabilityQosPolicyKind)PM::GetInstance().get<int>("durability");
         dw_qos.durability.direct_communication =
-                !ParameterManager::GetInstance().query<bool>("noDirectCommunication");
+                !PM::GetInstance().get<bool>("noDirectCommunication");
 
         dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples = _SendQueueSize / 10;
 
@@ -2452,20 +2452,20 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     if (qos_profile == "LatencyQos"
-            && ParameterManager::GetInstance().query<bool>("noDirectCommunication")
-            && (ParameterManager::GetInstance().query<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
-                    || ParameterManager::GetInstance().query<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
+            && PM::GetInstance().get<bool>("noDirectCommunication")
+            && (PM::GetInstance().get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+                    || PM::GetInstance().get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
         dw_qos.durability.kind =
-                (DDS_DurabilityQosPolicyKind)ParameterManager::GetInstance().query<int>("durability");
-        dw_qos.durability.direct_communication = !ParameterManager::GetInstance().query<bool>("noDirectCommunication");
+                (DDS_DurabilityQosPolicyKind)PM::GetInstance().get<int>("durability");
+        dw_qos.durability.direct_communication = !PM::GetInstance().get<bool>("noDirectCommunication");
     }
 
     dw_qos.resource_limits.max_instances = _InstanceCount + 1; // One extra for MAX_CFT_VALUE
     dw_qos.resource_limits.initial_instances = _InstanceCount +1;
 
-    if (ParameterManager::GetInstance().query<int>("unbounded") != 0) {
+    if (PM::GetInstance().get<int>("unbounded") != 0) {
         char buf[10];
-        sprintf(buf, "%d", ParameterManager::GetInstance().query<int>("unbounded"));
+        sprintf(buf, "%d", PM::GetInstance().get<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
                buf, false);
@@ -2490,7 +2490,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (!ParameterManager::GetInstance().query<bool>("dynamicData")) {
+    if (!PM::GetInstance().get<bool>("dynamicData")) {
         return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore, _instancesToBeWritten);
     } else {
         return new RTIDynamicDataPublisher(writer, _InstanceCount, _pongSemaphore, T::TypeSupport::get_typecode(), _instancesToBeWritten);
@@ -2623,21 +2623,21 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     if (_factory->get_datareader_qos_from_profile(dr_qos,
-            ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
+            PM::GetInstance().get<std::string>("qosLibrary").c_str(),
             qos_profile.c_str())
             != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
                 qos_profile.c_str(),
-                ParameterManager::GetInstance().query<std::string>("qosLibrary").c_str(),
-                ParameterManager::GetInstance().query<std::string>("qosFile").c_str());
+                PM::GetInstance().get<std::string>("qosLibrary").c_str(),
+                PM::GetInstance().get<std::string>("qosFile").c_str());
         return NULL;
     }
 
     // only force reliability on throughput/latency topics
     if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0)
     {
-        if (!ParameterManager::GetInstance().query<bool>("bestEffort"))
+        if (!PM::GetInstance().get<bool>("bestEffort"))
         {
             dr_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         }
@@ -2647,7 +2647,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (ParameterManager::GetInstance().query<bool>("noPositiveAcks")
+    if (PM::GetInstance().get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dr_qos.protocol.disable_positive_acks = true;
     }
@@ -2655,14 +2655,14 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     // only apply durability on Throughput datareader
     if (qos_profile == "ThroughputQos"
             || (qos_profile == "LatencyQos"
-                    && ParameterManager::GetInstance().query<bool>("noDirectCommunication")
-                    && (ParameterManager::GetInstance().query<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
-                            || ParameterManager::GetInstance().query<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)))
+                    && PM::GetInstance().get<bool>("noDirectCommunication")
+                    && (PM::GetInstance().get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+                            || PM::GetInstance().get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)))
     {
         dr_qos.durability.kind =
-                (DDS_DurabilityQosPolicyKind) ParameterManager::GetInstance().query<int>("durability");
+                (DDS_DurabilityQosPolicyKind) PM::GetInstance().get<int>("durability");
         dr_qos.durability.direct_communication =
-            !ParameterManager::GetInstance().query<bool>("noDirectCommunication");
+            !PM::GetInstance().get<bool>("noDirectCommunication");
     }
 
     dr_qos.resource_limits.initial_instances = _InstanceCount + 1;
@@ -2680,7 +2680,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (ParameterManager::GetInstance().query<bool>("multicast")
+    if (PM::GetInstance().get<bool>("multicast")
             && _transport.allowsMulticast()) {
         dr_qos.multicast.value.ensure_length(1, 1);
         dr_qos.multicast.value[0].receive_address = DDS_String_dup(
@@ -2699,9 +2699,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         dr_qos.multicast.value[0].transports.length(0);
     }
 
-    if (ParameterManager::GetInstance().query<int>("unbounded") != 0) {
+    if (PM::GetInstance().get<int>("unbounded") != 0) {
         char buf[10];
-        sprintf(buf, "%d", ParameterManager::GetInstance().query<int>("unbounded"));
+        sprintf(buf, "%d", PM::GetInstance().get<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
@@ -2718,7 +2718,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
     if (callback != NULL) {
 
-        if (!ParameterManager::GetInstance().query<bool>("dynamicData")) {
+        if (!PM::GetInstance().get<bool>("dynamicData")) {
             reader = _subscriber->create_datareader(
                     topic_desc,
                     dr_qos,
@@ -2751,7 +2751,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         _reader = reader;
     }
 
-    if (!ParameterManager::GetInstance().query<bool>("dynamicData")) {
+    if (!PM::GetInstance().get<bool>("dynamicData")) {
         return new RTISubscriber<T>(reader);
     } else {
         return new RTIDynamicDataSubscriber<T>(reader);

@@ -85,81 +85,81 @@ int subscriber_main()
 int perftest_cpp::Run(int argc, char *argv[])
 {
     try {
-        ParameterManager::GetInstance().initialize();
+        PM::GetInstance().initialize();
     } catch(std::exception &ex) {
         // call destructor
         // p.shutdown();
-        fprintf(stderr, "Exception in ParameterManager::initialize(): %s.\n", ex.what());
+        fprintf(stderr, "Exception in PMinitialize(): %s.\n", ex.what());
         return -1;
     }
-    if (ParameterManager::GetInstance().checkHelp(argc, argv)) {
+    if (PM::GetInstance().check_help(argc, argv)) {
         return 0;
     }
-    if (!ParameterManager::GetInstance().parse(argc, argv)) {
+    if (!PM::GetInstance().parse(argc, argv)) {
         return -1;
     }
 
-    if (!ParameterManager::GetInstance().validateGroup()) {
+    if (!PM::GetInstance().validate_group()) {
         return -1;
     }
 
-//     printf("batching: %d\n", ParameterManager::GetInstance().query<int>("batching"));
-//     printf("pub: %d\n", ParameterManager::GetInstance().query<bool>("pub"));
-//     printf("sub: %d\n", ParameterManager::GetInstance().query<bool>("sub"));
-//     printf("flowController: %s\n", ParameterManager::GetInstance().query<std::string>("flowController").c_str());
-//     std::vector<unsigned long long> scan = ParameterManager::GetInstance().queryVector<unsigned long long>("scan");
+//     printf("batching: %d\n", PM::GetInstance().get<int>("batching"));
+//     printf("pub: %d\n", PM::GetInstance().get<bool>("pub"));
+//     printf("sub: %d\n", PM::GetInstance().get<bool>("sub"));
+//     printf("flowController: %s\n", PM::GetInstance().get<std::string>("flowController").c_str());
+//     std::vector<unsigned long long> scan = PM::GetInstance().get_vector<unsigned long long>("scan");
 //     printf("scan: \n");
 //     for (unsigned int i = 0; i < scan.size(); i++) {
 //         printf("\t%llu\n", scan[i]);
 //     }
-//     printf("sendQueueSize: %d\n", ParameterManager::GetInstance().query<int>("sendQueueSize"));
-//     std::vector<unsigned long long> cft = ParameterManager::GetInstance().queryVector<unsigned long long>("cft");
+//     printf("sendQueueSize: %d\n", PM::GetInstance().get<int>("sendQueueSize"));
+//     std::vector<unsigned long long> cft = PM::GetInstance().get_vector<unsigned long long>("cft");
 //     printf("cft: \n");
 //     for (unsigned int i = 0; i < cft.size(); i++) {
 //         printf("\t%llu\n", cft[i]);
 //     }
-//     printf("pubRate: %d : %s\n", ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").first, ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").second.c_str());
+//     printf("pubRate: %d : %s\n", PM::GetInstance().get_pair<int, std::string>("pubRate").first, PM::GetInstance().get_pair<int, std::string>("pubRate").second.c_str());
 
-//     printf("sidMultiSubTest: %d\n", ParameterManager::GetInstance().query<int>("sidMultiSubTest"));
-//     printf("pidMultiPubTest: %d\n", ParameterManager::GetInstance().query<int>("pidMultiPubTest"));
-//     printf("dataLen: %d\n", ParameterManager::GetInstance().query<int>("dataLen"));
-//     printf("numIter: %d\n", ParameterManager::GetInstance().query<int>("numIter"));
-//     printf("instances: %d\n", ParameterManager::GetInstance().query<int>("instances"));
-//     printf("writeInstance: %d\n", ParameterManager::GetInstance().query<int>("writeInstance"));
-//     printf("sleep: %d\n", ParameterManager::GetInstance().query<int>("sleep"));
-//     printf("numSubscribers: %d\n", ParameterManager::GetInstance().query<int>("numSubscribers"));
-//     printf("numPublishers: %d\n", ParameterManager::GetInstance().query<int>("numPublishers"));
-//     printf("verbosity: %d\n", ParameterManager::GetInstance().query<int>("verbosity"));
-//     printf("writerStats: %d\n", ParameterManager::GetInstance().query<bool>("writerStats"));
-//     printf("executionTime: %d\n", ParameterManager::GetInstance().query<int>("executionTime"));
-//     printf("latencyTest: %d\n", ParameterManager::GetInstance().query<bool>("latencyTest"));
+//     printf("sidMultiSubTest: %d\n", PM::GetInstance().get<int>("sidMultiSubTest"));
+//     printf("pidMultiPubTest: %d\n", PM::GetInstance().get<int>("pidMultiPubTest"));
+//     printf("dataLen: %d\n", PM::GetInstance().get<int>("dataLen"));
+//     printf("numIter: %d\n", PM::GetInstance().get<int>("numIter"));
+//     printf("instances: %d\n", PM::GetInstance().get<int>("instances"));
+//     printf("writeInstance: %d\n", PM::GetInstance().get<int>("writeInstance"));
+//     printf("sleep: %d\n", PM::GetInstance().get<int>("sleep"));
+//     printf("numSubscribers: %d\n", PM::GetInstance().get<int>("numSubscribers"));
+//     printf("numPublishers: %d\n", PM::GetInstance().get<int>("numPublishers"));
+//     printf("verbosity: %d\n", PM::GetInstance().get<int>("verbosity"));
+//     printf("writerStats: %d\n", PM::GetInstance().get<bool>("writerStats"));
+//     printf("executionTime: %d\n", PM::GetInstance().get<int>("executionTime"));
+//     printf("latencyTest: %d\n", PM::GetInstance().get<bool>("latencyTest"));
 
 //     //TRANSPORT
-//     printf("nic: %s\n", PM::GetInstance().query<std::string>("nic").c_str());
-//     printf("transport: %s\n", PM::GetInstance().query<std::string>("transport").c_str());
-//     printf("multicast: %d\n", PM::GetInstance().query<bool>("multicast"));
-//     printf("multicastAddr: %s\n", PM::GetInstance().query<std::string>("multicastAddr").c_str());
-//     printf("transportVerbosity: %s\n", PM::GetInstance().query<std::string>("transportVerbosity").c_str());
-//     printf("transportServerBindPort: %s\n", PM::GetInstance().query<std::string>("transportServerBindPort").c_str());
-//     printf("transportWan: %s\n", PM::GetInstance().query<std::string>("transportWan").c_str());
-//     printf("transportWanServerPort: %s\n", PM::GetInstance().query<std::string>("transportWanServerPort").c_str());
-//     printf("transportWanId: %s\n", PM::GetInstance().query<std::string>("transportWanId").c_str());
-//     printf("transportSecureWan: %d\n", PM::GetInstance().query<bool>("transportSecureWan"));
-//     printf("transportPublicAddress: %s\n", PM::GetInstance().query<std::string>("transportPublicAddress").c_str());
-//     printf("transportWanServerAddress: %s\n", PM::GetInstance().query<std::string>("transportWanServerAddress").c_str());
-//     printf("transportCertAuthority: %s\n", PM::GetInstance().query<std::string>("transportCertAuthority").c_str());
-//     printf("transportCertFile: %s\n", PM::GetInstance().query<std::string>("transportCertFile").c_str());
-//     printf("transportPrivateKey: %s\n", PM::GetInstance().query<std::string>("transportPrivateKey").c_str());
+//     printf("nic: %s\n", PM::GetInstance().get<std::string>("nic").c_str());
+//     printf("transport: %s\n", PM::GetInstance().get<std::string>("transport").c_str());
+//     printf("multicast: %d\n", PM::GetInstance().get<bool>("multicast"));
+//     printf("multicastAddr: %s\n", PM::GetInstance().get<std::string>("multicastAddr").c_str());
+//     printf("transportVerbosity: %s\n", PM::GetInstance().get<std::string>("transportVerbosity").c_str());
+//     printf("transportServerBindPort: %s\n", PM::GetInstance().get<std::string>("transportServerBindPort").c_str());
+//     printf("transportWan: %s\n", PM::GetInstance().get<std::string>("transportWan").c_str());
+//     printf("transportWanServerPort: %s\n", PM::GetInstance().get<std::string>("transportWanServerPort").c_str());
+//     printf("transportWanId: %s\n", PM::GetInstance().get<std::string>("transportWanId").c_str());
+//     printf("transportSecureWan: %d\n", PM::GetInstance().get<bool>("transportSecureWan"));
+//     printf("transportPublicAddress: %s\n", PM::GetInstance().get<std::string>("transportPublicAddress").c_str());
+//     printf("transportWanServerAddress: %s\n", PM::GetInstance().get<std::string>("transportWanServerAddress").c_str());
+//     printf("transportCertAuthority: %s\n", PM::GetInstance().get<std::string>("transportCertAuthority").c_str());
+//     printf("transportCertFile: %s\n", PM::GetInstance().get<std::string>("transportCertFile").c_str());
+//     printf("transportPrivateKey: %s\n", PM::GetInstance().get<std::string>("transportPrivateKey").c_str());
 
 //   #ifdef RTI_SECURE_PERFTEST
-//     printf("secureEncryptDiscovery: %d\n", PM::GetInstance().query<bool>("secureEncryptDiscovery"));
-//     printf("secureSign: %d\n", PM::GetInstance().query<bool>("secureSign"));
-//     printf("secureEncryptData: %d\n", PM::GetInstance().query<bool>("secureEncryptData"));
-//     printf("secureGovernanceFile: %s\n", PM::GetInstance().query<std::string>("secureGovernanceFile").c_str());
-//     printf("securePermissionsFile: %s\n", PM::GetInstance().query<std::string>("securePermissionsFile").c_str());
-//     printf("secureCertAuthority: %s\n", PM::GetInstance().query<std::string>("secureCertAuthority").c_str());
-//     printf("secureCertFile: %s\n", PM::GetInstance().query<std::string>("secureCertFile").c_str());
-//     printf("securePrivateKey: %s\n", PM::GetInstance().query<std::string>("securePrivateKey").c_str());
+//     printf("secureEncryptDiscovery: %d\n", PM::GetInstance().get<bool>("secureEncryptDiscovery"));
+//     printf("secureSign: %d\n", PM::GetInstance().get<bool>("secureSign"));
+//     printf("secureEncryptData: %d\n", PM::GetInstance().get<bool>("secureEncryptData"));
+//     printf("secureGovernanceFile: %s\n", PM::GetInstance().get<std::string>("secureGovernanceFile").c_str());
+//     printf("securePermissionsFile: %s\n", PM::GetInstance().get<std::string>("securePermissionsFile").c_str());
+//     printf("secureCertAuthority: %s\n", PM::GetInstance().get<std::string>("secureCertAuthority").c_str());
+//     printf("secureCertFile: %s\n", PM::GetInstance().get<std::string>("secureCertFile").c_str());
+//     printf("securePrivateKey: %s\n", PM::GetInstance().get<std::string>("securePrivateKey").c_str());
 //   #endif
 //     return 0;
 
@@ -169,14 +169,14 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
-    if (ParameterManager::GetInstance().query<int>("unbounded") == 0) {
-        if (ParameterManager::GetInstance().query<bool>("keyed")) {
+    if (PM::GetInstance().get<int>("unbounded") == 0) {
+        if (PM::GetInstance().get<bool>("keyed")) {
             _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
         } else {
             _MessagingImpl = new RTIDDSImpl<TestData_t>();
         }
     } else {
-        if (ParameterManager::GetInstance().query<bool>("keyed")) {
+        if (PM::GetInstance().get<bool>("keyed")) {
             _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
         } else {
             _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
@@ -190,7 +190,7 @@ int perftest_cpp::Run(int argc, char *argv[])
 
     PrintConfiguration();
 
-    if (ParameterManager::GetInstance().query<bool>("pub")) {
+    if (PM::GetInstance().get<bool>("pub")) {
         return Publisher();
     } else {
         return Subscriber();
@@ -769,8 +769,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
 
         // With latency test, latency should be 1
-        if(!ParameterManager::GetInstance().isSet("latencyCount")) {
-            ParameterManager::GetInstance().setValue<unsigned long long>("latencyCount",1);
+        if(!PM::GetInstance().is_set("latencyCount")) {
+            PM::GetInstance().set<unsigned long long>("latencyCount",1);
         }
 
         /*
@@ -785,15 +785,15 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if(!ParameterManager::GetInstance().isSet("latencyCount")) {
-        ParameterManager::GetInstance().setValue<unsigned long long>("latencyCount",10000);
+    if(!PM::GetInstance().is_set("latencyCount")) {
+        PM::GetInstance().set<unsigned long long>("latencyCount",10000);
     }
 
-    if (_NumIter < ParameterManager::GetInstance().query<unsigned long long>("latencyCount")) {
+    if (_NumIter < PM::GetInstance().get<unsigned long long>("latencyCount")) {
         fprintf(stderr,
                 "numIter (%llu) must be greater than latencyCount (%llu).\n",
                 _NumIter,
-                ParameterManager::GetInstance().query<unsigned long long>("latencyCount"));
+                PM::GetInstance().get<unsigned long long>("latencyCount"));
         return false;
     }
 
@@ -812,9 +812,9 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     }
 
     // Manage the parameter: -unbounded
-    if (ParameterManager::GetInstance().isSet("unbounded")) {
-        if (ParameterManager::GetInstance().query<int>("unbounded") == 0) {
-            ParameterManager::GetInstance().setValue<unsigned long long>(
+    if (PM::GetInstance().is_set("unbounded")) {
+        if (PM::GetInstance().get<int>("unbounded") == 0) {
+            PM::GetInstance().set<unsigned long long>(
                     "unbounded",
                     (std::min)(2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE));
         }
@@ -843,13 +843,13 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     if (_DataLen > (unsigned long) (std::min)(
             MAX_SYNCHRONOUS_SIZE,
             MAX_BOUNDED_SEQ_SIZE)) {
-        if (ParameterManager::GetInstance().query<int>("unbounded") == 0) {
-            ParameterManager::GetInstance().setValue<unsigned long long>("unbounded", MAX_BOUNDED_SEQ_SIZE);
+        if (PM::GetInstance().get<int>("unbounded") == 0) {
+            PM::GetInstance().set<unsigned long long>("unbounded", MAX_BOUNDED_SEQ_SIZE);
         }
     } else { /* No Large Data */
-        if (ParameterManager::GetInstance().query<int>("unbounded") != 0) {
+        if (PM::GetInstance().get<int>("unbounded") != 0) {
             fprintf(stderr, "Unbounded will be ignored since large data is not presented.\n");
-            ParameterManager::GetInstance().setValue<unsigned long long>("unbounded", 0);
+            PM::GetInstance().set<unsigned long long>("unbounded", 0);
         }
     }
 
@@ -864,7 +864,7 @@ void perftest_cpp::PrintConfiguration()
     std::ostringstream stringStream;
 
     // Throughput/Latency mode
-    if (ParameterManager::GetInstance().query<bool>("pub")) {
+    if (PM::GetInstance().get<bool>("pub")) {
         stringStream << "\nMode: ";
 
         if (_LatencyTest) {
@@ -879,7 +879,7 @@ void perftest_cpp::PrintConfiguration()
 
     // Reliable/Best Effort
     stringStream << "\tReliability: ";
-    if (!ParameterManager::GetInstance().query<bool>("bestEffort")) {
+    if (!PM::GetInstance().get<bool>("bestEffort")) {
         stringStream << "Reliable\n";
     } else {
         stringStream << "Best Effort\n";
@@ -887,23 +887,23 @@ void perftest_cpp::PrintConfiguration()
 
     // Keyed/Unkeyed
     stringStream << "\tKeyed: ";
-    if (ParameterManager::GetInstance().query<bool>("keyed")) {
+    if (PM::GetInstance().get<bool>("keyed")) {
         stringStream << "Yes\n";
     } else {
         stringStream << "No\n";
     }
 
     // Publisher/Subscriber and Entity ID
-    if (ParameterManager::GetInstance().query<bool>("pub")) {
+    if (PM::GetInstance().get<bool>("pub")) {
         stringStream << "\tPublisher ID: " << _PubID << "\n";
     } else {
         stringStream << "\tSubscriber ID: " << _SubID << "\n";
     }
 
-    if (ParameterManager::GetInstance().query<bool>("pub")) {
+    if (PM::GetInstance().get<bool>("pub")) {
         // Latency Count
         stringStream << "\tLatency count: 1 latency sample every "
-                     << ParameterManager::GetInstance().query<unsigned long long>("latencyCount")
+                     << PM::GetInstance().get<unsigned long long>("latencyCount")
                      << " samples\n";
 
         // Scan/Data Sizes
@@ -961,7 +961,7 @@ void perftest_cpp::PrintConfiguration()
 
     // Listener/WaitSets
     stringStream << "\tReceive using: ";
-    if (ParameterManager::GetInstance().query<bool>("useReadThread")) {
+    if (PM::GetInstance().get<bool>("useReadThread")) {
         stringStream << "WaitSets\n";
     } else {
         stringStream << "Listeners\n";
@@ -1115,7 +1115,7 @@ class ThroughputListener : public IMessagingCB
 
             begin_time = perftest_cpp::GetTimeUsec();
 
-            if (!ParameterManager::GetInstance().query<bool>("noPrintIntervals")) {
+            if (!PM::GetInstance().get<bool>("noPrintIntervals")) {
                 printf("\n\n********** New data length is %d\n",
                        message.size + perftest_cpp::OVERHEAD_BYTES);
                 fflush(stdout);
@@ -1178,7 +1178,7 @@ class ThroughputListener : public IMessagingCB
             }
 
             std::string outputCpu = "";
-            if (ParameterManager::GetInstance().query<bool>("cpu")) {
+            if (PM::GetInstance().get<bool>("cpu")) {
                 outputCpu = cpu.get_cpu_average();
             }
             printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
@@ -1246,7 +1246,7 @@ int perftest_cpp::Subscriber()
     }
 
     // Check if using callbacks or read thread
-    if (!ParameterManager::GetInstance().query<bool>("useReadThread")) {
+    if (!PM::GetInstance().get<bool>("useReadThread")) {
         // create latency pong reader
         reader_listener = new ThroughputListener(writer, NULL, _useCft, _NumPublishers);
         reader = _MessagingImpl->CreateReader(
@@ -1325,7 +1325,7 @@ int perftest_cpp::Subscriber()
     unsigned long long msgsent, bytes, last_msgs, last_bytes;
     float missing_packets_percent = 0;
 
-    if (ParameterManager::GetInstance().query<bool>("cpu")) {
+    if (PM::GetInstance().get<bool>("cpu")) {
          reader_listener->cpu.initialize();
     }
 
@@ -1352,7 +1352,7 @@ int perftest_cpp::Subscriber()
             break;
         }
 
-        if (!ParameterManager::GetInstance().query<bool>("noPrintIntervals")) {
+        if (!PM::GetInstance().get<bool>("noPrintIntervals")) {
             if (last_data_length != reader_listener->last_data_length)
             {
                 last_data_length = reader_listener->last_data_length;
@@ -1390,7 +1390,7 @@ int perftest_cpp::Subscriber()
 
             if (last_msgs > 0) {
                 std::string outputCpu = "";
-                if (ParameterManager::GetInstance().query<bool>("cpu")) {
+                if (PM::GetInstance().get<bool>("cpu")) {
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
                 printf("Packets: %8llu  Packets/s: %7llu  Packets/s(ave): %7.0lf  "
@@ -1572,7 +1572,7 @@ class LatencyListener : public IMessagingCB
         latency_ave = (double)latency_sum / count;
         latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-        if (ParameterManager::GetInstance().query<bool>("cpu")) {
+        if (PM::GetInstance().get<bool>("cpu")) {
             outputCpu = cpu.get_cpu_average();
         }
 
@@ -1700,18 +1700,18 @@ class LatencyListener : public IMessagingCB
         {
             last_data_length = message.size;
 
-            if (!ParameterManager::GetInstance().query<bool>("noPrintIntervals")) {
+            if (!PM::GetInstance().get<bool>("noPrintIntervals")) {
                 printf("\n\n********** New data length is %d\n",
                        last_data_length + perftest_cpp::OVERHEAD_BYTES);
             }
         }
         else {
-            if (!ParameterManager::GetInstance().query<bool>("noPrintIntervals")) {
+            if (!PM::GetInstance().get<bool>("noPrintIntervals")) {
                 latency_ave = (double)latency_sum / (double)count;
                 latency_std = sqrt(
                         (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-                if (ParameterManager::GetInstance().query<bool>("cpu")) {
+                if (PM::GetInstance().get<bool>("cpu")) {
                     outputCpu = cpu.get_cpu_instant();
                 }
                 printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us  Min %6lu us  Max %6lu %s\n",
@@ -1790,9 +1790,9 @@ int perftest_cpp::Publisher()
 
     // calculate number of latency pings that will be sent per data size
     num_latency = (unsigned long)((_NumIter/samplesPerBatch) /
-            ParameterManager::GetInstance().query<unsigned long long>("latencyCount"));
+            PM::GetInstance().get<unsigned long long>("latencyCount"));
     if ((_NumIter/samplesPerBatch) %
-            ParameterManager::GetInstance().query<unsigned long long>("latencyCount") > 0) {
+            PM::GetInstance().get<unsigned long long>("latencyCount") > 0) {
         num_latency++;
     }
 
@@ -1806,7 +1806,7 @@ int perftest_cpp::Publisher()
     if (_PubID == 0)
     {
         // Check if using callbacks or read thread
-        if (!ParameterManager::GetInstance().query<bool>("useReadThread")) {
+        if (!PM::GetInstance().get<bool>("useReadThread")) {
             // create latency pong reader
             // the writer is passed for ping-pong notification in LatencyTest
             reader_listener = new LatencyListener(
@@ -1902,7 +1902,7 @@ int perftest_cpp::Publisher()
     message.entity_id = _PubID;
     message.data = new char[(std::max)((int)_DataLen, (int)LENGTH_CHANGED_SIZE)];
 
-    if (ParameterManager::GetInstance().query<bool>("cpu") && _PubID == 0) {
+    if (PM::GetInstance().get<bool>("cpu") && _PubID == 0) {
         reader_listener->cpu.initialize();
     }
 
@@ -2024,7 +2024,7 @@ int perftest_cpp::Publisher()
         // only send latency pings if is publisher with ID 0
         // In batch mode, latency pings are sent once every LatencyCount batches
         if ( (_PubID == 0) && (((loop/samplesPerBatch)
-                % ParameterManager::GetInstance().query<unsigned long long>("latencyCount")) == 0) ) {
+                % PM::GetInstance().get<unsigned long long>("latencyCount")) == 0) ) {
 
             /* In batch mode only send a single ping in a batch.
              *
@@ -2098,7 +2098,7 @@ int perftest_cpp::Publisher()
                 sentPing = true;
 
                 if (_displayWriterStats &&
-                        !ParameterManager::GetInstance().query<bool>("noPrintIntervals")) {
+                        !PM::GetInstance().get<bool>("noPrintIntervals")) {
                     printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
                 }
             }
@@ -2109,7 +2109,7 @@ int perftest_cpp::Publisher()
         message.latency_ping = pingID;
         writer->Send(message);
         if(_LatencyTest && sentPing) {
-            if (!ParameterManager::GetInstance().query<bool>("bestEffort")) {
+            if (!PM::GetInstance().get<bool>("bestEffort")) {
                 writer->waitForPingResponse();
             }
             else {

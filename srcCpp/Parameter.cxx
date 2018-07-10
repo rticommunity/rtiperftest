@@ -165,7 +165,7 @@ PARSEMETHOD ParameterBase::getParseMethod()
 }
 
 // Get the help message
-std::string ParameterBase::printCommandLineParameter()
+std::string ParameterBase::print_command_line_parameter()
 {
     const std::string spaces (42, ' ');
     std::string description = getDescription();

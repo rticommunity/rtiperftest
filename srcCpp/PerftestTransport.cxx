@@ -81,7 +81,7 @@ bool setAllowInterfacesList(
         PerftestTransport &transport,
         DDS_DomainParticipantQos &qos)
 {
-    if (!ParameterManager::GetInstance().query<std::string>("allowInterfaces").empty()) {
+    if (!PM::GetInstance().get<std::string>("allowInterfaces").empty()) {
 
         if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
             fprintf(stderr,
@@ -103,7 +103,7 @@ bool setAllowInterfacesList(
             if (!addPropertyToParticipantQos(
                     qos,
                     propertyName,
-                    ParameterManager::GetInstance().query<std::string>("allowInterfaces"))) {
+                    PM::GetInstance().get<std::string>("allowInterfaces"))) {
                 return false;
             }
 
@@ -113,7 +113,7 @@ bool setAllowInterfacesList(
             if (!addPropertyToParticipantQos(
                     qos,
                     propertyName,
-                    ParameterManager::GetInstance().query<std::string>("allowInterfaces"))) {
+                    PM::GetInstance().get<std::string>("allowInterfaces"))) {
                 return false;
             }
 
@@ -129,7 +129,7 @@ bool setAllowInterfacesList(
             return addPropertyToParticipantQos(
                     qos,
                     propertyName,
-                    ParameterManager::GetInstance().query<std::string>("allowInterfaces"));
+                    PM::GetInstance().get<std::string>("allowInterfaces"));
         }
     }
 
@@ -140,7 +140,7 @@ bool setTransportVerbosity(
         PerftestTransport &transport,
         DDS_DomainParticipantQos &qos)
 {
-    if (!PM::GetInstance().query<std::string>("transportVerbosity").empty()) {
+    if (!PM::GetInstance().get<std::string>("transportVerbosity").empty()) {
         if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
             fprintf(stderr,
                     "%s Ignoring -transportVerbosity option\n",
@@ -169,7 +169,7 @@ bool setTransportVerbosity(
         return addPropertyToParticipantQos(
                 qos,
                 propertyName,
-                PM::GetInstance().query<std::string>("transportVerbosity"));
+                PM::GetInstance().get<std::string>("transportVerbosity"));
     }
     return true;
 }
@@ -215,7 +215,7 @@ bool configureTcpTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos)
 {
-    std::string serverBindPort = ParameterManager::GetInstance().query<std::string>("transportServerBindPort");
+    std::string serverBindPort = PM::GetInstance().get<std::string>("transportServerBindPort");
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
 
     if (!addPropertyToParticipantQos(
@@ -234,7 +234,7 @@ bool configureTcpTransport(
         }
     }
 
-    if (PM::GetInstance().query<bool>("transportWan")) {
+    if (PM::GetInstance().get<bool>("transportWan")) {
 
         if (!assertPropertyToParticipantQos(
                 qos,
@@ -246,13 +246,13 @@ bool configureTcpTransport(
 
         if (serverBindPort != "0") {
             if (!PM::GetInstance()
-                         .query<std::string>("transportPublicAddress")
+                         .get<std::string>("transportPublicAddress")
                          .empty()) {
                 if (!addPropertyToParticipantQos(
                         qos,
                         transport.transportConfig.prefixString
                                 + ".public_address",
-                        PM::GetInstance().query<std::string>(
+                        PM::GetInstance().get<std::string>(
                                 "transportPublicAddress"))) {
                     return false;
                 }
@@ -267,7 +267,7 @@ bool configureTcpTransport(
     }
 
     if (transport.transportConfig.kind == TRANSPORT_TLSv4) {
-        if (PM::GetInstance().query<bool>("transportWan")) {
+        if (PM::GetInstance().get<bool>("transportWan")) {
             if (!assertPropertyToParticipantQos(
                     qos,
                     transport.transportConfig.prefixString
@@ -357,12 +357,12 @@ bool configureWanTransport(
     }
 
     if (!PM::GetInstance()
-            .query<std::string>("transportWanServerAddress")
+            .get<std::string>("transportWanServerAddress")
             .empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".server",
-                PM::GetInstance().query<std::string>(
+                PM::GetInstance().get<std::string>(
                         "transportWanServerAddress"))) {
             return false;
         }
@@ -374,21 +374,21 @@ bool configureWanTransport(
         return false;
     }
 
-    if (!PM::GetInstance().query<std::string>("transportWanServerPort").empty()) {
+    if (!PM::GetInstance().get<std::string>("transportWanServerPort").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".server_port",
-                PM::GetInstance().query<std::string>("transportWanServerPort"))) {
+                PM::GetInstance().get<std::string>("transportWanServerPort"))) {
             return false;
         }
     }
 
-    if (!PM::GetInstance().query<std::string>("transportWanId").empty()) {
+    if (!PM::GetInstance().get<std::string>("transportWanId").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString
                         + ".transport_instance_id",
-                PM::GetInstance().query<std::string>("transportWanId"))) {
+                PM::GetInstance().get<std::string>("transportWanId"))) {
             return false;
         }
     } else {
@@ -396,7 +396,7 @@ bool configureWanTransport(
         return false;
     }
 
-    if (PM::GetInstance().query<bool>("transportSecureWan")) {
+    if (PM::GetInstance().get<bool>("transportSecureWan")) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".enable_security",
@@ -587,7 +587,7 @@ bool configureTransport(
         }
     } else {
         // We are not using the allow interface string, so we clear it
-        ParameterManager::GetInstance().setValue<std::string>("allowInterfaces", std::string(""));
+        PM::GetInstance().set<std::string>("allowInterfaces", std::string(""));
     }
 
     if (!setTransportVerbosity(transport, qos)) {
@@ -683,7 +683,7 @@ bool PerftestTransport::setTransport(std::string transportString)
 void PerftestTransport::populateSecurityFiles() {
 
     if (secureOptions.certificateFile.empty()) {
-        if (ParameterManager::GetInstance().query<bool>("pub")) {
+        if (PM::GetInstance().get<bool>("pub")) {
             secureOptions.certificateFile = TRANSPORT_CERTIFICATE_FILE_PUB;
         } else {
             secureOptions.certificateFile = TRANSPORT_CERTIFICATE_FILE_SUB;
@@ -691,7 +691,7 @@ void PerftestTransport::populateSecurityFiles() {
     }
 
     if (secureOptions.privateKeyFile.empty()) {
-        if (ParameterManager::GetInstance().query<bool>("pub")) {
+        if (PM::GetInstance().get<bool>("pub")) {
             secureOptions.privateKeyFile = TRANSPORT_PRIVATEKEY_FILE_PUB;
         } else {
             secureOptions.privateKeyFile = TRANSPORT_PRIVATEKEY_FILE_SUB;
@@ -807,7 +807,7 @@ std::string PerftestTransport::helpMessageString()
 
 std::string PerftestTransport::printTransportConfigurationSummary()
 {
-    bool useMulticast = ParameterManager::GetInstance().query<bool>("multicast");
+    bool useMulticast = PM::GetInstance().get<bool>("multicast");
                                 std::ostringstream stringStream;
     stringStream << "Transport Configuration:\n";
     stringStream << "\tKind: " << transportConfig.nameString;
@@ -816,8 +816,8 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     }
     stringStream << "\n";
 
-    if (!ParameterManager::GetInstance().query<std::string>("allowInterfaces").empty()) {
-        stringStream << "\tNic: " << ParameterManager::GetInstance().query<std::string>("allowInterfaces") << "\n";
+    if (!PM::GetInstance().get<std::string>("allowInterfaces").empty()) {
+        stringStream << "\tNic: " << PM::GetInstance().get<std::string>("allowInterfaces") << "\n";
     }
 
     stringStream << "\tUse Multicast: "
@@ -831,16 +831,16 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     if (transportConfig.kind == TRANSPORT_TCPv4
             || transportConfig.kind == TRANSPORT_TLSv4) {
         stringStream << "\tTCP Server Bind Port: "
-                     << ParameterManager::GetInstance().query<std::string>(
+                     << PM::GetInstance().get<std::string>(
                                 "transportServerBindPort")
                      << "\n";
 
         stringStream << "\tTCP LAN/WAN mode: "
-                     << (PM::GetInstance().query<bool>("transportWan")
+                     << (PM::GetInstance().get<bool>("transportWan")
                             ? "WAN\n" : "LAN\n");
-        if (PM::GetInstance().query<bool>("transportWan")) {
+        if (PM::GetInstance().get<bool>("transportWan")) {
             stringStream << "\tTCP Public Address: "
-                         << PM::GetInstance().query<std::string>(
+                         << PM::GetInstance().get<std::string>(
                                 "transportPublicAddress") << "\n";
         }
     }
@@ -848,24 +848,24 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     if (transportConfig.kind == TRANSPORT_WANv4) {
 
         stringStream << "\tWAN Server Address: "
-                     << PM::GetInstance().query<std::string>(
+                     << PM::GetInstance().get<std::string>(
                             "transportWanServerAddress")
                      << ":"
-                     << PM::GetInstance().query<std::string>(
+                     << PM::GetInstance().get<std::string>(
                             "transportWanServerPort")
                      << "\n";
         stringStream << "\tWAN Id: "
-                     << PM::GetInstance().query<std::string>("transportWanId")
+                     << PM::GetInstance().get<std::string>("transportWanId")
                      << "\n";
         stringStream << "\tWAN Secure: "
-                     << PM::GetInstance().query<bool>("transportSecureWan")
+                     << PM::GetInstance().get<bool>("transportSecureWan")
                      << "\n";
     }
 
     if (transportConfig.kind == TRANSPORT_TLSv4
             || transportConfig.kind == TRANSPORT_DTLSv4
             || (transportConfig.kind == TRANSPORT_WANv4
-            && PM::GetInstance().query<bool>("transportSecureWan"))) {
+            && PM::GetInstance().get<bool>("transportSecureWan"))) {
         stringStream << "\tCertificate authority file: "
                      << secureOptions.certAuthorityFile << "\n";
         stringStream << "\tCertificate file: "
@@ -874,9 +874,9 @@ std::string PerftestTransport::printTransportConfigurationSummary()
                      << secureOptions.privateKeyFile << "\n";
     }
 
-    if (!PM::GetInstance().query<std::string>("transportVerbosity").empty()) {
+    if (!PM::GetInstance().get<std::string>("transportVerbosity").empty()) {
         stringStream << "\tVerbosity: "
-                << PM::GetInstance().query<std::string>("transportVerbosity")
+                << PM::GetInstance().get<std::string>("transportVerbosity")
                 << "\n";
     }
 
@@ -981,7 +981,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-multicast")) {
             i++;
         } else if (IS_OPTION(argv[i], "-multicastAddr")) {
-            ParameterManager::GetInstance().setValue("multicast", true);
+            PM::GetInstance().set("multicast", true);
             if ((i == (argc - 1)) || *argv[++i] == '-') {
                 fprintf(stderr,
                         "%s Missing <address> after "
@@ -995,15 +995,15 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
         }
     }
 
-    if (ParameterManager::GetInstance()
-                .query<std::string>("allowInterfaces")
+    if (PM::GetInstance()
+                .get<std::string>("allowInterfaces")
                 .empty()) {
-            ParameterManager::GetInstance().setValue<std::string>(
+            PM::GetInstance().set<std::string>(
                     "allowInterfaces",
-                    ParameterManager::GetInstance().query<std::string>("nic"));
+                    PM::GetInstance().get<std::string>("nic"));
     }
 
-    if (!setTransport(ParameterManager::GetInstance().query<std::string>(
+    if (!setTransport(PM::GetInstance().get<std::string>(
                 "transport"))) {
         fprintf(stderr,
                 "%s Error Setting the transport\n",

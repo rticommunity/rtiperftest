@@ -747,7 +747,7 @@ bool ParameterManager::parse(int argc, char *argv[])
 }
 
 // Get the help message
-std::string ParameterManager::displayHelp()
+std::string ParameterManager::display_help()
 {
     std::map<std::string, AnyParameter>::iterator it;
     std::ostringstream oss;
@@ -755,24 +755,24 @@ std::string ParameterManager::displayHelp()
     for (int i = GENERAL; i != RAWTRANSPORT+1; i++) {
         switch (static_cast<GROUP>(i)) {
             case GENERAL:
-                output[static_cast<GROUP>(i)] += getCenterHeaderHelpLine("GENERAL");
+                output[static_cast<GROUP>(i)] += get_center_header_help_line("GENERAL");
                 break;
             case PUB:
-                output[static_cast<GROUP>(i)] += getCenterHeaderHelpLine("PUBLISHER");
+                output[static_cast<GROUP>(i)] += get_center_header_help_line("PUBLISHER");
                 break;
             case SUB:
-                output[static_cast<GROUP>(i)] += getCenterHeaderHelpLine("SUBSCRIBER");
+                output[static_cast<GROUP>(i)] += get_center_header_help_line("SUBSCRIBER");
                 break;
             case TRANSPORT:
-                output[static_cast<GROUP>(i)] += getCenterHeaderHelpLine("TRANSPORT");
+                output[static_cast<GROUP>(i)] += get_center_header_help_line("TRANSPORT");
                 break;
           #ifdef RTI_SECURE_PERFTEST
             case SECURE:
-                output[static_cast<GROUP>(i)] += getCenterHeaderHelpLine("SECURE");
+                output[static_cast<GROUP>(i)] += get_center_header_help_line("SECURE");
                 break;
           #endif
             case RAWTRANSPORT:
-                output[static_cast<GROUP>(i)] += getCenterHeaderHelpLine("RAWTRANSPORT");
+                output[static_cast<GROUP>(i)] += get_center_header_help_line("RAWTRANSPORT");
                 break;
             default:
                 break;
@@ -787,7 +787,7 @@ std::string ParameterManager::displayHelp()
     for (it = parameterList.begin(); it != parameterList.end(); it++) {
         if (!it->second.get()->getInternal()) {
             output[it->second.get()->getGroup()] +=
-                    it->second.get()->printCommandLineParameter();
+                    it->second.get()->print_command_line_parameter();
         }
     }
     std::map<GROUP, std::string>::iterator itOutput;
@@ -799,12 +799,12 @@ std::string ParameterManager::displayHelp()
 }
 
 // check -help option
-bool ParameterManager::checkHelp(int argc, char *argv[])
+bool ParameterManager::check_help(int argc, char *argv[])
 {
     std::vector<std::string> allArgs(argv, argv + argc);
     for (unsigned int i = 1; i < allArgs.size(); i++) {
         if (allArgs[i] == "-help" || allArgs[i] == "-h") {
-            std::cout << displayHelp() <<'\n';
+            std::cout << display_help() <<'\n';
             return true;
         }
     }
@@ -817,7 +817,7 @@ ParameterManager::~ParameterManager()
 }
 
 // check if a variable has been set
-bool ParameterManager::isSet(std::string parameterKey)
+bool ParameterManager::is_set(std::string parameterKey)
 {
     std::map<std::string, AnyParameter>::iterator it;
     it = parameterList.find(parameterKey);
@@ -829,17 +829,17 @@ bool ParameterManager::isSet(std::string parameterKey)
 }
 
 
-bool ParameterManager::validateGroup()
+bool ParameterManager::validate_group()
 {
     bool success = true;
     std::map<std::string, AnyParameter>::iterator it;
     for (it = parameterList.begin(); it != parameterList.end(); it++) {
         if (it->second.get()->getIsSet()) {
-            if (it->second.get()->getGroup() == PUB && GetInstance().query<bool>("sub")) {
+            if (it->second.get()->getGroup() == PUB && GetInstance().get<bool>("sub")) {
                 fprintf(stderr, "Cannot use '%s' while setting '-sub'.\n",
                         it->second.get()->getCommandLineArgument().first.c_str());
                 success = false;
-            } else if (it->second.get()->getGroup() == SUB && GetInstance().query<bool>("pub")) {
+            } else if (it->second.get()->getGroup() == SUB && GetInstance().get<bool>("pub")) {
                 fprintf(stderr, "Cannot use '%s' while setting '-pub'.\n",
                         it->second.get()->getCommandLineArgument().first.c_str());
                 success = false;
@@ -864,7 +864,7 @@ std::vector<std::string> ParameterManager::split(std::string str, char delimiter
     return v;
 }
 
-std::string ParameterManager::getCenterHeaderHelpLine(std::string name){
+std::string ParameterManager::get_center_header_help_line(std::string name){
     name += "Specific Options";
     std::stringstream line;
     unsigned int maxWithLine = 80;
