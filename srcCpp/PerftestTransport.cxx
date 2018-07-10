@@ -233,7 +233,7 @@ bool configureTcpTransport(
         }
     }
 
-    if (transport.tcpOptions.wanNetwork) {
+    if (PM::GetInstance().query<bool>("transportWan")) {
 
         if (!assertPropertyToParticipantQos(
                 qos,
@@ -263,8 +263,7 @@ bool configureTcpTransport(
     }
 
     if (transport.transportConfig.kind == TRANSPORT_TLSv4) {
-
-        if (transport.tcpOptions.wanNetwork) {
+        if (PM::GetInstance().query<bool>("transportWan")) {
             if (!assertPropertyToParticipantQos(
                     qos,
                     transport.transportConfig.prefixString
@@ -831,8 +830,9 @@ std::string PerftestTransport::printTransportConfigurationSummary()
                      << "\n";
 
         stringStream << "\tTCP LAN/WAN mode: "
-                     << (tcpOptions.wanNetwork ? "WAN\n" : "LAN\n");
-        if (tcpOptions.wanNetwork) {
+                     << (PM::GetInstance().query<bool>("transportWan")
+                            ? "WAN\n" : "LAN\n");
+        if (PM::GetInstance().query<bool>("transportWan")) {
             stringStream << "\tTCP Public Address: "
                          << tcpOptions.publicAddress << "\n";
         }
@@ -914,7 +914,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
 
         } else if (IS_OPTION(argv[i], "-transportWan")) {
 
-            tcpOptions.wanNetwork = true;
+            i++;
 
         } else if (IS_OPTION(argv[i], "-transportPublicAddress")) {
 

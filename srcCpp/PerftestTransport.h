@@ -68,11 +68,9 @@ struct SecureTransportOptions {
 };
 
 struct TcpTransportOptions {
-    bool wanNetwork;
     std::string publicAddress;
 
-    TcpTransportOptions() :
-        wanNetwork(false)
+    TcpTransportOptions()
     {}
 };
 
