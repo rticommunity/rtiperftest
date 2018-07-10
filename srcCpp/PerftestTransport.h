@@ -119,7 +119,7 @@ private:
 
     static const std::map<std::string, TransportConfig>& getTransportConfigMap();
     bool setTransport(std::string transportString);
-    void populateSecurityFiles(bool isPublisher);
+    void populateSecurityFiles();
 
 };
 

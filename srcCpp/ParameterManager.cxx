@@ -640,7 +640,7 @@ bool ParameterManager::parse(int argc, char *argv[])
     std::map<std::string, AnyParameter>::iterator it;
     for (unsigned int i = 1; i < allArgs.size(); i++) {
         for (it = parameterList.begin(); it != parameterList.end(); it++) {
-            if (IS_OPTION(allArgs[i].c_str(), it->second.get()->getCommandLineArgument().first.c_str())) { // TODO check for small string compare
+            if (IS_OPTION(allArgs[i].c_str(), it->second.get()->getCommandLineArgument().first.c_str())) {
                 // NumArguments == 0
                 if (it->second.get()->getExtraArgument() == NO) {
                     // Type is T_BOOL
@@ -827,6 +827,28 @@ bool ParameterManager::isSet(std::string parameterKey)
         return false;
     }
 }
+
+
+bool ParameterManager::validateGroup()
+{
+    bool success = true;
+    std::map<std::string, AnyParameter>::iterator it;
+    for (it = parameterList.begin(); it != parameterList.end(); it++) {
+        if (it->second.get()->getIsSet()) {
+            if (it->second.get()->getGroup() == PUB && GetInstance().query<bool>("sub")) {
+                fprintf(stderr, "Cannot use '%s' while setting '-sub'.\n",
+                        it->second.get()->getCommandLineArgument().first.c_str());
+                success = false;
+            } else if (it->second.get()->getGroup() == SUB && GetInstance().query<bool>("pub")) {
+                fprintf(stderr, "Cannot use '%s' while setting '-pub'.\n",
+                        it->second.get()->getCommandLineArgument().first.c_str());
+                success = false;
+            }
+        }
+    }
+    return success;
+}
+
 
 std::vector<std::string> ParameterManager::split(std::string str, char delimiter)
 {

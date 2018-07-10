@@ -92,12 +92,10 @@ class perftest_cpp
   private:
     unsigned long  _DataLen;
     unsigned long long _NumIter;
-    bool _IsPub;
     bool _isScan;
     std::vector<unsigned long> _scanDataLenSizes;
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
-    int  _LatencyCount;
     int  _NumSubscribers;
     int  _NumPublishers;
     unsigned long _InstanceCount;
