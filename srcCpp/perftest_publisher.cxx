@@ -98,8 +98,10 @@ int perftest_cpp::Run(int argc, char *argv[])
     if (!ParameterManager::GetInstance().parse(argc, argv)) {
         return -1;
     }
-    // TODO validate that if -pub not use parameter of SUB group
-    // TODO validate that if -sub not use parameter of PUB group
+
+    if (!ParameterManager::GetInstance().validateGroup()) {
+        return -1;
+    }
 
 //     printf("batching: %d\n", ParameterManager::GetInstance().query<int>("batching"));
 //     printf("pub: %d\n", ParameterManager::GetInstance().query<bool>("pub"));
