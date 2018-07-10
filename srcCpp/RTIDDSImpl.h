@@ -40,7 +40,6 @@ class RTIDDSImpl : public IMessaging
     {
         _SendQueueSize = 50;
         _DataLen = 100;
-        _AutoThrottle = false;
         _TurboMode = false;
         _IsMulticast = false;
         _BatchSize = DEFAULT_THROUGHPUT_BATCH_SIZE; // Default: 8 kBytes
@@ -53,7 +52,6 @@ class RTIDDSImpl : public IMessaging
         _isLargeData = false;
         _isScan = false;
         _isPublisher = false;
-        _useUnbounded = 0;
         _useCft = false;
         _instancesToBeWritten = -1; // By default use round-robin (-1)
         _CFTRange[0] = 0;
@@ -127,7 +125,6 @@ class RTIDDSImpl : public IMessaging
     int          _SendQueueSize;
     unsigned long _DataLen;
     bool         _TurboMode;
-    bool         _AutoThrottle;
     bool         _IsMulticast;
     int _BatchSize;
     unsigned long _InstanceCount;
@@ -139,7 +136,6 @@ class RTIDDSImpl : public IMessaging
     bool         _isLargeData;
     bool         _isScan;
     bool         _isPublisher;
-    unsigned long _useUnbounded;
     bool         _useCft;
     long _instancesToBeWritten;
     unsigned int _CFTRange[2];

@@ -189,7 +189,7 @@ void ParameterManager::initialize()
     cpu->setGroup(GENERAL);
     parameterList["cpu"] = AnyParameter(cpu);
 
-    Parameter<unsigned long long> *unbounded = new Parameter<unsigned long long>(63000);
+    Parameter<unsigned long long> *unbounded = new Parameter<unsigned long long>(0);
     unbounded->setCommandLineArgument(std::make_pair("-unbounded","<allocation_threshold>"));
     unbounded->setDescription("Use unbounded Sequences\n<allocation_threshold> is optional. Default: 63000 Bytes");
     unbounded->setType(T_NUMERIC);
@@ -657,6 +657,7 @@ bool ParameterManager::parse(int argc, char *argv[])
                                 it->second.get()->getCommandLineArgument().first.c_str());
                             return false;
                         } else if (it->second.get()->getExtraArgument() == OPTIONAL) {
+                            it->second.get()->setIsSet(true);
                             break;
                         }
                     }

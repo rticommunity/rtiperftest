@@ -32,6 +32,16 @@ class ParameterManager
         static ParameterManager &GetInstance();
         ~ParameterManager();
 
+        // Set the value of a parameter
+        template <typename T>
+        void setValue(std::string parameterKey, T var){
+            std::map<std::string, AnyParameter>::iterator it;
+            it = parameterList.find(parameterKey);
+            if (it != parameterList.end()) {
+                (static_cast<Parameter<T>*>(parameterList[parameterKey].get<T>()))->setValue(var);
+            }
+        }
+
         // Get the value of a parameter
         template <typename T>
         T query(std::string parameterKey)

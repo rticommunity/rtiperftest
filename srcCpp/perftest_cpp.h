@@ -107,7 +107,6 @@ class perftest_cpp
     bool _LatencyTest;
     int _pubRate;
     bool _pubRateMethodSpin;
-    unsigned long _useUnbounded;
     unsigned int _executionTime;
     bool _displayWriterStats;
     bool _useCft;
@@ -128,7 +127,6 @@ class perftest_cpp
   public:
     static int  _SubID;
     static int  _PubID;
-    static bool _showCpu;
 
     static struct RTIClock *_Clock;
     static struct RTINtpTime _ClockTime_aux;

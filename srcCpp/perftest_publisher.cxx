@@ -20,7 +20,6 @@
 
 int  perftest_cpp::_SubID = 0;
 int  perftest_cpp::_PubID = 0;
-bool perftest_cpp::_showCpu = false;
 
 /* Clock related variables */
 struct RTIClock* perftest_cpp::_Clock = RTIHighResolutionClock_new();
@@ -99,6 +98,9 @@ int perftest_cpp::Run(int argc, char *argv[])
     if (!ParameterManager::GetInstance().parse(argc, argv)) {
         return -1;
     }
+    // TODO validate that if -pub not use parameter of SUB group
+    // TODO validate that if -sub not use parameter of PUB group
+
 //     printf("batching: %d\n", ParameterManager::GetInstance().query<int>("batching"));
 //     printf("pub: %d\n", ParameterManager::GetInstance().query<bool>("pub"));
 //     printf("sub: %d\n", ParameterManager::GetInstance().query<bool>("sub"));
@@ -108,7 +110,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     for (unsigned int i = 0; i < scan.size(); i++) {
 //         printf("\t%llu\n", scan[i]);
 //     }
-//     printf("unbounded: %d\n", ParameterManager::GetInstance().query<int>("unbounded"));
 //     printf("sendQueueSize: %d\n", ParameterManager::GetInstance().query<int>("sendQueueSize"));
 //     std::vector<unsigned long long> cft = ParameterManager::GetInstance().queryVector<unsigned long long>("cft");
 //     printf("cft: \n");
@@ -116,7 +117,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //         printf("\t%llu\n", cft[i]);
 //     }
 //     printf("pubRate: %d : %s\n", ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").first, ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").second.c_str());
-//     printf("enableAutoThrottle: %d\n", ParameterManager::GetInstance().query<bool>("enableAutoThrottle"));
 //     printf("enableTurboMode: %d\n", ParameterManager::GetInstance().query<bool>("enableTurboMode"));
 
 //     printf("sidMultiSubTest: %d\n", ParameterManager::GetInstance().query<int>("sidMultiSubTest"));
@@ -130,7 +130,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     printf("numSubscribers: %d\n", ParameterManager::GetInstance().query<int>("numSubscribers"));
 //     printf("numPublishers: %d\n", ParameterManager::GetInstance().query<int>("numPublishers"));
 //     printf("verbosity: %d\n", ParameterManager::GetInstance().query<int>("verbosity"));
-//     printf("cpu: %d\n", ParameterManager::GetInstance().query<bool>("cpu"));
 //     printf("writerStats: %d\n", ParameterManager::GetInstance().query<bool>("writerStats"));
 //     printf("executionTime: %d\n", ParameterManager::GetInstance().query<int>("executionTime"));
 //     printf("latencyTest: %d\n", ParameterManager::GetInstance().query<bool>("latencyTest"));
@@ -170,7 +169,7 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
-    if (_useUnbounded == 0) { //unbounded is not set
+    if (ParameterManager::GetInstance().query<int>("unbounded") == 0) {
         if (ParameterManager::GetInstance().query<bool>("keyed")) {
             _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
         } else {
@@ -300,7 +299,6 @@ perftest_cpp::perftest_cpp()
     _MessagingArgc = 0;
     _LatencyTest = false;
     _pubRate = 0;
-    _useUnbounded = 0;
     _executionTime = 0;
     _displayWriterStats = false;
     _pubRateMethodSpin = true;
@@ -522,49 +520,12 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 fprintf(stderr,"-dataLen must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
                 return false;
             }
-
-            if (_useUnbounded == 0 && _DataLen > (unsigned long)MAX_BOUNDED_SEQ_SIZE) {
-                _useUnbounded = (std::min)(
-                        2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
-            }
         }
         else if (IS_OPTION(argv[i], "-unbounded")) {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
             if ((i == (argc-1)) || *argv[i+1] == '-')
             {
-                _useUnbounded = (std::min)(
-                        2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
             } else {
                 ++i;
-                _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-                if (_MessagingArgv[_MessagingArgc] == NULL) {
-                    fprintf(stderr, "Problem allocating memory\n");
-                    return false;
-                }
-
-                _MessagingArgc++;
-
-                _useUnbounded = strtol(argv[i], NULL, 10);
-
-                if (_useUnbounded < (unsigned long)OVERHEAD_BYTES)
-                {
-                    fprintf(stderr, "-unbounded <allocation_threshold> must be >= %d\n", OVERHEAD_BYTES);
-                    return false;
-                }
-                if (_useUnbounded > (unsigned long)MAX_BOUNDED_SEQ_SIZE)
-                {
-                    fprintf(stderr,"-unbounded <allocation_threshold> must be <= %d\n", MAX_BOUNDED_SEQ_SIZE);
-                    return false;
-                }
             }
         }
         else if (IS_OPTION(argv[i], "-spin"))
@@ -773,7 +734,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
         } else if (IS_OPTION(argv[i], "-cpu"))
         {
-            _showCpu = true;
         } else if (IS_OPTION(argv[i], "-cft"))
         {
             _useCft = true;
@@ -860,24 +820,24 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
     }
 
+    // Manage the parameter: -unbounded
+    if (ParameterManager::GetInstance().isSet("unbounded")) {
+        if (ParameterManager::GetInstance().query<int>("unbounded") == 0) {
+            ParameterManager::GetInstance().setValue<unsigned long long>(
+                    "unbounded",
+                    (std::min)(2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE));
+        }
+    }
+
     if (_isScan) {
+        // TODO sort the scan vector
         _DataLen = _scanDataLenSizes[_scanDataLenSizes.size() - 1]; // Max size
         if (_executionTime == 0){
             _executionTime = 60;
         }
         // Check if large data or small data
-        if (_scanDataLenSizes[0] > (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
+        if (_scanDataLenSizes[0] < (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
                 && _scanDataLenSizes[_scanDataLenSizes.size() - 1] > (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
-            if (_useUnbounded == 0) {
-                _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
-            }
-        } else if (_scanDataLenSizes[0] <= (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
-                && _scanDataLenSizes[_scanDataLenSizes.size() - 1] <= (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
-            if (_useUnbounded != 0) {
-                fprintf(stderr, "Unbounded will be ignored since -scan is present.\n");
-                _useUnbounded = 0;
-            }
-        } else {
             fprintf(stderr, "The sizes of -scan [");
             for (unsigned int i = 0; i < _scanDataLenSizes.size(); i++) {
                 fprintf(stderr, "%lu ", _scanDataLenSizes[i]);
@@ -885,6 +845,20 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             fprintf(stderr, "] should be either all smaller or all bigger than %d.\n",
                     (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE));
             return false;
+        }
+    }
+
+    /* Check if we need to enable Large Data. This works also for -scan */
+    if (_DataLen > (unsigned long) (std::min)(
+            MAX_SYNCHRONOUS_SIZE,
+            MAX_BOUNDED_SEQ_SIZE)) {
+        if (ParameterManager::GetInstance().query<int>("unbounded") == 0) {
+            ParameterManager::GetInstance().setValue<unsigned long long>("unbounded", MAX_BOUNDED_SEQ_SIZE);
+        }
+    } else { /* No Large Data */
+        if (ParameterManager::GetInstance().query<int>("unbounded") != 0) {
+            fprintf(stderr, "Unbounded will be ignored since large data is not presented.\n");
+            ParameterManager::GetInstance().setValue<unsigned long long>("unbounded", 0);
         }
     }
 
@@ -1212,7 +1186,7 @@ class ThroughputListener : public IMessagingCB
             }
 
             std::string outputCpu = "";
-            if (perftest_cpp::_showCpu) {
+            if (ParameterManager::GetInstance().query<bool>("cpu")) {
                 outputCpu = cpu.get_cpu_average();
             }
             printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
@@ -1359,7 +1333,7 @@ int perftest_cpp::Subscriber()
     unsigned long long msgsent, bytes, last_msgs, last_bytes;
     float missing_packets_percent = 0;
 
-    if (perftest_cpp::_showCpu) {
+    if (ParameterManager::GetInstance().query<bool>("cpu")) {
          reader_listener->cpu.initialize();
     }
 
@@ -1424,7 +1398,7 @@ int perftest_cpp::Subscriber()
 
             if (last_msgs > 0) {
                 std::string outputCpu = "";
-                if (perftest_cpp::_showCpu) {
+                if (ParameterManager::GetInstance().query<bool>("cpu")) {
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
                 printf("Packets: %8llu  Packets/s: %7llu  Packets/s(ave): %7.0lf  "
@@ -1606,7 +1580,7 @@ class LatencyListener : public IMessagingCB
         latency_ave = (double)latency_sum / count;
         latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-        if (perftest_cpp::_showCpu) {
+        if (ParameterManager::GetInstance().query<bool>("cpu")) {
             outputCpu = cpu.get_cpu_average();
         }
 
@@ -1745,7 +1719,7 @@ class LatencyListener : public IMessagingCB
                 latency_std = sqrt(
                         (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-                if (perftest_cpp::_showCpu) {
+                if (ParameterManager::GetInstance().query<bool>("cpu")) {
                     outputCpu = cpu.get_cpu_instant();
                 }
                 printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us  Min %6lu us  Max %6lu %s\n",
@@ -1934,7 +1908,7 @@ int perftest_cpp::Publisher()
     message.entity_id = _PubID;
     message.data = new char[(std::max)((int)_DataLen, (int)LENGTH_CHANGED_SIZE)];
 
-    if ( perftest_cpp::_showCpu && _PubID == 0) {
+    if (ParameterManager::GetInstance().query<bool>("cpu") && _PubID == 0) {
         reader_listener->cpu.initialize();
     }
 

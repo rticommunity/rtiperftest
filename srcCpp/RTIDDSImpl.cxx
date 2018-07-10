@@ -269,30 +269,12 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 fprintf(stderr, "-dataLen must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
                 return false;
             }
-            if (_useUnbounded == 0 && _DataLen > (unsigned long)MAX_BOUNDED_SEQ_SIZE) {
-                _useUnbounded = (std::min)(
-                        2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
-            }
         }
         else if (IS_OPTION(argv[i], "-unbounded")) {
             if ((i == (argc-1)) || *argv[i+1] == '-')
             {
-                _useUnbounded = (std::min)(
-                        2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
             } else {
                 ++i;
-                _useUnbounded = strtol(argv[i], NULL, 10);
-
-                if (_useUnbounded <  (unsigned long)perftest_cpp::OVERHEAD_BYTES)
-                {
-                    fprintf(stderr, "-unbounded <allocation_threshold> must be >= %d\n",  perftest_cpp::OVERHEAD_BYTES);
-                    return false;
-                }
-                if (_useUnbounded > (unsigned long)MAX_BOUNDED_SEQ_SIZE)
-                {
-                    fprintf(stderr,"-unbounded <allocation_threshold> must be <= %d\n", MAX_BOUNDED_SEQ_SIZE);
-                    return false;
-                }
             }
         } else if (IS_OPTION(argv[i], "-sendQueueSize")) {
             if ((i == (argc - 1)) || *argv[++i] == '-') {
@@ -410,7 +392,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-enableAutoThrottle"))
         {
-            _AutoThrottle = true;
         }
         else if (IS_OPTION(argv[i], "-enableTurboMode") )
         {
@@ -588,11 +569,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 MAX_SYNCHRONOUS_SIZE,
                 MAX_BOUNDED_SEQ_SIZE)) {
         _isLargeData = true;
-        if (_useUnbounded == 0) {
-            _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
-        }
     } else { /* No Large Data */
-        _useUnbounded = 0;
         _isLargeData = false;
     }
 
@@ -751,7 +728,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     if (_TurboMode) {
         stringStream << "\tTurbo Mode: Enabled\n";
     }
-    if (_AutoThrottle) {
+    if (ParameterManager::GetInstance().query<bool>("enableAutoThrottle")) {
         stringStream << "\tAutoThrottle: Enabled\n";
     }
 
@@ -2223,7 +2200,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         return false;
     };
 
-    if (_AutoThrottle) {
+    if (ParameterManager::GetInstance().query<bool>("enableAutoThrottle")) {
         DDSPropertyQosPolicyHelper::add_property(qos.property,
                 "dds.domain_participant.auto_throttle.enable", "true", false);
     }
@@ -2434,7 +2411,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                 _FastHeartbeatPeriod;
         }
 
-        if (_AutoThrottle) {
+        if (ParameterManager::GetInstance().query<bool>("enableAutoThrottle")) {
             DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.auto_throttle.enable", "true", false);
         }
@@ -2488,9 +2465,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     dw_qos.resource_limits.max_instances = _InstanceCount + 1; // One extra for MAX_CFT_VALUE
     dw_qos.resource_limits.initial_instances = _InstanceCount +1;
 
-    if (_useUnbounded > 0) {
+    if (ParameterManager::GetInstance().query<int>("unbounded") != 0) {
         char buf[10];
-        sprintf(buf, "%lu", _useUnbounded);
+        sprintf(buf, "%d", ParameterManager::GetInstance().query<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
                buf, false);
@@ -2723,9 +2700,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         dr_qos.multicast.value[0].transports.length(0);
     }
 
-    if (_useUnbounded > 0) {
+    if (ParameterManager::GetInstance().query<int>("unbounded") != 0) {
         char buf[10];
-        sprintf(buf, "%lu", _useUnbounded);
+        sprintf(buf, "%d", ParameterManager::GetInstance().query<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
