@@ -274,7 +274,7 @@ void ParameterManager::initialize()
     numSubscribers->setDescription("Number of subscribers running in test.\nDefault: 1");
     numSubscribers->setType(T_NUMERIC);
     numSubscribers->setExtraArgument(YES);
-    numSubscribers->setRange(1, ULLONG_MAX);
+    numSubscribers->setRange(1, INT_MAX);
     numSubscribers->setGroup(PUB);
     parameterList["numSubscribers"] = AnyParameter(numSubscribers);
 

@@ -908,11 +908,16 @@ class RTIPublisher : public IMessagingWriter
     {
         DDS_PublicationMatchedStatus status;
 
-        while (true)
-        {
-            _writer->get_publication_matched_status(status);
-            if (status.current_count >= numSubscribers)
-            {
+        while (true) {
+            DDS_ReturnCode_t retcode = _writer->get_publication_matched_status(
+                    status);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "WaitForReaders _writer->get_publication_matched_status "
+                        "failed: %d.\n",
+                        retcode);
+            }
+            if (status.current_count >= numSubscribers) {
                 break;
             }
             perftest_cpp::MilliSleep(1000);
@@ -1165,7 +1170,8 @@ public:
         return true;
     }
 
-    void WaitForReaders(int numSubscribers) {
+    void WaitForReaders(int numSubscribers)
+    {
         DDS_PublicationMatchedStatus status;
 
         while (true) {

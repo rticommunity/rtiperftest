@@ -123,7 +123,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     printf("instances: %d\n", PM::GetInstance().get<int>("instances"));
 //     printf("writeInstance: %d\n", PM::GetInstance().get<int>("writeInstance"));
 //     printf("sleep: %d\n", PM::GetInstance().get<int>("sleep"));
-//     printf("numSubscribers: %d\n", PM::GetInstance().get<int>("numSubscribers"));
 //     printf("numPublishers: %d\n", PM::GetInstance().get<int>("numPublishers"));
 //     printf("verbosity: %d\n", PM::GetInstance().get<int>("verbosity"));
 //     printf("writerStats: %d\n", PM::GetInstance().get<bool>("writerStats"));
@@ -282,7 +281,6 @@ perftest_cpp::perftest_cpp()
     _isScan = false;
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
-    _NumSubscribers = 1;
     _NumPublishers = 1;
     _InstanceCount = 1;
     _MessagingImpl = NULL;
@@ -520,12 +518,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-numSubscribers"))
         {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <count> after -numSubscribers\n");
-                return false;
-            }
-            _NumSubscribers = strtol(argv[i], NULL, 10);
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-numPublishers"))
         {
@@ -1842,15 +1835,17 @@ int perftest_cpp::Publisher()
         }
     }
 
-    fprintf(stderr,"Waiting to discover %d subscribers ...\n", _NumSubscribers);
+    fprintf(stderr,
+            "Waiting to discover %d subscribers ...\n",
+            PM::GetInstance().get<int>("numSubscribers"));
     fflush(stderr);
-    writer->WaitForReaders(_NumSubscribers);
+    writer->WaitForReaders(PM::GetInstance().get<int>("numSubscribers"));
 
     // We have to wait until every Subscriber sends an announcement message
     // indicating that it has discovered every Publisher
     fprintf(stderr,"Waiting for subscribers announcement ...\n");
     fflush(stderr);
-    while (_NumSubscribers
+    while (PM::GetInstance().get<int>("numSubscribers")
             > (int)announcement_reader_listener->subscriber_list.size()) {
         MilliSleep(1000);
     }
@@ -2018,7 +2013,8 @@ int perftest_cpp::Publisher()
                     message.size = LENGTH_CHANGED_SIZE;
                     // must set latency_ping so that a subscriber sends us
                     // back the LENGTH_CHANGED_SIZE message
-                    message.latency_ping = num_pings % _NumSubscribers;
+                    message.latency_ping = num_pings %
+                            PM::GetInstance().get<int>("numSubscribers");
 
                     /*
                      * If the Throughput topic is reliable, we can send the packet and do
@@ -2032,7 +2028,7 @@ int perftest_cpp::Publisher()
                      */
                     announcement_reader_listener->subscriber_list.clear();
                     while ((int)announcement_reader_listener->subscriber_list.size()
-                            < _NumSubscribers) {
+                            < PM::GetInstance().get<int>("numSubscribers")) {
                         writer->Send(message, true);
                         writer->Flush();
                         writer->waitForAck(
@@ -2049,7 +2045,8 @@ int perftest_cpp::Publisher()
                 }
 
                 // Each time ask a different subscriber to echo back
-                pingID = num_pings % _NumSubscribers;
+                pingID = num_pings %
+                        PM::GetInstance().get<int>("numSubscribers");
                 unsigned long long now = GetTimeUsec();
                 message.timestamp_sec = (int)((now >> 32) & 0xFFFFFFFF);
                 message.timestamp_usec = (unsigned int)(now & 0xFFFFFFFF);
