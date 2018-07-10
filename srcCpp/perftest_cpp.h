@@ -102,7 +102,6 @@ class perftest_cpp
     IMessaging *_MessagingImpl;
     char **_MessagingArgv;
     int _MessagingArgc;
-    bool _LatencyTest;
     int _pubRate;
     bool _pubRateMethodSpin;
     bool _displayWriterStats;

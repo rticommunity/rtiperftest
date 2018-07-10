@@ -387,7 +387,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-latencyTest"))
         {
-            _LatencyTest = true;
         }
         else if (IS_OPTION(argv[i], "-enableAutoThrottle"))
         {
@@ -575,7 +574,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     if (_BatchSize > 0) {
 
         /* We will not use batching for a latency test */
-        if (_LatencyTest) {
+        if (PM::GetInstance().get<bool>("latencyTest")) {
             if (isBatchSizeProvided) {
                 fprintf(stderr, "Batching cannot be used in a Latency test.\n");
                 return false;
@@ -2124,9 +2123,9 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // only if we run the latency test we need to wait
     // for pongs after sending pings
-    _pongSemaphore = _LatencyTest ?
-        RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL) :
-        NULL;
+    _pongSemaphore = PM::GetInstance().get<bool>("latencyTest") ?
+            RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL) :
+            NULL;
 
     // setup the QOS profile file to be loaded
     _factory->get_qos(factory_qos);

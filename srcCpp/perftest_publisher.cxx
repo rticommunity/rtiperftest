@@ -131,7 +131,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     printf("numPublishers: %d\n", PM::GetInstance().get<int>("numPublishers"));
 //     printf("verbosity: %d\n", PM::GetInstance().get<int>("verbosity"));
 //     printf("writerStats: %d\n", PM::GetInstance().get<bool>("writerStats"));
-//     printf("latencyTest: %d\n", PM::GetInstance().get<bool>("latencyTest"));
 
 //     //TRANSPORT
 //     printf("nic: %s\n", PM::GetInstance().get<std::string>("nic").c_str());
@@ -294,7 +293,6 @@ perftest_cpp::perftest_cpp()
     _MessagingImpl = NULL;
     _MessagingArgv = NULL;
     _MessagingArgc = 0;
-    _LatencyTest = false;
     _pubRate = 0;
     _displayWriterStats = false;
     _pubRateMethodSpin = true;
@@ -618,16 +616,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         else if (IS_OPTION(argv[i], "-bestEffort")) {
         } else if (IS_OPTION(argv[i], "-latencyTest"))
         {
-            _LatencyTest = true;
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-instances"))
         {
@@ -748,7 +736,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if(_LatencyTest) {
+    if(PM::GetInstance().get<bool>("latencyTest")) {
         if(_PubID != 0) {
             fprintf(stderr, "Only the publisher with ID = 0 can run the latency test\n");
             return false;
@@ -853,7 +841,7 @@ void perftest_cpp::PrintConfiguration()
     if (PM::GetInstance().get<bool>("pub")) {
         stringStream << "\nMode: ";
 
-        if (_LatencyTest) {
+        if (PM::GetInstance().get<bool>("latencyTest")) {
             stringStream << "LATENCY TEST (Ping-Pong test)\n";
         } else {
             stringStream << "THROUGHPUT TEST\n"
@@ -1800,7 +1788,7 @@ int perftest_cpp::Publisher()
             reader_listener = new LatencyListener(
                     num_latency,
                     NULL,
-                    _LatencyTest ? writer : NULL);
+                    PM::GetInstance().get<bool>("latencyTest") ? writer : NULL);
             reader = _MessagingImpl->CreateReader(
                     LATENCY_TOPIC_NAME,
                     reader_listener);
@@ -1823,7 +1811,7 @@ int perftest_cpp::Publisher()
             reader_listener = new LatencyListener(
                     num_latency,
                     reader,
-                    _LatencyTest ? writer : NULL);
+                    PM::GetInstance().get<bool>("latencyTest") ? writer : NULL);
 
             RTIOsapiThread_new("ReceiverThread",
                                 RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
@@ -2096,7 +2084,7 @@ int perftest_cpp::Publisher()
         message.seq_num = (unsigned long) loop;
         message.latency_ping = pingID;
         writer->Send(message);
-        if(_LatencyTest && sentPing) {
+        if(PM::GetInstance().get<bool>("latencyTest") && sentPing) {
             if (!PM::GetInstance().get<bool>("bestEffort")) {
                 writer->waitForPingResponse();
             }
