@@ -4,6 +4,7 @@
  */
 
 #include "PerftestTransport.h"
+#include "ParameterManager.h"
 
 /******************************************************************************/
 
@@ -677,10 +678,10 @@ bool PerftestTransport::setTransport(std::string transportString)
     return true;
 }
 
-void PerftestTransport::populateSecurityFiles(bool isPublisher) {
+void PerftestTransport::populateSecurityFiles() {
 
     if (secureOptions.certificateFile.empty()) {
-        if (isPublisher) {
+        if (ParameterManager::GetInstance().query<bool>("pub")) {
             secureOptions.certificateFile = TRANSPORT_CERTIFICATE_FILE_PUB;
         } else {
             secureOptions.certificateFile = TRANSPORT_CERTIFICATE_FILE_SUB;
@@ -688,7 +689,7 @@ void PerftestTransport::populateSecurityFiles(bool isPublisher) {
     }
 
     if (secureOptions.privateKeyFile.empty()) {
-        if (isPublisher) {
+        if (ParameterManager::GetInstance().query<bool>("pub")) {
             secureOptions.privateKeyFile = TRANSPORT_PRIVATEKEY_FILE_PUB;
         } else {
             secureOptions.privateKeyFile = TRANSPORT_PRIVATEKEY_FILE_SUB;
@@ -871,15 +872,12 @@ std::string PerftestTransport::printTransportConfigurationSummary()
 bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
 {
 
-    bool isPublisher = false;
     std::string transportString = "Use XML";
 
     // We will only parse the properties related with transports here.
     for (int i = 0; i < argc; ++i) {
 
         if (IS_OPTION(argv[i], "-pub")) {
-
-            isPublisher = true;
 
         } else if (IS_OPTION(argv[i], "-dataLen")) {
 
@@ -1083,7 +1081,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
     if (transportConfig.kind == TRANSPORT_TLSv4
             || transportConfig.kind == TRANSPORT_DTLSv4
             || transportConfig.kind == TRANSPORT_WANv4) {
-        populateSecurityFiles(isPublisher);
+        populateSecurityFiles();
     }
 
     return true;

@@ -192,7 +192,7 @@ int perftest_cpp::Run(int argc, char *argv[])
 
     PrintConfiguration();
 
-    if (_IsPub) {
+    if (ParameterManager::GetInstance().query<bool>("pub")) {
         return Publisher();
     } else {
         return Subscriber();
@@ -288,7 +288,6 @@ perftest_cpp::perftest_cpp()
 {
     _DataLen = 100;
     _NumIter = 100000000;
-    _IsPub = false;
     _isScan = false;
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
@@ -435,13 +434,9 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     {
         if (IS_OPTION(argv[i], "-pub"))
         {
-            _IsPub = true;
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-            _MessagingArgc++;
         }
         else if (IS_OPTION(argv[i], "-sub"))
         {
-            _IsPub = false;
         }
         else if (IS_OPTION(argv[i], "-sidMultiSubTest"))
         {
@@ -875,7 +870,7 @@ void perftest_cpp::PrintConfiguration()
     std::ostringstream stringStream;
 
     // Throughput/Latency mode
-    if (_IsPub) {
+    if (ParameterManager::GetInstance().query<bool>("pub")) {
         stringStream << "\nMode: ";
 
         if (_LatencyTest) {
@@ -905,13 +900,13 @@ void perftest_cpp::PrintConfiguration()
     }
 
     // Publisher/Subscriber and Entity ID
-    if (_IsPub) {
+    if (ParameterManager::GetInstance().query<bool>("pub")) {
         stringStream << "\tPublisher ID: " << _PubID << "\n";
     } else {
         stringStream << "\tSubscriber ID: " << _SubID << "\n";
     }
 
-    if (_IsPub) {
+    if (ParameterManager::GetInstance().query<bool>("pub")) {
         // Latency Count
         stringStream << "\tLatency count: 1 latency sample every "
                      << _LatencyCount << " samples\n";

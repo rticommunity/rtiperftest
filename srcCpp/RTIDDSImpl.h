@@ -51,7 +51,6 @@ class RTIDDSImpl : public IMessaging
         _IsDebug = false;
         _isLargeData = false;
         _isScan = false;
-        _isPublisher = false;
         _useCft = false;
         _instancesToBeWritten = -1; // By default use round-robin (-1)
         _CFTRange[0] = 0;
@@ -135,7 +134,6 @@ class RTIDDSImpl : public IMessaging
     bool         _IsDebug;
     bool         _isLargeData;
     bool         _isScan;
-    bool         _isPublisher;
     bool         _useCft;
     long _instancesToBeWritten;
     unsigned int _CFTRange[2];

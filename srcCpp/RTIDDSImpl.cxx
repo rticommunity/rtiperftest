@@ -222,7 +222,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     // Command line params
     for (i = 0; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-pub")) {
-            _isPublisher = true;
         } else if (IS_OPTION(argv[i], "-scan")) {
             _isScan = true;
 
@@ -649,7 +648,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             return false;
         }
     }
-    if (_isPublisher && _useCft) {
+    if (ParameterManager::GetInstance().query<bool>("pub") && _useCft) {
         fprintf(stderr,
                 "Content Filtered Topic is not a parameter in the publisher side.\n");
     }
@@ -711,7 +710,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
     // Dynamic Data
-    if (_isPublisher) {
+    if (ParameterManager::GetInstance().query<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
         if (_isLargeData
                 || ParameterManager::GetInstance().query<bool>("asynchronous")) {
@@ -1978,7 +1977,7 @@ bool RTIDDSImpl<T>::validateSecureArgs()
 {
     if (_secureUseSecure) {
         if (_securePrivateKeyFile.empty()) {
-            if (_isPublisher) {
+            if (ParameterManager::GetInstance().query<bool>("pub")) {
                 _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_PUB;
             } else {
                 _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_SUB;
@@ -1986,7 +1985,7 @@ bool RTIDDSImpl<T>::validateSecureArgs()
         }
 
         if (_secureCertificateFile.empty()) {
-            if (_isPublisher) {
+            if (ParameterManager::GetInstance().query<bool>("pub")) {
                 _secureCertificateFile = SECURE_CERTIFICATE_FILE_PUB;
             } else {
                 _secureCertificateFile = SECURE_CERTIFICATE_FILE_SUB;
@@ -1998,7 +1997,7 @@ bool RTIDDSImpl<T>::validateSecureArgs()
         }
 
         if (_securePermissionsFile.empty()) {
-            if (_isPublisher) {
+            if (ParameterManager::GetInstance().query<bool>("pub")) {
                 _securePermissionsFile = SECURE_PERMISION_FILE_PUB;
             } else {
                 _securePermissionsFile = SECURE_PERMISION_FILE_SUB;
