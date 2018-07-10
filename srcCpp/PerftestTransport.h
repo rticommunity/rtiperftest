@@ -67,14 +67,6 @@ struct SecureTransportOptions {
     std::string privateKeyFile;
 };
 
-struct WanTransportOptions {
-    bool secureWan;
-
-    WanTransportOptions() :
-        secureWan(false)
-    {}
-};
-
 /******************************************************************************/
 
 class PerftestTransport {
@@ -87,8 +79,6 @@ public:
     TransportConfig transportConfig;
     // Security files
     SecureTransportOptions secureOptions;
-    // Wan specific options
-    WanTransportOptions wanOptions;
 
     unsigned long dataLen;
 

@@ -395,8 +395,7 @@ bool configureWanTransport(
         return false;
     }
 
-    if (transport.wanOptions.secureWan) {
-
+    if (PM::GetInstance().query<bool>("transportSecureWan")) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".enable_security",
@@ -857,13 +856,15 @@ std::string PerftestTransport::printTransportConfigurationSummary()
         stringStream << "\tWAN Id: "
                      << PM::GetInstance().query<std::string>("transportWanId")
                      << "\n";
-        stringStream << "\tWAN Secure: " << wanOptions.secureWan << "\n";
-
+        stringStream << "\tWAN Secure: "
+                     << PM::GetInstance().query<bool>("transportSecureWan")
+                     << "\n";
     }
 
     if (transportConfig.kind == TRANSPORT_TLSv4
             || transportConfig.kind == TRANSPORT_DTLSv4
-            || (transportConfig.kind == TRANSPORT_WANv4 && wanOptions.secureWan)) {
+            || (transportConfig.kind == TRANSPORT_WANv4
+            && PM::GetInstance().query<bool>("transportSecureWan"))) {
         stringStream << "\tCertificate authority file: "
                      << secureOptions.certAuthorityFile << "\n";
         stringStream << "\tCertificate file: "
@@ -979,7 +980,6 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
 
         } else if (IS_OPTION(argv[i], "-transportSecureWan")) {
 
-            wanOptions.secureWan = true;
 
         } else if (IS_OPTION(argv[i], "-multicast")) {
             i++;
