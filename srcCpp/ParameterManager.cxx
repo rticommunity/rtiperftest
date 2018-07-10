@@ -405,6 +405,15 @@ void ParameterManager::initialize()
     nic->setGroup(TRANSPORT);
     parameterList["nic"] = AnyParameter(nic);
 
+    Parameter<std::string> *allowInterfaces = new Parameter<std::string>();
+    allowInterfaces->setCommandLineArgument(std::make_pair("-allowInterfaces", "<ipaddr>"));
+    allowInterfaces->setDescription("Use only the nic specified by <ipaddr>.\nIf not specified, use all available interfaces");
+    allowInterfaces->setType(T_STR);
+    allowInterfaces->setExtraArgument(YES);
+    allowInterfaces->setGroup(TRANSPORT);
+    allowInterfaces->setInternal(true);
+    parameterList["allowInterfaces"] = AnyParameter(allowInterfaces);
+
     ParameterVector<std::string> * peer = new ParameterVector<std::string>();
     peer->setCommandLineArgument(std::make_pair("-peer","<address>"));
     peer->setDescription("Adds a peer to the peer host address list.\nThis argument may be repeated to indicate multiple peers");

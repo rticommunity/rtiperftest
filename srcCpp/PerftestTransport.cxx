@@ -4,7 +4,7 @@
  */
 
 #include "PerftestTransport.h"
-
+#include "ParameterManager.h"
 /******************************************************************************/
 
 #if defined(RTI_WIN32)
@@ -80,7 +80,7 @@ bool setAllowInterfacesList(
         PerftestTransport &transport,
         DDS_DomainParticipantQos &qos)
 {
-    if (!transport.allowInterfaces.empty()) {
+    if (!ParameterManager::GetInstance().query<std::string>("allowInterfaces").empty()) {
 
         if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
             fprintf(stderr,
@@ -102,7 +102,7 @@ bool setAllowInterfacesList(
             if (!addPropertyToParticipantQos(
                     qos,
                     propertyName,
-                    transport.allowInterfaces)) {
+                    ParameterManager::GetInstance().query<std::string>("allowInterfaces"))) {
                 return false;
             }
 
@@ -112,7 +112,7 @@ bool setAllowInterfacesList(
             if (!addPropertyToParticipantQos(
                     qos,
                     propertyName,
-                    transport.allowInterfaces)) {
+                    ParameterManager::GetInstance().query<std::string>("allowInterfaces"))) {
                 return false;
             }
 
@@ -128,7 +128,7 @@ bool setAllowInterfacesList(
             return addPropertyToParticipantQos(
                     qos,
                     propertyName,
-                    transport.allowInterfaces);
+                    ParameterManager::GetInstance().query<std::string>("allowInterfaces"));
         }
     }
 
@@ -583,7 +583,8 @@ bool configureTransport(
         }
     } else {
         // We are not using the allow interface string, so we clear it
-        transport.allowInterfaces.clear();
+        ParameterManager::GetInstance().query<std::string>("allowInterfaces").clear();
+        printf("allowInterfaces: %s\n", ParameterManager::GetInstance().query<std::string>("allowInterfaces").c_str());
     }
 
     if (!setTransportVerbosity(transport, qos)) {
@@ -813,8 +814,8 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     }
     stringStream << "\n";
 
-    if (!allowInterfaces.empty()) {
-        stringStream << "\tNic: " << allowInterfaces << "\n";
+    if (!ParameterManager::GetInstance().query<std::string>("allowInterfaces").empty()) {
+        stringStream << "\tNic: " << ParameterManager::GetInstance().query<std::string>("allowInterfaces") << "\n";
     }
 
     stringStream << "\tUse Multicast: "
@@ -920,25 +921,11 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
 
         } else if (IS_OPTION(argv[i], "-nic")) {
 
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr,
-                        "%s Missing <address> after -nic\n",
-                        classLoggingString.c_str());
-                return false;
-            }
-
-            allowInterfaces = std::string(argv[i]);
+            i++;
 
         } else if (IS_OPTION(argv[i], "-allowInterfaces")) {
 
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr,
-                        "%s Missing <address> after -allowInterfaces\n",
-                        classLoggingString.c_str());
-                return false;
-            }
-
-            allowInterfaces = std::string(argv[i]);
+            i++;
 
         } else if (IS_OPTION(argv[i], "-transportVerbosity")) {
 

@@ -10,6 +10,7 @@
 #include <map>
 #include <sstream>
 #include "perftest.h"
+//#include "ParameterManager.h" moved to .cxx
 #include "ndds/ndds_cpp.h"
 
 /******************************************************************************/
@@ -99,7 +100,6 @@ public:
     /* PUBLIC CLASS MEMBERS */
 
     TransportConfig transportConfig;
-    std::string allowInterfaces;
     std::string verbosity;
     // TCP specific options
     TcpTransportOptions tcpOptions;
