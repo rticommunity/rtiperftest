@@ -96,7 +96,6 @@ class perftest_cpp
     std::vector<unsigned long> _scanDataLenSizes;
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
-    int  _LatencyCount;
     int  _NumSubscribers;
     int  _NumPublishers;
     unsigned long _InstanceCount;

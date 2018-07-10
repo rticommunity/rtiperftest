@@ -127,7 +127,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     printf("instances: %d\n", ParameterManager::GetInstance().query<int>("instances"));
 //     printf("writeInstance: %d\n", ParameterManager::GetInstance().query<int>("writeInstance"));
 //     printf("sleep: %d\n", ParameterManager::GetInstance().query<int>("sleep"));
-//     printf("latencyCount: %d\n", ParameterManager::GetInstance().query<int>("latencyCount"));
 //     printf("numSubscribers: %d\n", ParameterManager::GetInstance().query<int>("numSubscribers"));
 //     printf("numPublishers: %d\n", ParameterManager::GetInstance().query<int>("numPublishers"));
 //     printf("verbosity: %d\n", ParameterManager::GetInstance().query<int>("verbosity"));
@@ -290,7 +289,6 @@ perftest_cpp::perftest_cpp()
     _isScan = false;
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
-    _LatencyCount = -1;
     _NumSubscribers = 1;
     _NumPublishers = 1;
     _InstanceCount = 1;
@@ -547,12 +545,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-latencyCount"))
         {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr,"Missing <count> after -latencyCount\n");
-                return false;
-            }
-            _LatencyCount = strtol(argv[i], NULL, 10);
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-numSubscribers"))
         {
@@ -776,8 +769,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
 
         // With latency test, latency should be 1
-        if(_LatencyCount == -1) {
-            _LatencyCount = 1;
+        if(!ParameterManager::GetInstance().isSet("latencyCount")) {
+            ParameterManager::GetInstance().setValue<unsigned long long>("latencyCount",1);
         }
 
         /*
@@ -792,13 +785,15 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if(_LatencyCount == -1) {
-        _LatencyCount = 10000;
+    if(!ParameterManager::GetInstance().isSet("latencyCount")) {
+        ParameterManager::GetInstance().setValue<unsigned long long>("latencyCount",10000);
     }
 
-    if ((int)_NumIter < _LatencyCount) {
-        fprintf(stderr, "numIter (%llu) must be greater than latencyCount (%d).\n",
-            _NumIter, _LatencyCount);
+    if (_NumIter < ParameterManager::GetInstance().query<unsigned long long>("latencyCount")) {
+        fprintf(stderr,
+                "numIter (%llu) must be greater than latencyCount (%llu).\n",
+                _NumIter,
+                ParameterManager::GetInstance().query<unsigned long long>("latencyCount"));
         return false;
     }
 
@@ -908,7 +903,8 @@ void perftest_cpp::PrintConfiguration()
     if (ParameterManager::GetInstance().query<bool>("pub")) {
         // Latency Count
         stringStream << "\tLatency count: 1 latency sample every "
-                     << _LatencyCount << " samples\n";
+                     << ParameterManager::GetInstance().query<unsigned long long>("latencyCount")
+                     << " samples\n";
 
         // Scan/Data Sizes
         stringStream << "\tData Size: ";
@@ -1793,8 +1789,10 @@ int perftest_cpp::Publisher()
     samplesPerBatch = GetSamplesPerBatch();
 
     // calculate number of latency pings that will be sent per data size
-    num_latency = (unsigned long)((_NumIter/samplesPerBatch) / _LatencyCount);
-    if ((_NumIter/samplesPerBatch) % _LatencyCount > 0) {
+    num_latency = (unsigned long)((_NumIter/samplesPerBatch) /
+            ParameterManager::GetInstance().query<unsigned long long>("latencyCount"));
+    if ((_NumIter/samplesPerBatch) %
+            ParameterManager::GetInstance().query<unsigned long long>("latencyCount") > 0) {
         num_latency++;
     }
 
@@ -2026,7 +2024,7 @@ int perftest_cpp::Publisher()
         // only send latency pings if is publisher with ID 0
         // In batch mode, latency pings are sent once every LatencyCount batches
         if ( (_PubID == 0) && (((loop/samplesPerBatch)
-                % (unsigned long long)_LatencyCount) == 0) ) {
+                % ParameterManager::GetInstance().query<unsigned long long>("latencyCount")) == 0) ) {
 
             /* In batch mode only send a single ping in a batch.
              *
