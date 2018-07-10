@@ -35,6 +35,15 @@ USE_SECURE_LIBS=0
 # Needed when compiling statically using security
 RTI_OPENSSLHOME=""
 
+#Variables for customType
+custom_type_folder="${idl_location}/customType"
+USE_CUSTOM_TYPE=0
+custom_type="" # Type of the customer
+custom_type_file_name_support="" # Name of the file with the type. "TSupport.h"
+# Intermediate file for including the custom type file #include "file.idl"
+custom_idl_file="${custom_type_folder}/custom.idl"
+
+
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -64,7 +73,7 @@ function usage()
     echo "    --cpp03-build                Only C++ New PSM code generation and           "
     echo "                                 compilation.                                   "
     echo "    --make <path>                Path to the GNU make executable. If this       "
-    echo "                                 parameter is not present, GNU make variable    "
+    echo "                                 parameter is not present, the GNU make variable"
     echo "                                 should be available from your \$PATH variable. "
     echo "    --perl <path>                Path to PERL executable. If this parameter is  "
     echo "                                 not present, the path to PERL should be        "
@@ -85,10 +94,30 @@ function usage()
     echo "    --openssl-home <path>        Path to the openssl home. This will be used    "
     echo "                                 when compiling statically and using security   "
     echo "                                 Default is an empty string (current folder).   "
+    echo "    --customType <type>          Use the Custom type feature with your type.    "
+    echo "                                 See details and examples of use in the         "
+    echo "                                 documentation.                                 "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
     echo ""
+}
+
+function clean_custom_type_files()
+{
+    # Remove generated files of the customer type
+    for file in ${custom_type_folder}/*.idl
+    do
+        if [ -f $file ]; then
+            name_file=$(basename $file)
+            rm -rf ${idl_location}/${name_file}
+            name_file="${name_file%.*}"
+            rm -f "${script_location}"/srcC*/"${name_file}Plugin."*
+            rm -f "${script_location}"/srcC*/"${name_file}."*
+            rm -f "${script_location}"/srcC*/"${name_file}Support."*
+        fi
+    done
+    rm -rf ${custom_idl_file}
 }
 
 function clean()
@@ -113,6 +142,7 @@ function clean()
     rm -rf "${script_location}"/srcJava/jar
     rm -rf "${script_location}"/srcJava/com/rti/perftest/gen
     rm -rf "${script_location}"/bin
+    clean_custom_type_files
     clean_documentation
 
     echo ""
@@ -211,6 +241,58 @@ function additional_defines_calculation()
             echo -e "${INFO_TAG} Using security plugin. Linking Statically."
         fi
     fi
+    if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
+        additional_defines=${additional_defines}" DRTI_CUSTOM_TYPE="${custom_type}" DRTI_CUSTOM_TYPE_FILE_NAME_SUPPORT="${custom_type_file_name_support}
+    fi
+}
+
+# Generate code for the type of the customer.
+# Fill additional source and header files for custom type.
+function build_cpp_custom_type()
+{
+    # Search the file which contains "Struct ${custom_type} {" and include it to ${custom_idl_file}
+    found_idl=false
+    for file in ${custom_type_folder}/*.idl
+    do
+        if [ -f $file ]; then
+            if grep -Fq  "struct "${custom_type}" {" ${file}
+            then # found
+                custom_type_file_name_support=$(basename $file)
+                custom_type_file_name_support=${custom_type_file_name_support%.*}
+                custom_type_file_name_support=${custom_type_file_name_support}"Support.h"
+                echo "#include \"$(basename $file)\"" > ${custom_idl_file}
+                found_idl=true
+            fi
+        fi
+    done
+    if [ "$found_idl" = false ]; then
+        echo -e "${ERROR_TAG} Cannot find an idl file with the ${custom_type} structure for custom type test."
+        exit -1
+    fi
+    cp -rf ${custom_type_folder}/* ${idl_location}/
+    additional_header_files_custom_type="CustomType.h"
+    additional_source_files_custom_type="CustomType.cxx"
+    # Find all the files in the folder ${custom_type_folder}
+    # Run codegen with all those files
+    for file in ${custom_type_folder}/*.idl
+    do
+        if [ -f $file ]; then
+            rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -I ${idl_location} -unboundedSupport -replace -create typefiles -d \"${classic_cpp_folder}\" \"${file}\" "
+            echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+            eval $rtiddsgen_command
+            if [ "$?" != 0 ]; then
+                echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string} with the file ${file}."
+                exit -1
+            fi
+            # Adding the generated file as additional HeaderFiles and SourceFiles
+            name_file=$(basename $file)
+            name_file="${name_file%.*}"
+            additional_header_files_custom_type="${name_file}Plugin.h ${name_file}.h ${name_file}Support.h "$additional_header_files_custom_type
+            additional_source_files_custom_type="${name_file}Plugin.cxx ${name_file}.cxx ${name_file}Support.cxx "$additional_source_files_custom_type
+        fi
+    done
+    # Adding RTI_USE_CUSTOM_TYPE as a macro
+    additional_defines_custom_type=" -D RTI_CUSTOM_TYPE="${custom_type}
 }
 
 function geneate_qos_string()
@@ -236,11 +318,20 @@ function geneate_qos_string()
 
 function build_cpp()
 {
+    ##############################################################################
+    # Generate files for the custom type files
+    additional_defines_custom_type=""
+    additional_header_files_custom_type=""
+    additional_source_files_custom_type=""
+
+    if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
+        build_cpp_custom_type
+    fi
     additional_defines_calculation
-    ############################################################################
+    ##############################################################################
     # Generate files for srcCpp
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles  \"RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"${additional_header_files_custom_type} RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles \"${additional_source_files_custom_type} RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} ${additional_defines_custom_type} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${classic_cpp_lang_string}."
@@ -543,6 +634,16 @@ while [ "$1" != "" ]; do
             ;;
         --secure)
             USE_SECURE_LIBS=1
+            ;;
+        --customType)
+            USE_CUSTOM_TYPE=1
+            custom_type=$2
+            if [ -z "${custom_type}" ]; then
+                echo -e "${ERROR_TAG} --customType should be followed by the name of the type."
+                usage
+                exit -1
+            fi
+            shift
             ;;
         --build-doc)
             build_documentation

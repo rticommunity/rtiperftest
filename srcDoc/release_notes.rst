@@ -51,6 +51,16 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+Ability to use your own type in RTI Perftest
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* now supports the ability to use your own custom type.
+It is possible to measure the performance of your own type.
+
+The Custom Types feature allows you to use your own customized types instead of
+the one provided by RTI Perftest. It is designed in such a way that the number
+of changes in the code and configuration files is minimal.
+
 Build HTML and PDF documentation (#94)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
