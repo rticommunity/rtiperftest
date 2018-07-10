@@ -131,7 +131,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     printf("numPublishers: %d\n", PM::GetInstance().get<int>("numPublishers"));
 //     printf("verbosity: %d\n", PM::GetInstance().get<int>("verbosity"));
 //     printf("writerStats: %d\n", PM::GetInstance().get<bool>("writerStats"));
-//     printf("executionTime: %d\n", PM::GetInstance().get<int>("executionTime"));
 //     printf("latencyTest: %d\n", PM::GetInstance().get<bool>("latencyTest"));
 
 //     //TRANSPORT
@@ -297,7 +296,6 @@ perftest_cpp::perftest_cpp()
     _MessagingArgc = 0;
     _LatencyTest = false;
     _pubRate = 0;
-    _executionTime = 0;
     _displayWriterStats = false;
     _pubRateMethodSpin = true;
     _useCft = false;
@@ -708,19 +706,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-executionTime"))
         {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <seconds> after -executionTime\n");
-                return false;
-            }
-            _executionTime = (unsigned int) strtol(argv[i], NULL, 10);
-
-            if (_executionTime <= 0) {
-                fprintf(stderr,
-                        "-executionTime value must be a positive number greater than 0\n");
-                return false;
-            }
-
+            ++i;
         } else if (IS_OPTION(argv[i], "-cpu"))
         {
         } else if (IS_OPTION(argv[i], "-cft"))
@@ -823,8 +809,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     if (_isScan) {
         // TODO sort the scan vector
         _DataLen = _scanDataLenSizes[_scanDataLenSizes.size() - 1]; // Max size
-        if (_executionTime == 0){
-            _executionTime = 60;
+        if (PM::GetInstance().get<unsigned long long>("executionTime") == 0){
+            PM::GetInstance().set<unsigned long long>("executionTime",60);
         }
         // Check if large data or small data
         if (_scanDataLenSizes[0] < (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
@@ -952,8 +938,10 @@ void perftest_cpp::PrintConfiguration()
             stringStream << "Unlimited (Not set)\n";
         }
         // Execution Time or Num Iter
-        if (_executionTime > 0) {
-            stringStream << "\tExecution time: " << _executionTime << " seconds\n";
+        if (PM::GetInstance().get<unsigned long long>("executionTime") > 0) {
+            stringStream << "\tExecution time: "
+                         << PM::GetInstance().get<unsigned long long>("executionTime")
+                         << " seconds\n";
         } else {
             stringStream << "\tNumber of samples: " << _NumIter << "\n";
         }
@@ -1971,8 +1959,8 @@ int perftest_cpp::Publisher()
         pubRate_sample_period = (unsigned long long)(_pubRate / 100);
     }
 
-    if (_executionTime > 0 && !_isScan) {
-        SetTimeout(_executionTime);
+    if (PM::GetInstance().get<unsigned long long>("executionTime") > 0 && !_isScan) {
+        SetTimeout(PM::GetInstance().get<unsigned long long>("executionTime"));
     }
     /********************
      *  Main sending loop
@@ -2040,10 +2028,10 @@ int perftest_cpp::Publisher()
             if ( current_index_in_batch == ping_index_in_batch  && !sentPing )
             {
                 // If running in scan mode, dataLen under test is changed
-                // after _executionTime
+                // after executionTime
                 if (_isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    SetTimeout(_executionTime, _isScan);
+                    SetTimeout(PM::GetInstance().get<unsigned long long>("executionTime"), _isScan);
 
                     // flush anything that was previously sent
                     writer->Flush();

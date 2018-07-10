@@ -105,7 +105,6 @@ class perftest_cpp
     bool _LatencyTest;
     int _pubRate;
     bool _pubRateMethodSpin;
-    unsigned int _executionTime;
     bool _displayWriterStats;
     bool _useCft;
     static const Perftest_ProductVersion_t _version;
