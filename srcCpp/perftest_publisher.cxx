@@ -119,7 +119,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //         printf("\t%llu\n", cft[i]);
 //     }
 //     printf("pubRate: %d : %s\n", ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").first, ParameterManager::GetInstance().queryPair<int, std::string>("pubRate").second.c_str());
-//     printf("enableTurboMode: %d\n", ParameterManager::GetInstance().query<bool>("enableTurboMode"));
 
 //     printf("sidMultiSubTest: %d\n", ParameterManager::GetInstance().query<int>("sidMultiSubTest"));
 //     printf("pidMultiPubTest: %d\n", ParameterManager::GetInstance().query<int>("pidMultiPubTest"));

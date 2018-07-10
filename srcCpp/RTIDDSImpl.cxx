@@ -394,7 +394,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-enableTurboMode") )
         {
-            _TurboMode = true;
         }
         else if (IS_OPTION(argv[i], "-noXmlQos") ) {
         }
@@ -627,14 +626,14 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_TurboMode) {
+    if (ParameterManager::GetInstance().query<bool>("enableTurboMode")) {
         if (ParameterManager::GetInstance().query<bool>("asynchronous")) {
             fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing.\n");
             return false;
         }
         if (_isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
-            _TurboMode = false;
+            ParameterManager::GetInstance().setValue<bool>("enableTurboMode",false);
         }
     }
 
@@ -724,7 +723,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
     // Turbo Mode / AutoThrottle
-    if (_TurboMode) {
+    if (ParameterManager::GetInstance().query<bool>("enableTurboMode")) {
         stringStream << "\tTurbo Mode: Enabled\n";
     }
     if (ParameterManager::GetInstance().query<bool>("enableAutoThrottle")) {
@@ -2415,7 +2414,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                     "dds.data_writer.auto_throttle.enable", "true", false);
         }
 
-        if (_TurboMode) {
+        if (ParameterManager::GetInstance().query<bool>("enableTurboMode")) {
             DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.enable_turbo_mode", "true", false);
             dw_qos.batch.enable = false;
