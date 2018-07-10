@@ -139,8 +139,7 @@ bool setTransportVerbosity(
         PerftestTransport &transport,
         DDS_DomainParticipantQos &qos)
 {
-    if (!transport.verbosity.empty()) {
-
+    if (!PM::GetInstance().query<std::string>("transportVerbosity").empty()) {
         if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
             fprintf(stderr,
                     "%s Ignoring -transportVerbosity option\n",
@@ -169,7 +168,7 @@ bool setTransportVerbosity(
         return addPropertyToParticipantQos(
                 qos,
                 propertyName,
-                transport.verbosity);
+                PM::GetInstance().query<std::string>("transportVerbosity"));
     }
     return true;
 }
@@ -861,8 +860,10 @@ std::string PerftestTransport::printTransportConfigurationSummary()
                      << secureOptions.privateKeyFile << "\n";
     }
 
-    if (!verbosity.empty()) {
-        stringStream << "\tVerbosity: " << verbosity << "\n";
+    if (!PM::GetInstance().query<std::string>("transportVerbosity").empty()) {
+        stringStream << "\tVerbosity: "
+                << PM::GetInstance().query<std::string>("transportVerbosity")
+                << "\n";
     }
 
     return stringStream.str();
@@ -905,14 +906,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
 
         } else if (IS_OPTION(argv[i], "-transportVerbosity")) {
 
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr,
-                        "%s Missing <level> after -transportVerbosity\n",
-                        classLoggingString.c_str());
-                return false;
-            }
-
-            verbosity = std::string(argv[i]);
+            i++;
 
         } else if (IS_OPTION(argv[i], "-transportServerBindPort")) {
 

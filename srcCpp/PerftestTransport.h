@@ -98,7 +98,6 @@ public:
     /* PUBLIC CLASS MEMBERS */
 
     TransportConfig transportConfig;
-    std::string verbosity;
     // TCP specific options
     TcpTransportOptions tcpOptions;
     // Security files
