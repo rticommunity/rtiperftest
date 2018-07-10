@@ -150,7 +150,7 @@ void ParameterManager::initialize()
     waitsetDelayUsec->setType(T_NUMERIC);
     waitsetDelayUsec->setExtraArgument(YES);
     waitsetDelayUsec->setGroup(GENERAL);
-    waitsetDelayUsec->setRange(0, ULLONG_MAX);
+    waitsetDelayUsec->setRange(0, UINT_MAX);
     parameterList["waitsetDelayUsec"] = AnyParameter(waitsetDelayUsec);
 
     Parameter<unsigned long long> *waitsetEventCount = new Parameter<unsigned long long>(5);
@@ -159,7 +159,7 @@ void ParameterManager::initialize()
     waitsetEventCount->setType(T_NUMERIC);
     waitsetEventCount->setExtraArgument(YES);
     waitsetEventCount->setGroup(GENERAL);
-    waitsetEventCount->setRange(0, ULLONG_MAX);
+    waitsetEventCount->setRange(1, ULLONG_MAX);
     parameterList["waitsetEventCount"] = AnyParameter(waitsetEventCount);
 
     Parameter<bool> *asynchronous = new Parameter<bool>(false);

@@ -808,7 +808,7 @@ std::string PerftestTransport::helpMessageString()
 std::string PerftestTransport::printTransportConfigurationSummary()
 {
     bool useMulticast = PM::GetInstance().get<bool>("multicast");
-                                std::ostringstream stringStream;
+    std::ostringstream stringStream;
     stringStream << "Transport Configuration:\n";
     stringStream << "\tKind: " << transportConfig.nameString;
     if (transportConfig.takenFromQoS) {
@@ -817,7 +817,9 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     stringStream << "\n";
 
     if (!PM::GetInstance().get<std::string>("allowInterfaces").empty()) {
-        stringStream << "\tNic: " << PM::GetInstance().get<std::string>("allowInterfaces") << "\n";
+        stringStream << "\tNic: "
+                     << PM::GetInstance().get<std::string>("allowInterfaces")
+                     << "\n";
     }
 
     stringStream << "\tUse Multicast: "
@@ -876,8 +878,8 @@ std::string PerftestTransport::printTransportConfigurationSummary()
 
     if (!PM::GetInstance().get<std::string>("transportVerbosity").empty()) {
         stringStream << "\tVerbosity: "
-                << PM::GetInstance().get<std::string>("transportVerbosity")
-                << "\n";
+                     << PM::GetInstance().get<std::string>("transportVerbosity")
+                     << "\n";
     }
 
     return stringStream.str();

@@ -1461,9 +1461,9 @@ class RTISubscriber : public IMessagingReader
         // null listener means using receive thread
         if (_reader->get_listener() == NULL) {
             DDS_WaitSetProperty_t property;
-            property.max_event_count         =
-                    PM::GetInstance().get<int>("waitsetEventCount");
-            property.max_event_delay.sec     =
+            property.max_event_count =
+                    PM::GetInstance().get<unsigned long long>("waitsetEventCount");
+            property.max_event_delay.sec =
                     PM::GetInstance().get<unsigned int>("waitsetDelayUsec") / 1000000;
             property.max_event_delay.nanosec =
                     (PM::GetInstance().get<unsigned int>("waitsetDelayUsec") % 1000000) * 1000;
@@ -2132,7 +2132,8 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     _factory->get_qos(factory_qos);
     if (!PM::GetInstance().get<bool>("noXmlQos")) {
         factory_qos.profile.url_profile.ensure_length(1, 1);
-        factory_qos.profile.url_profile[0] = DDS_String_dup(PM::GetInstance().get<std::string>("qosFile").c_str());
+        factory_qos.profile.url_profile[0] =
+                DDS_String_dup(PM::GetInstance().get<std::string>("qosFile").c_str());
     } else {
         factory_qos.profile.string_profile.from_array(
                 PERFTEST_QOS_STRING,
@@ -2205,10 +2206,10 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // Creates the participant
     _participant = _factory->create_participant(
-        PM::GetInstance().get<int>("domain"), qos, listener,
-        DDS_INCONSISTENT_TOPIC_STATUS |
-        DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
-        DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
+            PM::GetInstance().get<int>("domain"), qos, listener,
+            DDS_INCONSISTENT_TOPIC_STATUS |
+            DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
+            DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
 
     if (_participant == NULL || _loggerDevice.checkShmemErrors()) {
         if (_loggerDevice.checkShmemErrors()) {
@@ -2361,7 +2362,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         if (PM::GetInstance().get<std::string>("flowController")
                 != "default") {
             dw_qos.publish_mode.flow_controller_name =
-                    DDS_String_dup(("dds.flow_controller.token_bucket." + PM::GetInstance().get<std::string>("flowController")).c_str());
+                    DDS_String_dup(("dds.flow_controller.token_bucket." +
+                    PM::GetInstance().get<std::string>("flowController")).c_str());
         }
     }
 
@@ -2457,7 +2459,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                     || PM::GetInstance().get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
         dw_qos.durability.kind =
                 (DDS_DurabilityQosPolicyKind)PM::GetInstance().get<int>("durability");
-        dw_qos.durability.direct_communication = !PM::GetInstance().get<bool>("noDirectCommunication");
+        dw_qos.durability.direct_communication =
+                !PM::GetInstance().get<bool>("noDirectCommunication");
     }
 
     dw_qos.resource_limits.max_instances = _InstanceCount + 1; // One extra for MAX_CFT_VALUE
@@ -2637,12 +2640,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     // only force reliability on throughput/latency topics
     if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0)
     {
-        if (!PM::GetInstance().get<bool>("bestEffort"))
-        {
+        if (!PM::GetInstance().get<bool>("bestEffort")) {
             dr_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
-        }
-        else
-        {
+        } else {
             dr_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
         }
     }

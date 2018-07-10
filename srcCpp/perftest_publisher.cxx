@@ -89,7 +89,7 @@ int perftest_cpp::Run(int argc, char *argv[])
     } catch(std::exception &ex) {
         // call destructor
         // p.shutdown();
-        fprintf(stderr, "Exception in PMinitialize(): %s.\n", ex.what());
+        fprintf(stderr, "Exception in PM::GetInstance().initialize(): %s.\n", ex.what());
         return -1;
     }
     if (PM::GetInstance().check_help(argc, argv)) {
