@@ -51,6 +51,22 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+Allow 3 differents addresses for -multicastAddr feature (#97)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous version of *RTI Perftest*, `-multicatAddr` command line parameter
+only supported a single address as input.
+
+`-multicastAddr` option now supports one or tree diferent addresses for each of
+the tree topics used by  *RTI Perftest* (Throughput, Latency and announcement).
+
+If only one address is set, *RTI Perftest* will calculate the 2 next addresses
+and will set it to the three topics. The higher value supported for ipv4
+format is `255.255.255.253`. For IPv6 the maximum value will be
+`FFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFD`
+
+IPv4 and IPv6 are supported and can be set together on the same input command.
+
 Build HTML and PDF documentation (#94)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
