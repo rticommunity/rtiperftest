@@ -276,11 +276,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 ++i;
             }
         } else if (IS_OPTION(argv[i], "-sendQueueSize")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <count> after -sendQueueSize\n");
-                return false;
-            }
-            _SendQueueSize = strtol(argv[i], NULL, 10);
+            ++i;
         } else if (IS_OPTION(argv[i], "-heartbeatPeriod")) {
             if ((i == (argc - 1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <period> after -heartbeatPeriod\n");
@@ -2288,7 +2284,7 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
      */
     initializeSampleCount = (std::max)(
             initializeSampleCount,
-            (unsigned long) _SendQueueSize);
+            (unsigned long) PM::GetInstance().get<int>("sendQueueSize"));
 
     /*
      * If we are using batching we need to take into account tha the Send Queue
@@ -2296,7 +2292,7 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
      */
     if (_BatchSize > 0) {
         initializeSampleCount = (std::max)(
-                _SendQueueSize * (_BatchSize / _DataLen),
+                PM::GetInstance().get<int>("sendQueueSize") * (_BatchSize / _DataLen),
                 initializeSampleCount);
     }
 
@@ -2396,9 +2392,11 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
             dw_qos.batch.enable = true;
             dw_qos.batch.max_data_bytes = _BatchSize;
             dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
-            dw_qos.writer_resource_limits.max_batches = _SendQueueSize;
+            dw_qos.writer_resource_limits.max_batches =
+                    PM::GetInstance().get<int>("sendQueueSize");
         } else {
-            dw_qos.resource_limits.max_samples = _SendQueueSize;
+            dw_qos.resource_limits.max_samples =
+                    PM::GetInstance().get<int>("sendQueueSize");
         }
 
         if (_HeartbeatPeriod.sec > 0 || _HeartbeatPeriod.nanosec > 0) {
@@ -2426,10 +2424,12 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                     "dds.data_writer.enable_turbo_mode", "true", false);
             dw_qos.batch.enable = false;
             dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
-            dw_qos.writer_resource_limits.max_batches = _SendQueueSize;
+            dw_qos.writer_resource_limits.max_batches =
+                    PM::GetInstance().get<int>("sendQueueSize");
         }
 
-        dw_qos.resource_limits.initial_samples = _SendQueueSize;
+        dw_qos.resource_limits.initial_samples =
+                PM::GetInstance().get<int>("sendQueueSize");
         dw_qos.resource_limits.max_samples_per_instance
             = dw_qos.resource_limits.max_samples;
 
@@ -2438,10 +2438,13 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         dw_qos.durability.direct_communication =
                 !PM::GetInstance().get<bool>("noDirectCommunication");
 
-        dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples = _SendQueueSize / 10;
+        dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+                PM::GetInstance().get<int>("sendQueueSize") / 10;
 
-        dw_qos.protocol.rtps_reliable_writer.low_watermark = _SendQueueSize * 1 / 10;
-        dw_qos.protocol.rtps_reliable_writer.high_watermark = _SendQueueSize * 9 / 10;
+        dw_qos.protocol.rtps_reliable_writer.low_watermark =
+                PM::GetInstance().get<int>("sendQueueSize") * 1 / 10;
+        dw_qos.protocol.rtps_reliable_writer.high_watermark =
+                PM::GetInstance().get<int>("sendQueueSize") * 9 / 10;
 
         /*
          * If _SendQueueSize is 1 low watermark and high watermark would both be
@@ -2454,8 +2457,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                     dw_qos.protocol.rtps_reliable_writer.low_watermark + 1;
         }
 
-        dw_qos.protocol.rtps_reliable_writer.max_send_window_size = _SendQueueSize;
-        dw_qos.protocol.rtps_reliable_writer.min_send_window_size = _SendQueueSize;
+        dw_qos.protocol.rtps_reliable_writer.max_send_window_size =
+                PM::GetInstance().get<int>("sendQueueSize");
+        dw_qos.protocol.rtps_reliable_writer.min_send_window_size =
+                PM::GetInstance().get<int>("sendQueueSize");
     }
 
     if (qos_profile == "LatencyQos"

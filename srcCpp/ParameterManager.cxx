@@ -337,7 +337,7 @@ void ParameterManager::initialize()
     sendQueueSize->setType(T_NUMERIC);
     sendQueueSize->setExtraArgument(YES);
     sendQueueSize->setGroup(PUB);
-    sendQueueSize->setRange(0, ULLONG_MAX);
+    sendQueueSize->setRange(1, INT_MAX);
     parameterList["sendQueueSize"] = AnyParameter(sendQueueSize);
 
     // TODO convert into NanoSec

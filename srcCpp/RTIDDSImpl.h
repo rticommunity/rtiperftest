@@ -38,7 +38,6 @@ class RTIDDSImpl : public IMessaging
         _transport(),
         _loggerDevice()
     {
-        _SendQueueSize = 50;
         _DataLen = 100;
         _IsMulticast = false;
         _BatchSize = DEFAULT_THROUGHPUT_BATCH_SIZE; // Default: 8 kBytes
@@ -119,7 +118,6 @@ class RTIDDSImpl : public IMessaging
   #endif
 
 
-    int          _SendQueueSize;
     unsigned long _DataLen;
     bool         _IsMulticast;
     int _BatchSize;

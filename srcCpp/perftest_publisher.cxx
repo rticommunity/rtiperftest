@@ -108,7 +108,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     for (unsigned int i = 0; i < scan.size(); i++) {
 //         printf("\t%llu\n", scan[i]);
 //     }
-//     printf("sendQueueSize: %d\n", PM::GetInstance().get<int>("sendQueueSize"));
 //     std::vector<unsigned long long> cft = PM::GetInstance().get_vector<unsigned long long>("cft");
 //     printf("cft: \n");
 //     for (unsigned int i = 0; i < cft.size(); i++) {
