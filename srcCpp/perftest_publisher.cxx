@@ -115,10 +115,8 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     for (unsigned int i = 0; i < cft.size(); i++) {
 //         printf("\t%llu\n", cft[i]);
 //     }
-//     printf("sidMultiSubTest: %d\n", PM::GetInstance().get<int>("sidMultiSubTest"));
 //     printf("dataLen: %d\n", PM::GetInstance().get<int>("dataLen"));
 //     printf("instances: %d\n", PM::GetInstance().get<int>("instances"));
-//     printf("numPublishers: %d\n", PM::GetInstance().get<int>("numPublishers"));
 
 //     //TRANSPORT
 //     printf("nic: %s\n", PM::GetInstance().get<std::string>("nic").c_str());
@@ -274,7 +272,6 @@ perftest_cpp::perftest_cpp()
     _isScan = false;
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
-    _NumPublishers = 1;
     _InstanceCount = 1;
     _MessagingImpl = NULL;
     _MessagingArgv = NULL;
@@ -488,12 +485,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-numPublishers"))
         {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <count> after -numPublishers\n");
-                return false;
-            }
-            _NumPublishers = strtol(argv[i], NULL, 10);
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-scan"))
         {
@@ -933,7 +925,7 @@ class ThroughputListener : public IMessagingCB
         _last_seq_num = new unsigned long[numPublishers];
         _useCft = UseCft;
 
-        for (int i=0; i<numPublishers; i++) {
+        for (int i = 0; i < numPublishers; i++) {
             _last_seq_num[i] = 0;
         }
 
@@ -1154,7 +1146,11 @@ int perftest_cpp::Subscriber()
     // Check if using callbacks or read thread
     if (!PM::GetInstance().get<bool>("useReadThread")) {
         // create latency pong reader
-        reader_listener = new ThroughputListener(writer, NULL, _useCft, _NumPublishers);
+        reader_listener = new ThroughputListener(
+                writer,
+                NULL,
+                _useCft,
+                PM::GetInstance().get<int>("numPublishers"));
         reader = _MessagingImpl->CreateReader(
                 THROUGHPUT_TOPIC_NAME,
                 reader_listener);
@@ -1172,7 +1168,11 @@ int perftest_cpp::Subscriber()
             fprintf(stderr, "Problem creating throughput reader.\n");
             return -1;
         }
-        reader_listener = new ThroughputListener(writer, reader, _useCft, _NumPublishers);
+        reader_listener = new ThroughputListener(
+                writer,
+                reader,
+                _useCft,
+                PM::GetInstance().get<int>("numPublishers"));
 
         RTIOsapiThread_new("ReceiverThread",
                             RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
@@ -1193,10 +1193,12 @@ int perftest_cpp::Subscriber()
     }
 
     // Synchronize with publishers
-    fprintf(stderr,"Waiting to discover %d publishers ...\n", _NumPublishers);
+    fprintf(stderr,
+            "Waiting to discover %d publishers ...\n",
+            PM::GetInstance().get<int>("numPublishers"));
     fflush(stderr);
-    reader->WaitForWriters(_NumPublishers);
-    announcement_writer->WaitForReaders(_NumPublishers);
+    reader->WaitForWriters(PM::GetInstance().get<int>("numPublishers"));
+    announcement_writer->WaitForReaders(PM::GetInstance().get<int>("numPublishers"));
 
     /*
      * Announcement message that will be used by the announcement_writer

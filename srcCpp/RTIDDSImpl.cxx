@@ -1567,12 +1567,9 @@ class RTISubscriber : public IMessagingReader
     {
         DDS_SubscriptionMatchedStatus status;
 
-        while (true)
-        {
+        while (true) {
             _reader->get_subscription_matched_status(status);
-
-            if (status.current_count >= numPublishers)
-            {
+            if (status.current_count >= numPublishers) {
                 break;
             }
             perftest_cpp::MilliSleep(1000);
@@ -1773,7 +1770,6 @@ class RTIDynamicDataSubscriber : public IMessagingReader
 
         while (true) {
             _reader->get_subscription_matched_status(status);
-
             if (status.current_count >= numPublishers) {
                 break;
             }
