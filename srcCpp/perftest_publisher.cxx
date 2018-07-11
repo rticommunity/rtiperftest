@@ -489,13 +489,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-sleep"))
         {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr,"Missing <millisec> after -sleep\n");
-                return false;
-            }
-            _SleepNanosec = strtol(argv[i], NULL, 10);
-            _SleepNanosec *= 1000000;
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-latencyCount"))
         {
@@ -661,6 +655,9 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     }
 
     // Validate and manage the parameter
+
+    // Manage parameter -sleep
+    _SleepNanosec = 1000000 * PM::GetInstance().get<unsigned int>("sleep");
 
     // Manage parameter -printIterval
     // It is copied because it is used in the critical patch
@@ -1950,9 +1947,9 @@ int perftest_cpp::Publisher()
                 }
             } else { // sleep
                 if (rate > pubRate) {
-                    _SleepNanosec += sleepUsec; //plus 1 MicroSec
+                    _SleepNanosec += sleepUsec; // plus 1 MicroSec
                 } else if (rate < pubRate && _SleepNanosec > sleepUsec) {
-                    _SleepNanosec -=  sleepUsec; //less 1 MicroSec
+                    _SleepNanosec -=  sleepUsec; // less 1 MicroSec
                 } else if (rate < pubRate && _SleepNanosec <= sleepUsec) {
                     _SleepNanosec = 0;
                 }
