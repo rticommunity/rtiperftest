@@ -435,12 +435,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 return false;
             }
         } else if (IS_OPTION(argv[i], "-writeInstance")) {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <number> after -writeInstance\n");
-                return false;
-            }
-            _instancesToBeWritten = strtol(argv[i], NULL, 10);
+            ++i;
         }
       #ifdef RTI_SECURE_PERFTEST
         else if (IS_OPTION(argv[i], "-secureSign")) {
@@ -633,12 +628,12 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     }
 
     // Manage _instancesToBeWritten
-    if (_instancesToBeWritten != -1) {
-        if ((long)_InstanceCount < _instancesToBeWritten) {
-            fprintf(
-                    stderr,
+    if (PM::GetInstance().is_set("writeInstance")) {
+        if ((long)_InstanceCount < PM::GetInstance().get<long>("writeInstance")) {
+            fprintf(stderr,
                     "Specified '-WriteInstance' (%ld) invalid: Bigger than the number of instances (%lu).\n",
-                    _instancesToBeWritten, _InstanceCount);
+                    PM::GetInstance().get<long>("writeInstance"),
+                    _InstanceCount);
             return false;
         }
     }
@@ -2504,9 +2499,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     if (!PM::GetInstance().get<bool>("dynamicData")) {
-        return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore, _instancesToBeWritten);
+        return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore, PM::GetInstance().get<long>("writeInstance"));
     } else {
-        return new RTIDynamicDataPublisher(writer, _InstanceCount, _pongSemaphore, T::TypeSupport::get_typecode(), _instancesToBeWritten);
+        return new RTIDynamicDataPublisher(writer, _InstanceCount, _pongSemaphore, T::TypeSupport::get_typecode(), PM::GetInstance().get<long>("writeInstance"));
     }
 
 }

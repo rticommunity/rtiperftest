@@ -49,7 +49,6 @@ class RTIDDSImpl : public IMessaging
         _isLargeData = false;
         _isScan = false;
         _useCft = false;
-        _instancesToBeWritten = -1; // By default use round-robin (-1)
         _CFTRange[0] = 0;
         _CFTRange[1] = 0;
 
@@ -129,7 +128,6 @@ class RTIDDSImpl : public IMessaging
     bool         _isLargeData;
     bool         _isScan;
     bool         _useCft;
-    long _instancesToBeWritten;
     unsigned int _CFTRange[2];
 
     PerftestTransport _transport;

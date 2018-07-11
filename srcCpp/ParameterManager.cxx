@@ -358,12 +358,12 @@ void ParameterManager::initialize()
     writerStats->setGroup(PUB);
     parameterList["writerStats"] = AnyParameter(writerStats);
 
-    Parameter<unsigned long long> *writeInstance = new Parameter<unsigned long long>(0);
+    Parameter<long> *writeInstance = new Parameter<long>(-1);// (-1) By default use round-robin (-1)
     writeInstance->setCommandLineArgument(std::make_pair("-writeInstance","<instance>"));
     writeInstance->setDescription("Set the instance number to be sent. \n'-writeInstance' parameter cannot be bigger than the number of instances.\nDefault: 'Round-Robin' schedule");
     writeInstance->setType(T_NUMERIC);
     writeInstance->setExtraArgument(YES);
-    writeInstance->setRange(0, ULLONG_MAX);
+    writeInstance->setRange(0, LONG_MAX);
     writeInstance->setGroup(PUB);
     parameterList["writeInstance"] = AnyParameter(writeInstance);
 

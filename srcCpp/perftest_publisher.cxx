@@ -118,10 +118,7 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     printf("sidMultiSubTest: %d\n", PM::GetInstance().get<int>("sidMultiSubTest"));
 //     printf("dataLen: %d\n", PM::GetInstance().get<int>("dataLen"));
 //     printf("instances: %d\n", PM::GetInstance().get<int>("instances"));
-//     printf("writeInstance: %d\n", PM::GetInstance().get<int>("writeInstance"));
-//     printf("sleep: %d\n", PM::GetInstance().get<int>("sleep"));
 //     printf("numPublishers: %d\n", PM::GetInstance().get<int>("numPublishers"));
-//     printf("writerStats: %d\n", PM::GetInstance().get<bool>("writerStats"));
 
 //     //TRANSPORT
 //     printf("nic: %s\n", PM::GetInstance().get<std::string>("nic").c_str());
@@ -282,7 +279,6 @@ perftest_cpp::perftest_cpp()
     _MessagingImpl = NULL;
     _MessagingArgv = NULL;
     _MessagingArgc = 0;
-    _displayWriterStats = false;
     _useCft = false;
 
 #ifdef RTI_WIN32
@@ -608,7 +604,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         else if (IS_OPTION(argv[i], "-keyed")) {
         }
         else if (IS_OPTION(argv[i], "-writerStats")) {
-            _displayWriterStats = true;
         }
         else if (IS_OPTION(argv[i], "-executionTime"))
         {
@@ -1905,7 +1900,12 @@ int perftest_cpp::Publisher()
      * - NumIter
      * - latencyCount
      * - numSubscribers
-     * - PM::GetInstance().get<bool>("bestEffort")
+     * - bestEffort
+     * - latencyTest
+     * - pidMultiPubTest
+     * - pubRateMethodSpin
+     * - pubRate
+     * - writerStats
      */
     const unsigned long long numIter =
             PM::GetInstance().get<unsigned long long>("numIter");
@@ -1915,10 +1915,11 @@ int perftest_cpp::Publisher()
     const bool bestEffort = PM::GetInstance().get<bool>("bestEffort");
     const bool latencyTest = PM::GetInstance().get<bool>("latencyTest");
     const int pidMultiPubTest = PM::GetInstance().get<int>("pidMultiPubTest");
-    const bool _pubRateMethodSpin =
+    const bool pubRateMethodSpin =
             PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").second == "spin";
     const unsigned long pubRate =
             PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first;
+    const bool writerStats = PM::GetInstance().get<bool>("writerStats");
     /********************
      *  Main sending loop
      */
@@ -1937,7 +1938,7 @@ int perftest_cpp::Publisher()
             time_delta = time_now - time_last_check;
             time_last_check = time_now;
             rate = (pubRate_sample_period * 1000000) / (unsigned long)time_delta;
-            if (_pubRateMethodSpin) {
+            if (pubRateMethodSpin) {
                 if (rate > pubRate) {
                     _SpinLoopCount += spinPerUsec;
                 } else if (rate < pubRate && _SpinLoopCount > spinPerUsec) {
@@ -2043,7 +2044,7 @@ int perftest_cpp::Publisher()
                 ping_index_in_batch = (ping_index_in_batch + 1) % samplesPerBatch;
                 sentPing = true;
 
-                if (_displayWriterStats && !perftest_cpp::printIntervals) {
+                if (writerStats && !perftest_cpp::printIntervals) {
                     printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
                 }
             }
@@ -2101,7 +2102,7 @@ int perftest_cpp::Publisher()
             "Latency results are only shown when -pidMultiPubTest = 0\n");
     }
 
-    if (_displayWriterStats) {
+    if (PM::GetInstance().get<bool>("writerStats")) {
         printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
     }
 
