@@ -382,7 +382,7 @@ void ParameterManager::initialize()
     sidMultiSubTest->setDescription("Set the id of the subscriber in a\nmulti-subscriber test. Default: 0");
     sidMultiSubTest->setType(T_NUMERIC);
     sidMultiSubTest->setExtraArgument(YES);
-    sidMultiSubTest->setRange(0, ULLONG_MAX);
+    sidMultiSubTest->setRange(0, INT_MAX);
     sidMultiSubTest->setGroup(SUB);
     parameterList["sidMultiSubTest"] = AnyParameter(sidMultiSubTest);
 

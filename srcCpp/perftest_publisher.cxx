@@ -407,16 +407,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-sidMultiSubTest"))
         {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <id> after -sidMultiSubTest\n");
-                return false;
-            }
-            _SubID = strtol(argv[i], NULL, 10);
-            if (_SubID < 0)
-            {
-                fprintf(stderr, "Bad id for subscriber\n");
-                return false;
-            }
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-pidMultiPubTest"))
         {
@@ -662,6 +653,10 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     // Manage parameter -cpu
     // It is copied because it is used in the critical patch
     perftest_cpp::showCpu = PM::GetInstance().get<bool>("cpu");
+
+    // Manage parameter -sidMultiSubTest
+    // It is copied because it is used in the critical patch
+    perftest_cpp::_SubID = PM::GetInstance().get<int>("sidMultiSubTest");
 
     if(PM::GetInstance().get<bool>("latencyTest")) {
         if(PM::GetInstance().get<int>("pidMultiPubTest") != 0) {
@@ -999,7 +994,7 @@ class ThroughputListener : public IMessagingCB
         }
 
         // Send back a packet if this is a ping
-        if ((message.latency_ping == perftest_cpp::_SubID)  ||
+        if ((message.latency_ping == perftest_cpp::_SubID) ||
                 (_useCft && message.latency_ping != -1)) {
             _writer->Send(message);
             _writer->Flush();
