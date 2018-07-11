@@ -653,7 +653,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         return false;
     };
 
-    // Setting verbosity
+    // Manage parameter -verbosity. Setting verbosity
     if (PM::GetInstance().is_set("verbosity")) {
         switch (PM::GetInstance().get<int>("verbosity")) {
             case 0: NDDSConfigLogger::get_instance()->

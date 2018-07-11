@@ -118,6 +118,8 @@ class perftest_cpp
 
   public:
     static int  _SubID;
+    static bool printIntervals;
+    static bool showCpu;
 
     static struct RTIClock *_Clock;
     static struct RTINtpTime _ClockTime_aux;
