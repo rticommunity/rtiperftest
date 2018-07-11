@@ -7,6 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Net;
+using System.Net.Sockets;
+using System.Text.RegularExpressions;
+using System.IO;
 using DDS;
 
 namespace PerformanceTest
@@ -126,6 +130,7 @@ namespace PerformanceTest
         private const string TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
 
         public bool useMulticast;
+        public bool customMulticastAddrSet;
 
         public SortedDictionary<string, string> multicastAddrMap =
                 new SortedDictionary<string, string>();
@@ -180,6 +185,7 @@ namespace PerformanceTest
             wanOptions = new WanTransportOptions();
 
             useMulticast = false;
+            customMulticastAddrSet = false;
 
             multicastAddrMap.Add(LATENCY_TOPIC_NAME.VALUE, "239.255.1.2");
             multicastAddrMap.Add(ANNOUNCEMENT_TOPIC_NAME.VALUE, "239.255.1.100");
@@ -312,6 +318,17 @@ namespace PerformanceTest
                 }
             }
             sb.Append("\n");
+
+            if (customMulticastAddrSet)
+            {
+                sb.Append( "\tUsing custom Multicast Addresses:");
+                sb.Append("\n\t\tThroughtput Address: ");
+                sb.Append(getMulticastAddr(THROUGHPUT_TOPIC_NAME.VALUE));
+                sb.Append("\n\t\tLatency Address: ");
+                sb.Append(getMulticastAddr(LATENCY_TOPIC_NAME.VALUE));
+                sb.Append("\n\t\tAnnouncement Address: ");
+                sb.Append(getMulticastAddr(ANNOUNCEMENT_TOPIC_NAME.VALUE));
+            }
 
             if (transportConfig.kind == Transport.TRANSPORT_TCPv4
                     || transportConfig.kind == Transport.TRANSPORT_TLSv4)
@@ -560,15 +577,18 @@ namespace PerformanceTest
                 else if ("-multicastAddr".StartsWith(argv[i], true, null))
                 {
                     useMulticast = true;
+                    customMulticastAddrSet = true;
                     if ((i == (argv.Length - 1)) || argv[++i].StartsWith("-"))
                     {
                         Console.Error.WriteLine(classLoggingString
                                 + " Missing <address> after -multicastAddr");
                         return false;
                     }
-                    multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = argv[i];
-                    multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] = argv[i];
-                    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE] = argv[i];
+                    if (!parseMulticastAddresses(argv[i])) {
+                        Console.Error.WriteLine(classLoggingString
+                                + " Error parsing -multicastAddr");
+                        return false;
+                    }
                 }
                 else if ("-nomulticast".StartsWith(argv[i], true, null))
                 {
@@ -1103,11 +1123,13 @@ namespace PerformanceTest
             string nextAddr;
             Byte[] buffer;
 
+            Console.Error.Write("Address: " + addr + "\n");
+
             try {
                 buffer = IPAddress.Parse(addr).GetAddressBytes();
             } catch (IOException e) {
                 Console.Error.Write(classLoggingString
-                        + " Error parsing address." + " Exception: " + e.Source;
+                        + " Error parsing address." + " Exception: " + e.Source);
                 return null;
             }
 
@@ -1133,7 +1155,7 @@ namespace PerformanceTest
 
             /* Get the string format of the address */
             try {
-                nextAddr = buffer.ToString();
+                nextAddr = new IPAddress(buffer).ToString();
             } catch (IOException e) {
                 Console.Error.Write(classLoggingString
                         + " Error recovering address from byte format : "
@@ -1146,42 +1168,39 @@ namespace PerformanceTest
 
         private bool parseMulticastAddresses(string arg) {
 
-            /* Regular expressions for IPv4 and IPv6 format */
-            string IPV4_REGEX = "\\A(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\z";
-            string IPV6_REGEX = "\\A(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\\z";
-
             /*
             * Split the string into diferents parts delimited with ',' character.
             * With a "a,b,c" input this will result in tree diferent addresses
             * "a","b" and "c"
             */
-            string[] addresses = arg.split(",");
-
+            string[] addresses = arg.Split(',');
+            IPAddress auxIP; //Use to check if the address given is valid
+            
             /* If tree addresses are given */
             if (addresses.Length == 3) {
                 /* Check if the addresses match a ipv4 or ipv6 format */
-                if (!IPAddress.TryParse(addresses[0])
-                        || !IPAddress.TryParse(addresses[1])
-                        || !IPAddress.TryParse(addresses[2])) {
+                if (!IPAddress.TryParse(addresses[0], out auxIP)
+                        || !IPAddress.TryParse(addresses[1], out auxIP)
+                        || !IPAddress.TryParse(addresses[2], out auxIP)) {
                     Console.Error.Write(classLoggingString
                             + " The input addresses dont match a IPv4 or IPv6 format");
                     return false;
                 }
 
-                multicastAddrMap.Add(THROUGHPUT_TOPIC_NAME.VALUE, addresses[0]);
-                multicastAddrMap.Add(LATENCY_TOPIC_NAME.VALUE, addresses[1]);
-                multicastAddrMap.Add(ANNOUNCEMENT_TOPIC_NAME.VALUE, addresses[2]);
+                multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = addresses[0];
+                multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] = addresses[1];
+                multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE] = addresses[2];
 
             } else if (addresses.Length == 1) {
                 /* If only one address are give */
-                string aux = new string();
+                string aux;;
 
-                if (!IPAddress.TryParse(addresses[0])) {
+                if (!IPAddress.TryParse(addresses[0],out auxIP)) {
                     Console.Error.Write(classLoggingString
                             + " The input address dont match a IPv4 or IPv6 format");
                     return false;
                 }
-                multicastAddrMap.put(THROUGHPUT_TOPIC_NAME.VALUE, addresses[0]);
+                multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = addresses[0];
 
                 /* Calculate the consecutive one */
                 aux = increaseAddressByOne(addresses[0]);
@@ -1190,7 +1209,7 @@ namespace PerformanceTest
                             + " Fail to increase the value of IP addres given");
                     return false;
                 }
-                multicastAddrMap.put(LATENCY_TOPIC_NAME.VALUE, aux);
+                multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] = aux;
 
                 /* Calculate the consecutive one */
                 aux = increaseAddressByOne(aux);
@@ -1199,7 +1218,7 @@ namespace PerformanceTest
                             + " Fail to increase the value of IP addres given");
                     return false;
                 }
-                multicastAddrMap.put(ANNOUNCEMENT_TOPIC_NAME.VALUE, aux);
+                multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE] = aux;
 
             } else {
                 Console.Error.Write(classLoggingString
