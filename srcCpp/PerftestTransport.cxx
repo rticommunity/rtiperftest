@@ -840,7 +840,7 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     stringStream << "\n";
 
     if (customMulticastAddrSet) {
-        stringStream << "\tCustom Multicast Addresses:"
+        stringStream << "\tUsing custom Multicast Addresses:"
                 << "\n\t\tThroughtput Address: "
                 << multicastAddrMap[THROUGHPUT_TOPIC_NAME].c_str()
                 << "\n\t\tLatency Address: "
@@ -1088,7 +1088,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
                 return false;
             }
 
-            if (!parse_custom_multicast_addresses(argv[i])){
+            if (!parse_multicast_addresses(argv[i])){
                 fprintf(stderr, "Error parsing -multicastAddr\n");
                 return false;
             }
@@ -1191,7 +1191,7 @@ bool PerftestTransport::increase_address_by_one(
     return true;
 }
 
-bool PerftestTransport::parse_custom_multicast_addresses(char *arg)
+bool PerftestTransport::parse_multicast_addresses(char *arg)
 {
     char throughput[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
     char latency[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];

@@ -1098,6 +1098,120 @@ namespace PerformanceTest
             return true;
         }
 
+        private string increaseAddressByOne(string addr) {
+            bool success = false;
+            string nextAddr;
+            Byte[] buffer;
+
+            try {
+                buffer = IPAddress.Parse(addr).GetAddressBytes();
+            } catch (IOException e) {
+                Console.Error.Write(classLoggingString
+                        + " Error parsing address." + " Exception: " + e.Source;
+                return null;
+            }
+
+            /*
+            * Increase the full address by one value.
+            * if the Address is 255.255.255.255 (or the equivalent for IPv6) this
+            * function will FAIL
+            */
+            for (int i = buffer.Length - 1; i >= 0 && !success; i--) {
+                if (buffer[i] != (Byte)255) {
+                    /* Increase the value and exit */
+                    buffer[i]++;
+                    success = true;
+                }
+            }
+
+            if (!success) {
+                Console.Error.Write(classLoggingString
+                        + " IP value too high. Please use -help for more information"
+                        + " about -multicastAddr command line\n");
+                return null;
+            }
+
+            /* Get the string format of the address */
+            try {
+                nextAddr = buffer.ToString();
+            } catch (IOException e) {
+                Console.Error.Write(classLoggingString
+                        + " Error recovering address from byte format : "
+                        + e.Source);
+                return null;
+            }
+
+            return nextAddr;
+        }
+
+        private bool parseMulticastAddresses(string arg) {
+
+            /* Regular expressions for IPv4 and IPv6 format */
+            string IPV4_REGEX = "\\A(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\z";
+            string IPV6_REGEX = "\\A(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\\z";
+
+            /*
+            * Split the string into diferents parts delimited with ',' character.
+            * With a "a,b,c" input this will result in tree diferent addresses
+            * "a","b" and "c"
+            */
+            string[] addresses = arg.split(",");
+
+            /* If tree addresses are given */
+            if (addresses.Length == 3) {
+                /* Check if the addresses match a ipv4 or ipv6 format */
+                if (!IPAddress.TryParse(addresses[0])
+                        || !IPAddress.TryParse(addresses[1])
+                        || !IPAddress.TryParse(addresses[2])) {
+                    Console.Error.Write(classLoggingString
+                            + " The input addresses dont match a IPv4 or IPv6 format");
+                    return false;
+                }
+
+                multicastAddrMap.Add(THROUGHPUT_TOPIC_NAME.VALUE, addresses[0]);
+                multicastAddrMap.Add(LATENCY_TOPIC_NAME.VALUE, addresses[1]);
+                multicastAddrMap.Add(ANNOUNCEMENT_TOPIC_NAME.VALUE, addresses[2]);
+
+            } else if (addresses.Length == 1) {
+                /* If only one address are give */
+                string aux = new string();
+
+                if (!IPAddress.TryParse(addresses[0])) {
+                    Console.Error.Write(classLoggingString
+                            + " The input address dont match a IPv4 or IPv6 format");
+                    return false;
+                }
+                multicastAddrMap.put(THROUGHPUT_TOPIC_NAME.VALUE, addresses[0]);
+
+                /* Calculate the consecutive one */
+                aux = increaseAddressByOne(addresses[0]);
+                if (aux == null) {
+                    Console.Error.Write(classLoggingString
+                            + " Fail to increase the value of IP addres given");
+                    return false;
+                }
+                multicastAddrMap.put(LATENCY_TOPIC_NAME.VALUE, aux);
+
+                /* Calculate the consecutive one */
+                aux = increaseAddressByOne(aux);
+                if (aux == null) {
+                    Console.Error.Write(classLoggingString
+                            + " Fail to increase the value of IP addres given");
+                    return false;
+                }
+                multicastAddrMap.put(ANNOUNCEMENT_TOPIC_NAME.VALUE, aux);
+
+            } else {
+                Console.Error.Write(classLoggingString
+                        + " Error parsing Address/es '" + arg
+                        + "' for -multicastAddr option\n"
+                        + "Use -help option to see the correct sintax");
+                return false;
+            }
+
+            return true;
+        }
+
         public string getMulticastAddr(string topicName)
         {
             string address;
