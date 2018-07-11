@@ -114,8 +114,6 @@ int perftest_cpp::Run(int argc, char *argv[])
 //     for (unsigned int i = 0; i < cft.size(); i++) {
 //         printf("\t%llu\n", cft[i]);
 //     }
-//     printf("pubRate: %d : %s\n", PM::GetInstance().get_pair<int, std::string>("pubRate").first, PM::GetInstance().get_pair<int, std::string>("pubRate").second.c_str());
-
 //     printf("sidMultiSubTest: %d\n", PM::GetInstance().get<int>("sidMultiSubTest"));
 //     printf("pidMultiPubTest: %d\n", PM::GetInstance().get<int>("pidMultiPubTest"));
 //     printf("dataLen: %d\n", PM::GetInstance().get<int>("dataLen"));
@@ -285,9 +283,7 @@ perftest_cpp::perftest_cpp()
     _MessagingImpl = NULL;
     _MessagingArgv = NULL;
     _MessagingArgc = 0;
-    _pubRate = 0;
     _displayWriterStats = false;
-    _pubRateMethodSpin = true;
     _useCft = false;
 
 #ifdef RTI_WIN32
@@ -614,36 +610,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             ++i;
         }
         else if (IS_OPTION(argv[i], "-pubRate")) {
-
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <samples/s>:<method> after -pubRate\n");
-                return false;
-            }
-
-            if (strchr(argv[i],':') != NULL) { // In the case that there are 2 parameter
-                if (sscanf(argv[i],"%d:%*s",&_pubRate) != 1) {
-                    fprintf(stderr, "-pubRate value must have the format <samples/s>:<method>\n");
-                    return false;
-                }
-                if (strstr(argv[i], "sleep") != NULL) {
-                    _pubRateMethodSpin = false;
-                } else if (strstr(argv[i], "spin") == NULL) {
-                    fprintf(stderr,
-                            "<samples/s>:<method> for pubRate '%s' is not valid."
-                            " It must contain 'spin' or 'sleep'.\n",argv[i]);
-                    return false;
-                }
-            } else {
-                _pubRate = strtol(argv[i], NULL, 10);
-            }
-
-            if (_pubRate > 10000000) {
-                fprintf(stderr,"-pubRate cannot be greater than 10000000.\n");
-                return false;
-            } else if (_pubRate < 0) {
-                fprintf(stderr,"-pubRate cannot be smaller than 0 (set 0 for unlimited).\n");
-                return false;
-            }
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-keyed")) {
         }
@@ -733,15 +700,15 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     }
 
     //manage the parameter: -pubRate -sleep -spin
-    if (_pubRate > 0) {
+    if (PM::GetInstance().is_set("pubRate")) {
         if (_SpinLoopCount > 0) {
-            fprintf(stderr, "'-spin' is not compatible with -pubRate. "
-                "Spin/Sleep value will be set by -pubRate.\n");
+            fprintf(stderr, "'-spin' is not compatible with '-pubRate'. "
+                    "Spin/Sleep value will be set by -pubRate.\n");
             _SpinLoopCount = 0;
         }
         if (_SleepNanosec > 0) {
-            fprintf(stderr, "'-sleep' is not compatible with -pubRate. "
-                "Spin/Sleep value will be set by -pubRate.\n");
+            fprintf(stderr, "'-sleep' is not compatible with '-pubRate'. "
+                    "Spin/Sleep value will be set by -pubRate.\n");
             _SleepNanosec = 0;
         }
     }
@@ -878,9 +845,10 @@ void perftest_cpp::PrintConfiguration()
 
         // Publication Rate
         stringStream << "\tPublication Rate: ";
-        if (_pubRate > 0) {
-            stringStream << _pubRate << " Samples/s (";
-            if (_pubRateMethodSpin) {
+        if (PM::GetInstance().is_set("pubRate")) {
+            stringStream << PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first
+                         << " Samples/s (";
+            if (PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").second == "spin") {
                 stringStream << "Spin)\n";
             } else {
                 stringStream << "Sleep)\n";
@@ -1812,18 +1780,21 @@ int perftest_cpp::Publisher()
     unsigned long sleepUsec = 1000;
     DDS_Duration_t sleep_period = {0,0};
 
-    if (_pubRate > 0) {
-        if ( _pubRateMethodSpin) {
+    if (PM::GetInstance().is_set("pubRate")) {
+        if (PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").second == "spin") {
             spinPerUsec = NDDSUtility::get_spin_per_microsecond();
             /* A return value of 0 means accuracy not assured */
             if (spinPerUsec == 0) {
-                fprintf(stderr,"Error initializing spin per microsecond. -pubRate cannot be used\n"
-                        "Exiting...\n");
+                fprintf(stderr,
+                        "Error initializing spin per microsecond. '-pubRate'"
+                        "cannot be used\nExiting...\n");
                 return -1;
             }
-            _SpinLoopCount = 1000000*spinPerUsec/_pubRate;
+            _SpinLoopCount = 1000000 * spinPerUsec /
+                    PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first;
         } else { // sleep count
-            _SleepNanosec =(unsigned long) 1000000000/_pubRate;
+            _SleepNanosec = 1000000000 /
+                    PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first;
         }
     }
 
@@ -1913,8 +1884,10 @@ int perftest_cpp::Publisher()
     /* Minimum value for pubRate_sample_period will be 1 so we execute 100 times
        the control loop every second, or every sample if we want to send less
        than 100 samples per second */
-    if (_pubRate > 100) {
-        pubRate_sample_period = (unsigned long long)(_pubRate / 100);
+    if (PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first > 100) {
+        pubRate_sample_period =
+                PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first /
+                100;
     }
 
     if (PM::GetInstance().get<unsigned long long>("executionTime") > 0 && !_isScan) {
@@ -1930,7 +1903,7 @@ int perftest_cpp::Publisher()
 
         /* This if has been included to perform the control loop
            that modifies the publication rate according to -pubRate */
-        if ((_pubRate > 0) &&
+        if ((PM::GetInstance().is_set("pubRate")) &&
                 (loop > 0) &&
                 (loop % pubRate_sample_period == 0)) {
 
@@ -1938,31 +1911,35 @@ int perftest_cpp::Publisher()
 
             time_delta = time_now - time_last_check;
             time_last_check = time_now;
-            rate = (pubRate_sample_period*1000000)/(unsigned long)time_delta;
-            if ( _pubRateMethodSpin) {
-                if (rate > (unsigned long)_pubRate) {
+            rate = (pubRate_sample_period * 1000000) / (unsigned long)time_delta;
+            if (PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").second == "spin") {
+                if (rate > PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first) {
                     _SpinLoopCount += spinPerUsec;
-                } else if (rate < (unsigned long)_pubRate && _SpinLoopCount > spinPerUsec) {
+                } else if (rate < PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first
+                        && _SpinLoopCount > spinPerUsec) {
                     _SpinLoopCount -= spinPerUsec;
-                } else if (rate < (unsigned long)_pubRate && _SpinLoopCount <= spinPerUsec) {
+                } else if (rate < PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first
+                        && _SpinLoopCount <= spinPerUsec) {
                     _SpinLoopCount = 0;
                 }
             } else { // sleep
-                if (rate > (unsigned long)_pubRate) {
+                if (rate > PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first) {
                     _SleepNanosec += sleepUsec; //plus 1 MicroSec
-                } else if (rate < (unsigned long)_pubRate && _SleepNanosec > sleepUsec) {
+                } else if (rate < PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first
+                        && _SleepNanosec > sleepUsec) {
                     _SleepNanosec -=  sleepUsec; //less 1 MicroSec
-                } else if (rate < (unsigned long)_pubRate && _SleepNanosec <= sleepUsec) {
+                } else if (rate < PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first
+                        && _SleepNanosec <= sleepUsec) {
                     _SleepNanosec = 0;
                 }
             }
         }
 
-        if ( _SpinLoopCount > 0 ) {
+        if (_SpinLoopCount > 0) {
             NDDSUtility::spin(_SpinLoopCount);
         }
 
-        if ( _SleepNanosec > 0 ) {
+        if (_SleepNanosec > 0) {
             sleep_period.nanosec = (DDS_UnsignedLong)_SleepNanosec;
             NDDSUtility::sleep(sleep_period);
         }

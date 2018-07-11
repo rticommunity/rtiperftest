@@ -297,7 +297,7 @@ void ParameterManager::initialize()
     cft->setGroup(PUB);
     parameterList["cft"] = AnyParameter(cft);
 
-    ParameterPair<unsigned long long, std::string> *pubRate = new ParameterPair<unsigned long long, std::string>(0,"sleep");
+    ParameterPair<unsigned long long, std::string> *pubRate = new ParameterPair<unsigned long long, std::string>(0,"spin");
     pubRate->setCommandLineArgument(std::make_pair("-pubRate","<samples/s>:<method>"));
     pubRate->setDescription("Limit the throughput to the specified number\nof samples/s. Default 0 (don't limit)\n[OPTIONAL] Method to control the throughput can be:\n'spin' or 'sleep'.\nDefault method: spin");
     pubRate->setType(T_PAIR_NUMERIC_STR);

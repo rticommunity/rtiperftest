@@ -100,8 +100,6 @@ class perftest_cpp
     IMessaging *_MessagingImpl;
     char **_MessagingArgv;
     int _MessagingArgc;
-    int _pubRate;
-    bool _pubRateMethodSpin;
     bool _displayWriterStats;
     bool _useCft;
     static const Perftest_ProductVersion_t _version;
