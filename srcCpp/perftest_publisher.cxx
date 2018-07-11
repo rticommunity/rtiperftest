@@ -19,7 +19,6 @@
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 
 int  perftest_cpp::_SubID = 0;
-int  perftest_cpp::_PubID = 0;
 
 /* Clock related variables */
 struct RTIClock* perftest_cpp::_Clock = RTIHighResolutionClock_new();
@@ -430,16 +429,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-pidMultiPubTest"))
         {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <id> after -pidMultiPubTest\n");
-                return false;
-            }
-            _PubID = strtol(argv[i], NULL, 10);
-            if (_PubID < 0)
-            {
-                fprintf(stderr, "Bad id for publisher\n");
-                return false;
-            }
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-numIter"))
         {
@@ -705,7 +695,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     }
 
     if(PM::GetInstance().get<bool>("latencyTest")) {
-        if(_PubID != 0) {
+        if(PM::GetInstance().get<int>("pidMultiPubTest") != 0) {
             fprintf(stderr, "Only the publisher with ID = 0 can run the latency test\n");
             return false;
         }
@@ -840,7 +830,9 @@ void perftest_cpp::PrintConfiguration()
 
     // Publisher/Subscriber and Entity ID
     if (PM::GetInstance().get<bool>("pub")) {
-        stringStream << "\tPublisher ID: " << _PubID << "\n";
+        stringStream << "\tPublisher ID: "
+                     << PM::GetInstance().get<int>("pidMultiPubTest")
+                     << "\n";
     } else {
         stringStream << "\tSubscriber ID: " << _SubID << "\n";
     }
@@ -1754,7 +1746,7 @@ int perftest_cpp::Publisher()
 
     IMessagingReader *reader;
     // Only publisher with ID 0 will send/receive pings
-    if (_PubID == 0)
+    if (PM::GetInstance().get<int>("pidMultiPubTest") == 0)
     {
         // Check if using callbacks or read thread
         if (!PM::GetInstance().get<bool>("useReadThread")) {
@@ -1852,10 +1844,11 @@ int perftest_cpp::Publisher()
 
     // Allocate data and set size
     TestMessage message;
-    message.entity_id = _PubID;
+    message.entity_id = PM::GetInstance().get<int>("pidMultiPubTest");
     message.data = new char[(std::max)((int)_DataLen, (int)LENGTH_CHANGED_SIZE)];
 
-    if (PM::GetInstance().get<bool>("cpu") && _PubID == 0) {
+    if (PM::GetInstance().get<bool>("cpu")
+            && PM::GetInstance().get<int>("pidMultiPubTest") == 0) {
         reader_listener->cpu.initialize();
     }
 
@@ -1978,7 +1971,8 @@ int perftest_cpp::Publisher()
 
         // only send latency pings if is publisher with ID 0
         // In batch mode, latency pings are sent once every LatencyCount batches
-        if ( (_PubID == 0) && (((loop/samplesPerBatch)
+        if ( (PM::GetInstance().get<int>("pidMultiPubTest") == 0)
+                && (((loop/samplesPerBatch)
                 % PM::GetInstance().get<unsigned long long>("latencyCount")) == 0) ) {
 
             /* In batch mode only send a single ping in a batch.
@@ -2105,7 +2099,7 @@ int perftest_cpp::Publisher()
         i++;
     }
 
-    if (_PubID == 0) {
+    if (PM::GetInstance().get<int>("pidMultiPubTest") == 0) {
         reader_listener->print_summary_latency();
         reader_listener->end_test = true;
     } else {

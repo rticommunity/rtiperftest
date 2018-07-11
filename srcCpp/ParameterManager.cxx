@@ -283,7 +283,7 @@ void ParameterManager::initialize()
     pidMultiPubTest->setDescription("Set id of the publisher in a multi-publisher test.\n Only publisher 0 sends \n latency pings. Default: 0");
     pidMultiPubTest->setType(T_NUMERIC);
     pidMultiPubTest->setExtraArgument(YES);
-    pidMultiPubTest->setRange(0, ULLONG_MAX);
+    pidMultiPubTest->setRange(0, INT_MAX);
     pidMultiPubTest->setGroup(PUB);
     parameterList["pidMultiPubTest"] = AnyParameter(pidMultiPubTest);
 
