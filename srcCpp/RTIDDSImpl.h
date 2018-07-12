@@ -50,11 +50,6 @@ class RTIDDSImpl : public IMessaging
 
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure = false;
-        _secureIsSigned = false;
-        _secureIsDataEncrypted = false;
-        _secureIsSMEncrypted = false;
-        _secureIsDiscoveryEncrypted = false;
-        _secureDebugLevel = -1;
       #endif
 
         _HeartbeatPeriod.sec = 0;
@@ -127,17 +122,6 @@ class RTIDDSImpl : public IMessaging
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;
-    bool _secureIsSigned;
-    bool _secureIsDataEncrypted; // user data
-    bool _secureIsSMEncrypted;   // submessage
-    bool _secureIsDiscoveryEncrypted;
-    std::string _secureCertAuthorityFile;
-    std::string _secureCertificateFile;
-    std::string _securePrivateKeyFile;
-    std::string _secureGovernanceFile;
-    std::string _securePermissionsFile;
-    std::string _secureLibrary;
-    int  _secureDebugLevel;
 
     static const std::string SECURE_PRIVATEKEY_FILE_PUB;
     static const std::string SECURE_PRIVATEKEY_FILE_SUB;

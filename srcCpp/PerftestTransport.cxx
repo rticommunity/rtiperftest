@@ -179,31 +179,31 @@ bool configureSecurityFiles(
         DDS_DomainParticipantQos& qos)
 {
 
-    if (!transport.secureOptions.certAuthorityFile.empty()) {
+    if (!PM::GetInstance().get<std::string>("transportCertAuthority").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".tls.verify.ca_file",
-                transport.secureOptions.certAuthorityFile)) {
+                PM::GetInstance().get<std::string>("transportCertAuthority"))) {
             return false;
         }
     }
 
-    if (!transport.secureOptions.certificateFile.empty()) {
+    if (!PM::GetInstance().get<std::string>("transportCertFile").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString
                         + ".tls.identity.certificate_chain_file",
-                transport.secureOptions.certificateFile)) {
+                PM::GetInstance().get<std::string>("transportCertFile"))) {
             return false;
         }
     }
 
-    if (!transport.secureOptions.privateKeyFile.empty()) {
+    if (!PM::GetInstance().get<std::string>("transportPrivateKey").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString
                         + ".tls.identity.private_key_file",
-                transport.secureOptions.privateKeyFile)) {
+                PM::GetInstance().get<std::string>("transportPrivateKey"))) {
             return false;
         }
     }
@@ -682,24 +682,34 @@ bool PerftestTransport::setTransport(std::string transportString)
 
 void PerftestTransport::populateSecurityFiles() {
 
-    if (secureOptions.certificateFile.empty()) {
+    if (PM::GetInstance().get<std::string>("transportCertFile").empty()) {
         if (PM::GetInstance().get<bool>("pub")) {
-            secureOptions.certificateFile = TRANSPORT_CERTIFICATE_FILE_PUB;
+            PM::GetInstance().set(
+                    "transportCertFile",
+                    TRANSPORT_CERTIFICATE_FILE_PUB);
         } else {
-            secureOptions.certificateFile = TRANSPORT_CERTIFICATE_FILE_SUB;
+            PM::GetInstance().set(
+                    "transportCertFile",
+                    TRANSPORT_CERTIFICATE_FILE_SUB);
         }
     }
 
-    if (secureOptions.privateKeyFile.empty()) {
+    if (PM::GetInstance().get<std::string>("transportPrivateKey").empty()) {
         if (PM::GetInstance().get<bool>("pub")) {
-            secureOptions.privateKeyFile = TRANSPORT_PRIVATEKEY_FILE_PUB;
+            PM::GetInstance().set(
+                    "transportPrivateKey",
+                    TRANSPORT_PRIVATEKEY_FILE_PUB);
         } else {
-            secureOptions.privateKeyFile = TRANSPORT_PRIVATEKEY_FILE_SUB;
+            PM::GetInstance().set(
+                    "transportPrivateKey",
+                    TRANSPORT_PRIVATEKEY_FILE_SUB);
         }
     }
 
-    if (secureOptions.certAuthorityFile.empty()) {
-        secureOptions.certAuthorityFile = TRANSPORT_CERTAUTHORITY_FILE;
+    if (PM::GetInstance().get<std::string>("transportCertAuthority").empty()) {
+        PM::GetInstance().set(
+                "transportCertAuthority",
+                TRANSPORT_CERTAUTHORITY_FILE);
     }
 }
 
@@ -869,11 +879,14 @@ std::string PerftestTransport::printTransportConfigurationSummary()
             || (transportConfig.kind == TRANSPORT_WANv4
             && PM::GetInstance().get<bool>("transportSecureWan"))) {
         stringStream << "\tCertificate authority file: "
-                     << secureOptions.certAuthorityFile << "\n";
+                     << PM::GetInstance().get<std::string>(
+                            "transportCertAuthority") << "\n";
         stringStream << "\tCertificate file: "
-                     << secureOptions.certificateFile << "\n";
+                     << PM::GetInstance().get<std::string>("transportCertFile")
+                     << "\n";
         stringStream << "\tPrivate key file: "
-                     << secureOptions.privateKeyFile << "\n";
+                     << PM::GetInstance().get<std::string>(
+                            "transportPrivateKey") << "\n";
     }
 
     if (!PM::GetInstance().get<std::string>("transportVerbosity").empty()) {
@@ -934,36 +947,15 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
 
         }  else if (IS_OPTION(argv[i], "-transportCertAuthority")) {
 
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr,
-                        "%s Missing <path> after -transportCertAuthority\n",
-                        classLoggingString.c_str());
-                return false;
-            }
-
-            secureOptions.certAuthorityFile = std::string(argv[i]);
+            i++;
 
         }  else if (IS_OPTION(argv[i], "-transportCertFile")) {
 
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr,
-                        "%s Missing <path> after -transportCertFile\n",
-                        classLoggingString.c_str());
-                return false;
-            }
-
-            secureOptions.certificateFile = std::string(argv[i]);
+            i++;
 
         } else if (IS_OPTION(argv[i], "-transportPrivateKey")) {
 
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr,
-                        "%s Missing <path> after -transportPrivateKey\n",
-                        classLoggingString.c_str());
-                return false;
-            }
-
-            secureOptions.privateKeyFile = std::string(argv[i]);
+            i++;
 
         } else if (IS_OPTION(argv[i], "-transportWanServerAddress")) {
 
@@ -997,12 +989,10 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
         }
     }
 
-    if (PM::GetInstance()
-                .get<std::string>("allowInterfaces")
-                .empty()) {
-            PM::GetInstance().set<std::string>(
-                    "allowInterfaces",
-                    PM::GetInstance().get<std::string>("nic"));
+    if (PM::GetInstance().get<std::string>("allowInterfaces").empty()) {
+        PM::GetInstance().set<std::string>(
+                "allowInterfaces",
+                PM::GetInstance().get<std::string>("nic"));
     }
 
     if (!setTransport(PM::GetInstance().get<std::string>(

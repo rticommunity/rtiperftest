@@ -61,12 +61,6 @@ struct TransportConfig {
     }
 };
 
-struct SecureTransportOptions {
-    std::string certAuthorityFile;
-    std::string certificateFile;
-    std::string privateKeyFile;
-};
-
 /******************************************************************************/
 
 class PerftestTransport {
@@ -77,8 +71,6 @@ public:
     /* PUBLIC CLASS MEMBERS */
 
     TransportConfig transportConfig;
-    // Security files
-    SecureTransportOptions secureOptions;
 
     unsigned long dataLen;
 
