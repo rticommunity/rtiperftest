@@ -40,7 +40,6 @@ class RTIDDSImpl : public IMessaging
     {
         _DataLen = 100;
         _IsMulticast = false;
-        _BatchSize = DEFAULT_THROUGHPUT_BATCH_SIZE; // Default: 8 kBytes
         _InstanceMaxCountReader = DDS_LENGTH_UNLIMITED;
         _InstanceHashBuckets = -1;
         _KeepDurationUsec = -1;
@@ -82,11 +81,6 @@ class RTIDDSImpl : public IMessaging
 
     void Shutdown();
 
-    int GetBatchSize()
-    {
-        return _BatchSize;
-    }
-
     unsigned long GetInitializationSampleCount();
 
     IMessagingWriter *CreateWriter(const char *topic_name);
@@ -110,7 +104,6 @@ class RTIDDSImpl : public IMessaging
 
     unsigned long _DataLen;
     bool         _IsMulticast;
-    int _BatchSize;
     long _InstanceMaxCountReader;
     int          _InstanceHashBuckets;
     int          _KeepDurationUsec;

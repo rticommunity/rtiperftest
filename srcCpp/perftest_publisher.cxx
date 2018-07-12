@@ -104,7 +104,6 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
-//     printf("batching: %d\n", PM::GetInstance().get<int>("batching"));
     // std::vector<unsigned long long> scan = PM::GetInstance().get_vector<unsigned long long>("scan");
     // printf("scan: \n");
     // for (unsigned int i = 0; i < scan.size(); i++) {
@@ -773,18 +772,18 @@ void perftest_cpp::PrintConfiguration()
         }
 
         // Batching
-        int batchSize = _MessagingImpl->GetBatchSize();
         stringStream << "\tBatching: ";
-        if (batchSize > 0) {
-            stringStream << batchSize << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
-        } else if (batchSize == 0) {
+        if (PM::GetInstance().get<long>("batchsize") > 0) {
+            stringStream << PM::GetInstance().get<long>("batchsize")
+                         << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
+        } else if (PM::GetInstance().get<long>("batchsize") == 0) {
             stringStream << "No (Use \"-batchSize\" to setup batching)\n";
         } else { // < 0
             stringStream << "Disabled by RTI Perftest.\n";
-            if (batchSize == -1) {
+            if (PM::GetInstance().get<long>("batchsize") == -1) {
                 stringStream << "\t\t  BatchSize is smaller than 2 times\n"
                              << "\t\t  the minimum sample size.\n";
-            } else if (batchSize == -2) {
+            } else if (PM::GetInstance().get<long>("batchsize") == -2) {
                 stringStream << "\t\t  BatchSize cannot be used with\n"
                              << "\t\t  Large Data.\n";
             }
@@ -1640,7 +1639,7 @@ int perftest_cpp::Publisher()
     IMessagingReader *announcement_reader;
     unsigned long num_latency;
     unsigned long announcementSampleCount = 50;
-    unsigned int samplesPerBatch = 1;
+    unsigned int samplesPerBatch = GetSamplesPerBatch();
 
     // create throughput/ping writer
     IMessagingWriter *writer = _MessagingImpl->CreateWriter(
@@ -1651,8 +1650,6 @@ int perftest_cpp::Publisher()
         fprintf(stderr,"Problem creating throughput writer.\n");
         return -1;
     }
-
-    samplesPerBatch = GetSamplesPerBatch();
 
     // calculate number of latency pings that will be sent per data size
     num_latency = (unsigned long)((PM::GetInstance().get<unsigned long long>("numIter") /
@@ -1665,7 +1662,7 @@ int perftest_cpp::Publisher()
     }
 
     if (samplesPerBatch > 1) {
-        // in batch mode, might have to send another ping
+        // In batch mode, might have to send another ping
         ++num_latency;
     }
 
@@ -1935,10 +1932,9 @@ int perftest_cpp::Publisher()
              * when both are equal.
              *
              * Note when not in batch mode, current_index_in_batch = ping_index_in_batch
-             * always.  And the if() is always true.
+             * always. And the if() is always true.
              */
-            if ( current_index_in_batch == ping_index_in_batch  && !sentPing )
-            {
+            if (current_index_in_batch == ping_index_in_batch && !sentPing) {
                 // If running in scan mode, dataLen under test is changed
                 // after executionTime
                 if (_isScan && _testCompleted_scan) {
@@ -2020,8 +2016,7 @@ int perftest_cpp::Publisher()
 
 
         // come to the beginning of another batch
-        if (current_index_in_batch == 0)
-        {
+        if (current_index_in_batch == 0) {
             sentPing = false;
         }
     }
@@ -2132,19 +2127,12 @@ inline unsigned long long perftest_cpp::GetTimeUsec() {
 }
 
 inline unsigned int perftest_cpp::GetSamplesPerBatch() {
-    int batchSize = _MessagingImpl->GetBatchSize();
-    unsigned int samplesPerBatch;
-
-    if (batchSize > 0) {
-        samplesPerBatch = batchSize / (int) _DataLen;
-        if (samplesPerBatch == 0) {
-            samplesPerBatch = 1;
-        }
+    if (PM::GetInstance().get<long>("batchsize") > 0) {
+        return PM::GetInstance().get<long>("batchsize") /
+                (unsigned int)_DataLen;
     } else {
-        samplesPerBatch = 1;
+        return 1;
     }
-
-    return samplesPerBatch;
 }
 
 #ifdef RTI_WIN32

@@ -201,14 +201,14 @@ void ParameterManager::initialize()
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER
 
-    Parameter<unsigned long long> *batching = new Parameter<unsigned long long>(DEFAULT_THROUGHPUT_BATCH_SIZE);
-    batching->setCommandLineArgument(std::make_pair("-batchsize","<bytes>"));
-    batching->setDescription("Size in bytes of batched message. Default: 8kB.\n(Disabled for LatencyTest mode or if dataLen > 4kB)");
-    batching->setType(T_NUMERIC);
-    batching->setExtraArgument(YES);
-    batching->setRange(0, MAX_SYNCHRONOUS_SIZE);
-    batching->setGroup(PUB);
-    parameterList["batching"] = AnyParameter(batching);
+    Parameter<long long> *batchsize = new Parameter<long long>(DEFAULT_THROUGHPUT_BATCH_SIZE);
+    batchsize->setCommandLineArgument(std::make_pair("-batchsize","<bytes>"));
+    batchsize->setDescription("Size in bytes of batched message. Default: 8kB.\n(Disabled for LatencyTest mode or if dataLen > 4kB)");
+    batchsize->setType(T_NUMERIC);
+    batchsize->setExtraArgument(YES);
+    batchsize->setRange(0, MAX_SYNCHRONOUS_SIZE - 1);
+    batchsize->setGroup(PUB);
+    parameterList["batchsize"] = AnyParameter(batchsize);
 
     Parameter<bool> *enableAutoThrottle = new Parameter<bool>(false);
     enableAutoThrottle->setCommandLineArgument(std::make_pair("-enableAutoThrottle",""));
