@@ -266,7 +266,6 @@ perftest_cpp::perftest_cpp()
     _isScan = false;
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
-    _InstanceCount = 1;
     _MessagingImpl = NULL;
     _MessagingArgv = NULL;
     _MessagingArgc = 0;
@@ -538,37 +537,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-instances"))
         {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <count> after -instances\n");
-                return false;
-            }
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            _InstanceCount = strtol(argv[i], NULL, 10);
-
-            if (_InstanceCount <= 0)
-            {
-                fprintf(stderr, "instance count cannot be negative or null\n");
-                return false;
-            }
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-verbosity"))
         {
@@ -1829,7 +1798,7 @@ int perftest_cpp::Publisher()
      */
     unsigned long initializeSampleCount = (std::max)(
             _MessagingImpl->GetInitializationSampleCount(),
-            _InstanceCount);
+            PM::GetInstance().get<unsigned long>("instances"));
 
     fprintf(stderr,
             "Sending %lu initialization pings ...\n",

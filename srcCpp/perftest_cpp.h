@@ -95,7 +95,6 @@ class perftest_cpp
     std::vector<unsigned long> _scanDataLenSizes;
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
-    unsigned long _InstanceCount;
     IMessaging *_MessagingImpl;
     char **_MessagingArgv;
     int _MessagingArgc;

@@ -325,17 +325,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-dynamicData")) {
         } else if (IS_OPTION(argv[i], "-noDirectCommunication")) {
         } else if (IS_OPTION(argv[i], "-instances")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <count> after -instances\n");
-                return false;
-            }
-            _InstanceCount = strtol(argv[i], NULL, 10);
-            _InstanceMaxCountReader = _InstanceCount;
-
-            if (_InstanceCount <= 0) {
-                fprintf(stderr, "instance count cannot be negative or zero\n");
-                return false;
-            }
+            ++i;
         } else if (IS_OPTION(argv[i], "-instanceHashBuckets")) {
             if ((i == (argc-1)) || *argv[++i] == '-') {
                 fprintf(stderr, "Missing <count> after -instanceHashBuckets\n");
@@ -509,6 +499,12 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     }
 
     // Validation
+
+    // Manage parameter -instance
+    if (PM::GetInstance().is_set("instance")){
+        _InstanceMaxCountReader =
+                PM::GetInstance().get<unsigned long>("instances");
+    }
     //Peers
     if (PM::GetInstance().get_vector<std::string>("peer").size()
             >= RTIPERFTEST_MAX_PEERS) {
@@ -598,11 +594,12 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 
     // Manage _instancesToBeWritten
     if (PM::GetInstance().is_set("writeInstance")) {
-        if ((long)_InstanceCount < PM::GetInstance().get<long>("writeInstance")) {
+        if (PM::GetInstance().get<long>("instances") <
+                PM::GetInstance().get<long>("writeInstance")) {
             fprintf(stderr,
                     "Specified '-WriteInstance' (%ld) invalid: Bigger than the number of instances (%lu).\n",
                     PM::GetInstance().get<long>("writeInstance"),
-                    _InstanceCount);
+                    PM::GetInstance().get<unsigned long>("instances"));
             return false;
         }
     }
@@ -2429,8 +2426,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                 !PM::GetInstance().get<bool>("noDirectCommunication");
     }
 
-    dw_qos.resource_limits.max_instances = _InstanceCount + 1; // One extra for MAX_CFT_VALUE
-    dw_qos.resource_limits.initial_instances = _InstanceCount +1;
+    dw_qos.resource_limits.max_instances =
+            PM::GetInstance().get<unsigned long>("instances") + 1; // One extra for MAX_CFT_VALUE
+    dw_qos.resource_limits.initial_instances =
+            PM::GetInstance().get<unsigned long>("instances") +1;
 
     if (PM::GetInstance().get<int>("unbounded") != 0) {
         char buf[10];
@@ -2440,12 +2439,13 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                buf, false);
     }
 
-    if (_InstanceCount > 1) {
+    if (PM::GetInstance().get<unsigned long>("instances") > 1) {
         if (_InstanceHashBuckets > 0) {
             dw_qos.resource_limits.instance_hash_buckets =
                 _InstanceHashBuckets;
         } else {
-            dw_qos.resource_limits.instance_hash_buckets = _InstanceCount;
+            dw_qos.resource_limits.instance_hash_buckets =
+                    PM::GetInstance().get<unsigned long>("instances");
         }
     }
 
@@ -2460,9 +2460,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     if (!PM::GetInstance().get<bool>("dynamicData")) {
-        return new RTIPublisher<T>(writer, _InstanceCount, _pongSemaphore, PM::GetInstance().get<long>("writeInstance"));
+        return new RTIPublisher<T>(writer, PM::GetInstance().get<unsigned long>("instances"), _pongSemaphore, PM::GetInstance().get<long>("writeInstance"));
     } else {
-        return new RTIDynamicDataPublisher(writer, _InstanceCount, _pongSemaphore, T::TypeSupport::get_typecode(), PM::GetInstance().get<long>("writeInstance"));
+        return new RTIDynamicDataPublisher(writer, PM::GetInstance().get<unsigned long>("instances"), _pongSemaphore, T::TypeSupport::get_typecode(), PM::GetInstance().get<long>("writeInstance"));
     }
 
 }
@@ -2506,7 +2506,7 @@ DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
     std::vector<unsigned long long> cftRange =
             PM::GetInstance().get_vector<unsigned long long>("cft");
     if (cftRange.size() == 1) { // If same elements, no range
-        printf("CFT enabled for instance: '%d' \n",cftRange[0]);
+        printf("CFT enabled for instance: '%llu' \n",cftRange[0]);
         char cft_param[KEY_SIZE][128];
         for (int i = 0; i < KEY_SIZE ; i++) {
             sprintf(cft_param[i],"%d", (unsigned char)(cftRange[0] >> i * 8));
@@ -2516,7 +2516,7 @@ DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
         condition = "(%0 = key[0] AND %1 = key[1] AND %2 = key[2] AND %3 = key[3]) OR"
                 "(255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3])";
     } else { // If cftRange.size() == 2 (RANGE)
-        printf("CFT enabled for instance range: [%d,%d] \n",
+        printf("CFT enabled for instance range: [%llu,%llu] \n",
             cftRange[0],
             cftRange[1]);
         char cft_param[2 * KEY_SIZE][128];
@@ -2635,18 +2635,20 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
             !PM::GetInstance().get<bool>("noDirectCommunication");
     }
 
-    dr_qos.resource_limits.initial_instances = _InstanceCount + 1;
+    dr_qos.resource_limits.initial_instances =
+            PM::GetInstance().get<unsigned long>("instances") + 1;
     if (_InstanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
         _InstanceMaxCountReader++;
     }
     dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
 
-    if (_InstanceCount > 1) {
+    if (PM::GetInstance().get<unsigned long>("instances") > 1) {
         if (_InstanceHashBuckets > 0) {
             dr_qos.resource_limits.instance_hash_buckets =
                 _InstanceHashBuckets;
         } else {
-            dr_qos.resource_limits.instance_hash_buckets = _InstanceCount;
+            dr_qos.resource_limits.instance_hash_buckets =
+                PM::GetInstance().get<unsigned long>("instances");
         }
     }
 

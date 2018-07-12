@@ -76,7 +76,7 @@ void ParameterManager::initialize()
     instances->setDescription("Set the number of instances (keys) to iterate\nover when publishing. Default: 1");
     instances->setType(T_NUMERIC);
     instances->setExtraArgument(YES);
-    instances->setRange(0, ULLONG_MAX);
+    instances->setRange(1, ULONG_MAX);
     instances->setGroup(GENERAL);
     parameterList["instances"] = AnyParameter(instances);
 
