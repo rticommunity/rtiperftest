@@ -451,6 +451,11 @@ void ParameterManager::initialize()
      *  multicastAddrMap[LATENCY_TOPIC_NAME] = argv[i];
      *  multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = argv[i];
      */
+    /*
+     * TODO: wait for merge the -multicastAddr option update
+     * The parse for the input string will be done on the validation. After that
+     * parameter manager does not will be called again.
+     */
     Parameter<std::string> * multicastAddr = new Parameter<std::string>();
     multicastAddr->setCommandLineArgument(std::make_pair("-multicastAddr","<address>"));
     multicastAddr->setDescription("Use multicast to send data and set\nthe input <address> as the multicast\naddress for all the topics");
