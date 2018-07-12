@@ -1129,8 +1129,6 @@ namespace PerformanceTest
             string nextAddr;
             Byte[] buffer;
 
-            Console.Error.Write("Address: " + addr + "\n");
-
             try {
                 buffer = IPAddress.Parse(addr).GetAddressBytes();
             } catch (IOException e) {
