@@ -402,38 +402,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         else if (IS_OPTION(argv[i], "-peer")) {
             ++i;
         } else if (IS_OPTION(argv[i], "-cft")) {
-            _useCft = true;
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <start>:<end> after -cft\n");
-                return false;
-            }
-
-            if (strchr(argv[i],':') != NULL) { // In the case that there are 2 parameter
-                unsigned int cftStart = 0;
-                unsigned int cftEnd = 0;
-                if (sscanf(argv[i],"%u:%u",&cftStart,&cftEnd) != 2) {
-                    fprintf(stderr, "-cft value must have the format <start>:<end>\n");
-                    return false;
-                }
-                _CFTRange[0] = cftStart;
-                _CFTRange[1] = cftEnd;
-            } else {
-                _CFTRange[0] = strtol(argv[i], NULL, 10);
-                _CFTRange[1] = _CFTRange[0];
-            }
-
-            if (_CFTRange[0] > _CFTRange[1]) {
-                fprintf(stderr, "-cft <start> value cannot be bigger than <end>\n");
-                return false;
-            }
-            if (_CFTRange[0] < 0 ||
-                    _CFTRange[0] >= (unsigned int)MAX_CFT_VALUE ||
-                    _CFTRange[1] < 0 ||
-                    _CFTRange[1] >= (unsigned int)MAX_CFT_VALUE) {
-                fprintf(stderr, "-cft <start>:<end> values should be between [0,%d] \n", MAX_CFT_VALUE);
-                return false;
-            }
+            ++i;
         } else if (IS_OPTION(argv[i], "-writeInstance")) {
             ++i;
         }
@@ -636,10 +605,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                     _InstanceCount);
             return false;
         }
-    }
-    if (PM::GetInstance().get<bool>("pub") && _useCft) {
-        fprintf(stderr,
-                "Content Filtered Topic is not a parameter in the publisher side.\n");
     }
 
     if(!_transport.parseTransportOptions(argc, argv)) {
@@ -2506,13 +2471,13 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
  * CreateCFT
  * The CFT allows to the subscriber to receive a specific instance or a range of them.
  * In order generate the CFT it is necesary to create a condition:
- *      - In the case of a specific instance, it is necesary to convert to _CFTRange[0] into a key notation.
+ *      - In the case of a specific instance, it is necesary to convert to cftRange[0] into a key notation.
  *        Then it is enought with check that every element of key is equal to the instance.
- *        Exmaple: _CFTRange[0] = 300. condition ="(0 = key[0] AND 0 = key[1] AND 1 = key[2] AND  44 = key[3])"
+ *        Exmaple: cftRange[0] = 300. condition ="(0 = key[0] AND 0 = key[1] AND 1 = key[2] AND  44 = key[3])"
  *          So, in the case that the key = { 0, 0, 1, 44}, it will be received.
- *      - In the case of a range of instances, it is necesary to convert to _CFTRange[0] and _CFTRange[1] into a key notation.
+ *      - In the case of a range of instances, it is necesary to convert to cftRange[0] and cftRange[1] into a key notation.
  *        Then it is enought with check that the key is in the range of instances.
- *        Exmaple: _CFTRange[1] = 300 and _CFTRange[1] = 1.
+ *        Exmaple: cftRange[1] = 300 and cftRange[1] = 1.
  *          condition = ""
  *              "("
  *                  "("
@@ -2538,29 +2503,33 @@ DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
 {
     std::string condition;
     DDS_StringSeq parameters(2 * KEY_SIZE);
-    if (_CFTRange[0] == _CFTRange[1]) { // If same elements, no range
-        printf("CFT enabled for instance: '%d' \n",_CFTRange[0]);
+    std::vector<unsigned long long> cftRange =
+            PM::GetInstance().get_vector<unsigned long long>("cft");
+    if (cftRange.size() == 1) { // If same elements, no range
+        printf("CFT enabled for instance: '%d' \n",cftRange[0]);
         char cft_param[KEY_SIZE][128];
         for (int i = 0; i < KEY_SIZE ; i++) {
-            sprintf(cft_param[i],"%d", (unsigned char)(_CFTRange[0] >> i * 8));
+            sprintf(cft_param[i],"%d", (unsigned char)(cftRange[0] >> i * 8));
         }
         const char* param_list[] = { cft_param[0], cft_param[1], cft_param[2], cft_param[3]};
         parameters.from_array(param_list, KEY_SIZE);
         condition = "(%0 = key[0] AND %1 = key[1] AND %2 = key[2] AND %3 = key[3]) OR"
                 "(255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3])";
-    } else { // If range
-        printf("CFT enabled for instance range: [%d,%d] \n",_CFTRange[0],_CFTRange[1]);
+    } else { // If cftRange.size() == 2 (RANGE)
+        printf("CFT enabled for instance range: [%d,%d] \n",
+            cftRange[0],
+            cftRange[1]);
         char cft_param[2 * KEY_SIZE][128];
         for (int i = 0; i < 2 * KEY_SIZE ; i++ ) {
-            if ( i < KEY_SIZE ) {
-                sprintf(cft_param[i],"%d", (unsigned char)(_CFTRange[0] >> i * 8));
+            if (i < KEY_SIZE) {
+                sprintf(cft_param[i], "%d", (unsigned char)(cftRange[0] >> i * 8));
             } else { // KEY_SIZE < i < KEY_SIZE * 2
-                sprintf(cft_param[i],"%d", (unsigned char)(_CFTRange[1] >> i * 8));
+                sprintf(cft_param[i], "%d", (unsigned char)(cftRange[1] >> i * 8));
             }
         }
         const char* param_list[] = { cft_param[0], cft_param[1],
-            cft_param[2], cft_param[3],cft_param[4],
-            cft_param[5], cft_param[6], cft_param[7]
+                cft_param[2], cft_param[3],cft_param[4],
+                cft_param[5], cft_param[6], cft_param[7]
         };
         parameters.from_array(param_list, 2 * KEY_SIZE);
         condition = ""
@@ -2709,7 +2678,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     /* Create CFT Topic */
-    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && _useCft) {
+    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 &&
+            PM::GetInstance().is_set("cft")) {
         topic_desc = CreateCft(topic_name, topic);
         if (topic_desc == NULL) {
             printf("Create_contentfilteredtopic error\n");

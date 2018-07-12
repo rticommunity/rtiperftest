@@ -105,19 +105,13 @@ int perftest_cpp::Run(int argc, char *argv[])
     }
 
 //     printf("batching: %d\n", PM::GetInstance().get<int>("batching"));
-//     std::vector<unsigned long long> scan = PM::GetInstance().get_vector<unsigned long long>("scan");
-//     printf("scan: \n");
-//     for (unsigned int i = 0; i < scan.size(); i++) {
-//         printf("\t%llu\n", scan[i]);
-//     }
-//     std::vector<unsigned long long> cft = PM::GetInstance().get_vector<unsigned long long>("cft");
-//     printf("cft: \n");
-//     for (unsigned int i = 0; i < cft.size(); i++) {
-//         printf("\t%llu\n", cft[i]);
-//     }
-//     printf("dataLen: %d\n", PM::GetInstance().get<int>("dataLen"));
+    // std::vector<unsigned long long> scan = PM::GetInstance().get_vector<unsigned long long>("scan");
+    // printf("scan: \n");
+    // for (unsigned int i = 0; i < scan.size(); i++) {
+    //     printf("\t%llu\n", scan[i]);
+    // }
+  //  printf("dataLen: %d\n", PM::GetInstance().get<int>("dataLen"));
 //     printf("instances: %d\n", PM::GetInstance().get<int>("instances"));
-
 //     //TRANSPORT
 //     printf("nic: %s\n", PM::GetInstance().get<std::string>("nic").c_str());
 //     printf("transport: %s\n", PM::GetInstance().get<std::string>("transport").c_str());
@@ -276,7 +270,6 @@ perftest_cpp::perftest_cpp()
     _MessagingImpl = NULL;
     _MessagingArgv = NULL;
     _MessagingArgc = 0;
-    _useCft = false;
 
 #ifdef RTI_WIN32
     if (_hTimerQueue == NULL) {
@@ -595,30 +588,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         {
         } else if (IS_OPTION(argv[i], "-cft"))
         {
-            _useCft = true;
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <start>:<end> after -cft\n");
-                return false;
-            }
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
+            ++i;
         } else
         {
             _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
@@ -688,7 +658,22 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         return false;
     }
 
-    //manage the parameter: -pubRate -sleep -spin
+    // Manage the parameter: -cft
+    if (PM::GetInstance().is_set("cft")) {
+        std::vector<unsigned long long> cftRange =
+                PM::GetInstance().get_vector<unsigned long long>("cft");
+        if (cftRange.size() > 2) {
+            fprintf(stderr,
+                    "'-cft' value must have the format <start>:<end>\n");
+            return false;
+        } else if (cftRange[0] > cftRange[1]) {
+                fprintf(stderr,
+                        "'-cft' <start> value cannot be bigger than <end>\n");
+                return false;
+        }
+    }
+
+    // Manage the parameter: -pubRate -sleep -spin
     if (PM::GetInstance().is_set("pubRate")) {
         if (_SpinLoopCount > 0) {
             fprintf(stderr, "'-spin' is not compatible with '-pubRate'. "
@@ -1149,7 +1134,7 @@ int perftest_cpp::Subscriber()
         reader_listener = new ThroughputListener(
                 writer,
                 NULL,
-                _useCft,
+                PM::GetInstance().is_set("cft"),
                 PM::GetInstance().get<int>("numPublishers"));
         reader = _MessagingImpl->CreateReader(
                 THROUGHPUT_TOPIC_NAME,
@@ -1171,7 +1156,7 @@ int perftest_cpp::Subscriber()
         reader_listener = new ThroughputListener(
                 writer,
                 reader,
-                _useCft,
+                PM::GetInstance().is_set("cft"),
                 PM::GetInstance().get<int>("numPublishers"));
 
         RTIOsapiThread_new("ReceiverThread",

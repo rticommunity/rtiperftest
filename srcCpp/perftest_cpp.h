@@ -99,7 +99,6 @@ class perftest_cpp
     IMessaging *_MessagingImpl;
     char **_MessagingArgv;
     int _MessagingArgc;
-    bool _useCft;
     static const Perftest_ProductVersion_t _version;
 
   private:

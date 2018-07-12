@@ -287,16 +287,6 @@ void ParameterManager::initialize()
     pidMultiPubTest->setGroup(PUB);
     parameterList["pidMultiPubTest"] = AnyParameter(pidMultiPubTest);
 
-    ParameterVector<unsigned long long> *cft = new ParameterVector<unsigned long long>();
-    cft->setCommandLineArgument(std::make_pair("-cft","<start>:<end>"));
-    cft->setDescription("Use a Content Filtered Topic for the Throughput topic in the subscriber side.\nSpecify 2 parameters: <start> and <end> to receive samples with a key in that range.\nSpecify only 1 parameter to receive samples with that exact key.\nDefault: Not set");
-    cft->setType(T_VECTOR_NUMERIC);
-    cft->setExtraArgument(YES);
-    cft->setRange(0, MAX_CFT_VALUE);
-    cft->setParseMethod(SPLIT);
-    cft->setGroup(PUB);
-    parameterList["cft"] = AnyParameter(cft);
-
     ParameterPair<unsigned long long, std::string> *pubRate = new ParameterPair<unsigned long long, std::string>(0,"spin");
     pubRate->setCommandLineArgument(std::make_pair("-pubRate","<samples/s>:<method>"));
     pubRate->setDescription("Limit the throughput to the specified number\nof samples/s. Default 0 (don't limit)\n[OPTIONAL] Method to control the throughput can be:\n'spin' or 'sleep'.\nDefault method: spin");
@@ -394,6 +384,16 @@ void ParameterManager::initialize()
     numPublishers->setRange(1, ULLONG_MAX);
     numPublishers->setGroup(SUB);
     parameterList["numPublishers"] = AnyParameter(numPublishers);
+
+    ParameterVector<unsigned long long> *cft = new ParameterVector<unsigned long long>();
+    cft->setCommandLineArgument(std::make_pair("-cft","<start>:<end>"));
+    cft->setDescription("Use a Content Filtered Topic for the Throughput topic in the subscriber side.\nSpecify 2 parameters: <start> and <end> to receive samples with a key in that range.\nSpecify only 1 parameter to receive samples with that exact key.\nDefault: Not set");
+    cft->setType(T_VECTOR_NUMERIC);
+    cft->setExtraArgument(YES);
+    cft->setRange(0, MAX_CFT_VALUE - 1);
+    cft->setParseMethod(SPLIT);
+    cft->setGroup(SUB);
+    parameterList["cft"] = AnyParameter(cft);
 
     ////////////////////////////////////////////////////////////////////////////
     // TRANSPORT PARAMETER:

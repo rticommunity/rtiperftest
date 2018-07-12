@@ -48,9 +48,6 @@ class RTIDDSImpl : public IMessaging
         _IsDebug = false;
         _isLargeData = false;
         _isScan = false;
-        _useCft = false;
-        _CFTRange[0] = 0;
-        _CFTRange[1] = 0;
 
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure = false;
@@ -127,8 +124,6 @@ class RTIDDSImpl : public IMessaging
     bool         _IsDebug;
     bool         _isLargeData;
     bool         _isScan;
-    bool         _useCft;
-    unsigned int _CFTRange[2];
 
     PerftestTransport _transport;
 
