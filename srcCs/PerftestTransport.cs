@@ -251,8 +251,14 @@ namespace PerformanceTest
                 sb.Append(nameAddress.Key).Append(" ").Append(nameAddress.Value).Append("\n");
             }
             sb.Append("\t-multicastAddr <address>      - Use multicast to send data and set\n");
-            sb.Append("\t                                the input <address> as the multicast\n");
-            sb.Append("\t                                address for all the topics.\n");
+            sb.Append("\t                                the input <address>|<addr,addr,addr>\n");
+            sb.Append("\t                                as the multicast addresses for the\n");
+            sb.Append("\t                                three topics in the application.\n");
+            sb.Append("\t                                If only one address is provided, that\n");
+            sb.Append("\t                                one and the 2 consecutive ones will be\n");
+            sb.Append("\t                                used for the 3 topics used by Perftest.\n");
+            sb.Append("\t                                The address must be lower than X.X.X.253\n");
+            sb.Append("\t                                on IPv4 or the equivalent for IPv6\n");
             sb.Append("\t-transportVerbosity <level>   - Verbosity of the transport\n");
             sb.Append("\t                                Default: 0 (errors only)\n");
             sb.Append("\t-transportServerBindPort <p>  - Port used by the transport to accept\n");
