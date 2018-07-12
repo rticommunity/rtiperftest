@@ -138,12 +138,16 @@ int perftest_cpp::Run(int argc, char *argv[])
 //   #ifdef RTI_SECURE_PERFTEST
 //     printf("secureEncryptDiscovery: %d\n", PM::GetInstance().get<bool>("secureEncryptDiscovery"));
 //     printf("secureSign: %d\n", PM::GetInstance().get<bool>("secureSign"));
+//     printf("secureEncryptBoth: %d\n", PM::GetInstance().get<bool>("secureEncryptBoth"));
 //     printf("secureEncryptData: %d\n", PM::GetInstance().get<bool>("secureEncryptData"));
+//     printf("secureEncryptSM: %d\n", PM::GetInstance().get<bool>("secureEncryptSM"));
 //     printf("secureGovernanceFile: %s\n", PM::GetInstance().get<std::string>("secureGovernanceFile").c_str());
 //     printf("securePermissionsFile: %s\n", PM::GetInstance().get<std::string>("securePermissionsFile").c_str());
 //     printf("secureCertAuthority: %s\n", PM::GetInstance().get<std::string>("secureCertAuthority").c_str());
 //     printf("secureCertFile: %s\n", PM::GetInstance().get<std::string>("secureCertFile").c_str());
 //     printf("securePrivateKey: %s\n", PM::GetInstance().get<std::string>("securePrivateKey").c_str());
+//     printf("secureLibrary: %s\n", PM::GetInstance().get<std::string>("secureLibrary").c_str());
+//     printf("secureDebug: %s\n", PM::GetInstance().get<unsigned long long>("secureDebug"));
 //   #endif
 //     return 0;
 

@@ -573,6 +573,14 @@ void ParameterManager::initialize()
     secureSign->setGroup(SECURE);
     parameterList["secureSign"] = AnyParameter(secureSign);
 
+    Parameter<bool> *secureEncryptBoth = new Parameter<bool>(false);
+    secureEncryptBoth->setCommandLineArgument(std::make_pair("-secureEncryptBoth",""));
+    secureEncryptBoth->setDescription("Sign (HMAC) discovery and user data");
+    secureEncryptBoth->setType(T_BOOL);
+    secureEncryptBoth->setExtraArgument(NO);
+    secureEncryptBoth->setGroup(SECURE);
+    parameterList["secureEncryptBoth"] = AnyParameter(secureEncryptBoth);
+
     Parameter<bool> *secureEncryptData = new Parameter<bool>(false);
     secureEncryptData->setCommandLineArgument(std::make_pair("-secureEncryptData",""));
     secureEncryptData->setDescription("Encrypt topic (user) data");
@@ -630,7 +638,25 @@ void ParameterManager::initialize()
     securePrivateKey->setExtraArgument(YES);
     securePrivateKey->setGroup(SECURE);
     parameterList["securePrivateKey"] = AnyParameter(securePrivateKey);
-  #endif
+
+    Parameter<std::string> *secureLibrary = new Parameter<std::string>();
+    secureLibrary->setCommandLineArgument(std::make_pair("-secureLibrary","<file>"));
+    secureLibrary->setDescription("Private key file <optional>.\nDefault: \"./resource/secure/subkey.pem\"");
+    secureLibrary->setType(T_STR);
+    secureLibrary->setExtraArgument(YES);
+    secureLibrary->setGroup(SECURE);
+    parameterList["secureLibrary"] = AnyParameter(secureLibrary);
+
+    Parameter<unsigned long long> *secureDebug = new Parameter<unsigned long long>(1);
+    secureDebug->setCommandLineArgument(std::make_pair("-secureDebug","<level>"));
+    secureDebug->setType(T_NUMERIC);
+    secureDebug->setExtraArgument(YES);
+    secureDebug->setRange(-1, ULLONG_MAX);
+    secureDebug->setGroup(SECURE);
+    secureDebug->setInternal(true);
+    parameterList["secureDebug"] = AnyParameter(secureDebug);
+
+#endif
 }
 
 
@@ -881,3 +907,7 @@ std::string ParameterManager::get_center_header_help_line(std::string name){
     }
     return line.str();
 }
+/*TODO: */
+// bool ParameterManager::group_is_use(){
+
+// }

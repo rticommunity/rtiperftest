@@ -439,82 +439,45 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
       #ifdef RTI_SECURE_PERFTEST
         else if (IS_OPTION(argv[i], "-secureSign")) {
-            _secureIsSigned = true;
             _secureUseSecure = true;
         }
         else if (IS_OPTION(argv[i], "-secureEncryptBoth")) {
-            _secureIsDataEncrypted = true;
-            _secureIsSMEncrypted = true;
             _secureUseSecure = true;
         }
         else if (IS_OPTION(argv[i], "-secureEncryptData")) {
-            _secureIsDataEncrypted = true;
             _secureUseSecure = true;
         }
         else if (IS_OPTION(argv[i], "-secureEncryptSM")) {
-            _secureIsSMEncrypted = true;
             _secureUseSecure = true;
         }
         else if (IS_OPTION(argv[i], "-secureEncryptDiscovery")) {
-            _secureIsDiscoveryEncrypted = true;
             _secureUseSecure = true;
         }
         else if (IS_OPTION(argv[i], "-secureGovernanceFile")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-               fprintf(stderr, "Missing <file> after -secureGovernanceFile\n");
-               return false;
-            }
-            _secureGovernanceFile = argv[i];
-            fprintf(stdout, "Warning -- authentication, encryption, signing arguments "
-                    "will be ignored, and the values specified by the Governance file will "
-                    "be used instead\n");
+            i++;
             _secureUseSecure = true;
         }
         else if (IS_OPTION(argv[i], "-securePermissionsFile")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <file> after -securePermissionsFile\n");
-                return false;
-            }
-            _securePermissionsFile = argv[i];
+            i++;
             _secureUseSecure = true;
         }
         else if (IS_OPTION(argv[i], "-secureCertAuthority")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <file> after -secureCertAuthority\n");
-                return false;
-            }
-            _secureCertAuthorityFile = argv[i];
+            i++;
             _secureUseSecure = true;
         }
         else if (IS_OPTION(argv[i], "-secureCertFile")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <file> after -secureCertFile\n");
-                return false;
-            }
-            _secureCertificateFile = argv[i];
+            i++;
             _secureUseSecure = true;
         }
         else if (IS_OPTION(argv[i], "-securePrivateKey")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <file> after -securePrivateKey\n");
-                return false;
-            }
-            _securePrivateKeyFile = argv[i];
+            i++;
             _secureUseSecure = true;
         }
         else if (IS_OPTION(argv[i], "-secureLibrary")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <file> after -secureLibrary\n");
-                return false;
-            }
-            _secureLibrary = argv[i];
+            i++;
         }
         else if (IS_OPTION(argv[i], "-secureDebug")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <level> after -secureDebug\n");
-                 return false;
-            }
-            _secureDebugLevel = strtol(argv[i], NULL, 10);
+            i++;
         }
       #endif
         else {
@@ -673,7 +636,19 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    return true;
+    if (PM::GetInstance().is_set("secureGovernanceFile")) {
+        fprintf(stdout,
+                "Warning -- authentication, encryption, signing arguments "
+                "will be ignored, and the values specified by the Governance "
+                "file will be used instead\n");
+    }
+
+    if (PM::GetInstance().is_set("secureEncryptBoth")) {
+        PM::GetInstance().set("secureEncryptData", true);
+        PM::GetInstance().set("secureEncryptSM", true);
+    }
+
+        return true;
 }
 
 /*********************************************************
@@ -1788,6 +1763,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     // configure use of security plugins, based on provided arguments
 
     DDS_ReturnCode_t retcode;
+    std::string governanceFilePath;
 
     // load plugin
     retcode = DDSPropertyQosPolicyHelper::add_property(
@@ -1816,7 +1792,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
             "com.rti.serv.secure.library",
-            _secureLibrary.c_str(),
+            PM::GetInstance().get<std::string>("secureLibrary").c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property com.rti.serv.secure.library\n");
@@ -1846,37 +1822,38 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
      */
 
     // check if governance file provided
-    if (_secureGovernanceFile.empty()) {
+    if (PM::GetInstance().get<std::string>("secureGovernanceFile").empty()) {
         // choose a pre-built governance file
-        _secureGovernanceFile = "./resource/secure/signed_PerftestGovernance_";
-        if (_secureIsDiscoveryEncrypted) {
-            _secureGovernanceFile += "Discovery";
+        governanceFilePath = "./resource/secure/signed_PerftestGovernance_";
+        if (PM::GetInstance().get<bool>("secureEncryptDiscovery")) {
+            governanceFilePath += "Discovery";
         }
 
-        if (_secureIsSigned) {
-            _secureGovernanceFile += "Sign";
+        if (PM::GetInstance().get<bool>("secureSign")) {
+            governanceFilePath += "Sign";
         }
 
-        if (_secureIsDataEncrypted && _secureIsSMEncrypted) {
-            _secureGovernanceFile += "EncryptBoth";
-        } else if (_secureIsDataEncrypted) {
-            _secureGovernanceFile += "EncryptData";
-        } else if (_secureIsSMEncrypted) {
-            _secureGovernanceFile += "EncryptSubmessage";
+        if (PM::GetInstance().get<bool>("secureEncryptData")
+                && PM::GetInstance().get<bool>("secureEncryptSM")) {
+            governanceFilePath += "EncryptBoth";
+        } else if (PM::GetInstance().get<bool>("secureEncryptData")) {
+            governanceFilePath += "EncryptData";
+        } else if (PM::GetInstance().get<bool>("secureEncryptSM")) {
+            governanceFilePath += "EncryptSubmessage";
         }
 
-        _secureGovernanceFile += ".xml";
+        governanceFilePath += ".xml";
 
         retcode = DDSPropertyQosPolicyHelper::add_property(
                 dpQos.property,
                 "com.rti.serv.secure.access_control.governance_file",
-                _secureGovernanceFile.c_str(),
+                governanceFilePath.c_str(),
                 false);
     } else {
         retcode = DDSPropertyQosPolicyHelper::add_property(
                 dpQos.property,
                 "com.rti.serv.secure.access_control.governance_file",
-                _secureGovernanceFile.c_str(),
+                governanceFilePath.c_str(),
                 false);
     }
     if (retcode != DDS_RETCODE_OK) {
@@ -1885,11 +1862,13 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
         return false;
     }
 
+    PM::GetInstance().set("secureGovernanceFile", governanceFilePath);
+
     // permissions file
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
             "com.rti.serv.secure.access_control.permissions_file",
-            _securePermissionsFile.c_str(),
+            PM::GetInstance().get<std::string>("securePermissionsFile").c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
@@ -1901,7 +1880,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
             "com.rti.serv.secure.access_control.permissions_authority_file",
-            _secureCertAuthorityFile.c_str(),
+            PM::GetInstance().get<std::string>("secureCertAuthority").c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
@@ -1913,7 +1892,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
             "com.rti.serv.secure.authentication.ca_file",
-            _secureCertAuthorityFile.c_str(),
+            PM::GetInstance().get<std::string>("secureCertAuthority").c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
@@ -1925,7 +1904,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
             "com.rti.serv.secure.authentication.certificate_file",
-            _secureCertificateFile.c_str(),
+            PM::GetInstance().get<std::string>("secureCertFile").c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
@@ -1937,7 +1916,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
             "com.rti.serv.secure.authentication.private_key_file",
-            _securePrivateKeyFile.c_str(),
+            PM::GetInstance().get<std::string>("securePrivateKey").c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
@@ -1945,9 +1924,10 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
         return false;
     }
 
-    if (_secureDebugLevel != -1) {
+    if (PM::GetInstance().is_set("secureDebug")) {
         char buf[16];
-        sprintf(buf, "%d", _secureDebugLevel);
+        sprintf(buf, "%llu",
+                PM::GetInstance().get<unsigned long long>("secureDebug"));
         retcode = DDSPropertyQosPolicyHelper::add_property(
                 dpQos.property,
                 "com.rti.serv.secure.logging.log_level",
@@ -1967,37 +1947,51 @@ template <typename T>
 bool RTIDDSImpl<T>::validateSecureArgs()
 {
     if (_secureUseSecure) {
-        if (_securePrivateKeyFile.empty()) {
+        if (PM::GetInstance().get<std::string>("securePrivateKey").empty()) {
             if (PM::GetInstance().get<bool>("pub")) {
-                _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_PUB;
+                PM::GetInstance().set(
+                        "securePrivateKey",
+                        SECURE_PRIVATEKEY_FILE_PUB);
             } else {
-                _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_SUB;
+                PM::GetInstance().set(
+                        "securePrivateKey",
+                        SECURE_PRIVATEKEY_FILE_SUB);
             }
         }
 
-        if (_secureCertificateFile.empty()) {
+        if (PM::GetInstance().get<std::string>("secureCertFile").empty()) {
             if (PM::GetInstance().get<bool>("pub")) {
-                _secureCertificateFile = SECURE_CERTIFICATE_FILE_PUB;
+                PM::GetInstance().set(
+                        "secureCertFile",
+                        SECURE_CERTIFICATE_FILE_PUB);
             } else {
-                _secureCertificateFile = SECURE_CERTIFICATE_FILE_SUB;
+                PM::GetInstance().set(
+                        "secureCertFile",
+                        SECURE_CERTIFICATE_FILE_SUB);
             }
         }
 
-        if (_secureCertAuthorityFile.empty()) {
-            _secureCertAuthorityFile = SECURE_CERTAUTHORITY_FILE;
+        if (PM::GetInstance().get<std::string>("secureCertAuthority").empty()) {
+            PM::GetInstance().set(
+                    "secureCertAuthority",
+                    SECURE_CERTAUTHORITY_FILE);
         }
 
-        if (_securePermissionsFile.empty()) {
+        if (PM::GetInstance().get<std::string>("securePermissionsFile").empty()) {
             if (PM::GetInstance().get<bool>("pub")) {
-                _securePermissionsFile = SECURE_PERMISION_FILE_PUB;
+                PM::GetInstance().set(
+                        "securePermissionsFile",
+                        SECURE_PERMISION_FILE_PUB);
             } else {
-                _securePermissionsFile = SECURE_PERMISION_FILE_SUB;
+                PM::GetInstance().set(
+                        "securePermissionsFile",
+                        SECURE_PERMISION_FILE_SUB);
             }
         }
 
       #ifdef RTI_PERFTEST_DYNAMIC_LINKING
-        if (_secureLibrary.empty()) {
-            _secureLibrary = SECURE_LIBRARY_NAME;
+        if (PM::GetInstance().get<std::string>("secureLibrary").empty()) {
+            PM::GetInstance().set("secureLibrary", SECURE_LIBRARY_NAME);
         }
       #endif
 
@@ -2013,77 +2007,88 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     stringStream << "Secure Configuration:\n";
 
     stringStream << "\tEncrypt discovery: ";
-    if (_secureIsDiscoveryEncrypted) {
+    if (PM::GetInstance().get<bool>("secureEncryptDiscovery")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tEncrypt topic (user) data: ";
-    if (_secureIsDataEncrypted) {
+    if (PM::GetInstance().get<bool>("secureEncryptData")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tEncrypt submessage: ";
-    if (_secureIsSMEncrypted) {
+    if (PM::GetInstance().get<bool>("secureEncryptSM")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tSign data: ";
-    if (_secureIsSigned) {
+    if (PM::GetInstance().get<bool>("secureSign")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tGovernance file: ";
-    if (_secureGovernanceFile.empty()) {
+    if (PM::GetInstance().get<std::string>("secureGovernanceFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _secureGovernanceFile << "\n";
+        stringStream << PM::GetInstance().get<std::string>(
+                                "secureGovernanceFile")
+                     << "\n";
     }
 
     stringStream << "\tPermissions file: ";
-    if (_securePermissionsFile.empty()) {
+    if (PM::GetInstance().get<std::string>("securePermissionsFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _securePermissionsFile << "\n";
+        stringStream << PM::GetInstance().get<std::string>(
+                                "securePermissionsFile")
+                     << "\n";
     }
 
     stringStream << "\tPrivate key file: ";
-    if (_securePrivateKeyFile.empty()) {
+    if (PM::GetInstance().get<std::string>("securePrivateKey").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _securePrivateKeyFile << "\n";
+        stringStream << PM::GetInstance().get<std::string>("securePrivateKey")
+                     << "\n";
     }
 
     stringStream << "\tCertificate file: ";
-    if (_secureCertificateFile.empty()) {
+    if (PM::GetInstance().get<std::string>("secureCertFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _secureCertificateFile << "\n";
+        stringStream << PM::GetInstance().get<std::string>("secureCertFile")
+                     << "\n";
     }
 
     stringStream << "\tCertificate authority file: ";
-    if (_secureCertAuthorityFile.empty()) {
+    if (PM::GetInstance().get<std::string>("secureCertAuthority").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _secureCertAuthorityFile << "\n";
+        stringStream << PM::GetInstance().get<std::string>(
+                                "secureCertAuthority")
+                     << "\n";
     }
 
     stringStream << "\tPlugin library: ";
-    if (_secureLibrary.empty()) {
+    if (PM::GetInstance().get<std::string>("secureLibrary").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _secureLibrary << "\n";
+        stringStream << PM::GetInstance().get<std::string>("secureLibrary")
+                     << "\n";
     }
 
-    if (_secureDebugLevel != -1) {
-        stringStream << "\tDebug level: " <<  _secureDebugLevel << "\n";
+    if (PM::GetInstance().is_set("secureDebug")) {
+        stringStream << "\tDebug level: "
+                     << PM::GetInstance().get<unsigned long long>("secureDebug")
+                     << "\n";
     }
 
     return stringStream.str();
