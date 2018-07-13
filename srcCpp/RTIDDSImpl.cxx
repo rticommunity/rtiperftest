@@ -343,39 +343,38 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
       #ifdef RTI_SECURE_PERFTEST
         else if (IS_OPTION(argv[i], "-secureSign")) {
-            _secureUseSecure = true;
+
         }
         else if (IS_OPTION(argv[i], "-secureEncryptBoth")) {
-            _secureUseSecure = true;
+
         }
         else if (IS_OPTION(argv[i], "-secureEncryptData")) {
-            _secureUseSecure = true;
+
         }
         else if (IS_OPTION(argv[i], "-secureEncryptSM")) {
-            _secureUseSecure = true;
+
         }
         else if (IS_OPTION(argv[i], "-secureEncryptDiscovery")) {
-            _secureUseSecure = true;
+
         }
         else if (IS_OPTION(argv[i], "-secureGovernanceFile")) {
             i++;
-            _secureUseSecure = true;
+
         }
         else if (IS_OPTION(argv[i], "-securePermissionsFile")) {
             i++;
-            _secureUseSecure = true;
+
         }
         else if (IS_OPTION(argv[i], "-secureCertAuthority")) {
             i++;
-            _secureUseSecure = true;
+
         }
         else if (IS_OPTION(argv[i], "-secureCertFile")) {
             i++;
-            _secureUseSecure = true;
+
         }
         else if (IS_OPTION(argv[i], "-securePrivateKey")) {
             i++;
-            _secureUseSecure = true;
         }
         else if (IS_OPTION(argv[i], "-secureLibrary")) {
             i++;
@@ -630,7 +629,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
    #ifdef RTI_SECURE_PERFTEST
-   if (_secureUseSecure) {
+   if (PM::GetInstance().group_is_use(SECURE)) {
         stringStream << "\n" << printSecureArgs();
    }
    #endif
@@ -1853,7 +1852,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
 template <typename T>
 bool RTIDDSImpl<T>::validateSecureArgs()
 {
-    if (_secureUseSecure) {
+    if (PM::GetInstance().group_is_use(SECURE)) {
         if (PM::GetInstance().get<std::string>("securePrivateKey").empty()) {
             if (PM::GetInstance().get<bool>("pub")) {
                 PM::GetInstance().set(
@@ -2071,7 +2070,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
 
   #ifdef RTI_SECURE_PERFTEST
-    if (_secureUseSecure) {
+    if (PM::GetInstance().group_is_use(SECURE)) {
         // validate arguments
         if (!validateSecureArgs()) {
             fprintf(stderr, "Failed to configure security plugins\n");

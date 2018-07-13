@@ -45,10 +45,6 @@ class RTIDDSImpl : public IMessaging
         _IsDebug = false;
         _isLargeData = false;
 
-      #ifdef RTI_SECURE_PERFTEST
-        _secureUseSecure = false;
-      #endif
-
         _HeartbeatPeriod.sec = 0;
         _HeartbeatPeriod.nanosec = 0;
         _FastHeartbeatPeriod.sec = 0;
@@ -108,8 +104,6 @@ class RTIDDSImpl : public IMessaging
     PerftestTransport _transport;
 
   #ifdef RTI_SECURE_PERFTEST
-    bool _secureUseSecure;
-
     static const std::string SECURE_PRIVATEKEY_FILE_PUB;
     static const std::string SECURE_PRIVATEKEY_FILE_SUB;
     static const std::string SECURE_CERTIFICATE_FILE_PUB;

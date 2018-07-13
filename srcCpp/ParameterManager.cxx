@@ -907,7 +907,13 @@ std::string ParameterManager::get_center_header_help_line(std::string name){
     }
     return line.str();
 }
-/*TODO: */
-// bool ParameterManager::group_is_use(){
 
-// }
+bool ParameterManager::group_is_use(GROUP group){
+    std::map<std::string, AnyParameter>::iterator it;
+    for (it = parameterList.begin(); it != parameterList.end(); it++) {
+        if (it->second.get()->getIsSet() && it->second.get()->getGroup() == group) {
+            return true;
+        }
+    }
+    return false;
+}
