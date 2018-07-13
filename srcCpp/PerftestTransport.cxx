@@ -715,105 +715,6 @@ void PerftestTransport::populateSecurityFiles() {
 /******************************************************************************/
 /* PUBLIC METHODS */
 
-std::map<std::string, unsigned int> PerftestTransport::getTransportCmdLineArgs()
-{
-
-    std::map<std::string, unsigned int> cmdLineArgsMap;
-
-    cmdLineArgsMap["-transport"] = 1;
-    cmdLineArgsMap["-enableTCP"] = 0;
-    cmdLineArgsMap["-enableUDPv6"] = 0;
-    cmdLineArgsMap["-enableSharedMemory"] = 0;
-    cmdLineArgsMap["-nic"] = 1;
-    cmdLineArgsMap["-allowInterfaces"] = 1;
-    cmdLineArgsMap["-transportServerBindPort"] = 1;
-    cmdLineArgsMap["-transportVerbosity"] = 1;
-    cmdLineArgsMap["-transportWan"] = 0;
-    cmdLineArgsMap["-transportPublicAddress"] = 1;
-    cmdLineArgsMap["-transportCertAuthority"] = 1;
-    cmdLineArgsMap["-transportCertFile"] = 1;
-    cmdLineArgsMap["-transportPrivateKey"] = 1;
-    cmdLineArgsMap["-transportWanServerAddress"] = 1;
-    cmdLineArgsMap["-transportWanServerPort"] = 1;
-    cmdLineArgsMap["-transportWanId"] = 1;
-    cmdLineArgsMap["-transportSecureWan"] = 0;
-    cmdLineArgsMap["-multicast"] = 0;
-    cmdLineArgsMap["-nomulticast"] = 0;
-    cmdLineArgsMap["-multicastAddr"] = 1;
-
-    return cmdLineArgsMap;
-}
-
-std::string PerftestTransport::helpMessageString()
-{
-
-    std::ostringstream oss;
-    oss
-    << "\t===================== Transport Specific Options ======================\n"
-    << "\n"
-    << "\t-transport <kind>             - Set transport to be used. The rest of\n"
-    << "\t                                the transports will be disabled.\n"
-    << "\t                                Values:\n"
-    << "\t                                    UDPv4\n"
-    << "\t                                    UDPv6\n"
-    << "\t                                    SHMEM\n"
-    << "\t                                    TCP\n"
-    << "\t                                    TLS\n"
-    << "\t                                    DTLS\n"
-    << "\t                                    WAN\n"
-    << "\t                                    Use XML\n"
-    << "\t                                Default: Use XML (UDPv4|SHMEM).\n"
-    << "\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n"
-    << "\t                                If not specified, use all available\n"
-    << "\t                                interfaces\n"
-    << "\t-multicast                    - Use multicast to send data. Each topic\n"
-    << "\t                                will use a different address:\n";
-    for (std::map<std::string, std::string>::iterator it = multicastAddrMap.begin();
-        it!=multicastAddrMap.end(); ++it) {
-            oss << "                                            "
-            << it->first << " " << it->second << "\n";
-    }
-    oss
-    << "\t-multicastAddr <address>      - Use multicast to send data and set\n"
-    << "\t                                the input <address> as the multicast\n"
-    << "\t                                address for all the topics.\n"
-    << "\t-transportVerbosity <level>   - Verbosity of the transport\n"
-    << "\t                                Default: 0 (errors only)\n"
-    << "\t-transportServerBindPort <p>  - Port used by the transport to accept\n"
-    << "\t                                TCP/TLS connections <optional>\n"
-    << "\t                                Default: 7400\n"
-    << "\t-transportWan                   Use TCP/TLS across LANs and Firewalls.\n"
-    << "\t                                Default: Not Set, LAN mode.\n"
-    << "\t-transportPublicAddress <ip>  - Public IP address and port (WAN address\n"
-    << "\t                                and port) (separated with ‘:’ ) related\n"
-    << "\t                                to the transport instantiation. This is\n"
-    << "\t                                required when using server mode.\n"
-    << "\t                                Default: Not Set.\n"
-    << "\t-transportWanServerAddress <a>- Address where to find the WAN Server\n"
-    << "\t                                Default: Not Set (Required)\n"
-    << "\t-transportWanServerPort <p>     Port where to find the WAN Server.\n"
-    << "\t                                Default: 3478.\n"
-    << "\t-transportWanId <id>          - Id to be used for the WAN transport.\n"
-    << "\t                                Default: Not Set (Required).\n"
-    << "\t-transportSecureWan           - Use WAN with security.\n"
-    << "\t                                Default: False.\n"
-    << "\t-transportCertAuthority <file>- Certificate authority file <optional>\n"
-    << "\t                                Default: \""
-    << TRANSPORT_CERTAUTHORITY_FILE << "\"\n"
-    << "\t-transportCertFile <file>     - Certificate file <optional>\n"
-    << "\t                                Default (Publisher): \""
-    << TRANSPORT_CERTIFICATE_FILE_PUB << "\"\n"
-    << "\t                                Default (Subscriber): \""
-    << TRANSPORT_CERTIFICATE_FILE_SUB << "\"\n"
-    << "\t-transportPrivateKey <file>   - Private key file <optional>\n"
-    << "\t                                Default (Publisher): \""
-    << TRANSPORT_PRIVATEKEY_FILE_PUB << "\"\n"
-    << "\t                                Default (Subscriber): \""
-    << TRANSPORT_PRIVATEKEY_FILE_SUB << "\"\n";
-
-    return oss.str();
-}
-
 std::string PerftestTransport::printTransportConfigurationSummary()
 {
     bool useMulticast = PM::GetInstance().get<bool>("multicast");
@@ -897,94 +798,34 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     return stringStream.str();
 }
 
-bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
+/*********************************************************
+ * Validate and manage the parameter
+ */
+bool PerftestTransport::validate_input()
 {
+    // TODO: (Alfonso) Manage parameter -multicastAddr
+    // } else if (IS_OPTION(argv[i], "-multicastAddr")) {
+    //     PM::GetInstance().set("multicast", true);
+    //     if ((i == (argc - 1)) || *argv[++i] == '-') {
+    //         fprintf(stderr,
+    //                 "%s Missing <address> after "
+    //                 "-multicastAddr\n",
+    //                 classLoggingString.c_str());
+    //         return false;
+    //     }
+    //     multicastAddrMap[THROUGHPUT_TOPIC_NAME] = argv[i];
+    //     multicastAddrMap[LATENCY_TOPIC_NAME] = argv[i];
+    //     multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = argv[i];
+    // }
 
-    // We will only parse the properties related with transports here.
-    for (int i = 0; i < argc; ++i) {
-
-        if (IS_OPTION(argv[i], "-pub")) {
-
-        } else if (IS_OPTION(argv[i], "-dataLen")) {
-            ++i;
-        } else if (IS_OPTION(argv[i], "-transport")) {
-
-            i++;
-
-        } else if (IS_OPTION(argv[i], "-nic")) {
-
-            i++;
-
-        } else if (IS_OPTION(argv[i], "-allowInterfaces")) {
-
-            i++;
-
-        } else if (IS_OPTION(argv[i], "-transportVerbosity")) {
-
-            i++;
-
-        } else if (IS_OPTION(argv[i], "-transportServerBindPort")) {
-
-            i++;
-
-        } else if (IS_OPTION(argv[i], "-transportWan")) {
-
-            i++;
-
-        } else if (IS_OPTION(argv[i], "-transportPublicAddress")) {
-
-            i++;
-
-        }  else if (IS_OPTION(argv[i], "-transportCertAuthority")) {
-
-            i++;
-
-        }  else if (IS_OPTION(argv[i], "-transportCertFile")) {
-
-            i++;
-
-        } else if (IS_OPTION(argv[i], "-transportPrivateKey")) {
-
-            i++;
-
-        } else if (IS_OPTION(argv[i], "-transportWanServerAddress")) {
-
-            i++;
-
-        } else if (IS_OPTION(argv[i], "-transportWanServerPort")) {
-
-            i++;
-
-        } else if (IS_OPTION(argv[i], "-transportWanId")) {
-
-            i++;
-
-        } else if (IS_OPTION(argv[i], "-transportSecureWan")) {
-
-
-        } else if (IS_OPTION(argv[i], "-multicast")) {
-            i++;
-        } else if (IS_OPTION(argv[i], "-multicastAddr")) {
-            PM::GetInstance().set("multicast", true);
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr,
-                        "%s Missing <address> after "
-                        "-multicastAddr\n",
-                        classLoggingString.c_str());
-                return false;
-            }
-            multicastAddrMap[THROUGHPUT_TOPIC_NAME] = argv[i];
-            multicastAddrMap[LATENCY_TOPIC_NAME] = argv[i];
-            multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = argv[i];
-        }
-    }
-
+    // Manage parameter -allowInterfaces -nic
     if (PM::GetInstance().get<std::string>("allowInterfaces").empty()) {
         PM::GetInstance().set<std::string>(
                 "allowInterfaces",
                 PM::GetInstance().get<std::string>("nic"));
     }
 
+    // Manage parameter -transport
     if (!setTransport(PM::GetInstance().get<std::string>(
                 "transport"))) {
         fprintf(stderr,

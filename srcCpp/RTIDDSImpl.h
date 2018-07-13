@@ -49,7 +49,6 @@ class RTIDDSImpl : public IMessaging
         _KeepDurationUsec = -1;
         _IsDebug = false;
         _isLargeData = false;
-
         _factory = NULL;
         _participant = NULL;
         _subscriber = NULL;
@@ -65,9 +64,7 @@ class RTIDDSImpl : public IMessaging
         Shutdown();
     }
 
-    void PrintCmdLineHelp();
-
-    bool ParseConfig(int argc, char *argv[]);
+    bool validate_input();
 
     std::string PrintConfiguration();
 

@@ -410,10 +410,9 @@ void ParameterManager::initialize()
     numPublishers->setRange(1, ULLONG_MAX);
     numPublishers->setGroup(SUB);
     parameterList["numPublishers"] = AnyParameter(numPublishers);
-
     ParameterVector<unsigned long long> *cft = new ParameterVector<unsigned long long>();
     cft->setCommandLineArgument(std::make_pair("-cft","<start>:<end>"));
-    cft->setDescription("Use a Content Filtered Topic for the Throughput topic in the subscriber side.\nSpecify 2 parameters: <start> and <end> to receive samples with a key in that range.\nSpecify only 1 parameter to receive samples with that exact key.\nDefault: Not set");
+    cft->setDescription("Use a Content Filtered Topic for the Throughput topic in the\nsubscriber side. Specify 2 parameters: <start> and <end> to\nreceive samples with a key in that range.\nSpecify only 1 parameter to receive samples with that exact key.\nDefault: Not set");
     cft->setType(T_VECTOR_NUMERIC);
     cft->setExtraArgument(YES);
     cft->setRange(0, MAX_CFT_VALUE - 1);
@@ -922,7 +921,7 @@ std::vector<std::string> ParameterManager::split(std::string str, char delimiter
 }
 
 std::string ParameterManager::get_center_header_help_line(std::string name){
-    name += "Specific Options";
+    name += " Specific Options";
     std::stringstream line;
     unsigned int maxWithLine = 80;
     std::string separatorBar =

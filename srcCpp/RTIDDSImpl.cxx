@@ -132,234 +132,11 @@ void RTIDDSImpl<T>::Shutdown()
 }
 
 /*********************************************************
- * PrintCmdLineHelp
+ * Validate and manage the parameter
  */
 template <typename T>
-void RTIDDSImpl<T>::PrintCmdLineHelp()
+bool RTIDDSImpl<T>::validate_input()
 {
-    /**************************************************************************/
-    std::string usage_string = std::string(
-            "\t-sendQueueSize <number>       - Sets number of samples (or batches) in send\n") +
-            "\t                                queue, default 50\n" +
-            "\t-domain <ID>                  - RTI DDS Domain, default 1\n" +
-            "\t-qosFile <filename>           - Name of XML file for DDS Qos profiles, \n" +
-            "\t                                default: perftest_qos_profiles.xml\n" +
-            "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n" +
-            "\t                                default: PerftestQosLibrary\n" +
-            "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
-            "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
-            "\t                                (Disabled for LatencyTest mode or if dataLen > 4kB)\n" +
-            "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
-            "\t                                protocol, default use positive acks\n" +
-            "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +
-            "\t                                1 - transient local, 2 - transient, \n" +
-            "\t                                3 - persistent, default 0\n" +
-            "\t-dynamicData                  - Makes use of the Dynamic Data APIs instead\n" +
-            "\t                                of using the generated types.\n" +
-            "\t-noDirectCommunication        - Use brokered mode for persistent durability\n" +
-            "\t-waitsetDelayUsec <usec>      - UseReadThread related. Allows you to\n" +
-            "\t                                process incoming data in groups, based on the\n" +
-            "\t                                time rather than individually. It can be used\n" +
-            "\t                                combined with -waitsetEventCount,\n" +
-            "\t                                default 100 usec\n" +
-            "\t-waitsetEventCount <count>    - UseReadThread related. Allows you to\n" +
-            "\t                                process incoming data in groups, based on the\n" +
-            "\t                                number of samples rather than individually. It\n" +
-            "\t                                can be used combined with -waitsetDelayUsec,\n" +
-            "\t                                default 5\n" +
-            "\t-enableAutoThrottle           - Enables the AutoThrottling feature in the\n" +
-            "\t                                throughput DataWriter (pub)\n" +
-            "\t-enableTurboMode              - Enables the TurboMode feature in the\n" +
-            "\t                                throughput DataWriter (pub)\n" +
-            "\t-noXmlQos                     - Skip loading the qos profiles from the xml\n" +
-            "\t                                profile\n" +
-            "\t-asynchronous                 - Use asynchronous writer\n" +
-            "\t                                Default: Not set\n" +
-            "\t-flowController <flow>        - In the case asynchronous writer use a specific flow controller.\n" +
-            "\t                                There are several flow controller predefined:\n" +
-            "\t                                ";
-    for(unsigned int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
-        usage_string += "\"" + valid_flow_controller[i] + "\" ";
-    }
-    usage_string += std::string("\n") +
-            "\t                                Default: \"default\" (If using asynchronous).\n" +
-            "\t-peer <address>               - Adds a peer to the peer host address list.\n" +
-            "\t                                This argument may be repeated to indicate multiple peers\n" +
-            "\n";
-    usage_string += _transport.helpMessageString();
-  #ifdef RTI_SECURE_PERFTEST
-    usage_string += std::string("\n") +
-            "\t======================= SECURE Specific Options =======================\n\n" +
-            "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n" +
-            "\t-secureSign                   - Sign (HMAC) discovery and user data\n" +
-            "\t-secureEncryptData            - Encrypt topic (user) data\n" +
-            "\t-secureEncryptSM              - Encrypt RTPS submessages\n" +
-            "\t-secureGovernanceFile <file>  - Governance file. If specified, the authentication,\n" +
-            "\t                                signing, and encryption arguments are ignored. The\n" +
-            "\t                                governance document configuration will be used instead\n" +
-            "\t                                Default: built using the secure options.\n" +
-            "\t-securePermissionsFile <file> - Permissions file <optional>\n" +
-            "\t                                Default: \"./resource/secure/signed_PerftestPermissionsSub.xml\"\n" +
-            "\t-secureCertAuthority <file>   - Certificate authority file <optional>\n" +
-            "\t                                Default: \"./resource/secure/cacert.pem\"\n" +
-            "\t-secureCertFile <file>        - Certificate file <optional>\n" +
-            "\t                                Default: \"./resource/secure/sub.pem\"\n" +
-            "\t-securePrivateKey <file>      - Private key file <optional>\n" +
-            "\t                                Default: \"./resource/secure/subkey.pem\"\n";
-  #endif
-
-    fprintf(stderr, "%s", usage_string.c_str());
-}
-
-/*********************************************************
- * ParseConfig
- */
-template <typename T>
-bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
-{
-    int i;
-
-    // Command-line params
-    for (i = 0; i < argc; ++i) {
-        if (IS_OPTION(argv[i], "-pub")) {
-        } else if (IS_OPTION(argv[i], "-scan")) {
-            if ((i != (argc-1)) && *argv[1+i] != '-') {
-                ++i;
-            }
-        } else if (IS_OPTION(argv[i], "-dataLen")) {
-
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-unbounded")) {
-            if ((i == (argc-1)) || *argv[i+1] == '-')
-            {
-            } else {
-                ++i;
-            }
-        } else if (IS_OPTION(argv[i], "-sendQueueSize")) {
-            ++i;
-        } else if (IS_OPTION(argv[i], "-domain")) {
-            ++i;
-        } else if (IS_OPTION(argv[i], "-qosFile")) {
-            ++i;
-        } else if (IS_OPTION(argv[i], "-qosLibrary")) {
-            ++i;
-        } else if (IS_OPTION(argv[i], "-bestEffort")) {
-        } else if (IS_OPTION(argv[i], "-durability")) {
-            ++i;
-        } else if (IS_OPTION(argv[i], "-dynamicData")) {
-        } else if (IS_OPTION(argv[i], "-noDirectCommunication")) {
-        } else if (IS_OPTION(argv[i], "-instances")) {
-            ++i;
-        } else if (IS_OPTION(argv[i], "-instanceHashBuckets")) {
-            ++i;
-        } else if (IS_OPTION(argv[i], "-batchSize")) {
-            ++i;
-        } else if (IS_OPTION(argv[i], "-keepDurationUsec")) {
-            ++i;
-        } else if (IS_OPTION(argv[i], "-noPositiveAcks")) {
-        }
-        else if (IS_OPTION(argv[i], "-verbosity"))
-        {
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-waitsetDelayUsec")) {
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-waitsetEventCount")) {
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-latencyTest"))
-        {
-        }
-        else if (IS_OPTION(argv[i], "-enableAutoThrottle"))
-        {
-        }
-        else if (IS_OPTION(argv[i], "-enableTurboMode") )
-        {
-        }
-        else if (IS_OPTION(argv[i], "-noXmlQos") ) {
-        }
-        else if (IS_OPTION(argv[i], "-asynchronous") )
-        {
-        }
-        else if (IS_OPTION(argv[i], "-flowController"))
-        {
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-peer")) {
-            ++i;
-        } else if (IS_OPTION(argv[i], "-cft")) {
-            ++i;
-        } else if (IS_OPTION(argv[i], "-writeInstance")) {
-            ++i;
-        }
-      #ifdef RTI_SECURE_PERFTEST
-        else if (IS_OPTION(argv[i], "-secureSign")) {
-
-        }
-        else if (IS_OPTION(argv[i], "-secureEncryptBoth")) {
-
-        }
-        else if (IS_OPTION(argv[i], "-secureEncryptData")) {
-
-        }
-        else if (IS_OPTION(argv[i], "-secureEncryptSM")) {
-
-        }
-        else if (IS_OPTION(argv[i], "-secureEncryptDiscovery")) {
-
-        }
-        else if (IS_OPTION(argv[i], "-secureGovernanceFile")) {
-            i++;
-
-        }
-        else if (IS_OPTION(argv[i], "-securePermissionsFile")) {
-            i++;
-
-        }
-        else if (IS_OPTION(argv[i], "-secureCertAuthority")) {
-            i++;
-
-        }
-        else if (IS_OPTION(argv[i], "-secureCertFile")) {
-            i++;
-
-        }
-        else if (IS_OPTION(argv[i], "-securePrivateKey")) {
-            i++;
-        }
-        else if (IS_OPTION(argv[i], "-secureLibrary")) {
-            i++;
-        }
-        else if (IS_OPTION(argv[i], "-secureDebug")) {
-            i++;
-        }
-      #endif
-        else {
-            if (i > 0) {
-                std::map<std::string, unsigned int> transportCmdOpts =
-                        PerftestTransport::getTransportCmdLineArgs();
-
-                std::map<std::string, unsigned int>::iterator it =
-                        transportCmdOpts.find(argv[i]);
-                if(it != transportCmdOpts.end()) {
-                    /*
-                     * Increment the counter with the number of arguments
-                     * obtained from the map.
-                     */
-                    i = i + it->second;
-                    continue;
-                }
-
-                fprintf(stderr, "%s: not recognized\n", argv[i]);
-                return false;
-            }
-        }
-    }
-
-    /* Validate and manage the parameter */
-
     // Manage parameter -instance
     if (PM::GetInstance().is_set("instance")){
         _InstanceMaxCountReader =
@@ -466,9 +243,8 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     }
 
     // Manage transport parameter
-    if(!_transport.parseTransportOptions(argc, argv)) {
-        fprintf(stderr,
-                "Failure parsing the transport options.\n");
+    if(!_transport.validate_input()) {
+        fprintf(stderr, "Failure validation the transport options.\n");
         return false;
     };
 
@@ -2258,8 +2034,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     _factory = DDSDomainParticipantFactory::get_instance();
 
-    if (!ParseConfig(argc, argv))
-    {
+    if (!validate_input()) {
         return false;
     }
 

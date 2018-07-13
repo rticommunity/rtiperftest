@@ -80,14 +80,9 @@ public:
 
     /**************************************************************************/
     /* PUBLIC METHODS */
-
-    static std::map<std::string, unsigned int> getTransportCmdLineArgs();
-
-    std::string helpMessageString();
-
     std::string printTransportConfigurationSummary();
 
-    bool parseTransportOptions(int argc, char *argv[]);
+    bool validate_input();
 
     // Check if the transport allows the use of multicast.
     bool allowsMulticast();
