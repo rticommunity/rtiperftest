@@ -646,7 +646,7 @@ C++ (Traditional) API:
 
 
 
-1. Copy your IDL files into `~/rtiperftest/srcIdl/custom/` folder.
+1. Copy your IDL files into `~/rtiperftest/srcIdl/customType/` folder.
 
 2. The following functions should be implemented (optionally) to properly
    initialize and set the Custom Type structures.
@@ -977,7 +977,7 @@ C++ (Traditional) API:
 
 
 
-5. Launch *RTI Perftest* with DynamicData.
+5. Besides, you can launch *RTI Perftest* with your customType using DynamicData.
 
     ::
 
