@@ -213,7 +213,6 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
 template <typename T>
 bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 {
-    unsigned long minScanSize = MAX_PERFTEST_SAMPLE_SIZE;
     int i;
     int sec = 0;
     unsigned int nanosec = 0;
@@ -222,32 +221,8 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     for (i = 0; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-pub")) {
         } else if (IS_OPTION(argv[i], "-scan")) {
-            _isScan = true;
-
-            /*
-             * Check if we have custom scan values. In such case we are just
-             * interested in the minimum one.
-             */
             if ((i != (argc-1)) && *argv[1+i] != '-') {
                 ++i;
-                unsigned long auxScan = 0;
-                char *pch = NULL;
-                pch = strtok (argv[i], ":");
-                while (pch != NULL) {
-                    if (sscanf(pch, "%lu", &auxScan) != 1) {
-                        return false;
-                    }
-                    pch = strtok (NULL, ":");
-                    if (auxScan < minScanSize) {
-                        minScanSize = auxScan;
-                    }
-                }
-            /*
-             * If we do not specify any custom value for the -scan, we would
-             * set minScanSize to the minimum size in the default set for -scan.
-             */
-            } else {
-                minScanSize = 32;
             }
         } else if (IS_OPTION(argv[i], "-dataLen")) {
 
@@ -285,7 +260,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             sec = 0;
             nanosec = 0;
 
-            if (sscanf(argv[i],"%d:%u",&sec,&nanosec) != 2) {
+            if (sscanf(argv[i],"%d:%u", &sec, &nanosec) != 2) {
                 fprintf(stderr, "-heartbeatPeriod value must have the format <sec>:<nanosec>\n");
                 return false;
             }
@@ -461,8 +436,9 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     }
 
     /* If we are using scan, we get the minimum and set it in Datalen */
-    if (_isScan) {
-        _DataLen = minScanSize;
+    if (PM::GetInstance().is_set("scan")) {
+        // Get min of scanList
+        _DataLen = PM::GetInstance().get_vector<unsigned long long>("scan")[0];
     }
 
     /* Check if we need to enable Large Data. This works also for -scan */
@@ -518,7 +494,8 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
              * enough to contain at least two samples (in this case we avoid the
              * checking at the middleware level).
              */
-            if (PM::GetInstance().is_set("batchsize") || _isScan) {
+            if (PM::GetInstance().is_set("batchsize") ||
+                    PM::GetInstance().is_set("scan")) {
                 /*
                  * Batchsize disabled. A message will be print if _batchsize < 0
                  * in perftest_cpp::PrintConfiguration()

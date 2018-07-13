@@ -91,8 +91,6 @@ class perftest_cpp
 
   private:
     unsigned long  _DataLen;
-    bool _isScan;
-    std::vector<unsigned long> _scanDataLenSizes;
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
     IMessaging *_MessagingImpl;
@@ -101,7 +99,9 @@ class perftest_cpp
     static const Perftest_ProductVersion_t _version;
 
   private:
-    static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);
+    static void SetTimeout(
+            unsigned int executionTimeInSeconds,
+            bool isScan = false);
 
     /* The following three members are used in a static callback
        and so they have to be static */

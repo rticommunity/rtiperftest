@@ -29,7 +29,7 @@ RTI_UINT64 perftest_cpp::_Clock_sec = 0;
 RTI_UINT64 perftest_cpp::_Clock_usec = 0;
 
 bool perftest_cpp::_testCompleted = false;
-bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan test
+bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
 const int timeout_wait_for_ack_sec = 0;
 const unsigned int timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {2, 3, 2, 0};
@@ -103,12 +103,6 @@ int perftest_cpp::Run(int argc, char *argv[])
     if (!PM::GetInstance().validate_group()) {
         return -1;
     }
-
-    // std::vector<unsigned long long> scan = PM::GetInstance().get_vector<unsigned long long>("scan");
-    // printf("scan: \n");
-    // for (unsigned int i = 0; i < scan.size(); i++) {
-    //     printf("\t%llu\n", scan[i]);
-    // }
   //  printf("dataLen: %d\n", PM::GetInstance().get<int>("dataLen"));
 //     printf("instances: %d\n", PM::GetInstance().get<int>("instances"));
 //     //TRANSPORT
@@ -207,25 +201,6 @@ void perftest_cpp::PrintVersion()
 
 }
 
-// Set the default values into the array _scanDataLenSizes vector
-void set_default_scan_values(
-        std::vector<unsigned long> & _scanDataLenSizes)
-{
-    _scanDataLenSizes.clear();
-    _scanDataLenSizes.push_back(32);
-    _scanDataLenSizes.push_back(64);
-    _scanDataLenSizes.push_back(128);
-    _scanDataLenSizes.push_back(256);
-    _scanDataLenSizes.push_back(512);
-    _scanDataLenSizes.push_back(1024);
-    _scanDataLenSizes.push_back(2048);
-    _scanDataLenSizes.push_back(4096);
-    _scanDataLenSizes.push_back(8192);
-    _scanDataLenSizes.push_back(16384);
-    _scanDataLenSizes.push_back(32768);
-    _scanDataLenSizes.push_back(63000);
-}
-
 /*********************************************************
  * Destructor
  */
@@ -266,7 +241,6 @@ perftest_cpp::~perftest_cpp()
 perftest_cpp::perftest_cpp()
 {
     _DataLen = 100;
-    _isScan = false;
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
     _MessagingImpl = NULL;
@@ -484,49 +458,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-scan"))
         {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-            _MessagingArgc++;
-            _isScan = true;
             if ((i != (argc-1)) && *argv[1+i] != '-') {
-                _scanDataLenSizes.clear();
                 ++i;
-                unsigned long aux_scan;
-                char * pch;
-                _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-                if (_MessagingArgv[_MessagingArgc] == NULL) {
-                    fprintf(stderr, "Problem allocating memory\n");
-                    return false;
-                }
-                _MessagingArgc++;
-
-                pch = strtok (argv[i], ":");
-                while (pch != NULL) {
-                    if (sscanf(pch, "%lu", &aux_scan) != 1) {
-                        fprintf(stderr, "-scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'\n");
-                        return false;
-                    }
-                    _scanDataLenSizes.push_back(aux_scan);
-                    pch = strtok (NULL, ":");
-                }
-                if (_scanDataLenSizes.size() < 2) {
-                    fprintf(stderr, "'-scan <size1>:<size2>:...:<sizeN>' the number of size should be equal or greater then two.\n");
-                    return false;
-                }
-                std::sort(_scanDataLenSizes.begin(), _scanDataLenSizes.end());
-                if (_scanDataLenSizes[0] < (unsigned long)OVERHEAD_BYTES) {
-                    fprintf(stderr, "-scan sizes must be >= %d\n",
-                            OVERHEAD_BYTES);
-                    return false;
-                }
-                if (_scanDataLenSizes[_scanDataLenSizes.size() - 1] >
-                        (unsigned long)MAX_PERFTEST_SAMPLE_SIZE) {
-                    fprintf(stderr,"-scan sizes must be <= %d\n",
-                            MAX_PERFTEST_SAMPLE_SIZE);
-                    return false;
-                }
-            } else { // Set default values
-                set_default_scan_values(_scanDataLenSizes);
             }
         }
         else if (IS_OPTION(argv[i], "-noPrintIntervals") ) {
@@ -668,21 +601,24 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if (_isScan) {
-        // TODO sort the scan vector
-        _DataLen = _scanDataLenSizes[_scanDataLenSizes.size() - 1]; // Max size
+    // Manage the parameter: -scan
+    if (PM::GetInstance().is_set("scan")) {
+        std::vector<unsigned long long> scanList =
+                PM::GetInstance().get_vector<unsigned long long>("scan");
+        _DataLen = scanList[scanList.size() - 1]; // Max size
         if (PM::GetInstance().get<unsigned long long>("executionTime") == 0){
             PM::GetInstance().set<unsigned long long>("executionTime", 60);
         }
         // Check if large data or small data
-        if (_scanDataLenSizes[0] < (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
-                && _scanDataLenSizes[_scanDataLenSizes.size() - 1] > (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+        if (scanList[0] < (unsigned long long)(std::min)(MAX_SYNCHRONOUS_SIZE , MAX_BOUNDED_SEQ_SIZE)
+                && scanList[scanList.size() - 1] > (unsigned long long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
             fprintf(stderr, "The sizes of -scan [");
-            for (unsigned int i = 0; i < _scanDataLenSizes.size(); i++) {
-                fprintf(stderr, "%lu ", _scanDataLenSizes[i]);
+            for (unsigned int i = 0; i < scanList.size(); i++) {
+                fprintf(stderr, "%llu ", scanList[i]);
             }
-            fprintf(stderr, "] should be either all smaller or all bigger than %d.\n",
-                    (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE));
+            fprintf(stderr,
+                    "] should be either all smaller or all bigger than %d.\n",
+                    (std::min)(MAX_SYNCHRONOUS_SIZE , MAX_BOUNDED_SEQ_SIZE));
             return false;
         }
     }
@@ -758,10 +694,12 @@ void perftest_cpp::PrintConfiguration()
 
         // Scan/Data Sizes
         stringStream << "\tData Size: ";
-        if (_isScan) {
-            for (unsigned long i = 0; i < _scanDataLenSizes.size(); i++ ) {
-                stringStream << _scanDataLenSizes[i];
-                if (i == _scanDataLenSizes.size() - 1) {
+        if (PM::GetInstance().is_set("scan")) {
+            std::vector<unsigned long long> scanList =
+                    PM::GetInstance().get_vector<unsigned long long>("scan");
+            for (unsigned long i = 0; i < scanList.size(); i++ ) {
+                stringStream << scanList[i];
+                if (i == scanList.size() - 1) {
                     stringStream << "\n";
                 } else {
                     stringStream << ", ";
@@ -958,8 +896,7 @@ class ThroughputListener : public IMessagingCB
         }
 
         // case where not running a scan
-        if (message.size != last_data_length)
-        {
+        if (message.size != last_data_length) {
             packets_received = 0;
             bytes_received = 0;
             missing_packets = 0;
@@ -1433,7 +1370,7 @@ class LatencyListener : public IMessagingCB
         }
 
         // sort the array (in ascending order)
-        std::sort(_latency_history, _latency_history+count);
+        std::sort(_latency_history, _latency_history + count);
         latency_ave = (double)latency_sum / count;
         latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
@@ -1843,7 +1780,8 @@ int perftest_cpp::Publisher()
                 100;
     }
 
-    if (PM::GetInstance().get<unsigned long long>("executionTime") > 0 && !_isScan) {
+    if (PM::GetInstance().get<unsigned long long>("executionTime") > 0
+            && !PM::GetInstance().is_set("scan")) {
         SetTimeout(PM::GetInstance().get<unsigned long long>("executionTime"));
     }
     /*
@@ -1858,6 +1796,8 @@ int perftest_cpp::Publisher()
      * - pubRateMethodSpin
      * - pubRate
      * - writerStats
+     * - isScan
+     * - scanList
      */
     const unsigned long long numIter =
             PM::GetInstance().get<unsigned long long>("numIter");
@@ -1872,11 +1812,14 @@ int perftest_cpp::Publisher()
     const unsigned long pubRate =
             PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first;
     const bool writerStats = PM::GetInstance().get<bool>("writerStats");
+    const bool isScan = PM::GetInstance().is_set("scan");
+    const std::vector<unsigned long long> scanList =
+                PM::GetInstance().get_vector<unsigned long long>("scan");
     /********************
      *  Main sending loop
      */
     for (unsigned long long loop = 0;
-            (_isScan || (loop < numIter)) && (!_testCompleted);
+            (isScan || (loop < numIter)) && (!_testCompleted);
             ++loop) {
 
         /* This if has been included to perform the control loop
@@ -1937,11 +1880,10 @@ int perftest_cpp::Publisher()
             if (current_index_in_batch == ping_index_in_batch && !sentPing) {
                 // If running in scan mode, dataLen under test is changed
                 // after executionTime
-                if (_isScan && _testCompleted_scan) {
+                if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    SetTimeout(
-                            PM::GetInstance().get<unsigned long long>("executionTime"),
-                            _isScan);
+                    SetTimeout(PM::GetInstance().get<unsigned long long>("executionTime"),
+                            isScan);
 
                     // flush anything that was previously sent
                     writer->Flush();
@@ -1949,7 +1891,7 @@ int perftest_cpp::Publisher()
                             timeout_wait_for_ack_sec,
                             timeout_wait_for_ack_nsec);
 
-                    if (scan_count == _scanDataLenSizes.size()) {
+                    if (scan_count == scanList.size()) {
                         break; // End of scan test
                     }
 
@@ -1978,7 +1920,7 @@ int perftest_cpp::Publisher()
                             timeout_wait_for_ack_nsec);
                     }
 
-                    message.size = _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
+                    message.size = scanList[scan_count++] - OVERHEAD_BYTES;
                     /* Reset _SamplePerBatch */
                     samplesPerBatch = GetSamplesPerBatch();
 
@@ -2093,9 +2035,10 @@ int perftest_cpp::Publisher()
  * Utility functions
  */
 
-inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds,
-        bool _isScan) {
-    if (_isScan) {
+inline void perftest_cpp::SetTimeout(
+        unsigned int executionTimeInSeconds,
+        bool isScan) {
+    if (isScan) {
       #ifdef RTI_WIN32
         CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout_scan,
                 NULL , executionTimeInSeconds * 1000, 0, 0);
@@ -2127,7 +2070,7 @@ inline unsigned long long perftest_cpp::GetTimeUsec() {
 }
 
 inline unsigned int perftest_cpp::GetSamplesPerBatch() {
-    if (PM::GetInstance().get<long>("batchsize") > 0) {
+    if (PM::GetInstance().get<long>("batchsize") > (long)_DataLen) {
         return PM::GetInstance().get<long>("batchsize") /
                 (unsigned int)_DataLen;
     } else {

@@ -45,7 +45,6 @@ class RTIDDSImpl : public IMessaging
         _KeepDurationUsec = -1;
         _IsDebug = false;
         _isLargeData = false;
-        _isScan = false;
 
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure = false;
@@ -109,8 +108,6 @@ class RTIDDSImpl : public IMessaging
     int          _KeepDurationUsec;
     bool         _IsDebug;
     bool         _isLargeData;
-    bool         _isScan;
-
     PerftestTransport _transport;
 
   #ifdef RTI_SECURE_PERFTEST

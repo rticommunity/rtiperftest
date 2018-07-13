@@ -11,6 +11,7 @@
 #include <climits>
 #include <string>
 #include <utility>      // std::pair, std::make_pair
+#include <algorithm>    // std::sort
 #include <vector>
 #include <iostream>
 #include <sstream>
@@ -175,6 +176,9 @@ class ParameterVector : public ParameterBase {
                 value.clear();
             }
             value.push_back(var);
+            if (getType() == T_VECTOR_NUMERIC) {
+                std::sort(value.begin(), value.end());
+            }
             setIsSet(true);
         }
 

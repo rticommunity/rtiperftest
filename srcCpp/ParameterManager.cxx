@@ -201,7 +201,7 @@ void ParameterManager::initialize()
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER
 
-    Parameter<long long> *batchsize = new Parameter<long long>(DEFAULT_THROUGHPUT_BATCH_SIZE);
+    Parameter<long long> *batchsize = new Parameter<long long>(DEFAULT_THROUGHPUT_BATCH_SIZE); // Default: 8 kBytes
     batchsize->setCommandLineArgument(std::make_pair("-batchsize","<bytes>"));
     batchsize->setDescription("Size in bytes of batched message. Default: 8kB.\n(Disabled for LatencyTest mode or if dataLen > 4kB)");
     batchsize->setType(T_NUMERIC);
