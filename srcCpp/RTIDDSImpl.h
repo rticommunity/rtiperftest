@@ -45,11 +45,6 @@ class RTIDDSImpl : public IMessaging
         _IsDebug = false;
         _isLargeData = false;
 
-        _HeartbeatPeriod.sec = 0;
-        _HeartbeatPeriod.nanosec = 0;
-        _FastHeartbeatPeriod.sec = 0;
-        _FastHeartbeatPeriod.nanosec = 0;
-
         _factory = NULL;
         _participant = NULL;
         _subscriber = NULL;
@@ -113,10 +108,6 @@ class RTIDDSImpl : public IMessaging
     static const std::string SECURE_PERMISION_FILE_SUB;
     static const std::string SECURE_LIBRARY_NAME;
   #endif
-
-    DDS_Duration_t   _HeartbeatPeriod;
-    DDS_Duration_t   _FastHeartbeatPeriod;
-
     DDSDomainParticipantFactory *_factory;
     DDSDomainParticipant        *_participant;
     DDSSubscriber               *_subscriber;

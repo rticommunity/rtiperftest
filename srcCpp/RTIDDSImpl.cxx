@@ -214,8 +214,6 @@ template <typename T>
 bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 {
     int i;
-    int sec = 0;
-    unsigned int nanosec = 0;
 
     // Command line params
     for (i = 0; i < argc; ++i) {
@@ -236,42 +234,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
         } else if (IS_OPTION(argv[i], "-sendQueueSize")) {
             ++i;
-        } else if (IS_OPTION(argv[i], "-heartbeatPeriod")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <period> after -heartbeatPeriod\n");
-                return false;
-            }
-
-            sec = 0;
-            nanosec = 0;
-
-            if (sscanf(argv[i],"%d:%u", &sec, &nanosec) != 2) {
-                fprintf(stderr, "-heartbeatPeriod value must have the format <sec>:<nanosec>\n");
-                return false;
-            }
-
-            if (sec > 0 || nanosec > 0) {
-                _HeartbeatPeriod.sec = sec;
-                _HeartbeatPeriod.nanosec = nanosec;
-            }
-        } else if (IS_OPTION(argv[i], "-fastHeartbeatPeriod")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <period> after -fastHeartbeatPeriod\n");
-                return false;
-            }
-
-            sec = 0;
-            nanosec = 0;
-
-            if (sscanf(argv[i],"%d:%u",&sec,&nanosec) != 2) {
-                fprintf(stderr, "-fastHeartbeatPeriod value must have the format <sec>:<nanosec>\n");
-                return false;
-            }
-
-            if (sec > 0 || nanosec > 0) {
-                _FastHeartbeatPeriod.sec = sec;
-                _FastHeartbeatPeriod.nanosec = nanosec;
-            }
         } else if (IS_OPTION(argv[i], "-domain")) {
             ++i;
         } else if (IS_OPTION(argv[i], "-qosFile")) {
@@ -2306,21 +2268,6 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         } else {
             dw_qos.resource_limits.max_samples =
                     PM::GetInstance().get<int>("sendQueueSize");
-        }
-
-        if (_HeartbeatPeriod.sec > 0 || _HeartbeatPeriod.nanosec > 0) {
-            // set the heartbeat_period
-            dw_qos.protocol.rtps_reliable_writer.heartbeat_period =
-                _HeartbeatPeriod;
-            // make the late joiner heartbeat compatible
-            dw_qos.protocol.rtps_reliable_writer.late_joiner_heartbeat_period =
-                _HeartbeatPeriod;
-        }
-
-        if (_FastHeartbeatPeriod.sec > 0 || _FastHeartbeatPeriod.nanosec > 0) {
-            // set the fast_heartbeat_period
-            dw_qos.protocol.rtps_reliable_writer.fast_heartbeat_period =
-                _FastHeartbeatPeriod;
         }
 
         if (PM::GetInstance().get<bool>("enableAutoThrottle")) {
