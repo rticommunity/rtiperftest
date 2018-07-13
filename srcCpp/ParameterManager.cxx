@@ -330,7 +330,6 @@ void ParameterManager::initialize()
     sendQueueSize->setRange(1, INT_MAX);
     parameterList["sendQueueSize"] = AnyParameter(sendQueueSize);
 
-    // TODO convert into NanoSec
     Parameter<unsigned long long> *sleep = new Parameter<unsigned long long>(0);
     sleep->setCommandLineArgument(std::make_pair("-sleep","<millisec>"));
     sleep->setDescription("Time to sleep between each send. Default: 0");
@@ -339,6 +338,15 @@ void ParameterManager::initialize()
     sleep->setRange(0, ULLONG_MAX);
     sleep->setGroup(PUB);
     parameterList["sleep"] = AnyParameter(sleep);
+
+    Parameter<unsigned long long> *spin = new Parameter<unsigned long long>(0);
+    spin->setCommandLineArgument(std::make_pair("-spin","<count>"));
+    spin->setInternal(true);
+    spin->setType(T_NUMERIC);
+    spin->setExtraArgument(YES);
+    spin->setRange(0, ULLONG_MAX);
+    spin->setGroup(PUB);
+    parameterList["spin"] = AnyParameter(spin);
 
     Parameter<bool> *writerStats = new Parameter<bool>(false);
     writerStats->setCommandLineArgument(std::make_pair("-writerStats",""));

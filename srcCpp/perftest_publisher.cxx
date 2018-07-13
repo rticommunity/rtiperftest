@@ -361,14 +361,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-spin"))
         {
-            fprintf(stderr,"-spin option is deprecated. It will be removed "
-                    "in upcoming releases.\n");
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr,"Missing <count> after -spin\n");
-                return false;
-            }
-            _SpinLoopCount = strtol(argv[i], NULL, 10);
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-sleep"))
         {
@@ -440,6 +433,9 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     /* Validate and manage the parameter */
     // Manage parameter -sleep
     _SleepNanosec = 1000000 * PM::GetInstance().get<unsigned int>("sleep");
+
+    // Manage parameter -spin
+    _SpinLoopCount = PM::GetInstance().get<unsigned long long>("spin");
 
     // Manage parameter -printIterval
     // It is copied because it is used in the critical patch
