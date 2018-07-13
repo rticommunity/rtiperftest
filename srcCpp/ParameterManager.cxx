@@ -104,6 +104,15 @@ void ParameterManager::initialize()
     noPositiveAcks->setGroup(GENERAL);
     parameterList["noPositiveAcks"] = AnyParameter(noPositiveAcks);
 
+    Parameter<unsigned long long> *keepDurationUsec = new Parameter<unsigned long long>(0);
+    keepDurationUsec->setCommandLineArgument(std::make_pair("-keepDurationUsec","<usec>"));
+    keepDurationUsec->setInternal(true);
+    keepDurationUsec->setType(T_NUMERIC);
+    keepDurationUsec->setExtraArgument(YES);
+    keepDurationUsec->setGroup(GENERAL);
+    keepDurationUsec->setRange(1, ULLONG_MAX);
+    parameterList["keepDurationUsec"] = AnyParameter(keepDurationUsec);
+
     Parameter<bool> *noPrintIntervals = new Parameter<bool>(false);
     noPrintIntervals->setCommandLineArgument(std::make_pair("-noPrintIntervals",""));
     noPrintIntervals->setDescription("Don't print statistics at intervals during\ntest");

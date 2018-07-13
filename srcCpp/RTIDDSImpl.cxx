@@ -299,11 +299,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-batchSize")) {
             ++i;
         } else if (IS_OPTION(argv[i], "-keepDurationUsec")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <usec> after -keepDurationUsec\n");
-                return false;
-            }
-            _KeepDurationUsec = strtol(argv[i], NULL, 10);
+            ++i;
         } else if (IS_OPTION(argv[i], "-noPositiveAcks")) {
         }
         else if (IS_OPTION(argv[i], "-verbosity"))
@@ -2262,9 +2258,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     if (PM::GetInstance().get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_qos.protocol.disable_positive_acks = true;
-        if (_KeepDurationUsec != -1) {
+        if (PM::GetInstance().is_set("keepDurationUsec")) {
             dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
-                DDS_Duration_t::from_micros(_KeepDurationUsec);
+                DDS_Duration_t::from_micros(
+                            PM::GetInstance().get<unsigned long long>("keepDurationUsec"));
         }
     }
 
