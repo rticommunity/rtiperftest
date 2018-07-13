@@ -80,6 +80,15 @@ void ParameterManager::initialize()
     instances->setGroup(GENERAL);
     parameterList["instances"] = AnyParameter(instances);
 
+    Parameter<unsigned long long> *instanceHashBuckets = new Parameter<unsigned long long>(0);
+    instanceHashBuckets->setCommandLineArgument(std::make_pair("-instanceHashBuckets","<count>"));
+    instanceHashBuckets->setInternal(true);
+    instanceHashBuckets->setType(T_NUMERIC);
+    instanceHashBuckets->setExtraArgument(YES);
+    instanceHashBuckets->setRange(1, 1000000);
+    instanceHashBuckets->setGroup(GENERAL);
+    parameterList["instanceHashBuckets"] = AnyParameter(instanceHashBuckets);
+
     Parameter<bool> *keyed = new Parameter<bool>(false);
     keyed->setCommandLineArgument(std::make_pair("-keyed",""));
     keyed->setDescription("Use keyed data. Default: unkeyed");

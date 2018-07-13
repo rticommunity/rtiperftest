@@ -248,16 +248,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         } else if (IS_OPTION(argv[i], "-instances")) {
             ++i;
         } else if (IS_OPTION(argv[i], "-instanceHashBuckets")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <count> after -instanceHashBuckets\n");
-                return false;
-            }
-            _InstanceHashBuckets = strtol(argv[i], NULL, 10);
-
-            if (_InstanceHashBuckets <= 0 && _InstanceHashBuckets != -1) {
-                fprintf(stderr, "instance hash buckets cannot be negative or zero\n");
-                return false;
-            }
+            ++i;
         } else if (IS_OPTION(argv[i], "-batchSize")) {
             ++i;
         } else if (IS_OPTION(argv[i], "-keepDurationUsec")) {
@@ -2343,9 +2334,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     if (PM::GetInstance().get<unsigned long>("instances") > 1) {
-        if (_InstanceHashBuckets > 0) {
+        if (PM::GetInstance().is_set("instanceHashBuckets")) {
             dw_qos.resource_limits.instance_hash_buckets =
-                _InstanceHashBuckets;
+                PM::GetInstance().get<unsigned long>("instanceHashBuckets");
         } else {
             dw_qos.resource_limits.instance_hash_buckets =
                     PM::GetInstance().get<unsigned long>("instances");
@@ -2546,9 +2537,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
 
     if (PM::GetInstance().get<unsigned long>("instances") > 1) {
-        if (_InstanceHashBuckets > 0) {
+        if (PM::GetInstance().is_set("instanceHashBuckets")) {
             dr_qos.resource_limits.instance_hash_buckets =
-                _InstanceHashBuckets;
+                PM::GetInstance().get<unsigned long>("instanceHashBuckets");
         } else {
             dr_qos.resource_limits.instance_hash_buckets =
                 PM::GetInstance().get<unsigned long>("instances");
