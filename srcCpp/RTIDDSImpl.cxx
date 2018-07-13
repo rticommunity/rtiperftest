@@ -405,21 +405,21 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    // Validation
+    /* Validate and manage the parameter */
 
     // Manage parameter -instance
     if (PM::GetInstance().is_set("instance")){
         _InstanceMaxCountReader =
                 PM::GetInstance().get<unsigned long>("instances");
     }
-    //Peers
+    // Manage parameter -peers
     if (PM::GetInstance().get_vector<std::string>("peer").size()
             >= RTIPERFTEST_MAX_PEERS) {
         fprintf(stderr,"The maximun of 'initial_peers' is %d\n", RTIPERFTEST_MAX_PEERS);
         return false;
     }
 
-    /* Check if we need to enable Large Data. This works also for -scan */
+    // Check if we need to enable Large Data. This works also for -scan
     if (PM::GetInstance().get<unsigned long long>("dataLen")
             > (unsigned long) (std::min)(
                     MAX_SYNCHRONOUS_SIZE,
@@ -429,28 +429,28 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         _isLargeData = false;
     }
 
-    /* If we are using batching */
-    if (PM::GetInstance().get<long>("batchsize") > 0) {
+    // Manage parameter -batchSize
+    if (PM::GetInstance().get<long>("batchSize") > 0) {
         /* We will not use batching for a latency test */
         if (PM::GetInstance().get<bool>("latencyTest")) {
-            if (PM::GetInstance().is_set("batchsize")) {
+            if (PM::GetInstance().is_set("batchSize")) {
                 fprintf(stderr, "Batching cannot be used in a Latency test.\n");
                 return false;
             } else {
                 // Disable Batching
-                PM::GetInstance().set<long>("batchsize", 0);
+                PM::GetInstance().set<long>("batchSize", 0);
             }
         }
 
         /* Check if using asynchronous */
         if (PM::GetInstance().get<bool>("asynchronous")) {
-            if (PM::GetInstance().is_set("batchsize")) {
+            if (PM::GetInstance().is_set("batchSize")) {
                 fprintf(stderr,
                         "Batching cannot be used with asynchronous writing.\n");
                 return false;
             } else {
                 // Disable Batching
-                PM::GetInstance().set<long>("batchsize", 0);
+                PM::GetInstance().set<long>("batchSize", 0);
             }
         }
 
@@ -460,34 +460,35 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
          * so we explitly fail
          */
         if (_isLargeData) {
-            if (PM::GetInstance().is_set("batchsize")) {
+            if (PM::GetInstance().is_set("batchSize")) {
                 fprintf(stderr, "Batching cannot be used with Large Data.\n");
                 return false;
             } else {
-                PM::GetInstance().set<long>("batchsize", -2);
+                PM::GetInstance().set<long>("batchSize", -2);
             }
-        } else if ((unsigned long)PM::GetInstance().get<long>("batchsize")
+        } else if ((unsigned long)PM::GetInstance().get<long>("batchSize")
                 < PM::GetInstance().get<unsigned long long>("dataLen") * 2) {
             /*
              * We don't want to use batching if the batch size is not large
              * enough to contain at least two samples (in this case we avoid the
              * checking at the middleware level).
              */
-            if (PM::GetInstance().is_set("batchsize") ||
+            if (PM::GetInstance().is_set("batchSize") ||
                     PM::GetInstance().is_set("scan")) {
                 /*
-                 * Batchsize disabled. A message will be print if _batchsize < 0
+                 * Batchsize disabled. A message will be print if _batchSize < 0
                  * in perftest_cpp::PrintConfiguration()
                  */
-                PM::GetInstance().set<long>("batchsize", -1);
+                PM::GetInstance().set<long>("batchSize", -1);
             }
             else {
                 // Disable Batching
-                PM::GetInstance().set<long>("batchsize", 0);
+                PM::GetInstance().set<long>("batchSize", 0);
             }
         }
     }
 
+    // Manage parameter -enableTurboMode
     if (PM::GetInstance().get<bool>("enableTurboMode")) {
         if (PM::GetInstance().get<bool>("asynchronous")) {
             fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing.\n");
@@ -499,7 +500,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    // Manage _instancesToBeWritten
+    // Manage parameter -writeInstance
     if (PM::GetInstance().is_set("writeInstance")) {
         if (PM::GetInstance().get<long>("instances") <
                 PM::GetInstance().get<long>("writeInstance")) {
@@ -511,13 +512,17 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
+    // Manage transport parameter
     if(!_transport.parseTransportOptions(argc, argv)) {
         fprintf(stderr,
                 "Failure parsing the transport options.\n");
         return false;
     };
 
-    // Manage parameter -verbosity. Setting verbosity
+    /*
+     * Manage parameter -verbosity.
+     *  Setting verbosity
+     */
     if (PM::GetInstance().is_set("verbosity")) {
         switch (PM::GetInstance().get<int>("verbosity")) {
             case 0: NDDSConfigLogger::get_instance()->
@@ -542,6 +547,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
+    // Manage parameter -secureGovernanceFile
     if (PM::GetInstance().is_set("secureGovernanceFile")) {
         fprintf(stdout,
                 "Warning -- authentication, encryption, signing arguments "
@@ -549,12 +555,13 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 "file will be used instead\n");
     }
 
+    // Manage parameter -secureEncryptBoth
     if (PM::GetInstance().is_set("secureEncryptBoth")) {
         PM::GetInstance().set("secureEncryptData", true);
         PM::GetInstance().set("secureEncryptSM", true);
     }
 
-        return true;
+    return true;
 }
 
 /*********************************************************
@@ -2192,10 +2199,10 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
      * If we are using batching we need to take into account tha the Send Queue
      * will be per-batch, therefore for the number of samples:
      */
-    if (PM::GetInstance().get<long>("batchsize") > 0) {
+    if (PM::GetInstance().get<long>("batchSize") > 0) {
         initializeSampleCount = (std::max)(
                 PM::GetInstance().get<int>("sendQueueSize") *
-                        (PM::GetInstance().get<long>("batchsize") /
+                        (PM::GetInstance().get<long>("batchSize") /
                         PM::GetInstance().get<unsigned long>("dataLen")),
                 initializeSampleCount);
     }
@@ -2292,10 +2299,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                     RTI_TRUE;
         }
 
-        if (PM::GetInstance().get<long>("batchsize") > 0) {
+        if (PM::GetInstance().get<long>("batchSize") > 0) {
             dw_qos.batch.enable = true;
             dw_qos.batch.max_data_bytes =
-                    PM::GetInstance().get<long>("batchsize");
+                    PM::GetInstance().get<long>("batchSize");
             dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
             dw_qos.writer_resource_limits.max_batches =
                     PM::GetInstance().get<int>("sendQueueSize");

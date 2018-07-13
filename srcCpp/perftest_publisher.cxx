@@ -437,8 +437,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
     }
 
-    // Validate and manage the parameter
-
+    /* Validate and manage the parameter */
     // Manage parameter -sleep
     _SleepNanosec = 1000000 * PM::GetInstance().get<unsigned int>("sleep");
 
@@ -455,6 +454,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     // It is copied because it is used in the critical patch
     perftest_cpp::_SubID = PM::GetInstance().get<int>("sidMultiSubTest");
 
+    // Manage parameter -latencyTest
     if(PM::GetInstance().get<bool>("latencyTest")) {
         if(PM::GetInstance().get<int>("pidMultiPubTest") != 0) {
             fprintf(stderr, "Only the publisher with ID = 0 can run the latency test\n");
@@ -480,10 +480,10 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
     }
 
+    // Manage parameter -latencyCount
     if(!PM::GetInstance().is_set("latencyCount")) {
         PM::GetInstance().set<unsigned long long>("latencyCount",10000);
     }
-
     if (PM::GetInstance().get<unsigned long long>("numIter") <
             PM::GetInstance().get<unsigned long long>("latencyCount")) {
         fprintf(stderr,
@@ -555,7 +555,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
     }
 
-    /* Check if we need to enable Large Data. This works also for -scan */
+    // Check if we need to enable Large Data. This works also for -scan
     if (PM::GetInstance().get<unsigned long long>("dataLen") > (unsigned long long) (std::min)(
             MAX_SYNCHRONOUS_SIZE,
             MAX_BOUNDED_SEQ_SIZE)) {
@@ -644,17 +644,17 @@ void perftest_cpp::PrintConfiguration()
 
         // Batching
         stringStream << "\tBatching: ";
-        if (PM::GetInstance().get<long>("batchsize") > 0) {
-            stringStream << PM::GetInstance().get<long>("batchsize")
+        if (PM::GetInstance().get<long>("batchSize") > 0) {
+            stringStream << PM::GetInstance().get<long>("batchSize")
                          << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
-        } else if (PM::GetInstance().get<long>("batchsize") == 0) {
+        } else if (PM::GetInstance().get<long>("batchSize") == 0) {
             stringStream << "No (Use \"-batchSize\" to setup batching)\n";
         } else { // < 0
             stringStream << "Disabled by RTI Perftest.\n";
-            if (PM::GetInstance().get<long>("batchsize") == -1) {
+            if (PM::GetInstance().get<long>("batchSize") == -1) {
                 stringStream << "\t\t  BatchSize is smaller than 2 times\n"
                              << "\t\t  the sample size.\n";
-            } else if (PM::GetInstance().get<long>("batchsize") == -2) {
+            } else if (PM::GetInstance().get<long>("batchSize") == -2) {
                 stringStream << "\t\t  BatchSize cannot be used with\n"
                              << "\t\t  Large Data.\n";
             }
@@ -2004,9 +2004,9 @@ inline unsigned long long perftest_cpp::GetTimeUsec() {
 }
 
 inline unsigned int perftest_cpp::GetSamplesPerBatch() {
-    if (PM::GetInstance().get<long>("batchsize")
+    if (PM::GetInstance().get<long>("batchSize")
             > (long)PM::GetInstance().get<unsigned long long>("dataLen")) {
-        return PM::GetInstance().get<long>("batchsize") /
+        return PM::GetInstance().get<long>("batchSize") /
                 (unsigned int)PM::GetInstance().get<unsigned long long>("dataLen");
     } else {
         return 1;
