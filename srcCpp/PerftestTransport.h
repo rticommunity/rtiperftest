@@ -71,9 +71,6 @@ public:
     /* PUBLIC CLASS MEMBERS */
 
     TransportConfig transportConfig;
-
-    unsigned long dataLen;
-
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 

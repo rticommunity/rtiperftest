@@ -226,22 +226,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
         } else if (IS_OPTION(argv[i], "-dataLen")) {
 
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <length> after -dataLen\n");
-                return false;
-            }
-
-            _DataLen = strtol(argv[i], NULL, 10);
-
-            if (_DataLen < (unsigned long)perftest_cpp::OVERHEAD_BYTES) {
-                fprintf(stderr, "-dataLen must be >= %d\n", perftest_cpp::OVERHEAD_BYTES);
-                return false;
-            }
-
-            if (_DataLen > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE) {
-                fprintf(stderr, "-dataLen must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
-                return false;
-            }
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-unbounded")) {
             if ((i == (argc-1)) || *argv[i+1] == '-')
@@ -435,16 +420,11 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         return false;
     }
 
-    /* If we are using scan, we get the minimum and set it in Datalen */
-    if (PM::GetInstance().is_set("scan")) {
-        // Get min of scanList
-        _DataLen = PM::GetInstance().get_vector<unsigned long long>("scan")[0];
-    }
-
     /* Check if we need to enable Large Data. This works also for -scan */
-    if (_DataLen > (unsigned long) (std::min)(
-                MAX_SYNCHRONOUS_SIZE,
-                MAX_BOUNDED_SEQ_SIZE)) {
+    if (PM::GetInstance().get<unsigned long long>("dataLen")
+            > (unsigned long) (std::min)(
+                    MAX_SYNCHRONOUS_SIZE,
+                    MAX_BOUNDED_SEQ_SIZE)) {
         _isLargeData = true;
     } else { /* No Large Data */
         _isLargeData = false;
@@ -488,7 +468,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
                 PM::GetInstance().set<long>("batchsize", -2);
             }
         } else if ((unsigned long)PM::GetInstance().get<long>("batchsize")
-                < _DataLen * 2) {
+                < PM::GetInstance().get<unsigned long long>("dataLen") * 2) {
             /*
              * We don't want to use batching if the batch size is not large
              * enough to contain at least two samples (in this case we avoid the
@@ -2216,7 +2196,8 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
     if (PM::GetInstance().get<long>("batchsize") > 0) {
         initializeSampleCount = (std::max)(
                 PM::GetInstance().get<int>("sendQueueSize") *
-                        (PM::GetInstance().get<long>("batchsize") / _DataLen),
+                        (PM::GetInstance().get<long>("batchsize") /
+                        PM::GetInstance().get<unsigned long>("dataLen")),
                 initializeSampleCount);
     }
 

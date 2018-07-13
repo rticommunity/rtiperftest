@@ -38,7 +38,6 @@ class RTIDDSImpl : public IMessaging
         _transport(),
         _loggerDevice()
     {
-        _DataLen = 100;
         _IsMulticast = false;
         _InstanceMaxCountReader = DDS_LENGTH_UNLIMITED;
         _InstanceHashBuckets = -1;
@@ -100,8 +99,6 @@ class RTIDDSImpl : public IMessaging
     bool validateSecureArgs();
   #endif
 
-
-    unsigned long _DataLen;
     bool         _IsMulticast;
     long _InstanceMaxCountReader;
     int          _InstanceHashBuckets;

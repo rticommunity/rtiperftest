@@ -418,7 +418,7 @@ bool configureShmemTransport(
 {
     // Number of messages that can be buffered in the receive queue.
     int received_message_count_max = 1024 * 1024 * 2
-            / (int) transport.dataLen;
+            / (int) PM::GetInstance().get<unsigned long long>("dataLen");
     if (received_message_count_max < 1) {
         received_message_count_max = 1;
     }
@@ -600,8 +600,7 @@ bool configureTransport(
 /******************************************************************************/
 /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 
-PerftestTransport::PerftestTransport() :
-        dataLen(100)
+PerftestTransport::PerftestTransport()
 {
     multicastAddrMap[LATENCY_TOPIC_NAME] = "239.255.1.2";
     multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = "239.255.1.100";
@@ -907,16 +906,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
         if (IS_OPTION(argv[i], "-pub")) {
 
         } else if (IS_OPTION(argv[i], "-dataLen")) {
-
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr,
-                        "%s Missing <length> after -dataLen\n",
-                        classLoggingString.c_str());
-                return false;
-            }
-
-            dataLen = strtol(argv[i], NULL, 10);
-
+            ++i;
         } else if (IS_OPTION(argv[i], "-transport")) {
 
             i++;

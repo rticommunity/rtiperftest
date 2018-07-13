@@ -103,40 +103,6 @@ int perftest_cpp::Run(int argc, char *argv[])
     if (!PM::GetInstance().validate_group()) {
         return -1;
     }
-  //  printf("dataLen: %d\n", PM::GetInstance().get<int>("dataLen"));
-//     printf("instances: %d\n", PM::GetInstance().get<int>("instances"));
-//     //TRANSPORT
-//     printf("nic: %s\n", PM::GetInstance().get<std::string>("nic").c_str());
-//     printf("transport: %s\n", PM::GetInstance().get<std::string>("transport").c_str());
-//     printf("multicast: %d\n", PM::GetInstance().get<bool>("multicast"));
-//     printf("multicastAddr: %s\n", PM::GetInstance().get<std::string>("multicastAddr").c_str());
-//     printf("transportVerbosity: %s\n", PM::GetInstance().get<std::string>("transportVerbosity").c_str());
-//     printf("transportServerBindPort: %s\n", PM::GetInstance().get<std::string>("transportServerBindPort").c_str());
-//     printf("transportWan: %s\n", PM::GetInstance().get<std::string>("transportWan").c_str());
-//     printf("transportWanServerPort: %s\n", PM::GetInstance().get<std::string>("transportWanServerPort").c_str());
-//     printf("transportWanId: %s\n", PM::GetInstance().get<std::string>("transportWanId").c_str());
-//     printf("transportSecureWan: %d\n", PM::GetInstance().get<bool>("transportSecureWan"));
-//     printf("transportPublicAddress: %s\n", PM::GetInstance().get<std::string>("transportPublicAddress").c_str());
-//     printf("transportWanServerAddress: %s\n", PM::GetInstance().get<std::string>("transportWanServerAddress").c_str());
-//     printf("transportCertAuthority: %s\n", PM::GetInstance().get<std::string>("transportCertAuthority").c_str());
-//     printf("transportCertFile: %s\n", PM::GetInstance().get<std::string>("transportCertFile").c_str());
-//     printf("transportPrivateKey: %s\n", PM::GetInstance().get<std::string>("transportPrivateKey").c_str());
-
-//   #ifdef RTI_SECURE_PERFTEST
-//     printf("secureEncryptDiscovery: %d\n", PM::GetInstance().get<bool>("secureEncryptDiscovery"));
-//     printf("secureSign: %d\n", PM::GetInstance().get<bool>("secureSign"));
-//     printf("secureEncryptBoth: %d\n", PM::GetInstance().get<bool>("secureEncryptBoth"));
-//     printf("secureEncryptData: %d\n", PM::GetInstance().get<bool>("secureEncryptData"));
-//     printf("secureEncryptSM: %d\n", PM::GetInstance().get<bool>("secureEncryptSM"));
-//     printf("secureGovernanceFile: %s\n", PM::GetInstance().get<std::string>("secureGovernanceFile").c_str());
-//     printf("securePermissionsFile: %s\n", PM::GetInstance().get<std::string>("securePermissionsFile").c_str());
-//     printf("secureCertAuthority: %s\n", PM::GetInstance().get<std::string>("secureCertAuthority").c_str());
-//     printf("secureCertFile: %s\n", PM::GetInstance().get<std::string>("secureCertFile").c_str());
-//     printf("securePrivateKey: %s\n", PM::GetInstance().get<std::string>("securePrivateKey").c_str());
-//     printf("secureLibrary: %s\n", PM::GetInstance().get<std::string>("secureLibrary").c_str());
-//     printf("secureDebug: %s\n", PM::GetInstance().get<unsigned long long>("secureDebug"));
-//   #endif
-//     return 0;
 
     PrintVersion();
 
@@ -240,7 +206,6 @@ perftest_cpp::~perftest_cpp()
  */
 perftest_cpp::perftest_cpp()
 {
-    _DataLen = 100;
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
     _MessagingImpl = NULL;
@@ -385,42 +350,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-dataLen"))
         {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <length> after -dataLen\n");
-                return false;
-            }
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            _DataLen = strtol(argv[i], NULL, 10);
-
-            if (_DataLen < (unsigned long)OVERHEAD_BYTES)
-            {
-                fprintf(stderr, "-dataLen must be >= %d\n", OVERHEAD_BYTES);
-                return false;
-            }
-            if (_DataLen > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE)
-            {
-                fprintf(stderr,"-dataLen must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
-                return false;
-            }
+            ++i;
         }
         else if (IS_OPTION(argv[i], "-unbounded")) {
             if ((i == (argc-1)) || *argv[i+1] == '-')
@@ -597,7 +527,9 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         if (PM::GetInstance().get<int>("unbounded") == 0) {
             PM::GetInstance().set<unsigned long long>(
                     "unbounded",
-                    (std::min)(2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE));
+                    (std::min)(
+                            2 * PM::GetInstance().get<unsigned long>("dataLen"),
+                            (unsigned long)MAX_BOUNDED_SEQ_SIZE));
         }
     }
 
@@ -605,7 +537,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     if (PM::GetInstance().is_set("scan")) {
         std::vector<unsigned long long> scanList =
                 PM::GetInstance().get_vector<unsigned long long>("scan");
-        _DataLen = scanList[scanList.size() - 1]; // Max size
+        PM::GetInstance().set<unsigned long long>("dataLen", scanList[scanList.size() - 1]); // Max size of scan
         if (PM::GetInstance().get<unsigned long long>("executionTime") == 0){
             PM::GetInstance().set<unsigned long long>("executionTime", 60);
         }
@@ -624,7 +556,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     }
 
     /* Check if we need to enable Large Data. This works also for -scan */
-    if (_DataLen > (unsigned long) (std::min)(
+    if (PM::GetInstance().get<unsigned long long>("dataLen") > (unsigned long long) (std::min)(
             MAX_SYNCHRONOUS_SIZE,
             MAX_BOUNDED_SEQ_SIZE)) {
         if (PM::GetInstance().get<int>("unbounded") == 0) {
@@ -706,7 +638,8 @@ void perftest_cpp::PrintConfiguration()
                 }
             }
         } else {
-            stringStream << _DataLen << "\n";
+            stringStream << PM::GetInstance().get<unsigned long long>("dataLen")
+                         << "\n";
         }
 
         // Batching
@@ -720,7 +653,7 @@ void perftest_cpp::PrintConfiguration()
             stringStream << "Disabled by RTI Perftest.\n";
             if (PM::GetInstance().get<long>("batchsize") == -1) {
                 stringStream << "\t\t  BatchSize is smaller than 2 times\n"
-                             << "\t\t  the minimum sample size.\n";
+                             << "\t\t  the sample size.\n";
             } else if (PM::GetInstance().get<long>("batchsize") == -2) {
                 stringStream << "\t\t  BatchSize cannot be used with\n"
                              << "\t\t  Large Data.\n";
@@ -1707,7 +1640,7 @@ int perftest_cpp::Publisher()
     // Allocate data and set size
     TestMessage message;
     message.entity_id = PM::GetInstance().get<int>("pidMultiPubTest");
-    message.data = new char[(std::max)((int)_DataLen, (int)LENGTH_CHANGED_SIZE)];
+    message.data = new char[(std::max)((int)PM::GetInstance().get<unsigned long long>("dataLen"), (int)LENGTH_CHANGED_SIZE)];
 
     if (perftest_cpp::showCpu && PM::GetInstance().get<int>("pidMultiPubTest") == 0) {
         reader_listener->cpu.initialize();
@@ -1753,7 +1686,8 @@ int perftest_cpp::Publisher()
     fflush(stderr);
 
     // Set data size, account for other bytes in message
-    message.size = (int)_DataLen - OVERHEAD_BYTES;
+    message.size = (int)PM::GetInstance().get<unsigned long long>("dataLen") -
+            OVERHEAD_BYTES;
 
     // Sleep 1 second, then begin test
     MilliSleep(1000);
@@ -2070,9 +2004,10 @@ inline unsigned long long perftest_cpp::GetTimeUsec() {
 }
 
 inline unsigned int perftest_cpp::GetSamplesPerBatch() {
-    if (PM::GetInstance().get<long>("batchsize") > (long)_DataLen) {
+    if (PM::GetInstance().get<long>("batchsize")
+            > (long)PM::GetInstance().get<unsigned long long>("dataLen")) {
         return PM::GetInstance().get<long>("batchsize") /
-                (unsigned int)_DataLen;
+                (unsigned int)PM::GetInstance().get<unsigned long long>("dataLen");
     } else {
         return 1;
     }

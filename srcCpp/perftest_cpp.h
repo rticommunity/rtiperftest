@@ -90,7 +90,6 @@ class perftest_cpp
     }
 
   private:
-    unsigned long  _DataLen;
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
     IMessaging *_MessagingImpl;
