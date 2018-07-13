@@ -232,7 +232,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     int sec = 0;
     unsigned int nanosec = 0;
 
-    // now load everything else, command line params override config file
+    // now load everything else, command-line params override config file
     for (i = 0; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-pub")) {
             _isPublisher = true;
@@ -554,7 +554,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
                 _peer_host[_peer_host_count++] = argv[i];
             } else {
-                std::cerr << "[Error] The maximun of -initial peers is " << RTIPERFTEST_MAX_PEERS << std::endl;
+                std::cerr << "[Error] The maximum of -initial peers is " << RTIPERFTEST_MAX_PEERS << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
         } else if (IS_OPTION(argv[i], "-cft")) {

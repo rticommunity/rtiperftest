@@ -1,0 +1,10 @@
+#include "enumTest.idl"
+#include "seqTest.idl"
+#include "stringTest.idl"
+
+struct Test {
+    long test_long;
+    TestEnum test_enum;
+    StringTest test_string;
+    SeqTest test_seq;
+};//@Extensibility FINAL_EXTENSIBILITY

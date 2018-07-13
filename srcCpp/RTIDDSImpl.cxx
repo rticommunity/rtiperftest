@@ -72,6 +72,10 @@ DynamicDataMembersId::DynamicDataMembersId()
     membersId["timestamp_usec"] = 5;
     membersId["latency_ping"] = 6;
     membersId["bin_data"] = 7;
+#ifdef RTI_CUSTOM_TYPE
+    membersId["custom_type"] = 8;
+    membersId["custom_type_size"] = 9;
+#endif
 }
 
 DynamicDataMembersId::~DynamicDataMembersId()
@@ -215,7 +219,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
 {
     int i;
 
-    // Command line params
+    // Command-line params
     for (i = 0; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-pub")) {
         } else if (IS_OPTION(argv[i], "-scan")) {
@@ -640,17 +644,47 @@ class RTIPublisher : public IMessagingWriter
     DDS_InstanceHandle_t *_instance_handles;
     RTIOsapiSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
+  #ifdef RTI_CUSTOM_TYPE
+    unsigned int _lastMessageSize;
+    unsigned int _minCustomTypeSerializeSize;
+  #endif
     bool _isReliable;
 
  public:
     RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
     {
+      #ifdef RTI_CUSTOM_TYPE
+        _lastMessageSize = 0;
+        // Calculate _minCustomTypeSerializeSize
+        if (!get_serialize_size_custom_type_data(_minCustomTypeSerializeSize)) {
+            throw std::runtime_error("get_serialize_size_custom_type_data failed");
+        }
+        // Initialize data
+        DDS_ReturnCode_t retcode = RTI_CUSTOM_TYPE::TypeSupport::initialize_data(
+                &data.custom_type);
+        if (retcode != DDS_RETCODE_OK) {
+            RTI_CUSTOM_TYPE::TypeSupport::finalize_data(&data.custom_type);
+            throw std::runtime_error("TypeSupport::initialize_data failed");
+        }
+        if (!initialize_custom_type_data(data.custom_type)) {
+            RTI_CUSTOM_TYPE::TypeSupport::finalize_data(&data.custom_type);
+            throw std::runtime_error("initialize_custom_type_data failed");
+        }
+      #endif
         _writer = T::DataWriter::narrow(writer);
-        data.bin_data.maximum(0);
+        if (!data.bin_data.maximum(0)) {
+            Shutdown();
+            throw std::runtime_error("bin_data.maximum failed");
+        }
         _num_instances = num_instances;
         _instance_counter = 0;
-        _instance_handles =
-                (DDS_InstanceHandle_t *) malloc(sizeof(DDS_InstanceHandle_t)*(_num_instances + 1)); // One extra for MAX_CFT_VALUE
+        _instance_handles = (DDS_InstanceHandle_t *) malloc(
+                sizeof(DDS_InstanceHandle_t)*(_num_instances + 1)); // One extra for MAX_CFT_VALUE
+        if (_instance_handles == NULL) {
+            Shutdown();
+            fprintf(stderr, "_instance_handles malloc failed\n");
+            throw std::bad_alloc();
+        }
         _pongSemaphore = pongSemaphore;
         _instancesToBeWritten = instancesToBeWritten;
 
@@ -658,12 +692,18 @@ class RTIPublisher : public IMessagingWriter
             for (int c = 0; c < KEY_SIZE; c++) {
                 data.key[c] = (unsigned char) (i >> c * 8);
             }
+          #ifdef RTI_CUSTOM_TYPE
+            register_custom_type_data(data.custom_type, i);
+          #endif
             _instance_handles[i] = _writer->register_instance(data);
         }
         // Register the key of MAX_CFT_VALUE
         for (int c = 0; c < KEY_SIZE; c++) {
             data.key[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
         }
+      #ifdef RTI_CUSTOM_TYPE
+        register_custom_type_data(data.custom_type, MAX_CFT_VALUE);
+      #endif
         _instance_handles[_num_instances] = _writer->register_instance(data);
 
         DDS_DataWriterQos qos;
@@ -672,7 +712,11 @@ class RTIPublisher : public IMessagingWriter
     }
 
     ~RTIPublisher() {
-        Shutdown();
+        try {
+            Shutdown();
+        } catch (const std::exception &ex) {
+            fprintf(stderr, "Exception in RTIPublisher::~RTIPublisher(): %s.\n", ex.what());
+        }
     }
 
     void Shutdown() {
@@ -680,8 +724,16 @@ class RTIPublisher : public IMessagingWriter
             delete(_writer->get_listener());
             _writer->set_listener(NULL);
         }
-
-        free(_instance_handles);
+        if (_instance_handles != NULL) {
+            free(_instance_handles);
+            _instance_handles = NULL;
+        }
+      #ifdef RTI_CUSTOM_TYPE
+        if (!finalize_custom_type_data(data.custom_type)) {
+            throw std::runtime_error("finalize_custom_type_data failed");
+        }
+        RTI_CUSTOM_TYPE::TypeSupport::finalize_data(&data.custom_type);
+      #endif
     }
 
     void Flush()
@@ -692,14 +744,8 @@ class RTIPublisher : public IMessagingWriter
     bool Send(const TestMessage &message, bool isCftWildCardKey)
     {
         DDS_ReturnCode_t retcode;
+        bool success = true;
         long key = 0;
-
-        data.entity_id = message.entity_id;
-        data.seq_num = message.seq_num;
-        data.timestamp_sec = message.timestamp_sec;
-        data.timestamp_usec = message.timestamp_usec;
-        data.latency_ping = message.latency_ping;
-        data.bin_data.loan_contiguous((DDS_Octet*)message.data, message.size, message.size);
 
         if (!isCftWildCardKey) {
             if (_num_instances > 1) {
@@ -716,15 +762,67 @@ class RTIPublisher : public IMessagingWriter
             data.key[c] = (unsigned char)(key >> c * 8);
         }
 
+        data.entity_id = message.entity_id;
+        data.seq_num = message.seq_num;
+        data.timestamp_sec = message.timestamp_sec;
+        data.timestamp_usec = message.timestamp_usec;
+        data.latency_ping = message.latency_ping;
+      #ifdef RTI_CUSTOM_TYPE
+        /**
+         * Using custom type the size of the data is set in data.custom_type_size:
+         *      If the message.size is a sentinel size value used to handle the test:
+         *          data.custom_type_size = message.size
+         *      Else:
+         *          If the message.size is different from the last iteration:
+         *              data.custom_type_size of the custom type (data.custom_type)
+         *              is measured from the function serialize_data_to_cdr_buffer()
+         *          Else:
+         *              data.custom_type_size is the same as the last iteration
+        */
+        if (is_sentinel_size(message.size)) {
+            data.custom_type_size = message.size;
+        } else {
+            if (!set_custom_type_data(
+                    data.custom_type,
+                    key,
+                    message.size - _minCustomTypeSerializeSize)) {
+                fprintf(stderr, "set_custom_type_data failed.\n");
+                return false;
+            }
+            if ((unsigned int)message.size != _lastMessageSize) {
+                success = get_serialize_size_custom_type_data(
+                        (unsigned int &)data.custom_type_size);
+                if (!success) {
+                    return false;
+                }
+                _lastMessageSize = message.size;
+            }
+        }
+      #else
+        success = data.bin_data.loan_contiguous(
+                (DDS_Octet*)message.data,
+                message.size,
+                message.size);
+        if (!success) {
+            fprintf(stderr, "bin_data.loan_contiguous() failed.\n");
+            return false;
+        }
+      #endif
         if (!isCftWildCardKey) {
             retcode = _writer->write(data, _instance_handles[key]);
         } else { // send CFT_MAX sample
             retcode = _writer->write(data, _instance_handles[_num_instances]);
         }
-        data.bin_data.unloan();
 
-        if (retcode != DDS_RETCODE_OK)
-        {
+      #ifndef RTI_CUSTOM_TYPE
+        success = data.bin_data.unloan();
+        if (!success) {
+            fprintf(stderr, "bin_data.unloan() failed.\n");
+            return false;
+        }
+      #endif
+
+        if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr,"Write error %d.\n", retcode);
             return false;
         }
@@ -752,7 +850,8 @@ class RTIPublisher : public IMessagingWriter
         }
     }
 
-    bool waitForPingResponse() {
+    bool waitForPingResponse()
+    {
         if(_pongSemaphore != NULL) {
             if(RTIOsapiSemaphore_take(_pongSemaphore, NULL)
                     == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
@@ -805,6 +904,29 @@ class RTIPublisher : public IMessagingWriter
             perftest_cpp::MilliSleep(nsec / 1000000);
         }
     }
+
+#ifdef RTI_CUSTOM_TYPE
+  private:
+    bool is_sentinel_size(int size) {
+        return size == perftest_cpp::INITIALIZE_SIZE
+                || size == perftest_cpp::FINISHED_SIZE
+                || size == perftest_cpp::LENGTH_CHANGED_SIZE
+                || size == 0;
+    }
+
+    bool get_serialize_size_custom_type_data(unsigned int &size) {
+        DDS_ReturnCode_t retcode = RTI_CUSTOM_TYPE::TypeSupport::serialize_data_to_cdr_buffer(
+                NULL,
+                (unsigned int &)size,
+                &data.custom_type);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "serialize_data_to_cdr_buffer failed: %d.\n", retcode);
+            return false;
+        }
+        size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
+        return true;
+    }
+#endif
 };
 
 /* Dynamic Data equivalent function from RTIPublisher */
@@ -818,10 +940,14 @@ class RTIDynamicDataPublisher : public IMessagingWriter
     DDS_InstanceHandle_t *_instance_handles;
     RTIOsapiSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
-    int _last_message_size;
+  #ifdef RTI_CUSTOM_TYPE
+    unsigned int _minCustomTypeSerializeSize;
+    unsigned int _customTypeSize;
+  #endif
+    int _lastMessageSize;
     bool _isReliable;
 
-public:
+  public:
     RTIDynamicDataPublisher(
             DDSDataWriter *writer,
             unsigned long num_instances,
@@ -831,18 +957,32 @@ public:
             data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT)
 
     {
-        _writer = DDSDynamicDataWriter::narrow(writer);
-        DDS_Octet key_octets[KEY_SIZE];
         DDS_ReturnCode_t retcode;
 
-        _last_message_size = 0;
+      #ifdef RTI_CUSTOM_TYPE
+        // Calculate size_alignment_type of DDS_DynamicData object
+        if (!get_serialize_size_custom_type_data(_minCustomTypeSerializeSize)) {
+            throw std::runtime_error("get_serialize_size_custom_type_data failed");
+        }
+        // Initialize data
+        if (!initialize_custom_type_dynamic_data(data)) {
+            // ~DDS_DynamicData() will be called and data will be free
+            throw std::runtime_error("initialize_custom_type_dynamic_data failed");
+        }
+      #endif
+        _writer = DDSDynamicDataWriter::narrow(writer);
+        DDS_Octet key_octets[KEY_SIZE];
+
+        _lastMessageSize = 0;
         _num_instances = num_instances;
         _instance_counter = 0;
         _instancesToBeWritten = instancesToBeWritten;
         _instance_handles = (DDS_InstanceHandle_t *) malloc(
                 sizeof(DDS_InstanceHandle_t) * (num_instances + 1));
         if (_instance_handles == NULL) {
-            fprintf(stderr, "_instance_handles malloc failed.\n");
+            Shutdown();
+            fprintf(stderr, "_instance_handles malloc failed\n");
+            throw std::bad_alloc();
         }
         _pongSemaphore = pongSemaphore;
 
@@ -856,9 +996,14 @@ public:
                     KEY_SIZE,
                     key_octets);
             if (retcode != DDS_RETCODE_OK) {
-                fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
+                Shutdown();
+                char errorMessage[21 + 21]; // enough to hold all numbers
+                sprintf(errorMessage, "set_octet_array(key) failed: %d", retcode);
+                throw std::runtime_error(errorMessage);
             }
-
+          #ifdef RTI_CUSTOM_TYPE
+            register_custom_type_dynamic_data(data, i);
+          #endif
             _instance_handles[i] = _writer->register_instance(data);
         }
         // Register the key of MAX_CFT_VALUE
@@ -871,8 +1016,14 @@ public:
                     KEY_SIZE,
                     key_octets);
         if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
+            Shutdown();
+            char errorMessage[21 + 21]; // enough to hold all numbers
+            sprintf(errorMessage, "set_octet_array(key) failed: %d", retcode);
+            throw std::runtime_error(errorMessage);
         }
+      #ifdef RTI_CUSTOM_TYPE
+        register_custom_type_dynamic_data(data, MAX_CFT_VALUE);
+      #endif
         _instance_handles[_num_instances] = _writer->register_instance(data);
 
         DDS_DataWriterQos qos;
@@ -881,7 +1032,11 @@ public:
     }
 
     ~RTIDynamicDataPublisher() {
-        Shutdown();
+        try {
+            Shutdown();
+        } catch (const std::exception &ex) {
+            fprintf(stderr, "Exception in RTIDynamicDataPublisher::~RTIDynamicDataPublisher(): %s.\n", ex.what());
+        }
     }
 
     void Shutdown() {
@@ -889,8 +1044,15 @@ public:
             delete(_writer->get_listener());
             _writer->set_listener(NULL);
         }
-
-        free(_instance_handles);
+        if (_instance_handles != NULL) {
+            free(_instance_handles);
+            _instance_handles = NULL;
+        }
+      #ifdef RTI_CUSTOM_TYPE
+        if (!finalize_custom_type_dynamic_data(data)) {
+            throw std::runtime_error("finalize_custom_type_dynamic_data failed");
+        }
+      #endif
     }
 
     void Flush()
@@ -903,27 +1065,33 @@ public:
         DDS_ReturnCode_t retcode;
         DDS_Octet key_octets[KEY_SIZE];
         long key = 0;
+        if (!isCftWildCardKey) {
+            if (_num_instances > 1) {
+                if (_instancesToBeWritten == -1) {
+                    key = _instance_counter++ % _num_instances;
+                } else { // send sample to a specific subscriber
+                    key = _instancesToBeWritten;
+                }
+            }
+        } else {
+            key = MAX_CFT_VALUE;
+        }
+        for (int c = 0; c < KEY_SIZE; c++) {
+            key_octets[c] = (unsigned char) (key >> c * 8);
+        }
 
-        if (_last_message_size != message.size) {
+        if (_lastMessageSize != message.size) {
             //Cannot use data.clear_member("bind_data") because:
             //DDS_DynamicData_clear_member:unsupported for non-sparse types
             data.clear_all_members();
-
-            DDS_OctetSeq octetSeq;
-            bool succeeded = octetSeq.from_array(
-                    (DDS_Octet *) message.data,
-                    message.size);
-            if (!succeeded) {
-                fprintf(stderr, "from_array() failed.\n");
-            }
-            retcode = data.set_octet_seq(
-                    "bin_data",
-                    DynamicDataMembersId::GetInstance().at("bin_data"),
-                    octetSeq);
-            if (retcode != DDS_RETCODE_OK) {
-                fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
-            }
-            _last_message_size = message.size;
+        }
+        retcode = data.set_octet_array(
+                "key",
+                DynamicDataMembersId::GetInstance().at("key"),
+                KEY_SIZE,
+                key_octets);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
         }
         retcode = data.set_long(
                 "entity_id",
@@ -960,29 +1128,68 @@ public:
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "set_long(latency_ping) failed: %d.\n", retcode);
         }
-
-        if (!isCftWildCardKey) {
-            if (_num_instances > 1) {
-                if (_instancesToBeWritten == -1) {
-                    key = _instance_counter++ % _num_instances;
-                } else { // send sample to a specific subscriber
-                    key = _instancesToBeWritten;
-                }
+     #ifndef RTI_CUSTOM_TYPE
+        if (_lastMessageSize != message.size) {
+            DDS_OctetSeq octetSeq;
+            bool succeeded = octetSeq.from_array(
+                    (DDS_Octet *) message.data,
+                    message.size);
+            if (!succeeded) {
+                fprintf(stderr, "from_array() failed.\n");
+            }
+            retcode = data.set_octet_seq(
+                "bin_data",
+                DynamicDataMembersId::GetInstance().at("bin_data"),
+                octetSeq);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_octet_seq(bin_data) failed: %d.\n", retcode);
+            }
+        }
+      #else
+        /**
+         * Using custom type the size of the data is set in data.custom_type_size:
+         *    If the message.size is a sentinel size value used to handle the test:
+         *          data.custom_type_size = message.size
+         *      Else:
+         *          If the message.size is different from the last iteration:
+         *              data.custom_type_size of the custom type (data.custom_type)
+         *              is measured from the function serialize_data_to_cdr_buffer()
+         *          Else:
+         *              data.custom_type_size is the same as the last iteration
+        */
+        if (is_sentinel_size(message.size)) {
+            retcode = data.set_long(
+                    "custom_type_size",
+                    DynamicDataMembersId::GetInstance().at("custom_type_size"),
+                    message.size);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_long(custom_type_size) failed: %d.\n", retcode);
+                return false;
             }
         } else {
-            key = MAX_CFT_VALUE;
+            if (!set_custom_type_dynamic_data(
+                    data,
+                    key,
+                    message.size - _minCustomTypeSerializeSize)) {
+                fprintf(stderr, "set_custom_type_dynamic_data failed.\n");
+                return false;
+            }
+            if (message.size != _lastMessageSize) {
+                if (!get_serialize_size_custom_type_data(_customTypeSize)) {
+                    fprintf(stderr, "get_serialize_size_custom_type_data.\n");
+                }
+            }
+            retcode = data.set_long(
+                    "custom_type_size",
+                    DynamicDataMembersId::GetInstance().at("custom_type_size"),
+                    _customTypeSize);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_long(custom_type_size) failed: %d.\n", retcode);
+                return false;
+            }
         }
-        for (int c = 0; c < KEY_SIZE; c++) {
-            key_octets[c] = (unsigned char) (key >> c * 8);
-        }
-        retcode = data.set_octet_array(
-                "key",
-                DynamicDataMembersId::GetInstance().at("key"),
-                KEY_SIZE,
-                key_octets);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "set_octet_array(key) failed: %d.\n", retcode);
-        }
+      #endif
+        _lastMessageSize = message.size;
 
         if (!isCftWildCardKey) {
             retcode = _writer->write(data, _instance_handles[key]);
@@ -994,7 +1201,6 @@ public:
             fprintf(stderr, "Write error %d.\n", retcode);
             return false;
         }
-
         return true;
     }
 
@@ -1069,6 +1275,48 @@ public:
             perftest_cpp::MilliSleep(nsec / 1000000);
         }
     }
+#ifdef RTI_CUSTOM_TYPE
+  private:
+    bool is_sentinel_size(int size) {
+        return size == perftest_cpp::INITIALIZE_SIZE
+                || size == perftest_cpp::FINISHED_SIZE
+                || size == perftest_cpp::LENGTH_CHANGED_SIZE
+                || size == 0;
+    }
+
+    bool get_serialize_size_custom_type_data(unsigned int &size) {
+        char *buffer = NULL;
+        DDS_ReturnCode_t retcode = data.to_cdr_buffer(
+                NULL,
+                (unsigned int &)size);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "to_cdr_buffer failed: %d.\n", retcode);
+            return false;
+        }
+        RTIOsapiHeap_allocateBufferAligned(
+                &buffer,
+                size,
+                RTIOsapiAlignment_getAlignmentOf(char *));
+        if (buffer == NULL) {
+            fprintf(stderr, "RTIOsapiHeap_allocateBufferAligned failed.\n");
+            return false;
+        }
+        retcode = data.to_cdr_buffer(
+                buffer,
+                (unsigned int &)size);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "to_cdr_buffer failed: %d.\n", retcode);
+            return false;
+        }
+        if (buffer != NULL) {
+            RTIOsapiHeap_freeBufferAligned(buffer);
+            buffer = NULL;
+        }
+        size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
+        size -= perftest_cpp::OVERHEAD_BYTES;
+        return true;
+    }
+#endif
 };
 
 /*********************************************************
@@ -1131,7 +1379,11 @@ class ReceiverListener : public DDSDataReaderListener
                 _message.timestamp_sec = _data_seq[i].timestamp_sec;
                 _message.timestamp_usec = _data_seq[i].timestamp_usec;
                 _message.latency_ping = _data_seq[i].latency_ping;
+              #ifdef RTI_CUSTOM_TYPE
+                _message.size = _data_seq[i].custom_type_size;
+              #else
                 _message.size = _data_seq[i].bin_data.length();
+              #endif
                 _message.data = (char *)_data_seq[i].bin_data.get_contiguous_bufferI();
 
                 _callback->ProcessMessage(_message);
@@ -1242,6 +1494,18 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                             retcode);
                     _message.latency_ping = 0;
                 }
+              #ifdef RTI_CUSTOM_TYPE
+                retcode = _data_seq[i].get_long(
+                        _message.size,
+                        "custom_type_size",
+                        DynamicDataMembersId::GetInstance().at("custom_type_size"));
+                if (retcode != DDS_RETCODE_OK) {
+                    fprintf(stderr,
+                            "on_data_available() get_long(size) failed: %d.\n",
+                            retcode);
+                    _message.size = 0;
+                }
+              #else
                 retcode = _data_seq[i].get_octet_seq(
                         octetSeq,
                         "bin_data",
@@ -1251,8 +1515,9 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                             "on_data_available() get_octet_seq(bin_data) failed: %d.\n",
                             retcode);
                 }
-                _message.size = octetSeq.length(); // size comming from bin_data
+                _message.size = octetSeq.length();
                 _message.data = (char *)octetSeq.get_contiguous_buffer();
+              #endif
 
                 _callback->ProcessMessage(_message);
             }
@@ -1391,7 +1656,11 @@ class RTISubscriber : public IMessagingReader
             _message.timestamp_sec = _data_seq[_data_idx].timestamp_sec;
             _message.timestamp_usec = _data_seq[_data_idx].timestamp_usec;
             _message.latency_ping = _data_seq[_data_idx].latency_ping;
+          #ifdef RTI_CUSTOM_TYPE
+            _message.size = _data_seq[_data_idx].custom_type_size;
+          #else
             _message.size = _data_seq[_data_idx].bin_data.length();
+          #endif
             _message.data = (char *)_data_seq[_data_idx].bin_data.get_contiguous_bufferI();
 
             ++_data_idx;
@@ -1583,10 +1852,22 @@ class RTIDynamicDataSubscriber : public IMessagingReader
                         retcode);
                 _message.latency_ping = 0;
             }
+            #ifdef RTI_CUSTOM_TYPE
+            retcode = _data_seq[_data_idx].get_long(
+                    _message.size,
+                    "custom_type_size",
+                    DynamicDataMembersId::GetInstance().at("custom_type_size"));
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "on_data_available() get_long(size) failed: %d.\n",
+                        retcode);
+                _message.size = 0;
+            }
+          #else
             retcode = _data_seq[_data_idx].get_octet_seq(
-                octetSeq,
-                "bin_data",
-                DynamicDataMembersId::GetInstance().at("bin_data"));
+                    octetSeq,
+                    "bin_data",
+                    DynamicDataMembersId::GetInstance().at("bin_data"));
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
                         "ReceiveMessage() get_octet_seq(bin_data) failed: %d.\n",
@@ -1594,6 +1875,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
             }
             _message.size = octetSeq.length();
             _message.data = (char *)octetSeq.get_contiguous_buffer();
+          #endif
 
             ++_data_idx;
 
@@ -2354,9 +2636,28 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     if (!PM::GetInstance().get<bool>("dynamicData")) {
-        return new RTIPublisher<T>(writer, PM::GetInstance().get<unsigned long>("instances"), _pongSemaphore, PM::GetInstance().get<long>("writeInstance"));
+        try {
+            return new RTIPublisher<T>(
+                    writer,
+                    PM::GetInstance().get<unsigned long>("instances"),
+                    _pongSemaphore,
+                    PM::GetInstance().get<long>("writeInstance"));
+        } catch (const std::exception &ex) {
+            fprintf(stderr, "Exception in RTIDDSImpl<T>::CreateWriter(): %s.\n", ex.what());
+            return NULL;
+        }
     } else {
-        return new RTIDynamicDataPublisher(writer, PM::GetInstance().get<unsigned long>("instances"), _pongSemaphore, T::TypeSupport::get_typecode(), PM::GetInstance().get<long>("writeInstance"));
+        try{
+            return new RTIDynamicDataPublisher(
+                    writer,
+                    PM::GetInstance().get<unsigned long>("instances"),
+                    _pongSemaphore,
+                    T::TypeSupport::get_typecode(),
+                    PM::GetInstance().get<long>("writeInstance"));
+        } catch (const std::exception &ex) {
+            fprintf(stderr, "Exception in RTIDDSImpl<T>::CreateWriter(): %s.\n", ex.what());
+            return NULL;
+        }
     }
 
 }

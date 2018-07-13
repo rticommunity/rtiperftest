@@ -316,11 +316,11 @@ by using the `Transport` spececific command-line parameters.
 
 -  ``-nic <ipaddr>``
 
-   Restrict RTI Connext DDS to sending output through this interface.
-   The value should be the IP address assigned to any of the available network 
-   interfaces on the machine. On UNIX systems the name of the interface is also
-   valid. This command line parameter is mapped to the "allow_interfaces_list"
-   property in RTI Connext DDS.
+  Restrict RTI Connext DDS to sending output through this interface.
+  The value should be the IP address assigned to any of the available network
+  interfaces on the machine. On UNIX systems the name of the interface is also
+  valid. This command line parameter is mapped to the "allow_interfaces_list"
+  property in RTI Connext DDS.
 
    By default, RTI Connext DDS will attempt to contact all possible
    subscribing nodes on all available network interfaces. Even on a
@@ -842,7 +842,7 @@ additional context switches into your data receive path. When data is
 arriving at a high rate, these context switches can adversely impact
 performance when they occur with each data sample.
 
-To improve efficiency, the command line parameters
+To improve efficiency, the command-line parameters
 ``-waitsetDelayUsec <usec>`` and ``-waitsetEventCount <count>`` allow
 you to process incoming data in groups, based on the number of samples
 and/or time, rather than individually, reducing the number of context
@@ -926,7 +926,7 @@ With Turbo Mode, the size of a batch is automatically adjusted to
 provide the best latency for a given write rate. For slow write rates,
 the batch size will be smaller to minimize the latency penalty. For high
 write rates, the batch size will be bigger to increase throughput. When
-turbo mode is used, the command line option See ``-batchSize <bytes>``
+turbo mode is used, the command-line option See ``-batchSize <bytes>``
 is ignored.
 
 To achieve the best latency under maximum throughput conditions, use See
