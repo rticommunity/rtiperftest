@@ -11,6 +11,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Linq;
 using DDS;
 
 namespace PerformanceTest
@@ -257,8 +258,9 @@ namespace PerformanceTest
             sb.Append("\t                                If only one address is provided, that\n");
             sb.Append("\t                                one and the 2 consecutive ones will be\n");
             sb.Append("\t                                used for the 3 topics used by Perftest.\n");
-            sb.Append("\t                                The address must be lower than X.X.X.253\n");
-            sb.Append("\t                                on IPv4 or the equivalent for IPv6\n");
+            sb.Append("\t                                If one address is set, this one must be\n");
+            sb.Append("\t                                in multicast range and lower than\n");
+            sb.Append("\t                                239.255.255.253 or the equivalent on IPv6\n");
             sb.Append("\t-transportVerbosity <level>   - Verbosity of the transport\n");
             sb.Append("\t                                Default: 0 (errors only)\n");
             sb.Append("\t-transportServerBindPort <p>  - Port used by the transport to accept\n");
@@ -1129,11 +1131,14 @@ namespace PerformanceTest
             string nextAddr;
             Byte[] buffer;
 
-            try {
+            try
+            {
                 buffer = IPAddress.Parse(addr).GetAddressBytes();
-            } catch (IOException e) {
+            }
+            catch (System.Exception e)
+            {
                 Console.Error.Write(classLoggingString
-                        + " Error parsing address." + " Exception: " + e.Source);
+                        + " Error parsing address." + " Exception: " + e.Source  + "\n");
                 return null;
             }
 
@@ -1142,15 +1147,22 @@ namespace PerformanceTest
             * if the Address is 255.255.255.255 (or the equivalent for IPv6) this
             * function will FAIL
             */
-            for (int i = buffer.Length - 1; i >= 0 && !success; i--) {
-                if (buffer[i] != (Byte)255) {
+            for (int i = buffer.Length - 1; i >= 0 && !success; i--)
+            {
+                if (buffer[i] == (Byte)255)
+                {
+                    buffer[i]=0;
+                }
+                else
+                {
                     /* Increase the value and exit */
                     buffer[i]++;
                     success = true;
                 }
             }
 
-            if (!success) {
+            if (!success)
+            {
                 Console.Error.Write(classLoggingString
                         + " IP value too high. Please use -help for more information"
                         + " about -multicastAddr command line\n");
@@ -1158,19 +1170,23 @@ namespace PerformanceTest
             }
 
             /* Get the string format of the address */
-            try {
+            try
+            {
                 nextAddr = new IPAddress(buffer).ToString();
-            } catch (IOException e) {
+            }
+            catch (System.Exception e)
+            {
                 Console.Error.Write(classLoggingString
                         + " Error recovering address from byte format : "
-                        + e.Source);
+                        + e.Source  + "\n");
                 return null;
             }
 
             return nextAddr;
         }
 
-        private bool parseMulticastAddresses(string arg) {
+        private bool parseMulticastAddresses(string arg)
+        {
 
             /*
             * Split the string into diferents parts delimited with ',' character.
@@ -1178,70 +1194,92 @@ namespace PerformanceTest
             * "a","b" and "c"
             */
             string[] addresses = arg.Split(',');
-            IPAddress auxIP; //Use to check if the address given is valid
-            
-            /* If tree addresses are given */
-            if (addresses.Length == 3) {
-                /* Check if the addresses match a ipv4 or ipv6 format */
-                if (!IPAddress.TryParse(addresses[0], out auxIP)
-                        || !IPAddress.TryParse(addresses[1], out auxIP)
-                        || !IPAddress.TryParse(addresses[2], out auxIP)) {
-                    Console.Error.Write(classLoggingString
-                            + " The input addresses dont match a IPv4 or IPv6 format");
-                    return false;
-                }
 
+            /* If tree addresses are given */
+            if (addresses.Length == 3)
+            {
                 multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = addresses[0];
                 multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] = addresses[1];
                 multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE] = addresses[2];
-
-            } else if (addresses.Length == 1) {
+            }
+            else if (addresses.Length == 1)
+            {
                 /* If only one address are give */
-                string aux;;
-
-                if (!IPAddress.TryParse(addresses[0],out auxIP)) {
-                    Console.Error.Write(classLoggingString
-                            + " The input address dont match a IPv4 or IPv6 format");
-                    return false;
-                }
                 multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = addresses[0];
 
                 /* Calculate the consecutive one */
-                aux = increaseAddressByOne(addresses[0]);
-                if (aux == null) {
+                multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] = increaseAddressByOne(addresses[0]);
+                if (multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] == null)
+                {
                     Console.Error.Write(classLoggingString
-                            + " Fail to increase the value of IP addres given");
+                            + " Fail to increase the value of given IP address\n");
                     return false;
                 }
-                multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] = aux;
 
                 /* Calculate the consecutive one */
-                aux = increaseAddressByOne(aux);
-                if (aux == null) {
+                multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE]
+                        = increaseAddressByOne(multicastAddrMap[LATENCY_TOPIC_NAME.VALUE]);
+                if (multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE] == null)
+                {
                     Console.Error.Write(classLoggingString
-                            + " Fail to increase the value of IP addres given");
+                            + " Fail to increase the value of given IP address\n");
                     return false;
                 }
-                multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE] = aux;
-
-            } else {
+            }
+            else
+            {
                 Console.Error.Write(classLoggingString
                         + " Error parsing Address/es '" + arg
                         + "' for -multicastAddr option\n"
-                        + "Use -help option to see the correct sintax");
+                        + "Use -help option to see the correct sintax\n");
+                return false;
+            }
+            if (!isMulticast(multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE])
+                    || !isMulticast(multicastAddrMap[LATENCY_TOPIC_NAME.VALUE])
+                    || !isMulticast(multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE]))
+            {
+                Console.Error.Write(classLoggingString
+                        + " Error parsing the address/es " + arg
+                        + " for -multicastAddr option\n" +
+                        "Use -help option to see the correct sintax\n");
                 return false;
             }
 
             return true;
         }
 
+        public bool isMulticast(string addr)
+        {
+
+            Console.Error.Write("ADDRESS: " + addr + "\n");
+
+            IPAddress address;
+
+            try
+            {
+                address = IPAddress.Parse(addr);
+            }
+            catch (System.Exception e)
+            {
+                Console.Error.Write(classLoggingString
+                        + " Error parsing address." + " Exception: " + e.Source + "\n");
+                return false;
+            }
+
+            return address.IsIPv6Multicast
+                    || (address.GetAddressBytes()[0] >= (byte) 224
+                        &&  address.GetAddressBytes()[0] <= (byte) 239);
+        }
+
         public string getMulticastAddr(string topicName)
         {
             string address;
-            if (multicastAddrMap.TryGetValue(topicName, out address)) {
+            if (multicastAddrMap.TryGetValue(topicName, out address))
+            {
                 return address;
             }
-            else {
+            else
+            {
                 return null;
             }
         }

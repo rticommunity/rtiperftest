@@ -133,6 +133,9 @@ public:
      */
     const std::string getMulticastAddr(const char *topic);
 
+    /* Used to validate a multicast address */
+    bool is_multicast(std::string addr);
+
 private:
 
     static std::map<std::string, TransportConfig> transportConfigMap;

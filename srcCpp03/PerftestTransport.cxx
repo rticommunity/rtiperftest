@@ -612,8 +612,9 @@ std::string PerftestTransport::helpMessageString()
     << "\t                                If only one address is provided, that\n"
     << "\t                                one and the 2 consecutive ones will be\n"
     << "\t                                used for the 3 topics used by Perftest.\n"
-    << "\t                                The address must be lower than X.X.X.253\n"
-    << "\t                                on IPv4 or the equivalent for IPv6\n"
+    << "\t                                If one address is set, this one must be\n"
+    << "\t                                in multicast range and lower than\n"
+    << "\t                                239.255.255.253 or the equivalent on IPv6\n"
     << "\t-transportVerbosity <level>   - Verbosity of the transport\n"
     << "\t                                Default: 0 (errors only)\n"
     << "\t-transportServerBindPort <p>  - Port used by the transport to accept\n"
@@ -970,6 +971,18 @@ const std::string PerftestTransport::getMulticastAddr(const char *topicName)
     return address;
 }
 
+bool PerftestTransport::is_multicast(std::string addr)
+{
+    NDDS_Transport_Address_t transportAddress;
+
+    if (!NDDS_Transport_Address_from_string(&transportAddress, addr.c_str())) {
+        fprintf(stderr, "Fail to get a transport address from string\n");
+        return false;
+    }
+
+    return NDDS_Transport_Address_is_multicast(&transportAddress);
+}
+
 bool PerftestTransport::increase_address_by_one(
         const std::string addr,
         std::string &nextAddr)
@@ -994,11 +1007,13 @@ bool PerftestTransport::increase_address_by_one(
      * function will FAIL
      */
     for (int i = NDDS_TRANSPORT_ADDRESS_LENGTH - 1; i >= 0 && !success; i--) {
-        if (isIPv4 && i < 13) {
+        if (isIPv4 && i < 9) {
             /* If the user set a IPv4 higher than 255.255.255.253 fail here*/
             break;
         }
-        if (transportAddress.network_ordered_value[i] != 255) {
+        if (transportAddress.network_ordered_value[i] == 255) {
+            transportAddress.network_ordered_value[i] = 0;
+        } else {
             /* Increase the value and exit */
             transportAddress.network_ordered_value[i]++;
             success = true;
@@ -1088,6 +1103,26 @@ bool PerftestTransport::parse_multicast_addresses(char *arg)
                 "Error parsing Address/es '%s' for -multicastAddr option\n"
                 "Use -help option to see the correct sintax\n",
                 arg);
+        return false;
+    }
+
+    /* Check if the result addresses are multicast */
+    if (!is_multicast(multicastAddrMap[THROUGHPUT_TOPIC_NAME])
+            || !is_multicast(multicastAddrMap[LATENCY_TOPIC_NAME])
+            || !is_multicast(multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME])) {
+
+        fprintf(stderr,
+                "Error parsing the address/es '%s' for -multicastAddr option\n",
+                arg);
+        if (numberOfAddressess == 1) {
+            fprintf(stderr,
+                    "The calculated addresses are outsite of multicast range.\n");
+        } else {
+            fprintf(stderr, "There are outsite of multicast range.\n");
+        }
+
+        fprintf(stderr, "Use -help option to see the correct sintax\n");
+
         return false;
     }
 
