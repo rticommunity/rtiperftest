@@ -25,7 +25,7 @@ void ParameterManager::initialize()
     bestEffort->set_type(T_BOOL);
     bestEffort->set_extra_argument(NO);
     bestEffort->set_group(GENERAL);
-    parameterList["bestEffort"].create(bestEffort);
+    parameterList["bestEffort"] = AnyParameter(bestEffort);
 
     Parameter<unsigned long long> *dataLen = new Parameter<unsigned long long>(100);
     dataLen->set_command_line_argument(std::make_pair("-dataLen","<bytes>"));

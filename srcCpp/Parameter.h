@@ -277,13 +277,6 @@ class AnyParameter {
             return *this;
         };
 
-
-        template <typename T>
-        void create(Parameter<T> *p){
-            param = p;
-            p = NULL;
-        }
-
         ~AnyParameter()
         {
             if (param != NULL) {
