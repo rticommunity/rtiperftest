@@ -76,17 +76,17 @@ void ParameterManager::initialize()
     instances->set_description("Set the number of instances (keys) to iterate\nover when publishing. Default: 1");
     instances->set_type(T_NUMERIC);
     instances->set_extra_argument(YES);
-    instances->setRange(1, ULONG_MAX);
+    instances->set_range(1, ULONG_MAX);
     instances->set_group(GENERAL);
     parameterList["instances"] = AnyParameter(instances);
 
     Parameter<unsigned long long> *instanceHashBuckets = new Parameter<unsigned long long>(0);
-    instanceHashBuckets->setCommandLineArgument(std::make_pair("-instanceHashBuckets","<count>"));
-    instanceHashBuckets->setInternal(true);
-    instanceHashBuckets->setType(T_NUMERIC);
-    instanceHashBuckets->setExtraArgument(YES);
-    instanceHashBuckets->setRange(1, 1000000);
-    instanceHashBuckets->setGroup(GENERAL);
+    instanceHashBuckets->set_command_line_argument(std::make_pair("-instanceHashBuckets","<count>"));
+    instanceHashBuckets->set_internal(true);
+    instanceHashBuckets->set_type(T_NUMERIC);
+    instanceHashBuckets->set_extra_argument(YES);
+    instanceHashBuckets->set_range(1, 1000000);
+    instanceHashBuckets->set_group(GENERAL);
     parameterList["instanceHashBuckets"] = AnyParameter(instanceHashBuckets);
 
     Parameter<bool> *keyed = new Parameter<bool>(false);
@@ -114,12 +114,12 @@ void ParameterManager::initialize()
     parameterList["noPositiveAcks"] = AnyParameter(noPositiveAcks);
 
     Parameter<unsigned long long> *keepDurationUsec = new Parameter<unsigned long long>(0);
-    keepDurationUsec->setCommandLineArgument(std::make_pair("-keepDurationUsec","<usec>"));
-    keepDurationUsec->setInternal(true);
-    keepDurationUsec->setType(T_NUMERIC);
-    keepDurationUsec->setExtraArgument(YES);
-    keepDurationUsec->setGroup(GENERAL);
-    keepDurationUsec->setRange(1, ULLONG_MAX);
+    keepDurationUsec->set_command_line_argument(std::make_pair("-keepDurationUsec","<usec>"));
+    keepDurationUsec->set_internal(true);
+    keepDurationUsec->set_type(T_NUMERIC);
+    keepDurationUsec->set_extra_argument(YES);
+    keepDurationUsec->set_group(GENERAL);
+    keepDurationUsec->set_range(1, ULLONG_MAX);
     parameterList["keepDurationUsec"] = AnyParameter(keepDurationUsec);
 
     Parameter<bool> *noPrintIntervals = new Parameter<bool>(false);
@@ -305,16 +305,6 @@ void ParameterManager::initialize()
     pidMultiPubTest->set_group(PUB);
     parameterList["pidMultiPubTest"] = AnyParameter(pidMultiPubTest);
 
-    ParameterVector<unsigned long long> *cft = new ParameterVector<unsigned long long>();
-    cft->set_command_line_argument(std::make_pair("-cft","<start>:<end>"));
-    cft->set_description("Use a Content Filtered Topic for the Throughput topic in the subscriber side.\nSpecify 2 parameters: <start> and <end> to receive samples with a key in that range.\nSpecify only 1 parameter to receive samples with that exact key.\nDefault: Not set");
-    cft->set_type(T_VECTOR_NUMERIC);
-    cft->set_extra_argument(YES);
-    cft->set_range(0, MAX_CFT_VALUE);
-    cft->setParseMethod(SPLIT);
-    cft->set_group(PUB);
-    parameterList["cft"] = AnyParameter(cft);
-
     ParameterPair<unsigned long long, std::string> *pubRate = new ParameterPair<unsigned long long, std::string>(0,"spin");
     pubRate->set_command_line_argument(std::make_pair("-pubRate","<samples/s>:<method>"));
     pubRate->set_description("Limit the throughput to the specified number\nof samples/s. Default 0 (don't limit)\n[OPTIONAL] Method to control the throughput can be:\n'spin' or 'sleep'.\nDefault method: spin");
@@ -345,7 +335,7 @@ void ParameterManager::initialize()
     scan->set_type(T_VECTOR_NUMERIC);
     scan->set_extra_argument(OPTIONAL);
     scan->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_PERFTEST_SAMPLE_SIZE);
-    scan->setParseMethod(SPLIT);
+    scan->set_parse_method(SPLIT);
     scan->set_group(PUB);
     parameterList["scan"] = AnyParameter(scan);
 
@@ -368,12 +358,12 @@ void ParameterManager::initialize()
     parameterList["sleep"] = AnyParameter(sleep);
 
     Parameter<unsigned long long> *spin = new Parameter<unsigned long long>(0);
-    spin->setCommandLineArgument(std::make_pair("-spin","<count>"));
-    spin->setInternal(true);
-    spin->setType(T_NUMERIC);
-    spin->setExtraArgument(YES);
-    spin->setRange(0, ULLONG_MAX);
-    spin->setGroup(PUB);
+    spin->set_command_line_argument(std::make_pair("-spin","<count>"));
+    spin->set_internal(true);
+    spin->set_type(T_NUMERIC);
+    spin->set_extra_argument(YES);
+    spin->set_range(0, ULLONG_MAX);
+    spin->set_group(PUB);
     parameterList["spin"] = AnyParameter(spin);
 
     Parameter<bool> *writerStats = new Parameter<bool>(false);
@@ -420,14 +410,15 @@ void ParameterManager::initialize()
     numPublishers->set_range(1, ULLONG_MAX);
     numPublishers->set_group(SUB);
     parameterList["numPublishers"] = AnyParameter(numPublishers);
+
     ParameterVector<unsigned long long> *cft = new ParameterVector<unsigned long long>();
-    cft->setCommandLineArgument(std::make_pair("-cft","<start>:<end>"));
-    cft->setDescription("Use a Content Filtered Topic for the Throughput topic in the\nsubscriber side. Specify 2 parameters: <start> and <end> to\nreceive samples with a key in that range.\nSpecify only 1 parameter to receive samples with that exact key.\nDefault: Not set");
-    cft->setType(T_VECTOR_NUMERIC);
-    cft->setExtraArgument(YES);
-    cft->setRange(0, MAX_CFT_VALUE - 1);
-    cft->setParseMethod(SPLIT);
-    cft->setGroup(SUB);
+    cft->set_command_line_argument(std::make_pair("-cft","<start>:<end>"));
+    cft->set_description("Use a Content Filtered Topic for the Throughput topic in the\nsubscriber side. Specify 2 parameters: <start> and <end> to\nreceive samples with a key in that range.\nSpecify only 1 parameter to receive samples with that exact key.\nDefault: Not set");
+    cft->set_type(T_VECTOR_NUMERIC);
+    cft->set_extra_argument(YES);
+    cft->set_range(0, MAX_CFT_VALUE - 1);
+    cft->set_parse_method(SPLIT);
+    cft->set_group(SUB);
     parameterList["cft"] = AnyParameter(cft);
 
     ////////////////////////////////////////////////////////////////////////////
@@ -946,7 +937,7 @@ std::string ParameterManager::get_center_header_help_line(std::string name){
 bool ParameterManager::group_is_use(GROUP group){
     std::map<std::string, AnyParameter>::iterator it;
     for (it = parameterList.begin(); it != parameterList.end(); it++) {
-        if (it->second.get()->getIsSet() && it->second.get()->getGroup() == group) {
+        if (it->second.get()->get_isSet() && it->second.get()->get_group() == group) {
             return true;
         }
     }

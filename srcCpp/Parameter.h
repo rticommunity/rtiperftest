@@ -88,7 +88,7 @@ class ParameterBase  {
         virtual void set_range_end(unsigned long long var);
         virtual void set_range(unsigned long long rangeStart, unsigned long long rangeEnd);
         virtual void add_valid_str_value(std::string validStrValue);
-        virtual void setParseMethod(PARSEMETHOD var) {}
+        virtual void set_parse_method(PARSEMETHOD var) {}
 
         // Get members
         virtual std::pair <std::string, std::string> get_command_line_argument();
@@ -183,7 +183,7 @@ class ParameterVector : public ParameterBase {
             set_isSet(true);
         }
 
-        void setParseMethod(PARSEMETHOD var)
+        void set_parse_method(PARSEMETHOD var)
         {
             parseMethod = var;
         }
