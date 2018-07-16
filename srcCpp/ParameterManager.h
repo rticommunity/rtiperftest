@@ -38,7 +38,7 @@ class ParameterManager
             std::map<std::string, AnyParameter>::iterator it;
             it = parameterList.find(parameterKey);
             if (it != parameterList.end()) {
-                (static_cast<Parameter<T>*>(parameterList[parameterKey].get<T>()))->setValue(var);
+                (static_cast<Parameter<T>*>(parameterList[parameterKey].get<T>()))->set_value(var);
             }
         }
 
@@ -49,7 +49,7 @@ class ParameterManager
             std::map<std::string, AnyParameter>::iterator it;
             it = parameterList.find(parameterKey);
             if (it != parameterList.end()) {
-                return (static_cast<Parameter<T>*>(parameterList[parameterKey].get<T>()))->getValue();
+                return (static_cast<Parameter<T>*>(parameterList[parameterKey].get<T>()))->get_value();
             } else {
                 return T(); // Return the default
                 // TODO throw exception
@@ -63,7 +63,7 @@ class ParameterManager
           std::map<std::string, AnyParameter>::iterator it;
             it = parameterList.find(parameterKey);
             if (it != parameterList.end()) {
-                return (static_cast<ParameterVector<T>*>(parameterList[parameterKey].getVector<T>()))->getValue();
+                return (static_cast<ParameterVector<T>*>(parameterList[parameterKey].get_vector<T>()))->get_value();
             } else {
                 return std::vector<T>(); // Return the default
                 // TODO throw exception
@@ -77,7 +77,7 @@ class ParameterManager
           std::map<std::string, AnyParameter>::iterator it;
             it = parameterList.find(parameterKey);
             if (it != parameterList.end()) {
-                return (static_cast<ParameterPair<K,V>*>(parameterList[parameterKey].getPair<K,V>()))->getValue();
+                return (static_cast<ParameterPair<K,V>*>(parameterList[parameterKey].get_pair<K,V>()))->get_value();
             } else {
                 return std::pair<K,V>(); // Return the default
                 // TODO throw exception

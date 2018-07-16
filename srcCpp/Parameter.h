@@ -122,12 +122,12 @@ class Parameter : public ParameterBase {
         {
         }
 
-        T getValue()
+        T get_value()
         {
             return value;
         }
 
-        void setValue(T var)
+        void set_value(T var)
         {
             value = var;
             set_isSet(true);
@@ -164,12 +164,12 @@ class ParameterVector : public ParameterBase {
         {
         }
 
-        std::vector<T> getValue()
+        std::vector<T> get_value()
         {
             return value;
         }
 
-        void setValue(T var)
+        void set_value(T var)
         {
             if (!get_isSet()) {
                 // In the case of is not set, remove default values.
@@ -216,12 +216,12 @@ class ParameterPair : public ParameterBase {
         {
         }
 
-        std::pair<K,V> getValue()
+        std::pair<K,V> get_value()
         {
             return value;
         }
 
-        void setValue(K key, V val)
+        void set_value(K key, V val)
         {
 
             value = std::make_pair(key, val);
@@ -259,13 +259,13 @@ class AnyParameter {
         }
 
         template <typename T>
-        ParameterVector<T>* getVector()
+        ParameterVector<T>* get_vector()
         {
             return static_cast<ParameterVector<T>*>(param);
         }
 
         template <typename K, typename V>
-        ParameterPair<K,V>* getPair()
+        ParameterPair<K,V>* get_pair()
         {
             return static_cast<ParameterPair<K,V>*>(param);
         }
@@ -276,6 +276,13 @@ class AnyParameter {
             other.param = NULL;
             return *this;
         };
+
+
+        template <typename T>
+        void create(Parameter<T> *p){
+            param = p;
+            p = NULL;
+        }
 
         ~AnyParameter()
         {

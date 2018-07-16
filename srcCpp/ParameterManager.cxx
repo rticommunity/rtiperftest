@@ -25,7 +25,7 @@ void ParameterManager::initialize()
     bestEffort->set_type(T_BOOL);
     bestEffort->set_extra_argument(NO);
     bestEffort->set_group(GENERAL);
-    parameterList["bestEffort"] = AnyParameter(bestEffort);
+    parameterList["bestEffort"].create(bestEffort);
 
     Parameter<unsigned long long> *dataLen = new Parameter<unsigned long long>(100);
     dataLen->set_command_line_argument(std::make_pair("-dataLen","<bytes>"));
@@ -702,7 +702,7 @@ bool ParameterManager::parse(int argc, char *argv[])
                 if (it->second.get()->get_extra_argument() == NO) {
                     // Type is T_BOOL
                     if (it->second.get()->get_type() == T_BOOL) {
-                        (static_cast<Parameter<bool>*>(it->second.get<bool>()))->setValue(true);
+                        (static_cast<Parameter<bool>*>(it->second.get<bool>()))->set_value(true);
                     }
                 // NumArguments is 1 or optional
                 } else if (it->second.get()->get_extra_argument() > NO) {
@@ -724,7 +724,7 @@ bool ParameterManager::parse(int argc, char *argv[])
                         if (!it->second.get()->validate_str_range(allArgs[i])) {
                             success = false;
                         }
-                        (static_cast<Parameter<std::string>*>(it->second.get<std::string>()))->setValue(allArgs[i]);
+                        (static_cast<Parameter<std::string>*>(it->second.get<std::string>()))->set_value(allArgs[i]);
                     }
                     // Type is T_NUMERIC
                     else if (it->second.get()->get_type() == T_NUMERIC) {
@@ -737,20 +737,20 @@ bool ParameterManager::parse(int argc, char *argv[])
                         if (!it->second.get()->validate_numeric_range(var)) {
                             success = false;
                         }
-                        (static_cast<Parameter<unsigned long long>*>(it->second.get<unsigned long long>()))->setValue(var);
+                        (static_cast<Parameter<unsigned long long>*>(it->second.get<unsigned long long>()))->set_value(var);
                     }
                     // Type is T_VECTOR_STR
                     else if (it->second.get()->get_type() == T_VECTOR_STR) {
-                        if (NOSPLIT == ((ParameterVector<std::string>*)it->second.getVector<std::string>())->get_parse_method()) {
+                        if (NOSPLIT == ((ParameterVector<std::string>*)it->second.get_vector<std::string>())->get_parse_method()) {
                             if (!it->second.get()->validate_str_range(allArgs[i])) {
                                 success = false;
                             }
-                            (static_cast<ParameterVector<std::string>*>(it->second.getVector<std::string>()))->setValue(allArgs[i]);
+                            (static_cast<ParameterVector<std::string>*>(it->second.get_vector<std::string>()))->set_value(allArgs[i]);
                         }
                     }
                     // Type is T_VECTOR_NUMERIC
                     else if (it->second.get()->get_type() == T_VECTOR_NUMERIC) {
-                        if (SPLIT == ((ParameterVector<unsigned long long>*)it->second.getVector<unsigned long long>())->get_parse_method()) {
+                        if (SPLIT == ((ParameterVector<unsigned long long>*)it->second.get_vector<unsigned long long>())->get_parse_method()) {
                             std::vector<std::string> v = split(allArgs[i]);
                             for (unsigned int j = 0; j < v.size(); j++) {
                                 if (sscanf(v[j].c_str(), "%llu", &var) != 1) {
@@ -762,7 +762,7 @@ bool ParameterManager::parse(int argc, char *argv[])
                                 if (!it->second.get()->validate_numeric_range(var)) {
                                     success = false;
                                 }
-                                (static_cast<ParameterVector<unsigned long long>*>(it->second.getVector<unsigned long long>()))->setValue(var);
+                                (static_cast<ParameterVector<unsigned long long>*>(it->second.get_vector<unsigned long long>()))->set_value(var);
                             }
                         }
                     }
@@ -787,7 +787,7 @@ bool ParameterManager::parse(int argc, char *argv[])
                             if (!it->second.get()->validate_str_range(v[1])) {
                                 success = false;
                             }
-                            (static_cast<ParameterPair<unsigned long long, std::string>*>(it->second.getPair<unsigned long long, std::string>()))->setValue(var, v[1]);
+                            (static_cast<ParameterPair<unsigned long long, std::string>*>(it->second.get_pair<unsigned long long, std::string>()))->set_value(var, v[1]);
                         }
                     }
                 }
