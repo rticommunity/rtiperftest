@@ -76,9 +76,18 @@ void ParameterManager::initialize()
     instances->set_description("Set the number of instances (keys) to iterate\nover when publishing. Default: 1");
     instances->set_type(T_NUMERIC);
     instances->set_extra_argument(YES);
-    instances->set_range(0, ULLONG_MAX);
+    instances->setRange(1, ULONG_MAX);
     instances->set_group(GENERAL);
     parameterList["instances"] = AnyParameter(instances);
+
+    Parameter<unsigned long long> *instanceHashBuckets = new Parameter<unsigned long long>(0);
+    instanceHashBuckets->setCommandLineArgument(std::make_pair("-instanceHashBuckets","<count>"));
+    instanceHashBuckets->setInternal(true);
+    instanceHashBuckets->setType(T_NUMERIC);
+    instanceHashBuckets->setExtraArgument(YES);
+    instanceHashBuckets->setRange(1, 1000000);
+    instanceHashBuckets->setGroup(GENERAL);
+    parameterList["instanceHashBuckets"] = AnyParameter(instanceHashBuckets);
 
     Parameter<bool> *keyed = new Parameter<bool>(false);
     keyed->set_command_line_argument(std::make_pair("-keyed",""));
@@ -103,6 +112,15 @@ void ParameterManager::initialize()
     noPositiveAcks->set_extra_argument(NO);
     noPositiveAcks->set_group(GENERAL);
     parameterList["noPositiveAcks"] = AnyParameter(noPositiveAcks);
+
+    Parameter<unsigned long long> *keepDurationUsec = new Parameter<unsigned long long>(0);
+    keepDurationUsec->setCommandLineArgument(std::make_pair("-keepDurationUsec","<usec>"));
+    keepDurationUsec->setInternal(true);
+    keepDurationUsec->setType(T_NUMERIC);
+    keepDurationUsec->setExtraArgument(YES);
+    keepDurationUsec->setGroup(GENERAL);
+    keepDurationUsec->setRange(1, ULLONG_MAX);
+    parameterList["keepDurationUsec"] = AnyParameter(keepDurationUsec);
 
     Parameter<bool> *noPrintIntervals = new Parameter<bool>(false);
     noPrintIntervals->set_command_line_argument(std::make_pair("-noPrintIntervals",""));
@@ -201,14 +219,14 @@ void ParameterManager::initialize()
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER
 
-    Parameter<unsigned long long> *batching = new Parameter<unsigned long long>(DEFAULT_THROUGHPUT_BATCH_SIZE);
-    batching->set_command_line_argument(std::make_pair("-batchsize","<bytes>"));
-    batching->set_description("Size in bytes of batched message. Default: 8kB.\n(Disabled for LatencyTest mode or if dataLen > 4kB)");
-    batching->set_type(T_NUMERIC);
-    batching->set_extra_argument(YES);
-    batching->set_range(0, MAX_SYNCHRONOUS_SIZE);
-    batching->set_group(PUB);
-    parameterList["batching"] = AnyParameter(batching);
+    Parameter<unsigned long long> *batchSize = new Parameter<unsigned long long>(DEFAULT_THROUGHPUT_BATCH_SIZE);
+    batchSize->set_command_line_argument(std::make_pair("-batchsize","<bytes>"));
+    batchSize->set_description("Size in bytes of batched message. Default: 8kB.\n(Disabled for LatencyTest mode or if dataLen > 4kB)");
+    batchSize->set_type(T_NUMERIC);
+    batchSize->set_extra_argument(YES);
+    batchSize->set_range(0, MAX_SYNCHRONOUS_SIZE - 1);
+    batchSize->set_group(PUB);
+    parameterList["batchSize"] = AnyParameter(batchSize);
 
     Parameter<bool> *enableAutoThrottle = new Parameter<bool>(false);
     enableAutoThrottle->set_command_line_argument(std::make_pair("-enableAutoThrottle",""));
@@ -308,20 +326,20 @@ void ParameterManager::initialize()
     pubRate->add_valid_str_value("spin");
     parameterList["pubRate"] = AnyParameter(pubRate);
 
-     std::vector<unsigned long long> _scanDataLenSizes;
-    _scanDataLenSizes.push_back(32);
-    _scanDataLenSizes.push_back(64);
-    _scanDataLenSizes.push_back(128);
-    _scanDataLenSizes.push_back(256);
-    _scanDataLenSizes.push_back(512);
-    _scanDataLenSizes.push_back(1024);
-    _scanDataLenSizes.push_back(2048);
-    _scanDataLenSizes.push_back(4096);
-    _scanDataLenSizes.push_back(8192);
-    _scanDataLenSizes.push_back(16384);
-    _scanDataLenSizes.push_back(32768);
-    _scanDataLenSizes.push_back(63000);
-    ParameterVector<unsigned long long> * scan = new ParameterVector<unsigned long long>(_scanDataLenSizes);
+     std::vector<unsigned long long> scanList;
+    scanList.push_back(32);
+    scanList.push_back(64);
+    scanList.push_back(128);
+    scanList.push_back(256);
+    scanList.push_back(512);
+    scanList.push_back(1024);
+    scanList.push_back(2048);
+    scanList.push_back(4096);
+    scanList.push_back(8192);
+    scanList.push_back(16384);
+    scanList.push_back(32768);
+    scanList.push_back(63000);
+    ParameterVector<unsigned long long> * scan = new ParameterVector<unsigned long long>(scanList);
     scan->set_command_line_argument(std::make_pair("-scan","<size1>:<size2>:...:<sizeN>"));
     scan->set_description("Run test in scan mode, traversing\na range of sample data sizes from\n[32,63000] or [63001,2147483128] bytes,\nin the case that you are using large data or not.\nThe list of sizes is optional.\nDefault values are '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\nDefault: Not set");
     scan->set_type(T_VECTOR_NUMERIC);
@@ -340,7 +358,6 @@ void ParameterManager::initialize()
     sendQueueSize->set_range(1, INT_MAX);
     parameterList["sendQueueSize"] = AnyParameter(sendQueueSize);
 
-    // TODO convert into NanoSec
     Parameter<unsigned long long> *sleep = new Parameter<unsigned long long>(0);
     sleep->set_command_line_argument(std::make_pair("-sleep","<millisec>"));
     sleep->set_description("Time to sleep between each send. Default: 0");
@@ -349,6 +366,15 @@ void ParameterManager::initialize()
     sleep->set_range(0, ULLONG_MAX);
     sleep->set_group(PUB);
     parameterList["sleep"] = AnyParameter(sleep);
+
+    Parameter<unsigned long long> *spin = new Parameter<unsigned long long>(0);
+    spin->setCommandLineArgument(std::make_pair("-spin","<count>"));
+    spin->setInternal(true);
+    spin->setType(T_NUMERIC);
+    spin->setExtraArgument(YES);
+    spin->setRange(0, ULLONG_MAX);
+    spin->setGroup(PUB);
+    parameterList["spin"] = AnyParameter(spin);
 
     Parameter<bool> *writerStats = new Parameter<bool>(false);
     writerStats->set_command_line_argument(std::make_pair("-writerStats",""));
@@ -394,6 +420,15 @@ void ParameterManager::initialize()
     numPublishers->set_range(1, ULLONG_MAX);
     numPublishers->set_group(SUB);
     parameterList["numPublishers"] = AnyParameter(numPublishers);
+    ParameterVector<unsigned long long> *cft = new ParameterVector<unsigned long long>();
+    cft->setCommandLineArgument(std::make_pair("-cft","<start>:<end>"));
+    cft->setDescription("Use a Content Filtered Topic for the Throughput topic in the\nsubscriber side. Specify 2 parameters: <start> and <end> to\nreceive samples with a key in that range.\nSpecify only 1 parameter to receive samples with that exact key.\nDefault: Not set");
+    cft->setType(T_VECTOR_NUMERIC);
+    cft->setExtraArgument(YES);
+    cft->setRange(0, MAX_CFT_VALUE - 1);
+    cft->setParseMethod(SPLIT);
+    cft->setGroup(SUB);
+    parameterList["cft"] = AnyParameter(cft);
 
     ////////////////////////////////////////////////////////////////////////////
     // TRANSPORT PARAMETER:
@@ -896,7 +931,7 @@ std::vector<std::string> ParameterManager::split(std::string str, char delimiter
 }
 
 std::string ParameterManager::get_center_header_help_line(std::string name){
-    name += "Specific Options";
+    name += " Specific Options";
     std::stringstream line;
     unsigned int maxWithLine = 80;
     std::string separatorBar =
@@ -907,7 +942,13 @@ std::string ParameterManager::get_center_header_help_line(std::string name){
     }
     return line.str();
 }
-/*TODO: */
-// bool ParameterManager::group_is_use(){
 
-// }
+bool ParameterManager::group_is_use(GROUP group){
+    std::map<std::string, AnyParameter>::iterator it;
+    for (it = parameterList.begin(); it != parameterList.end(); it++) {
+        if (it->second.get()->getIsSet() && it->second.get()->getGroup() == group) {
+            return true;
+        }
+    }
+    return false;
+}

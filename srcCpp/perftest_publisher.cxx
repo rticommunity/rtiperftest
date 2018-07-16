@@ -2,7 +2,8 @@
  * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
-
+#define STRINGIFY(x) #x
+#define TO_STRING(x) STRINGIFY(x)
 #include "RTIDDSImpl.h"
 #include "perftest_cpp.h"
 #include "CpuMonitor.h"
@@ -29,7 +30,7 @@ RTI_UINT64 perftest_cpp::_Clock_sec = 0;
 RTI_UINT64 perftest_cpp::_Clock_usec = 0;
 
 bool perftest_cpp::_testCompleted = false;
-bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan test
+bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
 const int timeout_wait_for_ack_sec = 0;
 const unsigned int timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {2, 3, 2, 0};
@@ -104,56 +105,9 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
-//     printf("batching: %d\n", PM::GetInstance().get<int>("batching"));
-//     std::vector<unsigned long long> scan = PM::GetInstance().get_vector<unsigned long long>("scan");
-//     printf("scan: \n");
-//     for (unsigned int i = 0; i < scan.size(); i++) {
-//         printf("\t%llu\n", scan[i]);
-//     }
-//     std::vector<unsigned long long> cft = PM::GetInstance().get_vector<unsigned long long>("cft");
-//     printf("cft: \n");
-//     for (unsigned int i = 0; i < cft.size(); i++) {
-//         printf("\t%llu\n", cft[i]);
-//     }
-//     printf("dataLen: %d\n", PM::GetInstance().get<int>("dataLen"));
-//     printf("instances: %d\n", PM::GetInstance().get<int>("instances"));
-
-//     //TRANSPORT
-//     printf("nic: %s\n", PM::GetInstance().get<std::string>("nic").c_str());
-//     printf("transport: %s\n", PM::GetInstance().get<std::string>("transport").c_str());
-//     printf("multicast: %d\n", PM::GetInstance().get<bool>("multicast"));
-//     printf("multicastAddr: %s\n", PM::GetInstance().get<std::string>("multicastAddr").c_str());
-//     printf("transportVerbosity: %s\n", PM::GetInstance().get<std::string>("transportVerbosity").c_str());
-//     printf("transportServerBindPort: %s\n", PM::GetInstance().get<std::string>("transportServerBindPort").c_str());
-//     printf("transportWan: %s\n", PM::GetInstance().get<std::string>("transportWan").c_str());
-//     printf("transportWanServerPort: %s\n", PM::GetInstance().get<std::string>("transportWanServerPort").c_str());
-//     printf("transportWanId: %s\n", PM::GetInstance().get<std::string>("transportWanId").c_str());
-//     printf("transportSecureWan: %d\n", PM::GetInstance().get<bool>("transportSecureWan"));
-//     printf("transportPublicAddress: %s\n", PM::GetInstance().get<std::string>("transportPublicAddress").c_str());
-//     printf("transportWanServerAddress: %s\n", PM::GetInstance().get<std::string>("transportWanServerAddress").c_str());
-//     printf("transportCertAuthority: %s\n", PM::GetInstance().get<std::string>("transportCertAuthority").c_str());
-//     printf("transportCertFile: %s\n", PM::GetInstance().get<std::string>("transportCertFile").c_str());
-//     printf("transportPrivateKey: %s\n", PM::GetInstance().get<std::string>("transportPrivateKey").c_str());
-
-//   #ifdef RTI_SECURE_PERFTEST
-//     printf("secureEncryptDiscovery: %d\n", PM::GetInstance().get<bool>("secureEncryptDiscovery"));
-//     printf("secureSign: %d\n", PM::GetInstance().get<bool>("secureSign"));
-//     printf("secureEncryptBoth: %d\n", PM::GetInstance().get<bool>("secureEncryptBoth"));
-//     printf("secureEncryptData: %d\n", PM::GetInstance().get<bool>("secureEncryptData"));
-//     printf("secureEncryptSM: %d\n", PM::GetInstance().get<bool>("secureEncryptSM"));
-//     printf("secureGovernanceFile: %s\n", PM::GetInstance().get<std::string>("secureGovernanceFile").c_str());
-//     printf("securePermissionsFile: %s\n", PM::GetInstance().get<std::string>("securePermissionsFile").c_str());
-//     printf("secureCertAuthority: %s\n", PM::GetInstance().get<std::string>("secureCertAuthority").c_str());
-//     printf("secureCertFile: %s\n", PM::GetInstance().get<std::string>("secureCertFile").c_str());
-//     printf("securePrivateKey: %s\n", PM::GetInstance().get<std::string>("securePrivateKey").c_str());
-//     printf("secureLibrary: %s\n", PM::GetInstance().get<std::string>("secureLibrary").c_str());
-//     printf("secureDebug: %s\n", PM::GetInstance().get<unsigned long long>("secureDebug"));
-//   #endif
-//     return 0;
-
     PrintVersion();
 
-    if (!ParseConfig(argc, argv)) {
+    if (!validate_input()) {
         return -1;
     }
 
@@ -214,25 +168,6 @@ void perftest_cpp::PrintVersion()
 
 }
 
-// Set the default values into the array _scanDataLenSizes vector
-void set_default_scan_values(
-        std::vector<unsigned long> & _scanDataLenSizes)
-{
-    _scanDataLenSizes.clear();
-    _scanDataLenSizes.push_back(32);
-    _scanDataLenSizes.push_back(64);
-    _scanDataLenSizes.push_back(128);
-    _scanDataLenSizes.push_back(256);
-    _scanDataLenSizes.push_back(512);
-    _scanDataLenSizes.push_back(1024);
-    _scanDataLenSizes.push_back(2048);
-    _scanDataLenSizes.push_back(4096);
-    _scanDataLenSizes.push_back(8192);
-    _scanDataLenSizes.push_back(16384);
-    _scanDataLenSizes.push_back(32768);
-    _scanDataLenSizes.push_back(63000);
-}
-
 /*********************************************************
  * Destructor
  */
@@ -272,15 +207,11 @@ perftest_cpp::~perftest_cpp()
  */
 perftest_cpp::perftest_cpp()
 {
-    _DataLen = 100;
-    _isScan = false;
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
-    _InstanceCount = 1;
     _MessagingImpl = NULL;
     _MessagingArgv = NULL;
     _MessagingArgc = 0;
-    _useCft = false;
 
 #ifdef RTI_WIN32
     if (_hTimerQueue == NULL) {
@@ -292,354 +223,15 @@ perftest_cpp::perftest_cpp()
 
 
 /*********************************************************
- * ParseArgs
+ * Validate and manage the parameter
  */
-bool perftest_cpp::ParseConfig(int argc, char *argv[])
+bool perftest_cpp::validate_input()
 {
-    _MessagingArgc = 0;
-    _MessagingArgv = new char*[argc];
-
-    if (_MessagingArgv == NULL) {
-        fprintf(stderr, "Problem allocating memory\n");
-        return false;
-    }
-
-    for (int i=0; i<argc; i++) {
-        _MessagingArgv[i] = NULL;
-    }
-
-    const char *usage_string =
-        /**************************************************************************/
-        "Usage:\n"
-        "       perftest_cpp [options]\n"
-        "\nWhere [options] are (case insensitive, partial match OK):\n\n"
-        "\t-help                   - Print this usage message and exit\n"
-        "\t-pub                    - Set test to be a publisher\n"
-        "\t-sub                    - Set test to be a subscriber (default)\n"
-        "\t-sidMultiSubTest <id>   - Set the id of the subscriber in a\n"
-        "\t                          multi-subscriber test, default 0\n"
-        "\t-pidMultiPubTest <id>   - Set id of the publisher in a multi-publisher \n"
-        "\t                          test, default 0. Only publisher 0 sends \n"
-        "\t                          latency pings\n"
-        "\t-dataLen <bytes>        - Set length of payload for each send\n"
-        "\t                          default 100.\n"
-        "\t-unbounded <allocation_threshold> - Use unbounded Sequences\n"
-        "\t                                   <allocation_threshold> is optional, default 2*dataLen up to 63000 Bytes.\n"
-        "\t-numIter <count>        - Set number of messages to send, default is\n"
-        "\t                          100000000 for Throughput tests or 10000000\n"
-        "\t                          for Latency tests. See -executionTime.\n"
-        "\t-instances <count>      - Set the number of instances (keys) to iterate\n"
-        "\t                          over when publishing, default 1\n"
-        "\t-writeInstance <instance> - Set the instance number to be sent. \n"
-        "\t                          -WriteInstance parameter cannot be bigger than the number of instances.\n"
-        "\t                          Default 'Round-Robin schedule'\n"
-        "\t-sleep <millisec>       - Time to sleep between each send, default 0\n"
-        "\t-latencyCount <count>   - Number of samples (or batches) to send before\n"
-        "\t                          a latency ping packet is sent, default\n"
-        "\t                          10000 if -latencyTest is not specified,\n"
-        "\t                          1 if -latencyTest is specified\n"
-        "\t-numSubscribers <count> - Number of subscribers running in test, \n"
-        "\t                          default 1\n"
-        "\t-numPublishers <count>  - Number of publishers running in test, \n"
-        "\t                          default 1\n"
-        "\t-scan <size1>:<size2>:...:<sizeN> - Run test in scan mode, traversing\n"
-        "\t                                    a range of sample data sizes from\n"
-        "\t                                    [32,63000] or [63001,2147483128] bytes,\n"
-        "\t                                    in the case that you are using large data or not.\n"
-        "\t                                    The list of sizes is optional.\n"
-        "\t                                    Default values are '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\n"
-        "\t                                    Default: Not set\n"
-        "\t-noPrintIntervals       - Don't print statistics at intervals during \n"
-        "\t                          test\n"
-        "\t-useReadThread          - Use separate thread instead of callback to \n"
-        "\t                          read data\n"
-        "\t-latencyTest            - Run a latency test consisting of a ping-pong \n"
-        "\t                          synchronous communication\n"
-        "\t-verbosity <level>      - Run with different levels of verbosity:\n"
-        "\t                          0 - SILENT, 1 - ERROR, 2 - WARNING,\n"
-        "\t                          3 - ALL. Default: 1\n"
-        "\t-pubRate <samples/s>:<method>    - Limit the throughput to the specified number\n"
-        "\t                                   of samples/s, default 0 (don't limit)\n"
-        "\t                                   [OPTIONAL] Method to control the throughput can be:\n"
-        "\t                                   'spin' or 'sleep'\n"
-        "\t                                   Default method: spin\n"
-        "\t-keyed                  - Use keyed data (default: unkeyed)\n"
-        "\t-executionTime <sec>    - Set a maximum duration for the test. The\n"
-        "\t                          first condition triggered will finish the\n"
-        "\t                          test: number of samples or execution time.\n"
-        "\t                          Default 0 (don't set execution time)\n"
-        "\t-writerStats            - Display the Pulled Sample count stats for\n"
-        "\t                          reliable protocol debugging purposes.\n"
-        "\t                          Default: Not set\n"
-        "\t-cpu                   -  Display the cpu percent use by the process\n"
-        "\t                          Default: Not set\n"
-        "\t-cft <start>:<end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n"
-        "\t                          Specify 2 parameters: <start> and <end> to receive samples with a key in that range.\n"
-        "\t                          Specify only 1 parameter to receive samples with that exact key.\n"
-        "\t                          Default: Not set\n";
-
-    if (argc < 1)
-    {
-        fprintf(stderr, "%s", usage_string);
-        fflush(stderr);
-        RTIDDSImpl<TestData_t>().PrintCmdLineHelp();
-        return false;
-    }
-
-    int i;
-    for (i = 1; i < argc; ++i)
-    {
-        if (IS_OPTION(argv[i], "-help")) {
-            fprintf(stderr, "%s", usage_string);
-            fflush(stderr);
-            RTIDDSImpl<TestData_t>().PrintCmdLineHelp();
-            return false;
-        }
-    }
-
-    // Load command line parameters.
-    for (i = 0; i < argc; ++i)
-    {
-        if (IS_OPTION(argv[i], "-pub"))
-        {
-        }
-        else if (IS_OPTION(argv[i], "-sub"))
-        {
-        }
-        else if (IS_OPTION(argv[i], "-sidMultiSubTest"))
-        {
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-pidMultiPubTest"))
-        {
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-numIter"))
-        {
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-dataLen"))
-        {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <length> after -dataLen\n");
-                return false;
-            }
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            _DataLen = strtol(argv[i], NULL, 10);
-
-            if (_DataLen < (unsigned long)OVERHEAD_BYTES)
-            {
-                fprintf(stderr, "-dataLen must be >= %d\n", OVERHEAD_BYTES);
-                return false;
-            }
-            if (_DataLen > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE)
-            {
-                fprintf(stderr,"-dataLen must be <= %d\n", MAX_PERFTEST_SAMPLE_SIZE);
-                return false;
-            }
-        }
-        else if (IS_OPTION(argv[i], "-unbounded")) {
-            if ((i == (argc-1)) || *argv[i+1] == '-')
-            {
-            } else {
-                ++i;
-            }
-        }
-        else if (IS_OPTION(argv[i], "-spin"))
-        {
-            fprintf(stderr,"-spin option is deprecated. It will be removed "
-                    "in upcoming releases.\n");
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr,"Missing <count> after -spin\n");
-                return false;
-            }
-            _SpinLoopCount = strtol(argv[i], NULL, 10);
-        }
-        else if (IS_OPTION(argv[i], "-sleep"))
-        {
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-latencyCount"))
-        {
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-numSubscribers"))
-        {
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-numPublishers"))
-        {
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-scan"))
-        {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-            _MessagingArgc++;
-            _isScan = true;
-            if ((i != (argc-1)) && *argv[1+i] != '-') {
-                _scanDataLenSizes.clear();
-                ++i;
-                unsigned long aux_scan;
-                char * pch;
-                _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-                if (_MessagingArgv[_MessagingArgc] == NULL) {
-                    fprintf(stderr, "Problem allocating memory\n");
-                    return false;
-                }
-                _MessagingArgc++;
-
-                pch = strtok (argv[i], ":");
-                while (pch != NULL) {
-                    if (sscanf(pch, "%lu", &aux_scan) != 1) {
-                        fprintf(stderr, "-scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'\n");
-                        return false;
-                    }
-                    _scanDataLenSizes.push_back(aux_scan);
-                    pch = strtok (NULL, ":");
-                }
-                if (_scanDataLenSizes.size() < 2) {
-                    fprintf(stderr, "'-scan <size1>:<size2>:...:<sizeN>' the number of size should be equal or greater then two.\n");
-                    return false;
-                }
-                std::sort(_scanDataLenSizes.begin(), _scanDataLenSizes.end());
-                if (_scanDataLenSizes[0] < (unsigned long)OVERHEAD_BYTES) {
-                    fprintf(stderr, "-scan sizes must be >= %d\n",
-                            OVERHEAD_BYTES);
-                    return false;
-                }
-                if (_scanDataLenSizes[_scanDataLenSizes.size() - 1] >
-                        (unsigned long)MAX_PERFTEST_SAMPLE_SIZE) {
-                    fprintf(stderr,"-scan sizes must be <= %d\n",
-                            MAX_PERFTEST_SAMPLE_SIZE);
-                    return false;
-                }
-            } else { // Set default values
-                set_default_scan_values(_scanDataLenSizes);
-            }
-        }
-        else if (IS_OPTION(argv[i], "-noPrintIntervals") ) {
-        }
-        else if (IS_OPTION(argv[i], "-useReadThread") )
-        {
-        }
-        else if (IS_OPTION(argv[i], "-bestEffort")) {
-        } else if (IS_OPTION(argv[i], "-latencyTest"))
-        {
-        }
-        else if (IS_OPTION(argv[i], "-instances"))
-        {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <count> after -instances\n");
-                return false;
-            }
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            _InstanceCount = strtol(argv[i], NULL, 10);
-
-            if (_InstanceCount <= 0)
-            {
-                fprintf(stderr, "instance count cannot be negative or null\n");
-                return false;
-            }
-        }
-        else if (IS_OPTION(argv[i], "-verbosity"))
-        {
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-pubRate")) {
-            ++i;
-        }
-        else if (IS_OPTION(argv[i], "-keyed")) {
-        }
-        else if (IS_OPTION(argv[i], "-writerStats")) {
-        }
-        else if (IS_OPTION(argv[i], "-executionTime"))
-        {
-            ++i;
-        } else if (IS_OPTION(argv[i], "-cpu"))
-        {
-        } else if (IS_OPTION(argv[i], "-cft"))
-        {
-            _useCft = true;
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <start>:<end> after -cft\n");
-                return false;
-            }
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-        } else
-        {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-        }
-    }
-
-    // Validate and manage the parameter
-
     // Manage parameter -sleep
     _SleepNanosec = 1000000 * PM::GetInstance().get<unsigned int>("sleep");
+
+    // Manage parameter -spin
+    _SpinLoopCount = PM::GetInstance().get<unsigned long long>("spin");
 
     // Manage parameter -printIterval
     // It is copied because it is used in the critical patch
@@ -654,6 +246,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     // It is copied because it is used in the critical patch
     perftest_cpp::_SubID = PM::GetInstance().get<int>("sidMultiSubTest");
 
+    // Manage parameter -latencyTest
     if(PM::GetInstance().get<bool>("latencyTest")) {
         if(PM::GetInstance().get<int>("pidMultiPubTest") != 0) {
             fprintf(stderr, "Only the publisher with ID = 0 can run the latency test\n");
@@ -679,10 +272,10 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
     }
 
+    // Manage parameter -latencyCount
     if(!PM::GetInstance().is_set("latencyCount")) {
         PM::GetInstance().set<unsigned long long>("latencyCount",10000);
     }
-
     if (PM::GetInstance().get<unsigned long long>("numIter") <
             PM::GetInstance().get<unsigned long long>("latencyCount")) {
         fprintf(stderr,
@@ -692,7 +285,22 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         return false;
     }
 
-    //manage the parameter: -pubRate -sleep -spin
+    // Manage the parameter: -cft
+    if (PM::GetInstance().is_set("cft")) {
+        std::vector<unsigned long long> cftRange =
+                PM::GetInstance().get_vector<unsigned long long>("cft");
+        if (cftRange.size() > 2) {
+            fprintf(stderr,
+                    "'-cft' value must have the format <start>:<end>\n");
+            return false;
+        } else if (cftRange[0] > cftRange[1]) {
+                fprintf(stderr,
+                        "'-cft' <start> value cannot be bigger than <end>\n");
+                return false;
+        }
+    }
+
+    // Manage the parameter: -pubRate -sleep -spin
     if (PM::GetInstance().is_set("pubRate")) {
         if (_SpinLoopCount > 0) {
             fprintf(stderr, "'-spin' is not compatible with '-pubRate'. "
@@ -711,31 +319,36 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         if (PM::GetInstance().get<int>("unbounded") == 0) {
             PM::GetInstance().set<unsigned long long>(
                     "unbounded",
-                    (std::min)(2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE));
+                    (std::min)(
+                            2 * PM::GetInstance().get<unsigned long>("dataLen"),
+                            (unsigned long)MAX_BOUNDED_SEQ_SIZE));
         }
     }
 
-    if (_isScan) {
-        // TODO sort the scan vector
-        _DataLen = _scanDataLenSizes[_scanDataLenSizes.size() - 1]; // Max size
+    // Manage the parameter: -scan
+    if (PM::GetInstance().is_set("scan")) {
+        std::vector<unsigned long long> scanList =
+                PM::GetInstance().get_vector<unsigned long long>("scan");
+        PM::GetInstance().set<unsigned long long>("dataLen", scanList[scanList.size() - 1]); // Max size of scan
         if (PM::GetInstance().get<unsigned long long>("executionTime") == 0){
             PM::GetInstance().set<unsigned long long>("executionTime", 60);
         }
         // Check if large data or small data
-        if (_scanDataLenSizes[0] < (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
-                && _scanDataLenSizes[_scanDataLenSizes.size() - 1] > (unsigned long) (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+        if (scanList[0] < (unsigned long long)(std::min)(MAX_SYNCHRONOUS_SIZE , MAX_BOUNDED_SEQ_SIZE)
+                && scanList[scanList.size() - 1] > (unsigned long long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
             fprintf(stderr, "The sizes of -scan [");
-            for (unsigned int i = 0; i < _scanDataLenSizes.size(); i++) {
-                fprintf(stderr, "%lu ", _scanDataLenSizes[i]);
+            for (unsigned int i = 0; i < scanList.size(); i++) {
+                fprintf(stderr, "%llu ", scanList[i]);
             }
-            fprintf(stderr, "] should be either all smaller or all bigger than %d.\n",
-                    (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE));
+            fprintf(stderr,
+                    "] should be either all smaller or all bigger than %d.\n",
+                    (std::min)(MAX_SYNCHRONOUS_SIZE , MAX_BOUNDED_SEQ_SIZE));
             return false;
         }
     }
 
-    /* Check if we need to enable Large Data. This works also for -scan */
-    if (_DataLen > (unsigned long) (std::min)(
+    // Check if we need to enable Large Data. This works also for -scan
+    if (PM::GetInstance().get<unsigned long long>("dataLen") > (unsigned long long) (std::min)(
             MAX_SYNCHRONOUS_SIZE,
             MAX_BOUNDED_SEQ_SIZE)) {
         if (PM::GetInstance().get<int>("unbounded") == 0) {
@@ -757,6 +370,12 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 void perftest_cpp::PrintConfiguration()
 {
     std::ostringstream stringStream;
+
+  #ifdef RTI_CUSTOM_TYPE
+    stringStream << "\nUsing user provided type '"
+                 << TO_STRING(RTI_CUSTOM_TYPE)
+                 << "'\n";
+  #endif
 
     // Throughput/Latency mode
     if (PM::GetInstance().get<bool>("pub")) {
@@ -805,32 +424,35 @@ void perftest_cpp::PrintConfiguration()
 
         // Scan/Data Sizes
         stringStream << "\tData Size: ";
-        if (_isScan) {
-            for (unsigned long i = 0; i < _scanDataLenSizes.size(); i++ ) {
-                stringStream << _scanDataLenSizes[i];
-                if (i == _scanDataLenSizes.size() - 1) {
+        if (PM::GetInstance().is_set("scan")) {
+            std::vector<unsigned long long> scanList =
+                    PM::GetInstance().get_vector<unsigned long long>("scan");
+            for (unsigned long i = 0; i < scanList.size(); i++ ) {
+                stringStream << scanList[i];
+                if (i == scanList.size() - 1) {
                     stringStream << "\n";
                 } else {
                     stringStream << ", ";
                 }
             }
         } else {
-            stringStream << _DataLen << "\n";
+            stringStream << PM::GetInstance().get<unsigned long long>("dataLen")
+                         << "\n";
         }
 
         // Batching
-        int batchSize = _MessagingImpl->GetBatchSize();
         stringStream << "\tBatching: ";
-        if (batchSize > 0) {
-            stringStream << batchSize << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
-        } else if (batchSize == 0) {
+        if (PM::GetInstance().get<long>("batchSize") > 0) {
+            stringStream << PM::GetInstance().get<long>("batchSize")
+                         << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
+        } else if (PM::GetInstance().get<long>("batchSize") == 0) {
             stringStream << "No (Use \"-batchSize\" to setup batching)\n";
         } else { // < 0
             stringStream << "Disabled by RTI Perftest.\n";
-            if (batchSize == -1) {
+            if (PM::GetInstance().get<long>("batchSize") == -1) {
                 stringStream << "\t\t  BatchSize is smaller than 2 times\n"
-                             << "\t\t  the minimum sample size.\n";
-            } else if (batchSize == -2) {
+                             << "\t\t  the sample size.\n";
+            } else if (PM::GetInstance().get<long>("batchSize") == -2) {
                 stringStream << "\t\t  BatchSize cannot be used with\n"
                              << "\t\t  Large Data.\n";
             }
@@ -1005,8 +627,7 @@ class ThroughputListener : public IMessagingCB
         }
 
         // case where not running a scan
-        if (message.size != last_data_length)
-        {
+        if (message.size != last_data_length) {
             packets_received = 0;
             bytes_received = 0;
             missing_packets = 0;
@@ -1153,7 +774,7 @@ int perftest_cpp::Subscriber()
         reader_listener = new ThroughputListener(
                 writer,
                 NULL,
-                _useCft,
+                PM::GetInstance().is_set("cft"),
                 PM::GetInstance().get<int>("numPublishers"));
         reader = _MessagingImpl->CreateReader(
                 THROUGHPUT_TOPIC_NAME,
@@ -1175,7 +796,7 @@ int perftest_cpp::Subscriber()
         reader_listener = new ThroughputListener(
                 writer,
                 reader,
-                _useCft,
+                PM::GetInstance().is_set("cft"),
                 PM::GetInstance().get<int>("numPublishers"));
 
         RTIOsapiThread_new("ReceiverThread",
@@ -1480,7 +1101,7 @@ class LatencyListener : public IMessagingCB
         }
 
         // sort the array (in ascending order)
-        std::sort(_latency_history, _latency_history+count);
+        std::sort(_latency_history, _latency_history + count);
         latency_ave = (double)latency_sum / count;
         latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
@@ -1686,7 +1307,7 @@ int perftest_cpp::Publisher()
     IMessagingReader *announcement_reader;
     unsigned long num_latency;
     unsigned long announcementSampleCount = 50;
-    unsigned int samplesPerBatch = 1;
+    unsigned int samplesPerBatch = GetSamplesPerBatch();
 
     // create throughput/ping writer
     IMessagingWriter *writer = _MessagingImpl->CreateWriter(
@@ -1697,8 +1318,6 @@ int perftest_cpp::Publisher()
         fprintf(stderr,"Problem creating throughput writer.\n");
         return -1;
     }
-
-    samplesPerBatch = GetSamplesPerBatch();
 
     // calculate number of latency pings that will be sent per data size
     num_latency = (unsigned long)((PM::GetInstance().get<unsigned long long>("numIter") /
@@ -1711,7 +1330,7 @@ int perftest_cpp::Publisher()
     }
 
     if (samplesPerBatch > 1) {
-        // in batch mode, might have to send another ping
+        // In batch mode, might have to send another ping
         ++num_latency;
     }
 
@@ -1819,7 +1438,7 @@ int perftest_cpp::Publisher()
     // Allocate data and set size
     TestMessage message;
     message.entity_id = PM::GetInstance().get<int>("pidMultiPubTest");
-    message.data = new char[(std::max)((int)_DataLen, (int)LENGTH_CHANGED_SIZE)];
+    message.data = new char[(std::max)((int)PM::GetInstance().get<unsigned long long>("dataLen"), (int)LENGTH_CHANGED_SIZE)];
 
     if (perftest_cpp::showCpu && PM::GetInstance().get<int>("pidMultiPubTest") == 0) {
         reader_listener->cpu.initialize();
@@ -1848,7 +1467,7 @@ int perftest_cpp::Publisher()
      */
     unsigned long initializeSampleCount = (std::max)(
             _MessagingImpl->GetInitializationSampleCount(),
-            _InstanceCount);
+            PM::GetInstance().get<unsigned long>("instances"));
 
     fprintf(stderr,
             "Sending %lu initialization pings ...\n",
@@ -1865,7 +1484,8 @@ int perftest_cpp::Publisher()
     fflush(stderr);
 
     // Set data size, account for other bytes in message
-    message.size = (int)_DataLen - OVERHEAD_BYTES;
+    message.size = (int)PM::GetInstance().get<unsigned long long>("dataLen") -
+            OVERHEAD_BYTES;
 
     // Sleep 1 second, then begin test
     MilliSleep(1000);
@@ -1892,7 +1512,8 @@ int perftest_cpp::Publisher()
                 100;
     }
 
-    if (PM::GetInstance().get<unsigned long long>("executionTime") > 0 && !_isScan) {
+    if (PM::GetInstance().get<unsigned long long>("executionTime") > 0
+            && !PM::GetInstance().is_set("scan")) {
         SetTimeout(PM::GetInstance().get<unsigned long long>("executionTime"));
     }
     /*
@@ -1907,6 +1528,8 @@ int perftest_cpp::Publisher()
      * - pubRateMethodSpin
      * - pubRate
      * - writerStats
+     * - isScan
+     * - scanList
      */
     const unsigned long long numIter =
             PM::GetInstance().get<unsigned long long>("numIter");
@@ -1921,11 +1544,14 @@ int perftest_cpp::Publisher()
     const unsigned long pubRate =
             PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first;
     const bool writerStats = PM::GetInstance().get<bool>("writerStats");
+    const bool isScan = PM::GetInstance().is_set("scan");
+    const std::vector<unsigned long long> scanList =
+                PM::GetInstance().get_vector<unsigned long long>("scan");
     /********************
      *  Main sending loop
      */
     for (unsigned long long loop = 0;
-            (_isScan || (loop < numIter)) && (!_testCompleted);
+            (isScan || (loop < numIter)) && (!_testCompleted);
             ++loop) {
 
         /* This if has been included to perform the control loop
@@ -1981,17 +1607,15 @@ int perftest_cpp::Publisher()
              * when both are equal.
              *
              * Note when not in batch mode, current_index_in_batch = ping_index_in_batch
-             * always.  And the if() is always true.
+             * always. And the if() is always true.
              */
-            if ( current_index_in_batch == ping_index_in_batch  && !sentPing )
-            {
+            if (current_index_in_batch == ping_index_in_batch && !sentPing) {
                 // If running in scan mode, dataLen under test is changed
                 // after executionTime
-                if (_isScan && _testCompleted_scan) {
+                if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    SetTimeout(
-                            PM::GetInstance().get<unsigned long long>("executionTime"),
-                            _isScan);
+                    SetTimeout(PM::GetInstance().get<unsigned long long>("executionTime"),
+                            isScan);
 
                     // flush anything that was previously sent
                     writer->Flush();
@@ -1999,7 +1623,7 @@ int perftest_cpp::Publisher()
                             timeout_wait_for_ack_sec,
                             timeout_wait_for_ack_nsec);
 
-                    if (scan_count == _scanDataLenSizes.size()) {
+                    if (scan_count == scanList.size()) {
                         break; // End of scan test
                     }
 
@@ -2028,7 +1652,7 @@ int perftest_cpp::Publisher()
                             timeout_wait_for_ack_nsec);
                     }
 
-                    message.size = _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
+                    message.size = scanList[scan_count++] - OVERHEAD_BYTES;
                     /* Reset _SamplePerBatch */
                     samplesPerBatch = GetSamplesPerBatch();
 
@@ -2066,8 +1690,7 @@ int perftest_cpp::Publisher()
 
 
         // come to the beginning of another batch
-        if (current_index_in_batch == 0)
-        {
+        if (current_index_in_batch == 0) {
             sentPing = false;
         }
     }
@@ -2144,9 +1767,10 @@ int perftest_cpp::Publisher()
  * Utility functions
  */
 
-inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds,
-        bool _isScan) {
-    if (_isScan) {
+inline void perftest_cpp::SetTimeout(
+        unsigned int executionTimeInSeconds,
+        bool isScan) {
+    if (isScan) {
       #ifdef RTI_WIN32
         CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout_scan,
                 NULL , executionTimeInSeconds * 1000, 0, 0);
@@ -2178,19 +1802,13 @@ inline unsigned long long perftest_cpp::GetTimeUsec() {
 }
 
 inline unsigned int perftest_cpp::GetSamplesPerBatch() {
-    int batchSize = _MessagingImpl->GetBatchSize();
-    unsigned int samplesPerBatch;
-
-    if (batchSize > 0) {
-        samplesPerBatch = batchSize / (int) _DataLen;
-        if (samplesPerBatch == 0) {
-            samplesPerBatch = 1;
-        }
+    if (PM::GetInstance().get<long>("batchSize")
+            > (long)PM::GetInstance().get<unsigned long long>("dataLen")) {
+        return PM::GetInstance().get<long>("batchSize") /
+                (unsigned int)PM::GetInstance().get<unsigned long long>("dataLen");
     } else {
-        samplesPerBatch = 1;
+        return 1;
     }
-
-    return samplesPerBatch;
 }
 
 #ifdef RTI_WIN32

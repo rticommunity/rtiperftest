@@ -57,7 +57,7 @@ class perftest_cpp
     ~perftest_cpp();
 
     int Run(int argc, char *argv[]);
-    bool ParseConfig(int argc, char *argv[]);
+    bool validate_input();
     void PrintConfiguration();
     unsigned int GetSamplesPerBatch();
 
@@ -90,20 +90,17 @@ class perftest_cpp
     }
 
   private:
-    unsigned long  _DataLen;
-    bool _isScan;
-    std::vector<unsigned long> _scanDataLenSizes;
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
-    unsigned long _InstanceCount;
     IMessaging *_MessagingImpl;
     char **_MessagingArgv;
     int _MessagingArgc;
-    bool _useCft;
     static const Perftest_ProductVersion_t _version;
 
   private:
-    static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);
+    static void SetTimeout(
+            unsigned int executionTimeInSeconds,
+            bool isScan = false);
 
     /* The following three members are used in a static callback
        and so they have to be static */
@@ -129,7 +126,11 @@ class perftest_cpp
   #endif
 
     // Number of bytes sent in messages besides user data
+  #ifdef RTI_CUSTOM_TYPE
+    static const int OVERHEAD_BYTES = 28 + 4; // For custom_type_size
+  #else
     static const int OVERHEAD_BYTES = 28;
+  #endif
     // Flag used to indicate message is used for initialization only
     static const int INITIALIZE_SIZE = 1234;
     // Flag used to indicate end of test

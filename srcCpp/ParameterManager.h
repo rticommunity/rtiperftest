@@ -103,6 +103,9 @@ class ParameterManager
          */
         bool validate_group();
 
+        // Verify if there is a parameter if this group set
+        bool group_is_use(GROUP group);
+
 
     private:
         // Get the help message

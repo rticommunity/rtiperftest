@@ -19,6 +19,8 @@
 /bin
 .cproject
 .project
+/srcIdl/customType/*
+/tmp
 .vscode
 .suo
 *.VC.db

@@ -202,7 +202,6 @@ import com.rti.perftest.TestMessage;
         // sort the array (in ascending order)
         Arrays.sort(_latencyHistory, 0, (int)_count);
         double latency_ave = _latencySum / (double)_count;
-        // TODO: This std dev calculation isn't correct!
         double latency_std = sqrt(
                 abs(_latencySumSquare / (double)_count -
                         (latency_ave * latency_ave)));

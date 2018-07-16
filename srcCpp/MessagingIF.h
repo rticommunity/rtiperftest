@@ -69,7 +69,6 @@ class IMessagingWriter
     virtual void WaitForReaders(int numSubscribers) = 0;
     virtual bool Send(const TestMessage &message, bool isCftWildCardKey = false) = 0;
     virtual void Flush() = 0;
-
     virtual bool waitForPingResponse() {
         // Implementation required only if
         // support for LatencyTest is desired.
@@ -96,6 +95,15 @@ class IMessagingWriter
     };
     virtual void waitForAck(int /*sec*/, unsigned int /*nsec*/) {
     };
+#ifdef RTI_CUSTOM_TYPE
+  private:
+    virtual bool is_sentinel_size(int size) {
+        return 0;
+    };
+    virtual bool get_serialize_size_custom_type_data(unsigned int &size) {
+        return 0;
+    };
+#endif
 };
 
 class IMessaging
@@ -104,18 +112,9 @@ class IMessaging
     virtual ~IMessaging() {}
     virtual bool Initialize(int argc, char *argv[]) = 0;
 
-    virtual void PrintCmdLineHelp() = 0;
-
     virtual std::string PrintConfiguration() = 0;
 
     virtual void Shutdown() = 0;
-
-    /*
-     * If the implementation supports batching and the test scenario is
-     * using batching, this function should return the size of the batch
-     * in bytes.
-     */
-    virtual int GetBatchSize() = 0;
 
     /*
      * Get an estimation of the minimum number of samples that need to be send
