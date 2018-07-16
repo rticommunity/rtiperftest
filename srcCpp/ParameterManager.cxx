@@ -20,292 +20,292 @@ void ParameterManager::initialize()
 {
     // GENERAL PARAMETER
     Parameter<bool> *bestEffort = new Parameter<bool>(false);
-    bestEffort->setCommandLineArgument(std::make_pair("-bestEffort",""));
-    bestEffort->setDescription("Run test in best effort mode. Default: reliable");
-    bestEffort->setType(T_BOOL);
-    bestEffort->setExtraArgument(NO);
-    bestEffort->setGroup(GENERAL);
+    bestEffort->set_command_line_argument(std::make_pair("-bestEffort",""));
+    bestEffort->set_description("Run test in best effort mode. Default: reliable");
+    bestEffort->set_type(T_BOOL);
+    bestEffort->set_extra_argument(NO);
+    bestEffort->set_group(GENERAL);
     parameterList["bestEffort"] = AnyParameter(bestEffort);
 
     Parameter<unsigned long long> *dataLen = new Parameter<unsigned long long>(100);
-    dataLen->setCommandLineArgument(std::make_pair("-dataLen","<bytes>"));
-    dataLen->setDescription("Set length of payload for each send.\nDefault: 100");
-    dataLen->setType(T_NUMERIC);
-    dataLen->setExtraArgument(YES);
-    dataLen->setRange(perftest_cpp::OVERHEAD_BYTES, MAX_PERFTEST_SAMPLE_SIZE);
-    dataLen->setGroup(GENERAL);
+    dataLen->set_command_line_argument(std::make_pair("-dataLen","<bytes>"));
+    dataLen->set_description("Set length of payload for each send.\nDefault: 100");
+    dataLen->set_type(T_NUMERIC);
+    dataLen->set_extra_argument(YES);
+    dataLen->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_PERFTEST_SAMPLE_SIZE);
+    dataLen->set_group(GENERAL);
     parameterList["dataLen"] = AnyParameter(dataLen);
 
     Parameter<unsigned long long> *verbosity = new Parameter<unsigned long long>(1);
-    verbosity->setCommandLineArgument(std::make_pair("-verbosity","<level>"));
-    verbosity->setDescription("Run with different levels of verbosity:\n0 - SILENT, 1 - ERROR, 2 - WARNING, 3 - ALL.\nDefault: 1");
-    verbosity->setType(T_NUMERIC);
-    verbosity->setExtraArgument(YES);
-    verbosity->setRange(0, 3);
-    verbosity->setGroup(GENERAL);
+    verbosity->set_command_line_argument(std::make_pair("-verbosity","<level>"));
+    verbosity->set_description("Run with different levels of verbosity:\n0 - SILENT, 1 - ERROR, 2 - WARNING, 3 - ALL.\nDefault: 1");
+    verbosity->set_type(T_NUMERIC);
+    verbosity->set_extra_argument(YES);
+    verbosity->set_range(0, 3);
+    verbosity->set_group(GENERAL);
     parameterList["verbosity"] = AnyParameter(verbosity);
 
     Parameter<bool> *dynamicData = new Parameter<bool>(false);
-    dynamicData->setCommandLineArgument(std::make_pair("-dynamicData",""));
-    dynamicData->setDescription("Makes use of the Dynamic Data APIs instead\nof using the generated types");
-    dynamicData->setType(T_BOOL);
-    dynamicData->setExtraArgument(NO);
-    dynamicData->setGroup(GENERAL);
+    dynamicData->set_command_line_argument(std::make_pair("-dynamicData",""));
+    dynamicData->set_description("Makes use of the Dynamic Data APIs instead\nof using the generated types");
+    dynamicData->set_type(T_BOOL);
+    dynamicData->set_extra_argument(NO);
+    dynamicData->set_group(GENERAL);
     parameterList["dynamicData"] = AnyParameter(dynamicData);
 
     Parameter<unsigned long long> *durability = new Parameter<unsigned long long>(DDS_VOLATILE_DURABILITY_QOS);
-    durability->setCommandLineArgument(std::make_pair("-durability","<0|1|2|3>"));
-    durability->setDescription("Set durability QOS: 0 - volatile,\n1 - transient local, 2 - transient,\n3 - persistent. Default: 0");
-    durability->setType(T_NUMERIC);
-    durability->setExtraArgument(YES);
-    durability->setGroup(GENERAL);
-    durability->setRange(0, 3);
+    durability->set_command_line_argument(std::make_pair("-durability","<0|1|2|3>"));
+    durability->set_description("Set durability QOS: 0 - volatile,\n1 - transient local, 2 - transient,\n3 - persistent. Default: 0");
+    durability->set_type(T_NUMERIC);
+    durability->set_extra_argument(YES);
+    durability->set_group(GENERAL);
+    durability->set_range(0, 3);
     parameterList["durability"] = AnyParameter(durability);
 
     Parameter<unsigned long long> *domain = new Parameter<unsigned long long>(1);
-    domain->setCommandLineArgument(std::make_pair("-domain","<id>"));
-    domain->setDescription("RTI DDS Domain. Default: 1");
-    domain->setType(T_NUMERIC);
-    domain->setExtraArgument(YES);
-    domain->setRange(0, 250);
-    domain->setGroup(GENERAL);
+    domain->set_command_line_argument(std::make_pair("-domain","<id>"));
+    domain->set_description("RTI DDS Domain. Default: 1");
+    domain->set_type(T_NUMERIC);
+    domain->set_extra_argument(YES);
+    domain->set_range(0, 250);
+    domain->set_group(GENERAL);
     parameterList["domain"] = AnyParameter(domain);
 
     Parameter<unsigned long long> *instances = new Parameter<unsigned long long>(1);
-    instances->setCommandLineArgument(std::make_pair("-instances","<count>"));
-    instances->setDescription("Set the number of instances (keys) to iterate\nover when publishing. Default: 1");
-    instances->setType(T_NUMERIC);
-    instances->setExtraArgument(YES);
-    instances->setRange(0, ULLONG_MAX);
-    instances->setGroup(GENERAL);
+    instances->set_command_line_argument(std::make_pair("-instances","<count>"));
+    instances->set_description("Set the number of instances (keys) to iterate\nover when publishing. Default: 1");
+    instances->set_type(T_NUMERIC);
+    instances->set_extra_argument(YES);
+    instances->set_range(0, ULLONG_MAX);
+    instances->set_group(GENERAL);
     parameterList["instances"] = AnyParameter(instances);
 
     Parameter<bool> *keyed = new Parameter<bool>(false);
-    keyed->setCommandLineArgument(std::make_pair("-keyed",""));
-    keyed->setDescription("Use keyed data. Default: unkeyed");
-    keyed->setType(T_BOOL);
-    keyed->setExtraArgument(NO);
-    keyed->setGroup(GENERAL);
+    keyed->set_command_line_argument(std::make_pair("-keyed",""));
+    keyed->set_description("Use keyed data. Default: unkeyed");
+    keyed->set_type(T_BOOL);
+    keyed->set_extra_argument(NO);
+    keyed->set_group(GENERAL);
     parameterList["keyed"] = AnyParameter(keyed);
 
     Parameter<bool> *noDirectCommunication = new Parameter<bool>(false);
-    noDirectCommunication->setCommandLineArgument(std::make_pair("-noDirectCommunication",""));
-    noDirectCommunication->setDescription("Use brokered mode for persistent durability");
-    noDirectCommunication->setType(T_BOOL);
-    noDirectCommunication->setExtraArgument(NO);
-    noDirectCommunication->setGroup(GENERAL);
+    noDirectCommunication->set_command_line_argument(std::make_pair("-noDirectCommunication",""));
+    noDirectCommunication->set_description("Use brokered mode for persistent durability");
+    noDirectCommunication->set_type(T_BOOL);
+    noDirectCommunication->set_extra_argument(NO);
+    noDirectCommunication->set_group(GENERAL);
     parameterList["noDirectCommunication"] = AnyParameter(noDirectCommunication);
 
     Parameter<bool> *noPositiveAcks = new Parameter<bool>(false);
-    noPositiveAcks->setCommandLineArgument(std::make_pair("-noPositiveAcks",""));
-    noPositiveAcks->setDescription("Disable use of positive acks in reliable \nprotocol. Default use positive acks");
-    noPositiveAcks->setType(T_BOOL);
-    noPositiveAcks->setExtraArgument(NO);
-    noPositiveAcks->setGroup(GENERAL);
+    noPositiveAcks->set_command_line_argument(std::make_pair("-noPositiveAcks",""));
+    noPositiveAcks->set_description("Disable use of positive acks in reliable \nprotocol. Default use positive acks");
+    noPositiveAcks->set_type(T_BOOL);
+    noPositiveAcks->set_extra_argument(NO);
+    noPositiveAcks->set_group(GENERAL);
     parameterList["noPositiveAcks"] = AnyParameter(noPositiveAcks);
 
     Parameter<bool> *noPrintIntervals = new Parameter<bool>(false);
-    noPrintIntervals->setCommandLineArgument(std::make_pair("-noPrintIntervals",""));
-    noPrintIntervals->setDescription("Don't print statistics at intervals during\ntest");
-    noPrintIntervals->setType(T_BOOL);
-    noPrintIntervals->setExtraArgument(NO);
-    noPrintIntervals->setGroup(GENERAL);
+    noPrintIntervals->set_command_line_argument(std::make_pair("-noPrintIntervals",""));
+    noPrintIntervals->set_description("Don't print statistics at intervals during\ntest");
+    noPrintIntervals->set_type(T_BOOL);
+    noPrintIntervals->set_extra_argument(NO);
+    noPrintIntervals->set_group(GENERAL);
     parameterList["noPrintIntervals"] = AnyParameter(noPrintIntervals);
 
     Parameter<std::string> *qosFile = new Parameter<std::string>("perftest_qos_profiles.xml");
-    qosFile->setCommandLineArgument(std::make_pair("-qosFile","<filename>"));
-    qosFile->setDescription("Name of XML file for DDS Qos profiles.\nDefault: perftest_qos_profiles.xml");
-    qosFile->setType(T_STR);
-    qosFile->setExtraArgument(YES);
-    qosFile->setGroup(GENERAL);
+    qosFile->set_command_line_argument(std::make_pair("-qosFile","<filename>"));
+    qosFile->set_description("Name of XML file for DDS Qos profiles.\nDefault: perftest_qos_profiles.xml");
+    qosFile->set_type(T_STR);
+    qosFile->set_extra_argument(YES);
+    qosFile->set_group(GENERAL);
     parameterList["qosFile"] = AnyParameter(qosFile);
 
     Parameter<std::string> *qosLibrary = new Parameter<std::string>("PerftestQosLibrary");
-    qosLibrary->setCommandLineArgument(std::make_pair("-qosLibrary","<lib name>"));
-    qosLibrary->setDescription("Name of QoS Library for DDS Qos profiles.\nDefault: PerftestQosLibrary");
-    qosLibrary->setType(T_STR);
-    qosLibrary->setExtraArgument(YES);
-    qosLibrary->setGroup(GENERAL);
+    qosLibrary->set_command_line_argument(std::make_pair("-qosLibrary","<lib name>"));
+    qosLibrary->set_description("Name of QoS Library for DDS Qos profiles.\nDefault: PerftestQosLibrary");
+    qosLibrary->set_type(T_STR);
+    qosLibrary->set_extra_argument(YES);
+    qosLibrary->set_group(GENERAL);
     parameterList["qosLibrary"] = AnyParameter(qosLibrary);
 
     Parameter<bool> *noXmlQos = new Parameter<bool>(false);
-    noXmlQos->setCommandLineArgument(std::make_pair("-noXmlQos",""));
-    noXmlQos->setDescription("Skip loading the qos profiles from the xml\nprofile");
-    noXmlQos->setType(T_BOOL);
-    noXmlQos->setExtraArgument(NO);
-    noXmlQos->setGroup(GENERAL);
+    noXmlQos->set_command_line_argument(std::make_pair("-noXmlQos",""));
+    noXmlQos->set_description("Skip loading the qos profiles from the xml\nprofile");
+    noXmlQos->set_type(T_BOOL);
+    noXmlQos->set_extra_argument(NO);
+    noXmlQos->set_group(GENERAL);
     parameterList["noXmlQos"] = AnyParameter(noXmlQos);
 
     Parameter<bool> *useReadThread = new Parameter<bool>(false);
-    useReadThread->setCommandLineArgument(std::make_pair("-useReadThread",""));
-    useReadThread->setDescription("Use separate thread instead of callback to\nread data");
-    useReadThread->setType(T_BOOL);
-    useReadThread->setExtraArgument(NO);
-    useReadThread->setGroup(GENERAL);
+    useReadThread->set_command_line_argument(std::make_pair("-useReadThread",""));
+    useReadThread->set_description("Use separate thread instead of callback to\nread data");
+    useReadThread->set_type(T_BOOL);
+    useReadThread->set_extra_argument(NO);
+    useReadThread->set_group(GENERAL);
     parameterList["useReadThread"] = AnyParameter(useReadThread);
 
     Parameter<unsigned long long> *waitsetDelayUsec = new Parameter<unsigned long long>(100);
-    waitsetDelayUsec->setCommandLineArgument(std::make_pair("-waitsetDelayUsec","<usec>"));
-    waitsetDelayUsec->setDescription("UseReadThread related. Allows you to\nprocess incoming data in groups, based on the\ntime rather than individually. It can be used\ncombined with -waitsetEventCount.\nDefault: 100 usec");
-    waitsetDelayUsec->setType(T_NUMERIC);
-    waitsetDelayUsec->setExtraArgument(YES);
-    waitsetDelayUsec->setGroup(GENERAL);
-    waitsetDelayUsec->setRange(0, UINT_MAX);
+    waitsetDelayUsec->set_command_line_argument(std::make_pair("-waitsetDelayUsec","<usec>"));
+    waitsetDelayUsec->set_description("UseReadThread related. Allows you to\nprocess incoming data in groups, based on the\ntime rather than individually. It can be used\ncombined with -waitsetEventCount.\nDefault: 100 usec");
+    waitsetDelayUsec->set_type(T_NUMERIC);
+    waitsetDelayUsec->set_extra_argument(YES);
+    waitsetDelayUsec->set_group(GENERAL);
+    waitsetDelayUsec->set_range(0, UINT_MAX);
     parameterList["waitsetDelayUsec"] = AnyParameter(waitsetDelayUsec);
 
     Parameter<unsigned long long> *waitsetEventCount = new Parameter<unsigned long long>(5);
-    waitsetEventCount->setCommandLineArgument(std::make_pair("-waitsetEventCount","<count>"));
-    waitsetEventCount->setDescription("UseReadThread related. Allows you to\nprocess incoming data in groups, based on the\nnumber of samples rather than individually. It\ncan be used combined with -waitsetDelayUsec.\nDefault: 5");
-    waitsetEventCount->setType(T_NUMERIC);
-    waitsetEventCount->setExtraArgument(YES);
-    waitsetEventCount->setGroup(GENERAL);
-    waitsetEventCount->setRange(1, ULLONG_MAX);
+    waitsetEventCount->set_command_line_argument(std::make_pair("-waitsetEventCount","<count>"));
+    waitsetEventCount->set_description("UseReadThread related. Allows you to\nprocess incoming data in groups, based on the\nnumber of samples rather than individually. It\ncan be used combined with -waitsetDelayUsec.\nDefault: 5");
+    waitsetEventCount->set_type(T_NUMERIC);
+    waitsetEventCount->set_extra_argument(YES);
+    waitsetEventCount->set_group(GENERAL);
+    waitsetEventCount->set_range(1, ULLONG_MAX);
     parameterList["waitsetEventCount"] = AnyParameter(waitsetEventCount);
 
     Parameter<bool> *asynchronous = new Parameter<bool>(false);
-    asynchronous->setCommandLineArgument(std::make_pair("-asynchronous",""));
-    asynchronous->setDescription("Use asynchronous writer.\nDefault: Not set");
-    asynchronous->setType(T_BOOL);
-    asynchronous->setExtraArgument(NO);
-    asynchronous->setGroup(GENERAL);
+    asynchronous->set_command_line_argument(std::make_pair("-asynchronous",""));
+    asynchronous->set_description("Use asynchronous writer.\nDefault: Not set");
+    asynchronous->set_type(T_BOOL);
+    asynchronous->set_extra_argument(NO);
+    asynchronous->set_group(GENERAL);
     parameterList["asynchronous"] = AnyParameter(asynchronous);
 
     Parameter<std::string> *flowController = new Parameter<std::string>("default");
-    flowController->setCommandLineArgument(std::make_pair("-flowController", "<flow>"));
-    flowController->setDescription("In the case asynchronous writer use a specific flow controller.\nThere are several flow controller predefined:\n\t{'default', '1Gbps', '10Gbps'}\nDefault: \"default\" (If using asynchronous)");
-    flowController->setType(T_STR);
-    flowController->setExtraArgument(YES);
-    flowController->addValidStrValue("default");
-    flowController->addValidStrValue("1Gbps");
-    flowController->addValidStrValue("10Gbps");
-    flowController->setGroup(GENERAL);
+    flowController->set_command_line_argument(std::make_pair("-flowController", "<flow>"));
+    flowController->set_description("In the case asynchronous writer use a specific flow controller.\nThere are several flow controller predefined:\n\t{'default', '1Gbps', '10Gbps'}\nDefault: \"default\" (If using asynchronous)");
+    flowController->set_type(T_STR);
+    flowController->set_extra_argument(YES);
+    flowController->add_valid_str_value("default");
+    flowController->add_valid_str_value("1Gbps");
+    flowController->add_valid_str_value("10Gbps");
+    flowController->set_group(GENERAL);
     parameterList["flowController"] = AnyParameter(flowController);
 
     Parameter<bool> *cpu = new Parameter<bool>(false);
-    cpu->setCommandLineArgument(std::make_pair("-cpu",""));
-    cpu->setDescription("Display the cpu percent use by the process\nDefault: Not set");
-    cpu->setType(T_BOOL);
-    cpu->setExtraArgument(NO);
-    cpu->setGroup(GENERAL);
+    cpu->set_command_line_argument(std::make_pair("-cpu",""));
+    cpu->set_description("Display the cpu percent use by the process\nDefault: Not set");
+    cpu->set_type(T_BOOL);
+    cpu->set_extra_argument(NO);
+    cpu->set_group(GENERAL);
     parameterList["cpu"] = AnyParameter(cpu);
 
     Parameter<unsigned long long> *unbounded = new Parameter<unsigned long long>(0);
-    unbounded->setCommandLineArgument(std::make_pair("-unbounded","<allocation_threshold>"));
-    unbounded->setDescription("Use unbounded Sequences\n<allocation_threshold> is optional. Default: 63000 Bytes");
-    unbounded->setType(T_NUMERIC);
-    unbounded->setExtraArgument(OPTIONAL);
-    unbounded->setRange(perftest_cpp::OVERHEAD_BYTES, MAX_BOUNDED_SEQ_SIZE);
-    unbounded->setGroup(GENERAL);
+    unbounded->set_command_line_argument(std::make_pair("-unbounded","<allocation_threshold>"));
+    unbounded->set_description("Use unbounded Sequences\n<allocation_threshold> is optional. Default: 63000 Bytes");
+    unbounded->set_type(T_NUMERIC);
+    unbounded->set_extra_argument(OPTIONAL);
+    unbounded->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_BOUNDED_SEQ_SIZE);
+    unbounded->set_group(GENERAL);
     parameterList["unbounded"] = AnyParameter(unbounded);
 
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER
 
     Parameter<unsigned long long> *batching = new Parameter<unsigned long long>(DEFAULT_THROUGHPUT_BATCH_SIZE);
-    batching->setCommandLineArgument(std::make_pair("-batchsize","<bytes>"));
-    batching->setDescription("Size in bytes of batched message. Default: 8kB.\n(Disabled for LatencyTest mode or if dataLen > 4kB)");
-    batching->setType(T_NUMERIC);
-    batching->setExtraArgument(YES);
-    batching->setRange(0, MAX_SYNCHRONOUS_SIZE);
-    batching->setGroup(PUB);
+    batching->set_command_line_argument(std::make_pair("-batchsize","<bytes>"));
+    batching->set_description("Size in bytes of batched message. Default: 8kB.\n(Disabled for LatencyTest mode or if dataLen > 4kB)");
+    batching->set_type(T_NUMERIC);
+    batching->set_extra_argument(YES);
+    batching->set_range(0, MAX_SYNCHRONOUS_SIZE);
+    batching->set_group(PUB);
     parameterList["batching"] = AnyParameter(batching);
 
     Parameter<bool> *enableAutoThrottle = new Parameter<bool>(false);
-    enableAutoThrottle->setCommandLineArgument(std::make_pair("-enableAutoThrottle",""));
-    enableAutoThrottle->setDescription("Enables the AutoThrottling feature in the\nthroughput DataWriter (pub)");
-    enableAutoThrottle->setType(T_BOOL);
-    enableAutoThrottle->setExtraArgument(NO);
-    enableAutoThrottle->setGroup(PUB);
+    enableAutoThrottle->set_command_line_argument(std::make_pair("-enableAutoThrottle",""));
+    enableAutoThrottle->set_description("Enables the AutoThrottling feature in the\nthroughput DataWriter (pub)");
+    enableAutoThrottle->set_type(T_BOOL);
+    enableAutoThrottle->set_extra_argument(NO);
+    enableAutoThrottle->set_group(PUB);
     parameterList["enableAutoThrottle"] = AnyParameter(enableAutoThrottle);
 
     Parameter<bool> *enableTurboMode = new Parameter<bool>(false);
-    enableTurboMode->setCommandLineArgument(std::make_pair("-enableTurboMode",""));
-    enableTurboMode->setDescription("Enables the TurboMode feature in the\nthroughput DataWriter (pub)");
-    enableTurboMode->setType(T_BOOL);
-    enableTurboMode->setExtraArgument(NO);
-    enableTurboMode->setGroup(PUB);
+    enableTurboMode->set_command_line_argument(std::make_pair("-enableTurboMode",""));
+    enableTurboMode->set_description("Enables the TurboMode feature in the\nthroughput DataWriter (pub)");
+    enableTurboMode->set_type(T_BOOL);
+    enableTurboMode->set_extra_argument(NO);
+    enableTurboMode->set_group(PUB);
     parameterList["enableTurboMode"] = AnyParameter(enableTurboMode);
 
     Parameter<bool> * pub = new Parameter<bool>(false);
-    pub->setCommandLineArgument(std::make_pair("-pub",""));
-    pub->setDescription("Set test to be a publisher");
-    pub->setType(T_BOOL);
-    pub->setExtraArgument(NO);
-    pub->setGroup(PUB);
+    pub->set_command_line_argument(std::make_pair("-pub",""));
+    pub->set_description("Set test to be a publisher");
+    pub->set_type(T_BOOL);
+    pub->set_extra_argument(NO);
+    pub->set_group(PUB);
     parameterList["pub"] = AnyParameter(pub);
 
     Parameter<unsigned long long> *latencyCount = new Parameter<unsigned long long>(10000);
-    latencyCount->setCommandLineArgument(std::make_pair("-latencyCount","<count>"));
-    latencyCount->setDescription("Number of samples (or batches) to send before\na latency ping packet is sent. Default:\n10000 if -latencyTest is not specified,\n1 if -latencyTest is specified");
-    latencyCount->setType(T_NUMERIC);
-    latencyCount->setExtraArgument(YES);
-    latencyCount->setRange(0, ULLONG_MAX);
-    latencyCount->setGroup(PUB);
+    latencyCount->set_command_line_argument(std::make_pair("-latencyCount","<count>"));
+    latencyCount->set_description("Number of samples (or batches) to send before\na latency ping packet is sent. Default:\n10000 if -latencyTest is not specified,\n1 if -latencyTest is specified");
+    latencyCount->set_type(T_NUMERIC);
+    latencyCount->set_extra_argument(YES);
+    latencyCount->set_range(0, ULLONG_MAX);
+    latencyCount->set_group(PUB);
     parameterList["latencyCount"] = AnyParameter(latencyCount);
 
     Parameter<unsigned long long> *executionTime = new Parameter<unsigned long long>(0);
-    executionTime->setCommandLineArgument(std::make_pair("-executionTime","<sec>"));
-    executionTime->setDescription("Set a maximum duration for the test.\nThe first condition triggered will finish the\ntest: number of samples or execution time.\nDefault 0 (don't set execution time)");
-    executionTime->setType(T_NUMERIC);
-    executionTime->setExtraArgument(YES);
-    executionTime->setRange(1, ULLONG_MAX);
-    executionTime->setGroup(PUB);
+    executionTime->set_command_line_argument(std::make_pair("-executionTime","<sec>"));
+    executionTime->set_description("Set a maximum duration for the test.\nThe first condition triggered will finish the\ntest: number of samples or execution time.\nDefault 0 (don't set execution time)");
+    executionTime->set_type(T_NUMERIC);
+    executionTime->set_extra_argument(YES);
+    executionTime->set_range(1, ULLONG_MAX);
+    executionTime->set_group(PUB);
     parameterList["executionTime"] = AnyParameter(executionTime);
 
     Parameter<bool> *latencyTest = new Parameter<bool>(false);
-    latencyTest->setCommandLineArgument(std::make_pair("-latencyTest",""));
-    latencyTest->setDescription("Run a latency test consisting of a ping-pong\nsynchronous communication");
-    latencyTest->setType(T_BOOL);
-    latencyTest->setExtraArgument(NO);
-    latencyTest->setGroup(PUB);
+    latencyTest->set_command_line_argument(std::make_pair("-latencyTest",""));
+    latencyTest->set_description("Run a latency test consisting of a ping-pong\nsynchronous communication");
+    latencyTest->set_type(T_BOOL);
+    latencyTest->set_extra_argument(NO);
+    latencyTest->set_group(PUB);
     parameterList["latencyTest"] = AnyParameter(latencyTest);
 
     Parameter<unsigned long long> *numIter = new Parameter<unsigned long long>(100000000);
-    numIter->setCommandLineArgument(std::make_pair("-numIter","<count>"));
-    numIter->setDescription("Set number of messages to send. Default:\n100000000 for Throughput tests or 10000000\nfor Latency tests. See '-executionTime'");
-    numIter->setType(T_NUMERIC);
-    numIter->setExtraArgument(YES);
-    numIter->setRange(1, ULLONG_MAX);
-    numIter->setGroup(PUB);
+    numIter->set_command_line_argument(std::make_pair("-numIter","<count>"));
+    numIter->set_description("Set number of messages to send. Default:\n100000000 for Throughput tests or 10000000\nfor Latency tests. See '-executionTime'");
+    numIter->set_type(T_NUMERIC);
+    numIter->set_extra_argument(YES);
+    numIter->set_range(1, ULLONG_MAX);
+    numIter->set_group(PUB);
     parameterList["numIter"] = AnyParameter(numIter);
 
     Parameter<unsigned long long> *numSubscribers = new Parameter<unsigned long long>(1);
-    numSubscribers->setCommandLineArgument(std::make_pair("-numSubscribers","<count>"));
-    numSubscribers->setDescription("Number of subscribers running in test.\nDefault: 1");
-    numSubscribers->setType(T_NUMERIC);
-    numSubscribers->setExtraArgument(YES);
-    numSubscribers->setRange(1, INT_MAX);
-    numSubscribers->setGroup(PUB);
+    numSubscribers->set_command_line_argument(std::make_pair("-numSubscribers","<count>"));
+    numSubscribers->set_description("Number of subscribers running in test.\nDefault: 1");
+    numSubscribers->set_type(T_NUMERIC);
+    numSubscribers->set_extra_argument(YES);
+    numSubscribers->set_range(1, INT_MAX);
+    numSubscribers->set_group(PUB);
     parameterList["numSubscribers"] = AnyParameter(numSubscribers);
 
     Parameter<unsigned long long> *pidMultiPubTest = new Parameter<unsigned long long>(0);
-    pidMultiPubTest->setCommandLineArgument(std::make_pair("-pidMultiPubTest","<bytes>"));
-    pidMultiPubTest->setDescription("Set id of the publisher in a multi-publisher test.\n Only publisher 0 sends \n latency pings. Default: 0");
-    pidMultiPubTest->setType(T_NUMERIC);
-    pidMultiPubTest->setExtraArgument(YES);
-    pidMultiPubTest->setRange(0, INT_MAX);
-    pidMultiPubTest->setGroup(PUB);
+    pidMultiPubTest->set_command_line_argument(std::make_pair("-pidMultiPubTest","<bytes>"));
+    pidMultiPubTest->set_description("Set id of the publisher in a multi-publisher test.\n Only publisher 0 sends \n latency pings. Default: 0");
+    pidMultiPubTest->set_type(T_NUMERIC);
+    pidMultiPubTest->set_extra_argument(YES);
+    pidMultiPubTest->set_range(0, INT_MAX);
+    pidMultiPubTest->set_group(PUB);
     parameterList["pidMultiPubTest"] = AnyParameter(pidMultiPubTest);
 
     ParameterVector<unsigned long long> *cft = new ParameterVector<unsigned long long>();
-    cft->setCommandLineArgument(std::make_pair("-cft","<start>:<end>"));
-    cft->setDescription("Use a Content Filtered Topic for the Throughput topic in the subscriber side.\nSpecify 2 parameters: <start> and <end> to receive samples with a key in that range.\nSpecify only 1 parameter to receive samples with that exact key.\nDefault: Not set");
-    cft->setType(T_VECTOR_NUMERIC);
-    cft->setExtraArgument(YES);
-    cft->setRange(0, MAX_CFT_VALUE);
+    cft->set_command_line_argument(std::make_pair("-cft","<start>:<end>"));
+    cft->set_description("Use a Content Filtered Topic for the Throughput topic in the subscriber side.\nSpecify 2 parameters: <start> and <end> to receive samples with a key in that range.\nSpecify only 1 parameter to receive samples with that exact key.\nDefault: Not set");
+    cft->set_type(T_VECTOR_NUMERIC);
+    cft->set_extra_argument(YES);
+    cft->set_range(0, MAX_CFT_VALUE);
     cft->setParseMethod(SPLIT);
-    cft->setGroup(PUB);
+    cft->set_group(PUB);
     parameterList["cft"] = AnyParameter(cft);
 
     ParameterPair<unsigned long long, std::string> *pubRate = new ParameterPair<unsigned long long, std::string>(0,"spin");
-    pubRate->setCommandLineArgument(std::make_pair("-pubRate","<samples/s>:<method>"));
-    pubRate->setDescription("Limit the throughput to the specified number\nof samples/s. Default 0 (don't limit)\n[OPTIONAL] Method to control the throughput can be:\n'spin' or 'sleep'.\nDefault method: spin");
-    pubRate->setType(T_PAIR_NUMERIC_STR);
-    pubRate->setExtraArgument(YES);
-    pubRate->setGroup(PUB);
-    pubRate->setRange(1, 10000000);
-    pubRate->addValidStrValue("sleep");
-    pubRate->addValidStrValue("spin");
+    pubRate->set_command_line_argument(std::make_pair("-pubRate","<samples/s>:<method>"));
+    pubRate->set_description("Limit the throughput to the specified number\nof samples/s. Default 0 (don't limit)\n[OPTIONAL] Method to control the throughput can be:\n'spin' or 'sleep'.\nDefault method: spin");
+    pubRate->set_type(T_PAIR_NUMERIC_STR);
+    pubRate->set_extra_argument(YES);
+    pubRate->set_group(PUB);
+    pubRate->set_range(1, 10000000);
+    pubRate->add_valid_str_value("sleep");
+    pubRate->add_valid_str_value("spin");
     parameterList["pubRate"] = AnyParameter(pubRate);
 
      std::vector<unsigned long long> _scanDataLenSizes;
@@ -322,127 +322,127 @@ void ParameterManager::initialize()
     _scanDataLenSizes.push_back(32768);
     _scanDataLenSizes.push_back(63000);
     ParameterVector<unsigned long long> * scan = new ParameterVector<unsigned long long>(_scanDataLenSizes);
-    scan->setCommandLineArgument(std::make_pair("-scan","<size1>:<size2>:...:<sizeN>"));
-    scan->setDescription("Run test in scan mode, traversing\na range of sample data sizes from\n[32,63000] or [63001,2147483128] bytes,\nin the case that you are using large data or not.\nThe list of sizes is optional.\nDefault values are '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\nDefault: Not set");
-    scan->setType(T_VECTOR_NUMERIC);
-    scan->setExtraArgument(OPTIONAL);
-    scan->setRange(perftest_cpp::OVERHEAD_BYTES, MAX_PERFTEST_SAMPLE_SIZE);
+    scan->set_command_line_argument(std::make_pair("-scan","<size1>:<size2>:...:<sizeN>"));
+    scan->set_description("Run test in scan mode, traversing\na range of sample data sizes from\n[32,63000] or [63001,2147483128] bytes,\nin the case that you are using large data or not.\nThe list of sizes is optional.\nDefault values are '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\nDefault: Not set");
+    scan->set_type(T_VECTOR_NUMERIC);
+    scan->set_extra_argument(OPTIONAL);
+    scan->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_PERFTEST_SAMPLE_SIZE);
     scan->setParseMethod(SPLIT);
-    scan->setGroup(PUB);
+    scan->set_group(PUB);
     parameterList["scan"] = AnyParameter(scan);
 
     Parameter<unsigned long long> *sendQueueSize = new Parameter<unsigned long long>(50);
-    sendQueueSize->setCommandLineArgument(std::make_pair("-sendQueueSize","<number>"));
-    sendQueueSize->setDescription("Sets number of samples (or batches) in send\nqueue. Default: 50");
-    sendQueueSize->setType(T_NUMERIC);
-    sendQueueSize->setExtraArgument(YES);
-    sendQueueSize->setGroup(PUB);
-    sendQueueSize->setRange(1, INT_MAX);
+    sendQueueSize->set_command_line_argument(std::make_pair("-sendQueueSize","<number>"));
+    sendQueueSize->set_description("Sets number of samples (or batches) in send\nqueue. Default: 50");
+    sendQueueSize->set_type(T_NUMERIC);
+    sendQueueSize->set_extra_argument(YES);
+    sendQueueSize->set_group(PUB);
+    sendQueueSize->set_range(1, INT_MAX);
     parameterList["sendQueueSize"] = AnyParameter(sendQueueSize);
 
     // TODO convert into NanoSec
     Parameter<unsigned long long> *sleep = new Parameter<unsigned long long>(0);
-    sleep->setCommandLineArgument(std::make_pair("-sleep","<millisec>"));
-    sleep->setDescription("Time to sleep between each send. Default: 0");
-    sleep->setType(T_NUMERIC);
-    sleep->setExtraArgument(YES);
-    sleep->setRange(0, ULLONG_MAX);
-    sleep->setGroup(PUB);
+    sleep->set_command_line_argument(std::make_pair("-sleep","<millisec>"));
+    sleep->set_description("Time to sleep between each send. Default: 0");
+    sleep->set_type(T_NUMERIC);
+    sleep->set_extra_argument(YES);
+    sleep->set_range(0, ULLONG_MAX);
+    sleep->set_group(PUB);
     parameterList["sleep"] = AnyParameter(sleep);
 
     Parameter<bool> *writerStats = new Parameter<bool>(false);
-    writerStats->setCommandLineArgument(std::make_pair("-writerStats",""));
-    writerStats->setDescription("Display the Pulled Sample count stats for\nreliable protocol debugging purposes.\nDefault: Not set");
-    writerStats->setType(T_BOOL);
-    writerStats->setExtraArgument(NO);
-    writerStats->setGroup(PUB);
+    writerStats->set_command_line_argument(std::make_pair("-writerStats",""));
+    writerStats->set_description("Display the Pulled Sample count stats for\nreliable protocol debugging purposes.\nDefault: Not set");
+    writerStats->set_type(T_BOOL);
+    writerStats->set_extra_argument(NO);
+    writerStats->set_group(PUB);
     parameterList["writerStats"] = AnyParameter(writerStats);
 
     Parameter<long> *writeInstance = new Parameter<long>(-1);// (-1) By default use round-robin (-1)
-    writeInstance->setCommandLineArgument(std::make_pair("-writeInstance","<instance>"));
-    writeInstance->setDescription("Set the instance number to be sent. \n'-writeInstance' parameter cannot be bigger than the number of instances.\nDefault: 'Round-Robin' schedule");
-    writeInstance->setType(T_NUMERIC);
-    writeInstance->setExtraArgument(YES);
-    writeInstance->setRange(0, LONG_MAX);
-    writeInstance->setGroup(PUB);
+    writeInstance->set_command_line_argument(std::make_pair("-writeInstance","<instance>"));
+    writeInstance->set_description("Set the instance number to be sent. \n'-writeInstance' parameter cannot be bigger than the number of instances.\nDefault: 'Round-Robin' schedule");
+    writeInstance->set_type(T_NUMERIC);
+    writeInstance->set_extra_argument(YES);
+    writeInstance->set_range(0, LONG_MAX);
+    writeInstance->set_group(PUB);
     parameterList["writeInstance"] = AnyParameter(writeInstance);
 
     ////////////////////////////////////////////////////////////////////////////
     //SUBSCRIBER PARAMETER
     Parameter<bool> * sub = new Parameter<bool>(false);
-    sub->setCommandLineArgument(std::make_pair("-sub",""));
-    sub->setDescription("Set test to be a subscriber");
-    sub->setType(T_BOOL);
-    sub->setExtraArgument(NO);
-    sub->setGroup(SUB);
+    sub->set_command_line_argument(std::make_pair("-sub",""));
+    sub->set_description("Set test to be a subscriber");
+    sub->set_type(T_BOOL);
+    sub->set_extra_argument(NO);
+    sub->set_group(SUB);
     parameterList["sub"] = AnyParameter(sub);
 
     Parameter<unsigned long long> *sidMultiSubTest = new Parameter<unsigned long long>(0);
-    sidMultiSubTest->setCommandLineArgument(std::make_pair("-sidMultiSubTest","<bytes>"));
-    sidMultiSubTest->setDescription("Set the id of the subscriber in a\nmulti-subscriber test. Default: 0");
-    sidMultiSubTest->setType(T_NUMERIC);
-    sidMultiSubTest->setExtraArgument(YES);
-    sidMultiSubTest->setRange(0, INT_MAX);
-    sidMultiSubTest->setGroup(SUB);
+    sidMultiSubTest->set_command_line_argument(std::make_pair("-sidMultiSubTest","<bytes>"));
+    sidMultiSubTest->set_description("Set the id of the subscriber in a\nmulti-subscriber test. Default: 0");
+    sidMultiSubTest->set_type(T_NUMERIC);
+    sidMultiSubTest->set_extra_argument(YES);
+    sidMultiSubTest->set_range(0, INT_MAX);
+    sidMultiSubTest->set_group(SUB);
     parameterList["sidMultiSubTest"] = AnyParameter(sidMultiSubTest);
 
     Parameter<unsigned long long> *numPublishers = new Parameter<unsigned long long>(1);
-    numPublishers->setCommandLineArgument(std::make_pair("-numPublishers","<count>"));
-    numPublishers->setDescription("Number of publishers running in test.\nDefault: 1");
-    numPublishers->setType(T_NUMERIC);
-    numPublishers->setExtraArgument(YES);
-    numPublishers->setRange(1, ULLONG_MAX);
-    numPublishers->setGroup(SUB);
+    numPublishers->set_command_line_argument(std::make_pair("-numPublishers","<count>"));
+    numPublishers->set_description("Number of publishers running in test.\nDefault: 1");
+    numPublishers->set_type(T_NUMERIC);
+    numPublishers->set_extra_argument(YES);
+    numPublishers->set_range(1, ULLONG_MAX);
+    numPublishers->set_group(SUB);
     parameterList["numPublishers"] = AnyParameter(numPublishers);
 
     ////////////////////////////////////////////////////////////////////////////
     // TRANSPORT PARAMETER:
     Parameter<std::string> *nic = new Parameter<std::string>();
-    nic->setCommandLineArgument(std::make_pair("-nic","<ipaddr>"));
-    nic->setDescription("Use only the nic specified by <ipaddr>.\nIf not specified, use all available interfaces");
-    nic->setType(T_STR);
-    nic->setExtraArgument(YES);
-    nic->setGroup(TRANSPORT);
+    nic->set_command_line_argument(std::make_pair("-nic","<ipaddr>"));
+    nic->set_description("Use only the nic specified by <ipaddr>.\nIf not specified, use all available interfaces");
+    nic->set_type(T_STR);
+    nic->set_extra_argument(YES);
+    nic->set_group(TRANSPORT);
     parameterList["nic"] = AnyParameter(nic);
 
     Parameter<std::string> *allowInterfaces = new Parameter<std::string>();
-    allowInterfaces->setCommandLineArgument(std::make_pair("-allowInterfaces", "<ipaddr>"));
-    allowInterfaces->setDescription("Use only the nic specified by <ipaddr>.\nIf not specified, use all available interfaces");
-    allowInterfaces->setType(T_STR);
-    allowInterfaces->setExtraArgument(YES);
-    allowInterfaces->setGroup(TRANSPORT);
-    allowInterfaces->setInternal(true);
+    allowInterfaces->set_command_line_argument(std::make_pair("-allowInterfaces", "<ipaddr>"));
+    allowInterfaces->set_description("Use only the nic specified by <ipaddr>.\nIf not specified, use all available interfaces");
+    allowInterfaces->set_type(T_STR);
+    allowInterfaces->set_extra_argument(YES);
+    allowInterfaces->set_group(TRANSPORT);
+    allowInterfaces->set_internal(true);
     parameterList["allowInterfaces"] = AnyParameter(allowInterfaces);
 
     ParameterVector<std::string> * peer = new ParameterVector<std::string>();
-    peer->setCommandLineArgument(std::make_pair("-peer","<address>"));
-    peer->setDescription("Adds a peer to the peer host address list.\nThis argument may be repeated to indicate multiple peers");
-    peer->setType(T_VECTOR_STR);
-    peer->setExtraArgument(YES);
-    peer->setGroup(TRANSPORT);
+    peer->set_command_line_argument(std::make_pair("-peer","<address>"));
+    peer->set_description("Adds a peer to the peer host address list.\nThis argument may be repeated to indicate multiple peers");
+    peer->set_type(T_VECTOR_STR);
+    peer->set_extra_argument(YES);
+    peer->set_group(TRANSPORT);
     parameterList["peer"] = AnyParameter(peer);
 
     Parameter<std::string> * transport = new Parameter<std::string>("Use XML");
-    transport->setCommandLineArgument(std::make_pair("-transport","<kind>"));
-    transport->setDescription("Set transport to be used. The rest of\nthe transports will be disabled.\nValues:\nUDPv4\nUDPv6\nSHMEM\nTCP\nTLS\nDTLS\nWAN\nUse XML\nDefault: Use XML (UDPv4|SHMEM)");
-    transport->setType(T_STR);
-    transport->setExtraArgument(YES);
-    transport->setGroup(TRANSPORT);
-    transport->addValidStrValue("UDPv4");
-    transport->addValidStrValue("UDPv6");
-    transport->addValidStrValue("SHMEM");
-    transport->addValidStrValue("TCP");
-    transport->addValidStrValue("TLS");
-    transport->addValidStrValue("DTLS");
-    transport->addValidStrValue("WAN");
+    transport->set_command_line_argument(std::make_pair("-transport","<kind>"));
+    transport->set_description("Set transport to be used. The rest of\nthe transports will be disabled.\nValues:\nUDPv4\nUDPv6\nSHMEM\nTCP\nTLS\nDTLS\nWAN\nUse XML\nDefault: Use XML (UDPv4|SHMEM)");
+    transport->set_type(T_STR);
+    transport->set_extra_argument(YES);
+    transport->set_group(TRANSPORT);
+    transport->add_valid_str_value("UDPv4");
+    transport->add_valid_str_value("UDPv6");
+    transport->add_valid_str_value("SHMEM");
+    transport->add_valid_str_value("TCP");
+    transport->add_valid_str_value("TLS");
+    transport->add_valid_str_value("DTLS");
+    transport->add_valid_str_value("WAN");
     parameterList["transport"] = AnyParameter(transport);
 
     Parameter<bool> *multicast = new Parameter<bool>(false);
-    multicast->setCommandLineArgument(std::make_pair("-multicast",""));
-    multicast->setDescription("Use multicast to send data. Each topic\nwill use a different address\n\tlatency: '239.255.1.2'\n\tthroughput: '239.255.1.1'\n\tannouncement: '239.255.1.100'");
-    multicast->setType(T_BOOL);
-    multicast->setExtraArgument(NO);
-    multicast->setGroup(TRANSPORT);
+    multicast->set_command_line_argument(std::make_pair("-multicast",""));
+    multicast->set_description("Use multicast to send data. Each topic\nwill use a different address\n\tlatency: '239.255.1.2'\n\tthroughput: '239.255.1.1'\n\tannouncement: '239.255.1.100'");
+    multicast->set_type(T_BOOL);
+    multicast->set_extra_argument(NO);
+    multicast->set_group(TRANSPORT);
     parameterList["multicast"] = AnyParameter(multicast);
 
     // TODO set multicastAddrMap
@@ -457,203 +457,203 @@ void ParameterManager::initialize()
      * parameter manager does not will be called again.
      */
     Parameter<std::string> * multicastAddr = new Parameter<std::string>();
-    multicastAddr->setCommandLineArgument(std::make_pair("-multicastAddr","<address>"));
-    multicastAddr->setDescription("Use multicast to send data and set\nthe input <address> as the multicast\naddress for all the topics");
-    multicastAddr->setType(T_STR);
-    multicastAddr->setExtraArgument(YES);
-    multicastAddr->setGroup(TRANSPORT);
+    multicastAddr->set_command_line_argument(std::make_pair("-multicastAddr","<address>"));
+    multicastAddr->set_description("Use multicast to send data and set\nthe input <address> as the multicast\naddress for all the topics");
+    multicastAddr->set_type(T_STR);
+    multicastAddr->set_extra_argument(YES);
+    multicastAddr->set_group(TRANSPORT);
     parameterList["multicastAddr"] = AnyParameter(multicastAddr);
 
     Parameter<std::string> *transportVerbosity = new Parameter<std::string>();
-    transportVerbosity->setCommandLineArgument(std::make_pair("-transportVerbosity","<level>"));
-    transportVerbosity->setDescription("Verbosity of the transport.\nDefault: 0 (errors only)");
-    transportVerbosity->setType(T_STR);
-    transportVerbosity->setExtraArgument(YES);
-    transportVerbosity->setGroup(TRANSPORT);
+    transportVerbosity->set_command_line_argument(std::make_pair("-transportVerbosity","<level>"));
+    transportVerbosity->set_description("Verbosity of the transport.\nDefault: 0 (errors only)");
+    transportVerbosity->set_type(T_STR);
+    transportVerbosity->set_extra_argument(YES);
+    transportVerbosity->set_group(TRANSPORT);
     parameterList["transportVerbosity"] = AnyParameter(transportVerbosity);
 
     Parameter<std::string> * transportServerBindPort = new Parameter<std::string>("7400");
-    transportServerBindPort->setCommandLineArgument(std::make_pair("-transportServerBindPort","<p>"));
-    transportServerBindPort->setDescription("Port used by the transport to accept\nTCP/TLS connections <optional>.\nDefault: 7400");
-    transportServerBindPort->setType(T_STR);
-    transportServerBindPort->setExtraArgument(YES);
-    transportServerBindPort->setGroup(TRANSPORT);
+    transportServerBindPort->set_command_line_argument(std::make_pair("-transportServerBindPort","<p>"));
+    transportServerBindPort->set_description("Port used by the transport to accept\nTCP/TLS connections <optional>.\nDefault: 7400");
+    transportServerBindPort->set_type(T_STR);
+    transportServerBindPort->set_extra_argument(YES);
+    transportServerBindPort->set_group(TRANSPORT);
     parameterList["transportServerBindPort"] = AnyParameter(transportServerBindPort);
 
     Parameter<bool> *transportWan = new Parameter<bool>(false);
-    transportWan->setCommandLineArgument(std::make_pair("-transportWan",""));
-    transportWan->setDescription("Use TCP/TLS across LANs and Firewalls.\nDefault: Not Set, LAN mode");
-    transportWan->setType(T_BOOL);
-    transportWan->setExtraArgument(NO);
-    transportWan->setGroup(TRANSPORT);
+    transportWan->set_command_line_argument(std::make_pair("-transportWan",""));
+    transportWan->set_description("Use TCP/TLS across LANs and Firewalls.\nDefault: Not Set, LAN mode");
+    transportWan->set_type(T_BOOL);
+    transportWan->set_extra_argument(NO);
+    transportWan->set_group(TRANSPORT);
     parameterList["transportWan"] = AnyParameter(transportWan);
 
     Parameter<std::string> * transportPublicAddress = new Parameter<std::string>();
-    transportPublicAddress->setCommandLineArgument(std::make_pair("-transportPublicAddress","<ip>"));
-    transportPublicAddress->setDescription("Public IP address and port (WAN address\nand port) (separated with ‘:’ ) related\nto the transport instantiation. This is\nrequired when using server mode.\nDefault: Not Set");
-    transportPublicAddress->setType(T_STR);
-    transportPublicAddress->setExtraArgument(YES);
-    transportPublicAddress->setGroup(TRANSPORT);
+    transportPublicAddress->set_command_line_argument(std::make_pair("-transportPublicAddress","<ip>"));
+    transportPublicAddress->set_description("Public IP address and port (WAN address\nand port) (separated with ‘:’ ) related\nto the transport instantiation. This is\nrequired when using server mode.\nDefault: Not Set");
+    transportPublicAddress->set_type(T_STR);
+    transportPublicAddress->set_extra_argument(YES);
+    transportPublicAddress->set_group(TRANSPORT);
     parameterList["transportPublicAddress"] = AnyParameter(transportPublicAddress);
 
     Parameter<std::string> * transportWanServerAddress = new Parameter<std::string>();
-    transportWanServerAddress->setCommandLineArgument(std::make_pair("-transportWanServerAddress","<a>"));
-    transportWanServerAddress->setDescription("Address where to find the WAN Server\nDefault: Not Set (Required)\n");
-    transportWanServerAddress->setType(T_STR);
-    transportWanServerAddress->setExtraArgument(YES);
-    transportWanServerAddress->setGroup(TRANSPORT);
+    transportWanServerAddress->set_command_line_argument(std::make_pair("-transportWanServerAddress","<a>"));
+    transportWanServerAddress->set_description("Address where to find the WAN Server\nDefault: Not Set (Required)\n");
+    transportWanServerAddress->set_type(T_STR);
+    transportWanServerAddress->set_extra_argument(YES);
+    transportWanServerAddress->set_group(TRANSPORT);
     parameterList["transportWanServerAddress"] = AnyParameter(transportWanServerAddress);
 
     Parameter<std::string> * transportWanServerPort = new Parameter<std::string>("3478");
-    transportWanServerPort->setCommandLineArgument(std::make_pair("-transportWanServerPort","<p>"));
-    transportWanServerPort->setDescription("Port where to find the WAN Server.\nDefault: 3478");
-    transportWanServerPort->setType(T_STR);
-    transportWanServerPort->setExtraArgument(YES);
-    transportWanServerPort->setGroup(TRANSPORT);
+    transportWanServerPort->set_command_line_argument(std::make_pair("-transportWanServerPort","<p>"));
+    transportWanServerPort->set_description("Port where to find the WAN Server.\nDefault: 3478");
+    transportWanServerPort->set_type(T_STR);
+    transportWanServerPort->set_extra_argument(YES);
+    transportWanServerPort->set_group(TRANSPORT);
     parameterList["transportWanServerPort"] = AnyParameter(transportWanServerPort);
 
     Parameter<std::string> *transportWanId = new Parameter<std::string>();
-    transportWanId->setCommandLineArgument(std::make_pair("-transportWanId","<id>"));
-    transportWanId->setDescription("Id to be used for the WAN transport.\nDefault: Not Set (Required)");
-    transportWanId->setType(T_STR);
-    transportWanId->setExtraArgument(YES);
-    transportWanId->setGroup(TRANSPORT);
+    transportWanId->set_command_line_argument(std::make_pair("-transportWanId","<id>"));
+    transportWanId->set_description("Id to be used for the WAN transport.\nDefault: Not Set (Required)");
+    transportWanId->set_type(T_STR);
+    transportWanId->set_extra_argument(YES);
+    transportWanId->set_group(TRANSPORT);
     parameterList["transportWanId"] = AnyParameter(transportWanId);
 
     Parameter<bool> *transportSecureWan = new Parameter<bool>(false);
-    transportSecureWan->setCommandLineArgument(std::make_pair("-transportSecureWan",""));
-    transportSecureWan->setDescription("Use WAN with security.\nDefault: False");
-    transportSecureWan->setType(T_BOOL);
-    transportSecureWan->setExtraArgument(NO);
-    transportSecureWan->setGroup(TRANSPORT);
+    transportSecureWan->set_command_line_argument(std::make_pair("-transportSecureWan",""));
+    transportSecureWan->set_description("Use WAN with security.\nDefault: False");
+    transportSecureWan->set_type(T_BOOL);
+    transportSecureWan->set_extra_argument(NO);
+    transportSecureWan->set_group(TRANSPORT);
     parameterList["transportSecureWan"] = AnyParameter(transportSecureWan);
 
     Parameter<std::string> * transportCertAuthority = new Parameter<std::string>(TRANSPORT_CERTAUTHORITY_FILE);
-    transportCertAuthority->setCommandLineArgument(std::make_pair("-transportCertAuthority","<file>"));
-    transportCertAuthority->setDescription("Certificate authority file <optional>.\nDefault: \"" + TRANSPORT_CERTAUTHORITY_FILE + "\"");
-    transportCertAuthority->setType(T_STR);
-    transportCertAuthority->setExtraArgument(YES);
-    transportCertAuthority->setGroup(TRANSPORT);
+    transportCertAuthority->set_command_line_argument(std::make_pair("-transportCertAuthority","<file>"));
+    transportCertAuthority->set_description("Certificate authority file <optional>.\nDefault: \"" + TRANSPORT_CERTAUTHORITY_FILE + "\"");
+    transportCertAuthority->set_type(T_STR);
+    transportCertAuthority->set_extra_argument(YES);
+    transportCertAuthority->set_group(TRANSPORT);
     parameterList["transportCertAuthority"] = AnyParameter(transportCertAuthority);
 
     // TODO assigned a value if it is pub or sub
     Parameter<std::string> * transportCertFile = new Parameter<std::string>(TRANSPORT_CERTIFICATE_FILE_PUB);
-    transportCertFile->setCommandLineArgument(std::make_pair("-transportCertFile","<file>"));
-    transportCertFile->setDescription("Certificate file <optional>.\nDefault (Publisher): \"" + TRANSPORT_CERTIFICATE_FILE_PUB + "\"\nDefault (Subscriber): \"" + TRANSPORT_CERTIFICATE_FILE_SUB + "\"\n");
-    transportCertFile->setType(T_STR);
-    transportCertFile->setExtraArgument(YES);
-    transportCertFile->setGroup(TRANSPORT);
+    transportCertFile->set_command_line_argument(std::make_pair("-transportCertFile","<file>"));
+    transportCertFile->set_description("Certificate file <optional>.\nDefault (Publisher): \"" + TRANSPORT_CERTIFICATE_FILE_PUB + "\"\nDefault (Subscriber): \"" + TRANSPORT_CERTIFICATE_FILE_SUB + "\"\n");
+    transportCertFile->set_type(T_STR);
+    transportCertFile->set_extra_argument(YES);
+    transportCertFile->set_group(TRANSPORT);
     parameterList["transportCertFile"] = AnyParameter(transportCertFile);
 
     // TODO assigned a value if it is pub or sub
     Parameter<std::string> * transportPrivateKey = new Parameter<std::string>(TRANSPORT_CERTIFICATE_FILE_PUB);
-    transportPrivateKey->setCommandLineArgument(std::make_pair("-transportPrivateKey","<file>"));
-    transportPrivateKey->setDescription("Private key file <optional>.\nDefault (Publisher): \"" + TRANSPORT_PRIVATEKEY_FILE_PUB + "\"\nDefault (Subscriber): \"" + TRANSPORT_PRIVATEKEY_FILE_SUB + "\"\n");
-    transportPrivateKey->setType(T_STR);
-    transportPrivateKey->setExtraArgument(YES);
-    transportPrivateKey->setGroup(TRANSPORT);
+    transportPrivateKey->set_command_line_argument(std::make_pair("-transportPrivateKey","<file>"));
+    transportPrivateKey->set_description("Private key file <optional>.\nDefault (Publisher): \"" + TRANSPORT_PRIVATEKEY_FILE_PUB + "\"\nDefault (Subscriber): \"" + TRANSPORT_PRIVATEKEY_FILE_SUB + "\"\n");
+    transportPrivateKey->set_type(T_STR);
+    transportPrivateKey->set_extra_argument(YES);
+    transportPrivateKey->set_group(TRANSPORT);
     parameterList["transportPrivateKey"] = AnyParameter(transportPrivateKey);
 
     ////////////////////////////////////////////////////////////////////////////
     // SECURE PARAMETER:
   #ifdef RTI_SECURE_PERFTEST
     Parameter<bool> *secureEncryptDiscovery = new Parameter<bool>(false);
-    secureEncryptDiscovery->setCommandLineArgument(std::make_pair("-secureEncryptDiscovery",""));
-    secureEncryptDiscovery->setDescription("Encrypt discovery traffic");
-    secureEncryptDiscovery->setType(T_BOOL);
-    secureEncryptDiscovery->setExtraArgument(NO);
-    secureEncryptDiscovery->setGroup(SECURE);
+    secureEncryptDiscovery->set_command_line_argument(std::make_pair("-secureEncryptDiscovery",""));
+    secureEncryptDiscovery->set_description("Encrypt discovery traffic");
+    secureEncryptDiscovery->set_type(T_BOOL);
+    secureEncryptDiscovery->set_extra_argument(NO);
+    secureEncryptDiscovery->set_group(SECURE);
     parameterList["secureEncryptDiscovery"] = AnyParameter(secureEncryptDiscovery);
 
     Parameter<bool> *secureSign = new Parameter<bool>(false);
-    secureSign->setCommandLineArgument(std::make_pair("-secureSign",""));
-    secureSign->setDescription("Sign (HMAC) discovery and user data");
-    secureSign->setType(T_BOOL);
-    secureSign->setExtraArgument(NO);
-    secureSign->setGroup(SECURE);
+    secureSign->set_command_line_argument(std::make_pair("-secureSign",""));
+    secureSign->set_description("Sign (HMAC) discovery and user data");
+    secureSign->set_type(T_BOOL);
+    secureSign->set_extra_argument(NO);
+    secureSign->set_group(SECURE);
     parameterList["secureSign"] = AnyParameter(secureSign);
 
     Parameter<bool> *secureEncryptBoth = new Parameter<bool>(false);
-    secureEncryptBoth->setCommandLineArgument(std::make_pair("-secureEncryptBoth",""));
-    secureEncryptBoth->setDescription("Sign (HMAC) discovery and user data");
-    secureEncryptBoth->setType(T_BOOL);
-    secureEncryptBoth->setExtraArgument(NO);
-    secureEncryptBoth->setGroup(SECURE);
+    secureEncryptBoth->set_command_line_argument(std::make_pair("-secureEncryptBoth",""));
+    secureEncryptBoth->set_description("Sign (HMAC) discovery and user data");
+    secureEncryptBoth->set_type(T_BOOL);
+    secureEncryptBoth->set_extra_argument(NO);
+    secureEncryptBoth->set_group(SECURE);
     parameterList["secureEncryptBoth"] = AnyParameter(secureEncryptBoth);
 
     Parameter<bool> *secureEncryptData = new Parameter<bool>(false);
-    secureEncryptData->setCommandLineArgument(std::make_pair("-secureEncryptData",""));
-    secureEncryptData->setDescription("Encrypt topic (user) data");
-    secureEncryptData->setType(T_BOOL);
-    secureEncryptData->setExtraArgument(NO);
-    secureEncryptData->setGroup(SECURE);
+    secureEncryptData->set_command_line_argument(std::make_pair("-secureEncryptData",""));
+    secureEncryptData->set_description("Encrypt topic (user) data");
+    secureEncryptData->set_type(T_BOOL);
+    secureEncryptData->set_extra_argument(NO);
+    secureEncryptData->set_group(SECURE);
     parameterList["secureEncryptData"] = AnyParameter(secureEncryptData);
 
     Parameter<bool> *secureEncryptSM = new Parameter<bool>(false);
-    secureEncryptSM->setCommandLineArgument(std::make_pair("-secureEncryptSM",""));
-    secureEncryptSM->setDescription("Encrypt RTPS submessages");
-    secureEncryptSM->setType(T_BOOL);
-    secureEncryptSM->setExtraArgument(NO);
-    secureEncryptSM->setGroup(SECURE);
+    secureEncryptSM->set_command_line_argument(std::make_pair("-secureEncryptSM",""));
+    secureEncryptSM->set_description("Encrypt RTPS submessages");
+    secureEncryptSM->set_type(T_BOOL);
+    secureEncryptSM->set_extra_argument(NO);
+    secureEncryptSM->set_group(SECURE);
     parameterList["secureEncryptSM"] = AnyParameter(secureEncryptSM);
 
     Parameter<std::string> *secureGovernanceFile = new Parameter<std::string>();
-    secureGovernanceFile->setCommandLineArgument(std::make_pair("-secureGovernanceFile","<file>"));
-    secureGovernanceFile->setDescription("Governance file. If specified, the authentication,\nsigning, and encryption arguments are ignored. The\ngovernance document configuration will be used instead.\nDefault: built using the secure options");
-    secureGovernanceFile->setType(T_STR);
-    secureGovernanceFile->setExtraArgument(YES);
-    secureGovernanceFile->setGroup(SECURE);
+    secureGovernanceFile->set_command_line_argument(std::make_pair("-secureGovernanceFile","<file>"));
+    secureGovernanceFile->set_description("Governance file. If specified, the authentication,\nsigning, and encryption arguments are ignored. The\ngovernance document configuration will be used instead.\nDefault: built using the secure options");
+    secureGovernanceFile->set_type(T_STR);
+    secureGovernanceFile->set_extra_argument(YES);
+    secureGovernanceFile->set_group(SECURE);
     parameterList["secureGovernanceFile"] = AnyParameter(secureGovernanceFile);
 
     // TODO assigned a value if it is pub or sub
     Parameter<std::string> *securePermissionsFile = new Parameter<std::string>();
-    securePermissionsFile->setCommandLineArgument(std::make_pair("-securePermissionsFile","<file>"));
-    securePermissionsFile->setDescription("Permissions file <optional>.\nDefault: \"./resource/secure/signed_PerftestPermissionsSub.xml\"");
-    securePermissionsFile->setType(T_STR);
-    securePermissionsFile->setExtraArgument(YES);
-    securePermissionsFile->setGroup(SECURE);
+    securePermissionsFile->set_command_line_argument(std::make_pair("-securePermissionsFile","<file>"));
+    securePermissionsFile->set_description("Permissions file <optional>.\nDefault: \"./resource/secure/signed_PerftestPermissionsSub.xml\"");
+    securePermissionsFile->set_type(T_STR);
+    securePermissionsFile->set_extra_argument(YES);
+    securePermissionsFile->set_group(SECURE);
     parameterList["securePermissionsFile"] = AnyParameter(securePermissionsFile);
 
     Parameter<std::string> *secureCertAuthority = new Parameter<std::string>();
-    secureCertAuthority->setCommandLineArgument(std::make_pair("-secureCertAuthority","<file>"));
-    secureCertAuthority->setDescription("Certificate authority file <optional>.\nDefault: \"./resource/secure/cacert.pem\"");
-    secureCertAuthority->setType(T_STR);
-    secureCertAuthority->setExtraArgument(YES);
-    secureCertAuthority->setGroup(SECURE);
+    secureCertAuthority->set_command_line_argument(std::make_pair("-secureCertAuthority","<file>"));
+    secureCertAuthority->set_description("Certificate authority file <optional>.\nDefault: \"./resource/secure/cacert.pem\"");
+    secureCertAuthority->set_type(T_STR);
+    secureCertAuthority->set_extra_argument(YES);
+    secureCertAuthority->set_group(SECURE);
     parameterList["secureCertAuthority"] = AnyParameter(secureCertAuthority);
 
     // TODO assigned a value if it is pub or sub
     Parameter<std::string> *secureCertFile = new Parameter<std::string>();
-    secureCertFile->setCommandLineArgument(std::make_pair("-secureCertFile","<file>"));
-    secureCertFile->setDescription("Certificate file <optional>.\nDefault: \"./resource/secure/sub.pem\"");
-    secureCertFile->setType(T_STR);
-    secureCertFile->setExtraArgument(YES);
-    secureCertFile->setGroup(SECURE);
+    secureCertFile->set_command_line_argument(std::make_pair("-secureCertFile","<file>"));
+    secureCertFile->set_description("Certificate file <optional>.\nDefault: \"./resource/secure/sub.pem\"");
+    secureCertFile->set_type(T_STR);
+    secureCertFile->set_extra_argument(YES);
+    secureCertFile->set_group(SECURE);
     parameterList["secureCertFile"] = AnyParameter(secureCertFile);
 
     Parameter<std::string> *securePrivateKey = new Parameter<std::string>();
-    securePrivateKey->setCommandLineArgument(std::make_pair("-securePrivateKey","<file>"));
-    securePrivateKey->setDescription("Private key file <optional>.\nDefault: \"./resource/secure/subkey.pem\"");
-    securePrivateKey->setType(T_STR);
-    securePrivateKey->setExtraArgument(YES);
-    securePrivateKey->setGroup(SECURE);
+    securePrivateKey->set_command_line_argument(std::make_pair("-securePrivateKey","<file>"));
+    securePrivateKey->set_description("Private key file <optional>.\nDefault: \"./resource/secure/subkey.pem\"");
+    securePrivateKey->set_type(T_STR);
+    securePrivateKey->set_extra_argument(YES);
+    securePrivateKey->set_group(SECURE);
     parameterList["securePrivateKey"] = AnyParameter(securePrivateKey);
 
     Parameter<std::string> *secureLibrary = new Parameter<std::string>();
-    secureLibrary->setCommandLineArgument(std::make_pair("-secureLibrary","<file>"));
-    secureLibrary->setDescription("Private key file <optional>.\nDefault: \"./resource/secure/subkey.pem\"");
-    secureLibrary->setType(T_STR);
-    secureLibrary->setExtraArgument(YES);
-    secureLibrary->setGroup(SECURE);
+    secureLibrary->set_command_line_argument(std::make_pair("-secureLibrary","<file>"));
+    secureLibrary->set_description("Private key file <optional>.\nDefault: \"./resource/secure/subkey.pem\"");
+    secureLibrary->set_type(T_STR);
+    secureLibrary->set_extra_argument(YES);
+    secureLibrary->set_group(SECURE);
     parameterList["secureLibrary"] = AnyParameter(secureLibrary);
 
     Parameter<unsigned long long> *secureDebug = new Parameter<unsigned long long>(1);
-    secureDebug->setCommandLineArgument(std::make_pair("-secureDebug","<level>"));
-    secureDebug->setType(T_NUMERIC);
-    secureDebug->setExtraArgument(YES);
-    secureDebug->setRange(-1, ULLONG_MAX);
-    secureDebug->setGroup(SECURE);
-    secureDebug->setInternal(true);
+    secureDebug->set_command_line_argument(std::make_pair("-secureDebug","<level>"));
+    secureDebug->set_type(T_NUMERIC);
+    secureDebug->set_extra_argument(YES);
+    secureDebug->set_range(-1, ULLONG_MAX);
+    secureDebug->set_group(SECURE);
+    secureDebug->set_internal(true);
     parameterList["secureDebug"] = AnyParameter(secureDebug);
 
 #endif
@@ -671,69 +671,69 @@ bool ParameterManager::parse(int argc, char *argv[])
     std::map<std::string, AnyParameter>::iterator it;
     for (unsigned int i = 1; i < allArgs.size(); i++) {
         for (it = parameterList.begin(); it != parameterList.end(); it++) {
-            if (IS_OPTION(allArgs[i].c_str(), it->second.get()->getCommandLineArgument().first.c_str())) {
+            if (IS_OPTION(allArgs[i].c_str(), it->second.get()->get_command_line_argument().first.c_str())) {
                 // NumArguments == 0
-                if (it->second.get()->getExtraArgument() == NO) {
+                if (it->second.get()->get_extra_argument() == NO) {
                     // Type is T_BOOL
-                    if (it->second.get()->getType() == T_BOOL) {
+                    if (it->second.get()->get_type() == T_BOOL) {
                         (static_cast<Parameter<bool>*>(it->second.get<bool>()))->setValue(true);
                     }
                 // NumArguments is 1 or optional
-                } else if (it->second.get()->getExtraArgument() > NO) {
+                } else if (it->second.get()->get_extra_argument() > NO) {
                     // Check for error in num of arguments
                     if (i+1 >= allArgs.size() || allArgs[i+1].find("-") == 0) {
-                        if (it->second.get()->getExtraArgument() == YES) {
+                        if (it->second.get()->get_extra_argument() == YES) {
                             fprintf(stderr, "Missing '%s' after '%s'\n",
-                                it->second.get()->getCommandLineArgument().second.c_str(),
-                                it->second.get()->getCommandLineArgument().first.c_str());
+                                it->second.get()->get_command_line_argument().second.c_str(),
+                                it->second.get()->get_command_line_argument().first.c_str());
                             return false;
-                        } else if (it->second.get()->getExtraArgument() == OPTIONAL) {
-                            it->second.get()->setIsSet(true);
+                        } else if (it->second.get()->get_extra_argument() == OPTIONAL) {
+                            it->second.get()->set_isSet(true);
                             break;
                         }
                     }
                     ++i;
                     // Type is T_STR
-                    if (it->second.get()->getType() == T_STR) {
-                        if (!it->second.get()->validateStrRange(allArgs[i])) {
+                    if (it->second.get()->get_type() == T_STR) {
+                        if (!it->second.get()->validate_str_range(allArgs[i])) {
                             success = false;
                         }
                         (static_cast<Parameter<std::string>*>(it->second.get<std::string>()))->setValue(allArgs[i]);
                     }
                     // Type is T_NUMERIC
-                    else if (it->second.get()->getType() == T_NUMERIC) {
+                    else if (it->second.get()->get_type() == T_NUMERIC) {
                         if (sscanf(allArgs[i].c_str(), "%llu", &var) != 1) {
                             fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
-                                    it->second.get()->getCommandLineArgument().second.c_str(),
-                                    it->second.get()->getCommandLineArgument().first.c_str());
+                                    it->second.get()->get_command_line_argument().second.c_str(),
+                                    it->second.get()->get_command_line_argument().first.c_str());
                             success = false;
                         }
-                        if (!it->second.get()->validateNumericRange(var)) {
+                        if (!it->second.get()->validate_numeric_range(var)) {
                             success = false;
                         }
                         (static_cast<Parameter<unsigned long long>*>(it->second.get<unsigned long long>()))->setValue(var);
                     }
                     // Type is T_VECTOR_STR
-                    else if (it->second.get()->getType() == T_VECTOR_STR) {
-                        if (NOSPLIT == ((ParameterVector<std::string>*)it->second.getVector<std::string>())->getParseMethod()) {
-                            if (!it->second.get()->validateStrRange(allArgs[i])) {
+                    else if (it->second.get()->get_type() == T_VECTOR_STR) {
+                        if (NOSPLIT == ((ParameterVector<std::string>*)it->second.getVector<std::string>())->get_parse_method()) {
+                            if (!it->second.get()->validate_str_range(allArgs[i])) {
                                 success = false;
                             }
                             (static_cast<ParameterVector<std::string>*>(it->second.getVector<std::string>()))->setValue(allArgs[i]);
                         }
                     }
                     // Type is T_VECTOR_NUMERIC
-                    else if (it->second.get()->getType() == T_VECTOR_NUMERIC) {
-                        if (SPLIT == ((ParameterVector<unsigned long long>*)it->second.getVector<unsigned long long>())->getParseMethod()) {
+                    else if (it->second.get()->get_type() == T_VECTOR_NUMERIC) {
+                        if (SPLIT == ((ParameterVector<unsigned long long>*)it->second.getVector<unsigned long long>())->get_parse_method()) {
                             std::vector<std::string> v = split(allArgs[i]);
                             for (unsigned int j = 0; j < v.size(); j++) {
                                 if (sscanf(v[j].c_str(), "%llu", &var) != 1) {
                                     fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
-                                            it->second.get()->getCommandLineArgument().second.c_str(),
-                                            it->second.get()->getCommandLineArgument().first.c_str());
+                                            it->second.get()->get_command_line_argument().second.c_str(),
+                                            it->second.get()->get_command_line_argument().first.c_str());
                                     success = false;
                                 }
-                                if (!it->second.get()->validateNumericRange(var)) {
+                                if (!it->second.get()->validate_numeric_range(var)) {
                                     success = false;
                                 }
                                 (static_cast<ParameterVector<unsigned long long>*>(it->second.getVector<unsigned long long>()))->setValue(var);
@@ -741,24 +741,24 @@ bool ParameterManager::parse(int argc, char *argv[])
                         }
                     }
                     // Type is T_PAIR_NUMERIC_STR
-                    else if (it->second.get()->getType() == T_PAIR_NUMERIC_STR) {
+                    else if (it->second.get()->get_type() == T_PAIR_NUMERIC_STR) {
                         std::vector<std::string> v = split(allArgs[i]);
                         if (v.size() != 2) {
                             fprintf(stderr, "Missing '%s' after '%s'\n",
-                                it->second.get()->getCommandLineArgument().second.c_str(),
-                                it->second.get()->getCommandLineArgument().first.c_str());
+                                it->second.get()->get_command_line_argument().second.c_str(),
+                                it->second.get()->get_command_line_argument().first.c_str());
                             return false;
                         } else {
                             if (sscanf(v[0].c_str(), "%llu", &var) != 1) {
                                 fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
-                                        it->second.get()->getCommandLineArgument().second.c_str(),
-                                        it->second.get()->getCommandLineArgument().first.c_str());
+                                        it->second.get()->get_command_line_argument().second.c_str(),
+                                        it->second.get()->get_command_line_argument().first.c_str());
                                 success = false;
                             }
-                            if (!it->second.get()->validateNumericRange(var)) {
+                            if (!it->second.get()->validate_numeric_range(var)) {
                                 success = false;
                             }
-                            if (!it->second.get()->validateStrRange(v[1])) {
+                            if (!it->second.get()->validate_str_range(v[1])) {
                                 success = false;
                             }
                             (static_cast<ParameterPair<unsigned long long, std::string>*>(it->second.getPair<unsigned long long, std::string>()))->setValue(var, v[1]);
@@ -816,8 +816,8 @@ std::string ParameterManager::display_help()
     output[GENERAL] +="\t-help                           - Print this usage message and exit\n";
 
     for (it = parameterList.begin(); it != parameterList.end(); it++) {
-        if (!it->second.get()->getInternal()) {
-            output[it->second.get()->getGroup()] +=
+        if (!it->second.get()->get_internal()) {
+            output[it->second.get()->get_group()] +=
                     it->second.get()->print_command_line_parameter();
         }
     }
@@ -853,7 +853,7 @@ bool ParameterManager::is_set(std::string parameterKey)
     std::map<std::string, AnyParameter>::iterator it;
     it = parameterList.find(parameterKey);
     if (it != parameterList.end()) {
-        return parameterList[parameterKey].get()->getIsSet();
+        return parameterList[parameterKey].get()->get_isSet();
     } else {
         return false;
     }
@@ -865,14 +865,14 @@ bool ParameterManager::validate_group()
     bool success = true;
     std::map<std::string, AnyParameter>::iterator it;
     for (it = parameterList.begin(); it != parameterList.end(); it++) {
-        if (it->second.get()->getIsSet()) {
-            if (it->second.get()->getGroup() == PUB && GetInstance().get<bool>("sub")) {
+        if (it->second.get()->get_isSet()) {
+            if (it->second.get()->get_group() == PUB && GetInstance().get<bool>("sub")) {
                 fprintf(stderr, "Cannot use '%s' while setting '-sub'.\n",
-                        it->second.get()->getCommandLineArgument().first.c_str());
+                        it->second.get()->get_command_line_argument().first.c_str());
                 success = false;
-            } else if (it->second.get()->getGroup() == SUB && GetInstance().get<bool>("pub")) {
+            } else if (it->second.get()->get_group() == SUB && GetInstance().get<bool>("pub")) {
                 fprintf(stderr, "Cannot use '%s' while setting '-pub'.\n",
-                        it->second.get()->getCommandLineArgument().first.c_str());
+                        it->second.get()->get_command_line_argument().first.c_str());
                 success = false;
             }
         }

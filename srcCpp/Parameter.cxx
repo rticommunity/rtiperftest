@@ -31,7 +31,7 @@ ParameterBase::~ParameterBase()
 }
 
 // Validate range
-bool ParameterBase::validateNumericRange(unsigned long long var)
+bool ParameterBase::validate_numeric_range(unsigned long long var)
 {
     if (rangeEnd < var || rangeStart > var) {
         fprintf(stderr, "In the argument '%s', '%s' should be in the range [%llu, %llu]\n",
@@ -46,7 +46,7 @@ bool ParameterBase::validateNumericRange(unsigned long long var)
 }
 
 // Validate str Valuesi if not empty
-bool ParameterBase::validateStrRange(std::string var)
+bool ParameterBase::validate_str_range(std::string var)
 {
     if (!validStrValues.empty()) {
         bool validStr = false;
@@ -67,99 +67,99 @@ bool ParameterBase::validateStrRange(std::string var)
 }
 
 // Set members
-void ParameterBase::setCommandLineArgument(std::pair<std::string, std::string> var)
+void ParameterBase::set_command_line_argument(std::pair<std::string, std::string> var)
 {
     commandLineArgument = var;
 }
 
-void ParameterBase::setDescription(std::string var)
+void ParameterBase::set_description(std::string var)
 {
     description = var;
 }
 
-void ParameterBase::setIsSet(bool var)
+void ParameterBase::set_isSet(bool var)
 {
     isSet = var;
 }
 
-void ParameterBase::setType(TYPE var)
+void ParameterBase::set_type(TYPE var)
 {
     type = var;
 }
 
-void ParameterBase::setExtraArgument(EXTRAARGUMENT var)
+void ParameterBase::set_extra_argument(EXTRAARGUMENT var)
 {
     extraArgument = var;
 }
 
-void ParameterBase::setRangeStart(unsigned long long var)
+void ParameterBase::set_range_start(unsigned long long var)
 {
     rangeStart = var;
 }
 
-void ParameterBase::setRangeEnd(unsigned long long var)
+void ParameterBase::set_range_end(unsigned long long var)
 {
     rangeEnd = var;
 }
 
-void ParameterBase::setRange(unsigned long long rangeStart, unsigned long long rangeEnd)
+void ParameterBase::set_range(unsigned long long rangeStart, unsigned long long rangeEnd)
 {
     this->rangeStart = rangeStart;
     this->rangeEnd = rangeEnd;
 }
 
-void ParameterBase::addValidStrValue(std::string validStrValue)
+void ParameterBase::add_valid_str_value(std::string validStrValue)
 {
     this->validStrValues.push_back(validStrValue);
 }
 
-void ParameterBase::setInternal(bool var)
+void ParameterBase::set_internal(bool var)
 {
     internal = var;
 }
 
-void ParameterBase::setGroup(GROUP var)
+void ParameterBase::set_group(GROUP var)
 {
     group = var;
 }
 
 // Get members
-std::pair <std::string, std::string> ParameterBase::getCommandLineArgument()
+std::pair <std::string, std::string> ParameterBase::get_command_line_argument()
 {
     return commandLineArgument;
 }
 
-std::string ParameterBase::getDescription()
+std::string ParameterBase::get_description()
 {
     return description;
 }
 
-bool ParameterBase::getIsSet()
+bool ParameterBase::get_isSet()
 {
     return isSet;
 }
 
-TYPE ParameterBase::getType()
+TYPE ParameterBase::get_type()
 {
     return type;
 }
 
-EXTRAARGUMENT ParameterBase::getExtraArgument()
+EXTRAARGUMENT ParameterBase::get_extra_argument()
 {
     return extraArgument;
 }
 
-bool ParameterBase::getInternal()
+bool ParameterBase::get_internal()
 {
     return internal;
 }
 
-GROUP ParameterBase::getGroup()
+GROUP ParameterBase::get_group()
 {
     return group;
 }
 
-PARSEMETHOD ParameterBase::getParseMethod()
+PARSEMETHOD ParameterBase::get_parse_method()
 {
     return NOSPLIT;
 }
@@ -168,7 +168,7 @@ PARSEMETHOD ParameterBase::getParseMethod()
 std::string ParameterBase::print_command_line_parameter()
 {
     const std::string spaces (42, ' ');
-    std::string description = getDescription();
+    std::string description = get_description();
     std::size_t foundPosition = description.find("\n");
     while (foundPosition != std::string::npos) {
         description.insert(foundPosition + 1, spaces);
@@ -179,9 +179,9 @@ std::string ParameterBase::print_command_line_parameter()
     oss.width(33);
     oss << std::left
         << std::string("\t")
-        + getCommandLineArgument().first
+        + get_command_line_argument().first
         + std::string(" ")
-        + getCommandLineArgument().second;
+        + get_command_line_argument().second;
     oss << "- "
         << description
         << "\n";

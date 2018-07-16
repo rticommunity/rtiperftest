@@ -68,36 +68,36 @@ class ParameterBase  {
         virtual ~ParameterBase();
 
         // Validate range
-        bool validateNumericRange(unsigned long long var);
+        bool validate_numeric_range(unsigned long long var);
 
         // Validate str Valuesi if not empty
-        bool validateStrRange(std::string var);
+        bool validate_str_range(std::string var);
 
         std::string print_command_line_parameter();
 
         // Set members
-        virtual void setCommandLineArgument(std::pair <std::string, std::string> var);
-        virtual void setDescription(std::string var);
-        virtual void setIsSet(bool var);
-        virtual void setType(TYPE var);
-        virtual void setExtraArgument(EXTRAARGUMENT var);
-        virtual void setInternal(bool var);
-        virtual void setGroup(GROUP var);
-        virtual void setRangeStart(unsigned long long var);
-        virtual void setRangeEnd(unsigned long long var);
-        virtual void setRange(unsigned long long rangeStart, unsigned long long rangeEnd);
-        virtual void addValidStrValue(std::string validStrValue);
+        virtual void set_command_line_argument(std::pair <std::string, std::string> var);
+        virtual void set_description(std::string var);
+        virtual void set_isSet(bool var);
+        virtual void set_type(TYPE var);
+        virtual void set_extra_argument(EXTRAARGUMENT var);
+        virtual void set_internal(bool var);
+        virtual void set_group(GROUP var);
+        virtual void set_range_start(unsigned long long var);
+        virtual void set_range_end(unsigned long long var);
+        virtual void set_range(unsigned long long rangeStart, unsigned long long rangeEnd);
+        virtual void add_valid_str_value(std::string validStrValue);
         virtual void setParseMethod(PARSEMETHOD var) {}
 
         // Get members
-        virtual std::pair <std::string, std::string> getCommandLineArgument();
-        virtual std::string getDescription();
-        virtual bool getIsSet();
-        virtual TYPE getType();
-        virtual EXTRAARGUMENT getExtraArgument();
-        virtual bool getInternal();
-        virtual GROUP getGroup();
-        virtual PARSEMETHOD getParseMethod();
+        virtual std::pair <std::string, std::string> get_command_line_argument();
+        virtual std::string get_description();
+        virtual bool get_isSet();
+        virtual TYPE get_type();
+        virtual EXTRAARGUMENT get_extra_argument();
+        virtual bool get_internal();
+        virtual GROUP get_group();
+        virtual PARSEMETHOD get_parse_method();
 };
 
 template <typename T>
@@ -129,7 +129,7 @@ class Parameter : public ParameterBase {
         void setValue(T var)
         {
             value = var;
-            setIsSet(true);
+            set_isSet(true);
         }
 };
 
@@ -170,12 +170,12 @@ class ParameterVector : public ParameterBase {
 
         void setValue(T var)
         {
-            if (!getIsSet()) {
+            if (!get_isSet()) {
                 // In the case of is not set, remove default values.
                 value.clear();
             }
             value.push_back(var);
-            setIsSet(true);
+            set_isSet(true);
         }
 
         void setParseMethod(PARSEMETHOD var)
@@ -183,7 +183,7 @@ class ParameterVector : public ParameterBase {
             parseMethod = var;
         }
 
-        PARSEMETHOD getParseMethod()
+        PARSEMETHOD get_parse_method()
         {
             return parseMethod;
         }
@@ -220,7 +220,7 @@ class ParameterPair : public ParameterBase {
         {
 
             value = std::make_pair(key, val);
-            setIsSet(true);
+            set_isSet(true);
         }
 };
 
