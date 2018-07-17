@@ -905,43 +905,49 @@ class RTIPublisher : public IMessagingWriter
     bool _isReliable;
 
  public:
-    RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
-    {
-        _writer = T::DataWriter::narrow(writer);
-        if (_writer == NULL) {
-            fprintf(stderr, "DataWriter::narrow(writer) error.\n");
-            /*
-             * Nothing was created at this point, shutdown() is called for
-             * maintain consistency.
-             */
-            Shutdown();
-            throw std::runtime_error(
-                    "Fail to narrow the given DDSDataWriter pointer to "
-                    "T::DataWriter pointer\n");
-        }
-        data.bin_data.maximum(0);
-        _num_instances = num_instances;
-        _instance_counter = 0;
-        _instance_handles =
-                (DDS_InstanceHandle_t *) malloc(sizeof(DDS_InstanceHandle_t)*(_num_instances + 1)); // One extra for MAX_CFT_VALUE
-        _pongSemaphore = pongSemaphore;
-        _instancesToBeWritten = instancesToBeWritten;
+     RTIPublisher(
+             DDSDataWriter *writer,
+             unsigned long num_instances,
+             RTIOsapiSemaphore *pongSemaphore,
+             int instancesToBeWritten)
+             : _writer(T::DataWriter::narrow(writer)),
+               _num_instances(num_instances),
+               _instance_counter(0),
+               _instance_handles(NULL),
+               _pongSemaphore(pongSemaphore),
+               _instancesToBeWritten(instancesToBeWritten)
+     {
+         if (_writer == NULL) {
+             fprintf(stderr, "DataWriter::narrow(writer) error.\n");
+             /*
+              * Nothing was created at this point, shutdown() is called for
+              * maintain consistency.
+              */
+             Shutdown();
+             throw std::runtime_error(
+                     "Fail to narrow the given DDSDataWriter pointer to "
+                     "T::DataWriter pointer\n");
+         }
+         data.bin_data.maximum(0);
+         _instance_handles = (DDS_InstanceHandle_t *) malloc(
+                 sizeof(DDS_InstanceHandle_t)
+                 * (_num_instances + 1));  // One extra for MAX_CFT_VALUE
 
-        for (unsigned long i = 0; i < _num_instances; ++i) {
-            for (int c = 0; c < KEY_SIZE; c++) {
-                data.key[c] = (unsigned char) (i >> c * 8);
-            }
-            _instance_handles[i] = _writer->register_instance(data);
-        }
-        // Register the key of MAX_CFT_VALUE
-        for (int c = 0; c < KEY_SIZE; c++) {
-            data.key[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
-        }
-        _instance_handles[_num_instances] = _writer->register_instance(data);
+         for (unsigned long i = 0; i < _num_instances; ++i) {
+             for (int c = 0; c < KEY_SIZE; c++) {
+                 data.key[c] = (unsigned char) (i >> c * 8);
+             }
+             _instance_handles[i] = _writer->register_instance(data);
+         }
+         // Register the key of MAX_CFT_VALUE
+         for (int c = 0; c < KEY_SIZE; c++) {
+             data.key[c] = (unsigned char) (MAX_CFT_VALUE >> c * 8);
+         }
+         _instance_handles[_num_instances] = _writer->register_instance(data);
 
-        DDS_DataWriterQos qos;
-        _writer->get_qos(qos);
-        _isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
+         DDS_DataWriterQos qos;
+         _writer->get_qos(qos);
+         _isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
     }
 
     ~RTIPublisher() {
@@ -955,8 +961,9 @@ class RTIPublisher : public IMessagingWriter
                 _writer->set_listener(NULL);
             }
         }
-
-        free(_instance_handles);
+        if (_instance_handles != NULL){
+            free(_instance_handles);
+        }
     }
 
     void Flush()
@@ -1097,11 +1104,16 @@ public:
             unsigned long num_instances,
             RTIOsapiSemaphore *pongSemaphore,
             DDS_TypeCode *typeCode,
-            int instancesToBeWritten) :
-            data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT)
-
+            int instancesToBeWritten)
+            : _writer(DDSDynamicDataWriter::narrow(writer)),
+              data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT),
+              _num_instances(num_instances),
+              _instance_counter(0),
+              _instance_handles(NULL),
+              _pongSemaphore(pongSemaphore),
+              _instancesToBeWritten(instancesToBeWritten),
+              _last_message_size(0)
     {
-        _writer = DDSDynamicDataWriter::narrow(writer);
         if (_writer == NULL) {
             fprintf(stderr, "DDSDynamicDataWriter::narrow(writer) error.\n");
             /*
@@ -1117,16 +1129,11 @@ public:
         DDS_Octet key_octets[KEY_SIZE];
         DDS_ReturnCode_t retcode;
 
-        _last_message_size = 0;
-        _num_instances = num_instances;
-        _instance_counter = 0;
-        _instancesToBeWritten = instancesToBeWritten;
         _instance_handles = (DDS_InstanceHandle_t *) malloc(
                 sizeof(DDS_InstanceHandle_t) * (num_instances + 1));
         if (_instance_handles == NULL) {
             fprintf(stderr, "_instance_handles malloc failed.\n");
         }
-        _pongSemaphore = pongSemaphore;
 
         for (unsigned long i = 0; i < _num_instances; ++i) {
             for (int c = 0; c < KEY_SIZE; c++) {
@@ -1568,9 +1575,11 @@ class RTISubscriber : public IMessagingReader
 
   public:
 
-    RTISubscriber(DDSDataReader *reader): _message()
+    RTISubscriber(DDSDataReader *reader)
+        : _reader(T::DataReader::narrow(reader)),
+          _message()
+
     {
-        _reader = T::DataReader::narrow(reader);
         if (_reader == NULL) {
             fprintf(stderr, "T::DataReader::narrow(reader) error.\n");
             /*
@@ -1727,9 +1736,10 @@ class RTIDynamicDataSubscriber : public IMessagingReader
 
   public:
 
-    RTIDynamicDataSubscriber(DDSDataReader *reader): _message()
+    RTIDynamicDataSubscriber(DDSDataReader *reader)
+            : _reader(DDSDynamicDataReader::narrow(reader)),
+              _message()
     {
-        _reader = DDSDynamicDataReader::narrow(reader);
         if (_reader == NULL) {
             fprintf(stderr, "DDSDynamicDataReader::narrow(reader) error.\n");
             /*
