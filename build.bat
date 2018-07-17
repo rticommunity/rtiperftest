@@ -8,9 +8,9 @@ set "classic_cpp_folder=%script_location%srcCpp"
 set "modern_cpp_folder=%script_location%srcCpp03"
 set "cs_folder=%script_location%srcCs"
 set "java_folder=%script_location%srcJava"
-set "java_scripts_folder=%script_location%resource\java_scripts"
+set "java_scripts_folder=%script_location%resource/scripts/java_execution_scripts"
 set "bin_folder=%script_location%bin"
-set "cStringifyFile_script=%script_location%resource\script\cStringifyFile.pl"
+set "cStringifyFile_script=%script_location%resource\scripts\cStringifyFile.pl"
 set "qos_file=%script_location%perftest_qos_profiles.xml"
 
 @REM # Default values:
@@ -559,9 +559,6 @@ GOTO:EOF
 	echo.    --cpp03-build          Only C++ New PSM code generation and
 	echo.                           compilation.
 	echo.    --cs-build             Only C Sharp code generation and compilation.
-	echo.    --make  path           Path to the GNU make executable. If this
-	echo.                           parameter is not present, the GNU make variable
-	echo.                           should be available from your $PATH variable.
 	echo.    --perl path            Path to PERL executable. If this parameter is
 	echo.                           not present, the path to PERL should be
 	echo.                           available from your \$PATH variable.
