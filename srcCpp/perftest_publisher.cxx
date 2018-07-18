@@ -146,14 +146,20 @@ bool perftest_cpp::set_main_thread_priority()
     int priority = perftest_cpp::threadPriorities.main;
 
 #ifdef RTI_WIN32
-    DWORD dwError, dwThreadPri;
+    unsigned long error;
+
+    if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS)){
+        error = GetLastError();
+            printf("Fail to set main thread Class to real time, ERROR: %d\n", error);
+        return false;
+    }
 
     if (!SetThreadPriority(GetCurrentThread(), priority)) {
-        dwError = GetLastError();
-        if (priority == dwError)
-            printf("The thread is already running with priority %d\n", dwError);
+        error = GetLastError();
+        if (priority == error)
+            printf("The thread is already running with priority ERROR: %d\n", error);
         else {
-            printf("Fail to set main thread priority, %d\n", dwError);
+            printf("Fail to set main thread priority, ERROR: %d\n", error);
         }
         return false;
     }
