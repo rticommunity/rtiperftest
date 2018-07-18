@@ -35,6 +35,7 @@ bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the sca
 const int timeout_wait_for_ack_sec = 0;
 const unsigned int timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {2, 3, 2, 0};
+Perftest_Thread_Priorities perftest_cpp::threadPriorities;
 
 /*
  * PERFTEST-108
@@ -95,6 +96,10 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
+    if (perftest_cpp::threadPriorities.isSet && !set_main_thread_priority()) {
+        return -1;
+    }
+
     if (_useUnbounded == 0) { //unbounded is not set
         if (_isKeyed) {
             _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
@@ -121,6 +126,54 @@ int perftest_cpp::Run(int argc, char *argv[])
     } else {
         return Subscriber();
     }
+}
+
+struct RTIOsapiThreadChild {
+#ifndef RTI_VXWORKS
+    /* 13 Dec. 2012 sf: Excluding this because previous
+       VxWorks code path did not use ThreadChild or
+       semaphore to delay onSpawned method from running
+     */
+    struct RTIOsapiSemaphore *suspendSem;
+#endif
+    int options, priority;
+    RTIOsapiThreadOnSpawnedMethod onSpawned;
+    void *threadParam;
+};
+
+bool perftest_cpp::set_main_thread_priority()
+{
+    int priority = perftest_cpp::threadPriorities.main;
+
+#ifdef RTI_WIN32
+    DWORD dwError, dwThreadPri;
+
+    if (!SetThreadPriority(GetCurrentThread(), priority)) {
+        dwError = GetLastError();
+        if (priority == dwError)
+            printf("The thread is already running with priority %d\n", dwError);
+        else {
+            printf("Fail to set main thread priority, %d\n", dwError);
+        }
+        return false;
+    }
+#else
+    int error = 0;
+    struct sched_param sp;
+
+    sp.sched_priority = priority;
+
+    error = pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
+    if (error != 0) {
+        fprintf(stderr,
+                "Fail to set main thread priority, %s\n",
+                strerror(error));
+        return false;
+    }
+
+#endif
+
+    return true;
 }
 
 const DDS_ProductVersion_t perftest_cpp::GetDDSVersion()
@@ -762,6 +815,21 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             }
 
             _MessagingArgc++;
+        } else if (IS_OPTION(argv[i], "-threadPriorities")) {
+            if ((i == (argc - 1)) || *argv[++i] == '-') {
+                fprintf(stderr,
+                        "Missing <A:B:C> priorities after -threadPriorities\n");
+                return false;
+            }
+            if (sscanf(argv[i],
+                    "%d:%d:%d",
+                    &perftest_cpp::threadPriorities.main,
+                    &perftest_cpp::threadPriorities.receive,
+                    &perftest_cpp::threadPriorities.dbAndEvent) != 3) {
+                fprintf(stderr, "Wrong sintax after -threadPriorities\n");
+                return false;
+            }
+            perftest_cpp::threadPriorities.isSet = true;
         } else
         {
             _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);

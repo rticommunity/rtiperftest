@@ -48,9 +48,22 @@ struct Perftest_ProductVersion_t
   char revision;
 };
 
-class perftest_cpp
-{
-  public:
+struct Perftest_Thread_Priorities {
+    int main;
+    int receive;
+    int dbAndEvent;
+    bool isSet;
+
+    Perftest_Thread_Priorities(){
+        main = 0;
+        receive = 0;
+        dbAndEvent = 0;
+        isSet = false;
+    }
+};
+
+class perftest_cpp {
+public:
     perftest_cpp();
     ~perftest_cpp();
 
@@ -62,6 +75,7 @@ class perftest_cpp
   private:
     int Publisher();
     int Subscriber();
+    bool set_main_thread_priority();
 
   public:
     static void MilliSleep(unsigned int millisec) {
@@ -140,6 +154,8 @@ class perftest_cpp
   #ifdef RTI_WIN32
     static LARGE_INTEGER _ClockFrequency;
   #endif
+
+    static Perftest_Thread_Priorities threadPriorities;
 
     // Number of bytes sent in messages besides user data
   #ifdef RTI_CUSTOM_TYPE

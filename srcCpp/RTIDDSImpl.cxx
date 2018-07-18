@@ -2567,6 +2567,22 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         return false;
     };
 
+    // set thread priorities.
+    if (perftest_cpp::threadPriorities.isSet) {
+        DDS_ThreadSettingsKindMask mask
+                = DDS_THREAD_SETTINGS_REALTIME_PRIORITY | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
+        // Set real time schedule
+        qos.receiver_pool.buffer_size = 65536;
+        qos.receiver_pool.thread.mask = mask;
+        qos.event.thread.mask = mask;
+        qos.database.thread.mask = mask;
+
+        // Set priority
+        qos.receiver_pool.thread.priority = perftest_cpp::threadPriorities.receive;
+        qos.event.thread.priority = perftest_cpp::threadPriorities.dbAndEvent;
+        qos.database.thread.priority = perftest_cpp::threadPriorities.dbAndEvent;
+    }
+
     if (_AutoThrottle) {
         DDSPropertyQosPolicyHelper::add_property(qos.property,
                 "dds.domain_participant.auto_throttle.enable", "true", false);
