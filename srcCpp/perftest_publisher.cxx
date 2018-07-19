@@ -356,7 +356,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t-useReadThread          - Use separate thread instead of callback to \n"
         "\t                          read data\n"
         "\t-threadPriorities <A:B:C> - Set the priorities for the Main thread(A), \n"
-        "\t                          Receive threads created by the participant\n"
+        "\t                          Receive threads(B) created by the participant\n"
         "\t                          and Receive listener threads(B) when -UseReadThread is provide\n"
         "\t                          and Event and DataBase(C) threads\n"
         "\t                          created by each DomainParticipant\n"
@@ -818,12 +818,12 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
 
             _MessagingArgc++;
         } else if (IS_OPTION(argv[i], "-threadPriorities")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
+            if ((i == (argc - 1))) {
                 fprintf(stderr,
                         "Missing <A:B:C> priorities after -threadPriorities\n");
                 return false;
             }
-            if (sscanf(argv[i],
+            if (sscanf(argv[++i],
                     "%d:%d:%d",
                     &perftest_cpp::threadPriorities.main,
                     &perftest_cpp::threadPriorities.receive,
