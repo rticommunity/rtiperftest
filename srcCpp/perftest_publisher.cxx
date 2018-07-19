@@ -128,19 +128,6 @@ int perftest_cpp::Run(int argc, char *argv[])
     }
 }
 
-struct RTIOsapiThreadChild {
-#ifndef RTI_VXWORKS
-    /* 13 Dec. 2012 sf: Excluding this because previous
-       VxWorks code path did not use ThreadChild or
-       semaphore to delay onSpawned method from running
-     */
-    struct RTIOsapiSemaphore *suspendSem;
-#endif
-    int options, priority;
-    RTIOsapiThreadOnSpawnedMethod onSpawned;
-    void *threadParam;
-};
-
 bool perftest_cpp::set_main_thread_priority()
 {
     int priority = perftest_cpp::threadPriorities.main;
@@ -174,6 +161,10 @@ bool perftest_cpp::set_main_thread_priority()
         fprintf(stderr,
                 "Fail to set main thread priority, %s\n",
                 strerror(error));
+        if (error == EPERM) {
+            fprintf(stderr,
+                    "\t - Try to run it as superUser\n");
+        }
         return false;
     }
 
