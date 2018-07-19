@@ -67,6 +67,26 @@ Build HTML and PDF documentation (#94)
 RTI Perftest build script for linux now offers the option to generate the HTML
 and PDF documentation from the rst files in srcDoc.
 
+New parameter that allow set thread priorities (#94)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A new parameter, `-threadPriorities`, has been added to *RTI Perftest* to allow
+the users set the priorities on four differents threads.
+
+The parameter accepts three priorities numeric values as follows:
+
+::
+
+-threadPriorities A:B:C
+
+Where:
+
+- *A* is for the main Thread that manage all the communication.
+- *B* is for all the receive threads creates by the participant to process the
+  data packets received and for the listener created when -useReadThread is provide.
+- *C* is for the event thread and dataBase thread created for each DomainParticipant.
+
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 

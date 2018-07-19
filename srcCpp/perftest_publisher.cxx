@@ -355,6 +355,11 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                          test\n"
         "\t-useReadThread          - Use separate thread instead of callback to \n"
         "\t                          read data\n"
+        "\t-threadPriorities <A:B:C> - Set the priorities for the Main thread(A), \n"
+        "\t                          Receive threads created by the participant\n"
+        "\t                          and Receive listener threads(B) when -UseReadThread is provide\n"
+        "\t                          and Event and DataBase(C) threads\n"
+        "\t                          created by each DomainParticipant\n"
         "\t-latencyTest            - Run a latency test consisting of a ping-pong \n"
         "\t                          synchronous communication\n"
         "\t-verbosity <level>      - Run with different levels of verbosity:\n"
@@ -1338,9 +1343,18 @@ int perftest_cpp::Subscriber()
         }
         reader_listener = new ThroughputListener(writer, reader, _useCft, _NumPublishers);
 
+        int threadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
+        int threadPriority = RTI_OSAPI_THREAD_PRIORITY_DEFAULT;
+
+        if (perftest_cpp::threadPriorities.isSet) {
+            threadOptions = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
+                    | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
+            threadPriority = perftest_cpp::threadPriorities.receive;
+        }
+
         RTIOsapiThread_new("ReceiverThread",
-                            RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-                            RTI_OSAPI_THREAD_OPTION_DEFAULT,
+                            threadPriority,
+                            threadOptions,
                             RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
                             NULL,
                             ThroughputReadThread,
@@ -1910,9 +1924,18 @@ int perftest_cpp::Publisher()
                     reader,
                     _LatencyTest ? writer : NULL);
 
+            int threadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
+            int threadPriority = RTI_OSAPI_THREAD_PRIORITY_DEFAULT;
+
+            if (perftest_cpp::threadPriorities.isSet) {
+                threadOptions = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
+                        | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
+                threadPriority = perftest_cpp::threadPriorities.receive;
+            }
+
             RTIOsapiThread_new("ReceiverThread",
-                                RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-                                RTI_OSAPI_THREAD_OPTION_DEFAULT,
+                                threadPriority,
+                                threadOptions,
                                 RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
                                 NULL,
                                 LatencyReadThread,
