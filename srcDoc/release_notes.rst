@@ -67,7 +67,7 @@ Build HTML and PDF documentation (#94)
 RTI Perftest build script for linux now offers the option to generate the HTML
 and PDF documentation from the rst files in srcDoc.
 
-New parameter that allow set thread priorities (#94)
+New parameter that allow set thread priorities (#65)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A new parameter, `-threadPriorities`, has been added to *RTI Perftest* to allow
