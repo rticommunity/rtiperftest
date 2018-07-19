@@ -62,7 +62,8 @@ struct Perftest_Thread_Priorities {
     }
 };
 
-class perftest_cpp {
+class perftest_cpp
+{
 public:
     perftest_cpp();
     ~perftest_cpp();
