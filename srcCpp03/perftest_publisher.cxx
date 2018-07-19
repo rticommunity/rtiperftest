@@ -966,6 +966,18 @@ void perftest_cpp::PrintConfiguration()
         stringStream << "Listeners\n";
     }
 
+    // Thread priority
+    if (perftest_cpp::threadPriorities.isSet) {
+        stringStream << "\tUsing thread priorities:" << endl;
+        stringStream << "\t\tMain thread Priority: "
+                << perftest_cpp::threadPriorities.main << endl;
+        stringStream << "\t\tReceive thread Priority: "
+                << perftest_cpp::threadPriorities.receive << endl;
+        
+        stringStream << "\tUsing thread priorities:\n";
+
+    }
+
     stringStream << _MessagingImpl->PrintConfiguration();
     std::cerr << stringStream.str() << std::endl;
 

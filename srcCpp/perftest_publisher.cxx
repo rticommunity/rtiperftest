@@ -1039,6 +1039,17 @@ void perftest_cpp::PrintConfiguration()
         stringStream << "Listeners\n";
     }
 
+    // Thread priority
+    if (perftest_cpp::threadPriorities.isSet) {
+        stringStream << "\tUsing thread priorities:" << std::endl;
+        stringStream << "\t\tMain thread Priority: "
+                << perftest_cpp::threadPriorities.main << std::endl;
+        stringStream << "\t\tReceive thread Priority: "
+                << perftest_cpp::threadPriorities.receive << std::endl;
+        stringStream << "\t\tDataBase and Event threads Priority: "
+                << perftest_cpp::threadPriorities.dbAndEvent << std::endl;
+    }
+
     stringStream << _MessagingImpl->PrintConfiguration();
     fprintf(stderr, "%s\n", stringStream.str().c_str());
 
