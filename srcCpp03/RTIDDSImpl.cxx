@@ -1302,7 +1302,7 @@ public:
     void Shutdown() {
         _reader.listener(NULL, dds::core::status::StatusMask::none());
         if (_readerListener != NULL) {
-            delete(_readerListener);
+            delete _readerListener;
         }
     }
 

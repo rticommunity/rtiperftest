@@ -187,31 +187,31 @@ perftest_cpp::~perftest_cpp()
     }
 
     if (_throughputReaderListener != NULL) {
-        delete (_throughputReaderListener);
+        delete _throughputReaderListener;
     }
 
     if (_latencyReaderListener != NULL) {
-        delete (_latencyReaderListener);
+        delete _latencyReaderListener;
     }
 
     if (_announcementReaderListener != NULL) {
-        delete (_announcementReaderListener);
+        delete _announcementReaderListener;
     }
 
     if (_reader != NULL) {
-        delete (_reader);
+        delete _reader;
     }
 
     if (_writer != NULL) {
-        delete (_writer);
+        delete _writer;
     }
 
     if (_announcementReader != NULL) {
-        delete (_announcementReader);
+        delete _announcementReader;
     }
 
     if (_announcementWriter != NULL) {
-        delete (_announcementWriter);
+        delete _announcementWriter;
     }
 
     if (_MessagingImpl != NULL) {

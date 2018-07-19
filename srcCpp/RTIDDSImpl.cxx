@@ -111,7 +111,7 @@ void RTIDDSImpl<T>::Shutdown()
 
         DDSDomainParticipantListener* participant_listener = _participant->get_listener();
         if (participant_listener != NULL) {
-            delete(participant_listener);
+            delete participant_listener;
         }
 
         _participant->delete_contained_entities();
@@ -957,7 +957,7 @@ class RTIPublisher : public IMessagingWriter
     void Shutdown() {
         if (_writer != NULL) {
             if (_writer->get_listener() != NULL) {
-                delete(_writer->get_listener());
+                delete _writer->get_listener();
                 _writer->set_listener(NULL);
             }
         }
@@ -1176,7 +1176,7 @@ public:
     void Shutdown() {
         if (_writer != NULL) {
             if (_writer->get_listener() != NULL) {
-                delete(_writer->get_listener());
+                delete _writer->get_listener();
                 _writer->set_listener(NULL);
             }
         }
@@ -1619,7 +1619,7 @@ class RTISubscriber : public IMessagingReader
     {
         if (_reader != NULL) {
             if (_reader->get_listener() != NULL) {
-                delete(_reader->get_listener());
+                delete _reader->get_listener();
                 _reader->set_listener(NULL);
             }
             // loan may be outstanding during shutdown
@@ -1780,7 +1780,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
     {
         if (_reader != NULL) {
             if (_reader->get_listener() != NULL) {
-                delete (_reader->get_listener());
+                delete _reader->get_listener();
                 _reader->set_listener(NULL);
             }
             // loan may be outstanding during shutdown

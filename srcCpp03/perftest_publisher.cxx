@@ -1374,20 +1374,20 @@ int perftest_cpp::RunSubscriber()
     perftest_cpp::MilliSleep(1000);
 
     if (announcement_writer != NULL) {
-        delete(announcement_writer);
+        delete announcement_writer;
     }
 
     if (writer != NULL) {
-        delete(writer);
+        delete writer;
     }
 
     if (reader != NULL) {
         reader->Shutdown();
-        delete(reader);
+        delete reader;
     }
 
     if (reader_listener != NULL) {
-        delete(reader_listener);
+        delete reader_listener;
     }
 
     std::cerr << "[Info] Finishing test..." <<std::endl;
@@ -1517,7 +1517,7 @@ class LatencyListener : public IMessagingCB
 
         if (_reader != NULL) {
             _reader->Shutdown();
-            delete(_reader);
+            delete _reader;
         }
     }
 
@@ -2093,25 +2093,25 @@ int perftest_cpp::RunPublisher()
     }
 
     if (writer != NULL) {
-        delete(writer);
+        delete writer;
     }
 
     if (announcement_reader_listener != NULL) {
-        delete(announcement_reader_listener);
+        delete announcement_reader_listener;
     }
 
     if (reader_listener != NULL) {
-        delete(reader_listener);
+        delete reader_listener;
     }
 
     if (reader != NULL) {
         reader->Shutdown();
-        delete(reader);
+        delete reader;
     }
 
     if (announcement_reader != NULL) {
         announcement_reader->Shutdown();
-        delete(announcement_reader);
+        delete announcement_reader;
     }
 
     if (_testCompleted) {
