@@ -23,8 +23,6 @@ ParameterBase::~ParameterBase()
     isSet = false;
     type = T_NULL;
     extraArgument = NO;
-    commandLineArgument.first.clear();
-    commandLineArgument.second.clear();
     rangeStart = 0;
     rangeEnd = 0;
     validStrValues.clear();
@@ -35,8 +33,8 @@ bool ParameterBase::validate_numeric_range(unsigned long long var)
 {
     if (rangeEnd < var || rangeStart > var) {
         fprintf(stderr, "In the argument '%s', '%s' should be in the range [%llu, %llu]\n",
-                commandLineArgument.first.c_str(),
-                commandLineArgument.second.c_str(),
+                commandLineArgument.get_option().c_str(),
+                commandLineArgument.get_arg().c_str(),
                 rangeStart,
                 rangeEnd);
         return false;
@@ -57,8 +55,8 @@ bool ParameterBase::validate_str_range(std::string var)
         }
         if (!validStr) {
             fprintf(stderr, "In the argument '%s', incorrect '%s':  %s\n",
-                commandLineArgument.first.c_str(),
-                commandLineArgument.second.c_str(),
+                commandLineArgument.get_option().c_str(),
+                commandLineArgument.get_arg().c_str(),
                 var.c_str());
             return false;
         }
@@ -67,9 +65,9 @@ bool ParameterBase::validate_str_range(std::string var)
 }
 
 // Set members
-void ParameterBase::set_command_line_argument(std::pair<std::string, std::string> var)
+void ParameterBase::set_command_line_argument(std::string option, std::string arg)
 {
-    commandLineArgument = var;
+    commandLineArgument.set(option, arg);
 }
 
 void ParameterBase::set_description(std::string var)
@@ -124,9 +122,19 @@ void ParameterBase::set_group(GROUP var)
 }
 
 // Get members
-std::pair <std::string, std::string> ParameterBase::get_command_line_argument()
+CommandLineArgument ParameterBase::get_command_line_argument()
 {
     return commandLineArgument;
+}
+
+std::string ParameterBase::get_arg()
+{
+    return commandLineArgument.get_arg();
+}
+
+std::string ParameterBase::get_option()
+{
+    return commandLineArgument.get_option();
 }
 
 std::string ParameterBase::get_description()
@@ -179,9 +187,9 @@ std::string ParameterBase::print_command_line_parameter()
     oss.width(33);
     oss << std::left
         << std::string("\t")
-        + get_command_line_argument().first
+        + get_option()
         + std::string(" ")
-        + get_command_line_argument().second;
+        + get_arg();
     oss << "- "
         << description
         << "\n";

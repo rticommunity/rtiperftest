@@ -47,9 +47,50 @@ enum GROUP {
     RAWTRANSPORT
 };
 
+class CommandLineArgument {
+    public:
+        std::string _option;
+        std::string _arg;
+
+    public:
+        CommandLineArgument()
+        {
+        }
+
+        CommandLineArgument(std::string option, std::string arg)
+        {
+            _option.assign(option);
+            _arg.assign(arg);
+        }
+
+        ~CommandLineArgument()
+        {
+            _option.clear();
+            _arg.clear();
+        }
+
+        void set(std::string option, std::string arg)
+        {
+            _option.assign(option);
+            _arg.assign(arg);
+        }
+
+        std::string get_option()
+        {
+            return _option;
+        }
+
+        std::string get_arg()
+        {
+            return _arg;
+        }
+
+
+};
+
 class ParameterBase  {
     private:
-        std::pair <std::string, std::string> commandLineArgument;
+        CommandLineArgument commandLineArgument;
         std::string description;
         bool isSet;
         TYPE type;
@@ -77,7 +118,7 @@ class ParameterBase  {
         std::string print_command_line_parameter();
 
         // Set members
-        virtual void set_command_line_argument(std::pair <std::string, std::string> var);
+        virtual void set_command_line_argument(std::string option, std::string arg);
         virtual void set_description(std::string var);
         virtual void set_isSet(bool var);
         virtual void set_type(TYPE var);
@@ -91,7 +132,9 @@ class ParameterBase  {
         virtual void set_parse_method(PARSEMETHOD var) {}
 
         // Get members
-        virtual std::pair <std::string, std::string> get_command_line_argument();
+        virtual std::string get_arg();
+        virtual std::string get_option();
+        virtual CommandLineArgument get_command_line_argument();
         virtual std::string get_description();
         virtual bool get_isSet();
         virtual TYPE get_type();
