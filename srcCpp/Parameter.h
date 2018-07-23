@@ -16,6 +16,10 @@
 #include <iostream>
 #include <sstream>
 
+/*
+ * This specifies the the type of the parameter.
+ * It is used in the way to parse them.
+ */
 enum TYPE {
     T_NULL,           // Default type
     T_NUMERIC,        // Numeric type, unsigned long long
@@ -26,6 +30,7 @@ enum TYPE {
     T_PAIR_NUMERIC_STR // std::pair<unsigened long long, std::string>
 };
 
+// This specifies the way how to parser a argument for a ParameterVector.
 enum PARSEMETHOD {
     NOSPLIT,          // If the value is not splited into the vector
     SPLIT             // If the value is splited into the vector
@@ -38,6 +43,7 @@ enum EXTRAARGUMENT {
     YES              // There is not one extra argument
 };
 
+// This specifies the group of a parameter. It is used to sort the help.
 enum GROUP {
     GENERAL,
     PUB,
@@ -48,44 +54,19 @@ enum GROUP {
 };
 
 class CommandLineArgument {
-    public:
+    private:
         std::string _option;
         std::string _arg;
 
     public:
-        CommandLineArgument()
-        {
-        }
+        CommandLineArgument();
+        CommandLineArgument(std::string option, std::string arg);
+        ~CommandLineArgument();
 
-        CommandLineArgument(std::string option, std::string arg)
-        {
-            _option.assign(option);
-            _arg.assign(arg);
-        }
-
-        ~CommandLineArgument()
-        {
-            _option.clear();
-            _arg.clear();
-        }
-
-        void set(std::string option, std::string arg)
-        {
-            _option.assign(option);
-            _arg.assign(arg);
-        }
-
-        std::string get_option()
-        {
-            return _option;
-        }
-
-        std::string get_arg()
-        {
-            return _arg;
-        }
-
-
+        // Set and Get members
+        void set(std::string option, std::string arg);
+        std::string get_option();
+        std::string get_arg();
 };
 
 class ParameterBase  {
@@ -188,21 +169,25 @@ class ParameterVector : public ParameterBase {
         {
             parseMethod = NOSPLIT;
         }
+
         ParameterVector(T var)
         {
             parseMethod = NOSPLIT;
             value.clear();
             value.push_back(var);
         }
+
         ParameterVector(std::vector<T> var)
         {
             parseMethod = NOSPLIT;
             value.insert(value.begin(),var.begin(), var.end());
         }
+
         ~ParameterVector()
         {
             value.clear();
         }
+
         ParameterVector(ParameterBase& p)
         {
         }
@@ -248,13 +233,16 @@ class ParameterPair : public ParameterBase {
         ParameterPair()
         {
         }
+
         ParameterPair(K key, V val)
         {
             value = std::make_pair(key, val);
         }
+
         ~ParameterPair()
         {
         }
+
         ParameterPair(ParameterBase& p)
         {
         }

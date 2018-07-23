@@ -5,6 +5,40 @@
 
 #include "Parameter.h"
 
+/* Implementation Class CommandLineArgument*/
+CommandLineArgument::CommandLineArgument()
+{
+}
+
+CommandLineArgument::CommandLineArgument(std::string option, std::string arg)
+{
+    _option.assign(option);
+    _arg.assign(arg);
+}
+
+CommandLineArgument::~CommandLineArgument()
+{
+    _option.clear();
+    _arg.clear();
+}
+
+void CommandLineArgument::set(std::string option, std::string arg)
+{
+    _option.assign(option);
+    _arg.assign(arg);
+}
+
+std::string CommandLineArgument::get_option()
+{
+    return _option;
+}
+
+std::string CommandLineArgument::get_arg()
+{
+    return _arg;
+}
+
+/* Implementation Class ParameterBase*/
 ParameterBase::ParameterBase()
 {
     internal = false;
