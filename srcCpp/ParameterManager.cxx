@@ -6,9 +6,7 @@
 #include "ParameterManager.h"
 #include "perftest_cpp.h"
 
-ParameterManager::ParameterManager()
-{
-}
+ParameterManager::ParameterManager() {}
 
 ParameterManager &ParameterManager::GetInstance()
 {
@@ -480,7 +478,7 @@ void ParameterManager::initialize()
     multicast->set_group(TRANSPORT);
     _parameterList["multicast"] = AnyParameter(multicast);
 
-    // TODO set multicastAddrMap
+    // TODO: set multicastAddrMap
     /*
      *  multicastAddrMap[THROUGHPUT_TOPIC_NAME] = argv[i];
      *  multicastAddrMap[LATENCY_TOPIC_NAME] = argv[i];
@@ -571,7 +569,6 @@ void ParameterManager::initialize()
     transportCertAuthority->set_group(TRANSPORT);
     _parameterList["transportCertAuthority"] = AnyParameter(transportCertAuthority);
 
-    // TODO assigned a value if it is pub or sub
     Parameter<std::string> * transportCertFile = new Parameter<std::string>(TRANSPORT_CERTIFICATE_FILE_PUB);
     transportCertFile->set_command_line_argument("-transportCertFile","<file>");
     transportCertFile->set_description("Certificate file <optional>.\nDefault (Publisher): \"" + TRANSPORT_CERTIFICATE_FILE_PUB + "\"\nDefault (Subscriber): \"" + TRANSPORT_CERTIFICATE_FILE_SUB + "\"\n");
@@ -580,7 +577,6 @@ void ParameterManager::initialize()
     transportCertFile->set_group(TRANSPORT);
     _parameterList["transportCertFile"] = AnyParameter(transportCertFile);
 
-    // TODO assigned a value if it is pub or sub
     Parameter<std::string> * transportPrivateKey = new Parameter<std::string>(TRANSPORT_CERTIFICATE_FILE_PUB);
     transportPrivateKey->set_command_line_argument("-transportPrivateKey","<file>");
     transportPrivateKey->set_description("Private key file <optional>.\nDefault (Publisher): \"" + TRANSPORT_PRIVATEKEY_FILE_PUB + "\"\nDefault (Subscriber): \"" + TRANSPORT_PRIVATEKEY_FILE_SUB + "\"\n");
@@ -640,7 +636,6 @@ void ParameterManager::initialize()
     secureGovernanceFile->set_group(SECURE);
     _parameterList["secureGovernanceFile"] = AnyParameter(secureGovernanceFile);
 
-    // TODO assigned a value if it is pub or sub
     Parameter<std::string> *securePermissionsFile = new Parameter<std::string>();
     securePermissionsFile->set_command_line_argument("-securePermissionsFile","<file>");
     securePermissionsFile->set_description("Permissions file <optional>.\nDefault: \"./resource/secure/signed_PerftestPermissionsSub.xml\"");
@@ -657,7 +652,6 @@ void ParameterManager::initialize()
     secureCertAuthority->set_group(SECURE);
     _parameterList["secureCertAuthority"] = AnyParameter(secureCertAuthority);
 
-    // TODO assigned a value if it is pub or sub
     Parameter<std::string> *secureCertFile = new Parameter<std::string>();
     secureCertFile->set_command_line_argument("-secureCertFile","<file>");
     secureCertFile->set_description("Certificate file <optional>.\nDefault: \"./resource/secure/sub.pem\"");
@@ -700,14 +694,15 @@ bool ParameterManager::parse(int argc, char *argv[])
 {
     unsigned long long var;
     bool success = true;
+    ParameterBase *p = NULL;
     // Copy all arguments into a container of strings
     std::vector<std::string> allArgs(argv, argv + argc);
-
     std::map<std::string, AnyParameter>::iterator it;
+
     for (unsigned int i = 1; i < allArgs.size(); i++) {
         for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
             if (IS_OPTION(allArgs[i].c_str(), it->second.get()->get_option().c_str())) {
-                ParameterBase *p = it->second.get();
+                p = it->second.get();
                 // NumArguments == 0
                 if (p->get_extra_argument() == NO) {
                     // Type is T_BOOL
@@ -716,8 +711,8 @@ bool ParameterManager::parse(int argc, char *argv[])
                     }
                 // NumArguments is 1 or optional
                 } else { // if (p->get_extra_argument() > NO) {
-                    // Check for error in num of arguments
-                    if (i + 1 >= allArgs.size() || allArgs[i+1].find("-") == 0) {
+                    // Check for error in the number of arguments
+                    if (i + 1 >= allArgs.size() || allArgs[i + 1].find("-") == 0) {
                         if (p->get_extra_argument() == YES) {
                             fprintf(stderr, "Missing '%s' after '%s'\n",
                                 p->get_arg().c_str(),
@@ -819,7 +814,7 @@ std::string ParameterManager::display_help()
     std::map<std::string, AnyParameter>::iterator it;
     std::ostringstream oss;
     std::map<GROUP, std::string> output;
-    for (int i = GENERAL; i != RAWTRANSPORT+1; i++) {
+    for (unsigned int i = GENERAL; i != RAWTRANSPORT + 1; i++) {
         switch (static_cast<GROUP>(i)) {
             case GENERAL:
                 output[static_cast<GROUP>(i)] += get_center_header_help_line("GENERAL");
@@ -865,7 +860,7 @@ std::string ParameterManager::display_help()
     return oss.str();
 }
 
-// check -help option
+// check for the '-help' option
 bool ParameterManager::check_help(int argc, char *argv[])
 {
     std::vector<std::string> allArgs(argv, argv + argc);
@@ -886,8 +881,10 @@ ParameterManager::~ParameterManager()
 // check if a variable has been set
 bool ParameterManager::is_set(std::string parameterKey)
 {
-    if (_parameterList.find(parameterKey) != _parameterList.end()) {
-        return _parameterList[parameterKey].get()->get_isSet();
+    std::map<std::string, AnyParameter>::iterator it =
+        _parameterList.find(parameterKey);
+    if (it != _parameterList.end()) {
+        return it->second.get()->get_isSet();
     } else {
         return false;
     }

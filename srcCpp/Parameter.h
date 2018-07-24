@@ -18,12 +18,12 @@
 
 /*
  * This specifies the type of the parameter.
- * It is used in the way to parse them.
+ * It is used to determine how to parse them.
  */
 enum TYPE {
     T_NULL,           // Default type
-    T_NUMERIC,        // Numeric type, unsigned long long
-    T_STR,            // std::string tpy
+    T_NUMERIC,        // Numeric type
+    T_STR,            // std::string pype
     T_BOOL,           // bool type
     T_VECTOR_NUMERIC, // std::vector<unsigened long long>
     T_VECTOR_STR,      // std::vector<std::string>
@@ -40,10 +40,10 @@ enum PARSEMETHOD {
 enum EXTRAARGUMENT {
     NO,               // There is not extra argument
     OPTIONAL,         // It is possible to have one extra argument
-    YES              // There is not one extra argument
+    YES              // There is an extra argument
 };
 
-// This specifies the group of a parameter. It is used to sort the help.
+// This specifies the group of a parameter. It is used to sort the help message.
 enum GROUP {
     GENERAL,
     PUB,
@@ -64,9 +64,9 @@ class CommandLineArgument {
         ~CommandLineArgument();
 
         // Set and Get members
-        void set(std::string option, std::string arg);
-        std::string get_option();
-        std::string get_arg();
+        void set(const std::string option, const std::string arg);
+        const std::string get_option();
+        const std::string get_arg();
 };
 
 class ParameterBase  {
@@ -76,15 +76,15 @@ class ParameterBase  {
         bool _isSet;
         TYPE _type;
         EXTRAARGUMENT  _extraArgument;
-        bool _internal; // Does not have description
+        bool _internal; // It will not be display to the customer
         GROUP _group;
 
         /*
          * Only used for numeric Parameter
-         * The range are inlcuded.
+         * The value is include in the range.
+         * The default minimum is 0, because not negative paramter.
          */
-        unsigned long long _rangeStart;
-        unsigned long long _rangeEnd;
+        std::pair<unsigned long long, unsigned long long> _numericRange;
 
         // Only used for std::string Parameter
         std::vector<std::string> _validStrValues;
@@ -93,12 +93,12 @@ class ParameterBase  {
         ParameterBase();
         virtual ~ParameterBase();
 
-        // Validate if the var is include in the range
+        // Validate if the value is include in the range
         bool validate_numeric_range(unsigned long long var);
 
         /*
          * If validStrValues is not empty
-        *      Validate if var is include in the list of valid string
+        *      Validate if the value is include in the list of valid string
         */
         bool validate_str_range(std::string var);
 
@@ -112,9 +112,9 @@ class ParameterBase  {
         virtual void set_extra_argument(const EXTRAARGUMENT var);
         virtual void set_internal(const bool var);
         virtual void set_group(const GROUP var);
-        virtual void set_range_start(const unsigned long long var);
-        virtual void set_range_end(const unsigned long long var);
-        virtual void set_range(const unsigned long long rangeStart, unsigned long long rangeEnd);
+        virtual void set_range(
+                const unsigned long long rangeStart,
+                unsigned long long rangeEnd);
         virtual void add_valid_str_value(const std::string validStrValue);
         virtual void set_parse_method(const PARSEMETHOD var) {}
 
@@ -137,19 +137,13 @@ class Parameter : public ParameterBase {
         T _value;
 
     public:
-        Parameter()
-        {
-        }
+        Parameter() {}
 
-        Parameter(T value):
-                _value(value)
-        {}
-        ~Parameter()
-        {
-        }
-        Parameter(ParameterBase& p)
-        {
-        }
+        Parameter(T value) : _value(value) {}
+
+        ~Parameter() {}
+
+        Parameter(ParameterBase& p) {}
 
         T get_value()
         {
@@ -170,10 +164,7 @@ class ParameterVector : public ParameterBase {
         PARSEMETHOD _parseMethod;
 
     public:
-        ParameterVector()
-        {
-            _parseMethod = NOSPLIT;
-        }
+        ParameterVector() : _parseMethod(NOSPLIT)  {}
 
         ParameterVector(T value):
                 _parseMethod(NOSPLIT)
@@ -193,9 +184,7 @@ class ParameterVector : public ParameterBase {
             _value.clear();
         }
 
-        ParameterVector(ParameterBase& p)
-        {
-        }
+        ParameterVector(ParameterBase& p) {}
 
         std::vector<T> get_value()
         {
@@ -205,7 +194,7 @@ class ParameterVector : public ParameterBase {
         void set_value(T value)
         {
             if (!get_isSet()) {
-                // In the case of is not set, remove default values.
+                // In the case it is not set, remove default values
                 _value.clear();
             }
             _value.push_back(value);
@@ -232,25 +221,19 @@ class ParameterVector : public ParameterBase {
 template <typename K, typename V>
 class ParameterPair : public ParameterBase {
     private:
-        std::pair <K, V> _value;
+        std::pair<K, V> _value;
 
     public:
-        ParameterPair()
-        {
-        }
+        ParameterPair() {}
 
         ParameterPair(K key, V val)
         {
             _value = std::make_pair(key, val);
         }
 
-        ~ParameterPair()
-        {
-        }
+        ~ParameterPair() {}
 
-        ParameterPair(ParameterBase& p)
-        {
-        }
+        ParameterPair(ParameterBase& p) {}
 
         std::pair<K,V> get_value()
         {
@@ -259,7 +242,6 @@ class ParameterPair : public ParameterBase {
 
         void set_value(K key, V val)
         {
-
             _value = std::make_pair(key, val);
             set_isSet(true);
         }
@@ -267,12 +249,9 @@ class ParameterPair : public ParameterBase {
 
 class AnyParameter {
     private:
-        ParameterBase* _param;
+        ParameterBase *_param;
     public:
-        AnyParameter()
-        {
-            _param = NULL;
-        }
+        AnyParameter():  _param(NULL) {}
 
         template <typename T>
         AnyParameter(Parameter<T> *var) : _param(var) {}

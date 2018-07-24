@@ -36,8 +36,10 @@ class ParameterManager
         template <typename T>
         void set(std::string parameterKey, T var)
         {
-            if (_parameterList.find(parameterKey) != _parameterList.end()) {
-                (static_cast<Parameter<T>*>(_parameterList[parameterKey].get<T>()))->set_value(var);
+            std::map<std::string, AnyParameter>::iterator it =
+                _parameterList.find(parameterKey);
+            if (it != _parameterList.end()) {
+                (static_cast<Parameter<T>*>(it->second.get<T>()))->set_value(var);
             }
         }
 
@@ -45,8 +47,10 @@ class ParameterManager
         template <typename T>
         T get(std::string parameterKey)
         {
-            if (_parameterList.find(parameterKey) != _parameterList.end()) {
-                return (static_cast<Parameter<T>*>(_parameterList[parameterKey].get<T>()))->get_value();
+            std::map<std::string, AnyParameter>::iterator it =
+                _parameterList.find(parameterKey);
+            if (it != _parameterList.end()) {
+                return (static_cast<Parameter<T>*>(it->second.get<T>()))->get_value();
             } else {
                 return T(); // Return the default
                 // TODO throw exception
@@ -57,8 +61,10 @@ class ParameterManager
         template <typename T>
         std::vector<T> get_vector(std::string parameterKey)
         {
-            if (_parameterList.find(parameterKey) != _parameterList.end()) {
-                return (static_cast<ParameterVector<T>*>(_parameterList[parameterKey].get_vector<T>()))->get_value();
+            std::map<std::string, AnyParameter>::iterator it =
+                _parameterList.find(parameterKey);
+            if (it != _parameterList.end()) {
+                return (static_cast<ParameterVector<T>*>(it->second.get_vector<T>()))->get_value();
             } else {
                 return std::vector<T>(); // Return the default
                 // TODO throw exception
@@ -69,8 +75,10 @@ class ParameterManager
         template <typename K, typename V>
         std::pair<K,V> get_pair(std::string parameterKey)
         {
-            if (_parameterList.find(parameterKey) != _parameterList.end()) {
-                return (static_cast<ParameterPair<K,V>*>(_parameterList[parameterKey].get_pair<K,V>()))->get_value();
+            std::map<std::string, AnyParameter>::iterator it =
+                _parameterList.find(parameterKey);
+            if (it != _parameterList.end()) {
+                return (static_cast<ParameterPair<K,V>*>(it->second.get_pair<K,V>()))->get_value();
             } else {
                 return std::pair<K,V>(); // Return the default
                 // TODO throw exception
@@ -96,7 +104,7 @@ class ParameterManager
          */
         bool validate_group();
 
-        // Verify if there is a parameter if this group set
+        // Verify if there is a parameter of the group set
         bool group_is_use(GROUP group);
 
 

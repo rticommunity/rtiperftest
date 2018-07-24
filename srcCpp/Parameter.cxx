@@ -4,8 +4,9 @@
  */
 
 #include "Parameter.h"
-
+////////////////////////////////////////////////////////////////////////////
 /* Implementation Class CommandLineArgument*/
+
 CommandLineArgument::CommandLineArgument()
 {
 }
@@ -13,7 +14,9 @@ CommandLineArgument::CommandLineArgument()
 CommandLineArgument::CommandLineArgument(std::string option, std::string arg) :
         _option(option),
         _arg(arg)
-{}
+{
+
+}
 
 CommandLineArgument::~CommandLineArgument()
 {
@@ -21,31 +24,32 @@ CommandLineArgument::~CommandLineArgument()
     _arg.clear();
 }
 
-void CommandLineArgument::set(std::string option, std::string arg)
+void CommandLineArgument::set(const std::string option, const std::string arg)
 {
     _option.assign(option);
     _arg.assign(arg);
 }
 
-std::string CommandLineArgument::get_option()
+const std::string CommandLineArgument::get_option()
 {
     return _option;
 }
 
-std::string CommandLineArgument::get_arg()
+const std::string CommandLineArgument::get_arg()
 {
     return _arg;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 /* Implementation Class ParameterBase*/
+
 ParameterBase::ParameterBase()
 {
     _internal = false;
     _isSet = false;
     _type = T_NULL;
     _extraArgument = NO;
-    _rangeStart = 0;
-    _rangeEnd = ULLONG_MAX;
+    _numericRange= std::make_pair(0,ULLONG_MAX);
     _group = GENERAL;
 }
 
@@ -56,27 +60,25 @@ ParameterBase::~ParameterBase()
     _isSet = false;
     _type = T_NULL;
     _extraArgument = NO;
-    _rangeStart = 0;
-    _rangeEnd = 0;
+    _numericRange= std::make_pair(0,ULLONG_MAX);
     _validStrValues.clear();
 }
 
 // Validate range
 bool ParameterBase::validate_numeric_range(unsigned long long var)
 {
-    if (_rangeEnd < var || _rangeStart > var) {
+    if (_numericRange.first < var || var < _numericRange.second) {
         fprintf(stderr, "In the argument '%s', '%s' should be in the range [%llu, %llu]\n",
                 _commandLineArgument.get_option().c_str(),
                 _commandLineArgument.get_arg().c_str(),
-                _rangeStart,
-                _rangeEnd);
+                _numericRange.first,
+                _numericRange.second);
         return false;
     } else {
         return true;
     }
 }
 
-// Validate str Valuesi if not empty
 bool ParameterBase::validate_str_range(std::string var)
 {
     if (!_validStrValues.empty()) {
@@ -92,7 +94,7 @@ bool ParameterBase::validate_str_range(std::string var)
 }
 
 // Set members
-void ParameterBase::set_command_line_argument(const std::string option, std::string arg)
+void ParameterBase::set_command_line_argument(const std::string option, const std::string arg)
 {
     _commandLineArgument.set(option, arg);
 }
@@ -117,20 +119,11 @@ void ParameterBase::set_extra_argument(const EXTRAARGUMENT var)
     _extraArgument = var;
 }
 
-void ParameterBase::set_range_start(const unsigned long long var)
+void ParameterBase::set_range(
+        const unsigned long long rangeStart,
+        const unsigned long long rangeEnd)
 {
-    _rangeStart = var;
-}
-
-void ParameterBase::set_range_end(const unsigned long long var)
-{
-    _rangeEnd = var;
-}
-
-void ParameterBase::set_range(const unsigned long long rangeStart, const unsigned long long rangeEnd)
-{
-    _rangeStart = rangeStart;
-    _rangeEnd = rangeEnd;
+    _numericRange = std::make_pair(rangeStart, rangeEnd);
 }
 
 void ParameterBase::add_valid_str_value(const std::string validStrValue)
@@ -203,7 +196,7 @@ const PARSEMETHOD ParameterBase::get_parse_method()
 std::string ParameterBase::print_command_line_parameter()
 {
     const std::string spaces (42, ' ');
-    std::string description = get_description();
+    std::string description = _description;
     std::size_t foundPosition = description.find("\n");
     while (foundPosition != std::string::npos) {
         description.insert(foundPosition + 1, spaces);
