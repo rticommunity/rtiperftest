@@ -24,7 +24,7 @@
 class ParameterManager
 {
     private:
-        std::map<std::string, AnyParameter> parameterList;
+        std::map<std::string, AnyParameter> _parameterList;
 
     public:
         ParameterManager();
@@ -36,8 +36,8 @@ class ParameterManager
         template <typename T>
         void set(std::string parameterKey, T var)
         {
-            if (parameterList.find(parameterKey) != parameterList.end()) {
-                (static_cast<Parameter<T>*>(parameterList[parameterKey].get<T>()))->set_value(var);
+            if (_parameterList.find(parameterKey) != _parameterList.end()) {
+                (static_cast<Parameter<T>*>(_parameterList[parameterKey].get<T>()))->set_value(var);
             }
         }
 
@@ -45,8 +45,8 @@ class ParameterManager
         template <typename T>
         T get(std::string parameterKey)
         {
-            if (parameterList.find(parameterKey) != parameterList.end()) {
-                return (static_cast<Parameter<T>*>(parameterList[parameterKey].get<T>()))->get_value();
+            if (_parameterList.find(parameterKey) != _parameterList.end()) {
+                return (static_cast<Parameter<T>*>(_parameterList[parameterKey].get<T>()))->get_value();
             } else {
                 return T(); // Return the default
                 // TODO throw exception
@@ -57,8 +57,8 @@ class ParameterManager
         template <typename T>
         std::vector<T> get_vector(std::string parameterKey)
         {
-            if (parameterList.find(parameterKey) != parameterList.end()) {
-                return (static_cast<ParameterVector<T>*>(parameterList[parameterKey].get_vector<T>()))->get_value();
+            if (_parameterList.find(parameterKey) != _parameterList.end()) {
+                return (static_cast<ParameterVector<T>*>(_parameterList[parameterKey].get_vector<T>()))->get_value();
             } else {
                 return std::vector<T>(); // Return the default
                 // TODO throw exception
@@ -69,8 +69,8 @@ class ParameterManager
         template <typename K, typename V>
         std::pair<K,V> get_pair(std::string parameterKey)
         {
-            if (parameterList.find(parameterKey) != parameterList.end()) {
-                return (static_cast<ParameterPair<K,V>*>(parameterList[parameterKey].get_pair<K,V>()))->get_value();
+            if (_parameterList.find(parameterKey) != _parameterList.end()) {
+                return (static_cast<ParameterPair<K,V>*>(_parameterList[parameterKey].get_pair<K,V>()))->get_value();
             } else {
                 return std::pair<K,V>(); // Return the default
                 // TODO throw exception

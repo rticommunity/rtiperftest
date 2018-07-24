@@ -71,23 +71,23 @@ class CommandLineArgument {
 
 class ParameterBase  {
     private:
-        CommandLineArgument commandLineArgument;
-        std::string description;
-        bool isSet;
-        TYPE type;
-        EXTRAARGUMENT  extraArgument;
-        bool internal; // Does not have description
-        GROUP group;
+        CommandLineArgument _commandLineArgument;
+        std::string _description;
+        bool _isSet;
+        TYPE _type;
+        EXTRAARGUMENT  _extraArgument;
+        bool _internal; // Does not have description
+        GROUP _group;
 
         /*
-         * Only used for numeric argument
+         * Only used for numeric Parameter
          * The range are inlcuded.
          */
-        unsigned long long rangeStart;
-        unsigned long long rangeEnd;
+        unsigned long long _rangeStart;
+        unsigned long long _rangeEnd;
 
-        // Only used for std::string argument
-        std::vector<std::string> validStrValues;
+        // Only used for std::string Parameter
+        std::vector<std::string> _validStrValues;
 
     public:
         ParameterBase();
@@ -134,16 +134,16 @@ class ParameterBase  {
 template <typename T>
 class Parameter : public ParameterBase {
     private:
-        T value;
+        T _value;
 
     public:
         Parameter()
         {
         }
 
-        Parameter(T var)
+        Parameter(T value)
         {
-            value = var;
+            _value = value;
         }
         ~Parameter()
         {
@@ -154,12 +154,12 @@ class Parameter : public ParameterBase {
 
         T get_value()
         {
-            return value;
+            return _value;
         }
 
-        void set_value(T var)
+        void set_value(T value)
         {
-            value = var;
+            _value = value;
             set_isSet(true);
         }
 };
@@ -167,31 +167,31 @@ class Parameter : public ParameterBase {
 template <typename T>
 class ParameterVector : public ParameterBase {
     private:
-        std::vector<T> value;
-        PARSEMETHOD parseMethod;
+        std::vector<T> _value;
+        PARSEMETHOD _parseMethod;
 
     public:
         ParameterVector()
         {
-            parseMethod = NOSPLIT;
+            _parseMethod = NOSPLIT;
         }
 
-        ParameterVector(T var)
+        ParameterVector(T value)
         {
-            parseMethod = NOSPLIT;
-            value.clear();
-            value.push_back(var);
+            _parseMethod = NOSPLIT;
+            _value.clear();
+            _value.push_back(value);
         }
 
-        ParameterVector(std::vector<T> var)
+        ParameterVector(std::vector<T> value)
         {
-            parseMethod = NOSPLIT;
-            value.insert(value.begin(),var.begin(), var.end());
+            _parseMethod = NOSPLIT;
+            _value.insert(_value.begin(), value.begin(), value.end());
         }
 
         ~ParameterVector()
         {
-            value.clear();
+            _value.clear();
         }
 
         ParameterVector(ParameterBase& p)
@@ -200,31 +200,31 @@ class ParameterVector : public ParameterBase {
 
         std::vector<T> get_value()
         {
-            return value;
+            return _value;
         }
 
-        void set_value(T var)
+        void set_value(T value)
         {
             if (!get_isSet()) {
                 // In the case of is not set, remove default values.
-                value.clear();
+                _value.clear();
             }
-            value.push_back(var);
+            _value.push_back(value);
 
             if (get_type() == T_VECTOR_NUMERIC) {
-                std::sort(value.begin(), value.end());
+                std::sort(_value.begin(), _value.end());
             }
             set_isSet(true);
         }
 
-        void set_parse_method(const PARSEMETHOD var)
+        void set_parse_method(const PARSEMETHOD parseMethod)
         {
-            parseMethod = var;
+            _parseMethod = parseMethod;
         }
 
         const PARSEMETHOD get_parse_method()
         {
-            return parseMethod;
+            return _parseMethod;
         }
 };
 
@@ -233,7 +233,7 @@ class ParameterVector : public ParameterBase {
 template <typename K, typename V>
 class ParameterPair : public ParameterBase {
     private:
-        std::pair <K, V> value;
+        std::pair <K, V> _value;
 
     public:
         ParameterPair()
@@ -242,7 +242,7 @@ class ParameterPair : public ParameterBase {
 
         ParameterPair(K key, V val)
         {
-            value = std::make_pair(key, val);
+            _value = std::make_pair(key, val);
         }
 
         ~ParameterPair()
@@ -255,70 +255,70 @@ class ParameterPair : public ParameterBase {
 
         std::pair<K,V> get_value()
         {
-            return value;
+            return _value;
         }
 
         void set_value(K key, V val)
         {
 
-            value = std::make_pair(key, val);
+            _value = std::make_pair(key, val);
             set_isSet(true);
         }
 };
 
 class AnyParameter {
     private:
-        ParameterBase* param;
+        ParameterBase* _param;
     public:
         AnyParameter()
         {
-            param = NULL;
+            _param = NULL;
         }
 
         template <typename T>
-        AnyParameter(Parameter<T> *var) : param(var) {}
+        AnyParameter(Parameter<T> *var) : _param(var) {}
 
         template <typename T>
-        AnyParameter(ParameterVector<T> *var) : param(var) {}
+        AnyParameter(ParameterVector<T> *var) : _param(var) {}
 
         template <typename K, typename V>
-        AnyParameter(ParameterPair<K,V> *var) : param(var) {}
+        AnyParameter(ParameterPair<K, V> *var) : _param(var) {}
 
         ParameterBase* get()
         {
-            return static_cast<ParameterBase*>(param);
+            return static_cast<ParameterBase*>(_param);
         }
 
         template <typename T>
         Parameter<T>* get()
         {
-            return static_cast<Parameter<T>*>(param);
+            return static_cast<Parameter<T>*>(_param);
         }
 
         template <typename T>
         ParameterVector<T>* get_vector()
         {
-            return static_cast<ParameterVector<T>*>(param);
+            return static_cast<ParameterVector<T>*>(_param);
         }
 
         template <typename K, typename V>
-        ParameterPair<K,V>* get_pair()
+        ParameterPair<K, V>* get_pair()
         {
-            return static_cast<ParameterPair<K,V>*>(param);
+            return static_cast<ParameterPair<K, V>*>(_param);
         }
 
         AnyParameter& operator=(AnyParameter other)
         {
-            param = other.param;
-            other.param = NULL;
+            _param = other._param;
+            other._param = NULL;
             return *this;
         };
 
         ~AnyParameter()
         {
-            if (param != NULL) {
-                delete param;
-                param = NULL;
+            if (_param != NULL) {
+                delete _param;
+                _param = NULL;
             }
         }
 };

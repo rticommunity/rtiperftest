@@ -25,7 +25,7 @@ void ParameterManager::initialize()
     bestEffort->set_type(T_BOOL);
     bestEffort->set_extra_argument(NO);
     bestEffort->set_group(GENERAL);
-    parameterList["bestEffort"] = AnyParameter(bestEffort);
+    _parameterList["bestEffort"] = AnyParameter(bestEffort);
 
     Parameter<unsigned long long> *dataLen = new Parameter<unsigned long long>(100);
     dataLen->set_command_line_argument("-dataLen","<bytes>");
@@ -34,7 +34,7 @@ void ParameterManager::initialize()
     dataLen->set_extra_argument(YES);
     dataLen->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_PERFTEST_SAMPLE_SIZE);
     dataLen->set_group(GENERAL);
-    parameterList["dataLen"] = AnyParameter(dataLen);
+    _parameterList["dataLen"] = AnyParameter(dataLen);
 
     Parameter<unsigned long long> *verbosity = new Parameter<unsigned long long>(1);
     verbosity->set_command_line_argument("-verbosity","<level>");
@@ -43,7 +43,7 @@ void ParameterManager::initialize()
     verbosity->set_extra_argument(YES);
     verbosity->set_range(0, 3);
     verbosity->set_group(GENERAL);
-    parameterList["verbosity"] = AnyParameter(verbosity);
+    _parameterList["verbosity"] = AnyParameter(verbosity);
 
     Parameter<bool> *dynamicData = new Parameter<bool>(false);
     dynamicData->set_command_line_argument("-dynamicData","");
@@ -51,7 +51,7 @@ void ParameterManager::initialize()
     dynamicData->set_type(T_BOOL);
     dynamicData->set_extra_argument(NO);
     dynamicData->set_group(GENERAL);
-    parameterList["dynamicData"] = AnyParameter(dynamicData);
+    _parameterList["dynamicData"] = AnyParameter(dynamicData);
 
     Parameter<unsigned long long> *durability = new Parameter<unsigned long long>(DDS_VOLATILE_DURABILITY_QOS);
     durability->set_command_line_argument("-durability","<0|1|2|3>");
@@ -60,7 +60,7 @@ void ParameterManager::initialize()
     durability->set_extra_argument(YES);
     durability->set_group(GENERAL);
     durability->set_range(0, 3);
-    parameterList["durability"] = AnyParameter(durability);
+    _parameterList["durability"] = AnyParameter(durability);
 
     Parameter<unsigned long long> *domain = new Parameter<unsigned long long>(1);
     domain->set_command_line_argument("-domain","<id>");
@@ -69,7 +69,7 @@ void ParameterManager::initialize()
     domain->set_extra_argument(YES);
     domain->set_range(0, 250);
     domain->set_group(GENERAL);
-    parameterList["domain"] = AnyParameter(domain);
+    _parameterList["domain"] = AnyParameter(domain);
 
     Parameter<unsigned long long> *instances = new Parameter<unsigned long long>(1);
     instances->set_command_line_argument("-instances","<count>");
@@ -78,7 +78,7 @@ void ParameterManager::initialize()
     instances->set_extra_argument(YES);
     instances->set_range(1, ULONG_MAX);
     instances->set_group(GENERAL);
-    parameterList["instances"] = AnyParameter(instances);
+    _parameterList["instances"] = AnyParameter(instances);
 
     Parameter<unsigned long long> *instanceHashBuckets = new Parameter<unsigned long long>(0);
     instanceHashBuckets->set_command_line_argument("-instanceHashBuckets","<count>");
@@ -87,7 +87,7 @@ void ParameterManager::initialize()
     instanceHashBuckets->set_extra_argument(YES);
     instanceHashBuckets->set_range(1, 1000000);
     instanceHashBuckets->set_group(GENERAL);
-    parameterList["instanceHashBuckets"] = AnyParameter(instanceHashBuckets);
+    _parameterList["instanceHashBuckets"] = AnyParameter(instanceHashBuckets);
 
     Parameter<bool> *keyed = new Parameter<bool>(false);
     keyed->set_command_line_argument("-keyed","");
@@ -95,7 +95,7 @@ void ParameterManager::initialize()
     keyed->set_type(T_BOOL);
     keyed->set_extra_argument(NO);
     keyed->set_group(GENERAL);
-    parameterList["keyed"] = AnyParameter(keyed);
+    _parameterList["keyed"] = AnyParameter(keyed);
 
     Parameter<bool> *noDirectCommunication = new Parameter<bool>(false);
     noDirectCommunication->set_command_line_argument("-noDirectCommunication","");
@@ -103,7 +103,7 @@ void ParameterManager::initialize()
     noDirectCommunication->set_type(T_BOOL);
     noDirectCommunication->set_extra_argument(NO);
     noDirectCommunication->set_group(GENERAL);
-    parameterList["noDirectCommunication"] = AnyParameter(noDirectCommunication);
+    _parameterList["noDirectCommunication"] = AnyParameter(noDirectCommunication);
 
     Parameter<bool> *noPositiveAcks = new Parameter<bool>(false);
     noPositiveAcks->set_command_line_argument("-noPositiveAcks","");
@@ -111,7 +111,7 @@ void ParameterManager::initialize()
     noPositiveAcks->set_type(T_BOOL);
     noPositiveAcks->set_extra_argument(NO);
     noPositiveAcks->set_group(GENERAL);
-    parameterList["noPositiveAcks"] = AnyParameter(noPositiveAcks);
+    _parameterList["noPositiveAcks"] = AnyParameter(noPositiveAcks);
 
     Parameter<unsigned long long> *keepDurationUsec = new Parameter<unsigned long long>(0);
     keepDurationUsec->set_command_line_argument("-keepDurationUsec","<usec>");
@@ -120,7 +120,7 @@ void ParameterManager::initialize()
     keepDurationUsec->set_extra_argument(YES);
     keepDurationUsec->set_group(GENERAL);
     keepDurationUsec->set_range(1, ULLONG_MAX);
-    parameterList["keepDurationUsec"] = AnyParameter(keepDurationUsec);
+    _parameterList["keepDurationUsec"] = AnyParameter(keepDurationUsec);
 
     Parameter<bool> *noPrintIntervals = new Parameter<bool>(false);
     noPrintIntervals->set_command_line_argument("-noPrintIntervals","");
@@ -128,7 +128,7 @@ void ParameterManager::initialize()
     noPrintIntervals->set_type(T_BOOL);
     noPrintIntervals->set_extra_argument(NO);
     noPrintIntervals->set_group(GENERAL);
-    parameterList["noPrintIntervals"] = AnyParameter(noPrintIntervals);
+    _parameterList["noPrintIntervals"] = AnyParameter(noPrintIntervals);
 
     Parameter<std::string> *qosFile = new Parameter<std::string>("perftest_qos_profiles.xml");
     qosFile->set_command_line_argument("-qosFile","<filename>");
@@ -136,7 +136,7 @@ void ParameterManager::initialize()
     qosFile->set_type(T_STR);
     qosFile->set_extra_argument(YES);
     qosFile->set_group(GENERAL);
-    parameterList["qosFile"] = AnyParameter(qosFile);
+    _parameterList["qosFile"] = AnyParameter(qosFile);
 
     Parameter<std::string> *qosLibrary = new Parameter<std::string>("PerftestQosLibrary");
     qosLibrary->set_command_line_argument("-qosLibrary","<lib name>");
@@ -144,7 +144,7 @@ void ParameterManager::initialize()
     qosLibrary->set_type(T_STR);
     qosLibrary->set_extra_argument(YES);
     qosLibrary->set_group(GENERAL);
-    parameterList["qosLibrary"] = AnyParameter(qosLibrary);
+    _parameterList["qosLibrary"] = AnyParameter(qosLibrary);
 
     Parameter<bool> *noXmlQos = new Parameter<bool>(false);
     noXmlQos->set_command_line_argument("-noXmlQos","");
@@ -152,7 +152,7 @@ void ParameterManager::initialize()
     noXmlQos->set_type(T_BOOL);
     noXmlQos->set_extra_argument(NO);
     noXmlQos->set_group(GENERAL);
-    parameterList["noXmlQos"] = AnyParameter(noXmlQos);
+    _parameterList["noXmlQos"] = AnyParameter(noXmlQos);
 
     Parameter<bool> *useReadThread = new Parameter<bool>(false);
     useReadThread->set_command_line_argument("-useReadThread","");
@@ -160,7 +160,7 @@ void ParameterManager::initialize()
     useReadThread->set_type(T_BOOL);
     useReadThread->set_extra_argument(NO);
     useReadThread->set_group(GENERAL);
-    parameterList["useReadThread"] = AnyParameter(useReadThread);
+    _parameterList["useReadThread"] = AnyParameter(useReadThread);
 
     Parameter<unsigned long long> *waitsetDelayUsec = new Parameter<unsigned long long>(100);
     waitsetDelayUsec->set_command_line_argument("-waitsetDelayUsec","<usec>");
@@ -169,7 +169,7 @@ void ParameterManager::initialize()
     waitsetDelayUsec->set_extra_argument(YES);
     waitsetDelayUsec->set_group(GENERAL);
     waitsetDelayUsec->set_range(0, UINT_MAX);
-    parameterList["waitsetDelayUsec"] = AnyParameter(waitsetDelayUsec);
+    _parameterList["waitsetDelayUsec"] = AnyParameter(waitsetDelayUsec);
 
     Parameter<unsigned long long> *waitsetEventCount = new Parameter<unsigned long long>(5);
     waitsetEventCount->set_command_line_argument("-waitsetEventCount","<count>");
@@ -178,7 +178,7 @@ void ParameterManager::initialize()
     waitsetEventCount->set_extra_argument(YES);
     waitsetEventCount->set_group(GENERAL);
     waitsetEventCount->set_range(1, ULLONG_MAX);
-    parameterList["waitsetEventCount"] = AnyParameter(waitsetEventCount);
+    _parameterList["waitsetEventCount"] = AnyParameter(waitsetEventCount);
 
     Parameter<bool> *asynchronous = new Parameter<bool>(false);
     asynchronous->set_command_line_argument("-asynchronous","");
@@ -186,7 +186,7 @@ void ParameterManager::initialize()
     asynchronous->set_type(T_BOOL);
     asynchronous->set_extra_argument(NO);
     asynchronous->set_group(GENERAL);
-    parameterList["asynchronous"] = AnyParameter(asynchronous);
+    _parameterList["asynchronous"] = AnyParameter(asynchronous);
 
     Parameter<std::string> *flowController = new Parameter<std::string>("default");
     flowController->set_command_line_argument("-flowController", "<flow>");
@@ -197,7 +197,7 @@ void ParameterManager::initialize()
     flowController->add_valid_str_value("1Gbps");
     flowController->add_valid_str_value("10Gbps");
     flowController->set_group(GENERAL);
-    parameterList["flowController"] = AnyParameter(flowController);
+    _parameterList["flowController"] = AnyParameter(flowController);
 
     Parameter<bool> *cpu = new Parameter<bool>(false);
     cpu->set_command_line_argument("-cpu","");
@@ -205,7 +205,7 @@ void ParameterManager::initialize()
     cpu->set_type(T_BOOL);
     cpu->set_extra_argument(NO);
     cpu->set_group(GENERAL);
-    parameterList["cpu"] = AnyParameter(cpu);
+    _parameterList["cpu"] = AnyParameter(cpu);
 
     Parameter<unsigned long long> *unbounded = new Parameter<unsigned long long>(0);
     unbounded->set_command_line_argument("-unbounded","<allocation_threshold>");
@@ -214,7 +214,7 @@ void ParameterManager::initialize()
     unbounded->set_extra_argument(OPTIONAL);
     unbounded->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_BOUNDED_SEQ_SIZE);
     unbounded->set_group(GENERAL);
-    parameterList["unbounded"] = AnyParameter(unbounded);
+    _parameterList["unbounded"] = AnyParameter(unbounded);
 
     Parameter<std::string> *threadPriorities = new Parameter<std::string>("");
     threadPriorities->set_command_line_argument("-threadPriorities","<:A:B:C>");
@@ -222,7 +222,7 @@ void ParameterManager::initialize()
     threadPriorities->set_type(T_STR);
     threadPriorities->set_extra_argument(YES);
     threadPriorities->set_group(GENERAL);
-    parameterList["threadPriorities"] = AnyParameter(threadPriorities);
+    _parameterList["threadPriorities"] = AnyParameter(threadPriorities);
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -235,7 +235,7 @@ void ParameterManager::initialize()
     batchSize->set_extra_argument(YES);
     batchSize->set_range(0, MAX_SYNCHRONOUS_SIZE - 1);
     batchSize->set_group(PUB);
-    parameterList["batchSize"] = AnyParameter(batchSize);
+    _parameterList["batchSize"] = AnyParameter(batchSize);
 
     Parameter<bool> *enableAutoThrottle = new Parameter<bool>(false);
     enableAutoThrottle->set_command_line_argument("-enableAutoThrottle","");
@@ -243,7 +243,7 @@ void ParameterManager::initialize()
     enableAutoThrottle->set_type(T_BOOL);
     enableAutoThrottle->set_extra_argument(NO);
     enableAutoThrottle->set_group(PUB);
-    parameterList["enableAutoThrottle"] = AnyParameter(enableAutoThrottle);
+    _parameterList["enableAutoThrottle"] = AnyParameter(enableAutoThrottle);
 
     Parameter<bool> *enableTurboMode = new Parameter<bool>(false);
     enableTurboMode->set_command_line_argument("-enableTurboMode","");
@@ -251,7 +251,7 @@ void ParameterManager::initialize()
     enableTurboMode->set_type(T_BOOL);
     enableTurboMode->set_extra_argument(NO);
     enableTurboMode->set_group(PUB);
-    parameterList["enableTurboMode"] = AnyParameter(enableTurboMode);
+    _parameterList["enableTurboMode"] = AnyParameter(enableTurboMode);
 
     Parameter<bool> * pub = new Parameter<bool>(false);
     pub->set_command_line_argument("-pub","");
@@ -259,7 +259,7 @@ void ParameterManager::initialize()
     pub->set_type(T_BOOL);
     pub->set_extra_argument(NO);
     pub->set_group(PUB);
-    parameterList["pub"] = AnyParameter(pub);
+    _parameterList["pub"] = AnyParameter(pub);
 
     Parameter<unsigned long long> *latencyCount = new Parameter<unsigned long long>(10000);
     latencyCount->set_command_line_argument("-latencyCount","<count>");
@@ -268,7 +268,7 @@ void ParameterManager::initialize()
     latencyCount->set_extra_argument(YES);
     latencyCount->set_range(0, ULLONG_MAX);
     latencyCount->set_group(PUB);
-    parameterList["latencyCount"] = AnyParameter(latencyCount);
+    _parameterList["latencyCount"] = AnyParameter(latencyCount);
 
     Parameter<unsigned long long> *executionTime = new Parameter<unsigned long long>(0);
     executionTime->set_command_line_argument("-executionTime","<sec>");
@@ -277,7 +277,7 @@ void ParameterManager::initialize()
     executionTime->set_extra_argument(YES);
     executionTime->set_range(1, ULLONG_MAX);
     executionTime->set_group(PUB);
-    parameterList["executionTime"] = AnyParameter(executionTime);
+    _parameterList["executionTime"] = AnyParameter(executionTime);
 
     Parameter<bool> *latencyTest = new Parameter<bool>(false);
     latencyTest->set_command_line_argument("-latencyTest","");
@@ -285,7 +285,7 @@ void ParameterManager::initialize()
     latencyTest->set_type(T_BOOL);
     latencyTest->set_extra_argument(NO);
     latencyTest->set_group(PUB);
-    parameterList["latencyTest"] = AnyParameter(latencyTest);
+    _parameterList["latencyTest"] = AnyParameter(latencyTest);
 
     Parameter<unsigned long long> *numIter = new Parameter<unsigned long long>(100000000);
     numIter->set_command_line_argument("-numIter","<count>");
@@ -294,7 +294,7 @@ void ParameterManager::initialize()
     numIter->set_extra_argument(YES);
     numIter->set_range(1, ULLONG_MAX);
     numIter->set_group(PUB);
-    parameterList["numIter"] = AnyParameter(numIter);
+    _parameterList["numIter"] = AnyParameter(numIter);
 
     Parameter<unsigned long long> *numSubscribers = new Parameter<unsigned long long>(1);
     numSubscribers->set_command_line_argument("-numSubscribers","<count>");
@@ -303,7 +303,7 @@ void ParameterManager::initialize()
     numSubscribers->set_extra_argument(YES);
     numSubscribers->set_range(1, INT_MAX);
     numSubscribers->set_group(PUB);
-    parameterList["numSubscribers"] = AnyParameter(numSubscribers);
+    _parameterList["numSubscribers"] = AnyParameter(numSubscribers);
 
     Parameter<unsigned long long> *pidMultiPubTest = new Parameter<unsigned long long>(0);
     pidMultiPubTest->set_command_line_argument("-pidMultiPubTest","<bytes>");
@@ -312,7 +312,7 @@ void ParameterManager::initialize()
     pidMultiPubTest->set_extra_argument(YES);
     pidMultiPubTest->set_range(0, INT_MAX);
     pidMultiPubTest->set_group(PUB);
-    parameterList["pidMultiPubTest"] = AnyParameter(pidMultiPubTest);
+    _parameterList["pidMultiPubTest"] = AnyParameter(pidMultiPubTest);
 
     ParameterPair<unsigned long long, std::string> *pubRate = new ParameterPair<unsigned long long, std::string>(0,"spin");
     pubRate->set_command_line_argument("-pubRate","<samples/s>:<method>");
@@ -323,7 +323,7 @@ void ParameterManager::initialize()
     pubRate->set_range(1, 10000000);
     pubRate->add_valid_str_value("sleep");
     pubRate->add_valid_str_value("spin");
-    parameterList["pubRate"] = AnyParameter(pubRate);
+    _parameterList["pubRate"] = AnyParameter(pubRate);
 
      std::vector<unsigned long long> scanList;
     scanList.push_back(32);
@@ -346,7 +346,7 @@ void ParameterManager::initialize()
     scan->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_PERFTEST_SAMPLE_SIZE);
     scan->set_parse_method(SPLIT);
     scan->set_group(PUB);
-    parameterList["scan"] = AnyParameter(scan);
+    _parameterList["scan"] = AnyParameter(scan);
 
     Parameter<unsigned long long> *sendQueueSize = new Parameter<unsigned long long>(50);
     sendQueueSize->set_command_line_argument("-sendQueueSize","<number>");
@@ -355,7 +355,7 @@ void ParameterManager::initialize()
     sendQueueSize->set_extra_argument(YES);
     sendQueueSize->set_group(PUB);
     sendQueueSize->set_range(1, INT_MAX);
-    parameterList["sendQueueSize"] = AnyParameter(sendQueueSize);
+    _parameterList["sendQueueSize"] = AnyParameter(sendQueueSize);
 
     Parameter<unsigned long long> *sleep = new Parameter<unsigned long long>(0);
     sleep->set_command_line_argument("-sleep","<millisec>");
@@ -364,7 +364,7 @@ void ParameterManager::initialize()
     sleep->set_extra_argument(YES);
     sleep->set_range(0, ULLONG_MAX);
     sleep->set_group(PUB);
-    parameterList["sleep"] = AnyParameter(sleep);
+    _parameterList["sleep"] = AnyParameter(sleep);
 
     Parameter<unsigned long long> *spin = new Parameter<unsigned long long>(0);
     spin->set_command_line_argument("-spin","<count>");
@@ -373,7 +373,7 @@ void ParameterManager::initialize()
     spin->set_extra_argument(YES);
     spin->set_range(0, ULLONG_MAX);
     spin->set_group(PUB);
-    parameterList["spin"] = AnyParameter(spin);
+    _parameterList["spin"] = AnyParameter(spin);
 
     Parameter<bool> *writerStats = new Parameter<bool>(false);
     writerStats->set_command_line_argument("-writerStats","");
@@ -381,7 +381,7 @@ void ParameterManager::initialize()
     writerStats->set_type(T_BOOL);
     writerStats->set_extra_argument(NO);
     writerStats->set_group(PUB);
-    parameterList["writerStats"] = AnyParameter(writerStats);
+    _parameterList["writerStats"] = AnyParameter(writerStats);
 
     Parameter<long> *writeInstance = new Parameter<long>(-1);// (-1) By default use round-robin (-1)
     writeInstance->set_command_line_argument("-writeInstance","<instance>");
@@ -390,7 +390,7 @@ void ParameterManager::initialize()
     writeInstance->set_extra_argument(YES);
     writeInstance->set_range(0, LONG_MAX);
     writeInstance->set_group(PUB);
-    parameterList["writeInstance"] = AnyParameter(writeInstance);
+    _parameterList["writeInstance"] = AnyParameter(writeInstance);
 
     ////////////////////////////////////////////////////////////////////////////
     //SUBSCRIBER PARAMETER
@@ -400,7 +400,7 @@ void ParameterManager::initialize()
     sub->set_type(T_BOOL);
     sub->set_extra_argument(NO);
     sub->set_group(SUB);
-    parameterList["sub"] = AnyParameter(sub);
+    _parameterList["sub"] = AnyParameter(sub);
 
     Parameter<unsigned long long> *sidMultiSubTest = new Parameter<unsigned long long>(0);
     sidMultiSubTest->set_command_line_argument("-sidMultiSubTest","<bytes>");
@@ -409,7 +409,7 @@ void ParameterManager::initialize()
     sidMultiSubTest->set_extra_argument(YES);
     sidMultiSubTest->set_range(0, INT_MAX);
     sidMultiSubTest->set_group(SUB);
-    parameterList["sidMultiSubTest"] = AnyParameter(sidMultiSubTest);
+    _parameterList["sidMultiSubTest"] = AnyParameter(sidMultiSubTest);
 
     Parameter<unsigned long long> *numPublishers = new Parameter<unsigned long long>(1);
     numPublishers->set_command_line_argument("-numPublishers","<count>");
@@ -418,7 +418,7 @@ void ParameterManager::initialize()
     numPublishers->set_extra_argument(YES);
     numPublishers->set_range(1, ULLONG_MAX);
     numPublishers->set_group(SUB);
-    parameterList["numPublishers"] = AnyParameter(numPublishers);
+    _parameterList["numPublishers"] = AnyParameter(numPublishers);
 
     ParameterVector<unsigned long long> *cft = new ParameterVector<unsigned long long>();
     cft->set_command_line_argument("-cft","<start>:<end>");
@@ -428,7 +428,7 @@ void ParameterManager::initialize()
     cft->set_range(0, MAX_CFT_VALUE - 1);
     cft->set_parse_method(SPLIT);
     cft->set_group(SUB);
-    parameterList["cft"] = AnyParameter(cft);
+    _parameterList["cft"] = AnyParameter(cft);
 
     ////////////////////////////////////////////////////////////////////////////
     // TRANSPORT PARAMETER:
@@ -438,7 +438,7 @@ void ParameterManager::initialize()
     nic->set_type(T_STR);
     nic->set_extra_argument(YES);
     nic->set_group(TRANSPORT);
-    parameterList["nic"] = AnyParameter(nic);
+    _parameterList["nic"] = AnyParameter(nic);
 
     Parameter<std::string> *allowInterfaces = new Parameter<std::string>();
     allowInterfaces->set_command_line_argument("-allowInterfaces", "<ipaddr>");
@@ -447,7 +447,7 @@ void ParameterManager::initialize()
     allowInterfaces->set_extra_argument(YES);
     allowInterfaces->set_group(TRANSPORT);
     allowInterfaces->set_internal(true);
-    parameterList["allowInterfaces"] = AnyParameter(allowInterfaces);
+    _parameterList["allowInterfaces"] = AnyParameter(allowInterfaces);
 
     ParameterVector<std::string> * peer = new ParameterVector<std::string>();
     peer->set_command_line_argument("-peer","<address>");
@@ -455,7 +455,7 @@ void ParameterManager::initialize()
     peer->set_type(T_VECTOR_STR);
     peer->set_extra_argument(YES);
     peer->set_group(TRANSPORT);
-    parameterList["peer"] = AnyParameter(peer);
+    _parameterList["peer"] = AnyParameter(peer);
 
     Parameter<std::string> * transport = new Parameter<std::string>("Use XML");
     transport->set_command_line_argument("-transport","<kind>");
@@ -470,7 +470,7 @@ void ParameterManager::initialize()
     transport->add_valid_str_value("TLS");
     transport->add_valid_str_value("DTLS");
     transport->add_valid_str_value("WAN");
-    parameterList["transport"] = AnyParameter(transport);
+    _parameterList["transport"] = AnyParameter(transport);
 
     Parameter<bool> *multicast = new Parameter<bool>(false);
     multicast->set_command_line_argument("-multicast","");
@@ -478,7 +478,7 @@ void ParameterManager::initialize()
     multicast->set_type(T_BOOL);
     multicast->set_extra_argument(NO);
     multicast->set_group(TRANSPORT);
-    parameterList["multicast"] = AnyParameter(multicast);
+    _parameterList["multicast"] = AnyParameter(multicast);
 
     // TODO set multicastAddrMap
     /*
@@ -497,7 +497,7 @@ void ParameterManager::initialize()
     multicastAddr->set_type(T_STR);
     multicastAddr->set_extra_argument(YES);
     multicastAddr->set_group(TRANSPORT);
-    parameterList["multicastAddr"] = AnyParameter(multicastAddr);
+    _parameterList["multicastAddr"] = AnyParameter(multicastAddr);
 
     Parameter<std::string> *transportVerbosity = new Parameter<std::string>();
     transportVerbosity->set_command_line_argument("-transportVerbosity","<level>");
@@ -505,7 +505,7 @@ void ParameterManager::initialize()
     transportVerbosity->set_type(T_STR);
     transportVerbosity->set_extra_argument(YES);
     transportVerbosity->set_group(TRANSPORT);
-    parameterList["transportVerbosity"] = AnyParameter(transportVerbosity);
+    _parameterList["transportVerbosity"] = AnyParameter(transportVerbosity);
 
     Parameter<std::string> * transportServerBindPort = new Parameter<std::string>("7400");
     transportServerBindPort->set_command_line_argument("-transportServerBindPort","<p>");
@@ -513,7 +513,7 @@ void ParameterManager::initialize()
     transportServerBindPort->set_type(T_STR);
     transportServerBindPort->set_extra_argument(YES);
     transportServerBindPort->set_group(TRANSPORT);
-    parameterList["transportServerBindPort"] = AnyParameter(transportServerBindPort);
+    _parameterList["transportServerBindPort"] = AnyParameter(transportServerBindPort);
 
     Parameter<bool> *transportWan = new Parameter<bool>(false);
     transportWan->set_command_line_argument("-transportWan","");
@@ -521,7 +521,7 @@ void ParameterManager::initialize()
     transportWan->set_type(T_BOOL);
     transportWan->set_extra_argument(NO);
     transportWan->set_group(TRANSPORT);
-    parameterList["transportWan"] = AnyParameter(transportWan);
+    _parameterList["transportWan"] = AnyParameter(transportWan);
 
     Parameter<std::string> * transportPublicAddress = new Parameter<std::string>();
     transportPublicAddress->set_command_line_argument("-transportPublicAddress","<ip>");
@@ -529,7 +529,7 @@ void ParameterManager::initialize()
     transportPublicAddress->set_type(T_STR);
     transportPublicAddress->set_extra_argument(YES);
     transportPublicAddress->set_group(TRANSPORT);
-    parameterList["transportPublicAddress"] = AnyParameter(transportPublicAddress);
+    _parameterList["transportPublicAddress"] = AnyParameter(transportPublicAddress);
 
     Parameter<std::string> * transportWanServerAddress = new Parameter<std::string>();
     transportWanServerAddress->set_command_line_argument("-transportWanServerAddress","<a>");
@@ -537,7 +537,7 @@ void ParameterManager::initialize()
     transportWanServerAddress->set_type(T_STR);
     transportWanServerAddress->set_extra_argument(YES);
     transportWanServerAddress->set_group(TRANSPORT);
-    parameterList["transportWanServerAddress"] = AnyParameter(transportWanServerAddress);
+    _parameterList["transportWanServerAddress"] = AnyParameter(transportWanServerAddress);
 
     Parameter<std::string> * transportWanServerPort = new Parameter<std::string>("3478");
     transportWanServerPort->set_command_line_argument("-transportWanServerPort","<p>");
@@ -545,7 +545,7 @@ void ParameterManager::initialize()
     transportWanServerPort->set_type(T_STR);
     transportWanServerPort->set_extra_argument(YES);
     transportWanServerPort->set_group(TRANSPORT);
-    parameterList["transportWanServerPort"] = AnyParameter(transportWanServerPort);
+    _parameterList["transportWanServerPort"] = AnyParameter(transportWanServerPort);
 
     Parameter<std::string> *transportWanId = new Parameter<std::string>();
     transportWanId->set_command_line_argument("-transportWanId","<id>");
@@ -553,7 +553,7 @@ void ParameterManager::initialize()
     transportWanId->set_type(T_STR);
     transportWanId->set_extra_argument(YES);
     transportWanId->set_group(TRANSPORT);
-    parameterList["transportWanId"] = AnyParameter(transportWanId);
+    _parameterList["transportWanId"] = AnyParameter(transportWanId);
 
     Parameter<bool> *transportSecureWan = new Parameter<bool>(false);
     transportSecureWan->set_command_line_argument("-transportSecureWan","");
@@ -561,7 +561,7 @@ void ParameterManager::initialize()
     transportSecureWan->set_type(T_BOOL);
     transportSecureWan->set_extra_argument(NO);
     transportSecureWan->set_group(TRANSPORT);
-    parameterList["transportSecureWan"] = AnyParameter(transportSecureWan);
+    _parameterList["transportSecureWan"] = AnyParameter(transportSecureWan);
 
     Parameter<std::string> * transportCertAuthority = new Parameter<std::string>(TRANSPORT_CERTAUTHORITY_FILE);
     transportCertAuthority->set_command_line_argument("-transportCertAuthority","<file>");
@@ -569,7 +569,7 @@ void ParameterManager::initialize()
     transportCertAuthority->set_type(T_STR);
     transportCertAuthority->set_extra_argument(YES);
     transportCertAuthority->set_group(TRANSPORT);
-    parameterList["transportCertAuthority"] = AnyParameter(transportCertAuthority);
+    _parameterList["transportCertAuthority"] = AnyParameter(transportCertAuthority);
 
     // TODO assigned a value if it is pub or sub
     Parameter<std::string> * transportCertFile = new Parameter<std::string>(TRANSPORT_CERTIFICATE_FILE_PUB);
@@ -578,7 +578,7 @@ void ParameterManager::initialize()
     transportCertFile->set_type(T_STR);
     transportCertFile->set_extra_argument(YES);
     transportCertFile->set_group(TRANSPORT);
-    parameterList["transportCertFile"] = AnyParameter(transportCertFile);
+    _parameterList["transportCertFile"] = AnyParameter(transportCertFile);
 
     // TODO assigned a value if it is pub or sub
     Parameter<std::string> * transportPrivateKey = new Parameter<std::string>(TRANSPORT_CERTIFICATE_FILE_PUB);
@@ -587,7 +587,7 @@ void ParameterManager::initialize()
     transportPrivateKey->set_type(T_STR);
     transportPrivateKey->set_extra_argument(YES);
     transportPrivateKey->set_group(TRANSPORT);
-    parameterList["transportPrivateKey"] = AnyParameter(transportPrivateKey);
+    _parameterList["transportPrivateKey"] = AnyParameter(transportPrivateKey);
 
     ////////////////////////////////////////////////////////////////////////////
     // SECURE PARAMETER:
@@ -598,7 +598,7 @@ void ParameterManager::initialize()
     secureEncryptDiscovery->set_type(T_BOOL);
     secureEncryptDiscovery->set_extra_argument(NO);
     secureEncryptDiscovery->set_group(SECURE);
-    parameterList["secureEncryptDiscovery"] = AnyParameter(secureEncryptDiscovery);
+    _parameterList["secureEncryptDiscovery"] = AnyParameter(secureEncryptDiscovery);
 
     Parameter<bool> *secureSign = new Parameter<bool>(false);
     secureSign->set_command_line_argument("-secureSign","");
@@ -606,7 +606,7 @@ void ParameterManager::initialize()
     secureSign->set_type(T_BOOL);
     secureSign->set_extra_argument(NO);
     secureSign->set_group(SECURE);
-    parameterList["secureSign"] = AnyParameter(secureSign);
+    _parameterList["secureSign"] = AnyParameter(secureSign);
 
     Parameter<bool> *secureEncryptBoth = new Parameter<bool>(false);
     secureEncryptBoth->set_command_line_argument("-secureEncryptBoth","");
@@ -614,7 +614,7 @@ void ParameterManager::initialize()
     secureEncryptBoth->set_type(T_BOOL);
     secureEncryptBoth->set_extra_argument(NO);
     secureEncryptBoth->set_group(SECURE);
-    parameterList["secureEncryptBoth"] = AnyParameter(secureEncryptBoth);
+    _parameterList["secureEncryptBoth"] = AnyParameter(secureEncryptBoth);
 
     Parameter<bool> *secureEncryptData = new Parameter<bool>(false);
     secureEncryptData->set_command_line_argument("-secureEncryptData","");
@@ -622,7 +622,7 @@ void ParameterManager::initialize()
     secureEncryptData->set_type(T_BOOL);
     secureEncryptData->set_extra_argument(NO);
     secureEncryptData->set_group(SECURE);
-    parameterList["secureEncryptData"] = AnyParameter(secureEncryptData);
+    _parameterList["secureEncryptData"] = AnyParameter(secureEncryptData);
 
     Parameter<bool> *secureEncryptSM = new Parameter<bool>(false);
     secureEncryptSM->set_command_line_argument("-secureEncryptSM","");
@@ -630,7 +630,7 @@ void ParameterManager::initialize()
     secureEncryptSM->set_type(T_BOOL);
     secureEncryptSM->set_extra_argument(NO);
     secureEncryptSM->set_group(SECURE);
-    parameterList["secureEncryptSM"] = AnyParameter(secureEncryptSM);
+    _parameterList["secureEncryptSM"] = AnyParameter(secureEncryptSM);
 
     Parameter<std::string> *secureGovernanceFile = new Parameter<std::string>();
     secureGovernanceFile->set_command_line_argument("-secureGovernanceFile","<file>");
@@ -638,7 +638,7 @@ void ParameterManager::initialize()
     secureGovernanceFile->set_type(T_STR);
     secureGovernanceFile->set_extra_argument(YES);
     secureGovernanceFile->set_group(SECURE);
-    parameterList["secureGovernanceFile"] = AnyParameter(secureGovernanceFile);
+    _parameterList["secureGovernanceFile"] = AnyParameter(secureGovernanceFile);
 
     // TODO assigned a value if it is pub or sub
     Parameter<std::string> *securePermissionsFile = new Parameter<std::string>();
@@ -647,7 +647,7 @@ void ParameterManager::initialize()
     securePermissionsFile->set_type(T_STR);
     securePermissionsFile->set_extra_argument(YES);
     securePermissionsFile->set_group(SECURE);
-    parameterList["securePermissionsFile"] = AnyParameter(securePermissionsFile);
+    _parameterList["securePermissionsFile"] = AnyParameter(securePermissionsFile);
 
     Parameter<std::string> *secureCertAuthority = new Parameter<std::string>();
     secureCertAuthority->set_command_line_argument("-secureCertAuthority","<file>");
@@ -655,7 +655,7 @@ void ParameterManager::initialize()
     secureCertAuthority->set_type(T_STR);
     secureCertAuthority->set_extra_argument(YES);
     secureCertAuthority->set_group(SECURE);
-    parameterList["secureCertAuthority"] = AnyParameter(secureCertAuthority);
+    _parameterList["secureCertAuthority"] = AnyParameter(secureCertAuthority);
 
     // TODO assigned a value if it is pub or sub
     Parameter<std::string> *secureCertFile = new Parameter<std::string>();
@@ -664,7 +664,7 @@ void ParameterManager::initialize()
     secureCertFile->set_type(T_STR);
     secureCertFile->set_extra_argument(YES);
     secureCertFile->set_group(SECURE);
-    parameterList["secureCertFile"] = AnyParameter(secureCertFile);
+    _parameterList["secureCertFile"] = AnyParameter(secureCertFile);
 
     Parameter<std::string> *securePrivateKey = new Parameter<std::string>();
     securePrivateKey->set_command_line_argument("-securePrivateKey","<file>");
@@ -672,7 +672,7 @@ void ParameterManager::initialize()
     securePrivateKey->set_type(T_STR);
     securePrivateKey->set_extra_argument(YES);
     securePrivateKey->set_group(SECURE);
-    parameterList["securePrivateKey"] = AnyParameter(securePrivateKey);
+    _parameterList["securePrivateKey"] = AnyParameter(securePrivateKey);
 
     Parameter<std::string> *secureLibrary = new Parameter<std::string>();
     secureLibrary->set_command_line_argument("-secureLibrary","<file>");
@@ -680,7 +680,7 @@ void ParameterManager::initialize()
     secureLibrary->set_type(T_STR);
     secureLibrary->set_extra_argument(YES);
     secureLibrary->set_group(SECURE);
-    parameterList["secureLibrary"] = AnyParameter(secureLibrary);
+    _parameterList["secureLibrary"] = AnyParameter(secureLibrary);
 
     Parameter<unsigned long long> *secureDebug = new Parameter<unsigned long long>(1);
     secureDebug->set_command_line_argument("-secureDebug","<level>");
@@ -689,7 +689,7 @@ void ParameterManager::initialize()
     secureDebug->set_range(-1, ULLONG_MAX);
     secureDebug->set_group(SECURE);
     secureDebug->set_internal(true);
-    parameterList["secureDebug"] = AnyParameter(secureDebug);
+    _parameterList["secureDebug"] = AnyParameter(secureDebug);
 
 #endif
 }
@@ -705,7 +705,7 @@ bool ParameterManager::parse(int argc, char *argv[])
 
     std::map<std::string, AnyParameter>::iterator it;
     for (unsigned int i = 1; i < allArgs.size(); i++) {
-        for (it = parameterList.begin(); it != parameterList.end(); it++) {
+        for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
             if (IS_OPTION(allArgs[i].c_str(), it->second.get()->get_option().c_str())) {
                 ParameterBase *p = it->second.get();
                 // NumArguments == 0
@@ -804,7 +804,7 @@ bool ParameterManager::parse(int argc, char *argv[])
                 break;
             }
         }
-        if (it == parameterList.end()) {
+        if (it == _parameterList.end()) {
             fprintf(stderr, "Cannot parse '%s', invalid input.\n",
                     allArgs[i].c_str());
             success = false;
@@ -851,7 +851,7 @@ std::string ParameterManager::display_help()
         << "Where [options] are:\n";
     output[GENERAL] +="\t-help                           - Print this usage message and exit\n";
 
-    for (it = parameterList.begin(); it != parameterList.end(); it++) {
+    for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
         if (!it->second.get()->get_internal()) {
             output[it->second.get()->get_group()] +=
                     it->second.get()->print_command_line_parameter();
@@ -880,14 +880,14 @@ bool ParameterManager::check_help(int argc, char *argv[])
 
 ParameterManager::~ParameterManager()
 {
-    parameterList.clear();
+    _parameterList.clear();
 }
 
 // check if a variable has been set
 bool ParameterManager::is_set(std::string parameterKey)
 {
-    if (parameterList.find(parameterKey) != parameterList.end()) {
-        return parameterList[parameterKey].get()->get_isSet();
+    if (_parameterList.find(parameterKey) != _parameterList.end()) {
+        return _parameterList[parameterKey].get()->get_isSet();
     } else {
         return false;
     }
@@ -898,7 +898,7 @@ bool ParameterManager::validate_group()
 {
     bool success = true;
     std::map<std::string, AnyParameter>::iterator it;
-    for (it = parameterList.begin(); it != parameterList.end(); it++) {
+    for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
         if (it->second.get()->get_isSet()) {
             if (it->second.get()->get_group() == PUB && GetInstance().get<bool>("sub")) {
                 fprintf(stderr, "Cannot use '%s' while setting '-sub'.\n",
@@ -947,7 +947,7 @@ std::string ParameterManager::get_center_header_help_line(std::string name)
 bool ParameterManager::group_is_use(GROUP group)
 {
     std::map<std::string, AnyParameter>::iterator it;
-    for (it = parameterList.begin(); it != parameterList.end(); it++) {
+    for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
         if (it->second.get()->get_isSet() && it->second.get()->get_group() == group) {
             return true;
         }
