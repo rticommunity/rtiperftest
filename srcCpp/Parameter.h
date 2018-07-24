@@ -79,7 +79,10 @@ class ParameterBase  {
         bool internal; // Does not have description
         GROUP group;
 
-        // Only used for numeric argument
+        /*
+         * Only used for numeric argument
+         * The range are inlcuded.
+         */
         unsigned long long rangeStart;
         unsigned long long rangeEnd;
 
@@ -90,10 +93,13 @@ class ParameterBase  {
         ParameterBase();
         virtual ~ParameterBase();
 
-        // Validate range
+        // Validate if the var is include in the range
         bool validate_numeric_range(unsigned long long var);
 
-        // Validate str Valuesi if not empty
+        /*
+         * If validStrValues is not empty
+        *      Validat if var is include in the list of valid string
+        */
         bool validate_str_range(std::string var);
 
         std::string print_command_line_parameter();
