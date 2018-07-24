@@ -876,9 +876,7 @@ ParameterManager::~ParameterManager()
 // check if a variable has been set
 bool ParameterManager::is_set(std::string parameterKey)
 {
-    std::map<std::string, AnyParameter>::iterator it;
-    it = parameterList.find(parameterKey);
-    if (it != parameterList.end()) {
+    if (parameterList.find(parameterKey) != parameterList.end()) {
         return parameterList[parameterKey].get()->get_isSet();
     } else {
         return false;
@@ -921,7 +919,8 @@ std::vector<std::string> ParameterManager::split(std::string str, char delimiter
     return v;
 }
 
-std::string ParameterManager::get_center_header_help_line(std::string name){
+std::string ParameterManager::get_center_header_help_line(std::string name)
+{
     name += " Specific Options";
     std::stringstream line;
     unsigned int maxWithLine = 80;
@@ -934,7 +933,8 @@ std::string ParameterManager::get_center_header_help_line(std::string name){
     return line.str();
 }
 
-bool ParameterManager::group_is_use(GROUP group){
+bool ParameterManager::group_is_use(GROUP group)
+{
     std::map<std::string, AnyParameter>::iterator it;
     for (it = parameterList.begin(); it != parameterList.end(); it++) {
         if (it->second.get()->get_isSet() && it->second.get()->get_group() == group) {

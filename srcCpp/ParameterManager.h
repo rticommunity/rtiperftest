@@ -34,10 +34,9 @@ class ParameterManager
 
         // Set the value of a parameter
         template <typename T>
-        void set(std::string parameterKey, T var){
-            std::map<std::string, AnyParameter>::iterator it;
-            it = parameterList.find(parameterKey);
-            if (it != parameterList.end()) {
+        void set(std::string parameterKey, T var)
+        {
+            if (parameterList.find(parameterKey) != parameterList.end()) {
                 (static_cast<Parameter<T>*>(parameterList[parameterKey].get<T>()))->set_value(var);
             }
         }
@@ -46,9 +45,7 @@ class ParameterManager
         template <typename T>
         T get(std::string parameterKey)
         {
-            std::map<std::string, AnyParameter>::iterator it;
-            it = parameterList.find(parameterKey);
-            if (it != parameterList.end()) {
+            if (parameterList.find(parameterKey) != parameterList.end()) {
                 return (static_cast<Parameter<T>*>(parameterList[parameterKey].get<T>()))->get_value();
             } else {
                 return T(); // Return the default
@@ -60,9 +57,7 @@ class ParameterManager
         template <typename T>
         std::vector<T> get_vector(std::string parameterKey)
         {
-          std::map<std::string, AnyParameter>::iterator it;
-            it = parameterList.find(parameterKey);
-            if (it != parameterList.end()) {
+            if (parameterList.find(parameterKey) != parameterList.end()) {
                 return (static_cast<ParameterVector<T>*>(parameterList[parameterKey].get_vector<T>()))->get_value();
             } else {
                 return std::vector<T>(); // Return the default
@@ -74,9 +69,7 @@ class ParameterManager
         template <typename K, typename V>
         std::pair<K,V> get_pair(std::string parameterKey)
         {
-          std::map<std::string, AnyParameter>::iterator it;
-            it = parameterList.find(parameterKey);
-            if (it != parameterList.end()) {
+            if (parameterList.find(parameterKey) != parameterList.end()) {
                 return (static_cast<ParameterPair<K,V>*>(parameterList[parameterKey].get_pair<K,V>()))->get_value();
             } else {
                 return std::pair<K,V>(); // Return the default
