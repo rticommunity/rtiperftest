@@ -698,68 +698,69 @@ bool ParameterManager::parse(int argc, char *argv[])
     for (unsigned int i = 1; i < allArgs.size(); i++) {
         for (it = parameterList.begin(); it != parameterList.end(); it++) {
             if (IS_OPTION(allArgs[i].c_str(), it->second.get()->get_option().c_str())) {
+                ParameterBase *p = it->second.get();
                 // NumArguments == 0
-                if (it->second.get()->get_extra_argument() == NO) {
+                if (p->get_extra_argument() == NO) {
                     // Type is T_BOOL
-                    if (it->second.get()->get_type() == T_BOOL) {
+                    if (p->get_type() == T_BOOL) {
                         (static_cast<Parameter<bool>*>(it->second.get<bool>()))->set_value(true);
                     }
                 // NumArguments is 1 or optional
-                } else { // if (it->second.get()->get_extra_argument() > NO) {
+                } else { // if (p->get_extra_argument() > NO) {
                     // Check for error in num of arguments
                     if (i+1 >= allArgs.size() || allArgs[i+1].find("-") == 0) {
-                        if (it->second.get()->get_extra_argument() == YES) {
+                        if (p->get_extra_argument() == YES) {
                             fprintf(stderr, "Missing '%s' after '%s'\n",
-                                it->second.get()->get_arg().c_str(),
-                                it->second.get()->get_option().c_str());
+                                p->get_arg().c_str(),
+                                p->get_option().c_str());
                             return false;
-                        } else if (it->second.get()->get_extra_argument() == OPTIONAL) {
-                            it->second.get()->set_isSet(true);
+                        } else if (p->get_extra_argument() == OPTIONAL) {
+                            p->set_isSet(true);
                             break;
                         }
                     }
                     ++i;
                     // Type is T_STR
-                    if (it->second.get()->get_type() == T_STR) {
-                        if (!it->second.get()->validate_str_range(allArgs[i])) {
+                    if (p->get_type() == T_STR) {
+                        if (!p->validate_str_range(allArgs[i])) {
                             success = false;
                         }
                         (static_cast<Parameter<std::string>*>(it->second.get<std::string>()))->set_value(allArgs[i]);
                     }
                     // Type is T_NUMERIC
-                    else if (it->second.get()->get_type() == T_NUMERIC) {
+                    else if (p->get_type() == T_NUMERIC) {
                         if (sscanf(allArgs[i].c_str(), "%llu", &var) != 1) {
                             fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
-                                    it->second.get()->get_arg().c_str(),
-                                    it->second.get()->get_option().c_str());
+                                    p->get_arg().c_str(),
+                                    p->get_option().c_str());
                             success = false;
                         }
-                        if (!it->second.get()->validate_numeric_range(var)) {
+                        if (!p->validate_numeric_range(var)) {
                             success = false;
                         }
                         (static_cast<Parameter<unsigned long long>*>(it->second.get<unsigned long long>()))->set_value(var);
                     }
                     // Type is T_VECTOR_STR
-                    else if (it->second.get()->get_type() == T_VECTOR_STR) {
+                    else if (p->get_type() == T_VECTOR_STR) {
                         if (NOSPLIT == ((ParameterVector<std::string>*)it->second.get_vector<std::string>())->get_parse_method()) {
-                            if (!it->second.get()->validate_str_range(allArgs[i])) {
+                            if (!p->validate_str_range(allArgs[i])) {
                                 success = false;
                             }
                             (static_cast<ParameterVector<std::string>*>(it->second.get_vector<std::string>()))->set_value(allArgs[i]);
                         }
                     }
                     // Type is T_VECTOR_NUMERIC
-                    else if (it->second.get()->get_type() == T_VECTOR_NUMERIC) {
+                    else if (p->get_type() == T_VECTOR_NUMERIC) {
                         if (SPLIT == ((ParameterVector<unsigned long long>*)it->second.get_vector<unsigned long long>())->get_parse_method()) {
                             std::vector<std::string> v = split(allArgs[i]);
                             for (unsigned int j = 0; j < v.size(); j++) {
                                 if (sscanf(v[j].c_str(), "%llu", &var) != 1) {
                                     fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
-                                            it->second.get()->get_arg().c_str(),
-                                            it->second.get()->get_option().c_str());
+                                            p->get_arg().c_str(),
+                                            p->get_option().c_str());
                                     success = false;
                                 }
-                                if (!it->second.get()->validate_numeric_range(var)) {
+                                if (!p->validate_numeric_range(var)) {
                                     success = false;
                                 }
                                 (static_cast<ParameterVector<unsigned long long>*>(it->second.get_vector<unsigned long long>()))->set_value(var);
@@ -767,24 +768,24 @@ bool ParameterManager::parse(int argc, char *argv[])
                         }
                     }
                     // Type is T_PAIR_NUMERIC_STR
-                    else if (it->second.get()->get_type() == T_PAIR_NUMERIC_STR) {
+                    else if (p->get_type() == T_PAIR_NUMERIC_STR) {
                         std::vector<std::string> v = split(allArgs[i]);
                         if (v.size() != 2) {
                             fprintf(stderr, "Missing '%s' after '%s'\n",
-                                it->second.get()->get_arg().c_str(),
-                                it->second.get()->get_option().c_str());
+                                p->get_arg().c_str(),
+                                p->get_option().c_str());
                             return false;
                         } else {
                             if (sscanf(v[0].c_str(), "%llu", &var) != 1) {
                                 fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
-                                        it->second.get()->get_arg().c_str(),
-                                        it->second.get()->get_option().c_str());
+                                        p->get_arg().c_str(),
+                                        p->get_option().c_str());
                                 success = false;
                             }
-                            if (!it->second.get()->validate_numeric_range(var)) {
+                            if (!p->validate_numeric_range(var)) {
                                 success = false;
                             }
-                            if (!it->second.get()->validate_str_range(v[1])) {
+                            if (!p->validate_str_range(v[1])) {
                                 success = false;
                             }
                             (static_cast<ParameterPair<unsigned long long, std::string>*>(it->second.get_pair<unsigned long long, std::string>()))->set_value(var, v[1]);
