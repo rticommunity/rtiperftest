@@ -94,109 +94,109 @@ bool ParameterBase::validate_str_range(std::string var)
 }
 
 // Set members
-void ParameterBase::set_command_line_argument(std::string option, std::string arg)
+void ParameterBase::set_command_line_argument(const std::string option, std::string arg)
 {
     commandLineArgument.set(option, arg);
 }
 
-void ParameterBase::set_description(std::string var)
+void ParameterBase::set_description(const std::string var)
 {
     description = var;
 }
 
-void ParameterBase::set_isSet(bool var)
+void ParameterBase::set_isSet(const bool var)
 {
     isSet = var;
 }
 
-void ParameterBase::set_type(TYPE var)
+void ParameterBase::set_type(const TYPE var)
 {
     type = var;
 }
 
-void ParameterBase::set_extra_argument(EXTRAARGUMENT var)
+void ParameterBase::set_extra_argument(const EXTRAARGUMENT var)
 {
     extraArgument = var;
 }
 
-void ParameterBase::set_range_start(unsigned long long var)
+void ParameterBase::set_range_start(const unsigned long long var)
 {
     rangeStart = var;
 }
 
-void ParameterBase::set_range_end(unsigned long long var)
+void ParameterBase::set_range_end(const unsigned long long var)
 {
     rangeEnd = var;
 }
 
-void ParameterBase::set_range(unsigned long long rangeStart, unsigned long long rangeEnd)
+void ParameterBase::set_range(const unsigned long long rangeStart, const unsigned long long rangeEnd)
 {
     this->rangeStart = rangeStart;
     this->rangeEnd = rangeEnd;
 }
 
-void ParameterBase::add_valid_str_value(std::string validStrValue)
+void ParameterBase::add_valid_str_value(const std::string validStrValue)
 {
     this->validStrValues.push_back(validStrValue);
 }
 
-void ParameterBase::set_internal(bool var)
+void ParameterBase::set_internal(const bool var)
 {
     internal = var;
 }
 
-void ParameterBase::set_group(GROUP var)
+void ParameterBase::set_group(const GROUP var)
 {
     group = var;
 }
 
 // Get members
-CommandLineArgument ParameterBase::get_command_line_argument()
+const CommandLineArgument ParameterBase::get_command_line_argument()
 {
     return commandLineArgument;
 }
 
-std::string ParameterBase::get_arg()
+const std::string ParameterBase::get_arg()
 {
     return commandLineArgument.get_arg();
 }
 
-std::string ParameterBase::get_option()
+const std::string ParameterBase::get_option()
 {
     return commandLineArgument.get_option();
 }
 
-std::string ParameterBase::get_description()
+const std::string ParameterBase::get_description()
 {
     return description;
 }
 
-bool ParameterBase::get_isSet()
+const bool ParameterBase::get_isSet()
 {
     return isSet;
 }
 
-TYPE ParameterBase::get_type()
+const TYPE ParameterBase::get_type()
 {
     return type;
 }
 
-EXTRAARGUMENT ParameterBase::get_extra_argument()
+const EXTRAARGUMENT ParameterBase::get_extra_argument()
 {
     return extraArgument;
 }
 
-bool ParameterBase::get_internal()
+const bool ParameterBase::get_internal()
 {
     return internal;
 }
 
-GROUP ParameterBase::get_group()
+const GROUP ParameterBase::get_group()
 {
     return group;
 }
 
-PARSEMETHOD ParameterBase::get_parse_method()
+const PARSEMETHOD ParameterBase::get_parse_method()
 {
     return NOSPLIT;
 }

@@ -105,30 +105,30 @@ class ParameterBase  {
         std::string print_command_line_parameter();
 
         // Set members
-        virtual void set_command_line_argument(std::string option, std::string arg);
-        virtual void set_description(std::string var);
-        virtual void set_isSet(bool var);
-        virtual void set_type(TYPE var);
-        virtual void set_extra_argument(EXTRAARGUMENT var);
-        virtual void set_internal(bool var);
-        virtual void set_group(GROUP var);
-        virtual void set_range_start(unsigned long long var);
-        virtual void set_range_end(unsigned long long var);
-        virtual void set_range(unsigned long long rangeStart, unsigned long long rangeEnd);
-        virtual void add_valid_str_value(std::string validStrValue);
-        virtual void set_parse_method(PARSEMETHOD var) {}
+        virtual void set_command_line_argument(const std::string option, const std::string arg);
+        virtual void set_description(const std::string var);
+        virtual void set_isSet(const bool var);
+        virtual void set_type(const TYPE var);
+        virtual void set_extra_argument(const EXTRAARGUMENT var);
+        virtual void set_internal(const bool var);
+        virtual void set_group(const GROUP var);
+        virtual void set_range_start(const unsigned long long var);
+        virtual void set_range_end(const unsigned long long var);
+        virtual void set_range(const unsigned long long rangeStart, unsigned long long rangeEnd);
+        virtual void add_valid_str_value(const std::string validStrValue);
+        virtual void set_parse_method(const PARSEMETHOD var) {}
 
         // Get members
-        virtual std::string get_arg();
-        virtual std::string get_option();
-        virtual CommandLineArgument get_command_line_argument();
-        virtual std::string get_description();
-        virtual bool get_isSet();
-        virtual TYPE get_type();
-        virtual EXTRAARGUMENT get_extra_argument();
-        virtual bool get_internal();
-        virtual GROUP get_group();
-        virtual PARSEMETHOD get_parse_method();
+        virtual const std::string get_arg();
+        virtual const std::string get_option();
+        virtual const CommandLineArgument get_command_line_argument();
+        virtual const std::string get_description();
+        virtual const bool get_isSet();
+        virtual const TYPE get_type();
+        virtual const EXTRAARGUMENT get_extra_argument();
+        virtual const bool get_internal();
+        virtual const GROUP get_group();
+        virtual const PARSEMETHOD get_parse_method();
 };
 
 template <typename T>
@@ -217,12 +217,12 @@ class ParameterVector : public ParameterBase {
             set_isSet(true);
         }
 
-        void set_parse_method(PARSEMETHOD var)
+        void set_parse_method(const PARSEMETHOD var)
         {
             parseMethod = var;
         }
 
-        PARSEMETHOD get_parse_method()
+        const PARSEMETHOD get_parse_method()
         {
             return parseMethod;
         }
