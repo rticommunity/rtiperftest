@@ -81,16 +81,15 @@ bool ParameterBase::validate_numeric_range(unsigned long long var)
 bool ParameterBase::validate_str_range(std::string var)
 {
     if (!validStrValues.empty()) {
-        if (validStrValues.end() != std::find(validStrValues.begin(), validStrValues.end(), var)) {
-            return true;
-        } else {
+        if (validStrValues.end() == std::find(validStrValues.begin(), validStrValues.end(), var)) {
             fprintf(stderr, "In the argument '%s', incorrect '%s':  %s\n",
                     commandLineArgument.get_option().c_str(),
                     commandLineArgument.get_arg().c_str(),
                     var.c_str());
+            return false;
         }
     }
-    return false;
+    return true;
 }
 
 // Set members

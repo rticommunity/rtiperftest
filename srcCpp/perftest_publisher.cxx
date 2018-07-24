@@ -361,6 +361,8 @@ bool perftest_cpp::validate_input()
         }
     }
 
+    // TODO: Manage the parameter: -threadPriorities
+        //PM::GetInstance().get<std::string>("threadPriorities");
     return true;
 }
 

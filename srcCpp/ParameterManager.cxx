@@ -216,6 +216,15 @@ void ParameterManager::initialize()
     unbounded->set_group(GENERAL);
     parameterList["unbounded"] = AnyParameter(unbounded);
 
+    Parameter<std::string> *threadPriorities = new Parameter<std::string>("");
+    threadPriorities->set_command_line_argument("-threadPriorities","<:A:B:C>");
+    threadPriorities->set_description("Set the priorities for the Main thread(A), \nReceive threads(B) created by the participant\nand Receive listener threads(B) when -UseReadThread is provide\nand Event and DataBase(C) threads\ncreated by each DomainParticipant\n");
+    threadPriorities->set_type(T_STR);
+    threadPriorities->set_extra_argument(YES);
+    threadPriorities->set_group(GENERAL);
+    parameterList["threadPriorities"] = AnyParameter(threadPriorities);
+
+
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER
 
@@ -708,7 +717,7 @@ bool ParameterManager::parse(int argc, char *argv[])
                 // NumArguments is 1 or optional
                 } else { // if (p->get_extra_argument() > NO) {
                     // Check for error in num of arguments
-                    if (i+1 >= allArgs.size() || allArgs[i+1].find("-") == 0) {
+                    if (i + 1 >= allArgs.size() || allArgs[i+1].find("-") == 0) {
                         if (p->get_extra_argument() == YES) {
                             fprintf(stderr, "Missing '%s' after '%s'\n",
                                 p->get_arg().c_str(),
