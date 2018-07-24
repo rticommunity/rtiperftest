@@ -705,7 +705,7 @@ bool ParameterManager::parse(int argc, char *argv[])
                         (static_cast<Parameter<bool>*>(it->second.get<bool>()))->set_value(true);
                     }
                 // NumArguments is 1 or optional
-                } else if (it->second.get()->get_extra_argument() > NO) {
+                } else { // if (it->second.get()->get_extra_argument() > NO) {
                     // Check for error in num of arguments
                     if (i+1 >= allArgs.size() || allArgs[i+1].find("-") == 0) {
                         if (it->second.get()->get_extra_argument() == YES) {
@@ -905,17 +905,18 @@ bool ParameterManager::validate_group()
 }
 
 
-std::vector<std::string> ParameterManager::split(std::string str, char delimiter)
+std::vector<std::string> ParameterManager::split(std::string var, std::string delimiter)
 {
     std::vector<std::string> v;
-    std::size_t current, previous = 0;
-    current = str.find_first_of(delimiter);
-    while (current != std::string::npos) {
-        v.push_back(str.substr(previous, current - previous));
-        previous = current + 1;
-        current = str.find_first_of(delimiter, previous);
+    char * pch;
+    char *str = new char[var.length() + 1];
+    strcpy(str, var.c_str());
+    pch = strtok (str, delimiter.c_str());
+    while (pch != NULL) {
+        v.push_back(pch);
+        pch = strtok (NULL, delimiter.c_str());
     }
-    v.push_back(str.substr(previous, current - previous));
+    delete[] str;
     return v;
 }
 

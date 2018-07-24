@@ -103,7 +103,7 @@ class ParameterManager
     private:
         // Get the help message
         std::string print_command_line_parameter(ParameterBase *parameterValue);
-        std::vector<std::string> split(std::string str, char delimiter = ':');
+        std::vector<std::string> split(std::string str, std::string delimiter = ":");
         std::string get_center_header_help_line(std::string name);
 
 };
