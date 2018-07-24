@@ -17,7 +17,7 @@
 #include <sstream>
 
 /*
- * This specifies the the type of the parameter.
+ * This specifies the type of the parameter.
  * It is used in the way to parse them.
  */
 enum TYPE {
@@ -98,7 +98,7 @@ class ParameterBase  {
 
         /*
          * If validStrValues is not empty
-        *      Validat if var is include in the list of valid string
+        *      Validate if var is include in the list of valid string
         */
         bool validate_str_range(std::string var);
 
@@ -141,10 +141,9 @@ class Parameter : public ParameterBase {
         {
         }
 
-        Parameter(T value)
-        {
-            _value = value;
-        }
+        Parameter(T value):
+                _value(value)
+        {}
         ~Parameter()
         {
         }
@@ -176,9 +175,9 @@ class ParameterVector : public ParameterBase {
             _parseMethod = NOSPLIT;
         }
 
-        ParameterVector(T value)
+        ParameterVector(T value):
+                _parseMethod(NOSPLIT)
         {
-            _parseMethod = NOSPLIT;
             _value.clear();
             _value.push_back(value);
         }

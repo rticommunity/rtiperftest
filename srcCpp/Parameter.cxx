@@ -10,11 +10,10 @@ CommandLineArgument::CommandLineArgument()
 {
 }
 
-CommandLineArgument::CommandLineArgument(std::string option, std::string arg)
-{
-    _option.assign(option);
-    _arg.assign(arg);
-}
+CommandLineArgument::CommandLineArgument(std::string option, std::string arg) :
+        _option(option),
+        _arg(arg)
+{}
 
 CommandLineArgument::~CommandLineArgument()
 {

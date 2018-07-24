@@ -918,7 +918,7 @@ bool ParameterManager::validate_group()
 std::vector<std::string> ParameterManager::split(std::string var, std::string delimiter)
 {
     std::vector<std::string> v;
-    char * pch;
+    char *pch;
     char *str = new char[var.length() + 1];
     strcpy(str, var.c_str());
     pch = strtok (str, delimiter.c_str());
