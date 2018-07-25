@@ -227,7 +227,7 @@ bool perftest_cpp::validate_input()
 {
     // Manage parameter -sleep
     // It is copied because it is used in the critical patch
-    _SleepNanosec = 1000000 * PM::GetInstance().get<unsigned int>("sleep");
+    _SleepNanosec = 1000000 * PM::GetInstance().get<unsigned long long>("sleep");
 
     // Manage parameter -spin
     // It is copied because it is used in the critical patch
@@ -317,11 +317,10 @@ bool perftest_cpp::validate_input()
     // Manage the parameter: -unbounded
     if (PM::GetInstance().is_set("unbounded")) {
         if (PM::GetInstance().get<int>("unbounded") == 0) {
-            PM::GetInstance().set<unsigned long long>(
-                    "unbounded",
+            PM::GetInstance().set<int>("unbounded",
                     (std::min)(
-                            2 * PM::GetInstance().get<unsigned long>("dataLen"),
-                            (unsigned long)MAX_BOUNDED_SEQ_SIZE));
+                            2 * PM::GetInstance().get<unsigned long long>("dataLen"),
+                            (unsigned long long)MAX_BOUNDED_SEQ_SIZE));
         }
     }
 
@@ -358,7 +357,7 @@ bool perftest_cpp::validate_input()
         if (PM::GetInstance().get<int>("unbounded") != 0) {
             fprintf(stderr,
                     "Unbounded will be ignored since large data is not presented.\n");
-            PM::GetInstance().set<unsigned long long>("unbounded", 0);
+            PM::GetInstance().set<int>("unbounded", 0);
         }
     }
 
@@ -1469,7 +1468,7 @@ int perftest_cpp::Publisher()
      */
     unsigned long initializeSampleCount = (std::max)(
             _MessagingImpl->GetInitializationSampleCount(),
-            PM::GetInstance().get<unsigned long>("instances"));
+            (unsigned long)PM::GetInstance().get<unsigned long long>("instances"));
 
     fprintf(stderr,
             "Sending %lu initialization pings ...\n",

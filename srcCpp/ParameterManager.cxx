@@ -28,16 +28,16 @@ void ParameterManager::initialize()
     Parameter<unsigned long long> *dataLen = new Parameter<unsigned long long>(100);
     dataLen->set_command_line_argument("-dataLen","<bytes>");
     dataLen->set_description("Set length of payload for each send.\nDefault: 100");
-    dataLen->set_type(T_NUMERIC);
+    dataLen->set_type(T_NUMERIC_LLU);
     dataLen->set_extra_argument(YES);
     dataLen->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_PERFTEST_SAMPLE_SIZE);
     dataLen->set_group(GENERAL);
     _parameterList["dataLen"] = AnyParameter(dataLen);
 
-    Parameter<unsigned long long> *verbosity = new Parameter<unsigned long long>(1);
+    Parameter<int> *verbosity = new Parameter<int>(1);
     verbosity->set_command_line_argument("-verbosity","<level>");
     verbosity->set_description("Run with different levels of verbosity:\n0 - SILENT, 1 - ERROR, 2 - WARNING, 3 - ALL.\nDefault: 1");
-    verbosity->set_type(T_NUMERIC);
+    verbosity->set_type(T_NUMERIC_D);
     verbosity->set_extra_argument(YES);
     verbosity->set_range(0, 3);
     verbosity->set_group(GENERAL);
@@ -51,19 +51,19 @@ void ParameterManager::initialize()
     dynamicData->set_group(GENERAL);
     _parameterList["dynamicData"] = AnyParameter(dynamicData);
 
-    Parameter<unsigned long long> *durability = new Parameter<unsigned long long>(DDS_VOLATILE_DURABILITY_QOS);
+    Parameter<int> *durability = new Parameter<int>(DDS_VOLATILE_DURABILITY_QOS);
     durability->set_command_line_argument("-durability","<0|1|2|3>");
     durability->set_description("Set durability QOS: 0 - volatile,\n1 - transient local, 2 - transient,\n3 - persistent. Default: 0");
-    durability->set_type(T_NUMERIC);
+    durability->set_type(T_NUMERIC_D);
     durability->set_extra_argument(YES);
     durability->set_group(GENERAL);
     durability->set_range(0, 3);
     _parameterList["durability"] = AnyParameter(durability);
 
-    Parameter<unsigned long long> *domain = new Parameter<unsigned long long>(1);
+    Parameter<int> *domain = new Parameter<int>(1);
     domain->set_command_line_argument("-domain","<id>");
     domain->set_description("RTI DDS Domain. Default: 1");
-    domain->set_type(T_NUMERIC);
+    domain->set_type(T_NUMERIC_D);
     domain->set_extra_argument(YES);
     domain->set_range(0, 250);
     domain->set_group(GENERAL);
@@ -72,7 +72,7 @@ void ParameterManager::initialize()
     Parameter<unsigned long long> *instances = new Parameter<unsigned long long>(1);
     instances->set_command_line_argument("-instances","<count>");
     instances->set_description("Set the number of instances (keys) to iterate\nover when publishing. Default: 1");
-    instances->set_type(T_NUMERIC);
+    instances->set_type(T_NUMERIC_LLU);
     instances->set_extra_argument(YES);
     instances->set_range(1, ULONG_MAX);
     instances->set_group(GENERAL);
@@ -81,7 +81,7 @@ void ParameterManager::initialize()
     Parameter<unsigned long long> *instanceHashBuckets = new Parameter<unsigned long long>(0);
     instanceHashBuckets->set_command_line_argument("-instanceHashBuckets","<count>");
     instanceHashBuckets->set_internal(true);
-    instanceHashBuckets->set_type(T_NUMERIC);
+    instanceHashBuckets->set_type(T_NUMERIC_LLU);
     instanceHashBuckets->set_extra_argument(YES);
     instanceHashBuckets->set_range(1, 1000000);
     instanceHashBuckets->set_group(GENERAL);
@@ -114,7 +114,7 @@ void ParameterManager::initialize()
     Parameter<unsigned long long> *keepDurationUsec = new Parameter<unsigned long long>(0);
     keepDurationUsec->set_command_line_argument("-keepDurationUsec","<usec>");
     keepDurationUsec->set_internal(true);
-    keepDurationUsec->set_type(T_NUMERIC);
+    keepDurationUsec->set_type(T_NUMERIC_LLU);
     keepDurationUsec->set_extra_argument(YES);
     keepDurationUsec->set_group(GENERAL);
     keepDurationUsec->set_range(1, ULLONG_MAX);
@@ -163,7 +163,7 @@ void ParameterManager::initialize()
     Parameter<unsigned long long> *waitsetDelayUsec = new Parameter<unsigned long long>(100);
     waitsetDelayUsec->set_command_line_argument("-waitsetDelayUsec","<usec>");
     waitsetDelayUsec->set_description("UseReadThread related. Allows you to\nprocess incoming data in groups, based on the\ntime rather than individually. It can be used\ncombined with -waitsetEventCount.\nDefault: 100 usec");
-    waitsetDelayUsec->set_type(T_NUMERIC);
+    waitsetDelayUsec->set_type(T_NUMERIC_LLU);
     waitsetDelayUsec->set_extra_argument(YES);
     waitsetDelayUsec->set_group(GENERAL);
     waitsetDelayUsec->set_range(0, UINT_MAX);
@@ -172,7 +172,7 @@ void ParameterManager::initialize()
     Parameter<unsigned long long> *waitsetEventCount = new Parameter<unsigned long long>(5);
     waitsetEventCount->set_command_line_argument("-waitsetEventCount","<count>");
     waitsetEventCount->set_description("UseReadThread related. Allows you to\nprocess incoming data in groups, based on the\nnumber of samples rather than individually. It\ncan be used combined with -waitsetDelayUsec.\nDefault: 5");
-    waitsetEventCount->set_type(T_NUMERIC);
+    waitsetEventCount->set_type(T_NUMERIC_LLU);
     waitsetEventCount->set_extra_argument(YES);
     waitsetEventCount->set_group(GENERAL);
     waitsetEventCount->set_range(1, ULLONG_MAX);
@@ -205,10 +205,10 @@ void ParameterManager::initialize()
     cpu->set_group(GENERAL);
     _parameterList["cpu"] = AnyParameter(cpu);
 
-    Parameter<unsigned long long> *unbounded = new Parameter<unsigned long long>(0);
+    Parameter<int> *unbounded = new Parameter<int>(0);
     unbounded->set_command_line_argument("-unbounded","<allocation_threshold>");
     unbounded->set_description("Use unbounded Sequences\n<allocation_threshold> is optional. Default: 63000 Bytes");
-    unbounded->set_type(T_NUMERIC);
+    unbounded->set_type(T_NUMERIC_D);
     unbounded->set_extra_argument(OPTIONAL);
     unbounded->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_BOUNDED_SEQ_SIZE);
     unbounded->set_group(GENERAL);
@@ -226,10 +226,10 @@ void ParameterManager::initialize()
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER
 
-    Parameter<unsigned long long> *batchSize = new Parameter<unsigned long long>(DEFAULT_THROUGHPUT_BATCH_SIZE);
+    Parameter<long> *batchSize = new Parameter<long>(DEFAULT_THROUGHPUT_BATCH_SIZE);
     batchSize->set_command_line_argument("-batchsize","<bytes>");
     batchSize->set_description("Size in bytes of batched message. Default: 8kB.\n(Disabled for LatencyTest mode or if dataLen > 4kB)");
-    batchSize->set_type(T_NUMERIC);
+    batchSize->set_type(T_NUMERIC_LD);
     batchSize->set_extra_argument(YES);
     batchSize->set_range(0, MAX_SYNCHRONOUS_SIZE - 1);
     batchSize->set_group(PUB);
@@ -262,7 +262,7 @@ void ParameterManager::initialize()
     Parameter<unsigned long long> *latencyCount = new Parameter<unsigned long long>(10000);
     latencyCount->set_command_line_argument("-latencyCount","<count>");
     latencyCount->set_description("Number of samples (or batches) to send before\na latency ping packet is sent. Default:\n10000 if -latencyTest is not specified,\n1 if -latencyTest is specified");
-    latencyCount->set_type(T_NUMERIC);
+    latencyCount->set_type(T_NUMERIC_LLU);
     latencyCount->set_extra_argument(YES);
     latencyCount->set_range(0, ULLONG_MAX);
     latencyCount->set_group(PUB);
@@ -271,7 +271,7 @@ void ParameterManager::initialize()
     Parameter<unsigned long long> *executionTime = new Parameter<unsigned long long>(0);
     executionTime->set_command_line_argument("-executionTime","<sec>");
     executionTime->set_description("Set a maximum duration for the test.\nThe first condition triggered will finish the\ntest: number of samples or execution time.\nDefault 0 (don't set execution time)");
-    executionTime->set_type(T_NUMERIC);
+    executionTime->set_type(T_NUMERIC_LLU);
     executionTime->set_extra_argument(YES);
     executionTime->set_range(1, ULLONG_MAX);
     executionTime->set_group(PUB);
@@ -288,25 +288,25 @@ void ParameterManager::initialize()
     Parameter<unsigned long long> *numIter = new Parameter<unsigned long long>(100000000);
     numIter->set_command_line_argument("-numIter","<count>");
     numIter->set_description("Set number of messages to send. Default:\n100000000 for Throughput tests or 10000000\nfor Latency tests. See '-executionTime'");
-    numIter->set_type(T_NUMERIC);
+    numIter->set_type(T_NUMERIC_LLU);
     numIter->set_extra_argument(YES);
     numIter->set_range(1, ULLONG_MAX);
     numIter->set_group(PUB);
     _parameterList["numIter"] = AnyParameter(numIter);
 
-    Parameter<unsigned long long> *numSubscribers = new Parameter<unsigned long long>(1);
+    Parameter<int> *numSubscribers = new Parameter<int>(1);
     numSubscribers->set_command_line_argument("-numSubscribers","<count>");
     numSubscribers->set_description("Number of subscribers running in test.\nDefault: 1");
-    numSubscribers->set_type(T_NUMERIC);
+    numSubscribers->set_type(T_NUMERIC_D);
     numSubscribers->set_extra_argument(YES);
     numSubscribers->set_range(1, INT_MAX);
     numSubscribers->set_group(PUB);
     _parameterList["numSubscribers"] = AnyParameter(numSubscribers);
 
-    Parameter<unsigned long long> *pidMultiPubTest = new Parameter<unsigned long long>(0);
+    Parameter<int> *pidMultiPubTest = new Parameter<int>(0);
     pidMultiPubTest->set_command_line_argument("-pidMultiPubTest","<bytes>");
     pidMultiPubTest->set_description("Set id of the publisher in a multi-publisher test.\n Only publisher 0 sends \n latency pings. Default: 0");
-    pidMultiPubTest->set_type(T_NUMERIC);
+    pidMultiPubTest->set_type(T_NUMERIC_D);
     pidMultiPubTest->set_extra_argument(YES);
     pidMultiPubTest->set_range(0, INT_MAX);
     pidMultiPubTest->set_group(PUB);
@@ -346,10 +346,10 @@ void ParameterManager::initialize()
     scan->set_group(PUB);
     _parameterList["scan"] = AnyParameter(scan);
 
-    Parameter<unsigned long long> *sendQueueSize = new Parameter<unsigned long long>(50);
+    Parameter<int> *sendQueueSize = new Parameter<int>(50);
     sendQueueSize->set_command_line_argument("-sendQueueSize","<number>");
     sendQueueSize->set_description("Sets number of samples (or batches) in send\nqueue. Default: 50");
-    sendQueueSize->set_type(T_NUMERIC);
+    sendQueueSize->set_type(T_NUMERIC_D);
     sendQueueSize->set_extra_argument(YES);
     sendQueueSize->set_group(PUB);
     sendQueueSize->set_range(1, INT_MAX);
@@ -358,7 +358,7 @@ void ParameterManager::initialize()
     Parameter<unsigned long long> *sleep = new Parameter<unsigned long long>(0);
     sleep->set_command_line_argument("-sleep","<millisec>");
     sleep->set_description("Time to sleep between each send. Default: 0");
-    sleep->set_type(T_NUMERIC);
+    sleep->set_type(T_NUMERIC_LLU);
     sleep->set_extra_argument(YES);
     sleep->set_range(0, ULLONG_MAX);
     sleep->set_group(PUB);
@@ -367,7 +367,7 @@ void ParameterManager::initialize()
     Parameter<unsigned long long> *spin = new Parameter<unsigned long long>(0);
     spin->set_command_line_argument("-spin","<count>");
     spin->set_internal(true);
-    spin->set_type(T_NUMERIC);
+    spin->set_type(T_NUMERIC_LLU);
     spin->set_extra_argument(YES);
     spin->set_range(0, ULLONG_MAX);
     spin->set_group(PUB);
@@ -384,7 +384,7 @@ void ParameterManager::initialize()
     Parameter<long> *writeInstance = new Parameter<long>(-1);// (-1) By default use round-robin (-1)
     writeInstance->set_command_line_argument("-writeInstance","<instance>");
     writeInstance->set_description("Set the instance number to be sent. \n'-writeInstance' parameter cannot be bigger than the number of instances.\nDefault: 'Round-Robin' schedule");
-    writeInstance->set_type(T_NUMERIC);
+    writeInstance->set_type(T_NUMERIC_LD);
     writeInstance->set_extra_argument(YES);
     writeInstance->set_range(0, LONG_MAX);
     writeInstance->set_group(PUB);
@@ -400,19 +400,19 @@ void ParameterManager::initialize()
     sub->set_group(SUB);
     _parameterList["sub"] = AnyParameter(sub);
 
-    Parameter<unsigned long long> *sidMultiSubTest = new Parameter<unsigned long long>(0);
+    Parameter<int> *sidMultiSubTest = new Parameter<int>(0);
     sidMultiSubTest->set_command_line_argument("-sidMultiSubTest","<bytes>");
     sidMultiSubTest->set_description("Set the id of the subscriber in a\nmulti-subscriber test. Default: 0");
-    sidMultiSubTest->set_type(T_NUMERIC);
+    sidMultiSubTest->set_type(T_NUMERIC_D);
     sidMultiSubTest->set_extra_argument(YES);
     sidMultiSubTest->set_range(0, INT_MAX);
     sidMultiSubTest->set_group(SUB);
     _parameterList["sidMultiSubTest"] = AnyParameter(sidMultiSubTest);
 
-    Parameter<unsigned long long> *numPublishers = new Parameter<unsigned long long>(1);
+    Parameter<int> *numPublishers = new Parameter<int>(1);
     numPublishers->set_command_line_argument("-numPublishers","<count>");
     numPublishers->set_description("Number of publishers running in test.\nDefault: 1");
-    numPublishers->set_type(T_NUMERIC);
+    numPublishers->set_type(T_NUMERIC_D);
     numPublishers->set_extra_argument(YES);
     numPublishers->set_range(1, ULLONG_MAX);
     numPublishers->set_group(SUB);
@@ -676,11 +676,11 @@ void ParameterManager::initialize()
     secureLibrary->set_group(SECURE);
     _parameterList["secureLibrary"] = AnyParameter(secureLibrary);
 
-    Parameter<unsigned long long> *secureDebug = new Parameter<unsigned long long>(1);
+    Parameter<int> *secureDebug = new Parameter<int>(1);
     secureDebug->set_command_line_argument("-secureDebug","<level>");
-    secureDebug->set_type(T_NUMERIC);
+    secureDebug->set_type(T_NUMERIC_D);
     secureDebug->set_extra_argument(YES);
-    secureDebug->set_range(-1, ULLONG_MAX);
+    secureDebug->set_range(0, 7);
     secureDebug->set_group(SECURE);
     secureDebug->set_internal(true);
     _parameterList["secureDebug"] = AnyParameter(secureDebug);
@@ -692,7 +692,9 @@ void ParameterManager::initialize()
 // Parse the command line parameters and set the value
 bool ParameterManager::parse(int argc, char *argv[])
 {
-    unsigned long long var;
+    unsigned long long varLLU;
+    long varLD;
+    int varD;
     bool success = true;
     ParameterBase *p = NULL;
     // Copy all arguments into a container of strings
@@ -731,18 +733,44 @@ bool ParameterManager::parse(int argc, char *argv[])
                         }
                         (static_cast<Parameter<std::string>*>(it->second.get<std::string>()))->set_value(allArgs[i]);
                     }
-                    // Type is T_NUMERIC
-                    else if (p->get_type() == T_NUMERIC) {
-                        if (sscanf(allArgs[i].c_str(), "%llu", &var) != 1) {
+                    // Type is T_NUMERIC_LLU
+                    else if (p->get_type() == T_NUMERIC_LLU) {
+                        if (sscanf(allArgs[i].c_str(), "%llu", &varLLU) != 1) {
                             fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
                                     p->get_arg().c_str(),
                                     p->get_option().c_str());
                             success = false;
                         }
-                        if (!p->validate_numeric_range(var)) {
+                        if (!p->validate_numeric_range(varLLU)) {
                             success = false;
                         }
-                        (static_cast<Parameter<unsigned long long>*>(it->second.get<unsigned long long>()))->set_value(var);
+                        (static_cast<Parameter<unsigned long long>*>(it->second.get<unsigned long long>()))->set_value(varLLU);
+                    }
+                    // Type is T_NUMERIC_LD
+                    else if (p->get_type() == T_NUMERIC_LD) {
+                        if (sscanf(allArgs[i].c_str(), "%ld", &varLD) != 1) {
+                            fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
+                                    p->get_arg().c_str(),
+                                    p->get_option().c_str());
+                            success = false;
+                        }
+                        if (!p->validate_numeric_range(varLD)) {
+                            success = false;
+                        }
+                        (static_cast<Parameter<long>*>(it->second.get<long>()))->set_value(varLD);
+                    }
+                    // Type is T_NUMERIC_D
+                    else if (p->get_type() == T_NUMERIC_D) {
+                        if (sscanf(allArgs[i].c_str(), "%d", &varD) != 1) {
+                            fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
+                                    p->get_arg().c_str(),
+                                    p->get_option().c_str());
+                            success = false;
+                        }
+                        if (!p->validate_numeric_range(varD)) {
+                            success = false;
+                        }
+                        (static_cast<Parameter<int>*>(it->second.get<int>()))->set_value(varD);
                     }
                     // Type is T_VECTOR_STR
                     else if (p->get_type() == T_VECTOR_STR) {
@@ -758,16 +786,16 @@ bool ParameterManager::parse(int argc, char *argv[])
                         if (SPLIT == ((ParameterVector<unsigned long long>*)it->second.get_vector<unsigned long long>())->get_parse_method()) {
                             std::vector<std::string> v = split(allArgs[i]);
                             for (unsigned int j = 0; j < v.size(); j++) {
-                                if (sscanf(v[j].c_str(), "%llu", &var) != 1) {
+                                if (sscanf(v[j].c_str(), "%llu", &varLLU) != 1) {
                                     fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
                                             p->get_arg().c_str(),
                                             p->get_option().c_str());
                                     success = false;
                                 }
-                                if (!p->validate_numeric_range(var)) {
+                                if (!p->validate_numeric_range(varLLU)) {
                                     success = false;
                                 }
-                                (static_cast<ParameterVector<unsigned long long>*>(it->second.get_vector<unsigned long long>()))->set_value(var);
+                                (static_cast<ParameterVector<unsigned long long>*>(it->second.get_vector<unsigned long long>()))->set_value(varLLU);
                             }
                         }
                     }
@@ -780,19 +808,19 @@ bool ParameterManager::parse(int argc, char *argv[])
                                 p->get_option().c_str());
                             return false;
                         } else {
-                            if (sscanf(v[0].c_str(), "%llu", &var) != 1) {
+                            if (sscanf(v[0].c_str(), "%llu", &varLLU) != 1) {
                                 fprintf(stderr, "Cannot parse '%s' '%s', invalid input.\n",
                                         p->get_arg().c_str(),
                                         p->get_option().c_str());
                                 success = false;
                             }
-                            if (!p->validate_numeric_range(var)) {
+                            if (!p->validate_numeric_range(varLLU)) {
                                 success = false;
                             }
                             if (!p->validate_str_range(v[1])) {
                                 success = false;
                             }
-                            (static_cast<ParameterPair<unsigned long long, std::string>*>(it->second.get_pair<unsigned long long, std::string>()))->set_value(var, v[1]);
+                            (static_cast<ParameterPair<unsigned long long, std::string>*>(it->second.get_pair<unsigned long long, std::string>()))->set_value(varLLU, v[1]);
                         }
                     }
                 }

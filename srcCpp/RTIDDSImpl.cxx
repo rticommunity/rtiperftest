@@ -140,7 +140,7 @@ bool RTIDDSImpl<T>::validate_input()
     // Manage parameter -instance
     if (PM::GetInstance().is_set("instance")){
         _InstanceMaxCountReader =
-                PM::GetInstance().get<unsigned long>("instances");
+                PM::GetInstance().get<unsigned long long>("instances");
     }
     // Manage parameter -peers
     if (PM::GetInstance().get_vector<std::string>("peer").size()
@@ -232,12 +232,12 @@ bool RTIDDSImpl<T>::validate_input()
 
     // Manage parameter -writeInstance
     if (PM::GetInstance().is_set("writeInstance")) {
-        if (PM::GetInstance().get<long>("instances") <
-                PM::GetInstance().get<long>("writeInstance")) {
+        if (PM::GetInstance().get<unsigned long long>("instances") <
+                (unsigned long long)PM::GetInstance().get<long>("writeInstance")) {
             fprintf(stderr,
-                    "Specified '-WriteInstance' (%ld) invalid: Bigger than the number of instances (%lu).\n",
+                    "Specified '-WriteInstance' (%ld) invalid: Bigger than the number of instances (%llu).\n",
                     PM::GetInstance().get<long>("writeInstance"),
-                    PM::GetInstance().get<unsigned long>("instances"));
+                    PM::GetInstance().get<unsigned long long>("instances"));
             return false;
         }
     }
@@ -253,7 +253,7 @@ bool RTIDDSImpl<T>::validate_input()
      * Setting verbosity if the parameter is provided
      */
     if (PM::GetInstance().is_set("verbosity")) {
-        switch (PM::GetInstance().get<int>("verbosity")) {
+        switch (PM::GetInstance().get<unsigned long long>("verbosity")) {
             case 0: NDDSConfigLogger::get_instance()->
                     set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_SILENT);
                 fprintf(stderr, "Setting verbosity to SILENT\n");
@@ -1490,7 +1490,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
 
             DDS_WaitSetProperty_t property;
             property.max_event_count =
-                    PM::GetInstance().get<int>("waitsetEventCount");
+                    PM::GetInstance().get<unsigned long long>("waitsetEventCount");
             property.max_event_delay.sec =
                     PM::GetInstance().get<unsigned int>("waitsetDelayUsec") / 1000000;
             property.max_event_delay.nanosec =
@@ -1846,8 +1846,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
 
     if (PM::GetInstance().is_set("secureDebug")) {
         char buf[16];
-        sprintf(buf, "%llu",
-                PM::GetInstance().get<unsigned long long>("secureDebug"));
+        sprintf(buf, "%d", PM::GetInstance().get<int>("secureDebug"));
         retcode = DDSPropertyQosPolicyHelper::add_property(
                 dpQos.property,
                 "com.rti.serv.secure.logging.log_level",
@@ -2006,7 +2005,7 @@ std::string RTIDDSImpl<T>::printSecureArgs()
 
     if (PM::GetInstance().is_set("secureDebug")) {
         stringStream << "\tDebug level: "
-                     << PM::GetInstance().get<unsigned long long>("secureDebug")
+                     << PM::GetInstance().get<int>("secureDebug")
                      << "\n";
     }
 
@@ -2380,9 +2379,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     dw_qos.resource_limits.max_instances =
-            PM::GetInstance().get<unsigned long>("instances") + 1; // One extra for MAX_CFT_VALUE
+            PM::GetInstance().get<unsigned long long>("instances") + 1; // One extra for MAX_CFT_VALUE
     dw_qos.resource_limits.initial_instances =
-            PM::GetInstance().get<unsigned long>("instances") +1;
+            PM::GetInstance().get<unsigned long long>("instances") + 1;
 
     if (PM::GetInstance().get<int>("unbounded") != 0) {
         char buf[10];
@@ -2392,13 +2391,13 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                buf, false);
     }
 
-    if (PM::GetInstance().get<unsigned long>("instances") > 1) {
+    if (PM::GetInstance().get<unsigned long long>("instances") > 1) {
         if (PM::GetInstance().is_set("instanceHashBuckets")) {
             dw_qos.resource_limits.instance_hash_buckets =
-                PM::GetInstance().get<unsigned long>("instanceHashBuckets");
+                PM::GetInstance().get<unsigned long long>("instanceHashBuckets");
         } else {
             dw_qos.resource_limits.instance_hash_buckets =
-                    PM::GetInstance().get<unsigned long>("instances");
+                    PM::GetInstance().get<unsigned long long>("instances");
         }
     }
 
@@ -2416,7 +2415,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         try {
             return new RTIPublisher<T>(
                     writer,
-                    PM::GetInstance().get<unsigned long>("instances"),
+                    PM::GetInstance().get<unsigned long long>("instances"),
                     _pongSemaphore,
                     PM::GetInstance().get<long>("writeInstance"));
         } catch (const std::exception &ex) {
@@ -2427,7 +2426,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         try{
             return new RTIDynamicDataPublisher(
                     writer,
-                    PM::GetInstance().get<unsigned long>("instances"),
+                    PM::GetInstance().get<unsigned long long>("instances"),
                     _pongSemaphore,
                     T::TypeSupport::get_typecode(),
                     PM::GetInstance().get<long>("writeInstance"));
@@ -2609,19 +2608,19 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     dr_qos.resource_limits.initial_instances =
-            PM::GetInstance().get<unsigned long>("instances") + 1;
+            PM::GetInstance().get<unsigned long long>("instances") + 1;
     if (_InstanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
         _InstanceMaxCountReader++;
     }
     dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
 
-    if (PM::GetInstance().get<unsigned long>("instances") > 1) {
+    if (PM::GetInstance().get<unsigned long long>("instances") > 1) {
         if (PM::GetInstance().is_set("instanceHashBuckets")) {
             dr_qos.resource_limits.instance_hash_buckets =
-                    PM::GetInstance().get<unsigned long>("instanceHashBuckets");
+                    PM::GetInstance().get<unsigned long long>("instanceHashBuckets");
         } else {
             dr_qos.resource_limits.instance_hash_buckets =
-                    PM::GetInstance().get<unsigned long>("instances");
+                    PM::GetInstance().get<unsigned long long>("instances");
         }
     }
 

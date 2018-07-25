@@ -21,11 +21,13 @@
  * It is used to determine how to parse them.
  */
 enum TYPE {
-    T_NULL,           // Default type
-    T_NUMERIC,        // Numeric type
-    T_STR,            // std::string pype
-    T_BOOL,           // bool type
-    T_VECTOR_NUMERIC, // std::vector<unsigened long long>
+    T_NULL,            // Default type
+    T_NUMERIC_LLU,     // Numeric type unsigned long long
+    T_NUMERIC_LD,      // Numeric type long
+    T_NUMERIC_D,       // Numeric type int
+    T_STR,             // std::string pype
+    T_BOOL,            // bool type
+    T_VECTOR_NUMERIC,  // std::vector<unsigened long long>
     T_VECTOR_STR,      // std::vector<std::string>
     T_PAIR_NUMERIC_STR // std::pair<unsigened long long, std::string>
 };
