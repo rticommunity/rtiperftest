@@ -161,7 +161,7 @@ bool RTIDDSImpl<T>::validate_input()
 
     // Manage parameter -batchSize
     if (PM::GetInstance().get<long>("batchSize") > 0) {
-        /* We will not use batching for a latency test */
+        // We will not use batching for a latency test
         if (PM::GetInstance().get<bool>("latencyTest")) {
             if (PM::GetInstance().is_set("batchSize")) {
                 fprintf(stderr, "Batching cannot be used in a Latency test.\n");
@@ -172,7 +172,7 @@ bool RTIDDSImpl<T>::validate_input()
             }
         }
 
-        /* Check if using asynchronous */
+        // Check if using asynchronous
         if (PM::GetInstance().get<bool>("asynchronous")) {
             if (PM::GetInstance().is_set("batchSize")) {
                 fprintf(stderr,
@@ -250,29 +250,29 @@ bool RTIDDSImpl<T>::validate_input()
 
     /*
      * Manage parameter -verbosity.
-     *  Setting verbosity
+     * Setting verbosity if the parameter is provided
      */
     if (PM::GetInstance().is_set("verbosity")) {
         switch (PM::GetInstance().get<int>("verbosity")) {
             case 0: NDDSConfigLogger::get_instance()->
-                        set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_SILENT);
-                    fprintf(stderr, "Setting verbosity to SILENT\n");
-                    break;
+                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_SILENT);
+                fprintf(stderr, "Setting verbosity to SILENT\n");
+                break;
             case 1: NDDSConfigLogger::get_instance()->
-                        set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_ERROR);
-                    fprintf(stderr, "Setting verbosity to ERROR\n");
-                    break;
+                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_ERROR);
+                fprintf(stderr, "Setting verbosity to ERROR\n");
+                break;
             case 2: NDDSConfigLogger::get_instance()->
-                        set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_WARNING);
-                    fprintf(stderr, "Setting verbosity to WARNING\n");
-                    break;
+                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_WARNING);
+                fprintf(stderr, "Setting verbosity to WARNING\n");
+                break;
             case 3: NDDSConfigLogger::get_instance()->
-                        set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
-                    fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
-                    break;
+                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
+                break;
             default:
                 fprintf(stderr, "Invalid value for the verbosity parameter\n");
-                    return false;
+                return false;
         }
     }
 
@@ -354,7 +354,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
             PM::GetInstance().get_vector<std::string>("peer");
     if (!_peerList.empty()) {
         stringStream << "\tInitial peers: ";
-        for (size_t i = 0; i < _peerList.size(); ++i) {
+        for (unsigned int i = 0; i < _peerList.size(); ++i) {
             stringStream << _peerList[i];
             if (i == _peerList.size() - 1) {
                 stringStream << "\n";
@@ -1958,8 +1958,7 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     if (PM::GetInstance().get<std::string>("secureGovernanceFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << PM::GetInstance().get<std::string>(
-                                "secureGovernanceFile")
+        stringStream << PM::GetInstance().get<std::string>("secureGovernanceFile")
                      << "\n";
     }
 
@@ -2076,7 +2075,8 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     if (_factory->get_participant_qos_from_profile(
             qos,
             PM::GetInstance().get<std::string>("qosLibrary").c_str(),
-            "BaseProfileQos") != DDS_RETCODE_OK) {
+            "BaseProfileQos")
+            != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "Problem setting QoS Library \"%s::BaseProfileQos\" for participant_qos.\n",
                 PM::GetInstance().get<std::string>("qosLibrary").c_str());
@@ -2097,17 +2097,18 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     }
   #endif
 
-    // set initial peers and not use multicast
+    // Set initial peers and not use multicast
     std::vector<std::string> _peerList =
             PM::GetInstance().get_vector<std::string>("peer");
     if (!_peerList.empty()) {
         std::vector<char*> cstrings;
         cstrings.reserve(_peerList.size());
-        for(size_t i = 0; i < _peerList.size(); ++i)
+        for(unsigned int i = 0; i < _peerList.size(); ++i) {
             cstrings.push_back(const_cast<char*>(_peerList[i].c_str()));
+        }
         qos.discovery.initial_peers.from_array(
-            (const char **)&cstrings[0],
-            _peerList.size());
+                (const char **)&cstrings[0],
+                _peerList.size());
         qos.discovery.multicast_receive_addresses.length(0);
     }
 
@@ -2253,10 +2254,11 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (_factory->get_datawriter_qos_from_profile(dw_qos,
-            PM::GetInstance().get<std::string>("qosLibrary").c_str(),
-            qos_profile.c_str())
-        != DDS_RETCODE_OK) {
+    if (_factory->get_datawriter_qos_from_profile(
+                dw_qos,
+                PM::GetInstance().get<std::string>("qosLibrary").c_str(),
+                qos_profile.c_str())
+            != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
                 qos_profile.c_str(),
@@ -2271,7 +2273,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         if (PM::GetInstance().is_set("keepDurationUsec")) {
             dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
                 DDS_Duration_t::from_micros(
-                            PM::GetInstance().get<unsigned long long>("keepDurationUsec"));
+                        PM::GetInstance().get<unsigned long long>("keepDurationUsec"));
         }
     }
 
@@ -2370,7 +2372,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     if (qos_profile == "LatencyQos"
             && PM::GetInstance().get<bool>("noDirectCommunication")
             && (PM::GetInstance().get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
-                    || PM::GetInstance().get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
+            || PM::GetInstance().get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
         dw_qos.durability.kind =
                 (DDS_DurabilityQosPolicyKind)PM::GetInstance().get<int>("durability");
         dw_qos.durability.direct_communication =
@@ -2487,8 +2489,8 @@ DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
                 "(255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3])";
     } else { // If cftRange.size() == 2 (RANGE)
         printf("CFT enabled for instance range: [%llu,%llu] \n",
-            cftRange[0],
-            cftRange[1]);
+                cftRange[0],
+                cftRange[1]);
         char cft_param[2 * KEY_SIZE][128];
         for (int i = 0; i < 2 * KEY_SIZE ; i++ ) {
             if (i < KEY_SIZE) {
@@ -2565,7 +2567,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-    if (_factory->get_datareader_qos_from_profile(dr_qos,
+    if (_factory->get_datareader_qos_from_profile(
+            dr_qos,
             PM::GetInstance().get<std::string>("qosLibrary").c_str(),
             qos_profile.c_str())
             != DDS_RETCODE_OK) {
@@ -2595,14 +2598,14 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     // only apply durability on Throughput datareader
     if (qos_profile == "ThroughputQos"
             || (qos_profile == "LatencyQos"
-                    && PM::GetInstance().get<bool>("noDirectCommunication")
-                    && (PM::GetInstance().get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
-                            || PM::GetInstance().get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)))
+            && PM::GetInstance().get<bool>("noDirectCommunication")
+            && (PM::GetInstance().get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+            || PM::GetInstance().get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)))
     {
         dr_qos.durability.kind =
                 (DDS_DurabilityQosPolicyKind) PM::GetInstance().get<int>("durability");
         dr_qos.durability.direct_communication =
-            !PM::GetInstance().get<bool>("noDirectCommunication");
+                !PM::GetInstance().get<bool>("noDirectCommunication");
     }
 
     dr_qos.resource_limits.initial_instances =
@@ -2615,10 +2618,10 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     if (PM::GetInstance().get<unsigned long>("instances") > 1) {
         if (PM::GetInstance().is_set("instanceHashBuckets")) {
             dr_qos.resource_limits.instance_hash_buckets =
-                PM::GetInstance().get<unsigned long>("instanceHashBuckets");
+                    PM::GetInstance().get<unsigned long>("instanceHashBuckets");
         } else {
             dr_qos.resource_limits.instance_hash_buckets =
-                PM::GetInstance().get<unsigned long>("instances");
+                    PM::GetInstance().get<unsigned long>("instances");
         }
     }
 
@@ -2660,7 +2663,6 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     if (callback != NULL) {
-
         if (!PM::GetInstance().get<bool>("dynamicData")) {
             reader = _subscriber->create_datareader(
                     topic_desc,

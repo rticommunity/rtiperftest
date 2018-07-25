@@ -47,7 +47,6 @@ class RTIDDSImpl : public IMessaging
         _IsMulticast = false;
         _InstanceMaxCountReader = DDS_LENGTH_UNLIMITED;
         _KeepDurationUsec = -1;
-        _IsDebug = false;
         _isLargeData = false;
         _factory = NULL;
         _participant = NULL;
@@ -76,8 +75,10 @@ class RTIDDSImpl : public IMessaging
 
     IMessagingWriter *CreateWriter(const char *topic_name);
 
-    // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
-    // to get data
+    /*
+     * Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
+     * to get data
+     */
     IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
 
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
@@ -95,7 +96,6 @@ class RTIDDSImpl : public IMessaging
     bool         _IsMulticast;
     long _InstanceMaxCountReader;
     int          _KeepDurationUsec;
-    bool         _IsDebug;
     bool         _isLargeData;
     PerftestTransport _transport;
 

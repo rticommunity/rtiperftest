@@ -717,7 +717,6 @@ void PerftestTransport::populateSecurityFiles() {
 
 std::string PerftestTransport::printTransportConfigurationSummary()
 {
-    bool useMulticast = PM::GetInstance().get<bool>("multicast");
     std::ostringstream stringStream;
     stringStream << "Transport Configuration:\n";
     stringStream << "\tKind: " << transportConfig.nameString;
@@ -733,8 +732,8 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     }
 
     stringStream << "\tUse Multicast: "
-                 << ((allowsMulticast() && useMulticast) ? "True" : "False");
-    if (!allowsMulticast() && useMulticast) {
+                 << ((allowsMulticast() && PM::GetInstance().get<bool>("multicast")) ? "True" : "False");
+    if (!allowsMulticast() && PM::GetInstance().get<bool>("multicast")) {
         stringStream << " (Multicast is not supported for "
                      << transportConfig.nameString << ")";
     }
@@ -753,7 +752,8 @@ std::string PerftestTransport::printTransportConfigurationSummary()
         if (PM::GetInstance().get<bool>("transportWan")) {
             stringStream << "\tTCP Public Address: "
                          << PM::GetInstance().get<std::string>(
-                                "transportPublicAddress") << "\n";
+                                "transportPublicAddress")
+                        << "\n";
         }
     }
 
@@ -818,7 +818,10 @@ bool PerftestTransport::validate_input()
     //     multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = argv[i];
     // }
 
-    // Manage parameter -allowInterfaces -nic
+    /*
+     * Manage parameter -allowInterfaces -nic
+     * "-allowInterfaces" and "-nic" are the same parameter, so now use only one.
+     */
     if (PM::GetInstance().get<std::string>("allowInterfaces").empty()) {
         PM::GetInstance().set<std::string>(
                 "allowInterfaces",

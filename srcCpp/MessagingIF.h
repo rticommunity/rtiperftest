@@ -20,14 +20,14 @@ class TestMessage
     unsigned int timestamp_usec;
     int          latency_ping;
 
-    TestMessage():
-        data(NULL),
-        size(0),
-        entity_id(0),
-        seq_num(0),
-        timestamp_sec(0),
-        timestamp_usec(0),
-        latency_ping(0)
+    TestMessage() :
+            data(NULL),
+            size(0),
+            entity_id(0),
+            seq_num(0),
+            timestamp_sec(0),
+            timestamp_usec(0),
+            latency_ping(0)
     {
         key[0]=0;
         key[1]=0;

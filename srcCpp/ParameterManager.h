@@ -29,7 +29,7 @@ class ParameterManager
     public:
         ParameterManager();
         void initialize();
-        static ParameterManager &GetInstance();
+        static ParameterManager& GetInstance();
         ~ParameterManager();
 
         // Set the value of a parameter
@@ -37,7 +37,7 @@ class ParameterManager
         void set(std::string parameterKey, T var)
         {
             std::map<std::string, AnyParameter>::iterator it =
-                _parameterList.find(parameterKey);
+                    _parameterList.find(parameterKey);
             if (it != _parameterList.end()) {
                 (static_cast<Parameter<T>*>(it->second.get<T>()))->set_value(var);
             }
@@ -48,7 +48,7 @@ class ParameterManager
         T get(std::string parameterKey)
         {
             std::map<std::string, AnyParameter>::iterator it =
-                _parameterList.find(parameterKey);
+                    _parameterList.find(parameterKey);
             if (it != _parameterList.end()) {
                 return (static_cast<Parameter<T>*>(it->second.get<T>()))->get_value();
             } else {
@@ -62,7 +62,7 @@ class ParameterManager
         std::vector<T> get_vector(std::string parameterKey)
         {
             std::map<std::string, AnyParameter>::iterator it =
-                _parameterList.find(parameterKey);
+                    _parameterList.find(parameterKey);
             if (it != _parameterList.end()) {
                 return (static_cast<ParameterVector<T>*>(it->second.get_vector<T>()))->get_value();
             } else {
@@ -76,7 +76,7 @@ class ParameterManager
         std::pair<K,V> get_pair(std::string parameterKey)
         {
             std::map<std::string, AnyParameter>::iterator it =
-                _parameterList.find(parameterKey);
+                    _parameterList.find(parameterKey);
             if (it != _parameterList.end()) {
                 return (static_cast<ParameterPair<K,V>*>(it->second.get_pair<K,V>()))->get_value();
             } else {
@@ -85,7 +85,7 @@ class ParameterManager
             }
         }
 
-        // Parse the command line parameters and set the value
+        // Parse the command line parameters and set the values
         bool parse(int argc, char *argv[]);
 
         // Get the help message
@@ -109,8 +109,6 @@ class ParameterManager
 
 
     private:
-        // Get the help message
-        std::string print_command_line_parameter(ParameterBase *parameterValue);
         std::vector<std::string> split(std::string str, std::string delimiter = ":");
         std::string get_center_header_help_line(std::string name);
 

@@ -17,7 +17,7 @@
 #include <sstream>
 
 /*
- * This specifies the type of the parameter.
+ * This enum specifies the type of the parameter.
  * It is used to determine how to parse them.
  */
 enum TYPE {
@@ -30,20 +30,20 @@ enum TYPE {
     T_PAIR_NUMERIC_STR // std::pair<unsigened long long, std::string>
 };
 
-// This specifies the way how to parser a argument for a ParameterVector.
+// This enum specifies the way how to parser an argument for a ParameterVector.
 enum PARSEMETHOD {
     NOSPLIT,          // If the value is not splited into the vector
     SPLIT             // If the value is splited into the vector
 };
 
-// This specifies if a parameter will be followed by one extra argument.
+// This enum specifies if a parameter will be followed by one extra argument.
 enum EXTRAARGUMENT {
     NO,               // There is not extra argument
     OPTIONAL,         // It is possible to have one extra argument
     YES              // There is an extra argument
 };
 
-// This specifies the group of a parameter. It is used to sort the help message.
+// This enum specifies the group of a parameter. It is used to sort the help message.
 enum GROUP {
     GENERAL,
     PUB,
@@ -76,7 +76,7 @@ class ParameterBase  {
         bool _isSet;
         TYPE _type;
         EXTRAARGUMENT  _extraArgument;
-        bool _internal; // It will not be display to the customer
+        bool _internal; // It will not be displaied to the customer
         GROUP _group;
 
         /*
@@ -102,6 +102,7 @@ class ParameterBase  {
         */
         bool validate_str_range(std::string var);
 
+        // Get the help message of a expecific parameter
         std::string print_command_line_parameter();
 
         // Set members
@@ -166,7 +167,7 @@ class ParameterVector : public ParameterBase {
     public:
         ParameterVector() : _parseMethod(NOSPLIT)  {}
 
-        ParameterVector(T value):
+        ParameterVector(T value) :
                 _parseMethod(NOSPLIT)
         {
             _value.clear();
@@ -251,7 +252,7 @@ class AnyParameter {
     private:
         ParameterBase *_param;
     public:
-        AnyParameter():  _param(NULL) {}
+        AnyParameter() :  _param(NULL) {}
 
         template <typename T>
         AnyParameter(Parameter<T> *var) : _param(var) {}

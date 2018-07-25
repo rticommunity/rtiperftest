@@ -67,7 +67,7 @@ ParameterBase::~ParameterBase()
 // Validate range
 bool ParameterBase::validate_numeric_range(unsigned long long var)
 {
-    if (_numericRange.first < var || var < _numericRange.second) {
+    if (_numericRange.first > var || var > _numericRange.second) {
         fprintf(stderr, "In the argument '%s', '%s' should be in the range [%llu, %llu]\n",
                 _commandLineArgument.get_option().c_str(),
                 _commandLineArgument.get_arg().c_str(),
@@ -192,7 +192,7 @@ const PARSEMETHOD ParameterBase::get_parse_method()
     return NOSPLIT;
 }
 
-// Get the help message
+// Get the help message of a expecific parameter
 std::string ParameterBase::print_command_line_parameter()
 {
     const std::string spaces (42, ' ');

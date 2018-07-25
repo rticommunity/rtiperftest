@@ -8,7 +8,7 @@
 
 ParameterManager::ParameterManager() {}
 
-ParameterManager &ParameterManager::GetInstance()
+ParameterManager& ParameterManager::GetInstance()
 {
     static ParameterManager instance;
     return instance;
@@ -702,7 +702,7 @@ bool ParameterManager::parse(int argc, char *argv[])
     for (unsigned int i = 1; i < allArgs.size(); i++) {
         for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
             if (IS_OPTION(allArgs[i].c_str(), it->second.get()->get_option().c_str())) {
-                p = it->second.get();
+                p = it->second.get(); // Save the variable, it will be used several time.
                 // NumArguments == 0
                 if (p->get_extra_argument() == NO) {
                     // Type is T_BOOL
@@ -882,7 +882,7 @@ ParameterManager::~ParameterManager()
 bool ParameterManager::is_set(std::string parameterKey)
 {
     std::map<std::string, AnyParameter>::iterator it =
-        _parameterList.find(parameterKey);
+            _parameterList.find(parameterKey);
     if (it != _parameterList.end()) {
         return it->second.get()->get_isSet();
     } else {

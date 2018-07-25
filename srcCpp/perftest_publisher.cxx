@@ -89,8 +89,6 @@ int perftest_cpp::Run(int argc, char *argv[])
     try {
         PM::GetInstance().initialize();
     } catch(std::exception &ex) {
-        // call destructor
-        // p.shutdown();
         fprintf(stderr, "Exception in PM::GetInstance().initialize(): %s.\n", ex.what());
         return -1;
     }
@@ -228,9 +226,11 @@ perftest_cpp::perftest_cpp()
 bool perftest_cpp::validate_input()
 {
     // Manage parameter -sleep
+    // It is copied because it is used in the critical patch
     _SleepNanosec = 1000000 * PM::GetInstance().get<unsigned int>("sleep");
 
     // Manage parameter -spin
+    // It is copied because it is used in the critical patch
     _SpinLoopCount = PM::GetInstance().get<unsigned long long>("spin");
 
     // Manage parameter -printIterval
@@ -255,7 +255,7 @@ bool perftest_cpp::validate_input()
 
         // With latency test, latency should be 1
         if(!PM::GetInstance().is_set("latencyCount")) {
-            PM::GetInstance().set<unsigned long long>("latencyCount",1);
+            PM::GetInstance().set<unsigned long long>("latencyCount", 1);
         }
 
         /*
@@ -274,7 +274,7 @@ bool perftest_cpp::validate_input()
 
     // Manage parameter -latencyCount
     if(!PM::GetInstance().is_set("latencyCount")) {
-        PM::GetInstance().set<unsigned long long>("latencyCount",10000);
+        PM::GetInstance().set<unsigned long long>("latencyCount", 10000);
     }
     if (PM::GetInstance().get<unsigned long long>("numIter") <
             PM::GetInstance().get<unsigned long long>("latencyCount")) {
@@ -334,7 +334,7 @@ bool perftest_cpp::validate_input()
             PM::GetInstance().set<unsigned long long>("executionTime", 60);
         }
         // Check if large data or small data
-        if (scanList[0] < (unsigned long long)(std::min)(MAX_SYNCHRONOUS_SIZE , MAX_BOUNDED_SEQ_SIZE)
+        if (scanList[0] < (unsigned long long)(std::min)(MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)
                 && scanList[scanList.size() - 1] > (unsigned long long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
             fprintf(stderr, "The sizes of -scan [");
             for (unsigned int i = 0; i < scanList.size(); i++) {
@@ -342,7 +342,7 @@ bool perftest_cpp::validate_input()
             }
             fprintf(stderr,
                     "] should be either all smaller or all bigger than %d.\n",
-                    (std::min)(MAX_SYNCHRONOUS_SIZE , MAX_BOUNDED_SEQ_SIZE));
+                    (std::min)(MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE));
             return false;
         }
     }
@@ -356,7 +356,8 @@ bool perftest_cpp::validate_input()
         }
     } else { /* No Large Data */
         if (PM::GetInstance().get<int>("unbounded") != 0) {
-            fprintf(stderr, "Unbounded will be ignored since large data is not presented.\n");
+            fprintf(stderr,
+                    "Unbounded will be ignored since large data is not presented.\n");
             PM::GetInstance().set<unsigned long long>("unbounded", 0);
         }
     }
@@ -473,7 +474,7 @@ void perftest_cpp::PrintConfiguration()
         } else {
             stringStream << "Unlimited (Not set)\n";
         }
-        // Execution Time or Num Iter
+        // Execution Time or NumIter
         if (PM::GetInstance().get<unsigned long long>("executionTime") > 0) {
             stringStream << "\tExecution time: "
                          << PM::GetInstance().get<unsigned long long>("executionTime")
@@ -1338,8 +1339,7 @@ int perftest_cpp::Publisher()
 
     IMessagingReader *reader;
     // Only publisher with ID 0 will send/receive pings
-    if (PM::GetInstance().get<int>("pidMultiPubTest") == 0)
-    {
+    if (PM::GetInstance().get<int>("pidMultiPubTest") == 0) {
         // Check if using callbacks or read thread
         if (!PM::GetInstance().get<bool>("useReadThread")) {
             // create latency pong reader
