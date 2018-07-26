@@ -237,8 +237,7 @@ bool perftest_cpp::parse_priority(std::string arg)
             return false;
         }
 
-    } else if (sscanf(arg.c_str(), "%c:%c:%c", &x, &y, &z) != 3) {
-                printf("TEST\n");
+    } else if (sscanf(arg.c_str(), "%c:%c:%c", &x, &y, &z) == 3) {
         /* Check if is given by characters */
         if (!perftest_cpp::threadPriorities.set_priorities(x, y, z)) {
             fprintf(stderr, "Fail to parse -threadPriorities\n");
