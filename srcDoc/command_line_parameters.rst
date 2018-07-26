@@ -300,6 +300,19 @@ Test Parameters for Publishing and Subscribing Applications
    **Default:**
    ``Not set. RTI Perftest will use the default initial peers (localhost, shared-memory and multicast).``
 
+-  ``-threadPriorities X:Y:Z``
+
+    Set the priorities for the application Threads:
+        X -- For the Main Thread, which will be the one sending the data. Also
+             for the Asynchronous thread if that one is used.
+        Y -- For the Receive Threads, If the -useReadThread is used, also for
+             the thread created to receive and process data.
+        Z -- For the rest of the threads created by the middleware: Event and
+             Database Threads.
+
+   **Default:**
+   ``Not set. The priority will not be modify.``
+
 Transport Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

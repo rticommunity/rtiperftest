@@ -67,25 +67,37 @@ Build HTML and PDF documentation (#94)
 RTI Perftest build script for linux now offers the option to generate the HTML
 and PDF documentation from the rst files in srcDoc.
 
-New parameter that allow set thread priorities (#65)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RTI Perftest thread priorities can be configured via command-line parameter (#65)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A new parameter, `-threadPriorities`, has been added to *RTI Perftest* to allow
-the users set the priorities on four differents threads.
+the users to set the priorities on the different threads created by RTI Connext
+DDS and by the application.
 
-The parameter accepts three priorities numeric values as follows:
+This parameter accepts 3 numeric values which will be used as follows:
 
 ::
 
--threadPriorities A:B:C
+-threadPriorities X:Y:Z
 
 Where:
 
-- *A* is for the main Thread that manage all the communication.
-- *B* is for all the receive threads creates by the participant to process the
-  data packets received and for the listener created when -useReadThread is provide.
-- *C* is for the event thread and dataBase thread created for each DomainParticipant.
+- *X* is for the main Thread that manage all the communication and it's also
+  used for the asynchronous thread when using large data.
+- *Y* is the priotiry for all the receive thread. This value will be used for
+  the receive thread created by *RTI Connext DDS*, but also for the thread in
+  charge  of receiving the data when the -useReadThread option (use Waitsets)
+  is provided.
+- *Z* is the priority for the Event and DataBase threads created at the
+  *RTI Connext DDS* level.
 
+To see what values to be used for the threads See
+*RTI Connext DDS Core Libraries Platform Notes Version 5.3.1*
+
+- Table 6.7 Thread-Priority Definitions for Linux Platforms
+- Table 8.6 Thread-Priority Definitions for OS X Platforms
+- Table 11.7 Thread-Priority Definitions for VxWorks Platforms
+- Table 12.7 Thread-Priority Definitions for Windows Platforms
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~

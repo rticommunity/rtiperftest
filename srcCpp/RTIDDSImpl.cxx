@@ -2483,7 +2483,13 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 {
     DDS_DomainParticipantQos qos;
     DDS_DomainParticipantFactoryQos factory_qos;
+    DDS_PublisherQos publisherQoS;
+
     DomainListener *listener = new DomainListener();
+
+    /* Mask for threadPriorities when it's used */
+    DDS_ThreadSettingsKindMask mask = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
+            | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
 
     // Register _loggerDevice
     if (!NDDSConfigLogger::get_instance()->set_output_device(&_loggerDevice)) {
@@ -2569,8 +2575,6 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
     // set thread priorities.
     if (perftest_cpp::threadPriorities.isSet) {
-        DDS_ThreadSettingsKindMask mask
-                = DDS_THREAD_SETTINGS_REALTIME_PRIORITY | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
 
         // Set real time schedule
         qos.receiver_pool.thread.mask = mask;
@@ -2578,9 +2582,12 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         qos.database.thread.mask = mask;
 
         // Set priority
-        qos.receiver_pool.thread.priority = perftest_cpp::threadPriorities.receive;
+        qos.receiver_pool.thread.priority
+                = perftest_cpp::threadPriorities.receive;
         qos.event.thread.priority = perftest_cpp::threadPriorities.dbAndEvent;
-        qos.database.thread.priority = perftest_cpp::threadPriorities.dbAndEvent;
+        qos.database.thread.priority
+                = perftest_cpp::threadPriorities.dbAndEvent;
+
     }
 
     if (_AutoThrottle) {
@@ -2619,10 +2626,27 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         dynamicDataTypeSupportObject->register_type(_participant, _typename);
     }
 
-    // Create the DDSPublisher and DDSSubscriber
-    _publisher = _participant->create_publisher_with_profile(
+    _factory->get_publisher_qos_from_profile(
+            publisherQoS,
             _ProfileLibraryName,
-            "BaseProfileQos",
+            "BaseProfileQos");
+
+    if (perftest_cpp::threadPriorities.isSet) {
+        // Asynchronous thread priority
+        publisherQoS.asynchronous_publisher.disable_asynchronous_write = false;
+        publisherQoS.asynchronous_publisher.thread.mask = mask;
+        publisherQoS.asynchronous_publisher.thread.priority
+                = perftest_cpp::threadPriorities.main;
+        // Asynchronous thread for batching priority
+        publisherQoS.asynchronous_publisher.asynchronous_batch_thread.mask = mask;
+        publisherQoS.asynchronous_publisher.asynchronous_batch_thread.priority
+                = perftest_cpp::threadPriorities.main;
+
+    }
+
+    // Create the DDSPublisher and DDSSubscriber
+    _publisher = _participant->create_publisher(
+            publisherQoS,
             NULL,
             DDS_STATUS_MASK_NONE);
     if (_publisher == NULL)
@@ -2741,6 +2765,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         if (_FlowControllerCustom != "default") {
             dw_qos.publish_mode.flow_controller_name =
                     DDS_String_dup(("dds.flow_controller.token_bucket."+_FlowControllerCustom).c_str());
+
         }
     }
 
