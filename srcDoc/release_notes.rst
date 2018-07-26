@@ -51,6 +51,16 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+Ability to use your own type in RTI Perftest
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* now supports the ability to use your own custom type.
+It is possible to measure the performance of your own type.
+
+The Custom Types feature allows you to use your own customized types instead of
+the one provided by RTI Perftest. It is designed in such a way that the number
+of changes in the code and configuration files is minimal.
+
 Allow 3 differents addresses for -multicastAddr feature (#97)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -66,7 +76,6 @@ All the imput addresses must be in multicast range.
 If only one address is set, *RTI Perftest* will use that one and the two
 consecutive ones. The higher value supported is `239.255.255.253` or
 `FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFC` for IPv6.
-
 
 Build HTML and PDF documentation (#94)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

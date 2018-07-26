@@ -349,13 +349,13 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
     /*
      * PERFTEST-108
      * We add this boolean value to check if we are explicity changing the
-     * number of iterations via command line paramenter. This will only be
+     * number of iterations via command-line paramenter. This will only be
      * used if this is a latency test to decrease or not the default number
      * of iterations.
      */
     bool numIterSet = false;
 
-    // Load command line parameters.
+    // Load command-line parameters.
     for (i = 0; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-pub")) {
             _IsPub = true;
