@@ -7,6 +7,7 @@ filename=$0
 script_location=`cd "\`dirname "$filename"\`"; pwd`
 idl_location="${script_location}/srcIdl"
 classic_cpp_folder="${script_location}/srcCpp"
+common_cpp_folder="${script_location}/srcCppCommon"
 modern_cpp_folder="${script_location}/srcCpp03"
 java_folder="${script_location}/srcJava"
 java_scripts_folder="${script_location}/resource/java_scripts"
@@ -144,6 +145,7 @@ function clean()
     rm -rf "${script_location}"/bin
     clean_custom_type_files
     clean_documentation
+    clean_src_cpp_common
 
     echo ""
     echo "================================================================================"
@@ -316,8 +318,33 @@ function geneate_qos_string()
     fi
 }
 
+function copy_src_cpp_common()
+{
+    for file in ${common_cpp_folder}/*
+    do
+        if [ -f $file ]; then
+            cp -rf "$file" "${classic_cpp_folder}"
+            cp -rf "$file" "${modern_cpp_folder}"
+        fi
+    done
+}
+
+function clean_src_cpp_common()
+{
+    for file in ${common_cpp_folder}/*
+    do
+        if [ -f $file ]; then
+            name_file=$(basename $file)
+            rm -rf "${modern_cpp_folder}/${name_file}"
+            rm -rf "${classic_cpp_folder}/${name_file}"
+        fi
+    done
+}
+
+
 function build_cpp()
 {
+    copy_src_cpp_common
     ##############################################################################
     # Generate files for the custom type files
     additional_defines_custom_type=""
@@ -377,10 +404,13 @@ function build_cpp()
     fi
     cp -f "${perftest_cpp_name_beginning}${executable_extension}" \
     "${destination_folder}/perftest_cpp${executable_extension}"
+
+    clean_src_cpp_common
 }
 
 function build_cpp03()
 {
+    copy_src_cpp_common
     additional_defines_calculation
     ##############################################################################
     # Generate files for srcCpp03
@@ -431,6 +461,8 @@ function build_cpp03()
     fi
     cp -f "${perftest_cpp03_name_beginning}${executable_extension}" \
     "${destination_folder}/perftest_cpp03${executable_extension}"
+
+    clean_src_cpp_common
 }
 
 function build_java()
