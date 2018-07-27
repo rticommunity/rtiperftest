@@ -802,12 +802,12 @@ int perftest_cpp::Subscriber()
                 PM::GetInstance().get<int>("numPublishers"));
 
         RTIOsapiThread_new("ReceiverThread",
-                            RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-                            RTI_OSAPI_THREAD_OPTION_DEFAULT,
-                            RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                            NULL,
-                            ThroughputReadThread,
-                            reader_listener);
+                RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
+                RTI_OSAPI_THREAD_OPTION_DEFAULT,
+                RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                NULL,
+                ThroughputReadThread,
+                reader_listener);
     }
 
     // Create announcement writer
@@ -980,8 +980,7 @@ class AnnouncementListener : public IMessagingCB
   public:
     std::vector<int> subscriber_list;
 
-    AnnouncementListener() {
-    }
+    AnnouncementListener() {}
 
     void ProcessMessage(TestMessage& message) {
         /*
@@ -1194,9 +1193,11 @@ class LatencyListener : public IMessagingCB
         }
         else
         {
-            fprintf(stderr,"Clock skew suspected: received time %llu usec, sent time %llu usec",
-                            now, sentTime);
-                ++clock_skew_count;
+            fprintf(stderr,
+                    "Clock skew suspected: received time %llu usec, sent time %llu usec",
+                    now,
+                    sentTime);
+            ++clock_skew_count;
             return;
         }
 
@@ -1531,6 +1532,7 @@ int perftest_cpp::Publisher()
      * - writerStats
      * - isScan
      * - scanList
+     * - isSetPubRate
      */
     const unsigned long long numIter =
             PM::GetInstance().get<unsigned long long>("numIter");
@@ -1548,6 +1550,7 @@ int perftest_cpp::Publisher()
     const bool isScan = PM::GetInstance().is_set("scan");
     const std::vector<unsigned long long> scanList =
                 PM::GetInstance().get_vector<unsigned long long>("scan");
+    const bool isSetPubRate = PM::GetInstance().is_set("pubRate");
     /********************
      *  Main sending loop
      */
@@ -1557,9 +1560,7 @@ int perftest_cpp::Publisher()
 
         /* This if has been included to perform the control loop
            that modifies the publication rate according to -pubRate */
-        if ((PM::GetInstance().is_set("pubRate")) &&
-                (loop > 0) &&
-                (loop % pubRate_sample_period == 0)) {
+        if (isSetPubRate && (loop > 0) && (loop % pubRate_sample_period == 0)) {
 
             time_now = perftest_cpp::GetTimeUsec();
 
