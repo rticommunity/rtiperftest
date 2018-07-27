@@ -780,7 +780,6 @@ std::string PerftestTransport::helpMessageString()
     << "\t                                If one address is set, this one must be\n"
     << "\t                                in multicast range and lower than\n"
     << "\t                                239.255.255.253 or the equivalent on IPv6\n"
-    << "\t                                on IPv4 or the equivalent for IPv6\n"
     << "\t-transportVerbosity <level>   - Verbosity of the transport\n"
     << "\t                                Default: 0 (errors only)\n"
     << "\t-transportServerBindPort <p>  - Port used by the transport to accept\n"
