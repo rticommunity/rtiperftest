@@ -310,6 +310,9 @@ Test Parameters for Publishing and Subscribing Applications
         Z -- For the rest of the threads created by the middleware: Event and
              Database Threads.
 
+    A three default values: h (high), n (normal) and l (lower) can be use
+    instead of numbers.
+
    **Default:**
    ``Not set. The priority will not be modify.``
 

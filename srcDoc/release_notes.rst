@@ -74,7 +74,8 @@ A new parameter, `-threadPriorities`, has been added to *RTI Perftest* to allow
 the users to set the priorities on the different threads created by RTI Connext
 DDS and by the application.
 
-This parameter accepts 3 numeric values which will be used as follows:
+This parameter accepts 3 numeric values or 3 different default values,
+*h* (high), *n* (normal) and *l* (lower), which will be used as follows:
 
 ::
 

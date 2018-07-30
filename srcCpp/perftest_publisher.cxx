@@ -443,6 +443,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                                   and process data.\n"
         "\t                              Z -- For the rest of the threads created by the middleware:\n"
         "\t                                   Event and Database Threads.\n"
+        "\t                          A three default values: h (high), n (normal) and l (lower).\n"
+        "\t                          can be use instead of numbers.\n"
         "\t-latencyTest            - Run a latency test consisting of a ping-pong \n"
         "\t                          synchronous communication\n"
         "\t-verbosity <level>      - Run with different levels of verbosity:\n"
