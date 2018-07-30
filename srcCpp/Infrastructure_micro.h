@@ -195,23 +195,34 @@ class NDDSUtility {
 
     static DDS_UnsignedLongLong get_spin_per_microsecond() {
 
-        unsigned int spin_count = 1;
+        /* Same default values used by DDS */
+        unsigned int spinCount = 20000;
         unsigned int rti_clock_calculation_loop_count_max = 100;
-        unsigned long long init;
+
+        unsigned long long init, fin, usec, spinsPerUsec;
 
         PerftestClock clock = PerftestClock::getInstance();
         init = clock.getTimeUsec();
-        int i;
 
-        for (i = 0; i < rti_clock_calculation_loop_count_max; ++i) {
-            NDDS_Utility_spin(spin_count);
-            if (clock.getTimeUsec() - init >= 1) {
-                break;
-            }
+        for (int i = 0; i < rti_clock_calculation_loop_count_max; ++i) {
+            NDDS_Utility_spin(spinCount);
         }
-        unsigned long long spinPerUsec = i * spin_count;
+        fin = clock.getTimeUsec();
 
-        return spinPerUsec;
+        usec = fin - init;
+
+        spinsPerUsec = 1.0 / ((float)usec
+                / (float)(rti_clock_calculation_loop_count_max * spinCount));
+
+        /*
+         * The value may be 0 due to lack of resolution or non
+         * monotonic clocks.
+         */
+        if (spinsPerUsec < 1) {
+            spinsPerUsec = 1; // To avoid error
+        }
+
+        return spinsPerUsec;
     }
 
 };
