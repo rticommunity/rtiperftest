@@ -205,7 +205,7 @@ class NDDSUtility {
         init = clock.getTimeUsec();
 
         for (int i = 0; i < rti_clock_calculation_loop_count_max; ++i) {
-            NDDS_Utility_spin(spinCount);
+            NDDS_Utility_spin(spinCount); //Same numbers of spin iters as DDS
         }
         fin = clock.getTimeUsec();
 
