@@ -353,7 +353,7 @@ bool perftest_cpp::validate_input()
         if (PM::GetInstance().get<int>("unbounded") == 0) {
             PM::GetInstance().set<unsigned long long>("unbounded", MAX_BOUNDED_SEQ_SIZE);
         }
-    } else { /* No Large Data */
+    } else { // No Large Data
         if (PM::GetInstance().get<int>("unbounded") != 0) {
             fprintf(stderr,
                     "Unbounded will be ignored since large data is not presented.\n");

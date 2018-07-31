@@ -820,7 +820,8 @@ bool PerftestTransport::validate_input()
 
     /*
      * Manage parameter -allowInterfaces -nic
-     * "-allowInterfaces" and "-nic" are the same parameter, so now use only one.
+     * "-allowInterfaces" and "-nic" are the same parameter,
+     * so now use only one: "allowInterfaces"
      */
     if (PM::GetInstance().get<std::string>("allowInterfaces").empty()) {
         PM::GetInstance().set<std::string>(

@@ -145,7 +145,9 @@ bool RTIDDSImpl<T>::validate_input()
     // Manage parameter -peers
     if (PM::GetInstance().get_vector<std::string>("peer").size()
             >= RTIPERFTEST_MAX_PEERS) {
-        fprintf(stderr,"The maximun of 'initial_peers' is %d\n", RTIPERFTEST_MAX_PEERS);
+        fprintf(stderr,
+                "The maximun of 'initial_peers' is %d\n",
+                RTIPERFTEST_MAX_PEERS);
         return false;
     }
 
@@ -155,7 +157,7 @@ bool RTIDDSImpl<T>::validate_input()
                     MAX_SYNCHRONOUS_SIZE,
                     MAX_BOUNDED_SEQ_SIZE)) {
         _isLargeData = true;
-    } else { /* No Large Data */
+    } else { // No Large Data
         _isLargeData = false;
     }
 
@@ -235,7 +237,8 @@ bool RTIDDSImpl<T>::validate_input()
         if (PM::GetInstance().get<unsigned long long>("instances") <
                 (unsigned long long)PM::GetInstance().get<long>("writeInstance")) {
             fprintf(stderr,
-                    "Specified '-WriteInstance' (%ld) invalid: Bigger than the number of instances (%llu).\n",
+                    "Specified '-WriteInstance' (%ld) invalid: "
+                    "Bigger than the number of instances (%llu).\n",
                     PM::GetInstance().get<long>("writeInstance"),
                     PM::GetInstance().get<unsigned long long>("instances"));
             return false;
@@ -271,7 +274,7 @@ bool RTIDDSImpl<T>::validate_input()
                 fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
                 break;
             default:
-                fprintf(stderr, "Invalid value for the verbosity parameter\n");
+                fprintf(stderr, "Invalid value for the '-verbosity' parameter\n");
                 return false;
         }
     }
@@ -1965,8 +1968,7 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     if (PM::GetInstance().get<std::string>("securePermissionsFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << PM::GetInstance().get<std::string>(
-                                "securePermissionsFile")
+        stringStream << PM::GetInstance().get<std::string>("securePermissionsFile")
                      << "\n";
     }
 
