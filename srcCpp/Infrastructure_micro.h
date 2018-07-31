@@ -107,34 +107,6 @@ typedef struct RTINtpTime {
     }                                                   \
 }
 
-#define RTINtpTime_packFromFractionPrecise(time, \
-                                           numerator, denominator_per_sec, \
-                                           precisionBits) \
-{ \
-    register RTI_UINT32 RTINtpTime_current_bit = 0x80000000; \
-    register RTI_UINT32 RTINtpTime_current_units = (denominator_per_sec)<<precisionBits; \
-    register RTI_UINT32 RTINtpTime_precision_numerator = \
-        ((numerator)%(denominator_per_sec))<< precisionBits; \
-    (time).sec  = (numerator)/(denominator_per_sec); \
-    (time).frac = 0; \
-    while (RTINtpTime_current_units >>= 1) { \
-        (time).frac += \
-            (((RTINtpTime_precision_numerator) >= RTINtpTime_current_units) ? \
-             (((RTINtpTime_precision_numerator) -= RTINtpTime_current_units), RTINtpTime_current_bit) : 0); \
-        RTINtpTime_current_bit >>= 1; \
-    } \
-}
-
-#define RTINtpTime_packFromMicrosec(time, s, usec) \
-{ \
-    register RTI_UINT32 RTINtpTime_temp = usec; \
-    (time).sec  = s; \
-    (time).frac = (RTINtpTime_temp<<12)+ \
-		  ((RTINtpTime_temp*99)<<1)+ \
-		  ((RTINtpTime_temp*15 + \
-		  ((RTINtpTime_temp*61)>>7))>>4); \
-}
-
 class NDDSUtility {
   public:
     /*e \dref_Utility_sleep */
