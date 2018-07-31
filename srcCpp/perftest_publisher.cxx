@@ -123,7 +123,7 @@ int perftest_cpp::Run(int argc, char *argv[])
         }
     }
 
-    if (!_MessagingImpl->Initialize(_MessagingArgc, _MessagingArgv))
+    if (!_MessagingImpl->Initialize())
     {
         return -1;
     }
@@ -135,6 +135,25 @@ int perftest_cpp::Run(int argc, char *argv[])
     } else {
         return Subscriber();
     }
+}
+
+void perftest_cpp::MilliSleep(unsigned int millisec) {
+  #if defined(RTI_WIN32)
+    Sleep(millisec);
+  #elif defined(RTI_VXWORKS)
+    DDS_Duration_t sleep_period = {0, millisec*1000000};
+    NDDSUtility::sleep(sleep_period);
+  #else
+    usleep(millisec * 1000);
+  #endif
+}
+
+void perftest_cpp::ThreadYield() {
+  #ifdef RTI_WIN32
+    Sleep(0);
+  #else
+    sched_yield();
+  #endif
 }
 
 const DDS_ProductVersion_t perftest_cpp::GetDDSVersion()
@@ -171,17 +190,6 @@ void perftest_cpp::PrintVersion()
  */
 perftest_cpp::~perftest_cpp()
 {
-
-    for (int i = 0; i< _MessagingArgc; ++i) {
-        if (_MessagingArgv[i] != NULL) {
-            DDS_String_free(_MessagingArgv[i]);
-        }
-    }
-
-    if (_MessagingArgv != NULL) {
-        delete []_MessagingArgv;
-    }
-
     if(_MessagingImpl != NULL){
         delete _MessagingImpl;
     }
@@ -208,8 +216,6 @@ perftest_cpp::perftest_cpp()
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
     _MessagingImpl = NULL;
-    _MessagingArgv = NULL;
-    _MessagingArgc = 0;
 
 #ifdef RTI_WIN32
     if (_hTimerQueue == NULL) {
@@ -236,7 +242,7 @@ bool perftest_cpp::validate_input()
     // Manage parameter -printIterval
     // It is copied because it is used in the critical patch
     perftest_cpp::printIntervals =
-            PM::GetInstance().get<bool>("noPrintIntervals");
+            !PM::GetInstance().get<bool>("noPrintIntervals");
 
     // Manage parameter -cpu
     // It is copied because it is used in the critical patch
@@ -333,8 +339,10 @@ bool perftest_cpp::validate_input()
             PM::GetInstance().set<unsigned long long>("executionTime", 60);
         }
         // Check if large data or small data
-        if (scanList[0] < (unsigned long long)(std::min)(MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)
-                && scanList[scanList.size() - 1] > (unsigned long long)(std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+        if (scanList[0] < (unsigned long long)(std::min)
+                    (MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)
+                && scanList[scanList.size() - 1] > (unsigned long long)(std::min)
+                    (MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
             fprintf(stderr, "The sizes of -scan [");
             for (unsigned int i = 0; i < scanList.size(); i++) {
                 fprintf(stderr, "%llu ", scanList[i]);
@@ -362,7 +370,7 @@ bool perftest_cpp::validate_input()
     }
 
     // TODO: Manage the parameter: -threadPriorities
-        //PM::GetInstance().get<std::string>("threadPriorities");
+    // PM::GetInstance().get<std::string>("threadPriorities");
     return true;
 }
 
@@ -640,7 +648,7 @@ class ThroughputListener : public IMessagingCB
 
             begin_time = perftest_cpp::GetTimeUsec();
 
-            if (!perftest_cpp::printIntervals) {
+            if (perftest_cpp::printIntervals) {
                 printf("\n\n********** New data length is %d\n",
                        message.size + perftest_cpp::OVERHEAD_BYTES);
                 fflush(stdout);
@@ -887,7 +895,7 @@ int perftest_cpp::Subscriber()
             break;
         }
 
-        if (!perftest_cpp::printIntervals) {
+        if (perftest_cpp::printIntervals) {
             if (last_data_length != reader_listener->last_data_length)
             {
                 last_data_length = reader_listener->last_data_length;
@@ -1236,13 +1244,13 @@ class LatencyListener : public IMessagingCB
         {
             last_data_length = message.size;
 
-            if (!perftest_cpp::printIntervals) {
+            if (perftest_cpp::printIntervals) {
                 printf("\n\n********** New data length is %d\n",
                        last_data_length + perftest_cpp::OVERHEAD_BYTES);
             }
         }
         else {
-            if (!perftest_cpp::printIntervals) {
+            if (perftest_cpp::printIntervals) {
                 latency_ave = (double)latency_sum / (double)count;
                 latency_std = sqrt(
                         (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
@@ -1671,7 +1679,7 @@ int perftest_cpp::Publisher()
                 ping_index_in_batch = (ping_index_in_batch + 1) % samplesPerBatch;
                 sentPing = true;
 
-                if (writerStats && !perftest_cpp::printIntervals) {
+                if (writerStats && perftest_cpp::printIntervals) {
                     printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
                 }
             }

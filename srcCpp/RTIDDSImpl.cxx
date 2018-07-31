@@ -139,10 +139,10 @@ bool RTIDDSImpl<T>::validate_input()
 {
     // Manage parameter -instance
     if (PM::GetInstance().is_set("instance")){
-        _InstanceMaxCountReader =
+        _instanceMaxCountReader =
                 PM::GetInstance().get<unsigned long long>("instances");
     }
-    // Manage parameter -peers
+    // Manage parameter -peer
     if (PM::GetInstance().get_vector<std::string>("peer").size()
             >= RTIPERFTEST_MAX_PEERS) {
         fprintf(stderr,
@@ -228,7 +228,7 @@ bool RTIDDSImpl<T>::validate_input()
         }
         if (_isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
-            PM::GetInstance().set<bool>("enableTurboMode",false);
+            PM::GetInstance().set<bool>("enableTurboMode", false);
         }
     }
 
@@ -256,21 +256,24 @@ bool RTIDDSImpl<T>::validate_input()
      * Setting verbosity if the parameter is provided
      */
     if (PM::GetInstance().is_set("verbosity")) {
-        switch (PM::GetInstance().get<unsigned long long>("verbosity")) {
-            case 0: NDDSConfigLogger::get_instance()->
-                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_SILENT);
+        switch (PM::GetInstance().get<int>("verbosity")) {
+            case 0:
+                NDDSConfigLogger::get_instance()->set_verbosity(
+                        NDDS_CONFIG_LOG_VERBOSITY_SILENT);
                 fprintf(stderr, "Setting verbosity to SILENT\n");
                 break;
-            case 1: NDDSConfigLogger::get_instance()->
-                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_ERROR);
+            case 1:
+                NDDSConfigLogger::get_instance()->set_verbosity(
+                        NDDS_CONFIG_LOG_VERBOSITY_ERROR);
                 fprintf(stderr, "Setting verbosity to ERROR\n");
                 break;
-            case 2: NDDSConfigLogger::get_instance()->
-                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_WARNING);
+            case 2:
+                NDDSConfigLogger::get_instance()->set_verbosity(
+                        NDDS_CONFIG_LOG_VERBOSITY_WARNING);
                 fprintf(stderr, "Setting verbosity to WARNING\n");
                 break;
-            case 3: NDDSConfigLogger::get_instance()->
-                    set_verbosity(NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+            case 3: NDDSConfigLogger::get_instance()->set_verbosity(
+                        NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
                 fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
                 break;
             default:
@@ -368,9 +371,9 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
    #ifdef RTI_SECURE_PERFTEST
-   if (PM::GetInstance().group_is_use(SECURE)) {
+    if (PM::GetInstance().group_is_use(SECURE)) {
         stringStream << "\n" << printSecureArgs();
-   }
+    }
    #endif
 
     return stringStream.str();
@@ -1785,6 +1788,10 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
         return false;
     }
 
+    /*
+     * Save the local variable governanceFilePath into
+     * the parameter "secureGovernanceFile"
+     */
     PM::GetInstance().set("secureGovernanceFile", governanceFilePath);
 
     // permissions file
@@ -2020,7 +2027,7 @@ std::string RTIDDSImpl<T>::printSecureArgs()
  * Initialize
  */
 template <typename T>
-bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
+bool RTIDDSImpl<T>::Initialize()
 {
     DDS_DomainParticipantQos qos;
     DDS_DomainParticipantFactoryQos factory_qos;
@@ -2256,9 +2263,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     if (_factory->get_datawriter_qos_from_profile(
-                dw_qos,
-                PM::GetInstance().get<std::string>("qosLibrary").c_str(),
-                qos_profile.c_str())
+            dw_qos,
+            PM::GetInstance().get<std::string>("qosLibrary").c_str(),
+            qos_profile.c_str())
             != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
@@ -2289,7 +2296,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         }
     }
 
-    // only force reliability on throughput/latency topics
+    // Only force reliability on throughput/latency topics
     if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0) {
         if (!PM::GetInstance().get<bool>("bestEffort")) {
             // default: use the setting specified in the qos profile
@@ -2337,8 +2344,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 
         dw_qos.resource_limits.initial_samples =
                 PM::GetInstance().get<int>("sendQueueSize");
-        dw_qos.resource_limits.max_samples_per_instance
-            = dw_qos.resource_limits.max_samples;
+        dw_qos.resource_limits.max_samples_per_instance =
+                dw_qos.resource_limits.max_samples;
 
         dw_qos.durability.kind =
                 (DDS_DurabilityQosPolicyKind)PM::GetInstance().get<int>("durability");
@@ -2396,7 +2403,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     if (PM::GetInstance().get<unsigned long long>("instances") > 1) {
         if (PM::GetInstance().is_set("instanceHashBuckets")) {
             dw_qos.resource_limits.instance_hash_buckets =
-                PM::GetInstance().get<unsigned long long>("instanceHashBuckets");
+                    PM::GetInstance().get<unsigned long long>("instanceHashBuckets");
         } else {
             dw_qos.resource_limits.instance_hash_buckets =
                     PM::GetInstance().get<unsigned long long>("instances");
@@ -2479,12 +2486,13 @@ DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
     std::vector<unsigned long long> cftRange =
             PM::GetInstance().get_vector<unsigned long long>("cft");
     if (cftRange.size() == 1) { // If same elements, no range
-        printf("CFT enabled for instance: '%llu' \n",cftRange[0]);
+        printf("CFT enabled for instance: '%llu' \n", cftRange[0]);
         char cft_param[KEY_SIZE][128];
         for (int i = 0; i < KEY_SIZE ; i++) {
-            sprintf(cft_param[i],"%d", (unsigned char)(cftRange[0] >> i * 8));
+            sprintf(cft_param[i], "%d", (unsigned char)(cftRange[0] >> i * 8));
         }
-        const char* param_list[] = { cft_param[0], cft_param[1], cft_param[2], cft_param[3]};
+        const char* param_list[] =
+                {cft_param[0], cft_param[1], cft_param[2], cft_param[3]};
         parameters.from_array(param_list, KEY_SIZE);
         condition = "(%0 = key[0] AND %1 = key[1] AND %2 = key[2] AND %3 = key[3]) OR"
                 "(255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3])";
@@ -2493,7 +2501,7 @@ DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
                 cftRange[0],
                 cftRange[1]);
         char cft_param[2 * KEY_SIZE][128];
-        for (int i = 0; i < 2 * KEY_SIZE ; i++ ) {
+        for (unsigned int i = 0; i < 2 * KEY_SIZE ; i++ ) {
             if (i < KEY_SIZE) {
                 sprintf(cft_param[i], "%d", (unsigned char)(cftRange[0] >> i * 8));
             } else { // KEY_SIZE < i < KEY_SIZE * 2
@@ -2581,9 +2589,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-    // only force reliability on throughput/latency topics
-    if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0)
-    {
+    // Only force reliability on throughput/latency topics
+    if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0) {
         if (!PM::GetInstance().get<bool>("bestEffort")) {
             dr_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         } else {
@@ -2611,10 +2618,10 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
     dr_qos.resource_limits.initial_instances =
             PM::GetInstance().get<unsigned long long>("instances") + 1;
-    if (_InstanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
-        _InstanceMaxCountReader++;
+    if (_instanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
+        _instanceMaxCountReader++;
     }
-    dr_qos.resource_limits.max_instances = _InstanceMaxCountReader;
+    dr_qos.resource_limits.max_instances = _instanceMaxCountReader;
 
     if (PM::GetInstance().get<unsigned long long>("instances") > 1) {
         if (PM::GetInstance().is_set("instanceHashBuckets")) {

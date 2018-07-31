@@ -44,9 +44,7 @@ class RTIDDSImpl : public IMessaging
         _transport(),
         _loggerDevice()
     {
-        _IsMulticast = false;
-        _InstanceMaxCountReader = DDS_LENGTH_UNLIMITED;
-        _KeepDurationUsec = -1;
+        _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
         _isLargeData = false;
         _factory = NULL;
         _participant = NULL;
@@ -54,7 +52,6 @@ class RTIDDSImpl : public IMessaging
         _publisher = NULL;
         _reader = NULL;
         _typename = T::TypeSupport::get_type_name();
-
         _pongSemaphore = NULL;
     }
 
@@ -67,7 +64,7 @@ class RTIDDSImpl : public IMessaging
 
     std::string PrintConfiguration();
 
-    bool Initialize(int argc, char *argv[]);
+    bool Initialize();
 
     void Shutdown();
 
@@ -93,11 +90,17 @@ class RTIDDSImpl : public IMessaging
     bool validateSecureArgs();
   #endif
 
-    bool         _IsMulticast;
-    long _InstanceMaxCountReader;
-    int          _KeepDurationUsec;
-    bool         _isLargeData;
-    PerftestTransport _transport;
+    long                         _instanceMaxCountReader;
+    bool                         _isLargeData;
+    PerftestTransport            _transport;
+	DDSDomainParticipantFactory *_factory;
+    DDSDomainParticipant        *_participant;
+    DDSSubscriber               *_subscriber;
+    DDSPublisher                *_publisher;
+    DDSDataReader               *_reader;
+    const char                  *_typename;
+    RTIOsapiSemaphore           *_pongSemaphore;
+    RTIDDSLoggerDevice           _loggerDevice;
 
   #ifdef RTI_SECURE_PERFTEST
     static const std::string SECURE_PRIVATEKEY_FILE_PUB;
@@ -109,15 +112,7 @@ class RTIDDSImpl : public IMessaging
     static const std::string SECURE_PERMISION_FILE_SUB;
     static const std::string SECURE_LIBRARY_NAME;
   #endif
-    DDSDomainParticipantFactory *_factory;
-    DDSDomainParticipant        *_participant;
-    DDSSubscriber               *_subscriber;
-    DDSPublisher                *_publisher;
-    DDSDataReader               *_reader;
-    const char                  *_typename;
 
-    RTIOsapiSemaphore *_pongSemaphore;
-    RTIDDSLoggerDevice _loggerDevice;
 };
 
 

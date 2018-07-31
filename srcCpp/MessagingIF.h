@@ -110,7 +110,7 @@ class IMessaging
 {
   public:
     virtual ~IMessaging() {}
-    virtual bool Initialize(int argc, char *argv[]) = 0;
+    virtual bool Initialize() = 0;
 
     virtual std::string PrintConfiguration() = 0;
 

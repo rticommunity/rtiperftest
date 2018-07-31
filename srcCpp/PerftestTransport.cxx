@@ -215,8 +215,6 @@ bool configureTcpTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos)
 {
-    std::string serverBindPort = PM::GetInstance().get<std::string>(
-                "transportServerBindPort");
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
 
     if (!addPropertyToParticipantQos(
@@ -226,11 +224,11 @@ bool configureTcpTransport(
         return false;
     }
 
-    if (!serverBindPort.empty()) {
+    if (!PM::GetInstance().get<std::string>("transportServerBindPort").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".server_bind_port",
-                serverBindPort)) {
+                PM::GetInstance().get<std::string>("transportServerBindPort"))) {
             return false;
         }
     }
@@ -245,7 +243,7 @@ bool configureTcpTransport(
             return false;
         }
 
-        if (serverBindPort != "0") {
+        if (PM::GetInstance().get<std::string>("transportServerBindPort") != "0") {
             if (!PM::GetInstance().get<std::string>(
                     "transportPublicAddress").empty()) {
                 if (!addPropertyToParticipantQos(
@@ -356,9 +354,8 @@ bool configureWanTransport(
         return false;
     }
 
-    if (!PM::GetInstance()
-            .get<std::string>("transportWanServerAddress")
-            .empty()) {
+    if (!PM::GetInstance().get<std::string>(
+            "transportWanServerAddress").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".server",
