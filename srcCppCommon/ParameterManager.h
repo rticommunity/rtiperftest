@@ -1,10 +1,15 @@
-#ifndef __PARAMETERMANAGER_H__
-#define __PARAMETERMANAGER_H__
+
 
 /*
  * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
+
+#ifndef __PARAMETERMANAGER_H__
+#define __PARAMETERMANAGER_H__
+
+#define PMI ParameterManager::get_instance()
+
 #include "PerftestTransport.h"
 #include "RTIDDSImpl.h"
 #include "Parameter.h"
@@ -29,7 +34,7 @@ class ParameterManager
     public:
         ParameterManager();
         void initialize();
-        static ParameterManager& GetInstance();
+        static ParameterManager& get_instance();
         ~ParameterManager();
 
         // Set the value of a parameter
@@ -102,10 +107,10 @@ class ParameterManager
          *     That if -pub not use parameter of SUB group
          *     That if -sub not use parameter of PUB group
          */
-        bool validate_group();
+        bool check_incompatible_parameter();
 
         // Verify if there is a parameter of the group set
-        bool group_is_use(GROUP group);
+        bool group_is_used(Group group);
 
 
     private:
@@ -113,7 +118,5 @@ class ParameterManager
         std::string get_center_header_help_line(std::string name);
 
 };
-
-typedef ParameterManager PM;
 
 #endif // __PARAMETERMANAGER_H__

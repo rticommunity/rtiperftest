@@ -1,7 +1,10 @@
+
+
 /*
  * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
+
 
 #include "Parameter.h"
 ////////////////////////////////////////////////////////////////////////////
@@ -109,12 +112,12 @@ void ParameterBase::set_isSet(const bool var)
     _isSet = var;
 }
 
-void ParameterBase::set_type(const TYPE var)
+void ParameterBase::set_type(const Type var)
 {
     _type = var;
 }
 
-void ParameterBase::set_extra_argument(const EXTRAARGUMENT var)
+void ParameterBase::set_extra_argument(const ExtraArgument var)
 {
     _extraArgument = var;
 }
@@ -136,7 +139,7 @@ void ParameterBase::set_internal(const bool var)
     _internal = var;
 }
 
-void ParameterBase::set_group(const GROUP var)
+void ParameterBase::set_group(const Group var)
 {
     _group = var;
 }
@@ -167,12 +170,12 @@ const bool ParameterBase::get_isSet()
     return _isSet;
 }
 
-const TYPE ParameterBase::get_type()
+const Type ParameterBase::get_type()
 {
     return _type;
 }
 
-const EXTRAARGUMENT ParameterBase::get_extra_argument()
+const ExtraArgument ParameterBase::get_extra_argument()
 {
     return _extraArgument;
 }
@@ -182,14 +185,14 @@ const bool ParameterBase::get_internal()
     return _internal;
 }
 
-const GROUP ParameterBase::get_group()
+const Group ParameterBase::get_group()
 {
     return _group;
 }
 
-const PARSEMETHOD ParameterBase::get_parse_method()
+const ParseMethod ParameterBase::get_parse_method()
 {
-    return NOSPLIT;
+    return NO_SPLIT;
 }
 
 // Get the help message of a expecific parameter

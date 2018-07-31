@@ -87,19 +87,19 @@ int subscriber_main()
 int perftest_cpp::Run(int argc, char *argv[])
 {
     try {
-        PM::GetInstance().initialize();
+        PMI.initialize();
     } catch(std::exception &ex) {
-        fprintf(stderr, "Exception in PM::GetInstance().initialize(): %s.\n", ex.what());
+        fprintf(stderr, "Exception in PMI.initialize(): %s.\n", ex.what());
         return -1;
     }
-    if (PM::GetInstance().check_help(argc, argv)) {
+    if (PMI.check_help(argc, argv)) {
         return 0;
     }
-    if (!PM::GetInstance().parse(argc, argv)) {
+    if (!PMI.parse(argc, argv)) {
         return -1;
     }
 
-    if (!PM::GetInstance().validate_group()) {
+    if (!PMI.check_incompatible_parameter()) {
         return -1;
     }
 
@@ -109,14 +109,14 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
-    if (PM::GetInstance().get<int>("unbounded") == 0) {
-        if (PM::GetInstance().get<bool>("keyed")) {
+    if (PMI.get<int>("unbounded") == 0) {
+        if (PMI.get<bool>("keyed")) {
             _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
         } else {
             _MessagingImpl = new RTIDDSImpl<TestData_t>();
         }
     } else {
-        if (PM::GetInstance().get<bool>("keyed")) {
+        if (PMI.get<bool>("keyed")) {
             _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
         } else {
             _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
@@ -130,7 +130,7 @@ int perftest_cpp::Run(int argc, char *argv[])
 
     PrintConfiguration();
 
-    if (PM::GetInstance().get<bool>("pub")) {
+    if (PMI.get<bool>("pub")) {
         return Publisher();
     } else {
         return Subscriber();
@@ -233,35 +233,35 @@ bool perftest_cpp::validate_input()
 {
     // Manage parameter -sleep
     // It is copied because it is used in the critical patch
-    _SleepNanosec = 1000000 * PM::GetInstance().get<unsigned long long>("sleep");
+    _SleepNanosec = 1000000 * PMI.get<unsigned long long>("sleep");
 
     // Manage parameter -spin
     // It is copied because it is used in the critical patch
-    _SpinLoopCount = PM::GetInstance().get<unsigned long long>("spin");
+    _SpinLoopCount = PMI.get<unsigned long long>("spin");
 
     // Manage parameter -printIterval
     // It is copied because it is used in the critical patch
     perftest_cpp::printIntervals =
-            !PM::GetInstance().get<bool>("noPrintIntervals");
+            !PMI.get<bool>("noPrintIntervals");
 
     // Manage parameter -cpu
     // It is copied because it is used in the critical patch
-    perftest_cpp::showCpu = PM::GetInstance().get<bool>("cpu");
+    perftest_cpp::showCpu = PMI.get<bool>("cpu");
 
     // Manage parameter -sidMultiSubTest
     // It is copied because it is used in the critical patch
-    perftest_cpp::_SubID = PM::GetInstance().get<int>("sidMultiSubTest");
+    perftest_cpp::_SubID = PMI.get<int>("sidMultiSubTest");
 
     // Manage parameter -latencyTest
-    if(PM::GetInstance().get<bool>("latencyTest")) {
-        if(PM::GetInstance().get<int>("pidMultiPubTest") != 0) {
+    if(PMI.get<bool>("latencyTest")) {
+        if(PMI.get<int>("pidMultiPubTest") != 0) {
             fprintf(stderr, "Only the publisher with ID = 0 can run the latency test\n");
             return false;
         }
 
         // With latency test, latency should be 1
-        if(!PM::GetInstance().is_set("latencyCount")) {
-            PM::GetInstance().set<unsigned long long>("latencyCount", 1);
+        if(!PMI.is_set("latencyCount")) {
+            PMI.set<unsigned long long>("latencyCount", 1);
         }
 
         /*
@@ -271,30 +271,30 @@ bool perftest_cpp::validate_input()
          * Therefore, unless we explicitly changed the _NumIter value we will
          * use a smaller default: "numIterDefaultLatencyTest"
          */
-        if (!PM::GetInstance().is_set("numIter")) {
-            PM::GetInstance().set<unsigned long long>(
+        if (!PMI.is_set("numIter")) {
+            PMI.set<unsigned long long>(
                     "numIter",
                     numIterDefaultLatencyTest);
         }
     }
 
     // Manage parameter -latencyCount
-    if(!PM::GetInstance().is_set("latencyCount")) {
-        PM::GetInstance().set<unsigned long long>("latencyCount", 10000);
+    if(!PMI.is_set("latencyCount")) {
+        PMI.set<unsigned long long>("latencyCount", 10000);
     }
-    if (PM::GetInstance().get<unsigned long long>("numIter") <
-            PM::GetInstance().get<unsigned long long>("latencyCount")) {
+    if (PMI.get<unsigned long long>("numIter") <
+            PMI.get<unsigned long long>("latencyCount")) {
         fprintf(stderr,
                 "numIter (%llu) must be greater than latencyCount (%llu).\n",
-                PM::GetInstance().get<unsigned long long>("numIter"),
-                PM::GetInstance().get<unsigned long long>("latencyCount"));
+                PMI.get<unsigned long long>("numIter"),
+                PMI.get<unsigned long long>("latencyCount"));
         return false;
     }
 
     // Manage the parameter: -cft
-    if (PM::GetInstance().is_set("cft")) {
+    if (PMI.is_set("cft")) {
         std::vector<unsigned long long> cftRange =
-                PM::GetInstance().get_vector<unsigned long long>("cft");
+                PMI.get_vector<unsigned long long>("cft");
         if (cftRange.size() > 2) {
             fprintf(stderr,
                     "'-cft' value must have the format <start>:<end>\n");
@@ -307,7 +307,7 @@ bool perftest_cpp::validate_input()
     }
 
     // Manage the parameter: -pubRate -sleep -spin
-    if (PM::GetInstance().is_set("pubRate")) {
+    if (PMI.is_set("pubRate")) {
         if (_SpinLoopCount > 0) {
             fprintf(stderr, "'-spin' is not compatible with '-pubRate'. "
                     "Spin/Sleep value will be set by -pubRate.\n");
@@ -321,22 +321,22 @@ bool perftest_cpp::validate_input()
     }
 
     // Manage the parameter: -unbounded
-    if (PM::GetInstance().is_set("unbounded")) {
-        if (PM::GetInstance().get<int>("unbounded") == 0) {
-            PM::GetInstance().set<int>("unbounded",
+    if (PMI.is_set("unbounded")) {
+        if (PMI.get<int>("unbounded") == 0) {
+            PMI.set<int>("unbounded",
                     (std::min)(
-                            2 * PM::GetInstance().get<unsigned long long>("dataLen"),
+                            2 * PMI.get<unsigned long long>("dataLen"),
                             (unsigned long long)MAX_BOUNDED_SEQ_SIZE));
         }
     }
 
     // Manage the parameter: -scan
-    if (PM::GetInstance().is_set("scan")) {
+    if (PMI.is_set("scan")) {
         std::vector<unsigned long long> scanList =
-                PM::GetInstance().get_vector<unsigned long long>("scan");
-        PM::GetInstance().set<unsigned long long>("dataLen", scanList[scanList.size() - 1]); // Max size of scan
-        if (PM::GetInstance().get<unsigned long long>("executionTime") == 0){
-            PM::GetInstance().set<unsigned long long>("executionTime", 60);
+                PMI.get_vector<unsigned long long>("scan");
+        PMI.set<unsigned long long>("dataLen", scanList[scanList.size() - 1]); // Max size of scan
+        if (PMI.get<unsigned long long>("executionTime") == 0){
+            PMI.set<unsigned long long>("executionTime", 60);
         }
         // Check if large data or small data
         if (scanList[0] < (unsigned long long)(std::min)
@@ -355,22 +355,22 @@ bool perftest_cpp::validate_input()
     }
 
     // Check if we need to enable Large Data. This works also for -scan
-    if (PM::GetInstance().get<unsigned long long>("dataLen") > (unsigned long long) (std::min)(
+    if (PMI.get<unsigned long long>("dataLen") > (unsigned long long) (std::min)(
             MAX_SYNCHRONOUS_SIZE,
             MAX_BOUNDED_SEQ_SIZE)) {
-        if (PM::GetInstance().get<int>("unbounded") == 0) {
-            PM::GetInstance().set<int>("unbounded", MAX_BOUNDED_SEQ_SIZE);
+        if (PMI.get<int>("unbounded") == 0) {
+            PMI.set<int>("unbounded", MAX_BOUNDED_SEQ_SIZE);
         }
     } else { // No Large Data
-        if (PM::GetInstance().get<int>("unbounded") != 0) {
+        if (PMI.get<int>("unbounded") != 0) {
             fprintf(stderr,
                     "Unbounded will be ignored since large data is not presented.\n");
-            PM::GetInstance().set<int>("unbounded", 0);
+            PMI.set<int>("unbounded", 0);
         }
     }
 
     // TODO: Manage the parameter: -threadPriorities
-    // PM::GetInstance().get<std::string>("threadPriorities");
+    // PMI.get<std::string>("threadPriorities");
     return true;
 }
 
@@ -388,10 +388,10 @@ void perftest_cpp::PrintConfiguration()
   #endif
 
     // Throughput/Latency mode
-    if (PM::GetInstance().get<bool>("pub")) {
+    if (PMI.get<bool>("pub")) {
         stringStream << "\nMode: ";
 
-        if (PM::GetInstance().get<bool>("latencyTest")) {
+        if (PMI.get<bool>("latencyTest")) {
             stringStream << "LATENCY TEST (Ping-Pong test)\n";
         } else {
             stringStream << "THROUGHPUT TEST\n"
@@ -403,7 +403,7 @@ void perftest_cpp::PrintConfiguration()
 
     // Reliable/Best Effort
     stringStream << "\tReliability: ";
-    if (!PM::GetInstance().get<bool>("bestEffort")) {
+    if (!PMI.get<bool>("bestEffort")) {
         stringStream << "Reliable\n";
     } else {
         stringStream << "Best Effort\n";
@@ -411,32 +411,32 @@ void perftest_cpp::PrintConfiguration()
 
     // Keyed/Unkeyed
     stringStream << "\tKeyed: ";
-    if (PM::GetInstance().get<bool>("keyed")) {
+    if (PMI.get<bool>("keyed")) {
         stringStream << "Yes\n";
     } else {
         stringStream << "No\n";
     }
 
     // Publisher/Subscriber and Entity ID
-    if (PM::GetInstance().get<bool>("pub")) {
+    if (PMI.get<bool>("pub")) {
         stringStream << "\tPublisher ID: "
-                     << PM::GetInstance().get<int>("pidMultiPubTest")
+                     << PMI.get<int>("pidMultiPubTest")
                      << "\n";
     } else {
         stringStream << "\tSubscriber ID: " << _SubID << "\n";
     }
 
-    if (PM::GetInstance().get<bool>("pub")) {
+    if (PMI.get<bool>("pub")) {
         // Latency Count
         stringStream << "\tLatency count: 1 latency sample every "
-                     << PM::GetInstance().get<unsigned long long>("latencyCount")
+                     << PMI.get<unsigned long long>("latencyCount")
                      << " samples\n";
 
         // Scan/Data Sizes
         stringStream << "\tData Size: ";
-        if (PM::GetInstance().is_set("scan")) {
+        if (PMI.is_set("scan")) {
             std::vector<unsigned long long> scanList =
-                    PM::GetInstance().get_vector<unsigned long long>("scan");
+                    PMI.get_vector<unsigned long long>("scan");
             for (unsigned long i = 0; i < scanList.size(); i++ ) {
                 stringStream << scanList[i];
                 if (i == scanList.size() - 1) {
@@ -446,23 +446,23 @@ void perftest_cpp::PrintConfiguration()
                 }
             }
         } else {
-            stringStream << PM::GetInstance().get<unsigned long long>("dataLen")
+            stringStream << PMI.get<unsigned long long>("dataLen")
                          << "\n";
         }
 
         // Batching
         stringStream << "\tBatching: ";
-        if (PM::GetInstance().get<long>("batchSize") > 0) {
-            stringStream << PM::GetInstance().get<long>("batchSize")
+        if (PMI.get<long>("batchSize") > 0) {
+            stringStream << PMI.get<long>("batchSize")
                          << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
-        } else if (PM::GetInstance().get<long>("batchSize") == 0) {
+        } else if (PMI.get<long>("batchSize") == 0) {
             stringStream << "No (Use \"-batchSize\" to setup batching)\n";
         } else { // < 0
             stringStream << "Disabled by RTI Perftest.\n";
-            if (PM::GetInstance().get<long>("batchSize") == -1) {
+            if (PMI.get<long>("batchSize") == -1) {
                 stringStream << "\t\t  BatchSize is smaller than 2 times\n"
                              << "\t\t  the sample size.\n";
-            } else if (PM::GetInstance().get<long>("batchSize") == -2) {
+            } else if (PMI.get<long>("batchSize") == -2) {
                 stringStream << "\t\t  BatchSize cannot be used with\n"
                              << "\t\t  Large Data.\n";
             }
@@ -470,10 +470,10 @@ void perftest_cpp::PrintConfiguration()
 
         // Publication Rate
         stringStream << "\tPublication Rate: ";
-        if (PM::GetInstance().is_set("pubRate")) {
-            stringStream << PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").first
+        if (PMI.is_set("pubRate")) {
+            stringStream << PMI.get_pair<unsigned long long, std::string>("pubRate").first
                          << " Samples/s (";
-            if (PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
+            if (PMI.get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
                 stringStream << "Spin)\n";
             } else {
                 stringStream << "Sleep)\n";
@@ -482,20 +482,20 @@ void perftest_cpp::PrintConfiguration()
             stringStream << "Unlimited (Not set)\n";
         }
         // Execution Time or NumIter
-        if (PM::GetInstance().get<unsigned long long>("executionTime") > 0) {
+        if (PMI.get<unsigned long long>("executionTime") > 0) {
             stringStream << "\tExecution time: "
-                         << PM::GetInstance().get<unsigned long long>("executionTime")
+                         << PMI.get<unsigned long long>("executionTime")
                          << " seconds\n";
         } else {
             stringStream << "\tNumber of samples: "
-                         << PM::GetInstance().get<unsigned long long>("numIter")
+                         << PMI.get<unsigned long long>("numIter")
                          << "\n";
         }
     }
 
     // Listener/WaitSets
     stringStream << "\tReceive using: ";
-    if (PM::GetInstance().get<bool>("useReadThread")) {
+    if (PMI.get<bool>("useReadThread")) {
         stringStream << "WaitSets\n";
     } else {
         stringStream << "Listeners\n";
@@ -779,13 +779,13 @@ int perftest_cpp::Subscriber()
     }
 
     // Check if using callbacks or read thread
-    if (!PM::GetInstance().get<bool>("useReadThread")) {
+    if (!PMI.get<bool>("useReadThread")) {
         // create latency pong reader
         reader_listener = new ThroughputListener(
                 writer,
                 NULL,
-                PM::GetInstance().is_set("cft"),
-                PM::GetInstance().get<int>("numPublishers"));
+                PMI.is_set("cft"),
+                PMI.get<int>("numPublishers"));
         reader = _MessagingImpl->CreateReader(
                 THROUGHPUT_TOPIC_NAME,
                 reader_listener);
@@ -806,8 +806,8 @@ int perftest_cpp::Subscriber()
         reader_listener = new ThroughputListener(
                 writer,
                 reader,
-                PM::GetInstance().is_set("cft"),
-                PM::GetInstance().get<int>("numPublishers"));
+                PMI.is_set("cft"),
+                PMI.get<int>("numPublishers"));
 
         RTIOsapiThread_new("ReceiverThread",
                 RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
@@ -830,10 +830,10 @@ int perftest_cpp::Subscriber()
     // Synchronize with publishers
     fprintf(stderr,
             "Waiting to discover %d publishers ...\n",
-            PM::GetInstance().get<int>("numPublishers"));
+            PMI.get<int>("numPublishers"));
     fflush(stderr);
-    reader->WaitForWriters(PM::GetInstance().get<int>("numPublishers"));
-    announcement_writer->WaitForReaders(PM::GetInstance().get<int>("numPublishers"));
+    reader->WaitForWriters(PMI.get<int>("numPublishers"));
+    announcement_writer->WaitForReaders(PMI.get<int>("numPublishers"));
 
     /*
      * Announcement message that will be used by the announcement_writer
@@ -1331,12 +1331,12 @@ int perftest_cpp::Publisher()
     }
 
     // calculate number of latency pings that will be sent per data size
-    num_latency = (unsigned long)((PM::GetInstance().get<unsigned long long>("numIter") /
+    num_latency = (unsigned long)((PMI.get<unsigned long long>("numIter") /
             samplesPerBatch) /
-            PM::GetInstance().get<unsigned long long>("latencyCount"));
-    if ((PM::GetInstance().get<unsigned long long>("numIter") /
+            PMI.get<unsigned long long>("latencyCount"));
+    if ((PMI.get<unsigned long long>("numIter") /
             samplesPerBatch) %
-            PM::GetInstance().get<unsigned long long>("latencyCount") > 0) {
+            PMI.get<unsigned long long>("latencyCount") > 0) {
         num_latency++;
     }
 
@@ -1347,15 +1347,15 @@ int perftest_cpp::Publisher()
 
     IMessagingReader *reader;
     // Only publisher with ID 0 will send/receive pings
-    if (PM::GetInstance().get<int>("pidMultiPubTest") == 0) {
+    if (PMI.get<int>("pidMultiPubTest") == 0) {
         // Check if using callbacks or read thread
-        if (!PM::GetInstance().get<bool>("useReadThread")) {
+        if (!PMI.get<bool>("useReadThread")) {
             // create latency pong reader
             // the writer is passed for ping-pong notification in LatencyTest
             reader_listener = new LatencyListener(
                     num_latency,
                     NULL,
-                    PM::GetInstance().get<bool>("latencyTest") ? writer : NULL);
+                    PMI.get<bool>("latencyTest") ? writer : NULL);
             reader = _MessagingImpl->CreateReader(
                     LATENCY_TOPIC_NAME,
                     reader_listener);
@@ -1378,7 +1378,7 @@ int perftest_cpp::Publisher()
             reader_listener = new LatencyListener(
                     num_latency,
                     reader,
-                    PM::GetInstance().get<bool>("latencyTest") ? writer : NULL);
+                    PMI.get<bool>("latencyTest") ? writer : NULL);
 
             RTIOsapiThread_new("ReceiverThread",
                                 RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
@@ -1412,8 +1412,8 @@ int perftest_cpp::Publisher()
     unsigned long sleepUsec = 1000;
     DDS_Duration_t sleep_period = {0,0};
 
-    if (PM::GetInstance().is_set("pubRate")) {
-        if (PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
+    if (PMI.is_set("pubRate")) {
+        if (PMI.get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
             spinPerUsec = NDDSUtility::get_spin_per_microsecond();
             /* A return value of 0 means accuracy not assured */
             if (spinPerUsec == 0) {
@@ -1423,34 +1423,34 @@ int perftest_cpp::Publisher()
                 return -1;
             }
             _SpinLoopCount = 1000000 * spinPerUsec /
-                    PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").first;
+                    PMI.get_pair<unsigned long long, std::string>("pubRate").first;
         } else { // sleep count
             _SleepNanosec = 1000000000 /
-                    PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").first;
+                    PMI.get_pair<unsigned long long, std::string>("pubRate").first;
         }
     }
 
     fprintf(stderr,
             "Waiting to discover %d subscribers ...\n",
-            PM::GetInstance().get<int>("numSubscribers"));
+            PMI.get<int>("numSubscribers"));
     fflush(stderr);
-    writer->WaitForReaders(PM::GetInstance().get<int>("numSubscribers"));
+    writer->WaitForReaders(PMI.get<int>("numSubscribers"));
 
     // We have to wait until every Subscriber sends an announcement message
     // indicating that it has discovered every Publisher
     fprintf(stderr,"Waiting for subscribers announcement ...\n");
     fflush(stderr);
-    while (PM::GetInstance().get<int>("numSubscribers")
+    while (PMI.get<int>("numSubscribers")
             > (int)announcement_reader_listener->subscriber_list.size()) {
         MilliSleep(1000);
     }
 
     // Allocate data and set size
     TestMessage message;
-    message.entity_id = PM::GetInstance().get<int>("pidMultiPubTest");
-    message.data = new char[(std::max)((int)PM::GetInstance().get<unsigned long long>("dataLen"), (int)LENGTH_CHANGED_SIZE)];
+    message.entity_id = PMI.get<int>("pidMultiPubTest");
+    message.data = new char[(std::max)((int)PMI.get<unsigned long long>("dataLen"), (int)LENGTH_CHANGED_SIZE)];
 
-    if (perftest_cpp::showCpu && PM::GetInstance().get<int>("pidMultiPubTest") == 0) {
+    if (perftest_cpp::showCpu && PMI.get<int>("pidMultiPubTest") == 0) {
         reader_listener->cpu.initialize();
     }
 
@@ -1477,7 +1477,7 @@ int perftest_cpp::Publisher()
      */
     unsigned long initializeSampleCount = (std::max)(
             _MessagingImpl->GetInitializationSampleCount(),
-            (unsigned long)PM::GetInstance().get<unsigned long long>("instances"));
+            (unsigned long)PMI.get<unsigned long long>("instances"));
 
     fprintf(stderr,
             "Sending %lu initialization pings ...\n",
@@ -1494,7 +1494,7 @@ int perftest_cpp::Publisher()
     fflush(stderr);
 
     // Set data size, account for other bytes in message
-    message.size = (int)PM::GetInstance().get<unsigned long long>("dataLen") -
+    message.size = (int)PMI.get<unsigned long long>("dataLen") -
             OVERHEAD_BYTES;
 
     // Sleep 1 second, then begin test
@@ -1516,15 +1516,15 @@ int perftest_cpp::Publisher()
     /* Minimum value for pubRate_sample_period will be 1 so we execute 100 times
        the control loop every second, or every sample if we want to send less
        than 100 samples per second */
-    if (PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").first > 100) {
+    if (PMI.get_pair<unsigned long long, std::string>("pubRate").first > 100) {
         pubRate_sample_period =
-                PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").first /
+                PMI.get_pair<unsigned long long, std::string>("pubRate").first /
                 100;
     }
 
-    if (PM::GetInstance().get<unsigned long long>("executionTime") > 0
-            && !PM::GetInstance().is_set("scan")) {
-        SetTimeout(PM::GetInstance().get<unsigned long long>("executionTime"));
+    if (PMI.get<unsigned long long>("executionTime") > 0
+            && !PMI.is_set("scan")) {
+        SetTimeout(PMI.get<unsigned long long>("executionTime"));
     }
     /*
      * Copy variable to no query the ParameterManager in every iteration.
@@ -1543,22 +1543,22 @@ int perftest_cpp::Publisher()
      * - isSetPubRate
      */
     const unsigned long long numIter =
-            PM::GetInstance().get<unsigned long long>("numIter");
+            PMI.get<unsigned long long>("numIter");
     const unsigned long long latencyCount =
-            PM::GetInstance().get<unsigned long long>("latencyCount");
-    const int numSubscribers = PM::GetInstance().get<int>("numSubscribers");
-    const bool bestEffort = PM::GetInstance().get<bool>("bestEffort");
-    const bool latencyTest = PM::GetInstance().get<bool>("latencyTest");
-    const int pidMultiPubTest = PM::GetInstance().get<int>("pidMultiPubTest");
+            PMI.get<unsigned long long>("latencyCount");
+    const int numSubscribers = PMI.get<int>("numSubscribers");
+    const bool bestEffort = PMI.get<bool>("bestEffort");
+    const bool latencyTest = PMI.get<bool>("latencyTest");
+    const int pidMultiPubTest = PMI.get<int>("pidMultiPubTest");
     const bool pubRateMethodSpin =
-            PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").second == "spin";
+            PMI.get_pair<unsigned long long, std::string>("pubRate").second == "spin";
     const unsigned long pubRate =
-            PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").first;
-    const bool writerStats = PM::GetInstance().get<bool>("writerStats");
-    const bool isScan = PM::GetInstance().is_set("scan");
+            PMI.get_pair<unsigned long long, std::string>("pubRate").first;
+    const bool writerStats = PMI.get<bool>("writerStats");
+    const bool isScan = PMI.is_set("scan");
     const std::vector<unsigned long long> scanList =
-            PM::GetInstance().get_vector<unsigned long long>("scan");
-    const bool isSetPubRate = PM::GetInstance().is_set("pubRate");
+            PMI.get_vector<unsigned long long>("scan");
+    const bool isSetPubRate = PMI.is_set("pubRate");
     /********************
      *  Main sending loop
      */
@@ -1624,7 +1624,7 @@ int perftest_cpp::Publisher()
                 // after executionTime
                 if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    SetTimeout(PM::GetInstance().get<unsigned long long>("executionTime"),
+                    SetTimeout(PMI.get<unsigned long long>("executionTime"),
                             isScan);
 
                     // flush anything that was previously sent
@@ -1727,7 +1727,7 @@ int perftest_cpp::Publisher()
         i++;
     }
 
-    if (PM::GetInstance().get<int>("pidMultiPubTest") == 0) {
+    if (PMI.get<int>("pidMultiPubTest") == 0) {
         reader_listener->print_summary_latency();
         reader_listener->end_test = true;
     } else {
@@ -1736,7 +1736,7 @@ int perftest_cpp::Publisher()
             "Latency results are only shown when -pidMultiPubTest = 0\n");
     }
 
-    if (PM::GetInstance().get<bool>("writerStats")) {
+    if (PMI.get<bool>("writerStats")) {
         printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
     }
 
@@ -1812,10 +1812,10 @@ inline unsigned long long perftest_cpp::GetTimeUsec() {
 }
 
 inline unsigned int perftest_cpp::GetSamplesPerBatch() {
-    if (PM::GetInstance().get<long>("batchSize")
-            > (long)PM::GetInstance().get<unsigned long long>("dataLen")) {
-        return PM::GetInstance().get<long>("batchSize") /
-                (unsigned int)PM::GetInstance().get<unsigned long long>("dataLen");
+    if (PMI.get<long>("batchSize")
+            > (long)PMI.get<unsigned long long>("dataLen")) {
+        return PMI.get<long>("batchSize") /
+                (unsigned int)PMI.get<unsigned long long>("dataLen");
     } else {
         return 1;
     }

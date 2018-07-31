@@ -43,25 +43,25 @@
 
 struct Perftest_ProductVersion_t
 {
-  char major;
-  char minor;
-  char release;
-  char revision;
+	char major;
+	char minor;
+	char release;
+	char revision;
 };
 
 class perftest_cpp
 {
   public:
-    perftest_cpp();
-    ~perftest_cpp();
-    int Run(int argc, char *argv[]);
-    bool validate_input();
-    void PrintConfiguration();
-    unsigned int GetSamplesPerBatch();
+	perftest_cpp();
+	~perftest_cpp();
+	int Run(int argc, char *argv[]);
+	bool validate_input();
+	void PrintConfiguration();
+	unsigned int GetSamplesPerBatch();
 	static void MilliSleep(unsigned int millisec);
 	static const DDS_ProductVersion_t GetDDSVersion();
-    static const Perftest_ProductVersion_t GetPerftestVersion();
-    static void PrintVersion();
+	static const Perftest_ProductVersion_t GetPerftestVersion();
+	static void PrintVersion();
 	static void ThreadYield();
 	static unsigned long long GetTimeUsec();
 
@@ -77,8 +77,8 @@ class perftest_cpp
     int Publisher();
     int Subscriber();
 	static void SetTimeout(
-            unsigned int executionTimeInSeconds,
-            bool isScan = false);
+	unsigned int executionTimeInSeconds,
+	bool isScan = false);
 
 	// Private members
     unsigned long long _SpinLoopCount;

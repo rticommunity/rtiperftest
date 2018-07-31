@@ -1,11 +1,12 @@
-#ifndef __PARAMETER_H__
-#define __PARAMETER_H__
+
 
 /*
  * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
+#ifndef __PARAMETER_H__
+#define __PARAMETER_H__
 
 #include <stdio.h>
 #include <climits>
@@ -20,7 +21,7 @@
  * This enum specifies the type of the parameter.
  * It is used to determine how to parse them.
  */
-enum TYPE {
+enum Type {
     T_NULL,            // Default type
     T_NUMERIC_LLU,     // Numeric type unsigned long long
     T_NUMERIC_LD,      // Numeric type long
@@ -33,20 +34,20 @@ enum TYPE {
 };
 
 // This enum specifies the way how to parser an argument for a ParameterVector.
-enum PARSEMETHOD {
-    NOSPLIT,          // If the value is not splited into the vector
+enum ParseMethod {
+    NO_SPLIT,          // If the value is not splited into the vector
     SPLIT             // If the value is splited into the vector
 };
 
 // This enum specifies if a parameter will be followed by one extra argument.
-enum EXTRAARGUMENT {
+enum ExtraArgument {
     NO,               // There is not extra argument
     OPTIONAL,         // It is possible to have one extra argument
     YES              // There is an extra argument
 };
 
 // This enum specifies the group of a parameter. It is used to sort the help message.
-enum GROUP {
+enum Group {
     GENERAL,
     PUB,
     SUB,
@@ -71,15 +72,15 @@ class CommandLineArgument {
         const std::string get_arg();
 };
 
-class ParameterBase  {
+class ParameterBase {
     private:
         CommandLineArgument _commandLineArgument;
         std::string _description;
         bool _isSet;
-        TYPE _type;
-        EXTRAARGUMENT  _extraArgument;
-        bool _internal; // It will not be displaied to the customer
-        GROUP _group;
+        Type _type;
+        ExtraArgument  _extraArgument;
+        bool _internal; // It will not be displayed to the customer
+        Group _group;
 
         /*
          * Only used for numeric Parameter
@@ -108,30 +109,30 @@ class ParameterBase  {
         std::string print_command_line_parameter();
 
         // Set members
-        virtual void set_command_line_argument(const std::string option, const std::string arg);
-        virtual void set_description(const std::string var);
-        virtual void set_isSet(const bool var);
-        virtual void set_type(const TYPE var);
-        virtual void set_extra_argument(const EXTRAARGUMENT var);
-        virtual void set_internal(const bool var);
-        virtual void set_group(const GROUP var);
-        virtual void set_range(
+        void set_command_line_argument(const std::string option, const std::string arg);
+        void set_description(const std::string var);
+        void set_isSet(const bool var);
+        void set_type(const Type var);
+        void set_extra_argument(const ExtraArgument var);
+        void set_internal(const bool var);
+        void set_group(const Group var);
+        void set_range(
                 const unsigned long long rangeStart,
                 unsigned long long rangeEnd);
-        virtual void add_valid_str_value(const std::string validStrValue);
-        virtual void set_parse_method(const PARSEMETHOD var) {}
+        void add_valid_str_value(const std::string validStrValue);
+        virtual void set_parse_method(const ParseMethod var) {}
 
         // Get members
-        virtual const std::string get_arg();
-        virtual const std::string get_option();
-        virtual const CommandLineArgument get_command_line_argument();
-        virtual const std::string get_description();
-        virtual const bool get_isSet();
-        virtual const TYPE get_type();
-        virtual const EXTRAARGUMENT get_extra_argument();
-        virtual const bool get_internal();
-        virtual const GROUP get_group();
-        virtual const PARSEMETHOD get_parse_method();
+        const std::string get_arg();
+        const std::string get_option();
+        const CommandLineArgument get_command_line_argument();
+        const std::string get_description();
+        const bool get_isSet();
+        const Type get_type();
+        const ExtraArgument get_extra_argument();
+        const bool get_internal();
+        const Group get_group();
+        const ParseMethod get_parse_method();
 };
 
 template <typename T>
@@ -164,13 +165,13 @@ template <typename T>
 class ParameterVector : public ParameterBase {
     private:
         std::vector<T> _value;
-        PARSEMETHOD _parseMethod;
+        ParseMethod _parseMethod;
 
     public:
-        ParameterVector() : _parseMethod(NOSPLIT)  {}
+        ParameterVector() : _parseMethod(NO_SPLIT)  {}
 
         ParameterVector(T value) :
-                _parseMethod(NOSPLIT)
+                _parseMethod(NO_SPLIT)
         {
             _value.clear();
             _value.push_back(value);
@@ -178,7 +179,7 @@ class ParameterVector : public ParameterBase {
 
         ParameterVector(std::vector<T> value)
         {
-            _parseMethod = NOSPLIT;
+            _parseMethod = NO_SPLIT;
             _value.insert(_value.begin(), value.begin(), value.end());
         }
 
@@ -208,12 +209,12 @@ class ParameterVector : public ParameterBase {
             set_isSet(true);
         }
 
-        void set_parse_method(const PARSEMETHOD parseMethod)
+        void set_parse_method(const ParseMethod parseMethod)
         {
             _parseMethod = parseMethod;
         }
 
-        const PARSEMETHOD get_parse_method()
+        const ParseMethod get_parse_method()
         {
             return _parseMethod;
         }
