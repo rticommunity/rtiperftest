@@ -471,9 +471,9 @@ void perftest_cpp::PrintConfiguration()
         // Publication Rate
         stringStream << "\tPublication Rate: ";
         if (PM::GetInstance().is_set("pubRate")) {
-            stringStream << PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first
+            stringStream << PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").first
                          << " Samples/s (";
-            if (PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").second == "spin") {
+            if (PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
                 stringStream << "Spin)\n";
             } else {
                 stringStream << "Sleep)\n";
@@ -1413,7 +1413,7 @@ int perftest_cpp::Publisher()
     DDS_Duration_t sleep_period = {0,0};
 
     if (PM::GetInstance().is_set("pubRate")) {
-        if (PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").second == "spin") {
+        if (PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
             spinPerUsec = NDDSUtility::get_spin_per_microsecond();
             /* A return value of 0 means accuracy not assured */
             if (spinPerUsec == 0) {
@@ -1423,10 +1423,10 @@ int perftest_cpp::Publisher()
                 return -1;
             }
             _SpinLoopCount = 1000000 * spinPerUsec /
-                    PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first;
+                    PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").first;
         } else { // sleep count
             _SleepNanosec = 1000000000 /
-                    PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first;
+                    PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").first;
         }
     }
 
@@ -1516,9 +1516,9 @@ int perftest_cpp::Publisher()
     /* Minimum value for pubRate_sample_period will be 1 so we execute 100 times
        the control loop every second, or every sample if we want to send less
        than 100 samples per second */
-    if (PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first > 100) {
+    if (PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").first > 100) {
         pubRate_sample_period =
-                PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first /
+                PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").first /
                 100;
     }
 
@@ -1551,13 +1551,13 @@ int perftest_cpp::Publisher()
     const bool latencyTest = PM::GetInstance().get<bool>("latencyTest");
     const int pidMultiPubTest = PM::GetInstance().get<int>("pidMultiPubTest");
     const bool pubRateMethodSpin =
-            PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").second == "spin";
+            PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").second == "spin";
     const unsigned long pubRate =
-            PM::GetInstance().get_pair<unsigned long, std::string>("pubRate").first;
+            PM::GetInstance().get_pair<unsigned long long, std::string>("pubRate").first;
     const bool writerStats = PM::GetInstance().get<bool>("writerStats");
     const bool isScan = PM::GetInstance().is_set("scan");
     const std::vector<unsigned long long> scanList =
-                PM::GetInstance().get_vector<unsigned long long>("scan");
+            PM::GetInstance().get_vector<unsigned long long>("scan");
     const bool isSetPubRate = PM::GetInstance().is_set("pubRate");
     /********************
      *  Main sending loop
