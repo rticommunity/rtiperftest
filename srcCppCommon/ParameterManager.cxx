@@ -264,7 +264,7 @@ void ParameterManager::initialize()
     latencyCount->set_description("Number of samples (or batches) to send before\na latency ping packet is sent. Default:\n10000 if -latencyTest is not specified,\n1 if -latencyTest is specified");
     latencyCount->set_type(T_NUMERIC_LLU);
     latencyCount->set_extra_argument(YES);
-    latencyCount->set_range(0, ULLONG_MAX);
+    latencyCount->set_range(1, ULLONG_MAX);
     latencyCount->set_group(PUB);
     _parameterList["latencyCount"] = AnyParameter(latencyCount);
 
@@ -360,7 +360,7 @@ void ParameterManager::initialize()
     sleep->set_description("Time to sleep between each send. Default: 0");
     sleep->set_type(T_NUMERIC_LLU);
     sleep->set_extra_argument(YES);
-    sleep->set_range(0, ULLONG_MAX);
+    sleep->set_range(1, ULLONG_MAX);
     sleep->set_group(PUB);
     _parameterList["sleep"] = AnyParameter(sleep);
 
@@ -369,7 +369,7 @@ void ParameterManager::initialize()
     spin->set_internal(true);
     spin->set_type(T_NUMERIC_LLU);
     spin->set_extra_argument(YES);
-    spin->set_range(0, ULLONG_MAX);
+    spin->set_range(1, ULLONG_MAX);
     spin->set_group(PUB);
     _parameterList["spin"] = AnyParameter(spin);
 

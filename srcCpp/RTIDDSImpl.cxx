@@ -1344,9 +1344,9 @@ class RTISubscriber : public IMessagingReader
             property.max_event_count =
                     PM::GetInstance().get<unsigned long long>("waitsetEventCount");
             property.max_event_delay.sec =
-                    PM::GetInstance().get<unsigned int>("waitsetDelayUsec") / 1000000;
+                    PM::GetInstance().get<unsigned long long>("waitsetDelayUsec") / 1000000;
             property.max_event_delay.nanosec =
-                    (PM::GetInstance().get<unsigned int>("waitsetDelayUsec") % 1000000) * 1000;
+                    (PM::GetInstance().get<unsigned long long>("waitsetDelayUsec") % 1000000) * 1000;
 
             _waitset = new DDSWaitSet(property);
 
@@ -1498,9 +1498,9 @@ class RTIDynamicDataSubscriber : public IMessagingReader
             property.max_event_count =
                     PM::GetInstance().get<unsigned long long>("waitsetEventCount");
             property.max_event_delay.sec =
-                    PM::GetInstance().get<unsigned int>("waitsetDelayUsec") / 1000000;
+                    PM::GetInstance().get<unsigned long long>("waitsetDelayUsec") / 1000000;
             property.max_event_delay.nanosec =
-                    (PM::GetInstance().get<unsigned int>("waitsetDelayUsec") % 1000000) * 1000;
+                    (PM::GetInstance().get<unsigned long long>("waitsetDelayUsec") % 1000000) * 1000;
             _waitset = new DDSWaitSet(property);
             DDSStatusCondition *reader_status;
             reader_status = reader->get_statuscondition();

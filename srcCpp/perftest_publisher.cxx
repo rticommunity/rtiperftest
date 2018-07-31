@@ -359,7 +359,7 @@ bool perftest_cpp::validate_input()
             MAX_SYNCHRONOUS_SIZE,
             MAX_BOUNDED_SEQ_SIZE)) {
         if (PM::GetInstance().get<int>("unbounded") == 0) {
-            PM::GetInstance().set<unsigned long long>("unbounded", MAX_BOUNDED_SEQ_SIZE);
+            PM::GetInstance().set<int>("unbounded", MAX_BOUNDED_SEQ_SIZE);
         }
     } else { // No Large Data
         if (PM::GetInstance().get<int>("unbounded") != 0) {
