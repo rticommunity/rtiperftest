@@ -139,12 +139,10 @@ bool RTIDDSImpl<T>::validate_input()
 {
     // Manage parameter -instance
     if (PMI.is_set("instance")){
-        _instanceMaxCountReader =
-                PMI.get<unsigned long long>("instances");
+        _instanceMaxCountReader = PMI.get<unsigned long long>("instances");
     }
     // Manage parameter -peer
-    if (PMI.get_vector<std::string>("peer").size()
-            >= RTIPERFTEST_MAX_PEERS) {
+    if (PMI.get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
         fprintf(stderr,
                 "The maximun of 'initial_peers' is %d\n",
                 RTIPERFTEST_MAX_PEERS);
@@ -205,8 +203,7 @@ bool RTIDDSImpl<T>::validate_input()
              * enough to contain at least two samples (in this case we avoid the
              * checking at the middleware level).
              */
-            if (PMI.is_set("batchSize") ||
-                    PMI.is_set("scan")) {
+            if (PMI.is_set("batchSize") || PMI.is_set("scan")) {
                 /*
                  * Batchsize disabled. A message will be print if _batchSize < 0
                  * in perftest_cpp::PrintConfiguration()
@@ -324,8 +321,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     // Dynamic Data
     if (PMI.get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
-        if (_isLargeData
-                || PMI.get<bool>("asynchronous")) {
+        if (_isLargeData || PMI.get<bool>("asynchronous")) {
             stringStream << "Yes\n";
             stringStream << "\tFlow Controller: "
                          << PMI.get<std::string>("flowController")
@@ -352,12 +348,12 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
                      << "\n";
     }
 
-    stringStream << "\n" << _transport.printTransportConfigurationSummary();
+    stringStream << "\n"
+                 << _transport.printTransportConfigurationSummary();
 
 
     // set initial peers and not use multicast
-    std::vector<std::string> _peerList =
-            PMI.get_vector<std::string>("peer");
+    std::vector<std::string> _peerList = PMI.get_vector<std::string>("peer");
     if (!_peerList.empty()) {
         stringStream << "\tInitial peers: ";
         for (unsigned int i = 0; i < _peerList.size(); ++i) {
@@ -1754,11 +1750,9 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
         if (PMI.get<bool>("secureEncryptDiscovery")) {
             governanceFilePath += "Discovery";
         }
-
         if (PMI.get<bool>("secureSign")) {
             governanceFilePath += "Sign";
         }
-
         if (PMI.get<bool>("secureEncryptData")
                 && PMI.get<bool>("secureEncryptSM")) {
             governanceFilePath += "EncryptBoth";
@@ -1878,43 +1872,29 @@ bool RTIDDSImpl<T>::validateSecureArgs()
     if (PMI.group_is_used(SECURE)) {
         if (PMI.get<std::string>("securePrivateKey").empty()) {
             if (PMI.get<bool>("pub")) {
-                PMI.set(
-                        "securePrivateKey",
-                        SECURE_PRIVATEKEY_FILE_PUB);
+                PMI.set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
             } else {
-                PMI.set(
-                        "securePrivateKey",
-                        SECURE_PRIVATEKEY_FILE_SUB);
+                PMI.set("securePrivateKey", SECURE_PRIVATEKEY_FILE_SUB);
             }
         }
 
         if (PMI.get<std::string>("secureCertFile").empty()) {
             if (PMI.get<bool>("pub")) {
-                PMI.set(
-                        "secureCertFile",
-                        SECURE_CERTIFICATE_FILE_PUB);
+                PMI.set("secureCertFile", SECURE_CERTIFICATE_FILE_PUB);
             } else {
-                PMI.set(
-                        "secureCertFile",
-                        SECURE_CERTIFICATE_FILE_SUB);
+                PMI.set("secureCertFile", SECURE_CERTIFICATE_FILE_SUB);
             }
         }
 
         if (PMI.get<std::string>("secureCertAuthority").empty()) {
-            PMI.set(
-                    "secureCertAuthority",
-                    SECURE_CERTAUTHORITY_FILE);
+            PMI.set("secureCertAuthority", SECURE_CERTAUTHORITY_FILE);
         }
 
         if (PMI.get<std::string>("securePermissionsFile").empty()) {
             if (PMI.get<bool>("pub")) {
-                PMI.set(
-                        "securePermissionsFile",
-                        SECURE_PERMISION_FILE_PUB);
+                PMI.set("securePermissionsFile", SECURE_PERMISION_FILE_PUB);
             } else {
-                PMI.set(
-                        "securePermissionsFile",
-                        SECURE_PERMISION_FILE_SUB);
+                PMI.set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
             }
         }
 
@@ -1999,8 +1979,7 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     if (PMI.get<std::string>("secureCertAuthority").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << PMI.get<std::string>(
-                                "secureCertAuthority")
+        stringStream << PMI.get<std::string>("secureCertAuthority")
                      << "\n";
     }
 
@@ -2066,13 +2045,14 @@ bool RTIDDSImpl<T>::Initialize()
 
     if (_factory->reload_profiles() != DDS_RETCODE_OK)
     {
-        fprintf(stderr,"Problem opening QOS profiles file %s.\n",
+        fprintf(stderr,
+                "Problem opening QOS profiles file %s.\n",
                 PMI.get<std::string>("qosFile").c_str());
         return false;
     }
 
     if (_factory->set_default_library(PMI.get<std::string>("qosLibrary").c_str())
-             != DDS_RETCODE_OK) {
+            != DDS_RETCODE_OK) {
         fprintf(stderr,"No QOS Library named \"%s\" found in %s.\n",
                PMI.get<std::string>("qosLibrary").c_str(),
                PMI.get<std::string>("qosFile").c_str());
@@ -2106,8 +2086,7 @@ bool RTIDDSImpl<T>::Initialize()
   #endif
 
     // Set initial peers and not use multicast
-    std::vector<std::string> _peerList =
-            PMI.get_vector<std::string>("peer");
+    std::vector<std::string> _peerList = PMI.get_vector<std::string>("peer");
     if (!_peerList.empty()) {
         std::vector<char*> cstrings;
         cstrings.reserve(_peerList.size());
@@ -2122,11 +2101,13 @@ bool RTIDDSImpl<T>::Initialize()
 
     if (!configureTransport(_transport, qos)){
         return false;
-    };
+    }
 
     if (PMI.get<bool>("enableAutoThrottle")) {
         DDSPropertyQosPolicyHelper::add_property(qos.property,
-                "dds.domain_participant.auto_throttle.enable", "true", false);
+                "dds.domain_participant.auto_throttle.enable",
+                "true",
+                false);
     }
 
     // Creates the participant
@@ -2138,8 +2119,7 @@ bool RTIDDSImpl<T>::Initialize()
 
     if (_participant == NULL || _loggerDevice.checkShmemErrors()) {
         if (_loggerDevice.checkShmemErrors()) {
-            fprintf(
-                    stderr,
+            fprintf(stderr,
                     "The participant creation failed due to issues in the Shared Memory configuration of your OS.\n"
                     "For more information about how to configure Shared Memory see: http://community.rti.com/kb/osx510 \n"
                     "If you want to skip the use of Shared memory in RTI Perftest, "
@@ -2166,8 +2146,7 @@ bool RTIDDSImpl<T>::Initialize()
             "BaseProfileQos",
             NULL,
             DDS_STATUS_MASK_NONE);
-    if (_publisher == NULL)
-    {
+    if (_publisher == NULL) {
         fprintf(stderr,"Problem creating publisher.\n");
         return false;
     }
@@ -2177,8 +2156,7 @@ bool RTIDDSImpl<T>::Initialize()
             "BaseProfileQos",
             NULL,
             DDS_STATUS_MASK_NONE);
-    if (_subscriber == NULL)
-    {
+    if (_subscriber == NULL) {
         fprintf(stderr,"Problem creating subscriber.\n");
         return false;
     }
@@ -2285,11 +2263,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         }
     }
 
-    if (_isLargeData
-            || PMI.get<bool>("asynchronous")) {
+    if (_isLargeData || PMI.get<bool>("asynchronous")) {
         dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
-        if (PMI.get<std::string>("flowController")
-                != "default") {
+        if (PMI.get<std::string>("flowController") != "default") {
             dw_qos.publish_mode.flow_controller_name =
                     DDS_String_dup(("dds.flow_controller.token_bucket." +
                     PMI.get<std::string>("flowController")).c_str());
@@ -2318,14 +2294,12 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 
         if (PMI.get<long>("batchSize") > 0) {
             dw_qos.batch.enable = true;
-            dw_qos.batch.max_data_bytes =
-                    PMI.get<long>("batchSize");
+            dw_qos.batch.max_data_bytes = PMI.get<long>("batchSize");
             dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
             dw_qos.writer_resource_limits.max_batches =
                     PMI.get<int>("sendQueueSize");
         } else {
-            dw_qos.resource_limits.max_samples =
-                    PMI.get<int>("sendQueueSize");
+            dw_qos.resource_limits.max_samples = PMI.get<int>("sendQueueSize");
         }
 
         if (PMI.get<bool>("enableAutoThrottle")) {
@@ -2335,15 +2309,16 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 
         if (PMI.get<bool>("enableTurboMode")) {
             DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
-                    "dds.data_writer.enable_turbo_mode", "true", false);
+                    "dds.data_writer.enable_turbo_mode",
+                    "true",
+                    false);
             dw_qos.batch.enable = false;
             dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
             dw_qos.writer_resource_limits.max_batches =
                     PMI.get<int>("sendQueueSize");
         }
 
-        dw_qos.resource_limits.initial_samples =
-                PMI.get<int>("sendQueueSize");
+        dw_qos.resource_limits.initial_samples = PMI.get<int>("sendQueueSize");
         dw_qos.resource_limits.max_samples_per_instance =
                 dw_qos.resource_limits.max_samples;
 
@@ -2428,7 +2403,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                     _pongSemaphore,
                     PMI.get<long>("writeInstance"));
         } catch (const std::exception &ex) {
-            fprintf(stderr, "Exception in RTIDDSImpl<T>::CreateWriter(): %s.\n", ex.what());
+            fprintf(stderr,
+                    "Exception in RTIDDSImpl<T>::CreateWriter(): %s.\n", ex.what());
             return NULL;
         }
     } else {
@@ -2661,8 +2637,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     /* Create CFT Topic */
-    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 &&
-            PMI.is_set("cft")) {
+    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && PMI.is_set("cft")) {
         topic_desc = CreateCft(topic_name, topic);
         if (topic_desc == NULL) {
             printf("Create_contentfilteredtopic error\n");
@@ -2693,9 +2668,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 DDS_STATUS_MASK_NONE);
     }
 
-    if (reader == NULL)
-    {
-        fprintf(stderr,"Problem creating reader.\n");
+    if (reader == NULL) {
+        fprintf(stderr, "Problem creating reader.\n");
         return NULL;
     }
 

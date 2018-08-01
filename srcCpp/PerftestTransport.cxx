@@ -234,7 +234,6 @@ bool configureTcpTransport(
     }
 
     if (PMI.get<bool>("transportWan")) {
-
         if (!assertPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString
@@ -244,14 +243,12 @@ bool configureTcpTransport(
         }
 
         if (PMI.get<std::string>("transportServerBindPort") != "0") {
-            if (!PMI.get<std::string>(
-                    "transportPublicAddress").empty()) {
+            if (!PMI.get<std::string>("transportPublicAddress").empty()) {
                 if (!addPropertyToParticipantQos(
                         qos,
                         transport.transportConfig.prefixString
                                 + ".public_address",
-                        PMI.get<std::string>(
-                                "transportPublicAddress"))) {
+                        PMI.get<std::string>("transportPublicAddress"))) {
                     return false;
                 }
             } else {
@@ -354,13 +351,11 @@ bool configureWanTransport(
         return false;
     }
 
-    if (!PMI.get<std::string>(
-            "transportWanServerAddress").empty()) {
+    if (!PMI.get<std::string>("transportWanServerAddress").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".server",
-                PMI.get<std::string>(
-                        "transportWanServerAddress"))) {
+                PMI.get<std::string>("transportWanServerAddress"))) {
             return false;
         }
     } else {
@@ -680,32 +675,22 @@ void PerftestTransport::populateSecurityFiles() {
 
     if (PMI.get<std::string>("transportCertFile").empty()) {
         if (PMI.get<bool>("pub")) {
-            PMI.set(
-                    "transportCertFile",
-                    TRANSPORT_CERTIFICATE_FILE_PUB);
+            PMI.set("transportCertFile", TRANSPORT_CERTIFICATE_FILE_PUB);
         } else {
-            PMI.set(
-                    "transportCertFile",
-                    TRANSPORT_CERTIFICATE_FILE_SUB);
+            PMI.set("transportCertFile", TRANSPORT_CERTIFICATE_FILE_SUB);
         }
     }
 
     if (PMI.get<std::string>("transportPrivateKey").empty()) {
         if (PMI.get<bool>("pub")) {
-            PMI.set(
-                    "transportPrivateKey",
-                    TRANSPORT_PRIVATEKEY_FILE_PUB);
+            PMI.set("transportPrivateKey", TRANSPORT_PRIVATEKEY_FILE_PUB);
         } else {
-            PMI.set(
-                    "transportPrivateKey",
-                    TRANSPORT_PRIVATEKEY_FILE_SUB);
+            PMI.set("transportPrivateKey", TRANSPORT_PRIVATEKEY_FILE_SUB);
         }
     }
 
     if (PMI.get<std::string>("transportCertAuthority").empty()) {
-        PMI.set(
-                "transportCertAuthority",
-                TRANSPORT_CERTAUTHORITY_FILE);
+        PMI.set("transportCertAuthority", TRANSPORT_CERTAUTHORITY_FILE);
     }
 }
 
@@ -729,7 +714,8 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     }
 
     stringStream << "\tUse Multicast: "
-                 << ((allowsMulticast() && PMI.get<bool>("multicast")) ? "True" : "False");
+                 << ((allowsMulticast()
+                        && PMI.get<bool>("multicast")) ? "True" : "False");
     if (!allowsMulticast() && PMI.get<bool>("multicast")) {
         stringStream << " (Multicast is not supported for "
                      << transportConfig.nameString << ")";
@@ -739,29 +725,23 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     if (transportConfig.kind == TRANSPORT_TCPv4
             || transportConfig.kind == TRANSPORT_TLSv4) {
         stringStream << "\tTCP Server Bind Port: "
-                     << PMI.get<std::string>(
-                                "transportServerBindPort")
+                     << PMI.get<std::string>("transportServerBindPort")
                      << "\n";
 
         stringStream << "\tTCP LAN/WAN mode: "
-                     << (PMI.get<bool>("transportWan")
-                            ? "WAN\n" : "LAN\n");
+                     << (PMI.get<bool>("transportWan") ? "WAN\n" : "LAN\n");
         if (PMI.get<bool>("transportWan")) {
             stringStream << "\tTCP Public Address: "
-                         << PMI.get<std::string>(
-                                "transportPublicAddress")
-                        << "\n";
+                         << PMI.get<std::string>("transportPublicAddress")
+                         << "\n";
         }
     }
 
     if (transportConfig.kind == TRANSPORT_WANv4) {
-
         stringStream << "\tWAN Server Address: "
-                     << PMI.get<std::string>(
-                            "transportWanServerAddress")
+                     << PMI.get<std::string>("transportWanServerAddress")
                      << ":"
-                     << PMI.get<std::string>(
-                            "transportWanServerPort")
+                     << PMI.get<std::string>("transportWanServerPort")
                      << "\n";
         stringStream << "\tWAN Id: "
                      << PMI.get<std::string>("transportWanId")
@@ -776,14 +756,14 @@ std::string PerftestTransport::printTransportConfigurationSummary()
             || (transportConfig.kind == TRANSPORT_WANv4
             && PMI.get<bool>("transportSecureWan"))) {
         stringStream << "\tCertificate authority file: "
-                     << PMI.get<std::string>(
-                            "transportCertAuthority") << "\n";
+                     << PMI.get<std::string>("transportCertAuthority")
+                     << "\n";
         stringStream << "\tCertificate file: "
                      << PMI.get<std::string>("transportCertFile")
                      << "\n";
         stringStream << "\tPrivate key file: "
-                     << PMI.get<std::string>(
-                            "transportPrivateKey") << "\n";
+                     << PMI.get<std::string>("transportPrivateKey")
+                     << "\n";
     }
 
     if (!PMI.get<std::string>("transportVerbosity").empty()) {
@@ -821,14 +801,11 @@ bool PerftestTransport::validate_input()
      * so now use only one: "allowInterfaces"
      */
     if (PMI.get<std::string>("allowInterfaces").empty()) {
-        PMI.set<std::string>(
-                "allowInterfaces",
-                PMI.get<std::string>("nic"));
+        PMI.set<std::string>("allowInterfaces", PMI.get<std::string>("nic"));
     }
 
     // Manage parameter -transport
-    if (!setTransport(PMI.get<std::string>(
-                "transport"))) {
+    if (!setTransport(PMI.get<std::string>("transport"))) {
         fprintf(stderr,
                 "%s Error Setting the transport\n",
                 classLoggingString.c_str());

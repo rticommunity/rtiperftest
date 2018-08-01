@@ -86,6 +86,8 @@ int subscriber_main()
 
 int perftest_cpp::Run(int argc, char *argv[])
 {
+    PrintVersion();
+
     try {
         PMI.initialize();
     } catch(std::exception &ex) {
@@ -98,13 +100,9 @@ int perftest_cpp::Run(int argc, char *argv[])
     if (!PMI.parse(argc, argv)) {
         return -1;
     }
-
     if (!PMI.check_incompatible_parameter()) {
         return -1;
     }
-
-    PrintVersion();
-
     if (!validate_input()) {
         return -1;
     }
@@ -241,8 +239,7 @@ bool perftest_cpp::validate_input()
 
     // Manage parameter -printIterval
     // It is copied because it is used in the critical patch
-    perftest_cpp::printIntervals =
-            !PMI.get<bool>("noPrintIntervals");
+    perftest_cpp::printIntervals = !PMI.get<bool>("noPrintIntervals");
 
     // Manage parameter -cpu
     // It is copied because it is used in the critical patch
@@ -272,9 +269,7 @@ bool perftest_cpp::validate_input()
          * use a smaller default: "numIterDefaultLatencyTest"
          */
         if (!PMI.is_set("numIter")) {
-            PMI.set<unsigned long long>(
-                    "numIter",
-                    numIterDefaultLatencyTest);
+            PMI.set<unsigned long long>("numIter", numIterDefaultLatencyTest);
         }
     }
 
@@ -323,10 +318,9 @@ bool perftest_cpp::validate_input()
     // Manage the parameter: -unbounded
     if (PMI.is_set("unbounded")) {
         if (PMI.get<int>("unbounded") == 0) {
-            PMI.set<int>("unbounded",
-                    (std::min)(
-                            2 * PMI.get<unsigned long long>("dataLen"),
-                            (unsigned long long)MAX_BOUNDED_SEQ_SIZE));
+            PMI.set<int>("unbounded", (std::min)(
+                    2 * PMI.get<unsigned long long>("dataLen"),
+                    (unsigned long long)MAX_BOUNDED_SEQ_SIZE));
         }
     }
 
@@ -334,7 +328,8 @@ bool perftest_cpp::validate_input()
     if (PMI.is_set("scan")) {
         std::vector<unsigned long long> scanList =
                 PMI.get_vector<unsigned long long>("scan");
-        PMI.set<unsigned long long>("dataLen", scanList[scanList.size() - 1]); // Max size of scan
+        // Max size of scan
+        PMI.set<unsigned long long>("dataLen", scanList[scanList.size() - 1]);
         if (PMI.get<unsigned long long>("executionTime") == 0){
             PMI.set<unsigned long long>("executionTime", 60);
         }
@@ -1448,7 +1443,9 @@ int perftest_cpp::Publisher()
     // Allocate data and set size
     TestMessage message;
     message.entity_id = PMI.get<int>("pidMultiPubTest");
-    message.data = new char[(std::max)((int)PMI.get<unsigned long long>("dataLen"), (int)LENGTH_CHANGED_SIZE)];
+    message.data = new char[(std::max)
+        ((int)PMI.get<unsigned long long>("dataLen"),
+        (int)LENGTH_CHANGED_SIZE)];
 
     if (perftest_cpp::showCpu && PMI.get<int>("pidMultiPubTest") == 0) {
         reader_listener->cpu.initialize();
@@ -1494,8 +1491,7 @@ int perftest_cpp::Publisher()
     fflush(stderr);
 
     // Set data size, account for other bytes in message
-    message.size = (int)PMI.get<unsigned long long>("dataLen") -
-            OVERHEAD_BYTES;
+    message.size = (int)PMI.get<unsigned long long>("dataLen") - OVERHEAD_BYTES;
 
     // Sleep 1 second, then begin test
     MilliSleep(1000);
@@ -1542,8 +1538,7 @@ int perftest_cpp::Publisher()
      * - scanList
      * - isSetPubRate
      */
-    const unsigned long long numIter =
-            PMI.get<unsigned long long>("numIter");
+    const unsigned long long numIter = PMI.get<unsigned long long>("numIter");
     const unsigned long long latencyCount =
             PMI.get<unsigned long long>("latencyCount");
     const int numSubscribers = PMI.get<int>("numSubscribers");
