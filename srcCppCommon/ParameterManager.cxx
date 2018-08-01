@@ -83,24 +83,22 @@ void ParameterManager::initialize()
     domain->set_group(GENERAL);
     _parameterList["domain"] = AnyParameter(domain);
 
-    Parameter<unsigned long long> *instances =
-            new Parameter<unsigned long long>(1);
+    Parameter<long> *instances = new Parameter<long>(1);
     instances->set_command_line_argument("-instances", "<count>");
     instances->set_description(
             "Set the number of instances (keys) to iterate\n"
             "over when publishing. Default: 1");
-    instances->set_type(T_NUMERIC_LLU);
+    instances->set_type(T_NUMERIC_LD);
     instances->set_extra_argument(YES);
-    instances->set_range(1, ULONG_MAX);
+    instances->set_range(1, LONG_MAX);
     instances->set_group(GENERAL);
     _parameterList["instances"] = AnyParameter(instances);
 
-    Parameter<unsigned long long> *instanceHashBuckets =
-            new Parameter<unsigned long long>(0);
+    Parameter<long> *instanceHashBuckets = new Parameter<long>(0);
     instanceHashBuckets->set_command_line_argument(
             "-instanceHashBuckets", "<count>");
     instanceHashBuckets->set_internal(true);
-    instanceHashBuckets->set_type(T_NUMERIC_LLU);
+    instanceHashBuckets->set_type(T_NUMERIC_LD);
     instanceHashBuckets->set_extra_argument(YES);
     instanceHashBuckets->set_range(1, 1000000);
     instanceHashBuckets->set_group(GENERAL);
@@ -207,18 +205,17 @@ void ParameterManager::initialize()
     waitsetDelayUsec->set_range(0, UINT_MAX);
     _parameterList["waitsetDelayUsec"] = AnyParameter(waitsetDelayUsec);
 
-    Parameter<unsigned long long> *waitsetEventCount =
-            new Parameter<unsigned long long>(5);
+    Parameter<long> *waitsetEventCount = new Parameter<long>(5);
     waitsetEventCount->set_command_line_argument("-waitsetEventCount", "<count>");
     waitsetEventCount->set_description(
             "UseReadThread related. Allows you to\n"
             "process incoming data in groups, based on the\n"
             "number of samples rather than individually. It\n"
             "can be used combined with -waitsetDelayUsec.\nDefault: 5");
-    waitsetEventCount->set_type(T_NUMERIC_LLU);
+    waitsetEventCount->set_type(T_NUMERIC_LD);
     waitsetEventCount->set_extra_argument(YES);
     waitsetEventCount->set_group(GENERAL);
-    waitsetEventCount->set_range(1, ULLONG_MAX);
+    waitsetEventCount->set_range(1, LONG_MAX);
     _parameterList["waitsetEventCount"] = AnyParameter(waitsetEventCount);
 
     Parameter<bool> *asynchronous = new Parameter<bool>(false);
@@ -259,7 +256,7 @@ void ParameterManager::initialize()
             "Use unbounded Sequences\n"
             "<allocation_threshold> is optional. Default: 63000 Bytes");
     unbounded->set_type(T_NUMERIC_D);
-    unbounded->set_extra_argument(OPTIONAL);
+    unbounded->set_extra_argument(POSSIBLE);
     unbounded->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_BOUNDED_SEQ_SIZE);
     unbounded->set_group(GENERAL);
     _parameterList["unbounded"] = AnyParameter(unbounded);
@@ -435,7 +432,7 @@ void ParameterManager::initialize()
             "'32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\n"
             "Default: Not set");
     scan->set_type(T_VECTOR_NUMERIC);
-    scan->set_extra_argument(OPTIONAL);
+    scan->set_extra_argument(POSSIBLE);
     scan->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_PERFTEST_SAMPLE_SIZE);
     scan->set_parse_method(SPLIT);
     scan->set_group(PUB);
@@ -915,7 +912,7 @@ bool ParameterManager::parse(int argc, char *argv[])
                                 p->get_arg().c_str(),
                                 p->get_option().c_str());
                             return false;
-                        } else if (p->get_extra_argument() == OPTIONAL) {
+                        } else if (p->get_extra_argument() == POSSIBLE) {
                             p->set_isSet(true);
                             break;
                         }

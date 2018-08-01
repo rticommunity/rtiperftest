@@ -138,8 +138,8 @@ template <typename T>
 bool RTIDDSImpl<T>::validate_input()
 {
     // Manage parameter -instance
-    if (PMI.is_set("instance")) {
-        _instanceMaxCountReader = PMI.get<unsigned long long>("instances");
+    if (PMI.is_set("instances")) {
+        _instanceMaxCountReader = PMI.get<long>("instances");
     }
     // Manage parameter -peer
     if (PMI.get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
@@ -226,13 +226,12 @@ bool RTIDDSImpl<T>::validate_input()
 
     // Manage parameter -writeInstance
     if (PMI.is_set("writeInstance")) {
-        if (PMI.get<unsigned long long>("instances") <
-                (unsigned long long)PMI.get<long>("writeInstance")) {
+        if (PMI.get<long>("instances") < PMI.get<long>("writeInstance")) {
             fprintf(stderr,
                     "Specified '-WriteInstance' (%ld) invalid: "
-                    "Bigger than the number of instances (%llu).\n",
+                    "Bigger than the number of instances (%ld).\n",
                     PMI.get<long>("writeInstance"),
-                    PMI.get<unsigned long long>("instances"));
+                    PMI.get<long>("instances"));
             return false;
         }
     }
@@ -1333,9 +1332,9 @@ class RTISubscriber : public IMessagingReader
         if (_reader->get_listener() == NULL) {
             DDS_WaitSetProperty_t property;
             property.max_event_count =
-                    PMI.get<unsigned long long>("waitsetEventCount");
+                    PMI.get<long>("waitsetEventCount");
             property.max_event_delay.sec =
-                    PMI.get<unsigned long long>("waitsetDelayUsec") / 1000000;
+                    (long)PMI.get<unsigned long long>("waitsetDelayUsec") / 1000000;
             property.max_event_delay.nanosec =
                     (PMI.get<unsigned long long>("waitsetDelayUsec") % 1000000) * 1000;
 
@@ -1487,9 +1486,9 @@ class RTIDynamicDataSubscriber : public IMessagingReader
 
             DDS_WaitSetProperty_t property;
             property.max_event_count =
-                    PMI.get<unsigned long long>("waitsetEventCount");
+                    PMI.get<long>("waitsetEventCount");
             property.max_event_delay.sec =
-                    PMI.get<unsigned long long>("waitsetDelayUsec") / 1000000;
+                    (long)PMI.get<unsigned long long>("waitsetDelayUsec") / 1000000;
             property.max_event_delay.nanosec =
                     (PMI.get<unsigned long long>("waitsetDelayUsec") % 1000000) * 1000;
             _waitset = new DDSWaitSet(property);
@@ -2090,7 +2089,7 @@ bool RTIDDSImpl<T>::Initialize()
         }
         qos.discovery.initial_peers.from_array(
                 (const char **)&cstrings[0],
-                peerList.size());
+                (long)peerList.size());
         qos.discovery.multicast_receive_addresses.length(0);
     }
 
@@ -2358,9 +2357,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     dw_qos.resource_limits.max_instances =
-            PMI.get<unsigned long long>("instances") + 1; // One extra for MAX_CFT_VALUE
-    dw_qos.resource_limits.initial_instances =
-            PMI.get<unsigned long long>("instances") + 1;
+            PMI.get<long>("instances") + 1; // One extra for MAX_CFT_VALUE
+    dw_qos.resource_limits.initial_instances = PMI.get<long>("instances") + 1;
 
     if (PMI.get<int>("unbounded") != 0) {
         char buf[10];
@@ -2370,13 +2368,13 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
                buf, false);
     }
 
-    if (PMI.get<unsigned long long>("instances") > 1) {
+    if (PMI.get<long>("instances") > 1) {
         if (PMI.is_set("instanceHashBuckets")) {
             dw_qos.resource_limits.instance_hash_buckets =
-                    PMI.get<unsigned long long>("instanceHashBuckets");
+                    PMI.get<long>("instanceHashBuckets");
         } else {
             dw_qos.resource_limits.instance_hash_buckets =
-                    PMI.get<unsigned long long>("instances");
+                    PMI.get<long>("instances");
         }
     }
 
@@ -2394,7 +2392,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         try {
             return new RTIPublisher<T>(
                     writer,
-                    PMI.get<unsigned long long>("instances"),
+                    PMI.get<long>("instances"),
                     _pongSemaphore,
                     PMI.get<long>("writeInstance"));
         } catch (const std::exception &ex) {
@@ -2406,7 +2404,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         try{
             return new RTIDynamicDataPublisher(
                     writer,
-                    PMI.get<unsigned long long>("instances"),
+                    PMI.get<long>("instances"),
                     _pongSemaphore,
                     T::TypeSupport::get_typecode(),
                     PMI.get<long>("writeInstance"));
@@ -2586,20 +2584,19 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 !PMI.get<bool>("noDirectCommunication");
     }
 
-    dr_qos.resource_limits.initial_instances =
-            PMI.get<unsigned long long>("instances") + 1;
+    dr_qos.resource_limits.initial_instances = PMI.get<long>("instances") + 1;
     if (_instanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
         _instanceMaxCountReader++;
     }
     dr_qos.resource_limits.max_instances = _instanceMaxCountReader;
 
-    if (PMI.get<unsigned long long>("instances") > 1) {
+    if (PMI.get<long>("instances") > 1) {
         if (PMI.is_set("instanceHashBuckets")) {
             dr_qos.resource_limits.instance_hash_buckets =
-                    PMI.get<unsigned long long>("instanceHashBuckets");
+                    PMI.get<long>("instanceHashBuckets");
         } else {
             dr_qos.resource_limits.instance_hash_buckets =
-                    PMI.get<unsigned long long>("instances");
+                    PMI.get<long>("instances");
         }
     }
 

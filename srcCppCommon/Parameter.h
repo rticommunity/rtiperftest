@@ -42,8 +42,8 @@ enum ParseMethod {
 // This enum specifies if a parameter will be followed by one extra argument.
 enum ExtraArgument {
     NO,               // There is not extra argument
-    OPTIONAL,         // It is possible to have one extra argument
-    YES              // There is an extra argument
+    POSSIBLE,         // It is possible to have one extra argument
+    YES               // There is an extra argument
 };
 
 // This enum specifies the group of a parameter. It is used to sort the help message.

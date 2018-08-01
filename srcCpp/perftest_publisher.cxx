@@ -231,7 +231,7 @@ bool perftest_cpp::validate_input()
 {
     // Manage parameter -sleep
     // It is copied because it is used in the critical patch
-    _SleepNanosec = 1000000 * PMI.get<unsigned long long>("sleep");
+    _SleepNanosec = 1000000 * (unsigned long)PMI.get<unsigned long long>("sleep");
 
     // Manage parameter -spin
     // It is copied because it is used in the critical patch
@@ -318,7 +318,7 @@ bool perftest_cpp::validate_input()
     // Manage the parameter: -unbounded
     if (PMI.is_set("unbounded")) {
         if (PMI.get<int>("unbounded") == 0) {
-            PMI.set<int>("unbounded", (std::min)(
+            PMI.set<int>("unbounded", (int)(std::min)(
                     2 * PMI.get<unsigned long long>("dataLen"),
                     (unsigned long long)MAX_BOUNDED_SEQ_SIZE));
         }
@@ -1421,7 +1421,8 @@ int perftest_cpp::Publisher()
                     PMI.get_pair<unsigned long long, std::string>("pubRate").first;
         } else { // sleep count
             _SleepNanosec = 1000000000 /
-                    PMI.get_pair<unsigned long long, std::string>("pubRate").first;
+                    (unsigned long)PMI.get_pair
+                            <unsigned long long, std::string>("pubRate").first;
         }
     }
 
@@ -1474,7 +1475,7 @@ int perftest_cpp::Publisher()
      */
     unsigned long initializeSampleCount = (std::max)(
             _MessagingImpl->GetInitializationSampleCount(),
-            (unsigned long)PMI.get<unsigned long long>("instances"));
+            (unsigned long)PMI.get<long>("instances"));
 
     fprintf(stderr,
             "Sending %lu initialization pings ...\n",
@@ -1514,13 +1515,14 @@ int perftest_cpp::Publisher()
        than 100 samples per second */
     if (PMI.get_pair<unsigned long long, std::string>("pubRate").first > 100) {
         pubRate_sample_period =
-                PMI.get_pair<unsigned long long, std::string>("pubRate").first /
+                (unsigned long)PMI.get_pair
+                        <unsigned long long, std::string>("pubRate").first /
                 100;
     }
 
     if (PMI.get<unsigned long long>("executionTime") > 0
             && !PMI.is_set("scan")) {
-        SetTimeout(PMI.get<unsigned long long>("executionTime"));
+        SetTimeout((unsigned int)PMI.get<unsigned long long>("executionTime"));
     }
     /*
      * Copy variable to no query the ParameterManager in every iteration.
@@ -1548,7 +1550,7 @@ int perftest_cpp::Publisher()
     const bool pubRateMethodSpin =
             PMI.get_pair<unsigned long long, std::string>("pubRate").second == "spin";
     const unsigned long pubRate =
-            PMI.get_pair<unsigned long long, std::string>("pubRate").first;
+            (unsigned long)PMI.get_pair<unsigned long long, std::string>("pubRate").first;
     const bool writerStats = PMI.get<bool>("writerStats");
     const bool isScan = PMI.is_set("scan");
     const std::vector<unsigned long long> scanList =
@@ -1619,7 +1621,8 @@ int perftest_cpp::Publisher()
                 // after executionTime
                 if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    SetTimeout(PMI.get<unsigned long long>("executionTime"),
+                    SetTimeout(
+                            (unsigned int)PMI.get<unsigned long long>("executionTime"),
                             isScan);
 
                     // flush anything that was previously sent
@@ -1657,7 +1660,7 @@ int perftest_cpp::Publisher()
                             timeout_wait_for_ack_nsec);
                     }
 
-                    message.size = scanList[scan_count++] - OVERHEAD_BYTES;
+                    message.size = (int)scanList[scan_count++] - OVERHEAD_BYTES;
                     /* Reset _SamplePerBatch */
                     samplesPerBatch = GetSamplesPerBatch();
 
