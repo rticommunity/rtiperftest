@@ -170,8 +170,7 @@ class ParameterVector : public ParameterBase {
     public:
         ParameterVector() : _parseMethod(NO_SPLIT)  {}
 
-        ParameterVector(T value) :
-                _parseMethod(NO_SPLIT)
+        ParameterVector(T value) : _parseMethod(NO_SPLIT)
         {
             _value.clear();
             _value.push_back(value);
@@ -195,6 +194,13 @@ class ParameterVector : public ParameterBase {
             return _value;
         }
 
+        /*
+         * Add the value to the vector<T>:
+         *     - If the isSet is false: clear the vector.
+         *       It is used in order to clean the default values.
+         *     - After add the element, sort them.
+         *     - Set isSet to True
+         */
         void set_value(T value)
         {
             if (!get_isSet()) {
@@ -202,10 +208,8 @@ class ParameterVector : public ParameterBase {
                 _value.clear();
             }
             _value.push_back(value);
+            std::sort(_value.begin(), _value.end());
 
-            if (get_type() == T_VECTOR_NUMERIC) {
-                std::sort(_value.begin(), _value.end());
-            }
             set_isSet(true);
         }
 

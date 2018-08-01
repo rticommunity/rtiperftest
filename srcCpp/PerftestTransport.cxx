@@ -578,7 +578,7 @@ bool configureTransport(
             return false;
         }
     } else {
-        // We are not using the allow interface string, so we clear it
+        // We are not using the allow interface string, so it is clean
         PMI.set<std::string>("allowInterfaces", std::string(""));
     }
 
@@ -714,8 +714,8 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     }
 
     stringStream << "\tUse Multicast: "
-                 << ((allowsMulticast()
-                        && PMI.get<bool>("multicast")) ? "True" : "False");
+                 << ((allowsMulticast() && PMI.get<bool>("multicast"))
+                        ? "True" : "False");
     if (!allowsMulticast() && PMI.get<bool>("multicast")) {
         stringStream << " (Multicast is not supported for "
                      << transportConfig.nameString << ")";

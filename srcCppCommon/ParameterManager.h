@@ -107,7 +107,7 @@ class ParameterManager
          *     That if -pub not use parameter of SUB group
          *     That if -sub not use parameter of PUB group
          */
-        bool check_incompatible_parameter();
+        bool check_incompatible_parameters();
 
         // Verify if there is a parameter of the group set
         bool group_is_used(Group group);

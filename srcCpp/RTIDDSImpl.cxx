@@ -138,7 +138,7 @@ template <typename T>
 bool RTIDDSImpl<T>::validate_input()
 {
     // Manage parameter -instance
-    if (PMI.is_set("instance")){
+    if (PMI.is_set("instance")) {
         _instanceMaxCountReader = PMI.get<unsigned long long>("instances");
     }
     // Manage parameter -peer
@@ -167,8 +167,7 @@ bool RTIDDSImpl<T>::validate_input()
                 fprintf(stderr, "Batching cannot be used in a Latency test.\n");
                 return false;
             } else {
-                // Disable Batching
-                PMI.set<long>("batchSize", 0);
+                PMI.set<long>("batchSize", 0); // Disable Batching
             }
         }
 
@@ -179,8 +178,7 @@ bool RTIDDSImpl<T>::validate_input()
                         "Batching cannot be used with asynchronous writing.\n");
                 return false;
             } else {
-                // Disable Batching
-                PMI.set<long>("batchSize", 0);
+                PMI.set<long>("batchSize", 0); // Disable Batching
             }
         }
 
@@ -209,10 +207,8 @@ bool RTIDDSImpl<T>::validate_input()
                  * in perftest_cpp::PrintConfiguration()
                  */
                 PMI.set<long>("batchSize", -1);
-            }
-            else {
-                // Disable Batching
-                PMI.set<long>("batchSize", 0);
+            } else {
+                PMI.set<long>("batchSize", 0); // Disable Batching
             }
         }
     }
@@ -222,8 +218,7 @@ bool RTIDDSImpl<T>::validate_input()
         if (PMI.get<bool>("asynchronous")) {
             fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing.\n");
             return false;
-        }
-        if (_isLargeData) {
+        } if (_isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
             PMI.set<bool>("enableTurboMode", false);
         }
@@ -353,12 +348,12 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
 
     // set initial peers and not use multicast
-    std::vector<std::string> _peerList = PMI.get_vector<std::string>("peer");
-    if (!_peerList.empty()) {
+    const std::vector<std::string> peerList = PMI.get_vector<std::string>("peer");
+    if (!peerList.empty()) {
         stringStream << "\tInitial peers: ";
-        for (unsigned int i = 0; i < _peerList.size(); ++i) {
-            stringStream << _peerList[i];
-            if (i == _peerList.size() - 1) {
+        for (unsigned int i = 0; i < peerList.size(); ++i) {
+            stringStream << peerList[i];
+            if (i == peerList.size() - 1) {
                 stringStream << "\n";
             } else {
                 stringStream << ", ";
@@ -2043,8 +2038,7 @@ bool RTIDDSImpl<T>::Initialize()
     }
     _factory->set_qos(factory_qos);
 
-    if (_factory->reload_profiles() != DDS_RETCODE_OK)
-    {
+    if (_factory->reload_profiles() != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "Problem opening QOS profiles file %s.\n",
                 PMI.get<std::string>("qosFile").c_str());
@@ -2053,7 +2047,8 @@ bool RTIDDSImpl<T>::Initialize()
 
     if (_factory->set_default_library(PMI.get<std::string>("qosLibrary").c_str())
             != DDS_RETCODE_OK) {
-        fprintf(stderr,"No QOS Library named \"%s\" found in %s.\n",
+        fprintf(stderr,
+                "No QOS Library named \"%s\" found in %s.\n",
                PMI.get<std::string>("qosLibrary").c_str(),
                PMI.get<std::string>("qosFile").c_str());
         return false;
@@ -2086,16 +2081,16 @@ bool RTIDDSImpl<T>::Initialize()
   #endif
 
     // Set initial peers and not use multicast
-    std::vector<std::string> _peerList = PMI.get_vector<std::string>("peer");
-    if (!_peerList.empty()) {
+    const std::vector<std::string> peerList = PMI.get_vector<std::string>("peer");
+    if (!peerList.empty()) {
         std::vector<char*> cstrings;
-        cstrings.reserve(_peerList.size());
-        for(unsigned int i = 0; i < _peerList.size(); ++i) {
-            cstrings.push_back(const_cast<char*>(_peerList[i].c_str()));
+        cstrings.reserve(peerList.size());
+        for(unsigned int i = 0; i < peerList.size(); ++i) {
+            cstrings.push_back(const_cast<char*>(peerList[i].c_str()));
         }
         qos.discovery.initial_peers.from_array(
                 (const char **)&cstrings[0],
-                _peerList.size());
+                peerList.size());
         qos.discovery.multicast_receive_addresses.length(0);
     }
 
@@ -2459,7 +2454,7 @@ DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
 {
     std::string condition;
     DDS_StringSeq parameters(2 * KEY_SIZE);
-    std::vector<unsigned long long> cftRange =
+    const std::vector<unsigned long long> cftRange =
             PMI.get_vector<unsigned long long>("cft");
     if (cftRange.size() == 1) { // If same elements, no range
         printf("CFT enabled for instance: '%llu' \n", cftRange[0]);
@@ -2584,8 +2579,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
             || (qos_profile == "LatencyQos"
             && PMI.get<bool>("noDirectCommunication")
             && (PMI.get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
-            || PMI.get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)))
-    {
+            || PMI.get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS))) {
         dr_qos.durability.kind =
                 (DDS_DurabilityQosPolicyKind) PMI.get<int>("durability");
         dr_qos.durability.direct_communication =

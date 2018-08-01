@@ -76,9 +76,9 @@ class perftest_cpp
   private:
     int Publisher();
     int Subscriber();
-	static void SetTimeout(
-	unsigned int executionTimeInSeconds,
-	bool isScan = false);
+    static void SetTimeout(
+            unsigned int executionTimeInSeconds,
+            bool isScan = false);
 
 	// Private members
     unsigned long long _SpinLoopCount;
@@ -87,9 +87,9 @@ class perftest_cpp
     static const Perftest_ProductVersion_t _version;
 
     /*
-	 * The following three members are used in a static callback
-	 * and so they have to be static
-	 */
+     * The following three members are used in a static callback
+     * and so they have to be static
+     */
     static bool _testCompleted;
     static bool _testCompleted_scan;
   #ifdef RTI_WIN32

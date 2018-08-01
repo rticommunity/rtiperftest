@@ -247,7 +247,7 @@ void ParameterManager::initialize()
     Parameter<bool> *cpu = new Parameter<bool>(false);
     cpu->set_command_line_argument("-cpu", "");
     cpu->set_description(
-        "Display the cpu percent use by the process\nDefault: Not set");
+            "Display the cpu percent use by the process\nDefault: Not set");
     cpu->set_type(T_BOOL);
     cpu->set_extra_argument(NO);
     cpu->set_group(GENERAL);
@@ -313,7 +313,7 @@ void ParameterManager::initialize()
     enableTurboMode->set_group(PUB);
     _parameterList["enableTurboMode"] = AnyParameter(enableTurboMode);
 
-    Parameter<bool> * pub = new Parameter<bool>(false);
+    Parameter<bool> *pub = new Parameter<bool>(false);
     pub->set_command_line_argument("-pub", "");
     pub->set_description("Set test to be a publisher");
     pub->set_type(T_BOOL);
@@ -422,7 +422,7 @@ void ParameterManager::initialize()
     scanList.push_back(16384);
     scanList.push_back(32768);
     scanList.push_back(63000);
-    ParameterVector<unsigned long long> * scan =
+    ParameterVector<unsigned long long> *scan =
             new ParameterVector<unsigned long long>(scanList);
     scan->set_command_line_argument("-scan", "<size1>:<size2>:...:<sizeN>");
     scan->set_description(
@@ -485,8 +485,8 @@ void ParameterManager::initialize()
     writeInstance->set_command_line_argument("-writeInstance", "<instance>");
     writeInstance->set_description(
             "Set the instance number to be sent.\n"
-            "'-writeInstance' parameter cannot be bigger than the number "
-            "of instances.\nDefault: 'Round-Robin' schedule");
+            "'-writeInstance' parameter cannot be bigger than the number\n"
+            "of instances. Default: 'Round-Robin' schedule");
     writeInstance->set_type(T_NUMERIC_LD);
     writeInstance->set_extra_argument(YES);
     writeInstance->set_range(0, LONG_MAX);
@@ -495,7 +495,7 @@ void ParameterManager::initialize()
 
     ////////////////////////////////////////////////////////////////////////////
     //SUBSCRIBER PARAMETER
-    Parameter<bool> * sub = new Parameter<bool>(false);
+    Parameter<bool> *sub = new Parameter<bool>(false);
     sub->set_command_line_argument("-sub", "");
     sub->set_description("Set test to be a subscriber");
     sub->set_type(T_BOOL);
@@ -563,7 +563,7 @@ void ParameterManager::initialize()
     allowInterfaces->set_internal(true);
     _parameterList["allowInterfaces"] = AnyParameter(allowInterfaces);
 
-    ParameterVector<std::string> * peer = new ParameterVector<std::string>();
+    ParameterVector<std::string> *peer = new ParameterVector<std::string>();
     peer->set_command_line_argument("-peer", "<address>");
     peer->set_description(
             "Adds a peer to the peer host address list.\n"
@@ -573,7 +573,7 @@ void ParameterManager::initialize()
     peer->set_group(TRANSPORT);
     _parameterList["peer"] = AnyParameter(peer);
 
-    Parameter<std::string> * transport = new Parameter<std::string>("Use XML");
+    Parameter<std::string> *transport = new Parameter<std::string>("Use XML");
     transport->set_command_line_argument("-transport", "<kind>");
     transport->set_description(
             "Set transport to be used. The rest of\n"
@@ -614,12 +614,13 @@ void ParameterManager::initialize()
      * The parse for the input string will be done on the validation. After that
      * parameter manager does not will be called again.
      */
-    Parameter<std::string> * multicastAddr = new Parameter<std::string>();
+    Parameter<std::string> *multicastAddr = new Parameter<std::string>();
     multicastAddr->set_command_line_argument("-multicastAddr", "<address>");
     multicastAddr->set_description(
             "Use multicast to send data and set\n"
             "the input <address> as the multicast\n"
             "address for all the topics");
+    // TODO: add the default value to the description
     multicastAddr->set_type(T_STR);
     multicastAddr->set_extra_argument(YES);
     multicastAddr->set_group(TRANSPORT);
@@ -636,7 +637,7 @@ void ParameterManager::initialize()
     transportVerbosity->set_group(TRANSPORT);
     _parameterList["transportVerbosity"] = AnyParameter(transportVerbosity);
 
-    Parameter<std::string> * transportServerBindPort =
+    Parameter<std::string> *transportServerBindPort =
             new Parameter<std::string>("7400");
     transportServerBindPort->set_command_line_argument(
             "-transportServerBindPort", "<p>");
@@ -659,7 +660,7 @@ void ParameterManager::initialize()
     transportWan->set_group(TRANSPORT);
     _parameterList["transportWan"] = AnyParameter(transportWan);
 
-    Parameter<std::string> * transportPublicAddress =
+    Parameter<std::string> *transportPublicAddress =
             new Parameter<std::string>();
     transportPublicAddress->set_command_line_argument(
             "-transportPublicAddress", "<ip>");
@@ -671,10 +672,10 @@ void ParameterManager::initialize()
     transportPublicAddress->set_type(T_STR);
     transportPublicAddress->set_extra_argument(YES);
     transportPublicAddress->set_group(TRANSPORT);
-    _parameterList["transportPublicAddress"] = AnyParameter(
-            transportPublicAddress);
+    _parameterList["transportPublicAddress"] =
+            AnyParameter(transportPublicAddress);
 
-    Parameter<std::string> * transportWanServerAddress =
+    Parameter<std::string> *transportWanServerAddress =
             new Parameter<std::string>();
     transportWanServerAddress->set_command_line_argument(
             "-transportWanServerAddress", "<a>");
@@ -684,10 +685,10 @@ void ParameterManager::initialize()
     transportWanServerAddress->set_type(T_STR);
     transportWanServerAddress->set_extra_argument(YES);
     transportWanServerAddress->set_group(TRANSPORT);
-    _parameterList["transportWanServerAddress"] = AnyParameter(
-            transportWanServerAddress);
+    _parameterList["transportWanServerAddress"] =
+            AnyParameter(transportWanServerAddress);
 
-    Parameter<std::string> * transportWanServerPort =
+    Parameter<std::string> *transportWanServerPort =
         new Parameter<std::string>("3478");
     transportWanServerPort->set_command_line_argument(
             "-transportWanServerPort", "<p>");
@@ -696,8 +697,8 @@ void ParameterManager::initialize()
     transportWanServerPort->set_type(T_STR);
     transportWanServerPort->set_extra_argument(YES);
     transportWanServerPort->set_group(TRANSPORT);
-    _parameterList["transportWanServerPort"] = AnyParameter(
-            transportWanServerPort);
+    _parameterList["transportWanServerPort"] =
+            AnyParameter(transportWanServerPort);
 
     Parameter<std::string> *transportWanId = new Parameter<std::string>();
     transportWanId->set_command_line_argument("-transportWanId", "<id>");
@@ -718,7 +719,7 @@ void ParameterManager::initialize()
     transportSecureWan->set_group(TRANSPORT);
     _parameterList["transportSecureWan"] = AnyParameter(transportSecureWan);
 
-    Parameter<std::string> * transportCertAuthority =
+    Parameter<std::string> *transportCertAuthority =
         new Parameter<std::string>(TRANSPORT_CERTAUTHORITY_FILE);
     transportCertAuthority->set_command_line_argument(
             "-transportCertAuthority", "<file>");
@@ -728,10 +729,10 @@ void ParameterManager::initialize()
     transportCertAuthority->set_type(T_STR);
     transportCertAuthority->set_extra_argument(YES);
     transportCertAuthority->set_group(TRANSPORT);
-    _parameterList["transportCertAuthority"] = AnyParameter(
-            transportCertAuthority);
+    _parameterList["transportCertAuthority"] =
+            AnyParameter(transportCertAuthority);
 
-    Parameter<std::string> * transportCertFile = new Parameter<std::string>(
+    Parameter<std::string> *transportCertFile = new Parameter<std::string>(
             TRANSPORT_CERTIFICATE_FILE_PUB);
     transportCertFile->set_command_line_argument("-transportCertFile", "<file>");
     transportCertFile->set_description(
@@ -743,7 +744,7 @@ void ParameterManager::initialize()
     transportCertFile->set_group(TRANSPORT);
     _parameterList["transportCertFile"] = AnyParameter(transportCertFile);
 
-    Parameter<std::string> * transportPrivateKey = new Parameter<std::string>(
+    Parameter<std::string> *transportPrivateKey = new Parameter<std::string>(
             TRANSPORT_CERTIFICATE_FILE_PUB);
     transportPrivateKey->set_command_line_argument(
             "-transportPrivateKey", "<file>");
@@ -766,8 +767,8 @@ void ParameterManager::initialize()
     secureEncryptDiscovery->set_type(T_BOOL);
     secureEncryptDiscovery->set_extra_argument(NO);
     secureEncryptDiscovery->set_group(SECURE);
-    _parameterList["secureEncryptDiscovery"] = AnyParameter(
-            secureEncryptDiscovery);
+    _parameterList["secureEncryptDiscovery"] =
+            AnyParameter(secureEncryptDiscovery);
 
     Parameter<bool> *secureSign = new Parameter<bool>(false);
     secureSign->set_command_line_argument("-secureSign", "");
@@ -887,13 +888,14 @@ bool ParameterManager::parse(int argc, char *argv[])
     int varD;
     bool success = true;
     ParameterBase *p = NULL;
-    // Copy all arguments into a container of strings
+    // Copy all arguments into a vector of strings
     std::vector<std::string> allArgs(argv, argv + argc);
     std::map<std::string, AnyParameter>::iterator it;
 
     for (unsigned int i = 1; i < allArgs.size(); i++) {
         for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
-            if (IS_OPTION(allArgs[i].c_str(),
+            if (IS_OPTION(
+                    allArgs[i].c_str(),
                     it->second.get()->get_option().c_str())) {
                 // Save the variable, it will be used several time.
                 p = it->second.get();
@@ -1094,8 +1096,7 @@ std::string ParameterManager::display_help()
     oss << "/**********************************************************************************************/\n"
         << "Usage:\t perftest_cpp [options]\n"
         << "Where [options] are:\n";
-    output[GENERAL] +=
-            "\t-help                           - "
+    output[GENERAL] += "\t-help                           - "
             "Print this usage message and exit\n";
 
     for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
@@ -1112,7 +1113,7 @@ std::string ParameterManager::display_help()
     return oss.str();
 }
 
-// check for the '-help' option
+// check for the '-help' option and display help if requested
 bool ParameterManager::check_help(int argc, char *argv[])
 {
     std::vector<std::string> allArgs(argv, argv + argc);
@@ -1142,8 +1143,7 @@ bool ParameterManager::is_set(std::string parameterKey)
     }
 }
 
-
-bool ParameterManager::check_incompatible_parameter()
+bool ParameterManager::check_incompatible_parameters()
 {
     bool success = true;
     std::map<std::string, AnyParameter>::iterator it;

@@ -368,6 +368,7 @@ function build_cpp()
     eval $rtiddsgen_command
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
+        clean_src_cpp_common
         exit -1
     fi
     cp "${classic_cpp_folder}/perftest_publisher.cxx" \
@@ -380,6 +381,7 @@ function build_cpp()
     "${MAKE_EXE}" -C "${classic_cpp_folder}" -f makefile_perftest_${platform}
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure compiling code for ${classic_cpp_lang_string}."
+        clean_src_cpp_common
         exit -1
     fi
     echo -e "${INFO_TAG} Compilation successful"
@@ -425,6 +427,7 @@ function build_cpp03()
     eval $rtiddsgen_command
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
+        clean_src_cpp_common
         exit -1
     fi
     cp "${modern_cpp_folder}/perftest_publisher.cxx" \
@@ -437,6 +440,7 @@ function build_cpp03()
     "${MAKE_EXE}" -C "${modern_cpp_folder}" -f makefile_perftest_${platform}
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure compiling code for ${modern_cpp_folder}."
+        clean_src_cpp_common
         exit -1
     fi
     echo -e "${INFO_TAG} Compilation successful"

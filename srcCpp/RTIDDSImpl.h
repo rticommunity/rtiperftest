@@ -93,7 +93,7 @@ class RTIDDSImpl : public IMessaging
     long                         _instanceMaxCountReader;
     bool                         _isLargeData;
     PerftestTransport            _transport;
-	DDSDomainParticipantFactory *_factory;
+    DDSDomainParticipantFactory *_factory;
     DDSDomainParticipant        *_participant;
     DDSSubscriber               *_subscriber;
     DDSPublisher                *_publisher;

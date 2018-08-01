@@ -100,7 +100,7 @@ int perftest_cpp::Run(int argc, char *argv[])
     if (!PMI.parse(argc, argv)) {
         return -1;
     }
-    if (!PMI.check_incompatible_parameter()) {
+    if (!PMI.check_incompatible_parameters()) {
         return -1;
     }
     if (!validate_input()) {
@@ -250,14 +250,14 @@ bool perftest_cpp::validate_input()
     perftest_cpp::_SubID = PMI.get<int>("sidMultiSubTest");
 
     // Manage parameter -latencyTest
-    if(PMI.get<bool>("latencyTest")) {
-        if(PMI.get<int>("pidMultiPubTest") != 0) {
+    if (PMI.get<bool>("latencyTest")) {
+        if (PMI.get<int>("pidMultiPubTest") != 0) {
             fprintf(stderr, "Only the publisher with ID = 0 can run the latency test\n");
             return false;
         }
 
         // With latency test, latency should be 1
-        if(!PMI.is_set("latencyCount")) {
+        if (!PMI.is_set("latencyCount")) {
             PMI.set<unsigned long long>("latencyCount", 1);
         }
 
@@ -274,7 +274,7 @@ bool perftest_cpp::validate_input()
     }
 
     // Manage parameter -latencyCount
-    if(!PMI.is_set("latencyCount")) {
+    if (!PMI.is_set("latencyCount")) {
         PMI.set<unsigned long long>("latencyCount", 10000);
     }
     if (PMI.get<unsigned long long>("numIter") <
@@ -288,7 +288,7 @@ bool perftest_cpp::validate_input()
 
     // Manage the parameter: -cft
     if (PMI.is_set("cft")) {
-        std::vector<unsigned long long> cftRange =
+        const std::vector<unsigned long long> cftRange =
                 PMI.get_vector<unsigned long long>("cft");
         if (cftRange.size() > 2) {
             fprintf(stderr,
@@ -326,7 +326,7 @@ bool perftest_cpp::validate_input()
 
     // Manage the parameter: -scan
     if (PMI.is_set("scan")) {
-        std::vector<unsigned long long> scanList =
+        const std::vector<unsigned long long> scanList =
                 PMI.get_vector<unsigned long long>("scan");
         // Max size of scan
         PMI.set<unsigned long long>("dataLen", scanList[scanList.size() - 1]);
@@ -430,7 +430,7 @@ void perftest_cpp::PrintConfiguration()
         // Scan/Data Sizes
         stringStream << "\tData Size: ";
         if (PMI.is_set("scan")) {
-            std::vector<unsigned long long> scanList =
+            const std::vector<unsigned long long> scanList =
                     PMI.get_vector<unsigned long long>("scan");
             for (unsigned long i = 0; i < scanList.size(); i++ ) {
                 stringStream << scanList[i];
@@ -1376,12 +1376,12 @@ int perftest_cpp::Publisher()
                     PMI.get<bool>("latencyTest") ? writer : NULL);
 
             RTIOsapiThread_new("ReceiverThread",
-                                RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-                                RTI_OSAPI_THREAD_OPTION_DEFAULT,
-                                RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                                NULL,
-                                LatencyReadThread,
-                                reader_listener);
+                    RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
+                    RTI_OSAPI_THREAD_OPTION_DEFAULT,
+                    RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                    NULL,
+                    LatencyReadThread,
+                    reader_listener);
         }
     }
     else
@@ -1444,8 +1444,8 @@ int perftest_cpp::Publisher()
     TestMessage message;
     message.entity_id = PMI.get<int>("pidMultiPubTest");
     message.data = new char[(std::max)
-        ((int)PMI.get<unsigned long long>("dataLen"),
-        (int)LENGTH_CHANGED_SIZE)];
+            ((int)PMI.get<unsigned long long>("dataLen"),
+            (int)LENGTH_CHANGED_SIZE)];
 
     if (perftest_cpp::showCpu && PMI.get<int>("pidMultiPubTest") == 0) {
         reader_listener->cpu.initialize();

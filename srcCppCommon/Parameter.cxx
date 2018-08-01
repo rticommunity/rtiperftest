@@ -17,9 +17,7 @@ CommandLineArgument::CommandLineArgument()
 CommandLineArgument::CommandLineArgument(std::string option, std::string arg) :
         _option(option),
         _arg(arg)
-{
-
-}
+{}
 
 CommandLineArgument::~CommandLineArgument()
 {
@@ -209,11 +207,8 @@ std::string ParameterBase::print_command_line_parameter()
     oss.fill(' ');
     oss.width(33);
     oss << std::left
-        << std::string("\t")
-        + get_option()
-        + std::string(" ")
-        + get_arg();
-    oss << "- "
+        << std::string("\t") + get_option() + std::string(" ") + get_arg()
+        << "- "
         << description
         << "\n";
     return oss.str();
