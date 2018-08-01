@@ -44,45 +44,7 @@
 #endif
 
 #include "MessagingIF.h"
-
-struct Perftest_Thread_Priorities {
-    int main;
-    int receive;
-    int dbAndEvent;
-    bool isSet;
-
-    std::map<char, int> defaultPriorities;
-
-    Perftest_Thread_Priorities()
-    {
-        main = 0;
-        receive = 0;
-        dbAndEvent = 0;
-        isSet = false;
-      #ifdef RTI_WIN32
-        defaultPriorities['h'] = THREAD_PRIORITY_TIME_CRITICAL;
-        defaultPriorities['n'] = THREAD_PRIORITY_NORMAL;
-        defaultPriorities['l'] = THREAD_PRIORITY_IDLE;
-      #elif RTI_UNIX
-        defaultPriorities['h'] = sched_get_priority_max(SCHED_FIFO);
-        defaultPriorities['n'] = (sched_get_priority_max(SCHED_FIFO)
-            + sched_get_priority_min(SCHED_FIFO)) / 2;
-        defaultPriorities['l'] = sched_get_priority_min(SCHED_FIFO);
-      #endif
-    }
-
-    bool set_priorities(char x, char y, char z)
-    {
-        if (defaultPriorities.count(x) && defaultPriorities.count(y)
-            && defaultPriorities.count(z)) {
-          main = defaultPriorities[x];
-          receive = defaultPriorities[y];
-          dbAndEvent = defaultPriorities[z];
-          return true;
-        }
-        return false;
-    }
-};
+#include "perftestThreadPriorities.h"
 
 struct Perftest_ProductVersion_t
 {
@@ -188,7 +150,7 @@ class perftest_cpp
   #endif
 
     // Priorities for the threads used by perftest and domain participant
-    static Perftest_Thread_Priorities threadPriorities;
+    static PerftestThreadPriorities threadPriorities;
 
     // Number of bytes sent in messages besides user data
     static const int OVERHEAD_BYTES = 28;

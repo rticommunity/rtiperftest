@@ -33,7 +33,7 @@ RTI_UINT64 perftest_cpp::_Clock_usec = 0;
 const long timeout_wait_for_ack_sec = 0;
 const unsigned long timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {2, 3, 2, 0};
-Perftest_Thread_Priorities perftest_cpp::threadPriorities;
+PerftestThreadPriorities perftest_cpp::threadPriorities;
 
 /*
  * PERFTEST-108
