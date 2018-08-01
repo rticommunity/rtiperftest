@@ -293,7 +293,7 @@ class AnyParameter {
             return static_cast<ParameterPair<K, V>*>(_param);
         }
 
-        AnyParameter& operator=(AnyParameter other)
+        AnyParameter& operator=(AnyParameter &other)
         {
             _param = other._param;
             other._param = NULL;

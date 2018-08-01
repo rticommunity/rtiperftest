@@ -117,6 +117,17 @@ class ParameterManager
         std::vector<std::string> split(std::string str, std::string delimiter = ":");
         std::string get_center_header_help_line(std::string name);
 
+        /*
+         * Add a parameter to the _parameterList.
+         *      Create a local AnyParameter and add to the map using the method:
+         *           AnyParameter& operator=(AnyParameter &other)
+         */
+        template <typename T>
+        void create(std::string key, T *param) {
+            AnyParameter var(param);
+            _parameterList[key] = var;
+        }
+
 };
 
 #endif // __PARAMETERMANAGER_H__
