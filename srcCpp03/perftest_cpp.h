@@ -45,6 +45,45 @@
 
 #include "MessagingIF.h"
 
+struct Perftest_Thread_Priorities {
+    int main;
+    int receive;
+    int dbAndEvent;
+    bool isSet;
+
+    std::map<char, int> defaultPriorities;
+
+    Perftest_Thread_Priorities()
+    {
+        main = 0;
+        receive = 0;
+        dbAndEvent = 0;
+        isSet = false;
+      #ifdef RTI_WIN32
+        defaultPriorities['h'] = THREAD_PRIORITY_TIME_CRITICAL;
+        defaultPriorities['n'] = THREAD_PRIORITY_NORMAL;
+        defaultPriorities['l'] = THREAD_PRIORITY_IDLE;
+      #elif RTI_UNIX
+        defaultPriorities['h'] = sched_get_priority_max(SCHED_FIFO);
+        defaultPriorities['n'] = (sched_get_priority_max(SCHED_FIFO)
+            + sched_get_priority_min(SCHED_FIFO)) / 2;
+        defaultPriorities['l'] = sched_get_priority_min(SCHED_FIFO);
+      #endif
+    }
+
+    bool set_priorities(char x, char y, char z)
+    {
+        if (defaultPriorities.count(x) && defaultPriorities.count(y)
+            && defaultPriorities.count(z)) {
+          main = defaultPriorities[x];
+          receive = defaultPriorities[y];
+          dbAndEvent = defaultPriorities[z];
+          return true;
+        }
+        return false;
+    }
+};
+
 struct Perftest_ProductVersion_t
 {
   char major;
@@ -67,6 +106,9 @@ class perftest_cpp
   private:
     int RunPublisher();
     int RunSubscriber();
+    bool set_main_thread_priority();
+    bool check_priority_range(int value);
+    bool parse_priority(std::string arg);
 
   public:
     static void MilliSleep(unsigned int millisec) {
@@ -144,6 +186,9 @@ class perftest_cpp
   #ifdef RTI_WIN32
     static LARGE_INTEGER _ClockFrequency;
   #endif
+
+    // Priorities for the threads used by perftest and domain participant
+    static Perftest_Thread_Priorities threadPriorities;
 
     // Number of bytes sent in messages besides user data
     static const int OVERHEAD_BYTES = 28;

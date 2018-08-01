@@ -2488,8 +2488,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     DomainListener *listener = new DomainListener();
 
     /* Mask for threadPriorities when it's used */
-    DDS_ThreadSettingsKindMask mask = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
-            | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
+    DDS_ThreadSettingsKindMask mask = DDS_THREAD_SETTINGS_REALTIME_PRIORITY;
 
     // Register _loggerDevice
     if (!NDDSConfigLogger::get_instance()->set_output_device(&_loggerDevice)) {
@@ -2638,6 +2637,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         publisherQoS.asynchronous_publisher.thread.priority
                 = perftest_cpp::threadPriorities.main;
         // Asynchronous thread for batching priority
+        publisherQoS.asynchronous_publisher.disable_asynchronous_batch = false;
         publisherQoS.asynchronous_publisher.asynchronous_batch_thread.mask = mask;
         publisherQoS.asynchronous_publisher.asynchronous_batch_thread.priority
                 = perftest_cpp::threadPriorities.main;
@@ -2765,7 +2765,6 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         if (_FlowControllerCustom != "default") {
             dw_qos.publish_mode.flow_controller_name =
                     DDS_String_dup(("dds.flow_controller.token_bucket."+_FlowControllerCustom).c_str());
-
         }
     }
 

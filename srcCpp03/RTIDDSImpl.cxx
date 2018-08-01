@@ -1757,6 +1757,11 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     dds::core::QosProvider qos_provider =
         getQosProviderForProfile( _ProfileLibraryName,"BaseProfileQos");
     dds::domain::qos::DomainParticipantQos qos = qos_provider.participant_qos();
+    dds::pub::qos::PublisherQos publisherQoS = qos_provider.publisher_qos();
+
+    /* Mask for threadPriorities when it's used */
+    rti::core::ThreadSettingsKindMask mask(
+            rti::core::ThreadSettingsKindMask::realtime_priority());
 
     std::map<std::string, std::string> properties =
             qos.policy<Property>().get_all();
@@ -1780,6 +1785,22 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         return false;
     };
 
+    // set thread priorities.
+    if (perftest_cpp::threadPriorities.isSet) {
+        // Set real time schedule
+        qos.policy<ReceiverPool>().thread().mask(mask);
+        qos.policy<Event>().thread().mask(mask);
+        qos.policy<Database>().thread().mask(mask);
+
+        // Set priority
+        qos.policy<ReceiverPool>().thread().priority(
+                perftest_cpp::threadPriorities.receive);
+        qos.policy<Event>().thread().priority(
+                perftest_cpp::threadPriorities.dbAndEvent);
+        qos.policy<Database>().thread().priority(
+                perftest_cpp::threadPriorities.dbAndEvent);
+    }
+
     if (_AutoThrottle) {
         properties["dds.domain_participant.auto_throttle.enable"] = "true";
     }
@@ -1799,8 +1820,24 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
             dds::core::status::StatusMask::offered_incompatible_qos() |
             dds::core::status::StatusMask::requested_incompatible_qos() );
 
+    // Set publisher QoS
+    if (perftest_cpp::threadPriorities.isSet) {
+        // Asynchronous thread priority
+        publisherQoS.policy<AsynchronousPublisher>().disable_asynchronous_write(false);
+        publisherQoS.policy<AsynchronousPublisher>().thread().mask(mask);
+        publisherQoS.policy<AsynchronousPublisher>().thread().priority(
+                perftest_cpp::threadPriorities.main);
+
+        // Asynchronous thread for batching priority
+        publisherQoS.policy<AsynchronousPublisher>().disable_asynchronous_batch(false);
+        publisherQoS.policy<AsynchronousPublisher>().asynchronous_batch_thread()
+                .mask(mask);
+        publisherQoS.policy<AsynchronousPublisher>().asynchronous_batch_thread()
+                .priority(perftest_cpp::threadPriorities.main);
+    }
+
     // Create the _publisher and _subscriber
-    _publisher = dds::pub::Publisher(_participant, qos_provider.publisher_qos());
+    _publisher = dds::pub::Publisher(_participant, publisherQoS);
 
     _subscriber = dds::sub::Subscriber(_participant, qos_provider.subscriber_qos());
 

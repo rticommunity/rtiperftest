@@ -43,10 +43,10 @@
 
 struct Perftest_ProductVersion_t
 {
-    char major;
-    char minor;
-    char release;
-    char revision;
+  char major;
+  char minor;
+  char release;
+  char revision;
 };
 
 /*
@@ -113,14 +113,14 @@ public:
 
   public:
     static void MilliSleep(unsigned int millisec) {
-#if defined(RTI_WIN32)
+      #if defined(RTI_WIN32)
         Sleep(millisec);
-#elif defined(RTI_VXWORKS)
+      #elif defined(RTI_VXWORKS)
         DDS_Duration_t sleep_period = {0, millisec*1000000};
         NDDSUtility::sleep(sleep_period);
-#else
+      #else
         usleep(millisec * 1000);
-#endif
+      #endif
     }
 
     static const DDS_ProductVersion_t GetDDSVersion();
@@ -128,11 +128,11 @@ public:
     static void PrintVersion();
 
     static void ThreadYield() {
-#ifdef RTI_WIN32
+  #ifdef RTI_WIN32
         Sleep(0);
-#else
+  #else
         sched_yield();
-#endif
+  #endif
     }
 
   private:
@@ -169,10 +169,10 @@ public:
        and so they have to be static */
     static bool _testCompleted;
     static bool _testCompleted_scan;
-#ifdef RTI_WIN32
+  #ifdef RTI_WIN32
     static HANDLE _hTimerQueue;
     static HANDLE _hTimer;
-#endif
+  #endif
 
   public:
     static int  _SubID;
@@ -185,18 +185,19 @@ public:
     static RTI_UINT64 _Clock_sec;
     static RTI_UINT64 _Clock_usec;
 
-#ifdef RTI_WIN32
+  #ifdef RTI_WIN32
     static LARGE_INTEGER _ClockFrequency;
-#endif
+  #endif
 
+    // Priorities for the threads used by perftest and domain participant
     static Perftest_Thread_Priorities threadPriorities;
 
     // Number of bytes sent in messages besides user data
-#ifdef RTI_CUSTOM_TYPE
+  #ifdef RTI_CUSTOM_TYPE
     static const int OVERHEAD_BYTES = 28 + 4; // For custom_type_size
-#else
+  #else
     static const int OVERHEAD_BYTES = 28;
-#endif
+  #endif
     // Flag used to indicate message is used for initialization only
     static const int INITIALIZE_SIZE = 1234;
     // Flag used to indicate end of test
@@ -213,13 +214,13 @@ public:
    public:
     static unsigned long long GetTimeUsec();
 
-#ifdef RTI_WIN32
+  #ifdef RTI_WIN32
     static VOID CALLBACK Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired);
     static VOID CALLBACK Timeout_scan(PVOID lpParam, BOOLEAN timerOrWaitFired);
-#else
+  #else
     static void Timeout(int sign);
     static void Timeout_scan(int sign);
-#endif
+  #endif
 
 };
 

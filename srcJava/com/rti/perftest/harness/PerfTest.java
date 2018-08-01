@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
-import javax.realtime.RealtimeThread;
 // ===========================================================================
 
 /**
@@ -688,23 +687,6 @@ public final class PerfTest {
                 _messagingArgv[_messagingArgc++] = argv[i];
 
                 _useCft = true;
-            }
-            else if ("-threadPriorities".toLowerCase().startsWith(argv[i].toLowerCase()))
-            {
-                //_messagingArgv[_messagingArgc++] = argv[i];
-
-                // if (i == (argc - 1)) {
-                //     System.err.print("Missing <A:B:C> priorities after -threadPriorities\n");
-                //     return false;
-                // }
-                // if (!parsePriority(argv[++i])) {
-                //     System.err.print("Wrong sintax after -threadPriorities\n");
-                //     return false;
-                // }
-
-                //Thread.currentThread().setPriority(1);
-                new RealtimeThread(new BootStrap()).start();
-                ++i;
             }
             else {
                 _messagingArgv[_messagingArgc++] = argv[i];

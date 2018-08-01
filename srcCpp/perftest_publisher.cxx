@@ -251,7 +251,6 @@ bool perftest_cpp::parse_priority(std::string arg)
     return true;
 }
 
-
 const DDS_ProductVersion_t perftest_cpp::GetDDSVersion()
 {
     return NDDSConfigVersion::get_instance().get_product_version();
@@ -1435,8 +1434,8 @@ int perftest_cpp::Subscriber()
         }
         reader_listener = new ThroughputListener(writer, reader, _useCft, _NumPublishers);
 
-        int threadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
         int threadPriority = RTI_OSAPI_THREAD_PRIORITY_DEFAULT;
+        int threadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
 
         if (perftest_cpp::threadPriorities.isSet) {
             threadOptions = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
@@ -1444,13 +1443,14 @@ int perftest_cpp::Subscriber()
             threadPriority = perftest_cpp::threadPriorities.receive;
         }
 
-        RTIOsapiThread_new("ReceiverThread",
-                            threadPriority,
-                            threadOptions,
-                            RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                            NULL,
-                            ThroughputReadThread,
-                            reader_listener);
+        RTIOsapiThread_new(
+                "ReceiverThread",
+                threadPriority,
+                threadOptions,
+                RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                NULL,
+                ThroughputReadThread,
+                reader_listener);
     }
 
     // Create announcement writer
@@ -2016,13 +2016,13 @@ int perftest_cpp::Publisher()
                     reader,
                     _LatencyTest ? writer : NULL);
 
-            int threadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
             int threadPriority = RTI_OSAPI_THREAD_PRIORITY_DEFAULT;
+            int threadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
 
             if (perftest_cpp::threadPriorities.isSet) {
+                threadPriority = perftest_cpp::threadPriorities.receive;
                 threadOptions = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
                         | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
-                threadPriority = perftest_cpp::threadPriorities.receive;
             }
 
             RTIOsapiThread_new("ReceiverThread",
