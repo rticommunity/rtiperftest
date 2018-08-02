@@ -27,7 +27,6 @@
   #include <unistd.h>
   #include <signal.h>
 #endif
-#include "ParameterManager.h"
 
 /*
  * This is needed by MilliSleep in VxWorks, since in some versions the usleep
@@ -36,10 +35,12 @@
 #if defined(RTI_VXWORKS)
   #include "ndds/ndds_cpp.h"
 #endif
-
+#include "perftest.h"
+#include "ndds/ndds_cpp.h"
 #include "MessagingIF.h"
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
+#include "ParameterManager.h"
 
 struct Perftest_ProductVersion_t
 {
@@ -81,6 +82,7 @@ class perftest_cpp
             bool isScan = false);
 
 	// Private members
+    ParameterManager _PM;
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
     IMessaging *_MessagingImpl;

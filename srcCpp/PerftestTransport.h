@@ -10,16 +10,8 @@
 #include <map>
 #include <sstream>
 #include "perftest.h"
-//#include "ParameterManager.h" moved to .cxx
+#include "ParameterManager.h"
 #include "ndds/ndds_cpp.h"
-
-/******************************************************************************/
-// Default location of the security related files
-const std::string TRANSPORT_PRIVATEKEY_FILE_PUB = "./resource/secure/pubkey.pem";
-const std::string TRANSPORT_PRIVATEKEY_FILE_SUB = "./resource/secure/subkey.pem";
-const std::string TRANSPORT_CERTIFICATE_FILE_PUB = "./resource/secure/pub.pem";
-const std::string TRANSPORT_CERTIFICATE_FILE_SUB = "./resource/secure/sub.pem";
-const std::string TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
 
 enum Transport {
     TRANSPORT_NOT_SET,
@@ -77,6 +69,7 @@ public:
     PerftestTransport();
 
     virtual ~PerftestTransport();
+    void initialize(ParameterManager *PM);
 
     /**************************************************************************/
     /* PUBLIC METHODS */
@@ -98,7 +91,7 @@ private:
     static std::map<std::string, TransportConfig> transportConfigMap;
 
     std::map<std::string, std::string> multicastAddrMap;
-
+    ParameterManager *_PM;
     /**************************************************************************/
 
     static const std::map<std::string, TransportConfig>& getTransportConfigMap();
@@ -109,6 +102,7 @@ private:
 
 bool configureTransport(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos &qos);
+        DDS_DomainParticipantQos &qos,
+        ParameterManager *_PM);
 
 #endif /* PERFTEST_2_0_SRCCPP_PERFTESTTRANSPORT_H_ */

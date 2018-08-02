@@ -7,6 +7,7 @@
  */
 
 #include <string>
+#include "ParameterManager.h"
 
 class TestMessage
 {
@@ -110,7 +111,7 @@ class IMessaging
 {
   public:
     virtual ~IMessaging() {}
-    virtual bool Initialize() = 0;
+    virtual bool Initialize(ParameterManager &PM) = 0;
 
     virtual std::string PrintConfiguration() = 0;
 

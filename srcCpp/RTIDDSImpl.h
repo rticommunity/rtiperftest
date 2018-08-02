@@ -53,6 +53,7 @@ class RTIDDSImpl : public IMessaging
         _reader = NULL;
         _typename = T::TypeSupport::get_type_name();
         _pongSemaphore = NULL;
+        _PM = NULL;
     }
 
     ~RTIDDSImpl()
@@ -64,7 +65,7 @@ class RTIDDSImpl : public IMessaging
 
     std::string PrintConfiguration();
 
-    bool Initialize();
+    bool Initialize(ParameterManager &PM);
 
     void Shutdown();
 
@@ -101,6 +102,7 @@ class RTIDDSImpl : public IMessaging
     const char                  *_typename;
     RTIOsapiSemaphore           *_pongSemaphore;
     RTIDDSLoggerDevice           _loggerDevice;
+    ParameterManager            *_PM;
 
   #ifdef RTI_SECURE_PERFTEST
     static const std::string SECURE_PRIVATEKEY_FILE_PUB;

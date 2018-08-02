@@ -11,12 +11,6 @@
 
 ParameterManager::ParameterManager() {}
 
-ParameterManager& ParameterManager::get_instance()
-{
-    static ParameterManager instance;
-    return instance;
-}
-
 void ParameterManager::initialize()
 {
     // GENERAL PARAMETER
@@ -1142,13 +1136,11 @@ bool ParameterManager::check_incompatible_parameters()
     std::map<std::string, AnyParameter>::iterator it;
     for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
         if (it->second.get()->get_isSet()) {
-            if (it->second.get()->get_group() == PUB &&
-                    get_instance().get<bool>("sub")) {
+            if (it->second.get()->get_group() == PUB && get<bool>("sub")) {
                 fprintf(stderr, "Cannot use '%s' while setting '-sub'.\n",
                         it->second.get()->get_option().c_str());
                 success = false;
-            } else if (it->second.get()->get_group() == SUB &&
-                    get_instance().get<bool>("pub")) {
+            } else if (it->second.get()->get_group() == SUB && get<bool>("pub")) {
                 fprintf(stderr, "Cannot use '%s' while setting '-pub'.\n",
                         it->second.get()->get_option().c_str());
                 success = false;

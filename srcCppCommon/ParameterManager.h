@@ -8,10 +8,9 @@
 #ifndef __PARAMETERMANAGER_H__
 #define __PARAMETERMANAGER_H__
 
-#define PMI ParameterManager::get_instance()
+// #include "PerftestTransport.h"
+// #include "RTIDDSImpl.h"
 
-#include "PerftestTransport.h"
-#include "RTIDDSImpl.h"
 #include "Parameter.h"
 #include <map>
 
@@ -26,6 +25,17 @@
 #endif
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 
+
+
+/******************************************************************************/
+// Default location of the security related files
+const std::string TRANSPORT_PRIVATEKEY_FILE_PUB = "./resource/secure/pubkey.pem";
+const std::string TRANSPORT_PRIVATEKEY_FILE_SUB = "./resource/secure/subkey.pem";
+const std::string TRANSPORT_CERTIFICATE_FILE_PUB = "./resource/secure/pub.pem";
+const std::string TRANSPORT_CERTIFICATE_FILE_SUB = "./resource/secure/sub.pem";
+const std::string TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
+
+
 class ParameterManager
 {
     private:
@@ -34,7 +44,6 @@ class ParameterManager
     public:
         ParameterManager();
         void initialize();
-        static ParameterManager& get_instance();
         ~ParameterManager();
 
         // Set the value of a parameter

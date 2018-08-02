@@ -138,11 +138,11 @@ template <typename T>
 bool RTIDDSImpl<T>::validate_input()
 {
     // Manage parameter -instance
-    if (PMI.is_set("instances")) {
-        _instanceMaxCountReader = PMI.get<long>("instances");
+    if (_PM->is_set("instances")) {
+        _instanceMaxCountReader = _PM->get<long>("instances");
     }
     // Manage parameter -peer
-    if (PMI.get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
+    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
         fprintf(stderr,
                 "The maximun of 'initial_peers' is %d\n",
                 RTIPERFTEST_MAX_PEERS);
@@ -150,7 +150,7 @@ bool RTIDDSImpl<T>::validate_input()
     }
 
     // Check if we need to enable Large Data. This works also for -scan
-    if (PMI.get<unsigned long long>("dataLen")
+    if (_PM->get<unsigned long long>("dataLen")
             > (unsigned long) (std::min)(
                     MAX_SYNCHRONOUS_SIZE,
                     MAX_BOUNDED_SEQ_SIZE)) {
@@ -160,25 +160,25 @@ bool RTIDDSImpl<T>::validate_input()
     }
 
     // Manage parameter -batchSize
-    if (PMI.get<long>("batchSize") > 0) {
+    if (_PM->get<long>("batchSize") > 0) {
         // We will not use batching for a latency test
-        if (PMI.get<bool>("latencyTest")) {
-            if (PMI.is_set("batchSize")) {
+        if (_PM->get<bool>("latencyTest")) {
+            if (_PM->is_set("batchSize")) {
                 fprintf(stderr, "Batching cannot be used in a Latency test.\n");
                 return false;
             } else {
-                PMI.set<long>("batchSize", 0); // Disable Batching
+                _PM->set<long>("batchSize", 0); // Disable Batching
             }
         }
 
         // Check if using asynchronous
-        if (PMI.get<bool>("asynchronous")) {
-            if (PMI.is_set("batchSize")) {
+        if (_PM->get<bool>("asynchronous")) {
+            if (_PM->is_set("batchSize")) {
                 fprintf(stderr,
                         "Batching cannot be used with asynchronous writing.\n");
                 return false;
             } else {
-                PMI.set<long>("batchSize", 0); // Disable Batching
+                _PM->set<long>("batchSize", 0); // Disable Batching
             }
         }
 
@@ -188,50 +188,50 @@ bool RTIDDSImpl<T>::validate_input()
          * so we explitly fail
          */
         if (_isLargeData) {
-            if (PMI.is_set("batchSize")) {
+            if (_PM->is_set("batchSize")) {
                 fprintf(stderr, "Batching cannot be used with Large Data.\n");
                 return false;
             } else {
-                PMI.set<long>("batchSize", -2);
+                _PM->set<long>("batchSize", -2);
             }
-        } else if ((unsigned long)PMI.get<long>("batchSize")
-                < PMI.get<unsigned long long>("dataLen") * 2) {
+        } else if ((unsigned long)_PM->get<long>("batchSize")
+                < _PM->get<unsigned long long>("dataLen") * 2) {
             /*
              * We don't want to use batching if the batch size is not large
              * enough to contain at least two samples (in this case we avoid the
              * checking at the middleware level).
              */
-            if (PMI.is_set("batchSize") || PMI.is_set("scan")) {
+            if (_PM->is_set("batchSize") || _PM->is_set("scan")) {
                 /*
                  * Batchsize disabled. A message will be print if _batchSize < 0
                  * in perftest_cpp::PrintConfiguration()
                  */
-                PMI.set<long>("batchSize", -1);
+                _PM->set<long>("batchSize", -1);
             } else {
-                PMI.set<long>("batchSize", 0); // Disable Batching
+                _PM->set<long>("batchSize", 0); // Disable Batching
             }
         }
     }
 
     // Manage parameter -enableTurboMode
-    if (PMI.get<bool>("enableTurboMode")) {
-        if (PMI.get<bool>("asynchronous")) {
+    if (_PM->get<bool>("enableTurboMode")) {
+        if (_PM->get<bool>("asynchronous")) {
             fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing.\n");
             return false;
         } if (_isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
-            PMI.set<bool>("enableTurboMode", false);
+            _PM->set<bool>("enableTurboMode", false);
         }
     }
 
     // Manage parameter -writeInstance
-    if (PMI.is_set("writeInstance")) {
-        if (PMI.get<long>("instances") < PMI.get<long>("writeInstance")) {
+    if (_PM->is_set("writeInstance")) {
+        if (_PM->get<long>("instances") < _PM->get<long>("writeInstance")) {
             fprintf(stderr,
                     "Specified '-WriteInstance' (%ld) invalid: "
                     "Bigger than the number of instances (%ld).\n",
-                    PMI.get<long>("writeInstance"),
-                    PMI.get<long>("instances"));
+                    _PM->get<long>("writeInstance"),
+                    _PM->get<long>("instances"));
             return false;
         }
     }
@@ -246,8 +246,8 @@ bool RTIDDSImpl<T>::validate_input()
      * Manage parameter -verbosity.
      * Setting verbosity if the parameter is provided
      */
-    if (PMI.is_set("verbosity")) {
-        switch (PMI.get<int>("verbosity")) {
+    if (_PM->is_set("verbosity")) {
+        switch (_PM->get<int>("verbosity")) {
             case 0:
                 NDDSConfigLogger::get_instance()->set_verbosity(
                         NDDS_CONFIG_LOG_VERBOSITY_SILENT);
@@ -274,7 +274,7 @@ bool RTIDDSImpl<T>::validate_input()
     }
 
     // Manage parameter -secureGovernanceFile
-    if (PMI.is_set("secureGovernanceFile")) {
+    if (_PM->is_set("secureGovernanceFile")) {
         fprintf(stdout,
                 "Warning -- authentication, encryption, signing arguments "
                 "will be ignored, and the values specified by the Governance "
@@ -282,9 +282,9 @@ bool RTIDDSImpl<T>::validate_input()
     }
 
     // Manage parameter -secureEncryptBoth
-    if (PMI.is_set("secureEncryptBoth")) {
-        PMI.set("secureEncryptData", true);
-        PMI.set("secureEncryptSM", true);
+    if (_PM->is_set("secureEncryptBoth")) {
+        _PM->set("secureEncryptData", true);
+        _PM->set("secureEncryptSM", true);
     }
 
     return true;
@@ -301,24 +301,24 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
     // Domain ID
     stringStream << "\tDomain: "
-                 << PMI.get<int>("domain")
+                 << _PM->get<int>("domain")
                  << "\n";
 
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
-    if (PMI.get<bool>("dynamicData")) {
+    if (_PM->get<bool>("dynamicData")) {
         stringStream << "Yes\n";
     } else {
         stringStream << "No\n";
     }
 
     // Dynamic Data
-    if (PMI.get<bool>("pub")) {
+    if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
-        if (_isLargeData || PMI.get<bool>("asynchronous")) {
+        if (_isLargeData || _PM->get<bool>("asynchronous")) {
             stringStream << "Yes\n";
             stringStream << "\tFlow Controller: "
-                         << PMI.get<std::string>("flowController")
+                         << _PM->get<std::string>("flowController")
                          << "\n";
         } else {
             stringStream << "No\n";
@@ -326,19 +326,19 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
     // Turbo Mode / AutoThrottle
-    if (PMI.get<bool>("enableTurboMode")) {
+    if (_PM->get<bool>("enableTurboMode")) {
         stringStream << "\tTurbo Mode: Enabled\n";
     }
-    if (PMI.get<bool>("enableAutoThrottle")) {
+    if (_PM->get<bool>("enableAutoThrottle")) {
         stringStream << "\tAutoThrottle: Enabled\n";
     }
 
     // XML File
     stringStream << "\tXML File: ";
-    if (PMI.get<bool>("noXmlQos")) {
+    if (_PM->get<bool>("noXmlQos")) {
         stringStream << "Disabled\n";
     } else {
-        stringStream << PMI.get<std::string>("qosFile")
+        stringStream << _PM->get<std::string>("qosFile")
                      << "\n";
     }
 
@@ -347,7 +347,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
 
     // set initial peers and not use multicast
-    const std::vector<std::string> peerList = PMI.get_vector<std::string>("peer");
+    const std::vector<std::string> peerList = _PM->get_vector<std::string>("peer");
     if (!peerList.empty()) {
         stringStream << "\tInitial peers: ";
         for (unsigned int i = 0; i < peerList.size(); ++i) {
@@ -361,7 +361,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
    #ifdef RTI_SECURE_PERFTEST
-    if (PMI.group_is_used(SECURE)) {
+    if (_PM->group_is_used(SECURE)) {
         stringStream << "\n" << printSecureArgs();
     }
    #endif
@@ -421,9 +421,10 @@ class RTIPublisher : public IMessagingWriter
     unsigned int _minCustomTypeSerializeSize;
   #endif
     bool _isReliable;
+    ParameterManager *_PM;
 
  public:
-    RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten)
+    RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten, ParameterManager *PM)
     {
       #ifdef RTI_CUSTOM_TYPE
         _lastMessageSize = 0;
@@ -443,6 +444,7 @@ class RTIPublisher : public IMessagingWriter
             throw std::runtime_error("initialize_custom_type_data failed");
         }
       #endif
+        _PM = PM;
         _writer = T::DataWriter::narrow(writer);
         if (!data.bin_data.maximum(0)) {
             Shutdown();
@@ -718,6 +720,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
   #endif
     int _lastMessageSize;
     bool _isReliable;
+    ParameterManager *_PM;
 
   public:
     RTIDynamicDataPublisher(
@@ -725,7 +728,8 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             unsigned long num_instances,
             RTIOsapiSemaphore *pongSemaphore,
             DDS_TypeCode *typeCode,
-            int instancesToBeWritten) :
+            int instancesToBeWritten,
+            ParameterManager *PM) :
             data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT)
 
     {
@@ -742,6 +746,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             throw std::runtime_error("initialize_custom_type_dynamic_data failed");
         }
       #endif
+        _PM = PM;
         _writer = DDSDynamicDataWriter::narrow(writer);
         DDS_Octet key_octets[KEY_SIZE];
 
@@ -1312,31 +1317,32 @@ class RTISubscriber : public IMessagingReader
   private:
     typename T::DataReader *_reader;
     typename T::Seq         _data_seq;
-    DDS_SampleInfoSeq     _info_seq;
-    TestMessage           _message;
-    DDSWaitSet           *_waitset;
-    DDSConditionSeq       _active_conditions;
-
-    int      _data_idx;
-    bool      _no_data;
+    DDS_SampleInfoSeq       _info_seq;
+    TestMessage             _message;
+    DDSWaitSet             *_waitset;
+    DDSConditionSeq         _active_conditions;
+    int                     _data_idx;
+    bool                    _no_data;
+    ParameterManager       *_PM;
 
   public:
 
-    RTISubscriber(DDSDataReader *reader): _message()
+    RTISubscriber(DDSDataReader *reader, ParameterManager *PM): _message()
     {
         _reader = T::DataReader::narrow(reader);
         _data_idx = 0;
         _no_data = false;
+        _PM = PM;
 
         // null listener means using receive thread
         if (_reader->get_listener() == NULL) {
             DDS_WaitSetProperty_t property;
             property.max_event_count =
-                    PMI.get<long>("waitsetEventCount");
+                    _PM->get<long>("waitsetEventCount");
             property.max_event_delay.sec =
-                    (long)PMI.get<unsigned long long>("waitsetDelayUsec") / 1000000;
+                    (long)_PM->get<unsigned long long>("waitsetDelayUsec") / 1000000;
             property.max_event_delay.nanosec =
-                    (PMI.get<unsigned long long>("waitsetDelayUsec") % 1000000) * 1000;
+                    (_PM->get<unsigned long long>("waitsetDelayUsec") % 1000000) * 1000;
 
             _waitset = new DDSWaitSet(property);
 
@@ -1469,10 +1475,11 @@ class RTIDynamicDataSubscriber : public IMessagingReader
 
     int _data_idx;
     bool _no_data;
+    ParameterManager *_PM;
 
   public:
 
-    RTIDynamicDataSubscriber(DDSDataReader *reader): _message()
+    RTIDynamicDataSubscriber(DDSDataReader *reader, ParameterManager *PM): _message()
     {
         _reader = DDSDynamicDataReader::narrow(reader);
         if (_reader == NULL) {
@@ -1480,17 +1487,17 @@ class RTIDynamicDataSubscriber : public IMessagingReader
         }
         _data_idx = 0;
         _no_data = false;
-
+        _PM = PM;
         // null listener means using receive thread
         if (_reader->get_listener() == NULL) {
 
             DDS_WaitSetProperty_t property;
             property.max_event_count =
-                    PMI.get<long>("waitsetEventCount");
+                    _PM->get<long>("waitsetEventCount");
             property.max_event_delay.sec =
-                    (long)PMI.get<unsigned long long>("waitsetDelayUsec") / 1000000;
+                    (long)_PM->get<unsigned long long>("waitsetDelayUsec") / 1000000;
             property.max_event_delay.nanosec =
-                    (PMI.get<unsigned long long>("waitsetDelayUsec") % 1000000) * 1000;
+                    (_PM->get<unsigned long long>("waitsetDelayUsec") % 1000000) * 1000;
             _waitset = new DDSWaitSet(property);
             DDSStatusCondition *reader_status;
             reader_status = reader->get_statuscondition();
@@ -1708,7 +1715,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
             "com.rti.serv.secure.library",
-            PMI.get<std::string>("secureLibrary").c_str(),
+            _PM->get<std::string>("secureLibrary").c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property com.rti.serv.secure.library\n");
@@ -1738,21 +1745,21 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
      */
 
     // check if governance file provided
-    if (PMI.get<std::string>("secureGovernanceFile").empty()) {
+    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
         // choose a pre-built governance file
         governanceFilePath = "./resource/secure/signed_PerftestGovernance_";
-        if (PMI.get<bool>("secureEncryptDiscovery")) {
+        if (_PM->get<bool>("secureEncryptDiscovery")) {
             governanceFilePath += "Discovery";
         }
-        if (PMI.get<bool>("secureSign")) {
+        if (_PM->get<bool>("secureSign")) {
             governanceFilePath += "Sign";
         }
-        if (PMI.get<bool>("secureEncryptData")
-                && PMI.get<bool>("secureEncryptSM")) {
+        if (_PM->get<bool>("secureEncryptData")
+                && _PM->get<bool>("secureEncryptSM")) {
             governanceFilePath += "EncryptBoth";
-        } else if (PMI.get<bool>("secureEncryptData")) {
+        } else if (_PM->get<bool>("secureEncryptData")) {
             governanceFilePath += "EncryptData";
-        } else if (PMI.get<bool>("secureEncryptSM")) {
+        } else if (_PM->get<bool>("secureEncryptSM")) {
             governanceFilePath += "EncryptSubmessage";
         }
 
@@ -1780,13 +1787,13 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
      * Save the local variable governanceFilePath into
      * the parameter "secureGovernanceFile"
      */
-    PMI.set("secureGovernanceFile", governanceFilePath);
+    _PM->set("secureGovernanceFile", governanceFilePath);
 
     // permissions file
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
             "com.rti.serv.secure.access_control.permissions_file",
-            PMI.get<std::string>("securePermissionsFile").c_str(),
+            _PM->get<std::string>("securePermissionsFile").c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
@@ -1798,7 +1805,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
             "com.rti.serv.secure.access_control.permissions_authority_file",
-            PMI.get<std::string>("secureCertAuthority").c_str(),
+            _PM->get<std::string>("secureCertAuthority").c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
@@ -1810,7 +1817,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
             "com.rti.serv.secure.authentication.ca_file",
-            PMI.get<std::string>("secureCertAuthority").c_str(),
+            _PM->get<std::string>("secureCertAuthority").c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
@@ -1822,7 +1829,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
             "com.rti.serv.secure.authentication.certificate_file",
-            PMI.get<std::string>("secureCertFile").c_str(),
+            _PM->get<std::string>("secureCertFile").c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
@@ -1834,7 +1841,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
             "com.rti.serv.secure.authentication.private_key_file",
-            PMI.get<std::string>("securePrivateKey").c_str(),
+            _PM->get<std::string>("securePrivateKey").c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
@@ -1842,9 +1849,9 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
         return false;
     }
 
-    if (PMI.is_set("secureDebug")) {
+    if (_PM->is_set("secureDebug")) {
         char buf[16];
-        sprintf(buf, "%d", PMI.get<int>("secureDebug"));
+        sprintf(buf, "%d", _PM->get<int>("secureDebug"));
         retcode = DDSPropertyQosPolicyHelper::add_property(
                 dpQos.property,
                 "com.rti.serv.secure.logging.log_level",
@@ -1863,38 +1870,38 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
 template <typename T>
 bool RTIDDSImpl<T>::validateSecureArgs()
 {
-    if (PMI.group_is_used(SECURE)) {
-        if (PMI.get<std::string>("securePrivateKey").empty()) {
-            if (PMI.get<bool>("pub")) {
-                PMI.set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
+    if (_PM->group_is_used(SECURE)) {
+        if (_PM->get<std::string>("securePrivateKey").empty()) {
+            if (_PM->get<bool>("pub")) {
+                _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
             } else {
-                PMI.set("securePrivateKey", SECURE_PRIVATEKEY_FILE_SUB);
+                _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_SUB);
             }
         }
 
-        if (PMI.get<std::string>("secureCertFile").empty()) {
-            if (PMI.get<bool>("pub")) {
-                PMI.set("secureCertFile", SECURE_CERTIFICATE_FILE_PUB);
+        if (_PM->get<std::string>("secureCertFile").empty()) {
+            if (_PM->get<bool>("pub")) {
+                _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_PUB);
             } else {
-                PMI.set("secureCertFile", SECURE_CERTIFICATE_FILE_SUB);
+                _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_SUB);
             }
         }
 
-        if (PMI.get<std::string>("secureCertAuthority").empty()) {
-            PMI.set("secureCertAuthority", SECURE_CERTAUTHORITY_FILE);
+        if (_PM->get<std::string>("secureCertAuthority").empty()) {
+            _PM->set("secureCertAuthority", SECURE_CERTAUTHORITY_FILE);
         }
 
-        if (PMI.get<std::string>("securePermissionsFile").empty()) {
-            if (PMI.get<bool>("pub")) {
-                PMI.set("securePermissionsFile", SECURE_PERMISION_FILE_PUB);
+        if (_PM->get<std::string>("securePermissionsFile").empty()) {
+            if (_PM->get<bool>("pub")) {
+                _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_PUB);
             } else {
-                PMI.set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
+                _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
             }
         }
 
       #ifdef RTI_PERFTEST_DYNAMIC_LINKING
-        if (PMI.get<std::string>("secureLibrary").empty()) {
-            PMI.set("secureLibrary", SECURE_LIBRARY_NAME);
+        if (_PM->get<std::string>("secureLibrary").empty()) {
+            _PM->set("secureLibrary", SECURE_LIBRARY_NAME);
         }
       #endif
 
@@ -1910,84 +1917,84 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     stringStream << "Secure Configuration:\n";
 
     stringStream << "\tEncrypt discovery: ";
-    if (PMI.get<bool>("secureEncryptDiscovery")) {
+    if (_PM->get<bool>("secureEncryptDiscovery")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tEncrypt topic (user) data: ";
-    if (PMI.get<bool>("secureEncryptData")) {
+    if (_PM->get<bool>("secureEncryptData")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tEncrypt submessage: ";
-    if (PMI.get<bool>("secureEncryptSM")) {
+    if (_PM->get<bool>("secureEncryptSM")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tSign data: ";
-    if (PMI.get<bool>("secureSign")) {
+    if (_PM->get<bool>("secureSign")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tGovernance file: ";
-    if (PMI.get<std::string>("secureGovernanceFile").empty()) {
+    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << PMI.get<std::string>("secureGovernanceFile")
+        stringStream << _PM->get<std::string>("secureGovernanceFile")
                      << "\n";
     }
 
     stringStream << "\tPermissions file: ";
-    if (PMI.get<std::string>("securePermissionsFile").empty()) {
+    if (_PM->get<std::string>("securePermissionsFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << PMI.get<std::string>("securePermissionsFile")
+        stringStream << _PM->get<std::string>("securePermissionsFile")
                      << "\n";
     }
 
     stringStream << "\tPrivate key file: ";
-    if (PMI.get<std::string>("securePrivateKey").empty()) {
+    if (_PM->get<std::string>("securePrivateKey").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << PMI.get<std::string>("securePrivateKey")
+        stringStream << _PM->get<std::string>("securePrivateKey")
                      << "\n";
     }
 
     stringStream << "\tCertificate file: ";
-    if (PMI.get<std::string>("secureCertFile").empty()) {
+    if (_PM->get<std::string>("secureCertFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << PMI.get<std::string>("secureCertFile")
+        stringStream << _PM->get<std::string>("secureCertFile")
                      << "\n";
     }
 
     stringStream << "\tCertificate authority file: ";
-    if (PMI.get<std::string>("secureCertAuthority").empty()) {
+    if (_PM->get<std::string>("secureCertAuthority").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << PMI.get<std::string>("secureCertAuthority")
+        stringStream << _PM->get<std::string>("secureCertAuthority")
                      << "\n";
     }
 
     stringStream << "\tPlugin library: ";
-    if (PMI.get<std::string>("secureLibrary").empty()) {
+    if (_PM->get<std::string>("secureLibrary").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << PMI.get<std::string>("secureLibrary")
+        stringStream << _PM->get<std::string>("secureLibrary")
                      << "\n";
     }
 
-    if (PMI.is_set("secureDebug")) {
+    if (_PM->is_set("secureDebug")) {
         stringStream << "\tDebug level: "
-                     << PMI.get<int>("secureDebug")
+                     << _PM->get<int>("secureDebug")
                      << "\n";
     }
 
@@ -2000,8 +2007,12 @@ std::string RTIDDSImpl<T>::printSecureArgs()
  * Initialize
  */
 template <typename T>
-bool RTIDDSImpl<T>::Initialize()
+bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
 {
+    // Assigne the ParameterManager
+    _PM = &PM;
+    _transport.initialize(_PM);
+
     DDS_DomainParticipantQos qos;
     DDS_DomainParticipantFactoryQos factory_qos;
     DomainListener *listener = new DomainListener();
@@ -2020,16 +2031,16 @@ bool RTIDDSImpl<T>::Initialize()
 
     // only if we run the latency test we need to wait
     // for pongs after sending pings
-    _pongSemaphore = PMI.get<bool>("latencyTest") ?
+    _pongSemaphore = _PM->get<bool>("latencyTest") ?
             RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL) :
             NULL;
 
     // setup the QOS profile file to be loaded
     _factory->get_qos(factory_qos);
-    if (!PMI.get<bool>("noXmlQos")) {
+    if (!_PM->get<bool>("noXmlQos")) {
         factory_qos.profile.url_profile.ensure_length(1, 1);
         factory_qos.profile.url_profile[0] =
-                DDS_String_dup(PMI.get<std::string>("qosFile").c_str());
+                DDS_String_dup(_PM->get<std::string>("qosFile").c_str());
     } else {
         factory_qos.profile.string_profile.from_array(
                 PERFTEST_QOS_STRING,
@@ -2040,32 +2051,32 @@ bool RTIDDSImpl<T>::Initialize()
     if (_factory->reload_profiles() != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "Problem opening QOS profiles file %s.\n",
-                PMI.get<std::string>("qosFile").c_str());
+                _PM->get<std::string>("qosFile").c_str());
         return false;
     }
 
-    if (_factory->set_default_library(PMI.get<std::string>("qosLibrary").c_str())
+    if (_factory->set_default_library(_PM->get<std::string>("qosLibrary").c_str())
             != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "No QOS Library named \"%s\" found in %s.\n",
-               PMI.get<std::string>("qosLibrary").c_str(),
-               PMI.get<std::string>("qosFile").c_str());
+               _PM->get<std::string>("qosLibrary").c_str(),
+               _PM->get<std::string>("qosFile").c_str());
         return false;
     }
 
     // Configure DDSDomainParticipant QOS
     if (_factory->get_participant_qos_from_profile(
             qos,
-            PMI.get<std::string>("qosLibrary").c_str(),
+            _PM->get<std::string>("qosLibrary").c_str(),
             "BaseProfileQos")
             != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "Problem setting QoS Library \"%s::BaseProfileQos\" for participant_qos.\n",
-                PMI.get<std::string>("qosLibrary").c_str());
+                _PM->get<std::string>("qosLibrary").c_str());
     }
 
   #ifdef RTI_SECURE_PERFTEST
-    if (PMI.group_is_used(SECURE)) {
+    if (_PM->group_is_used(SECURE)) {
         // validate arguments
         if (!validateSecureArgs()) {
             fprintf(stderr, "Failed to configure security plugins\n");
@@ -2080,7 +2091,7 @@ bool RTIDDSImpl<T>::Initialize()
   #endif
 
     // Set initial peers and not use multicast
-    const std::vector<std::string> peerList = PMI.get_vector<std::string>("peer");
+    const std::vector<std::string> peerList = _PM->get_vector<std::string>("peer");
     if (!peerList.empty()) {
         std::vector<char*> cstrings;
         cstrings.reserve(peerList.size());
@@ -2093,11 +2104,11 @@ bool RTIDDSImpl<T>::Initialize()
         qos.discovery.multicast_receive_addresses.length(0);
     }
 
-    if (!configureTransport(_transport, qos)){
+    if (!configureTransport(_transport, qos, _PM)){
         return false;
     }
 
-    if (PMI.get<bool>("enableAutoThrottle")) {
+    if (_PM->get<bool>("enableAutoThrottle")) {
         DDSPropertyQosPolicyHelper::add_property(qos.property,
                 "dds.domain_participant.auto_throttle.enable",
                 "true",
@@ -2106,7 +2117,7 @@ bool RTIDDSImpl<T>::Initialize()
 
     // Creates the participant
     _participant = _factory->create_participant(
-            PMI.get<int>("domain"), qos, listener,
+            _PM->get<int>("domain"), qos, listener,
             DDS_INCONSISTENT_TOPIC_STATUS |
             DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
             DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
@@ -2124,7 +2135,7 @@ bool RTIDDSImpl<T>::Initialize()
     }
 
     // Register the types and create the topics
-    if (!PMI.get<bool>("dynamicData")) {
+    if (!_PM->get<bool>("dynamicData")) {
         T::TypeSupport::register_type(_participant, _typename);
     } else {
         DDSDynamicDataTypeSupport* dynamicDataTypeSupportObject =
@@ -2136,7 +2147,7 @@ bool RTIDDSImpl<T>::Initialize()
 
     // Create the DDSPublisher and DDSSubscriber
     _publisher = _participant->create_publisher_with_profile(
-            PMI.get<std::string>("qosLibrary").c_str(),
+            _PM->get<std::string>("qosLibrary").c_str(),
             "BaseProfileQos",
             NULL,
             DDS_STATUS_MASK_NONE);
@@ -2146,7 +2157,7 @@ bool RTIDDSImpl<T>::Initialize()
     }
 
     _subscriber = _participant->create_subscriber_with_profile(
-            PMI.get<std::string>("qosLibrary").c_str(),
+            _PM->get<std::string>("qosLibrary").c_str(),
             "BaseProfileQos",
             NULL,
             DDS_STATUS_MASK_NONE);
@@ -2180,17 +2191,17 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
      */
     initializeSampleCount = (std::max)(
             initializeSampleCount,
-            (unsigned long) PMI.get<int>("sendQueueSize"));
+            (unsigned long) _PM->get<int>("sendQueueSize"));
 
     /*
      * If we are using batching we need to take into account tha the Send Queue
      * will be per-batch, therefore for the number of samples:
      */
-    if (PMI.get<long>("batchSize") > 0) {
+    if (_PM->get<long>("batchSize") > 0) {
         initializeSampleCount = (std::max)(
-                PMI.get<int>("sendQueueSize") *
-                        (PMI.get<long>("batchSize") /
-                        PMI.get<unsigned long>("dataLen")),
+                _PM->get<int>("sendQueueSize") *
+                        (_PM->get<long>("batchSize") /
+                        _PM->get<unsigned long>("dataLen")),
                 initializeSampleCount);
     }
 
@@ -2236,39 +2247,39 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 
     if (_factory->get_datawriter_qos_from_profile(
             dw_qos,
-            PMI.get<std::string>("qosLibrary").c_str(),
+            _PM->get<std::string>("qosLibrary").c_str(),
             qos_profile.c_str())
             != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
                 qos_profile.c_str(),
-                PMI.get<std::string>("qosLibrary").c_str(),
-                PMI.get<std::string>("qosFile").c_str());
+                _PM->get<std::string>("qosLibrary").c_str(),
+                _PM->get<std::string>("qosFile").c_str());
         return NULL;
     }
 
-    if (PMI.get<bool>("noPositiveAcks")
+    if (_PM->get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_qos.protocol.disable_positive_acks = true;
-        if (PMI.is_set("keepDurationUsec")) {
+        if (_PM->is_set("keepDurationUsec")) {
             dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
                 DDS_Duration_t::from_micros(
-                        PMI.get<unsigned long long>("keepDurationUsec"));
+                        _PM->get<unsigned long long>("keepDurationUsec"));
         }
     }
 
-    if (_isLargeData || PMI.get<bool>("asynchronous")) {
+    if (_isLargeData || _PM->get<bool>("asynchronous")) {
         dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
-        if (PMI.get<std::string>("flowController") != "default") {
+        if (_PM->get<std::string>("flowController") != "default") {
             dw_qos.publish_mode.flow_controller_name =
                     DDS_String_dup(("dds.flow_controller.token_bucket." +
-                    PMI.get<std::string>("flowController")).c_str());
+                    _PM->get<std::string>("flowController")).c_str());
         }
     }
 
     // Only force reliability on throughput/latency topics
     if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0) {
-        if (!PMI.get<bool>("bestEffort")) {
+        if (!_PM->get<bool>("bestEffort")) {
             // default: use the setting specified in the qos profile
             // dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         }
@@ -2281,27 +2292,27 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     // These QOS's are only set for the Throughput datawriter
     if (qos_profile == "ThroughputQos") {
 
-        if (PMI.get<bool>("multicast")) {
+        if (_PM->get<bool>("multicast")) {
             dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
                     RTI_TRUE;
         }
 
-        if (PMI.get<long>("batchSize") > 0) {
+        if (_PM->get<long>("batchSize") > 0) {
             dw_qos.batch.enable = true;
-            dw_qos.batch.max_data_bytes = PMI.get<long>("batchSize");
+            dw_qos.batch.max_data_bytes = _PM->get<long>("batchSize");
             dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
             dw_qos.writer_resource_limits.max_batches =
-                    PMI.get<int>("sendQueueSize");
+                    _PM->get<int>("sendQueueSize");
         } else {
-            dw_qos.resource_limits.max_samples = PMI.get<int>("sendQueueSize");
+            dw_qos.resource_limits.max_samples = _PM->get<int>("sendQueueSize");
         }
 
-        if (PMI.get<bool>("enableAutoThrottle")) {
+        if (_PM->get<bool>("enableAutoThrottle")) {
             DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.auto_throttle.enable", "true", false);
         }
 
-        if (PMI.get<bool>("enableTurboMode")) {
+        if (_PM->get<bool>("enableTurboMode")) {
             DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.enable_turbo_mode",
                     "true",
@@ -2309,25 +2320,25 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
             dw_qos.batch.enable = false;
             dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
             dw_qos.writer_resource_limits.max_batches =
-                    PMI.get<int>("sendQueueSize");
+                    _PM->get<int>("sendQueueSize");
         }
 
-        dw_qos.resource_limits.initial_samples = PMI.get<int>("sendQueueSize");
+        dw_qos.resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
         dw_qos.resource_limits.max_samples_per_instance =
                 dw_qos.resource_limits.max_samples;
 
         dw_qos.durability.kind =
-                (DDS_DurabilityQosPolicyKind)PMI.get<int>("durability");
+                (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
         dw_qos.durability.direct_communication =
-                !PMI.get<bool>("noDirectCommunication");
+                !_PM->get<bool>("noDirectCommunication");
 
         dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
-                PMI.get<int>("sendQueueSize") / 10;
+                _PM->get<int>("sendQueueSize") / 10;
 
         dw_qos.protocol.rtps_reliable_writer.low_watermark =
-                PMI.get<int>("sendQueueSize") * 1 / 10;
+                _PM->get<int>("sendQueueSize") * 1 / 10;
         dw_qos.protocol.rtps_reliable_writer.high_watermark =
-                PMI.get<int>("sendQueueSize") * 9 / 10;
+                _PM->get<int>("sendQueueSize") * 9 / 10;
 
         /*
          * If _SendQueueSize is 1 low watermark and high watermark would both be
@@ -2341,40 +2352,40 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         }
 
         dw_qos.protocol.rtps_reliable_writer.max_send_window_size =
-                PMI.get<int>("sendQueueSize");
+                _PM->get<int>("sendQueueSize");
         dw_qos.protocol.rtps_reliable_writer.min_send_window_size =
-                PMI.get<int>("sendQueueSize");
+                _PM->get<int>("sendQueueSize");
     }
 
     if (qos_profile == "LatencyQos"
-            && PMI.get<bool>("noDirectCommunication")
-            && (PMI.get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
-            || PMI.get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
+            && _PM->get<bool>("noDirectCommunication")
+            && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+            || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
         dw_qos.durability.kind =
-                (DDS_DurabilityQosPolicyKind)PMI.get<int>("durability");
+                (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
         dw_qos.durability.direct_communication =
-                !PMI.get<bool>("noDirectCommunication");
+                !_PM->get<bool>("noDirectCommunication");
     }
 
     dw_qos.resource_limits.max_instances =
-            PMI.get<long>("instances") + 1; // One extra for MAX_CFT_VALUE
-    dw_qos.resource_limits.initial_instances = PMI.get<long>("instances") + 1;
+            _PM->get<long>("instances") + 1; // One extra for MAX_CFT_VALUE
+    dw_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
 
-    if (PMI.get<int>("unbounded") != 0) {
+    if (_PM->get<int>("unbounded") != 0) {
         char buf[10];
-        sprintf(buf, "%d", PMI.get<int>("unbounded"));
+        sprintf(buf, "%d", _PM->get<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
                buf, false);
     }
 
-    if (PMI.get<long>("instances") > 1) {
-        if (PMI.is_set("instanceHashBuckets")) {
+    if (_PM->get<long>("instances") > 1) {
+        if (_PM->is_set("instanceHashBuckets")) {
             dw_qos.resource_limits.instance_hash_buckets =
-                    PMI.get<long>("instanceHashBuckets");
+                    _PM->get<long>("instanceHashBuckets");
         } else {
             dw_qos.resource_limits.instance_hash_buckets =
-                    PMI.get<long>("instances");
+                    _PM->get<long>("instances");
         }
     }
 
@@ -2388,13 +2399,14 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (!PMI.get<bool>("dynamicData")) {
+    if (!_PM->get<bool>("dynamicData")) {
         try {
             return new RTIPublisher<T>(
                     writer,
-                    PMI.get<long>("instances"),
+                    _PM->get<long>("instances"),
                     _pongSemaphore,
-                    PMI.get<long>("writeInstance"));
+                    _PM->get<long>("writeInstance"),
+                    _PM);
         } catch (const std::exception &ex) {
             fprintf(stderr,
                     "Exception in RTIDDSImpl<T>::CreateWriter(): %s.\n", ex.what());
@@ -2404,10 +2416,11 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         try{
             return new RTIDynamicDataPublisher(
                     writer,
-                    PMI.get<long>("instances"),
+                    _PM->get<long>("instances"),
                     _pongSemaphore,
                     T::TypeSupport::get_typecode(),
-                    PMI.get<long>("writeInstance"));
+                    _PM->get<long>("writeInstance"),
+                    _PM);
         } catch (const std::exception &ex) {
             fprintf(stderr, "Exception in RTIDDSImpl<T>::CreateWriter(): %s.\n", ex.what());
             return NULL;
@@ -2453,7 +2466,7 @@ DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
     std::string condition;
     DDS_StringSeq parameters(2 * KEY_SIZE);
     const std::vector<unsigned long long> cftRange =
-            PMI.get_vector<unsigned long long>("cft");
+            _PM->get_vector<unsigned long long>("cft");
     if (cftRange.size() == 1) { // If same elements, no range
         printf("CFT enabled for instance: '%llu' \n", cftRange[0]);
         char cft_param[KEY_SIZE][128];
@@ -2547,27 +2560,27 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
     if (_factory->get_datareader_qos_from_profile(
             dr_qos,
-            PMI.get<std::string>("qosLibrary").c_str(),
+            _PM->get<std::string>("qosLibrary").c_str(),
             qos_profile.c_str())
             != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
                 qos_profile.c_str(),
-                PMI.get<std::string>("qosLibrary").c_str(),
-                PMI.get<std::string>("qosFile").c_str());
+                _PM->get<std::string>("qosLibrary").c_str(),
+                _PM->get<std::string>("qosFile").c_str());
         return NULL;
     }
 
     // Only force reliability on throughput/latency topics
     if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0) {
-        if (!PMI.get<bool>("bestEffort")) {
+        if (!_PM->get<bool>("bestEffort")) {
             dr_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         } else {
             dr_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
         }
     }
 
-    if (PMI.get<bool>("noPositiveAcks")
+    if (_PM->get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dr_qos.protocol.disable_positive_acks = true;
     }
@@ -2575,32 +2588,32 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     // only apply durability on Throughput datareader
     if (qos_profile == "ThroughputQos"
             || (qos_profile == "LatencyQos"
-            && PMI.get<bool>("noDirectCommunication")
-            && (PMI.get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
-            || PMI.get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS))) {
+            && _PM->get<bool>("noDirectCommunication")
+            && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+            || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS))) {
         dr_qos.durability.kind =
-                (DDS_DurabilityQosPolicyKind) PMI.get<int>("durability");
+                (DDS_DurabilityQosPolicyKind) _PM->get<int>("durability");
         dr_qos.durability.direct_communication =
-                !PMI.get<bool>("noDirectCommunication");
+                !_PM->get<bool>("noDirectCommunication");
     }
 
-    dr_qos.resource_limits.initial_instances = PMI.get<long>("instances") + 1;
+    dr_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
     if (_instanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
         _instanceMaxCountReader++;
     }
     dr_qos.resource_limits.max_instances = _instanceMaxCountReader;
 
-    if (PMI.get<long>("instances") > 1) {
-        if (PMI.is_set("instanceHashBuckets")) {
+    if (_PM->get<long>("instances") > 1) {
+        if (_PM->is_set("instanceHashBuckets")) {
             dr_qos.resource_limits.instance_hash_buckets =
-                    PMI.get<long>("instanceHashBuckets");
+                    _PM->get<long>("instanceHashBuckets");
         } else {
             dr_qos.resource_limits.instance_hash_buckets =
-                    PMI.get<long>("instances");
+                    _PM->get<long>("instances");
         }
     }
 
-    if (PMI.get<bool>("multicast")
+    if (_PM->get<bool>("multicast")
             && _transport.allowsMulticast()) {
         dr_qos.multicast.value.ensure_length(1, 1);
         dr_qos.multicast.value[0].receive_address = DDS_String_dup(
@@ -2619,16 +2632,16 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         dr_qos.multicast.value[0].transports.length(0);
     }
 
-    if (PMI.get<int>("unbounded") != 0) {
+    if (_PM->get<int>("unbounded") != 0) {
         char buf[10];
-        sprintf(buf, "%d", PMI.get<int>("unbounded"));
+        sprintf(buf, "%d", _PM->get<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
     }
 
     /* Create CFT Topic */
-    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && PMI.is_set("cft")) {
+    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && _PM->is_set("cft")) {
         topic_desc = CreateCft(topic_name, topic);
         if (topic_desc == NULL) {
             printf("Create_contentfilteredtopic error\n");
@@ -2637,7 +2650,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     if (callback != NULL) {
-        if (!PMI.get<bool>("dynamicData")) {
+        if (!_PM->get<bool>("dynamicData")) {
             reader = _subscriber->create_datareader(
                     topic_desc,
                     dr_qos,
@@ -2669,10 +2682,10 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         _reader = reader;
     }
 
-    if (!PMI.get<bool>("dynamicData")) {
-        return new RTISubscriber<T>(reader);
+    if (!_PM->get<bool>("dynamicData")) {
+        return new RTISubscriber<T>(reader, _PM);
     } else {
-        return new RTIDynamicDataSubscriber<T>(reader);
+        return new RTIDynamicDataSubscriber<T>(reader, _PM);
     }
 }
 

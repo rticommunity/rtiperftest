@@ -4,7 +4,6 @@
  */
 
 #include "PerftestTransport.h"
-#include "ParameterManager.h"
 
 /******************************************************************************/
 
@@ -79,9 +78,10 @@ bool assertPropertyToParticipantQos(
 
 bool setAllowInterfacesList(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos &qos)
+        DDS_DomainParticipantQos &qos,
+        ParameterManager *_PM)
 {
-    if (!PMI.get<std::string>("allowInterfaces").empty()) {
+    if (!_PM->get<std::string>("allowInterfaces").empty()) {
 
         if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
             fprintf(stderr,
@@ -103,7 +103,7 @@ bool setAllowInterfacesList(
             if (!addPropertyToParticipantQos(
                     qos,
                     propertyName,
-                    PMI.get<std::string>("allowInterfaces"))) {
+                    _PM->get<std::string>("allowInterfaces"))) {
                 return false;
             }
 
@@ -113,7 +113,7 @@ bool setAllowInterfacesList(
             if (!addPropertyToParticipantQos(
                     qos,
                     propertyName,
-                    PMI.get<std::string>("allowInterfaces"))) {
+                    _PM->get<std::string>("allowInterfaces"))) {
                 return false;
             }
 
@@ -129,7 +129,7 @@ bool setAllowInterfacesList(
             return addPropertyToParticipantQos(
                     qos,
                     propertyName,
-                    PMI.get<std::string>("allowInterfaces"));
+                    _PM->get<std::string>("allowInterfaces"));
         }
     }
 
@@ -138,9 +138,10 @@ bool setAllowInterfacesList(
 
 bool setTransportVerbosity(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos &qos)
+        DDS_DomainParticipantQos &qos,
+        ParameterManager *_PM)
 {
-    if (!PMI.get<std::string>("transportVerbosity").empty()) {
+    if (!_PM->get<std::string>("transportVerbosity").empty()) {
         if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
             fprintf(stderr,
                     "%s Ignoring -transportVerbosity option\n",
@@ -169,41 +170,42 @@ bool setTransportVerbosity(
         return addPropertyToParticipantQos(
                 qos,
                 propertyName,
-                PMI.get<std::string>("transportVerbosity"));
+                _PM->get<std::string>("transportVerbosity"));
     }
     return true;
 }
 
 bool configureSecurityFiles(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos& qos)
+        DDS_DomainParticipantQos& qos,
+        ParameterManager *_PM)
 {
 
-    if (!PMI.get<std::string>("transportCertAuthority").empty()) {
+    if (!_PM->get<std::string>("transportCertAuthority").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".tls.verify.ca_file",
-                PMI.get<std::string>("transportCertAuthority"))) {
+                _PM->get<std::string>("transportCertAuthority"))) {
             return false;
         }
     }
 
-    if (!PMI.get<std::string>("transportCertFile").empty()) {
+    if (!_PM->get<std::string>("transportCertFile").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString
                         + ".tls.identity.certificate_chain_file",
-                PMI.get<std::string>("transportCertFile"))) {
+                _PM->get<std::string>("transportCertFile"))) {
             return false;
         }
     }
 
-    if (!PMI.get<std::string>("transportPrivateKey").empty()) {
+    if (!_PM->get<std::string>("transportPrivateKey").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString
                         + ".tls.identity.private_key_file",
-                PMI.get<std::string>("transportPrivateKey"))) {
+                _PM->get<std::string>("transportPrivateKey"))) {
             return false;
         }
     }
@@ -213,7 +215,8 @@ bool configureSecurityFiles(
 
 bool configureTcpTransport(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos& qos)
+        DDS_DomainParticipantQos& qos,
+        ParameterManager *_PM)
 {
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
 
@@ -224,16 +227,16 @@ bool configureTcpTransport(
         return false;
     }
 
-    if (!PMI.get<std::string>("transportServerBindPort").empty()) {
+    if (!_PM->get<std::string>("transportServerBindPort").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".server_bind_port",
-                PMI.get<std::string>("transportServerBindPort"))) {
+                _PM->get<std::string>("transportServerBindPort"))) {
             return false;
         }
     }
 
-    if (PMI.get<bool>("transportWan")) {
+    if (_PM->get<bool>("transportWan")) {
         if (!assertPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString
@@ -242,13 +245,13 @@ bool configureTcpTransport(
             return false;
         }
 
-        if (PMI.get<std::string>("transportServerBindPort") != "0") {
-            if (!PMI.get<std::string>("transportPublicAddress").empty()) {
+        if (_PM->get<std::string>("transportServerBindPort") != "0") {
+            if (!_PM->get<std::string>("transportPublicAddress").empty()) {
                 if (!addPropertyToParticipantQos(
                         qos,
                         transport.transportConfig.prefixString
                                 + ".public_address",
-                        PMI.get<std::string>("transportPublicAddress"))) {
+                        _PM->get<std::string>("transportPublicAddress"))) {
                     return false;
                 }
             } else {
@@ -262,7 +265,7 @@ bool configureTcpTransport(
     }
 
     if (transport.transportConfig.kind == TRANSPORT_TLSv4) {
-        if (PMI.get<bool>("transportWan")) {
+        if (_PM->get<bool>("transportWan")) {
             if (!assertPropertyToParticipantQos(
                     qos,
                     transport.transportConfig.prefixString
@@ -280,7 +283,7 @@ bool configureTcpTransport(
             }
         }
 
-        if (!configureSecurityFiles(transport, qos)) {
+        if (!configureSecurityFiles(transport, qos, _PM)) {
             return false;
         }
     }
@@ -290,7 +293,8 @@ bool configureTcpTransport(
 
 bool configureDtlsTransport(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos& qos)
+        DDS_DomainParticipantQos& qos,
+        ParameterManager *_PM)
 {
 
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
@@ -316,7 +320,7 @@ bool configureDtlsTransport(
         return false;
     }
 
-    if (!configureSecurityFiles(transport, qos)) {
+    if (!configureSecurityFiles(transport, qos, _PM)) {
         return false;
     }
 
@@ -325,7 +329,8 @@ bool configureDtlsTransport(
 
 bool configureWanTransport(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos& qos)
+        DDS_DomainParticipantQos& qos,
+        ParameterManager *_PM)
 {
 
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
@@ -351,11 +356,11 @@ bool configureWanTransport(
         return false;
     }
 
-    if (!PMI.get<std::string>("transportWanServerAddress").empty()) {
+    if (!_PM->get<std::string>("transportWanServerAddress").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".server",
-                PMI.get<std::string>("transportWanServerAddress"))) {
+                _PM->get<std::string>("transportWanServerAddress"))) {
             return false;
         }
     } else {
@@ -366,21 +371,21 @@ bool configureWanTransport(
         return false;
     }
 
-    if (!PMI.get<std::string>("transportWanServerPort").empty()) {
+    if (!_PM->get<std::string>("transportWanServerPort").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".server_port",
-                PMI.get<std::string>("transportWanServerPort"))) {
+                _PM->get<std::string>("transportWanServerPort"))) {
             return false;
         }
     }
 
-    if (!PMI.get<std::string>("transportWanId").empty()) {
+    if (!_PM->get<std::string>("transportWanId").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString
                         + ".transport_instance_id",
-                PMI.get<std::string>("transportWanId"))) {
+                _PM->get<std::string>("transportWanId"))) {
             return false;
         }
     } else {
@@ -388,7 +393,7 @@ bool configureWanTransport(
         return false;
     }
 
-    if (PMI.get<bool>("transportSecureWan")) {
+    if (_PM->get<bool>("transportSecureWan")) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".enable_security",
@@ -396,7 +401,7 @@ bool configureWanTransport(
             return false;
         }
 
-        if (!configureSecurityFiles(transport, qos)) {
+        if (!configureSecurityFiles(transport, qos, _PM)) {
             return false;
         }
     }
@@ -406,11 +411,12 @@ bool configureWanTransport(
 
 bool configureShmemTransport(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos& qos)
+        DDS_DomainParticipantQos& qos,
+        ParameterManager *_PM)
 {
     // Number of messages that can be buffered in the receive queue.
     int received_message_count_max = 1024 * 1024 * 2
-            / (int) PMI.get<unsigned long long>("dataLen");
+            / (int) _PM->get<unsigned long long>("dataLen");
     if (received_message_count_max < 1) {
         received_message_count_max = 1;
     }
@@ -428,7 +434,8 @@ bool configureShmemTransport(
 
 bool configureTransport(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos &qos)
+        DDS_DomainParticipantQos &qos,
+        ParameterManager *_PM)
 {
 
     /*
@@ -506,7 +513,7 @@ bool configureTransport(
 
         case TRANSPORT_SHMEM:
             qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_SHMEM;
-            if (!configureShmemTransport(transport, qos)) {
+            if (!configureShmemTransport(transport, qos, _PM)) {
                 fprintf(stderr,
                         "%s Failed to configure SHMEM plugin\n",
                         classLoggingString.c_str());
@@ -515,7 +522,7 @@ bool configureTransport(
             break;
 
         case TRANSPORT_TCPv4:
-            if (!configureTcpTransport(transport, qos)) {
+            if (!configureTcpTransport(transport, qos, _PM)) {
                 fprintf(stderr,
                         "%s Failed to configure TCP plugin\n",
                         classLoggingString.c_str());
@@ -524,7 +531,7 @@ bool configureTransport(
             break;
 
         case TRANSPORT_TLSv4:
-            if (!configureTcpTransport(transport, qos)) {
+            if (!configureTcpTransport(transport, qos, _PM)) {
                 fprintf(stderr,
                         "%s Failed to configure TCP + TLS plugin\n",
                         classLoggingString.c_str());
@@ -533,7 +540,7 @@ bool configureTransport(
             break;
 
         case TRANSPORT_DTLSv4:
-            if (!configureDtlsTransport(transport, qos)) {
+            if (!configureDtlsTransport(transport, qos, _PM)) {
                 fprintf(stderr,
                         "%s Failed to configure DTLS plugin\n",
                         classLoggingString.c_str());
@@ -542,7 +549,7 @@ bool configureTransport(
             break;
 
         case TRANSPORT_WANv4:
-            if (!configureWanTransport(transport, qos)) {
+            if (!configureWanTransport(transport, qos, _PM)) {
                 fprintf(stderr,
                         "%s Failed to configure WAN plugin\n",
                         classLoggingString.c_str());
@@ -557,7 +564,7 @@ bool configureTransport(
              */
             if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_SHMEM)
                     != 0) {
-                if (!configureShmemTransport(transport, qos)) {
+                if (!configureShmemTransport(transport, qos, _PM)) {
                     fprintf(stderr,
                             "%s Failed to configure SHMEM plugin\n",
                             classLoggingString.c_str());
@@ -574,15 +581,15 @@ bool configureTransport(
      */
     if (transport.transportConfig.kind != TRANSPORT_NOT_SET
             && transport.transportConfig.kind != TRANSPORT_SHMEM) {
-        if (!setAllowInterfacesList(transport, qos)) {
+        if (!setAllowInterfacesList(transport, qos, _PM)) {
             return false;
         }
     } else {
         // We are not using the allow interface string, so it is clean
-        PMI.set<std::string>("allowInterfaces", std::string(""));
+        _PM->set<std::string>("allowInterfaces", std::string(""));
     }
 
-    if (!setTransportVerbosity(transport, qos)) {
+    if (!setTransportVerbosity(transport, qos, _PM)) {
         return false;
     }
 
@@ -601,6 +608,11 @@ PerftestTransport::PerftestTransport()
 
 PerftestTransport::~PerftestTransport()
 {
+}
+
+void PerftestTransport::initialize(ParameterManager *PM)
+{
+    _PM = PM;
 }
 
 /******************************************************************************/
@@ -673,24 +685,24 @@ bool PerftestTransport::setTransport(std::string transportString)
 
 void PerftestTransport::populateSecurityFiles() {
 
-    if (PMI.get<std::string>("transportCertFile").empty()) {
-        if (PMI.get<bool>("pub")) {
-            PMI.set("transportCertFile", TRANSPORT_CERTIFICATE_FILE_PUB);
+    if (_PM->get<std::string>("transportCertFile").empty()) {
+        if (_PM->get<bool>("pub")) {
+            _PM->set("transportCertFile", TRANSPORT_CERTIFICATE_FILE_PUB);
         } else {
-            PMI.set("transportCertFile", TRANSPORT_CERTIFICATE_FILE_SUB);
+            _PM->set("transportCertFile", TRANSPORT_CERTIFICATE_FILE_SUB);
         }
     }
 
-    if (PMI.get<std::string>("transportPrivateKey").empty()) {
-        if (PMI.get<bool>("pub")) {
-            PMI.set("transportPrivateKey", TRANSPORT_PRIVATEKEY_FILE_PUB);
+    if (_PM->get<std::string>("transportPrivateKey").empty()) {
+        if (_PM->get<bool>("pub")) {
+            _PM->set("transportPrivateKey", TRANSPORT_PRIVATEKEY_FILE_PUB);
         } else {
-            PMI.set("transportPrivateKey", TRANSPORT_PRIVATEKEY_FILE_SUB);
+            _PM->set("transportPrivateKey", TRANSPORT_PRIVATEKEY_FILE_SUB);
         }
     }
 
-    if (PMI.get<std::string>("transportCertAuthority").empty()) {
-        PMI.set("transportCertAuthority", TRANSPORT_CERTAUTHORITY_FILE);
+    if (_PM->get<std::string>("transportCertAuthority").empty()) {
+        _PM->set("transportCertAuthority", TRANSPORT_CERTAUTHORITY_FILE);
     }
 }
 
@@ -707,16 +719,16 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     }
     stringStream << "\n";
 
-    if (!PMI.get<std::string>("allowInterfaces").empty()) {
+    if (!_PM->get<std::string>("allowInterfaces").empty()) {
         stringStream << "\tNic: "
-                     << PMI.get<std::string>("allowInterfaces")
+                     << _PM->get<std::string>("allowInterfaces")
                      << "\n";
     }
 
     stringStream << "\tUse Multicast: "
-                 << ((allowsMulticast() && PMI.get<bool>("multicast"))
+                 << ((allowsMulticast() && _PM->get<bool>("multicast"))
                         ? "True" : "False");
-    if (!allowsMulticast() && PMI.get<bool>("multicast")) {
+    if (!allowsMulticast() && _PM->get<bool>("multicast")) {
         stringStream << " (Multicast is not supported for "
                      << transportConfig.nameString << ")";
     }
@@ -725,50 +737,50 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     if (transportConfig.kind == TRANSPORT_TCPv4
             || transportConfig.kind == TRANSPORT_TLSv4) {
         stringStream << "\tTCP Server Bind Port: "
-                     << PMI.get<std::string>("transportServerBindPort")
+                     << _PM->get<std::string>("transportServerBindPort")
                      << "\n";
 
         stringStream << "\tTCP LAN/WAN mode: "
-                     << (PMI.get<bool>("transportWan") ? "WAN\n" : "LAN\n");
-        if (PMI.get<bool>("transportWan")) {
+                     << (_PM->get<bool>("transportWan") ? "WAN\n" : "LAN\n");
+        if (_PM->get<bool>("transportWan")) {
             stringStream << "\tTCP Public Address: "
-                         << PMI.get<std::string>("transportPublicAddress")
+                         << _PM->get<std::string>("transportPublicAddress")
                          << "\n";
         }
     }
 
     if (transportConfig.kind == TRANSPORT_WANv4) {
         stringStream << "\tWAN Server Address: "
-                     << PMI.get<std::string>("transportWanServerAddress")
+                     << _PM->get<std::string>("transportWanServerAddress")
                      << ":"
-                     << PMI.get<std::string>("transportWanServerPort")
+                     << _PM->get<std::string>("transportWanServerPort")
                      << "\n";
         stringStream << "\tWAN Id: "
-                     << PMI.get<std::string>("transportWanId")
+                     << _PM->get<std::string>("transportWanId")
                      << "\n";
         stringStream << "\tWAN Secure: "
-                     << PMI.get<bool>("transportSecureWan")
+                     << _PM->get<bool>("transportSecureWan")
                      << "\n";
     }
 
     if (transportConfig.kind == TRANSPORT_TLSv4
             || transportConfig.kind == TRANSPORT_DTLSv4
             || (transportConfig.kind == TRANSPORT_WANv4
-            && PMI.get<bool>("transportSecureWan"))) {
+            && _PM->get<bool>("transportSecureWan"))) {
         stringStream << "\tCertificate authority file: "
-                     << PMI.get<std::string>("transportCertAuthority")
+                     << _PM->get<std::string>("transportCertAuthority")
                      << "\n";
         stringStream << "\tCertificate file: "
-                     << PMI.get<std::string>("transportCertFile")
+                     << _PM->get<std::string>("transportCertFile")
                      << "\n";
         stringStream << "\tPrivate key file: "
-                     << PMI.get<std::string>("transportPrivateKey")
+                     << _PM->get<std::string>("transportPrivateKey")
                      << "\n";
     }
 
-    if (!PMI.get<std::string>("transportVerbosity").empty()) {
+    if (!_PM->get<std::string>("transportVerbosity").empty()) {
         stringStream << "\tVerbosity: "
-                     << PMI.get<std::string>("transportVerbosity")
+                     << _PM->get<std::string>("transportVerbosity")
                      << "\n";
     }
 
@@ -782,7 +794,7 @@ bool PerftestTransport::validate_input()
 {
     // TODO: (Alfonso) Manage parameter -multicastAddr
     // } else if (IS_OPTION(argv[i], "-multicastAddr")) {
-    //     PMI.set("multicast", true);
+    //     _PM->set("multicast", true);
     //     if ((i == (argc - 1)) || *argv[++i] == '-') {
     //         fprintf(stderr,
     //                 "%s Missing <address> after "
@@ -800,12 +812,12 @@ bool PerftestTransport::validate_input()
      * "-allowInterfaces" and "-nic" are the same parameter,
      * so now use only one: "allowInterfaces"
      */
-    if (PMI.get<std::string>("allowInterfaces").empty()) {
-        PMI.set<std::string>("allowInterfaces", PMI.get<std::string>("nic"));
+    if (_PM->get<std::string>("allowInterfaces").empty()) {
+        _PM->set<std::string>("allowInterfaces", _PM->get<std::string>("nic"));
     }
 
     // Manage parameter -transport
-    if (!setTransport(PMI.get<std::string>("transport"))) {
+    if (!setTransport(_PM->get<std::string>("transport"))) {
         fprintf(stderr,
                 "%s Error Setting the transport\n",
                 classLoggingString.c_str());
