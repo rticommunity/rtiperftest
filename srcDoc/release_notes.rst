@@ -70,9 +70,9 @@ and PDF documentation from the rst files in srcDoc.
 RTI Perftest thread priorities can be configured via command-line parameter (#65)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A new parameter, `-threadPriorities`, has been added to *RTI Perftest* to allow
-the users to set the priorities on the different threads created by RTI Connext
-DDS and by the application.
+A new parameter, `-threadPriorities`, has been added to *RTI Perftest* only for
+C++ and C++03 implementations to allow the users to set the priorities on the
+different threads created by RTI Connext DDS and by the application.
 
 This parameter accepts 3 numeric values or 3 different default values,
 *h* (high), *n* (normal) and *l* (lower), which will be used as follows:
@@ -97,7 +97,6 @@ To see what values to be used for the threads See
 
 - Table 6.7 Thread-Priority Definitions for Linux Platforms
 - Table 8.6 Thread-Priority Definitions for OS X Platforms
-- Table 11.7 Thread-Priority Definitions for VxWorks Platforms
 - Table 12.7 Thread-Priority Definitions for Windows Platforms
 
 What's Fixed in Master

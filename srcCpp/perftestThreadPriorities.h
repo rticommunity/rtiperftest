@@ -9,7 +9,7 @@
  */
 #ifdef RTI_WIN32
 #include <windows.h>
-#else
+#elif RTI_UNIX
 #include <sched.h>
 #endif
 #include <map>
