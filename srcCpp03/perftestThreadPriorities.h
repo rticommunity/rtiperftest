@@ -7,11 +7,15 @@
  * This class is used to keep the values of the priorities in the case where
  * the user provide them.
  */
-#include <map>
+#ifdef RTI_WIN32
+#include <windows.h>
+#else
 #include <sched.h>
+#endif
+#include <map>
 
 class PerftestThreadPriorities {
-  public:
+public:
     int main;
     int receive;
     int dbAndEvent;

@@ -210,7 +210,7 @@ bool perftest_cpp::check_priority_range(int value)
         fprintf(
                 stderr,
                 "The input priority (%d) on -threadPriorities are outside"
-                " of rage for this platform\n",
+                " of range for this platform\n",
                 value);
         return false;
     }
