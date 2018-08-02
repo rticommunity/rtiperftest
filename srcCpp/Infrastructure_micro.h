@@ -159,42 +159,57 @@ class NDDSUtility {
     #endif
     };
 
+    /* Get the time cost to call getTimeUsec a number of times equal to iteration */
+    static unsigned long long get_time_overhead(unsigned int iterations) {
+
+        PerftestClock clock = PerftestClock::getInstance();
+        unsigned long long init = 0, fin = 0, overhead = 0;
+
+        init = clock.getTimeUsec();
+        for (int i = 0; i < iterations; i++) {
+            clock.getTimeUsec();
+        }
+        fin = clock.getTimeUsec();
+
+        return fin - init;
+    }
+
     /*e \dref_Utility_spin */
     static void spin(DDS_UnsignedLongLong spinCount){
         NDDS_Utility_spin(spinCount);
     };
 
 
-    static DDS_UnsignedLongLong get_spin_per_microsecond() {
-
+    static DDS_UnsignedLongLong
+    get_spin_per_microsecond(unsigned int precision = 100)
+    {
         /* Same default values used by DDS */
         unsigned int spinCount = 20000;
-        unsigned int rti_clock_calculation_loop_count_max = 100;
 
-        unsigned long long init, fin, usec, spinsPerUsec;
+        unsigned long long init = 0, fin = 0, usec = 0;
+        unsigned long long iterations = 0;
+        unsigned long long overhead = 0;
 
         PerftestClock clock = PerftestClock::getInstance();
-        init = clock.getTimeUsec();
 
-        for (int i = 0; i < rti_clock_calculation_loop_count_max; ++i) {
+        while((int)(usec - overhead) < (int)precision){
+
+            init = clock.getTimeUsec();
+
             NDDS_Utility_spin(spinCount); //Same numbers of spin iters as DDS
-        }
-        fin = clock.getTimeUsec();
 
-        usec = fin - init;
+            fin = clock.getTimeUsec();
 
-        spinsPerUsec = 1.0 / ((float)usec
-                / (float)(rti_clock_calculation_loop_count_max * spinCount));
+            usec += fin - init;
 
-        /*
-         * The value may be 0 due to lack of resolution or non
-         * monotonic clocks.
-         */
-        if (spinsPerUsec < 1) {
-            spinsPerUsec = 1; // To avoid error
+            iterations++;
+            overhead = get_time_overhead(iterations);
         }
 
-        return spinsPerUsec;
+        /* Measure the clock.getTimeUsec() overhead */
+        usec -= overhead;
+
+        return (float)(iterations * spinCount) / usec;
     }
 
 };
