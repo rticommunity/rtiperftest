@@ -85,7 +85,7 @@ void ParameterManager::initialize()
             "over when publishing. Default: 1");
     instances->set_type(T_NUMERIC_LD);
     instances->set_extra_argument(YES);
-    instances->set_range(1, LONG_MAX);
+    instances->set_range(1, std::numeric_limits<long>::max());
     instances->set_group(GENERAL);
     create("instances", instances);
 
@@ -134,7 +134,7 @@ void ParameterManager::initialize()
     keepDurationUsec->set_type(T_NUMERIC_LLU);
     keepDurationUsec->set_extra_argument(YES);
     keepDurationUsec->set_group(GENERAL);
-    keepDurationUsec->set_range(1, ULLONG_MAX);
+    keepDurationUsec->set_range(1, std::numeric_limits<unsigned long long>::max());
     create("keepDurationUsec", keepDurationUsec);
 
     Parameter<bool> *noPrintIntervals = new Parameter<bool>(false);
@@ -197,7 +197,7 @@ void ParameterManager::initialize()
     waitsetDelayUsec->set_type(T_NUMERIC_LLU);
     waitsetDelayUsec->set_extra_argument(YES);
     waitsetDelayUsec->set_group(GENERAL);
-    waitsetDelayUsec->set_range(0, UINT_MAX);
+    waitsetDelayUsec->set_range(0, std::numeric_limits<unsigned int>::max());
     create("waitsetDelayUsec", waitsetDelayUsec);
 
     Parameter<long> *waitsetEventCount = new Parameter<long>(5);
@@ -210,7 +210,7 @@ void ParameterManager::initialize()
     waitsetEventCount->set_type(T_NUMERIC_LD);
     waitsetEventCount->set_extra_argument(YES);
     waitsetEventCount->set_group(GENERAL);
-    waitsetEventCount->set_range(1, LONG_MAX);
+    waitsetEventCount->set_range(1, std::numeric_limits<long>::max());
     create("waitsetEventCount", waitsetEventCount);
 
     Parameter<bool> *asynchronous = new Parameter<bool>(false);
@@ -323,7 +323,7 @@ void ParameterManager::initialize()
             "1 if -latencyTest is specified");
     latencyCount->set_type(T_NUMERIC_LLU);
     latencyCount->set_extra_argument(YES);
-    latencyCount->set_range(1, ULLONG_MAX);
+    latencyCount->set_range(1, std::numeric_limits<unsigned long long>::max());
     latencyCount->set_group(PUB);
     create("latencyCount", latencyCount);
 
@@ -337,7 +337,7 @@ void ParameterManager::initialize()
             "Default 0 (don't set execution time)");
     executionTime->set_type(T_NUMERIC_LLU);
     executionTime->set_extra_argument(YES);
-    executionTime->set_range(1, ULLONG_MAX);
+    executionTime->set_range(1, std::numeric_limits<unsigned long long>::max());
     executionTime->set_group(PUB);
     create("executionTime", executionTime);
 
@@ -360,7 +360,7 @@ void ParameterManager::initialize()
             "for Latency tests. See '-executionTime'");
     numIter->set_type(T_NUMERIC_LLU);
     numIter->set_extra_argument(YES);
-    numIter->set_range(1, ULLONG_MAX);
+    numIter->set_range(1, std::numeric_limits<unsigned long long>::max());
     numIter->set_group(PUB);
     create("numIter", numIter);
 
@@ -370,7 +370,7 @@ void ParameterManager::initialize()
             "Number of subscribers running in test.\nDefault: 1");
     numSubscribers->set_type(T_NUMERIC_D);
     numSubscribers->set_extra_argument(YES);
-    numSubscribers->set_range(1, INT_MAX);
+    numSubscribers->set_range(1, std::numeric_limits<int>::max());
     numSubscribers->set_group(PUB);
     create("numSubscribers", numSubscribers);
 
@@ -381,7 +381,7 @@ void ParameterManager::initialize()
             "Only publisher 0 sends\nlatency pings. Default: 0");
     pidMultiPubTest->set_type(T_NUMERIC_D);
     pidMultiPubTest->set_extra_argument(YES);
-    pidMultiPubTest->set_range(0, INT_MAX);
+    pidMultiPubTest->set_range(0, std::numeric_limits<int>::max());
     pidMultiPubTest->set_group(PUB);
     create("pidMultiPubTest", pidMultiPubTest);
 
@@ -440,7 +440,7 @@ void ParameterManager::initialize()
     sendQueueSize->set_type(T_NUMERIC_D);
     sendQueueSize->set_extra_argument(YES);
     sendQueueSize->set_group(PUB);
-    sendQueueSize->set_range(1, INT_MAX);
+    sendQueueSize->set_range(1, std::numeric_limits<int>::max());
     create("sendQueueSize", sendQueueSize);
 
     Parameter<unsigned long long> *sleep = new Parameter<unsigned long long>(0);
@@ -449,7 +449,7 @@ void ParameterManager::initialize()
             "Time to sleep between each send. Default: 0");
     sleep->set_type(T_NUMERIC_LLU);
     sleep->set_extra_argument(YES);
-    sleep->set_range(1, ULLONG_MAX);
+    sleep->set_range(1, std::numeric_limits<unsigned long long>::max());
     sleep->set_group(PUB);
     create("sleep", sleep);
 
@@ -458,7 +458,7 @@ void ParameterManager::initialize()
     spin->set_internal(true);
     spin->set_type(T_NUMERIC_LLU);
     spin->set_extra_argument(YES);
-    spin->set_range(1, ULLONG_MAX);
+    spin->set_range(1, std::numeric_limits<unsigned long long>::max());
     spin->set_group(PUB);
     create("spin", spin);
 
@@ -481,7 +481,7 @@ void ParameterManager::initialize()
             "of instances. Default: 'Round-Robin' schedule");
     writeInstance->set_type(T_NUMERIC_LD);
     writeInstance->set_extra_argument(YES);
-    writeInstance->set_range(0, LONG_MAX);
+    writeInstance->set_range(0, std::numeric_limits<long>::max());
     writeInstance->set_group(PUB);
     create("writeInstance", writeInstance);
 
@@ -502,7 +502,7 @@ void ParameterManager::initialize()
             "multi-subscriber test. Default: 0");
     sidMultiSubTest->set_type(T_NUMERIC_D);
     sidMultiSubTest->set_extra_argument(YES);
-    sidMultiSubTest->set_range(0, INT_MAX);
+    sidMultiSubTest->set_range(0, std::numeric_limits<int>::max());
     sidMultiSubTest->set_group(SUB);
     create("sidMultiSubTest", sidMultiSubTest);
 
@@ -512,7 +512,7 @@ void ParameterManager::initialize()
             "Number of publishers running in test.\nDefault: 1");
     numPublishers->set_type(T_NUMERIC_D);
     numPublishers->set_extra_argument(YES);
-    numPublishers->set_range(1, ULLONG_MAX);
+    numPublishers->set_range(1, std::numeric_limits<int>::max());
     numPublishers->set_group(SUB);
     create("numPublishers", numPublishers);
 

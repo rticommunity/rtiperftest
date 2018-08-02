@@ -9,7 +9,7 @@
 #define __PARAMETER_H__
 
 #include <stdio.h>
-#include <climits>
+#include <limits>       // std::numeric_limits
 #include <string>
 #include <utility>      // std::pair, std::make_pair
 #include <algorithm>    // std::sort

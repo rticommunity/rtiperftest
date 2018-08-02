@@ -50,7 +50,7 @@ ParameterBase::ParameterBase()
     _isSet = false;
     _type = T_NULL;
     _extraArgument = NO;
-    _numericRange= std::make_pair(0,ULLONG_MAX);
+    _numericRange= std::make_pair(0, std::numeric_limits<unsigned long long>::max());
     _group = GENERAL;
 }
 
@@ -61,7 +61,7 @@ ParameterBase::~ParameterBase()
     _isSet = false;
     _type = T_NULL;
     _extraArgument = NO;
-    _numericRange= std::make_pair(0,ULLONG_MAX);
+    _numericRange= std::make_pair(0, std::numeric_limits<unsigned long long>::max());
     _validStrValues.clear();
 }
 
