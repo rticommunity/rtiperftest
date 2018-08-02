@@ -36,14 +36,14 @@ enum Type {
 // This enum specifies the way how to parser an argument for a ParameterVector.
 enum ParseMethod {
     NO_SPLIT,          // If the value is not splited into the vector
-    SPLIT             // If the value is splited into the vector
+    SPLIT              // If the value is splited into the vector
 };
 
 // This enum specifies if a parameter will be followed by one extra argument.
 enum ExtraArgument {
-    NO,               // There is not extra argument
-    POSSIBLE,         // It is possible to have one extra argument
-    YES               // There is an extra argument
+    NO,                // There is not extra argument
+    POSSIBLE,          // It is possible to have one extra argument
+    YES                // There is an extra argument
 };
 
 // This enum specifies the group of a parameter. It is used to sort the help message.
@@ -109,7 +109,9 @@ class ParameterBase {
         std::string print_command_line_parameter();
 
         // Set members
-        void set_command_line_argument(const std::string option, const std::string arg);
+        void set_command_line_argument(
+                const std::string option,
+                const std::string arg);
         void set_description(const std::string var);
         void set_isSet(const bool var);
         void set_type(const Type var);
@@ -168,7 +170,7 @@ class ParameterVector : public ParameterBase {
         ParseMethod _parseMethod;
 
     public:
-        ParameterVector() : _parseMethod(NO_SPLIT)  {}
+        ParameterVector() : _parseMethod(NO_SPLIT) {}
 
         ParameterVector(T value) : _parseMethod(NO_SPLIT)
         {

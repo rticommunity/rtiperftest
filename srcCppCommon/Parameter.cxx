@@ -69,7 +69,8 @@ ParameterBase::~ParameterBase()
 bool ParameterBase::validate_numeric_range(unsigned long long var)
 {
     if (_numericRange.first > var || var > _numericRange.second) {
-        fprintf(stderr, "In the argument '%s', '%s' should be in the range [%llu, %llu]\n",
+        fprintf(stderr,
+                "In the argument '%s', '%s' should be in the range [%llu,%llu]\n",
                 _commandLineArgument.get_option().c_str(),
                 _commandLineArgument.get_arg().c_str(),
                 _numericRange.first,
@@ -83,7 +84,8 @@ bool ParameterBase::validate_numeric_range(unsigned long long var)
 bool ParameterBase::validate_str_range(std::string var)
 {
     if (!_validStrValues.empty()) {
-        if (_validStrValues.end() == std::find(_validStrValues.begin(), _validStrValues.end(), var)) {
+        if (_validStrValues.end() ==
+                std::find(_validStrValues.begin(), _validStrValues.end(), var)) {
             fprintf(stderr, "In the argument '%s', incorrect '%s':  %s\n",
                     _commandLineArgument.get_option().c_str(),
                     _commandLineArgument.get_arg().c_str(),
@@ -95,7 +97,9 @@ bool ParameterBase::validate_str_range(std::string var)
 }
 
 // Set members
-void ParameterBase::set_command_line_argument(const std::string option, const std::string arg)
+void ParameterBase::set_command_line_argument(
+        const std::string option,
+        const std::string arg)
 {
     _commandLineArgument.set(option, arg);
 }

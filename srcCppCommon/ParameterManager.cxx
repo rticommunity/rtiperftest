@@ -1084,9 +1084,8 @@ std::string ParameterManager::display_help()
                 break;
         }
     }
-
-    oss << "/**********************************************************************************************/\n"
-        << "Usage:\t perftest_cpp [options]\n"
+    oss << std::string(100, '*') << std::endl;
+    oss << "Usage:\t perftest_cpp [options]\n"
         << "Where [options] are:\n";
     output[GENERAL] += "\t-help                           - "
             "Print this usage message and exit\n";
@@ -1101,7 +1100,9 @@ std::string ParameterManager::display_help()
     for (itOutput = output.begin(); itOutput != output.end(); itOutput++) {
         oss << itOutput->second;
     }
-    oss << "/**********************************************************************************************/\n";
+    oss << std::string(100, '*') << std::endl;
+
+
     return oss.str();
 }
 
@@ -1185,10 +1186,10 @@ std::string ParameterManager::get_center_header_help_line(std::string name)
     line << "\n\n\t"
          << separatorBar
          << " "
-        << name
-        << " "
-        << separatorBar
-        << "\n\n";
+         << name
+         << " "
+         << separatorBar
+         << "\n\n";
     if (line.str().length() < maxWithLine) {
         //If name is odd, then add one more '='
         line << '=';
