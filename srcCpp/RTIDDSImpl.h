@@ -25,11 +25,11 @@
 /* Class for the DDS_DynamicDataMemberId of the type of RTI Perftest*/
 class DynamicDataMembersId
 {
-  private:
+private:
     std::map<std::string, int> membersId;
     DynamicDataMembersId();
 
-  public:
+public:
     ~DynamicDataMembersId();
     static DynamicDataMembersId &GetInstance();
     int at(std::string key);
@@ -38,7 +38,7 @@ class DynamicDataMembersId
 template <typename T>
 class RTIDDSImpl : public IMessaging
 {
-  public:
+public:
 
     RTIDDSImpl() :
         _transport(),
@@ -54,6 +54,11 @@ class RTIDDSImpl : public IMessaging
         _typename = T::TypeSupport::get_type_name();
         _pongSemaphore = NULL;
         _PM = NULL;
+        _qoSProfileNameMap[LATENCY_TOPIC_NAME] = std::string("LatencyQos");
+        _qoSProfileNameMap[ANNOUNCEMENT_TOPIC_NAME]
+                = std::string("AnnouncementQos");
+        _qoSProfileNameMap[THROUGHPUT_TOPIC_NAME]
+                = std::string("ThroughputQos");
     }
 
     ~RTIDDSImpl()
@@ -81,8 +86,9 @@ class RTIDDSImpl : public IMessaging
 
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
 
+    const std::string get_qos_profile_name(const char *topicName);
 
-  private:
+private:
 
     // Specific functions to configure the Security plugin
   #ifdef RTI_SECURE_PERFTEST
@@ -103,6 +109,7 @@ class RTIDDSImpl : public IMessaging
     RTIOsapiSemaphore           *_pongSemaphore;
     RTIDDSLoggerDevice           _loggerDevice;
     ParameterManager            *_PM;
+    std::map<std::string, std::string> _qoSProfileNameMap;
 
   #ifdef RTI_SECURE_PERFTEST
     static const std::string SECURE_PRIVATEKEY_FILE_PUB;
@@ -116,7 +123,6 @@ class RTIDDSImpl : public IMessaging
   #endif
 
 };
-
 
 #endif // __RTIDDSIMPL_H__
 

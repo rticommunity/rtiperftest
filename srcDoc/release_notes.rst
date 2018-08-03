@@ -80,6 +80,18 @@ value for the `<sec>` parameter without any notification to the user.
 This behavior has been fixed and unified for all the API implementations,
 showing now an error when finding a wrong value for the `<sec>` option.
 
+Remove duplicate code on RTIDDSImpl when the topic name is checked (#99)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Each time a reader o writer was create, the topic name was compare with all the
+default topic names (throughput, latency, announcement), with the propose of
+get the proper QoS Profile Name. This turn out to a duplicate code on
+`createWriter` and `createReader` functions.
+
+This behavior was fixed creating a new function `getQoSProfileName` that access
+to a new map `_qoSProfileNameMap` witch contain the tree topics names and his
+corresponding profiles names.
+
 Release Notes 2.4
 -----------------
 
