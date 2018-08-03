@@ -2688,18 +2688,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0) {
-        qos_profile = "ThroughputQos";
-    } else if (strcmp(topic_name, LATENCY_TOPIC_NAME) == 0) {
-        qos_profile = "LatencyQos";
-    } else if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) == 0) {
-        qos_profile = "AnnouncementQos";
-    } else {
-        fprintf(stderr,
-                "topic name must either be %s or %s or %s.\n",
-                THROUGHPUT_TOPIC_NAME,
-                LATENCY_TOPIC_NAME,
-                ANNOUNCEMENT_TOPIC_NAME);
+    qos_profile = get_qos_profile_name(topic_name);
+    if (qos_profile.empty()) {
+        fprintf(stderr, "Problem getting qos profile.\n");
         return NULL;
     }
 
@@ -2977,18 +2968,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
     topic_desc = topic;
 
-    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0) {
-        qos_profile = "ThroughputQos";
-    } else if (strcmp(topic_name, LATENCY_TOPIC_NAME) == 0) {
-        qos_profile = "LatencyQos";
-    } else if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) == 0) {
-        qos_profile = "AnnouncementQos";
-    } else {
-        fprintf(stderr,
-                "topic name must either be %s or %s or %s.\n",
-                THROUGHPUT_TOPIC_NAME,
-                LATENCY_TOPIC_NAME,
-                ANNOUNCEMENT_TOPIC_NAME);
+    qos_profile = get_qos_profile_name(topic_name);
+    if (qos_profile.empty()) {
+        fprintf(stderr, "Problem getting qos profile.\n");
         return NULL;
     }
 
@@ -3119,6 +3101,21 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     } else {
         return new RTIDynamicDataSubscriber<T>(reader);
     }
+}
+
+template <typename T>
+const std::string RTIDDSImpl<T>::get_qos_profile_name(const char *topicName)
+{
+    if (_qoSProfileNameMap[std::string(topicName)].empty()) {
+        fprintf(stderr,
+                "topic name must either be %s or %s or %s.\n",
+                THROUGHPUT_TOPIC_NAME,
+                LATENCY_TOPIC_NAME,
+                ANNOUNCEMENT_TOPIC_NAME);
+    }
+
+    /* If the topic name dont match any key return a empty string */
+    return _qoSProfileNameMap[std::string(topicName)];
 }
 
 #ifdef RTI_WIN32
