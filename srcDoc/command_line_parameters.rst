@@ -302,6 +302,9 @@ Test Parameters for Publishing and Subscribing Applications
 
 -  ``-threadPriorities X:Y:Z``
 
+    This Command Line parameter is supported only for the C++ and C++03 API
+    Implementations.
+    
     Set the priorities for the application Threads:
         X -- For the Main Thread, which will be the one sending the data. Also
              for the Asynchronous thread if that one is used.
@@ -312,6 +315,13 @@ Test Parameters for Publishing and Subscribing Applications
 
     A three default values: h (high), n (normal) and l (lower) can be use
     instead of numbers.
+
+    To see what values to be used for the threads See
+    *RTI Connext DDS Core Libraries Platform Notes Version 5.3.1*
+
+    - Table 6.7 Thread-Priority Definitions for Linux Platforms
+    - Table 8.6 Thread-Priority Definitions for OS X Platforms
+    - Table 12.7 Thread-Priority Definitions for Windows Platforms
 
    **Default:**
    ``Not set. The priority will not be modify.``

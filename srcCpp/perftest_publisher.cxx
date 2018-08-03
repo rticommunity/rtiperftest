@@ -132,13 +132,12 @@ bool perftest_cpp::set_main_thread_priority()
 {
     int priority = perftest_cpp::threadPriorities.main;
 
-#ifdef RTI_WIN32
+  #ifdef RTI_WIN32
     unsigned long error;
 
     if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS)) {
         error = GetLastError();
-            fprintf(
-                    stderr,
+            fprintf(stderr,
                     "Fail to set main thread Class to real time, ERROR: %d\n",
                     error);
         return false;
@@ -147,19 +146,17 @@ bool perftest_cpp::set_main_thread_priority()
     if (!SetThreadPriority(GetCurrentThread(), priority)) {
         error = GetLastError();
         if (priority == error)
-            fprintf(
-                    stderr,
+            fprintf(stderr,
                     "The thread is already running with priority ERROR: %d\n",
                     error);
         else {
-            fprintf(
-                    stderr,
+            fprintf(stderr,
                     "Fail to set main thread priority, ERROR: %d\n",
                     error);
         }
         return false;
     }
-#elif RTI_UNIX
+  #elif RTI_UNIX
     int error = 0;
     struct sched_param sp;
 
@@ -177,9 +174,9 @@ bool perftest_cpp::set_main_thread_priority()
         }
         return false;
     }
-#else
+  #else
     fprintf(stderr, "-threadPriorities are not supported on this platform\n");
-#endif
+  #endif
 
     return true;
 }
@@ -323,11 +320,11 @@ perftest_cpp::~perftest_cpp()
         RTIHighResolutionClock_delete(perftest_cpp::_Clock);
     }
 
-#ifdef RTI_WIN32
+  #ifdef RTI_WIN32
     if (_hTimerQueue != NULL) {
         DeleteTimerQueue(_hTimerQueue);
     }
-#endif
+  #endif
 
     fprintf(stderr,"Test ended.\n");
     fflush(stderr);
@@ -442,8 +439,8 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                                   and process data.\n"
         "\t                              Z -- For the rest of the threads created by the middleware:\n"
         "\t                                   Event and Database Threads.\n"
-        "\t                          A three default values: h (high), n (normal) and l (lower).\n"
-        "\t                          can be use instead of numbers.\n"
+        "\t                          A three default values: h (high), n (normal) and l (low).\n"
+        "\t                          can be uses instead of numbers.\n"
         "\t-latencyTest            - Run a latency test consisting of a ping-pong \n"
         "\t                          synchronous communication\n"
         "\t-verbosity <level>      - Run with different levels of verbosity:\n"
