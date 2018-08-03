@@ -169,25 +169,37 @@ class NDDSUtility {
     get_spin_per_microsecond(unsigned int precision = 100)
     {
         /* Same default values used by DDS */
-        unsigned long long clockCalculationLoopCountMax = 100;
         unsigned int spinCount = 200000;
-        unsigned long long init = 0, fin = 0, usec = 0;
+        unsigned long long clockCalculationLoopCountMax = 100;
+
+        unsigned long long usec = 0;
         unsigned long long iterations = 0;
 
         PerftestClock clock = PerftestClock::getInstance();
 
         do{
-            init = clock.getTimeUsec();
-
+            usec = clock.getTimeUsec(); // Initial time
             NDDS_Utility_spin(spinCount * iterations);
-
-            fin = clock.getTimeUsec();
-
-            usec = fin - init;
-
+            usec = clock.getTimeUsec() - usec; // Final time
             iterations++;
+            /*
+             * If the the clock have a low precision, increase spinCount
+             * until we measure some us or reach a maximun count loop
+             */
         } while (usec < precision && iterations < clockCalculationLoopCountMax);
 
+        /*
+         * The measure time can be zero due to lack of resolution or non
+         * monotonic clocks and a really fast machine.
+         * We may end on a exception condition, unable to calculate the
+         * spins per micro-seconds.
+         */
+        if (usec == 0) {
+            fprintf(stderr,
+                    "Unable to calculate the number of spins per"
+                    "micro-seconds\n");
+            return 0;
+        }
         return (unsigned long long) (iterations * spinCount) / usec;
     }
 
