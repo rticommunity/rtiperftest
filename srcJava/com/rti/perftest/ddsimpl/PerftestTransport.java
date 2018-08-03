@@ -992,6 +992,9 @@ public class PerftestTransport {
     public String getMulticastAddr(String topicName)
     {
         //get() function return null if the map contains no mapping for the key
+        if (multicastAddrMap.get(topicName) == null) {
+            return null;
+        }
         return multicastAddrMap.get(topicName).toString();
     }
 }

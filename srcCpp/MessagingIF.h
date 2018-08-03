@@ -76,7 +76,6 @@ class IMessagingWriter
     virtual void WaitForReaders(int numSubscribers) = 0;
     virtual bool Send(const TestMessage &message, bool isCftWildCardKey = false) = 0;
     virtual void Flush() = 0;
-
     virtual bool waitForPingResponse() {
         // Implementation required only if
         // support for LatencyTest is desired.
@@ -103,6 +102,15 @@ class IMessagingWriter
     };
     virtual void waitForAck(int /*sec*/, unsigned int /*nsec*/) {
     };
+#ifdef RTI_CUSTOM_TYPE
+  private:
+    virtual bool is_sentinel_size(int size) {
+        return 0;
+    };
+    virtual bool get_serialize_size_custom_type_data(unsigned int &size) {
+        return 0;
+    };
+#endif
 };
 
 class IMessaging

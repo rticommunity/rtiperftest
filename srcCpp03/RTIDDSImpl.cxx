@@ -126,7 +126,13 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _subscriber(dds::core::null),
         _publisher(dds::core::null),
         _pongSemaphore(RTI_OSAPI_SEMAPHORE_KIND_BINARY,NULL)
-    {}
+    {
+        _qoSProfileNameMap[LATENCY_TOPIC_NAME] = std::string("LatencyQos");
+        _qoSProfileNameMap[ANNOUNCEMENT_TOPIC_NAME]
+                = std::string("AnnouncementQos");
+        _qoSProfileNameMap[THROUGHPUT_TOPIC_NAME]
+                = std::string("ThroughputQos");
+    }
 
 /*********************************************************
  * Shutdown
@@ -232,7 +238,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     int sec = 0;
     unsigned int nanosec = 0;
 
-    // now load everything else, command line params override config file
+    // now load everything else, command-line params override config file
     for (i = 0; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-pub")) {
             _isPublisher = true;
@@ -554,7 +560,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
                 _peer_host[_peer_host_count++] = argv[i];
             } else {
-                std::cerr << "[Error] The maximun of -initial peers is " << RTIPERFTEST_MAX_PEERS << std::endl;
+                std::cerr << "[Error] The maximum of -initial peers is " << RTIPERFTEST_MAX_PEERS << std::endl;
                 throw std::logic_error("[Error] Error parsing commands");
             }
         } else if (IS_OPTION(argv[i], "-cft")) {
@@ -1855,17 +1861,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     using namespace rti::core::policy;
 
     std::string qos_profile = "";
-    if (topic_name == THROUGHPUT_TOPIC_NAME.c_str()) {
-        qos_profile = "ThroughputQos";
-    } else if (topic_name == LATENCY_TOPIC_NAME.c_str()) {
-        qos_profile = "LatencyQos";
-    } else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.c_str()) {
-        qos_profile = "AnnouncementQos";
-    } else {
-        std::cerr << "[Error] Topic name must either be "
-                  << THROUGHPUT_TOPIC_NAME << " or "
-                  << LATENCY_TOPIC_NAME << " or "
-                  << ANNOUNCEMENT_TOPIC_NAME << std::endl;
+    qos_profile = get_qos_profile_name(topic_name);
+    if (qos_profile.empty()) {
         throw std::logic_error("[Error] Topic name");
     }
 
@@ -2154,17 +2151,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     using namespace rti::core::policy;
 
     std::string qos_profile;
-    if (topic_name == THROUGHPUT_TOPIC_NAME.c_str()) {
-        qos_profile = "ThroughputQos";
-    } else if (topic_name == LATENCY_TOPIC_NAME.c_str()) {
-        qos_profile = "LatencyQos";
-    } else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.c_str()) {
-        qos_profile = "AnnouncementQos";
-    } else {
-        std::cerr << "[Error] Topic name must either be "
-                  << THROUGHPUT_TOPIC_NAME << " or "
-                  << LATENCY_TOPIC_NAME << " or "
-                  << ANNOUNCEMENT_TOPIC_NAME << std::endl;
+    qos_profile = get_qos_profile_name(topic_name);
+    if (qos_profile.empty()) {
         throw std::logic_error("[Error] Topic name");
     }
 
@@ -2368,6 +2356,21 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 _WaitsetEventCount,
                 _WaitsetDelayUsec);
     }
+}
+
+template <typename T>
+const std::string RTIDDSImpl<T>::get_qos_profile_name(std::string topicName)
+{
+    if (_qoSProfileNameMap[topicName].empty()) {
+        fprintf(stderr,
+                "topic name must either be %s or %s or %s.\n",
+                THROUGHPUT_TOPIC_NAME.c_str(),
+                LATENCY_TOPIC_NAME.c_str(),
+                ANNOUNCEMENT_TOPIC_NAME.c_str());
+    }
+
+    /* If the topic name dont match any key return a empty string */
+    return _qoSProfileNameMap[topicName];
 }
 
 template class RTIDDSImpl<TestDataKeyed_t>;

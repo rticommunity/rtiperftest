@@ -8,9 +8,9 @@ set "classic_cpp_folder=%script_location%srcCpp"
 set "modern_cpp_folder=%script_location%srcCpp03"
 set "cs_folder=%script_location%srcCs"
 set "java_folder=%script_location%srcJava"
-set "java_scripts_folder=%script_location%resource\java_scripts"
+set "java_scripts_folder=%script_location%resource\scripts\java_execution_scripts"
 set "bin_folder=%script_location%bin"
-set "cStringifyFile_script=%script_location%resource\script\cStringifyFile.pl"
+set "cStringifyFile_script=%script_location%resource\scripts\cStringifyFile.pl"
 set "qos_file=%script_location%perftest_qos_profiles.xml"
 
 @REM # Default values:
@@ -34,6 +34,14 @@ set /a rtiddsgen_version_number_new_solution_name=236
 @REM # Needed when compiling statically using security
 set RTI_OPENSSLHOME=""
 
+@REM # Variables for customType
+set "custom_type_folder=%idl_location%\customType"
+set USE_CUSTOM_TYPE=0
+set "custom_type=" @REM # Type of the customer
+@REM # Name of the file with the type. "TSupport.h"
+set "custom_type_file_name_support="
+@REM # Intermediate file for including the custom type file #include "file.idl"
+set "custom_idl_file=%custom_type_folder%\custom.idl"
 ::------------------------------------------------------------------------------
 
 @REM # Initial message
@@ -111,6 +119,15 @@ if NOT "%1"=="" (
 				SHIFT
 		) ELSE if "%1"=="--nddshome" (
 				SET "NDDSHOME=%2"
+				SHIFT
+		) ELSE if "%1"=="--customType" (
+				SET USE_CUSTOM_TYPE=1
+				SET "custom_type=%2"
+				if "!custom_type!"== "" (
+					echo [ERROR]: --customType should be followed by the name of the type.
+					call:help
+					exit /b 1
+				)
 				SHIFT
 		) ELSE (
 				echo [ERROR]: Unknown argument "%1"
@@ -196,6 +213,49 @@ if !BUILD_CPP! == 1 (
 
 	call::solution_compilation_flag_calculation
 
+	REM # Generate files for the custom type files
+	set "additional_defines_custom_type="
+	set "additional_header_files_custom_type="
+	set "additional_source_files_custom_type="
+
+	if !USE_CUSTOM_TYPE! == 1 (
+		REM # Search the file which contains "Struct ${custom_type} {" and include it to ${custom_idl_file}
+		set found_idl=0
+		for %%i in (%custom_type_folder%\*) do (
+			FINDSTR /C:"struct %custom_type% {" %%i  >NUL 2>&1
+			if !ERRORLEVEL! == 0 (
+				REM # found
+				set custom_type_file_name_support=%%~niSupport.h
+				echo #include "%%~nxi" > %custom_idl_file%
+				set found_idl=1
+			)
+		)
+		if !found_idl! == 0 (
+			echo [ERROR]: Cannot find an idl file with the %custom_type% structure for custom type test.
+			exit /b 1
+		)
+
+		call copy /Y %custom_type_folder%\* %idl_location%\
+		set "additional_header_files_custom_type=CustomType.h"
+		set "additional_source_files_custom_type=CustomType.cxx"
+		REM # Find all the files in the folder ${custom_type_folder}
+		REM # Run codegen with all those files
+		for %%i in (%custom_type_folder%\*) do (
+			call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -I %idl_location% -replace^
+			-create typefiles -d "%classic_cpp_folder%" %%i
+			if not !ERRORLEVEL! == 0 (
+				echo [ERROR]:Failure generating code for %classic_cpp_lang_string% with the file %%i."
+				exit /b 1
+			)
+			set "additional_header_files_custom_type=%%~niPlugin.h %%~ni.h %%~niSupport.h !additional_header_files_custom_type!"
+			set "additional_source_files_custom_type=%%~niPlugin.cxx %%~ni.cxx %%~niSupport.cxx !additional_source_files_custom_type!"
+		)
+		set "additional_header_files_custom_type=!additional_header_files_custom_type! "
+		set "additional_source_files_custom_type=!additional_source_files_custom_type! "
+		REM # Adding RTI_USE_CUSTOM_TYPE as a macro
+		set "additional_defines_custom_type= -D RTI_CUSTOM_TYPE=%custom_type%"
+	)
+
 	if !USE_SECURE_LIBS! == 1 (
 		set "ADDITIONAL_DEFINES=RTI_SECURE_PERFTEST"
 		if "x!STATIC_DYNAMIC!" == "xdynamic" (
@@ -210,6 +270,10 @@ if !BUILD_CPP! == 1 (
 			echo [INFO] Using security plugin. Linking Statically.
 		)
 	)
+	if !USE_CUSTOM_TYPE! == 1 (
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_CUSTOM_TYPE=%custom_type% RTI_CUSTOM_TYPE_FILE_NAME_SUPPORT=!custom_type_file_name_support!"
+	)
+
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
 
 	@REM # Generate files for srcCpp
@@ -217,9 +281,9 @@ if !BUILD_CPP! == 1 (
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
-	-additionalHeaderFiles "RTIRawTransportImpl.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
-	-additionalSourceFiles "RTIRawTransportImpl.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
-	!rtiddsgen_extra_options!^
+	-additionalHeaderFiles "!additional_header_files_custom_type!RTIRawTransportImpl.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
+	-additionalSourceFiles "!additional_source_files_custom_type!RTIRawTransportImpl.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
+	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
@@ -495,9 +559,6 @@ GOTO:EOF
 	echo.    --cpp03-build          Only C++ New PSM code generation and
 	echo.                           compilation.
 	echo.    --cs-build             Only C Sharp code generation and compilation.
-	echo.    --make  path           Path to the GNU make executable. If this
-	echo.                           parameter is not present, GNU make variable
-	echo.                           should be available from your $PATH variable.
 	echo.    --perl path            Path to PERL executable. If this parameter is
 	echo.                           not present, the path to PERL should be
 	echo.                           available from your \$PATH variable.
@@ -516,9 +577,24 @@ GOTO:EOF
 	echo.    --clean                If this option is present, the build.sh script
 	echo.                           will clean all the generated code and binaries
 	echo.                           from previous executions.
+	echo.    --customType type      Use the Custom type feature with your type.
+	echo.                           See details and examples of use in the
+	echo.                           documentation.
 	echo.    --help -h              Display this message.
 	echo[
 	echo ================================================================================
+GOTO:EOF
+
+:clean_custom_type_files
+    @REM # Remove generated files of the customer type
+	for %%i in (%custom_type_folder%\*) do (
+		del %idl_location%\%%~nxi > nul 2>nul
+		del %script_location%\srcCpp\%%~niPlugin.* > nul 2>nul
+		del %script_location%\srcCpp\%%~ni.* > nul 2>nul
+		del %script_location%\srcCpp\%%~niSupport.* > nul 2>nul
+	)
+	del %custom_idl_file% > nul 2>nul
+
 GOTO:EOF
 
 :clean
@@ -554,6 +630,7 @@ GOTO:EOF
 	rmdir /s /q %script_location%bin > nul 2>nul
 	rmdir /s /q %script_location%srcJava\class > nul 2>nul
 	rmdir /s /q %script_location%srcJava\jar > nul 2>nul
+	call::clean_custom_type_files
 
 	echo[
 	echo ================================================================================

@@ -34,7 +34,7 @@ Overview
 --------
 
 The publishing side of the test writes data as fast as it can. Every few
-samples (configured through the command line), it sends a special sample
+samples (configured through the command-line), it sends a special sample
 requesting an echo from the subscribing side. It uses this
 ``request -> echo`` exchange to measure round-trip latency.
 
