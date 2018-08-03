@@ -27,3 +27,7 @@
 *.VC.opendb
 doc
 srcDoc/_build
+/srcCpp/Parameter*
+/srcCpp03/Parameter*
+/srcCpp03/CpuMonitor*
+/srcCpp/CpuMonitor*

@@ -10,10 +10,10 @@
 #include <map>
 #include <sstream>
 #include "perftest.h"
+#include "ParameterManager.h"
 #include "ndds/ndds_cpp.h"
 
 /******************************************************************************/
-
 enum Transport {
     TRANSPORT_NOT_SET,
     TRANSPORT_UDPv4,
@@ -54,35 +54,6 @@ struct TransportConfig {
     }
 };
 
-struct SecureTransportOptions {
-    std::string certAuthorityFile;
-    std::string certificateFile;
-    std::string privateKeyFile;
-};
-
-struct TcpTransportOptions {
-    std::string serverBindPort;
-    bool wanNetwork;
-    std::string publicAddress;
-
-    TcpTransportOptions() :
-        serverBindPort("7400"),
-        wanNetwork(false)
-    {}
-};
-
-struct WanTransportOptions {
-    std::string wanServerAddress;
-    std::string wanServerPort;
-    std::string wanId;
-    bool secureWan;
-
-    WanTransportOptions() :
-        wanServerPort("3478"),
-        secureWan(false)
-    {}
-};
-
 /******************************************************************************/
 
 class PerftestTransport {
@@ -93,35 +64,19 @@ public:
     /* PUBLIC CLASS MEMBERS */
 
     TransportConfig transportConfig;
-    std::string allowInterfaces;
-    std::string verbosity;
-    // TCP specific options
-    TcpTransportOptions tcpOptions;
-    // Security files
-    SecureTransportOptions secureOptions;
-    // Wan specific options
-    WanTransportOptions wanOptions;
-
-    unsigned long dataLen;
-    bool useMulticast;
-
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 
     PerftestTransport();
 
     virtual ~PerftestTransport();
+    void initialize(ParameterManager *PM);
 
     /**************************************************************************/
     /* PUBLIC METHODS */
-
-    static std::map<std::string, unsigned int> getTransportCmdLineArgs();
-
-    std::string helpMessageString();
-
     std::string printTransportConfigurationSummary();
 
-    bool parseTransportOptions(int argc, char *argv[]);
+    bool validate_input();
 
     // Check if the transport allows the use of multicast.
     bool allowsMulticast();
@@ -137,17 +92,18 @@ private:
     static std::map<std::string, TransportConfig> transportConfigMap;
 
     std::map<std::string, std::string> multicastAddrMap;
-
+    ParameterManager *_PM;
     /**************************************************************************/
 
     static const std::map<std::string, TransportConfig>& getTransportConfigMap();
     bool setTransport(std::string transportString);
-    void populateSecurityFiles(bool isPublisher);
+    void populateSecurityFiles();
 
 };
 
 bool configureTransport(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos &qos);
+        DDS_DomainParticipantQos &qos,
+        ParameterManager *_PM);
 
 #endif /* PERFTEST_2_0_SRCCPP_PERFTESTTRANSPORT_H_ */

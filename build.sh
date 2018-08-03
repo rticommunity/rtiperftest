@@ -7,6 +7,7 @@ filename=$0
 script_location=`cd "\`dirname "$filename"\`"; pwd`
 idl_location="${script_location}/srcIdl"
 classic_cpp_folder="${script_location}/srcCpp"
+common_cpp_folder="${script_location}/srcCppCommon"
 modern_cpp_folder="${script_location}/srcCpp03"
 java_folder="${script_location}/srcJava"
 java_scripts_folder="${script_location}/resource/scripts/java_execution_scripts"
@@ -144,6 +145,7 @@ function clean()
     rm -rf "${script_location}"/bin
     clean_custom_type_files
     clean_documentation
+    clean_src_cpp_common
 
     echo ""
     echo "================================================================================"
@@ -316,8 +318,33 @@ function geneate_qos_string()
     fi
 }
 
+function copy_src_cpp_common()
+{
+    for file in ${common_cpp_folder}/*
+    do
+        if [ -f $file ]; then
+            cp -rf "$file" "${classic_cpp_folder}"
+            cp -rf "$file" "${modern_cpp_folder}"
+        fi
+    done
+}
+
+function clean_src_cpp_common()
+{
+    for file in ${common_cpp_folder}/*
+    do
+        if [ -f $file ]; then
+            name_file=$(basename $file)
+            rm -rf "${modern_cpp_folder}/${name_file}"
+            rm -rf "${classic_cpp_folder}/${name_file}"
+        fi
+    done
+}
+
+
 function build_cpp()
 {
+    copy_src_cpp_common
     ##############################################################################
     # Generate files for the custom type files
     additional_defines_custom_type=""
@@ -331,7 +358,7 @@ function build_cpp()
     ##############################################################################
     # Generate files for srcCpp
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"${additional_header_files_custom_type} RTIRawTransportImpl.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles \"${additional_source_files_custom_type} RTIRawTransportImpl.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} ${additional_defines_custom_type} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"${additional_header_files_custom_type} RTIRawTransportImpl.h Parameter.h ParameterManager.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles \"${additional_source_files_custom_type} RTIRawTransportImpl.cxx Parameter.cxx ParameterManager.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} ${additional_defines_custom_type} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${classic_cpp_lang_string}."
@@ -341,6 +368,7 @@ function build_cpp()
     eval $rtiddsgen_command
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
+        clean_src_cpp_common
         exit -1
     fi
     cp "${classic_cpp_folder}/perftest_publisher.cxx" \
@@ -353,6 +381,7 @@ function build_cpp()
     "${MAKE_EXE}" -C "${classic_cpp_folder}" -f makefile_perftest_${platform}
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure compiling code for ${classic_cpp_lang_string}."
+        clean_src_cpp_common
         exit -1
     fi
     echo -e "${INFO_TAG} Compilation successful"
@@ -377,10 +406,13 @@ function build_cpp()
     fi
     cp -f "${perftest_cpp_name_beginning}${executable_extension}" \
     "${destination_folder}/perftest_cpp${executable_extension}"
+
+    clean_src_cpp_common
 }
 
 function build_cpp03()
 {
+    copy_src_cpp_common
     additional_defines_calculation
     ##############################################################################
     # Generate files for srcCpp03
@@ -395,6 +427,7 @@ function build_cpp03()
     eval $rtiddsgen_command
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
+        clean_src_cpp_common
         exit -1
     fi
     cp "${modern_cpp_folder}/perftest_publisher.cxx" \
@@ -407,6 +440,7 @@ function build_cpp03()
     "${MAKE_EXE}" -C "${modern_cpp_folder}" -f makefile_perftest_${platform}
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure compiling code for ${modern_cpp_folder}."
+        clean_src_cpp_common
         exit -1
     fi
     echo -e "${INFO_TAG} Compilation successful"
@@ -431,6 +465,8 @@ function build_cpp03()
     fi
     cp -f "${perftest_cpp03_name_beginning}${executable_extension}" \
     "${destination_folder}/perftest_cpp03${executable_extension}"
+
+    clean_src_cpp_common
 }
 
 function build_java()

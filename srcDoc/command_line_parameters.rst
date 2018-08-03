@@ -209,11 +209,11 @@ Test Parameters for Publishing and Subscribing Applications
    **Configuring QoS with XML, Chapter 17** in the *RTI Connext DDS Core
    Libraries* User’s Manual.
 
-- ``qosLibrary <library name>``
+-  ``-qosLibrary <library name>``
 
-    Name of QoS Library for DDS Qos profiles
+   Name of QoS Library for DDS Qos profiles.
 
-    **Default:** ``PerftestQosLibrary``
+   **Default:** ``PerftestQosLibrary``
 
 -  ``-noXmlQos``
 
@@ -322,80 +322,80 @@ by using the `Transport` spececific command-line parameters.
   valid. This command line parameter is mapped to the "allow_interfaces_list"
   property in RTI Connext DDS.
 
-  By default, RTI Connext DDS will attempt to contact all possible
-  subscribing nodes on all available network interfaces. Even on a
-  multi-NIC machine, the performance over one NIC vs. another may be
-  different (e.g., Gbit vs. 100 Mbit), so choosing the correct NIC is
-  critical for a proper test.
+   By default, RTI Connext DDS will attempt to contact all possible
+   subscribing nodes on all available network interfaces. Even on a
+   multi-NIC machine, the performance over one NIC vs. another may be
+   different (e.g., Gbit vs. 100 Mbit), so choosing the correct NIC is
+   critical for a proper test.
 
 -  ``-transportVerbosity <level>``
 
-  Especific verbosity of the transport plugin.
+   Especific verbosity of the transport plugin.
 
-  | **Default:** ``0`` (Errors only).
+   | **Default:** ``0`` (Errors only).
 
 -  ``-transportServerBindPort <port>``
 
-    For TCP and TLS. Port used by the transport to accept TCP/TLS connections.
+   For TCP and TLS. Port used by the transport to accept TCP/TLS connections.
 
-    | **Default:** ``7400``
+   | **Default:** ``7400``
 
 -  ``-transportWan``
 
-    For TCP and TLS. Use tcp across LANs and firewalls.
+   For TCP and TLS. Use tcp across LANs and firewalls.
 
-    | **Default:** ``Not set``, LAN Mode.
+   | **Default:** ``Not set``, LAN Mode.
 
 -  ``-transportPublicAddress <ipaddr>``
 
-    For TCP and TLS. Public IP address and port (WAN address and port) (separated by ‘:’)
-    associated with the transport instantiation.
+   For TCP and TLS. Public IP address and port (WAN address and port) (separated by ‘:’)
+   associated with the transport instantiation.
 
-    | **Default:** ``Not set``
+   | **Default:** ``Not set``
 
 -  ``-transportWanServerAddress <ipaddr>``
 
-    For WAN transport. Address where to find the WAN Server.
+   For WAN transport. Address where to find the WAN Server.
 
-    | **Default:** ``Not set``
-    
+   | **Default:** ``Not set``
+
 -  ``-transportWanServerPort <ipaddr>``
 
-    For WAN transport. Port where to find the WAN Server.
+   For WAN transport. Port where to find the WAN Server.
 
-    | **Default:** ``Not set``
-    
+   | **Default:** ``Not set``
+
 -  ``-transportWanId <id>``
 
-    For WAN transport. Id to be used for the WAN transport. Required when using WAN.
+   For WAN transport. Id to be used for the WAN transport. Required when using WAN.
 
-    | **Default:** ``Not set``
+   | **Default:** ``Not set``
 
 -  ``-transportSecureWan``
 
-    For WAN transport. Use DTLS security over WAN.
+   For WAN transport. Use DTLS security over WAN.
 
-    | **Default:** ``Not set``
+   | **Default:** ``Not set``
 
 -  ``-transporCertAuthority <file>``
 
-    For TLS, DTLS and Secure WAN. Certificate authority file to be used by TLS.
+   For TLS, DTLS and Secure WAN. Certificate authority file to be used by TLS.
 
-    | **Default for Publisher:** ``./resource/secure/pub.pem``
-    | **Default for Subscriber:** ``./resource/secure/sub.pem``
+   | **Default for Publisher:** ``./resource/secure/pub.pem``
+   | **Default for Subscriber:** ``./resource/secure/sub.pem``
 
 -  ``-transporCertFile <file>``
 
-    For TLS, DTLS and Secure WAN. Certificate file to be used by TLS.
+   For TLS, DTLS and Secure WAN. Certificate file to be used by TLS.
 
-    | **Default:** ``./resource/secure/cacert.pem``
+   | **Default:** ``./resource/secure/cacert.pem``
 
 -  ``-transporPrivateKey <file>``
 
-    For TLS, DTLS and Secure WAN. Private key file to be used by TLS.
+   For TLS, DTLS and Secure WAN. Private key file to be used by TLS.
 
-    | **Default for Publisher:** ``./resource/secure/pubkey.pem``
-    | **Default for Subscriber:** ``./resource/secure/subkey.pem``
+   | **Default for Publisher:** ``./resource/secure/pubkey.pem``
+   | **Default for Subscriber:** ``./resource/secure/subkey.pem``
 
 .. _Test Parameters Only For Publishing Applications:
 

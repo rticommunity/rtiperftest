@@ -4,6 +4,7 @@ setlocal EnableDelayedExpansion
 
 set script_location=%~dp0
 set "idl_location=%script_location%srcIdl"
+set "common_cpp_folder=%script_location%srcCppCommon"
 set "classic_cpp_folder=%script_location%srcCpp"
 set "modern_cpp_folder=%script_location%srcCpp03"
 set "cs_folder=%script_location%srcCs"
@@ -210,7 +211,7 @@ set "java_lang_string=java"
 
 ::------------------------------------------------------------------------------
 if !BUILD_CPP! == 1 (
-
+	call::copy_src_cpp_common
 	call::solution_compilation_flag_calculation
 
 	REM # Generate files for the custom type files
@@ -281,12 +282,13 @@ if !BUILD_CPP! == 1 (
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
-	-additionalHeaderFiles "!additional_header_files_custom_type!RTIRawTransportImpl.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
-	-additionalSourceFiles "!additional_source_files_custom_type!RTIRawTransportImpl.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
+	-additionalHeaderFiles "!additional_header_files_custom_type!RTIRawTransportImpl.h Parameter.h ParameterManager.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
+	-additionalSourceFiles "!additional_source_files_custom_type!RTIRawTransportImpl.cxx Parameter.cxx ParameterManager.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
 	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
+		call::clean_src_cpp_common
 		exit /b 1
 	)
 	call copy "%classic_cpp_folder%"\perftest_publisher.cxx "%classic_cpp_folder%"\perftest_subscriber.cxx
@@ -297,16 +299,18 @@ if !BUILD_CPP! == 1 (
 	call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!"  /p:Platform="!win_arch!"  "%classic_cpp_folder%"\%solution_name_cpp%
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %classic_cpp_lang_string%.
+		call::clean_src_cpp_common
 		exit /b 1
 	)
 
 	echo [INFO]: Copying perftest_cpp executable file:
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
 	copy /Y "%classic_cpp_folder%"\objs\%architecture%\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp.exe
+	call::clean_src_cpp_common
 )
 
 if !BUILD_CPP03! == 1 (
-
+	call::copy_src_cpp_common
 	call::solution_compilation_flag_calculation
 
 	if !USE_SECURE_LIBS! == 1 (
@@ -337,6 +341,7 @@ if !BUILD_CPP03! == 1 (
 
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %modern_cpp_lang_string%.
+		call::clean_src_cpp_common
 		exit /b 1
 	)
 	call copy "%modern_cpp_folder%"\perftest_publisher.cxx "%modern_cpp_folder%"\perftest_subscriber.cxx
@@ -347,12 +352,15 @@ if !BUILD_CPP03! == 1 (
 	call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!"  /p:Platform="!win_arch!"  "%modern_cpp_folder%"\%solution_name_cpp%
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %modern_cpp_lang_string%.
+		call::clean_src_cpp_common
 		exit /b 1
 	)
 
 	echo [INFO]: Copying perftest_cpp executable file:
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
 	copy /Y "%modern_cpp_folder%"\objs\%architecture%\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp03.exe
+	call::clean_src_cpp_common
+
 )
 
 ::------------------------------------------------------------------------------
@@ -374,7 +382,7 @@ if %BUILD_CS% == 1 (
 
 	echo[
 	echo [INFO]: Compiling %cs_lang_string%
-  echo call !MSBUILD_EXE! /p:Configuration=!RELEASE_DEBUG! /p:Platform="!cs_win_arch!" "%cs_folder%"\%solution_name_cs%
+	echo call !MSBUILD_EXE! /p:Configuration=!RELEASE_DEBUG! /p:Platform="!cs_win_arch!" "%cs_folder%"\%solution_name_cs%
 	call !MSBUILD_EXE! /p:Configuration=!RELEASE_DEBUG! /p:Platform="!cs_win_arch!" "%cs_folder%"\%solution_name_cs%
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %cs_lang_string%.
@@ -585,8 +593,25 @@ GOTO:EOF
 	echo ================================================================================
 GOTO:EOF
 
+:clean_src_cpp_common
+    @REM # Remove copied file from srcCommon
+	for %%i in (%common_cpp_folder%\*) do (
+		del %modern_cpp_folder%\%%~nxi > nul 2>nul
+		del %classic_cpp_folder%\%%~nxi > nul 2>nul
+	)
+GOTO:EOF
+
+:copy_src_cpp_common
+    @REM # Copy file from srcCommon to srcCpp and srcCpp03
+	for %%i in (%common_cpp_folder%\*) do (
+		call copy /Y %common_cpp_folder%\%%~nxi %modern_cpp_folder%\ > nul 2>nul
+		call copy /Y %common_cpp_folder%\%%~nxi %classic_cpp_folder%\ > nul 2>nul
+	)
+
+GOTO:EOF
+
 :clean_custom_type_files
-    @REM # Remove generated files of the customer type
+	@REM # Remove generated files of the customer type
 	for %%i in (%custom_type_folder%\*) do (
 		del %idl_location%\%%~nxi > nul 2>nul
 		del %script_location%\srcCpp\%%~niPlugin.* > nul 2>nul
@@ -631,6 +656,7 @@ GOTO:EOF
 	rmdir /s /q %script_location%srcJava\class > nul 2>nul
 	rmdir /s /q %script_location%srcJava\jar > nul 2>nul
 	call::clean_custom_type_files
+	call::clean_src_cpp_common
 
 	echo[
 	echo ================================================================================

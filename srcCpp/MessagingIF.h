@@ -7,7 +7,11 @@
  */
 
 #include <string>
+<<<<<<< HEAD
 #include "osapi/osapi_semaphore.h"
+=======
+#include "ParameterManager.h"
+>>>>>>> feature/105-parameterManager
 
 class TestMessage
 {
@@ -21,14 +25,14 @@ class TestMessage
     unsigned int timestamp_usec;
     int          latency_ping;
 
-    TestMessage():
-        data(NULL),
-        size(0),
-        entity_id(0),
-        seq_num(0),
-        timestamp_sec(0),
-        timestamp_usec(0),
-        latency_ping(0)
+    TestMessage() :
+            data(NULL),
+            size(0),
+            entity_id(0),
+            seq_num(0),
+            timestamp_sec(0),
+            timestamp_usec(0),
+            latency_ping(0)
     {
         key[0]=0;
         key[1]=0;
@@ -117,20 +121,11 @@ class IMessaging
 {
   public:
     virtual ~IMessaging() {}
-    virtual bool Initialize(int argc, char *argv[]) = 0;
-
-    virtual void PrintCmdLineHelp() = 0;
+    virtual bool Initialize(ParameterManager &PM) = 0;
 
     virtual std::string PrintConfiguration() = 0;
 
     virtual void Shutdown() = 0;
-
-    /*
-     * If the implementation supports batching and the test scenario is
-     * using batching, this function should return the size of the batch
-     * in bytes.
-     */
-    virtual int GetBatchSize() = 0;
 
     /*
      * Get an estimation of the minimum number of samples that need to be send
