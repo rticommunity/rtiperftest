@@ -390,7 +390,7 @@ void ParameterManager::initialize()
     create("pidMultiPubTest", pidMultiPubTest);
 
     ParameterPair<unsigned long long, std::string> *pubRate =
-            new ParameterPair<unsigned long long, std::string>(0,"spin");
+            new ParameterPair<unsigned long long, std::string>(0, "spin");
     pubRate->set_command_line_argument("-pubRate", "<samples/s>:<method>");
     pubRate->set_description(
             "Limit the throughput to the specified number\n"
@@ -477,7 +477,7 @@ void ParameterManager::initialize()
     create("writerStats", writerStats);
 
     Parameter<long> *writeInstance =
-            new Parameter<long>(-1);// (-1) By default use round-robin (-1)
+            new Parameter<long>(-1); // (-1) By default use round-robin (-1)
     writeInstance->set_command_line_argument("-writeInstance", "<instance>");
     writeInstance->set_description(
             "Set the instance number to be sent.\n"
@@ -643,7 +643,7 @@ void ParameterManager::initialize()
     transportServerBindPort->set_type(T_STR);
     transportServerBindPort->set_extra_argument(YES);
     transportServerBindPort->set_group(TRANSPORT);
-    create("transportServerBindPort",  transportServerBindPort);
+    create("transportServerBindPort", transportServerBindPort);
 
     Parameter<bool> *transportWan = new Parameter<bool>(false);
     transportWan->set_command_line_argument("-transportWan", "");
@@ -667,7 +667,7 @@ void ParameterManager::initialize()
     transportPublicAddress->set_type(T_STR);
     transportPublicAddress->set_extra_argument(YES);
     transportPublicAddress->set_group(TRANSPORT);
-    create("transportPublicAddress",  transportPublicAddress);
+    create("transportPublicAddress", transportPublicAddress);
 
     Parameter<std::string> *transportWanServerAddress =
             new Parameter<std::string>();
@@ -679,7 +679,7 @@ void ParameterManager::initialize()
     transportWanServerAddress->set_type(T_STR);
     transportWanServerAddress->set_extra_argument(YES);
     transportWanServerAddress->set_group(TRANSPORT);
-    create("transportWanServerAddress",  transportWanServerAddress);
+    create("transportWanServerAddress", transportWanServerAddress);
 
     Parameter<std::string> *transportWanServerPort =
         new Parameter<std::string>("3478");
@@ -690,7 +690,7 @@ void ParameterManager::initialize()
     transportWanServerPort->set_type(T_STR);
     transportWanServerPort->set_extra_argument(YES);
     transportWanServerPort->set_group(TRANSPORT);
-    create("transportWanServerPort",  transportWanServerPort);
+    create("transportWanServerPort", transportWanServerPort);
 
     Parameter<std::string> *transportWanId = new Parameter<std::string>();
     transportWanId->set_command_line_argument("-transportWanId", "<id>");
@@ -721,7 +721,7 @@ void ParameterManager::initialize()
     transportCertAuthority->set_type(T_STR);
     transportCertAuthority->set_extra_argument(YES);
     transportCertAuthority->set_group(TRANSPORT);
-    create("transportCertAuthority",  transportCertAuthority);
+    create("transportCertAuthority", transportCertAuthority);
 
     Parameter<std::string> *transportCertFile = new Parameter<std::string>(
             TRANSPORT_CERTIFICATE_FILE_PUB);
@@ -865,10 +865,8 @@ void ParameterManager::initialize()
     secureDebug->set_group(SECURE);
     secureDebug->set_internal(true);
     create("secureDebug", secureDebug);
-
 #endif
 }
-
 
 // Parse the command line parameters and set the value
 bool ParameterManager::parse(int argc, char *argv[])
@@ -1099,8 +1097,6 @@ std::string ParameterManager::display_help()
         oss << itOutput->second;
     }
     oss << std::string(100, '*') << std::endl;
-
-
     return oss.str();
 }
 

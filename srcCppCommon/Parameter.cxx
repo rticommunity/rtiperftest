@@ -10,9 +10,7 @@
 ////////////////////////////////////////////////////////////////////////////
 /* Implementation Class CommandLineArgument*/
 
-CommandLineArgument::CommandLineArgument()
-{
-}
+CommandLineArgument::CommandLineArgument() {}
 
 CommandLineArgument::CommandLineArgument(std::string option, std::string arg) :
         _option(option),

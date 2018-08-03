@@ -13,6 +13,7 @@
 #include "ParameterManager.h"
 #include "ndds/ndds_cpp.h"
 
+/******************************************************************************/
 enum Transport {
     TRANSPORT_NOT_SET,
     TRANSPORT_UDPv4,

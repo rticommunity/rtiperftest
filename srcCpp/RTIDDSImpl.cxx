@@ -424,7 +424,12 @@ class RTIPublisher : public IMessagingWriter
     ParameterManager *_PM;
 
  public:
-    RTIPublisher(DDSDataWriter *writer, unsigned long num_instances, RTIOsapiSemaphore * pongSemaphore, int instancesToBeWritten, ParameterManager *PM)
+    RTIPublisher(
+            DDSDataWriter *writer,
+            unsigned long num_instances,
+            RTIOsapiSemaphore * pongSemaphore,
+            int instancesToBeWritten,
+            ParameterManager *PM)
     {
       #ifdef RTI_CUSTOM_TYPE
         _lastMessageSize = 0;
@@ -2263,8 +2268,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         dw_qos.protocol.disable_positive_acks = true;
         if (_PM->is_set("keepDurationUsec")) {
             dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
-                DDS_Duration_t::from_micros(
-                        _PM->get<unsigned long long>("keepDurationUsec"));
+                    DDS_Duration_t::from_micros(
+                            _PM->get<unsigned long long>("keepDurationUsec"));
         }
     }
 
@@ -2376,7 +2381,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
-               buf, false);
+               buf,
+               false);
     }
 
     if (_PM->get<long>("instances") > 1) {
@@ -2613,8 +2619,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (_PM->get<bool>("multicast")
-            && _transport.allowsMulticast()) {
+    if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
         dr_qos.multicast.value.ensure_length(1, 1);
         dr_qos.multicast.value[0].receive_address = DDS_String_dup(
                 _transport.getMulticastAddr(topic_name).c_str());

@@ -1514,9 +1514,9 @@ int perftest_cpp::Publisher()
        than 100 samples per second */
     if (_PM.get_pair<unsigned long long, std::string>("pubRate").first > 100) {
         pubRate_sample_period =
-                (unsigned long)_PM.get_pair
-                        <unsigned long long, std::string>("pubRate").first /
-                100;
+                (unsigned long)_PM.get_pair <unsigned long long, std::string>(
+                        "pubRate").first
+                / 100;
     }
 
     if (_PM.get<unsigned long long>("executionTime") > 0
