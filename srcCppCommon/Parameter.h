@@ -17,7 +17,7 @@
 #include <iostream>
 #include <sstream>
 
-#define MAX_ULLONG 18446744073709551615
+#define MAX_ULLONG 18446744073709551615ULL
 
 
 /*
