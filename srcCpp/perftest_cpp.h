@@ -35,8 +35,7 @@
 #if defined(RTI_VXWORKS)
   #include "ndds/ndds_cpp.h"
 #endif
-#include "perftest.h"
-#include "ndds/ndds_cpp.h"
+
 #include "MessagingIF.h"
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"

@@ -11,6 +11,7 @@
 // #include "PerftestTransport.h"
 // #include "RTIDDSImpl.h"
 
+#include "perftest.h"
 #include "Parameter.h"
 #include <map>
 

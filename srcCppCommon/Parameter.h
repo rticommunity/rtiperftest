@@ -9,13 +9,16 @@
 #define __PARAMETER_H__
 
 #include <stdio.h>
-#include <limits>       // std::numeric_limits
+#include <climits>
 #include <string>
 #include <utility>      // std::pair, std::make_pair
 #include <algorithm>    // std::sort
 #include <vector>
 #include <iostream>
 #include <sstream>
+
+#define MAX_ULLONG 18446744073709551615
+
 
 /*
  * This enum specifies the type of the parameter.
