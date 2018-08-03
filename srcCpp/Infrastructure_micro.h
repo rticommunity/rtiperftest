@@ -159,21 +159,6 @@ class NDDSUtility {
     #endif
     };
 
-    /* Get the time cost to call getTimeUsec a number of times equal to iteration */
-    static unsigned long long get_time_overhead(unsigned int iterations) {
-
-        PerftestClock clock = PerftestClock::getInstance();
-        unsigned long long init = 0, fin = 0, overhead = 0;
-
-        init = clock.getTimeUsec();
-        for (int i = 0; i < iterations; i++) {
-            clock.getTimeUsec();
-        }
-        fin = clock.getTimeUsec();
-
-        return fin - init;
-    }
-
     /*e \dref_Utility_spin */
     static void spin(DDS_UnsignedLongLong spinCount){
         NDDS_Utility_spin(spinCount);
@@ -184,32 +169,26 @@ class NDDSUtility {
     get_spin_per_microsecond(unsigned int precision = 100)
     {
         /* Same default values used by DDS */
-        unsigned int spinCount = 20000;
-
+        unsigned long long clockCalculationLoopCountMax = 100;
+        unsigned int spinCount = 200000;
         unsigned long long init = 0, fin = 0, usec = 0;
         unsigned long long iterations = 0;
-        unsigned long long overhead = 0;
 
         PerftestClock clock = PerftestClock::getInstance();
 
-        while((int)(usec - overhead) < (int)precision){
-
+        do{
             init = clock.getTimeUsec();
 
-            NDDS_Utility_spin(spinCount); //Same numbers of spin iters as DDS
+            NDDS_Utility_spin(spinCount * iterations);
 
             fin = clock.getTimeUsec();
 
-            usec += fin - init;
+            usec = fin - init;
 
             iterations++;
-            overhead = get_time_overhead(iterations);
-        }
+        } while (usec < precision && iterations < clockCalculationLoopCountMax);
 
-        /* Measure the clock.getTimeUsec() overhead */
-        usec -= overhead;
-
-        return (float)(iterations * spinCount) / usec;
+        return (unsigned long long) (iterations * spinCount) / usec;
     }
 
 };
