@@ -37,7 +37,7 @@ class RTIRawTransportImpl : public IMessaging {
 
     std::string PrintConfiguration();
 
-    bool Initialize(int argc, char *argv[]);
+    bool Initialize(ParameterManager &PM);
 
     void Shutdown();
     int GetBatchSize();
@@ -105,6 +105,8 @@ class RTIRawTransportImpl : public IMessaging {
     struct REDAWorkerFactory *_workerFactory;
     struct REDAExclusiveArea *_exclusiveArea;
     RTIOsapiThreadTssFactory *_tssFactory;
+
+    ParameterManager *_PM;
 };
 
 class peerData {

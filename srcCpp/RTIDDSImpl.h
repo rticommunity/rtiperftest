@@ -86,7 +86,6 @@ public:
 
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
 
-<<<<<<< HEAD
     /*
      * Those two functions calculate the time cost on serialization,
      * with a precision of microseconds.
@@ -113,10 +112,8 @@ public:
         return true;
     };
 
-=======
     const std::string get_qos_profile_name(const char *topicName);
 
->>>>>>> master
 private:
 
     // Specific functions to configure the Security plugin
@@ -153,12 +150,9 @@ private:
 
 };
 
-<<<<<<< HEAD
 double ObtainSerializeTimeCost(int iterations, unsigned int sampleSize);
 
 double ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize);
 
-=======
->>>>>>> master
 #endif // __RTIDDSIMPL_H__
 

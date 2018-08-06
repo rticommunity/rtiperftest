@@ -7,11 +7,8 @@
  */
 
 #include <string>
-<<<<<<< HEAD
 #include "osapi/osapi_semaphore.h"
-=======
 #include "ParameterManager.h"
->>>>>>> feature/105-parameterManager
 
 class TestMessage
 {

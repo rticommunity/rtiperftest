@@ -85,34 +85,14 @@ class perftest_cpp
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
     IMessaging *_MessagingImpl;
-<<<<<<< HEAD
-    char **_MessagingArgv;
-    int _MessagingArgc;
-    bool _LatencyTest;
-    bool _IsReliable;
-    int _pubRate;
-    bool _pubRateMethodSpin;
-    bool _isKeyed;
-    unsigned long _useUnbounded;
-    unsigned int _executionTime;
-    bool _displayWriterStats;
-    bool _useCft;
     bool _useRawTransport;
-    static const Perftest_ProductVersion_t _version;
 
-private:
-    static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);
-
-    /* The following three members are used in a static callback
-       and so they have to be static */
-=======
     static const Perftest_ProductVersion_t _version;
 
     /*
      * The following three members are used in a static callback
      * and so they have to be static
      */
->>>>>>> feature/105-parameterManager
     static bool _testCompleted;
     static bool _testCompleted_scan;
   #ifdef RTI_WIN32

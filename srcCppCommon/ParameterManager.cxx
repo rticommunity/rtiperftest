@@ -749,6 +749,31 @@ void ParameterManager::initialize()
     create("transportPrivateKey", transportPrivateKey);
 
     ////////////////////////////////////////////////////////////////////////////
+    // RAWTRANSPORT PARAMTER:
+
+    Parameter<bool> *noBlockingSockets = new Parameter<bool>(false);
+    sleep->set_command_line_argument("-noBlockingSockets", "");
+    sleep->set_description(
+                "Control blocking behavior of send sockets to never block.\n"
+                "CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT"
+                "PERFORMANCE PROBLEMS.\n");
+    sleep->set_type(T_BOOL);
+    sleep->set_extra_argument(NO);
+    sleep->set_group(RAWTRANSPORT);
+    create("noBlockingSockets", noBlockingSockets);
+
+    ParameterVector<std::string> *peerRT = new ParameterVector<std::string>();
+    peer->set_command_line_argument("-peerRT", "<address:id>");
+    peer->set_description(
+            "Adds a peer to the peer host address list with a optional id of\n"
+            "the subscriber. If the id is not provided, assume zero.\n"
+            "This argument may be repeated to indicate multiple peers");
+    peer->set_type(T_VECTOR_STR);
+    peer->set_extra_argument(YES);
+    peer->set_group(RAWTRANSPORT);
+    create("peerRT", peerRT);
+
+    ////////////////////////////////////////////////////////////////////////////
     // SECURE PARAMETER:
   #ifdef RTI_SECURE_PERFTEST
     Parameter<bool> *secureEncryptDiscovery = new Parameter<bool>(false);

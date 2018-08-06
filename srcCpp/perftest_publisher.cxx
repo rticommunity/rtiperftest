@@ -268,329 +268,9 @@ bool perftest_cpp::validate_input()
     // It is copied because it is used in the critical patch
     perftest_cpp::_SubID = _PM.get<int>("sidMultiSubTest");
 
-<<<<<<< HEAD
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            if ((i == (argc-1)) || *argv[i+1] == '-')
-            {
-                _useUnbounded = (std::min)(
-                        2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
-            } else {
-                ++i;
-                _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-                if (_MessagingArgv[_MessagingArgc] == NULL) {
-                    fprintf(stderr, "Problem allocating memory\n");
-                    return false;
-                }
-
-                _MessagingArgc++;
-
-                _useUnbounded = strtol(argv[i], NULL, 10);
-
-                if (_useUnbounded < (unsigned long)OVERHEAD_BYTES)
-                {
-                    fprintf(stderr, "-unbounded <allocation_threshold> must be >= %d\n", OVERHEAD_BYTES);
-                    return false;
-                }
-                if (_useUnbounded > (unsigned long)MAX_BOUNDED_SEQ_SIZE)
-                {
-                    fprintf(stderr,"-unbounded <allocation_threshold> must be <= %d\n", MAX_BOUNDED_SEQ_SIZE);
-                    return false;
-                }
-            }
-        }
-        else if (IS_OPTION(argv[i], "-spin"))
-        {
-            fprintf(stderr,"-spin option is deprecated. It will be removed "
-                    "in upcoming releases.\n");
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr,"Missing <count> after -spin\n");
-                return false;
-            }
-            _SpinLoopCount = strtol(argv[i], NULL, 10);
-        }
-        else if (IS_OPTION(argv[i], "-sleep"))
-        {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr,"Missing <millisec> after -sleep\n");
-                return false;
-            }
-            _SleepNanosec = strtol(argv[i], NULL, 10);
-            _SleepNanosec *= 1000000;
-        }
-        else if (IS_OPTION(argv[i], "-latencyCount"))
-        {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr,"Missing <count> after -latencyCount\n");
-                return false;
-            }
-            _LatencyCount = strtol(argv[i], NULL, 10);
-        }
-        else if (IS_OPTION(argv[i], "-numSubscribers"))
-        {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <count> after -numSubscribers\n");
-                return false;
-            }
-            _NumSubscribers = strtol(argv[i], NULL, 10);
-        }
-        else if (IS_OPTION(argv[i], "-numPublishers"))
-        {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <count> after -numPublishers\n");
-                return false;
-            }
-        }
-        else if (IS_OPTION(argv[i], "-scan"))
-        {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-            _MessagingArgc++;
-            _isScan = true;
-            if ((i != (argc-1)) && *argv[1+i] != '-') {
-                _scanDataLenSizes.clear();
-                ++i;
-                unsigned long aux_scan;
-                char * pch;
-                _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-                if (_MessagingArgv[_MessagingArgc] == NULL) {
-                    fprintf(stderr, "Problem allocating memory\n");
-                    return false;
-                }
-                _MessagingArgc++;
-
-                pch = strtok (argv[i], ":");
-                while (pch != NULL) {
-                    if (sscanf(pch, "%lu", &aux_scan) != 1) {
-                        fprintf(stderr, "-scan <size> value must have the format '-scan <size1>:<size2>:...:<sizeN>'\n");
-                        return false;
-                    }
-                    _scanDataLenSizes.push_back(aux_scan);
-                    pch = strtok (NULL, ":");
-                }
-                if (_scanDataLenSizes.size() < 2) {
-                    fprintf(stderr, "'-scan <size1>:<size2>:...:<sizeN>' the number of size should be equal or greater then two.\n");
-                    return false;
-                }
-                std::sort(_scanDataLenSizes.begin(), _scanDataLenSizes.end());
-                if (_scanDataLenSizes[0] < (unsigned long)OVERHEAD_BYTES) {
-                    fprintf(stderr, "-scan sizes must be >= %d\n",
-                            OVERHEAD_BYTES);
-                    return false;
-                }
-                if (_scanDataLenSizes[_scanDataLenSizes.size() - 1] >
-                        (unsigned long)MAX_PERFTEST_SAMPLE_SIZE) {
-                    fprintf(stderr,"-scan sizes must be <= %d\n",
-                            MAX_PERFTEST_SAMPLE_SIZE);
-                    return false;
-                }
-            } else { // Set default values
-                set_default_scan_values(_scanDataLenSizes);
-            }
-        }
-        else if (IS_OPTION(argv[i], "-noPrintIntervals") )
-        {
-            _PrintIntervals = false;
-        }
-        else if (IS_OPTION(argv[i], "-useReadThread") )
-        {
-            _UseReadThread = true;
-        }
-        else if (IS_OPTION(argv[i], "-bestEffort"))
-        {
-            _IsReliable = false;
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-        }
-        else if (IS_OPTION(argv[i], "-latencyTest"))
-        {
-            _LatencyTest = true;
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-        }
-        else if (IS_OPTION(argv[i], "-instances"))
-        {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <count> after -instances\n");
-                return false;
-            }
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            _InstanceCount = strtol(argv[i], NULL, 10);
-
-            if (_InstanceCount <= 0)
-            {
-                fprintf(stderr, "instance count cannot be negative or null\n");
-                return false;
-            }
-        }
-        else if (IS_OPTION(argv[i], "-verbosity"))
-        {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-            _MessagingArgc++;
-
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <level> after -verbosity\n");
-                return false;
-            }
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-            _MessagingArgc++;
-        }
-        else if (IS_OPTION(argv[i], "-pubRate")) {
-
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <samples/s>:<method> after -pubRate\n");
-                return false;
-            }
-
-            if (strchr(argv[i],':') != NULL) { // In the case that there are 2 parameter
-                if (sscanf(argv[i],"%d:%*s",&_pubRate) != 1) {
-                    fprintf(stderr, "-pubRate value must have the format <samples/s>:<method>\n");
-                    return false;
-                }
-                if (strstr(argv[i], "sleep") != NULL) {
-                    _pubRateMethodSpin = false;
-                } else if (strstr(argv[i], "spin") == NULL) {
-                    fprintf(stderr,
-                            "<samples/s>:<method> for pubRate '%s' is not valid."
-                            " It must contain 'spin' or 'sleep'.\n",argv[i]);
-                    return false;
-                }
-            } else {
-                _pubRate = strtol(argv[i], NULL, 10);
-            }
-
-            if (_pubRate > 10000000) {
-                fprintf(stderr,"-pubRate cannot be greater than 10000000.\n");
-                return false;
-            } else if (_pubRate < 0) {
-                fprintf(stderr,"-pubRate cannot be smaller than 0 (set 0 for unlimited).\n");
-                return false;
-            }
-        }
-        else if (IS_OPTION(argv[i], "-keyed")) {
-            _isKeyed = true;
-        }
-        else if (IS_OPTION(argv[i], "-writerStats")) {
-            _displayWriterStats = true;
-        }
-        else if (IS_OPTION(argv[i], "-executionTime"))
-        {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <seconds> after -executionTime\n");
-                return false;
-            }
-            _executionTime = (unsigned int) strtol(argv[i], NULL, 10);
-
-            if (_executionTime <= 0) {
-                fprintf(stderr,
-                        "-executionTime value must be a positive number greater than 0\n");
-                return false;
-            }
-
-        } else if (IS_OPTION(argv[i], "-cpu"))
-        {
-            _showCpu = true;
-        } else if (IS_OPTION(argv[i], "-cft"))
-        {
-            _useCft = true;
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <start>:<end> after -cft\n");
-                return false;
-            }
-
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-        } else
-        {
-            _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
-
-            if (_MessagingArgv[_MessagingArgc] == NULL) {
-                fprintf(stderr, "Problem allocating memory\n");
-                return false;
-            }
-
-            _MessagingArgc++;
-        }
-    }
-
-    if(_LatencyTest) {
-        if(_PubID != 0) {
-=======
     // Manage parameter -latencyTest
     if (_PM.get<bool>("latencyTest")) {
         if (_PM.get<int>("pidMultiPubTest") != 0) {
->>>>>>> feature/105-parameterManager
             fprintf(stderr, "Only the publisher with ID = 0 can run the latency test\n");
             return false;
         }
@@ -1342,11 +1022,8 @@ class AnnouncementListener : public IMessagingCB
         announced_subscribers = 0;
         end_test = false;
 
-<<<<<<< HEAD
     }
-=======
     AnnouncementListener() {}
->>>>>>> feature/105-parameterManager
 
     void ProcessMessage(TestMessage& message) {
         /*
@@ -1738,13 +1415,9 @@ int perftest_cpp::Publisher()
 
     IMessagingReader *reader;
     // Only publisher with ID 0 will send/receive pings
-<<<<<<< HEAD
-    struct RTIOsapiThread * listenerThread = NULL;
-    if (_PubID == 0)
-    {
-=======
+    struct RTIOsapiThread *listenerThread = NULL;
+
     if (_PM.get<int>("pidMultiPubTest") == 0) {
->>>>>>> feature/105-parameterManager
         // Check if using callbacks or read thread
         if (!_PM.get<bool>("useReadThread")) {
             // create latency pong reader
@@ -1777,21 +1450,13 @@ int perftest_cpp::Publisher()
                     reader,
                     _PM.get<bool>("latencyTest") ? writer : NULL);
 
-<<<<<<< HEAD
             listenerThread = RTIOsapiThread_new(
                     "ReceiverThread",
-=======
-            RTIOsapiThread_new("ReceiverThread",
->>>>>>> feature/105-parameterManager
                     RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
                     RTI_OSAPI_THREAD_OPTION_DEFAULT,
                     RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
                     NULL,
-<<<<<<< HEAD
                     ReadThread<LatencyListener>,
-=======
-                    LatencyReadThread,
->>>>>>> feature/105-parameterManager
                     reader_listener);
         }
     }

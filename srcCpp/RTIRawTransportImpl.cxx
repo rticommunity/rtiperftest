@@ -39,7 +39,8 @@ RTIRawTransportImpl::RTIRawTransportImpl()
           _plugin(NULL),
           _workerFactory(NULL),
           _exclusiveArea(NULL),
-          _tssFactory(NULL)
+          _tssFactory(NULL),
+          _PM(NULL)
 {
 
     // Set default interface
@@ -205,197 +206,22 @@ bool RTIRawTransportImpl::parseConfig(int argc, char *argv[]) {
     std::string paramsInfo = std::string(
             "Parameters not supported by sockets: (Delete them and try again)\n");
 
-    /* Print all the non compatibles params together and return */
-    for (int j = 0; j < argc; ++j ) {
-        it = find(
-                noRawTransportParamsV.begin(),
-                noRawTransportParamsV.end(),
-                argv[j]);
-        if (it != noRawTransportParamsV.end()) {
-            paramsInfo += std::string("\t" + std::string(argv[j]) + "\n" );
-            found = true;
-        }
-    }
+    // /* Print all the non compatibles params together and return */
+    // for (int j = 0; j < argc; ++j ) {
+    //     it = find(
+    //             noRawTransportParamsV.begin(),
+    //             noRawTransportParamsV.end(),
+    //             argv[j]);
+    //     if (it != noRawTransportParamsV.end()) {
+    //         paramsInfo += std::string("\t" + std::string(argv[j]) + "\n" );
+    //         found = true;
+    //     }
+    // }
 
-    if (found) {
-        fprintf(stderr, "%s", paramsInfo.c_str());
-        return false;
-    }
-
-
-    // Command line params
-    for (i = 0; i < argc; ++i) {
-        if (IS_OPTION(argv[i], "-pub")) {
-            _isPublisher = true;
-        }
-        else if (IS_OPTION(argv[i], "-scan")) {
-            _isScan = true;
-            if ((i != (argc - 1)) && *argv[1 + i] != '-') {
-                ++i;
-                unsigned long auxScan;
-                char *pch;
-                pch = strtok(argv[i], ":");
-                while (pch != NULL) {
-                    if (sscanf(pch, "%lu", &auxScan) != 1) {
-                        fprintf(
-                                stderr,
-                                "-scan <size> value must have the format '-scan"
-                                " <size1>:<size2>:...:<sizeN>'\n");
-                        return false;
-                    }
-                    pch = strtok(NULL, ":");
-                    if (auxScan >= _scanMaxSize) {
-                        _scanMaxSize = auxScan;
-                    }
-                }
-            }
-        }
-        else if (IS_OPTION(argv[i], "-dataLen")) {
-
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <length> after -dataLen\n");
-                return false;
-            }
-
-            _dataLen = strtol(argv[i], NULL, 10);
-
-            if (_dataLen < (unsigned long)perftest_cpp::OVERHEAD_BYTES) {
-                fprintf(
-                        stderr,
-                        "-dataLen must be >= %d\n",
-                        perftest_cpp::OVERHEAD_BYTES);
-                return false;
-            }
-
-            if (_dataLen > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE) {
-                fprintf(
-                        stderr,
-                        "-dataLen must be <= %d\n",
-                        MAX_PERFTEST_SAMPLE_SIZE);
-                return false;
-            }
-
-        }
-        else if (IS_OPTION(argv[i], "-domain")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <id> after -domain\n");
-                return false;
-            }
-            _domainID = strtol(argv[i], NULL, 10);
-        }
-        else if (IS_OPTION(argv[i], "-bestEffort")) {
-            /*
-             * RawTransport only support bestEffort
-             * This is just for accept the parameter if is provided
-             */
-        }
-        else if (IS_OPTION(argv[i], "-verbosity")) {
-            errno = 0;
-            int verbosityLevel = strtol(argv[++i], NULL, 10);
-
-            if (errno) {
-                fprintf(stderr, "Unexpected value after -verbosity\n");
-                return false;
-            }
-
-            switch (verbosityLevel) {
-            case 0:
-                NDDSConfigLogger::get_instance()->set_verbosity(
-                        NDDS_CONFIG_LOG_VERBOSITY_SILENT);
-                fprintf(stderr, "Setting verbosity to SILENT\n");
-                break;
-            case 1:
-                NDDSConfigLogger::get_instance()->set_verbosity(
-                        NDDS_CONFIG_LOG_VERBOSITY_ERROR);
-                fprintf(stderr, "Setting verbosity to ERROR\n");
-                break;
-            case 2:
-                NDDSConfigLogger::get_instance()->set_verbosity(
-                        NDDS_CONFIG_LOG_VERBOSITY_WARNING);
-                fprintf(stderr, "Setting verbosity to WARNING\n");
-                break;
-            case 3:
-                NDDSConfigLogger::get_instance()->set_verbosity(
-                        NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
-                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
-                break;
-            default:
-                fprintf(
-                        stderr,
-                        "Invalid value for the verbosity parameter. "
-                        "Setting verbosity to ERROR (1)\n");
-                verbosityLevel = 1;
-                break;
-            }
-        }
-        else if (IS_OPTION(argv[i], "-latencyTest")) {
-            _latencyTest = true;
-        }
-        else if (IS_OPTION(argv[i], "-noBlockingSockets")) {
-            _useBlocking = false;
-        }
-        else if (IS_OPTION(argv[i], "-peer")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                fprintf(stderr, "Missing <address> after -peer\n");
-                return false;
-            }
-            if (_peerHostCount +1 < RTIPERFTEST_MAX_PEERS) {
-                _peerHost[_peerHostCount++] = DDS_String_dup(argv[i]);
-                if (_peerHost[_peerHostCount-1] == NULL) {
-                    fprintf(
-                            stderr,
-                            "Fail to allocate memory on parseConfig()\n");
-                    return false;
-                }
-            } else {
-                fprintf(
-                        stderr,
-                        "The maximun of -initial peers is %d\n",
-                        RTIPERFTEST_MAX_PEERS);
-                return false;
-            }
-        }
-        else if (IS_OPTION(argv[i], "-batchSize")) {
-
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                fprintf(stderr, "Missing <#bytes> after -batchSize\n");
-                return false;
-            }
-            _batchSize = strtol(argv[i], NULL, 10);
-
-            if (_batchSize < 0
-                    || _batchSize > (unsigned int) MAX_SYNCHRONOUS_SIZE) {
-                fprintf(
-                        stderr,
-                        "Batch size '%d' should be between [0,%d]\n",
-                        _batchSize,
-                        MAX_SYNCHRONOUS_SIZE);
-                return false;
-            }
-        }
-        else {
-
-            if (i > 0) {
-                std::map<std::string, unsigned int> transportCmdOpts =
-                    PerftestTransport::getTransportCmdLineArgs();
-
-                std::map<std::string, unsigned int>::iterator it =
-                    transportCmdOpts.find(argv[i]);
-                if (it != transportCmdOpts.end()) {
-                    /*
-                     * Increment the counter with the number of arguments
-                     * obtained from the map.
-                     */
-                    i = i + it->second;
-                    continue;
-                }
-
-                fprintf(stderr, "%s: not recognized\n", argv[i]);
-                return false;
-            }
-        }
-    }
+    // if (found) {
+    //     fprintf(stderr, "%s", paramsInfo.c_str());
+    //     return false;
+    // }
 
     if (_isScan) {
         _dataLen = _scanMaxSize;
@@ -952,9 +778,11 @@ public:
 /*********************************************************
  * Initialize
  */
-bool RTIRawTransportImpl::Initialize(int argc, char *argv[])
+bool RTIRawTransportImpl::Initialize(ParameterManager &PM)
 {
-    if (!parseConfig(argc, argv)) {
+    _PM = &PM;
+
+    if (!validate_input() {
         return false;
     }
 
