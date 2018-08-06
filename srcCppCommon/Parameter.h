@@ -19,6 +19,7 @@
 
 #define MAX_ULLONG 18446744073709551615ULL
 
+typedef unsigned int GroupMask;
 
 /*
  * This enum specifies the type of the parameter.
@@ -50,13 +51,22 @@ enum ExtraArgument {
 };
 
 // This enum specifies the group of a parameter. It is used to sort the help message.
-enum Group {
-    GENERAL,
-    PUB,
-    SUB,
-    TRANSPORT,
-    SECURE,
-    RAWTRANSPORT
+// enum Group {
+//     GENERAL,
+//     PUB,
+//     SUB,
+//     TRANSPORT,
+//     SECURE,
+//     RAWTRANSPORT
+// };
+
+struct Group{
+    static const GroupMask GENERAL;
+    static const GroupMask PUB;
+    static const GroupMask SUB;
+    static const GroupMask TRANSPORT;
+    static const GroupMask SECURE;
+    static const GroupMask RAWTRANSPORT;
 };
 
 class CommandLineArgument {
@@ -83,7 +93,7 @@ class ParameterBase {
         Type _type;
         ExtraArgument  _extraArgument;
         bool _internal; // It will not be displayed to the customer
-        Group _group;
+        unsigned int _groupMask;
 
         /*
          * Only used for numeric Parameter
@@ -120,7 +130,7 @@ class ParameterBase {
         void set_type(const Type var);
         void set_extra_argument(const ExtraArgument var);
         void set_internal(const bool var);
-        void set_group(const Group var);
+        void set_group(const GroupMask var);
         void set_range(
                 const unsigned long long rangeStart,
                 unsigned long long rangeEnd);
@@ -136,7 +146,7 @@ class ParameterBase {
         const Type get_type();
         const ExtraArgument get_extra_argument();
         const bool get_internal();
-        const Group get_group();
+        const GroupMask get_group();
         const ParseMethod get_parse_method();
 };
 
