@@ -768,7 +768,7 @@ void ParameterManager::initialize()
                 "PERFORMANCE PROBLEMS.\n");
     sleep->set_type(T_BOOL);
     sleep->set_extra_argument(NO);
-    sleep->set_group(RAWTRANSPORT);
+    sleep->set_group(Group::RAWTRANSPORT);
     create("noBlockingSockets", noBlockingSockets);
 
     ParameterVector<std::string> *peerRT = new ParameterVector<std::string>();
@@ -779,7 +779,7 @@ void ParameterManager::initialize()
             "This argument may be repeated to indicate multiple peers");
     peerRT->set_type(T_VECTOR_STR);
     peerRT->set_extra_argument(YES);
-    peerRT->set_group(RAWTRANSPORT);
+    peerRT->set_group(Group::RAWTRANSPORT);
     create("peerRT", peerRT);
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1160,6 +1160,20 @@ bool ParameterManager::check_incompatible_parameters()
             }
         }
     }
+
+    // Check incompatibilities with rawTransport
+    if (get<bool>("rawTransport")) {
+        for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
+            if (it->second.get()->get_isSet()
+                && !(it->second.get()->get_group() & Group::RAWTRANSPORT)) {
+                fprintf(stderr,
+                        "Cannot use '%s' while setting '-rawTransport'.\n",
+                        it->second.get()->get_option().c_str());
+                success = false;
+            }
+        }
+    }
+
     return success;
 }
 

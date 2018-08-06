@@ -161,50 +161,50 @@ bool RTIRawTransportImpl::parseConfig(int argc, char *argv[]) {
     unsigned long _scanMaxSize = 0;
     int i;
 
-    bool found = false;
-    std::vector<std::string>::iterator it;
+    // bool found = false;
+    // std::vector<std::string>::iterator it;
 
-    /* Parameters not supported by sockets */
-    std::vector<std::string> noRawTransportParamsV;
+    // /* Parameters not supported by sockets */
+    // std::vector<std::string> noRawTransportParamsV;
 
-    /*C++98 dont support extended initializer lists*/
-    noRawTransportParamsV.push_back(std::string("-unbounded"));
-    noRawTransportParamsV.push_back(std::string("-sendQueueSize"));
-    noRawTransportParamsV.push_back(std::string("-heartbeatPeriod"));
-    noRawTransportParamsV.push_back(std::string("-fastHeartbeatPeriod"));
-    noRawTransportParamsV.push_back(std::string("-qosFile"));
-    noRawTransportParamsV.push_back(std::string("-qosLibrary"));
-    noRawTransportParamsV.push_back(std::string("-durability"));
-    noRawTransportParamsV.push_back(std::string("-dynamicData"));
-    noRawTransportParamsV.push_back(std::string("-noDirectCommunication"));
-    noRawTransportParamsV.push_back(std::string("-instances"));
-    noRawTransportParamsV.push_back(std::string("-instanceHashBuckets"));
-    noRawTransportParamsV.push_back(std::string("-keepDurationUsec"));
-    noRawTransportParamsV.push_back(std::string("-noPositiveAcks"));
-    noRawTransportParamsV.push_back(std::string("-waitsetDelayUsec"));
-    noRawTransportParamsV.push_back(std::string("-waitsetEventCount"));
-    noRawTransportParamsV.push_back(std::string("-enableAutoThrottle"));
-    noRawTransportParamsV.push_back(std::string("-enableTurboMode"));
-    noRawTransportParamsV.push_back(std::string("-noXmlQos"));
-    noRawTransportParamsV.push_back(std::string("-asynchronous"));
-    noRawTransportParamsV.push_back(std::string("-flowController"));
-    noRawTransportParamsV.push_back(std::string("-cft"));
-    noRawTransportParamsV.push_back(std::string("-writeInstance"));
-    noRawTransportParamsV.push_back(std::string("-enableTCP"));
-    noRawTransportParamsV.push_back(std::string("-enableUDPv6"));
-    noRawTransportParamsV.push_back(std::string("-allowInterfaces"));
-    noRawTransportParamsV.push_back(std::string("-transportServerBindPort"));
-    noRawTransportParamsV.push_back(std::string("-transportWan"));
-    noRawTransportParamsV.push_back(std::string("-transportCertAuthority"));
-    noRawTransportParamsV.push_back(std::string("-transportCertFile"));
-    noRawTransportParamsV.push_back(std::string("-transportPrivateKey"));
-    noRawTransportParamsV.push_back(std::string("-transportWanServerAddress"));
-    noRawTransportParamsV.push_back(std::string("-transportWanServerPort"));
-    noRawTransportParamsV.push_back(std::string("-transportWanId"));
-    noRawTransportParamsV.push_back(std::string("-transportSecureWan"));
+    // /*C++98 dont support extended initializer lists*/
+    // noRawTransportParamsV.push_back(std::string("-unbounded"));
+    // noRawTransportParamsV.push_back(std::string("-sendQueueSize"));
+    // noRawTransportParamsV.push_back(std::string("-heartbeatPeriod"));
+    // noRawTransportParamsV.push_back(std::string("-fastHeartbeatPeriod"));
+    // noRawTransportParamsV.push_back(std::string("-qosFile"));
+    // noRawTransportParamsV.push_back(std::string("-qosLibrary"));
+    // noRawTransportParamsV.push_back(std::string("-durability"));
+    // noRawTransportParamsV.push_back(std::string("-dynamicData"));
+    // noRawTransportParamsV.push_back(std::string("-noDirectCommunication"));
+    // noRawTransportParamsV.push_back(std::string("-instances"));
+    // noRawTransportParamsV.push_back(std::string("-instanceHashBuckets"));
+    // noRawTransportParamsV.push_back(std::string("-keepDurationUsec"));
+    // noRawTransportParamsV.push_back(std::string("-noPositiveAcks"));
+    // noRawTransportParamsV.push_back(std::string("-waitsetDelayUsec"));
+    // noRawTransportParamsV.push_back(std::string("-waitsetEventCount"));
+    // noRawTransportParamsV.push_back(std::string("-enableAutoThrottle"));
+    // noRawTransportParamsV.push_back(std::string("-enableTurboMode"));
+    // noRawTransportParamsV.push_back(std::string("-noXmlQos"));
+    // noRawTransportParamsV.push_back(std::string("-asynchronous"));
+    // noRawTransportParamsV.push_back(std::string("-flowController"));
+    // noRawTransportParamsV.push_back(std::string("-cft"));
+    // noRawTransportParamsV.push_back(std::string("-writeInstance"));
+    // noRawTransportParamsV.push_back(std::string("-enableTCP"));
+    // noRawTransportParamsV.push_back(std::string("-enableUDPv6"));
+    // noRawTransportParamsV.push_back(std::string("-allowInterfaces"));
+    // noRawTransportParamsV.push_back(std::string("-transportServerBindPort"));
+    // noRawTransportParamsV.push_back(std::string("-transportWan"));
+    // noRawTransportParamsV.push_back(std::string("-transportCertAuthority"));
+    // noRawTransportParamsV.push_back(std::string("-transportCertFile"));
+    // noRawTransportParamsV.push_back(std::string("-transportPrivateKey"));
+    // noRawTransportParamsV.push_back(std::string("-transportWanServerAddress"));
+    // noRawTransportParamsV.push_back(std::string("-transportWanServerPort"));
+    // noRawTransportParamsV.push_back(std::string("-transportWanId"));
+    // noRawTransportParamsV.push_back(std::string("-transportSecureWan"));
 
-    std::string paramsInfo = std::string(
-            "Parameters not supported by sockets: (Delete them and try again)\n");
+    // std::string paramsInfo = std::string(
+    //         "Parameters not supported by sockets: (Delete them and try again)\n");
 
     // /* Print all the non compatibles params together and return */
     // for (int j = 0; j < argc; ++j ) {
@@ -223,36 +223,98 @@ bool RTIRawTransportImpl::parseConfig(int argc, char *argv[]) {
     //     return false;
     // }
 
-    if (_isScan) {
-        _dataLen = _scanMaxSize;
+    // if (_isScan) {
+    //     _dataLen = _scanMaxSize;
+    // }
+
+    // Manage parameter -batchSize
+    if (_PM->get<long>("batchSize") > 0) {
+        // We will not use batching for a latency test
+        if (_PM->get<bool>("latencyTest")) {
+            if (_PM->is_set("batchSize")) {
+                fprintf(stderr, "Batching cannot be used in a Latency test.\n");
+                return false;
+            } else {
+                _PM->set<long>("batchSize", 0); // Disable Batching
+            }
+        }
     }
 
-    if (_batchSize != 0 && _dataLen > _batchSize) {
-        fprintf(stderr, "\t -batchSize must be bigger or equal than -datalen\n");
-        return false;
+    if ((unsigned long) _PM->get<long>("batchSize")
+        < _PM->get<unsigned long long>("dataLen") * 2) {
+        /*
+         * We don't want to use batching if the batch size is not large
+         * enough to contain at least two samples (in this case we avoid the
+         * checking at the middleware level).
+         */
+        if (_PM->is_set("batchSize") || _PM->is_set("scan")) {
+            /*
+             * Batchsize disabled. A message will be print if _batchSize < 0
+             * in perftest_cpp::PrintConfiguration()
+             */
+            _PM->set<long>("batchSize", -1);
+        } else {
+            _PM->set<long>("batchSize", 0);  // Disable Batching
+        }
     }
 
-    if (_batchSize != 0 && _latencyTest) {
-        fprintf(
-                stderr,
-                "\t -latencyTest not supported with batchign. (Remove "
-                "-batchSize)\n");
-        return false;
-    }
 
     if (_dataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
-        fprintf(stderr, "Large data settings enabled.\n");
-        _isLargeData = true;
-    }
-
-    if (!_transport.parseTransportOptions(argc, argv)) {
-        fprintf(stderr, "Failure parsing the transport options.\n");
+        fprintf(stderr,
+                "The maximun dataLen for rawTransport is %d.\n",
+                NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
         return false;
     }
 
-    if (_transport.useMulticast && (_peerHostCount > 0)) {
-        fprintf(
-                stderr,
+    /*
+     * Manage parameter -verbosity.
+     * Setting verbosity if the parameter is provided
+     */
+    if (_PM->is_set("verbosity")) {
+        switch (_PM->get<int>("verbosity")) {
+            case 0:
+                NDDSConfigLogger::get_instance()->set_verbosity(
+                        NDDS_CONFIG_LOG_VERBOSITY_SILENT);
+                fprintf(stderr, "Setting verbosity to SILENT\n");
+                break;
+            case 1:
+                NDDSConfigLogger::get_instance()->set_verbosity(
+                        NDDS_CONFIG_LOG_VERBOSITY_ERROR);
+                fprintf(stderr, "Setting verbosity to ERROR\n");
+                break;
+            case 2:
+                NDDSConfigLogger::get_instance()->set_verbosity(
+                        NDDS_CONFIG_LOG_VERBOSITY_WARNING);
+                fprintf(stderr, "Setting verbosity to WARNING\n");
+                break;
+            case 3: NDDSConfigLogger::get_instance()->set_verbosity(
+                        NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
+                break;
+            default:
+                fprintf(stderr, "Invalid value for the '-verbosity' parameter\n");
+                return false;
+        }
+    }
+
+    // Manage transport parameter
+    if (!_transport.validate_input()) {
+        fprintf(stderr, "Failure validation the transport options.\n");
+        return false;
+    };
+
+    // Manage parameter -peer
+    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
+        fprintf(stderr,
+                "The maximun of 'initial_peers' is %d\n",
+                RTIPERFTEST_MAX_PEERS);
+        return false;
+    }
+
+    // Manage parameter -multicast
+    if (_PM->get<bool>("multicast")
+        && _PM->get_vector<std::string>("peer").size() > 0) {
+        fprintf(stderr,
                 "\tFor multicast, if you want to send to other IP, "
                 "use multicastAddr\n");
         return false;
@@ -781,6 +843,8 @@ public:
 bool RTIRawTransportImpl::Initialize(ParameterManager &PM)
 {
     _PM = &PM;
+
+    _transport.initialize(_PM);
 
     if (!validate_input() {
         return false;
