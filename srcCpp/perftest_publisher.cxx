@@ -121,14 +121,7 @@ int perftest_cpp::Run(int argc, char *argv[])
             if (_PM.get<bool>("keyed")) {
                 _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
             } else {
-                fprintf(stderr, "Using unbounded Sequences, allocation_threshold %lu.\n", _useUnbounded);
-                if (_isKeyed) {
-                    fprintf(stderr, "Using Keyed Data.\n");
-                    _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
-                } else {
-                    fprintf(stderr, "Using Unkeyed Data.\n");
-                    _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
-                }
+                _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
             }
         }
     }
@@ -1023,7 +1016,6 @@ class AnnouncementListener : public IMessagingCB
         end_test = false;
 
     }
-    AnnouncementListener() {}
 
     void ProcessMessage(TestMessage& message) {
         /*

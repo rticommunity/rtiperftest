@@ -31,9 +31,7 @@ class RTIRawTransportImpl : public IMessaging {
 
     ~RTIRawTransportImpl() { Shutdown(); }
 
-    void PrintCmdLineHelp();
-
-    bool parseConfig(int argc, char *argv[]);
+    bool validate_input();
 
     std::string PrintConfiguration();
 
@@ -80,7 +78,7 @@ class RTIRawTransportImpl : public IMessaging {
 
     bool isMulticast()
     {
-        return _transport.useMulticast && _transport.allowsMulticast();
+        return _PM->get<bool>("multicast") && _transport.allowsMulticast();
     }
 
   private:

@@ -720,8 +720,8 @@ void ParameterManager::initialize()
     transportSecureWan->set_group(Group::TRANSPORT);
     create("transportSecureWan", transportSecureWan);
 
-    Parameter<std::string> *transportCertAuthority
-        new Parameter<std::string>(TRANSPORT_CERTAUTHORITY_FILE);
+    Parameter<std::string> *transportCertAuthority =
+            new Parameter<std::string>(TRANSPORT_CERTAUTHORITY_FILE);
     transportCertAuthority->set_command_line_argument(
             "-transportCertAuthority", "<file>");
     transportCertAuthority->set_description(

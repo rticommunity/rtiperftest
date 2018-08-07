@@ -44,7 +44,7 @@ RTIRawTransportImpl::RTIRawTransportImpl()
 {
 
     // Set default interface
-    _transport.allowInterfaces = std::string("127.0.0.1");
+    _PM->set<std::string>("allowInterfaces", std::string("127.0.0.1"));
 
     // Reserve space for the peers
     peerData::resourcesList.reserve(RTIPERFTEST_MAX_PEERS);
@@ -136,96 +136,9 @@ bool RTIRawTransportImpl::SupportsDiscovery()
 }
 
 /*********************************************************
- * PrintCmdLineHelp
+ * validate_input
  */
-void RTIRawTransportImpl::PrintCmdLineHelp() {
-    /**************************************************************************/
-    std::string usage_string = std::string(
-            "\t-domain <ID>                  - RTI DDS Domain, default 1\n") +
-            "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
-            "\t                                Default: \"default\" (If using asynchronous).\n" +
-            "\t-peer <address>               - Adds a peer to the peer host address list.\n" +
-            "\t                                This argument may be repeated to indicate multiple peers\n" +
-            "\t-noBlockingSockets            - Control blocking behavior of send sockets to never block.\n" +
-            "\t                                CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT PERFORMANCE PROBLEMS.\n" +
-            "\n";
-    usage_string += _transport.helpMessageString();
-
-    fprintf(stderr, "%s", usage_string.c_str());
-}
-
-/*********************************************************
- * parseConfig
- */
-bool RTIRawTransportImpl::parseConfig(int argc, char *argv[]) {
-    unsigned long _scanMaxSize = 0;
-    int i;
-
-    // bool found = false;
-    // std::vector<std::string>::iterator it;
-
-    // /* Parameters not supported by sockets */
-    // std::vector<std::string> noRawTransportParamsV;
-
-    // /*C++98 dont support extended initializer lists*/
-    // noRawTransportParamsV.push_back(std::string("-unbounded"));
-    // noRawTransportParamsV.push_back(std::string("-sendQueueSize"));
-    // noRawTransportParamsV.push_back(std::string("-heartbeatPeriod"));
-    // noRawTransportParamsV.push_back(std::string("-fastHeartbeatPeriod"));
-    // noRawTransportParamsV.push_back(std::string("-qosFile"));
-    // noRawTransportParamsV.push_back(std::string("-qosLibrary"));
-    // noRawTransportParamsV.push_back(std::string("-durability"));
-    // noRawTransportParamsV.push_back(std::string("-dynamicData"));
-    // noRawTransportParamsV.push_back(std::string("-noDirectCommunication"));
-    // noRawTransportParamsV.push_back(std::string("-instances"));
-    // noRawTransportParamsV.push_back(std::string("-instanceHashBuckets"));
-    // noRawTransportParamsV.push_back(std::string("-keepDurationUsec"));
-    // noRawTransportParamsV.push_back(std::string("-noPositiveAcks"));
-    // noRawTransportParamsV.push_back(std::string("-waitsetDelayUsec"));
-    // noRawTransportParamsV.push_back(std::string("-waitsetEventCount"));
-    // noRawTransportParamsV.push_back(std::string("-enableAutoThrottle"));
-    // noRawTransportParamsV.push_back(std::string("-enableTurboMode"));
-    // noRawTransportParamsV.push_back(std::string("-noXmlQos"));
-    // noRawTransportParamsV.push_back(std::string("-asynchronous"));
-    // noRawTransportParamsV.push_back(std::string("-flowController"));
-    // noRawTransportParamsV.push_back(std::string("-cft"));
-    // noRawTransportParamsV.push_back(std::string("-writeInstance"));
-    // noRawTransportParamsV.push_back(std::string("-enableTCP"));
-    // noRawTransportParamsV.push_back(std::string("-enableUDPv6"));
-    // noRawTransportParamsV.push_back(std::string("-allowInterfaces"));
-    // noRawTransportParamsV.push_back(std::string("-transportServerBindPort"));
-    // noRawTransportParamsV.push_back(std::string("-transportWan"));
-    // noRawTransportParamsV.push_back(std::string("-transportCertAuthority"));
-    // noRawTransportParamsV.push_back(std::string("-transportCertFile"));
-    // noRawTransportParamsV.push_back(std::string("-transportPrivateKey"));
-    // noRawTransportParamsV.push_back(std::string("-transportWanServerAddress"));
-    // noRawTransportParamsV.push_back(std::string("-transportWanServerPort"));
-    // noRawTransportParamsV.push_back(std::string("-transportWanId"));
-    // noRawTransportParamsV.push_back(std::string("-transportSecureWan"));
-
-    // std::string paramsInfo = std::string(
-    //         "Parameters not supported by sockets: (Delete them and try again)\n");
-
-    // /* Print all the non compatibles params together and return */
-    // for (int j = 0; j < argc; ++j ) {
-    //     it = find(
-    //             noRawTransportParamsV.begin(),
-    //             noRawTransportParamsV.end(),
-    //             argv[j]);
-    //     if (it != noRawTransportParamsV.end()) {
-    //         paramsInfo += std::string("\t" + std::string(argv[j]) + "\n" );
-    //         found = true;
-    //     }
-    // }
-
-    // if (found) {
-    //     fprintf(stderr, "%s", paramsInfo.c_str());
-    //     return false;
-    // }
-
-    // if (_isScan) {
-    //     _dataLen = _scanMaxSize;
-    // }
+bool RTIRawTransportImpl::validate_input() {
 
     // Manage parameter -batchSize
     if (_PM->get<long>("batchSize") > 0) {
@@ -846,7 +759,7 @@ bool RTIRawTransportImpl::Initialize(ParameterManager &PM)
 
     _transport.initialize(_PM);
 
-    if (!validate_input() {
+    if (!validate_input()) {
         return false;
     }
 
@@ -970,10 +883,10 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
     unsigned int j = 0;
 
     // If multicat, then take the multicast address.
-    if (_transport.useMulticast
+    if (_PM->get<bool>("multicast")
             && getMulticastTransportAddr(topicName, multicastAddr)) {
         isMulticastAddr = true;
-    } else if (_transport.useMulticast) {
+    } else if (_PM->get<bool>("multicast")) {
         fprintf(stderr, "Bad configuration for multicast (sockets)\n");
         return NULL;
     }
@@ -1037,10 +950,10 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
     RTIBool result = true;
 
     /* If multicat, then take the multicast address. */
-    if (_transport.useMulticast
+    if (_PM->get<bool>("multicast")
             && getMulticastTransportAddr(topicName, multicastAddr)) {
         isMulticastAddr = true;
-    } else if (_transport.useMulticast) {
+    } else if (_PM->get<bool>("multicast")) {
         fprintf(stderr, "Bad configuration for multicast (RawTransport)\n");
         return NULL;
     }
@@ -1073,7 +986,8 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
 bool RTIRawTransportImpl::configureSocketsTransport()
 {
     char *interfaceAddr = NULL; /*WARNING: interface is a reserved word on VS*/
-    interfaceAddr = DDS_String_dup(_transport.allowInterfaces.c_str());
+    interfaceAddr
+            = DDS_String_dup(_PM->get<std::string>("allowInterfaces").c_str());
     if (interfaceAddr == NULL) {
         fprintf(
                 stderr,
@@ -1127,7 +1041,7 @@ bool RTIRawTransportImpl::configureSocketsTransport()
             udpv4_prop.parent.allow_interfaces_list = &interfaceAddr;
             udpv4_prop.parent.allow_interfaces_list_length = 1;
 
-            if (_transport.useMulticast) {
+            if (_PM->get<bool>("multicast")) {
                 udpv4_prop.parent.allow_multicast_interfaces_list = &interfaceAddr;
                 udpv4_prop.parent.allow_multicast_interfaces_list_length = 1;
                 udpv4_prop.reuse_multicast_receive_resource = 1;
@@ -1191,7 +1105,7 @@ bool RTIRawTransportImpl::configureSocketsTransport()
             }
 
             /* Check if the multicast addres is correct */
-            if (_transport.useMulticast
+            if (_PM->get<bool>("multicast")
                     && getNumMulticastInterfaces(udpPlugin) <= 0) {
                 fprintf(
                         stderr,
@@ -1273,7 +1187,7 @@ bool RTIRawTransportImpl::configureSocketsTransport()
          * For SHMEM we dont want to print any interface on the
          * printTransportConfigurationSummary()
          */
-        _transport.allowInterfaces = std::string();
+        _PM->set<std::string>("allowInterfaces", std::string(""));
 
         break;
     }

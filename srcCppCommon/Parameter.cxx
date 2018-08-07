@@ -8,8 +8,6 @@
 
 #include "Parameter.h"
 ////////////////////////////////////////////////////////////////////////////
-<<<<<<< HEAD
-=======
 /* Implementation of Group bit mask */
 
 const GroupMask Group::GENERAL = 1 << 0;      // 0000 0001
@@ -20,7 +18,6 @@ const GroupMask Group::SECURE = 1 << 4;       // 0001 0000
 const GroupMask Group::RAWTRANSPORT = 1 << 5; // 0010 0000
 
 ////////////////////////////////////////////////////////////////////////////
->>>>>>> feature/105-parameterManager
 /* Implementation Class CommandLineArgument*/
 
 CommandLineArgument::CommandLineArgument() {}
@@ -62,11 +59,7 @@ ParameterBase::ParameterBase()
     _type = T_NULL;
     _extraArgument = NO;
     _numericRange= std::make_pair(0, MAX_ULLONG);
-<<<<<<< HEAD
-    _group = GENERAL;
-=======
     _groupMask = Group::GENERAL;
->>>>>>> feature/105-parameterManager
 }
 
 ParameterBase::~ParameterBase()
@@ -156,15 +149,9 @@ void ParameterBase::set_internal(const bool var)
     _internal = var;
 }
 
-<<<<<<< HEAD
-void ParameterBase::set_group(const Group var)
-{
-    _group = var;
-=======
 void ParameterBase::set_group(const GroupMask var)
 {
     _groupMask = var;
->>>>>>> feature/105-parameterManager
 }
 
 // Get members
@@ -208,15 +195,9 @@ const bool ParameterBase::get_internal()
     return _internal;
 }
 
-<<<<<<< HEAD
-const Group ParameterBase::get_group()
-{
-    return _group;
-=======
 const GroupMask ParameterBase::get_group()
 {
     return _groupMask;
->>>>>>> feature/105-parameterManager
 }
 
 const ParseMethod ParameterBase::get_parse_method()
