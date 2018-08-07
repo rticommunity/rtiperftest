@@ -123,7 +123,7 @@ class ParameterManager
         bool check_incompatible_parameters();
 
         // Verify if there is a parameter of the group set
-        bool group_is_used(GroupMask group);
+        bool group_is_used(Group group);
 
 
     private:
