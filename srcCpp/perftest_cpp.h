@@ -85,7 +85,6 @@ class perftest_cpp
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
     IMessaging *_MessagingImpl;
-    bool _useRawTransport;
 
     static const Perftest_ProductVersion_t _version;
 

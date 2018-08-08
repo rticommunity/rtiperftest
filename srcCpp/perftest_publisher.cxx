@@ -108,7 +108,7 @@ int perftest_cpp::Run(int argc, char *argv[])
     if (!validate_input()) {
         return -1;
     }
-    if (_useRawTransport) {
+    if (_PM.get<bool>("rawTransport")) {
         _MessagingImpl = new RTIRawTransportImpl();
     } else {
         if (_PM.get<int>("unbounded") == 0) {
@@ -233,13 +233,6 @@ perftest_cpp::perftest_cpp()
  */
 bool perftest_cpp::validate_input()
 {
-
-// TODO:
-//     else if (IS_OPTION(argv[i], "-rawTransport"))
-//     {
-//         _useRawTransport = true;
-//         _UseReadThread = true;
-//     }
 
     // Manage parameter -sleep
     // It is copied because it is used in the critical patch
@@ -374,6 +367,10 @@ bool perftest_cpp::validate_input()
                     "Unbounded will be ignored since large data is not presented.\n");
             _PM.set<int>("unbounded", 0);
         }
+    }
+
+    if (_PM.get<bool>("rawTransport")) {
+        _PM.set("useReadThread", true);
     }
 
     // TODO: Manage the parameter: -threadPriorities
@@ -1329,7 +1326,7 @@ static void *ReadThread(void *arg)
     // Meanwhile it's been use the reader, avoid the destruction of it.
     if (semaphore != NULL) {
         if (RTIOsapiSemaphore_take(semaphore, NULL)
-            != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+                != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
             fprintf(stderr, "Unexpected error taking semaphore\n");
             return NULL;
         }

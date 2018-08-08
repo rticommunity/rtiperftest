@@ -7,15 +7,13 @@
 
 
 #include "Parameter.h"
-////////////////////////////////////////////////////////////////////////////
-/* Implementation of Group bit mask */
 
-const GroupMask Group::GENERAL = 1 << 0;      // 0000 0001
-const GroupMask Group::PUB = 1 << 1;          // 0000 0010
-const GroupMask Group::SUB = 1 << 2;          // 0000 0100
-const GroupMask Group::TRANSPORT = 1 << 3;    // 0000 1000
-const GroupMask Group::SECURE = 1 << 4;       // 0001 0000
-const GroupMask Group::RAWTRANSPORT = 1 << 5; // 0010 0000
+
+////////////////////////////////////////////////////////////////////////////
+/* Implementation of middleware bit mask */
+const MiddlewareMask Middleware::RTIDDSPRO = 1 << 0;
+const MiddlewareMask Middleware::RTIDDSMICRO = 1 << 1;
+const MiddlewareMask Middleware::RAWTRANSPORT = 1 << 2;
 
 ////////////////////////////////////////////////////////////////////////////
 /* Implementation Class CommandLineArgument*/
@@ -59,7 +57,7 @@ ParameterBase::ParameterBase()
     _type = T_NULL;
     _extraArgument = NO;
     _numericRange= std::make_pair(0, MAX_ULLONG);
-    _groupMask = Group::GENERAL;
+    _group = GENERAL;
 }
 
 ParameterBase::~ParameterBase()
@@ -149,9 +147,14 @@ void ParameterBase::set_internal(const bool var)
     _internal = var;
 }
 
-void ParameterBase::set_group(const GroupMask var)
+void ParameterBase::set_group(const Group var)
 {
-    _groupMask = var;
+    _group = var;
+}
+
+void ParameterBase::set_supported_middleware(const MiddlewareMask var)
+{
+    _middlewareMask = var;
 }
 
 // Get members
@@ -195,9 +198,14 @@ const bool ParameterBase::get_internal()
     return _internal;
 }
 
-const GroupMask ParameterBase::get_group()
+const Group ParameterBase::get_group()
 {
-    return _groupMask;
+    return _group;
+}
+
+const MiddlewareMask ParameterBase::get_supported_middleware()
+{
+    return _middlewareMask;
 }
 
 const ParseMethod ParameterBase::get_parse_method()

@@ -82,18 +82,6 @@ class RTIRawTransportImpl : public IMessaging {
     }
 
   private:
-    unsigned long _dataLen;
-    int _domainID;
-    bool _latencyTest;
-    bool _isDebug;
-    bool _isLargeData;
-    bool _isScan;
-    bool _isPublisher;
-    unsigned int _batchSize;
-    int _peerHostCount;
-    char *_peerHost[RTIPERFTEST_MAX_PEERS];
-    unsigned int _basePort;
-    bool _useBlocking;
 
     std::vector<std::pair<NDDS_Transport_Address_t, int> > _peersMap;
     std::vector<peerData> _peersDataList;

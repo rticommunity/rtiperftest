@@ -23,18 +23,7 @@ std::vector<NDDS_Transport_SendResource_t> peerData::resourcesList;
  * Constructor
  */
 RTIRawTransportImpl::RTIRawTransportImpl()
-        : _dataLen(100),
-          _domainID(1),
-          _latencyTest(false),
-          _isDebug(false),
-          _isLargeData(false),
-          _isScan(false),
-          _isPublisher(false),
-          _batchSize(0),
-          _peerHostCount(0),
-          _basePort(7400),
-          _useBlocking(true),
-          _transport(),
+        : _transport(),
           _pongSemaphore(NULL),
           _plugin(NULL),
           _workerFactory(NULL),
@@ -42,9 +31,6 @@ RTIRawTransportImpl::RTIRawTransportImpl()
           _tssFactory(NULL),
           _PM(NULL)
 {
-
-    // Set default interface
-    _PM->set<std::string>("allowInterfaces", std::string("127.0.0.1"));
 
     // Reserve space for the peers
     peerData::resourcesList.reserve(RTIPERFTEST_MAX_PEERS);
@@ -88,11 +74,6 @@ void RTIRawTransportImpl::Shutdown()
 /*********************************************************
  * Getters
  */
-int RTIRawTransportImpl::GetBatchSize()
-{
-    return _batchSize;
-}
-
 unsigned long RTIRawTransportImpl::GetInitializationSampleCount()
 {
     return 0;
@@ -172,7 +153,8 @@ bool RTIRawTransportImpl::validate_input() {
     }
 
 
-    if (_dataLen > (unsigned long)MAX_SYNCHRONOUS_SIZE) {
+    if (_PM->get<unsigned long long>("dataLen")
+            > (unsigned long) MAX_SYNCHRONOUS_SIZE) {
         fprintf(stderr,
                 "The maximun dataLen for rawTransport is %d.\n",
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
@@ -216,8 +198,8 @@ bool RTIRawTransportImpl::validate_input() {
         return false;
     };
 
-    // Manage parameter -peer
-    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
+    // Manage parameter -peerRT
+    if (_PM->get_vector<std::string>("peerRT").size() >= RTIPERFTEST_MAX_PEERS) {
         fprintf(stderr,
                 "The maximun of 'initial_peers' is %d\n",
                 RTIPERFTEST_MAX_PEERS);
@@ -226,10 +208,16 @@ bool RTIRawTransportImpl::validate_input() {
 
     // Manage parameter -multicast
     if (_PM->get<bool>("multicast")
-        && _PM->get_vector<std::string>("peer").size() > 0) {
+        && _PM->get_vector<std::string>("peerRT").size() > 0) {
         fprintf(stderr,
                 "\tFor multicast, if you want to send to other IP, "
                 "use multicastAddr\n");
+        return false;
+    }
+
+    // Manage parameter -noBlockingSockets
+    if (_PM->get<bool>("noBlockingSockets")) {
+        fprintf(stderr, "SHMEM dont support -noBlockingSockets\n");
         return false;
     }
 
@@ -247,13 +235,13 @@ std::string RTIRawTransportImpl::PrintConfiguration()
     stringStream << "\tMiddleware: RawTransport\n";
 
     // Domain ID
-    stringStream << "\tDomain: " << _domainID << "\n";
+    stringStream << "\tDomain: " << _PM->get<int>("domain") << "\n";
 
     stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
     // Blocking sockets
     stringStream << "\tBlocking Sockets: ";
-    if (_useBlocking) {
+    if (!_PM->get<bool>("noBlockingSockets")) {
         stringStream << "Yes\n";
     } else {
         stringStream << "No\n";
@@ -261,7 +249,7 @@ std::string RTIRawTransportImpl::PrintConfiguration()
 
     // Ports
     stringStream << "\tThe following ports will be used: ";
-    if (_isPublisher) {
+    if (_PM->get<bool>("pub")) {
         stringStream << getReceiveUnicastPort(ANNOUNCEMENT_TOPIC_NAME) << " - "
                      << getReceiveUnicastPort(LATENCY_TOPIC_NAME) << "\n";
     } else {
@@ -269,11 +257,15 @@ std::string RTIRawTransportImpl::PrintConfiguration()
     }
 
     // set initial peers and not use multicast
-    if (_peerHostCount > 0 && !isMulticast()) {
+    if (_PM->get_vector<std::string>("peerRT").size() > 0 && !isMulticast()) {
         stringStream << "\tInitial peers: ";
-        for (int i = 0; i < _peerHostCount; ++i) {
-            stringStream << _peerHost[i];
-            stringStream << ((i+1 == _peerHostCount)? "\n" : ", ");
+        for (unsigned int i = 0;
+                i < _PM->get_vector<std::string>("peerRT").size(); ++i) {
+            stringStream << _PM->get_vector<std::string>("peerRT")[i];
+            stringStream
+                    << ((i + 1 == _PM->get_vector<std::string>("peerRT").size())
+                            ? "\n"
+                            : ", ");
         }
     }
 
@@ -297,6 +289,7 @@ class RTIRawTransportPublisher : public IMessagingWriter{
     std::vector<peerData> _peersDataList;
     TestData_t _data;
     RTIOsapiSemaphore *_pongSemaphore;
+    ParameterManager *_PM;
 
     /* --- Buffers management --- */
     unsigned int _batchBufferSize;
@@ -306,20 +299,21 @@ class RTIRawTransportPublisher : public IMessagingWriter{
 
 
   public:
-    RTIRawTransportPublisher(RTIRawTransportImpl *parent)
+    RTIRawTransportPublisher(RTIRawTransportImpl *parent, ParameterManager *PM)
             : _parent(parent),
             _worker(NULL),
-            _workerTssKey(0)
+            _workerTssKey(0),
+            _PM(PM)
     {
         _plugin = parent->getPlugin();
         _peersDataList = parent->getPeersData();
         _pongSemaphore = parent->getPongSemaphore();
 
-        if (parent->GetBatchSize() == 0) {
+        if (_PM->get<long>("batchSize") <= 0) {
             _batchBufferSize = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
             _useBatching = false;
         } else {
-            _batchBufferSize = parent->GetBatchSize();
+            _batchBufferSize = _PM->get<long>("batchSize");
             _useBatching = true;
         }
 
@@ -548,6 +542,7 @@ class RTIRawTransportSubscriber : public IMessagingReader
     char *_payload;
     int _payload_size;
     struct RTIOsapiSemaphore *_readThreadSemaphore;
+    ParameterManager *_PM;
 
     /* --- Buffer Management --- */
     struct RTICdrStream _stream;
@@ -558,13 +553,15 @@ public:
     RTIRawTransportSubscriber(
         RTIRawTransportImpl * parent,
         NDDS_Transport_SendResource_t recvResource,
-        NDDS_Transport_Port_t recvPort)
+        NDDS_Transport_Port_t recvPort,
+        ParameterManager *PM)
                 : _parent(parent),
                 _recvResource(recvResource),
                 _recvPort(recvPort),
                 _worker(NULL),
                 _workerTssKey(0),
                 _readThreadSemaphore(NULL),
+                _PM(PM),
                 _noData(true)
     {
         /* --- Parents Members --- */
@@ -757,6 +754,11 @@ bool RTIRawTransportImpl::Initialize(ParameterManager &PM)
 {
     _PM = &PM;
 
+    /* Set a default interface */
+    if (_PM->get<std::string>("allowInterfaces").empty()) {
+        _PM->set<std::string>("allowInterfaces", std::string("127.0.0.1"));
+    }
+
     _transport.initialize(_PM);
 
     if (!validate_input()) {
@@ -764,7 +766,7 @@ bool RTIRawTransportImpl::Initialize(ParameterManager &PM)
     }
 
     /* Only if we run latency test we need to wait for pongs after sending pings */
-    if (_latencyTest) {
+    if (_PM->get<bool>("latencyTest")) {
         _pongSemaphore =
                 RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL);
 
@@ -802,8 +804,8 @@ unsigned int RTIRawTransportImpl::getSendUnicastPort(
             DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
 
     return PRESRtps_getWellKnownUnicastPort(
-            _domainID, /* domainId */
-            _isPublisher ? subId + 1 : 0, /* participantId */
+            _PM->get<int>("domain"), /* domainId */
+            _PM->get<bool>("pub") ? subId + 1 : 0, /* participantId */
             wellKnownPorts.port_base,
             wellKnownPorts.domain_id_gain,
             wellKnownPorts.participant_id_gain,
@@ -825,8 +827,8 @@ RTIRawTransportImpl::getReceiveUnicastPort(const char *topicName)
             DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
 
     return PRESRtps_getWellKnownUnicastPort(
-            _domainID, /* domainId */
-            _isPublisher ? 0 : perftest_cpp::_SubID + 1, /* participantId */
+            _PM->get<int>("domain"), /* domainId */
+            _PM->get<bool>("pub") ? 0 : perftest_cpp::_SubID + 1, /* participantId */
             wellKnownPorts.port_base,
             wellKnownPorts.domain_id_gain,
             wellKnownPorts.participant_id_gain,
@@ -891,8 +893,12 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
         return NULL;
     }
 
-    /* _peerHostCount is garanteed to be 1 if multicast is enabled */
-    for (int i = 0; i < _peerHostCount; i++) {
+    /*
+     * _PM->get_vector<std::string>("peerRT").size() is garanteed to be 1 if
+     * multicast is enabled
+     */
+    for (unsigned int i = 0;
+            i < _PM->get_vector<std::string>("peerRT").size(); i++) {
         shared = false;
         actualAddr = isMulticastAddr ? multicastAddr : _peersMap[i].first;
 
@@ -934,7 +940,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
                         actualPort));
     }
 
-    return new RTIRawTransportPublisher(this);
+    return new RTIRawTransportPublisher(this, _PM);
 }
 
 /*********************************************************
@@ -980,7 +986,8 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
     return new RTIRawTransportSubscriber(
             this,
             recvResource,
-            recvPort);
+            recvPort,
+            _PM);
 }
 
 bool RTIRawTransportImpl::configureSocketsTransport()
@@ -988,6 +995,11 @@ bool RTIRawTransportImpl::configureSocketsTransport()
     char *interfaceAddr = NULL; /*WARNING: interface is a reserved word on VS*/
     interfaceAddr
             = DDS_String_dup(_PM->get<std::string>("allowInterfaces").c_str());
+    std::vector<std::string> peers = _PM->get_vector<std::string>("peerRT");
+    if (peers.empty()) {
+        peers.push_back("127.0.0.1");
+    }
+
     if (interfaceAddr == NULL) {
         fprintf(
                 stderr,
@@ -996,9 +1008,10 @@ bool RTIRawTransportImpl::configureSocketsTransport()
     }
 
     /* If no peer is given, assume a default one */
-    if (_peerHostCount == 0) {
-        _peerHost[0] = (char *) "127.0.0.1";
-        _peerHostCount = 1;
+    if (_PM->get_vector<std::string>("peerRT").size() == 0) {
+        std::vector<std::string> auxVector;
+        auxVector.push_back(std::string( "127.0.0.1"));
+        _PM->set<std::vector<std::string> >("peerRT", auxVector);
     }
 
     /* --- Worker configure --- */
@@ -1050,7 +1063,7 @@ bool RTIRawTransportImpl::configureSocketsTransport()
                 udpv4_prop.unicast_enabled = 0;
             }
 
-            if (_useBlocking) {
+            if (!_PM->get<bool>("noBlockingSockets")) {
                 udpv4_prop.send_blocking = NDDS_TRANSPORT_UDPV4_BLOCKING_ALWAYS;
             } else {
                 // This will reduce the package lost but affect on the
@@ -1115,15 +1128,15 @@ bool RTIRawTransportImpl::configureSocketsTransport()
             }
 
             /* Peers address and ID parse to NDDS_Transport_Address_t */
-            for (int i = 0; i < _peerHostCount; i++) {
+            for (unsigned int i = 0; i < peers.size(); i++) {
                 id_sub = 0;
                 /* Regular expression to identify ADDRESS:ID */
-                sscanf(_peerHost[i], "%[^:]:%d", addr_sub, &id_sub);
+                sscanf(peers[i].c_str(), "%[^:]:%d", addr_sub, &id_sub);
 
                 if (NDDS_Transport_UDP_string_to_address_cEA(
-                            _plugin,
-                            &addr,
-                            addr_sub)) {
+                        _plugin,
+                        &addr,
+                        addr_sub)) {
                     _peersMap.push_back(
                             std::pair<NDDS_Transport_Address_t, int>(
                                     addr, id_sub));
@@ -1142,12 +1155,6 @@ bool RTIRawTransportImpl::configureSocketsTransport()
     {
         struct NDDS_Transport_Shmem_Property_t shmem_prop =
                 NDDS_TRANSPORT_SHMEM_PROPERTY_DEFAULT;
-
-        //TODO: move to validate function when parameter manager merge
-        if (!_useBlocking) {
-            fprintf(stderr, "SHMEM dont support -noBlockingSockets\n");
-            return false;
-        }
 
         /* _Plugin configure for shared memory */
         shmem_prop.parent.message_size_max =
@@ -1175,9 +1182,9 @@ bool RTIRawTransportImpl::configureSocketsTransport()
         char addr_sub[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
         int id_sub = 0;
 
-        for (int i = 0; i < _peerHostCount; i++) {
+        for (unsigned int i = 0; i < peers.size(); i++) {
             id_sub = 0;
-            sscanf(_peerHost[i], "%[^:]:%d", addr_sub, &id_sub);
+            sscanf(peers[i].c_str(), "%[^:]:%d", addr_sub, &id_sub);
 
             _peersMap.push_back(
                     std::pair<NDDS_Transport_Address_t, int>(addr, id_sub));
