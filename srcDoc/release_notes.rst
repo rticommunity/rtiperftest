@@ -70,6 +70,14 @@ and PDF documentation from the rst files in srcDoc.
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Fix incorrect behavior of -unbounded with small data (#125)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, if -unbounded was provided with small data, the execution
+fail due to a swich off of unbounded after setting large data types.
+
+Now, unbounded will be not turn off when small data is used.
+
 Fix incorrect parsing of the `-executionTime` command-line parameter (#102)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
