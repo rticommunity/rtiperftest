@@ -93,14 +93,12 @@ public:
 
 
     static double ObtainDDSSerializeTimeCost(
-        T data,
         unsigned int sampleSize,
-        unsigned int iters);
+        unsigned int iters = 1000);
 
     static double ObtainDDSDeserializeTimeCost(
-        T data,
         unsigned int sampleSize,
-        unsigned int iters);
+        unsigned int iters = 1000);
 
     bool SupportsListener()
     {

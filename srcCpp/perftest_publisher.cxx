@@ -1068,14 +1068,17 @@ class LatencyListener : public IMessagingCB
     unsigned long      clock_skew_count;
     unsigned int       _num_latency;
     IMessagingWriter *_writer;
- public:
+    ParameterManager *_PM;
+public:
     IMessagingReader *_reader;
     CpuMonitor cpu;
 
   public:
 
-    LatencyListener(unsigned int num_latency, IMessagingReader *reader,
-            IMessagingWriter *writer)
+    LatencyListener(unsigned int num_latency,
+            IMessagingReader *reader,
+            IMessagingWriter *writer,
+            ParameterManager &PM)
     {
         latency_sum = 0;
         latency_sum_square = 0;
@@ -1115,12 +1118,15 @@ class LatencyListener : public IMessagingCB
         end_test = false;
         _reader = reader;
         _writer = writer;
+        _PM = &PM;
     }
 
     void print_summary_latency(){
 
         double latency_ave;
         double latency_std;
+        double serializeTime, deserializeTime;
+        int totalSampleSize = last_data_length + perftest_cpp::OVERHEAD_BYTES;
         std::string outputCpu = "";
         if (count == 0)
         {
@@ -1144,7 +1150,7 @@ class LatencyListener : public IMessagingCB
 
         printf("Length: %5d  Latency: Ave %6.0lf us  Std %6.1lf us  "
                "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us  99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
-               last_data_length + perftest_cpp::OVERHEAD_BYTES,
+               totalSampleSize,
                latency_ave, latency_std, latency_min, latency_max,
                _latency_history[count*50/100],
                _latency_history[count*90/100],
@@ -1155,18 +1161,48 @@ class LatencyListener : public IMessagingCB
         );
         fflush(stdout);
 
+        if (_PM->get<int>("unbounded") == 0) {
+            if (_PM->get<bool>("keyed")) {
+                serializeTime = RTIDDSImpl<TestDataKeyed_t>::
+                        ObtainDDSSerializeTimeCost(totalSampleSize);
+                deserializeTime = RTIDDSImpl<TestDataKeyed_t>::
+                        ObtainDDSDeserializeTimeCost(totalSampleSize);
+            } else {
+                serializeTime
+                        = RTIDDSImpl<TestData_t>::ObtainDDSSerializeTimeCost(
+                                totalSampleSize);
+                deserializeTime
+                        = RTIDDSImpl<TestData_t>::ObtainDDSDeserializeTimeCost(
+                                totalSampleSize);
+            }
+        } else {
+            if (_PM->get<bool>("keyed")) {
+                serializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
+                        ObtainDDSSerializeTimeCost(totalSampleSize);
+                deserializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
+                        ObtainDDSDeserializeTimeCost(totalSampleSize);
+            } else {
+                serializeTime = RTIDDSImpl<TestDataLarge_t>::
+                        ObtainDDSSerializeTimeCost(totalSampleSize);
+                deserializeTime = RTIDDSImpl<TestDataLarge_t>::
+                        ObtainDDSDeserializeTimeCost(totalSampleSize);
+            }
+        }
+
         //TODO: made it work with custom data etc..
         /*TODO: all declaration at the top. (waiting to solve the template problem)*/
-        unsigned int iterations = 10000;
-        double seriTime = ObtainSerializeTimeCost(
-                iterations, last_data_length + perftest_cpp::OVERHEAD_BYTES);
-        double deseriTime = ObtainDeserializeTimeCost(
-                iterations, last_data_length + perftest_cpp::OVERHEAD_BYTES);
+        // unsigned int iterations = 10000;
+        // double seriTime = ObtainSerializeTimeCost(
+        //         iterations,
+        //         last_data_length + perftest_cpp::OVERHEAD_BYTES);
+        // double deseriTime = ObtainDeserializeTimeCost(
+        //         iterations,
+        //         last_data_length + perftest_cpp::OVERHEAD_BYTES);
         printf("Serialization time per sample: %0.3f / Deserialization time per "
                "sample: %0.3f us / TOTAL: %0.3f us\n",
-               seriTime,
-               deseriTime,
-               seriTime + deseriTime);
+               serializeTime,
+               deserializeTime,
+               serializeTime + deserializeTime);
 
         latency_sum = 0;
         latency_sum_square = 0;
@@ -1414,7 +1450,8 @@ int perftest_cpp::Publisher()
             reader_listener = new LatencyListener(
                     num_latency,
                     NULL,
-                    _PM.get<bool>("latencyTest") ? writer : NULL);
+                    _PM.get<bool>("latencyTest") ? writer : NULL,
+                    _PM);
             reader = _MessagingImpl->CreateReader(
                     LATENCY_TOPIC_NAME,
                     reader_listener);
@@ -1437,7 +1474,8 @@ int perftest_cpp::Publisher()
             reader_listener = new LatencyListener(
                     num_latency,
                     reader,
-                    _PM.get<bool>("latencyTest") ? writer : NULL);
+                    _PM.get<bool>("latencyTest") ? writer : NULL,
+                    _PM);
 
             listenerThread = RTIOsapiThread_new(
                     "ReceiverThread",
