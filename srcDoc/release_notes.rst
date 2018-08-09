@@ -70,13 +70,12 @@ and PDF documentation from the rst files in srcDoc.
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Fix incorrect behavior of -unbounded with small data (#125)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Fix incorrect behavior the `-unbounded` command-line option when not using large data (#125)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In previous releases, if -unbounded was provided with small data, the execution
-fail due to a swich off of unbounded after setting large data types.
-
-Now, unbounded will be not turn off when small data is used.
+In the 2.4 release a regression was introduced and the use of `-unbounded`
+would cause a failure when using datasizes from `28` to `63000 Bytes`. This
+issue has been resolved.
 
 Fix incorrect parsing of the `-executionTime` command-line parameter (#102)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
