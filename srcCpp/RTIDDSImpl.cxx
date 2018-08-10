@@ -173,7 +173,7 @@ bool RTIDDSImpl<T>::validate_input()
 
         // Check if using asynchronous
         if (_PM->get<bool>("asynchronous")) {
-            if (_PM->is_set("batchSize")) {
+            if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
                 fprintf(stderr,
                         "Batching cannot be used with asynchronous writing.\n");
                 return false;
@@ -188,7 +188,7 @@ bool RTIDDSImpl<T>::validate_input()
          * so we explitly fail
          */
         if (_isLargeData) {
-            if (_PM->is_set("batchSize")) {
+            if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
                 fprintf(stderr, "Batching cannot be used with Large Data.\n");
                 return false;
             } else {
