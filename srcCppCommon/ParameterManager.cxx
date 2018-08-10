@@ -849,7 +849,7 @@ void ParameterManager::initialize()
     rawTransport->set_command_line_argument("-rawTransport", "");
     rawTransport->set_description(
             "Use sockets as a transport instead of DDS protocol.\n"
-            "Support UDPv4 and Shared Memory (SHMEM). Default: UDPv4\n"
+            "Support UDPv4 and Shared Memory (SHMEM).\n"
             "Many of the parameters are not supported with sockets.\n");
     rawTransport->set_type(T_BOOL);
     rawTransport->set_extra_argument(NO);

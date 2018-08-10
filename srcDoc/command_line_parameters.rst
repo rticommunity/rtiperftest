@@ -300,6 +300,14 @@ Test Parameters for Publishing and Subscribing Applications
    **Default:**
    ``Not set. RTI Perftest will use the default initial peers (localhost, shared-memory and multicast).``
 
+-  ``-rawTransport``
+
+  Use sockets as a transport instead of DDS protocol. Support UDPv4 and Shared
+  Memory (SHMEM).
+  Many of the parameters are not supported with sockets.
+
+   **Default:** ``Not set``
+
 Transport Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -677,6 +685,24 @@ Test Parameters to Control RTI Connext DDS Secure Options
 
    **Default for Publisher:** ``./resource/secure/pubkey.pem`` **Default
    for Subscriber:** ``./resource/secure/subkey.pem``
+
+
+RawTransport Specific Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-  ``-peerRT <address:id>``
+
+   Adds a peer to the peer host address list with a optional id of the
+   subscriber. If the id is not provided, assume zero. This argument may be
+   repeated to indicate multiple peers.
+
+   **Default:** Not set.
+
+-  ``-noBlockingSockets``
+
+   Control blocking behavior of send sockets to never block.
+   CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANTPERFORMANCE PROBLEMS.
+
+   **Default:** Not set (Always Block).
 
 Additional information about the parameters
 -------------------------------------------
