@@ -33,7 +33,7 @@ RTI_UINT64 perftest_cpp::_Clock_usec = 0;
 const long timeout_wait_for_ack_sec = 0;
 const unsigned long timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {2, 3, 2, 0};
-PerftestThreadPriorities perftest_cpp::threadPriorities;
+PerftestThreadPriorities _threadPriorities;
 
 /*
  * PERFTEST-108
@@ -95,7 +95,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
         return -1;
     }
 
-    if (perftest_cpp::threadPriorities.isSet && !set_main_thread_priority()) {
+    if (_threadPriorities.isSet && !set_main_thread_priority()) {
         return -1;
     }
 
@@ -126,7 +126,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
 
 bool perftest_cpp::set_main_thread_priority()
 {
-    int priority = perftest_cpp::threadPriorities.main;
+    int priority = _threadPriorities.main;
 
 #ifdef RTI_WIN32
     unsigned long error;
@@ -174,7 +174,7 @@ bool perftest_cpp::set_main_thread_priority()
         return false;
     }
 #else
-    fprintf(stderr, "-threadPriorities are not supported on this platform\n");
+    fprintf(stderr, "-_threadPriorities are not supported on this platform\n");
 #endif
 
     return true;
@@ -198,14 +198,14 @@ bool perftest_cpp::check_priority_range(int value)
         success = false;
     }
 #else
-    fprintf(stderr, "-threadPriorities are not supported on this platform\n");
+    fprintf(stderr, "-_threadPriorities are not supported on this platform\n");
     return false;
 #endif
 
     if (!success) {
         fprintf(
                 stderr,
-                "The input priority (%d) on -threadPriorities are outside"
+                "The input priority (%d) on -_threadPriorities are outside"
                 " of rage for this platform\n",
                 value);
         return false;
@@ -222,25 +222,25 @@ bool perftest_cpp::parse_priority(std::string arg)
     /* If is given by numbers */
     if (sscanf(arg.c_str(),
             "%d:%d:%d",
-            &perftest_cpp::threadPriorities.main,
-            &perftest_cpp::threadPriorities.receive,
-            &perftest_cpp::threadPriorities.dbAndEvent) == 3) {
-        if (!check_priority_range(perftest_cpp::threadPriorities.main)
-                || !check_priority_range(perftest_cpp::threadPriorities.receive)
-                || !check_priority_range(perftest_cpp::threadPriorities.dbAndEvent)) {
+            &_threadPriorities.main,
+            &_threadPriorities.receive,
+            &_threadPriorities.dbAndEvent) == 3) {
+        if (!check_priority_range(_threadPriorities.main)
+                || !check_priority_range(_threadPriorities.receive)
+                || !check_priority_range(_threadPriorities.dbAndEvent)) {
             fprintf(stderr,
-                    "Fail to parse -threadPriorities\n");
+                    "Fail to parse -_threadPriorities\n");
             return false;
         }
 
     } else if (sscanf(arg.c_str(), "%c:%c:%c", &x, &y, &z) == 3) {
         /* Check if is given by characters */
-        if (!perftest_cpp::threadPriorities.set_priorities(x, y, z)) {
-            fprintf(stderr, "Fail to parse -threadPriorities\n");
+        if (!_threadPriorities.set_priorities(x, y, z)) {
+            fprintf(stderr, "Fail to parse -_threadPriorities\n");
             return false;
         }
     } else {
-        fprintf(stderr, "Fail to parse -threadPriorities\n");
+        fprintf(stderr, "Fail to parse -_threadPriorities\n");
         return false;
     }
 
@@ -433,7 +433,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                          test\n"
         "\t-useReadThread          - Use separate thread instead of callback to \n"
         "\t                          read data\n"
-        "\t-threadPriorities X:Y:Z - Set the priorities for the application Threads:\n"
+        "\t-_threadPriorities X:Y:Z - Set the priorities for the application Threads:\n"
         "\t                              X -- For the Main Thread, which will be the one\n"
         "\t                                   sending the data. Also for the Asynchronous\n"
         "\t                                   thread if that one is used.\n"
@@ -899,17 +899,17 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 throw std::logic_error("[Error] Error parsing commands");
             }
             _MessagingArgc++;
-        } else if (IS_OPTION(argv[i], "-threadPriorities")) {
+        } else if (IS_OPTION(argv[i], "-_threadPriorities")) {
             if ((i == (argc - 1))) {
                 fprintf(stderr,
-                        "Missing <A:B:C> priorities after -threadPriorities\n");
+                        "Missing <A:B:C> priorities after -_threadPriorities\n");
                 return false;
             }
             if (!parse_priority(argv[++i])) {
-                fprintf(stderr, "Wrong sintax after -threadPriorities\n");
+                fprintf(stderr, "Wrong sintax after -_threadPriorities\n");
                 return false;
             }
-            perftest_cpp::threadPriorities.isSet = true;
+            _threadPriorities.isSet = true;
         } else
         {
             _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
@@ -1117,14 +1117,14 @@ void perftest_cpp::PrintConfiguration()
     }
 
     // Thread priority
-    if (perftest_cpp::threadPriorities.isSet) {
+    if (_threadPriorities.isSet) {
         stringStream << "\tUsing thread priorities:" << std::endl;
         stringStream << "\t\tMain thread Priority: "
-                << perftest_cpp::threadPriorities.main << std::endl;
+                << _threadPriorities.main << std::endl;
         stringStream << "\t\tReceive thread Priority: "
-                << perftest_cpp::threadPriorities.receive << std::endl;
+                << _threadPriorities.receive << std::endl;
         stringStream << "\t\tDataBase and Event threads Priority: "
-                << perftest_cpp::threadPriorities.dbAndEvent << std::endl;
+                << _threadPriorities.dbAndEvent << std::endl;
     }
 
     stringStream << _MessagingImpl->PrintConfiguration();
@@ -1410,8 +1410,8 @@ int perftest_cpp::RunSubscriber()
         int threadPriority = RTI_OSAPI_THREAD_PRIORITY_DEFAULT;
         int threadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
 
-        if (perftest_cpp::threadPriorities.isSet) {
-            threadPriority = perftest_cpp::threadPriorities.receive;
+        if (_threadPriorities.isSet) {
+            threadPriority = _threadPriorities.receive;
             threadOptions = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
                     | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
         }
@@ -1949,8 +1949,8 @@ int perftest_cpp::RunPublisher()
             int threadPriority = RTI_OSAPI_THREAD_PRIORITY_DEFAULT;
             int threadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
 
-            if (perftest_cpp::threadPriorities.isSet) {
-                threadPriority = perftest_cpp::threadPriorities.receive;
+            if (_threadPriorities.isSet) {
+                threadPriority = _threadPriorities.receive;
                 threadOptions = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
                         | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
             }

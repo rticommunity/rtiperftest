@@ -304,7 +304,7 @@ Test Parameters for Publishing and Subscribing Applications
 
     This Command Line parameter is supported only for the C++ and C++03 API
     Implementations.
-    
+
     Set the priorities for the application Threads:
         X -- For the Main Thread, which will be the one sending the data. Also
              for the Asynchronous thread if that one is used.

@@ -150,7 +150,7 @@ class perftest_cpp
   #endif
 
     // Priorities for the threads used by perftest and domain participant
-    static PerftestThreadPriorities threadPriorities;
+    static PerftestThreadPriorities _threadPriorities;
 
     // Number of bytes sent in messages besides user data
     static const int OVERHEAD_BYTES = 28;

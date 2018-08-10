@@ -15,12 +15,14 @@
 #include "PerftestTransport.h"
 #include "RTIDDSLoggerDevice.h"
 
-
 #ifdef RTI_CUSTOM_TYPE
 #include "CustomType.h"
 #endif
 
 #define RTIPERFTEST_MAX_PEERS 1024
+
+/* Forward declaration of perftest_cpp to avoid circular dependencies */
+class perftest_cpp;
 
 /* Class for the DDS_DynamicDataMemberId of the type of RTI Perftest*/
 class DynamicDataMembersId
@@ -42,6 +44,7 @@ class RTIDDSImpl : public IMessaging
 
     RTIDDSImpl() :
         _transport(),
+        _parent(NULL),
         _loggerDevice()
     {
         _SendQueueSize = 50;
@@ -113,7 +116,7 @@ class RTIDDSImpl : public IMessaging
 
     std::string PrintConfiguration();
 
-    bool Initialize(int argc, char *argv[]);
+    bool Initialize(int argc, char *argv[], perftest_cpp *parent);
 
     void Shutdown();
 
@@ -176,6 +179,7 @@ class RTIDDSImpl : public IMessaging
     unsigned int _CFTRange[2];
 
     PerftestTransport _transport;
+    perftest_cpp *_parent;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

@@ -60,6 +60,7 @@ public:
     bool ParseConfig(int argc, char *argv[]);
     void PrintConfiguration();
     unsigned int GetSamplesPerBatch();
+    const PerftestThreadPriorities get_thread_priorities();
 
   private:
     int Publisher();
@@ -147,7 +148,7 @@ public:
   #endif
 
     // Priorities for the threads used by perftest and domain participant
-    static PerftestThreadPriorities threadPriorities;
+    PerftestThreadPriorities _threadPriorities;
 
     // Number of bytes sent in messages besides user data
   #ifdef RTI_CUSTOM_TYPE
