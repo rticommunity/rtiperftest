@@ -70,7 +70,7 @@ and PDF documentation from the rst files in srcDoc.
 Raw Transport Support (#77)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-*RTI Perftest* now support a raw transport communication. This allow it to
+*RTI Perftest* now support a raw transport communication. This allow perftest to
 make tests skipping DDS protocol to calculate overhead and time differences.
 
 To run a test with this feature, ``-rawTransport`` command line option has been
@@ -123,11 +123,14 @@ Many of the command line parameter that exist for DDS are not supported if
 -  ``-transportWanServerPort``
 -  ``-transportWanId``
 -  ``-transportSecureWan``
+-  ``-peer``
 
-Other commands like ``-peer`` has been change his behavior when it's been use
-with ``-rawTransport``.
 
-    Sintax: -peer <x.x.x.x>|<x.x.x.x:id>
+For the command ``-peer`` a similar option ``-peerRT`` was created. This command
+have similar behavior as ``-peer`` and it's only aviable with ``-rawTransport``.
+You can used it to set a peer address and an optional ID:
+
+    Sintax: -peerRT <x.x.x.x>|<x.x.x.x:id>
 
     If no id is provided, it's set as zero.
 
@@ -137,7 +140,7 @@ with ``-rawTransport``.
 
 ::
 
-    perftest_cpp -pub -rawTransport -peer 127.0.0.1:5 -peer 127.0.0.1:6
+    perftest_cpp -pub -rawTransport -peerRT 127.0.0.1:5 -peerRT 127.0.0.1:6
 
 
 A new commands line parameters `-noBlockingSockets` has been added:
