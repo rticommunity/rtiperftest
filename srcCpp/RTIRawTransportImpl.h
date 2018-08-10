@@ -20,8 +20,6 @@
 
 #include "perftestPlugin.h"
 
-//TODO: maybe move this to perftest.cpp or the .idl || Postpone to new parser
-//TODO: Postpone until the parameter manager
 #define RTIPERFTEST_MAX_PEERS 1024
 
 class peerData;

@@ -145,18 +145,6 @@ class IMessaging
     virtual bool SupportsListener() = 0;
     virtual bool SupportsDiscovery() = 0;
 
-    //TODO:
-    // virtual double
-    // ObtainSerializeTimeCost(int iterations, unsigned int sampleSize)
-    // {
-    //     return 0;
-    // }
-
-    // virtual double
-    // ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize)
-    // {
-    //     return 0;
-    // }
 };
 
 
