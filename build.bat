@@ -282,8 +282,13 @@ if !BUILD_CPP! == 1 (
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
+<<<<<<< HEAD
 	-additionalHeaderFiles "!additional_header_files_custom_type!RTIRawTransportImpl.h Parameter.h ParameterManager.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
 	-additionalSourceFiles "!additional_source_files_custom_type!RTIRawTransportImpl.cxx Parameter.cxx ParameterManager.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
+=======
+	-additionalHeaderFiles "!additional_header_files_custom_type!Parameter.h ParameterManager.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
+	-additionalSourceFiles "!additional_source_files_custom_type!Parameter.cxx ParameterManager.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
+>>>>>>> feature/105-parameterManager
 	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
