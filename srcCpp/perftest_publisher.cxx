@@ -8,7 +8,6 @@
 #include "RTIRawTransportImpl.h"
 #include "perftest_cpp.h"
 #include "CpuMonitor.h"
-#include <typeinfo>
 
 #if defined(RTI_WIN32)
   #pragma warning(push)
@@ -233,7 +232,6 @@ perftest_cpp::perftest_cpp()
  */
 bool perftest_cpp::validate_input()
 {
-
     // Manage parameter -sleep
     // It is copied because it is used in the critical patch
     _SleepNanosec = 1000000 * (unsigned long)_PM.get<unsigned long long>("sleep");
@@ -369,6 +367,7 @@ bool perftest_cpp::validate_input()
         }
     }
 
+    /* RawTransport only allow listeners by threads */
     if (_PM.get<bool>("rawTransport")) {
         _PM.set("useReadThread", true);
     }
@@ -499,7 +498,7 @@ void perftest_cpp::PrintConfiguration()
 
     // Listener/WaitSets
     stringStream << "\tReceive using: ";
-    if (_PM.get<bool>("useReadThread")) {
+    if (_PM.get<bool>("useReadThread") && !_PM.get<bool>("rawTransport")) {
         stringStream << "WaitSets\n";
     } else {
         stringStream << "Listeners\n";
@@ -729,7 +728,6 @@ class ThroughputListener : public IMessagingCB
                    outputCpu.c_str()
             );
             fflush(stdout);
-
         }
 
         packets_received = 0;
@@ -860,6 +858,7 @@ int perftest_cpp::Subscriber()
     if (!_MessagingImpl->SupportsDiscovery()) {
         while (reader_listener->packets_received == 0
                 && !reader_listener->change_size){
+            /* Send announcement message until the publisher publish something*/
             announcement_writer->Send(announcement_msg);
             announcement_writer->Flush();
             perftest_cpp::MilliSleep(1000);
@@ -923,6 +922,7 @@ int perftest_cpp::Subscriber()
                 ave_count = 0;
                 continue;
             }
+
             last_msgs = reader_listener->packets_received;
             last_bytes = reader_listener->bytes_received;
             msgsent = last_msgs - prev_count;
@@ -1494,7 +1494,6 @@ int perftest_cpp::Publisher()
     announcement_reader = _MessagingImpl->CreateReader(
             ANNOUNCEMENT_TOPIC_NAME,
             announcement_reader_listener);
-
     if (announcement_reader == NULL)
     {
         fprintf(stderr, "Problem creating announcement reader.\n");
@@ -1502,8 +1501,7 @@ int perftest_cpp::Publisher()
     }
 
     struct RTIOsapiThread * announcementThread = NULL;
-    if (!_MessagingImpl->SupportsListener())
-    {
+    if (!_MessagingImpl->SupportsListener()) {
         announcement_reader_listener = new AnnouncementListener(announcement_reader);
 
         announcementThread = RTIOsapiThread_new(

@@ -9,15 +9,9 @@
 #if defined(RTI_WIN32)
 #pragma warning(push)
 #pragma warning(disable : 4996)
-#define STRNCASECMP _strnicmp
-#elif defined(RTI_VXWORKS)
-#define STRNCASECMP strncmp
-#else
-#define STRNCASECMP strncasecmp
 #endif
-#define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 
-std::vector<NDDS_Transport_SendResource_t> peerData::resourcesList;
+std::vector<NDDS_Transport_SendResource_t> PeerData::resourcesList;
 
 /*********************************************************
  * Constructor
@@ -33,7 +27,7 @@ RTIRawTransportImpl::RTIRawTransportImpl()
 {
 
     // Reserve space for the peers
-    peerData::resourcesList.reserve(RTIPERFTEST_MAX_PEERS);
+    PeerData::resourcesList.reserve(RTIPERFTEST_MAX_PEERS);
 
 }
 
@@ -43,11 +37,11 @@ RTIRawTransportImpl::RTIRawTransportImpl()
 void RTIRawTransportImpl::Shutdown()
 {
 
-    for (unsigned int i = 0; i < peerData::resourcesList.size(); i++) {
-        if (peerData::resourcesList[i] != NULL && _plugin != NULL) {
+    for (unsigned int i = 0; i < PeerData::resourcesList.size(); i++) {
+        if (PeerData::resourcesList[i] != NULL && _plugin != NULL) {
             _plugin->destroy_sendresource_srEA(
                     _plugin, _peersDataList[i].resource);
-            peerData::resourcesList[i] = NULL;
+            PeerData::resourcesList[i] = NULL;
         }
     }
 
@@ -79,28 +73,33 @@ unsigned long RTIRawTransportImpl::GetInitializationSampleCount()
     return 0;
 }
 
-NDDS_Transport_Plugin *RTIRawTransportImpl::getPlugin()
+NDDS_Transport_Plugin *RTIRawTransportImpl::get_plugin()
 {
     return _plugin;
 }
 
-std::vector<peerData> RTIRawTransportImpl::getPeersData()
+std::vector<PeerData> RTIRawTransportImpl::get_peers_data()
 {
     return _peersDataList;
 }
 
-RTIOsapiSemaphore *RTIRawTransportImpl::getPongSemaphore()
+RTIOsapiSemaphore *RTIRawTransportImpl::get_pong_semaphore()
 {
     return _pongSemaphore;
 }
-struct REDAWorkerFactory *RTIRawTransportImpl::getWorkerFactory()
+struct REDAWorkerFactory *RTIRawTransportImpl::get_worker_factory()
 {
     return _workerFactory;
 }
 
-RTIOsapiThreadTssFactory *RTIRawTransportImpl::getTssFactory()
+RTIOsapiThreadTssFactory *RTIRawTransportImpl::get_tss_factory()
 {
     return _tssFactory;
+}
+
+ParameterManager *RTIRawTransportImpl::get_parameter_manager()
+{
+    return _PM;
 }
 
 /*********************************************************
@@ -208,7 +207,7 @@ bool RTIRawTransportImpl::validate_input() {
 
     // Manage parameter -multicast
     if (_PM->get<bool>("multicast")
-        && _PM->get_vector<std::string>("peerRT").size() > 0) {
+            && _PM->get_vector<std::string>("peerRT").size() > 0) {
         fprintf(stderr,
                 "\tFor multicast, if you want to send to other IP, "
                 "use multicastAddr\n");
@@ -216,7 +215,8 @@ bool RTIRawTransportImpl::validate_input() {
     }
 
     // Manage parameter -noBlockingSockets
-    if (_PM->get<bool>("noBlockingSockets")) {
+    if (_PM->get<bool>("noBlockingSockets")
+            && _PM->get<std::string>("transport") == "SHMEM") {
         fprintf(stderr, "SHMEM dont support -noBlockingSockets\n");
         return false;
     }
@@ -240,12 +240,8 @@ std::string RTIRawTransportImpl::PrintConfiguration()
     stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
     // Blocking sockets
-    stringStream << "\tBlocking Sockets: ";
-    if (!_PM->get<bool>("noBlockingSockets")) {
-        stringStream << "Yes\n";
-    } else {
-        stringStream << "No\n";
-    }
+    stringStream << "\tBlocking Sockets: "
+                 << (_PM->get<bool>("noBlockingSockets")? "Yes\n" : "No\n");
 
     // Ports
     stringStream << "\tThe following ports will be used: ";
@@ -256,8 +252,8 @@ std::string RTIRawTransportImpl::PrintConfiguration()
         stringStream << getReceiveUnicastPort(THROUGHPUT_TOPIC_NAME) << "\n";
     }
 
-    // set initial peers and not use multicast
-    if (_PM->get_vector<std::string>("peerRT").size() > 0 && !isMulticast()) {
+    // Set initial peers
+    if (_PM->get_vector<std::string>("peerRT").size() > 0 && !is_multicast()) {
         stringStream << "\tInitial peers: ";
         for (unsigned int i = 0;
                 i < _PM->get_vector<std::string>("peerRT").size(); ++i) {
@@ -275,7 +271,7 @@ std::string RTIRawTransportImpl::PrintConfiguration()
 /*********************************************************
  * RTIPublisher
  */
-class RTIRawTransportPublisher : public IMessagingWriter{
+class RTIRawTransportPublisher : public IMessagingWriter {
   private:
 
     /* --- Transport members --- */
@@ -286,7 +282,7 @@ class RTIRawTransportPublisher : public IMessagingWriter{
     unsigned int _workerTssKey;
 
     /* --- Perftest members --- */
-    std::vector<peerData> _peersDataList;
+    std::vector<PeerData> _peersDataList;
     TestData_t _data;
     RTIOsapiSemaphore *_pongSemaphore;
     ParameterManager *_PM;
@@ -299,15 +295,15 @@ class RTIRawTransportPublisher : public IMessagingWriter{
 
 
   public:
-    RTIRawTransportPublisher(RTIRawTransportImpl *parent, ParameterManager *PM)
+    RTIRawTransportPublisher(RTIRawTransportImpl *parent)
             : _parent(parent),
-            _worker(NULL),
-            _workerTssKey(0),
-            _PM(PM)
+              _worker(NULL),
+              _workerTssKey(0)
     {
-        _plugin = parent->getPlugin();
-        _peersDataList = parent->getPeersData();
-        _pongSemaphore = parent->getPongSemaphore();
+        _plugin = parent->get_plugin();
+        _peersDataList = parent->get_peers_data();
+        _pongSemaphore = parent->get_pong_semaphore();
+        _PM = parent->get_parameter_manager();
 
         if (_PM->get<long>("batchSize") <= 0) {
             _batchBufferSize = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX;
@@ -357,9 +353,9 @@ class RTIRawTransportPublisher : public IMessagingWriter{
         }
 
         if (_worker != NULL) {
-            if (_parent->getWorkerFactory() != NULL) {
+            if (_parent->get_worker_factory() != NULL) {
                 REDAWorkerFactory_destroyWorker(
-                        _parent->getWorkerFactory(),
+                        _parent->get_worker_factory(),
                         _worker);
             } else {
                 fprintf(stderr, "Error, workerFactory destroy before worker\n");
@@ -372,9 +368,9 @@ class RTIRawTransportPublisher : public IMessagingWriter{
         bool success = true;
 
         if (_worker == NULL) {
-            _worker = RawTransportGetWorkerPerThread(
-                    _parent->getWorkerFactory(),
-                    _parent->getTssFactory(),
+            _worker = raw_transport_get_worker_per_thread(
+                    _parent->get_worker_factory(),
+                    _parent->get_tss_factory(),
                     &_workerTssKey);
         }
 
@@ -436,7 +432,6 @@ class RTIRawTransportPublisher : public IMessagingWriter{
                 message.size,
                 message.size);
 
-
         /*
          * If there is no more space on the buffer to allocate the new message
          * flush before add a new one.
@@ -455,13 +450,13 @@ class RTIRawTransportPublisher : public IMessagingWriter{
                 RTI_TRUE,
                 NULL);
 
+        /* _data is been serialize (copied). It's right to unloan then. */
+        _data.bin_data.unloan();
+
         if (!success) {
             fprintf(stderr, "Fail to serialize data\n");
             return false;
         }
-
-        /* _data is been serialize (copied). It's right to unloan then. */
-        _data.bin_data.unloan();
 
         _sendBuffer.length = RTICdrStream_getCurrentPositionOffset(&_stream);
 
@@ -553,19 +548,18 @@ public:
     RTIRawTransportSubscriber(
         RTIRawTransportImpl * parent,
         NDDS_Transport_SendResource_t recvResource,
-        NDDS_Transport_Port_t recvPort,
-        ParameterManager *PM)
+        NDDS_Transport_Port_t recvPort)
                 : _parent(parent),
-                _recvResource(recvResource),
-                _recvPort(recvPort),
-                _worker(NULL),
-                _workerTssKey(0),
-                _readThreadSemaphore(NULL),
-                _PM(PM),
-                _noData(true)
+                  _recvResource(recvResource),
+                  _recvPort(recvPort),
+                  _worker(NULL),
+                  _workerTssKey(0),
+                  _readThreadSemaphore(NULL),
+                  _noData(true)
     {
         /* --- Parents Members --- */
-        _plugin = parent->getPlugin();
+        _plugin = parent->get_plugin();
+        _PM = parent->get_parameter_manager();
 
         /* --- Buffer Management --- */
         _recvBuffer.length = 0;
@@ -638,9 +632,9 @@ public:
         }
 
         if (_worker != NULL) {
-            if (_parent->getWorkerFactory() != NULL) {
+            if (_parent->get_worker_factory() != NULL) {
                 REDAWorkerFactory_destroyWorker(
-                        _parent->getWorkerFactory(),
+                        _parent->get_worker_factory(),
                         _worker);
             } else {
                 fprintf(stderr, "Error, workerFactory destroy before worker\n");
@@ -653,9 +647,9 @@ public:
         int result = 0;
 
         if (_worker == NULL) {
-            _worker = RawTransportGetWorkerPerThread(
-                    _parent->getWorkerFactory(),
-                    _parent->getTssFactory(),
+            _worker = raw_transport_get_worker_per_thread(
+                    _parent->get_worker_factory(),
+                    _parent->get_tss_factory(),
                     &_workerTssKey);
         }
 
@@ -704,7 +698,12 @@ public:
             }
 
             TestData_tPlugin_deserialize_sample(
-                    NULL, &_data, &_stream, RTI_TRUE, RTI_TRUE, NULL);
+                    NULL,
+                    &_data,
+                    &_stream,
+                    RTI_TRUE,
+                    RTI_TRUE,
+                    NULL);
 
             _message.entity_id = _data.entity_id;
             _message.seq_num = _data.seq_num;
@@ -724,11 +723,11 @@ public:
     {
         if (_readThreadSemaphore == NULL) {
             _readThreadSemaphore = RTIOsapiSemaphore_new(
-                    RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL);
+                    RTI_OSAPI_SEMAPHORE_KIND_BINARY,
+                    NULL);
 
             if (_readThreadSemaphore == NULL) {
-                fprintf(
-                        stderr,
+                fprintf(stderr,
                         "Fail to create a Semaphore for RTIRawTransportImpl\n");
                 return NULL;
             }
@@ -771,14 +770,13 @@ bool RTIRawTransportImpl::Initialize(ParameterManager &PM)
                 RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL);
 
         if (_pongSemaphore == NULL) {
-            fprintf(
-                    stderr,
+            fprintf(stderr,
                     "Fail to create a Semaphore for RTIRawTransportImpl\n");
             return NULL;
         }
     }
 
-    if (!configureSocketsTransport()) {
+    if (!configure_sockets_transport()) {
         return false;
     }
 
@@ -788,12 +786,11 @@ bool RTIRawTransportImpl::Initialize(ParameterManager &PM)
 /*********************************************************
  * GetUnicastPort
  */
-unsigned int RTIRawTransportImpl::getSendUnicastPort(
+unsigned int RTIRawTransportImpl::get_send_unicast_port(
         const char *topicName,
         unsigned int subId)
 {
     /* subId = 0  by default */
-
     unsigned int portOffset = 0;
 
     if (!strcmp(topicName, ANNOUNCEMENT_TOPIC_NAME)) {
@@ -815,7 +812,6 @@ unsigned int RTIRawTransportImpl::getSendUnicastPort(
 unsigned int
 RTIRawTransportImpl::getReceiveUnicastPort(const char *topicName)
 {
-
     unsigned int portOffset = 0;
 
     if (!strcmp(topicName, ANNOUNCEMENT_TOPIC_NAME)) {
@@ -844,7 +840,7 @@ bool RTIRawTransportImpl::getMulticastTransportAddr(
         NDDS_Transport_Address_t &addr)
 {
     /*  Precondition */
-    if (!isMulticast()) {
+    if (!is_multicast()) {
         return false;
     }
 
@@ -877,7 +873,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
 {
 
     NDDS_Transport_Address_t multicastAddr;
-    bool isMulticastAddr = false;
+    bool is_multicastAddr = false;
 
     NDDS_Transport_Address_t actualAddr;
     int actualPort = 0;
@@ -887,7 +883,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
     // If multicat, then take the multicast address.
     if (_PM->get<bool>("multicast")
             && getMulticastTransportAddr(topicName, multicastAddr)) {
-        isMulticastAddr = true;
+        is_multicastAddr = true;
     } else if (_PM->get<bool>("multicast")) {
         fprintf(stderr, "Bad configuration for multicast (sockets)\n");
         return NULL;
@@ -900,16 +896,16 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
     for (unsigned int i = 0;
             i < _PM->get_vector<std::string>("peerRT").size(); i++) {
         shared = false;
-        actualAddr = isMulticastAddr ? multicastAddr : _peersMap[i].first;
+        actualAddr = is_multicastAddr ? multicastAddr : _peersMap[i].first;
 
         // Calculate the port of the new send resource.
-        actualPort = getSendUnicastPort(topicName, _peersMap[i].second);
+        actualPort = get_send_unicast_port(topicName, _peersMap[i].second);
 
-        for (j = 0; j < peerData::resourcesList.size() && !shared; ++j) {
+        for (j = 0; j < PeerData::resourcesList.size() && !shared; ++j) {
             // Try to share the resource
             shared = _plugin->share_sendresource_srEA(
                     _plugin,
-                    &peerData::resourcesList[j],
+                    &PeerData::resourcesList[j],
                     &actualAddr,
                     actualPort,
                     NDDS_TRANSPORT_PRIORITY_DEFAULT);
@@ -918,29 +914,35 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
             /* If the resource is not shared, then create a new one and store it */
             NDDS_Transport_SendResource_t resource;
             if (!_plugin->create_sendresource_srEA(
-                        _plugin,
-                        &resource,
-                        &actualAddr,
-                        actualPort,
-                        NDDS_TRANSPORT_PRIORITY_DEFAULT)) {
+                    _plugin,
+                    &resource,
+                    &actualAddr,
+                    actualPort,
+                    NDDS_TRANSPORT_PRIORITY_DEFAULT)) {
                 fprintf(
                         stderr,
                         "create_sendresource_srEA error.\n");
                 return NULL;
             }
 
-            peerData::resourcesList.push_back(resource);
+            PeerData::resourcesList.push_back(resource);
         }
         /* This data will be use by the writer to send to multiples peers. */
         _peersDataList.push_back(
-                peerData(
-                        shared ? &peerData::resourcesList[j-1]
-                                : &peerData::resourcesList.back(),
+                PeerData(
+                        shared ? &PeerData::resourcesList[j-1]
+                                : &PeerData::resourcesList.back(),
                         actualAddr,
                         actualPort));
     }
-
-    return new RTIRawTransportPublisher(this, _PM);
+    try {
+        return new RTIRawTransportPublisher(this);
+    } catch (const std::exception &ex) {
+        fprintf(stderr,
+                "Exception in RTIRawTransportImpl::CreateWriter(): %s.\n",
+                ex.what());
+        return NULL;
+    }
 }
 
 /*********************************************************
@@ -952,13 +954,13 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
     NDDS_Transport_RecvResource_t recvResource = NULL;
     NDDS_Transport_Port_t recvPort = 0;
     NDDS_Transport_Address_t multicastAddr;
-    bool isMulticastAddr = false;
+    bool is_multicastAddr = false;
     RTIBool result = true;
 
     /* If multicat, then take the multicast address. */
     if (_PM->get<bool>("multicast")
             && getMulticastTransportAddr(topicName, multicastAddr)) {
-        isMulticastAddr = true;
+        is_multicastAddr = true;
     } else if (_PM->get<bool>("multicast")) {
         fprintf(stderr, "Bad configuration for multicast (RawTransport)\n");
         return NULL;
@@ -971,7 +973,7 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
             _plugin,
             &recvResource,
             &recvPort,
-            (isMulticastAddr)? &multicastAddr : NULL,
+            (is_multicastAddr)? &multicastAddr : NULL,
             NDDS_TRANSPORT_PRIORITY_DEFAULT);
 
     if (!result) {
@@ -982,15 +984,18 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
             recvPort);
         return NULL;
     }
+    try {
+        return new RTIRawTransportSubscriber(this, recvResource, recvPort);
+    } catch (const std::exception &ex) {
+        fprintf(stderr,
+                "Exception in RTIRawTransportImpl::CreateReader(): %s.\n",
+                ex.what());
+        return NULL;
+    }
 
-    return new RTIRawTransportSubscriber(
-            this,
-            recvResource,
-            recvPort,
-            _PM);
 }
 
-bool RTIRawTransportImpl::configureSocketsTransport()
+bool RTIRawTransportImpl::configure_sockets_transport()
 {
     char *interfaceAddr = NULL; /*WARNING: interface is a reserved word on VS*/
     interfaceAddr
@@ -1001,9 +1006,8 @@ bool RTIRawTransportImpl::configureSocketsTransport()
     }
 
     if (interfaceAddr == NULL) {
-        fprintf(
-                stderr,
-                "Fail allocating memory on configureSocketsTransport\n");
+        fprintf(stderr,
+                "Fail allocating memory on configure_sockets_transport\n");
         return false;
     }
 
@@ -1066,8 +1070,10 @@ bool RTIRawTransportImpl::configureSocketsTransport()
             if (!_PM->get<bool>("noBlockingSockets")) {
                 udpv4_prop.send_blocking = NDDS_TRANSPORT_UDPV4_BLOCKING_ALWAYS;
             } else {
-                // This will reduce the package lost but affect on the
-                // performance.
+                /*
+                 * This will reduce the package lost but affect on the
+                 * performance
+                 */
                 udpv4_prop.send_blocking = NDDS_TRANSPORT_UDPV4_BLOCKING_NEVER;
             }
 
@@ -1077,6 +1083,7 @@ bool RTIRawTransportImpl::configureSocketsTransport()
             /*
              * Minimum number of gather-send buffers that must be supported by a
              * Transport Plugin implementation.
+             * Actually, we only use one.
              */
             udpv4_prop.parent.gather_send_buffer_count_max =
                     NDDS_TRANSPORT_PROPERTY_GATHER_SEND_BUFFER_COUNT_MIN;
@@ -1110,18 +1117,16 @@ bool RTIRawTransportImpl::configureSocketsTransport()
             struct NDDS_Transport_UDP *udpPlugin;
             udpPlugin = (struct NDDS_Transport_UDP *) _plugin;
             if (udpPlugin->_interfacesCount == 0) {
-                fprintf(
-                        stderr,
+                fprintf(stderr,
                         "Input interface (%s) not recognize\n",
                         interfaceAddr);
                 return false;
             }
 
-            /* Check if the multicast addres is correct */
+            /* Check if the multicast address is correct */
             if (_PM->get<bool>("multicast")
-                    && getNumMulticastInterfaces(udpPlugin) <= 0) {
-                fprintf(
-                        stderr,
+                    && get_num_multicast_interfaces(udpPlugin) <= 0) {
+                fprintf(stderr,
                         "The interface (%s) does not have multicast-enabled\n",
                         interfaceAddr);
                 return false;
@@ -1219,7 +1224,7 @@ bool RTIRawTransportImpl::configureSocketsTransport()
     return true;
 }
 
-int getNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin)
+int get_num_multicast_interfaces(struct NDDS_Transport_UDP *plugin)
 {
     int count = 0;
 
@@ -1229,7 +1234,7 @@ int getNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin)
 
     for (int i = 0; i < plugin->_interfacesCount; i++) {
         if (plugin->_interfaceArray[i]._interfaceFlags
-            & RTI_OSAPI_SOCKET_INTERFACE_FLAG_MULTICAST) {
+                & RTI_OSAPI_SOCKET_INTERFACE_FLAG_MULTICAST) {
             ++count;
         }
     }
@@ -1240,7 +1245,7 @@ int getNumMulticastInterfaces(struct NDDS_Transport_UDP *plugin)
  * Get the worker for the current thread, creating it if necessary.
  * This simulate the DDS_DomainParticipantGlobals_get_worker_per_threadI function
  */
-struct REDAWorker *RawTransportGetWorkerPerThread(
+struct REDAWorker *raw_transport_get_worker_per_thread(
         REDAWorkerFactory *workerFactory,
         RTIOsapiThreadTssFactory *tssFactory,
         unsigned int *workerTssKey)

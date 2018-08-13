@@ -91,7 +91,6 @@ public:
      * with a precision of microseconds.
      */
 
-
     static double ObtainDDSSerializeTimeCost(
         unsigned int sampleSize,
         unsigned int iters = 1000);
@@ -147,10 +146,6 @@ private:
   #endif
 
 };
-
-double ObtainSerializeTimeCost(int iterations, unsigned int sampleSize);
-
-double ObtainDeserializeTimeCost(int iterations, unsigned int sampleSize);
 
 #endif // __RTIDDSIMPL_H__
 

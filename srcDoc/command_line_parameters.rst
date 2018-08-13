@@ -302,11 +302,28 @@ Test Parameters for Publishing and Subscribing Applications
 
 -  ``-rawTransport``
 
-  Use sockets as a transport instead of DDS protocol. Support UDPv4 and Shared
-  Memory (SHMEM).
-  Many of the parameters are not supported with sockets.
+   Use sockets as a transport instead of DDS protocol. Support UDPv4 and Shared
+   Memory (SHMEM).
+   Many of the parameters are not supported with sockets.
 
    **Default:** ``Not set``
+
+-  ``-peerRT <address>``
+
+   Adds a peer to the peer host address list with a optional id of the
+   subscriber. If the id is not provided, assume zero.
+
+   This argument may be repeated to indicate multiple peers
+
+   **Default:**
+   ``Not set. RTI Perftest will use the a default initial peer (127.0.0.1).``
+
+-  ``-noBlockingSockets``
+
+   Control blocking behavior of send sockets to never block.
+   CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANTPERFORMANCE PROBLEMS.
+
+   **Default:** ``Not set. Always Block``
 
 Transport Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

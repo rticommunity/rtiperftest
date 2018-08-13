@@ -139,9 +139,7 @@ class IMessaging
      */
     virtual IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback) = 0;
 
-    /*
-     * Get information about witch features are supported by the medleware
-     */
+    /* Get information about witch features are supported by the medleware */
     virtual bool SupportsListener() = 0;
     virtual bool SupportsDiscovery() = 0;
 
