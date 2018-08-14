@@ -70,71 +70,35 @@ and PDF documentation from the rst files in srcDoc.
 Raw Transport Support (#77)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-*RTI Perftest* now support a raw transport communication. This allow perftest to
-make tests skipping DDS protocol to calculate overhead and time differences.
+*RTI Perftest* now supports raw transport communications. This allows the
+application to performance tests skipping the DDS protocol. The purpose of this
+feature is to allow the calculation of protocol overhead and time differences.
 
-To run a test with this feature, ``-rawTransport`` command line option has been
-added.
+To run a test with this feature, the ``-rawTransport`` command line option is
+required.
 
 RawTransport feature it's only aviable for C++ and support two kind of transport
 protocols, UDPv4 and Shared Memory
 
-The nexts kind of test are aviable:
+The Raw-Transport Feature allows the following configurations:
 
 -  `Multicast` (Only for UDPv4)
 -  `One-to-many communication` (Pub -> Sub)
 -  `Latency Test` / `Throughput Test`
 -  `Scan`
 
-Many of the command line parameter that exist for DDS are not supported if
-``-rawTransport`` is used:
-
--  ``-unbounded``
--  ``-sendQueueSize``
--  ``-heartbeatPeriod``
--  ``-fastHeartbeatPeriod``
--  ``-qosFile``
--  ``-qosLibrary``
--  ``-durability``
--  ``-dynamicData``
--  ``-noDirectCommunication``
--  ``-instances``
--  ``-instanceHashBuckets``
--  ``-keepDurationUsec``
--  ``-noPositiveAcks``
--  ``-waitsetDelayUsec``
--  ``-waitsetEventCount``
--  ``-enableAutoThrottle``
--  ``-enableTurboMode``
--  ``-noXmlQos``
--  ``-asynchronous``
--  ``-flowController``
--  ``-cft``
--  ``-writeInstance``
--  ``-enableTCP``
--  ``-enableUDPv6``
--  ``-allowInterfaces``
--  ``-transportServerBindPort``
--  ``-transportWan``
--  ``-transportCertAuthority``
--  ``-transportCertFile``
--  ``-transportPrivateKey``
--  ``-transportWanServerAddress``
--  ``-transportWanServerPort``
--  ``-transportWanId``
--  ``-transportSecureWan``
--  ``-peer``
-
+Some of the command line parameter that exist for DDS are not supported if
+``-rawTransport`` is used.
 
 For the command ``-peer`` a similar option ``-peerRT`` was created. This command
-have similar behavior as ``-peer`` and it's only aviable with ``-rawTransport``.
+have similar behavior as ``-peer`` and it's only available with ``-rawTransport``.
 You can used it to set a peer address and an optional ID:
 
     Sintax: -peerRT <x.x.x.x>|<x.x.x.x:id>
 
     If no id is provided, it's set as zero.
 
-    Any number of peer can be set until 1024 that correspond to RTIPERFTEST_MAX_PEERS.
+    Any number of peers can be set until 1024 that correspond to RTIPERFTEST_MAX_PEERS.
 
     Example:
 
@@ -148,7 +112,7 @@ A new commands line parameters `-noBlockingSockets` has been added:
 -  This command change the blocking behavior of send sockets to `never block`.
 -  It only aviable with RawTransport with UDPv4 as protocol.
 -  Potencialy it can reduce the lost packets.
--  CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT PERFORMANCE PROBLEMS.
+-  CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT PERFORMANCE VARIATIONS.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~

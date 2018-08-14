@@ -637,11 +637,14 @@ void ParameterManager::initialize()
     peer->set_command_line_argument("-peer", "<address>");
     peer->set_description(
             "Adds a peer to the peer host address list.\n"
+            "If -rawTransport is used, a optional ID of the subscriber could be"
+            "provied\n"
             "This argument may be repeated to indicate multiple peers");
     peer->set_type(T_VECTOR_STR);
     peer->set_extra_argument(YES);
     peer->set_group(TRANSPORT);
-    peer->set_supported_middleware(Middleware::RTIDDSPRO);
+    peer->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("peer", peer);
 
     Parameter<std::string> *transport = new Parameter<std::string>("Use XML");
@@ -868,18 +871,6 @@ void ParameterManager::initialize()
     noBlockingSockets->set_group(RAWTRANSPORT);
     noBlockingSockets->set_supported_middleware(Middleware::RAWTRANSPORT);
     create("noBlockingSockets", noBlockingSockets);
-
-    ParameterVector<std::string> *peerRT = new ParameterVector<std::string>();
-    peerRT->set_command_line_argument("-peerRT", "<address:id>");
-    peerRT->set_description(
-            "Adds a peer to the peer host address list with a optional id of\n"
-            "the subscriber. If the id is not provided, assume zero.\n"
-            "This argument may be repeated to indicate multiple peers");
-    peerRT->set_type(T_VECTOR_STR);
-    peerRT->set_extra_argument(YES);
-    peerRT->set_group(RAWTRANSPORT);
-    peerRT->set_supported_middleware(Middleware::RAWTRANSPORT);
-    create("peerRT", peerRT);
 
     ////////////////////////////////////////////////////////////////////////////
     // SECURE PARAMETER:

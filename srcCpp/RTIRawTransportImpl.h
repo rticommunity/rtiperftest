@@ -22,6 +22,7 @@
 
 #define RTIPERFTEST_MAX_PEERS 1024
 
+/* Forwaded declaration */
 class PeerData;
 class RTIRawTransportImpl : public IMessaging {
   public:
@@ -33,37 +34,37 @@ class RTIRawTransportImpl : public IMessaging {
     void Shutdown();
     int GetBatchSize();
 
-    bool SupportsListener();
-    bool SupportsDiscovery();
+    bool SupportsListener() {return false;}
+    bool SupportsDiscovery() {return false;}
 
     IMessagingWriter *CreateWriter(const char *topic_name);
 
-    /* This implementation dont support listener so callback is ignore. */
+    /* This implementation does not support listener so callback is ignored. */
     IMessagingReader *
     CreateReader(const char *topic_name, IMessagingCB *callback);
 
     bool configure_sockets_transport();
 
     /*********************** Getters ***********************/
-    unsigned long GetInitializationSampleCount();
-    NDDS_Transport_Plugin *get_plugin();
-    std::vector<PeerData> get_peers_data();
-    RTIOsapiSemaphore *get_pong_semaphore();
-    struct REDAWorkerFactory *get_worker_factory();
-    RTIOsapiThreadTssFactory *get_tss_factory();
-    ParameterManager *get_parameter_manager();
+    unsigned long GetInitializationSampleCount()    {return 0;}
+    NDDS_Transport_Plugin *get_plugin()             {return _plugin;}
+    std::vector<PeerData> get_peers_data()          {return _peersDataList;}
+    RTIOsapiSemaphore *get_pong_semaphore()         {return _pongSemaphore;}
+    struct REDAWorkerFactory *get_worker_factory()  {return _workerFactory;}
+    RTIOsapiThreadTssFactory *get_tss_factory()     {return _tssFactory;}
+    ParameterManager *get_parameter_manager()       {return _PM;}
 
     /* Calculate the port depending of the Id of the subscriber.*/
     unsigned int
     get_send_unicast_port(const char *topicName, unsigned int subId = 0);
 
     /* Get the multicast address that match to the topic name */
-    bool getMulticastTransportAddr(
+    bool get_multicast_transport_addr(
             const char *topicName,
             NDDS_Transport_Address_t &addr);
 
     /* Calculate the ports thats it will be use for receive data */
-    unsigned int getReceiveUnicastPort(const char *topicName);
+    unsigned int get_receive_unicast_port(const char *topicName);
     /********************************************************/
 
     bool is_multicast()
@@ -103,7 +104,7 @@ class PeerData {
                 NDDS_Transport_SendResource_t *res,
                 NDDS_Transport_Address_t addr,
                 unsigned int p)
-                : resource(res), transportAddr(addr), port(p)
+                        : resource(res), transportAddr(addr), port(p)
         {}
 };
 

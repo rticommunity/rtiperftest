@@ -497,11 +497,13 @@ void perftest_cpp::PrintConfiguration()
     }
 
     // Listener/WaitSets
-    stringStream << "\tReceive using: ";
-    if (_PM.get<bool>("useReadThread") && !_PM.get<bool>("rawTransport")) {
-        stringStream << "WaitSets\n";
-    } else {
-        stringStream << "Listeners\n";
+    if (!_PM.get<bool>("rawTransport")) {
+        stringStream << "\tReceive using: ";
+        if (_PM.get<bool>("useReadThread")) {
+            stringStream << "WaitSets\n";
+        } else {
+            stringStream << "Listeners\n";
+        }
     }
 
     stringStream << _MessagingImpl->PrintConfiguration();
@@ -852,23 +854,22 @@ int perftest_cpp::Subscriber()
     announcement_msg.data = new char[LENGTH_CHANGED_SIZE];
 
     // Send announcement message
-    TestMessage message;
-    message.entity_id = _SubID;
-
-    if (!_MessagingImpl->SupportsDiscovery()) {
-        while (reader_listener->packets_received == 0
-                && !reader_listener->change_size){
-            /* Send announcement message until the publisher publish something*/
-            announcement_writer->Send(announcement_msg);
-            announcement_writer->Flush();
-            perftest_cpp::MilliSleep(1000);
-        }
-    }
-    else{
+    do{
         announcement_writer->Send(announcement_msg);
         announcement_writer->Flush();
-    }
 
+        if (_MessagingImpl->SupportsDiscovery()){
+            /*
+             * If the middleware support discovery there is no need to wait
+             * until the writer answer due to we already know the writer is
+             * active and available to receive the announcement message.
+             */
+            break;
+        }
+        perftest_cpp::MilliSleep(1000);
+        /* Send announcement message until the publisher publish something*/
+    }while (reader_listener->packets_received == 0
+            && !reader_listener->change_size);
 
     fprintf(stderr,"Waiting for data...\n");
     fflush(stderr);
@@ -1127,6 +1128,10 @@ public:
         double latency_std;
         double serializeTime, deserializeTime;
         int totalSampleSize = last_data_length + perftest_cpp::OVERHEAD_BYTES;
+
+        int unbounded = _PM->get<int>("unbounded");
+        bool isKeyed = _PM->get<bool>("keyed");
+
         std::string outputCpu = "";
         if (count == 0)
         {
@@ -1161,8 +1166,8 @@ public:
         );
         fflush(stdout);
 
-        if (_PM->get<int>("unbounded") == 0) {
-            if (_PM->get<bool>("keyed")) {
+        if (!unbounded) {
+            if (isKeyed) {
                 serializeTime = RTIDDSImpl<TestDataKeyed_t>::
                         ObtainDDSSerializeTimeCost(totalSampleSize);
                 deserializeTime = RTIDDSImpl<TestDataKeyed_t>::
@@ -1189,8 +1194,8 @@ public:
             }
         }
 
-        printf("Serialization time per sample: %0.3f / Deserialization time per "
-               "sample: %0.3f us / TOTAL: %0.3f us\n",
+        printf("Serialization/Deserialization: %0.3f us / %0.3f us / TOTAL: "
+                "%0.3f us\n",
                serializeTime,
                deserializeTime,
                serializeTime + deserializeTime);
@@ -1390,7 +1395,6 @@ static void *ReadThread(void *arg)
 
     return NULL;
 }
-
 
 /*********************************************************
  * Publisher
@@ -1860,24 +1864,24 @@ int perftest_cpp::Publisher()
         RTIOsapiThread_delete(announcementThread);
     }
 
-    if (announcement_reader != NULL) {
-        delete (announcement_reader);
-    }
-
     if (reader != NULL) {
-        delete (reader);
+        delete reader;
     }
 
     if (writer != NULL) {
-        delete (writer);
+        delete writer;
     }
 
     if (reader_listener != NULL) {
-        delete (reader_listener);
+        delete reader_listener;
     }
 
     if (announcement_reader_listener != NULL) {
-        delete (announcement_reader_listener);
+        delete announcement_reader_listener;
+    }
+
+    if (announcement_reader != NULL) {
+        delete announcement_reader;
     }
 
     delete []message.data;

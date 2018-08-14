@@ -87,7 +87,7 @@ public:
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
 
     /*
-     * Those two functions calculate the time cost on serialization,
+     * These two functions calculate the serialization/deserialization time cost
      * with a precision of microseconds.
      */
 

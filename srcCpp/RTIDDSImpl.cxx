@@ -2219,13 +2219,14 @@ double RTIDDSImpl<T>::ObtainDDSSerializeTimeCost(
         unsigned int iters)
 {
     T data;
+    double serializeTime = 0;
     double timeInit = 0;
     double timeFinish = 0;
-    double serializeTime;
+    bool success = true;
 
     unsigned int maxSizeSerializedSample = 0;
-    char *buffer;
-    char *serializeBuffer;
+    char *buffer = NULL;
+    char *serializeBuffer = NULL;
 
     RTIOsapiHeap_allocateBuffer(
             &buffer,
@@ -2257,6 +2258,10 @@ double RTIDDSImpl<T>::ObtainDDSSerializeTimeCost(
                 NULL, maxSizeSerializedSample, &data)) {
         fprintf(stderr,
                 "Fail to serialize sample on ObtainDDSSerializeTimeCost\n");
+        data.bin_data.unloan();
+        if (buffer != NULL) {
+            RTIOsapiHeap_freeBuffer(buffer);
+        }
         return 0;
     }
 
@@ -2275,7 +2280,7 @@ double RTIDDSImpl<T>::ObtainDDSSerializeTimeCost(
                 &data)){
             fprintf(stderr,
                     "Fail to serialize sample on ObtainDDSSerializeTimeCost\n");
-            return 0;
+            success = false;
         }
     }
 
@@ -2292,6 +2297,10 @@ double RTIDDSImpl<T>::ObtainDDSSerializeTimeCost(
         RTIOsapiHeap_freeBuffer(serializeBuffer);
     }
 
+    if (!success) {
+        return 0;
+    }
+
     return serializeTime / (float) iters;
 }
 
@@ -2303,11 +2312,12 @@ double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
     T data;
     double timeInit = 0;
     double timeFinish = 0;
-    double deSerializeTime;
+    double deSerializeTime = 0;
+    bool success = true;
 
     unsigned int maxSizeSerializedSample = 0;
-    char *buffer;
-    char *serializeBuffer;
+    char *buffer = NULL;
+    char *serializeBuffer = NULL;
 
     RTIOsapiHeap_allocateBuffer(
             &buffer,
@@ -2338,6 +2348,10 @@ double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
             &data)){
         fprintf(stderr,
                 "Fail to serialize sample on ObtainDDSSerializeTimeCost\n");
+        data.bin_data.unloan();
+        if (buffer != NULL) {
+            RTIOsapiHeap_freeBuffer(buffer);
+        }
         return 0;
     }
 
@@ -2373,7 +2387,7 @@ double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
             fprintf(stderr,
                     "Fail to deserialize sample on "
                     "ObtainDDSDeserializeTimeCost\n");
-            return 0;
+            success = false;
         }
     }
 
@@ -2388,6 +2402,10 @@ double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
     }
     if (serializeBuffer != NULL) {
         RTIOsapiHeap_freeBuffer(serializeBuffer);
+    }
+
+    if (!success) {
+        return 0;
     }
 
     return deSerializeTime / (float) iters;

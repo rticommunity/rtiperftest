@@ -25,10 +25,7 @@ RTIRawTransportImpl::RTIRawTransportImpl()
           _tssFactory(NULL),
           _PM(NULL)
 {
-
-    // Reserve space for the peers
     PeerData::resourcesList.reserve(RTIPERFTEST_MAX_PEERS);
-
 }
 
 /*********************************************************
@@ -62,57 +59,6 @@ void RTIRawTransportImpl::Shutdown()
         _pongSemaphore = NULL;
     }
 
-}
-
-
-/*********************************************************
- * Getters
- */
-unsigned long RTIRawTransportImpl::GetInitializationSampleCount()
-{
-    return 0;
-}
-
-NDDS_Transport_Plugin *RTIRawTransportImpl::get_plugin()
-{
-    return _plugin;
-}
-
-std::vector<PeerData> RTIRawTransportImpl::get_peers_data()
-{
-    return _peersDataList;
-}
-
-RTIOsapiSemaphore *RTIRawTransportImpl::get_pong_semaphore()
-{
-    return _pongSemaphore;
-}
-struct REDAWorkerFactory *RTIRawTransportImpl::get_worker_factory()
-{
-    return _workerFactory;
-}
-
-RTIOsapiThreadTssFactory *RTIRawTransportImpl::get_tss_factory()
-{
-    return _tssFactory;
-}
-
-ParameterManager *RTIRawTransportImpl::get_parameter_manager()
-{
-    return _PM;
-}
-
-/*********************************************************
- * SupportFunctions
- */
-bool RTIRawTransportImpl::SupportsListener()
-{
-    return false;
-}
-
-bool RTIRawTransportImpl::SupportsDiscovery()
-{
-    return false;
 }
 
 /*********************************************************
@@ -197,8 +143,8 @@ bool RTIRawTransportImpl::validate_input() {
         return false;
     };
 
-    // Manage parameter -peerRT
-    if (_PM->get_vector<std::string>("peerRT").size() >= RTIPERFTEST_MAX_PEERS) {
+    // Manage parameter -peer
+    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
         fprintf(stderr,
                 "The maximun of 'initial_peers' is %d\n",
                 RTIPERFTEST_MAX_PEERS);
@@ -207,7 +153,7 @@ bool RTIRawTransportImpl::validate_input() {
 
     // Manage parameter -multicast
     if (_PM->get<bool>("multicast")
-            && _PM->get_vector<std::string>("peerRT").size() > 0) {
+            && _PM->get_vector<std::string>("peer").size() > 0) {
         fprintf(stderr,
                 "\tFor multicast, if you want to send to other IP, "
                 "use multicastAddr\n");
@@ -246,20 +192,20 @@ std::string RTIRawTransportImpl::PrintConfiguration()
     // Ports
     stringStream << "\tThe following ports will be used: ";
     if (_PM->get<bool>("pub")) {
-        stringStream << getReceiveUnicastPort(ANNOUNCEMENT_TOPIC_NAME) << " - "
-                     << getReceiveUnicastPort(LATENCY_TOPIC_NAME) << "\n";
+        stringStream << get_receive_unicast_port(ANNOUNCEMENT_TOPIC_NAME) << " - "
+                     << get_receive_unicast_port(LATENCY_TOPIC_NAME) << "\n";
     } else {
-        stringStream << getReceiveUnicastPort(THROUGHPUT_TOPIC_NAME) << "\n";
+        stringStream << get_receive_unicast_port(THROUGHPUT_TOPIC_NAME) << "\n";
     }
 
     // Set initial peers
-    if (_PM->get_vector<std::string>("peerRT").size() > 0 && !is_multicast()) {
+    if (_PM->get_vector<std::string>("peer").size() > 0 && !is_multicast()) {
         stringStream << "\tInitial peers: ";
         for (unsigned int i = 0;
-                i < _PM->get_vector<std::string>("peerRT").size(); ++i) {
-            stringStream << _PM->get_vector<std::string>("peerRT")[i];
+                i < _PM->get_vector<std::string>("peer").size(); ++i) {
+            stringStream << _PM->get_vector<std::string>("peer")[i];
             stringStream
-                    << ((i + 1 == _PM->get_vector<std::string>("peerRT").size())
+                    << ((i + 1 == _PM->get_vector<std::string>("peer").size())
                             ? "\n"
                             : ", ");
         }
@@ -386,7 +332,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
                     _worker)){
                 success = false;
                 /*
-                 * No need of print error. This wil be represented as lost
+                 * No need of print error. This will be represented as lost
                  * packets
                  */
             }
@@ -450,7 +396,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
                 RTI_TRUE,
                 NULL);
 
-        /* _data is been serialize (copied). It's right to unloan then. */
+        /* _data is been serialized (copied). Then it's right to unloan. */
         _data.bin_data.unloan();
 
         if (!success) {
@@ -810,7 +756,7 @@ unsigned int RTIRawTransportImpl::get_send_unicast_port(
 }
 
 unsigned int
-RTIRawTransportImpl::getReceiveUnicastPort(const char *topicName)
+RTIRawTransportImpl::get_receive_unicast_port(const char *topicName)
 {
     unsigned int portOffset = 0;
 
@@ -833,9 +779,9 @@ RTIRawTransportImpl::getReceiveUnicastPort(const char *topicName)
 
 
 /*********************************************************
- * getMulticastTransportAddr
+ * get_multicast_transport_addr
  */
-bool RTIRawTransportImpl::getMulticastTransportAddr(
+bool RTIRawTransportImpl::get_multicast_transport_addr(
         const char *topicName,
         NDDS_Transport_Address_t &addr)
 {
@@ -882,7 +828,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
 
     // If multicat, then take the multicast address.
     if (_PM->get<bool>("multicast")
-            && getMulticastTransportAddr(topicName, multicastAddr)) {
+            && get_multicast_transport_addr(topicName, multicastAddr)) {
         is_multicastAddr = true;
     } else if (_PM->get<bool>("multicast")) {
         fprintf(stderr, "Bad configuration for multicast (sockets)\n");
@@ -890,11 +836,11 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
     }
 
     /*
-     * _PM->get_vector<std::string>("peerRT").size() is garanteed to be 1 if
+     * _PM->get_vector<std::string>("peer").size() is garanteed to be 1 if
      * multicast is enabled
      */
     for (unsigned int i = 0;
-            i < _PM->get_vector<std::string>("peerRT").size(); i++) {
+            i < _PM->get_vector<std::string>("peer").size(); i++) {
         shared = false;
         actualAddr = is_multicastAddr ? multicastAddr : _peersMap[i].first;
 
@@ -927,7 +873,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
 
             PeerData::resourcesList.push_back(resource);
         }
-        /* This data will be use by the writer to send to multiples peers. */
+        /* This data will be used by the writer to send to multiples peers. */
         _peersDataList.push_back(
                 PeerData(
                         shared ? &PeerData::resourcesList[j-1]
@@ -959,7 +905,7 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
 
     /* If multicat, then take the multicast address. */
     if (_PM->get<bool>("multicast")
-            && getMulticastTransportAddr(topicName, multicastAddr)) {
+            && get_multicast_transport_addr(topicName, multicastAddr)) {
         is_multicastAddr = true;
     } else if (_PM->get<bool>("multicast")) {
         fprintf(stderr, "Bad configuration for multicast (RawTransport)\n");
@@ -967,7 +913,7 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
     }
 
     /* Calculate the port of the new receive resource. */
-    recvPort = getReceiveUnicastPort(topicName);
+    recvPort = get_receive_unicast_port(topicName);
 
     result = _plugin->create_recvresource_rrEA(
             _plugin,
@@ -1000,7 +946,7 @@ bool RTIRawTransportImpl::configure_sockets_transport()
     char *interfaceAddr = NULL; /*WARNING: interface is a reserved word on VS*/
     interfaceAddr
             = DDS_String_dup(_PM->get<std::string>("allowInterfaces").c_str());
-    std::vector<std::string> peers = _PM->get_vector<std::string>("peerRT");
+    std::vector<std::string> peers = _PM->get_vector<std::string>("peer");
     if (peers.empty()) {
         peers.push_back("127.0.0.1");
     }
@@ -1012,10 +958,10 @@ bool RTIRawTransportImpl::configure_sockets_transport()
     }
 
     /* If no peer is given, assume a default one */
-    if (_PM->get_vector<std::string>("peerRT").size() == 0) {
+    if (_PM->get_vector<std::string>("peer").size() == 0) {
         std::vector<std::string> auxVector;
         auxVector.push_back(std::string( "127.0.0.1"));
-        _PM->set<std::vector<std::string> >("peerRT", auxVector);
+        _PM->set<std::vector<std::string> >("peer", auxVector);
     }
 
     /* --- Worker configure --- */
@@ -1210,7 +1156,7 @@ bool RTIRawTransportImpl::configure_sockets_transport()
     case TRANSPORT_DTLSv4:
     case TRANSPORT_WANv4:
     default:
-        fprintf(stderr, "RawTransport only support UDPv4 & SHMEM\n");
+        fprintf(stderr, "RawTransport only supports UDPv4 & SHMEM\n");
         return false;
 
     } /* End Switch */
