@@ -43,10 +43,36 @@ class IMessagingCB
 {
   public:
     bool  end_test;
+    RTIOsapiSemaphore *syncSemaphore;
 
   public:
-    virtual ~IMessagingCB() {}
+
+    RTIOsapiSemaphore *get_synchronization_semaphore()
+    {
+        if (syncSemaphore == NULL) {
+            syncSemaphore = RTIOsapiSemaphore_new(
+                    RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL);
+
+            if (syncSemaphore == NULL) {
+                fprintf(stderr,
+                        "Fail to create a Semaphore for IMessagingCB\n");
+                return NULL;
+            }
+        }
+        return syncSemaphore;
+    }
+
+    void delete_sync_semaphore() {
+        if (syncSemaphore != NULL) {
+            RTIOsapiSemaphore_delete(syncSemaphore);
+            syncSemaphore = NULL;
+        }
+    }
+
     virtual void ProcessMessage(TestMessage &message) = 0;
+    virtual ~IMessagingCB() {
+        delete_sync_semaphore();
+    }
 };
 
 class IMessagingReader
@@ -63,7 +89,10 @@ class IMessagingReader
      * Used by rawTransport actually
      * Prevent delete the receive resource meanwhile it's been use by a listener
      */
-    virtual RTIOsapiSemaphore *GetReadThreadSemaphore() {return NULL;}
+    virtual RTIOsapiSemaphore *get_read_thread_semaphore() {return NULL;}
+
+    /* Unblock a receive resource (Used by RTIRawTransport)*/
+    virtual bool unblock() {return true;}
 
     // only used for non-callback test to cleanup
     // the thread

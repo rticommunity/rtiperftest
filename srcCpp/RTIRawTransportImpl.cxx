@@ -562,14 +562,6 @@ public:
             }
             _plugin->destroy_recvresource_rrEA(_plugin, &_recvResource);
 
-            /* Make a give before destroy the semaphore */
-            if (_readThreadSemaphore != NULL) {
-                if (RTIOsapiSemaphore_give(_readThreadSemaphore)
-                        != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
-                    fprintf(stderr, "Unexpected error giving semaphore\n");
-                    return;
-                }
-            }
         }
 
         if (_readThreadSemaphore != NULL) {
@@ -665,7 +657,8 @@ public:
 
     }
 
-    struct RTIOsapiSemaphore *GetReadThreadSemaphore()
+    //TODO: Remove at the end of the code review if it's not needed.
+    struct RTIOsapiSemaphore *get_read_thread_semaphore()
     {
         if (_readThreadSemaphore == NULL) {
             _readThreadSemaphore = RTIOsapiSemaphore_new(
@@ -677,18 +670,29 @@ public:
                         "Fail to create a Semaphore for RTIRawTransportImpl\n");
                 return NULL;
             }
-            if (RTIOsapiSemaphore_give(_readThreadSemaphore)
-                    != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
-                fprintf(stderr, "Unexpected error giving semaphore\n");
-                return NULL;
-            }
         }
-
         return _readThreadSemaphore;
     }
 
     void WaitForWriters(int numPublishers) {
         /*Dummy Function*/
+    }
+
+    bool unblock() {
+        RTI_INT32 retCode = 0;
+        if (_recvResource != NULL && _plugin != NULL && _worker != NULL) {
+            retCode = _plugin->unblock_receive_rrEA(
+                    _plugin,
+                    &_recvResource,
+                    _worker);
+        }
+        if (retCode == 0) {
+            fprintf(stderr,
+                    "Fail to unblock the receive resource on"
+                    "RTIRawTransportSubscriber\n");
+            return false;
+        }
+        return true;
     }
 };
 

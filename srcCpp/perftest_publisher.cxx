@@ -565,6 +565,7 @@ class ThroughputListener : public IMessagingCB
         _reader = reader;
         _last_seq_num = new unsigned long[numPublishers];
         _useCft = UseCft;
+        syncSemaphore = NULL;
 
         for (int i = 0; i < numPublishers; i++) {
             _last_seq_num[i] = 0;
@@ -577,6 +578,7 @@ class ThroughputListener : public IMessagingCB
         if (_last_seq_num != NULL) {
             delete []_last_seq_num;
         }
+        delete_sync_semaphore();
     }
 
     void ProcessMessage(TestMessage &message)
@@ -746,21 +748,48 @@ class ThroughputListener : public IMessagingCB
  * Used for receiving data using a thread instead of callback
  *
  */
-static void *ThroughputReadThread(void *arg)
+template<class ListenerType>
+static void *ReadThread(void *arg)
 {
-    ThroughputListener *listener = static_cast<ThroughputListener *>(arg);
+    ListenerType *listener = static_cast<ListenerType *>(arg);
     TestMessage *message = NULL;
 
-    while (!listener->end_test)
-    {
+    RTIOsapiSemaphore *semaphore = listener->get_synchronization_semaphore();
+
+    if (semaphore == NULL) {
+        fprintf(stderr,
+                "Unexpected error creating a synchronization semaphore\n");
+        return NULL;
+    }
+
+    while (!listener->end_test) {
         // Receive message should block until a message is received
         message = listener->_reader->ReceiveMessage();
 
-        if (message != NULL)
-        {
+        if (message != NULL) {
             listener->ProcessMessage(*message);
         }
+
+        /*
+        * TODO:
+        *
+        * To support -latencyTest plus -useReadThread we need to signal
+        * --HERE-- the internal semaphore used in RTIDDSImpl.cxx as
+        * we now do in the listener on_data_available callback
+        * inside RTIDDSImpl.cxx
+        *
+        */
     }
+
+    // This allow the reader to delete the reader participant
+    if (semaphore != NULL) {
+        if (RTIOsapiSemaphore_give(semaphore)
+                != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+            fprintf(stderr, "Unexpected error giving semaphore\n");
+            return NULL;
+        }
+    }
+
     return NULL;
 }
 
@@ -773,6 +802,7 @@ int perftest_cpp::Subscriber()
     IMessagingReader   *reader;
     IMessagingWriter   *writer;
     IMessagingWriter   *announcement_writer;
+    struct RTIOsapiThread *throughputThread = NULL;
 
     // create latency pong writer
     writer = _MessagingImpl->CreateWriter(LATENCY_TOPIC_NAME);
@@ -813,12 +843,12 @@ int perftest_cpp::Subscriber()
                 _PM.is_set("cft"),
                 _PM.get<int>("numPublishers"));
 
-        RTIOsapiThread_new("ReceiverThread",
+        throughputThread = RTIOsapiThread_new("ReceiverThread",
                 RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
                 RTI_OSAPI_THREAD_OPTION_DEFAULT,
                 RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
                 NULL,
-                ThroughputReadThread,
+                ReadThread<ThroughputListener>,
                 reader_listener);
     }
 
@@ -867,9 +897,8 @@ int perftest_cpp::Subscriber()
             break;
         }
         perftest_cpp::MilliSleep(1000);
-        /* Send announcement message until the publisher publish something*/
-    }while (reader_listener->packets_received == 0
-            && !reader_listener->change_size);
+        /* Send announcement message until the publisher send us something*/
+    }while (reader_listener->packets_received == 0);
 
     fprintf(stderr,"Waiting for data...\n");
     fflush(stderr);
@@ -968,6 +997,11 @@ int perftest_cpp::Subscriber()
 
     perftest_cpp::MilliSleep(2000);
 
+    if (!finalize_thread(throughputThread, reader_listener)) {
+        fprintf(stderr, "Error deleting throughputThread\n");
+        return -1;
+    }
+
     if (reader != NULL)
     {
         delete(reader);
@@ -1012,7 +1046,7 @@ class AnnouncementListener : public IMessagingCB
         _reader = reader;
         announced_subscribers = 0;
         end_test = false;
-
+        syncSemaphore = NULL;
     }
 
     void ProcessMessage(TestMessage& message) {
@@ -1088,6 +1122,7 @@ public:
         latency_max = 0;
         last_data_length = 0;
         clock_skew_count = 0;
+        syncSemaphore = NULL;
 
         if (num_latency > 0)
         {
@@ -1169,28 +1204,28 @@ public:
         if (!unbounded) {
             if (isKeyed) {
                 serializeTime = RTIDDSImpl<TestDataKeyed_t>::
-                        ObtainDDSSerializeTimeCost(totalSampleSize);
+                        obtain_dds_serialize_time_cost(totalSampleSize);
                 deserializeTime = RTIDDSImpl<TestDataKeyed_t>::
-                        ObtainDDSDeserializeTimeCost(totalSampleSize);
+                        obtain_dds_deserialize_time_cost(totalSampleSize);
             } else {
                 serializeTime
-                        = RTIDDSImpl<TestData_t>::ObtainDDSSerializeTimeCost(
+                        = RTIDDSImpl<TestData_t>::obtain_dds_serialize_time_cost(
                                 totalSampleSize);
                 deserializeTime
-                        = RTIDDSImpl<TestData_t>::ObtainDDSDeserializeTimeCost(
+                        = RTIDDSImpl<TestData_t>::obtain_dds_deserialize_time_cost(
                                 totalSampleSize);
             }
         } else {
-            if (_PM->get<bool>("keyed")) {
+            if (isKeyed) {
                 serializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
-                        ObtainDDSSerializeTimeCost(totalSampleSize);
+                        obtain_dds_serialize_time_cost(totalSampleSize);
                 deserializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
-                        ObtainDDSDeserializeTimeCost(totalSampleSize);
+                        obtain_dds_deserialize_time_cost(totalSampleSize);
             } else {
                 serializeTime = RTIDDSImpl<TestDataLarge_t>::
-                        ObtainDDSSerializeTimeCost(totalSampleSize);
+                        obtain_dds_serialize_time_cost(totalSampleSize);
                 deserializeTime = RTIDDSImpl<TestDataLarge_t>::
-                        ObtainDDSDeserializeTimeCost(totalSampleSize);
+                        obtain_dds_deserialize_time_cost(totalSampleSize);
             }
         }
 
@@ -1343,58 +1378,6 @@ public:
         }
     }
 };
-
-/*********************************************************
- * Used for receiving data using a thread instead of callback
- *
- */
-template<class ListenerType>
-static void *ReadThread(void *arg)
-{
-    ListenerType *listener = static_cast<ListenerType *>(arg);
-    TestMessage *message = NULL;
-    RTIOsapiSemaphore *semaphore = listener->_reader->GetReadThreadSemaphore();
-
-    // Meanwhile it's been use the reader, avoid the destruction of it.
-    if (semaphore != NULL) {
-        if (RTIOsapiSemaphore_take(semaphore, NULL)
-                != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
-            fprintf(stderr, "Unexpected error taking semaphore\n");
-            return NULL;
-        }
-    }
-
-    while (!listener->end_test)
-    {
-        // Receive message should block until a message is received
-        message = listener->_reader->ReceiveMessage();
-
-        if (message != NULL) {
-            listener->ProcessMessage(*message);
-        }
-
-    /*
-    * TODO:
-    *
-    * To support -latencyTest plus -useReadThread we need to signal
-    * --HERE-- the internal semaphore used in RTIDDSImpl.cxx as
-    * we now do in the listener on_data_available callback
-    * inside RTIDDSImpl.cxx
-    *
-    */
-    }
-
-    // This allow the reader to delete the reader participant
-    if (semaphore != NULL) {
-        if (RTIOsapiSemaphore_give(semaphore)
-                != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
-            fprintf(stderr, "Unexpected error giving semaphore\n");
-            return NULL;
-        }
-    }
-
-    return NULL;
-}
 
 /*********************************************************
  * Publisher
@@ -1856,12 +1839,17 @@ int perftest_cpp::Publisher()
     announcement_reader_listener->end_test = true;
     reader_listener->end_test = true;
 
-    if (listenerThread != NULL) {
-        RTIOsapiThread_delete(listenerThread);
+    if (!finalize_thread(listenerThread, reader_listener)) {
+        fprintf(stderr, "Error deleting listenerThread\n");
+        return -1;
+    }
+    if (!finalize_thread(announcementThread, announcement_reader_listener)) {
+        fprintf(stderr, "Error deleting announcementThread\n");
+        return -1;
     }
 
-    if (announcementThread != NULL) {
-        RTIOsapiThread_delete(announcementThread);
+    if (announcement_reader != NULL) {
+        delete announcement_reader;
     }
 
     if (reader != NULL) {
@@ -1880,9 +1868,6 @@ int perftest_cpp::Publisher()
         delete announcement_reader_listener;
     }
 
-    if (announcement_reader != NULL) {
-        delete announcement_reader;
-    }
 
     delete []message.data;
 
@@ -1922,6 +1907,27 @@ inline void perftest_cpp::SetTimeout(
         alarm(executionTimeInSeconds);
       #endif
     }
+}
+
+template <class ListenerType>
+bool perftest_cpp::finalize_thread(RTIOsapiThread *thread, ListenerType *listener)
+{
+    if (thread != NULL) {
+        if (listener->_reader->unblock()
+                && listener->syncSemaphore != NULL) {
+            /*
+             * If the thread is created but, the creation if the semaphore fail,
+             * syncSemaphore could be null
+             */
+            if (RTIOsapiSemaphore_take(listener->syncSemaphore, NULL)
+                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
+                fprintf(stderr, "Unexpected error taking semaphore\n");
+                return false;
+            }
+        }
+        RTIOsapiThread_delete(thread);
+    }
+    return true;
 }
 
 unsigned long long perftest_cpp::GetTimeUsec() {

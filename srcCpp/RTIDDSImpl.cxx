@@ -2214,7 +2214,7 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
 }
 
 template <typename T>
-double RTIDDSImpl<T>::ObtainDDSSerializeTimeCost(
+double RTIDDSImpl<T>::obtain_dds_serialize_time_cost(
         unsigned int sampleSize,
         unsigned int iters)
 {
@@ -2236,7 +2236,7 @@ double RTIDDSImpl<T>::ObtainDDSSerializeTimeCost(
     if (buffer == NULL) {
         fprintf(stderr,
                 "Error allocating memory for buffer on "
-                "ObtainDDSSerializeTimeCost\n");
+                "obtain_dds_serialize_time_cost\n");
         return 0;
     }
 
@@ -2257,7 +2257,7 @@ double RTIDDSImpl<T>::ObtainDDSSerializeTimeCost(
     if (DDS_RETCODE_OK != T::TypeSupport::serialize_data_to_cdr_buffer(
                 NULL, maxSizeSerializedSample, &data)) {
         fprintf(stderr,
-                "Fail to serialize sample on ObtainDDSSerializeTimeCost\n");
+                "Fail to serialize sample on obtain_dds_serialize_time_cost\n");
         data.bin_data.unloan();
         if (buffer != NULL) {
             RTIOsapiHeap_freeBuffer(buffer);
@@ -2279,7 +2279,7 @@ double RTIDDSImpl<T>::ObtainDDSSerializeTimeCost(
                 maxSizeSerializedSample,
                 &data)){
             fprintf(stderr,
-                    "Fail to serialize sample on ObtainDDSSerializeTimeCost\n");
+                    "Fail to serialize sample on obtain_dds_serialize_time_cost\n");
             success = false;
         }
     }
@@ -2305,7 +2305,7 @@ double RTIDDSImpl<T>::ObtainDDSSerializeTimeCost(
 }
 
 template <typename T>
-double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
+double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
         unsigned int sampleSize,
         unsigned int iters)
 {
@@ -2327,7 +2327,7 @@ double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
     if (buffer == NULL) {
         fprintf(stderr,
                 "Error allocating memory for buffer on "
-                "ObtainDDSDeserializeTimeCost\n");
+                "obtain_dds_deserialize_time_cost\n");
         return 0;
     }
 
@@ -2347,7 +2347,7 @@ double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
             maxSizeSerializedSample,
             &data)){
         fprintf(stderr,
-                "Fail to serialize sample on ObtainDDSSerializeTimeCost\n");
+                "Fail to serialize sample on obtain_dds_serialize_time_cost\n");
         data.bin_data.unloan();
         if (buffer != NULL) {
             RTIOsapiHeap_freeBuffer(buffer);
@@ -2363,7 +2363,7 @@ double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
     if (serializeBuffer == NULL) {
         fprintf(stderr,
                 "Error allocating memory for buffer on "
-                "ObtainDDSDeserializeTimeCost\n");
+                "obtain_dds_deserialize_time_cost\n");
         return 0;
     }
 
@@ -2372,7 +2372,7 @@ double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
             maxSizeSerializedSample,
             &data)) {
         fprintf(stderr,
-                "Fail to serialize sample on ObtainDDSDeserializeTimeCost\n");
+                "Fail to serialize sample on obtain_dds_deserialize_time_cost\n");
         return 0;
     }
 
@@ -2386,7 +2386,7 @@ double RTIDDSImpl<T>::ObtainDDSDeserializeTimeCost(
                     maxSizeSerializedSample)) {
             fprintf(stderr,
                     "Fail to deserialize sample on "
-                    "ObtainDDSDeserializeTimeCost\n");
+                    "obtain_dds_deserialize_time_cost\n");
             success = false;
         }
     }

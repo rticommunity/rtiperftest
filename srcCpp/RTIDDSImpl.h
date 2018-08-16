@@ -91,11 +91,11 @@ public:
      * with a precision of microseconds.
      */
 
-    static double ObtainDDSSerializeTimeCost(
+    static double obtain_dds_serialize_time_cost(
         unsigned int sampleSize,
         unsigned int iters = 1000);
 
-    static double ObtainDDSDeserializeTimeCost(
+    static double obtain_dds_deserialize_time_cost(
         unsigned int sampleSize,
         unsigned int iters = 1000);
 
