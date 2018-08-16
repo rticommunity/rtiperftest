@@ -781,7 +781,7 @@ static void *ReadThread(void *arg)
         */
     }
 
-    // This allow the reader to delete the reader participant
+    // This will allow the main thread to delete the thread that used this function.
     if (semaphore != NULL) {
         if (RTIOsapiSemaphore_give(semaphore)
                 != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
@@ -843,7 +843,8 @@ int perftest_cpp::Subscriber()
                 _PM.is_set("cft"),
                 _PM.get<int>("numPublishers"));
 
-        throughputThread = RTIOsapiThread_new("ReceiverThread",
+        throughputThread = RTIOsapiThread_new(
+                "ReceiverThread",
                 RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
                 RTI_OSAPI_THREAD_OPTION_DEFAULT,
                 RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
@@ -888,7 +889,7 @@ int perftest_cpp::Subscriber()
         announcement_writer->Send(announcement_msg);
         announcement_writer->Flush();
 
-        if (_MessagingImpl->SupportsDiscovery()){
+        if (_MessagingImpl->supports_discovery()){
             /*
              * If the middleware support discovery there is no need to wait
              * until the writer answer due to we already know the writer is
@@ -898,7 +899,7 @@ int perftest_cpp::Subscriber()
         }
         perftest_cpp::MilliSleep(1000);
         /* Send announcement message until the publisher send us something*/
-    }while (reader_listener->packets_received == 0);
+    } while (reader_listener->packets_received == 0);
 
     fprintf(stderr,"Waiting for data...\n");
     fflush(stderr);
@@ -1042,9 +1043,8 @@ class AnnouncementListener : public IMessagingCB
   public:
     std::vector<int> subscriber_list;
     AnnouncementListener(IMessagingReader *reader = NULL)
+            : announced_subscribers(0), _reader(reader)
     {
-        _reader = reader;
-        announced_subscribers = 0;
         end_test = false;
         syncSemaphore = NULL;
     }
@@ -1208,12 +1208,10 @@ public:
                 deserializeTime = RTIDDSImpl<TestDataKeyed_t>::
                         obtain_dds_deserialize_time_cost(totalSampleSize);
             } else {
-                serializeTime
-                        = RTIDDSImpl<TestData_t>::obtain_dds_serialize_time_cost(
-                                totalSampleSize);
-                deserializeTime
-                        = RTIDDSImpl<TestData_t>::obtain_dds_deserialize_time_cost(
-                                totalSampleSize);
+                serializeTime = RTIDDSImpl<TestData_t>::
+                        obtain_dds_serialize_time_cost(totalSampleSize);
+                deserializeTime = RTIDDSImpl<TestData_t>::
+                        obtain_dds_deserialize_time_cost(totalSampleSize);
             }
         } else {
             if (isKeyed) {
@@ -1428,8 +1426,7 @@ int perftest_cpp::Publisher()
             reader_listener = new LatencyListener(
                     num_latency,
                     NULL,
-                    _PM.get<bool>("latencyTest") ? writer : NULL,
-                    _PM);
+                    _PM.get<bool>("latencyTest") ? writer : NULL, _PM);
             reader = _MessagingImpl->CreateReader(
                     LATENCY_TOPIC_NAME,
                     reader_listener);
@@ -1452,8 +1449,7 @@ int perftest_cpp::Publisher()
             reader_listener = new LatencyListener(
                     num_latency,
                     reader,
-                    _PM.get<bool>("latencyTest") ? writer : NULL,
-                    _PM);
+                    _PM.get<bool>("latencyTest") ? writer : NULL, _PM);
 
             listenerThread = RTIOsapiThread_new(
                     "ReceiverThread",
@@ -1474,7 +1470,7 @@ int perftest_cpp::Publisher()
      * A Subscriber will send a message on this channel once it discovers
      * every Publisher
      */
-    if(_MessagingImpl->SupportsListener()) {
+    if (_MessagingImpl->supports_listener()) {
         announcement_reader_listener = new AnnouncementListener();
     }
 
@@ -1488,8 +1484,9 @@ int perftest_cpp::Publisher()
     }
 
     struct RTIOsapiThread * announcementThread = NULL;
-    if (!_MessagingImpl->SupportsListener()) {
-        announcement_reader_listener = new AnnouncementListener(announcement_reader);
+    if (!_MessagingImpl->supports_listener()) {
+        announcement_reader_listener
+                = new AnnouncementListener(announcement_reader);
 
         announcementThread = RTIOsapiThread_new(
                 "AnnouncementThread",
@@ -1836,9 +1833,6 @@ int perftest_cpp::Publisher()
         printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
     }
 
-    announcement_reader_listener->end_test = true;
-    reader_listener->end_test = true;
-
     if (!finalize_thread(listenerThread, reader_listener)) {
         fprintf(stderr, "Error deleting listenerThread\n");
         return -1;
@@ -1848,12 +1842,12 @@ int perftest_cpp::Publisher()
         return -1;
     }
 
-    if (announcement_reader != NULL) {
-        delete announcement_reader;
-    }
-
     if (reader != NULL) {
         delete reader;
+    }
+
+    if (announcement_reader != NULL) {
+        delete announcement_reader;
     }
 
     if (writer != NULL) {
@@ -1867,7 +1861,6 @@ int perftest_cpp::Publisher()
     if (announcement_reader_listener != NULL) {
         delete announcement_reader_listener;
     }
-
 
     delete []message.data;
 
@@ -1912,11 +1905,13 @@ inline void perftest_cpp::SetTimeout(
 template <class ListenerType>
 bool perftest_cpp::finalize_thread(RTIOsapiThread *thread, ListenerType *listener)
 {
+    listener->end_test = true;
+
     if (thread != NULL) {
         if (listener->_reader->unblock()
                 && listener->syncSemaphore != NULL) {
             /*
-             * If the thread is created but, the creation if the semaphore fail,
+             * If the thread is created but the creation of the semaphore fail,
              * syncSemaphore could be null
              */
             if (RTIOsapiSemaphore_take(listener->syncSemaphore, NULL)

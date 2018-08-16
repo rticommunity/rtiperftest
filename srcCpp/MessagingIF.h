@@ -47,6 +47,7 @@ class IMessagingCB
 
   public:
 
+    /* Create a semaphore if is not been created yet, and then return it */
     RTIOsapiSemaphore *get_synchronization_semaphore()
     {
         if (syncSemaphore == NULL) {
@@ -85,13 +86,7 @@ class IMessagingReader
     // only used for non-callback test
     virtual TestMessage *ReceiveMessage() = 0;
 
-    /*
-     * Used by rawTransport actually
-     * Prevent delete the receive resource meanwhile it's been use by a listener
-     */
-    virtual RTIOsapiSemaphore *get_read_thread_semaphore() {return NULL;}
-
-    /* Unblock a receive resource (Used by RTIRawTransport)*/
+    // Unblock a receive function. Useful whe a thread is blocked receiving data
     virtual bool unblock() {return true;}
 
     // only used for non-callback test to cleanup
@@ -169,8 +164,8 @@ class IMessaging
     virtual IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback) = 0;
 
     /* Get information about witch features are supported by the medleware */
-    virtual bool SupportsListener() = 0;
-    virtual bool SupportsDiscovery() = 0;
+    virtual bool supports_listener() = 0;
+    virtual bool supports_discovery() = 0;
 
 };
 

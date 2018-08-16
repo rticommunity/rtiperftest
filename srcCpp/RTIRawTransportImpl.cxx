@@ -482,7 +482,6 @@ class RTIRawTransportSubscriber : public IMessagingReader
     TestData_t _data;
     char *_payload;
     int _payload_size;
-    struct RTIOsapiSemaphore *_readThreadSemaphore;
     ParameterManager *_PM;
 
     /* --- Buffer Management --- */
@@ -500,7 +499,6 @@ public:
                   _recvPort(recvPort),
                   _worker(NULL),
                   _workerTssKey(0),
-                  _readThreadSemaphore(NULL),
                   _noData(true)
     {
         /* --- Parents Members --- */
@@ -551,22 +549,7 @@ public:
         }
 
         if (_recvResource != NULL && _plugin != NULL && _worker != NULL) {
-            _plugin->unblock_receive_rrEA(_plugin, &_recvResource, _worker);
-
-            if (_readThreadSemaphore != NULL) {
-                if (RTIOsapiSemaphore_take(_readThreadSemaphore, NULL)
-                        != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
-                    fprintf(stderr, "Unexpected error taking semaphore\n");
-                    return;
-                }
-            }
             _plugin->destroy_recvresource_rrEA(_plugin, &_recvResource);
-
-        }
-
-        if (_readThreadSemaphore != NULL) {
-            RTIOsapiSemaphore_delete(_readThreadSemaphore);
-            _readThreadSemaphore = NULL;
         }
 
         if (_worker != NULL) {
@@ -655,23 +638,6 @@ public:
 
         }
 
-    }
-
-    //TODO: Remove at the end of the code review if it's not needed.
-    struct RTIOsapiSemaphore *get_read_thread_semaphore()
-    {
-        if (_readThreadSemaphore == NULL) {
-            _readThreadSemaphore = RTIOsapiSemaphore_new(
-                    RTI_OSAPI_SEMAPHORE_KIND_BINARY,
-                    NULL);
-
-            if (_readThreadSemaphore == NULL) {
-                fprintf(stderr,
-                        "Fail to create a Semaphore for RTIRawTransportImpl\n");
-                return NULL;
-            }
-        }
-        return _readThreadSemaphore;
     }
 
     void WaitForWriters(int numPublishers) {

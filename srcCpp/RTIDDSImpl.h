@@ -92,19 +92,19 @@ public:
      */
 
     static double obtain_dds_serialize_time_cost(
-        unsigned int sampleSize,
-        unsigned int iters = 1000);
+            unsigned int sampleSize,
+            unsigned int iters = 1000);
 
     static double obtain_dds_deserialize_time_cost(
-        unsigned int sampleSize,
-        unsigned int iters = 1000);
+            unsigned int sampleSize,
+            unsigned int iters = 1000);
 
-    bool SupportsListener()
+    bool supports_listener()
     {
         return true;
     };
 
-    bool SupportsDiscovery()
+    bool supports_discovery()
     {
         return true;
     };

@@ -1328,6 +1328,7 @@ class RTISubscriber : public IMessagingReader
     DDSConditionSeq         _active_conditions;
     int                     _data_idx;
     bool                    _no_data;
+    bool                    _endTest;
     ParameterManager       *_PM;
 
   public:
@@ -1337,6 +1338,7 @@ class RTISubscriber : public IMessagingReader
         _reader = T::DataReader::narrow(reader);
         _data_idx = 0;
         _no_data = false;
+        _endTest = false;
         _PM = PM;
 
         // null listener means using receive thread
@@ -1378,7 +1380,7 @@ class RTISubscriber : public IMessagingReader
         DDS_ReturnCode_t retcode;
         int seq_length;
 
-        while (true) {
+        while (!_endTest) {
 
             // no outstanding reads
             if (_no_data)
@@ -1450,6 +1452,7 @@ class RTISubscriber : public IMessagingReader
 
             return &_message;
         }
+        return NULL;
     }
 
     void WaitForWriters(int numPublishers)
@@ -1463,6 +1466,21 @@ class RTISubscriber : public IMessagingReader
             }
             perftest_cpp::MilliSleep(1000);
         }
+    }
+
+    bool unblock()
+    {
+        DDSGuardCondition cond;
+        DDS_ReturnCode_t retCode = cond.set_trigger_value(DDS_BOOLEAN_TRUE);
+        if ( retCode != DDS_RETCODE_OK) {
+            fprintf(stderr,
+                    "Error setting a GuardCondition on unblock: %d.\n",
+                    retCode);
+            return false;
+        }
+        _waitset->attach_condition((DDSCondition *) &cond);
+        _endTest = true;
+        return true;
     }
 };
 
@@ -2248,7 +2266,7 @@ double RTIDDSImpl<T>::obtain_dds_serialize_time_cost(
     data.timestamp_usec = 0;
     data.latency_ping = 0;
 
-    /* The buffer can be reuse, does not matter what it's inside */
+    /* Does not matter what it's inside */
     data.bin_data.loan_contiguous(
             (DDS_Octet *) buffer,
             sampleSize,
@@ -2339,7 +2357,7 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
     data.timestamp_usec = 0;
     data.latency_ping = 0;
 
-    /* The buffer can be reuse, does not matter what it's inside */
+    /* Does not matter what it's inside */
     data.bin_data.loan_contiguous((DDS_Octet *) buffer, sampleSize, sampleSize);
 
     if (DDS_RETCODE_OK != T::TypeSupport::serialize_data_to_cdr_buffer(

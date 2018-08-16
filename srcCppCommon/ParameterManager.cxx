@@ -1297,7 +1297,7 @@ bool ParameterManager::check_incompatible_parameters()
             }
         }
     }
-    
+
     return success;
 }
 
