@@ -71,6 +71,11 @@ class IMessagingCB
     }
 
     virtual void ProcessMessage(TestMessage &message) = 0;
+
+    /*
+     * Default constructor, if a inheritance class declare this function must
+     * also call to delete_sync_semaphore().
+     */
     virtual ~IMessagingCB() {
         delete_sync_semaphore();
     }
@@ -86,7 +91,7 @@ class IMessagingReader
     // only used for non-callback test
     virtual TestMessage *ReceiveMessage() = 0;
 
-    // Unblock a receive function. Useful whe a thread is blocked receiving data
+    // Unblock a receive function. Needed whe a thread is blocked receiving data
     virtual bool unblock() {return true;}
 
     // only used for non-callback test to cleanup

@@ -45,7 +45,7 @@ class RTIRawTransportImpl : public IMessaging {
 
     bool configure_sockets_transport();
 
-    /*********************** Getters ***********************/
+    /*------------------------------- Getters --------------------------------*/
     unsigned long GetInitializationSampleCount()    {return 0;}
     NDDS_Transport_Plugin *get_plugin()             {return _plugin;}
     std::vector<PeerData> get_peers_data()          {return _peersDataList;}
@@ -65,7 +65,7 @@ class RTIRawTransportImpl : public IMessaging {
 
     /* Calculate the ports thats it will be use for receive data */
     unsigned int get_receive_unicast_port(const char *topicName);
-    /********************************************************/
+    /*------------------------------------------------------------------------*/
 
     bool is_multicast()
     {
@@ -86,6 +86,10 @@ class RTIRawTransportImpl : public IMessaging {
     ParameterManager *_PM;
 };
 
+/*
+ * This class is to allocate all the addresses-ports and his correspond send
+ * resources.
+ */
 class PeerData {
     public:
         // The resources created
@@ -108,6 +112,7 @@ class PeerData {
         {}
 };
 
+/* Allow to check if there is any interface with enabled multicast */
 int get_num_multicast_interfaces(struct NDDS_Transport_UDP *plugin);
 
 /* Generate a different worker per thread. */

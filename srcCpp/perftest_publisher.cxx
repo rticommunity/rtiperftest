@@ -1385,6 +1385,8 @@ int perftest_cpp::Publisher()
     LatencyListener *reader_listener = NULL;
     AnnouncementListener  *announcement_reader_listener = NULL;
     IMessagingReader *announcement_reader;
+    IMessagingReader *reader;
+    struct RTIOsapiThread *listenerThread = NULL;
     unsigned long num_latency;
     unsigned long announcementSampleCount = 50;
     unsigned int samplesPerBatch = GetSamplesPerBatch();
@@ -1414,10 +1416,7 @@ int perftest_cpp::Publisher()
         ++num_latency;
     }
 
-    IMessagingReader *reader;
     // Only publisher with ID 0 will send/receive pings
-    struct RTIOsapiThread *listenerThread = NULL;
-
     if (_PM.get<int>("pidMultiPubTest") == 0) {
         // Check if using callbacks or read thread
         if (!_PM.get<bool>("useReadThread")) {
@@ -1426,7 +1425,8 @@ int perftest_cpp::Publisher()
             reader_listener = new LatencyListener(
                     num_latency,
                     NULL,
-                    _PM.get<bool>("latencyTest") ? writer : NULL, _PM);
+                    _PM.get<bool>("latencyTest") ? writer : NULL,
+                    _PM);
             reader = _MessagingImpl->CreateReader(
                     LATENCY_TOPIC_NAME,
                     reader_listener);
@@ -1449,7 +1449,8 @@ int perftest_cpp::Publisher()
             reader_listener = new LatencyListener(
                     num_latency,
                     reader,
-                    _PM.get<bool>("latencyTest") ? writer : NULL, _PM);
+                    _PM.get<bool>("latencyTest") ? writer : NULL,
+                    _PM);
 
             listenerThread = RTIOsapiThread_new(
                     "ReceiverThread",
@@ -1837,6 +1838,7 @@ int perftest_cpp::Publisher()
         fprintf(stderr, "Error deleting listenerThread\n");
         return -1;
     }
+
     if (!finalize_thread(announcementThread, announcement_reader_listener)) {
         fprintf(stderr, "Error deleting announcementThread\n");
         return -1;
