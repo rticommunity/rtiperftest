@@ -700,7 +700,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
         }
     } else { /* No Large Data */
-        _useUnbounded = 0;
         _isLargeData = false;
     }
 

@@ -70,6 +70,13 @@ and PDF documentation from the rst files in srcDoc.
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Fix incorrect behavior the `-unbounded` command-line option when not using large data (#125)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the 2.4 release a regression was introduced and the use of `-unbounded`
+would cause a failure when using datasizes from `28` to `63000 Bytes`. This
+issue has been resolved.
+
 Fix incorrect parsing of the `-executionTime` command-line parameter (#102)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
