@@ -51,6 +51,60 @@ Release Notes 2.4
 What's New in 2.4
 ~~~~~~~~~~~~~~~~~
 
+Ability to use your own type in RTI Perftest
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* now supports the ability to use your own custom type.
+It is possible to measure the performance of your own type.
+
+The Custom Types feature allows you to use your own customized types instead of
+the one provided by RTI Perftest. It is designed in such a way that the number
+of changes in the code and configuration files is minimal.
+
+Build HTML and PDF documentation (#94)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+RTI Perftest build script for linux now offers the option to generate the HTML
+and PDF documentation from the rst files in srcDoc.
+
+What's Fixed in Master
+~~~~~~~~~~~~~~~~~~~~~~
+
+Fix incorrect behavior the `-unbounded` command-line option when not using large data (#125)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the 2.4 release a regression was introduced and the use of `-unbounded`
+would cause a failure when using datasizes from `28` to `63000 Bytes`. This
+issue has been resolved.
+
+Fix incorrect parsing of the `-executionTime` command-line parameter (#102)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, for the Classic and Modern C++ API implementations,
+the `-executionTime <sec>` command-line parameter would ignore any Invalid
+value for the `<sec>` parameter without any notification to the user.
+
+This behavior has been fixed and unified for all the API implementations,
+showing now an error when finding a wrong value for the `<sec>` option.
+
+Remove duplicate code on RTIDDSImpl when the topic name is checked (#99)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Each time a reader o writer was create, the topic name was compare with all the
+default topic names (throughput, latency, announcement), with the propose of
+get the proper QoS Profile Name. This turn out to a duplicate code on
+`createWriter` and `createReader` functions.
+
+This behavior was fixed creating a new function `getQoSProfileName` that access
+to a new map `_qoSProfileNameMap` witch contain the tree topics names and his
+corresponding profiles names.
+
+Release Notes 2.4
+-----------------
+
+What's New in 2.4
+~~~~~~~~~~~~~~~~~
+
 Summary of test parameters printed before RTI Perftest runs (#46)(#67)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

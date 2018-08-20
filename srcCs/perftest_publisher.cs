@@ -808,7 +808,7 @@ namespace PerformanceTest {
             /*
              * PERFTEST-108
              * We add this boolean value to check if we are explicity changing
-             * the number of iterations via command line paramenter. This will
+             * the number of iterations via command-line paramenter. This will
              * only be used if this is a latency test to decrease or not the
              * default number of iterations.
              */
@@ -1201,7 +1201,8 @@ namespace PerformanceTest {
 
                     if (!UInt64.TryParse(argv[i], out _executionTime))
                     {
-                        Console.Error.Write("Bad number for -executionTime\n");
+                        Console.Error.Write(
+                                "-executionTime value must be a positive number greater than 0\n");
                         return false;
                     }
                 }

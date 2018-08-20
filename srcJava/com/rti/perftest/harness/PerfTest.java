@@ -352,7 +352,7 @@ public final class PerfTest {
         /*
          * PERFTEST-108
          * We add this boolean value to check if we are explicity changing the
-         * number of iterations via command line paramenter. This will only be
+         * number of iterations via command-line paramenter. This will only be
          * used if this is a latency test to decrease or not the default number
          * of iterations.
          */
@@ -666,7 +666,8 @@ public final class PerfTest {
                 try {
                     _executionTime = (long)Integer.parseInt(argv[i]);
                 } catch (NumberFormatException nfx) {
-                    System.err.print("Bad executionTime\n");
+                    System.err.print(
+                            "-executionTime value must be a positive number greater than 0\n");
                     return false;
                 }
             }

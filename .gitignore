@@ -19,7 +19,11 @@
 /bin
 .cproject
 .project
+/srcIdl/customType/*
+/tmp
 .vscode
 .suo
 *.VC.db
 *.VC.opendb
+doc
+srcDoc/_build

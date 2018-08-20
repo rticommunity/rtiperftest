@@ -762,7 +762,7 @@ namespace PerformanceTest
                     if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
                         _peer_host[_peer_host_count++] = argv[i];
                     } else {
-                        Console.Error.Write("The maximun of -initial peers is " + RTIPERFTEST_MAX_PEERS + "\n");
+                        Console.Error.Write("The maximum of -initial peers is " + RTIPERFTEST_MAX_PEERS + "\n");
                         return false;
                     }
                 } else if ("-cft".StartsWith(argv[i], true, null)) {
@@ -855,7 +855,6 @@ namespace PerformanceTest
                     _useUnbounded = (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE;
                 }
             } else { /* No Large Data */
-                _useUnbounded = 0;
                 _isLargeData = false;
             }
 
@@ -1429,6 +1428,10 @@ namespace PerformanceTest
         {
             _DataTypeHelper = myDataTypeHelper;
             _transport = new PerftestTransport();
+
+            _qoSProfileNameMap.Add(LATENCY_TOPIC_NAME.VALUE, "LatencyQos");
+            _qoSProfileNameMap.Add(ANNOUNCEMENT_TOPIC_NAME.VALUE, "AnnouncementQos");
+            _qoSProfileNameMap.Add(THROUGHPUT_TOPIC_NAME.VALUE, "ThroughputQos");
         }
 
         /*********************************************************
@@ -1832,24 +1835,10 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (topic_name == THROUGHPUT_TOPIC_NAME.VALUE)
+            qos_profile = getQoSProfileName(topic_name);
+            if (qos_profile == null)
             {
-                qos_profile = "ThroughputQos";
-            }
-            else if (topic_name == LATENCY_TOPIC_NAME.VALUE)
-            {
-                qos_profile = "LatencyQos";
-            }
-            else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.VALUE)
-            {
-                qos_profile = "AnnouncementQos";
-            }
-            else
-            {
-                Console.Error.WriteLine("topic name must either be "
-                        + THROUGHPUT_TOPIC_NAME.VALUE
-                        + " or " + LATENCY_TOPIC_NAME.VALUE
-                        + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
+                Console.Error.WriteLine("Problem getting qos profile.\n");
                 return null;
             }
 
@@ -2142,24 +2131,10 @@ namespace PerformanceTest
                 return null;
             }
 
-            if (topic_name == THROUGHPUT_TOPIC_NAME.VALUE)
+            qos_profile = getQoSProfileName(topic_name);
+            if (qos_profile == null)
             {
-                qos_profile = "ThroughputQos";
-            }
-            else if (topic_name == LATENCY_TOPIC_NAME.VALUE)
-            {
-                qos_profile = "LatencyQos";
-            }
-            else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.VALUE)
-            {
-                qos_profile = "AnnouncementQos";
-            }
-            else
-            {
-                Console.Error.WriteLine("topic name must either be "
-                        + THROUGHPUT_TOPIC_NAME.VALUE
-                        + " or " + LATENCY_TOPIC_NAME.VALUE
-                        + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
+                Console.Error.WriteLine("Problem getting qos profile.\n");
                 return null;
             }
 
@@ -2285,6 +2260,21 @@ namespace PerformanceTest
             return new RTISubscriber<T>(reader, _DataTypeHelper.clone());
         }
 
+        public string getQoSProfileName(string topicName)
+        {
+            string name;
+            if (_qoSProfileNameMap.TryGetValue(topicName, out name)) {
+                return name;
+            }
+            else {
+                Console.Error.WriteLine("topic name must either be "
+                        + THROUGHPUT_TOPIC_NAME.VALUE
+                        + " or " + LATENCY_TOPIC_NAME.VALUE
+                        + " or " + ANNOUNCEMENT_TOPIC_NAME.VALUE);
+                return null;
+            }
+        }
+
         static int RTIPERFTEST_MAX_PEERS = 1024;
 
         private int    _SendQueueSize = 50;
@@ -2365,5 +2355,8 @@ namespace PerformanceTest
         private ITypeHelper<T>                  _DataTypeHelper = null;
 
         private Semaphore _pongSemaphore = null;
+
+        private SortedDictionary<string, string> _qoSProfileNameMap =
+                new SortedDictionary<string, string>();
     }
 }
