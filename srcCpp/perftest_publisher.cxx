@@ -565,7 +565,6 @@ class ThroughputListener : public IMessagingCB
         _reader = reader;
         _last_seq_num = new unsigned long[numPublishers];
         _useCft = UseCft;
-        syncSemaphore = NULL;
 
         for (int i = 0; i < numPublishers; i++) {
             _last_seq_num[i] = 0;
@@ -578,7 +577,6 @@ class ThroughputListener : public IMessagingCB
         if (_last_seq_num != NULL) {
             delete []_last_seq_num;
         }
-        delete_sync_semaphore();
     }
 
     void ProcessMessage(TestMessage &message)
@@ -782,12 +780,11 @@ static void *ReadThread(void *arg)
     }
 
     // This will allow the main thread to delete the thread that used this function.
-    if (semaphore != NULL) {
-        if (RTIOsapiSemaphore_give(semaphore)
-                != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
-            fprintf(stderr, "Unexpected error giving semaphore\n");
-            return NULL;
-        }
+
+    if (RTIOsapiSemaphore_give(semaphore)
+            != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+        fprintf(stderr, "Unexpected error giving semaphore\n");
+        return NULL;
     }
 
     return NULL;
@@ -998,7 +995,7 @@ int perftest_cpp::Subscriber()
 
     perftest_cpp::MilliSleep(2000);
 
-    if (!finalize_thread(throughputThread, reader_listener)) {
+    if (!finalize_read_thread(throughputThread, reader_listener)) {
         fprintf(stderr, "Error deleting throughputThread\n");
         return -1;
     }
@@ -1044,10 +1041,7 @@ class AnnouncementListener : public IMessagingCB
     std::vector<int> subscriber_list;
     AnnouncementListener(IMessagingReader *reader = NULL)
             : announced_subscribers(0), _reader(reader)
-    {
-        end_test = false;
-        syncSemaphore = NULL;
-    }
+    {}
 
     void ProcessMessage(TestMessage& message) {
         /*
@@ -1122,7 +1116,6 @@ public:
         latency_max = 0;
         last_data_length = 0;
         clock_skew_count = 0;
-        syncSemaphore = NULL;
 
         if (num_latency > 0)
         {
@@ -1386,7 +1379,7 @@ int perftest_cpp::Publisher()
     AnnouncementListener  *announcement_reader_listener = NULL;
     IMessagingReader *announcement_reader;
     IMessagingReader *reader;
-    struct RTIOsapiThread *listenerThread = NULL;
+    struct RTIOsapiThread *latencyReadThread = NULL;
     unsigned long num_latency;
     unsigned long announcementSampleCount = 50;
     unsigned int samplesPerBatch = GetSamplesPerBatch();
@@ -1452,7 +1445,7 @@ int perftest_cpp::Publisher()
                     _PM.get<bool>("latencyTest") ? writer : NULL,
                     _PM);
 
-            listenerThread = RTIOsapiThread_new(
+            latencyReadThread = RTIOsapiThread_new(
                     "ReceiverThread",
                     RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
                     RTI_OSAPI_THREAD_OPTION_DEFAULT,
@@ -1484,13 +1477,13 @@ int perftest_cpp::Publisher()
         return -1;
     }
 
-    struct RTIOsapiThread * announcementThread = NULL;
+    struct RTIOsapiThread * announcementReadThread = NULL;
     if (!_MessagingImpl->supports_listener()) {
         announcement_reader_listener
                 = new AnnouncementListener(announcement_reader);
 
-        announcementThread = RTIOsapiThread_new(
-                "AnnouncementThread",
+        announcementReadThread = RTIOsapiThread_new(
+                "announcementReadThread",
                 RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
                 RTI_OSAPI_THREAD_OPTION_DEFAULT,
                 RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
@@ -1834,13 +1827,13 @@ int perftest_cpp::Publisher()
         printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
     }
 
-    if (!finalize_thread(listenerThread, reader_listener)) {
-        fprintf(stderr, "Error deleting listenerThread\n");
+    if (!finalize_read_thread(latencyReadThread, reader_listener)) {
+        fprintf(stderr, "Error deleting latencyReadThread\n");
         return -1;
     }
 
-    if (!finalize_thread(announcementThread, announcement_reader_listener)) {
-        fprintf(stderr, "Error deleting announcementThread\n");
+    if (!finalize_read_thread(announcementReadThread, announcement_reader_listener)) {
+        fprintf(stderr, "Error deleting announcementReadThread\n");
         return -1;
     }
 
@@ -1905,7 +1898,9 @@ inline void perftest_cpp::SetTimeout(
 }
 
 template <class ListenerType>
-bool perftest_cpp::finalize_thread(RTIOsapiThread *thread, ListenerType *listener)
+bool perftest_cpp::finalize_read_thread(
+        RTIOsapiThread *thread,
+        ListenerType *listener)
 {
     listener->end_test = true;
 

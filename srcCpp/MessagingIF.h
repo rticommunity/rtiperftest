@@ -46,6 +46,14 @@ class IMessagingCB
     RTIOsapiSemaphore *syncSemaphore;
 
   public:
+    IMessagingCB() : end_test(false), syncSemaphore(NULL){}
+
+    virtual ~IMessagingCB() {
+        if (syncSemaphore != NULL) {
+            RTIOsapiSemaphore_delete(syncSemaphore);
+            syncSemaphore = NULL;
+        }
+    }
 
     /* Create a semaphore if is not been created yet, and then return it */
     RTIOsapiSemaphore *get_synchronization_semaphore()
@@ -63,22 +71,8 @@ class IMessagingCB
         return syncSemaphore;
     }
 
-    void delete_sync_semaphore() {
-        if (syncSemaphore != NULL) {
-            RTIOsapiSemaphore_delete(syncSemaphore);
-            syncSemaphore = NULL;
-        }
-    }
-
     virtual void ProcessMessage(TestMessage &message) = 0;
 
-    /*
-     * Default constructor, if a inheritance class declare this function must
-     * also call to delete_sync_semaphore().
-     */
-    virtual ~IMessagingCB() {
-        delete_sync_semaphore();
-    }
 };
 
 class IMessagingReader

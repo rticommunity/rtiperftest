@@ -80,7 +80,7 @@ class perftest_cpp
             unsigned int executionTimeInSeconds,
             bool isScan = false);
     template <class ListenerType>
-    bool finalize_thread(RTIOsapiThread *thread, ListenerType *listener);
+    bool finalize_read_thread(RTIOsapiThread *thread, ListenerType *listener);
 
     // Private members
     ParameterManager _PM;

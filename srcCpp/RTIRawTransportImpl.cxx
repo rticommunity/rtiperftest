@@ -168,7 +168,7 @@ bool RTIRawTransportImpl::validate_input() {
     // Manage parameter -noBlockingSockets
     if (_PM->get<bool>("noBlockingSockets")
             && _PM->get<std::string>("transport") == "SHMEM") {
-        fprintf(stderr, "SHMEM dont support -noBlockingSockets\n");
+        fprintf(stderr, "SHMEM does not support -noBlockingSockets\n");
         return false;
     }
 

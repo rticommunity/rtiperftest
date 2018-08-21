@@ -1371,6 +1371,10 @@ class RTISubscriber : public IMessagingReader
             delete(_reader->get_listener());
             _reader->set_listener(NULL);
         }
+
+        if (_waitset != NULL) {
+            delete _waitset;
+        }
         // loan may be outstanding during shutdown
         _reader->return_loan(_data_seq, _info_seq);
     }
@@ -1470,15 +1474,6 @@ class RTISubscriber : public IMessagingReader
 
     bool unblock()
     {
-        DDSGuardCondition cond;
-        DDS_ReturnCode_t retCode = cond.set_trigger_value(DDS_BOOLEAN_TRUE);
-        if ( retCode != DDS_RETCODE_OK) {
-            fprintf(stderr,
-                    "Error setting a GuardCondition on unblock: %d.\n",
-                    retCode);
-            return false;
-        }
-        _waitset->attach_condition((DDSCondition *) &cond);
         _endTest = true;
         return true;
     }
