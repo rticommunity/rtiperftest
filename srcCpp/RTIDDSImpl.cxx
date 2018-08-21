@@ -1560,7 +1560,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         RTIOsapiHeap_allocateBufferAligned(
                 &buffer,
                 size,
-                RTIOsapiAlignment_getAlignmentOf(char *));
+                RTI_OSAPI_ALIGNMENT_DEFAULT);
         if (buffer == NULL) {
             fprintf(stderr, "RTIOsapiHeap_allocateBufferAligned failed.\n");
             return false;
