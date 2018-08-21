@@ -92,6 +92,12 @@ This behavior was fixed creating a new function `getQoSProfileName` that access
 to a new map `_qoSProfileNameMap` witch contain the tree topics names and his
 corresponding profiles names.
 
+Ensure compatibility for the Classic C++ Implementation (#114)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some of the changes added for #55 broke compatibility when compiling certain
+platforms with no support for C++11. This issue has been fixed.
+
 Release Notes 2.4
 -----------------
 
