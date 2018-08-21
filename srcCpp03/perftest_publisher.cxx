@@ -174,7 +174,7 @@ bool perftest_cpp::set_main_thread_priority()
         return false;
     }
 #else
-    fprintf(stderr, "-_threadPriorities are not supported on this platform\n");
+    fprintf(stderr, "-threadPriorities are not supported on this platform\n");
 #endif
 
     return true;
@@ -198,14 +198,14 @@ bool perftest_cpp::check_priority_range(int value)
         success = false;
     }
 #else
-    fprintf(stderr, "-_threadPriorities are not supported on this platform\n");
+    fprintf(stderr, "-threadPriorities are not supported on this platform\n");
     return false;
 #endif
 
     if (!success) {
         fprintf(
                 stderr,
-                "The input priority (%d) on -_threadPriorities are outside"
+                "The input priority (%d) on -threadPriorities are outside"
                 " of rage for this platform\n",
                 value);
         return false;
@@ -236,11 +236,11 @@ bool perftest_cpp::parse_priority(std::string arg)
     } else if (sscanf(arg.c_str(), "%c:%c:%c", &x, &y, &z) == 3) {
         /* Check if is given by characters */
         if (!_threadPriorities.set_priorities(x, y, z)) {
-            fprintf(stderr, "Fail to parse -_threadPriorities\n");
+            fprintf(stderr, "Fail to parse -threadPriorities\n");
             return false;
         }
     } else {
-        fprintf(stderr, "Fail to parse -_threadPriorities\n");
+        fprintf(stderr, "Fail to parse -threadPriorities\n");
         return false;
     }
 
@@ -433,7 +433,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                          test\n"
         "\t-useReadThread          - Use separate thread instead of callback to \n"
         "\t                          read data\n"
-        "\t-_threadPriorities X:Y:Z - Set the priorities for the application Threads:\n"
+        "\t-threadPriorities X:Y:Z - Set the priorities for the application Threads:\n"
         "\t                              X -- For the Main Thread, which will be the one\n"
         "\t                                   sending the data. Also for the Asynchronous\n"
         "\t                                   thread if that one is used.\n"
@@ -899,14 +899,14 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 throw std::logic_error("[Error] Error parsing commands");
             }
             _MessagingArgc++;
-        } else if (IS_OPTION(argv[i], "-_threadPriorities")) {
+        } else if (IS_OPTION(argv[i], "-threadPriorities")) {
             if ((i == (argc - 1))) {
                 fprintf(stderr,
-                        "Missing <A:B:C> priorities after -_threadPriorities\n");
+                        "Missing <A:B:C> priorities after -threadPriorities\n");
                 return false;
             }
             if (!parse_priority(argv[++i])) {
-                fprintf(stderr, "Wrong sintax after -_threadPriorities\n");
+                fprintf(stderr, "Wrong sintax after -threadPriorities\n");
                 return false;
             }
             _threadPriorities.isSet = true;

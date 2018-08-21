@@ -2490,6 +2490,9 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[], perftest_cpp * parent)
     /* Mask for _threadPriorities when it's used */
     DDS_ThreadSettingsKindMask mask = DDS_THREAD_SETTINGS_REALTIME_PRIORITY;
 
+    if (parent == NULL) {
+        return false;
+    }
     _parent = parent;
     PerftestThreadPriorities threadPriorities = parent->get_thread_priorities();
 

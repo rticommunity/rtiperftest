@@ -1759,7 +1759,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     dds::domain::qos::DomainParticipantQos qos = qos_provider.participant_qos();
     dds::pub::qos::PublisherQos publisherQoS = qos_provider.publisher_qos();
 
-    /* Mask for _threadPriorities when it's used */
+    /* Mask for threadPriorities when it's used */
     rti::core::ThreadSettingsKindMask mask(
             rti::core::ThreadSettingsKindMask::realtime_priority());
 
