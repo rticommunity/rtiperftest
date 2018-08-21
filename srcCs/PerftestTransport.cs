@@ -1234,6 +1234,7 @@ namespace PerformanceTest
                         + "Use -help option to see the correct sintax\n");
                 return false;
             }
+            /* Last check. All the IPs must be in IP format and multicast range */
             if (!isMulticast(multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE])
                     || !isMulticast(multicastAddrMap[LATENCY_TOPIC_NAME.VALUE])
                     || !isMulticast(multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE]))
@@ -1251,12 +1252,11 @@ namespace PerformanceTest
         public bool isMulticast(string addr)
         {
 
-            Console.Error.Write("ADDRESS: " + addr + "\n");
-
             IPAddress address;
 
             try
             {
+                /* Get address from string into IP format */
                 address = IPAddress.Parse(addr);
             }
             catch (System.Exception e)
@@ -1266,6 +1266,10 @@ namespace PerformanceTest
                 return false;
             }
 
+            /*
+             * Check if is a IPV6 multicast address or if is a IPv4 multicast
+             * address checking the value of the most significant octet.
+             */
             return address.IsIPv6Multicast
                     || (address.GetAddressBytes()[0] >= (byte) 224
                         &&  address.GetAddressBytes()[0] <= (byte) 239);

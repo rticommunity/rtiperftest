@@ -1089,7 +1089,7 @@ public class PerftestTransport {
          */
         String [] addresses = arg.split(",",0);
 
-        /* If tree addresses are given */
+        /* If three addresses are given */
         if (addresses.length == 3) {
 
             multicastAddrMap.put(THROUGHPUT_TOPIC_NAME.VALUE, addresses[0]);
@@ -1126,7 +1126,7 @@ public class PerftestTransport {
                     + "Use -help option to see the correct sintax");
             return false;
         }
-
+        /* Last check. All the IPs must be in IP format and multicast range */
         if (!isMulticast(multicastAddrMap.get(THROUGHPUT_TOPIC_NAME.VALUE).toString())
                 || !isMulticast(multicastAddrMap.get(LATENCY_TOPIC_NAME.VALUE).toString())
                 || !isMulticast(multicastAddrMap.get(ANNOUNCEMENT_TOPIC_NAME.VALUE).toString())) {

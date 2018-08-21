@@ -1271,7 +1271,7 @@ bool PerftestTransport::parse_multicast_addresses(char *arg)
         return false;
     }
 
-    /* Check if the result addresses are multicast */
+    /* Last check. All the IPs must be in IP format and multicast range */
     if (!is_multicast(multicastAddrMap[THROUGHPUT_TOPIC_NAME])
             || !is_multicast(multicastAddrMap[LATENCY_TOPIC_NAME])
             || !is_multicast(multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME])) {
