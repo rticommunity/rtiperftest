@@ -1326,6 +1326,7 @@ class RTISubscriber : public IMessagingReader
     TestMessage             _message;
     DDSWaitSet             *_waitset;
     DDSConditionSeq         _active_conditions;
+    DDSGuardCondition       _endTestCondition;
     int                     _data_idx;
     bool                    _no_data;
     bool                    _endTest;
@@ -1357,6 +1358,7 @@ class RTISubscriber : public IMessagingReader
             reader_status = reader->get_statuscondition();
             reader_status->set_enabled_statuses(DDS_DATA_AVAILABLE_STATUS);
             _waitset->attach_condition(reader_status);
+            _waitset->attach_condition((DDSCondition *) &_endTestCondition);
         }
     }
 
@@ -1475,6 +1477,13 @@ class RTISubscriber : public IMessagingReader
     bool unblock()
     {
         _endTest = true;
+        if (_endTestCondition.set_trigger_value(DDS_BOOLEAN_TRUE)
+                != DDS_RETCODE_OK) {
+            fprintf(stderr,
+                    "Error setting a GuardCondition on unblock: %d.\n",
+                    retCode);
+            return false;
+        }
         return true;
     }
 };
