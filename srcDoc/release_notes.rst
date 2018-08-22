@@ -190,6 +190,12 @@ Migrate RTI Routing Service XML configuration to 6.0.0
 The RTI Routing Service configuration file has been updated and
 it is now supported in the version 6.0.0.
 
+Ensure compatibility for the Classic C++ Implementation (#114)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some of the changes added for #55 broke compatibility when compiling certain
+platforms with no support for C++11. This issue has been fixed.
+
 Release Notes 2.3.2
 -------------------
 
