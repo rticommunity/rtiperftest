@@ -8,10 +8,11 @@
 #ifndef __PARAMETERMANAGER_H__
 #define __PARAMETERMANAGER_H__
 
-// #include "PerftestTransport.h"
-// #include "RTIDDSImpl.h"
-
-#include "perftest.h"
+#if defined RTI_LANGUAGE_CPP_TRADITIONAL
+  #include "perftest.h"
+#elif defined RTI_LANGUAGE_CPP_MODERN
+  #include "perftest.hpp"
+#endif
 #include "Parameter.h"
 #include <map>
 

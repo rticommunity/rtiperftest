@@ -246,6 +246,15 @@ function additional_defines_calculation()
     if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
         additional_defines=${additional_defines}" DRTI_CUSTOM_TYPE="${custom_type}" DRTI_CUSTOM_TYPE_FILE_NAME_SUPPORT="${custom_type_file_name_support}
     fi
+
+    echo -e "${INFO_TAG} TEST TEST TESt antonio ${1}"
+    if [ "${1}" = "CPPtraditional" ]; then
+        additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_TRADITIONAL"
+    fi
+
+    if [ "${1}}" = "CPPmodern" ]; then
+        additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_MODERN"
+    fi
 }
 
 # Generate code for the type of the customer.
@@ -354,7 +363,7 @@ function build_cpp()
     if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
         build_cpp_custom_type
     fi
-    additional_defines_calculation
+    additional_defines_calculation "CPPtraditional"
     ##############################################################################
     # Generate files for srcCpp
 
@@ -413,11 +422,11 @@ function build_cpp()
 function build_cpp03()
 {
     copy_src_cpp_common
-    additional_defines_calculation
+    additional_defines_calculation "CPPModern"
     ##############################################################################
     # Generate files for srcCpp03
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles \"RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles \"Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${modern_cpp_lang_string}."

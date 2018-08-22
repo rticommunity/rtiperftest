@@ -6,6 +6,8 @@
 #ifndef __MESSAGINGIF_H__
 #define __MESSAGINGIF_H__
 
+#include "ParameterManager.h"
+
 class TestMessage
 {
   public:
@@ -92,7 +94,7 @@ class IMessaging
 {
   public:
     virtual ~IMessaging() {}
-    virtual bool Initialize(int argc, char *argv[]) = 0;
+    virtual bool Initialize(ParameterManager &PM) = 0;
     virtual void PrintCmdLineHelp() = 0;
     virtual std::string PrintConfiguration() = 0;
     virtual void Shutdown() = 0;

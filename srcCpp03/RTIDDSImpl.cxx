@@ -99,7 +99,6 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _IsDebug(false),
         _isLargeData(false),
         _isScan(false),
-        _isPublisher(false),
         _isDynamicData(false),
         _IsAsynchronous(false),
         _FlowControllerCustom("default"),
@@ -241,7 +240,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
     // now load everything else, command-line params override config file
     for (i = 0; i < argc; ++i) {
         if (IS_OPTION(argv[i], "-pub")) {
-            _isPublisher = true;
         } else if (IS_OPTION(argv[i], "-scan")) {
             _isScan = true;
 
@@ -799,7 +797,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             throw std::logic_error("[Error] Error parsing commands");
         }
     }
-    if (_isPublisher && _useCft) {
+    if (_PM->get<bool>("pub") && _useCft) {
         std::cerr << "Content Filtered Topic is not a parameter in the publisher side.\n" << std::endl;
     }
 
@@ -833,7 +831,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
     // Dynamic Data
-    if (_isPublisher) {
+    if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
         if (_isLargeData || _IsAsynchronous) {
             stringStream << "Yes\n";
@@ -930,6 +928,7 @@ protected:
     rti::core::Semaphore& _pongSemaphore;
     long _instancesToBeWritten;
     bool _isReliable;
+    ParameterManager *_PM;
 
 public:
     RTIPublisherBase(
@@ -937,14 +936,16 @@ public:
             unsigned long num_instances,
             rti::core::Semaphore& pongSemaphore,
             bool useSemaphore,
-            int instancesToBeWritten)
+            int instancesToBeWritten,
+            ParameterManager *PM)
           :
             _writer(writer),
             _num_instances(num_instances),
             _instance_counter(0),
             _useSemaphore(useSemaphore),
             _pongSemaphore(pongSemaphore),
-            _instancesToBeWritten(instancesToBeWritten)
+            _instancesToBeWritten(instancesToBeWritten),
+            _PM(PM)
     {
         using namespace dds::core::policy;
 
@@ -1015,14 +1016,16 @@ public:
             int num_instances,
             rti::core::Semaphore& pongSemaphore,
             bool useSemaphore,
-            int instancesToBeWritten)
+            int instancesToBeWritten,
+            ParameterManager *PM)
           :
             RTIPublisherBase<T>(
                     writer,
                     num_instances,
                     pongSemaphore,
                     useSemaphore,
-                    instancesToBeWritten)
+                    instancesToBeWritten,
+                    PM)
     {
 
         for (unsigned long i = 0; i < this->_num_instances; ++i) {
@@ -1091,14 +1094,16 @@ public:
             rti::core::Semaphore& pongSemaphore,
             bool useSemaphore,
             int instancesToBeWritten,
-            const dds::core::xtypes::StructType& typeCode)
+            const dds::core::xtypes::StructType& typeCode,
+            ParameterManager *PM)
           :
             RTIPublisherBase<DynamicData>(
                     writer,
                     num_instances,
                     pongSemaphore,
                     useSemaphore,
-                    instancesToBeWritten),
+                    instancesToBeWritten,
+                    PM),
             data(typeCode),
             _last_message_size(0)
     {
@@ -1273,17 +1278,20 @@ protected:
     dds::core::cond::WaitSet _waitset;
     int _data_idx;
     bool _no_data;
+    ParameterManager *_PM;
 
 public:
     RTISubscriberBase(
             dds::sub::DataReader<T> reader,
             ReceiverListenerBase<T> *readerListener,
             int _WaitsetEventCount,
-            unsigned int _WaitsetDelayUsec) :
+            unsigned int _WaitsetDelayUsec,
+            ParameterManager *PM) :
             _reader(reader),
             _readerListener(readerListener),
             _waitset(rti::core::cond::WaitSetProperty(_WaitsetEventCount,
-                    dds::core::Duration::from_microsecs(_WaitsetDelayUsec))) {
+                    dds::core::Duration::from_microsecs(_WaitsetDelayUsec))),
+            _PM(PM) {
         // null listener means using receive thread
         if (_reader.listener() == NULL) {
 
@@ -1327,13 +1335,15 @@ public:
             dds::sub::DataReader<T> reader,
             ReceiverListener<T> *readerListener,
             int _WaitsetEventCount,
-            unsigned int _WaitsetDelayUsec)
+            unsigned int _WaitsetDelayUsec,
+            ParameterManager *PM)
           :
             RTISubscriberBase<T>(
                     reader,
                     readerListener,
                     _WaitsetEventCount,
-                    _WaitsetDelayUsec)
+                    _WaitsetDelayUsec,
+                    PM)
     {}
 
     TestMessage *ReceiveMessage() {
@@ -1414,9 +1424,15 @@ public:
             dds::sub::DataReader<DynamicData> reader,
             DynamicDataReceiverListener *readerListener,
             int _WaitsetEventCount,
-            unsigned int _WaitsetDelayUsec)
+            unsigned int _WaitsetDelayUsec,
+            ParameterManager *PM)
           :
-            RTISubscriberBase<DynamicData>(reader,readerListener,_WaitsetEventCount,_WaitsetDelayUsec)
+            RTISubscriberBase<DynamicData>(
+                    reader,
+                    readerListener,
+                    _WaitsetEventCount,
+                    _WaitsetDelayUsec,
+                    PM)
     {}
 
     TestMessage *ReceiveMessage() {
@@ -1601,7 +1617,7 @@ void RTIDDSImpl<T>::validateSecureArgs()
 {
     if (_secureUseSecure) {
         if (_securePrivateKeyFile.empty()) {
-            if (_isPublisher) {
+            if (_PM->get<bool>("pub")) {
                 _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_PUB;
             } else {
                 _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_SUB;
@@ -1609,7 +1625,7 @@ void RTIDDSImpl<T>::validateSecureArgs()
         }
 
         if (_secureCertificateFile.empty()) {
-            if (_isPublisher) {
+            if (_PM->get<bool>("pub")) {
                 _secureCertificateFile = SECURE_CERTIFICATE_FILE_PUB;
             } else {
                 _secureCertificateFile = SECURE_CERTIFICATE_FILE_SUB;
@@ -1621,7 +1637,7 @@ void RTIDDSImpl<T>::validateSecureArgs()
         }
 
         if (_securePermissionsFile.empty()) {
-            if (_isPublisher) {
+            if (_PM->get<bool>("pub")) {
                 _securePermissionsFile = SECURE_PERMISION_FILE_PUB;
             } else {
                 _securePermissionsFile = SECURE_PERMISION_FILE_SUB;
@@ -1754,10 +1770,17 @@ dds::core::QosProvider RTIDDSImpl<T>::getQosProviderForProfile(
  * Initialize
  */
 template <typename T>
-bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
+bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
 {
     using namespace rti::core::policy;
-    ParseConfig(argc, argv);
+    // Assigne the ParameterManager
+    _PM = &PM;
+    //TODO:_transport.initialize(_PM);
+
+     //TODO:
+    // if (!validate_input()) {
+    //     return false;
+    // }
 
     // setup the QOS profile file to be loaded
     dds::core::QosProvider qos_provider =
@@ -2034,7 +2057,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
                 _InstanceCount,
                 _pongSemaphore,
                 _LatencyTest,
-                _instancesToBeWritten);
+                _instancesToBeWritten,
+                _PM);
 
     } else {
 
@@ -2054,7 +2078,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
                 _pongSemaphore,
                 _LatencyTest,
                 _instancesToBeWritten,
-                type);
+                type,
+                _PM);
     }
 }
 
@@ -2301,7 +2326,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 reader,
                 reader_listener,
                 _WaitsetEventCount,
-                _WaitsetDelayUsec);
+                _WaitsetDelayUsec,
+                _PM);
 
     } else {
         const dds::core::xtypes::StructType& type =
@@ -2354,7 +2380,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 reader,
                 dynamic_data_reader_listener,
                 _WaitsetEventCount,
-                _WaitsetDelayUsec);
+                _WaitsetDelayUsec,
+                _PM);
     }
 }
 

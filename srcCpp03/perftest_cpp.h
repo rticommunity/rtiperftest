@@ -60,7 +60,7 @@ class perftest_cpp
     ~perftest_cpp();
 
     int Run(int argc, char *argv[]);
-    bool ParseConfig(int argc, char *argv[]);
+    bool validate_input();
     void PrintConfiguration();
     unsigned int GetSamplesPerBatch();
 
@@ -92,9 +92,9 @@ class perftest_cpp
     }
 
   private:
+    ParameterManager _PM;
     unsigned long _DataLen;
     unsigned long long _NumIter;
-    bool _IsPub;
     bool _isScan;
     std::vector<unsigned long> _scanDataLenSizes;
     bool _UseReadThread;
@@ -111,7 +111,6 @@ class perftest_cpp
     bool _IsReliable;
     int _pubRate;
     bool _pubRateMethodSpin;
-    bool _isKeyed;
     unsigned long _useUnbounded;
     unsigned int _executionTime;
     bool _displayWriterStats;
@@ -132,9 +131,8 @@ class perftest_cpp
 
   public:
     static int  _SubID;
-    static int  _PubID;
-    static bool _PrintIntervals;
-    static bool _showCpu;
+    static bool printIntervals;
+    static bool showCpu;
 
     static struct RTIClock *_Clock;
     static struct RTINtpTime _ClockTime_aux;

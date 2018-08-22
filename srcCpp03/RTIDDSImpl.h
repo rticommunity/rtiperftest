@@ -50,7 +50,7 @@ class RTIDDSImpl : public IMessaging
 
     std::string PrintConfiguration();
 
-    bool Initialize(int argc, char *argv[]);
+    bool Initialize(ParameterManager &PM);
 
     void Shutdown();
 
@@ -101,7 +101,6 @@ class RTIDDSImpl : public IMessaging
     bool         _IsDebug;
     bool         _isLargeData;
     bool         _isScan;
-    bool         _isPublisher;
     bool         _isDynamicData;
     bool         _IsAsynchronous;
     std::string  _FlowControllerCustom;
@@ -111,7 +110,6 @@ class RTIDDSImpl : public IMessaging
     bool         _useCft;
     long         _instancesToBeWritten;
     std::vector<unsigned int> _CFTRange;
-
     PerftestTransport _transport;
 
   #ifdef RTI_SECURE_PERFTEST
@@ -151,7 +149,7 @@ class RTIDDSImpl : public IMessaging
     dds::pub::Publisher _publisher;
 
     rti::core::Semaphore _pongSemaphore;
-
+    ParameterManager *_PM;
     std::map<std::string, std::string> _qoSProfileNameMap;
 
   #ifdef RTI_SECURE_PERFTEST

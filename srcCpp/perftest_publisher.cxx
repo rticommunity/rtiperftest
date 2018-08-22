@@ -294,9 +294,9 @@ bool perftest_cpp::validate_input()
                     "'-cft' value must have the format <start>:<end>\n");
             return false;
         } else if (cftRange[0] > cftRange[1]) {
-                fprintf(stderr,
-                        "'-cft' <start> value cannot be bigger than <end>\n");
-                return false;
+            fprintf(stderr,
+                    "'-cft' <start> value cannot be bigger than <end>\n");
+            return false;
         }
     }
 
