@@ -443,9 +443,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         }
         else if (IS_OPTION(argv[i], "-spin"))
         {
-            PerftestLogParamNotMicro(argv[i]);
-            fprintf(stderr,"-spin option is deprecated. It will be removed "
-                    "in upcoming releases.\n");
             if ((i == (argc-1)) || *argv[++i] == '-')
             {
                 fprintf(stderr,"Missing <count> after -spin\n");
@@ -640,7 +637,6 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                     return false;
                 }
                 if (strstr(argv[i], "spin") != NULL) {
-                    PerftestLogParamNotMicro(argv[i]);
                     printf("-pubRate method: spin.\n");
                 } else if (strstr(argv[i], "sleep") != NULL) {
                     _pubRateMethodSpin = false;
