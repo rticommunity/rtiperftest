@@ -17,7 +17,7 @@
 #endif
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 
-int  perftest_cpp::_SubID = 0;
+int  perftest_cpp::subID = 0;
 bool perftest_cpp::printIntervals = true;
 bool perftest_cpp::_testCompleted = false;
 bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
@@ -122,7 +122,9 @@ int perftest_cpp::Run(int argc, char *argv[]) {
         }
     }
 
-    _MessagingImpl->Initialize(_PM);
+    if (!_MessagingImpl->Initialize(_PM)) {
+        return -1;
+    }
 
     PrintConfiguration();
 
@@ -131,6 +133,24 @@ int perftest_cpp::Run(int argc, char *argv[]) {
     } else {
         return RunSubscriber();
     }
+}
+
+void perftest_cpp::MilliSleep(unsigned int millisec) {
+  #if defined(RTI_WIN32)
+    Sleep(millisec);
+  #elif defined(RTI_VXWORKS)
+    rti::util::sleep(dds::core::Duration(0,millisec*1000000));
+  #else
+    usleep(millisec * 1000);
+  #endif
+}
+
+void perftest_cpp::ThreadYield() {
+  #ifdef RTI_WIN32
+    Sleep(0);
+  #else
+    sched_yield();
+  #endif
 }
 
 const rti::core::ProductVersion perftest_cpp::GetDDSVersion()
@@ -231,7 +251,7 @@ bool perftest_cpp::validate_input()
 
     // Manage parameter -sidMultiSubTest
     // It is copied because it is used in the critical patch
-    perftest_cpp::_SubID = _PM.get<int>("sidMultiSubTest");
+    perftest_cpp::subID = _PM.get<int>("sidMultiSubTest");
 
 
     // Manage parameter -latencyTest
@@ -288,7 +308,7 @@ bool perftest_cpp::validate_input()
         }
     }
 
-    //manage the parameter: -pubRate -sleep -spin
+    // Manage the parameter: -pubRate -sleep -spin
     if (_PM.is_set("pubRate")) {
         if (_SpinLoopCount > 0) {
             std::cerr << "[Error] '-spin' is not compatible with -pubRate. "
@@ -324,13 +344,13 @@ bool perftest_cpp::validate_input()
         if (scanList[0] < (unsigned long long)(std::min)
                     (MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)
                 && scanList[scanList.size() - 1] > (unsigned long long)(std::min)
-                    (MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+                    (MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)) {
             std::cerr << "[Error] The sizes of -scan [";
             for (unsigned int i = 0; i < scanList.size(); i++) {
                 fprintf(stderr, "%llu ", scanList[i]);
             }
             std::cerr << "] should be either all smaller or all bigger than "
-                      << (std::min)(MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)
+                      << (std::min)(MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)
                       << std::endl;
             throw std::logic_error("[Error] Error parsing commands");
         }
@@ -338,8 +358,7 @@ bool perftest_cpp::validate_input()
 
     // Check if we need to enable Large Data. This works also for -scan
     if (_PM.get<unsigned long long>("dataLen") > (unsigned long long) (std::min)(
-            MAX_SYNCHRONOUS_SIZE,
-            MAX_BOUNDED_SEQ_SIZE)) {
+            MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)) {
         if (_PM.get<int>("unbounded") == 0) {
             _PM.set<int>("unbounded", MAX_BOUNDED_SEQ_SIZE);
         }
@@ -368,7 +387,6 @@ void perftest_cpp::PrintConfiguration()
     // Throughput/Latency mode
     if (_PM.get<bool>("pub")) {
         stringStream << "\nMode: ";
-
         if (_PM.get<bool>("latencyTest")) {
             stringStream << "LATENCY TEST (Ping-Pong test)\n";
         } else {
@@ -397,24 +415,27 @@ void perftest_cpp::PrintConfiguration()
 
     // Publisher/Subscriber and Entity ID
     if (_PM.get<bool>("pub")) {
-        stringStream << "\tPublisher ID: " << _PM.get<int>("pidMultiPubTest") << "\n";
+        stringStream << "\tPublisher ID: "
+                     << _PM.get<int>("pidMultiPubTest")
+                     << "\n";
     } else {
-        stringStream << "\tSubscriber ID: " << _SubID << "\n";
+        stringStream << "\tSubscriber ID: " << subID << "\n";
     }
 
 
     if (_PM.get<bool>("pub")) {
         // Latency Count
         stringStream << "\tLatency count: 1 latency sample every "
-                     << _PM.get<unsigned long long>("latencyCount") << " samples\n";
+                     << _PM.get<unsigned long long>("latencyCount")
+                     << " samples\n";
 
         // Scan/Data Sizes
         stringStream << "\tData Size: ";
         if (_PM.is_set("scan")) {
-             const std::vector<unsigned long long> scanList =
+            const std::vector<unsigned long long> scanList =
                     _PM.get_vector<unsigned long long>("scan");
 
-            for (unsigned long i = 0; i < scanList.size(); i++ ) {
+            for (unsigned long i = 0; i < scanList.size(); i++) {
                 stringStream << scanList[i];
                 if (i == scanList.size() - 1) {
                     stringStream << "\n";
@@ -447,7 +468,8 @@ void perftest_cpp::PrintConfiguration()
         // Publication Rate
         stringStream << "\tPublication Rate: ";
         if (_PM.is_set("pubRate") > 0) {
-            stringStream << _PM.get_pair<unsigned long long, std::string>("pubRate").first << " Samples/s (";
+            stringStream << _PM.get_pair<unsigned long long, std::string>("pubRate").first
+                         << " Samples/s (";
             if (_PM.get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
                 stringStream << "Spin)\n";
             } else {
@@ -590,8 +612,8 @@ public:
 
 
         // Send back a packet if this is a ping
-        if ((message.latency_ping == perftest_cpp::_SubID)  ||
-                (_useCft && message.latency_ping != -1)) {
+        if ((message.latency_ping == perftest_cpp::subID)
+                || (_useCft && message.latency_ping != -1)) {
             _writer->send(message);
             _writer->flush();
         }
@@ -731,10 +753,13 @@ int perftest_cpp::RunSubscriber()
     writer = _MessagingImpl->CreateWriter(LATENCY_TOPIC_NAME);
 
     // Check if using callbacks or read thread
-    if (!_UseReadThread) {
-
+    if (!_PM.get<bool>("useReadThread")) {
         // create latency pong reader
-        reader_listener = new ThroughputListener(writer, NULL, _useCft, _NumPublishers);
+        reader_listener = new ThroughputListener(
+                writer,
+                NULL,
+                _PM.is_set("cft"),
+                _PM.get<int>("numPublishers"));
         reader = _MessagingImpl->CreateReader(
                 THROUGHPUT_TOPIC_NAME,
                 reader_listener);
@@ -753,14 +778,19 @@ int perftest_cpp::RunSubscriber()
                       << std::endl;
             return -1;
         }
-        reader_listener = new ThroughputListener(writer, reader, _useCft,
-                _NumPublishers);
+        reader_listener = new ThroughputListener(
+                writer,
+                reader,
+                _PM.is_set("cft"),
+                _PM.get<int>("numPublishers"));
 
         RTIOsapiThread_new("ReceiverThread",
-                            RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-                            RTI_OSAPI_THREAD_OPTION_DEFAULT,
-                            RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                            NULL, ThroughputReadThread, reader_listener);
+                RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
+                RTI_OSAPI_THREAD_OPTION_DEFAULT,
+                RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                NULL,
+                ThroughputReadThread,
+                reader_listener);
     }
 
     // Create announcement writer
@@ -768,10 +798,12 @@ int perftest_cpp::RunSubscriber()
             _MessagingImpl->CreateWriter(ANNOUNCEMENT_TOPIC_NAME);
 
     // Synchronize with publishers
-    std::cerr << "[Info] Waiting to discover " << _NumPublishers
-              << " publishers ..." << std::endl;
-    reader->waitForWriters(_NumPublishers);
-    announcement_writer->waitForReaders(_NumPublishers);
+    std::cerr << "[Info] Waiting to discover "
+              << _PM.get<int>("numPublishers")
+              << " publishers ..."
+              << std::endl;
+    reader->waitForWriters(_PM.get<int>("numPublishers"));
+    announcement_writer->waitForReaders(_PM.get<int>("numPublishers"));
 
     /*
      * Announcement message that will be used by the announcement_writer
@@ -779,7 +811,7 @@ int perftest_cpp::RunSubscriber()
      * different things.
      */
     TestMessage announcement_msg;
-    announcement_msg.entity_id = _SubID;
+    announcement_msg.entity_id = subID;
     announcement_msg.size = INITIALIZE_SIZE;
 
     // Send announcement message
@@ -811,7 +843,7 @@ int perftest_cpp::RunSubscriber()
         now = GetTimeUsec();
 
         if (reader_listener->change_size) { // ACK change_size
-            announcement_msg.entity_id = _SubID;
+            announcement_msg.entity_id = subID;
             announcement_msg.size = LENGTH_CHANGED_SIZE;
             announcement_writer->send(announcement_msg);
             announcement_writer->flush();
@@ -819,7 +851,7 @@ int perftest_cpp::RunSubscriber()
         }
 
         if (reader_listener->end_test) { // ACK end_test
-            announcement_msg.entity_id = _SubID;
+            announcement_msg.entity_id = subID;
             announcement_msg.size = FINISHED_SIZE;
             announcement_writer->send(announcement_msg);
             announcement_writer->flush();
@@ -915,8 +947,7 @@ class AnnouncementListener : public IMessagingCB
   public:
     std::vector<int> subscriber_list;
 
-    AnnouncementListener() {
-    }
+    AnnouncementListener() {}
 
     void ProcessMessage(TestMessage& message) {
         /*
@@ -1081,16 +1112,18 @@ class LatencyListener : public IMessagingCB
             // keep track of one-way latency
             latency /= 2;
         } else {
-            fprintf(stderr,"Clock skew suspected: received time %llu usec, sent time %llu usec",
-                            now, sentTime);
-                ++clock_skew_count;
+            fprintf(stderr,
+                    "Clock skew suspected: received time %llu usec, sent time %llu usec\n",
+                    now, sentTime);
+            ++clock_skew_count;
             return;
         }
 
         // store value for percentile calculations
         if (_latency_history != NULL) {
             if (count >= _num_latency){
-                fprintf(stderr,"Too many latency pongs received.  Do you have more than 1 app with -pidMultiPubTest = 0 or -sidMultiSubTest 0?\n");
+                fprintf(stderr,
+                        "Too many latency pongs received.  Do you have more than 1 app with -pidMultiPubTest = 0 or -sidMultiSubTest 0?\n");
                 return;
             } else {
                 _latency_history[count] = latency;
@@ -1156,30 +1189,32 @@ class LatencyListener : public IMessagingCB
         }
 
         if (clock_skew_count != 0) {
-            fprintf(stderr,"The following latency result may not be accurate because clock skew happens %lu times\n",
-                        clock_skew_count);
+            fprintf(stderr,
+                    "The following latency result may not be accurate because clock skew happens %lu times\n",
+                    clock_skew_count);
             fflush(stderr);
         }
 
         // sort the array (in ascending order)
-        std::sort(_latency_history, _latency_history+count);
+        std::sort(_latency_history, _latency_history + count);
         latency_ave = (double)latency_sum / count;
-        latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
+        latency_std = sqrt(
+                (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
         if (perftest_cpp::showCpu) {
             outputCpu = cpu.get_cpu_average();
         }
 
         printf("Length: %5d  Latency: Ave %6.0lf us  Std %6.1lf us  "
-               "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us  99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
-               last_data_length + perftest_cpp::OVERHEAD_BYTES,
-               latency_ave, latency_std, latency_min, latency_max,
-               _latency_history[count*50/100],
-               _latency_history[count*90/100],
-               _latency_history[count*99/100],
-               _latency_history[(int)(count*(9999.0/10000))],
-               _latency_history[(int)(count*(999999.0/1000000))],
-               outputCpu.c_str()
+                "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us  99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
+                last_data_length + perftest_cpp::OVERHEAD_BYTES,
+                latency_ave, latency_std, latency_min, latency_max,
+                _latency_history[count*50/100],
+                _latency_history[count*90/100],
+                _latency_history[count*99/100],
+                _latency_history[(int)(count*(9999.0/10000))],
+                _latency_history[(int)(count*(999999.0/1000000))],
+                outputCpu.c_str()
         );
 
         fflush(stdout);
@@ -1237,29 +1272,32 @@ int perftest_cpp::RunPublisher()
     IMessagingReader *announcement_reader;
     unsigned long num_latency;
     unsigned long announcementSampleCount = 50;
-    unsigned int samplesPerBatch = 1;
+    unsigned int samplesPerBatch = GetSamplesPerBatch();
     // create throughput/ping writer
     writer = _MessagingImpl->CreateWriter(THROUGHPUT_TOPIC_NAME);
 
-    samplesPerBatch = GetSamplesPerBatch();
-
-    num_latency = (unsigned long)((_NumIter/samplesPerBatch) / _PM.get<unsigned long long>("latencyCount"));
-    if ((_NumIter/samplesPerBatch) % _PM.get<unsigned long long>("latencyCount") > 0) {
+    // Calculate number of latency pings that will be sent per data size
+    num_latency = (unsigned long)((_PM.get<unsigned long long>("numIter") /
+            samplesPerBatch) / _PM.get<unsigned long long>("latencyCount"));
+    if ((_PM.get<unsigned long long>("numIter") / samplesPerBatch) %
+            _PM.get<unsigned long long>("latencyCount") > 0) {
         num_latency++;
     }
 
     if (samplesPerBatch > 1) {
-        // in batch mode, might have to send another ping
+        // In batch mode, might have to send another ping
         ++num_latency;
     }
 
     // Only publisher with ID 0 will send/receive pings
     if (_PM.get<int>("pidMultiPubTest") == 0) {
         // Check if using callbacks or read thread
-        if (!_UseReadThread) {
+        if (!_PM.get<bool>("useReadThread")) {
             // create latency pong reader
             // the writer is passed for ping-pong notification in LatencyTest
-            reader_listener = new LatencyListener(num_latency, NULL,
+            reader_listener = new LatencyListener(
+                    num_latency,
+                    NULL,
                     _PM.get<bool>("latencyTest") ? writer : NULL);
             reader = _MessagingImpl->CreateReader(
                     LATENCY_TOPIC_NAME,
@@ -1280,14 +1318,18 @@ int perftest_cpp::RunPublisher()
                         << std::endl;
                 return -1;
             }
-            reader_listener = new LatencyListener(num_latency, reader,
+            reader_listener = new LatencyListener(
+                    num_latency,
+                    reader,
                     _PM.get<bool>("latencyTest") ? writer : NULL);
 
             RTIOsapiThread_new("ReceiverThread",
-            RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-            RTI_OSAPI_THREAD_OPTION_DEFAULT,
-            RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-            NULL, LatencyReadThread, reader_listener);
+                    RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
+                    RTI_OSAPI_THREAD_OPTION_DEFAULT,
+                    RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                    NULL,
+                    LatencyReadThread,
+                    reader_listener);
         }
     } else {
         reader = NULL;
@@ -1308,28 +1350,35 @@ int perftest_cpp::RunPublisher()
 
     unsigned long long spinPerUsec = 0;
     unsigned long sleepUsec = 1000;
-    if (_pubRate > 0) {
-        if ( _pubRateMethodSpin) {
+    if (_PM.is_set("pubRate") > 0) {
+        if ( _PM.get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
             spinPerUsec = rti::util::spin_per_microsecond();
             /* A return value of 0 means accuracy not assured */
             if (spinPerUsec == 0) {
-                std::cerr << "[Error] Error initializing spin per microsecond. -pubRate cannot be used\n" <<
-                        "Exiting..." << std::endl;
+                std::cerr << "[Error] Error initializing spin per microsecond. "
+                          << "'-pubRate' cannot be used\nExiting..."
+                          << std::endl;
                 return -1;
             }
-            _SpinLoopCount = 1000000*spinPerUsec/_pubRate;
+            _SpinLoopCount = 1000000 * spinPerUsec /
+                    _PM.get_pair<unsigned long long, std::string>("pubRate").first;
         } else { // sleep count
-            _SleepNanosec =(unsigned long long) 1000000000/_pubRate;
+            _SleepNanosec = 1000000000/
+                    (unsigned long)_PM.get_pair
+                            <unsigned long long, std::string>("pubRate").first;
         }
     }
 
-    std::cerr << "[Info] Waiting to discover " << _NumSubscribers << " subscribers ..." << std::endl;
-    writer->waitForReaders(_NumSubscribers);
+    std::cerr << "[Info] Waiting to discover "
+              << _PM.get<int>("numSubscribers")
+              << " subscribers ..."
+              << std::endl;
+    writer->waitForReaders(_PM.get<int>("numSubscribers"));
 
     // We have to wait until every Subscriber sends an announcement message
     // indicating that it has discovered every RunPublisher
     std::cerr << "[Info] Waiting for subscribers announcement ..." << std::endl;
-    while (_NumSubscribers
+    while (_PM.get<int>("numSubscribers")
             > (int)announcement_reader_listener->subscriber_list.size()) {
         MilliSleep(1000);
     }
@@ -1337,8 +1386,8 @@ int perftest_cpp::RunPublisher()
     // Allocate data and set size
     TestMessage message;
     message.entity_id = _PM.get<int>("pidMultiPubTest");
-    //message.size = std::max(_PM.get<unsigned long long>("dataLen"),LENGTH_CHANGED_SIZE);
-    //message.bin_data.resize(std::max(_PM.get<unsigned long long>("dataLen"),LENGTH_CHANGED_SIZE));
+    //message.size = std::max(_PM.get<unsigned long long>("dataLen"), LENGTH_CHANGED_SIZE);
+    //message.bin_data.resize(std::max(_PM.get<unsigned long long>("dataLen"), LENGTH_CHANGED_SIZE));
 
 
     if ( perftest_cpp::showCpu && _PM.get<int>("pidMultiPubTest") == 0) {
@@ -1368,7 +1417,7 @@ int perftest_cpp::RunPublisher()
      */
     unsigned long initializeSampleCount = (std::max)(
             _MessagingImpl->GetInitializationSampleCount(),
-            _InstanceCount);
+            (unsigned long)_PM.get<long>("instances"));
 
     std::cerr << "[Info] Sending " << initializeSampleCount
               << " initialization pings ..." << std::endl;
@@ -1404,12 +1453,16 @@ int perftest_cpp::RunPublisher()
     /* Minimum value for spin_sample_period will be 1 so we execute 100 times
        the control loop every second, or every sample if we want to send less
        than 100 samples per second */
-    if (_pubRate > 100) {
-        pubRate_sample_period = (unsigned long long)(_pubRate / 100);
+    if (_PM.get_pair<unsigned long long, std::string>("pubRate").first > 100) {
+        pubRate_sample_period =
+                (unsigned long)(_PM.get_pair<unsigned long long, std::string>(
+                    "pubRate").first
+                / 100);
     }
 
-    if (_executionTime > 0 && !_PM.is_set("scan")) {
-        SetTimeout(_executionTime);
+    if (_PM.get<unsigned long long>("executionTime") > 0
+            && !_PM.is_set("scan")) {
+        SetTimeout((unsigned int)_PM.get<unsigned long long>("executionTime"));
     }
     /*
      * Copy variable to no query the ParameterManager in every iteration.
@@ -1446,14 +1499,13 @@ int perftest_cpp::RunPublisher()
     /********************
      *  Main sending loop
      */
-    for ( unsigned long long loop = 0; ((_isScan) || (loop < _NumIter)) &&
-                                     (!_testCompleted) ; ++loop ) {
+    for (unsigned long long loop = 0;
+            ((isScan) || (loop < numIter)) && (!_testCompleted);
+            ++loop ) {
 
         /* This if has been included to perform the control loop
            that modifies the publication rate according to -pubRate */
-        if ((_pubRate > 0) &&
-                (loop > 0) &&
-                (loop % pubRate_sample_period == 0)) {
+        if ((isSetPubRate > 0) && (loop > 0) && (loop % pubRate_sample_period == 0)) {
 
             time_now = perftest_cpp::GetTimeUsec();
 
@@ -1461,30 +1513,30 @@ int perftest_cpp::RunPublisher()
             time_last_check = time_now;
             rate = (pubRate_sample_period * 1000000) / (unsigned long)time_delta;
 
-            if ( _pubRateMethodSpin) {
-                if (rate > (unsigned long)_pubRate) {
+            if (pubRateMethodSpin) {
+                if (rate > pubRate) {
                     _SpinLoopCount += spinPerUsec;
-                } else if (rate < (unsigned long)_pubRate && _SpinLoopCount > spinPerUsec) {
+                } else if (rate < pubRate && _SpinLoopCount > spinPerUsec) {
                     _SpinLoopCount -= spinPerUsec;
-                } else if (rate < (unsigned long)_pubRate && _SpinLoopCount <= spinPerUsec) {
+                } else if (rate < pubRate && _SpinLoopCount <= spinPerUsec) {
                     _SpinLoopCount = 0;
                 }
             } else { // sleep
-                if (rate > (unsigned long)_pubRate) {
+                if (rate > pubRate) {
                     _SleepNanosec += sleepUsec; //plus 1 MicroSec
-                } else if (rate < (unsigned long)_pubRate && _SleepNanosec > sleepUsec) {
+                } else if (rate < pubRate && _SleepNanosec > sleepUsec) {
                     _SleepNanosec -=  sleepUsec; //less 1 MicroSec
-                } else if (rate < (unsigned long)_pubRate && _SleepNanosec <= sleepUsec) {
+                } else if (rate < pubRate && _SleepNanosec <= sleepUsec) {
                     _SleepNanosec = 0;
                 }
             }
         }
 
-        if ( _SpinLoopCount > 0 ) {
+        if (_SpinLoopCount > 0) {
             rti::util::spin(_SpinLoopCount);
         }
 
-        if ( _SleepNanosec > 0 ) {
+        if (_SleepNanosec > 0) {
             rti::util::sleep(dds::core::Duration(0,(unsigned int)_SleepNanosec));
         }
 
@@ -1492,9 +1544,8 @@ int perftest_cpp::RunPublisher()
 
         // only send latency pings if is publisher with ID 0
         // In batch mode, latency pings are sent once every LatencyCount batches
-        if ( (pidMultiPubTest == 0) && (((loop/samplesPerBatch)
-                % (unsigned long long)_LatencyCount) == 0) )
-        {
+        if ((pidMultiPubTest == 0) && (((loop / samplesPerBatch)
+                % latencyCount) == 0) ) {
 
             /* In batch mode only send a single ping in a batch.
              *
@@ -1505,15 +1556,16 @@ int perftest_cpp::RunPublisher()
              * when both are equal.
              *
              * Note when not in batch mode, current_index_in_batch = ping_index_in_batch
-             * always.  And the if() is always true.
+             * always. And the if() is always true.
              */
-            if ( current_index_in_batch == ping_index_in_batch  && !sentPing )
-            {
+            if ( current_index_in_batch == ping_index_in_batch  && !sentPing) {
                 // If running in scan mode, dataLen under test is changed
                 // after _executionTime
-                if (_isScan && _testCompleted_scan) {
+                if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    SetTimeout(_executionTime, _isScan);
+                    SetTimeout(
+                            (unsigned int)_PM.get<unsigned long long>("executionTime"),
+                            isScan);
 
                     // flush anything that was previously sent
                     writer->flush();
@@ -1521,7 +1573,7 @@ int perftest_cpp::RunPublisher()
                         timeout_wait_for_ack_sec,
                         timeout_wait_for_ack_nsec);
 
-                    if (scan_count == _scanDataLenSizes.size()) {
+                    if (scan_count == scanList.size()) {
                         break; // End of scan test
                     }
 
@@ -1530,7 +1582,7 @@ int perftest_cpp::RunPublisher()
                     //message.data.resize(message.size);
                     // must set latency_ping so that a subscriber sends us
                     // back the LENGTH_CHANGED_SIZE message
-                    message.latency_ping = num_pings % _NumSubscribers;
+                    message.latency_ping = num_pings % numSubscribers;
 
                     /*
                      * If the Throughput topic is reliable, we can send the packet and do
@@ -1544,7 +1596,7 @@ int perftest_cpp::RunPublisher()
                      */
                     announcement_reader_listener->subscriber_list.clear();
                     while ((int)announcement_reader_listener->subscriber_list.size()
-                            < _NumSubscribers) {
+                            < numSubscribers) {
                         writer->send(message, true);
                         writer->flush();
                         writer->waitForAck(
@@ -1552,8 +1604,7 @@ int perftest_cpp::RunPublisher()
                             timeout_wait_for_ack_nsec);
                     }
 
-                    message.size =
-                            _scanDataLenSizes[scan_count++] - OVERHEAD_BYTES;
+                    message.size = (int)scanList[scan_count++] - OVERHEAD_BYTES;
                     /* Reset _SamplePerBatch */
                     samplesPerBatch = GetSamplesPerBatch();
 
@@ -1562,7 +1613,7 @@ int perftest_cpp::RunPublisher()
                 }
 
                 // Each time ask a different subscriber to echo back
-                pingID = num_pings % _NumSubscribers;
+                pingID = num_pings % numSubscribers;
                 unsigned long long now = GetTimeUsec();
                 message.timestamp_sec = (int)((now >> 32) & 0xFFFFFFFF);
                 message.timestamp_usec = (unsigned int)(now & 0xFFFFFFFF);
@@ -1571,8 +1622,9 @@ int perftest_cpp::RunPublisher()
                 ping_index_in_batch = (ping_index_in_batch + 1) % samplesPerBatch;
                 sentPing = true;
 
-                if (_displayWriterStats && printIntervals) {
-                    printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
+                if (writerStats && perftest_cpp::printIntervals) {
+                    printf("Pulled samples: %7d\n",
+                            writer->getPulledSampleCount());
                 }
             }
         }
@@ -1581,11 +1633,10 @@ int perftest_cpp::RunPublisher()
         message.seq_num = (unsigned long) loop;
         message.latency_ping = pingID;
         writer->send(message);
-        if(_LatencyTest && sentPing) {
-            if (_IsReliable) {
+        if(latencyTest && sentPing) {
+            if (!bestEffort) {
                 writer->waitForPingResponse();
-            }
-            else {
+            } else {
                 /* time out in milliseconds */
                 writer->waitForPingResponse(200);
             }
@@ -1593,8 +1644,7 @@ int perftest_cpp::RunPublisher()
 
 
         // come to the beginning of another batch
-        if (current_index_in_batch == 0)
-        {
+        if (current_index_in_batch == 0) {
             sentPing = false;
         }
     }
@@ -1630,8 +1680,9 @@ int perftest_cpp::RunPublisher()
                   << "-pidMultiPubTest = 0" << std::endl;
     }
 
-    if (_displayWriterStats) {
-        printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
+    if (_PM.get<bool>("writerStats")) {
+        printf("Pulled samples: %7d\n",
+                writer->getPulledSampleCount());
     }
 
     if (writer != NULL) {
@@ -1680,9 +1731,10 @@ inline unsigned long long perftest_cpp::GetTimeUsec() {
     return perftest_cpp::_Clock_usec + 1000000 * perftest_cpp::_Clock_sec;
 }
 
-inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds,
-        bool _isScan) {
-    if (_isScan) {
+inline void perftest_cpp::SetTimeout(
+        unsigned int executionTimeInSeconds,
+        bool isScan) {
+    if (isScan) {
       #ifdef RTI_WIN32
         CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout_scan,
                 NULL , executionTimeInSeconds * 1000, 0, 0);
@@ -1691,7 +1743,7 @@ inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds,
         alarm(executionTimeInSeconds);
       #endif
     } else {
-        std::cerr <<  "[Info] Setting timeout to " << executionTimeInSeconds 
+        std::cerr <<  "[Info] Setting timeout to " << executionTimeInSeconds
                   <<  " seconds." << std::endl;
       #ifdef RTI_WIN32
         CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout,
@@ -1704,19 +1756,13 @@ inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds,
 }
 
 inline unsigned int perftest_cpp::GetSamplesPerBatch() {
-    int batchSize = _MessagingImpl->GetBatchSize();
-    unsigned int samplesPerBatch;
-
-    if (batchSize > 0) {
-        samplesPerBatch = batchSize / (int) _PM.get<unsigned long long>("dataLen");
-        if (samplesPerBatch == 0) {
-            samplesPerBatch = 1;
-        }
+    if (_PM.get<long>("batchSize")
+            > (long)_PM.get<unsigned long long>("dataLen")) {
+        return _PM.get<long>("batchSize") /
+                (unsigned int)_PM.get<unsigned long long>("dataLen");
     } else {
-        samplesPerBatch = 1;
+        return 1;
     }
-
-    return samplesPerBatch;
 }
 
 #ifdef RTI_WIN32

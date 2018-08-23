@@ -19,7 +19,7 @@
 #endif
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 
-int  perftest_cpp::_SubID = 0;
+int  perftest_cpp::subID = 0;
 bool perftest_cpp::printIntervals = true;
 bool perftest_cpp::showCpu = false;
 
@@ -246,7 +246,7 @@ bool perftest_cpp::validate_input()
 
     // Manage parameter -sidMultiSubTest
     // It is copied because it is used in the critical patch
-    perftest_cpp::_SubID = _PM.get<int>("sidMultiSubTest");
+    perftest_cpp::subID = _PM.get<int>("sidMultiSubTest");
 
     // Manage parameter -latencyTest
     if (_PM.get<bool>("latencyTest")) {
@@ -336,7 +336,7 @@ bool perftest_cpp::validate_input()
         if (scanList[0] < (unsigned long long)(std::min)
                     (MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)
                 && scanList[scanList.size() - 1] > (unsigned long long)(std::min)
-                    (MAX_SYNCHRONOUS_SIZE,MAX_BOUNDED_SEQ_SIZE)) {
+                    (MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)) {
             fprintf(stderr, "The sizes of -scan [");
             for (unsigned int i = 0; i < scanList.size(); i++) {
                 fprintf(stderr, "%llu ", scanList[i]);
@@ -350,8 +350,7 @@ bool perftest_cpp::validate_input()
 
     // Check if we need to enable Large Data. This works also for -scan
     if (_PM.get<unsigned long long>("dataLen") > (unsigned long long) (std::min)(
-            MAX_SYNCHRONOUS_SIZE,
-            MAX_BOUNDED_SEQ_SIZE)) {
+            MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)) {
         if (_PM.get<int>("unbounded") == 0) {
             _PM.set<int>("unbounded", MAX_BOUNDED_SEQ_SIZE);
         }
@@ -384,7 +383,6 @@ void perftest_cpp::PrintConfiguration()
     // Throughput/Latency mode
     if (_PM.get<bool>("pub")) {
         stringStream << "\nMode: ";
-
         if (_PM.get<bool>("latencyTest")) {
             stringStream << "LATENCY TEST (Ping-Pong test)\n";
         } else {
@@ -417,7 +415,7 @@ void perftest_cpp::PrintConfiguration()
                      << _PM.get<int>("pidMultiPubTest")
                      << "\n";
     } else {
-        stringStream << "\tSubscriber ID: " << _SubID << "\n";
+        stringStream << "\tSubscriber ID: " << subID << "\n";
     }
 
     if (_PM.get<bool>("pub")) {
@@ -431,7 +429,7 @@ void perftest_cpp::PrintConfiguration()
         if (_PM.is_set("scan")) {
             const std::vector<unsigned long long> scanList =
                     _PM.get_vector<unsigned long long>("scan");
-            for (unsigned long i = 0; i < scanList.size(); i++ ) {
+            for (unsigned long i = 0; i < scanList.size(); i++) {
                 stringStream << scanList[i];
                 if (i == scanList.size() - 1) {
                     stringStream << "\n";
@@ -440,8 +438,7 @@ void perftest_cpp::PrintConfiguration()
                 }
             }
         } else {
-            stringStream << _PM.get<unsigned long long>("dataLen")
-                         << "\n";
+            stringStream << _PM.get<unsigned long long>("dataLen") << "\n";
         }
 
         // Batching
@@ -616,8 +613,8 @@ class ThroughputListener : public IMessagingCB
         }
 
         // Send back a packet if this is a ping
-        if ((message.latency_ping == perftest_cpp::_SubID) ||
-                (_useCft && message.latency_ping != -1)) {
+        if ((message.latency_ping == perftest_cpp::subID)
+                || (_useCft && message.latency_ping != -1)) {
             _writer->Send(message);
             _writer->Flush();
         }
@@ -839,7 +836,7 @@ int perftest_cpp::Subscriber()
      * greatest size:
      */
     TestMessage announcement_msg;
-    announcement_msg.entity_id = _SubID;
+    announcement_msg.entity_id = subID;
     announcement_msg.size = perftest_cpp::INITIALIZE_SIZE;
     announcement_msg.data = new char[LENGTH_CHANGED_SIZE];
 
@@ -874,7 +871,7 @@ int perftest_cpp::Subscriber()
         now = GetTimeUsec();
 
         if (reader_listener->change_size) { // ACK change_size
-            announcement_msg.entity_id = _SubID;
+            announcement_msg.entity_id = subID;
             announcement_msg.size =  LENGTH_CHANGED_SIZE;
             announcement_writer->Send(announcement_msg);
             announcement_writer->Flush();
@@ -882,7 +879,7 @@ int perftest_cpp::Subscriber()
         }
 
         if (reader_listener->end_test) { // ACK end_test
-            announcement_msg.entity_id = _SubID;
+            announcement_msg.entity_id = subID;
             announcement_msg.size = FINISHED_SIZE;
             announcement_writer->Send(announcement_msg);
             announcement_writer->Flush();
@@ -1098,8 +1095,9 @@ class LatencyListener : public IMessagingCB
         }
 
         if (clock_skew_count != 0) {
-            fprintf(stderr,"The following latency result may not be accurate because clock skew happens %lu times\n",
-                        clock_skew_count);
+            fprintf(stderr,
+                    "The following latency result may not be accurate because clock skew happens %lu times\n",
+                    clock_skew_count);
             fflush(stderr);
         }
 
@@ -1113,15 +1111,15 @@ class LatencyListener : public IMessagingCB
         }
 
         printf("Length: %5d  Latency: Ave %6.0lf us  Std %6.1lf us  "
-               "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us  99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
-               last_data_length + perftest_cpp::OVERHEAD_BYTES,
-               latency_ave, latency_std, latency_min, latency_max,
-               _latency_history[count*50/100],
-               _latency_history[count*90/100],
-               _latency_history[count*99/100],
-               _latency_history[(int)(count*(9999.0/10000))],
-               _latency_history[(int)(count*(999999.0/1000000))],
-               outputCpu.c_str()
+                "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us  99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
+                last_data_length + perftest_cpp::OVERHEAD_BYTES,
+                latency_ave, latency_std, latency_min, latency_max,
+                _latency_history[count*50/100],
+                _latency_history[count*90/100],
+                _latency_history[count*99/100],
+                _latency_history[(int)(count*(9999.0/10000))],
+                _latency_history[(int)(count*(999999.0/1000000))],
+                outputCpu.c_str()
         );
         fflush(stdout);
 
@@ -1196,7 +1194,7 @@ class LatencyListener : public IMessagingCB
         else
         {
             fprintf(stderr,
-                    "Clock skew suspected: received time %llu usec, sent time %llu usec",
+                    "Clock skew suspected: received time %llu usec, sent time %llu usec\n",
                     now,
                     sentTime);
             ++clock_skew_count;
@@ -1320,11 +1318,11 @@ int perftest_cpp::Publisher()
 
     if (writer == NULL)
     {
-        fprintf(stderr,"Problem creating throughput writer.\n");
+        fprintf(stderr, "Problem creating throughput writer.\n");
         return -1;
     }
 
-    // calculate number of latency pings that will be sent per data size
+    // Calculate number of latency pings that will be sent per data size
     num_latency = (unsigned long)((_PM.get<unsigned long long>("numIter") /
             samplesPerBatch) /
             _PM.get<unsigned long long>("latencyCount"));
@@ -1603,7 +1601,8 @@ int perftest_cpp::Publisher()
 
         // only send latency pings if is publisher with ID 0
         // In batch mode, latency pings are sent once every LatencyCount batches
-        if ((pidMultiPubTest == 0) && (((loop / samplesPerBatch) % latencyCount) == 0)) {
+        if ((pidMultiPubTest == 0) && (((loop / samplesPerBatch)
+                % latencyCount) == 0)) {
             /* In batch mode only send a single ping in a batch.
              *
              * However, the ping is sent in a round robin position within
@@ -1677,7 +1676,8 @@ int perftest_cpp::Publisher()
                 sentPing = true;
 
                 if (writerStats && perftest_cpp::printIntervals) {
-                    printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
+                    printf("Pulled samples: %7d\n",
+                            writer->getPulledSampleCount());
                 }
             }
         }
@@ -1734,7 +1734,8 @@ int perftest_cpp::Publisher()
     }
 
     if (_PM.get<bool>("writerStats")) {
-        printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
+        printf("Pulled samples: %7d\n",
+                writer->getPulledSampleCount());
     }
 
     if (reader_listener != NULL) {

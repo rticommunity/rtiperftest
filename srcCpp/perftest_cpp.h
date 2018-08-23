@@ -99,7 +99,7 @@ class perftest_cpp
   #endif
 
   public:
-    static int  _SubID;
+    static int  subID;
     static bool printIntervals;
     static bool showCpu;
     static struct RTIClock *_Clock;
