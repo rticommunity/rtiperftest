@@ -247,7 +247,6 @@ function additional_defines_calculation()
         additional_defines=${additional_defines}" DRTI_CUSTOM_TYPE="${custom_type}" DRTI_CUSTOM_TYPE_FILE_NAME_SUPPORT="${custom_type_file_name_support}
     fi
 
-    echo -e "${INFO_TAG} TEST TEST TESt antonio ${1}"
     if [ "${1}" = "CPPtraditional" ]; then
         additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_TRADITIONAL"
     fi
