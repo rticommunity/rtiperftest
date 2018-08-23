@@ -550,8 +550,11 @@ public:
 
         _recvBuffer.length = NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX; // = 65507
 
-        _data.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX
-                - perftest_cpp::OVERHEAD_BYTES);
+        if (!_data.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX
+                - perftest_cpp::OVERHEAD_BYTES)) {
+            Shutdown();  // Delete everything created at this point.
+            throw std::runtime_error("bin_data.maximum Error\n");
+        }
 
         RTICdrStream_init(&_stream);
     }
@@ -586,7 +589,7 @@ public:
 
     TestMessage *ReceiveMessage() {
 
-        int result = 0;
+        int result;
 
         if (_worker == NULL) {
             _worker = raw_transport_get_worker_per_thread(
@@ -727,7 +730,7 @@ bool RTIRawTransportImpl::Initialize(ParameterManager &PM)
 /*********************************************************
  * GetUnicastPort
  */
-unsigned int RTIRawTransportImpl::get_send_unicast_port(
+unsigned int RTIRawTransportImpl::get_peer_unicast_port(
         const char *topicName,
         unsigned int subId)
 {
@@ -850,7 +853,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
         actualAddr = is_multicastAddr ? multicastAddr : _peersMap[i].first;
 
         // Calculate the port of the new send resource.
-        actualPort = get_send_unicast_port(topicName, _peersMap[i].second);
+        actualPort = get_peer_unicast_port(topicName, _peersMap[i].second);
 
         /*
          * Look for all the resources created at this point and try to share the

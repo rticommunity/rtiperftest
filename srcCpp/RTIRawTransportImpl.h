@@ -56,7 +56,7 @@ class RTIRawTransportImpl : public IMessaging {
 
     /* Calculate the port depending of the Id of the subscriber.*/
     unsigned int
-    get_send_unicast_port(const char *topicName, unsigned int subId = 0);
+    get_peer_unicast_port(const char *topicName, unsigned int subId = 0);
 
     /* Get the multicast address that match to the topic name */
     bool get_multicast_transport_addr(
