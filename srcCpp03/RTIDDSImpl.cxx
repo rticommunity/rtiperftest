@@ -702,45 +702,40 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    /* If we are using scan, we get the minimum and set it in Datalen */
-    if (_isScan) {
-        _DataLen = minScanSize;
-    }
-
     /* Check if we need to enable Large Data. This works also for -scan */
-    if (_DataLen > (unsigned long) (std::min)(
-                MAX_SYNCHRONOUS_SIZE,
-                MAX_BOUNDED_SEQ_SIZE)) {
+    if (_PM->get<unsigned long long>("dataLen")
+            > (unsigned long) (std::min)(
+                    MAX_SYNCHRONOUS_SIZE,
+                    MAX_BOUNDED_SEQ_SIZE)) {
         _isLargeData = true;
-        if (_useUnbounded == 0) {
-            _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
+        if (_PM->get<int>("unbounded") == 0) {
+            _PM->set("unbounded", MAX_BOUNDED_SEQ_SIZE);
         }
     } else { /* No Large Data */
-        _useUnbounded = 0;
+        PM->set("unbounded", 0);
         _isLargeData = false;
     }
 
     /* If we are using batching */
-    if (_BatchSize > 0) {
-
+    if (_PM->get<long>("batchSize") > 0) {
         /* We will not use batching for a latency test */
-        if (_LatencyTest) {
-            if (isBatchSizeProvided) {
+        if (_PM->get<bool>("latencyTest")) {
+            if (_PM->is_set("batchSize")) {
                 fprintf(stderr, "Batching cannot be used in a Latency test.\n");
                 return false;
             } else {
-                _BatchSize = 0; //Disable Batching
+                _PM->set<long>("batchSize", 0);  // Disable Batching
             }
         }
 
         /* Check if using asynchronous */
-        if (_IsAsynchronous) {
-            if (isBatchSizeProvided) {
+        if (_PM->get<bool>("asynchronous")) {
+            if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
                 fprintf(stderr,
                         "Batching cannot be used with asynchronous writing.\n");
                 return false;
             } else {
-                _BatchSize = 0; //Disable Batching
+                _PM->set<long>("batchSize", 0);  // Disable Batching
             }
         }
 
@@ -750,55 +745,53 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
          * so we explitly fail
          */
         if (_isLargeData) {
-            if (isBatchSizeProvided) {
+            if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
                 fprintf(stderr, "Batching cannot be used with Large Data.\n");
                 return false;
             } else {
-                _BatchSize = -2;
+                _PM->set<long>("batchSize", -2);
             }
-        } else if ((unsigned long) _BatchSize < _DataLen * 2) {
+        } else if ((unsigned long) _BatchSize
+                < _PM->get<unsigned long long>("dataLen") * 2) {
             /*
              * We don't want to use batching if the batch size is not large
              * enough to contain at least two samples (in this case we avoid the
              * checking at the middleware level).
              */
-            if (isBatchSizeProvided || _isScan) {
+            if (_PM->is_set("batchSize") || _PM->is_set("scan")) {
                 /*
                  * Batchsize disabled. A message will be print if _batchsize < 0 in
                  * perftest_cpp::PrintConfiguration()
                  */
-                _BatchSize = -1;
+                _PM->set<long>("batchSize", -1);
             }
             else {
-                _BatchSize = 0;
+                _PM->set<long>("batchSize", 0); // Disable Batching
             }
         }
     }
 
-    if (_TurboMode) {
-        if (_IsAsynchronous) {
+    if (_PM->get<bool>("enableTurboMode")) {
+        if (_PM->get<bool>("asynchronous")) {
             std::cerr << "[Error] Turbo Mode cannot be used with asynchronous writing. "
                     << std::endl;
             return false;
         }
         if (_isLargeData) {
             std::cerr << "Turbo Mode disabled, using large data." << std::endl;
-            _TurboMode = false;
+            _PM->set<bool>("enableTurboMode", false);
         }
     }
 
     // Manage _instancesToBeWritten
-    if (_instancesToBeWritten != -1) {
-        if ((long)_InstanceCount < _instancesToBeWritten) {
+    if (_PM->is_set("writeInstance")) {
+        if (_PM->get<long>("instances") < _PM->get<long>("writeInstance")) {
             std::cerr << "Specified '-WriteInstance' (" <<
-                    _instancesToBeWritten <<
+                    _PM->get<long>("writeInstance") <<
                     ") invalid: Bigger than the number of instances (" <<
-                    _InstanceCount << ")." << std::endl;
+                    _PM->get<long>("instances") << ")." << std::endl;
             throw std::logic_error("[Error] Error parsing commands");
         }
-    }
-    if (_PM->get<bool>("pub") && _useCft) {
-        std::cerr << "Content Filtered Topic is not a parameter in the publisher side.\n" << std::endl;
     }
 
     if(!_transport.parseTransportOptions(argc, argv)) {
@@ -820,11 +813,11 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     std::ostringstream stringStream;
 
     // Domain ID
-    stringStream << "\tDomain: " << _DomainID << "\n";
+    stringStream << "\tDomain: " << _PM->get<int>("domain") << "\n";
 
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
-    if (_isDynamicData) {
+    if (_PM->get<bool>("dynamicData")) {
         stringStream << "Yes\n";
     } else {
         stringStream << "No\n";
@@ -833,10 +826,10 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     // Dynamic Data
     if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
-        if (_isLargeData || _IsAsynchronous) {
+        if (_isLargeData || _PM->get<bool>("asynchronous")) {
             stringStream << "Yes\n";
             stringStream << "\tFlow Controller: "
-                         << _FlowControllerCustom
+                         << _PM->get<std::string>("flowController")
                          << "\n";
         } else {
             stringStream << "No\n";
@@ -844,30 +837,31 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
     // Turbo Mode / AutoThrottle
-    if (_TurboMode) {
+    if (_PM->get<bool>("enableTurboMode")) {
         stringStream << "\tTurbo Mode: Enabled\n";
     }
-    if (_AutoThrottle) {
+    if (_PM->get<bool>("enableAutoThrottle")) {
         stringStream << "\tAutoThrottle: Enabled\n";
     }
 
     // XML File
     stringStream << "\tXML File: ";
-    if (!_UseXmlQos) {
+    if (_PM->get<bool>("noXmlQos")) {
         stringStream << "Disabled\n";
     } else {
-        stringStream << _ProfileFile << "\n";
+        stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
 
     stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
 
     // set initial peers and not use multicast
-    if (_peer_host_count > 0) {
+    const std::vector<std::string> peerList = _PM->get_vector<std::string>("peer");
+    if (!peerList.empty()) {
         stringStream << "\tInitial peers: ";
-        for (int i = 0; i < _peer_host_count; ++i) {
-            stringStream << _peer_host[i];
-            if (i == _peer_host_count - 1) {
+        for (unsigned int i = 0; i < peerList.size(); ++i) {
+            stringStream << peerList[i];
+            if (i == peerList.size() - 1) {
                 stringStream << "\n";
             } else {
                 stringStream << ", ";
@@ -1289,9 +1283,13 @@ public:
             ParameterManager *PM) :
             _reader(reader),
             _readerListener(readerListener),
-            _waitset(rti::core::cond::WaitSetProperty(_WaitsetEventCount,
-                    dds::core::Duration::from_microsecs(_WaitsetDelayUsec))),
-            _PM(PM) {
+            _waitset(rti::core::cond::WaitSetProperty(
+                            _PM->get<long>("waitsetEventCount"),
+                    dds::core::Duration::from_microsecs(
+                            long)_PM->get<unsigned long long>(
+                                    "waitsetDelayUsec")))),
+            _PM(PM)
+    {
         // null listener means using receive thread
         if (_reader.listener() == NULL) {
 
@@ -1537,9 +1535,10 @@ void RTIDDSImpl<T>::configureSecurePlugin(
     dpQosProperties["com.rti.serv.secure.create_function"] =
             "RTI_Security_PluginSuite_create";
 
-    dpQosProperties["com.rti.serv.secure.library"] = _secureLibrary;
+    dpQosProperties["com.rti.serv.secure.library"]
+            = _PM->get<std::string>("secureLibrary");
 
-  #else // Static library linking
+#else // Static library linking
 
     void *pPtr = (void *) RTI_Security_PluginSuite_create;
     dpQosProperties["com.rti.serv.secure.create_function_ptr"] =
@@ -1556,22 +1555,23 @@ void RTIDDSImpl<T>::configureSecurePlugin(
      */
 
     // check if governance file provided
-    if (_secureGovernanceFile.empty()) {
+    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
         // choose a pre-built governance file
         _secureGovernanceFile = "./resource/secure/signed_PerftestGovernance_";
-        if (_secureIsDiscoveryEncrypted) {
+        if (_PM->get<bool>("secureEncryptDiscovery")) {
             _secureGovernanceFile += "Discovery";
         }
 
-        if (_secureIsSigned) {
+        if (_PM->get<bool>("secureSign")) {
             _secureGovernanceFile += "Sign";
         }
 
-        if (_secureIsDataEncrypted && _secureIsSMEncrypted) {
+        if (_PM->get<bool>("secureEncryptData")
+                && _PM->get<bool>("secureEncryptSM")) {
             _secureGovernanceFile += "EncryptBoth";
-        } else if (_secureIsDataEncrypted) {
+        } else if (_PM->get<bool>("secureEncryptData")) {
             _secureGovernanceFile += "EncryptData";
-        } else if (_secureIsSMEncrypted) {
+        } else if (_PM->get<bool>("secureEncryptSM")) {
             _secureGovernanceFile += "EncryptSubmessage";
         }
 
@@ -1615,38 +1615,38 @@ void RTIDDSImpl<T>::configureSecurePlugin(
 template <typename T>
 void RTIDDSImpl<T>::validateSecureArgs()
 {
-    if (_secureUseSecure) {
-        if (_securePrivateKeyFile.empty()) {
+    if (_PM->group_is_used(SECURE)) {
+        if (_PM->get<std::string>("securePrivateKey").empty()) {
             if (_PM->get<bool>("pub")) {
-                _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_PUB;
+                _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
             } else {
-                _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_SUB;
+                _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_SUB);
             }
         }
 
         if (_secureCertificateFile.empty()) {
             if (_PM->get<bool>("pub")) {
-                _secureCertificateFile = SECURE_CERTIFICATE_FILE_PUB;
+                _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_PUB);
             } else {
-                _secureCertificateFile = SECURE_CERTIFICATE_FILE_SUB;
+                _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_SUB);
             }
         }
 
         if (_secureCertAuthorityFile.empty()) {
-            _secureCertAuthorityFile = SECURE_CERTAUTHORITY_FILE;
+            _PM->set("secureCertAuthority", SECURE_CERTAUTHORITY_FILE);
         }
 
         if (_securePermissionsFile.empty()) {
             if (_PM->get<bool>("pub")) {
-                _securePermissionsFile = SECURE_PERMISION_FILE_PUB;
+                _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_PUB);
             } else {
-                _securePermissionsFile = SECURE_PERMISION_FILE_SUB;
+                _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
             }
         }
 
       #ifdef RTI_PERFTEST_DYNAMIC_LINKING
-        if (_secureLibrary.empty()) {
-            _secureLibrary = SECURE_LIBRARY_NAME;
+        if (_PM->get<std::string>("secureLibrary").empty()) {
+            _PM->set("secureLibrary", SECURE_LIBRARY_NAME);
         }
       #endif
     }
@@ -1659,76 +1659,76 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     stringStream << "Secure Configuration:\n";
 
     stringStream << "\tEncrypt discovery: ";
-    if (_secureIsDiscoveryEncrypted) {
+    if (_PM->get<bool>("secureEncryptDiscovery")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tEncrypt topic (user) data: ";
-    if (_secureIsDataEncrypted) {
+    if (_PM->get<bool>("secureEncryptData")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tEncrypt submessage: ";
-    if (_secureIsSMEncrypted) {
+    if (_PM->get<bool>("secureEncryptData")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tSign data: ";
-    if (_secureIsSigned) {
+    if (_PM->get<bool>("secureSign")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tGovernance file: ";
-    if (_secureGovernanceFile.empty()) {
+    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
         stringStream << _secureGovernanceFile << "\n";
     }
 
     stringStream << "\tPermissions file: ";
-    if (_securePermissionsFile.empty()) {
+    if (_PM->get<std::string>("securePermissionsFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
         stringStream << _securePermissionsFile << "\n";
     }
 
     stringStream << "\tPrivate key file: ";
-    if (_securePrivateKeyFile.empty()) {
+    if (_PM->get<std::string>("securePrivateKey").empty()) {
         stringStream << "Not Specified\n";
     } else {
         stringStream << _securePrivateKeyFile << "\n";
     }
 
     stringStream << "\tCertificate file: ";
-    if (_secureCertificateFile.empty()) {
+    if (_PM->get<std::string>("secureCertFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
         stringStream << _secureCertificateFile << "\n";
     }
 
     stringStream << "\tCertificate authority file: ";
-    if (_secureCertAuthorityFile.empty()) {
+    if (_PM->get<std::string>("secureCertAuthority").empty()) {
         stringStream << "Not Specified\n";
     } else {
         stringStream << _secureCertAuthorityFile << "\n";
     }
 
     stringStream << "\tPlugin library: ";
-    if (_secureLibrary.empty()) {
+    if (_PM->get<std::string>("secureLibrary").empty()) {
         stringStream << "Not Specified\n";
     } else {
         stringStream << _secureLibrary << "\n";
     }
 
-    if (_secureDebugLevel != -1) {
+    if (_PM->is_set("secureDebug")) {
         stringStream << "\tDebug level: " <<  _secureDebugLevel << "\n";
     }
 
@@ -1799,8 +1799,8 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
 
     Discovery qos_discovery = qos.policy<Discovery>(); //get all the Discovery
     // set initial peers and not use multicast
-    if (_peer_host_count > 0) {
-        _peer_host.resize(_peer_host_count);
+    if (!_PM->get_vector<std::string>("peer").empty()) {
+        _peer_host.resize(_PM->get_vector<std::string>("peer").size());
         qos_discovery.initial_peers(_peer_host);
         qos_discovery.multicast_receive_addresses(dds::core::StringSeq());
     }
@@ -1809,7 +1809,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
         return false;
     };
 
-    if (_AutoThrottle) {
+    if (_PM->get<bool>("enableAutoThrottle")) {
         properties["dds.domain_participant.auto_throttle.enable"] = "true";
     }
 
@@ -1823,7 +1823,10 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
     DomainListener *listener = new DomainListener;
 
     // Creates the participant
-    _participant = dds::domain::DomainParticipant(_DomainID, qos, listener,
+    _participant = dds::domain::DomainParticipant(
+            _PM->get<int>("domain"),
+            qos,
+            listener,
             dds::core::status::StatusMask::inconsistent_topic() |
             dds::core::status::StatusMask::offered_incompatible_qos() |
             dds::core::status::StatusMask::requested_incompatible_qos() );
@@ -1859,15 +1862,17 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
      */
     initializeSampleCount = (std::max)(
             initializeSampleCount,
-            (unsigned long) _SendQueueSize);
+            (unsigned long) _PM->get<int>("sendQueueSize"));
 
     /*
      * If we are using batching we need to take into account tha the Send Queue
      * will be per-batch, therefore for the number of samples:
      */
-    if (_BatchSize > 0) {
+    if (_PM->get<long>("batchSize") > 0) {
         initializeSampleCount = (std::max)(
-                _SendQueueSize * (_BatchSize / _DataLen),
+                _PM->get<int>("sendQueueSize") *
+                        (_PM->get<long>("batchSize") /
+                        _PM->get<unsigned long>("dataLen")),
                 initializeSampleCount);
     }
 
@@ -1889,9 +1894,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         throw std::logic_error("[Error] Topic name");
     }
 
-    std::string lib_name(_ProfileLibraryName);
     dds::core::QosProvider qos_provider =
-        getQosProviderForProfile(lib_name, qos_profile);
+        getQosProviderForProfile(
+                _PM->get<std::string>("qosLibrary"),
+                _PM->get<std::string>("qosFile"));
     dds::pub::qos::DataWriterQos dw_qos = qos_provider.datawriter_qos();
 
     Reliability qos_reliability = dw_qos.policy<Reliability>();
@@ -1911,19 +1917,23 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     std::map<std::string, std::string> properties =
             dw_qos.policy<Property>().get_all();
 
-    if (!_UsePositiveAcks
+    if (_PM->get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_dataWriterProtocol.disable_positive_acks(true);
-        if (_KeepDurationUsec != -1) {
-            dw_reliableWriterProtocol.disable_positive_acks_min_sample_keep_duration(
-                dds::core::Duration::from_microsecs(_KeepDurationUsec));
+        if (_PM->is_set("keepDurationUsec")) {
+            dw_reliableWriterProtocol
+                    .disable_positive_acks_min_sample_keep_duration(
+                            dds::core::Duration::from_microsecs(
+                                    _PM->get<unsigned long long>(
+                                            "keepDurationUsec")));
         }
     }
 
-    if (_isLargeData || _IsAsynchronous) {
-       if (_FlowControllerCustom!= "default") {
-           dwPublishMode = PublishMode::Asynchronous(
-               "dds.flow_controller.token_bucket."+_FlowControllerCustom);
+    if (_isLargeData || _PM->get<bool>("asynchronous")) {
+        if (_PM->get<std::string>("flowController") != "default") {
+            dwPublishMode = PublishMode::Asynchronous(
+                    "dds.flow_controller.token_bucket."
+                    + _PM->get<std::string>("flowController"));
        } else{
            dwPublishMode = PublishMode::Asynchronous();
        }
@@ -1931,7 +1941,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
 
     // only force reliability on throughput/latency topics
     if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
-        if (_IsReliable) {
+        if (!_PM->get<bool>("bestEffort")) {
             // default: use the setting specified in the qos profile
             // qos_reliability = Reliability::Reliable(dds::core::Duration::infinite());
         } else {
@@ -1943,17 +1953,17 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     // These QOS's are only set for the Throughput datawriter
     if (qos_profile == "ThroughputQos") {
 
-        if (_transport.useMulticast) {
+        if (_PM->get<bool>("multicast")) {
             dw_reliableWriterProtocol.enable_multicast_periodic_heartbeat(true);
         }
 
-        if (_BatchSize > 0) {
+        if (_PM->get<long>("batchSize") > 0) {
             dwBatch.enable(true);
-            dwBatch.max_data_bytes(_BatchSize);
+            dwBatch.max_data_bytes(_PM->get<long>("batchSize"));
             qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
-            qos_dw_resource_limits.max_batches(_SendQueueSize);
+            qos_dw_resource_limits.max_batches(_PM->get<int>("sendQueueSize"));
         } else {
-            qos_resource_limits.max_samples(_SendQueueSize);
+            qos_resource_limits.max_samples(_PM->get<int>("sendQueueSize"));
         }
 
         if (_HeartbeatPeriod.sec() > 0 || _HeartbeatPeriod.nanosec() > 0) {
@@ -1968,7 +1978,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
             dw_reliableWriterProtocol.fast_heartbeat_period(_FastHeartbeatPeriod);
         }
 
-        if (_AutoThrottle) {
+        if (_PM->get<bool>("enableAutoThrottle")) {
             properties["dds.data_writer.auto_throttle.enable"] = "true";
         }
 
@@ -1976,10 +1986,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
             properties["dds.data_writer.enable_turbo_mode.enable"] = "true";
             dwBatch.enable(false);
             qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
-            qos_dw_resource_limits.max_batches(_SendQueueSize);
+            qos_dw_resource_limits.max_batches(_PM->get<int>("sendQueueSize"));
         }
 
-        qos_resource_limits->initial_samples(_SendQueueSize);
+        qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
 
         if (_Durability == DDS_VOLATILE_DURABILITY_QOS) {
@@ -1991,9 +2001,12 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         }
         qos_durability->direct_communication(_DirectCommunication);
 
-        dw_reliableWriterProtocol.heartbeats_per_max_samples(_SendQueueSize / 10);
-        dw_reliableWriterProtocol.low_watermark(_SendQueueSize * 1 / 10);
-        dw_reliableWriterProtocol.high_watermark(_SendQueueSize * 9 / 10);
+        dw_reliableWriterProtocol.heartbeats_per_max_samples(
+                _PM->get<int>("sendQueueSize") / 10);
+        dw_reliableWriterProtocol.low_watermark(
+                _PM->get<int>("sendQueueSize") * 1 / 10);
+        dw_reliableWriterProtocol.high_watermark(
+                _PM->get<int>("sendQueueSize") * 9 / 10);
 
         /*
          * If _SendQueueSize is 1 low watermark and high watermark would both be
@@ -2006,8 +2019,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
                     dw_reliableWriterProtocol.high_watermark() + 1);
         }
 
-        dw_reliableWriterProtocol.max_send_window_size(_SendQueueSize);
-        dw_reliableWriterProtocol.min_send_window_size(_SendQueueSize);
+        dw_reliableWriterProtocol.max_send_window_size(
+                _PM->get<int>("sendQueueSize"));
+        dw_reliableWriterProtocol.min_send_window_size(
+                _PM->get<int>("sendQueueSize"));
     }
 
     if (qos_profile == "LatencyQos"
