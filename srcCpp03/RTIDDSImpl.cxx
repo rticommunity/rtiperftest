@@ -116,7 +116,7 @@ bool RTIDDSImpl<T>::validate_imput()
 {
     // Manage parameter -instance
     if (_PM->is_set("instances")) {
-        _instanceMaxCountReader = _PM->get<long>("instances");
+        _InstanceMaxCountReader = _PM->get<long>("instances");
     }
 
     /* Check if we need to enable Large Data. This works also for -scan */
@@ -698,13 +698,13 @@ public:
             int _WaitsetEventCount,
             unsigned int _WaitsetDelayUsec,
             ParameterManager *PM) :
-            _reader(reader),
-            _readerListener(readerListener),
-            _waitset(rti::core::cond::WaitSetProperty(
-                    _PM->get<long>("waitsetEventCount"),
-                    dds::core::Duration::from_microsecs((long)
-                            _PM->get<unsigned long long>("waitsetDelayUsec")))),
-            _PM(PM)
+                    _reader(reader),
+                    _readerListener(readerListener),
+                    _waitset(rti::core::cond::WaitSetProperty(
+                            PM->get<long>("waitsetEventCount"),
+                            dds::core::Duration::from_microsecs((long)
+                                    PM->get<unsigned long long>("waitsetDelayUsec")))),
+                    _PM(PM)
     {
         // null listener means using receive thread
         if (_reader.listener() == NULL) {
@@ -1193,13 +1193,14 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
     _PM = &PM;
     _transport.initialize(_PM);
 
-    if (!validate_input()) {
+    if (!validate_imput()) {
         return false;
     }
 
     // setup the QOS profile file to be loaded
     dds::core::QosProvider qos_provider = getQosProviderForProfile(
-            _PM->get<std::string>("qosLibrary").c_str(), "BaseProfileQos");
+            _PM->get<std::string>("qosLibrary"),
+            "BaseProfileQos");
     dds::domain::qos::DomainParticipantQos qos = qos_provider.participant_qos();
 
     std::map<std::string, std::string> properties =
@@ -1309,10 +1310,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::core::QosProvider qos_provider =
-        getQosProviderForProfile(
-                _PM->get<std::string>("qosLibrary"),
-                _PM->get<std::string>("qosFile"));
+    dds::core::QosProvider qos_provider = getQosProviderForProfile(
+            _PM->get<std::string>("qosLibrary"),
+            qos_profile);
     dds::pub::qos::DataWriterQos dw_qos = qos_provider.datawriter_qos();
 
     Reliability qos_reliability = dw_qos.policy<Reliability>();
@@ -1608,7 +1608,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
     dds::core::QosProvider qos_provider = getQosProviderForProfile(
                 _PM->get<std::string>("qosLibrary"),
-                _PM->get<std::string>("qosFile"));
+                qos_profile);
     dds::sub::qos::DataReaderQos dr_qos = qos_provider.datareader_qos();
 
 
@@ -1684,10 +1684,6 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
-<<<<<<< HEAD
-=======
-
->>>>>>> 9f5bdd370c27ef85cd2d671e4f79d2bb88b73f03
         dds::core::StringSeq transports;
         transports.push_back("udpv4");
         std::string multicastAddr =

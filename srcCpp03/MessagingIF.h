@@ -95,7 +95,6 @@ class IMessaging
   public:
     virtual ~IMessaging() {}
     virtual bool Initialize(ParameterManager &PM) = 0;
-    virtual void PrintCmdLineHelp() = 0;
     virtual std::string PrintConfiguration() = 0;
     virtual void Shutdown() = 0;
 
