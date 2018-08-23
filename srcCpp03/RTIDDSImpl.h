@@ -75,10 +75,9 @@ class RTIDDSImpl : public IMessaging
 
   private:
 
-    const char  *_ProfileFile;
     long _InstanceMaxCountReader;
     int _InstanceHashBuckets;
-    bool         _isLargeData;
+    bool _isLargeData;
     PerftestTransport _transport;
 
   #ifdef RTI_SECURE_PERFTEST
@@ -93,7 +92,6 @@ class RTIDDSImpl : public IMessaging
     static const std::string SECURE_LIBRARY_NAME;
   #endif
 
-    const char          *_ProfileLibraryName;
 
     dds::domain::DomainParticipant _participant;
     dds::sub::Subscriber _subscriber;

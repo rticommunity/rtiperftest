@@ -78,7 +78,6 @@ int DynamicDataMembersId::at(std::string key)
 
 template <typename T>
 RTIDDSImpl<T>::RTIDDSImpl():
-        _ProfileFile("perftest_qos_profiles.xml"),
         _InstanceMaxCountReader(dds::core::LENGTH_UNLIMITED), //(-1)
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED), //(-1)
         _isLargeData(false),
@@ -115,8 +114,10 @@ void RTIDDSImpl<T>::Shutdown()
 template <typename T>
 bool RTIDDSImpl<T>::validate_imput()
 {
-
-
+    // Manage parameter -instance
+    if (_PM->is_set("instances")) {
+        _instanceMaxCountReader = _PM->get<long>("instances");
+    }
 
     /* Check if we need to enable Large Data. This works also for -scan */
     if (_PM->get<unsigned long long>("dataLen")
@@ -210,8 +211,8 @@ bool RTIDDSImpl<T>::validate_imput()
         }
     }
 
-    if(!_transport.validate_imput()) {
-        throw std::logic_error("Failure parsing the transport options.");
+    if(!_transport.validate_input()) {
+        throw std::logic_error("Failure validation the transport options.");
         return false;
     };
 
@@ -700,10 +701,9 @@ public:
             _reader(reader),
             _readerListener(readerListener),
             _waitset(rti::core::cond::WaitSetProperty(
-                            _PM->get<long>("waitsetEventCount"),
-                    dds::core::Duration::from_microsecs(
-                            (long)_PM->get<unsigned long long>(
-                                    "waitsetDelayUsec")))),
+                    _PM->get<long>("waitsetEventCount"),
+                    dds::core::Duration::from_microsecs((long)
+                            _PM->get<unsigned long long>("waitsetDelayUsec")))),
             _PM(PM)
     {
         // null listener means using receive thread
@@ -1164,7 +1164,7 @@ dds::core::QosProvider RTIDDSImpl<T>::getQosProviderForProfile(
 
     if (!_PM->get<bool>("noXmlQos")) {
         qosProvider = dds::core::QosProvider(
-                _ProfileFile,
+                _PM->get<std::string>("qosFile").c_str(),
                 library_name + "::" + profile_name);
     } else {
         rti::core::QosProviderParams perftestQosProviderParams;
@@ -1191,16 +1191,15 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
     using namespace rti::core::policy;
     // Assigne the ParameterManager
     _PM = &PM;
-    //TODO:_transport.initialize(_PM);
+    _transport.initialize(_PM);
 
-     //TODO:
-    // if (!validate_input()) {
-    //     return false;
-    // }
+    if (!validate_input()) {
+        return false;
+    }
 
     // setup the QOS profile file to be loaded
-    dds::core::QosProvider qos_provider =
-        getQosProviderForProfile( _ProfileLibraryName,"BaseProfileQos");
+    dds::core::QosProvider qos_provider = getQosProviderForProfile(
+            _PM->get<std::string>("qosLibrary").c_str(), "BaseProfileQos");
     dds::domain::qos::DomainParticipantQos qos = qos_provider.participant_qos();
 
     std::map<std::string, std::string> properties =
@@ -1221,7 +1220,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
         qos_discovery.multicast_receive_addresses(dds::core::StringSeq());
     }
 
-    if (!configureTransport(_transport, qos, properties)){
+    if (!configureTransport(_transport, qos, properties, _PM)){
         return false;
     };
 
@@ -1685,6 +1684,10 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9f5bdd370c27ef85cd2d671e4f79d2bb88b73f03
         dds::core::StringSeq transports;
         transports.push_back("udpv4");
         std::string multicastAddr =

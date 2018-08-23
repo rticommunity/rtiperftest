@@ -364,8 +364,7 @@ bool configureWanTransport(
             return false;
         }
     } else {
-        fprintf(
-                stderr,
+        fprintf(stderr,
                 "%s Wan Server Address is required\n",
                 classLoggingString.c_str());
         return false;
@@ -668,10 +667,9 @@ bool PerftestTransport::setTransport(std::string transportString)
     if (it != configMap.end()) {
         transportConfig = it->second;
     } else {
-        fprintf(
-                stderr,
+        fprintf(stderr,
                 "%s \"%s\" is not a valid transport. "
-                        "List of supported transport:\n",
+                "List of supported transport:\n",
                 classLoggingString.c_str(),
                 transportString.c_str());
         for (std::map<std::string, TransportConfig>::iterator it = configMap
