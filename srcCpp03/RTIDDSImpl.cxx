@@ -200,7 +200,6 @@ void RTIDDSImpl<T>::PrintCmdLineHelp() {
             "\t-peer <address>               - Adds a peer to the peer host address list.\n" +
             "\t                                This argument may be repeated to indicate multiple peers\n" +
             "\n";
-    usage_string += _transport.helpMessageString();
   #ifdef RTI_SECURE_PERFTEST
     usage_string += std::string("\n") +
             "\t======================= SECURE Specific Options =======================\n\n" +
@@ -680,26 +679,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _secureDebugLevel = strtol(argv[i], NULL, 10);
         }
       #endif
-        else {
-            if (i > 0) {
-                std::map<std::string, unsigned int> transportCmdOpts =
-                        PerftestTransport::getTransportCmdLineArgs();
-
-                std::map<std::string, unsigned int>::iterator it =
-                        transportCmdOpts.find(argv[i]);
-                if(it != transportCmdOpts.end()) {
-                    /*
-                     * Increment the counter with the number of arguments
-                     * obtained from the map.
-                     */
-                    i = i + it->second;
-                    continue;
-                }
-
-                std::cerr << argv[i] << " not recognized" << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-        }
     }
 
     /* Check if we need to enable Large Data. This works also for -scan */
@@ -712,7 +691,7 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _PM->set("unbounded", MAX_BOUNDED_SEQ_SIZE);
         }
     } else { /* No Large Data */
-        PM->set("unbounded", 0);
+        _PM->set("unbounded", 0);
         _isLargeData = false;
     }
 
@@ -794,8 +773,8 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
         }
     }
 
-    if(!_transport.parseTransportOptions(argc, argv)) {
-        throw std::logic_error("Failure parsing the transport options.");
+    if(!_transport.validate_input()) {
+        throw std::logic_error("Failure validation the transport options.");
         return false;
     };
 
@@ -1284,10 +1263,9 @@ public:
             _reader(reader),
             _readerListener(readerListener),
             _waitset(rti::core::cond::WaitSetProperty(
-                            _PM->get<long>("waitsetEventCount"),
-                    dds::core::Duration::from_microsecs(
-                            long)_PM->get<unsigned long long>(
-                                    "waitsetDelayUsec")))),
+                    _PM->get<long>("waitsetEventCount"),
+                    dds::core::Duration::from_microsecs((long)
+                            _PM->get<unsigned long long>("waitsetDelayUsec")))),
             _PM(PM)
     {
         // null listener means using receive thread
@@ -1775,7 +1753,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
     using namespace rti::core::policy;
     // Assigne the ParameterManager
     _PM = &PM;
-    //TODO:_transport.initialize(_PM);
+    _transport.initialize(_PM);
 
      //TODO:
     // if (!validate_input()) {
@@ -1805,7 +1783,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
         qos_discovery.multicast_receive_addresses(dds::core::StringSeq());
     }
 
-    if (!configureTransport(_transport, qos, properties)){
+    if (!configureTransport(_transport, qos, properties, _PM)){
         return false;
     };
 
@@ -2267,7 +2245,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
     }
 
-    if (_transport.useMulticast && _transport.allowsMulticast()) {
+    if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
 
         dds::core::StringSeq transports;
         transports.push_back("udpv4");
