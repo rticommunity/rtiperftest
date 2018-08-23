@@ -100,13 +100,6 @@ class IMessaging
     virtual void Shutdown() = 0;
 
     /*
-     * If the implementation supports batching and the test scenario is
-     * using batching, this function should return the size of the batch
-     * in bytes.
-     */
-    virtual int GetBatchSize() = 0;
-
-    /*
      * Get an estimation of the minimum number of samples that need to be send
      * before starting the test to ensure that most memory allocations will be
      * done in the subscriber side (when sending a burst of that data).

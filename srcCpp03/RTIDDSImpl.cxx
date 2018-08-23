@@ -167,7 +167,7 @@ bool RTIDDSImpl<T>::validate_imput()
             } else {
                 _PM->set<long>("batchSize", -2);
             }
-        } else if (_PM->get<long>("batchSize")
+        } else if ((unsigned long)_PM->get<long>("batchSize")
                 < _PM->get<unsigned long long>("dataLen") * 2) {
             /*
              * We don't want to use batching if the batch size is not large
@@ -210,10 +210,10 @@ bool RTIDDSImpl<T>::validate_imput()
         }
     }
 
-    // if(!_transport.parseTransportOptions(0, 'a')) {
-    //     throw std::logic_error("Failure parsing the transport options.");
-    //     return false;
-    // };
+    if(!_transport.validate_imput()) {
+        throw std::logic_error("Failure parsing the transport options.");
+        return false;
+    };
 
     return true;
 }
@@ -1216,16 +1216,8 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
     Discovery qos_discovery = qos.policy<Discovery>(); //get all the Discovery
     // set initial peers and not use multicast
 
-    const std::vector<std::string> peerList = _PM->get_vector<std::string>("peer");
-    if (!peerList.empty()) {
-        std::vector<char*> cstrings;
-        cstrings.reserve(peerList.size());
-        for(unsigned int i = 0; i < peerList.size(); ++i) {
-            cstrings.push_back(const_cast<char*>(peerList[i].c_str()));
-        }
-        qos_discovery.initial_peers.from_array(
-                (const char **)&cstrings[0],
-                (long)peerList.size());
+    if (!_PM->get_vector<std::string>("peer").empty()) {
+        qos_discovery.initial_peers(_PM->get_vector<std::string>("peer"));
         qos_discovery.multicast_receive_addresses(dds::core::StringSeq());
     }
 
@@ -1390,23 +1382,11 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
             qos_resource_limits.max_samples(_PM->get<int>("sendQueueSize"));
         }
 
-        if (_HeartbeatPeriod.sec() > 0 || _HeartbeatPeriod.nanosec() > 0) {
-            // set the heartbeat_period
-            dw_reliableWriterProtocol.heartbeat_period(_HeartbeatPeriod);
-            // make the late joiner heartbeat compatible
-            dw_reliableWriterProtocol.late_joiner_heartbeat_period(_HeartbeatPeriod);
-        }
-
-        if (_FastHeartbeatPeriod.sec() > 0 || _FastHeartbeatPeriod.nanosec() > 0) {
-            // set the fast_heartbeat_period
-            dw_reliableWriterProtocol.fast_heartbeat_period(_FastHeartbeatPeriod);
-        }
-
         if (_PM->get<bool>("enableAutoThrottle")) {
             properties["dds.data_writer.auto_throttle.enable"] = "true";
         }
 
-        if (_TurboMode) {
+        if (_PM->get<bool>("enableTurboMode")) {
             properties["dds.data_writer.enable_turbo_mode.enable"] = "true";
             dwBatch.enable(false);
             qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
@@ -1416,14 +1396,15 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
 
-        if (_Durability == DDS_VOLATILE_DURABILITY_QOS) {
+        if (_PM->get<int>("durability") == DDS_VOLATILE_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::Volatile();
-        } else if (_Durability == DDS_TRANSIENT_DURABILITY_QOS) {
+        } else if (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::TransientLocal();
         } else {
             qos_durability = dds::core::policy::Durability::Persistent();
         }
-        qos_durability->direct_communication(_DirectCommunication);
+        qos_durability->direct_communication(
+                !_PM->get<bool>("noDirectCommunication"));
 
         dw_reliableWriterProtocol.heartbeats_per_max_samples(
                 _PM->get<int>("sendQueueSize") / 10);
@@ -1565,7 +1546,6 @@ dds::topic::ContentFilteredTopic<U> RTIDDSImpl<T>::CreateCft(
     const std::vector<unsigned long long> cftRange
             = _PM->get_vector<unsigned long long>("cft");
     if (cftRange.size() == 1) {  // If same elements, no range
-    if (cftRange.size() == 1) {  // If same elements, no range
         std::cerr << "[Info] CFT enabled for instance: '" << cftRange[0] << "'" <<std::endl;
         for (int i = 0; i < KEY_SIZE; i++) {
             std::ostringstream string_stream_object;
@@ -1668,7 +1648,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         } else {
             qos_durability = dds::core::policy::Durability::Persistent();
         }
-        qos_durability->direct_communication(!_PM->get<bool>("noDirectCommunication"));
+        qos_durability->direct_communication(
+                !_PM->get<bool>("noDirectCommunication"));
     }
 
     if ((qos_profile == "LatencyQos")
@@ -1775,8 +1756,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return new RTISubscriber<T>(
                 reader,
                 reader_listener,
-                _WaitsetEventCount,
-                _WaitsetDelayUsec,
+                _PM->get<long>("waitsetEventCount"),
+                _PM->get<unsigned long long>("waitsetDelayUsec"),
                 _PM);
 
     } else {
@@ -1788,7 +1769,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 type);
         dds::sub::DataReader<DynamicData> reader(dds::core::null);
         DynamicDataReceiverListener *dynamic_data_reader_listener = NULL;
-        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _useCft) {
+        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _PM->is_set("cft")) {
             /* Create CFT Topic */
             dds::topic::ContentFilteredTopic<DynamicData> topicCft = CreateCft(
                     topic_name,
@@ -1829,8 +1810,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return new RTIDynamicDataSubscriber(
                 reader,
                 dynamic_data_reader_listener,
-                _WaitsetEventCount,
-                _WaitsetDelayUsec,
+                _PM->get<long>("waitsetEventCount"),
+                _PM->get<unsigned long long>("waitsetDelayUsec"),
                 _PM);
     }
 }
