@@ -12,7 +12,8 @@
 #endif
 
 std::vector<NDDS_Transport_SendResource_t> PeerData::resourcesList;
-
+unsigned int RTIRawTransportImpl::pubWorkerCount = 0;
+unsigned int RTIRawTransportImpl::subWorkerCount = 0;
 /*********************************************************
  * Constructor
  */
@@ -229,7 +230,6 @@ class RTIRawTransportPublisher : public IMessagingWriter {
     NDDS_Transport_Plugin *_plugin;
     NDDS_Transport_Buffer_t _sendBuffer;
     struct REDAWorker *_worker;
-    unsigned int _workerTssKey;
 
     /* --- Perftest members --- */
     std::vector<PeerData> _peersDataList;
@@ -243,12 +243,9 @@ class RTIRawTransportPublisher : public IMessagingWriter {
     struct RTICdrStream _stream;
     struct PRESTypePluginDefaultEndpointData _endPointData;
 
-
   public:
     RTIRawTransportPublisher(RTIRawTransportImpl *parent)
-            : _parent(parent),
-              _worker(NULL),
-              _workerTssKey(0)
+            : _parent(parent)
     {
         _plugin = parent->get_plugin();
         _peersDataList = parent->get_peers_data();
@@ -261,6 +258,30 @@ class RTIRawTransportPublisher : public IMessagingWriter {
         } else {
             _batchBufferSize = _PM->get<long>("batchSize");
             _useBatching = true;
+        }
+
+        /* --- Get a name for the worker --- */
+        std::ostringstream ss;
+        ss << RTIRawTransportImpl::pubWorkerCount++;
+        std::string workerName = std::string("PubWorker") + ss.str();
+
+        /* --- Get worker Factory --- */
+        struct REDAWorkerFactory *workerFactory = _parent->get_worker_factory();
+        if (workerFactory == NULL) {
+            /* Failed to get the worker factory */
+            Shutdown();
+            throw std::runtime_error("The worker factory is not initialized\n");
+        }
+
+        /* --- Create Worker --- */
+        _worker = REDAWorkerFactory_createWorker(
+                workerFactory,
+                workerName.c_str());
+        if (_worker == NULL) {
+            /* Failed to create worker */
+            Shutdown();
+            fprintf(stderr, "Fail to create a worker: %s\n", workerName.c_str());
+            throw std::runtime_error("Fail to create Worker\n");
         }
 
         RTIOsapiHeap_allocateBuffer(
@@ -317,21 +338,6 @@ class RTIRawTransportPublisher : public IMessagingWriter {
     bool SendMessage()
     {
         bool success = true;
-
-        if (_worker == NULL) {
-            /*
-             * We need to get the propper worker for the thread that is going to
-             * send the message. This can't be done on the constructor because
-             * the creation of the publisher and the send operation is done by
-             * different threads.
-             * Should be garanteed that the thread in charge of send will be
-             * always the same one.
-             */
-            _worker = raw_transport_get_worker_per_thread(
-                    _parent->get_worker_factory(),
-                    _parent->get_tss_factory(),
-                    &_workerTssKey);
-        }
 
         /* One send of the same message per Peer on the peerDataList */
         for(unsigned int i = 0; i < _peersDataList.size(); i++) {
@@ -496,7 +502,6 @@ class RTIRawTransportSubscriber : public IMessagingReader
     NDDS_Transport_Port_t _recvPort;
     NDDS_Transport_Message_t _transportMessage;
     struct REDAWorker *_worker;
-    unsigned int _workerTssKey; // thread-specific storage key of a thread.
 
     /* --- Perftest members --- */
     TestMessage _message;
@@ -518,13 +523,35 @@ public:
                 : _parent(parent),
                   _recvResource(recvResource),
                   _recvPort(recvPort),
-                  _worker(NULL),
-                  _workerTssKey(0),
                   _noData(true)
     {
         /* --- Parents Members --- */
         _plugin = parent->get_plugin();
         _PM = parent->get_parameter_manager();
+
+        /* --- Get a name for the worker --- */
+        std::ostringstream ss;
+        ss << RTIRawTransportImpl::pubWorkerCount++;
+        std::string workerName = std::string("SubWorker") + ss.str();
+
+        /* --- Get worker Factory --- */
+        struct REDAWorkerFactory *workerFactory = _parent->get_worker_factory();
+        if (workerFactory == NULL) {
+            /* Failed to get the worker factory */
+            Shutdown();
+            throw std::runtime_error("The worker factory is not initialized\n");
+        }
+
+        /* --- Create Worker --- */
+        _worker = REDAWorkerFactory_createWorker(
+                workerFactory,
+                workerName.c_str());
+        if (_worker == NULL) {
+            /* Failed to create worker */
+            Shutdown();
+            fprintf(stderr, "Fail to create a worker: %s\n", workerName.c_str());
+            throw std::runtime_error("Fail to create Worker\n");
+        }
 
         /* --- Buffer Management --- */
         _recvBuffer.length = 0;
@@ -590,13 +617,6 @@ public:
     TestMessage *ReceiveMessage() {
 
         int result;
-
-        if (_worker == NULL) {
-            _worker = raw_transport_get_worker_per_thread(
-                    _parent->get_worker_factory(),
-                    _parent->get_tss_factory(),
-                    &_workerTssKey);
-        }
 
         while (true) {
             if (_noData) {
@@ -1192,69 +1212,6 @@ int get_num_multicast_interfaces(struct NDDS_Transport_UDP *plugin)
     }
     return count;
 }
-
-/*
- * Get the worker for the current thread, creating it if necessary.
- * This simulate the DDS_DomainParticipantGlobals_get_worker_per_threadI function
- */
-struct REDAWorker *raw_transport_get_worker_per_thread(
-        REDAWorkerFactory *workerFactory,
-        RTIOsapiThreadTssFactory *tssFactory,
-        unsigned int *workerTssKey)
-{
-    RTIBool workerSet = false;
-    struct REDAWorker *worker = NULL;
-
-    /* --- Test preconditions --- */
-    if (workerFactory == NULL) {
-        fprintf(stderr, "Fail precondition, workerFactory == NULL\n");
-        return NULL;
-    }
-    if (tssFactory == NULL) {
-        fprintf(stderr, "Fail precondition, tssFactory == NULL\n");
-        return NULL;
-    }
-
-    /* --- Get tssKey (thread-specific storage key) --- */
-    if (*workerTssKey == 0) {
-        /* Create a TssKey */
-        if (!RTIOsapiThread_createKey(workerTssKey, tssFactory)) {
-            fprintf(stderr, "Fail to get thread-specific key\n");
-            return NULL;
-        }
-    }
-
-    /* --- Get worker --- */
-    worker = (struct REDAWorker *) RTIOsapiThread_getTss(*workerTssKey);
-    if (worker == NULL) {
-        char workerName[20];
-        /*
-         * Print 16 digits long hexadecimal (016lx). We use "l" to support
-         * the new 64-bit threadID data-type
-         */
-        sprintf(workerName, "U%016llx", RTIOsapiThread_getCurrentThreadID());
-        /* No worker? then, create a new one */
-        worker = REDAWorkerFactory_createWorker(workerFactory, workerName);
-        if (worker == NULL) {
-            /* failed to create worker */
-            fprintf(stderr, "Fail to create a worker\n");
-            return NULL;
-        } else {
-            /* worker created successfully: add to TSS */
-            workerSet = RTIOsapiThread_setTss(*workerTssKey, worker);
-            if (!workerSet) {
-                /* Failed to add to TSS: pretend it was never created. */
-                if (worker != NULL) {
-                    REDAWorkerFactory_destroyWorker(workerFactory, worker);
-                }
-                worker = NULL;
-            }
-        }
-    }
-
-    return worker;
-}
-
 
 #ifdef RTI_WIN32
 #pragma warning(pop)

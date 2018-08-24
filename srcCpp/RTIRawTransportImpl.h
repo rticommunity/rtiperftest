@@ -84,6 +84,11 @@ class RTIRawTransportImpl : public IMessaging {
     RTIOsapiThreadTssFactory *_tssFactory;
 
     ParameterManager *_PM;
+
+  public:
+    static unsigned int pubWorkerCount;
+    static unsigned int subWorkerCount;
+
 };
 
 /*

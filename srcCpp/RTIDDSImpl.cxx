@@ -1480,8 +1480,7 @@ class RTISubscriber : public IMessagingReader
         if (_endTestCondition.set_trigger_value(DDS_BOOLEAN_TRUE)
                 != DDS_RETCODE_OK) {
             fprintf(stderr,
-                    "Error setting a GuardCondition on unblock: %d.\n",
-                    retCode);
+                    "Error setting a GuardCondition on unblock.\n");
             return false;
         }
         return true;
