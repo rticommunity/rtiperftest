@@ -50,7 +50,7 @@ class RTIDDSImpl : public IMessaging
 
     std::string PrintConfiguration();
 
-    bool Initialize(int argc, char *argv[]);
+    bool Initialize(int argc, char *argv[], perftest_cpp *parent);
 
     void Shutdown();
 
@@ -110,6 +110,7 @@ class RTIDDSImpl : public IMessaging
     std::vector<unsigned int> _CFTRange;
 
     PerftestTransport _transport;
+    perftest_cpp *_parent;
 
   #ifdef RTI_SECURE_PERFTEST
     bool _secureUseSecure;

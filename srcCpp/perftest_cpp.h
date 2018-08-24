@@ -120,6 +120,9 @@ public:
     bool _useCft;
     static const Perftest_ProductVersion_t _version;
 
+    // Priorities for the threads used by perftest and domain participant
+    PerftestThreadPriorities _threadPriorities;
+
   private:
     static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);
 
@@ -146,9 +149,6 @@ public:
   #ifdef RTI_WIN32
     static LARGE_INTEGER _ClockFrequency;
   #endif
-
-    // Priorities for the threads used by perftest and domain participant
-    PerftestThreadPriorities _threadPriorities;
 
     // Number of bytes sent in messages besides user data
   #ifdef RTI_CUSTOM_TYPE

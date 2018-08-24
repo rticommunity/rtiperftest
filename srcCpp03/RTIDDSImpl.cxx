@@ -109,6 +109,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _useCft(false),
         _instancesToBeWritten(-1), // By default use round-robin (-1)
         _CFTRange(2),
+        _parent(NULL),
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure(false),
         _secureIsSigned(false),
@@ -1748,7 +1749,7 @@ dds::core::QosProvider RTIDDSImpl<T>::getQosProviderForProfile(
  * Initialize
  */
 template <typename T>
-bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
+bool RTIDDSImpl<T>::Initialize(int argc, char *argv[], perftest_cpp *parent)
 {
     using namespace rti::core::policy;
     ParseConfig(argc, argv);
@@ -1762,6 +1763,12 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     /* Mask for threadPriorities when it's used */
     rti::core::ThreadSettingsKindMask mask(
             rti::core::ThreadSettingsKindMask::realtime_priority());
+
+    if (parent == NULL) {
+        return false;
+    }
+    _parent = parent;
+    PerftestThreadPriorities threadPriorities = parent->get_thread_priorities();
 
     std::map<std::string, std::string> properties =
             qos.policy<Property>().get_all();
@@ -1786,7 +1793,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     };
 
     // set thread priorities.
-    if (_threadPriorities.isSet) {
+    if (threadPriorities.isSet) {
         // Set real time schedule
         qos.policy<ReceiverPool>().thread().mask(mask);
         qos.policy<Event>().thread().mask(mask);
@@ -1794,11 +1801,11 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
 
         // Set priority
         qos.policy<ReceiverPool>().thread().priority(
-                _threadPriorities.receive);
+                threadPriorities.receive);
         qos.policy<Event>().thread().priority(
-                _threadPriorities.dbAndEvent);
+                threadPriorities.dbAndEvent);
         qos.policy<Database>().thread().priority(
-                _threadPriorities.dbAndEvent);
+                threadPriorities.dbAndEvent);
     }
 
     if (_AutoThrottle) {
@@ -1821,19 +1828,19 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
             dds::core::status::StatusMask::requested_incompatible_qos() );
 
     // Set publisher QoS
-    if (_threadPriorities.isSet) {
+    if (threadPriorities.isSet) {
         // Asynchronous thread priority
         publisherQoS.policy<AsynchronousPublisher>().disable_asynchronous_write(false);
         publisherQoS.policy<AsynchronousPublisher>().thread().mask(mask);
         publisherQoS.policy<AsynchronousPublisher>().thread().priority(
-                _threadPriorities.main);
+                threadPriorities.main);
 
         // Asynchronous thread for batching priority
         publisherQoS.policy<AsynchronousPublisher>().disable_asynchronous_batch(false);
         publisherQoS.policy<AsynchronousPublisher>().asynchronous_batch_thread()
                 .mask(mask);
         publisherQoS.policy<AsynchronousPublisher>().asynchronous_batch_thread()
-                .priority(_threadPriorities.main);
+                .priority(threadPriorities.main);
     }
 
     // Create the _publisher and _subscriber

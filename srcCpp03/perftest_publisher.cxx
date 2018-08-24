@@ -113,7 +113,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
         }
     }
 
-    _MessagingImpl->Initialize(_MessagingArgc, _MessagingArgv);
+    _MessagingImpl->Initialize(_MessagingArgc, _MessagingArgv, this);
 
     PrintConfiguration();
 
@@ -2360,6 +2360,11 @@ inline unsigned int perftest_cpp::GetSamplesPerBatch() {
     }
 
     return samplesPerBatch;
+}
+
+const PerftestThreadPriorities perftest_cpp::get_thread_priorities()
+{
+    return _threadPriorities;
 }
 
 #ifdef RTI_WIN32

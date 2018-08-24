@@ -64,8 +64,9 @@ class perftest_cpp
     bool ParseConfig(int argc, char *argv[]);
     void PrintConfiguration();
     unsigned int GetSamplesPerBatch();
+    const PerftestThreadPriorities get_thread_priorities();
 
-  private:
+private:
     int RunPublisher();
     int RunSubscriber();
     bool set_main_thread_priority();
@@ -122,6 +123,9 @@ class perftest_cpp
     bool _useCft;
     static const Perftest_ProductVersion_t _version;
 
+    // Priorities for the threads used by perftest and domain participant
+    PerftestThreadPriorities _threadPriorities;
+
   private:
     static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);
 
@@ -148,9 +152,6 @@ class perftest_cpp
   #ifdef RTI_WIN32
     static LARGE_INTEGER _ClockFrequency;
   #endif
-
-    // Priorities for the threads used by perftest and domain participant
-    static PerftestThreadPriorities _threadPriorities;
 
     // Number of bytes sent in messages besides user data
     static const int OVERHEAD_BYTES = 28;
