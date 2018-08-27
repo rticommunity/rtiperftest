@@ -2910,6 +2910,16 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(const char *topicName)
     return _qoSProfileNameMap[std::string(topicName)];
 }
 
+
+/*
+ * This instantiation is to avoid a undefined reference of a templated static
+ * function of obtain_dds_de/serialize_time_cost on olders compilers.
+ */
+extern template class RTIDDSImpl<TestDataKeyed_t>;
+extern template class RTIDDSImpl<TestData_t>;
+extern template class RTIDDSImpl<TestDataKeyedLarge_t>;
+extern template class RTIDDSImpl<TestDataLarge_t>;
+
 #ifdef RTI_WIN32
   #pragma warning(pop)
 #endif
