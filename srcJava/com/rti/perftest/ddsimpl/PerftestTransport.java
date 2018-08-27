@@ -1084,7 +1084,7 @@ public class PerftestTransport {
 
         /*
          * Split the string into diferents parts delimited with ',' character.
-         * With a "a,b,c" input this will result in tree diferent addresses
+         * With a "a,b,c" input this will result in three diferent addresses
          * "a","b" and "c"
          */
         String [] addresses = arg.split(",",0);
@@ -1097,7 +1097,7 @@ public class PerftestTransport {
             multicastAddrMap.put(ANNOUNCEMENT_TOPIC_NAME.VALUE, addresses[2]);
 
         } else if (addresses.length == 1) {
-            /* If only one address are give */
+            /* If only one address is given */
             String aux = new String();
             multicastAddrMap.put(THROUGHPUT_TOPIC_NAME.VALUE, addresses[0]);
 

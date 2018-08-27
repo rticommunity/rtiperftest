@@ -1166,8 +1166,8 @@ bool PerftestTransport::increase_address_by_one(
     }
 
     /*
-     * Increase the full address by one value.
-     * if the Address is 255.255.255.255 (or the equivalent for IPv6) this
+     * Increase the address by one value.
+     * If the Address is 255.255.255.255 (or the equivalent for IPv6) this
      * function will FAIL
      */
     for (int i = NDDS_TRANSPORT_ADDRESS_LENGTH - 1; i >= 0 && !success; i--) {
@@ -1192,7 +1192,7 @@ bool PerftestTransport::increase_address_by_one(
         return false;
     }
 
-    /* Try to get a IPv4 string format */
+    /* Try to get a IP string format */
     if (!NDDS_Transport_Address_to_string_with_protocol_family_format(
             &transportAddress,
             buffer,
@@ -1222,7 +1222,7 @@ bool PerftestTransport::parse_multicast_addresses(char *arg)
         return false;
     }
 
-    /* If tree addresses are given */
+    /* If three addresses are given */
     if (numberOfAddressess == 3) {
         if (!NDDS_Transport_get_address(arg, 0, throughput)
                 || !NDDS_Transport_get_address(arg, 1, latency)
@@ -1237,7 +1237,7 @@ bool PerftestTransport::parse_multicast_addresses(char *arg)
         multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = annonuncement;
 
     } else if (numberOfAddressess == 1) {
-        /* If only one address are give */
+        /* If only one address is given */
         if (!NDDS_Transport_get_address(arg, 0, throughput)) {
             fprintf(stderr,
                     "Error parsing Address for -multicastAddr option\n");
@@ -1250,7 +1250,7 @@ bool PerftestTransport::parse_multicast_addresses(char *arg)
                 multicastAddrMap[THROUGHPUT_TOPIC_NAME],
                 multicastAddrMap[LATENCY_TOPIC_NAME])) {
             fprintf(stderr,
-                    "Fail to increase the value of IP addres given\n");
+                    "Fail to increase the value of IP address given\n");
             return false;
         }
 
@@ -1259,7 +1259,7 @@ bool PerftestTransport::parse_multicast_addresses(char *arg)
                 multicastAddrMap[LATENCY_TOPIC_NAME],
                 multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME])) {
             fprintf(stderr,
-                    "Fail to increase the value of IP addres given\n");
+                    "Fail to increase the value of IP address given\n");
             return false;
         }
 

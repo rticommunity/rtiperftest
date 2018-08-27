@@ -1144,8 +1144,8 @@ namespace PerformanceTest
 
             /*
             * Increase the full address by one value.
-            * if the Address is 255.255.255.255 (or the equivalent for IPv6) this
-            * function will FAIL
+            * if the Address is 255.255.255.255 (or the equivalent for IPv6)
+            * this function will FAIL
             */
             for (int i = buffer.Length - 1; i >= 0 && !success; i--)
             {
@@ -1189,13 +1189,13 @@ namespace PerformanceTest
         {
 
             /*
-            * Split the string into diferents parts delimited with ',' character.
-            * With a "a,b,c" input this will result in tree diferent addresses
+            * Split the string into different parts delimited with ',' character.
+            * With a "a,b,c" input this will result in three different addresses
             * "a","b" and "c"
             */
             string[] addresses = arg.Split(',');
 
-            /* If tree addresses are given */
+            /* If three addresses are given */
             if (addresses.Length == 3)
             {
                 multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = addresses[0];
@@ -1204,7 +1204,7 @@ namespace PerformanceTest
             }
             else if (addresses.Length == 1)
             {
-                /* If only one address are give */
+                /* If only one address is given */
                 multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = addresses[0];
 
                 /* Calculate the consecutive one */

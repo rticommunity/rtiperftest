@@ -1057,7 +1057,7 @@ bool PerftestTransport::parse_multicast_addresses(char *arg)
         return false;
     }
 
-    /* If tree addresses are given */
+    /* If three addresses are given */
     if (numberOfAddressess == 3) {
         if (!NDDS_Transport_get_address(arg, 0, throughput)
                 || !NDDS_Transport_get_address(arg, 1, latency)
@@ -1072,7 +1072,7 @@ bool PerftestTransport::parse_multicast_addresses(char *arg)
         multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = annonuncement;
 
     } else if (numberOfAddressess == 1) {
-        /* If only one address are give */
+        /* If only one address are given */
         if (!NDDS_Transport_get_address(arg, 0, throughput)) {
             fprintf(stderr,
                     "Error parsing Address for -multicastAddr option\n");
