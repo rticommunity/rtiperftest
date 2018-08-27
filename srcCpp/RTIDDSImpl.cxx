@@ -2915,11 +2915,10 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(const char *topicName)
  * This instantiation is to avoid a undefined reference of a templated static
  * function of obtain_dds_de/serialize_time_cost on olders compilers.
  */
-extern template class RTIDDSImpl<TestDataKeyed_t>;
-extern template class RTIDDSImpl<TestData_t>;
-extern template class RTIDDSImpl<TestDataKeyedLarge_t>;
-extern template class RTIDDSImpl<TestDataLarge_t>;
-
+template double RTIDDSImpl<TestDataKeyed_t>::obtain_dds_serialize_time_cost(unsigned int sampleSize, unsigned int iters);
+template double RTIDDSImpl<TestData_t>::obtain_dds_serialize_time_cost(unsigned int sampleSize, unsigned int iters);
+template double RTIDDSImpl<TestDataKeyedLarge_t>::obtain_dds_serialize_time_cost(unsigned int sampleSize, unsigned int iters);
+template double RTIDDSImpl<TestDataLarge_t>::obtain_dds_serialize_time_cost(unsigned int sampleSize, unsigned int iters);
 #ifdef RTI_WIN32
   #pragma warning(pop)
 #endif
