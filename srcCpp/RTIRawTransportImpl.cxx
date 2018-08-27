@@ -23,7 +23,6 @@ RTIRawTransportImpl::RTIRawTransportImpl()
           _plugin(NULL),
           _workerFactory(NULL),
           _exclusiveArea(NULL),
-          _tssFactory(NULL),
           _PM(NULL)
 {
     PeerData::resourcesList.reserve(RTIPERFTEST_MAX_PEERS);
@@ -51,9 +50,6 @@ void RTIRawTransportImpl::Shutdown()
     }
     if (_workerFactory != NULL) {
         REDAWorkerFactory_delete(_workerFactory);
-    }
-    if (_tssFactory != NULL){
-        RTIOsapiThread_deleteTssFactory(_tssFactory);
     }
     if (_pongSemaphore != NULL) {
         RTIOsapiSemaphore_delete(_pongSemaphore);
@@ -280,8 +276,10 @@ class RTIRawTransportPublisher : public IMessagingWriter {
         if (_worker == NULL) {
             /* Failed to create worker */
             Shutdown();
-            fprintf(stderr, "Fail to create a worker: %s\n", workerName.c_str());
-            throw std::runtime_error("Fail to create Worker\n");
+            throw std::runtime_error(
+                    std::string("Fail to create Worker ")
+                    + std::string(workerName)
+                    + std::string("\n"));
         }
 
         RTIOsapiHeap_allocateBuffer(
@@ -549,8 +547,10 @@ public:
         if (_worker == NULL) {
             /* Failed to create worker */
             Shutdown();
-            fprintf(stderr, "Fail to create a worker: %s\n", workerName.c_str());
-            throw std::runtime_error("Fail to create Worker\n");
+            throw std::runtime_error(
+                    std::string("Fail to create Worker ")
+                    + std::string(workerName)
+                    + std::string("\n"));
         }
 
         /* --- Buffer Management --- */
@@ -974,7 +974,7 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
 
 bool RTIRawTransportImpl::configure_sockets_transport()
 {
-    char *interfaceAddr = NULL; /*WARNING: interface is a reserved word on VS*/
+    char *interfaceAddr = NULL; /*WARNING: interface is a reserved word on VS */
     interfaceAddr
             = DDS_String_dup(_PM->get<std::string>("allowInterfaces").c_str());
     std::vector<std::string> peers = _PM->get_vector<std::string>("peer");
@@ -1005,21 +1005,15 @@ bool RTIRawTransportImpl::configure_sockets_transport()
         return false;
     }
 
-    /* --- TssFactory --- */
-    _tssFactory = RTIOsapiThread_createTssFactory();
-    if (_tssFactory == NULL) {
-        fprintf(stderr, "Fail to create thread-specific storage factory\n");
-        return false;
-    }
-
     switch (_transport.transportConfig.kind) {
 
-    /* --- Transport configure --- */
-    case TRANSPORT_NOT_SET:
-        /*Default transport for sockets is UDPv4*/
-        _transport.transportConfig.kind = TRANSPORT_UDPv4;
-        _transport.transportConfig.nameString = "UDPv4";
-
+        /* --- Transport configure --- */
+        case TRANSPORT_NOT_SET:
+        {
+            /*Default transport for sockets is UDPv4*/
+            _transport.transportConfig.kind = TRANSPORT_UDPv4;
+            _transport.transportConfig.nameString = "UDPv4";
+        }
         case TRANSPORT_UDPv4:
         {
             struct NDDS_Transport_UDPv4_Property_t udpv4_prop =

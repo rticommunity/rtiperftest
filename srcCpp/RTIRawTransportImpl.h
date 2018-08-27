@@ -51,7 +51,6 @@ class RTIRawTransportImpl : public IMessaging {
     std::vector<PeerData> get_peers_data()          {return _peersDataList;}
     RTIOsapiSemaphore *get_pong_semaphore()         {return _pongSemaphore;}
     struct REDAWorkerFactory *get_worker_factory()  {return _workerFactory;}
-    RTIOsapiThreadTssFactory *get_tss_factory()     {return _tssFactory;}
     ParameterManager *get_parameter_manager()       {return _PM;}
 
     /* Calculate the port depending of the Id of the subscriber.*/
@@ -81,7 +80,6 @@ class RTIRawTransportImpl : public IMessaging {
     NDDS_Transport_Plugin *_plugin;
     struct REDAWorkerFactory *_workerFactory;
     struct REDAExclusiveArea *_exclusiveArea;
-    RTIOsapiThreadTssFactory *_tssFactory;
 
     ParameterManager *_PM;
 
