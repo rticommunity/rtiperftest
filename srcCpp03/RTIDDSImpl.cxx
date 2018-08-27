@@ -1062,29 +1062,35 @@ void RTIDDSImpl<T>::configureSecurePlugin(
                 _secureGovernanceFile;
     }
 
+    /*
+     * Save the local variable governanceFilePath into
+     * the parameter "secureGovernanceFile"
+     */
+    _PM->set("secureGovernanceFile", governanceFilePath);
+
     // permissions file
-    dpQosProperties["com.rti.serv.secure.access_control.permissions_file"] =
-            _securePermissionsFile;
+    dpQosProperties["com.rti.serv.secure.access_control.permissions_file"]
+            = _PM->get<std::string>("securePermissionsFile");
 
     // permissions authority file
-    dpQosProperties["com.rti.serv.secure.access_control.permissions_authority_file"] =
-            _secureCertAuthorityFile;
+    dpQosProperties["com.rti.serv.secure.access_control.permissions_authority_file"]
+            = _PM->get<std::string>("secureCertAuthority");
 
     // certificate authority
-    dpQosProperties["com.rti.serv.secure.authentication.ca_file"] =
-            _secureCertAuthorityFile;
+    dpQosProperties["com.rti.serv.secure.authentication.ca_file"]
+            = _PM->get<std::string>("secureCertAuthority");
 
     // public key
-    dpQosProperties["com.rti.serv.secure.authentication.certificate_file"] =
-            _secureCertificateFile;
+    dpQosProperties["com.rti.serv.secure.authentication.certificate_file"]
+            = _PM->get<std::string>("secureCertFile");
 
     // private key
-    dpQosProperties["com.rti.serv.secure.authentication.private_key_file"] =
-            _securePrivateKeyFile;
+    dpQosProperties["com.rti.serv.secure.authentication.private_key_file"]
+            = _PM->get<std::string>("securePrivateKey");
 
-    if (_secureDebugLevel != -1) {
+    if (_PM->is_set("secureDebug")) {
         std::ostringstream string_stream_object;
-        string_stream_object << _secureDebugLevel;
+        string_stream_object << _PM->get<int>("secureDebug");
         dpQosProperties["com.rti.serv.secure.logging.log_level"] =
                 string_stream_object.str();
     }
@@ -1168,46 +1174,49 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     if (_PM->get<std::string>("secureGovernanceFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _secureGovernanceFile << "\n";
+        stringStream << _PM->get<std::string>("secureGovernanceFile")
+                     << "\n";
     }
 
     stringStream << "\tPermissions file: ";
     if (_PM->get<std::string>("securePermissionsFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _securePermissionsFile << "\n";
+        stringStream << _PM->get<std::string>("securePermissionsFile")
+                     << "\n";
     }
 
     stringStream << "\tPrivate key file: ";
     if (_PM->get<std::string>("securePrivateKey").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _securePrivateKeyFile << "\n";
+        stringStream << _PM->get<std::string>("securePrivateKey") << "\n";
     }
 
     stringStream << "\tCertificate file: ";
     if (_PM->get<std::string>("secureCertFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _secureCertificateFile << "\n";
+        stringStream << _PM->get<std::string>("secureCertFile") << "\n";
     }
 
     stringStream << "\tCertificate authority file: ";
     if (_PM->get<std::string>("secureCertAuthority").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _secureCertAuthorityFile << "\n";
+        stringStream << _PM->get<std::string>("secureCertAuthority") << "\n";
     }
 
     stringStream << "\tPlugin library: ";
     if (_PM->get<std::string>("secureLibrary").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _secureLibrary << "\n";
+        stringStream << _PM->get<std::string>("secureLibrary") << "\n";
     }
 
     if (_PM->is_set("secureDebug")) {
-        stringStream << "\tDebug level: " <<  _secureDebugLevel << "\n";
+        stringStream << "\tDebug level: " << _PM->get<int>("secureDebug")
+                     << "\n";
     }
 
     return stringStream.str();
@@ -1567,18 +1576,17 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
                 _PM);
     }
 }
-
 /*********************************************************
  * CreateCFT
  * The CFT allows to the subscriber to receive a specific instance or a range of them.
- * In order generate the CFT it is necesary to create a condition:
- *      - In the case of a specific instance, it is necesary to convert to _CFTRange[0] into a key notation.
- *        Then it is enought with check that every element of key is equal to the instance.
- *        Exmaple: _CFTRange[0] = 300. condition ="(0 = key[0] AND 0 = key[1] AND 1 = key[2] AND  44 = key[3])"
+ * In order generate the CFT it is necessary to create a condition:
+ *      - In the case of a specific instance, it is necessary to convert to cftRange[0] into a key notation.
+ *        Then it is enough with check that every element of key is equal to the instance.
+ *        Example: cftRange[0] = 300. condition ="(0 = key[0] AND 0 = key[1] AND 1 = key[2] AND  44 = key[3])"
  *          So, in the case that the key = { 0, 0, 1, 44}, it will be received.
- *      - In the case of a range of instances, it is necesary to convert to _CFTRange[0] and _CFTRange[1] into a key notation.
- *        Then it is enought with check that the key is in the range of instances.
- *        Exmaple: _CFTRange[1] = 300 and _CFTRange[1] = 1.
+ *      - In the case of a range of instances, it is necessary to convert to cftRange[0] and cftRange[1] into a key notation.
+ *        Then it is enough with check that the key is in the range of instances.
+ *        Example: cftRange[1] = 300 and cftRange[1] = 1.
  *          condition = ""
  *              "("
  *                  "("
