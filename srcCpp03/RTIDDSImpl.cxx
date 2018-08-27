@@ -112,14 +112,22 @@ void RTIDDSImpl<T>::Shutdown()
  * ParseConfig
  */
 template <typename T>
-bool RTIDDSImpl<T>::validate_imput()
+bool RTIDDSImpl<T>::validate_input()
 {
     // Manage parameter -instance
     if (_PM->is_set("instances")) {
         _InstanceMaxCountReader = _PM->get<long>("instances");
     }
 
-    /* Check if we need to enable Large Data. This works also for -scan */
+    // Manage parameter -peer
+    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
+        fprintf(stderr,
+                "The maximun of 'initial_peers' is %d\n",
+                RTIPERFTEST_MAX_PEERS);
+        return false;
+    }
+
+    // Check if we need to enable Large Data. This works also for -scan
     if (_PM->get<unsigned long long>("dataLen")
             > (unsigned long) (std::min)(
                     MAX_SYNCHRONOUS_SIZE,
@@ -133,9 +141,9 @@ bool RTIDDSImpl<T>::validate_imput()
         _isLargeData = false;
     }
 
-    /* If we are using batching */
+    // Manage parameter -batchSize
     if (_PM->get<long>("batchSize") > 0) {
-        /* We will not use batching for a latency test */
+        // We will not use batching for a latency test
         if (_PM->get<bool>("latencyTest")) {
             if (_PM->is_set("batchSize")) {
                 fprintf(stderr, "Batching cannot be used in a Latency test.\n");
@@ -145,7 +153,7 @@ bool RTIDDSImpl<T>::validate_imput()
             }
         }
 
-        /* Check if using asynchronous */
+        // Check if using asynchronous
         if (_PM->get<bool>("asynchronous")) {
             if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
                 fprintf(stderr,
@@ -188,33 +196,87 @@ bool RTIDDSImpl<T>::validate_imput()
         }
     }
 
+    // Manage parameter -enableTurboMode
     if (_PM->get<bool>("enableTurboMode")) {
         if (_PM->get<bool>("asynchronous")) {
             std::cerr << "[Error] Turbo Mode cannot be used with asynchronous writing. "
-                    << std::endl;
+                      << std::endl;
             return false;
         }
         if (_isLargeData) {
-            std::cerr << "Turbo Mode disabled, using large data." << std::endl;
+            std::cerr << "[Error] Turbo Mode disabled, using large data."
+                      << std::endl;
             _PM->set<bool>("enableTurboMode", false);
         }
     }
 
-    // Manage _instancesToBeWritten
+    // Manage parameter -writeInstance
     if (_PM->is_set("writeInstance")) {
         if (_PM->get<long>("instances") < _PM->get<long>("writeInstance")) {
-            std::cerr << "Specified '-WriteInstance' (" <<
-                    _PM->get<long>("writeInstance") <<
-                    ") invalid: Bigger than the number of instances (" <<
-                    _PM->get<long>("instances") << ")." << std::endl;
-            throw std::logic_error("[Error] Error parsing commands");
+            std::cerr << "Specified '-WriteInstance' ("
+                      << _PM->get<long>("writeInstance")
+                      << ") invalid: Bigger than the number of instances ("
+                      << _PM->get<long>("instances")
+                      << ")."
+                      << std::endl;
+            return false;
         }
     }
 
+    // Manage transport parameter
     if(!_transport.validate_input()) {
-        throw std::logic_error("Failure validation the transport options.");
+         std::cerr << "[Error] Failure validation the transport options."
+                   << std::endl;
         return false;
     };
+
+    /*
+     * Manage parameter -verbosity.
+     * Setting verbosity if the parameter is provided
+     */
+    if (_PM->is_set("verbosity")) {
+        switch (_PM->get<int>("verbosity")) {
+            case 0:
+                rti::config::Logger::instance().verbosity(
+                        rti::config::Verbosity::SILENT);
+                fprintf(stderr, "Setting verbosity to SILENT\n");
+                break;
+            case 1:
+                rti::config::Logger::instance().verbosity(
+                        rti::config::Verbosity::ERRORY);
+                fprintf(stderr, "Setting verbosity to ERROR\n");
+                break;
+            case 2:
+                rti::config::Logger::instance().verbosity(
+                        rti::config::Verbosity::WARNING);
+                fprintf(stderr, "Setting verbosity to WARNING\n");
+                break;
+            case 3: rti::config::Logger::instance().verbosity(
+                        rti::config::Verbosity::STATUS_ALL);
+                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
+                break;
+            default:
+                std::cerr << "[Info]: Invalid value for the verbosity"
+                          << " parameter. Using default value (1)"
+                          << std::endl;
+                fprintf(stderr, "Invalid value for the '-verbosity' parameter\n");
+                return false;
+        }
+    }
+
+    // Manage parameter -secureGovernanceFile
+    if (_PM->is_set("secureGovernanceFile")) {
+            std::cout << "[INFO] Authentication, encryption, signing arguments "
+                      << "will be ignored, and the values specified by the "
+                      << "Governance file will be used instead"
+                      << std::endl;
+    }
+
+    // Manage parameter -secureEncryptBoth
+    if (_PM->is_set("secureEncryptBoth")) {
+        _PM->set("secureEncryptData", true);
+        _PM->set("secureEncryptSM", true);
+    }
 
     return true;
 }
@@ -287,9 +349,9 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
    #ifdef RTI_SECURE_PERFTEST
-   if (_secureUseSecure) {
+    if (_PM->group_is_used(SECURE)) {
         stringStream << "\n" << printSecureArgs();
-   }
+    }
    #endif
 
     return stringStream.str();
@@ -1193,7 +1255,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
     _PM = &PM;
     _transport.initialize(_PM);
 
-    if (!validate_imput()) {
+    if (!validate_input()) {
         return false;
     }
 
@@ -1207,7 +1269,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
             qos.policy<Property>().get_all();
 
   #ifdef RTI_SECURE_PERFTEST
-    if (_secureUseSecure) {
+    if (_PM->group_is_used(SECURE)) {
         validateSecureArgs();
         configureSecurePlugin(properties);
     }

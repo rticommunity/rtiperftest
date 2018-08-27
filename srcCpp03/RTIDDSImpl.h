@@ -44,7 +44,7 @@ class RTIDDSImpl : public IMessaging
         Shutdown();
     }
 
-    bool validate_imput();
+    bool validate_input();
 
     std::string PrintConfiguration();
 

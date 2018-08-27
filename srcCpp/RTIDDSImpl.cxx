@@ -141,6 +141,7 @@ bool RTIDDSImpl<T>::validate_input()
     if (_PM->is_set("instances")) {
         _instanceMaxCountReader = _PM->get<long>("instances");
     }
+
     // Manage parameter -peer
     if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
         fprintf(stderr,
@@ -300,9 +301,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     std::ostringstream stringStream;
 
     // Domain ID
-    stringStream << "\tDomain: "
-                 << _PM->get<int>("domain")
-                 << "\n";
+    stringStream << "\tDomain: " << _PM->get<int>("domain") << "\n";
 
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
@@ -338,12 +337,10 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     if (_PM->get<bool>("noXmlQos")) {
         stringStream << "Disabled\n";
     } else {
-        stringStream << _PM->get<std::string>("qosFile")
-                     << "\n";
+        stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
 
-    stringStream << "\n"
-                 << _transport.printTransportConfigurationSummary();
+    stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
 
     // set initial peers and not use multicast
