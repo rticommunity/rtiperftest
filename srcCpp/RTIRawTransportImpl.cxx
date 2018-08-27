@@ -1065,12 +1065,7 @@ bool RTIRawTransportImpl::configure_sockets_transport()
             /*
              * The default value for send_socket_buffer_size and receive is
              * 131072.
-             * NDDS_TRANSPORT_UDPV4_SEND_SOCKET_BUFFER_SIZE_DEFAULT   (131072)
-             * NDDS_TRANSPORT_UDPV4_RECV_SOCKET_BUFFER_SIZE_DEFAULT   (131072)
-             *
-             * This could be necessary to modify for large data support.
              */
-
             /* Setting the transport properties */
             _plugin = NDDS_Transport_UDPv4_new(&udpv4_prop);
 
