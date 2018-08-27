@@ -73,24 +73,18 @@ class RTIDDSImpl : public IMessaging
 
   private:
 
+    // Specific functions to configure the Security plugin
+  #ifdef RTI_SECURE_PERFTEST
+    void configureSecurePlugin(std::map<std::string, std::string> &dpQosProperties);
+    std::string printSecureArgs();
+    void validateSecureArgs();
+  #endif
+
+
     long _InstanceMaxCountReader;
     int _InstanceHashBuckets;
     bool _isLargeData;
     PerftestTransport _transport;
-
-  #ifdef RTI_SECURE_PERFTEST
-
-    static const std::string SECURE_PRIVATEKEY_FILE_PUB;
-    static const std::string SECURE_PRIVATEKEY_FILE_SUB;
-    static const std::string SECURE_CERTIFICATE_FILE_PUB;
-    static const std::string SECURE_CERTIFICATE_FILE_SUB;
-    static const std::string SECURE_CERTAUTHORITY_FILE;
-    static const std::string SECURE_PERMISION_FILE_PUB;
-    static const std::string SECURE_PERMISION_FILE_SUB;
-    static const std::string SECURE_LIBRARY_NAME;
-  #endif
-
-
     dds::domain::DomainParticipant _participant;
     dds::sub::Subscriber _subscriber;
     dds::pub::Publisher _publisher;
@@ -100,9 +94,14 @@ class RTIDDSImpl : public IMessaging
     std::map<std::string, std::string> _qoSProfileNameMap;
 
   #ifdef RTI_SECURE_PERFTEST
-    void configureSecurePlugin(std::map<std::string, std::string> &dpQosProperties);
-    std::string printSecureArgs();
-    void validateSecureArgs();
+    static const std::string SECURE_PRIVATEKEY_FILE_PUB;
+    static const std::string SECURE_PRIVATEKEY_FILE_SUB;
+    static const std::string SECURE_CERTIFICATE_FILE_PUB;
+    static const std::string SECURE_CERTIFICATE_FILE_SUB;
+    static const std::string SECURE_CERTAUTHORITY_FILE;
+    static const std::string SECURE_PERMISION_FILE_PUB;
+    static const std::string SECURE_PERMISION_FILE_SUB;
+    static const std::string SECURE_LIBRARY_NAME;
   #endif
 
 };
