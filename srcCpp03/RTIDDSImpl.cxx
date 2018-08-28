@@ -126,7 +126,13 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _subscriber(dds::core::null),
         _publisher(dds::core::null),
         _pongSemaphore(RTI_OSAPI_SEMAPHORE_KIND_BINARY,NULL)
-    {}
+    {
+        _qoSProfileNameMap[LATENCY_TOPIC_NAME] = std::string("LatencyQos");
+        _qoSProfileNameMap[ANNOUNCEMENT_TOPIC_NAME]
+                = std::string("AnnouncementQos");
+        _qoSProfileNameMap[THROUGHPUT_TOPIC_NAME]
+                = std::string("ThroughputQos");
+    }
 
 /*********************************************************
  * Shutdown
@@ -712,7 +718,6 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
         }
     } else { /* No Large Data */
-        _useUnbounded = 0;
         _isLargeData = false;
     }
 
@@ -1855,17 +1860,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     using namespace rti::core::policy;
 
     std::string qos_profile = "";
-    if (topic_name == THROUGHPUT_TOPIC_NAME.c_str()) {
-        qos_profile = "ThroughputQos";
-    } else if (topic_name == LATENCY_TOPIC_NAME.c_str()) {
-        qos_profile = "LatencyQos";
-    } else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.c_str()) {
-        qos_profile = "AnnouncementQos";
-    } else {
-        std::cerr << "[Error] Topic name must either be "
-                  << THROUGHPUT_TOPIC_NAME << " or "
-                  << LATENCY_TOPIC_NAME << " or "
-                  << ANNOUNCEMENT_TOPIC_NAME << std::endl;
+    qos_profile = get_qos_profile_name(topic_name);
+    if (qos_profile.empty()) {
         throw std::logic_error("[Error] Topic name");
     }
 
@@ -2154,17 +2150,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     using namespace rti::core::policy;
 
     std::string qos_profile;
-    if (topic_name == THROUGHPUT_TOPIC_NAME.c_str()) {
-        qos_profile = "ThroughputQos";
-    } else if (topic_name == LATENCY_TOPIC_NAME.c_str()) {
-        qos_profile = "LatencyQos";
-    } else if (topic_name == ANNOUNCEMENT_TOPIC_NAME.c_str()) {
-        qos_profile = "AnnouncementQos";
-    } else {
-        std::cerr << "[Error] Topic name must either be "
-                  << THROUGHPUT_TOPIC_NAME << " or "
-                  << LATENCY_TOPIC_NAME << " or "
-                  << ANNOUNCEMENT_TOPIC_NAME << std::endl;
+    qos_profile = get_qos_profile_name(topic_name);
+    if (qos_profile.empty()) {
         throw std::logic_error("[Error] Topic name");
     }
 
@@ -2368,6 +2355,21 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 _WaitsetEventCount,
                 _WaitsetDelayUsec);
     }
+}
+
+template <typename T>
+const std::string RTIDDSImpl<T>::get_qos_profile_name(std::string topicName)
+{
+    if (_qoSProfileNameMap[topicName].empty()) {
+        fprintf(stderr,
+                "topic name must either be %s or %s or %s.\n",
+                THROUGHPUT_TOPIC_NAME.c_str(),
+                LATENCY_TOPIC_NAME.c_str(),
+                ANNOUNCEMENT_TOPIC_NAME.c_str());
+    }
+
+    /* If the topic name dont match any key return a empty string */
+    return _qoSProfileNameMap[topicName];
 }
 
 template class RTIDDSImpl<TestDataKeyed_t>;

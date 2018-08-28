@@ -150,6 +150,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private TypeHelper<T> _myDataType = null;
     private RTIDDSLoggerDevice _loggerDevice = null;
 
+    private static HashMap<String, String> _qoSProfileNameMap = new HashMap<String, String>();
+
     // -----------------------------------------------------------------------
     // Public Methods
     // -----------------------------------------------------------------------
@@ -159,6 +161,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
     public RTIDDSImpl(TypeHelper<T> typeHelper) {
         _myDataType = typeHelper;
         _transport = new PerftestTransport();
+
+        _qoSProfileNameMap.put(LATENCY_TOPIC_NAME.VALUE, "LatencyQos");
+        _qoSProfileNameMap.put(ANNOUNCEMENT_TOPIC_NAME.VALUE, "AnnouncementQos");
+        _qoSProfileNameMap.put(THROUGHPUT_TOPIC_NAME.VALUE, "ThroughputQos");
     }
 
     public void dispose() {
@@ -448,18 +454,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
             return null;
         }
 
-        if (THROUGHPUT_TOPIC_NAME.VALUE.equals(topicName)) {
-            qosProfile = "ThroughputQos";
-        } else if (LATENCY_TOPIC_NAME.VALUE.equals(topicName)) {
-            qosProfile = "LatencyQos";
-        } else if (ANNOUNCEMENT_TOPIC_NAME.VALUE.equals(topicName)) {
-            qosProfile = "AnnouncementQos";
-        } else {
-            System.err.println(
-                    "topic name must either be " +
-                    LATENCY_TOPIC_NAME.VALUE + " or " +
-                    ANNOUNCEMENT_TOPIC_NAME.VALUE  + " or " +
-                    THROUGHPUT_TOPIC_NAME.VALUE);
+        qosProfile = getQoSProfileName(topicName);
+        if (qosProfile == null) {
+            System.err.print("Problem getting qos profile.\n");
             return null;
         }
 
@@ -575,19 +572,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
         TopicDescription  topic_desc = topic; // Used to create the DDS DataReader
 
         String qosProfile;
-        if (THROUGHPUT_TOPIC_NAME.VALUE.equals(topicName)) {
-            qosProfile = "ThroughputQos";
-        } else if (LATENCY_TOPIC_NAME.VALUE.equals(topicName)) {
-            qosProfile = "LatencyQos";
-        } else if (ANNOUNCEMENT_TOPIC_NAME.VALUE.equals(topicName)) {
-            qosProfile = "AnnouncementQos";
-        }
-        else {
-            System.err.println(
-                    "topic name must either be " +
-                    THROUGHPUT_TOPIC_NAME.VALUE + " or " +
-                    LATENCY_TOPIC_NAME.VALUE  + " or " +
-                    ANNOUNCEMENT_TOPIC_NAME.VALUE);
+        qosProfile = getQoSProfileName(topicName);
+        if (qosProfile == null) {
+            System.err.print("Problem getting qos profile.\n");
             return null;
         }
 
@@ -1659,7 +1646,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
             }
         } else { /* No Large Data */
-            _useUnbounded = 0;
             _isLargeData = false;
         }
 
@@ -1755,6 +1741,19 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         return true;
+    }
+
+    public String getQoSProfileName(String topicName) {
+        // get() function return null if the map contains no mapping for the key
+        if(_qoSProfileNameMap.get(topicName) == null){
+            System.err.println(
+                    "topic name must either be " +
+                    LATENCY_TOPIC_NAME.VALUE + " or " +
+                    ANNOUNCEMENT_TOPIC_NAME.VALUE  + " or " +
+                    THROUGHPUT_TOPIC_NAME.VALUE);
+            return null;
+        }
+        return _qoSProfileNameMap.get(topicName).toString();
     }
 
 }
