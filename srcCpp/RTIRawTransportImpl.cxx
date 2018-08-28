@@ -616,11 +616,10 @@ public:
 
     TestMessage *ReceiveMessage() {
 
-        int result;
+        int result = 0;
 
         while (true) {
             if (_noData) {
-                result = 0;
                 result = _plugin->receive_rEA(
                         _plugin,
                         &_transportMessage,
@@ -628,16 +627,16 @@ public:
                         &_recvResource,
                         _worker);
                 if (!result) {
+                    fprintf(stderr, "Fail to receive data\n");
+                    return NULL;
+                } else if (_transportMessage.buffer.length == 0){
                     /*
                      * If the _transportMessage.buffer.length == 0, this
                      * method was unblocked by the unblock_receive_rrEA() call.
-                     * So it's not an error.
                      */
-                    if (_transportMessage.buffer.length != 0) {
-                        fprintf(stderr, "Fail to receive data\n");
-                    }
                     return NULL;
                 }
+
 
                 RTICdrStream_set(&_stream,
                         (char *)_transportMessage.buffer.pointer,
@@ -650,7 +649,7 @@ public:
             if (RTICdrStream_getCurrentPositionOffset(&_stream)
                     >= _transportMessage.buffer.length) {
                 if (_plugin->return_loaned_buffer_rEA != NULL
-                    && _transportMessage.loaned_buffer_param != (void *) -1) {
+                        && _transportMessage.loaned_buffer_param != (void *) -1) {
                     _plugin->return_loaned_buffer_rEA(
                             _plugin,
                             &_recvResource,

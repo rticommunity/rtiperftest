@@ -27,12 +27,6 @@
 #endif
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 
-
-template class RTIDDSImpl<TestDataKeyed_t>;
-template class RTIDDSImpl<TestData_t>;
-template class RTIDDSImpl<TestDataKeyedLarge_t>;
-template class RTIDDSImpl<TestDataLarge_t>;
-
 #ifdef RTI_SECURE_PERFTEST
 template <typename T>
 const std::string RTIDDSImpl<T>::SECURE_PRIVATEKEY_FILE_PUB =
@@ -2913,12 +2907,12 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(const char *topicName)
 
 /*
  * This instantiation is to avoid a undefined reference of a templated static
- * function of obtain_dds_de/serialize_time_cost on olders compilers.
+ * function of obtain_dds_de/serialize_time_costs.
  */
-template double RTIDDSImpl<TestDataKeyed_t>::obtain_dds_serialize_time_cost(unsigned int sampleSize, unsigned int iters);
-template double RTIDDSImpl<TestData_t>::obtain_dds_serialize_time_cost(unsigned int sampleSize, unsigned int iters);
-template double RTIDDSImpl<TestDataKeyedLarge_t>::obtain_dds_serialize_time_cost(unsigned int sampleSize, unsigned int iters);
-template double RTIDDSImpl<TestDataLarge_t>::obtain_dds_serialize_time_cost(unsigned int sampleSize, unsigned int iters);
+template class RTIDDSImpl<TestDataKeyed_t>;
+template class RTIDDSImpl<TestData_t>;
+template class RTIDDSImpl<TestDataKeyedLarge_t>;
+template class RTIDDSImpl<TestDataLarge_t>;
 #ifdef RTI_WIN32
   #pragma warning(pop)
 #endif
