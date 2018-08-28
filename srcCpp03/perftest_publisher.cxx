@@ -461,7 +461,7 @@ void perftest_cpp::PrintConfiguration()
 
         // Publication Rate
         stringStream << "\tPublication Rate: ";
-        if (_PM.is_set("pubRate") > 0) {
+        if (_PM.is_set("pubRate")) {
             stringStream << _PM.get_pair<unsigned long long, std::string>("pubRate").first
                          << " Samples/s (";
             if (_PM.get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
@@ -1344,7 +1344,7 @@ int perftest_cpp::RunPublisher()
 
     unsigned long long spinPerUsec = 0;
     unsigned long sleepUsec = 1000;
-    if (_PM.is_set("pubRate") > 0) {
+    if (_PM.is_set("pubRate")) {
         if ( _PM.get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
             spinPerUsec = rti::util::spin_per_microsecond();
             /* A return value of 0 means accuracy not assured */
@@ -1499,7 +1499,7 @@ int perftest_cpp::RunPublisher()
 
         /* This if has been included to perform the control loop
            that modifies the publication rate according to -pubRate */
-        if ((isSetPubRate > 0) && (loop > 0) && (loop % pubRate_sample_period == 0)) {
+        if (isSetPubRate && (loop > 0) && (loop % pubRate_sample_period == 0)) {
 
             time_now = perftest_cpp::GetTimeUsec();
 
