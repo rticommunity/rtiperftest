@@ -95,7 +95,8 @@ int perftest_cpp::Run(int argc, char *argv[]) {
         return -1;
     }
 
-    if (_threadPriorities.isSet && !set_main_thread_priority()) {
+    if (_threadPriorities.isSet
+            && !_threadPriorities.set_main_thread_priority()) {
         return -1;
     }
 
@@ -122,129 +123,6 @@ int perftest_cpp::Run(int argc, char *argv[]) {
     } else {
         return RunSubscriber();
     }
-}
-
-bool perftest_cpp::set_main_thread_priority()
-{
-    int priority = _threadPriorities.main;
-
-#ifdef RTI_WIN32
-    unsigned long error;
-
-    if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS)) {
-        error = GetLastError();
-            fprintf(
-                    stderr,
-                    "Fail to set main thread Class to real time, ERROR: %d\n",
-                    error);
-        return false;
-    }
-
-    if (!SetThreadPriority(GetCurrentThread(), priority)) {
-        error = GetLastError();
-        if (priority == error)
-            fprintf(
-                    stderr,
-                    "The thread is already running with priority ERROR: %d\n",
-                    error);
-        else {
-            fprintf(
-                    stderr,
-                    "Fail to set main thread priority, ERROR: %d\n",
-                    error);
-        }
-        return false;
-    }
-#elif RTI_UNIX
-    int error = 0;
-    struct sched_param sp;
-
-    sp.sched_priority = priority;
-
-    error = pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
-    if (error != 0) {
-        fprintf(
-                stderr,
-                "Fail to set main thread priority, %s\n",
-                strerror(error));
-        if (error == EPERM) {
-            fprintf(stderr,
-                    "\t - Try to run it as superUser\n");
-        }
-        return false;
-    }
-#else
-    fprintf(stderr, "-threadPriorities are not supported on this platform\n");
-#endif
-
-    return true;
-}
-
-bool perftest_cpp::check_priority_range(int value)
-{
-
-    bool success = true;
-#ifdef RTI_WIN32
-    if (value < -7 || value > 6) {
-        if (value != THREAD_PRIORITY_TIME_CRITICAL
-                && value != THREAD_PRIORITY_IDLE) {
-            success = false;
-        }
-    }
-
-#elif RTI_UNIX
-    if (value < sched_get_priority_min(SCHED_FIFO)
-            || value > sched_get_priority_max(SCHED_FIFO)) {
-        success = false;
-    }
-#else
-    fprintf(stderr, "-threadPriorities are not supported on this platform\n");
-    return false;
-#endif
-
-    if (!success) {
-        fprintf(
-                stderr,
-                "The input priority (%d) on -threadPriorities are outside"
-                " of rage for this platform\n",
-                value);
-        return false;
-    }
-
-    return true;
-}
-
-bool perftest_cpp::parse_priority(std::string arg)
-{
-
-    char x,y,z;
-
-    /* If is given by numbers */
-    if (sscanf(arg.c_str(),
-            "%d:%d:%d",
-            &_threadPriorities.main,
-            &_threadPriorities.receive,
-            &_threadPriorities.dbAndEvent) == 3) {
-        if (!check_priority_range(_threadPriorities.main)
-                || !check_priority_range(_threadPriorities.receive)
-                || !check_priority_range(_threadPriorities.dbAndEvent)) {
-            fprintf(stderr,
-                    "Fail to parse -_threadPriorities\n");
-            return false;
-        }
-
-    } else if (sscanf(arg.c_str(), "%c:%c:%c", &x, &y, &z) == 3) {
-        /* Check if is given by characters */
-        if (!_threadPriorities.set_priorities(x, y, z)) {
-            fprintf(stderr, "Fail to parse -threadPriorities\n");
-            return false;
-        }
-    } else {
-        fprintf(stderr, "Fail to parse -threadPriorities\n");
-        return false;
-    }
-
-    return true;
 }
 
 const rti::core::ProductVersion perftest_cpp::GetDDSVersion()
@@ -905,7 +783,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                         "Missing <A:B:C> priorities after -threadPriorities\n");
                 return false;
             }
-            if (!parse_priority(argv[++i])) {
+            if (!_threadPriorities.parse_priority(argv[++i])) {
                 fprintf(stderr, "Wrong sintax after -threadPriorities\n");
                 return false;
             }

@@ -12,10 +12,14 @@
 #elif RTI_UNIX
 #include <sched.h>
 #endif
+#include <errno.h>
 #include <map>
+#include <stdio.h>
+#include <string.h>
+#include <string>
 
 class PerftestThreadPriorities {
-public:
+  public:
     int main;
     int receive;
     int dbAndEvent;
@@ -25,4 +29,7 @@ public:
 
     PerftestThreadPriorities();
     bool set_priorities(char x, char y, char z);
+    bool set_main_thread_priority();
+    bool check_priority_range(int value);
+    bool parse_priority(std::string arg);
 };
