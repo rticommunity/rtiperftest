@@ -90,11 +90,10 @@ The Raw-Transport Feature allows the following configurations:
 Some of the command line parameter that exist for DDS are not supported if
 ``-rawTransport`` is used.
 
-For the command ``-peer`` a similar option ``-peerRT`` was created. This command
-have similar behavior as ``-peer`` and it's only available with ``-rawTransport``.
-You can used it to set a peer address and an optional ID:
+For the command ``-peer`` the behavior has been modify. You can used it to set a
+peer address and a new optional ID:
 
-    Sintax: -peerRT <x.x.x.x>|<x.x.x.x:id>
+    Sintax: -peer <x.x.x.x>|<x.x.x.x:id>
 
     If no id is provided, it's set as zero.
 
@@ -104,7 +103,7 @@ You can used it to set a peer address and an optional ID:
 
 ::
 
-    perftest_cpp -pub -rawTransport -peerRT 127.0.0.1:5 -peerRT 127.0.0.1:6
+    perftest_cpp -pub -rawTransport -peer 127.0.0.1:5 -peer 127.0.0.1:6
 
 
 A new commands line parameters `-noBlockingSockets` has been added:
