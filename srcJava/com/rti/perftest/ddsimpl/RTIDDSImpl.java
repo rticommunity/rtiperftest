@@ -1646,7 +1646,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
             }
         } else { /* No Large Data */
-            _useUnbounded = 0;
             _isLargeData = false;
         }
 

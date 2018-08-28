@@ -91,7 +91,7 @@ DynamicDataMembersId &DynamicDataMembersId::GetInstance()
 
 int DynamicDataMembersId::at(std::string key)
 {
-   return membersId.at(key);
+   return membersId[key];
 }
 
 /*********************************************************
@@ -151,10 +151,9 @@ bool RTIDDSImpl<T>::validate_input()
     }
 
     // Check if we need to enable Large Data. This works also for -scan
-    if (_PM->get<unsigned long long>("dataLen")
-            > (unsigned long) (std::min)(
-                    MAX_SYNCHRONOUS_SIZE,
-                    MAX_BOUNDED_SEQ_SIZE)) {
+    if (_PM->get<unsigned long long>("dataLen") > (unsigned long) (std::min)(
+            MAX_SYNCHRONOUS_SIZE,
+            MAX_BOUNDED_SEQ_SIZE)) {
         _isLargeData = true;
     } else { // No Large Data
         _isLargeData = false;
@@ -204,7 +203,7 @@ bool RTIDDSImpl<T>::validate_input()
              */
             if (_PM->is_set("batchSize") || _PM->is_set("scan")) {
                 /*
-                 * Batchsize disabled. A message will be print if _batchSize < 0
+                 * Batchsize disabled. A message will be print if batchSize < 0
                  * in perftest_cpp::PrintConfiguration()
                  */
                 _PM->set<long>("batchSize", -1);
@@ -1075,7 +1074,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         RTIOsapiHeap_allocateBufferAligned(
                 &buffer,
                 size,
-                RTIOsapiAlignment_getAlignmentOf(char *));
+                RTI_OSAPI_ALIGNMENT_DEFAULT);
         if (buffer == NULL) {
             fprintf(stderr, "RTIOsapiHeap_allocateBufferAligned failed.\n");
             return false;
@@ -2339,7 +2338,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
          * high watermark to the low watermark + 1 in such case.
          */
         if (dw_qos.protocol.rtps_reliable_writer.high_watermark
-            == dw_qos.protocol.rtps_reliable_writer.low_watermark) {
+                == dw_qos.protocol.rtps_reliable_writer.low_watermark) {
             dw_qos.protocol.rtps_reliable_writer.high_watermark =
                     dw_qos.protocol.rtps_reliable_writer.low_watermark + 1;
         }
