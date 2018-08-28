@@ -1089,7 +1089,7 @@ bool PerftestTransport::parseTransportOptions(int argc, char *argv[])
                 return false;
             }
 
-            if (!parse_multicast_addresses(argv[i])){
+            if (!parse_multicast_addresses(argv[i])) {
                 fprintf(stderr, "Error parsing -multicastAddr\n");
                 return false;
             }
@@ -1135,7 +1135,8 @@ const std::string PerftestTransport::getMulticastAddr(const char *topicName)
     return address;
 }
 
-bool PerftestTransport::is_multicast(std::string addr){
+bool PerftestTransport::is_multicast(std::string addr)
+{
 
     NDDS_Transport_Address_t transportAddress;
 
@@ -1161,9 +1162,7 @@ bool PerftestTransport::increase_address_by_one(
         return false;
     }
 
-    if (NDDS_Transport_Address_is_ipv4(&transportAddress)) {
-        isIPv4 = true;
-    }
+    isIPv4 = NDDS_Transport_Address_is_ipv4(&transportAddress);
 
     /*
      * Increase the address by one value.

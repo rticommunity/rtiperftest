@@ -997,9 +997,7 @@ bool PerftestTransport::increase_address_by_one(
         return false;
     }
 
-    if (NDDS_Transport_Address_is_ipv4(&transportAddress)) {
-        isIPv4 = true;
-    }
+    isIPv4 = NDDS_Transport_Address_is_ipv4(&transportAddress);
 
     /*
      * Increase the full address by one value.
@@ -1061,7 +1059,7 @@ bool PerftestTransport::parse_multicast_addresses(char *arg)
     if (numberOfAddressess == 3) {
         if (!NDDS_Transport_get_address(arg, 0, throughput)
                 || !NDDS_Transport_get_address(arg, 1, latency)
-                || !NDDS_Transport_get_address(arg, 2, annonuncement)){
+                || !NDDS_Transport_get_address(arg, 2, annonuncement)) {
             fprintf(stderr,
                     "Error parsing Address for -multicastAddr option\n");
             return false;
