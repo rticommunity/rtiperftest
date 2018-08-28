@@ -132,11 +132,7 @@ bool RTIDDSImpl<T>::validate_input()
                     MAX_SYNCHRONOUS_SIZE,
                     MAX_BOUNDED_SEQ_SIZE)) {
         _isLargeData = true;
-        if (_PM->get<int>("unbounded") == 0) {
-            _PM->set("unbounded", MAX_BOUNDED_SEQ_SIZE);
-        }
     } else { /* No Large Data */
-        _PM->set("unbounded", 0);
         _isLargeData = false;
     }
 

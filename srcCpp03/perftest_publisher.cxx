@@ -324,7 +324,7 @@ bool perftest_cpp::validate_input()
 
     // Manage the parameter: -unbounded
     if (_PM.is_set("unbounded")) {
-        if (_PM.get<int>("unbounded") == 0) {
+        if (_PM.get<int>("unbounded") == 0) { // Is the default
             _PM.set<int>("unbounded", (int)(std::min)(
                     2 * _PM.get<unsigned long long>("dataLen"),
                     (unsigned long long)MAX_BOUNDED_SEQ_SIZE));
@@ -361,12 +361,6 @@ bool perftest_cpp::validate_input()
             MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)) {
         if (_PM.get<int>("unbounded") == 0) {
             _PM.set<int>("unbounded", MAX_BOUNDED_SEQ_SIZE);
-        }
-    } else { // No Large Data
-        if (_PM.get<int>("unbounded") != 0) {
-            std::cerr << "[Error] Unbounded will be ignored since large data is not presented."
-                      << std::endl;
-            _PM.set<int>("unbounded", 0);
         }
     }
 

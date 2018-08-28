@@ -70,6 +70,13 @@ and PDF documentation from the rst files in srcDoc.
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Fix incorrect behavior the `-unbounded` command-line option when not using large data (#125)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the 2.4 release a regression was introduced and the use of `-unbounded`
+would cause a failure when using datasizes from `28` to `63000 Bytes`. This
+issue has been resolved.
+
 Fix incorrect parsing of the `-executionTime` command-line parameter (#102)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -91,6 +98,12 @@ get the proper QoS Profile Name. This turn out to a duplicate code on
 This behavior was fixed creating a new function `getQoSProfileName` that access
 to a new map `_qoSProfileNameMap` witch contain the tree topics names and his
 corresponding profiles names.
+
+Ensure compatibility for the Classic C++ Implementation (#114)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some of the changes added for #55 broke compatibility when compiling certain
+platforms with no support for C++11. This issue has been fixed.
 
 Release Notes 2.4
 -----------------

@@ -91,7 +91,7 @@ DynamicDataMembersId &DynamicDataMembersId::GetInstance()
 
 int DynamicDataMembersId::at(std::string key)
 {
-   return membersId.at(key);
+   return membersId[key];
 }
 
 /*********************************************************
@@ -1074,7 +1074,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         RTIOsapiHeap_allocateBufferAligned(
                 &buffer,
                 size,
-                RTIOsapiAlignment_getAlignmentOf(char *));
+                RTI_OSAPI_ALIGNMENT_DEFAULT);
         if (buffer == NULL) {
             fprintf(stderr, "RTIOsapiHeap_allocateBufferAligned failed.\n");
             return false;
