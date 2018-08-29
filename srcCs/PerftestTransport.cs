@@ -7,6 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Net;
+using System.Net.Sockets;
+using System.Text.RegularExpressions;
+using System.IO;
+using System.Linq;
 using DDS;
 
 namespace PerformanceTest
@@ -126,6 +131,7 @@ namespace PerformanceTest
         private const string TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
 
         public bool useMulticast;
+        public bool customMulticastAddrSet;
 
         public SortedDictionary<string, string> multicastAddrMap =
                 new SortedDictionary<string, string>();
@@ -180,6 +186,7 @@ namespace PerformanceTest
             wanOptions = new WanTransportOptions();
 
             useMulticast = false;
+            customMulticastAddrSet = false;
 
             multicastAddrMap.Add(LATENCY_TOPIC_NAME.VALUE, "239.255.1.2");
             multicastAddrMap.Add(ANNOUNCEMENT_TOPIC_NAME.VALUE, "239.255.1.100");
@@ -245,8 +252,15 @@ namespace PerformanceTest
                 sb.Append(nameAddress.Key).Append(" ").Append(nameAddress.Value).Append("\n");
             }
             sb.Append("\t-multicastAddr <address>      - Use multicast to send data and set\n");
-            sb.Append("\t                                the input <address> as the multicast\n");
-            sb.Append("\t                                address for all the topics.\n");
+            sb.Append("\t                                the input <address>|<addr,addr,addr>\n");
+            sb.Append("\t                                as the multicast addresses for the\n");
+            sb.Append("\t                                three topics in the application.\n");
+            sb.Append("\t                                If only one address is provided, that\n");
+            sb.Append("\t                                one and the 2 consecutive ones will be\n");
+            sb.Append("\t                                used for the 3 topics used by Perftest.\n");
+            sb.Append("\t                                If one address is set, this one must be\n");
+            sb.Append("\t                                in multicast range and lower than\n");
+            sb.Append("\t                                239.255.255.253 or the equivalent on IPv6\n");
             sb.Append("\t-transportVerbosity <level>   - Verbosity of the transport\n");
             sb.Append("\t                                Default: 0 (errors only)\n");
             sb.Append("\t-transportServerBindPort <p>  - Port used by the transport to accept\n");
@@ -312,6 +326,17 @@ namespace PerformanceTest
                 }
             }
             sb.Append("\n");
+
+            if (customMulticastAddrSet)
+            {
+                sb.Append( "\tUsing custom Multicast Addresses:");
+                sb.Append("\n\t\tThroughtput Address: ");
+                sb.Append(getMulticastAddr(THROUGHPUT_TOPIC_NAME.VALUE));
+                sb.Append("\n\t\tLatency Address: ");
+                sb.Append(getMulticastAddr(LATENCY_TOPIC_NAME.VALUE));
+                sb.Append("\n\t\tAnnouncement Address: ");
+                sb.Append(getMulticastAddr(ANNOUNCEMENT_TOPIC_NAME.VALUE));
+            }
 
             if (transportConfig.kind == Transport.TRANSPORT_TCPv4
                     || transportConfig.kind == Transport.TRANSPORT_TLSv4)
@@ -560,15 +585,18 @@ namespace PerformanceTest
                 else if ("-multicastAddr".StartsWith(argv[i], true, null))
                 {
                     useMulticast = true;
+                    customMulticastAddrSet = true;
                     if ((i == (argv.Length - 1)) || argv[++i].StartsWith("-"))
                     {
                         Console.Error.WriteLine(classLoggingString
                                 + " Missing <address> after -multicastAddr");
                         return false;
                     }
-                    multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = argv[i];
-                    multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] = argv[i];
-                    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE] = argv[i];
+                    if (!parseMulticastAddresses(argv[i])) {
+                        Console.Error.WriteLine(classLoggingString
+                                + " Error parsing -multicastAddr");
+                        return false;
+                    }
                 }
                 else if ("-nomulticast".StartsWith(argv[i], true, null))
                 {
@@ -1098,13 +1126,164 @@ namespace PerformanceTest
             return true;
         }
 
+        private string increaseAddressByOne(string addr) {
+            bool success = false;
+            string nextAddr;
+            Byte[] buffer;
+
+            try
+            {
+                buffer = IPAddress.Parse(addr).GetAddressBytes();
+            }
+            catch (System.Exception e)
+            {
+                Console.Error.Write(classLoggingString
+                        + " Error parsing address." + " Exception: " + e.Source  + "\n");
+                return null;
+            }
+
+            /*
+            * Increase the full address by one value.
+            * if the Address is 255.255.255.255 (or the equivalent for IPv6)
+            * this function will FAIL
+            */
+            for (int i = buffer.Length - 1; i >= 0 && !success; i--)
+            {
+                if (buffer[i] == (Byte)255)
+                {
+                    buffer[i]=0;
+                }
+                else
+                {
+                    /* Increase the value and exit */
+                    buffer[i]++;
+                    success = true;
+                }
+            }
+
+            if (!success)
+            {
+                Console.Error.Write(classLoggingString
+                        + " IP value too high. Please use -help for more information"
+                        + " about -multicastAddr command line\n");
+                return null;
+            }
+
+            /* Get the string format of the address */
+            try
+            {
+                nextAddr = new IPAddress(buffer).ToString();
+            }
+            catch (System.Exception e)
+            {
+                Console.Error.Write(classLoggingString
+                        + " Error recovering address from byte format : "
+                        + e.Source  + "\n");
+                return null;
+            }
+
+            return nextAddr;
+        }
+
+        private bool parseMulticastAddresses(string arg)
+        {
+
+            /*
+            * Split the string into different parts delimited with ',' character.
+            * With a "a,b,c" input this will result in three different addresses
+            * "a","b" and "c"
+            */
+            string[] addresses = arg.Split(',');
+
+            /* If three addresses are given */
+            if (addresses.Length == 3)
+            {
+                multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = addresses[0];
+                multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] = addresses[1];
+                multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE] = addresses[2];
+            }
+            else if (addresses.Length == 1)
+            {
+                /* If only one address is given */
+                multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE] = addresses[0];
+
+                /* Calculate the consecutive one */
+                multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] = increaseAddressByOne(addresses[0]);
+                if (multicastAddrMap[LATENCY_TOPIC_NAME.VALUE] == null)
+                {
+                    Console.Error.Write(classLoggingString
+                            + " Fail to increase the value of given IP address\n");
+                    return false;
+                }
+
+                /* Calculate the consecutive one */
+                multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE]
+                        = increaseAddressByOne(multicastAddrMap[LATENCY_TOPIC_NAME.VALUE]);
+                if (multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE] == null)
+                {
+                    Console.Error.Write(classLoggingString
+                            + " Fail to increase the value of given IP address\n");
+                    return false;
+                }
+            }
+            else
+            {
+                Console.Error.Write(classLoggingString
+                        + " Error parsing Address/es '" + arg
+                        + "' for -multicastAddr option\n"
+                        + "Use -help option to see the correct sintax\n");
+                return false;
+            }
+            /* Last check. All the IPs must be in IP format and multicast range */
+            if (!isMulticast(multicastAddrMap[THROUGHPUT_TOPIC_NAME.VALUE])
+                    || !isMulticast(multicastAddrMap[LATENCY_TOPIC_NAME.VALUE])
+                    || !isMulticast(multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME.VALUE]))
+            {
+                Console.Error.Write(classLoggingString
+                        + " Error parsing the address/es " + arg
+                        + " for -multicastAddr option\n" +
+                        "Use -help option to see the correct sintax\n");
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool isMulticast(string addr)
+        {
+
+            IPAddress address;
+
+            try
+            {
+                /* Get address from string into IP format */
+                address = IPAddress.Parse(addr);
+            }
+            catch (System.Exception e)
+            {
+                Console.Error.Write(classLoggingString
+                        + " Error parsing address." + " Exception: " + e.Source + "\n");
+                return false;
+            }
+
+            /*
+             * Check if is a IPV6 multicast address or if is a IPv4 multicast
+             * address checking the value of the most significant octet.
+             */
+            return address.IsIPv6Multicast
+                    || (address.GetAddressBytes()[0] >= (byte) 224
+                        &&  address.GetAddressBytes()[0] <= (byte) 239);
+        }
+
         public string getMulticastAddr(string topicName)
         {
             string address;
-            if (multicastAddrMap.TryGetValue(topicName, out address)) {
+            if (multicastAddrMap.TryGetValue(topicName, out address))
+            {
                 return address;
             }
-            else {
+            else
+            {
                 return null;
             }
         }
