@@ -150,6 +150,7 @@ void perftest_cpp::PrintVersion()
             ddsV.minor,
             ddsV.release);
 
+    fflush(stdout);
 }
 
 // Set the default values into the array _scanDataLenSizes vector
