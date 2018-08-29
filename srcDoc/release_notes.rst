@@ -61,6 +61,22 @@ The Custom Types feature allows you to use your own customized types instead of
 the one provided by RTI Perftest. It is designed in such a way that the number
 of changes in the code and configuration files is minimal.
 
+Allow 3 differents addresses for -multicastAddr feature (#97)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous versions of *RTI Perftest*, the `-multicatAddr` command-line
+parameter only supported a single address as input. This behavior has been
+improved, and now it supports in addition to only providing one address, also
+providing tree different addresses for each of the tree topics used by
+*RTI Perftest* (Throughput, Latency and Announcement).
+
+Both IPv4 and IPv6 addresses are supported and can be set together on the same
+input command. All the input addresses must be in multicast range.
+
+If only one address is set, *RTI Perftest* will use that one and the two
+consecutive ones. The higher values supported are `239.255.255.253` (for IPv4)
+and `FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFC` for IPv6.
+
 Build HTML and PDF documentation (#94)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

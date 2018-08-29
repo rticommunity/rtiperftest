@@ -37,6 +37,11 @@ const std::string TRANSPORT_CERTIFICATE_FILE_PUB = "./resource/secure/pub.pem";
 const std::string TRANSPORT_CERTIFICATE_FILE_SUB = "./resource/secure/sub.pem";
 const std::string TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
 
+// Default Multicast IP per topic
+const std::string TRANSPORT_MULTICAST_ADDR_LATENCY = "239.255.1.2";
+const std::string TRANSPORT_MULTICAST_ADDR_ANNOUNCEMENT = "239.255.1.100";
+const std::string TRANSPORT_MULTICAST_ADDR_THROUGHPUT = "239.255.1.1";
+
 
 class ParameterManager
 {

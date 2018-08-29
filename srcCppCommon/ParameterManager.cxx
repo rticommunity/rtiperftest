@@ -639,34 +639,36 @@ void ParameterManager::initialize()
 
     Parameter<bool> *multicast = new Parameter<bool>(false);
     multicast->set_command_line_argument("-multicast", "");
-    multicast->set_description(
-            "Use multicast to send data. Each topic\n"
-            "will use a different address\n\tlatency: '239.255.1.2'\n"
-            "\tthroughput: '239.255.1.1'\n\tannouncement: '239.255.1.100'");
+    std::ostringstream aux;
+    aux << "Use multicast to send data. Each topic\n"
+        << "will use a different address\n\tlatency: '"
+        << TRANSPORT_MULTICAST_ADDR_LATENCY
+        << "' \n\tthroughput: '"
+        << TRANSPORT_MULTICAST_ADDR_THROUGHPUT
+        << "'\n\tannouncement: '"
+        <<  TRANSPORT_MULTICAST_ADDR_ANNOUNCEMENT
+        << "'";
+    multicast->set_description(aux.str());
     multicast->set_type(T_BOOL);
     multicast->set_extra_argument(NO);
     multicast->set_group(TRANSPORT);
     multicast->set_supported_middleware(Middleware::RTIDDSPRO);
     create("multicast", multicast);
 
-    // TODO: set multicastAddrMap
-    /*
-     *  multicastAddrMap[THROUGHPUT_TOPIC_NAME] = argv[i];
-     *  multicastAddrMap[LATENCY_TOPIC_NAME] = argv[i];
-     *  multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = argv[i];
-     */
-    /*
-     * TODO: wait for merge the -multicastAddr option update
-     * The parse for the input string will be done on the validation. After that
-     * parameter manager does not will be called again.
-     */
+
     Parameter<std::string> *multicastAddr = new Parameter<std::string>();
     multicastAddr->set_command_line_argument("-multicastAddr", "<address>");
     multicastAddr->set_description(
             "Use multicast to send data and set\n"
-            "the input <address> as the multicast\n"
-            "address for all the topics");
-    // TODO: add the default value to the description
+            "the input <address>|<addr,addr,addr>\n"
+            "as the multicast addresses for the\n"
+            "three topics in the application.\n"
+            "If only one address is provided, that\n"
+            "one and the 2 consecutive ones will be\n"
+            "used for the 3 topics used by Perftest.\n"
+            "If one address is set, this one must be\n"
+            "in multicast range and lower than\n"
+            "239.255.255.253 or the equivalent on IPv6");
     multicastAddr->set_type(T_STR);
     multicastAddr->set_extra_argument(YES);
     multicastAddr->set_group(TRANSPORT);

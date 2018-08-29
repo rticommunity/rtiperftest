@@ -5,9 +5,11 @@
 
 package com.rti.perftest.ddsimpl;
 
+import java.net.InetAddress;
 import java.nio.file.WatchEvent.Kind;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 import com.rti.dds.infrastructure.PropertyQosPolicyHelper;
 import com.rti.dds.infrastructure.TransportBuiltinKind;
 import com.rti.dds.domain.DomainParticipantQos;
@@ -90,6 +92,7 @@ public class PerftestTransport {
 
     public long dataLen = 100;
     public boolean useMulticast = false;
+    public boolean customMulticastAddrSet = false;
 
     /**************************************************************************/
     /* PRIVATE CLASS MEMBERS*/
@@ -182,8 +185,15 @@ public class PerftestTransport {
         sb.append(map.getKey()).append(" ").append(map.getValue()).append("\n");
     }
     sb.append("\t-multicastAddr <address>      - Use multicast to send data and set\n");
-    sb.append("\t                                the input <address> as the multicast\n");
-    sb.append("\t                                address for all the topics.\n");
+    sb.append("\t                                the input <address>|<addr,addr,addr>\n");
+    sb.append("\t                                as the multicast addresses for the\n");
+    sb.append("\t                                three topics in the application.\n");
+    sb.append("\t                                If only one address is provided, that\n");
+    sb.append("\t                                one and the 2 consecutive ones will be\n");
+    sb.append("\t                                used for the 3 topics used by Perftest.\n");
+    sb.append("\t                                If one address is set, this one must be\n");
+    sb.append("\t                                in multicast range and lower than\n");
+    sb.append("\t                                239.255.255.253 or the equivalent on IPv6\n");
     sb.append("\t-transportVerbosity <level>   - Verbosity of the transport\n");
     sb.append("\t                                Default: 0 (errors only)\n");
     sb.append("\t-transportServerBindPort <p>  - Port used by the transport to accept\n");
@@ -238,6 +248,16 @@ public class PerftestTransport {
             sb.append(")");
         }
         sb.append( "\n");
+
+        if (customMulticastAddrSet) {
+            sb.append( "\tUsing custom Multicast Addresses:");
+            sb.append("\n\t\tThroughtput Address: ");
+            sb.append(getMulticastAddr(THROUGHPUT_TOPIC_NAME.VALUE));
+            sb.append("\n\t\tLatency Address: ");
+            sb.append(getMulticastAddr(LATENCY_TOPIC_NAME.VALUE));
+            sb.append("\n\t\tAnnouncement Address: ");
+            sb.append(getMulticastAddr(ANNOUNCEMENT_TOPIC_NAME.VALUE));
+        }
 
         if (transportConfig.kind == Transport.TRANSPORT_TCPv4
                 || transportConfig.kind == Transport.TRANSPORT_TLSv4) {
@@ -458,14 +478,18 @@ public class PerftestTransport {
             }
             else if ("-multicastAddr".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 useMulticast = true;
+                customMulticastAddrSet = true;
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
                     System.err.println(classLoggingString
                             + " Missing <address> after -multicastAddr");
                     return false;
                 }
-                multicastAddrMap.put(THROUGHPUT_TOPIC_NAME.VALUE, argv[i]);
-                multicastAddrMap.put(LATENCY_TOPIC_NAME.VALUE, argv[i]);
-                multicastAddrMap.put(ANNOUNCEMENT_TOPIC_NAME.VALUE, argv[i]);
+                if (!parseMulticastAddresses(argv[i])) {
+                    System.err.println(classLoggingString
+                            + " Error parsing -multicastAddr");
+                    return false;
+                }
+
             }
         }
 
@@ -997,5 +1021,126 @@ public class PerftestTransport {
         }
         return multicastAddrMap.get(topicName).toString();
     }
+
+    public boolean isMulticast(String address){
+
+        InetAddress addr;
+        try {
+            addr = InetAddress.getByName(address);
+        } catch (Exception e) {
+            System.err.println(classLoggingString + " Error parsing address."
+                    + " Exception: " + e.getMessage());
+            return false;
+        }
+
+        return addr.isMulticastAddress();
+    }
+
+    public String increaseAddressByOne(String addr) {
+        boolean success = false;
+        String nextAddr;
+        byte[] buffer;
+
+        try {
+            buffer = InetAddress.getByName(addr).getAddress();
+        } catch (Exception e) {
+            System.err.println(classLoggingString
+                    + " Error parsing address." + " Exception: " + e.getMessage());
+            return null;
+        }
+
+        /*
+        * Increase the full address by one value.
+        * if the Address is 255.255.255.255 (or the equivalent for IPv6) this
+        * function will FAIL
+        */
+        for (int i = buffer.length - 1; i >= 0 && !success; i--) {
+            if (buffer[i] == (byte) 255) {
+                buffer[i] = 0;
+            } else {
+                /* Increase the value and exit */
+                buffer[i]++;
+                success = true;
+            }
+        }
+
+        if (!success) {
+            System.err.println(classLoggingString
+                    + " IP value too high. Please use -help for more information"
+                    + " about -multicastAddr command line\n");
+            return null;
+        }
+
+        /* Get the string format of the address */
+        try {
+            nextAddr = InetAddress.getByAddress(buffer).getHostAddress();
+        } catch (Exception e) {
+            System.err.println(classLoggingString
+                    + " Error recovering address from byte format");
+            return null;
+        }
+
+        return nextAddr;
+    }
+
+    private boolean parseMulticastAddresses(String arg) {
+
+        /*
+         * Split the string into diferents parts delimited with ',' character.
+         * With a "a,b,c" input this will result in three diferent addresses
+         * "a","b" and "c"
+         */
+        String [] addresses = arg.split(",",0);
+
+        /* If three addresses are given */
+        if (addresses.length == 3) {
+
+            multicastAddrMap.put(THROUGHPUT_TOPIC_NAME.VALUE, addresses[0]);
+            multicastAddrMap.put(LATENCY_TOPIC_NAME.VALUE, addresses[1]);
+            multicastAddrMap.put(ANNOUNCEMENT_TOPIC_NAME.VALUE, addresses[2]);
+
+        } else if (addresses.length == 1) {
+            /* If only one address is given */
+            String aux = new String();
+            multicastAddrMap.put(THROUGHPUT_TOPIC_NAME.VALUE, addresses[0]);
+
+            /* Calculate the consecutive one */
+            aux = increaseAddressByOne(addresses[0]);
+            if (aux == null) {
+                System.err.println(classLoggingString
+                        + " Fail to increase the value of IP addres given");
+                return false;
+            }
+            multicastAddrMap.put(LATENCY_TOPIC_NAME.VALUE, aux);
+
+            /* Calculate the consecutive one */
+            aux = increaseAddressByOne(aux);
+            if (aux == null) {
+                System.err.println(classLoggingString
+                        + " Fail to increase the value of IP addres given");
+                return false;
+            }
+            multicastAddrMap.put(ANNOUNCEMENT_TOPIC_NAME.VALUE, aux);
+
+        } else {
+            System.err.println(classLoggingString
+                    + " Error parsing Address/es '" + arg
+                    + "' for -multicastAddr option\n"
+                    + "Use -help option to see the correct sintax");
+            return false;
+        }
+        /* Last check. All the IPs must be in IP format and multicast range */
+        if (!isMulticast(multicastAddrMap.get(THROUGHPUT_TOPIC_NAME.VALUE).toString())
+                || !isMulticast(multicastAddrMap.get(LATENCY_TOPIC_NAME.VALUE).toString())
+                || !isMulticast(multicastAddrMap.get(ANNOUNCEMENT_TOPIC_NAME.VALUE).toString())) {
+            System.err.println(classLoggingString + " Error parsing Address/es '"
+                    + arg + "' for -multicastAddr option\n"
+                    + "\tUse -help option to see the correct sintax");
+            return false;
+        }
+
+        return true;
+    }
+
 }
 //===========================================================================

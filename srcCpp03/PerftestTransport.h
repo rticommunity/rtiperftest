@@ -89,6 +89,9 @@ public:
      */
     const std::string getMulticastAddr(const char *topic);
 
+    /* Used to validate a multicast address */
+    bool is_multicast(std::string addr);
+
 private:
 
     static std::map<std::string, TransportConfig> transportConfigMap;
@@ -99,7 +102,8 @@ private:
     static const std::map<std::string, TransportConfig>& getTransportConfigMap();
     bool setTransport(std::string transportString);
     void populateSecurityFiles();
-
+    bool parse_multicast_addresses(const char *arg);
+    bool increase_address_by_one(const std::string addr, std::string &nextAddr);
 };
 
 bool configureTransport(
