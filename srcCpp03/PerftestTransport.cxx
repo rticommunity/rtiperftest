@@ -448,7 +448,8 @@ bool configureTransport(
 PerftestTransport::PerftestTransport()
 {
     multicastAddrMap[LATENCY_TOPIC_NAME] = TRANSPORT_MULTICAST_ADDR_LATENCY;
-    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = TRANSPORT_MULTICAST_ADDR_ANNOUNCEMENT;
+    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] =
+            TRANSPORT_MULTICAST_ADDR_ANNOUNCEMENT;
     multicastAddrMap[THROUGHPUT_TOPIC_NAME] = TRANSPORT_MULTICAST_ADDR_THROUGHPUT;
 }
 
@@ -582,12 +583,12 @@ std::string PerftestTransport::printTransportConfigurationSummary()
 
     if (_PM->is_set("multicastAddr")) {
         stringStream << "\tUsing custom Multicast Addresses:"
-                << "\n\t\tThroughtput Address: "
-                << multicastAddrMap[THROUGHPUT_TOPIC_NAME].c_str()
-                << "\n\t\tLatency Address: "
-                << multicastAddrMap[LATENCY_TOPIC_NAME].c_str()
-                << "\n\t\tAnnouncement Address: "
-                << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str();
+                     << "\n\t\tThroughtput Address: "
+                     << multicastAddrMap[THROUGHPUT_TOPIC_NAME].c_str()
+                     << "\n\t\tLatency Address: "
+                     << multicastAddrMap[LATENCY_TOPIC_NAME].c_str()
+                     << "\n\t\tAnnouncement Address: "
+                     << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str();
     }
     if (transportConfig.kind == TRANSPORT_TCPv4
             || transportConfig.kind == TRANSPORT_TLSv4) {
@@ -647,7 +648,7 @@ std::string PerftestTransport::printTransportConfigurationSummary()
 }
 
 /*********************************************************
- * Validate and manage the parameter
+ * Validate and manage the parameters
  */
 bool PerftestTransport::validate_input()
 {

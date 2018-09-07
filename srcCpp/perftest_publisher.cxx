@@ -202,7 +202,7 @@ perftest_cpp::~perftest_cpp()
     }
   #endif
 
-    fprintf(stderr,"Test ended.\n");
+    fprintf(stderr, "Test ended.\n");
     fflush(stderr);
 }
 
@@ -225,38 +225,39 @@ perftest_cpp::perftest_cpp()
 
 
 /*********************************************************
- * Validate and manage the parameter
+ * Validate and manage the parameters
  */
 bool perftest_cpp::validate_input()
 {
     // Manage parameter -sleep
-    // It is copied because it is used in the critical patch
+    // It is copied because it is used in the critical path
     _SleepNanosec = 1000000 * (unsigned long)_PM.get<unsigned long long>("sleep");
 
     // Manage parameter -spin
-    // It is copied because it is used in the critical patch
+    // It is copied because it is used in the critical path
     _SpinLoopCount = _PM.get<unsigned long long>("spin");
 
     // Manage parameter -printIterval
-    // It is copied because it is used in the critical patch
+    // It is copied because it is used in the critical path
     perftest_cpp::printIntervals = !_PM.get<bool>("noPrintIntervals");
 
     // Manage parameter -cpu
-    // It is copied because it is used in the critical patch
+    // It is copied because it is used in the critical path
     perftest_cpp::showCpu = _PM.get<bool>("cpu");
 
     // Manage parameter -sidMultiSubTest
-    // It is copied because it is used in the critical patch
+    // It is copied because it is used in the critical path
     perftest_cpp::subID = _PM.get<int>("sidMultiSubTest");
 
     // Manage parameter -latencyTest
     if (_PM.get<bool>("latencyTest")) {
         if (_PM.get<int>("pidMultiPubTest") != 0) {
-            fprintf(stderr, "Only the publisher with ID = 0 can run the latency test\n");
+            fprintf(stderr,
+                    "Only the publisher with ID = 0 can run the latency test\n");
             return false;
         }
 
-        // With latency test, latency should be 1
+        // In latency test mode, latencyCount should be 1
         if (!_PM.is_set("latencyCount")) {
             _PM.set<unsigned long long>("latencyCount", 1);
         }
@@ -333,7 +334,7 @@ bool perftest_cpp::validate_input()
         if (_PM.get<unsigned long long>("executionTime") == 0){
             _PM.set<unsigned long long>("executionTime", 60);
         }
-        // Check if large data or small data
+        // Check if scan is large data or small data
         if (scanList[0] < (unsigned long long)(std::min)
                     (MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)
                 && scanList[scanList.size() - 1] > (unsigned long long)(std::min)
@@ -443,7 +444,7 @@ void perftest_cpp::PrintConfiguration()
                          << " Bytes (Use \"-batchSize 0\" to disable batching)\n";
         } else if (_PM.get<long>("batchSize") == 0) {
             stringStream << "No (Use \"-batchSize\" to setup batching)\n";
-        } else { // < 0
+        } else { // <= 0
             stringStream << "Disabled by RTI Perftest.\n";
             if (_PM.get<long>("batchSize") == -1) {
                 stringStream << "\t\t  BatchSize is smaller than 2 times\n"
@@ -459,7 +460,8 @@ void perftest_cpp::PrintConfiguration()
         if (_PM.is_set("pubRate")) {
             stringStream << _PM.get_pair<unsigned long long, std::string>("pubRate").first
                          << " Samples/s (";
-            if (_PM.get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
+            if (_PM.get_pair<unsigned long long, std::string>("pubRate").second
+                    == "spin") {
                 stringStream << "Spin)\n";
             } else {
                 stringStream << "Sleep)\n";
@@ -1091,7 +1093,8 @@ class LatencyListener : public IMessagingCB
 
         if (clock_skew_count != 0) {
             fprintf(stderr,
-                    "The following latency result may not be accurate because clock skew happens %lu times\n",
+                    "The following latency result may not be accurate because"
+                    " clock skew happens %lu times\n",
                     clock_skew_count);
             fflush(stderr);
         }
@@ -1106,7 +1109,8 @@ class LatencyListener : public IMessagingCB
         }
 
         printf("Length: %5d  Latency: Ave %6.0lf us  Std %6.1lf us  "
-                "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us  99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
+                "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us"
+                " 99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
                 last_data_length + perftest_cpp::OVERHEAD_BYTES,
                 latency_ave, latency_std, latency_min, latency_max,
                 _latency_history[count*50/100],
@@ -1189,7 +1193,8 @@ class LatencyListener : public IMessagingCB
         else
         {
             fprintf(stderr,
-                    "Clock skew suspected: received time %llu usec, sent time %llu usec\n",
+                    "Clock skew suspected: received time %llu usec,"
+                    " sent time %llu usec\n",
                     now,
                     sentTime);
             ++clock_skew_count;
@@ -1201,7 +1206,9 @@ class LatencyListener : public IMessagingCB
         {
             if (count >= _num_latency)
             {
-                fprintf(stderr,"Too many latency pongs received.  Do you have more than 1 app with -pidMultiPubTest = 0 or -sidMultiSubTest 0?\n");
+                fprintf(stderr,"Too many latency pongs received."
+                " Do you have more than 1 app with -pidMultiPubTest = 0 or"
+                " -sidMultiSubTest 0?\n");
                 return;
             }
             else
@@ -1245,7 +1252,8 @@ class LatencyListener : public IMessagingCB
                 if (perftest_cpp::showCpu) {
                     outputCpu = cpu.get_cpu_instant();
                 }
-                printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us  Min %6lu us  Max %6lu %s\n",
+                printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us "
+                        " Min %6lu us  Max %6lu %s\n",
                         latency,
                         latency_ave,
                         latency_std,
@@ -1348,7 +1356,7 @@ int perftest_cpp::Publisher()
                     reader_listener);
             if (reader == NULL)
             {
-                fprintf(stderr,"Problem creating latency reader.\n");
+                fprintf(stderr, "Problem creating latency reader.\n");
                 return -1;
             }
         }
@@ -1400,7 +1408,8 @@ int perftest_cpp::Publisher()
     DDS_Duration_t sleep_period = {0,0};
 
     if (_PM.is_set("pubRate")) {
-        if (_PM.get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
+        if (_PM.get_pair<unsigned long long, std::string>("pubRate").second
+                == "spin") {
             spinPerUsec = NDDSUtility::get_spin_per_microsecond();
             /* A return value of 0 means accuracy not assured */
             if (spinPerUsec == 0) {
@@ -1606,7 +1615,8 @@ int perftest_cpp::Publisher()
              * within the batch should contain the ping. Only send the ping
              * when both are equal.
              *
-             * Note when not in batch mode, current_index_in_batch = ping_index_in_batch
+             * Note when not in batch mode,
+             * current_index_in_batch = ping_index_in_batch
              * always. And the if() is always true.
              */
             if (current_index_in_batch == ping_index_in_batch && !sentPing) {

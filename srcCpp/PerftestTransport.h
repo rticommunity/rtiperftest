@@ -94,7 +94,6 @@ public:
 private:
 
     static std::map<std::string, TransportConfig> transportConfigMap;
-
     std::map<std::string, std::string> multicastAddrMap;
     ParameterManager *_PM;
     /**************************************************************************/

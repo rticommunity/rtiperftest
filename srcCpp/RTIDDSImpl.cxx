@@ -132,7 +132,7 @@ void RTIDDSImpl<T>::Shutdown()
 }
 
 /*********************************************************
- * Validate and manage the parameter
+ * Validate and manage the parameterS
  */
 template <typename T>
 bool RTIDDSImpl<T>::validate_input()
@@ -216,7 +216,8 @@ bool RTIDDSImpl<T>::validate_input()
     // Manage parameter -enableTurboMode
     if (_PM->get<bool>("enableTurboMode")) {
         if (_PM->get<bool>("asynchronous")) {
-            fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing.\n");
+            fprintf(stderr,
+                    "Turbo Mode cannot be used with asynchronous writing.\n");
             return false;
         } if (_isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
@@ -1341,9 +1342,11 @@ class RTISubscriber : public IMessagingReader
             property.max_event_count =
                     _PM->get<long>("waitsetEventCount");
             property.max_event_delay.sec =
-                    (long)_PM->get<unsigned long long>("waitsetDelayUsec") / 1000000;
+                    (long)_PM->get<unsigned long long>("waitsetDelayUsec")
+                    / 1000000;
             property.max_event_delay.nanosec =
-                    (_PM->get<unsigned long long>("waitsetDelayUsec") % 1000000) * 1000;
+                    (_PM->get<unsigned long long>("waitsetDelayUsec") % 1000000)
+                    * 1000;
 
             _waitset = new DDSWaitSet(property);
 
@@ -1480,7 +1483,9 @@ class RTIDynamicDataSubscriber : public IMessagingReader
 
   public:
 
-    RTIDynamicDataSubscriber(DDSDataReader *reader, ParameterManager *PM): _message()
+    RTIDynamicDataSubscriber(
+            DDSDataReader *reader,
+            ParameterManager *PM) : _message()
     {
         _reader = DDSDynamicDataReader::narrow(reader);
         if (_reader == NULL) {
@@ -1496,9 +1501,11 @@ class RTIDynamicDataSubscriber : public IMessagingReader
             property.max_event_count =
                     _PM->get<long>("waitsetEventCount");
             property.max_event_delay.sec =
-                    (long)_PM->get<unsigned long long>("waitsetDelayUsec") / 1000000;
+                    (long)_PM->get<unsigned long long>("waitsetDelayUsec")
+                    / 1000000;
             property.max_event_delay.nanosec =
-                    (_PM->get<unsigned long long>("waitsetDelayUsec") % 1000000) * 1000;
+                    (_PM->get<unsigned long long>("waitsetDelayUsec") % 1000000)
+                    * 1000;
             _waitset = new DDSWaitSet(property);
             DDSStatusCondition *reader_status;
             reader_status = reader->get_statuscondition();
@@ -1790,7 +1797,7 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
      */
     _PM->set("secureGovernanceFile", governanceFilePath);
 
-    // permissions file
+    // Permissions file
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
             "com.rti.serv.secure.access_control.permissions_file",
@@ -2060,8 +2067,8 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
             != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "No QOS Library named \"%s\" found in %s.\n",
-               _PM->get<std::string>("qosLibrary").c_str(),
-               _PM->get<std::string>("qosFile").c_str());
+                _PM->get<std::string>("qosLibrary").c_str(),
+                _PM->get<std::string>("qosFile").c_str());
         return false;
     }
 
@@ -2072,7 +2079,8 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
             "BaseProfileQos")
             != DDS_RETCODE_OK) {
         fprintf(stderr,
-                "Problem setting QoS Library \"%s::BaseProfileQos\" for participant_qos.\n",
+                "Problem setting QoS Library \"%s::BaseProfileQos\" "
+                "for participant_qos.\n",
                 _PM->get<std::string>("qosLibrary").c_str());
     }
 
@@ -2092,7 +2100,8 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
   #endif
 
     // Set initial peers and not use multicast
-    const std::vector<std::string> peerList = _PM->get_vector<std::string>("peer");
+    const std::vector<std::string> peerList =
+            _PM->get_vector<std::string>("peer");
     if (!peerList.empty()) {
         std::vector<char*> cstrings;
         cstrings.reserve(peerList.size());
@@ -2118,7 +2127,9 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM)
 
     // Creates the participant
     _participant = _factory->create_participant(
-            _PM->get<int>("domain"), qos, listener,
+            _PM->get<int>("domain"),
+            qos,
+            listener,
             DDS_INCONSISTENT_TOPIC_STATUS |
             DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
             DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
@@ -2548,7 +2559,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
             qos_profile.c_str())
             != DDS_RETCODE_OK) {
         fprintf(stderr,
-                "No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
+                "No QOS Profile named \"%s\" found in QOS Library "
+                "\"%s\" in file %s.\n",
                 qos_profile.c_str(),
                 _PM->get<std::string>("qosLibrary").c_str(),
                 _PM->get<std::string>("qosFile").c_str());
@@ -2565,7 +2577,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     if (_PM->get<bool>("noPositiveAcks")
-            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
+            && (qos_profile == "ThroughputQos"
+            || qos_profile == "LatencyQos")) {
         dr_qos.protocol.disable_positive_acks = true;
     }
 

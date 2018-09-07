@@ -218,6 +218,7 @@ bool configureTcpTransport(
         DDS_DomainParticipantQos& qos,
         ParameterManager *_PM)
 {
+
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
 
     if (!addPropertyToParticipantQos(
@@ -798,7 +799,7 @@ std::string PerftestTransport::printTransportConfigurationSummary()
 }
 
 /*********************************************************
- * Validate and manage the parameter
+ * Validate and manage the parameterS
  */
 bool PerftestTransport::validate_input()
 {
@@ -822,7 +823,7 @@ bool PerftestTransport::validate_input()
     // Manage parameter -multicastAddr
     if(_PM->is_set("multicastAddr")) {
         if (!parse_multicast_addresses(
-                    _PM->get<std::string>("multicastAddr").c_str())) {
+                _PM->get<std::string>("multicastAddr").c_str())) {
             fprintf(stderr, "Error parsing -multicastAddr\n");
             return false;
         }

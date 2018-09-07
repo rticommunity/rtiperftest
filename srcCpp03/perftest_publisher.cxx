@@ -230,35 +230,37 @@ perftest_cpp::~perftest_cpp() {
 }
 
 /*********************************************************
- * Validate and manage the parameter
+ * Validate and manage the parameters
  */
 bool perftest_cpp::validate_input()
 {
     // Manage parameter -sleep
-    // It is copied because it is used in the critical patch
+    // It is copied because it is used in the critical path
     _SleepNanosec = 1000000 * (unsigned long)_PM.get<unsigned long long>("sleep");
 
     // Manage parameter -spin
-    // It is copied because it is used in the critical patch
+    // It is copied because it is used in the critical path
     _SpinLoopCount = _PM.get<unsigned long long>("spin");
 
     // Manage parameter -printIterval
-    // It is copied because it is used in the critical patch
+    // It is copied because it is used in the critical path
     perftest_cpp::printIntervals = !_PM.get<bool>("noPrintIntervals");
 
     // Manage parameter -cpu
-    // It is copied because it is used in the critical patch
+    // It is copied because it is used in the critical path
     perftest_cpp::showCpu = _PM.get<bool>("cpu");
 
     // Manage parameter -sidMultiSubTest
-    // It is copied because it is used in the critical patch
+    // It is copied because it is used in the critical path
     perftest_cpp::subID = _PM.get<int>("sidMultiSubTest");
 
 
     // Manage parameter -latencyTest
     if (_PM.get<bool>("latencyTest")) {
         if (_PM.get<int>("pidMultiPubTest") != 0) {
-            std::cerr << "[Error] Only the publisher with ID = 0 can run the latency test" << std::endl;
+            std::cerr << "[Error] Only the publisher with ID = 0 can run the"
+                      << " latency test"
+                      << std::endl;
             throw std::logic_error("[Error] Error parsing commands");
         }
 
@@ -465,7 +467,8 @@ void perftest_cpp::PrintConfiguration()
         if (_PM.is_set("pubRate")) {
             stringStream << _PM.get_pair<unsigned long long, std::string>("pubRate").first
                          << " Samples/s (";
-            if (_PM.get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
+            if (_PM.get_pair<unsigned long long, std::string>("pubRate").second
+                    == "spin") {
                 stringStream << "Spin)\n";
             } else {
                 stringStream << "Sleep)\n";
@@ -477,7 +480,7 @@ void perftest_cpp::PrintConfiguration()
         if (_PM.get<unsigned long long>("executionTime") > 0) {
             stringStream << "\tExecution time: "
                          << _PM.get<unsigned long long>("executionTime")
-                        << " seconds\n";
+                         << " seconds\n";
         } else {
             stringStream << "\tNumber of samples: "
                          << _PM.get<unsigned long long>("numIter")
@@ -1108,7 +1111,8 @@ class LatencyListener : public IMessagingCB
             latency /= 2;
         } else {
             fprintf(stderr,
-                    "Clock skew suspected: received time %llu usec, sent time %llu usec\n",
+                    "Clock skew suspected: received time %llu usec, "
+                    "sent time %llu usec\n",
                     now, sentTime);
             ++clock_skew_count;
             return;
@@ -1118,7 +1122,9 @@ class LatencyListener : public IMessagingCB
         if (_latency_history != NULL) {
             if (count >= _num_latency){
                 fprintf(stderr,
-                        "Too many latency pongs received.  Do you have more than 1 app with -pidMultiPubTest = 0 or -sidMultiSubTest 0?\n");
+                        "Too many latency pongs received.  Do you have more "
+                        "than 1 app with -pidMultiPubTest = 0 or "
+                        "-sidMultiSubTest 0?\n");
                 return;
             } else {
                 _latency_history[count] = latency;
@@ -1158,13 +1164,14 @@ class LatencyListener : public IMessagingCB
                 if (perftest_cpp::showCpu) {
                     outputCpu = cpu.get_cpu_instant();
                 }
-                printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us  Min %6lu us  Max %6lu %s\n",
-                       latency,
-                       latency_ave,
-                       latency_std,
-                       latency_min,
-                       latency_max,
-                       outputCpu.c_str()
+                printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us "
+                        " Min %6lu us  Max %6lu %s\n",
+                        latency,
+                        latency_ave,
+                        latency_std,
+                        latency_min,
+                        latency_max,
+                        outputCpu.c_str()
                 );
             }
         }
@@ -1185,7 +1192,8 @@ class LatencyListener : public IMessagingCB
 
         if (clock_skew_count != 0) {
             fprintf(stderr,
-                    "The following latency result may not be accurate because clock skew happens %lu times\n",
+                    "The following latency result may not be accurate because "
+                    "clock skew happens %lu times\n",
                     clock_skew_count);
             fflush(stderr);
         }
@@ -1194,14 +1202,16 @@ class LatencyListener : public IMessagingCB
         std::sort(_latency_history, _latency_history + count);
         latency_ave = (double)latency_sum / count;
         latency_std = sqrt(
-                (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
+                (double)latency_sum_square
+                / (double)count - (latency_ave * latency_ave));
 
         if (perftest_cpp::showCpu) {
             outputCpu = cpu.get_cpu_average();
         }
 
         printf("Length: %5d  Latency: Ave %6.0lf us  Std %6.1lf us  "
-                "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us  99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
+                "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us"
+                "  99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
                 last_data_length + perftest_cpp::OVERHEAD_BYTES,
                 latency_ave, latency_std, latency_min, latency_max,
                 _latency_history[count*50/100],
@@ -1346,7 +1356,8 @@ int perftest_cpp::RunPublisher()
     unsigned long long spinPerUsec = 0;
     unsigned long sleepUsec = 1000;
     if (_PM.is_set("pubRate")) {
-        if ( _PM.get_pair<unsigned long long, std::string>("pubRate").second == "spin") {
+        if ( _PM.get_pair<unsigned long long, std::string>("pubRate").second
+                == "spin") {
             spinPerUsec = rti::util::spin_per_microsecond();
             /* A return value of 0 means accuracy not assured */
             if (spinPerUsec == 0) {
@@ -1676,8 +1687,7 @@ int perftest_cpp::RunPublisher()
     }
 
     if (_PM.get<bool>("writerStats")) {
-        printf("Pulled samples: %7d\n",
-                writer->getPulledSampleCount());
+        printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
     }
 
     if (writer != NULL) {
