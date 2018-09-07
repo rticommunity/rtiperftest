@@ -181,6 +181,7 @@ void perftest_cpp::PrintVersion()
            ddsV.major_version(),
            ddsV.minor_version(),
            ddsV.release_version());
+    fflush(stdout);
 }
 
 /*********************************************************
