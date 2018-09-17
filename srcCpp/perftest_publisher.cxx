@@ -2212,6 +2212,23 @@ inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds,
       #ifdef RTI_WIN32
         CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout_scan,
                 NULL , executionTimeInSeconds * 1000, 0, 0);
+      #elif defined RTI_INTIME
+            HANDLE  hTimer;
+            hTimer = RtCreateTimer(NULL, 0, Timeout_scan, NULL, 
+                        RT_PRIORITY_MAX, CLOCK_FASTEST);
+            if (NULL == hTimer) {
+                    printf("Can not create the timer!!\n");
+                    exit(1);
+            }
+            LARGE_INTEGER timeout;
+            // set timer absolute
+            if (!RtGetClockTime(0, &timeout))
+                printf("Cannot get clock time!!\n");
+            timeout.QuadPart += executionTimeInSeconds*1000*10000;   /*Time in 100 nano seconds */
+            if (!RtSetTimer( hTimer, &timeout, NULL)) {
+                    printf("Can not set timer absolute(%x)!!\n", GetLastError());
+                    exit(2);
+            }
       #else
         signal(SIGALRM, Timeout_scan);
         alarm(executionTimeInSeconds);
@@ -2221,7 +2238,24 @@ inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds,
       #ifdef RTI_WIN32
         CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout,
                 NULL , executionTimeInSeconds * 1000, 0, 0);
-      #else
+       #elif defined RTI_INTIME
+            HANDLE  hTimer;
+            hTimer = RtCreateTimer(NULL, 0, Timeout, NULL, 
+                        RT_PRIORITY_MAX, CLOCK_FASTEST);
+            if (NULL == hTimer) {
+                    printf("Can not create the timer!!\n");
+                    exit(1);
+            }
+            LARGE_INTEGER timeout;
+            // set timer absolute
+            if (!RtGetClockTime(0, &timeout))
+                printf("Cannot get clock time!!\n");
+            timeout.QuadPart += executionTimeInSeconds*1000*10000;   /*Time in 100 nano seconds */
+            if (!RtSetTimer( hTimer, &timeout, NULL)) {
+                    printf("Can not set timer absolute(%x)!!\n", GetLastError());
+                    exit(2);
+            }
+        #else
         signal(SIGALRM, Timeout);
         alarm(executionTimeInSeconds);
       #endif
@@ -2269,6 +2303,15 @@ inline VOID CALLBACK perftest_cpp::Timeout_scan(PVOID lpParam, BOOLEAN timerOrWa
 }
 
   #pragma warning(pop)
+#elif defined RTI_INTIME
+inline void RTFCNDCL perftest_cpp::Timeout(PVOID lpParam) {
+    (void) lpParam;
+    _testCompleted = true;
+}
+inline void RTFCNDCL perftest_cpp::Timeout_scan(PVOID lpParam) {
+    (void) lpParam;
+    _testCompleted = true;
+}
 #else
 inline void perftest_cpp::Timeout(int sign) {
     _testCompleted = true;

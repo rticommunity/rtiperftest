@@ -25,6 +25,7 @@
 
 #ifdef RTI_WIN32
   #include <windows.h>
+#elif defined RTI_INTIME
 #else
   #ifndef RTI_VXWORKS
     #include <sys/time.h>
@@ -70,7 +71,7 @@ class perftest_cpp
 
   public:
     static void MilliSleep(unsigned int millisec) {
-      #if defined(RTI_WIN32)
+      #if defined(RTI_WIN32) || defined(RTI_INTIME)
         Sleep(millisec);
       #elif defined(RTI_VXWORKS)
         rti::util::sleep(dds::core::Duration(0,millisec*1000000));
@@ -84,7 +85,7 @@ class perftest_cpp
     static void PrintVersion();
 
     static void ThreadYield() {
-  #ifdef RTI_WIN32
+  #if defined RTI_WIN32 || defined(RTI_INTIME)
         Sleep(0);
   #else
         sched_yield();
@@ -168,6 +169,9 @@ class perftest_cpp
   #ifdef RTI_WIN32
     static VOID CALLBACK Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired);
     static VOID CALLBACK Timeout_scan(PVOID lpParam, BOOLEAN timerOrWaitFired);
+  #elif defined RTI_INTIME
+    static void RTFCNDCL Timeout(PVOID lpParam);
+    static void RTFCNDCL Timeout_scan(PVOID lpParam);
   #else
     static void Timeout(int sign);
     static void Timeout_scan(int sign);

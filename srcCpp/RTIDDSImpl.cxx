@@ -16,7 +16,7 @@
 #include "security/security_default.h"
 #endif
 
-#if defined(RTI_WIN32)
+#if defined(RTI_WIN32) || defined(RTI_INTIME)
   #pragma warning(push)
   #pragma warning(disable : 4996)
   #define STRNCASECMP _strnicmp
@@ -3117,6 +3117,6 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(const char *topicName)
     return _qoSProfileNameMap[std::string(topicName)];
 }
 
-#ifdef RTI_WIN32
+#if defined(RTI_WIN32) || defined(RTI_INTIME)
   #pragma warning(pop)
 #endif
