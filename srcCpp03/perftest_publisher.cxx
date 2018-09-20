@@ -2173,7 +2173,6 @@ inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds,
         CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout,
                 NULL , executionTimeInSeconds * 1000, 0, 0);
       #elif defined RTI_INTIME
-            HANDLE  hTimer;
             hTimer = RtCreateTimer(NULL, 0, Timeout, NULL, 
                         RT_PRIORITY_MAX, CLOCK_FASTEST);
             if (NULL == hTimer) {
@@ -2184,8 +2183,8 @@ inline void perftest_cpp::SetTimeout(unsigned int executionTimeInSeconds,
             // set timer absolute
             if (!RtGetClockTime(0, &timeout))
                 printf("Cannot get clock time!!\n");
-            timeout.QuadPart += executionTimeInSeconds*1000*10000;   /*Time in 100 nano seconds */
-            if (!RtSetTimer( hTimer, &timeout, NULL)) {
+            timeout.QuadPart += executionTimeInSeconds * 1000 * 10000;   /*Time in 100 nano seconds */
+            if (!RtSetTimer(hTimer, &timeout, NULL)) {
                     printf("Can not set timer absolute(%x)!!\n", GetLastError());
                     exit(2);
             }
@@ -2232,7 +2231,7 @@ inline void RTFCNDCL perftest_cpp::Timeout(PVOID lpParam) {
 }
 inline void RTFCNDCL perftest_cpp::Timeout_scan(PVOID lpParam) {
     (void) lpParam;
-    _testCompleted = true;
+    _testCompleted_scan = true;
 }
 #else
 inline void perftest_cpp::Timeout(int sign) {
