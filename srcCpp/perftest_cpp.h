@@ -88,7 +88,7 @@ class perftest_cpp
     static const Perftest_ProductVersion_t _version;
 
     /*
-     * The following three members are used in a static callback
+     * The following members are used in a static callback
      * and so they have to be static
      */
     static bool _testCompleted;
