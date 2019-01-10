@@ -67,6 +67,7 @@ public:
         _isScan = false;
         _isPublisher = false;
         _isDynamicData = false;
+        _useLegacyDynamicDataImpl = false;
         _IsAsynchronous = false;
         _FlowControllerCustom = "default";
         _useUnbounded = 0;
@@ -173,6 +174,7 @@ private:
     bool         _isScan;
     bool         _isPublisher;
     bool         _isDynamicData;
+    bool         _useLegacyDynamicDataImpl;
     bool         _IsAsynchronous;
     std::string  _FlowControllerCustom;
     unsigned long _useUnbounded;
