@@ -97,6 +97,10 @@ function usage()
     echo "    --customType <type>          Use the Custom type feature with your type.    "
     echo "                                 See details and examples of use in the         "
     echo "                                 documentation.                                 "
+    echo "    --legacy-DynamicData         Include the option to use the Legacy Dynamic   "
+    echo "                                 Data implementation when compiling RTI Perftest"
+    echo "                                 Classic C++ API. This requires RTI Connext DDS "
+    echo "                                 6.0.0 or above."                               "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
@@ -226,6 +230,12 @@ function library_sufix_calculation()
 function additional_defines_calculation()
 {
     additional_defines="O3"
+
+    if [ "${LEGACY_DD_IMPL}" == "1" ]; then
+        echo -e "${INFO_TAG} Allow the use of both legacy and new Dynamic Data Impl."
+        additional_defines=${additional_defines}" DRTI_LEGACY_DD_IMPL"
+    fi
+
     if [ "${USE_SECURE_LIBS}" == "1" ]; then
         additional_defines=${additional_defines}" DRTI_SECURE_PERFTEST"
         if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
@@ -634,6 +644,9 @@ while [ "$1" != "" ]; do
             ;;
         --secure)
             USE_SECURE_LIBS=1
+            ;;
+        --legacy-DynamicData)
+            LEGACY_DD_IMPL=1
             ;;
         --customType)
             USE_CUSTOM_TYPE=1
