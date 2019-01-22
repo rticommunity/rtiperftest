@@ -31,6 +31,7 @@ JAR_EXE=jar
 RELEASE_DEBUG=release
 STATIC_DYNAMIC=static
 USE_SECURE_LIBS=0
+LEGACY_DD_IMPL=0
 
 # Needed when compiling statically using security
 RTI_OPENSSLHOME=""
