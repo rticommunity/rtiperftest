@@ -29,6 +29,7 @@ JAR_EXE=jar
 RELEASE_DEBUG=release
 STATIC_DYNAMIC=static
 USE_SECURE_LIBS=0
+LEGACY_DD_IMPL=0
 
 # Needed when compiling statically using security
 RTI_OPENSSLHOME=""
@@ -192,6 +193,12 @@ function library_sufix_calculation()
 function additional_defines_calculation()
 {
     additional_defines="O3"
+
+    if [ "${LEGACY_DD_IMPL}" == "1" ]; then
+        echo -e "${INFO_TAG} Allow the use of both legacy and new Dynamic Data Impl."
+        additional_defines=${additional_defines}" DRTI_LEGACY_DD_IMPL"
+    fi
+
     if [ "${USE_SECURE_LIBS}" == "1" ]; then
         additional_defines=${additional_defines}" DRTI_SECURE_PERFTEST"
         if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
@@ -491,6 +498,9 @@ while [ "$1" != "" ]; do
             ;;
         --secure)
             USE_SECURE_LIBS=1
+            ;;
+        --legacy-DynamicData)
+            LEGACY_DD_IMPL=1
             ;;
         --openssl-home)
             RTI_OPENSSLHOME=$2

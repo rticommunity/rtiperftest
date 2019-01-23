@@ -61,6 +61,9 @@ class RTIDDSImpl : public IMessaging
         _isScan = false;
         _isPublisher = false;
         _isDynamicData = false;
+      #ifdef RTI_LEGACY_DD_IMPL
+        _useLegacyDynamicDataImpl = false;
+      #endif
         _IsAsynchronous = false;
         _FlowControllerCustom = "default";
         _useUnbounded = 0;
@@ -160,6 +163,9 @@ class RTIDDSImpl : public IMessaging
     bool         _isScan;
     bool         _isPublisher;
     bool         _isDynamicData;
+  #ifdef RTI_LEGACY_DD_IMPL
+    bool         _useLegacyDynamicDataImpl;
+  #endif
     bool         _IsAsynchronous;
     std::string  _FlowControllerCustom;
     unsigned long _useUnbounded;

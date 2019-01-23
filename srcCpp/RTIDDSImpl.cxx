@@ -162,6 +162,9 @@ void RTIDDSImpl<T>::PrintCmdLineHelp()
             "\t                                3 - persistent, default 0\n" +
             "\t-dynamicData                  - Makes use of the Dynamic Data APIs instead\n" +
             "\t                                of using the generated types.\n" +
+          #ifdef RTI_LEGACY_DD_IMPL
+            "\t-uselegacyDynamicData         - Makes use of the Old Dynamic Data Implementation\n" +
+          #endif
             "\t-noDirectCommunication        - Use brokered mode for persistent durability\n" +
             "\t-waitsetDelayUsec <usec>      - UseReadThread related. Allows you to\n" +
             "\t                                process incoming data in groups, based on the\n" +
@@ -381,6 +384,11 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
             }
         } else if (IS_OPTION(argv[i], "-dynamicData")) {
             _isDynamicData = true;
+      #ifdef RTI_LEGACY_DD_IMPL
+        } else if (IS_OPTION(argv[i], "-useLegacyDynamicData")) {
+            _isDynamicData = true;
+            _useLegacyDynamicDataImpl = true;
+      #endif
         } else if (IS_OPTION(argv[i], "-noDirectCommunication")) {
             _DirectCommunication = false;
         } else if (IS_OPTION(argv[i], "-instances")) {
@@ -805,7 +813,13 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
     if (_isDynamicData) {
-        stringStream << "Yes\n";
+        stringStream << "Yes";
+      #ifdef RTI_LEGACY_DD_IMPL
+        if (_useLegacyDynamicDataImpl) {
+            stringStream << " (Legacy Implementation)";
+        }
+      #endif
+        stringStream << "\n";
     } else {
         stringStream << "No\n";
     }
@@ -2309,6 +2323,13 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         fprintf(stderr,"Problem creating participant.\n");
         return false;
     }
+
+  #ifdef RTI_LEGACY_DD_IMPL
+    // If we are using Dynamic Data, check if we want to use the new or old impl
+    if (_isDynamicData && _useLegacyDynamicDataImpl) {
+        DDS_DynamicData_enable_legacy_impl();
+    }
+  #endif
 
     // Register the types and create the topics
     if (!_isDynamicData) {
