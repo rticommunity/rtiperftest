@@ -27,6 +27,7 @@ set PERL_EXEC=perl
 set RELEASE_DEBUG=release
 set STATIC_DYNAMIC=static
 set USE_SECURE_LIBS=0
+set LEGACY_DD_IMPL=0
 
 @REM Starting with 5.2.6 (rtiddsgen 2.3.6) the name of the solutions is different
 set /a rtiddsgen_version_number_new_solution_name=236
@@ -98,6 +99,8 @@ if NOT "%1"=="" (
 				SET RELEASE_DEBUG=debug
 		) ELSE if "%1"=="--dynamic" (
 				SET STATIC_DYNAMIC=dynamic
+		) ELSE if "%1"=="--legacy-DynamicData" (
+				SET LEGACY_DD_IMPL=1
 		) ELSE if "%1"=="--secure" (
 				SET USE_SECURE_LIBS=1
 		) ELSE if "%1"=="--msbuild" (
@@ -254,6 +257,11 @@ if !BUILD_CPP! == 1 (
 		set "additional_source_files_custom_type=!additional_source_files_custom_type! "
 		REM # Adding RTI_USE_CUSTOM_TYPE as a macro
 		set "additional_defines_custom_type= -D RTI_CUSTOM_TYPE=%custom_type%"
+	)
+
+	if !LEGACY_DD_IMPL! == 1 (
+		echo [INFO]: Allow the use of both legacy and new Dynamic Data Impl.
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_LEGACY_DD_IMPL"
 	)
 
 	if !USE_SECURE_LIBS! == 1 (
