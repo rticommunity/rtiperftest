@@ -13,6 +13,7 @@ set "bin_folder=%script_location%bin"
 
 @REM # By default we will build pro, not micro
 set BUILD_MICRO=0
+set BUILD_MICRO_24x_COMPATIBILITY=0
 
 @REM # Default values:
 set BUILD_CPP=1
@@ -67,6 +68,9 @@ if NOT "%1"=="" (
 		) ELSE if "%1"=="-h" (
 				call:help
 				exit /b 0
+		) ELSE if "%1"=="--micro-24x-compatibility" (
+				SET BUILD_MICRO=1
+				SET BUILD_MICRO_24x_COMPATIBILITY=1
 		) ELSE if "%1"=="--micro" (
 				SET BUILD_MICRO=1
 		) ELSE if "%1"=="--skip-java-build" (
@@ -427,6 +431,9 @@ if !BUILD_MICRO! == 1 (
 
 	call::solution_compilation_flag_calculation
 
+	if !BUILD_MICRO_24x_COMPATIBILITY! == 1 (
+		set "ADDITIONAL_DEFINES=RTI_MICRO_24x_COMPATIBILITY !ADDITIONAL_DEFINES!"
+	)
 	set "ADDITIONAL_DEFINES=RTI_WIN32 RTI_MICRO !ADDITIONAL_DEFINES!"
 	set "additional_header_files=MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h"
 	set "additional_source_files=RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx"

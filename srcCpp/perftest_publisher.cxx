@@ -396,7 +396,10 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             }
 
             if (_useUnbounded == 0 && _DataLen > (unsigned long)MAX_BOUNDED_SEQ_SIZE) {
-                PerftestLogNotSupportedInMicro("Large Data");
+                /* this should be set only for Micro 2.4.x*/
+                #if RTI_MICRO_24x_COMPATIBILITY
+                  PerftestLogNotSupportedInMicro("Large Data");
+                #endif
                 _useUnbounded = (std::min)(
                         2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
             }

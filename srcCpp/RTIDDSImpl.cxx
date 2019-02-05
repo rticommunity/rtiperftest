@@ -2339,16 +2339,22 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
          *
          * We could potentially modify this with a new command line parameter
          */
-        dr_qos.resource_limits.max_samples = 10000;
-        dr_qos.resource_limits.max_samples_per_instance = 10000;
-
+        if (_DataLen > MAX_BOUNDED_SEQ_SIZE) {
+            dr_qos.resource_limits.max_samples = 50;
+            dr_qos.resource_limits.max_samples_per_instance = 50;
+            dr_qos.history.depth = 100;
+        }
+        else {
+            dr_qos.resource_limits.max_samples = 10000;
+            dr_qos.resource_limits.max_samples_per_instance = 10000;
+            dr_qos.history.depth = 10000;
+        }
         /*
          * In micro we don't have keep all, this means we need to set the
          * history to keep last and chose a history depth. For the depth value
          * we can
          */
         dr_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
-        dr_qos.history.depth = 10000;
 
     } else { // "LatencyQos" or "AnnouncementQos"
 
@@ -2358,16 +2364,20 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
          * LENGTH_UNLIMITED. In Micro we will use a lower number due to
          * memory restrictions.
          */
-        dr_qos.resource_limits.max_samples = 1000;
+        if (_DataLen > MAX_BOUNDED_SEQ_SIZE) {
+            dr_qos.resource_limits.max_samples = 50;
+        }
+        else {
+            dr_qos.resource_limits.max_samples = 1000;
+        }
     }
 
     /*
      * We could potentially use here the number of subscriber, right now this
      * class does not have access to the number of subscriber though.
      */
-    dr_qos.reader_resource_limits.max_remote_writers = 1000;
-    dr_qos.reader_resource_limits.max_remote_writers_per_instance =
-            1000;
+    dr_qos.reader_resource_limits.max_remote_writers = 50;
+    dr_qos.reader_resource_limits.max_remote_writers_per_instance = 50;
   #endif
 
   #ifndef RTI_MICRO
@@ -2424,9 +2434,13 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 buf,
                 false);
       #else
-        fprintf(stderr,
-                "Unbounded sequences not supported on Micro.\n");
-        return NULL;
+        /* This is only needed for Micro 2.4.x. Unbounded sequences are 
+         * available in Micro 3.0 */
+        #if RTI_MICRO_24x_COMPATIBILITY
+          fprintf(stderr,
+                  "Unbounded sequences not supported on Micro.\n");
+          return NULL;
+        #endif
       #endif
     }
 
