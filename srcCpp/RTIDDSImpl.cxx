@@ -2084,8 +2084,12 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         dw_qos.protocol.rtps_reliable_writer.max_send_window_size = _SendQueueSize;
         dw_qos.protocol.rtps_reliable_writer.min_send_window_size = _SendQueueSize;
       #else
-        // Keep all not supported in Micro.
-        dw_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
+        #if RTI_MICRO_24x_COMPATIBILITY
+          // Keep all not supported in Micro 2.4.x
+          dw_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
+        #else
+          dw_qos.history.kind = DDS_KEEP_ALL_HISTORY_QOS;
+        #endif
         dw_qos.history.depth = _SendQueueSize;
         // Same values we use for Pro (See perftest_qos_profiles.xml).
         dw_qos.protocol.rtps_reliable_writer.heartbeat_period.sec = 0;
@@ -2342,7 +2346,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         if (_DataLen > MAX_BOUNDED_SEQ_SIZE) {
             dr_qos.resource_limits.max_samples = 50;
             dr_qos.resource_limits.max_samples_per_instance = 50;
-            dr_qos.history.depth = 100;
+            dr_qos.history.depth = 50;
         }
         else {
             dr_qos.resource_limits.max_samples = 10000;
@@ -2350,11 +2354,16 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
             dr_qos.history.depth = 10000;
         }
         /*
-         * In micro we don't have keep all, this means we need to set the
+         * In micro 2.4.x we don't have keep all, this means we need to set the
          * history to keep last and chose a history depth. For the depth value
-         * we can
+         * we can we same value as max_samples
          */
-        dr_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
+        #if RTI_MICRO_24x_COMPATIBILITY
+          // Keep all not supported in Micro 2.4.x
+          dr_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
+        #else
+          dr_qos.history.kind = DDS_KEEP_ALL_HISTORY_QOS;
+        #endif
 
     } else { // "LatencyQos" or "AnnouncementQos"
 
