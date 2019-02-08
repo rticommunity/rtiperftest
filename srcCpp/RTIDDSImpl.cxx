@@ -64,21 +64,23 @@ void RTIDDSImpl<T>::Shutdown()
 
   #ifdef RTI_MICRO
 
-    RTRegistry *registry = _factory->get_registry();
+    if (_factory != NULL) {
+        RTRegistry *registry = _factory->get_registry();
 
-    /*
-     * Some of these might not be registered, so we
-     * won't show any errors if the unregister returns
-     * that the module is not registerd.
-     */
-    if (!registry->unregister("dpde", NULL, NULL)) {
-        //printf("failed to unregister dpde\n");
-    }
-    if (!registry->unregister("rh", NULL, NULL)) {
-        //printf("failed to unregister rh\n");
-    }
-    if (!registry->unregister("wh", NULL, NULL)) {
-        //printf("failed to unregister wh\n");
+        /*
+         * Some of these might not be registered, so we
+         * won't show any errors if the unregister returns
+         * that the module is not registerd.
+         */
+        if (!registry->unregister("dpde", NULL, NULL)) {
+            //printf("failed to unregister dpde\n");
+        }
+        if (!registry->unregister("rh", NULL, NULL)) {
+            //printf("failed to unregister rh\n");
+        }
+        if (!registry->unregister("wh", NULL, NULL)) {
+            //printf("failed to unregister wh\n");
+        }
     }
 
   #endif
