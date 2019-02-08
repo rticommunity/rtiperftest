@@ -485,6 +485,8 @@ function build_micro_cpp()
     # Generate files for srcCpp
         if [ "${BUILD_MICRO_24x_COMPATIBILITY}" -eq "1" ]; then
             additional_defines=${additional_defines}" RTI_MICRO_24x_COMPATIBILITY"
+        else
+            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries nddsmetp"
         fi
 
     rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} -replace -create typefiles -create makefiles -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h\" -additionalSourceFiles \"RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "

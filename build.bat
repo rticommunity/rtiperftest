@@ -433,7 +433,10 @@ if !BUILD_MICRO! == 1 (
 
 	if !BUILD_MICRO_24x_COMPATIBILITY! == 1 (
 		set "ADDITIONAL_DEFINES=RTI_MICRO_24x_COMPATIBILITY !ADDITIONAL_DEFINES!"
+	) else (
+		set "rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalRtiLibraries nddsmetp"
 	)
+
 	set "ADDITIONAL_DEFINES=RTI_WIN32 RTI_MICRO !ADDITIONAL_DEFINES!"
 	set "additional_header_files=MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h"
 	set "additional_source_files=RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx"
