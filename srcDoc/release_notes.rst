@@ -86,6 +86,12 @@ and PDF documentation from the rst files in srcDoc.
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Migrate RTI Routing Service XML configuration to 6.0.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+RTI Routing Service configuration file has been updated and
+it is now supported by RTI Routing Service 6.0.0.
+
 Fix incorrect behavior the `-unbounded` command-line option when not using large data (#125)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
