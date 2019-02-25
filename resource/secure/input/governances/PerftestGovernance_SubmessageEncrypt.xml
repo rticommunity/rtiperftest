@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Perftest Governance Doc 
+  Encrypt: Yes
+  Sign: none
+  Authenticate: none
+-->
+
+
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="dds_security_governance.xsd">
+
+    <!-- Differences from DDS Security specification 
+     * in domain_id means all domains.
+     ENCRYPT only encrypts. It doesn't sign.
+     SIGN and NONE are the only supported rtps_protection_kinds.
+     ENCRYPT and NONE are the only supported non-rtps_protection_kinds.
+     metadata_protection_kind applies to both metadata and data.
+     DataWriter with metadata_protection_kind = NONE and
+     data_protection_kind = NONE is not compatible with DataReader with
+     metadata_protection_kind != NONE or data_protection_kind != NONE.
+     discovery_protection_kind is ineffective. If a topic sets
+     enable_discovery_protection = true, then its discovery is encrypted.
+     -->
+    <domain_access_rules>
+      <domain_rule>
+        <domains>
+          <id_range>
+            <min>0</min>
+          </id_range>
+        </domains>
+        <allow_unauthenticated_participants>true</allow_unauthenticated_participants>
+        <enable_join_access_control>false</enable_join_access_control>
+        <discovery_protection_kind>NONE</discovery_protection_kind>
+        <liveliness_protection_kind>NONE</liveliness_protection_kind>
+        <rtps_protection_kind>NONE</rtps_protection_kind>
+        <topic_access_rules>
+          <topic_rule>
+            <topic_expression>*</topic_expression>
+            <enable_discovery_protection>false</enable_discovery_protection>
+            <enable_read_access_control>false</enable_read_access_control>
+            <enable_write_access_control>false</enable_write_access_control>
+            <metadata_protection_kind>ENCRYPT</metadata_protection_kind>
+            <data_protection_kind>NONE</data_protection_kind>
+          </topic_rule>
+        </topic_access_rules>
+      </domain_rule>
+    </domain_access_rules>
+</dds>

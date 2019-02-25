@@ -1,9 +1,9 @@
 MIME-Version: 1.0
-Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg="sha-256"; boundary="----BB2DB0B2062CA2C3CD5C1A42A3464D90"
+Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg="sha-256"; boundary="----53C598FD111662814D302138D9DA3F18"
 
 This is an S/MIME signed message
 
-------BB2DB0B2062CA2C3CD5C1A42A3464D90
+------53C598FD111662814D302138D9DA3F18
 Content-Type: text/plain
 
 <?xml version="1.0" encoding="UTF-8"?>
@@ -11,8 +11,9 @@ Content-Type: text/plain
 <!-- Perftest Governance Doc 
   Encrypt: Yes
   Sign: none
-  Authenticate: Yes
+  Authenticate: none
 -->
+
 
 <dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="dds_security_governance.xsd">
@@ -36,18 +37,18 @@ Content-Type: text/plain
             <min>0</min>
           </id_range>
         </domains>
-        <allow_unauthenticated_participants>false</allow_unauthenticated_participants>
-        <enable_join_access_control>true</enable_join_access_control>
-        <discovery_protection_kind>ENCRYPT</discovery_protection_kind>
-        <liveliness_protection_kind>ENCRYPT</liveliness_protection_kind>
+        <allow_unauthenticated_participants>true</allow_unauthenticated_participants>
+        <enable_join_access_control>false</enable_join_access_control>
+        <discovery_protection_kind>NONE</discovery_protection_kind>
+        <liveliness_protection_kind>NONE</liveliness_protection_kind>
         <rtps_protection_kind>NONE</rtps_protection_kind>
         <topic_access_rules>
           <topic_rule>
             <topic_expression>*</topic_expression>
-            <enable_discovery_protection>true</enable_discovery_protection>
-            <enable_read_access_control>true</enable_read_access_control>
-            <enable_write_access_control>true</enable_write_access_control>
-            <metadata_protection_kind>ENCRYPT</metadata_protection_kind>
+            <enable_discovery_protection>false</enable_discovery_protection>
+            <enable_read_access_control>false</enable_read_access_control>
+            <enable_write_access_control>false</enable_write_access_control>
+            <metadata_protection_kind>ENCRYPT_WITH_ORIGIN_AUTHENTICATION</metadata_protection_kind>
             <data_protection_kind>NONE</data_protection_kind>
           </topic_rule>
         </topic_access_rules>
@@ -55,7 +56,7 @@ Content-Type: text/plain
     </domain_access_rules>
 </dds>
 
-------BB2DB0B2062CA2C3CD5C1A42A3464D90
+------53C598FD111662814D302138D9DA3F18
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -84,16 +85,16 @@ AgEBMIGLMH4xCzAJBgNVBAYTAlVTMQswCQYDVQQIDAJDQTESMBAGA1UEBwwJU3Vu
 bnl2YWxlMR4wHAYDVQQKDBVSZWFsIFRpbWUgSW5ub3ZhdGlvbnMxDzANBgNVBAMM
 BlJUSSBDQTEdMBsGCSqGSIb3DQEJARYOc2VjdXJlQHJ0aS5jb20CCQCc302A9290
 hDANBglghkgBZQMEAgEFAKCB5DAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
-CSqGSIb3DQEJBTEPFw0xOTAyMjUxOTIwNTJaMC8GCSqGSIb3DQEJBDEiBCDEualC
-hcTAKgpuKa0aHbTWGkbnf7bv+8v8aVug5+vT3jB5BgkqhkiG9w0BCQ8xbDBqMAsG
+CSqGSIb3DQEJBTEPFw0xOTAyMjUxOTIwNTJaMC8GCSqGSIb3DQEJBDEiBCBj9gxw
+yWLkZJ1KJ7y0BdnzxzONBGJUIM5BouE9fg4wBTB5BgkqhkiG9w0BCQ8xbDBqMAsG
 CWCGSAFlAwQBKjALBglghkgBZQMEARYwCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMH
 MA4GCCqGSIb3DQMCAgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG
-9w0DAgIBKDANBgkqhkiG9w0BAQEFAASCAQAsfIJObzpWFpRXgX8e+021boOFSHgA
-kJcVXVnAaH7J9Q/v43vRunhWJEDIN+7dEMPVAyMZawlRBnN4Vt8Tnt9wXv+/9Jy3
-xOb6d/juvyFzzaDaZ09yZBZgwgJHdf5fQtOJhntyonCyQM9SxgyODNCUDZVbRz4o
-laxVYeq6yRh4ELniLlX+X/sycgThZal6U906GGYwO8pvaWzM1KZjLPVzKywT4yZu
-RJPhXQdDtJOvQLQL1VluO3o4q8MViBHTBWWDs87fJuEqTWzn3obEgcSH34XHeobq
-43+myXFZ75AKMubqRmY9nRQmU/qLDWk2Th0c79RBi2G3p6D6EM4YvKT3
+9w0DAgIBKDANBgkqhkiG9w0BAQEFAASCAQBKMEgZ/yQ2+/OYDmcqrQzZoCrlhW2z
+ycW978kvpnvBkamngnCNKVc5zZhhwCVqAxvToQ5CZFRwX0uvGcb5KiwyxCbZXhCp
+U/bltfWuF7wIKLqsaBbvIhfxToIDA+BlCwdjAFfiITW8riaIZakYY5EHtyMDn15q
+h5eCqO+vhsMjEhCDdayYaVldLqybb6ep2xfPQr/PP62HzSyoRJm6P/CUDdJSGZxG
+p+VRdYvaZt3ry0/y+QnK3Ftnp8NOtYZYUnL05ethHiToEObM8zkVPTdGOsCSMP/U
+wx+7cbYJurj6Ch9OfKk3zIPu+IovLs+gGzE/IbzOStrIQLgKNCZZf0CJ
 
-------BB2DB0B2062CA2C3CD5C1A42A3464D90--
+------53C598FD111662814D302138D9DA3F18--
 
