@@ -18,7 +18,7 @@ void RTIDDSLoggerDevice::write(const NDDS_Config_LogMessage *message)
             }
         }
         if (!_shmemErrors) {
-            printf("%s\n", message->text);
+            printf("%s", message->text);
         }
     }
 }
