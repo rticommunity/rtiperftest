@@ -47,6 +47,10 @@ do
           read_NDDSHOME=$2
           shift 2
           ;;
+      -db-destination)
+          read_destination=$2
+          shift 2
+          ;;
       -*)
           echo "Error: Unknown option: $1" >&2
           exit 1
@@ -151,10 +155,21 @@ fi
 
 export TEST_THREAD_POOL_SIZE=1
 
+#Half of a second.
+export FLUSH_PERIOD_NSEC=500000000
+
+
+if [ "$read_destination" != "" ]; then
+    export destination=$read_destination
+else
+    export destination=/tmp
+fi
+
 ################################################################################
 echo " "
 echo "=========================================================================="
 echo "         Domain: $DOMAIN_BASE"
+echo "       Location: $destination"
 echo "           Type: $TYPE_NAME"
 echo "    Reliability: $RELIABILITY"
 echo "       Batching: $BATCHING"
@@ -177,4 +192,8 @@ echo " "
 echo "[Running] $command_line_parameter"
 echo " "
 ################################################################################
+
+
+cd $destination
+/bin/rm -rf rti_recorder_default*.dat
 $command_line_parameter

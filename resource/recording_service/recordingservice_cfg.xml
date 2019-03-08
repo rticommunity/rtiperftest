@@ -407,12 +407,10 @@
                 <file_suffix>dat</file_suffix>
             </sqlite>
 
-            <!-- testing without periodic processor this for now
             <flush_period>
                 <sec>0</sec>
                 <nanosec>$(FLUSH_PERIOD_NSEC)</nanosec>
             </flush_period>
-            -->
         </storage>
 
         <!--  Top-level domain settings -->
@@ -423,17 +421,16 @@
         </domain_participant>
 
         <session name="DefaultSession">
-		<subscriber_qos base_name="PerformanceLibraries_Modified::ThroughputQos"/>
+            <subscriber_qos base_name="PerformanceLibraries_Modified::ThroughputQos"/>
 
-
-                <thread_pool>
-                    <!-- a number greater than 1 requires thread-safe dblink plugin -->
-                    <size>$(TEST_THREAD_POOL_SIZE)</size>
-                    <priority>THREAD_PRIORITY_HIGH</priority>
-                </thread_pool>
+            <thread_pool>
+                <!-- a number greater than 1 requires thread-safe dblink plugin -->
+                <size>$(TEST_THREAD_POOL_SIZE)</size>
+                <priority>THREAD_PRIORITY_HIGH</priority>
+            </thread_pool>
 
             <topic_group name="RecordAll" participant_ref="Participant0">
-                <allow_topic_name_filter>*</allow_topic_name_filter>
+                <allow_topic_name_filter>Throughput</allow_topic_name_filter>
                 <deny_topic_name_filter>rti/*</deny_topic_name_filter>
                 <datareader_qos base_name="PerformanceLibraries_Modified::ThroughputQos">
                     <multicast>
