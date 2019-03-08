@@ -407,11 +407,8 @@
                 <file_suffix>dat</file_suffix>
             </sqlite>
 
-            <flush_period>
-                <sec>0</sec>
-                <nanosec>$(FLUSH_PERIOD_NSEC)</nanosec>
-            </flush_period>
         </storage>
+
 
         <!--  Top-level domain settings -->
         <domain_participant name="Participant0">

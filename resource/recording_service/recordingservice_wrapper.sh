@@ -155,10 +155,6 @@ fi
 
 export TEST_THREAD_POOL_SIZE=1
 
-#Half of a second.
-export FLUSH_PERIOD_NSEC=500000000
-
-
 if [ "$read_destination" != "" ]; then
     export destination=$read_destination
 else
