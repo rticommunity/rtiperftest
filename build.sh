@@ -475,6 +475,20 @@ function additional_defines_calculation_micro()
         fi
     fi
     additional_defines="RTI_MICRO O3"${additional_defines}
+
+    if [ "${USE_SECURE_LIBS}" == "1" ]; then
+        additional_defines=${additional_defines}" RTI_SECURE_PERFTEST"
+
+        if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
+            echo -e "${INFO_TAG} Using security plugin. Linking Dynamically."
+        else
+            if [ "${RTI_OPENSSLHOME}" == "" ]; then
+                echo -e "${ERROR_TAG} In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option."
+                exit -1
+            fi
+            echo -e "${INFO_TAG} Using security plugin. Linking Statically."
+        fi
+    fi
 }
 
 function build_micro_cpp()
@@ -486,10 +500,19 @@ function build_micro_cpp()
         if [ "${BUILD_MICRO_24x_COMPATIBILITY}" -eq "1" ]; then
             additional_defines=${additional_defines}" RTI_MICRO_24x_COMPATIBILITY"
         else
-            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries nddsmetp"
-        fi
+            if [ "${USE_SECURE_LIBS}" == "1"]; then
+                rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries \"nddsmetp  \" "
+            else
+                rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries \"nddsmetp rti_me_seccore\""
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} -replace -create typefiles -create makefiles -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h\" -additionalSourceFiles \"RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+                #rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries \"nddsmetp rti_me_seccore\" -additionalLibraries \"sslz cryptoz\" -additionalLibraryPaths \"${RTI_OPENSSLHOME}/${RELEASE_DEBUG}/lib\""
+            fi
+        fi
+    if [ "${USE_SECURE_LIBS}" != "1"]; then
+        rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} -replace -create typefiles -create makefiles -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h\" -additionalSourceFiles \"RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+    else
+        rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} -replace -create typefiles -create makefiles -additionalHeaderFiles \"MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h PerftestSecurity.h\" -additionalSourceFiles \"RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx PerftestSecurity.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+    fi
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${classic_cpp_lang_string}."

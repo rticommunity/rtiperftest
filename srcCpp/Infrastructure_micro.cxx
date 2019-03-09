@@ -286,4 +286,154 @@ void PerftestConfigureVerbosity(int verbosityLevel)
     OSAPI_Log_set_verbosity(verbosity);
 }
 
+#ifdef RTI_SECURE_PERFTEST
+bool ConfigureSecurity(
+        PerftestSecurity &security,
+        DDS_DomainParticipantQos &qos)
+{
+    printf("Configuring security...\n");
+
+    // configure use of security plugins, based on provided arguments
+    RTRegistry *registry = DDSDomainParticipantFactory::get_instance()->get_registry();
+
+    // Properties to register built-in security plugins
+    SECCORE_SecurePluginFactoryProperty sec_plugin_prop;
+
+    DDS_Boolean retval;
+
+    // print arguments
+    security.printSecurityConfigurationSummary();
+
+    // register plugin factory with registry
+    if (!SECCORE_SecurePluginFactory::register_suite(
+                    registry,SECCORE_DEFAULT_SUITE_NAME,sec_plugin_prop))
+    {
+        printf("Failed to register security plugins factory\n");
+        return false;
+    }
+
+    // Enable security in DomainParticipantQos
+    if (!qos.trust.suite.set_name(SECCORE_DEFAULT_SUITE_NAME))
+    {
+        printf("Failed to set security suite name: %s\n",
+               SECCORE_DEFAULT_SUITE_NAME);
+        return false;
+    }
+
+    // check if governance file provided
+    if (security.governanceFile.empty()) {
+        // choose a pre-built governance file
+        std::string file = "file:./resource/secure/signed_PerftestGovernance_";
+        if (security.discoveryEncrypted) {
+            file += "Discovery";
+        }
+
+        if (security.signPackages) {
+            file += "Sign";
+        }
+
+        if (security.dataEncrypted && security.subMessageEncrypted) {
+            file += "EncryptBoth";
+        } else if (security.dataEncrypted) {
+            file += "EncryptData";
+        } else if (security.subMessageEncrypted) {
+            file += "EncryptSubmessage";
+        }
+
+        file += ".xml";
+
+        fprintf(stdout,
+                "\tUsing pre-built governance file: \n\t%s\n",
+                file.c_str());
+
+        retval = qos.property.value.assert_property(
+                        "dds.sec.access.governance",
+                        file.c_str(),
+                        false);
+    } else {
+        retval = qos.property.value.assert_property(
+                        "dds.sec.access.governance",
+                        security.governanceFile.c_str(),
+                        false);
+    }
+    if (!retval) {
+        printf("Failed to add property "
+                "dds.sec.access.governance\n");
+        return false;
+    }
+
+    // permissions file
+    if (!qos.property.value.assert_property(
+                "dds.sec.access.permissions",
+                security.permissionsFile.c_str(),
+                false))
+    {
+        printf("Failed to add property "
+                "dds.sec.access.permissions\n");
+        return false;
+    }
+
+    // permissions authority file
+    if (!qos.property.value.assert_property(
+                "dds.sec.access.permissions_ca",
+                security.certAuthorityFile.c_str(),
+                false))
+    {
+        printf("Failed to add property "
+                "dds.sec.access.permissions_ca\n");
+        return false;
+    }
+
+    // certificate authority
+    if (!qos.property.value.assert_property(
+                "dds.sec.auth.identity_ca",
+                security.certAuthorityFile.c_str(),
+                false))
+    {
+        printf("Failed to add property "
+                "dds.sec.auth.identity_ca\n");
+        return false;
+    }
+
+    // public key
+    if (!qos.property.value.assert_property(
+                "dds.sec.auth.identity_certificate",
+                security.certificateFile.c_str(),
+                false))
+    {
+        printf("Failed to add property "
+                "dds.sec.auth.identity_certificate\n");
+        return false;
+    }
+
+    // private key
+    if (!qos.property.value.assert_property(
+                "dds.sec.auth.private_key",
+                security.privateKeyFile.c_str(),
+                false))
+    {
+        printf("Failed to add property "
+                "dds.sec.auth.private_key\n");
+        return false;
+    }
+
+    if (security.debugLevel != -1) {
+        char buf[16];
+        sprintf(buf, "%d", security.debugLevel);
+        if (!qos.property.value.assert_property(
+                    "logging.log_level",
+                    buf,
+                    false))
+        {
+            printf("Failed to add property "
+                    "logging.log_level\n");
+            return false;
+        }
+    }
+
+    return true;
+}
+#endif
+
+
 #endif // RTI_MICRO

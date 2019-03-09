@@ -12,19 +12,19 @@
 
 // Default location of the security related files
 const std::string SECURE_PRIVATEKEY_FILE_PUB =
-        "./resource/secure/pubkey.pem";
+        "file:./resource/secure/pubkey.pem";
 const std::string SECURE_PRIVATEKEY_FILE_SUB =
-        "./resource/secure/subkey.pem";
+        "file:./resource/secure/subkey.pem";
 const std::string SECURE_CERTIFICATE_FILE_PUB =
-        "./resource/secure/pub.pem";
+        "file:./resource/secure/pub.pem";
 const std::string SECURE_CERTIFICATE_FILE_SUB =
-        "./resource/secure/sub.pem";
+        "file:./resource/secure/sub.pem";
 const std::string SECURE_CERTAUTHORITY_FILE =
-        "./resource/secure/cacert.pem";
+        "file:./resource/secure/cacert.pem";
 const std::string SECURE_PERMISION_FILE_PUB =
-        "./resource/secure/signed_PerftestPermissionsPub.xml";
+        "file:./resource/secure/signed_PerftestPermissionsPub.xml";
 const std::string SECURE_PERMISION_FILE_SUB =
-        "./resource/secure/signed_PerftestPermissionsSub.xml";
+        "file:./resource/secure/signed_PerftestPermissionsSub.xml";
 const std::string SECURE_LIBRARY_NAME = "nddssecurity";
 
 /******************************************************************************/

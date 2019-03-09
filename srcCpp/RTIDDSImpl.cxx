@@ -81,6 +81,14 @@ void RTIDDSImpl<T>::Shutdown()
         if (!registry->unregister("wh", NULL, NULL)) {
             //printf("failed to unregister wh\n");
         }
+
+#ifdef RTI_SECURE_PERFTEST
+        if (!SECCORE_SecurePluginFactory::unregister_suite(
+                    registry, SECCORE_DEFAULT_SUITE_NAME)) {
+            //printf("failed to unregister security plugins\n");
+        }
+#endif
+
     }
 
   #endif
@@ -1811,6 +1819,22 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
                 DDS_String_dup("127.0.0.1");
     }
     qos.discovery.accept_unknown_peers = DDS_BOOLEAN_TRUE;
+
+        // Configure security
+  #ifdef RTI_SECURE_PERFTEST
+    if (_security.useSecurity) {
+        // validate arguments
+        if (!_security.validateSecureArgs(_isPublisher)) {
+            fprintf(stderr, "Failed to configure security plugins\n");
+            return false;
+        }
+        // configure
+        if (!ConfigureSecurity(_security, qos)) {
+            fprintf(stderr, "Failed to configure security plugins\n");
+            return false;
+        }
+    }
+  #endif // RTI_SECURE_PERFTEST
 
   #endif // RTI_MICRO
 
