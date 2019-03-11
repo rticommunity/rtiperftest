@@ -150,7 +150,7 @@ fi
 export command_line_parameter="$EXECUTABLE_NAME -cfgFile $script_location/recordingservice_cfg.xml -cfgName RecordingServiceTest -domainIdBase $DOMAIN_BASE -verbosity $VERBOSITY"
 
 if [ "$read_exec_time" != "" ]; then
-    export command_line_parameter="timeout $read_exec_time $command_line_parameter"
+    export command_line_parameter="timeout --preserve-status --signal=SIGINT $read_exec_time $command_line_parameter"
 fi
 
 export TEST_THREAD_POOL_SIZE=1
