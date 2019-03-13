@@ -2,7 +2,7 @@
 
 <!-- Perftest Governance Doc 
   Encrypt: Yes
-  Sign: Yes
+  Sign: none
   Authenticate: none
 -->
 
@@ -33,7 +33,7 @@
         <enable_join_access_control>false</enable_join_access_control>
         <discovery_protection_kind>NONE</discovery_protection_kind>
         <liveliness_protection_kind>NONE</liveliness_protection_kind>
-        <rtps_protection_kind>SIGN</rtps_protection_kind>
+        <rtps_protection_kind>NONE</rtps_protection_kind>
         <topic_access_rules>
           <topic_rule>
             <topic_expression>*</topic_expression>

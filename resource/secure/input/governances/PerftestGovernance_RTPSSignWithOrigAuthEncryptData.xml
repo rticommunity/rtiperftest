@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!-- Perftest Governance Doc 
-  Encrypt: Yes
-  Sign: Yes
+  Encrypt: none
+  Sign: none
   Authenticate: none
 -->
-
 
 <dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="dds_security_governance.xsd">
@@ -33,7 +32,7 @@
         <enable_join_access_control>false</enable_join_access_control>
         <discovery_protection_kind>NONE</discovery_protection_kind>
         <liveliness_protection_kind>NONE</liveliness_protection_kind>
-        <rtps_protection_kind>SIGN</rtps_protection_kind>
+        <rtps_protection_kind>SIGN_WITH_ORIGIN_AUTHENTICATION</rtps_protection_kind>
         <topic_access_rules>
           <topic_rule>
             <topic_expression>*</topic_expression>
@@ -41,7 +40,7 @@
             <enable_read_access_control>false</enable_read_access_control>
             <enable_write_access_control>false</enable_write_access_control>
             <metadata_protection_kind>NONE</metadata_protection_kind>
-            <data_protection_kind>ENCRYPT</data_protection_kind>
+            <data_protection_kind>NONE</data_protection_kind>
           </topic_rule>
         </topic_access_rules>
       </domain_rule>
