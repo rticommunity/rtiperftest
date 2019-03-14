@@ -595,7 +595,7 @@ bool ConfigureSecurity(
     // check if governance file provided
     if (security.governanceFile.empty()) {
         // choose a pre-built governance file
-        std::string file = "resource/secure/signed_PerftestGovernance_";
+        std::string file = "file:./resource/secure/signed_PerftestGovernance_";
         if (security.discoveryEncrypted) {
             file += "Discovery";
         }
@@ -619,79 +619,79 @@ bool ConfigureSecurity(
                 file.c_str());
         retcode = DDSPropertyQosPolicyHelper::add_property(
                 qos.property,
-                "com.rti.serv.secure.access_control.governance_file",
+                "dds.sec.access.governance",
                 file.c_str(),
                 false);
     } else {
         retcode = DDSPropertyQosPolicyHelper::add_property(
                 qos.property,
-                "com.rti.serv.secure.access_control.governance_file",
+                "dds.sec.access.governance",
                 security.governanceFile.c_str(),
                 false);
     }
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
-                "com.rti.serv.secure.access_control.governance_file\n");
+                "dds.sec.access.governance\n");
         return false;
     }
 
     // permissions file
     retcode = DDSPropertyQosPolicyHelper::add_property(
             qos.property,
-            "com.rti.serv.secure.access_control.permissions_file",
+            "dds.sec.access.permissions",
             security.permissionsFile.c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
-                "com.rti.serv.secure.access_control.permissions_file\n");
+                "dds.sec.access.permissions\n");
         return false;
     }
 
     // permissions authority file
     retcode = DDSPropertyQosPolicyHelper::add_property(
             qos.property,
-            "com.rti.serv.secure.access_control.permissions_authority_file",
+            "dds.sec.access.permissions_ca",
             security.certAuthorityFile.c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
-                "com.rti.serv.secure.access_control.permissions_authority_file\n");
+                "dds.sec.access.permissions_ca\n");
         return false;
     }
 
     // certificate authority
     retcode = DDSPropertyQosPolicyHelper::add_property(
             qos.property,
-            "com.rti.serv.secure.authentication.ca_file",
+            "dds.sec.auth.identity_ca",
             security.certAuthorityFile.c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
-                "com.rti.serv.secure.authentication.ca_file\n");
+                "dds.sec.auth.identity_ca\n");
         return false;
     }
 
     // public key
     retcode = DDSPropertyQosPolicyHelper::add_property(
             qos.property,
-            "com.rti.serv.secure.authentication.certificate_file",
+            "dds.sec.auth.identity_certificate",
             security.certificateFile.c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
-                "com.rti.serv.secure.authentication.certificate_file\n");
+                "dds.sec.auth.identity_certificate\n");
         return false;
     }
 
     // private key
     retcode = DDSPropertyQosPolicyHelper::add_property(
             qos.property,
-            "com.rti.serv.secure.authentication.private_key_file",
+            "dds.sec.auth.private_key",
             security.privateKeyFile.c_str(),
             false);
     if (retcode != DDS_RETCODE_OK) {
         printf("Failed to add property "
-                "com.rti.serv.secure.authentication.private_key_file\n");
+                "dds.sec.auth.private_key\n");
         return false;
     }
 
