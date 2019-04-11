@@ -14,7 +14,10 @@ set "bin_folder=%script_location%bin"
 @REM # By default we will build pro, not micro
 set BUILD_MICRO=0
 set BUILD_MICRO_24x_COMPATIBILITY=0
+<<<<<<< HEAD
 set MICRO_UNBOUNDED_SEQUENCE_SIZE=1048576
+=======
+>>>>>>> 20ac0a912d34a75df5555316900160bde38c9587
 
 @REM # Default values:
 set BUILD_CPP=1

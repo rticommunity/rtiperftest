@@ -64,21 +64,23 @@ void RTIDDSImpl<T>::Shutdown()
 
   #ifdef RTI_MICRO
 
-    RTRegistry *registry = _factory->get_registry();
+    if (_factory != NULL) {
+        RTRegistry *registry = _factory->get_registry();
 
-    /*
-     * Some of these might not be registered, so we
-     * won't show any errors if the unregister returns
-     * that the module is not registerd.
-     */
-    if (!registry->unregister("dpde", NULL, NULL)) {
-        //printf("failed to unregister dpde\n");
-    }
-    if (!registry->unregister("rh", NULL, NULL)) {
-        //printf("failed to unregister rh\n");
-    }
-    if (!registry->unregister("wh", NULL, NULL)) {
-        //printf("failed to unregister wh\n");
+        /*
+         * Some of these might not be registered, so we
+         * won't show any errors if the unregister returns
+         * that the module is not registerd.
+         */
+        if (!registry->unregister("dpde", NULL, NULL)) {
+            //printf("failed to unregister dpde\n");
+        }
+        if (!registry->unregister("rh", NULL, NULL)) {
+            //printf("failed to unregister rh\n");
+        }
+        if (!registry->unregister("wh", NULL, NULL)) {
+            //printf("failed to unregister wh\n");
+        }
     }
 
   #endif
@@ -2084,8 +2086,12 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         dw_qos.protocol.rtps_reliable_writer.max_send_window_size = _SendQueueSize;
         dw_qos.protocol.rtps_reliable_writer.min_send_window_size = _SendQueueSize;
       #else
-        // Keep all not supported in Micro.
-        dw_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
+        #if RTI_MICRO_24x_COMPATIBILITY
+          // Keep all not supported in Micro 2.4.x
+          dw_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
+        #else
+          dw_qos.history.kind = DDS_KEEP_ALL_HISTORY_QOS;
+        #endif
         dw_qos.history.depth = _SendQueueSize;
         // Same values we use for Pro (See perftest_qos_profiles.xml).
         dw_qos.protocol.rtps_reliable_writer.heartbeat_period.sec = 0;
@@ -2339,16 +2345,27 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
          *
          * We could potentially modify this with a new command line parameter
          */
-        dr_qos.resource_limits.max_samples = 10000;
-        dr_qos.resource_limits.max_samples_per_instance = 10000;
-
+        if (_DataLen > MAX_BOUNDED_SEQ_SIZE) {
+            dr_qos.resource_limits.max_samples = 50;
+            dr_qos.resource_limits.max_samples_per_instance = 50;
+            dr_qos.history.depth = 50;
+        }
+        else {
+            dr_qos.resource_limits.max_samples = 10000;
+            dr_qos.resource_limits.max_samples_per_instance = 10000;
+            dr_qos.history.depth = 10000;
+        }
         /*
-         * In micro we don't have keep all, this means we need to set the
+         * In micro 2.4.x we don't have keep all, this means we need to set the
          * history to keep last and chose a history depth. For the depth value
-         * we can
+         * we can we same value as max_samples
          */
-        dr_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
-        dr_qos.history.depth = 10000;
+        #if RTI_MICRO_24x_COMPATIBILITY
+          // Keep all not supported in Micro 2.4.x
+          dr_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
+        #else
+          dr_qos.history.kind = DDS_KEEP_ALL_HISTORY_QOS;
+        #endif
 
     } else { // "LatencyQos" or "AnnouncementQos"
 
@@ -2358,16 +2375,20 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
          * LENGTH_UNLIMITED. In Micro we will use a lower number due to
          * memory restrictions.
          */
-        dr_qos.resource_limits.max_samples = 1000;
+        if (_DataLen > MAX_BOUNDED_SEQ_SIZE) {
+            dr_qos.resource_limits.max_samples = 50;
+        }
+        else {
+            dr_qos.resource_limits.max_samples = 1000;
+        }
     }
 
     /*
      * We could potentially use here the number of subscriber, right now this
      * class does not have access to the number of subscriber though.
      */
-    dr_qos.reader_resource_limits.max_remote_writers = 1000;
-    dr_qos.reader_resource_limits.max_remote_writers_per_instance =
-            1000;
+    dr_qos.reader_resource_limits.max_remote_writers = 50;
+    dr_qos.reader_resource_limits.max_remote_writers_per_instance = 50;
   #endif
 
   #ifndef RTI_MICRO
@@ -2424,9 +2445,13 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 buf,
                 false);
       #else
-        fprintf(stderr,
-                "Unbounded sequences not supported on Micro.\n");
-        return NULL;
+        /* This is only needed for Micro 2.4.x. Unbounded sequences are 
+         * available in Micro 3.0 */
+        #if RTI_MICRO_24x_COMPATIBILITY
+          fprintf(stderr,
+                  "Unbounded sequences not supported on Micro.\n");
+          return NULL;
+        #endif
       #endif
     }
 

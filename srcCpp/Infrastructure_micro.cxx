@@ -138,6 +138,76 @@ bool configureUDPv4Transport(
     return true;
 }
 
+#if !RTI_MICRO_24x_COMPATIBILITY
+bool configureShmemTransport(
+        PerftestTransport &transport,
+        DDS_DomainParticipantQos& qos)
+{
+    RTRegistry *registry = DDSDomainParticipantFactory::get_instance()->get_registry();
+
+    DPDE_DiscoveryPluginProperty dpde_properties;
+    NETIO_SHMEMInterfaceFactoryProperty shmem_property;
+    
+    /* We don't need UDP transport. Unregister it */
+    if (!registry->unregister(NETIO_DEFAULT_UDP_NAME, NULL, NULL)) {
+        printf("Micro: Failed to unregister udp\n");
+        return false;
+    }
+
+    if (!registry->register_component("dpde",
+                DPDEDiscoveryFactory::get_interface(),
+                &dpde_properties._parent,
+                NULL)) {
+        printf("Micro: Failed to register dpde\n");
+        return false;
+    }
+
+    if (!qos.discovery.discovery.name.set_name("dpde")) {
+        printf("Micro: Failed to set discovery plugin name\n");
+        return false;
+    }
+
+    if (!registry->register_component(
+            NETIO_DEFAULT_SHMEM_NAME,
+            SHMEMInterfaceFactory::get_interface(),
+            (struct RT_ComponentFactoryProperty*) &shmem_property,
+            NULL))
+    {
+        printf("failed to register shmem\n");
+        return false;
+    }
+
+    qos.transports.enabled_transports.maximum(1);
+    qos.transports.enabled_transports.length(1);
+    qos.transports.enabled_transports[0] = DDS_String_dup("_shmem");
+
+    qos.discovery.enabled_transports.maximum(1);
+    qos.discovery.enabled_transports.length(1);
+    qos.discovery.enabled_transports[0] = DDS_String_dup("_shmem://");
+
+    qos.user_traffic.enabled_transports.maximum(1);
+    qos.user_traffic.enabled_transports.length(1);
+    qos.user_traffic.enabled_transports[0] = DDS_String_dup("_shmem://");
+
+    qos.discovery.initial_peers.maximum(1);
+    qos.discovery.initial_peers.length(1);
+    qos.discovery.initial_peers[0] = DDS_String_dup("_shmem://");
+
+    /* if there are more remote or local endpoints, you may need to increase these limits */
+    qos.resource_limits.max_destination_ports = 32;
+    qos.resource_limits.max_receive_ports = 32;
+    qos.resource_limits.local_topic_allocation = 3;
+    qos.resource_limits.local_type_allocation = 1;
+    qos.resource_limits.local_reader_allocation = 2;
+    qos.resource_limits.local_writer_allocation = 2;
+    qos.resource_limits.remote_participant_allocation = 8;
+    qos.resource_limits.remote_reader_allocation = 8;
+    qos.resource_limits.remote_writer_allocation = 8;
+
+    return true;
+}
+#endif
+
 bool PerftestConfigureTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos &qos)
@@ -149,12 +219,15 @@ bool PerftestConfigureTransport(
         /* fprintf(stderr,
                 "%s Using default configuration (xml)\n",
                 classLoggingString.c_str()); */
-        configureUDPv4Transport(transport, qos);
-        break;
+        return configureUDPv4Transport(transport, qos);
 
     case TRANSPORT_UDPv4:
-        configureUDPv4Transport(transport, qos);
-        break;
+        return configureUDPv4Transport(transport, qos);
+
+#if !RTI_MICRO_24x_COMPATIBILITY
+    case TRANSPORT_SHMEM:
+        return configureShmemTransport(transport, qos);
+#endif
 
     default:
         fprintf(stderr,

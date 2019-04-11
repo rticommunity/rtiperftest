@@ -396,7 +396,10 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             }
 
             if (_useUnbounded == 0 && _DataLen > (unsigned long)MAX_BOUNDED_SEQ_SIZE) {
-                PerftestLogNotSupportedInMicro("Large Data");
+                /* this should be set only for Micro 2.4.x*/
+                #if RTI_MICRO_24x_COMPATIBILITY
+                  PerftestLogNotSupportedInMicro("Large Data");
+                #endif
                 _useUnbounded = (std::min)(
                         2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
             }
@@ -1136,16 +1139,20 @@ int perftest_cpp::Subscriber()
         if (reader_listener->change_size) { // ACK change_size
             TestMessage message_change_size;
             message_change_size.entity_id = _SubID;
+            message_change_size.data = new char[1];
             announcement_writer->Send(message_change_size);
             announcement_writer->Flush();
             reader_listener->change_size = false;
+            delete[] message_change_size.data;
         }
 
         if (reader_listener->end_test) { // ACK end_test
             TestMessage message_end_test;
             message_end_test.entity_id = _SubID;
+            message_end_test.data = new char[1];
             announcement_writer->Send(message_end_test);
             announcement_writer->Flush();
+            delete[] message_end_test.data;
             break;
         }
 
