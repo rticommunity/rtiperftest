@@ -41,7 +41,7 @@ struct TestDataLarge_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, TMP_MICRO_MAX_UNBOUNDED_SEQ_SIZE> bin_data;
+    sequence<octet> bin_data;
 }; //@Extensibility FINAL_EXTENSIBILITY
 
 struct TestDataKeyedLarge_t {
@@ -52,6 +52,6 @@ struct TestDataKeyedLarge_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, TMP_MICRO_MAX_UNBOUNDED_SEQ_SIZE> bin_data;
+    sequence<octet> bin_data;
 }; //@Extensibility FINAL_EXTENSIBILITY
 
