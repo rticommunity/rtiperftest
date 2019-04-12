@@ -3,8 +3,8 @@
 Release Notes
 =============
 
-Compatibility 2.4
------------------
+Compatibility Master
+--------------------
 
 Using Security
 ~~~~~~~~~~~~~~
