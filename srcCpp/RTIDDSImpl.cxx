@@ -2330,6 +2330,16 @@ bool RTIDDSImpl<T>::configureSecurePlugin(DDS_DomainParticipantQos& dpQos) {
         return false;
     }
 
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.secure.cryptography.max_receiver_specific_macs",
+            "4",
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property com.rti.serv.secure.library\n");
+        return false;
+    }
+
     // private key
     retcode = DDSPropertyQosPolicyHelper::add_property(
             dpQos.property,
