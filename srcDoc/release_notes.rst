@@ -266,6 +266,12 @@ certain VxWorks platforms.
 This issue has been fixed, since this library is not needed in the *VxWorks* platforms,
 *RTI Perftest* excludes `sys/time.h` when compiling for *VxWorks*.
 
+Migrate RTI Routing Service XML configuration to 6.0.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The RTI Routing Service configuration file has been updated and
+it is now supported in the version 6.0.0.
+
 Release Notes 2.3.2
 -------------------
 

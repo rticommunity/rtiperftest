@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:noNamespaceSchemaLocation="../schema/rti_recording_service.xsd">
+
+    <!-- Qos Library -->
+    <qos_library name="UserQosLib">
+        <qos_profile name="UserReliableQos">
+            <datareader_qos>
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                </reliability>
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+            </datareader_qos>
+        </qos_profile>
+    </qos_library>
+
+
+    <!-- ================================================================= -->
+    <!-- QoS libraries                                                     -->
+    <!-- ================================================================= -->
+
+    <qos_library name="PerformanceLibraries_Modified">
+
+        <qos_profile name="BaseProfileQos">
+
+            <participant_qos>
+                <receiver_pool>
+                    <buffer_size>65536</buffer_size>
+                    <thread>
+                        <priority>THREAD_PRIORITY_NORMAL</priority>
+                    </thread>
+                </receiver_pool>
+
+                <resource_limits>
+                    <type_code_max_serialized_length>2048</type_code_max_serialized_length>
+                    <participant_property_string_max_length>4096</participant_property_string_max_length>
+                    <participant_property_list_max_length>64</participant_property_list_max_length>
+                </resource_limits>
+
+                <transport_builtin>
+                    <mask>$(TRANSPORT_BUILTIN_MASK)</mask>
+                </transport_builtin>
+
+                <property>
+                    <value>
+                        <element>
+                            <name>dds.transport.UDPv4.builtin.parent.message_size_max</name>
+                            <value>65536</value>
+                        </element>
+                        <element>
+                            <name>dds.transport.UDPv4.builtin.send_socket_buffer_size</name>
+                            <value>524288</value>
+                        </element>
+                        <element>
+                            <name>dds.transport.UDPv4.builtin.recv_socket_buffer_size</name>
+                            <value>2097152</value>
+                        </element>
+
+                        <element>
+                            <name>dds.transport.shmem.builtin.parent.message_size_max</name>
+                            <value>65536</value>
+                        </element>
+                        <element>
+                            <name>dds.transport.shmem.builtin.receive_buffer_size</name>
+                            <value>2097152</value>
+                        </element>
+
+                        <element>
+                            <name>dds.transport.TCPv4.tcp1.library</name>
+                            <value>nddstransporttcp</value>
+                        </element>
+                        <element>
+                            <name>dds.transport.TCPv4.tcp1.create_function</name>
+                            <value>NDDS_Transport_TCPv4_create</value>
+                        </element>
+                        <element>
+                            <name>dds.transport.TCPv4.tcp1.disable_nagle</name>
+                            <value>1</value>
+                        </element>
+                        <element>
+                            <name>dds.transport.TCPv4.tcp1.parent.message_size_max</name>
+                            <value>65536</value>
+                        </element>
+                    </value>
+                </property>
+
+            </participant_qos>
+
+            <publisher_qos>
+                <presentation>
+                    <access_scope>TOPIC_PRESENTATION_QOS</access_scope>
+                    <ordered_access>true</ordered_access>
+                </presentation>
+            </publisher_qos>
+
+            <subscriber_qos>
+                <presentation>
+                    <access_scope>TOPIC_PRESENTATION_QOS</access_scope>
+                    <ordered_access>true</ordered_access>
+                </presentation>
+            </subscriber_qos>
+
+            <datawriter_qos>
+
+                <resource_limits>
+                    <max_instances>$(BASE_PROFILE_QOS_MAX_INSTANCES)</max_instances>
+                    <initial_instances>$(BASE_PROFILE_QOS_INITIAL_INSTANCES)</initial_instances>
+                    <instance_hash_buckets>$(BASE_PROFILE_QOS_INSTANCE_HAS_BUCKETS)</instance_hash_buckets>
+                </resource_limits>
+
+                <protocol>
+                    <rtps_reliable_writer>
+                        <disable_positive_acks_min_sample_keep_duration>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>100000</nanosec>
+                        </disable_positive_acks_min_sample_keep_duration>
+                    </rtps_reliable_writer>
+                </protocol>
+
+                <publish_mode>
+                    <kind>$(PUBLISH_MODE)</kind>
+                </publish_mode>
+
+            </datawriter_qos>
+
+            <datareader_qos>
+                <resource_limits>
+                    <max_instances>$(BASE_PROFILE_QOS_MAX_INSTANCES)</max_instances>
+                    <initial_instances>$(BASE_PROFILE_QOS_INITIAL_INSTANCES)</initial_instances>
+                    <instance_hash_buckets>$(BASE_PROFILE_QOS_INSTANCE_HAS_BUCKETS)</instance_hash_buckets>
+                </resource_limits>
+            </datareader_qos>
+
+        </qos_profile>
+
+        <qos_profile name="ThroughputQos" base_name="BaseProfileQos">
+
+            <datawriter_qos>
+
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+
+                <reliability>
+                    <kind>$(RELIABILITY)</kind>
+                    <max_blocking_time>
+                        <sec>40</sec>
+                        <nanosec>0</nanosec>
+                    </max_blocking_time>
+                </reliability>
+
+                <resource_limits>
+                    <max_samples>$(THROUGHPUT_QOS_MAX_SAMPLES)</max_samples>
+                    <initial_samples>$(THROUGHPUT_QOS_INITIAL_SAMPLES)</initial_samples>
+                    <max_samples_per_instance>$(THROUGHPUT_QOS_MAX_SAMPLES_PER_INSTANCE)</max_samples_per_instance>
+                </resource_limits>
+
+                <protocol>
+                    <rtps_reliable_writer>
+
+                        <low_watermark>$(THROUGHPUT_QOS_LOW_WATERMARK)</low_watermark>
+                        <high_watermark>$(THROUGHPUT_QOS_HIGH_WATERMARK)</high_watermark>
+                        <heartbeats_per_max_samples>$(THROUGHPUT_QOS_HB_PER_MAX_SAMPLES)</heartbeats_per_max_samples>
+
+                        <min_send_window_size>$(THROUGHPUT_QOS_MAX_SAMPLES)</min_send_window_size>
+                        <max_send_window_size>$(THROUGHPUT_QOS_MAX_SAMPLES)</max_send_window_size>
+
+                        <heartbeat_period>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>10000000</nanosec>
+                        </heartbeat_period>
+
+                        <fast_heartbeat_period>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>1000000</nanosec>
+                        </fast_heartbeat_period>
+
+                        <late_joiner_heartbeat_period>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>10000000</nanosec>
+                        </late_joiner_heartbeat_period>
+
+                        <max_heartbeat_retries>LENGTH_UNLIMITED</max_heartbeat_retries>
+
+                        <min_nack_response_delay>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>DURATION_ZERO_NSEC</nanosec>
+                        </min_nack_response_delay>
+                        <max_nack_response_delay>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>DURATION_ZERO_NSEC</nanosec>
+                        </max_nack_response_delay>
+                    </rtps_reliable_writer>
+
+                </protocol>
+
+                <writer_resource_limits>
+                    <max_batches>$(SEND_QUEUE_SIZE)</max_batches>
+                </writer_resource_limits>
+
+                <!--
+                <batch>
+                    <enable>$(BATCHING)</enable>
+
+                    <max_data_bytes>$(BATCH_SIZE)</max_data_bytes>
+                    <max_meta_data_bytes>LENGTH_UNLIMITED</max_meta_data_bytes>
+                    <max_samples>LENGTH_UNLIMITED</max_samples>
+
+                    <source_timestamp_resolution>
+                        <sec>DURATION_INFINITE_SEC</sec>
+                        <nanosec>DURATION_INFINITE_NSEC</nanosec>
+                    </source_timestamp_resolution>
+
+                    <max_flush_delay>
+                        <sec>DURATION_INFINITE_SEC</sec>
+                        <nanosec>DURATION_INFINITE_NSEC</nanosec>
+                    </max_flush_delay>
+
+                    <thread_safe_write>false</thread_safe_write>
+                </batch>
+                -->
+
+                <writer_data_lifecycle>
+                    <autodispose_unregistered_instances>false</autodispose_unregistered_instances>
+                </writer_data_lifecycle>
+
+            </datawriter_qos>
+
+            <datareader_qos>
+
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+
+                <reliability>
+                    <kind>$(RELIABILITY)</kind>
+                </reliability>
+
+                <resource_limits>
+
+                    <max_samples>10000</max_samples>
+                    <initial_samples>5000</initial_samples>
+                    <max_samples_per_instance>10000</max_samples_per_instance>
+                </resource_limits>
+
+                <reader_resource_limits>
+                    <max_samples_per_remote_writer>10000</max_samples_per_remote_writer>
+                    <max_samples_per_read>65536</max_samples_per_read>
+                </reader_resource_limits>
+
+                <protocol>
+                    <rtps_reliable_reader>
+                        <min_heartbeat_response_delay>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>DURATION_ZERO_NSEC</nanosec>
+                        </min_heartbeat_response_delay>
+                        <max_heartbeat_response_delay>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>DURATION_ZERO_NSEC</nanosec>
+                        </max_heartbeat_response_delay>
+                    </rtps_reliable_reader>
+                </protocol>
+            </datareader_qos>
+
+        </qos_profile>
+
+        <qos_profile name="LatencyQos" base_name="BaseProfileQos">
+
+            <datawriter_qos>
+
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+
+                <reliability>
+                    <kind>$(RELIABILITY)</kind>
+                    <max_blocking_time>
+                        <sec>40</sec>
+                        <nanosec>0</nanosec>
+                    </max_blocking_time>
+                </reliability>
+
+                <resource_limits>
+                    <max_samples>LENGTH_UNLIMITED</max_samples>
+                    <initial_samples>100</initial_samples>
+                    <max_samples_per_instance>LENGTH_UNLIMITED</max_samples_per_instance>
+                </resource_limits>
+
+                <protocol>
+                    <rtps_reliable_writer>
+                        <low_watermark>10</low_watermark>
+                        <high_watermark>100</high_watermark>
+                        <heartbeats_per_max_samples>1000</heartbeats_per_max_samples>
+                        <heartbeat_period>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>10000000</nanosec>
+                        </heartbeat_period>
+                        <fast_heartbeat_period>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>1000000</nanosec>
+                        </fast_heartbeat_period>
+                        <late_joiner_heartbeat_period>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>10000000</nanosec>
+                        </late_joiner_heartbeat_period>
+                        <max_heartbeat_retries>LENGTH_UNLIMITED</max_heartbeat_retries>
+                        <min_nack_response_delay>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>DURATION_ZERO_NSEC</nanosec>
+                        </min_nack_response_delay>
+                        <max_nack_response_delay>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>DURATION_ZERO_NSEC</nanosec>
+                        </max_nack_response_delay>
+                        <min_send_window_size>LENGTH_UNLIMITED</min_send_window_size>
+                        <max_send_window_size>LENGTH_UNLIMITED</max_send_window_size>
+                    </rtps_reliable_writer>
+                </protocol>
+
+                <writer_data_lifecycle>
+                    <autodispose_unregistered_instances>false</autodispose_unregistered_instances>
+                </writer_data_lifecycle>
+
+            </datawriter_qos>
+
+            <datareader_qos>
+
+                <resource_limits>
+                    <max_samples>100</max_samples>
+                    <initial_samples>100</initial_samples>
+                    <max_samples_per_instance>100</max_samples_per_instance>
+                </resource_limits>
+
+                <reader_resource_limits>
+                    <max_samples_per_remote_writer>100</max_samples_per_remote_writer>
+                </reader_resource_limits>
+
+                <protocol>
+                    <rtps_reliable_reader>
+                        <min_heartbeat_response_delay>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>DURATION_ZERO_NSEC</nanosec>
+                        </min_heartbeat_response_delay>
+                        <max_heartbeat_response_delay>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>DURATION_ZERO_NSEC</nanosec>
+                        </max_heartbeat_response_delay>
+                        <heartbeat_suppression_duration>
+                            <sec>DURATION_ZERO_SEC</sec>
+                            <nanosec>DURATION_ZERO_NSEC</nanosec>
+                        </heartbeat_suppression_duration>
+                    </rtps_reliable_reader>
+                </protocol>
+            </datareader_qos>
+
+        </qos_profile>
+
+        <qos_profile name="AnnouncementQos" base_name="LatencyQos">
+
+            <datareader_qos>
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                    <max_blocking_time>
+                        <sec>DURATION_INFINITE_SEC</sec>
+                        <nanosec>DURATION_INFINITE_NSEC</nanosec>
+                    </max_blocking_time>
+                </reliability>
+
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+                <durability>
+                    <kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind>
+                </durability>
+            </datareader_qos>
+
+            <datawriter_qos>
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                    <max_blocking_time>
+                        <sec>DURATION_INFINITE_SEC</sec>
+                        <nanosec>DURATION_INFINITE_NSEC</nanosec>
+                    </max_blocking_time>
+                </reliability>
+
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+                <durability>
+                    <kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind>
+                </durability>
+            </datawriter_qos>
+        </qos_profile>
+
+    </qos_library>
+
+
+
+    <recording_service name="RecordingServiceTest">
+        <!--  Top-level storage settings -->
+        <storage>
+            <sqlite>
+                <file>rti_recorder_default</file>
+                <file_suffix>dat</file_suffix>
+            </sqlite>
+
+        </storage>
+
+
+        <!--  Top-level domain settings -->
+        <domain_participant name="Participant0">
+            <domain_id>0</domain_id>
+
+            <participant_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
+        </domain_participant>
+
+        <session name="DefaultSession">
+            <subscriber_qos base_name="PerformanceLibraries_Modified::ThroughputQos"/>
+
+            <thread_pool>
+                <!-- a number greater than 1 requires thread-safe dblink plugin -->
+                <size>$(TEST_THREAD_POOL_SIZE)</size>
+                <priority>THREAD_PRIORITY_HIGH</priority>
+            </thread_pool>
+
+            <topic_group name="RecordAll" participant_ref="Participant0">
+                <allow_topic_name_filter>Throughput</allow_topic_name_filter>
+                <deny_topic_name_filter>rti/*</deny_topic_name_filter>
+                <datareader_qos base_name="PerformanceLibraries_Modified::ThroughputQos">
+                    <multicast>
+                        <value>
+                            <element>
+                                <!-- perftest by default publishes the throughput topic in this address for multicast -->
+                                <receive_address>239.255.1.1</receive_address>
+                            </element>
+                        </value>
+                    </multicast>
+                </datareader_qos>
+            </topic_group>
+        </session>
+    </recording_service>
+
+</dds>
