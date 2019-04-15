@@ -34,7 +34,7 @@ bool perftest_cpp::_testCompleted = false;
 bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan test
 const int timeout_wait_for_ack_sec = 0;
 const unsigned int timeout_wait_for_ack_nsec = 100000000;
-const Perftest_ProductVersion_t perftest_cpp::_version = {2, 4, 0, 0};
+const Perftest_ProductVersion_t perftest_cpp::_version = {9, 9, 9, 9};
 
 /*
  * PERFTEST-108
