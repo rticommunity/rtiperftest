@@ -5,8 +5,10 @@
  * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
-
 #include <string>
+
+/* Forward declaration of perftest_cpp to avoid circular dependencies */
+class perftest_cpp;
 
 class TestMessage
 {
@@ -110,7 +112,7 @@ class IMessaging
 {
   public:
     virtual ~IMessaging() {}
-    virtual bool Initialize(int argc, char *argv[]) = 0;
+    virtual bool Initialize(int argc, char *argv[], perftest_cpp *parent) = 0;
 
     virtual void PrintCmdLineHelp() = 0;
 
