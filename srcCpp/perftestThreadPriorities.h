@@ -11,6 +11,7 @@
 #include <windows.h>
 #elif RTI_UNIX
 #include <sched.h>
+#include <pthread.h>
 #endif
 #include <errno.h>
 #include <map>

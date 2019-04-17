@@ -779,7 +779,7 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
             }
             _MessagingArgc++;
         } else if (IS_OPTION(argv[i], "-threadPriorities")) {
-            if ((i == (argc - 1))) {
+            if (i == (argc - 1)) {
                 fprintf(stderr,
                         "Missing <A:B:C> priorities after -threadPriorities\n");
                 return false;
