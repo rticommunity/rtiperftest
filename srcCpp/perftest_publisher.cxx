@@ -1902,7 +1902,6 @@ int perftest_cpp::Publisher()
             int threadPriority = RTI_OSAPI_THREAD_PRIORITY_DEFAULT;
             int threadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
 
-
             if (_threadPriorities.isSet) {
                 threadPriority = _threadPriorities.receive;
                 threadOptions = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
@@ -1910,7 +1909,8 @@ int perftest_cpp::Publisher()
             }
 
             struct RTIOsapiThread *receiverThread = NULL;
-            receiverThread = RTIOsapiThread_new("ReceiverThread",
+            receiverThread = RTIOsapiThread_new(
+                    "ReceiverThread",
                     threadPriority,
                     threadOptions,
                     RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
@@ -2328,7 +2328,6 @@ const PerftestThreadPriorities perftest_cpp::get_thread_priorities()
 {
     return _threadPriorities;
 }
-
 
 #ifdef RTI_WIN32
 inline VOID CALLBACK perftest_cpp::Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired) {

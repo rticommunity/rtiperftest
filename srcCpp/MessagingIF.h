@@ -5,6 +5,7 @@
  * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
+
 #include <string>
 
 /* Forward declaration of perftest_cpp to avoid circular dependencies */

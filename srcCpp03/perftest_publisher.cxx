@@ -1295,7 +1295,8 @@ int perftest_cpp::RunSubscriber()
                     | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
         }
 
-        RTIOsapiThread_new(
+        struct RTIOsapiThread *receiverThread = NULL;
+        receiverThread = RTIOsapiThread_new(
                 "ReceiverThread",
                 threadPriority,
                 threadOptions,
@@ -1303,6 +1304,12 @@ int perftest_cpp::RunSubscriber()
                 NULL,
                 ThroughputReadThread,
                 reader_listener);
+        if (receiverThread == NULL) {
+            std::cerr << "[Error] Problem creating ReceiverThread for ThroughputReadThread."
+                    << std::endl;
+            return -1;
+        }
+
     }
 
     // Create announcement writer
@@ -1834,7 +1841,8 @@ int perftest_cpp::RunPublisher()
                         | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
             }
 
-            RTIOsapiThread_new(
+            struct RTIOsapiThread *receiverThread = NULL;
+            receiverThread = RTIOsapiThread_new(
                     "ReceiverThread",
                     threadPriority,
                     threadOptions,
@@ -1842,6 +1850,11 @@ int perftest_cpp::RunPublisher()
                     NULL,
                     LatencyReadThread,
                     reader_listener);
+            if (receiverThread == NULL) {
+                std::cerr << "[Error] Problem creating ReceiverThread for LatencyReadThread."
+                        << std::endl;
+                return -1;
+            }
         }
     } else {
         reader = NULL;
