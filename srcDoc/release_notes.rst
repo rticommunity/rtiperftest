@@ -111,7 +111,7 @@ Where:
   *RTI Connext DDS* level.
 
 To see what values should be used for the different threads see
-*RTI Connext DDS Core Libraries Platform Notes Version 5.3.1*
+*RTI Connext DDS Core Libraries Platform Notes*
 
 - Table 6.7 Thread-Priority Definitions for Linux Platforms
 - Table 8.6 Thread-Priority Definitions for OS X Platforms
