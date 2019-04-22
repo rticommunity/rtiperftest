@@ -109,6 +109,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _useCft(false),
         _instancesToBeWritten(-1), // By default use round-robin (-1)
         _CFTRange(2),
+        _parent(NULL),
       #ifdef RTI_SECURE_PERFTEST
         _secureUseSecure(false),
         _secureIsSigned(false),
@@ -1753,7 +1754,7 @@ dds::core::QosProvider RTIDDSImpl<T>::getQosProviderForProfile(
  * Initialize
  */
 template <typename T>
-bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
+bool RTIDDSImpl<T>::Initialize(int argc, char *argv[], perftest_cpp *parent)
 {
     using namespace rti::core::policy;
     ParseConfig(argc, argv);
@@ -1762,6 +1763,17 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
     dds::core::QosProvider qos_provider =
         getQosProviderForProfile( _ProfileLibraryName,"BaseProfileQos");
     dds::domain::qos::DomainParticipantQos qos = qos_provider.participant_qos();
+    dds::pub::qos::PublisherQos publisherQoS = qos_provider.publisher_qos();
+
+    /* Mask for threadPriorities when it's used */
+    rti::core::ThreadSettingsKindMask mask(
+            rti::core::ThreadSettingsKindMask::realtime_priority());
+
+    if (parent == NULL) {
+        return false;
+    }
+    _parent = parent;
+    PerftestThreadPriorities threadPriorities = parent->get_thread_priorities();
 
     std::map<std::string, std::string> properties =
             qos.policy<Property>().get_all();
@@ -1785,6 +1797,22 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         return false;
     };
 
+    // set thread priorities.
+    if (threadPriorities.isSet) {
+        // Set real time schedule
+        qos.policy<ReceiverPool>().thread().mask(mask);
+        qos.policy<Event>().thread().mask(mask);
+        qos.policy<Database>().thread().mask(mask);
+
+        // Set priority
+        qos.policy<ReceiverPool>().thread().priority(
+                threadPriorities.receive);
+        qos.policy<Event>().thread().priority(
+                threadPriorities.dbAndEvent);
+        qos.policy<Database>().thread().priority(
+                threadPriorities.dbAndEvent);
+    }
+
     if (_AutoThrottle) {
         properties["dds.domain_participant.auto_throttle.enable"] = "true";
     }
@@ -1804,8 +1832,24 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
             dds::core::status::StatusMask::offered_incompatible_qos() |
             dds::core::status::StatusMask::requested_incompatible_qos() );
 
+    // Set publisher QoS
+    if (threadPriorities.isSet) {
+        // Asynchronous thread priority
+        publisherQoS.policy<AsynchronousPublisher>().disable_asynchronous_write(false);
+        publisherQoS.policy<AsynchronousPublisher>().thread().mask(mask);
+        publisherQoS.policy<AsynchronousPublisher>().thread().priority(
+                threadPriorities.main);
+
+        // Asynchronous thread for batching priority
+        publisherQoS.policy<AsynchronousPublisher>().disable_asynchronous_batch(false);
+        publisherQoS.policy<AsynchronousPublisher>().asynchronous_batch_thread()
+                .mask(mask);
+        publisherQoS.policy<AsynchronousPublisher>().asynchronous_batch_thread()
+                .priority(threadPriorities.main);
+    }
+
     // Create the _publisher and _subscriber
-    _publisher = dds::pub::Publisher(_participant, qos_provider.publisher_qos());
+    _publisher = dds::pub::Publisher(_participant, publisherQoS);
 
     _subscriber = dds::sub::Subscriber(_participant, qos_provider.subscriber_qos());
 

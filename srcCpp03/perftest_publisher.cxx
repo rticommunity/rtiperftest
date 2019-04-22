@@ -33,6 +33,7 @@ RTI_UINT64 perftest_cpp::_Clock_usec = 0;
 const long timeout_wait_for_ack_sec = 0;
 const unsigned long timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {9, 9, 9, 9};
+PerftestThreadPriorities _threadPriorities;
 
 /*
  * PERFTEST-108
@@ -94,6 +95,11 @@ int perftest_cpp::Run(int argc, char *argv[]) {
         return -1;
     }
 
+    if (_threadPriorities.isSet
+            && !_threadPriorities.set_main_thread_priority()) {
+        return -1;
+    }
+
     if (_useUnbounded == 0) { //unbounded is not set
         if (_isKeyed) {
             _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
@@ -108,7 +114,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
         }
     }
 
-    _MessagingImpl->Initialize(_MessagingArgc, _MessagingArgv);
+    _MessagingImpl->Initialize(_MessagingArgc, _MessagingArgv, this);
 
     PrintConfiguration();
 
@@ -306,6 +312,17 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
         "\t                          test\n"
         "\t-useReadThread          - Use separate thread instead of callback to \n"
         "\t                          read data\n"
+        "\t-threadPriorities X:Y:Z - Set the priorities for the application Threads:\n"
+        "\t                              X -- For the Main Thread, which will be the one\n"
+        "\t                                   sending the data. Also for the Asynchronous\n"
+        "\t                                   thread if that one is used.\n"
+        "\t                              Y -- For the Receive Threads, If the -useReadThread\n"
+        "\t                                   is used, also for the thread created to receive\n"
+        "\t                                   and process data.\n"
+        "\t                              Z -- For the rest of the threads created by the middleware:\n"
+        "\t                                   Event and Database Threads.\n"
+        "\t                          Three default values: h (high), n (normal) and l (low)\n"
+        "\t                          can be use instead of numbers.\n"
         "\t-latencyTest            - Run a latency test consisting of a ping-pong \n"
         "\t                          synchronous communication\n"
         "\t-verbosity <level>      - Run with different levels of verbosity:\n"
@@ -761,6 +778,17 @@ bool perftest_cpp::ParseConfig(int argc, char *argv[])
                 throw std::logic_error("[Error] Error parsing commands");
             }
             _MessagingArgc++;
+        } else if (IS_OPTION(argv[i], "-threadPriorities")) {
+            if (i == (argc - 1)) {
+                fprintf(stderr,
+                        "Missing <A:B:C> priorities after -threadPriorities\n");
+                return false;
+            }
+            if (!_threadPriorities.parse_priority(argv[++i])) {
+                fprintf(stderr, "Wrong sintax after -threadPriorities\n");
+                return false;
+            }
+            _threadPriorities.isSet = true;
         } else
         {
             _MessagingArgv[_MessagingArgc] = DDS_String_dup(argv[i]);
@@ -965,6 +993,17 @@ void perftest_cpp::PrintConfiguration()
         stringStream << "WaitSets\n";
     } else {
         stringStream << "Listeners\n";
+    }
+
+    // Thread priority
+    if (_threadPriorities.isSet) {
+        stringStream << "\tUsing thread priorities:" << std::endl;
+        stringStream << "\t\tMain thread Priority: "
+                << _threadPriorities.main << std::endl;
+        stringStream << "\t\tReceive thread Priority: "
+                << _threadPriorities.receive << std::endl;
+        stringStream << "\t\tDataBase and Event threads Priority: "
+                << _threadPriorities.dbAndEvent << std::endl;
     }
 
     stringStream << _MessagingImpl->PrintConfiguration();
@@ -1247,11 +1286,30 @@ int perftest_cpp::RunSubscriber()
         reader_listener = new ThroughputListener(writer, reader, _useCft,
                 _NumPublishers);
 
-        RTIOsapiThread_new("ReceiverThread",
-                            RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-                            RTI_OSAPI_THREAD_OPTION_DEFAULT,
-                            RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                            NULL, ThroughputReadThread, reader_listener);
+        int threadPriority = RTI_OSAPI_THREAD_PRIORITY_DEFAULT;
+        int threadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
+
+        if (_threadPriorities.isSet) {
+            threadPriority = _threadPriorities.receive;
+            threadOptions = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
+                    | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
+        }
+
+        struct RTIOsapiThread *receiverThread = NULL;
+        receiverThread = RTIOsapiThread_new(
+                "ReceiverThread",
+                threadPriority,
+                threadOptions,
+                RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                NULL,
+                ThroughputReadThread,
+                reader_listener);
+        if (receiverThread == NULL) {
+            std::cerr << "[Error] Problem creating ReceiverThread for ThroughputReadThread."
+                    << std::endl;
+            return -1;
+        }
+
     }
 
     // Create announcement writer
@@ -1774,11 +1832,29 @@ int perftest_cpp::RunPublisher()
             reader_listener = new LatencyListener(num_latency, reader,
                     _LatencyTest ? writer : NULL);
 
-            RTIOsapiThread_new("ReceiverThread",
-            RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-            RTI_OSAPI_THREAD_OPTION_DEFAULT,
-            RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-            NULL, LatencyReadThread, reader_listener);
+            int threadPriority = RTI_OSAPI_THREAD_PRIORITY_DEFAULT;
+            int threadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
+
+            if (_threadPriorities.isSet) {
+                threadPriority = _threadPriorities.receive;
+                threadOptions = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
+                        | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
+            }
+
+            struct RTIOsapiThread *receiverThread = NULL;
+            receiverThread = RTIOsapiThread_new(
+                    "ReceiverThread",
+                    threadPriority,
+                    threadOptions,
+                    RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+                    NULL,
+                    LatencyReadThread,
+                    reader_listener);
+            if (receiverThread == NULL) {
+                std::cerr << "[Error] Problem creating ReceiverThread for LatencyReadThread."
+                        << std::endl;
+                return -1;
+            }
         }
     } else {
         reader = NULL;
@@ -2176,6 +2252,11 @@ inline unsigned int perftest_cpp::GetSamplesPerBatch() {
     }
 
     return samplesPerBatch;
+}
+
+const PerftestThreadPriorities perftest_cpp::get_thread_priorities()
+{
+    return _threadPriorities;
 }
 
 #ifdef RTI_WIN32

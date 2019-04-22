@@ -3,6 +3,11 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
+#include <string>
+
+/* Forward declaration of perftest_cpp to avoid circular dependencies */
+class perftest_cpp;
+
 #ifndef __MESSAGINGIF_H__
 #define __MESSAGINGIF_H__
 
@@ -92,7 +97,7 @@ class IMessaging
 {
   public:
     virtual ~IMessaging() {}
-    virtual bool Initialize(int argc, char *argv[]) = 0;
+    virtual bool Initialize(int argc, char *argv[], perftest_cpp *parent) = 0;
     virtual void PrintCmdLineHelp() = 0;
     virtual std::string PrintConfiguration() = 0;
     virtual void Shutdown() = 0;

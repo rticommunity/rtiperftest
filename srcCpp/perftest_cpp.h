@@ -14,6 +14,7 @@
 #include <vector>
 // STL needed for sorting
 #include <algorithm>
+#include <map>
 #include <limits.h>
 
 #ifdef RTI_WIN32
@@ -37,6 +38,7 @@
 #endif
 
 #include "MessagingIF.h"
+#include "perftestThreadPriorities.h"
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
 
@@ -58,10 +60,14 @@ class perftest_cpp
     bool ParseConfig(int argc, char *argv[]);
     void PrintConfiguration();
     unsigned int GetSamplesPerBatch();
+    const PerftestThreadPriorities get_thread_priorities();
 
   private:
     int Publisher();
     int Subscriber();
+    bool set_main_thread_priority();
+    bool check_priority_range(int value);
+    bool parse_priority(std::string arg);
 
   public:
     static void MilliSleep(unsigned int millisec) {
@@ -113,6 +119,9 @@ class perftest_cpp
     bool _displayWriterStats;
     bool _useCft;
     static const Perftest_ProductVersion_t _version;
+
+    // Priorities for the threads used by perftest and domain participant
+    PerftestThreadPriorities _threadPriorities;
 
   private:
     static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);

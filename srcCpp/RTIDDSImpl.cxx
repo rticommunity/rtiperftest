@@ -2502,11 +2502,22 @@ std::string RTIDDSImpl<T>::printSecureArgs()
  * Initialize
  */
 template <typename T>
-bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
+bool RTIDDSImpl<T>::Initialize(int argc, char *argv[], perftest_cpp * parent)
 {
     DDS_DomainParticipantQos qos;
     DDS_DomainParticipantFactoryQos factory_qos;
+    DDS_PublisherQos publisherQoS;
+
     DomainListener *listener = new DomainListener();
+
+    /* Mask for _threadPriorities when it's used */
+    DDS_ThreadSettingsKindMask mask = DDS_THREAD_SETTINGS_REALTIME_PRIORITY;
+
+    if (parent == NULL) {
+        return false;
+    }
+    _parent = parent;
+    PerftestThreadPriorities threadPriorities = _parent->get_thread_priorities();
 
     // Register _loggerDevice
     if (!NDDSConfigLogger::get_instance()->set_output_device(&_loggerDevice)) {
@@ -2590,6 +2601,20 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         return false;
     };
 
+    // set thread priorities.
+    if (threadPriorities.isSet) {
+
+        // Set real time schedule
+        qos.receiver_pool.thread.mask = mask;
+        qos.event.thread.mask = mask;
+        qos.database.thread.mask = mask;
+
+        // Set priority
+        qos.receiver_pool.thread.priority = threadPriorities.receive;
+        qos.event.thread.priority = threadPriorities.dbAndEvent;
+        qos.database.thread.priority = threadPriorities.dbAndEvent;
+    }
+
     if (_AutoThrottle) {
         DDSPropertyQosPolicyHelper::add_property(qos.property,
                 "dds.domain_participant.auto_throttle.enable", "true", false);
@@ -2633,10 +2658,27 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[])
         dynamicDataTypeSupportObject->register_type(_participant, _typename);
     }
 
-    // Create the DDSPublisher and DDSSubscriber
-    _publisher = _participant->create_publisher_with_profile(
+    _factory->get_publisher_qos_from_profile(
+            publisherQoS,
             _ProfileLibraryName,
-            "BaseProfileQos",
+            "BaseProfileQos");
+
+    if (threadPriorities.isSet) {
+        // Asynchronous thread priority
+        publisherQoS.asynchronous_publisher.disable_asynchronous_write = false;
+        publisherQoS.asynchronous_publisher.thread.mask = mask;
+        publisherQoS.asynchronous_publisher.thread.priority
+                = threadPriorities.main;
+        // Asynchronous thread for batching priority
+        publisherQoS.asynchronous_publisher.disable_asynchronous_batch = false;
+        publisherQoS.asynchronous_publisher.asynchronous_batch_thread.mask = mask;
+        publisherQoS.asynchronous_publisher.asynchronous_batch_thread.priority
+                = threadPriorities.main;
+    }
+
+    // Create the DDSPublisher and DDSSubscriber
+    _publisher = _participant->create_publisher(
+            publisherQoS,
             NULL,
             DDS_STATUS_MASK_NONE);
     if (_publisher == NULL)

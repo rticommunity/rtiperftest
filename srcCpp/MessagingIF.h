@@ -8,6 +8,9 @@
 
 #include <string>
 
+/* Forward declaration of perftest_cpp to avoid circular dependencies */
+class perftest_cpp;
+
 class TestMessage
 {
   public:
@@ -110,7 +113,7 @@ class IMessaging
 {
   public:
     virtual ~IMessaging() {}
-    virtual bool Initialize(int argc, char *argv[]) = 0;
+    virtual bool Initialize(int argc, char *argv[], perftest_cpp *parent) = 0;
 
     virtual void PrintCmdLineHelp() = 0;
 

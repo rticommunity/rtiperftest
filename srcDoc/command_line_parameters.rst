@@ -300,6 +300,32 @@ Test Parameters for Publishing and Subscribing Applications
    **Default:**
    ``Not set. RTI Perftest will use the default initial peers (localhost, shared-memory and multicast).``
 
+-  ``-threadPriorities X:Y:Z``
+
+    This Command Line parameter is supported only for the C++ and C++03 API
+    Implementations.
+
+    Set the priorities for the application Threads:
+        X -- For the Main Thread, which will be the one sending the data. Also
+             for the Asynchronous thread if that one is used.
+        Y -- For the Receive Threads, If the -useReadThread is used, also for
+             the thread created to receive and process data.
+        Z -- For the rest of the threads created by the middleware: Event and
+             Database Threads.
+
+    Three default values: h (high), n (normal) and l (low) can be used
+    instead of numbers.
+
+    To see what values can be used for the different threads see
+    *RTI Connext DDS Core Libraries Platform Notes Version 5.3.1*
+
+    - Table 6.7 Thread-Priority Definitions for Linux Platforms
+    - Table 8.6 Thread-Priority Definitions for OS X Platforms
+    - Table 12.7 Thread-Priority Definitions for Windows Platforms
+
+   **Default:**
+   ``Not set. The priority will not be modified.``
+
 Transport Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
