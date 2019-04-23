@@ -78,51 +78,11 @@ int DynamicDataMembersId::at(std::string key)
 
 template <typename T>
 RTIDDSImpl<T>::RTIDDSImpl():
-        _SendQueueSize(50),
-        _DataLen(100),
-        _DomainID(1),
-        _ProfileFile("perftest_qos_profiles.xml"),
-        _TurboMode(false),
-        _UseXmlQos(true),
-        _AutoThrottle(false),
-        _IsReliable(true),
-        _IsMulticast(false),
-        _BatchSize(DEFAULT_THROUGHPUT_BATCH_SIZE),
-        _InstanceCount(1),
         _InstanceMaxCountReader(dds::core::LENGTH_UNLIMITED), //(-1)
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED), //(-1)
-        _Durability(0), // DDS_VOLATILE_DURABILITY_QOS;
-        _DirectCommunication(true),
-        _KeepDurationUsec(-1),
-        _UsePositiveAcks(true),
-        _LatencyTest(false),
-        _IsDebug(false),
         _isLargeData(false),
-        _isScan(false),
-        _isPublisher(false),
-        _isDynamicData(false),
-        _IsAsynchronous(false),
-        _FlowControllerCustom("default"),
-        _useUnbounded(0),
-        _peer_host_count(0),
-        _peer_host(dds::core::StringSeq(RTIPERFTEST_MAX_PEERS)),
-        _useCft(false),
-        _instancesToBeWritten(-1), // By default use round-robin (-1)
-        _CFTRange(2),
-        _parent(NULL),
-      #ifdef RTI_SECURE_PERFTEST
-        _secureUseSecure(false),
-        _secureIsSigned(false),
-        _secureIsDataEncrypted(false),
-        _secureIsSMEncrypted(false),
-        _secureIsDiscoveryEncrypted(false),
-        _secureDebugLevel(-1),
-      #endif
-        _WaitsetEventCount(5),
-        _WaitsetDelayUsec(100),
-        _HeartbeatPeriod(dds::core::Duration::zero()),
-        _FastHeartbeatPeriod(dds::core::Duration::zero()),
-        _ProfileLibraryName("PerftestQosLibrary"),
+
+
         _participant(dds::core::null),
         _subscriber(dds::core::null),
         _publisher(dds::core::null),
@@ -150,599 +110,53 @@ void RTIDDSImpl<T>::Shutdown()
 }
 
 /*********************************************************
- * PrintCmdLineHelp
- */
-template <typename T>
-void RTIDDSImpl<T>::PrintCmdLineHelp() {
-    std::string usage_string = std::string(
-            "\t-sendQueueSize <number>       - Sets number of samples (or batches) in send\n") +
-            "\t                                queue, default 50\n" +
-            "\t-domain <ID>                  - RTI DDS Domain, default 1\n" +
-            "\t-qosFile <filename>           - Name of XML file for DDS Qos profiles, \n"
-            "\t                                default: perftest_qos_profiles.xml\n"
-            "\t-qosLibrary <lib name>        - Name of QoS Library for DDS Qos profiles, \n"
-            "\t                                default: PerftestQosLibrary\n"
-            "\t-bestEffort                   - Run test in best effort mode, default reliable\n" +
-            "\t-batchSize <bytes>            - Size in bytes of batched message, default 8kB\n" +
-            "\t                                (Disabled for LatencyTest mode or if dataLen > 4kB)\n" +
-            "\t-noPositiveAcks               - Disable use of positive acks in reliable \n" +
-            "\t                                protocol, default use positive acks\n" +
-            "\t-durability <0|1|2|3>         - Set durability QOS, 0 - volatile,\n" +
-            "\t                                1 - transient local, 2 - transient, \n" +
-            "\t                                3 - persistent, default 0\n" +
-            "\t-dynamicData                  - Makes use of the Dynamic Data APIs instead\n" +
-            "\t                                of using the generated types.\n" +
-            "\t-noDirectCommunication        - Use brokered mode for persistent durability\n" +
-            "\t-waitsetDelayUsec <usec>      - UseReadThread related. Allows you to\n" +
-            "\t                                process incoming data in groups, based on the\n" +
-            "\t                                time rather than individually. It can be used\n" +
-            "\t                                combined with -waitsetEventCount,\n" +
-            "\t                                default 100 usec\n" +
-            "\t-waitsetEventCount <count>    - UseReadThread related. Allows you to\n" +
-            "\t                                process incoming data in groups, based on the\n" +
-            "\t                                number of samples rather than individually. It\n" +
-            "\t                                can be used combined with -waitsetDelayUsec,\n" +
-            "\t                                default 5\n" +
-            "\t-enableAutoThrottle           - Enables the AutoThrottling feature in the\n" +
-            "\t                                throughput DataWriter (pub)\n" +
-            "\t-enableTurboMode              - Enables the TurboMode feature in the\n" +
-            "\t                                throughput DataWriter (pub)\n" +
-            "\t-noXmlQos                     - Skip loading the qos profiles from the xml\n" +
-            "\t                                profile\n" +
-            "\t-asynchronous                 - Use asynchronous writer\n" +
-            "\t                                Default: Not set\n" +
-            "\t-flowController <flow>        - In the case asynchronous writer use a specific flow controller.\n" +
-            "\t                                There are several flow controller predefined:\n" +
-            "\t                                ";
-    for(unsigned int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
-        usage_string += "\"" + valid_flow_controller[i] + "\" ";
-    }
-    usage_string += std::string("\n") +
-            "\t                                Default: \"default\" (If using asynchronous).\n" +
-            "\t-peer <address>               - Adds a peer to the peer host address list.\n" +
-            "\t                                This argument may be repeated to indicate multiple peers\n" +
-            "\n";
-    usage_string += _transport.helpMessageString();
-  #ifdef RTI_SECURE_PERFTEST
-    usage_string += std::string("\n") +
-            "\t======================= SECURE Specific Options =======================\n\n" +
-            "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n" +
-            "\t-secureSign                   - Sign (HMAC) discovery and user data\n" +
-            "\t-secureEncryptData            - Encrypt topic (user) data\n" +
-            "\t-secureEncryptSM              - Encrypt RTPS submessages\n" +
-            "\t-secureGovernanceFile <file>  - Governance file. If specified, the authentication,\n" +
-            "\t                                signing, and encryption arguments are ignored. The\n" +
-            "\t                                governance document configuration will be used instead\n" +
-            "\t                                Default: built using the secure options.\n" +
-            "\t-securePermissionsFile <file> - Permissions file <optional>\n" +
-            "\t                                Default: \"./resource/secure/signed_PerftestPermissionsSub.xml\"\n" +
-            "\t-secureCertAuthority <file>   - Certificate authority file <optional>\n" +
-            "\t                                Default: \"./resource/secure/cacert.pem\"\n" +
-            "\t-secureCertFile <file>        - Certificate file <optional>\n" +
-            "\t                                Default: \"./resource/secure/sub.pem\"\n" +
-            "\t-securePrivateKey <file>      - Private key file <optional>\n" +
-            "\t                                Default: \"./resource/secure/subkey.pem\"\n";
-  #endif
-
-    std::cerr << usage_string << std::endl;
-}
-
-/*********************************************************
  * ParseConfig
  */
 template <typename T>
-bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
+bool RTIDDSImpl<T>::validate_input()
 {
-    unsigned long minScanSize = MAX_PERFTEST_SAMPLE_SIZE;
-    bool isBatchSizeProvided = false;
-    int i;
-    int sec = 0;
-    unsigned int nanosec = 0;
-
-    // now load everything else, command-line params override config file
-    for (i = 0; i < argc; ++i) {
-        if (IS_OPTION(argv[i], "-pub")) {
-            _isPublisher = true;
-        } else if (IS_OPTION(argv[i], "-scan")) {
-            _isScan = true;
-
-            /*
-             * Check if we have custom scan values. In such case we are just
-             * interested in the minimum one.
-             */
-            if ((i != (argc-1)) && *argv[1+i] != '-') {
-                ++i;
-                unsigned long auxScan = 0;
-                char *pch = NULL;
-                pch = strtok (argv[i], ":");
-                while (pch != NULL) {
-                    if (sscanf(pch, "%lu", &auxScan) != 1) {
-                        return false;
-                    }
-                    pch = strtok (NULL, ":");
-                    if (auxScan < minScanSize) {
-                        minScanSize = auxScan;
-                    }
-                }
-            /*
-             * If we do not specify any custom value for the -scan, we would
-             * set minScanSize to the minimum size in the default set for -scan.
-             */
-            } else {
-                minScanSize = 32;
-            }
-        } else if (IS_OPTION(argv[i], "-dataLen")) {
-
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <length> after -dataLen\n"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-
-            _DataLen = strtol(argv[i], NULL, 10);
-
-            if (_DataLen < (unsigned long)perftest_cpp::OVERHEAD_BYTES) {
-                std::cerr << "[Error] -dataLen must be >= "
-                        << perftest_cpp::OVERHEAD_BYTES << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-
-            if (_DataLen > (unsigned long)MAX_PERFTEST_SAMPLE_SIZE) {
-                std::cerr << "[Error] -dataLen must be <= "
-                        << MAX_PERFTEST_SAMPLE_SIZE << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            if (_useUnbounded == 0 && _DataLen > (unsigned long)MAX_BOUNDED_SEQ_SIZE) {
-                _useUnbounded = (std::min)(
-                        2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
-            }
-        }
-        else if (IS_OPTION(argv[i], "-unbounded")) {
-            if ((i == (argc-1)) || *argv[i+1] == '-')
-            {
-                _useUnbounded = (std::min)(
-                        2 * _DataLen, (unsigned long)MAX_BOUNDED_SEQ_SIZE);
-            } else {
-                ++i;
-                _useUnbounded = strtol(argv[i], NULL, 10);
-
-                if (_useUnbounded <  (unsigned long)perftest_cpp::OVERHEAD_BYTES)
-                {
-                    std::cerr << "[Error] -unbounded <allocation_threshold> must be >= "
-                        << perftest_cpp::OVERHEAD_BYTES << std::endl;
-                    throw std::logic_error("[Error] Error parsing commands");
-                }
-                if (_useUnbounded > (unsigned long)MAX_BOUNDED_SEQ_SIZE)
-                {
-                    std::cerr << "[Error] -unbounded <allocation_threshold> must be <= "
-                        << MAX_BOUNDED_SEQ_SIZE << std::endl;
-                    throw std::logic_error("[Error] Error parsing commands");
-                }
-            }
-        } else if (IS_OPTION(argv[i], "-sendQueueSize")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <count> after -sendQueueSize"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _SendQueueSize = strtol(argv[i], NULL, 10);
-        } else if (IS_OPTION(argv[i], "-heartbeatPeriod")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <period> after -heartbeatPeriod"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-
-            sec = 0;
-            nanosec = 0;
-
-            if (sscanf(argv[i], "%d:%u", &sec, &nanosec) != 2) {
-                std::cerr
-                        << "[Error] -heartbeatPeriod value must have the format <sec>:<nanosec>"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-
-            if (sec > 0 || nanosec > 0) {
-                _HeartbeatPeriod = dds::core::Duration(sec, nanosec);
-            }
-        } else if (IS_OPTION(argv[i], "-fastHeartbeatPeriod")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr
-                        << "[Error] Missing <period> after -fastHeartbeatPeriod"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-
-            sec = 0;
-            nanosec = 0;
-
-            if (sscanf(argv[i], "%d:%u", &sec, &nanosec) != 2) {
-                std::cerr
-                        << "[Error] -fastHeartbeatPeriod value must have the format <sec>:<nanosec>"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-
-            if (sec > 0 || nanosec > 0) {
-                _FastHeartbeatPeriod = dds::core::Duration(sec, nanosec);
-            }
-        } else if (IS_OPTION(argv[i], "-domain")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <id> after -domain" << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _DomainID = strtol(argv[i], NULL, 10);
-        } else if (IS_OPTION(argv[i], "-qosFile")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <filename> after -qosFile"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _ProfileFile = argv[i];
-        } else if (IS_OPTION(argv[i], "-qosLibrary")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <library name> after -qosLibrary"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _ProfileLibraryName = argv[i];
-        } else if (IS_OPTION(argv[i], "-bestEffort")) {
-            _IsReliable = false;
-        } else if (IS_OPTION(argv[i], "-durability")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <kind> after -durability"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _Durability = strtol(argv[i], NULL, 10);
-
-            if ((_Durability < 0) || (_Durability > 3)) {
-                std::cerr << "[Error] durability kind must be 0(volatile), "
-                        "1(transient local), 2(transient), or 3(persistent)."
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-        } else if (IS_OPTION(argv[i], "-dynamicData")) {
-            _isDynamicData = true;
-        } else if (IS_OPTION(argv[i], "-noDirectCommunication")) {
-            _DirectCommunication = false;
-        } else if (IS_OPTION(argv[i], "-instances")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <count> after -instances"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _InstanceCount = strtol(argv[i], NULL, 10);
-            _InstanceMaxCountReader = _InstanceCount;
-
-            if (_InstanceCount <= 0) {
-                std::cerr << "[Error] Instance count cannot be negative or zero"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-        } else if (IS_OPTION(argv[i], "-instanceHashBuckets")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr
-                        << "[Error] Missing <count> after -instanceHashBuckets"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _InstanceHashBuckets = strtol(argv[i], NULL, 10);
-
-            if (_InstanceHashBuckets <= 0 && _InstanceHashBuckets != -1) {
-                std::cerr
-                        << "[Error] Instance hash buckets cannot be negative or zero"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-        } else if (IS_OPTION(argv[i], "-batchSize")) {
-
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <#bytes> after -batchSize"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _BatchSize = strtol(argv[i], NULL, 10);
-
-            if (_BatchSize < 0 || _BatchSize > (int)MAX_SYNCHRONOUS_SIZE) {
-                std::cerr << "[Error] Batch size '" << _BatchSize
-                          << "' should be between [0," << MAX_SYNCHRONOUS_SIZE
-                          << "]" << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            isBatchSizeProvided = true;
-        } else if (IS_OPTION(argv[i], "-keepDurationUsec")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <usec> after -keepDurationUsec"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _KeepDurationUsec = strtol(argv[i], NULL, 10);
-        } else if (IS_OPTION(argv[i], "-noPositiveAcks")) {
-            _UsePositiveAcks = false;
-        } else if (IS_OPTION(argv[i], "-verbosity")) {
-            errno = 0;
-            int verbosityLevel = strtol(argv[++i], NULL, 10);
-
-            if (errno) {
-                fprintf(stderr, "Unexpected value after -verbosity\n");
-                return false;
-            }
-
-            switch (verbosityLevel) {
-                case 0: rti::config::Logger::instance().verbosity(
-                            rti::config::Verbosity::SILENT);
-                        std::cerr << "[Info]: Setting verbosity to SILENT"
-                                  << std::endl;
-                        break;
-                case 1: rti::config::Logger::instance().verbosity(
-                            rti::config::Verbosity::ERRORY);
-                        std::cerr << "[Info]: Setting verbosity to EXCEPTION"
-                                  << std::endl;
-                        break;
-                case 2: rti::config::Logger::instance().verbosity(
-                            rti::config::Verbosity::WARNING);
-                        std::cerr << "[Info]: Setting verbosity to WARNING"
-                                  << std::endl;
-                        break;
-                case 3: rti::config::Logger::instance().verbosity(
-                            rti::config::Verbosity::STATUS_ALL);
-                        std::cerr << "[Info]: Setting verbosity to STATUS_ALL"
-                                  << std::endl;
-                        break;
-                default: std::cerr << "[Info]: Invalid value for the verbosity"
-                                   << " parameter. Using default value (1)"
-                                   << std::endl;
-                        break;
-            }
-        } else if (IS_OPTION(argv[i], "-waitsetDelayUsec")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr << "Missing <usec> after -waitsetDelayUsec"
-                        << std::endl;
-                ;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _WaitsetDelayUsec = (unsigned int) strtol(argv[i], NULL, 10);
-        } else if (IS_OPTION(argv[i], "-waitsetEventCount")) {
-            if ((i == (argc - 1)) || *argv[++i] == '-') {
-                std::cerr << "Missing <count> after -waitsetEventCount"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _WaitsetEventCount = strtol(argv[i], NULL, 10);
-            if (_WaitsetEventCount < 0) {
-                std::cerr << "waitset event count cannot be negative"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-        } else if (IS_OPTION(argv[i], "-latencyTest")) {
-            _LatencyTest = true;
-        } else if (IS_OPTION(argv[i], "-enableAutoThrottle")) {
-            _AutoThrottle = true;
-        } else if (IS_OPTION(argv[i], "-enableTurboMode")) {
-            _TurboMode = true;
-        } else if (IS_OPTION(argv[i], "-noXmlQos") ) {
-            _UseXmlQos = false;
-        }
-        else if (IS_OPTION(argv[i], "-asynchronous") )
-        {
-            _IsAsynchronous = true;
-        }
-        else if (IS_OPTION(argv[i], "-flowController"))
-        {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                std::cerr << "Missing <flow Controller Name> after -flowController"
-                        << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _FlowControllerCustom = argv[i];
-
-            // verify if the flow controller name is correct, else use "default"
-            bool valid_flow_control = false;
-            for(unsigned int i=0; i < sizeof(valid_flow_controller)/sizeof(valid_flow_controller[0]); i++) {
-                if (_FlowControllerCustom == valid_flow_controller[i]) {
-                    valid_flow_control = true;
-                }
-            }
-
-            if (!valid_flow_control)
-            {
-                std::cerr <<"Bad <flow> "<<_FlowControllerCustom <<" for custom flow controller"<< std::endl;
-                _FlowControllerCustom = "default";// used default
-            }
-        }
-        else if (IS_OPTION(argv[i], "-peer")) {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                std::cerr << "[Error] Missing <address> after -peer"<< std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            if (_peer_host_count +1 < RTIPERFTEST_MAX_PEERS) {
-                _peer_host[_peer_host_count++] = argv[i];
-            } else {
-                std::cerr << "[Error] The maximum of -initial peers is " << RTIPERFTEST_MAX_PEERS << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-        } else if (IS_OPTION(argv[i], "-cft")) {
-            _useCft = true;
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <start>:<end> after -cft" << std::endl;
-                throw std::logic_error("Missing <start>:<end> after -cft");
-            }
-
-            if (strchr(argv[i],':') != NULL) { // In the case that there are 2 parameter
-                unsigned int cftStart = 0;
-                unsigned int cftEnd = 0;
-                if (sscanf(argv[i],"%u:%u",&cftStart,&cftEnd) != 2) {
-                    std::cerr << "[Error] -cft value must have the format <start>:<end>" << std::endl;
-                    throw std::logic_error("[Error] Error parsing commands");
-                }
-                _CFTRange[0] = cftStart;
-                _CFTRange[1] = cftEnd;
-            } else {
-                _CFTRange[0] = strtol(argv[i], NULL, 10);
-                _CFTRange[1] = _CFTRange[0];
-            }
-
-            if (_CFTRange[0] > _CFTRange[1]) {
-                std::cerr << "[Error]  -cft <start> value cannot be bigger than <end>" << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            if (_CFTRange[0] < 0 ||
-                    _CFTRange[0] >= (unsigned int)MAX_CFT_VALUE ||
-                    _CFTRange[1] < 0 ||
-                    _CFTRange[1] >= (unsigned int)MAX_CFT_VALUE) {
-                std::cerr << "[Error] -cft <start>:<end> values should be between [0,"
-                        << MAX_CFT_VALUE << "]" << std::endl;
-                return false;
-            }
-        } else if (IS_OPTION(argv[i], "-writeInstance")) {
-            if ((i == (argc-1)) || *argv[++i] == '-')
-            {
-                std::cerr << "Missing <number> after -writeInstance"<< std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _instancesToBeWritten = strtol(argv[i], NULL, 10);
-        }
-      #ifdef RTI_SECURE_PERFTEST
-        else if (IS_OPTION(argv[i], "-secureSign")) {
-            _secureIsSigned = true;
-            _secureUseSecure = true;
-        } else if (IS_OPTION(argv[i], "-secureEncryptBoth")) {
-            _secureIsDataEncrypted = true;
-            _secureIsSMEncrypted = true;
-            _secureUseSecure = true;
-        } else if (IS_OPTION(argv[i], "-secureEncryptData")) {
-            _secureIsDataEncrypted = true;
-            _secureUseSecure = true;
-        } else if (IS_OPTION(argv[i], "-secureEncryptSM")) {
-            _secureIsSMEncrypted = true;
-            _secureUseSecure = true;
-        } else if (IS_OPTION(argv[i], "-secureEncryptDiscovery")) {
-            _secureIsDiscoveryEncrypted = true;
-            _secureUseSecure = true;
-        } else if (IS_OPTION(argv[i], "-secureGovernanceFile")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <file> after -secureGovernanceFile"
-                          << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _secureGovernanceFile = argv[i];
-            std::cout << "[INFO] Authentication, encryption, signing arguments "
-                         "will be ignored, and the values specified by the "
-                         "Governance file will be used instead"
-                      << std::endl;
-            _secureUseSecure = true;
-        } else if (IS_OPTION(argv[i], "-securePermissionsFile")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                std::cerr << "[Error] Missing <file> after -securePermissionsFile"
-                          << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _securePermissionsFile = argv[i];
-            _secureUseSecure = true;
-        } else if (IS_OPTION(argv[i], "-secureCertAuthority")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                std::cerr << "Missing <file> after -secureCertAuthority"
-                          << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _secureCertAuthorityFile = argv[i];
-            _secureUseSecure = true;
-        } else if (IS_OPTION(argv[i], "-secureCertFile")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                std::cerr << "Missing <file> after -secureCertFile"
-                          << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _secureCertificateFile = argv[i];
-            _secureUseSecure = true;
-        } else if (IS_OPTION(argv[i], "-securePrivateKey")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                std::cerr << "Missing <file> after -securePrivateKey"
-                          << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _securePrivateKeyFile = argv[i];
-            _secureUseSecure = true;
-        } else if (IS_OPTION(argv[i], "-secureLibrary")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                std::cerr << "Missing <file> after -secureLibrary"
-                          << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _secureLibrary = argv[i];
-        } else if (IS_OPTION(argv[i], "-secureDebug")) {
-            if ((i == (argc-1)) || *argv[++i] == '-') {
-                std::cerr << "Missing <level> after -secureDebug"
-                          << std::endl;
-
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-            _secureDebugLevel = strtol(argv[i], NULL, 10);
-        }
-      #endif
-        else {
-            if (i > 0) {
-                std::map<std::string, unsigned int> transportCmdOpts =
-                        PerftestTransport::getTransportCmdLineArgs();
-
-                std::map<std::string, unsigned int>::iterator it =
-                        transportCmdOpts.find(argv[i]);
-                if(it != transportCmdOpts.end()) {
-                    /*
-                     * Increment the counter with the number of arguments
-                     * obtained from the map.
-                     */
-                    i = i + it->second;
-                    continue;
-                }
-
-                std::cerr << argv[i] << " not recognized" << std::endl;
-                throw std::logic_error("[Error] Error parsing commands");
-            }
-        }
+    // Manage parameter -instance
+    if (_PM->is_set("instances")) {
+        _InstanceMaxCountReader = _PM->get<long>("instances");
     }
 
-    /* If we are using scan, we get the minimum and set it in Datalen */
-    if (_isScan) {
-        _DataLen = minScanSize;
+    // Manage parameter -peer
+    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
+        fprintf(stderr,
+                "The maximun of 'initial_peers' is %d\n",
+                RTIPERFTEST_MAX_PEERS);
+        return false;
     }
 
-    /* Check if we need to enable Large Data. This works also for -scan */
-    if (_DataLen > (unsigned long) (std::min)(
-                MAX_SYNCHRONOUS_SIZE,
-                MAX_BOUNDED_SEQ_SIZE)) {
+    // Check if we need to enable Large Data. This works also for -scan
+    if (_PM->get<unsigned long long>("dataLen") > (unsigned long) (std::min)(
+                    MAX_SYNCHRONOUS_SIZE,
+                    MAX_BOUNDED_SEQ_SIZE)) {
         _isLargeData = true;
-        if (_useUnbounded == 0) {
-            _useUnbounded = MAX_BOUNDED_SEQ_SIZE;
-        }
     } else { /* No Large Data */
         _isLargeData = false;
     }
 
-    /* If we are using batching */
-    if (_BatchSize > 0) {
-
-        /* We will not use batching for a latency test */
-        if (_LatencyTest) {
-            if (isBatchSizeProvided) {
+    // Manage parameter -batchSize
+    if (_PM->get<long>("batchSize") > 0) {
+        // We will not use batching for a latency test
+        if (_PM->get<bool>("latencyTest")) {
+            if (_PM->is_set("batchSize")) {
                 fprintf(stderr, "Batching cannot be used in a Latency test.\n");
                 return false;
             } else {
-                _BatchSize = 0; //Disable Batching
+                _PM->set<long>("batchSize", 0);  // Disable Batching
             }
         }
 
-        /* Check if using asynchronous */
-        if (_IsAsynchronous) {
-            if (isBatchSizeProvided) {
+        // Check if using asynchronous
+        if (_PM->get<bool>("asynchronous")) {
+            if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
                 fprintf(stderr,
                         "Batching cannot be used with asynchronous writing.\n");
                 return false;
             } else {
-                _BatchSize = 0; //Disable Batching
+                _PM->set<long>("batchSize", 0);  // Disable Batching
             }
         }
 
@@ -752,61 +166,112 @@ bool RTIDDSImpl<T>::ParseConfig(int argc, char *argv[])
          * so we explitly fail
          */
         if (_isLargeData) {
-            if (isBatchSizeProvided) {
+            if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
                 fprintf(stderr, "Batching cannot be used with Large Data.\n");
                 return false;
             } else {
-                _BatchSize = -2;
+                _PM->set<long>("batchSize", -2);
             }
-        } else if ((unsigned long) _BatchSize < _DataLen * 2) {
+        } else if ((unsigned long)_PM->get<long>("batchSize")
+                < _PM->get<unsigned long long>("dataLen") * 2) {
             /*
              * We don't want to use batching if the batch size is not large
              * enough to contain at least two samples (in this case we avoid the
              * checking at the middleware level).
              */
-            if (isBatchSizeProvided || _isScan) {
+            if (_PM->is_set("batchSize") || _PM->is_set("scan")) {
                 /*
-                 * Batchsize disabled. A message will be print if _batchsize < 0 in
+                 * Batchsize disabled. A message will be print if batchsize < 0 in
                  * perftest_cpp::PrintConfiguration()
                  */
-                _BatchSize = -1;
+                _PM->set<long>("batchSize", -1);
             }
             else {
-                _BatchSize = 0;
+                _PM->set<long>("batchSize", 0); // Disable Batching
             }
         }
     }
 
-    if (_TurboMode) {
-        if (_IsAsynchronous) {
+    // Manage parameter -enableTurboMode
+    if (_PM->get<bool>("enableTurboMode")) {
+        if (_PM->get<bool>("asynchronous")) {
             std::cerr << "[Error] Turbo Mode cannot be used with asynchronous writing. "
-                    << std::endl;
+                      << std::endl;
+            return false;
+        } if (_isLargeData) {
+            std::cerr << "[Error] Turbo Mode disabled, using large data."
+                      << std::endl;
+            _PM->set<bool>("enableTurboMode", false);
+        }
+    }
+
+    // Manage parameter -writeInstance
+    if (_PM->is_set("writeInstance")) {
+        if (_PM->get<long>("instances") < _PM->get<long>("writeInstance")) {
+            std::cerr << "Specified '-WriteInstance' ("
+                      << _PM->get<long>("writeInstance")
+                      << ") invalid: Bigger than the number of instances ("
+                      << _PM->get<long>("instances")
+                      << ")."
+                      << std::endl;
             return false;
         }
-        if (_isLargeData) {
-            std::cerr << "Turbo Mode disabled, using large data." << std::endl;
-            _TurboMode = false;
-        }
     }
 
-    // Manage _instancesToBeWritten
-    if (_instancesToBeWritten != -1) {
-        if ((long)_InstanceCount < _instancesToBeWritten) {
-            std::cerr << "Specified '-WriteInstance' (" <<
-                    _instancesToBeWritten <<
-                    ") invalid: Bigger than the number of instances (" <<
-                    _InstanceCount << ")." << std::endl;
-            throw std::logic_error("[Error] Error parsing commands");
-        }
-    }
-    if (_isPublisher && _useCft) {
-        std::cerr << "Content Filtered Topic is not a parameter in the publisher side.\n" << std::endl;
-    }
-
-    if(!_transport.parseTransportOptions(argc, argv)) {
-        throw std::logic_error("Failure parsing the transport options.");
+    // Manage transport parameter
+    if(!_transport.validate_input()) {
+         std::cerr << "[Error] Failure validation the transport options."
+                   << std::endl;
         return false;
     };
+
+    /*
+     * Manage parameter -verbosity.
+     * Setting verbosity if the parameter is provided
+     */
+    if (_PM->is_set("verbosity")) {
+        switch (_PM->get<int>("verbosity")) {
+            case 0:
+                rti::config::Logger::instance().verbosity(
+                        rti::config::Verbosity::SILENT);
+                fprintf(stderr, "Setting verbosity to SILENT\n");
+                break;
+            case 1:
+                rti::config::Logger::instance().verbosity(
+                        rti::config::Verbosity::ERRORY);
+                fprintf(stderr, "Setting verbosity to ERROR\n");
+                break;
+            case 2:
+                rti::config::Logger::instance().verbosity(
+                        rti::config::Verbosity::WARNING);
+                fprintf(stderr, "Setting verbosity to WARNING\n");
+                break;
+            case 3: rti::config::Logger::instance().verbosity(
+                        rti::config::Verbosity::STATUS_ALL);
+                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
+                break;
+            default:
+                std::cerr << "[Info]: Invalid value for the verbosity"
+                          << " parameter. Using default value (1)"
+                          << std::endl;
+                fprintf(stderr, "Invalid value for the '-verbosity' parameter\n");
+                return false;
+        }
+    }
+
+    // Manage parameter -secureGovernanceFile
+    if (_PM->is_set("secureGovernanceFile")) {
+            std::cout << "[INFO] Authentication, encryption, signing arguments "
+                      << "will be ignored, and the values specified by the "
+                      << "Governance file will be used instead"
+                      << std::endl;
+    }
+
+    // Manage parameter -secureEncryptBoth
+    if (_PM->is_set("secureEncryptBoth")) {
+        _PM->set("secureEncryptData", true);
+        _PM->set("secureEncryptSM", true);
+    }
 
     return true;
 }
@@ -822,23 +287,23 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     std::ostringstream stringStream;
 
     // Domain ID
-    stringStream << "\tDomain: " << _DomainID << "\n";
+    stringStream << "\tDomain: " << _PM->get<int>("domain") << "\n";
 
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
-    if (_isDynamicData) {
+    if (_PM->get<bool>("dynamicData")) {
         stringStream << "Yes\n";
     } else {
         stringStream << "No\n";
     }
 
     // Dynamic Data
-    if (_isPublisher) {
+    if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
-        if (_isLargeData || _IsAsynchronous) {
+        if (_isLargeData || _PM->get<bool>("asynchronous")) {
             stringStream << "Yes\n";
             stringStream << "\tFlow Controller: "
-                         << _FlowControllerCustom
+                         << _PM->get<std::string>("flowController")
                          << "\n";
         } else {
             stringStream << "No\n";
@@ -846,30 +311,31 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
     // Turbo Mode / AutoThrottle
-    if (_TurboMode) {
+    if (_PM->get<bool>("enableTurboMode")) {
         stringStream << "\tTurbo Mode: Enabled\n";
     }
-    if (_AutoThrottle) {
+    if (_PM->get<bool>("enableAutoThrottle")) {
         stringStream << "\tAutoThrottle: Enabled\n";
     }
 
     // XML File
     stringStream << "\tXML File: ";
-    if (!_UseXmlQos) {
+    if (_PM->get<bool>("noXmlQos")) {
         stringStream << "Disabled\n";
     } else {
-        stringStream << _ProfileFile << "\n";
+        stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
 
     stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
 
     // set initial peers and not use multicast
-    if (_peer_host_count > 0) {
+    const std::vector<std::string> peerList = _PM->get_vector<std::string>("peer");
+    if (!peerList.empty()) {
         stringStream << "\tInitial peers: ";
-        for (int i = 0; i < _peer_host_count; ++i) {
-            stringStream << _peer_host[i];
-            if (i == _peer_host_count - 1) {
+        for (unsigned int i = 0; i < peerList.size(); ++i) {
+            stringStream << peerList[i];
+            if (i == peerList.size() - 1) {
                 stringStream << "\n";
             } else {
                 stringStream << ", ";
@@ -878,9 +344,9 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
 
    #ifdef RTI_SECURE_PERFTEST
-   if (_secureUseSecure) {
+    if (_PM->group_is_used(SECURE)) {
         stringStream << "\n" << printSecureArgs();
-   }
+    }
    #endif
 
     return stringStream.str();
@@ -930,6 +396,7 @@ protected:
     rti::core::Semaphore& _pongSemaphore;
     long _instancesToBeWritten;
     bool _isReliable;
+    ParameterManager *_PM;
 
 public:
     RTIPublisherBase(
@@ -937,14 +404,16 @@ public:
             unsigned long num_instances,
             rti::core::Semaphore& pongSemaphore,
             bool useSemaphore,
-            int instancesToBeWritten)
+            int instancesToBeWritten,
+            ParameterManager *PM)
           :
             _writer(writer),
             _num_instances(num_instances),
             _instance_counter(0),
             _useSemaphore(useSemaphore),
             _pongSemaphore(pongSemaphore),
-            _instancesToBeWritten(instancesToBeWritten)
+            _instancesToBeWritten(instancesToBeWritten),
+            _PM(PM)
     {
         using namespace dds::core::policy;
 
@@ -1015,14 +484,16 @@ public:
             int num_instances,
             rti::core::Semaphore& pongSemaphore,
             bool useSemaphore,
-            int instancesToBeWritten)
+            int instancesToBeWritten,
+            ParameterManager *PM)
           :
             RTIPublisherBase<T>(
                     writer,
                     num_instances,
                     pongSemaphore,
                     useSemaphore,
-                    instancesToBeWritten)
+                    instancesToBeWritten,
+                    PM)
     {
 
         for (unsigned long i = 0; i < this->_num_instances; ++i) {
@@ -1091,14 +562,16 @@ public:
             rti::core::Semaphore& pongSemaphore,
             bool useSemaphore,
             int instancesToBeWritten,
-            const dds::core::xtypes::StructType& typeCode)
+            const dds::core::xtypes::StructType& typeCode,
+            ParameterManager *PM)
           :
             RTIPublisherBase<DynamicData>(
                     writer,
                     num_instances,
                     pongSemaphore,
                     useSemaphore,
-                    instancesToBeWritten),
+                    instancesToBeWritten,
+                    PM),
             data(typeCode),
             _last_message_size(0)
     {
@@ -1273,17 +746,21 @@ protected:
     dds::core::cond::WaitSet _waitset;
     int _data_idx;
     bool _no_data;
+    ParameterManager *_PM;
 
 public:
     RTISubscriberBase(
             dds::sub::DataReader<T> reader,
             ReceiverListenerBase<T> *readerListener,
-            int _WaitsetEventCount,
-            unsigned int _WaitsetDelayUsec) :
-            _reader(reader),
-            _readerListener(readerListener),
-            _waitset(rti::core::cond::WaitSetProperty(_WaitsetEventCount,
-                    dds::core::Duration::from_microsecs(_WaitsetDelayUsec))) {
+            ParameterManager *PM) :
+                    _reader(reader),
+                    _readerListener(readerListener),
+                    _waitset(rti::core::cond::WaitSetProperty(
+                            PM->get<long>("waitsetEventCount"),
+                            dds::core::Duration::from_microsecs((long)
+                                    PM->get<unsigned long long>("waitsetDelayUsec")))),
+                    _PM(PM)
+    {
         // null listener means using receive thread
         if (_reader.listener() == NULL) {
 
@@ -1326,14 +803,12 @@ public:
     RTISubscriber(
             dds::sub::DataReader<T> reader,
             ReceiverListener<T> *readerListener,
-            int _WaitsetEventCount,
-            unsigned int _WaitsetDelayUsec)
+            ParameterManager *PM)
           :
             RTISubscriberBase<T>(
                     reader,
                     readerListener,
-                    _WaitsetEventCount,
-                    _WaitsetDelayUsec)
+                    PM)
     {}
 
     TestMessage *ReceiveMessage() {
@@ -1413,10 +888,12 @@ public:
     RTIDynamicDataSubscriber(
             dds::sub::DataReader<DynamicData> reader,
             DynamicDataReceiverListener *readerListener,
-            int _WaitsetEventCount,
-            unsigned int _WaitsetDelayUsec)
+            ParameterManager *PM)
           :
-            RTISubscriberBase<DynamicData>(reader,readerListener,_WaitsetEventCount,_WaitsetDelayUsec)
+            RTISubscriberBase<DynamicData>(
+                    reader,
+                    readerListener,
+                    PM)
     {}
 
     TestMessage *ReceiveMessage() {
@@ -1511,7 +988,8 @@ public:
 
 template<typename T>
 void RTIDDSImpl<T>::configureSecurePlugin(
-        std::map<std::string, std::string> &dpQosProperties) {
+        std::map<std::string,
+        std::string> &dpQosProperties) {
 
     // load plugin
     dpQosProperties["com.rti.serv.load_plugin"] = "com.rti.serv.secure";
@@ -1521,9 +999,10 @@ void RTIDDSImpl<T>::configureSecurePlugin(
     dpQosProperties["com.rti.serv.secure.create_function"] =
             "RTI_Security_PluginSuite_create";
 
-    dpQosProperties["com.rti.serv.secure.library"] = _secureLibrary;
+    dpQosProperties["com.rti.serv.secure.library"]
+            = _PM->get<std::string>("secureLibrary");
 
-  #else // Static library linking
+#else // Static library linking
 
     void *pPtr = (void *) RTI_Security_PluginSuite_create;
     dpQosProperties["com.rti.serv.secure.create_function_ptr"] =
@@ -1539,58 +1018,66 @@ void RTIDDSImpl<T>::configureSecurePlugin(
      * later versions still support the legacy properties as an alternative.
      */
 
+    std::string governanceFilePath;
     // check if governance file provided
-    if (_secureGovernanceFile.empty()) {
+    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
         // choose a pre-built governance file
-        _secureGovernanceFile = "./resource/secure/signed_PerftestGovernance_";
-        if (_secureIsDiscoveryEncrypted) {
-            _secureGovernanceFile += "Discovery";
+        governanceFilePath = "./resource/secure/signed_PerftestGovernance_";
+        if (_PM->get<bool>("secureEncryptDiscovery")) {
+            governanceFilePath += "Discovery";
         }
 
-        if (_secureIsSigned) {
-            _secureGovernanceFile += "Sign";
+        if (_PM->get<bool>("secureSign")) {
+            governanceFilePath += "Sign";
         }
 
-        if (_secureIsDataEncrypted && _secureIsSMEncrypted) {
-            _secureGovernanceFile += "EncryptBoth";
-        } else if (_secureIsDataEncrypted) {
-            _secureGovernanceFile += "EncryptData";
-        } else if (_secureIsSMEncrypted) {
-            _secureGovernanceFile += "EncryptSubmessage";
+        if (_PM->get<bool>("secureEncryptData")
+                && _PM->get<bool>("secureEncryptSM")) {
+            governanceFilePath += "EncryptBoth";
+        } else if (_PM->get<bool>("secureEncryptData")) {
+            governanceFilePath += "EncryptData";
+        } else if (_PM->get<bool>("secureEncryptSM")) {
+            governanceFilePath += "EncryptSubmessage";
         }
 
-        _secureGovernanceFile += ".xml";
+        governanceFilePath += ".xml";
 
         dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
-                _secureGovernanceFile;
+                governanceFilePath;
     } else {
         dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
-                _secureGovernanceFile;
+                governanceFilePath;
     }
 
+    /*
+     * Save the local variable governanceFilePath into
+     * the parameter "secureGovernanceFile"
+     */
+    _PM->set("secureGovernanceFile", governanceFilePath);
+
     // permissions file
-    dpQosProperties["com.rti.serv.secure.access_control.permissions_file"] =
-            _securePermissionsFile;
+    dpQosProperties["com.rti.serv.secure.access_control.permissions_file"]
+            = _PM->get<std::string>("securePermissionsFile");
 
     // permissions authority file
-    dpQosProperties["com.rti.serv.secure.access_control.permissions_authority_file"] =
-            _secureCertAuthorityFile;
+    dpQosProperties["com.rti.serv.secure.access_control.permissions_authority_file"]
+            = _PM->get<std::string>("secureCertAuthority");
 
     // certificate authority
-    dpQosProperties["com.rti.serv.secure.authentication.ca_file"] =
-            _secureCertAuthorityFile;
+    dpQosProperties["com.rti.serv.secure.authentication.ca_file"]
+            = _PM->get<std::string>("secureCertAuthority");
 
     // public key
-    dpQosProperties["com.rti.serv.secure.authentication.certificate_file"] =
-            _secureCertificateFile;
+    dpQosProperties["com.rti.serv.secure.authentication.certificate_file"]
+            = _PM->get<std::string>("secureCertFile");
 
     // private key
-    dpQosProperties["com.rti.serv.secure.authentication.private_key_file"] =
-            _securePrivateKeyFile;
+    dpQosProperties["com.rti.serv.secure.authentication.private_key_file"]
+            = _PM->get<std::string>("securePrivateKey");
 
-    if (_secureDebugLevel != -1) {
+    if (_PM->is_set("secureDebug")) {
         std::ostringstream string_stream_object;
-        string_stream_object << _secureDebugLevel;
+        string_stream_object << _PM->get<int>("secureDebug");
         dpQosProperties["com.rti.serv.secure.logging.log_level"] =
                 string_stream_object.str();
     }
@@ -1599,38 +1086,38 @@ void RTIDDSImpl<T>::configureSecurePlugin(
 template <typename T>
 void RTIDDSImpl<T>::validateSecureArgs()
 {
-    if (_secureUseSecure) {
-        if (_securePrivateKeyFile.empty()) {
-            if (_isPublisher) {
-                _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_PUB;
+    if (_PM->group_is_used(SECURE)) {
+        if (_PM->get<std::string>("securePrivateKey").empty()) {
+            if (_PM->get<bool>("pub")) {
+                _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
             } else {
-                _securePrivateKeyFile = SECURE_PRIVATEKEY_FILE_SUB;
+                _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_SUB);
             }
         }
 
-        if (_secureCertificateFile.empty()) {
-            if (_isPublisher) {
-                _secureCertificateFile = SECURE_CERTIFICATE_FILE_PUB;
+        if (_PM->get<std::string>("secureCertFile").empty()) {
+            if (_PM->get<bool>("pub")) {
+                _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_PUB);
             } else {
-                _secureCertificateFile = SECURE_CERTIFICATE_FILE_SUB;
+                _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_SUB);
             }
         }
 
-        if (_secureCertAuthorityFile.empty()) {
-            _secureCertAuthorityFile = SECURE_CERTAUTHORITY_FILE;
+        if (_PM->get<std::string>("secureCertAuthority").empty()) {
+            _PM->set("secureCertAuthority", SECURE_CERTAUTHORITY_FILE);
         }
 
-        if (_securePermissionsFile.empty()) {
-            if (_isPublisher) {
-                _securePermissionsFile = SECURE_PERMISION_FILE_PUB;
+        if (_PM->get<std::string>("securePermissionsFile").empty()) {
+            if (_PM->get<bool>("pub")) {
+                _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_PUB);
             } else {
-                _securePermissionsFile = SECURE_PERMISION_FILE_SUB;
+                _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
             }
         }
 
       #ifdef RTI_PERFTEST_DYNAMIC_LINKING
-        if (_secureLibrary.empty()) {
-            _secureLibrary = SECURE_LIBRARY_NAME;
+        if (_PM->get<std::string>("secureLibrary").empty()) {
+            _PM->set("secureLibrary", SECURE_LIBRARY_NAME);
         }
       #endif
     }
@@ -1643,77 +1130,81 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     stringStream << "Secure Configuration:\n";
 
     stringStream << "\tEncrypt discovery: ";
-    if (_secureIsDiscoveryEncrypted) {
+    if (_PM->get<bool>("secureEncryptDiscovery")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tEncrypt topic (user) data: ";
-    if (_secureIsDataEncrypted) {
+    if (_PM->get<bool>("secureEncryptData")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tEncrypt submessage: ";
-    if (_secureIsSMEncrypted) {
+    if (_PM->get<bool>("secureEncryptData")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tSign data: ";
-    if (_secureIsSigned) {
+    if (_PM->get<bool>("secureSign")) {
         stringStream << "True\n";
     } else {
         stringStream << "False\n";
     }
 
     stringStream << "\tGovernance file: ";
-    if (_secureGovernanceFile.empty()) {
+    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _secureGovernanceFile << "\n";
+        stringStream << _PM->get<std::string>("secureGovernanceFile")
+                     << "\n";
     }
 
     stringStream << "\tPermissions file: ";
-    if (_securePermissionsFile.empty()) {
+    if (_PM->get<std::string>("securePermissionsFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _securePermissionsFile << "\n";
+        stringStream << _PM->get<std::string>("securePermissionsFile")
+                     << "\n";
     }
 
     stringStream << "\tPrivate key file: ";
-    if (_securePrivateKeyFile.empty()) {
+    if (_PM->get<std::string>("securePrivateKey").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _securePrivateKeyFile << "\n";
+        stringStream << _PM->get<std::string>("securePrivateKey") << "\n";
     }
 
     stringStream << "\tCertificate file: ";
-    if (_secureCertificateFile.empty()) {
+    if (_PM->get<std::string>("secureCertFile").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _secureCertificateFile << "\n";
+        stringStream << _PM->get<std::string>("secureCertFile") << "\n";
     }
 
     stringStream << "\tCertificate authority file: ";
-    if (_secureCertAuthorityFile.empty()) {
+    if (_PM->get<std::string>("secureCertAuthority").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _secureCertAuthorityFile << "\n";
+        stringStream << _PM->get<std::string>("secureCertAuthority") << "\n";
     }
 
     stringStream << "\tPlugin library: ";
-    if (_secureLibrary.empty()) {
+    if (_PM->get<std::string>("secureLibrary").empty()) {
         stringStream << "Not Specified\n";
     } else {
-        stringStream << _secureLibrary << "\n";
+        stringStream << _PM->get<std::string>("secureLibrary") << "\n";
     }
 
-    if (_secureDebugLevel != -1) {
-        stringStream << "\tDebug level: " <<  _secureDebugLevel << "\n";
+    if (_PM->is_set("secureDebug")) {
+        stringStream << "\tDebug level: "
+                     << _PM->get<int>("secureDebug")
+                     << "\n";
     }
 
     return stringStream.str();
@@ -1730,9 +1221,9 @@ dds::core::QosProvider RTIDDSImpl<T>::getQosProviderForProfile(
 
     QosProvider qosProvider(dds::core::null);
 
-    if (_UseXmlQos) {
+    if (!_PM->get<bool>("noXmlQos")) {
         qosProvider = dds::core::QosProvider(
-                _ProfileFile,
+                _PM->get<std::string>("qosFile").c_str(),
                 library_name + "::" + profile_name);
     } else {
         rti::core::QosProviderParams perftestQosProviderParams;
@@ -1754,14 +1245,21 @@ dds::core::QosProvider RTIDDSImpl<T>::getQosProviderForProfile(
  * Initialize
  */
 template <typename T>
-bool RTIDDSImpl<T>::Initialize(int argc, char *argv[], perftest_cpp *parent)
+bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
 {
     using namespace rti::core::policy;
-    ParseConfig(argc, argv);
+    // Assigne the ParameterManager
+    _PM = &PM;
+    _transport.initialize(_PM);
+
+    if (!validate_input()) {
+        return false;
+    }
 
     // setup the QOS profile file to be loaded
-    dds::core::QosProvider qos_provider =
-        getQosProviderForProfile( _ProfileLibraryName,"BaseProfileQos");
+    dds::core::QosProvider qos_provider = getQosProviderForProfile(
+            _PM->get<std::string>("qosLibrary"),
+            "BaseProfileQos");
     dds::domain::qos::DomainParticipantQos qos = qos_provider.participant_qos();
     dds::pub::qos::PublisherQos publisherQoS = qos_provider.publisher_qos();
 
@@ -1779,7 +1277,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[], perftest_cpp *parent)
             qos.policy<Property>().get_all();
 
   #ifdef RTI_SECURE_PERFTEST
-    if (_secureUseSecure) {
+    if (_PM->group_is_used(SECURE)) {
         validateSecureArgs();
         configureSecurePlugin(properties);
     }
@@ -1787,13 +1285,13 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[], perftest_cpp *parent)
 
     Discovery qos_discovery = qos.policy<Discovery>(); //get all the Discovery
     // set initial peers and not use multicast
-    if (_peer_host_count > 0) {
-        _peer_host.resize(_peer_host_count);
-        qos_discovery.initial_peers(_peer_host);
+
+    if (!_PM->get_vector<std::string>("peer").empty()) {
+        qos_discovery.initial_peers(_PM->get_vector<std::string>("peer"));
         qos_discovery.multicast_receive_addresses(dds::core::StringSeq());
     }
 
-    if (!configureTransport(_transport, qos, properties)){
+    if (!configureTransport(_transport, qos, properties, _PM)){
         return false;
     };
 
@@ -1813,7 +1311,7 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[], perftest_cpp *parent)
                 threadPriorities.dbAndEvent);
     }
 
-    if (_AutoThrottle) {
+    if (_PM->get<bool>("enableAutoThrottle")) {
         properties["dds.domain_participant.auto_throttle.enable"] = "true";
     }
 
@@ -1827,7 +1325,10 @@ bool RTIDDSImpl<T>::Initialize(int argc, char *argv[], perftest_cpp *parent)
     DomainListener *listener = new DomainListener;
 
     // Creates the participant
-    _participant = dds::domain::DomainParticipant(_DomainID, qos, listener,
+    _participant = dds::domain::DomainParticipant(
+            _PM->get<int>("domain"),
+            qos,
+            listener,
             dds::core::status::StatusMask::inconsistent_topic() |
             dds::core::status::StatusMask::offered_incompatible_qos() |
             dds::core::status::StatusMask::requested_incompatible_qos() );
@@ -1879,15 +1380,17 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
      */
     initializeSampleCount = (std::max)(
             initializeSampleCount,
-            (unsigned long) _SendQueueSize);
+            (unsigned long) _PM->get<int>("sendQueueSize"));
 
     /*
      * If we are using batching we need to take into account tha the Send Queue
      * will be per-batch, therefore for the number of samples:
      */
-    if (_BatchSize > 0) {
+    if (_PM->get<long>("batchSize") > 0) {
         initializeSampleCount = (std::max)(
-                _SendQueueSize * (_BatchSize / _DataLen),
+                _PM->get<int>("sendQueueSize") *
+                        (_PM->get<long>("batchSize") /
+                        _PM->get<unsigned long>("dataLen")),
                 initializeSampleCount);
     }
 
@@ -1909,9 +1412,9 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         throw std::logic_error("[Error] Topic name");
     }
 
-    std::string lib_name(_ProfileLibraryName);
-    dds::core::QosProvider qos_provider =
-        getQosProviderForProfile(lib_name, qos_profile);
+    dds::core::QosProvider qos_provider = getQosProviderForProfile(
+            _PM->get<std::string>("qosLibrary"),
+            qos_profile);
     dds::pub::qos::DataWriterQos dw_qos = qos_provider.datawriter_qos();
 
     Reliability qos_reliability = dw_qos.policy<Reliability>();
@@ -1931,27 +1434,31 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     std::map<std::string, std::string> properties =
             dw_qos.policy<Property>().get_all();
 
-    if (!_UsePositiveAcks
+    if (_PM->get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_dataWriterProtocol.disable_positive_acks(true);
-        if (_KeepDurationUsec != -1) {
-            dw_reliableWriterProtocol.disable_positive_acks_min_sample_keep_duration(
-                dds::core::Duration::from_microsecs(_KeepDurationUsec));
+        if (_PM->is_set("keepDurationUsec")) {
+            dw_reliableWriterProtocol
+                    .disable_positive_acks_min_sample_keep_duration(
+                            dds::core::Duration::from_microsecs(
+                                    _PM->get<unsigned long long>(
+                                            "keepDurationUsec")));
         }
     }
 
-    if (_isLargeData || _IsAsynchronous) {
-       if (_FlowControllerCustom!= "default") {
-           dwPublishMode = PublishMode::Asynchronous(
-               "dds.flow_controller.token_bucket."+_FlowControllerCustom);
+    if (_isLargeData || _PM->get<bool>("asynchronous")) {
+        if (_PM->get<std::string>("flowController") != "default") {
+            dwPublishMode = PublishMode::Asynchronous(
+                    "dds.flow_controller.token_bucket."
+                    + _PM->get<std::string>("flowController"));
        } else{
            dwPublishMode = PublishMode::Asynchronous();
        }
    }
 
-    // only force reliability on throughput/latency topics
+    // Only force reliability on throughput/latency topics
     if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
-        if (_IsReliable) {
+        if (!_PM->get<bool>("bestEffort")) {
             // default: use the setting specified in the qos profile
             // qos_reliability = Reliability::Reliable(dds::core::Duration::infinite());
         } else {
@@ -1963,57 +1470,49 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     // These QOS's are only set for the Throughput datawriter
     if (qos_profile == "ThroughputQos") {
 
-        if (_transport.useMulticast) {
+        if (_PM->get<bool>("multicast")) {
             dw_reliableWriterProtocol.enable_multicast_periodic_heartbeat(true);
         }
 
-        if (_BatchSize > 0) {
+        if (_PM->get<long>("batchSize") > 0) {
             dwBatch.enable(true);
-            dwBatch.max_data_bytes(_BatchSize);
+            dwBatch.max_data_bytes(_PM->get<long>("batchSize"));
             qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
-            qos_dw_resource_limits.max_batches(_SendQueueSize);
+            qos_dw_resource_limits.max_batches(_PM->get<int>("sendQueueSize"));
         } else {
-            qos_resource_limits.max_samples(_SendQueueSize);
+            qos_resource_limits.max_samples(_PM->get<int>("sendQueueSize"));
         }
 
-        if (_HeartbeatPeriod.sec() > 0 || _HeartbeatPeriod.nanosec() > 0) {
-            // set the heartbeat_period
-            dw_reliableWriterProtocol.heartbeat_period(_HeartbeatPeriod);
-            // make the late joiner heartbeat compatible
-            dw_reliableWriterProtocol.late_joiner_heartbeat_period(_HeartbeatPeriod);
-        }
-
-        if (_FastHeartbeatPeriod.sec() > 0 || _FastHeartbeatPeriod.nanosec() > 0) {
-            // set the fast_heartbeat_period
-            dw_reliableWriterProtocol.fast_heartbeat_period(_FastHeartbeatPeriod);
-        }
-
-        if (_AutoThrottle) {
+        if (_PM->get<bool>("enableAutoThrottle")) {
             properties["dds.data_writer.auto_throttle.enable"] = "true";
         }
 
-        if (_TurboMode) {
+        if (_PM->get<bool>("enableTurboMode")) {
             properties["dds.data_writer.enable_turbo_mode.enable"] = "true";
             dwBatch.enable(false);
             qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
-            qos_dw_resource_limits.max_batches(_SendQueueSize);
+            qos_dw_resource_limits.max_batches(_PM->get<int>("sendQueueSize"));
         }
 
-        qos_resource_limits->initial_samples(_SendQueueSize);
+        qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
 
-        if (_Durability == DDS_VOLATILE_DURABILITY_QOS) {
+        if (_PM->get<int>("durability") == DDS_VOLATILE_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::Volatile();
-        } else if (_Durability == DDS_TRANSIENT_DURABILITY_QOS) {
+        } else if (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::TransientLocal();
         } else {
             qos_durability = dds::core::policy::Durability::Persistent();
         }
-        qos_durability->direct_communication(_DirectCommunication);
+        qos_durability->direct_communication(
+                !_PM->get<bool>("noDirectCommunication"));
 
-        dw_reliableWriterProtocol.heartbeats_per_max_samples(_SendQueueSize / 10);
-        dw_reliableWriterProtocol.low_watermark(_SendQueueSize * 1 / 10);
-        dw_reliableWriterProtocol.high_watermark(_SendQueueSize * 9 / 10);
+        dw_reliableWriterProtocol.heartbeats_per_max_samples(
+                _PM->get<int>("sendQueueSize") / 10);
+        dw_reliableWriterProtocol.low_watermark(
+                _PM->get<int>("sendQueueSize") * 1 / 10);
+        dw_reliableWriterProtocol.high_watermark(
+                _PM->get<int>("sendQueueSize") * 9 / 10);
 
         /*
          * If _SendQueueSize is 1 low watermark and high watermark would both be
@@ -2021,42 +1520,48 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
          * high watermark to the low watermark + 1 in such case.
          */
         if (dw_reliableWriterProtocol.high_watermark()
-            == dw_reliableWriterProtocol.high_watermark()) {
+                == dw_reliableWriterProtocol.high_watermark()) {
             dw_reliableWriterProtocol.high_watermark(
                     dw_reliableWriterProtocol.high_watermark() + 1);
         }
 
-        dw_reliableWriterProtocol.max_send_window_size(_SendQueueSize);
-        dw_reliableWriterProtocol.min_send_window_size(_SendQueueSize);
+        dw_reliableWriterProtocol.max_send_window_size(
+                _PM->get<int>("sendQueueSize"));
+        dw_reliableWriterProtocol.min_send_window_size(
+                _PM->get<int>("sendQueueSize"));
     }
 
     if (qos_profile == "LatencyQos"
-            && !_DirectCommunication
-            && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
-                    || _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
-        if (_Durability == DDS_TRANSIENT_DURABILITY_QOS) {
+            && _PM->get<bool>("noDirectCommunication")
+            && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+            || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
+        if (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::TransientLocal();
         } else {
             qos_durability = dds::core::policy::Durability::Persistent();
         }
-        qos_durability->direct_communication(_DirectCommunication);
+        qos_durability->direct_communication(
+                !_PM->get<bool>("noDirectCommunication"));
     }
 
-    qos_resource_limits.max_instances(_InstanceCount + 1); // One extra for MAX_CFT_VALUE
-    qos_resource_limits->initial_instances(_InstanceCount + 1);
+    qos_resource_limits.max_instances(_PM->get<long>("instances") + 1); // One extra for MAX_CFT_VALUE
+    qos_resource_limits->initial_instances(_PM->get<long>("instances") + 1);
 
-    if (_InstanceCount > 1) {
-        if (_InstanceHashBuckets > 0) {
-            qos_resource_limits->instance_hash_buckets(_InstanceHashBuckets);
+    if (_PM->get<long>("instances") > 1) {
+        if (_PM->is_set("instanceHashBuckets")) {
+            qos_resource_limits->instance_hash_buckets(
+                    _PM->get<long>("instanceHashBuckets"));
         } else {
-            qos_resource_limits->instance_hash_buckets(_InstanceCount);
+            qos_resource_limits->instance_hash_buckets(
+                    _PM->get<long>("instances"));
         }
     }
 
-    if (_useUnbounded > 0) {
+    if (_PM->get<int>("unbounded") > 0) {
         char buf[10];
-        sprintf(buf, "%lu", _useUnbounded);
-        properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] = buf;
+        sprintf(buf, "%d", _PM->get<int>("unbounded"));
+        properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] = 
+                buf;
     }
 
     dw_qos << qos_reliability;
@@ -2069,18 +1574,17 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     dw_qos << dw_dataWriterProtocol;
     dw_qos << Property(properties.begin(), properties.end(), true);
 
-    if (!_isDynamicData) {
+    if (!_PM->get<bool>("dynamicData")) {
         dds::topic::Topic<T> topic(_participant, topic_name);
         dds::pub::DataWriter<T> writer(_publisher, topic, dw_qos);
         return new RTIPublisher<T>(
                 writer,
-                _InstanceCount,
+                _PM->get<long>("instances"),
                 _pongSemaphore,
-                _LatencyTest,
-                _instancesToBeWritten);
-
+                _PM->get<bool>("latencyTest"),
+                _PM->get<long>("writeInstance"),
+                _PM);
     } else {
-
         const dds::core::xtypes::StructType& type =
                 rti::topic::dynamic_type<T>::get();
         dds::topic::Topic<DynamicData> topic(
@@ -2093,25 +1597,25 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
                 dw_qos);
         return new RTIDynamicDataPublisher(
                 writer,
-                _InstanceCount,
+                _PM->get<long>("instances"),
                 _pongSemaphore,
-                _LatencyTest,
-                _instancesToBeWritten,
-                type);
+                _PM->get<bool>("latencyTest"),
+                _PM->get<long>("writeInstance"),
+                type,
+                _PM);
     }
 }
-
 /*********************************************************
  * CreateCFT
  * The CFT allows to the subscriber to receive a specific instance or a range of them.
- * In order generate the CFT it is necesary to create a condition:
- *      - In the case of a specific instance, it is necesary to convert to _CFTRange[0] into a key notation.
- *        Then it is enought with check that every element of key is equal to the instance.
- *        Exmaple: _CFTRange[0] = 300. condition ="(0 = key[0] AND 0 = key[1] AND 1 = key[2] AND  44 = key[3])"
+ * In order generate the CFT it is necessary to create a condition:
+ *      - In the case of a specific instance, it is necessary to convert to cftRange[0] into a key notation.
+ *        Then it is enough with check that every element of key is equal to the instance.
+ *        Example: cftRange[0] = 300. condition ="(0 = key[0] AND 0 = key[1] AND 1 = key[2] AND  44 = key[3])"
  *          So, in the case that the key = { 0, 0, 1, 44}, it will be received.
- *      - In the case of a range of instances, it is necesary to convert to _CFTRange[0] and _CFTRange[1] into a key notation.
- *        Then it is enought with check that the key is in the range of instances.
- *        Exmaple: _CFTRange[1] = 300 and _CFTRange[1] = 1.
+ *      - In the case of a range of instances, it is necessary to convert to cftRange[0] and cftRange[1] into a key notation.
+ *        Then it is enough with check that the key is in the range of instances.
+ *        Example: cftRange[1] = 300 and cftRange[1] = 1.
  *          condition = ""
  *              "("
  *                  "("
@@ -2137,24 +1641,34 @@ dds::topic::ContentFilteredTopic<U> RTIDDSImpl<T>::CreateCft(
         const dds::topic::Topic<U> &topic) {
     std::string condition;
     std::vector<std::string> parameters(2 * KEY_SIZE);
-    if (_CFTRange[0] == _CFTRange[1]) { // If same elements, no range
-        std::cerr << "[Info] CFT enabled for instance: '" << _CFTRange[0] << "'" <<std::endl;
+    const std::vector<unsigned long long> cftRange
+            = _PM->get_vector<unsigned long long>("cft");
+    if (cftRange.size() == 1) {  // If same elements, no range
+        std::cerr << "[Info] CFT enabled for instance: '"
+                  << cftRange[0]
+                  << "'"
+                  <<std::endl;
         for (int i = 0; i < KEY_SIZE; i++) {
             std::ostringstream string_stream_object;
-            string_stream_object << (int)((unsigned char)(_CFTRange[0] >> i * 8));
+            string_stream_object << (int)((unsigned char)(cftRange[0] >> i * 8));
             parameters[i] = string_stream_object.str();
         }
         condition = "(%0 = key[0] AND  %1 = key[1] AND %2 = key[2] AND  %3 = key[3]) OR "
                     "(255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3])";
-    } else { // If range
-        std::cerr << "[Info] CFT enabled for instance range:[" << _CFTRange[0] << ","  << _CFTRange[1] << "]" << std::endl;
+    } else { // If range cftRange.size() == 2 (RANGE)
+        std::cerr << "[Info] CFT enabled for instance range:["
+                  << cftRange[0]
+                  << ","
+                  << cftRange[1]
+                  << "]"
+                  << std::endl;
         for (int i = 0; i < 2 * KEY_SIZE; i++) {
             std::ostringstream string_stream_object;
             if (i < KEY_SIZE) {
-                string_stream_object << (int)((unsigned char)(_CFTRange[0] >> i * 8));
+                string_stream_object << (int)((unsigned char)(cftRange[0] >> i * 8));
                 parameters[i]= string_stream_object.str();
             } else { // KEY_SIZE < i < KEY_SIZE * 2
-                string_stream_object << (int)((unsigned char)(_CFTRange[1] >> i * 8));
+                string_stream_object << (int)((unsigned char)(cftRange[1] >> i * 8));
                 parameters[i] = string_stream_object.str();
             }
         }
@@ -2199,9 +1713,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         throw std::logic_error("[Error] Topic name");
     }
 
-    std::string lib_name(_ProfileLibraryName);
-    dds::core::QosProvider qos_provider =
-        getQosProviderForProfile(lib_name, qos_profile);
+    dds::core::QosProvider qos_provider = getQosProviderForProfile(
+            _PM->get<std::string>("qosLibrary"),
+            qos_profile);
     dds::sub::qos::DataReaderQos dr_qos = qos_provider.datareader_qos();
 
 
@@ -2217,61 +1731,64 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
     // only force reliability on throughput/latency topics
     if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
-        if (_IsReliable) {
+        if (!_PM->get<bool>("bestEffort")) {
             qos_reliability = dds::core::policy::Reliability::Reliable();
         } else {
             qos_reliability = dds::core::policy::Reliability::BestEffort();
         }
     }
 
-    if (!_UsePositiveAcks
-            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
+    if (_PM->get<bool>("noPositiveAcks")
+            && (qos_profile == "ThroughputQos"
+            || qos_profile == "LatencyQos")) {
         dr_DataReaderProtocol.disable_positive_acks(true);
     }
 
     // only apply durability on Throughput datareader
     if (qos_profile == "ThroughputQos") {
 
-        if (_Durability == DDS_VOLATILE_DURABILITY_QOS) {
+        if (_PM->get<int>("durability") == DDS_VOLATILE_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::Volatile();
-        } else if (_Durability == DDS_TRANSIENT_DURABILITY_QOS) {
+        } else if (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::TransientLocal();
         } else {
             qos_durability = dds::core::policy::Durability::Persistent();
         }
-        qos_durability->direct_communication(_DirectCommunication);
+        qos_durability->direct_communication(
+                !_PM->get<bool>("noDirectCommunication"));
     }
 
     if ((qos_profile == "LatencyQos")
-            && !_DirectCommunication
-            && (_Durability == DDS_TRANSIENT_DURABILITY_QOS
-                    || _Durability == DDS_PERSISTENT_DURABILITY_QOS)) {
+            && _PM->get<bool>("noDirectCommunication")
+            && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+            || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
 
-        if (_Durability == DDS_TRANSIENT_DURABILITY_QOS) {
+        if (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::TransientLocal();
-        }
-        else {
+        } else {
             qos_durability = dds::core::policy::Durability::Persistent();
         }
-        qos_durability->direct_communication(_DirectCommunication);
+        qos_durability->direct_communication(
+                !_PM->get<bool>("noDirectCommunication"));
     }
 
-    qos_resource_limits->initial_instances(_InstanceCount + 1);
+    qos_resource_limits->initial_instances(_PM->get<long>("instances") + 1);
     if (_InstanceMaxCountReader != dds::core::LENGTH_UNLIMITED) {
         _InstanceMaxCountReader++;
     }
     qos_resource_limits->max_instances(_InstanceMaxCountReader);
 
-    if (_InstanceCount > 1) {
-        if (_InstanceHashBuckets > 0) {
-            qos_resource_limits->instance_hash_buckets(_InstanceHashBuckets);
+    if (_PM->get<long>("instances") > 1) {
+        if (_PM->get<long>("instanceHashBuckets") > 0) {
+            qos_resource_limits->instance_hash_buckets(
+                    _PM->get<long>("instanceHashBuckets"));
         } else {
-            qos_resource_limits->instance_hash_buckets(_InstanceCount);
+            qos_resource_limits->instance_hash_buckets(
+                    _PM->get<long>("instances"));
         }
     }
 
-    if (_transport.useMulticast && _transport.allowsMulticast()) {
-
+    if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
         dds::core::StringSeq transports;
         transports.push_back("udpv4");
         std::string multicastAddr =
@@ -2286,7 +1803,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         }
         rti::core::TransportMulticastSettings multicast_settings(
                 transports,
-                _transport.getMulticastAddr(topic_name.c_str()), 0);
+                _transport.getMulticastAddr(topic_name.c_str()),
+                0);
         rti::core::TransportMulticastSettingsSeq multicast_seq;
         multicast_seq.push_back(multicast_settings);
 
@@ -2294,9 +1812,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 rti::core::policy::TransportMulticastKind::AUTOMATIC);
     }
 
-    if (_useUnbounded > 0) {
+    if (_PM->get<int>("unbounded") > 0) {
         char buf[10];
-        sprintf(buf, "%lu", _useUnbounded);
+        sprintf(buf, "%d", _PM->get<int>("unbounded"));
         properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = buf;
     }
 
@@ -2306,12 +1824,12 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     dr_qos << dr_DataReaderProtocol;
     dr_qos << Property(properties.begin(), properties.end(), true);
 
-    if (!_isDynamicData) {
+    if (!_PM->get<bool>("dynamicData")) {
         dds::topic::Topic<T> topic(_participant, topic_name);
         dds::sub::DataReader<T> reader(dds::core::null);
         ReceiverListener<T> *reader_listener = NULL;
 
-        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _useCft) {
+        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _PM->is_set("cft")) {
             /* Create CFT Topic */
             dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
                     topic_name,
@@ -2343,8 +1861,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return new RTISubscriber<T>(
                 reader,
                 reader_listener,
-                _WaitsetEventCount,
-                _WaitsetDelayUsec);
+                _PM);
 
     } else {
         const dds::core::xtypes::StructType& type =
@@ -2355,7 +1872,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 type);
         dds::sub::DataReader<DynamicData> reader(dds::core::null);
         DynamicDataReceiverListener *dynamic_data_reader_listener = NULL;
-        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _useCft) {
+        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _PM->is_set("cft")) {
             /* Create CFT Topic */
             dds::topic::ContentFilteredTopic<DynamicData> topicCft = CreateCft(
                     topic_name,
@@ -2396,8 +1913,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return new RTIDynamicDataSubscriber(
                 reader,
                 dynamic_data_reader_listener,
-                _WaitsetEventCount,
-                _WaitsetDelayUsec);
+                _PM);
     }
 }
 
