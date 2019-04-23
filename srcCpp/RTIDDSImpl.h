@@ -44,8 +44,8 @@ public:
 
     RTIDDSImpl() :
         _transport(),
-        _parent(NULL),
-        _loggerDevice()
+        _loggerDevice(),
+        _parent(NULL)
     {
         _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
         _isLargeData = false;
