@@ -841,8 +841,12 @@ public final class PerfTest {
             } else { // < 0 (Meaning, Disabled by RTI Perftest)
                 sb.append("\"Disabled by RTI Perftest.\"\n");
                 if (batchSize == -1) {
-                    sb.append("\t\t  BatchSize is smaller than 2 times\n");
-                    sb.append("\t\t  the minimum sample size.\n");
+                    if (_latencyTest) {
+                        sb.append("\t\t  BatchSize disabled for a Latency Test\n");
+                    } else {
+                        sb.append("\t\t  BatchSize is smaller than 2 times\n");
+                        sb.append("\t\t  the minimum sample size.\n");
+                    }
                 }
                 if (batchSize == -2) {
                     sb.append("\t\t  BatchSize cannot be used with\n");

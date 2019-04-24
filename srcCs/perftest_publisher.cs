@@ -1391,8 +1391,12 @@ namespace PerformanceTest {
                 } else { // < 0 (Meaning, Disabled by RTI Perftest)
                     sb.Append("\"Disabled by RTI Perftest.\"\n");
                     if (batchSize == -1) {
-                        sb.Append("\t\t  BatchSize is smaller than 2 times\n");
-                        sb.Append("\t\t  the minimum sample size.\n");
+                        if (_LatencyTest) {
+                            sb.Append("\t\t  BatchSize disabled for a Latency Test\n");
+                        } else {
+                            sb.Append("\t\t  BatchSize is smaller than 2 times\n");
+                            sb.Append("\t\t  the minimum sample size.\n");
+                        }
                     }
                     if (batchSize == -2) {
                         sb.Append("\t\t  BatchSize cannot be used with\n");

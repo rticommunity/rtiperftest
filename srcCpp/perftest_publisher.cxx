@@ -478,8 +478,12 @@ void perftest_cpp::PrintConfiguration()
         } else { // <= 0
             stringStream << "Disabled by RTI Perftest.\n";
             if (_PM.get<long>("batchSize") == -1) {
-                stringStream << "\t\t  BatchSize is smaller than 2 times\n"
-                             << "\t\t  the sample size.\n";
+                if (_PM.get<bool>("latencyTest")) {
+                    stringStream << "\t\t  BatchSize disabled for a Latency Test\n";
+                } else {
+                    stringStream << "\t\t  BatchSize is smaller than 2 times\n"
+                                 << "\t\t  the sample size.\n";
+                }
             } else if (_PM.get<long>("batchSize") == -2) {
                 stringStream << "\t\t  BatchSize cannot be used with\n"
                              << "\t\t  Large Data.\n";
