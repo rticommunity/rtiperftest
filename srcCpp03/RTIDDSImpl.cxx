@@ -1391,7 +1391,7 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
                 _PM->get<int>("sendQueueSize") *
                         (_PM->get<long>("batchSize") /
                         _PM->get<unsigned long long>("dataLen")),
-                initializeSampleCount);
+                (unsigned long long) initializeSampleCount);
     }
 
     return initializeSampleCount;
