@@ -82,6 +82,8 @@ class perftest_cpp
     static void SetTimeout(
             unsigned int executionTimeInSeconds,
             bool isScan = false);
+    template <class ListenerType>
+    bool finalize_read_thread(RTIOsapiThread *thread, ListenerType *listener);
 
     // Private members
     ParameterManager _PM;

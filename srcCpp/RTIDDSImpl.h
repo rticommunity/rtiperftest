@@ -89,6 +89,29 @@ public:
 
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
 
+    /*
+     * These two functions calculate the serialization/deserialization time cost
+     * with a precision of microseconds.
+     */
+
+    static double obtain_dds_serialize_time_cost(
+            unsigned int sampleSize,
+            unsigned int iters = 1000);
+
+    static double obtain_dds_deserialize_time_cost(
+            unsigned int sampleSize,
+            unsigned int iters = 1000);
+
+    bool supports_listener()
+    {
+        return true;
+    };
+
+    bool supports_discovery()
+    {
+        return true;
+    };
+
     const std::string get_qos_profile_name(const char *topicName);
 
 private:

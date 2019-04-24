@@ -27,7 +27,6 @@
 #endif
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 
-
 template class RTIDDSImpl<TestDataKeyed_t>;
 template class RTIDDSImpl<TestData_t>;
 template class RTIDDSImpl<TestDataKeyedLarge_t>;
@@ -133,7 +132,7 @@ void RTIDDSImpl<T>::Shutdown()
 
 /*********************************************************
 
- * Validate and manage the parameterS
+ * Validate and manage the parameters
  */
 template <typename T>
 bool RTIDDSImpl<T>::validate_input()
@@ -142,7 +141,6 @@ bool RTIDDSImpl<T>::validate_input()
     if (_PM->is_set("instances")) {
         _instanceMaxCountReader = _PM->get<long>("instances");
     }
-
     // Manage parameter -peer
     if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
         fprintf(stderr,
@@ -347,7 +345,8 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
 
-    stringStream << "\n" << _transport.printTransportConfigurationSummary();
+    stringStream << "\n"
+                 << _transport.printTransportConfigurationSummary();
 
 
     // set initial peers and not use multicast
@@ -1330,8 +1329,10 @@ class RTISubscriber : public IMessagingReader
     TestMessage             _message;
     DDSWaitSet             *_waitset;
     DDSConditionSeq         _active_conditions;
+    DDSGuardCondition       _endTestCondition;
     int                     _data_idx;
     bool                    _no_data;
+    bool                    _endTest;
     ParameterManager       *_PM;
 
   public:
@@ -1341,6 +1342,7 @@ class RTISubscriber : public IMessagingReader
         _reader = T::DataReader::narrow(reader);
         _data_idx = 0;
         _no_data = false;
+        _endTest = false;
         _PM = PM;
 
         // null listener means using receive thread
@@ -1361,6 +1363,7 @@ class RTISubscriber : public IMessagingReader
             reader_status = reader->get_statuscondition();
             reader_status->set_enabled_statuses(DDS_DATA_AVAILABLE_STATUS);
             _waitset->attach_condition(reader_status);
+            _waitset->attach_condition((DDSCondition *) &_endTestCondition);
         }
     }
 
@@ -1375,6 +1378,10 @@ class RTISubscriber : public IMessagingReader
             delete(_reader->get_listener());
             _reader->set_listener(NULL);
         }
+
+        if (_waitset != NULL) {
+            delete _waitset;
+        }
         // loan may be outstanding during shutdown
         _reader->return_loan(_data_seq, _info_seq);
     }
@@ -1384,7 +1391,7 @@ class RTISubscriber : public IMessagingReader
         DDS_ReturnCode_t retcode;
         int seq_length;
 
-        while (true) {
+        while (!_endTest) {
 
             // no outstanding reads
             if (_no_data)
@@ -1456,6 +1463,7 @@ class RTISubscriber : public IMessagingReader
 
             return &_message;
         }
+        return NULL;
     }
 
     void WaitForWriters(int numPublishers)
@@ -1469,6 +1477,18 @@ class RTISubscriber : public IMessagingReader
             }
             perftest_cpp::MilliSleep(1000);
         }
+    }
+
+    bool unblock()
+    {
+        _endTest = true;
+        if (_endTestCondition.set_trigger_value(DDS_BOOLEAN_TRUE)
+                != DDS_RETCODE_OK) {
+            fprintf(stderr,
+                    "Error setting a GuardCondition on unblock.\n");
+            return false;
+        }
+        return true;
     }
 };
 
@@ -2287,6 +2307,204 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
     return initializeSampleCount;
 }
 
+template <typename T>
+double RTIDDSImpl<T>::obtain_dds_serialize_time_cost(
+        unsigned int sampleSize,
+        unsigned int iters)
+{
+    T data;
+    double serializeTime = 0;
+    double timeInit = 0;
+    double timeFinish = 0;
+    bool success = true;
+
+    unsigned int maxSizeSerializedSample = 0;
+    char *buffer = NULL;
+    char *serializeBuffer = NULL;
+
+    RTIOsapiHeap_allocateBuffer(
+            &buffer,
+            sampleSize,
+            RTI_OSAPI_ALIGNMENT_DEFAULT);
+
+    if (buffer == NULL) {
+        fprintf(stderr,
+                "Error allocating memory for buffer on "
+                "obtain_dds_serialize_time_cost\n");
+        return 0;
+    }
+
+    /* --- Initialize data --- */
+    data.bin_data.maximum(0);
+    data.entity_id = 0;
+    data.seq_num = 0;
+    data.timestamp_sec = 0;
+    data.timestamp_usec = 0;
+    data.latency_ping = 0;
+
+    /* Does not matter what it's inside */
+    data.bin_data.loan_contiguous(
+            (DDS_Octet *) buffer,
+            sampleSize,
+            sampleSize);
+
+    if (DDS_RETCODE_OK != T::TypeSupport::serialize_data_to_cdr_buffer(
+                NULL, maxSizeSerializedSample, &data)) {
+        fprintf(stderr,
+                "Fail to serialize sample on obtain_dds_serialize_time_cost\n");
+        data.bin_data.unloan();
+        if (buffer != NULL) {
+            RTIOsapiHeap_freeBuffer(buffer);
+        }
+        return 0;
+    }
+
+    RTIOsapiHeap_allocateBuffer(
+            &serializeBuffer,
+            maxSizeSerializedSample,
+            RTI_OSAPI_ALIGNMENT_DEFAULT);
+
+    /* Serialize time calculating */
+    timeInit = (unsigned int) perftest_cpp::GetTimeUsec();
+
+    for (unsigned int i = 0; i < iters; i++) {
+        if (DDS_RETCODE_OK != T::TypeSupport::serialize_data_to_cdr_buffer(
+                serializeBuffer,
+                maxSizeSerializedSample,
+                &data)){
+            fprintf(stderr,
+                    "Fail to serialize sample on obtain_dds_serialize_time_cost\n");
+            success = false;
+        }
+    }
+
+    timeFinish = (unsigned int) perftest_cpp::GetTimeUsec();
+
+    serializeTime = timeFinish - timeInit;
+
+    data.bin_data.unloan();
+
+    if (buffer != NULL) {
+        RTIOsapiHeap_freeBuffer(buffer);
+    }
+    if (serializeBuffer != NULL) {
+        RTIOsapiHeap_freeBuffer(serializeBuffer);
+    }
+
+    if (!success) {
+        return 0;
+    }
+
+    return serializeTime / (float) iters;
+}
+
+template <typename T>
+double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
+        unsigned int sampleSize,
+        unsigned int iters)
+{
+    T data;
+    double timeInit = 0;
+    double timeFinish = 0;
+    double deSerializeTime = 0;
+    bool success = true;
+
+    unsigned int maxSizeSerializedSample = 0;
+    char *buffer = NULL;
+    char *serializeBuffer = NULL;
+
+    RTIOsapiHeap_allocateBuffer(
+            &buffer,
+            sampleSize,
+            RTI_OSAPI_ALIGNMENT_DEFAULT);
+
+    if (buffer == NULL) {
+        fprintf(stderr,
+                "Error allocating memory for buffer on "
+                "obtain_dds_deserialize_time_cost\n");
+        return 0;
+    }
+
+    /* --- Initialize data --- */
+    data.bin_data.maximum(0);
+    data.entity_id = 0;
+    data.seq_num = 0;
+    data.timestamp_sec = 0;
+    data.timestamp_usec = 0;
+    data.latency_ping = 0;
+
+    /* Does not matter what it's inside */
+    data.bin_data.loan_contiguous((DDS_Octet *) buffer, sampleSize, sampleSize);
+
+    if (DDS_RETCODE_OK != T::TypeSupport::serialize_data_to_cdr_buffer(
+            NULL,
+            maxSizeSerializedSample,
+            &data)){
+        fprintf(stderr,
+                "Fail to serialize sample on obtain_dds_serialize_time_cost\n");
+        data.bin_data.unloan();
+        if (buffer != NULL) {
+            RTIOsapiHeap_freeBuffer(buffer);
+        }
+        return 0;
+    }
+
+    RTIOsapiHeap_allocateBuffer(
+            &serializeBuffer,
+            maxSizeSerializedSample,
+            RTI_OSAPI_ALIGNMENT_DEFAULT);
+
+    if (serializeBuffer == NULL) {
+        fprintf(stderr,
+                "Error allocating memory for buffer on "
+                "obtain_dds_deserialize_time_cost\n");
+        return 0;
+    }
+
+    if (DDS_RETCODE_OK != T::TypeSupport::serialize_data_to_cdr_buffer(
+            serializeBuffer,
+            maxSizeSerializedSample,
+            &data)) {
+        fprintf(stderr,
+                "Fail to serialize sample on obtain_dds_deserialize_time_cost\n");
+        return 0;
+    }
+
+    /* Deserialize time calculating */
+    timeInit = (unsigned int) perftest_cpp::GetTimeUsec();
+
+    for (unsigned int i = 0; i < iters; i++) {
+        if (DDS_RETCODE_OK != T::TypeSupport::deserialize_data_from_cdr_buffer(
+                    &data,
+                    serializeBuffer,
+                    maxSizeSerializedSample)) {
+            fprintf(stderr,
+                    "Fail to deserialize sample on "
+                    "obtain_dds_deserialize_time_cost\n");
+            success = false;
+        }
+    }
+
+    timeFinish = (unsigned int) perftest_cpp::GetTimeUsec();
+
+    deSerializeTime = timeFinish - timeInit;
+
+    data.bin_data.unloan();
+
+    if (buffer != NULL) {
+        RTIOsapiHeap_freeBuffer(buffer);
+    }
+    if (serializeBuffer != NULL) {
+        RTIOsapiHeap_freeBuffer(serializeBuffer);
+    }
+
+    if (!success) {
+        return 0;
+    }
+
+    return deSerializeTime / (float) iters;
+}
+
 /*********************************************************
  * CreateWriter
  */
@@ -2767,6 +2985,15 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(const char *topicName)
     return _qoSProfileNameMap[std::string(topicName)];
 }
 
+
+/*
+ * This instantiation is to avoid a undefined reference of a templated static
+ * function of obtain_dds_de/serialize_time_costs.
+ */
+template class RTIDDSImpl<TestDataKeyed_t>;
+template class RTIDDSImpl<TestData_t>;
+template class RTIDDSImpl<TestDataKeyedLarge_t>;
+template class RTIDDSImpl<TestDataLarge_t>;
 #ifdef RTI_WIN32
   #pragma warning(pop)
 #endif

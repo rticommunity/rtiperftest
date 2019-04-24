@@ -64,7 +64,6 @@ public:
     /* PUBLIC CLASS MEMBERS */
 
     TransportConfig transportConfig;
-
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 

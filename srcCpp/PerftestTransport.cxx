@@ -218,7 +218,6 @@ bool configureTcpTransport(
         DDS_DomainParticipantQos& qos,
         ParameterManager *_PM)
 {
-
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
 
     if (!addPropertyToParticipantQos(
@@ -803,6 +802,21 @@ std::string PerftestTransport::printTransportConfigurationSummary()
  */
 bool PerftestTransport::validate_input()
 {
+    // TODO: (Alfonso) Manage parameter -multicastAddr
+    // } else if (IS_OPTION(argv[i], "-multicastAddr")) {
+    //     _PM->set("multicast", true);
+    //     if ((i == (argc - 1)) || *argv[++i] == '-') {
+    //         fprintf(stderr,
+    //                 "%s Missing <address> after "
+    //                 "-multicastAddr\n",
+    //                 classLoggingString.c_str());
+    //         return false;
+    //     }
+    //     multicastAddrMap[THROUGHPUT_TOPIC_NAME] = argv[i];
+    //     multicastAddrMap[LATENCY_TOPIC_NAME] = argv[i];
+    //     multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = argv[i];
+    // }
+
     /*
      * Manage parameter -allowInterfaces -nic
      * "-allowInterfaces" and "-nic" are the same parameter,
@@ -1012,6 +1026,13 @@ bool PerftestTransport::parse_multicast_addresses(const char *arg)
         fprintf(stderr, "\tUse -help option to see the correct sintax\n");
 
         return false;
+    }
+
+    // We only need to set the secure properties for this
+    if (transportConfig.kind == TRANSPORT_TLSv4
+            || transportConfig.kind == TRANSPORT_DTLSv4
+            || transportConfig.kind == TRANSPORT_WANv4) {
+        populateSecurityFiles();
     }
 
     return true;
