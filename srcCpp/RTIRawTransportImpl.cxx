@@ -180,7 +180,7 @@ std::string RTIRawTransportImpl::PrintConfiguration()
     std::ostringstream stringStream;
 
     // Meedleware
-    stringStream << "\tMiddleware: RawTransport\n";
+    stringStream << "\tMiddleware: Raw Transport\n";
 
     // Domain ID
     stringStream << "\tDomain: " << _PM->get<int>("domain") << "\n";
