@@ -27,11 +27,6 @@
 #endif
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 
-template class RTIDDSImpl<TestDataKeyed_t>;
-template class RTIDDSImpl<TestData_t>;
-template class RTIDDSImpl<TestDataKeyedLarge_t>;
-template class RTIDDSImpl<TestDataLarge_t>;
-
 #ifdef RTI_SECURE_PERFTEST
 template <typename T>
 const std::string RTIDDSImpl<T>::SECURE_PRIVATEKEY_FILE_PUB =
