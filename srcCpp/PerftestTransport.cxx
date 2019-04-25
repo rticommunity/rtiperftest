@@ -799,7 +799,7 @@ std::string PerftestTransport::printTransportConfigurationSummary()
 }
 
 /*********************************************************
- * Validate and manage the parameterS
+ * Validate and manage the parameters
  */
 bool PerftestTransport::validate_input()
 {

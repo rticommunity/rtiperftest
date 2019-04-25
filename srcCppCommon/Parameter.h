@@ -315,7 +315,7 @@ class AnyParameter {
             _param = other._param;
             other._param = NULL;
             return *this;
-        };
+        }
 
         ~AnyParameter()
         {

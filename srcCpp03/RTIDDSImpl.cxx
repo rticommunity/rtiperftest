@@ -219,7 +219,7 @@ bool RTIDDSImpl<T>::validate_input()
     }
 
     // Manage transport parameter
-    if(!_transport.validate_input()) {
+    if (!_transport.validate_input()) {
          std::cerr << "[Error] Failure validation the transport options."
                    << std::endl;
         return false;

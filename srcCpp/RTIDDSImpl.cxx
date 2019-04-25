@@ -133,7 +133,7 @@ void RTIDDSImpl<T>::Shutdown()
 
 /*********************************************************
 
- * Validate and manage the parameterS
+ * Validate and manage the parameters
  */
 template <typename T>
 bool RTIDDSImpl<T>::validate_input()
@@ -239,7 +239,7 @@ bool RTIDDSImpl<T>::validate_input()
     }
 
     // Manage transport parameter
-    if(!_transport.validate_input()) {
+    if (!_transport.validate_input()) {
         fprintf(stderr, "Failure validation the transport options.\n");
         return false;
     };
