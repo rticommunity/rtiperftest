@@ -336,6 +336,7 @@ namespace PerformanceTest
                 sb.Append(getMulticastAddr(LATENCY_TOPIC_NAME.VALUE));
                 sb.Append("\n\t\tAnnouncement Address: ");
                 sb.Append(getMulticastAddr(ANNOUNCEMENT_TOPIC_NAME.VALUE));
+                sb.Append("\n");
             }
 
             if (transportConfig.kind == Transport.TRANSPORT_TCPv4

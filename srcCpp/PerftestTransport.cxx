@@ -741,7 +741,8 @@ std::string PerftestTransport::printTransportConfigurationSummary()
                 << "\n\t\tLatency Address: "
                 << multicastAddrMap[LATENCY_TOPIC_NAME].c_str()
                 << "\n\t\tAnnouncement Address: "
-                << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str();
+                << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str()
+                << "\n";
     }
 
     if (transportConfig.kind == TRANSPORT_TCPv4
@@ -802,21 +803,6 @@ std::string PerftestTransport::printTransportConfigurationSummary()
  */
 bool PerftestTransport::validate_input()
 {
-    // TODO: (Alfonso) Manage parameter -multicastAddr
-    // } else if (IS_OPTION(argv[i], "-multicastAddr")) {
-    //     _PM->set("multicast", true);
-    //     if ((i == (argc - 1)) || *argv[++i] == '-') {
-    //         fprintf(stderr,
-    //                 "%s Missing <address> after "
-    //                 "-multicastAddr\n",
-    //                 classLoggingString.c_str());
-    //         return false;
-    //     }
-    //     multicastAddrMap[THROUGHPUT_TOPIC_NAME] = argv[i];
-    //     multicastAddrMap[LATENCY_TOPIC_NAME] = argv[i];
-    //     multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = argv[i];
-    // }
-
     /*
      * Manage parameter -allowInterfaces -nic
      * "-allowInterfaces" and "-nic" are the same parameter,

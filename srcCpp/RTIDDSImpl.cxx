@@ -2161,7 +2161,6 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp * parent)
         return false;
     }
 
-    //TODO - REVIEW THIS CODE
     // set thread priorities.
     if (threadPriorities.isSet) {
 

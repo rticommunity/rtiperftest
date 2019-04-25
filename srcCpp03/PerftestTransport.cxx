@@ -588,7 +588,8 @@ std::string PerftestTransport::printTransportConfigurationSummary()
                      << "\n\t\tLatency Address: "
                      << multicastAddrMap[LATENCY_TOPIC_NAME].c_str()
                      << "\n\t\tAnnouncement Address: "
-                     << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str();
+                     << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str()
+                     << "\n";
     }
     if (transportConfig.kind == TRANSPORT_TCPv4
             || transportConfig.kind == TRANSPORT_TLSv4) {

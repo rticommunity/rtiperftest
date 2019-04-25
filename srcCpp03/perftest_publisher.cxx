@@ -389,9 +389,6 @@ bool perftest_cpp::validate_input()
         }
     }
 
-    // TODO: Manage the parameter: -threadPriorities
-    // _PM.get<std::string>("threadPriorities");
-
     return true;
 }
 
@@ -400,8 +397,6 @@ bool perftest_cpp::validate_input()
  */
 void perftest_cpp::PrintConfiguration()
 {
-    // TODO: Print Perftest and Connext DDS versions
-
     std::ostringstream stringStream;
     // Throughput/Latency mode
     if (_PM.get<bool>("pub")) {
