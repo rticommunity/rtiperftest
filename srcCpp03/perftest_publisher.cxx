@@ -32,7 +32,7 @@ RTI_UINT64 perftest_cpp::_Clock_usec = 0;
 const long timeout_wait_for_ack_sec = 0;
 const unsigned long timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {9, 9, 9, 9};
-PerftestThreadPriorities _threadPriorities;
+ThreadPriorities _threadPriorities;
 
 /*
  * PERFTEST-108
@@ -1835,7 +1835,7 @@ inline unsigned int perftest_cpp::GetSamplesPerBatch() {
     }
 }
 
-const PerftestThreadPriorities perftest_cpp::get_thread_priorities()
+const ThreadPriorities perftest_cpp::get_thread_priorities()
 {
     return _threadPriorities;
 }

@@ -2021,7 +2021,7 @@ inline unsigned int perftest_cpp::GetSamplesPerBatch() {
     }
 }
 
-const PerftestThreadPriorities perftest_cpp::get_thread_priorities()
+const ThreadPriorities perftest_cpp::get_thread_priorities()
 {
     return _threadPriorities;
 }

@@ -2066,7 +2066,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp * parent)
         return false;
     }
     _parent = parent;
-    PerftestThreadPriorities threadPriorities = _parent->get_thread_priorities();
+    ThreadPriorities threadPriorities = _parent->get_thread_priorities();
 
     // Register _loggerDevice
     if (!NDDSConfigLogger::get_instance()->set_output_device(&_loggerDevice)) {

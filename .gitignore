@@ -33,5 +33,5 @@ srcDoc/_build
 /srcCpp03/Parameter*
 /srcCpp03/CpuMonitor*
 /srcCpp/CpuMonitor*
-/srcCpp/perftestThreadPriorities.*
-/srcCpp03/perftestThreadPriorities.*
+/srcCpp/ThreadPriorities.*
+/srcCpp03/ThreadPriorities.*

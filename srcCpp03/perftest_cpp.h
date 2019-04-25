@@ -45,7 +45,7 @@
 #endif
 
 #include "MessagingIF.h"
-#include "perftestThreadPriorities.h"
+#include "ThreadPriorities.h"
 
 struct Perftest_ProductVersion_t
 {
@@ -64,7 +64,7 @@ class perftest_cpp
     bool validate_input();
     void PrintConfiguration();
     unsigned int GetSamplesPerBatch();
-    const PerftestThreadPriorities get_thread_priorities();
+    const ThreadPriorities get_thread_priorities();
     static void MilliSleep(unsigned int millisec);
     static const rti::core::ProductVersion GetDDSVersion();
     static const Perftest_ProductVersion_t GetPerftestVersion();
@@ -94,7 +94,7 @@ class perftest_cpp
     IMessaging *_MessagingImpl;
     static const Perftest_ProductVersion_t _version;
 
-    PerftestThreadPriorities _threadPriorities;
+    ThreadPriorities _threadPriorities;
 
     /* The following three members are used in a static callback
        and so they have to be static */
