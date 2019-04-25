@@ -232,7 +232,7 @@ bool RTIDDSImpl<T>::validate_input()
     }
 
     // Manage transport parameter
-    if(!_transport.validate_input()) {
+    if (!_transport.validate_input()) {
         fprintf(stderr, "Failure validation the transport options.\n");
         return false;
     };
