@@ -481,7 +481,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
         return 0;
     };
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec) {
+    void waitForAck(int sec, unsigned int nsec) {
         /* --- Dummy Function --- */
     }
 };
