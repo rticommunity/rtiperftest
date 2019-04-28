@@ -7,8 +7,8 @@
  */
 
 #include <string>
-#include "osapi/osapi_semaphore.h"
 #include "ParameterManager.h"
+#include "Infrastructure_common.h"
 
 /* Forward declaration of perftest_cpp to avoid circular dependencies */
 class perftest_cpp;
@@ -46,24 +46,23 @@ class IMessagingCB
 {
   public:
     bool  end_test;
-    RTIOsapiSemaphore *syncSemaphore;
+    PerftestSemaphore *syncSemaphore;
 
   public:
     IMessagingCB() : end_test(false), syncSemaphore(NULL){}
 
     virtual ~IMessagingCB() {
         if (syncSemaphore != NULL) {
-            RTIOsapiSemaphore_delete(syncSemaphore);
+            PerftestSemaphore_delete(syncSemaphore);
             syncSemaphore = NULL;
         }
     }
 
     /* Create a semaphore if is not been created yet, and then return it */
-    RTIOsapiSemaphore *get_synchronization_semaphore()
+    PerftestSemaphore *get_synchronization_semaphore()
     {
         if (syncSemaphore == NULL) {
-            syncSemaphore = RTIOsapiSemaphore_new(
-                    RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL);
+            syncSemaphore = PerftestSemaphore_new();
 
             if (syncSemaphore == NULL) {
                 fprintf(stderr,

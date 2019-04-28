@@ -13,7 +13,11 @@
 #include "MessagingIF.h"
 #include "perftestSupport.h"
 #include "PerftestTransport.h"
+#include "Infrastructure_common.h"
+
+#ifndef RTI_MICRO
 #include "RTIDDSLoggerDevice.h"
+#endif
 
 #ifdef RTI_CUSTOM_TYPE
 #include "CustomType.h"
@@ -44,10 +48,22 @@ public:
 
     RTIDDSImpl() :
         _transport(),
+      #ifndef RTI_MICRO
         _loggerDevice(),
+      #endif
         _parent(NULL)
     {
+      #ifndef RTI_MICRO
         _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
+      #else
+        /*
+         * For micro we want to restrict the use of memory, and since we need
+         * to set a maximum (other than DDS_LENGTH_UNLIMITED), we decided to use
+         * a default of 1. This means that for Micro, we need to specify the
+         * number of instances that will be received in the reader side.
+         */
+        _instanceMaxCountReader = 1;
+      #endif
         _isLargeData = false;
         _factory = NULL;
         _participant = NULL;
@@ -87,8 +103,11 @@ public:
      */
     IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
 
+  #ifndef RTI_MICRO
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
+  #endif
 
+    bool configureDomainParticipantQos(DDS_DomainParticipantQos &qos);
     /*
      * These two functions calculate the serialization/deserialization time cost
      * with a precision of microseconds.
@@ -116,13 +135,6 @@ public:
 
 private:
 
-    // Specific functions to configure the Security plugin
-  #ifdef RTI_SECURE_PERFTEST
-    bool configureSecurePlugin(DDS_DomainParticipantQos& dpQos);
-    std::string printSecureArgs();
-    bool validateSecureArgs();
-  #endif
-
     long                         _instanceMaxCountReader;
     bool                         _isLargeData;
     PerftestTransport            _transport;
@@ -132,23 +144,13 @@ private:
     DDSPublisher                *_publisher;
     DDSDataReader               *_reader;
     const char                  *_typename;
-    RTIOsapiSemaphore           *_pongSemaphore;
+    PerftestSemaphore           *_pongSemaphore;
+  #ifndef RTI_MICRO
     RTIDDSLoggerDevice           _loggerDevice;
+  #endif
     ParameterManager            *_PM;
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
-
-  #ifdef RTI_SECURE_PERFTEST
-    static const std::string SECURE_PRIVATEKEY_FILE_PUB;
-    static const std::string SECURE_PRIVATEKEY_FILE_SUB;
-    static const std::string SECURE_CERTIFICATE_FILE_PUB;
-    static const std::string SECURE_CERTIFICATE_FILE_SUB;
-    static const std::string SECURE_CERTAUTHORITY_FILE;
-    static const std::string SECURE_PERMISION_FILE_PUB;
-    static const std::string SECURE_PERMISION_FILE_SUB;
-    static const std::string SECURE_LIBRARY_NAME;
-  #endif
-
 };
 
 #endif // __RTIDDSIMPL_H__

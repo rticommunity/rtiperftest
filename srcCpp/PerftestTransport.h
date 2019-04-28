@@ -9,9 +9,7 @@
 #include <string>
 #include <map>
 #include <sstream>
-#include "perftest.h"
 #include "ParameterManager.h"
-#include "ndds/ndds_cpp.h"
 
 /******************************************************************************/
 enum Transport {
@@ -105,9 +103,7 @@ private:
 
 };
 
-bool configureTransport(
-        PerftestTransport &transport,
-        DDS_DomainParticipantQos &qos,
-        ParameterManager *_PM);
+// Tag used when adding logging output.
+const std::string classLoggingString = "PerftestTransport:";
 
 #endif /* PERFTEST_2_0_SRCCPP_PERFTESTTRANSPORT_H_ */

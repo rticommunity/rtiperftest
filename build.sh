@@ -17,12 +17,20 @@ qos_file="${script_location}/perftest_qos_profiles.xml"
 doc_folder="${script_location}/srcDoc"
 generate_doc_folder="${script_location}/doc"
 
+# By default we will build pro, not micro
+BUILD_MICRO=0
+
+# In case we build micro, which version.
+BUILD_MICRO_24x_COMPATIBILITY=0
+MICRO_UNBOUNDED_SEQUENCE_SIZE=1048576
+
 
 # Default values:
 BUILD_CPP=1
 BUILD_CPP03=1
 BUILD_JAVA=1
 MAKE_EXE=make
+CMAKE_EXE=cmake
 PERL_EXEC=perl
 JAVAC_EXE=javac
 JAVA_EXE=java
@@ -61,15 +69,25 @@ function usage()
     echo ""
     echo "This scripts accepts the following parameters:                                  "
     echo "                                                                                "
+    echo "    --micro                      Build RTI Perftest for RTI Connext Micro       "
+    echo "                                 By default RTI Perftest will assume it will be "
+    echo "                                 built against RTI Connext DDS Professional     "
     echo "    --platform <your_arch>       Platform for which build.sh is going to compile"
     echo "                                 RTI Perftest.                                  "
-    echo "    --nddshome <path>            Path to the *RTI Connext DDS installation*. If "
-    echo "                                 this parameter is not present, the \$NDDSHOME  "
-    echo "                                 variable should be set.                        "
+    echo "    --nddshome <path>            Path to the *RTI Connext DDS Professional      "
+    echo "                                 installation*. If this parameter is not present"
+    echo "                                 the \$NDDSHOME variable should be set.         "
+    echo "                                 If provided when building micro, it will be    "
+    echo "                                 used as \$RTIMEHOME                            "
+    echo "    --rtimehome <path>           Path to the *RTI Connext DDS Micro*            "
+    echo "                                 installation*. If this parameter is not present"
+    echo "                                 the \$RTIMEHOME variable should be set.        "
     echo "    --skip-java-build            Avoid Java ByteCode generation creation.       "
+    echo "                                 (No effect when building for Micro)            "
     echo "    --skip-cpp-build             Avoid C++ code generation and compilation.     "
     echo "    --skip-cpp03-build           Avoid C++ New PSM code generation and          "
     echo "                                 compilation.                                   "
+    echo "                                 (No effect when building for Micro)            "
     echo "    --java-build                 Only Java ByteCode generation creation.        "
     echo "    --cpp-build                  Only C++ code generation and compilation.      "
     echo "    --cpp03-build                Only C++ New PSM code generation and           "
@@ -77,6 +95,10 @@ function usage()
     echo "    --make <path>                Path to the GNU make executable. If this       "
     echo "                                 parameter is not present, the GNU make variable"
     echo "                                 should be available from your \$PATH variable. "
+    echo "    --cmake <path>               Path to the cmake executable. If this          "
+    echo "                                 parameter is not present, cmake executable     "
+    echo "                                 should be available from your \$PATH variable. "
+    echo "                                 will clean all the generated code and binaries "
     echo "    --perl <path>                Path to PERL executable. If this parameter is  "
     echo "                                 not present, the path to PERL should be        "
     echo "                                 available from your \$PATH variable.           "
@@ -84,6 +106,7 @@ function usage()
     echo "                                 parameter is not present, javac, jar and java  "
     echo "                                 executables should be available from your      "
     echo "                                 \$PATH variable.                               "
+    echo "                                 (No effect when building for Micro)            "
     echo "    --clean                      If this option is present, the build.sh script "
     echo "                                 will clean all the generated code and binaries "
     echo "    --debug                      Compile against the RTI Connext Debug          "
@@ -91,6 +114,7 @@ function usage()
     echo "    --build-doc                  Generate the HTML and PDF documentation.       "
     echo "    --dynamic                    Compile against the RTI Connext Dynamic        "
     echo "                                 libraries. Default is against static ones.     "
+    echo "                                 (No effect when building for Micro)            "
     echo "    --secure                     Enable the security options for compilation.   "
     echo "                                 Default is not enabled.                        "
     echo "    --openssl-home <path>        Path to the openssl home. This will be used    "
@@ -144,6 +168,10 @@ function clean()
     rm -rf "${script_location}"/srcJava/jar
     rm -rf "${script_location}"/srcJava/com/rti/perftest/gen
     rm -rf "${script_location}"/bin
+    rm -f  "${script_location}"/srcCpp/*.txt
+    rm -rf "${script_location}"/srcCpp/gen
+    rm -rf "${script_location}"/srcCpp/perftest_build
+    rm -rf "${script_location}"/srcCpp/perftestApplication.*
     clean_custom_type_files
     clean_documentation
     clean_src_cpp_common
@@ -156,12 +184,6 @@ function clean()
 
 function executable_checking()
 {
-    # Is NDDSHOME set?
-    if [ -z "${NDDSHOME}" ]; then
-        echo -e "${ERROR_TAG} The NDDSHOME variable is not set"
-        usage
-        exit -1
-    fi
 
     # Is platform specified?
     if [ -z "${platform}" ]; then
@@ -170,35 +192,77 @@ function executable_checking()
         exit -1
     fi
 
-    # Is MAKE in the path?
-    if [ "${BUILD_CPP}" -eq "1" ]; then
-        if [ -z `which "${MAKE_EXE}"` ]
-        then
-            echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp will not be built."
-        fi
-    fi
-    if [ "${BUILD_CPP03}" -eq "1" ]; then
-        if [ -z `which "${MAKE_EXE}"` ]
-        then
-            echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp03 will not be built."
-        fi
-    fi
+    # If we are Building MICRO
+    if [ "${BUILD_MICRO}" -eq "1" ]; then
 
-    # Is JAVA in the path?
-    if [ "${BUILD_JAVA}" -eq "1" ]; then
-        if [ -z `which "${JAVAC_EXE}"` ]; then
-            echo -e "${YELLOW}[WARNING]:${NC} javac executable not found, perftest_java will not be built."
-            BUILD_JAVA=0
+        # Is RTIMEHOME set?
+        if [ -z "${RTIMEHOME}" ]; then
+            # Is NDDSHOME set?
+            if [ -z "${NDDSHOME}" ]; then
+                echo -e "${ERROR_TAG} Nor RTIMEHOME nor NDDSHOME variables are set"
+                usage
+                exit -1
+            else
+                echo -e "${INFO_TAG} The RTIMEHOME variable is not set, using NDDSHOME"
+            fi
+        else
+            export NDDSHOME="${RTIMEHOME}"
         fi
-        if [ -z `which "${JAVA_EXE}"` ]; then
-            echo -e "${YELLOW}[WARNING]:${NC} java executable not found, perftest_java will not be built."
-            BUILD_JAVA=0
+
+        # Is CMAKE in the path?
+        if [ -z `which "${CMAKE_EXE}"` ]
+        then
+            echo -e "${YELLOW}[WARNING]:${NC} ${CMAKE_EXE} executable not found, perftest_cpp will not be built."
         fi
-        if [ -z `which "${JAR_EXE}"` ]; then
-            echo -e "${YELLOW}[WARNING]:${NC} jar executable not found, perftest_java will not be built."
-            BUILD_JAVA=0
+
+        # Is MAKE in the path?
+        if [ "${BUILD_CPP}" -eq "1" ]; then
+            if [ -z `which "${MAKE_EXE}"` ]
+            then
+                echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp will not be built."
+            fi
         fi
-    fi
+    else # If building pro
+
+        # Is NDDSHOME set?
+        if [ -z "${NDDSHOME}" ]; then
+            echo -e "${ERROR_TAG} The NDDSHOME variable is not set"
+            usage
+            exit -1
+        fi
+
+        # Is MAKE in the path?
+        if [ "${BUILD_CPP}" -eq "1" ]; then
+            if [ -z `which "${MAKE_EXE}"` ]
+            then
+                echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp will not be built."
+            fi
+        fi
+        if [ "${BUILD_CPP03}" -eq "1" ]; then
+            if [ -z `which "${MAKE_EXE}"` ]
+            then
+                echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp03 will not be built."
+            fi
+        fi
+
+        # Is JAVA in the path?
+        if [ "${BUILD_JAVA}" -eq "1" ]; then
+            if [ -z `which "${JAVAC_EXE}"` ]; then
+                echo -e "${YELLOW}[WARNING]:${NC} javac executable not found, perftest_java will not be built."
+                BUILD_JAVA=0
+            fi
+            if [ -z `which "${JAVA_EXE}"` ]; then
+                echo -e "${YELLOW}[WARNING]:${NC} java executable not found, perftest_java will not be built."
+                BUILD_JAVA=0
+            fi
+            if [ -z `which "${JAR_EXE}"` ]; then
+                echo -e "${YELLOW}[WARNING]:${NC} jar executable not found, perftest_java will not be built."
+                BUILD_JAVA=0
+            fi
+        fi
+
+    fi #Micro/Pro
+
 }
 
 function library_sufix_calculation()
@@ -356,10 +420,10 @@ function clean_src_cpp_common()
     done
 }
 
-
 function build_cpp()
 {
     copy_src_cpp_common
+
     ##############################################################################
     # Generate files for the custom type files
     additional_defines_custom_type=""
@@ -370,10 +434,45 @@ function build_cpp()
         build_cpp_custom_type
     fi
     additional_defines_calculation "CPPtraditional"
+
+    additional_header_files="${additional_header_files_custom_type} \
+        RTIRawTransportImpl.h \
+        ThreadPriorities.h \
+        Parameter.h \
+        ParameterManager.h \
+        RTIDDSLoggerDevice.h \
+        MessagingIF.h \
+        RTIDDSImpl.h \
+        perftest_cpp.h \
+        qos_string.h \
+        CpuMonitor.h \
+        PerftestTransport.h \
+        Infrastructure_common.h \
+        Infrastructure_pro.h"
+
+    additional_source_files="${additional_source_files_custom_type} \
+        RTIRawTransportImpl.cxx \
+        ThreadPriorities.cxx \
+        Parameter.cxx \
+        ParameterManager.cxx \
+        RTIDDSLoggerDevice.cxx \
+        RTIDDSImpl.cxx \
+        CpuMonitor.cxx \
+        PerftestTransport.cxx \
+        Infrastructure_common.cxx \
+        Infrastructure_pro.cxx"
+
     ##############################################################################
     # Generate files for srcCpp
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"${additional_header_files_custom_type} RTIRawTransportImpl.h ThreadPriorities.h Parameter.h ParameterManager.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles \"${additional_source_files_custom_type} RTIRawTransportImpl.cxx ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} ${additional_defines_custom_type} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
+        -unboundedSupport -replace -create typefiles -create makefiles \
+        -platform ${platform} \
+        -additionalHeaderFiles \"${additional_header_files}\" \
+        -additionalSourceFiles \"${additional_source_files} \" \
+        -additionalDefines \"${additional_defines}\" \
+        ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
+        -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${classic_cpp_lang_string}."
