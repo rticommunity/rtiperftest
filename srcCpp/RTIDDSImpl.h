@@ -48,6 +48,9 @@ public:
 
     RTIDDSImpl() :
         _transport(),
+      #ifdef RTI_SECURE_PERFTEST
+        _security(),
+      #endif
       #ifndef RTI_MICRO
         _loggerDevice(),
       #endif
@@ -138,6 +141,9 @@ private:
     long                         _instanceMaxCountReader;
     bool                         _isLargeData;
     PerftestTransport            _transport;
+  #ifdef RTI_SECURE_PERFTEST
+    PerftestSecurity             _security;
+  #endif
     DDSDomainParticipantFactory *_factory;
     DDSDomainParticipant        *_participant;
     DDSSubscriber               *_subscriber;

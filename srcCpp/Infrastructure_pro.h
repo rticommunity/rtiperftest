@@ -99,4 +99,11 @@ bool PerftestConfigureTransport(
         DDS_DomainParticipantQos &qos,
         ParameterManager *_PM);
 
+#ifdef RTI_SECURE_PERFTEST
+bool PerftestConfigureSecurity(
+        PerftestSecurity &security,
+        DDS_DomainParticipantQos &qos,
+        ParameterManager *_PM);
+#endif
+
 #endif /* INFRASTRUCTURE_PRO_H_ */

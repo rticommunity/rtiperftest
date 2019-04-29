@@ -334,6 +334,16 @@ bool PerftestConfigureTransport(
     return true;
 }
 
+#ifdef RTI_SECURE_PERFTEST
+bool PerftestConfigureSecurity(
+        PerftestSecurity &security,
+        DDS_DomainParticipantQos &qos,
+        ParameterManager *_PM)
+{
+    return true;
+}
+#endif
+
 /********************************************************************/
 /* Security Related Functions */
 

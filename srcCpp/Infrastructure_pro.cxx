@@ -676,6 +676,198 @@ bool PerftestConfigureTransport(
     return true;
 }
 
+#ifdef RTI_SECURE_PERFTEST
+bool PerftestConfigureSecurity(
+        PerftestSecurity &security,
+        DDS_DomainParticipantQos &qos,
+        ParameterManager *_PM)
+{
+    // configure use of security plugins, based on provided arguments
+
+    DDS_ReturnCode_t retcode;
+    std::string governanceFilePath;
+
+    if (!addPropertyToParticipantQos(
+            qos,
+            "com.rti.serv.load_plugin",
+            "com.rti.serv.secure")) {
+        return false;
+    }
+
+  #ifdef RTI_PERFTEST_DYNAMIC_LINKING
+
+    if (!assertPropertyToParticipantQos(
+        qos,
+        "com.rti.serv.secure.create_function",
+        "RTI_Security_PluginSuite_create")) {
+        return false;
+    }
+
+    if (!addPropertyToParticipantQos(
+            qos,
+            "com.rti.serv.secure.library",
+            _PM->get<std::string>("secureLibrary"))) {
+        return false;
+    }
+
+  #else // Static library linking
+
+    retcode = DDSPropertyQosPolicyHelper::assert_pointer_property(
+            dpQos.property,
+            "com.rti.serv.secure.create_function_ptr",
+            (void *) RTI_Security_PluginSuite_create);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add pointer_property "
+                "com.rti.serv.secure.create_function_ptr\n");
+        return false;
+    }
+
+  #endif
+
+    /*
+     * Below, we are using com.rti.serv.secure properties in order to be
+     * backward compatible with RTI Connext DDS 5.3.0 and below. Later versions
+     * use the properties that are specified in the DDS Security specification
+     * (see also the RTI Security Plugins Getting Started Guide). However,
+     * later versions still support the legacy properties as an alternative.
+     */
+
+    // check if governance file provided
+    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
+        // choose a pre-built governance file
+        governanceFilePath = "./resource/secure/signed_PerftestGovernance_";
+        if (_PM->get<bool>("secureEncryptDiscovery")) {
+            governanceFilePath += "Discovery";
+        }
+        if (_PM->get<bool>("secureSign")) {
+            governanceFilePath += "Sign";
+        }
+        if (_PM->get<bool>("secureEncryptData")
+                && _PM->get<bool>("secureEncryptSM")) {
+            governanceFilePath += "EncryptBoth";
+        } else if (_PM->get<bool>("secureEncryptData")) {
+            governanceFilePath += "EncryptData";
+        } else if (_PM->get<bool>("secureEncryptSM")) {
+            governanceFilePath += "EncryptSubmessage";
+        }
+
+        governanceFilePath += ".xml";
+
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.access_control.governance_file",
+                governanceFilePath)) {
+            return false;
+        }
+    } else {
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.access_control.governance_file",
+                governanceFilePath)) {
+            return false;
+        }
+    }
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property "
+                "com.rti.serv.secure.access_control.governance_file\n");
+        return false;
+    }
+
+    /*
+     * Save the local variable governanceFilePath into
+     * the parameter "secureGovernanceFile"
+     */
+    _PM->set("secureGovernanceFile", governanceFilePath);
+
+    // Permissions file
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.secure.access_control.permissions_file",
+            _PM->get<std::string>("securePermissionsFile").c_str(),
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property "
+                "com.rti.serv.secure.access_control.permissions_file\n");
+        return false;
+    }
+
+    // permissions authority file
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.secure.access_control.permissions_authority_file",
+            _PM->get<std::string>("secureCertAuthority").c_str(),
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property "
+                "com.rti.serv.secure.access_control.permissions_authority_file\n");
+        return false;
+    }
+
+    // certificate authority
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.secure.authentication.ca_file",
+            _PM->get<std::string>("secureCertAuthority").c_str(),
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property "
+                "com.rti.serv.secure.authentication.ca_file\n");
+        return false;
+    }
+
+    // public key
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.secure.authentication.certificate_file",
+            _PM->get<std::string>("secureCertFile").c_str(),
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property "
+                "com.rti.serv.secure.authentication.certificate_file\n");
+        return false;
+    }
+
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.secure.cryptography.max_receiver_specific_macs",
+            "4",
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property com.rti.serv.secure.library\n");
+        return false;
+    }
+
+    // private key
+    retcode = DDSPropertyQosPolicyHelper::add_property(
+            dpQos.property,
+            "com.rti.serv.secure.authentication.private_key_file",
+            _PM->get<std::string>("securePrivateKey").c_str(),
+            false);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Failed to add property "
+                "com.rti.serv.secure.authentication.private_key_file\n");
+        return false;
+    }
+
+    if (_PM->is_set("secureDebug")) {
+        char buf[16];
+        sprintf(buf, "%d", _PM->get<int>("secureDebug"));
+        retcode = DDSPropertyQosPolicyHelper::add_property(
+                dpQos.property,
+                "com.rti.serv.secure.logging.log_level",
+                buf,
+                false);
+        if (retcode != DDS_RETCODE_OK) {
+            printf("Failed to add property "
+                    "com.rti.serv.secure.logging.log_level\n");
+            return false;
+        }
+    }
+
+    return true;
+}
+#endif
+
 /********************************************************************/
 /* Security Related Functions */
 

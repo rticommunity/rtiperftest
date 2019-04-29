@@ -83,6 +83,13 @@ bool PerftestConfigureTransport(
         DDS_DomainParticipantQos &qos,
         ParameterManager *_PM);
 
+#ifdef RTI_SECURE_PERFTEST
+bool PerftestConfigureSecurity(
+        PerftestSecurity &security,
+        DDS_DomainParticipantQos &qos,
+        ParameterManager *_PM);
+#endif
+
 /********************************************************************/
 /* The following structures/classes are copied from RTI Connext DDS */
 

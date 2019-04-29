@@ -330,7 +330,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
    #ifdef RTI_SECURE_PERFTEST
     if (_PM->group_is_used(SECURE)) {
-        stringStream << "\n" << printSecureArgs();
+        stringStream << "\n" << _security.printSecurityConfigurationSummary();
     }
    #endif
 
@@ -1769,22 +1769,6 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
         qos.discovery.multicast_receive_addresses.length(0);
     }
 
-  #ifdef RTI_SECURE_PERFTEST //TODO
-    // Configure security
-    if (_PM->group_is_used(SECURE)) {
-        // validate arguments
-        if (!validateSecureArgs()) {
-            fprintf(stderr, "Failed to configure security plugins\n");
-            return false;
-        }
-        // configure
-        if (!configureSecurePlugin(qos)) {
-            fprintf(stderr, "Failed to configure security plugins\n");
-            return false;
-        }
-    }
-  #endif // RTI_SECURE_PERFTEST
-
     /* Mask for threadPriorities when it's used */
     DDS_ThreadSettingsKindMask mask = DDS_THREAD_SETTINGS_REALTIME_PRIORITY;
     ThreadPriorities threadPriorities = _parent->get_thread_priorities();
@@ -1871,6 +1855,22 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
     if (!PerftestConfigureTransport(_transport, qos, _PM)) {
         return false;
     }
+
+  #ifdef RTI_SECURE_PERFTEST
+    // Configure security
+    if (_PM->group_is_used(SECURE)) {
+        // validate arguments
+        if (!_security.validateSecureArgs()) {
+            fprintf(stderr, "Failed to configure security plugins\n");
+            return false;
+        }
+        // configure
+        if (!PerftestConfigureSecurePlugin(_security, qos, _PM)) {
+            fprintf(stderr, "Failed to configure security plugins\n");
+            return false;
+        }
+    }
+  #endif // RTI_SECURE_PERFTEST
 
   #ifdef RTI_SECURE_PERFTEST
     //TODO Use classic implementation, no need to create a class for security anymore

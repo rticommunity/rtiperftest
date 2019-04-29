@@ -376,7 +376,7 @@ function build_cpp_custom_type()
     additional_defines_custom_type=" -D RTI_CUSTOM_TYPE="${custom_type}
 }
 
-function geneate_qos_string()
+function generate_qos_string()
 {
     # If PERL_EXEC is in the path, generate the qos_string.h file.
     if [ "${BUILD_CPP}" -eq "1" ]; then
@@ -447,6 +447,7 @@ function build_cpp()
         qos_string.h \
         CpuMonitor.h \
         PerftestTransport.h \
+        PerftestSecurity.h \
         Infrastructure_common.h \
         Infrastructure_pro.h"
 
@@ -459,6 +460,7 @@ function build_cpp()
         RTIDDSImpl.cxx \
         CpuMonitor.cxx \
         PerftestTransport.cxx \
+        PerftestSecurity.cxx \
         Infrastructure_common.cxx \
         Infrastructure_pro.cxx"
 
@@ -824,7 +826,7 @@ modern_cpp_lang_string=C++03
 java_lang_string=java
 ############################################################################
 # Generate qos_string.h
-geneate_qos_string
+generate_qos_string
 
 if [ "${BUILD_CPP}" -eq "1" ]; then
     library_sufix_calculation
