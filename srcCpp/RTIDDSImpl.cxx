@@ -222,28 +222,6 @@ bool RTIDDSImpl<T>::validate_input()
         return false;
     };
 
-  #ifdef RTI_SECURE_PERFTEST
-    if (!_security.validate_input()) {
-        fprintf(stderr, "Failure validating the security options.\n");
-        return false;
-    };
-
-    // TODO: Check if this code still applies
-    // // Manage parameter -secureGovernanceFile
-    // if (_PM->is_set("secureGovernanceFile")) {
-    //     fprintf(stdout,
-    //             "Warning -- authentication, encryption, signing arguments "
-    //             "will be ignored, and the values specified by the Governance "
-    //             "file will be used instead\n");
-    // }
-
-    // // Manage parameter -secureEncryptBoth
-    // if (_PM->is_set("secureEncryptBoth")) {
-    //     _PM->set("secureEncryptData", true);
-    //     _PM->set("secureEncryptSM", true);
-    // }
-  #endif
-
     /*
      * Manage parameter -verbosity.
      * Setting verbosity if the parameter is provided

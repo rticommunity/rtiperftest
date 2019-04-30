@@ -51,6 +51,21 @@ void PerftestSecurity::initialize(ParameterManager *PM)
 bool PerftestSecurity::validateSecureArgs()
 {
     if (_PM->group_is_used(SECURE)) {
+
+    // TODO: Check if this code still applies
+    // // Manage parameter -secureGovernanceFile
+        if (_PM->is_set("secureGovernanceFile")) {
+            fprintf(stdout,
+                    "Warning -- authentication, encryption, signing arguments "
+                    "will be ignored, and the values specified by the Governance "
+                    "file will be used instead\n");
+        }
+
+        if (_PM->is_set("secureEncryptBoth")) {
+            _PM->set("secureEncryptData", true);
+            _PM->set("secureEncryptSM", true);
+        }
+
         if (_PM->get<std::string>("securePrivateKey").empty()) {
             if (_PM->get<bool>("pub")) {
                 _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
