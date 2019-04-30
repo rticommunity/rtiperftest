@@ -870,7 +870,7 @@ void ParameterManager::initialize()
     noBlockingSockets->set_command_line_argument("-noBlockingSockets", "");
     noBlockingSockets->set_description(
             "Control blocking behavior of send sockets to never block.\n"
-            "CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT"
+            "CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT\n"
             "PERFORMANCE PROBLEMS.\n");
     noBlockingSockets->set_type(T_BOOL);
     noBlockingSockets->set_extra_argument(NO);

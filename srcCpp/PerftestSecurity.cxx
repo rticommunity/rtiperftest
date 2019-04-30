@@ -40,6 +40,10 @@ PerftestSecurity::PerftestSecurity() :
 {
 }
 
+PerftestSecurity::~PerftestSecurity()
+{
+}
+
 void PerftestSecurity::initialize(ParameterManager *PM)
 {
     _PM = PM;
@@ -51,6 +55,21 @@ void PerftestSecurity::initialize(ParameterManager *PM)
 bool PerftestSecurity::validateSecureArgs()
 {
     if (_PM->group_is_used(SECURE)) {
+
+        // Manage parameter -secureGovernanceFile
+        if (_PM->is_set("secureGovernanceFile")) {
+            fprintf(stdout,
+                "Warning -- authentication, encryption, signing arguments "
+                "will be ignored, and the values specified by the Governance "
+                "file will be used instead\n");
+        }
+
+        // Manage parameter -secureEncryptBoth
+        if (_PM->is_set("secureEncryptBoth")) {
+            _PM->set("secureEncryptData", true);
+            _PM->set("secureEncryptSM", true);
+        }
+
         if (_PM->get<std::string>("securePrivateKey").empty()) {
             if (_PM->get<bool>("pub")) {
                 _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
@@ -90,7 +109,7 @@ bool PerftestSecurity::validateSecureArgs()
     return true;
 }
 
-void PerftestSecurity::printSecurityConfigurationSummary()
+std::string PerftestSecurity::printSecurityConfigurationSummary()
 {
     std::ostringstream stringStream;
     stringStream << "Secure Configuration:\n";

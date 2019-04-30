@@ -10,6 +10,7 @@
 #include <string>
 #include <map>
 #include <sstream>
+#include "ParameterManager.h"
 
 /******************************************************************************/
 
@@ -38,14 +39,14 @@ public:
 
     PerftestSecurity();
 
-    virtual ~PerftestSecurity();
+    ~PerftestSecurity();
     void initialize(ParameterManager *PM);
 
     /**************************************************************************/
     /* PUBLIC METHODS */
 
     bool validateSecureArgs();
-    void printSecurityConfigurationSummary();
+    std::string printSecurityConfigurationSummary();
 
 private:
 
