@@ -196,6 +196,17 @@ Ensure compatibility for the Classic C++ Implementation (#114)
 Some of the changes added for #55 broke compatibility when compiling certain
 platforms with no support for C++11. This issue has been fixed.
 
+Issues compiling in certain Platforms due to static variable `transportConfigMap` (#161)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In certain architectures the use of the static variable: `static std::map<std::string, TransportConfig> transportConfigMap`
+was causing some issues when referencing it from a static context.
+
+In order to avoid this issue, the variable is not static anymore
+and it will be initialized in the constructor of the `PerftestTransport` class.
+
+This issue affected both the Modern C++ Implementation and the Classic one.
+
 Release Notes 2.3.2
 -------------------
 

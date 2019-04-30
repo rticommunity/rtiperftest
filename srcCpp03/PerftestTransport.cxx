@@ -30,8 +30,6 @@ const std::string TRANSPORT_CERTIFICATE_FILE_PUB = "./resource/secure/pub.pem";
 const std::string TRANSPORT_CERTIFICATE_FILE_SUB = "./resource/secure/sub.pem";
 const std::string TRANSPORT_CERTAUTHORITY_FILE = "./resource/secure/cacert.pem";
 
-std::map<std::string, TransportConfig> PerftestTransport::transportConfigMap;
-
 /******************************************************************************/
 /* DDS Related functions. These functions doesn't belong to the
  * PerftestTransport class. This way we decouple the Transport class from
@@ -444,6 +442,39 @@ PerftestTransport::PerftestTransport() :
     multicastAddrMap[LATENCY_TOPIC_NAME] = "239.255.1.2";
     multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = "239.255.1.100";
     multicastAddrMap[THROUGHPUT_TOPIC_NAME] = "239.255.1.1";
+
+    transportConfigMap["Use XML"] = TransportConfig(
+            TRANSPORT_NOT_SET,
+            "--",
+            "--");
+    transportConfigMap["UDPv4"] = TransportConfig(
+            TRANSPORT_UDPv4,
+            "UDPv4",
+            "dds.transport.UDPv4.builtin");
+    transportConfigMap["UDPv6"] = TransportConfig(
+            TRANSPORT_UDPv6,
+            "UDPv6",
+            "dds.transport.UDPv6.builtin");
+    transportConfigMap["TCP"] = TransportConfig(
+            TRANSPORT_TCPv4,
+            "TCP",
+            "dds.transport.TCPv4.tcp1");
+    transportConfigMap["TLS"] = TransportConfig(
+            TRANSPORT_TLSv4,
+            "TLS",
+            "dds.transport.TCPv4.tcp1");
+    transportConfigMap["DTLS"] = TransportConfig(
+            TRANSPORT_DTLSv4,
+            "DTLS",
+            "dds.transport.DTLS.dtls1");
+    transportConfigMap["WAN"] = TransportConfig(
+            TRANSPORT_WANv4,
+            "WAN",
+            "dds.transport.WAN.wan1");
+    transportConfigMap["SHMEM"] = TransportConfig(
+            TRANSPORT_SHMEM,
+            "SHMEM",
+            "dds.transport.shmem.builtin");
 }
 
 PerftestTransport::~PerftestTransport()
@@ -453,51 +484,10 @@ PerftestTransport::~PerftestTransport()
 /******************************************************************************/
 /* PRIVATE METHODS */
 
-const std::map<std::string, TransportConfig>&
-PerftestTransport::getTransportConfigMap()
-{
-
-    if (transportConfigMap.empty()) {
-        transportConfigMap["Use XML"] = TransportConfig(
-                TRANSPORT_NOT_SET,
-                "--",
-                "--");
-        transportConfigMap["UDPv4"] = TransportConfig(
-                TRANSPORT_UDPv4,
-                "UDPv4",
-                "dds.transport.UDPv4.builtin");
-        transportConfigMap["UDPv6"] = TransportConfig(
-                TRANSPORT_UDPv6,
-                "UDPv6",
-                "dds.transport.UDPv6.builtin");
-        transportConfigMap["TCP"] = TransportConfig(
-                TRANSPORT_TCPv4,
-                "TCP",
-                "dds.transport.TCPv4.tcp1");
-        transportConfigMap["TLS"] = TransportConfig(
-                TRANSPORT_TLSv4,
-                "TLS",
-                "dds.transport.TCPv4.tcp1");
-        transportConfigMap["DTLS"] = TransportConfig(
-                TRANSPORT_DTLSv4,
-                "DTLS",
-                "dds.transport.DTLS.dtls1");
-        transportConfigMap["WAN"] = TransportConfig(
-                TRANSPORT_WANv4,
-                "WAN",
-                "dds.transport.WAN.wan1");
-        transportConfigMap["SHMEM"] = TransportConfig(
-                TRANSPORT_SHMEM,
-                "SHMEM",
-                "dds.transport.shmem.builtin");
-    }
-    return transportConfigMap;
-}
-
 bool PerftestTransport::setTransport(std::string transportString)
 {
 
-    std::map<std::string, TransportConfig> configMap = getTransportConfigMap();
+    std::map<std::string, TransportConfig> configMap = transportConfigMap;
     std::map<std::string, TransportConfig>::iterator it = configMap.find(
             transportString);
     if (it != configMap.end()) {

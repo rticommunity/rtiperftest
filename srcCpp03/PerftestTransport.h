@@ -134,13 +134,11 @@ public:
 
 private:
 
-    static std::map<std::string, TransportConfig> transportConfigMap;
-
+    std::map<std::string, TransportConfig> transportConfigMap;
     std::map<std::string, std::string> multicastAddrMap;
 
     /**************************************************************************/
 
-    static const std::map<std::string, TransportConfig>& getTransportConfigMap();
     bool setTransport(std::string transportString);
     void populateSecurityFiles(bool isPublisher);
 
