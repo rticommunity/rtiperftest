@@ -327,6 +327,19 @@ function additional_defines_calculation()
     fi
 }
 
+function additional_defines_calculation_micro()
+{
+    if [[ $platform == *"Darwin"* ]]; then
+        additional_defines=" RTI_DARWIN"
+    else
+        if [[ $platform == *"Linux"* ]]; then
+            additional_defines=" RTI_LINUX"
+            additional_included_libraries="nsl;rt;"
+        fi
+    fi
+    additional_defines="RTI_MICRO O3"${additional_defines}
+}
+
 # Generate code for the type of the customer.
 # Fill additional source and header files for custom type.
 function build_cpp_custom_type()
@@ -522,6 +535,119 @@ function build_cpp()
     fi
     cp -f "${perftest_cpp_name_beginning}${executable_extension}" \
     "${destination_folder}/perftest_cpp${executable_extension}"
+
+    clean_src_cpp_common
+}
+
+
+function build_micro_cpp()
+{
+    copy_src_cpp_common
+    additional_defines_calculation_micro
+
+    ##############################################################################
+    # Generate files for srcCpp
+        if [ "${BUILD_MICRO_24x_COMPATIBILITY}" -eq "1" ]; then
+            additional_defines=${additional_defines}" RTI_MICRO_24x_COMPATIBILITY"
+        else
+            rtiddsgen_extra_options="${rtiddsgen_extra_options} -sequenceSize ${MICRO_UNBOUNDED_SEQUENCE_SIZE} -additionalRtiLibraries nddsmetp"
+        fi
+
+    additional_header_files="${additional_header_files_custom_type} \
+        ThreadPriorities.h \
+        Parameter.h \
+        ParameterManager.h \
+        RTIDDSLoggerDevice.h \
+        MessagingIF.h \
+        RTIDDSImpl.h \
+        perftest_cpp.h \
+        CpuMonitor.h \
+        PerftestTransport.h \
+        PerftestSecurity.h \
+        Infrastructure_common.h \
+        Infrastructure_micro.h"
+
+    additional_source_files="\
+        Parameter.cxx \
+        ParameterManager.cxx \
+        RTIDDSLoggerDevice.cxx \
+        RTIDDSImpl.cxx \
+        CpuMonitor.cxx \
+        PerftestTransport.cxx \
+        PerftestSecurity.cxx \
+        Infrastructure_common.cxx \
+        Infrastructure_micro.cxx"
+
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} \
+            -replace -create typefiles -create makefiles \
+            -additionalHeaderFiles \"$additional_header_files\" \
+            -additionalSourceFiles \"$additional_source_files\" \
+            -additionalDefines \"${additional_defines}\" \
+            ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+
+    echo ""
+    echo -e "${INFO_TAG} Generating types and makefiles for ${classic_cpp_lang_string}."
+    echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+
+    # Executing RTIDDSGEN command here.
+    eval $rtiddsgen_command
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
+        exit -1
+    fi
+    cp "${classic_cpp_folder}/perftest_publisher.cxx" "${classic_cpp_folder}/perftest_subscriber.cxx"
+    cp "${idl_location}/perftest.idl" "${classic_cpp_folder}/perftest.idl"
+    touch "${classic_cpp_folder}/perftestApplication.cxx"
+    touch "${classic_cpp_folder}/perftestApplication.h"
+
+    ##############################################################################
+    # Compile srcCpp code
+    echo ""
+    echo -e "${INFO_TAG} Compiling perftest_cpp"
+    cd "${classic_cpp_folder}"
+
+    cmake_generate_command="${CMAKE_EXE} -DCMAKE_BUILD_TYPE=${RELEASE_DEBUG} -G \"Unix Makefiles\" -B./perftest_build -H. -DRTIME_TARGET_NAME=${platform} -DPLATFORM_LIBS=\"dl;m;pthread;${additional_included_libraries}\""
+
+	echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
+    eval $cmake_generate_command
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating unix makefiles with cmake for ${classic_cpp_lang_string}."
+        cd ..
+        exit -1
+    fi
+
+	cmake_build_command="${CMAKE_EXE} --build ./perftest_build --config ${RELEASE_DEBUG} --target perftest_publisher"
+    	echo -e "${INFO_TAG} Cmake Build Command: $cmake_build_command"
+    eval $cmake_build_command
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure compiling code for ${classic_cpp_lang_string}."
+        cd ..
+        exit -1
+    fi
+
+    echo -e "${INFO_TAG} Compilation successful"
+    cd ..
+
+    echo ""
+    echo -e "${INFO_TAG} Copying executable into: \"bin/${platform}/${RELEASE_DEBUG}\" folder"
+
+    # Create bin folder if not exists and copy executables, since this command
+    # has to work for several different architectures, we will try to find the
+    # executable name with different line endings.
+    perftest_cpp_name_beginning="${classic_cpp_folder}/objs/${platform}/perftest_publisher"
+    executable_extension=""
+    destination_folder="${bin_folder}/${platform}/${RELEASE_DEBUG}"
+    mkdir -p "${bin_folder}/${platform}/${RELEASE_DEBUG}"
+
+    if [ -e "$perftest_cpp_name_beginning" ]; then
+        executable_extension=""
+    elif [ -e "${perftest_cpp_name_beginning}.so" ]; then
+        executable_extension=".so"
+    elif [ -e "${perftest_cpp_name_beginning}.vxe" ]; then
+        executable_extension=".vxe"
+    fi
+    cp -f "${perftest_cpp_name_beginning}${executable_extension}" \
+    "${destination_folder}/perftest_cpp_micro${executable_extension}"
 
     clean_src_cpp_common
 }
@@ -731,6 +857,13 @@ while [ "$1" != "" ]; do
             clean
             exit
             ;;
+        --micro)
+            BUILD_MICRO=1
+            ;;
+        --micro-24x-compatibility)
+            BUILD_MICRO=1
+            BUILD_MICRO_24x_COMPATIBILITY=1
+            ;;
         --skip-java-build)
             BUILD_JAVA=0
             ;;
@@ -759,6 +892,10 @@ while [ "$1" != "" ]; do
             MAKE_EXE=$2
             shift
             ;;
+        --cmake)
+            CMAKE_EXE=$2
+            shift
+            ;;
         --perl)
             PERL_EXEC=$2
             shift
@@ -776,6 +913,10 @@ while [ "$1" != "" ]; do
             ;;
         --nddshome)
             export NDDSHOME=$2
+            shift
+            ;;
+        --rtimehome)
+            export RTIMEHOME=$2
             shift
             ;;
         --debug)
@@ -819,27 +960,41 @@ done
 
 executable_checking
 
-rtiddsgen_executable="$NDDSHOME/bin/rtiddsgen"
+if [ "${BUILD_MICRO}" -eq "1" ]; then
 
-classic_cpp_lang_string=C++
-modern_cpp_lang_string=C++03
-java_lang_string=java
-############################################################################
-# Generate qos_string.h
-generate_qos_string
+    rtiddsgen_executable="$RTIMEHOME/rtiddsgen/scripts/rtiddsgen"
 
-if [ "${BUILD_CPP}" -eq "1" ]; then
-    library_sufix_calculation
-    build_cpp
-fi
+    classic_cpp_lang_string=C++
+    if [ "${BUILD_CPP}" -eq "1" ]; then
+        library_sufix_calculation
+        build_micro_cpp
+    fi
 
-if [ "${BUILD_CPP03}" -eq "1" ]; then
-    library_sufix_calculation
-    build_cpp03
-fi
+else
 
-if [ "${BUILD_JAVA}" -eq "1" ]; then
-    build_java
+    rtiddsgen_executable="$NDDSHOME/bin/rtiddsgen"
+
+    classic_cpp_lang_string=C++
+    modern_cpp_lang_string=C++03
+    java_lang_string=java
+
+    # Generate qos_string.h
+    generate_qos_string
+
+    if [ "${BUILD_CPP}" -eq "1" ]; then
+        library_sufix_calculation
+        build_cpp
+    fi
+
+    if [ "${BUILD_CPP03}" -eq "1" ]; then
+        library_sufix_calculation
+        build_cpp03
+    fi
+
+    if [ "${BUILD_JAVA}" -eq "1" ]; then
+        build_java
+    fi
+
 fi
 
 echo ""
