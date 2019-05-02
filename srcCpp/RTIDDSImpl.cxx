@@ -978,9 +978,6 @@ class RTIDynamicDataPublisher : public IMessagingWriter
 
     /* time out in milliseconds */
     bool waitForPingResponse(int timeout) {
-        struct RTINtpTime blockDuration;
-        RTINtpTime_packFromMillisec(blockDuration, 0, timeout);
-
         if (_pongSemaphore != NULL) {
             if (!PerftestSemaphore_take(_pongSemaphore, timeout)) {
                 fprintf(stderr, "Unexpected error taking semaphore\n");
