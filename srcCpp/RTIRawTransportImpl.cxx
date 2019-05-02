@@ -236,7 +236,6 @@ class RTIRawTransportPublisher : public IMessagingWriter {
     /* --- Buffers management --- */
     unsigned int _batchBufferSize;
     bool _useBatching;
-    struct PRESTypePluginDefaultEndpointData _endPointData;
 
   public:
     RTIRawTransportPublisher(RTIRawTransportImpl *parent)
@@ -486,8 +485,6 @@ class RTIRawTransportSubscriber : public IMessagingReader
     /* --- Perftest members --- */
     TestMessage _message;
     TestData_t _data;
-    char *_payload;
-    int _payload_size;
     ParameterManager *_PM;
 
     /* --- Buffer Management --- */
