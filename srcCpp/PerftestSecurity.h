@@ -10,42 +10,25 @@
 #include <string>
 #include <map>
 #include <sstream>
+#include "ParameterManager.h"
 
 /******************************************************************************/
 
 class PerftestSecurity {
 
 public:
-
-    /**************************************************************************/
-    /* PUBLIC CLASS MEMBERS */
-
-    bool useSecurity;
-    bool signPackages;
-    bool dataEncrypted; // user data
-    bool subMessageEncrypted; // submessage
-    bool discoveryEncrypted;
-    std::string certAuthorityFile;
-    std::string certificateFile;
-    std::string privateKeyFile;
-    std::string governanceFile;
-    std::string permissionsFile;
-    std::string library;
-    int  debugLevel;
-
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 
     PerftestSecurity();
 
-    virtual ~PerftestSecurity();
     void initialize(ParameterManager *PM);
 
     /**************************************************************************/
     /* PUBLIC METHODS */
 
     bool validateSecureArgs();
-    void printSecurityConfigurationSummary();
+    std::string printSecurityConfigurationSummary();
 
 private:
 

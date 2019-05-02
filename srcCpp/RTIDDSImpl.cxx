@@ -1843,17 +1843,10 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
             return false;
         }
         // configure
-        if (!PerftestConfigureSecurePlugin(_security, qos, _PM)) {
+        if (!PerftestConfigureSecurity(_security, qos, _PM)) {
             fprintf(stderr, "Failed to configure security plugins\n");
             return false;
         }
-    }
-  #endif // RTI_SECURE_PERFTEST
-
-  #ifdef RTI_SECURE_PERFTEST
-    //TODO Use classic implementation, no need to create a class for security anymore
-    if (!configureSecurity(_security, qos, _PM)){
-        return false;
     }
   #endif // RTI_SECURE_PERFTEST
 
@@ -1869,7 +1862,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     // Assign ParameterManager
     _PM = &PM;
     _transport.initialize(_PM);
-  #ifdef RTI_SECURITY
+  #ifdef RTI_SECURE_PERFTEST
     _security.initialize(_PM);
   #endif
 
