@@ -292,7 +292,6 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
                  << _transport.printTransportConfigurationSummary();
 
 
-    // set initial peers and not use multicast
     const std::vector<std::string> peerList = _PM->get_vector<std::string>("peer");
     if (!peerList.empty()) {
         stringStream << "\tInitial peers: ";
@@ -1745,7 +1744,7 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
     }
 
     /* Mask for threadPriorities when it's used */
-    DDS_ThreadSettingsKindMask mask = DDS_THREAD_SETTINGS_REALTIME_PRIORITY;
+    int mask = Perftest_THREAD_SETTINGS_REALTIME_PRIORITY;
     ThreadPriorities threadPriorities = _parent->get_thread_priorities();
 
     // set thread priorities.
@@ -1791,18 +1790,6 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
         return false;
     }
 
-    if (!peerList.empty()) {
-        std::vector<char*> cstrings;
-        cstrings.reserve(peerList.size());
-        for(unsigned int i = 0; i < peerList.size(); ++i) {
-            cstrings.push_back(const_cast<char*>(peerList[i].c_str()));
-        }
-        qos.discovery.initial_peers.from_array(
-                (const char **)&cstrings[0],
-                (long)peerList.size());
-        qos.discovery.multicast_receive_addresses.length(0);
-    }
-
     /* If the user provides the list of addresses */
     const std::vector<std::string> peerList =
         _PM->get_vector<std::string>("peer");
@@ -1812,7 +1799,7 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
         qos.discovery.initial_peers.length(peerList.size());
         for(unsigned int i = 0; i < peerList.size(); ++i) {
             *qos.discovery.initial_peers.get_reference(i) =
-                DDS_String_dup(peerList[i].c_str()));
+                DDS_String_dup(peerList[i].c_str());
         }
     } else { /* Default discovery peers (unicast and multicast) */
         qos.discovery.initial_peers.maximum(2);
@@ -1870,7 +1857,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     DomainListener *listener = new DomainListener();
 
     /* Mask for _threadPriorities when it's used */
-    DDS_ThreadSettingsKindMask mask = DDS_THREAD_SETTINGS_REALTIME_PRIORITY;
+    int mask = Perftest_THREAD_SETTINGS_REALTIME_PRIORITY;
 
     if (parent == NULL) {
         return false;
@@ -2327,7 +2314,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
   #ifdef RTI_MICRO
-    if (strcmp(topic_name, perftest_cpp::_AnnouncementTopicName) == 0) {
+    if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) == 0) {
         dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         dw_qos.durability.kind = DDS_TRANSIENT_LOCAL_DURABILITY_QOS;
     }
@@ -2418,7 +2405,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         #else
           dw_qos.history.kind = DDS_KEEP_ALL_HISTORY_QOS;
         #endif
-        dw_qos.history.depth = _SendQueueSize;
+        dw_qos.history.depth = _PM->get<int>("sendQueueSize");
         // Same values we use for Pro (See perftest_qos_profiles.xml).
         dw_qos.protocol.rtps_reliable_writer.heartbeat_period.sec = 0;
         dw_qos.protocol.rtps_reliable_writer.heartbeat_period.nanosec = 10000000;
@@ -2694,7 +2681,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
          *
          * We could potentially modify this with a new command line parameter
          */
-        if (_DataLen > MAX_BOUNDED_SEQ_SIZE) {
+        if (_PM->get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
             dr_qos.resource_limits.max_samples = 50;
             dr_qos.resource_limits.max_samples_per_instance = 50;
             dr_qos.history.depth = 50;
@@ -2724,7 +2711,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
          * LENGTH_UNLIMITED. In Micro we will use a lower number due to
          * memory restrictions.
          */
-        if (_DataLen > MAX_BOUNDED_SEQ_SIZE) {
+        if (_PM->get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
             dr_qos.resource_limits.max_samples = 50;
         }
         else {

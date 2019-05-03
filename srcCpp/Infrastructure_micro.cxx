@@ -51,8 +51,10 @@ void PerftestClock::milliSleep(unsigned int millisec)
 
 const std::string GetDDSVersionString()
 {
-    //TODO FRANCIS: Complete this function
-    return "RTI Connext DDS Micro"
+    return "RTI Connext DDS Micro "
+            + std::to_string(RTIME_DDS_VERSION_MAJOR) + "."
+            + std::to_string(RTIME_DDS_VERSION_MINOR) + "."
+            + std::to_string(RTIME_DDS_VERSION_REVISION);
 }
 
 void PerftestConfigureVerbosity(int verbosityLevel)
@@ -87,7 +89,7 @@ struct PerftestMicroThreadOnSpawnedMethod
     MicroThreadOnSpawnedMethod method;
     void *thread_param;
 
-}
+};
 
 static RTI_BOOL perftestMicroThreadRoutine(struct OSAPI_ThreadInfo *thread_info)
 {
@@ -197,6 +199,13 @@ bool configureUDPv4Transport(
         return false;
     }
 
+    if (_PM->get<bool>("multicast")) {
+        DDS_StringSeq_set_maximum(&qos.user_traffic.enabled_transports, 1);
+        DDS_StringSeq_set_length(&qos.user_traffic.enabled_transports, 1);
+        *DDS_StringSeq_get_reference(&qos.user_traffic.enabled_transports, 0) = 
+                DDS_String_dup("_udp://239.255.0.1");
+    } 
+
     /* if there are more remote or local endpoints, you may need to increase these limits */
     qos.resource_limits.max_destination_ports = 32;
     qos.resource_limits.max_receive_ports = 32;
@@ -211,10 +220,10 @@ bool configureUDPv4Transport(
     return true;
 }
 
-#if !RTI_MICRO_24x_COMPATIBILITY
+#ifndef RTI_MICRO_24x_COMPATIBILITY
 bool configureShmemTransport(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos& qos
+        DDS_DomainParticipantQos& qos,
         ParameterManager *_PM)
 {
     RTRegistry *registry = DDSDomainParticipantFactory::get_instance()->get_registry();
@@ -288,9 +297,9 @@ bool PerftestConfigureTransport(
         ParameterManager *_PM)
 {
 
-    if (transport.transportConfig.kind == TRANSPORT_NOT_SET
-            || transport.transportConfig.kind == TRANSPORT_DEFAULT) {
+    if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
         transport.transportConfig.kind = TRANSPORT_UDPv4;
+        transport.transportConfig.nameString = "UDPv4 (Default)";
     }
 
     switch (transport.transportConfig.kind) {
@@ -310,26 +319,6 @@ bool PerftestConfigureTransport(
         return false;
 
     } // Switch
-
-
-    /*
-     * If the transport is empty or if it is shmem, it does not make sense
-     * setting an interface, in those cases, if the allow interfaces is provided
-     * we empty it.
-     */
-    if (transport.transportConfig.kind != TRANSPORT_NOT_SET
-            && transport.transportConfig.kind != TRANSPORT_SHMEM) {
-        if (!setAllowInterfacesList(transport, qos, _PM)) {
-            return false;
-        }
-    } else {
-        // We are not using the allow interface string, so it is clean
-        _PM->set<std::string>("allowInterfaces", std::string(""));
-    }
-
-    if (!setTransportVerbosity(transport, qos, _PM)) {
-        return false;
-    }
 
     return true;
 }

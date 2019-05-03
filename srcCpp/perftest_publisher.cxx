@@ -1182,6 +1182,7 @@ public:
         );
         fflush(stdout);
 
+      #ifndef RTI_MICRO
         if (!unbounded) {
             if (isKeyed) {
                 serializeTime = RTIDDSImpl<TestDataKeyed_t>::
@@ -1213,6 +1214,7 @@ public:
                serializeTime,
                deserializeTime,
                serializeTime + deserializeTime);
+      #endif
 
         latency_sum = 0;
         latency_sum_square = 0;
@@ -1442,8 +1444,8 @@ int perftest_cpp::Publisher()
 
             if (_threadPriorities.isSet) {
                 threadPriority = _threadPriorities.receive;
-                threadOptions = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
-                        | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
+                threadOptions = Perftest_THREAD_SETTINGS_REALTIME_PRIORITY
+                        | Perftest_THREAD_SETTINGS_PRIORITY_ENFORCE;
             }
 
             latencyReadThread = PerftestThread_new(
@@ -1492,8 +1494,8 @@ int perftest_cpp::Publisher()
         //TODO Alfonso: Review thread priorities, do they apply here?
         if (_threadPriorities.isSet) {
             threadPriority = _threadPriorities.receive;
-            threadOptions = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
-                    | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
+            threadOptions = Perftest_THREAD_SETTINGS_REALTIME_PRIORITY
+                    | Perftest_THREAD_SETTINGS_PRIORITY_ENFORCE;
         }
 
         announcementReadThread = PerftestThread_new(

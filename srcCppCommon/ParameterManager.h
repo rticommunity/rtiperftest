@@ -8,9 +8,9 @@
 #ifndef __PARAMETERMANAGER_H__
 #define __PARAMETERMANAGER_H__
 
-#if defined RTI_LANGUAGE_CPP_TRADITIONAL
+#ifdef RTI_LANGUAGE_CPP_TRADITIONAL
   #include "perftest.h"
-#elif defined RTI_LANGUAGE_CPP_MODERN
+#elif defined(RTI_LANGUAGE_CPP_MODERN)
   #include "perftest.hpp"
 #endif
 #include "Parameter.h"

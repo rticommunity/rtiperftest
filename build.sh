@@ -72,6 +72,8 @@ function usage()
     echo "    --micro                      Build RTI Perftest for RTI Connext Micro       "
     echo "                                 By default RTI Perftest will assume it will be "
     echo "                                 built against RTI Connext DDS Professional     "
+    echo "    --micro-24x-compatibility    Similar to --micro but ensuring compatibility  "
+    echo "                                 with RTI Connext Micro 2.4.11 and above.       "
     echo "    --platform <your_arch>       Platform for which build.sh is going to compile"
     echo "                                 RTI Perftest.                                  "
     echo "    --nddshome <path>            Path to the *RTI Connext DDS Professional      "
@@ -337,7 +339,7 @@ function additional_defines_calculation_micro()
             additional_included_libraries="nsl;rt;"
         fi
     fi
-    additional_defines="RTI_MICRO O3"${additional_defines}
+    additional_defines="RTI_LANGUAGE_CPP_TRADITIONAL RTI_MICRO O3"${additional_defines}
 }
 
 # Generate code for the type of the customer.
@@ -553,11 +555,10 @@ function build_micro_cpp()
             rtiddsgen_extra_options="${rtiddsgen_extra_options} -sequenceSize ${MICRO_UNBOUNDED_SEQUENCE_SIZE} -additionalRtiLibraries nddsmetp"
         fi
 
-    additional_header_files="${additional_header_files_custom_type} \
+    additional_header_files=" \
         ThreadPriorities.h \
         Parameter.h \
         ParameterManager.h \
-        RTIDDSLoggerDevice.h \
         MessagingIF.h \
         RTIDDSImpl.h \
         perftest_cpp.h \
@@ -567,10 +568,10 @@ function build_micro_cpp()
         Infrastructure_common.h \
         Infrastructure_micro.h"
 
-    additional_source_files="\
+    additional_source_files=" \
+        ThreadPriorities.cxx \
         Parameter.cxx \
         ParameterManager.cxx \
-        RTIDDSLoggerDevice.cxx \
         RTIDDSImpl.cxx \
         CpuMonitor.cxx \
         PerftestTransport.cxx \

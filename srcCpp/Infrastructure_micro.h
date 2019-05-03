@@ -58,7 +58,7 @@ void PerftestConfigureVerbosity(int verbosityLevel);
 /* THREADS */
 
 #define PerftestThread OSAPI_Thread
-#define PerftestThread_delete OSAPI_Thread_destroy
+#define PerftestThread_delete (void) OSAPI_Thread_destroy
 
 //TODO Francis: Support priorities in Micro
 #define Perftest_THREAD_PRIORITY_DEFAULT 0
