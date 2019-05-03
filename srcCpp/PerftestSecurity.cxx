@@ -30,13 +30,7 @@ const std::string SECURE_LIBRARY_NAME = "nddssecurity";
 /******************************************************************************/
 /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 
-PerftestSecurity::PerftestSecurity() :
-    useSecurity(false),
-    signPackages(false),
-    dataEncrypted(false),
-    subMessageEncrypted(false),
-    discoveryEncrypted(false),
-    debugLevel(-1)
+PerftestSecurity::PerftestSecurity()
 {
 }
 

@@ -17,29 +17,11 @@
 class PerftestSecurity {
 
 public:
-
-    /**************************************************************************/
-    /* PUBLIC CLASS MEMBERS */
-
-    bool useSecurity;
-    bool signPackages;
-    bool dataEncrypted; // user data
-    bool subMessageEncrypted; // submessage
-    bool discoveryEncrypted;
-    std::string certAuthorityFile;
-    std::string certificateFile;
-    std::string privateKeyFile;
-    std::string governanceFile;
-    std::string permissionsFile;
-    std::string library;
-    int  debugLevel;
-
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 
     PerftestSecurity();
 
-    ~PerftestSecurity();
     void initialize(ParameterManager *PM);
 
     /**************************************************************************/

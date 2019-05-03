@@ -8,10 +8,10 @@
  * the user provide them.
  */
 #ifdef RTI_WIN32
-#include <windows.h>
-#elif RTI_UNIX
-#include <sched.h>
-#include <pthread.h>
+  #include <windows.h>
+#elif defined(RTI_UNIX)
+  #include <sched.h>
+  #include <pthread.h>
 #endif
 #include <errno.h>
 #include <map>

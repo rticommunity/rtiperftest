@@ -45,7 +45,7 @@ class perftest_cpp
     int Publisher();
     int Subscriber();
     template <class ListenerType>
-    bool finalize_read_thread(RTIOsapiThread *thread, ListenerType *listener);
+    bool finalize_read_thread(PerftestThread *thread, ListenerType *listener);
 
     // Private members
     ParameterManager _PM;

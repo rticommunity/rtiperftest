@@ -217,7 +217,6 @@ std::string PerftestTransport::printTransportConfigurationSummary()
 bool PerftestTransport::validate_input()
 {
     /*
-     * Manage parameter -allowInterfaces -nic
      * "-allowInterfaces" and "-nic" are the same parameter,
      * so now use only one: "allowInterfaces"
      */

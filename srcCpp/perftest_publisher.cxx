@@ -7,7 +7,9 @@
 #define TO_STRING(x) STRINGIFY(x)
 
 #include "RTIDDSImpl.h"
-#include "RTIRawTransportImpl.h"
+#ifndef RTI_MICRO
+  #include "RTIRawTransportImpl.h"
+#endif
 #include "perftest_cpp.h"
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
@@ -93,7 +95,9 @@ int perftest_cpp::Run(int argc, char *argv[])
     }
 
     if (_PM.get<bool>("rawTransport")) {
+      #ifndef RTI_MICRO
         _MessagingImpl = new RTIRawTransportImpl();
+      #endif
     } else {
         if (_PM.get<int>("unbounded") == 0) {
             if (_PM.get<bool>("keyed")) {
