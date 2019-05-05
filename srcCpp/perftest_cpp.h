@@ -41,13 +41,14 @@
 #include "perftestThreadPriorities.h"
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
+#include "ParameterManager.h"
 
 struct Perftest_ProductVersion_t
 {
-  char major;
-  char minor;
-  char release;
-  char revision;
+    char major;
+    char minor;
+    char release;
+    char revision;
 };
 
 class perftest_cpp
@@ -55,79 +56,47 @@ class perftest_cpp
   public:
     perftest_cpp();
     ~perftest_cpp();
-
     int Run(int argc, char *argv[]);
-    bool ParseConfig(int argc, char *argv[]);
+    bool validate_input();
     void PrintConfiguration();
     unsigned int GetSamplesPerBatch();
     const PerftestThreadPriorities get_thread_priorities();
+    static void MilliSleep(unsigned int millisec);
+    static const DDS_ProductVersion_t GetDDSVersion();
+    static const Perftest_ProductVersion_t GetPerftestVersion();
+    static void PrintVersion();
+    static void ThreadYield();
+    static unsigned long long GetTimeUsec();
+
+  #ifdef RTI_WIN32
+    static VOID CALLBACK Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired);
+    static VOID CALLBACK Timeout_scan(PVOID lpParam, BOOLEAN timerOrWaitFired);
+  #else
+    static void Timeout(int sign);
+    static void Timeout_scan(int sign);
+  #endif
 
   private:
     int Publisher();
     int Subscriber();
-    bool set_main_thread_priority();
-    bool check_priority_range(int value);
-    bool parse_priority(std::string arg);
+    static void SetTimeout(
+            unsigned int executionTimeInSeconds,
+            bool isScan = false);
 
-  public:
-    static void MilliSleep(unsigned int millisec) {
-      #if defined(RTI_WIN32)
-        Sleep(millisec);
-      #elif defined(RTI_VXWORKS)
-        DDS_Duration_t sleep_period = {0, millisec*1000000};
-        NDDSUtility::sleep(sleep_period);
-      #else
-        usleep(millisec * 1000);
-      #endif
-    }
-
-    static const DDS_ProductVersion_t GetDDSVersion();
-    static const Perftest_ProductVersion_t GetPerftestVersion();
-    static void PrintVersion();
-
-    static void ThreadYield() {
-  #ifdef RTI_WIN32
-        Sleep(0);
-  #else
-        sched_yield();
-  #endif
-    }
-
-  private:
-    unsigned long  _DataLen;
-    unsigned long long _NumIter;
-    bool _IsPub;
-    bool _isScan;
-    std::vector<unsigned long> _scanDataLenSizes;
-    bool _UseReadThread;
+    // Private members
+    ParameterManager _PM;
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
-    int  _LatencyCount;
-    int  _NumSubscribers;
-    int  _NumPublishers;
-    unsigned long _InstanceCount;
     IMessaging *_MessagingImpl;
-    char **_MessagingArgv;
-    int _MessagingArgc;
-    bool _LatencyTest;
-    bool _IsReliable;
-    int _pubRate;
-    bool _pubRateMethodSpin;
-    bool _isKeyed;
-    unsigned long _useUnbounded;
-    unsigned int _executionTime;
-    bool _displayWriterStats;
-    bool _useCft;
     static const Perftest_ProductVersion_t _version;
 
     // Priorities for the threads used by perftest and domain participant
     PerftestThreadPriorities _threadPriorities;
 
-  private:
-    static void SetTimeout(unsigned int executionTimeInSeconds, bool _isScan = false);
-
-    /* The following three members are used in a static callback
-       and so they have to be static */
+    /*
+     * The following members are used in a static callback
+     * and so they have to be static
+     */
     static bool _testCompleted;
     static bool _testCompleted_scan;
   #ifdef RTI_WIN32
@@ -136,11 +105,9 @@ class perftest_cpp
   #endif
 
   public:
-    static int  _SubID;
-    static int  _PubID;
-    static bool _PrintIntervals;
-    static bool _showCpu;
-
+    static int  subID;
+    static bool printIntervals;
+    static bool showCpu;
     static struct RTIClock *_Clock;
     static struct RTINtpTime _ClockTime_aux;
     static RTI_UINT64 _Clock_sec;
@@ -152,7 +119,7 @@ class perftest_cpp
 
     // Number of bytes sent in messages besides user data
   #ifdef RTI_CUSTOM_TYPE
-    static const int OVERHEAD_BYTES = 28 + 4; // For custom_type_size
+    static const int OVERHEAD_BYTES = 28 + 4; // 4 for custom_type_size
   #else
     static const int OVERHEAD_BYTES = 28;
   #endif
@@ -168,18 +135,6 @@ class perftest_cpp
      * been reset.
      */
     static const unsigned long LATENCY_RESET_VALUE = ULONG_MAX;
-
-   public:
-    static unsigned long long GetTimeUsec();
-
-  #ifdef RTI_WIN32
-    static VOID CALLBACK Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired);
-    static VOID CALLBACK Timeout_scan(PVOID lpParam, BOOLEAN timerOrWaitFired);
-  #else
-    static void Timeout(int sign);
-    static void Timeout_scan(int sign);
-  #endif
-
 };
 
 #endif // __PERFTEST_CPP_H__

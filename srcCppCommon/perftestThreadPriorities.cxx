@@ -112,8 +112,8 @@ bool PerftestThreadPriorities::check_priority_range(int value)
 
     if (!success) {
         fprintf(stderr,
-                "The input priority (%d) on -threadPriorities are outside"
-                " of rage for this platform\n",
+                "The input priority (%d) on -threadPriorities is outside"
+                " of range for this platform\n",
                 value);
         return false;
     }
