@@ -79,6 +79,7 @@ public:
     // Check if the transport allows the use of multicast.
     bool allowsMulticast();
 
+  #ifndef RTI_MICRO
     /*
      * Given the name of a Perftest-defined topic, returns its multicast
      * address.
@@ -87,6 +88,7 @@ public:
 
     /* Used to validate a multicast address */
     bool is_multicast(std::string addr);
+  #endif
 
 private:
 
@@ -98,9 +100,10 @@ private:
     static const std::map<std::string, TransportConfig>& getTransportConfigMap();
     bool setTransport(std::string transportString);
     void populateSecurityFiles();
+  #ifndef RTI_MICRO
     bool parse_multicast_addresses(const char *arg);
     bool increase_address_by_one(const std::string addr, std::string &nextAddr);
-
+  #endif
 };
 
 // Tag used when adding logging output.

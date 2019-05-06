@@ -171,6 +171,9 @@ perftest_cpp::~perftest_cpp()
  * Constructor
  */
 perftest_cpp::perftest_cpp()
+#ifdef RTI_MICRO
+    : _PM(true)
+#endif
 {
     _SpinLoopCount = 0;
     _SleepNanosec = 0;

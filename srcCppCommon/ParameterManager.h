@@ -1,5 +1,3 @@
-
-
 /*
  * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
@@ -50,6 +48,7 @@ class ParameterManager
 
     public:
         ParameterManager();
+        ParameterManager(bool perftestForMicro);
         void initialize();
         ~ParameterManager();
 
@@ -133,6 +132,7 @@ class ParameterManager
 
 
     private:
+        bool perftestForMicro;
         std::vector<std::string> split(std::string str, std::string delimiter = ":");
         std::string get_center_header_help_line(std::string name);
 
