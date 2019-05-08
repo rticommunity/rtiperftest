@@ -117,6 +117,13 @@ To see what values should be used for the different threads see
 - Table 8.6 Thread-Priority Definitions for OS X Platforms
 - Table 12.7 Thread-Priority Definitions for Windows Platforms
 
+Added --compiler and --linker command line parameters to build.sh (#152)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When building in Unix, the user can now use the `--compiler` and/or `--linker`
+command line parameters to explicitly specify to the `build.sh` script the
+compiler/linker executables that will be used by *Rtiddsgen*.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
