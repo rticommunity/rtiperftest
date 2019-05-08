@@ -236,8 +236,6 @@ class RTIRawTransportPublisher : public IMessagingWriter {
     /* --- Buffers management --- */
     unsigned int _batchBufferSize;
     bool _useBatching;
-    struct RTICdrStream _stream;
-    struct PRESTypePluginDefaultEndpointData _endPointData;
 
   public:
     RTIRawTransportPublisher(RTIRawTransportImpl *parent)
@@ -293,20 +291,6 @@ class RTIRawTransportPublisher : public IMessagingWriter {
                     "Error allocating memory for the send buffer\n");
         }
         _sendBuffer.length = 0;
-
-        /* Buffer used for serialization */
-        RTICdrStream_init(&_stream);
-        RTICdrStream_set(
-                &_stream,
-                (char *)_sendBuffer.pointer,
-                NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
-
-        _endPointData._maxSizeSerializedSample
-                = TestData_tPlugin_get_serialized_sample_max_size(
-                        NULL, //endpoint_data
-                        RTI_TRUE, //include_encapsulation
-                        RTICdrEncapsulation_getNativeCdrEncapsulationId(),
-                        0 /*current_alignment*/ );
     }
 
     ~RTIRawTransportPublisher()
@@ -373,12 +357,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
          * This will be represented as lost packets
          */
 
-        /* If the send is done, reset the stream to fill the buffer again */
-        RTICdrStream_set(
-                &_stream,
-                (char *)_sendBuffer.pointer,
-                NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
-
+        /* If the send is done, reset the buffer to fill it again */
         _sendBuffer.length = 0;
     }
 
@@ -388,6 +367,8 @@ class RTIRawTransportPublisher : public IMessagingWriter {
         int serializeSize =  message.size
                 + perftest_cpp::OVERHEAD_BYTES
                 + RTI_CDR_ENCAPSULATION_HEADER_SIZE;
+        unsigned int actualCdrLength =
+                NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX - _sendBuffer.length;
 
         _data.entity_id = message.entity_id;
         _data.seq_num = message.seq_num;
@@ -408,14 +389,10 @@ class RTIRawTransportPublisher : public IMessagingWriter {
             Flush();
         }
 
-        success = TestData_tPlugin_serialize(
-                (PRESTypePluginEndpointData) &_endPointData,
-                &_data,
-                &_stream,
-                RTI_TRUE,
-                RTICdrEncapsulation_getNativeCdrEncapsulationId(),
-                RTI_TRUE,
-                NULL);
+        success = TestData_tPlugin_serialize_to_cdr_buffer(
+                _sendBuffer.pointer + _sendBuffer.length,
+                &actualCdrLength,
+                &_data);
 
         /* _data is been serialized (copied). Then it's right to unloan. */
         _data.bin_data.unloan();
@@ -425,7 +402,11 @@ class RTIRawTransportPublisher : public IMessagingWriter {
             return false;
         }
 
-        _sendBuffer.length = RTICdrStream_getCurrentPositionOffset(&_stream);
+        /* 
+         * actualCdrLength is update to the length of the serialize sample when
+         * the TestData_tPlugin_serialize_to_cdr_buffer was called. 
+         */
+        _sendBuffer.length += actualCdrLength;
 
         /*
          * If batching is not been used, flush the data, in other case,
@@ -504,13 +485,11 @@ class RTIRawTransportSubscriber : public IMessagingReader
     /* --- Perftest members --- */
     TestMessage _message;
     TestData_t _data;
-    char *_payload;
-    int _payload_size;
     ParameterManager *_PM;
 
     /* --- Buffer Management --- */
-    struct RTICdrStream _stream;
     bool _noData;
+    unsigned int _currentOffset;
 
 
 public:
@@ -556,6 +535,7 @@ public:
         /* --- Buffer Management --- */
         _recvBuffer.length = 0;
         _recvBuffer.pointer = NULL;
+        _currentOffset = 0;
 
         /*
          * Similar to NDDS_Transport_Message_t message =
@@ -582,8 +562,6 @@ public:
             Shutdown();  // Delete everything created at this point.
             throw std::runtime_error("bin_data.maximum Error\n");
         }
-
-        RTICdrStream_init(&_stream);
     }
 
     ~RTIRawTransportSubscriber()
@@ -636,18 +614,12 @@ public:
                      */
                     return NULL;
                 }
-
-
-                RTICdrStream_set(&_stream,
-                        (char *)_transportMessage.buffer.pointer,
-                        _transportMessage.buffer.length);
-
+                _currentOffset = 0;
                 _noData = false;
             }
 
             /* May have hit end condition */
-            if (RTICdrStream_getCurrentPositionOffset(&_stream)
-                    >= _transportMessage.buffer.length) {
+            if (_currentOffset >= (unsigned int)_transportMessage.buffer.length) {
                 if (_plugin->return_loaned_buffer_rEA != NULL
                         && _transportMessage.loaned_buffer_param != (void *) -1) {
                     _plugin->return_loaned_buffer_rEA(
@@ -661,13 +633,10 @@ public:
                 continue;
             }
 
-            TestData_tPlugin_deserialize_sample(
-                    NULL,
+            TestData_tPlugin_deserialize_from_cdr_buffer(
                     &_data,
-                    &_stream,
-                    RTI_TRUE,
-                    RTI_TRUE,
-                    NULL);
+                    _transportMessage.buffer.pointer + _currentOffset,
+                    _transportMessage.buffer.length);
 
             _message.entity_id = _data.entity_id;
             _message.seq_num = _data.seq_num;
@@ -676,6 +645,14 @@ public:
             _message.latency_ping = _data.latency_ping;
             _message.size = _data.bin_data.length();
             _message.data = (char *)_data.bin_data.get_contiguous_bufferI();
+
+            /*
+             * In case of batching we need to know the offset for each sample
+             * received to take the next one from the buffer.
+             */
+            _currentOffset += _message.size
+                + perftest_cpp::OVERHEAD_BYTES
+                + RTI_CDR_ENCAPSULATION_HEADER_SIZE;
 
             return &_message;
 
