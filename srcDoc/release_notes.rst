@@ -83,6 +83,13 @@ Build HTML and PDF documentation (#94)
 RTI Perftest build script for linux now offers the option to generate the HTML
 and PDF documentation from the rst files in srcDoc.
 
+Added --compiler and --linker command line parameters to build.sh (#152)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When building in Unix, the user can now use the `--compiler` and/or `--linker`
+command line parameters to explicitly specify to build.sh the compiler/linker
+executables that will be used by *Rtiddsgen*.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
