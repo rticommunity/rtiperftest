@@ -209,11 +209,11 @@ Test Parameters for Publishing and Subscribing Applications
    **Configuring QoS with XML, Chapter 17** in the *RTI Connext DDS Core
    Libraries* User’s Manual.
 
-- ``qosLibrary <library name>``
+-  ``-qosLibrary <library name>``
 
-    Name of QoS Library for DDS Qos profiles
+   Name of QoS Library for DDS Qos profiles.
 
-    **Default:** ``PerftestQosLibrary``
+   **Default:** ``PerftestQosLibrary``
 
 -  ``-noXmlQos``
 
@@ -300,6 +300,32 @@ Test Parameters for Publishing and Subscribing Applications
    **Default:**
    ``Not set. RTI Perftest will use the default initial peers (localhost, shared-memory and multicast).``
 
+-  ``-threadPriorities X:Y:Z``
+
+    This Command Line parameter is supported only for the C++ and C++03 API
+    Implementations.
+
+    Set the priorities for the application Threads:
+        X -- For the Main Thread, which will be the one sending the data. Also
+             for the Asynchronous thread if that one is used.
+        Y -- For the Receive Threads, If the -useReadThread is used, also for
+             the thread created to receive and process data.
+        Z -- For the rest of the threads created by the middleware: Event and
+             Database Threads.
+
+    Three default values: h (high), n (normal) and l (low) can be used
+    instead of numbers.
+
+    To see what values can be used for the different threads see
+    *RTI Connext DDS Core Libraries Platform Notes Version 5.3.1*
+
+    - Table 6.7 Thread-Priority Definitions for Linux Platforms
+    - Table 8.6 Thread-Priority Definitions for OS X Platforms
+    - Table 12.7 Thread-Priority Definitions for Windows Platforms
+
+   **Default:**
+   ``Not set. The priority will not be modified.``
+
 Transport Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -330,72 +356,72 @@ by using the `Transport` spececific command-line parameters.
 
 -  ``-transportVerbosity <level>``
 
-  Especific verbosity of the transport plugin.
+   Especific verbosity of the transport plugin.
 
-  | **Default:** ``0`` (Errors only).
+   | **Default:** ``0`` (Errors only).
 
 -  ``-transportServerBindPort <port>``
 
-    For TCP and TLS. Port used by the transport to accept TCP/TLS connections.
+   For TCP and TLS. Port used by the transport to accept TCP/TLS connections.
 
-    | **Default:** ``7400``
+   | **Default:** ``7400``
 
 -  ``-transportWan``
 
-    For TCP and TLS. Use tcp across LANs and firewalls.
+   For TCP and TLS. Use tcp across LANs and firewalls.
 
-    | **Default:** ``Not set``, LAN Mode.
+   | **Default:** ``Not set``, LAN Mode.
 
 -  ``-transportPublicAddress <ipaddr>``
 
-    For TCP and TLS. Public IP address and port (WAN address and port) (separated by ‘:’)
-    associated with the transport instantiation.
+   For TCP and TLS. Public IP address and port (WAN address and port) (separated by ‘:’)
+   associated with the transport instantiation.
 
-    | **Default:** ``Not set``
+   | **Default:** ``Not set``
 
 -  ``-transportWanServerAddress <ipaddr>``
 
-    For WAN transport. Address where to find the WAN Server.
+   For WAN transport. Address where to find the WAN Server.
 
-    | **Default:** ``Not set``
-    
+   | **Default:** ``Not set``
+
 -  ``-transportWanServerPort <ipaddr>``
 
-    For WAN transport. Port where to find the WAN Server.
+   For WAN transport. Port where to find the WAN Server.
 
-    | **Default:** ``Not set``
-    
+   | **Default:** ``Not set``
+
 -  ``-transportWanId <id>``
 
-    For WAN transport. Id to be used for the WAN transport. Required when using WAN.
+   For WAN transport. Id to be used for the WAN transport. Required when using WAN.
 
-    | **Default:** ``Not set``
+   | **Default:** ``Not set``
 
 -  ``-transportSecureWan``
 
-    For WAN transport. Use DTLS security over WAN.
+   For WAN transport. Use DTLS security over WAN.
 
-    | **Default:** ``Not set``
+   | **Default:** ``Not set``
 
 -  ``-transporCertAuthority <file>``
 
-    For TLS, DTLS and Secure WAN. Certificate authority file to be used by TLS.
+   For TLS, DTLS and Secure WAN. Certificate authority file to be used by TLS.
 
-    | **Default for Publisher:** ``./resource/secure/pub.pem``
-    | **Default for Subscriber:** ``./resource/secure/sub.pem``
+   | **Default for Publisher:** ``./resource/secure/pub.pem``
+   | **Default for Subscriber:** ``./resource/secure/sub.pem``
 
 -  ``-transporCertFile <file>``
 
-    For TLS, DTLS and Secure WAN. Certificate file to be used by TLS.
+   For TLS, DTLS and Secure WAN. Certificate file to be used by TLS.
 
-    | **Default:** ``./resource/secure/cacert.pem``
+   | **Default:** ``./resource/secure/cacert.pem``
 
 -  ``-transporPrivateKey <file>``
 
-    For TLS, DTLS and Secure WAN. Private key file to be used by TLS.
+   For TLS, DTLS and Secure WAN. Private key file to be used by TLS.
 
-    | **Default for Publisher:** ``./resource/secure/pubkey.pem``
-    | **Default for Subscriber:** ``./resource/secure/subkey.pem``
+   | **Default for Publisher:** ``./resource/secure/pubkey.pem``
+   | **Default for Subscriber:** ``./resource/secure/subkey.pem``
 
 .. _Test Parameters Only For Publishing Applications:
 

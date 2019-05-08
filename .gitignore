@@ -27,3 +27,11 @@
 *.VC.opendb
 doc
 srcDoc/_build
+
+#Files copied by the build Script.
+/srcCpp/Parameter*
+/srcCpp03/Parameter*
+/srcCpp03/CpuMonitor*
+/srcCpp/CpuMonitor*
+/srcCpp/perftestThreadPriorities.*
+/srcCpp03/perftestThreadPriorities.*

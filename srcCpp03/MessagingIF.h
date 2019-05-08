@@ -3,8 +3,15 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
+#include <string>
+
+/* Forward declaration of perftest_cpp to avoid circular dependencies */
+class perftest_cpp;
+
 #ifndef __MESSAGINGIF_H__
 #define __MESSAGINGIF_H__
+
+#include "ParameterManager.h"
 
 class TestMessage
 {
@@ -92,17 +99,9 @@ class IMessaging
 {
   public:
     virtual ~IMessaging() {}
-    virtual bool Initialize(int argc, char *argv[]) = 0;
-    virtual void PrintCmdLineHelp() = 0;
+    virtual bool Initialize(ParameterManager &PM, perftest_cpp *parent) = 0;
     virtual std::string PrintConfiguration() = 0;
     virtual void Shutdown() = 0;
-
-    /*
-     * If the implementation supports batching and the test scenario is
-     * using batching, this function should return the size of the batch
-     * in bytes.
-     */
-    virtual int GetBatchSize() = 0;
 
     /*
      * Get an estimation of the minimum number of samples that need to be send

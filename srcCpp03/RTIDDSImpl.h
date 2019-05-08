@@ -44,20 +44,13 @@ class RTIDDSImpl : public IMessaging
         Shutdown();
     }
 
-    void PrintCmdLineHelp();
-
-    bool ParseConfig(int argc, char *argv[]);
+    bool validate_input();
 
     std::string PrintConfiguration();
 
-    bool Initialize(int argc, char *argv[]);
+    bool Initialize(ParameterManager &PM, perftest_cpp *parent);
 
     void Shutdown();
-
-    int GetBatchSize()
-    {
-        return _BatchSize;
-    }
 
     unsigned long GetInitializationSampleCount();
 
@@ -80,54 +73,29 @@ class RTIDDSImpl : public IMessaging
 
   private:
 
-    int          _SendQueueSize;
-    unsigned long _DataLen;
-    int          _DomainID;
-    const char  *_ProfileFile;
-    bool         _TurboMode;
-    bool         _UseXmlQos;
-    bool         _AutoThrottle;
-    bool         _IsReliable;
-    bool         _IsMulticast;
-    int _BatchSize;
-    unsigned long _InstanceCount;
-    long _InstanceMaxCountReader;
-    int          _InstanceHashBuckets;
-    int          _Durability;
-    bool         _DirectCommunication;
-    int          _KeepDurationUsec;
-    bool         _UsePositiveAcks;
-    bool         _LatencyTest;
-    bool         _IsDebug;
-    bool         _isLargeData;
-    bool         _isScan;
-    bool         _isPublisher;
-    bool         _isDynamicData;
-    bool         _IsAsynchronous;
-    std::string  _FlowControllerCustom;
-    unsigned long _useUnbounded;
-    int          _peer_host_count;
-    dds::core::StringSeq  _peer_host;
-    bool         _useCft;
-    long         _instancesToBeWritten;
-    std::vector<unsigned int> _CFTRange;
 
+    // Specific functions to configure the Security plugin
+  #ifdef RTI_SECURE_PERFTEST
+    void configureSecurePlugin(std::map<std::string, std::string> &dpQosProperties);
+    std::string printSecureArgs();
+    void validateSecureArgs();
+  #endif
+
+
+    long _InstanceMaxCountReader;
+    int _InstanceHashBuckets;
+    bool _isLargeData;
     PerftestTransport _transport;
+    dds::domain::DomainParticipant _participant;
+    dds::sub::Subscriber _subscriber;
+    dds::pub::Publisher _publisher;
+
+    rti::core::Semaphore _pongSemaphore;
+    ParameterManager *_PM;
+    perftest_cpp *_parent;
+    std::map<std::string, std::string> _qoSProfileNameMap;
 
   #ifdef RTI_SECURE_PERFTEST
-    bool _secureUseSecure;
-    bool _secureIsSigned;
-    bool _secureIsDataEncrypted; // user data
-    bool _secureIsSMEncrypted;   // submessage
-    bool _secureIsDiscoveryEncrypted;
-    std::string _secureCertAuthorityFile;
-    std::string _secureCertificateFile;
-    std::string _securePrivateKeyFile;
-    std::string _secureGovernanceFile;
-    std::string _securePermissionsFile;
-    std::string _secureLibrary;
-    int  _secureDebugLevel;
-
     static const std::string SECURE_PRIVATEKEY_FILE_PUB;
     static const std::string SECURE_PRIVATEKEY_FILE_SUB;
     static const std::string SECURE_CERTIFICATE_FILE_PUB;
@@ -136,28 +104,6 @@ class RTIDDSImpl : public IMessaging
     static const std::string SECURE_PERMISION_FILE_PUB;
     static const std::string SECURE_PERMISION_FILE_SUB;
     static const std::string SECURE_LIBRARY_NAME;
-  #endif
-
-    int          _WaitsetEventCount;
-    unsigned int _WaitsetDelayUsec;
-
-    dds::core::Duration   _HeartbeatPeriod;
-    dds::core::Duration   _FastHeartbeatPeriod;
-
-    const char          *_ProfileLibraryName;
-
-    dds::domain::DomainParticipant _participant;
-    dds::sub::Subscriber _subscriber;
-    dds::pub::Publisher _publisher;
-
-    rti::core::Semaphore _pongSemaphore;
-
-    std::map<std::string, std::string> _qoSProfileNameMap;
-
-  #ifdef RTI_SECURE_PERFTEST
-    void configureSecurePlugin(std::map<std::string, std::string> &dpQosProperties);
-    std::string printSecureArgs();
-    void validateSecureArgs();
   #endif
 
 };

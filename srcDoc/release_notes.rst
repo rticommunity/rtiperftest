@@ -83,12 +83,46 @@ Build HTML and PDF documentation (#94)
 RTI Perftest build script for linux now offers the option to generate the HTML
 and PDF documentation from the rst files in srcDoc.
 
+RTI Perftest thread priorities can be configured via command-line parameter (#65)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For the Classic and Modern C++ API Implementations, a new parameter,
+`-threadPriorities`, has been added to RTI Perftest. This parameter allows the
+user to set the priorities on the different threads created by RTI Connext DDS
+and by the application itself.
+
+This parameter accepts either 3 numeric values representing the priority of each
+thread, or 3 string values: h (high), n (normal) and l (low). These parameters
+can be used as follows:
+
+::
+
+-threadPriorities X:Y:Z
+
+Where:
+
+- *X* is for the priority of the main Thread that manage all the communication
+  and it's also used for the asynchronous thread when using large data.
+- *Y* is the priotiry for all the receive thread. This value will be used for
+  the receive thread created by *RTI Connext DDS*, but also for the thread in
+  charge of receiving the data when the -useReadThread option (use Waitsets)
+  is provided.
+- *Z* is the priority for the Event and DataBase threads created at the
+  *RTI Connext DDS* level.
+
+To see what values should be used for the different threads see
+*RTI Connext DDS Core Libraries Platform Notes*
+
+- Table 6.7 Thread-Priority Definitions for Linux Platforms
+- Table 8.6 Thread-Priority Definitions for OS X Platforms
+- Table 12.7 Thread-Priority Definitions for Windows Platforms
+
 Added --compiler and --linker command line parameters to build.sh (#152)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When building in Unix, the user can now use the `--compiler` and/or `--linker`
-command line parameters to explicitly specify to build.sh the compiler/linker
-executables that will be used by *Rtiddsgen*.
+command line parameters to explicitly specify to the `build.sh` script the
+compiler/linker executables that will be used by *Rtiddsgen*.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -272,6 +306,12 @@ certain VxWorks platforms.
 
 This issue has been fixed, since this library is not needed in the *VxWorks* platforms,
 *RTI Perftest* excludes `sys/time.h` when compiling for *VxWorks*.
+
+Migrate RTI Routing Service XML configuration to 6.0.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The RTI Routing Service configuration file has been updated and
+it is now supported in the version 6.0.0.
 
 Release Notes 2.3.2
 -------------------
