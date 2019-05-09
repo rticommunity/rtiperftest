@@ -185,12 +185,14 @@ function executable_checking()
         if [ -z `which "${MAKE_EXE}"` ]
         then
             echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp will not be built."
+            BUILD_CPP=0
         fi
     fi
     if [ "${BUILD_CPP03}" -eq "1" ]; then
         if [ -z `which "${MAKE_EXE}"` ]
         then
             echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp03 will not be built."
+            BUILD_CPP03=0
         fi
     fi
 
@@ -199,12 +201,14 @@ function executable_checking()
         if [ -z `which "${COMPILER_EXE}"` ]
         then
             echo -e "${YELLOW}[WARNING]:${NC} ${COMPILER_EXE} executable not found, perftest_cpp will not be built."
+            BUILD_CPP=0
         fi
     fi
     if [[ "${BUILD_CPP03}" -eq "1" ]] && [[ ! -z ${COMPILER_EXE} ]]; then
         if [ -z `which "${COMPILER_EXE}"` ]
         then
             echo -e "${YELLOW}[WARNING]:${NC} ${COMPILER_EXE} executable not found, perftest_cpp03 will not be built."
+            BUILD_CPP03=0
         fi
     fi
 
@@ -213,12 +217,14 @@ function executable_checking()
         if [ -z `which "${LINKER_EXE}"` ]
         then
             echo -e "${YELLOW}[WARNING]:${NC} ${LINKER_EXE} executable not found, perftest_cpp will not be built."
+            BUILD_CPP=0
         fi
     fi
     if [[ "${BUILD_CPP03}" -eq "1" ]] && [[ ! -z ${LINKER_EXE} ]]; then
         if [ -z `which "${LINKER_EXE}"` ]
         then
             echo -e "${YELLOW}[WARNING]:${NC} ${LINKER_EXE} executable not found, perftest_cpp03 will not be built."
+            BUILD_CPP03=0
         fi
     fi
 
