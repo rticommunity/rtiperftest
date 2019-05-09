@@ -5,6 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/srcCpp",
                 "${workspaceFolder}/srcCppCommon",
+                "/usr/include",
+                "/usr/include/c++/4.2.1",
                 "${NDDSHOME}/include",
                 "${NDDSHOME}/include/ndds"
             ],
@@ -26,6 +28,8 @@
             "includePath": [
                 "${workspaceFolder}/srcCpp",
                 "${workspaceFolder}/srcCppCommon",
+                "/usr/include",
+                "/usr/include/c++/4.2.1",
                 "${RTIMEHOME}/include",
                 "${RTIMEHOME}/include/rti_me",
                 "${RTIMEHOME}/include/rti_me/dds_c",
