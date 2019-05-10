@@ -296,7 +296,7 @@ function additional_defines_calculation()
         additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_TRADITIONAL"
     fi
 
-    if [ "${1}}" = "CPPmodern" ]; then
+    if [ "${1}" = "CPPmodern" ]; then
         additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_MODERN"
     fi
 }
