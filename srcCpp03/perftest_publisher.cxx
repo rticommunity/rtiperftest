@@ -1457,8 +1457,8 @@ int perftest_cpp::RunPublisher()
     // Allocate data and set size
     TestMessage message;
     message.entity_id = _PM.get<int>("pidMultiPubTest");
-    //message.size = std::max(_PM.get<unsigned long long>("dataLen"), LENGTH_CHANGED_SIZE);
-    //message.bin_data.resize(std::max(_PM.get<unsigned long long>("dataLen"), LENGTH_CHANGED_SIZE));
+    //message.size = (std::max)(_PM.get<unsigned long long>("dataLen"), LENGTH_CHANGED_SIZE);
+    //message.bin_data.resize((std::max)(_PM.get<unsigned long long>("dataLen"), LENGTH_CHANGED_SIZE));
 
 
     if ( perftest_cpp::showCpu && _PM.get<int>("pidMultiPubTest") == 0) {
