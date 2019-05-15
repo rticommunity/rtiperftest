@@ -14,10 +14,7 @@ set "bin_folder=%script_location%bin"
 @REM # By default we will build pro, not micro
 set BUILD_MICRO=0
 set BUILD_MICRO_24x_COMPATIBILITY=0
-<<<<<<< HEAD
 set MICRO_UNBOUNDED_SEQUENCE_SIZE=1048576
-=======
->>>>>>> 20ac0a912d34a75df5555316900160bde38c9587
 
 @REM # Default values:
 set BUILD_CPP=1
@@ -483,7 +480,7 @@ if !BUILD_MICRO! == 1 (
 
 	echo [INFO]: Copying perftest_cpp executable file:
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
-	copy /Y "%classic_cpp_folder%"\objs\%architecture%\!RELEASE_DEBUG!\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp_micro.exe
+	copy /Y "%classic_cpp_folder%"\objs\%architecture%\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp_micro.exe
 )
 
 echo[
