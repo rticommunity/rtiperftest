@@ -7,6 +7,7 @@
 #include "RTIDDSImpl.h"
 #include "perftest_cpp.h"
 #include "CpuMonitor.h"
+#include <vector>
 
 #if defined(RTI_WIN32)
   #pragma warning(push)
@@ -54,7 +55,7 @@ HANDLE perftest_cpp::_hTimer = NULL;
 /*********************************************************
  * Main
  */
-int main(int argc, char *argv[])
+int main(int argc, char *argv[]) 
 {
     try {
         perftest_cpp app;
@@ -67,20 +68,30 @@ int main(int argc, char *argv[])
 }
 
 #if defined(RTI_VXWORKS)
-int publisher_main()
-{
-    const char *argv[] = {"perftest_cpp", "-pub"};
-    int argc = sizeof(argv)/sizeof(const char*);
+int perftest_cpp_main(char* args) {
+    std::vector<char*> arguments;
 
-    return main(argc, (char **) argv);
-}
+    // split args by " " and add each one to dynamic array
+    char* next = strtok(args, " ");
+    while (next != NULL) {
+		arguments.push_back(next);
+		next = strtok(NULL, " ");
+    } 
 
-int subscriber_main()
-{
-    const char *argv[] = {"perftest_cpp", "-sub"};
-    int argc = sizeof(argv)/sizeof(const char*);
+    // Copy dynamic array to the original
+    // NOTE: +1 because Run() expects also the executable name argv[0].
+    //          we skip the first index
+    int argc = arguments.size()+1;
+    char *argv[argc];
 
-    return main(argc, (char **) argv);
+    argv[0] = "perftest_cpp"; // Dummy name for the executable
+
+    for (int i = 0; i < argc; i++) {
+		argv[i+1] = arguments[i];
+    }
+
+    // Call original main function with the splitted arguments
+    return main(argc, argv);
 }
 #endif
 
