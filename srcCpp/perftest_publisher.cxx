@@ -71,17 +71,20 @@ int perftest_cpp_main(char *args)
 {
     // Run() expects also the executable name argv[0]
     std::vector<char *> arguments = {"perftest_cpp"};   
+    char *next = NULL;
+    char **argv = NULL;
+    int argc = 0;
 
     // split args by " " and add each one to dynamic array
-    char* next = strtok(args, " ");
+    next = strtok(args, " ");
     while (next != NULL) {
-		arguments.push_back(next);
-		next = strtok(NULL, " ");
+        arguments.push_back(next);
+        next = strtok(NULL, " ");
     } 
 
     // Copy dynamic array to the original
-    int argc = arguments.size();
-    char *argv[argc];
+    argc = arguments.size();
+    argv = new char*[argc];
 
     std::copy(arguments.begin(), arguments.end(), argv);
 
