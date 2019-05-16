@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 }
 
 #if defined(RTI_VXWORKS)
-int perftest_cpp_main(char* args)
+int perftest_cpp_main(char *args)
 {
     // Run() expects also the executable name argv[0]
     std::vector<char *> arguments = {"perftest_cpp"};   
