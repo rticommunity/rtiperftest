@@ -168,6 +168,12 @@ Ensure compatibility for the Classic C++ Implementation (#114)
 Some of the changes added for #55 broke compatibility when compiling certain
 platforms with no support for C++11. This issue has been fixed.
 
+Run RTI Perftest easier in VxWorks (#167)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+It was not clear how to run Perftest in VxWorks before; you had to append each command line parameter to the `argv` array inside `publisher_main` and `subscriber_main` in `perftest_publisher.cxx`. It made you have to recompile perftest each time you wanted to run it with different command line parameters in VxWorks. Now this issue has been fixed.
+
+In order to run Perftest in VxWorks now, call `perftest_cpp_main` function which receives a a simple string containing all the command line parameters.
+
 Release Notes 2.4
 -----------------
 
@@ -367,7 +373,6 @@ The `-multicast` parameter has been divided into 2: `-multicast` which enables
 multicast for a given transport using a set of default multicast addresses and
 `-multicastAddr <address>` which enables multicast and sets the multicast IPs to
 be the one provided.
-
 Update Security Certificates and Governance files (#49)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
