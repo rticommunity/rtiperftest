@@ -69,11 +69,13 @@ int main(int argc, char *argv[])
 #if defined(RTI_VXWORKS)
 int perftest_cpp_main(char *args)
 {
-    // Run() expects also the executable name argv[0]
-    std::vector<char *> arguments = {"perftest_cpp"};   
+    std::vector<char *> arguments;   
     char *next = NULL;
     char **argv = NULL;
     int argc = 0;
+
+    // Run() expects also the executable name argv[0]
+    arguments.push_back("perftest_cpp");
 
     // split args by " " and add each one to dynamic array
     next = strtok(args, " ");
