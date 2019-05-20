@@ -6,6 +6,8 @@
 #ifndef INFRASTRUCTURE_COMMON_H_
 #define INFRASTRUCTURE_COMMON_H_
 
+#include "perftest.h"
+
 #ifdef RTI_MICRO
   #include "Infrastructure_micro.h"
 #else

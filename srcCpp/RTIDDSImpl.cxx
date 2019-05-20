@@ -1795,8 +1795,8 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
         _PM->get_vector<std::string>("peer");
     if (!peerList.empty()) {
         //TODO FRANCIS: Review this code.
-        qos.discovery.initial_peers.maximum(peerList.size());
-        qos.discovery.initial_peers.length(peerList.size());
+        qos.discovery.initial_peers.maximum((int) peerList.size());
+        qos.discovery.initial_peers.length((int) peerList.size());
         for(unsigned int i = 0; i < peerList.size(); ++i) {
             *qos.discovery.initial_peers.get_reference(i) =
                 DDS_String_dup(peerList[i].c_str());

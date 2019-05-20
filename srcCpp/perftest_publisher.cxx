@@ -1142,7 +1142,9 @@ public:
 
         double latency_ave;
         double latency_std;
+      #ifndef RTI_MICRO
         double serializeTime, deserializeTime;
+      #endif
         int totalSampleSize = last_data_length + perftest_cpp::OVERHEAD_BYTES;
 
         int unbounded = _PM->get<int>("unbounded");

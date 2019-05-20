@@ -111,6 +111,8 @@ public:
   #endif
 
     bool configureDomainParticipantQos(DDS_DomainParticipantQos &qos);
+
+  #ifndef RTI_MICRO
     /*
      * These two functions calculate the serialization/deserialization time cost
      * with a precision of microseconds.
@@ -123,6 +125,7 @@ public:
     static double obtain_dds_deserialize_time_cost(
             unsigned int sampleSize,
             unsigned int iters = 1000);
+  #endif
 
     bool supports_listener()
     {

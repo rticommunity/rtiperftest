@@ -44,9 +44,6 @@ set /a rtiddsgen_version_number_new_solution_name=236
 @REM # Needed when compiling statically using security
 set RTI_OPENSSLHOME=""
 
-@REM CMAKE requires a cmake generator
-set cmake_generator="Visual Studio 10 2010"
-
 set "classic_cpp_lang_string=C++"
 set "modern_cpp_lang_string=C++03"
 set "cs_lang_string=C#"
@@ -191,8 +188,9 @@ if !BUILD_MICRO! == 1 (
 
 	call !MSBUILD_EXE! /version > nul
 	if not !ERRORLEVEL! == 0 (
-		echo [WARNING]: !MSBUILD_EXE! executable not found, perftest_cpp will not be built.
+		echo [WARNING]: !MSBUILD_EXE! executable not found, perftest_cpp_micro will not be built.
 		set BUILD_MICRO=0
+		exit /b 1
 	)
 
 ) else (
@@ -545,6 +543,7 @@ if %BUILD_JAVA% == 1 (
 if !BUILD_MICRO! == 1 (
 
 	call::solution_compilation_flag_calculation
+	call::copy_src_cpp_common
 
 	if !BUILD_MICRO_24x_COMPATIBILITY! == 1 (
 		set "ADDITIONAL_DEFINES=RTI_MICRO_24x_COMPATIBILITY !ADDITIONAL_DEFINES!"
@@ -553,8 +552,8 @@ if !BUILD_MICRO! == 1 (
 	)
 
 	set "ADDITIONAL_DEFINES=RTI_WIN32 RTI_MICRO !ADDITIONAL_DEFINES!"
-	set "additional_header_files=MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h"
-	set "additional_source_files=RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx"
+	set "additional_header_files=ParameterManager.h Parameter.h ThreadPriorities.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h"
+	set "additional_source_files=ParameterManager.cxx Parameter.cxx ThreadPriorities.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx"
 
 	@REM # Generate files for srcCpp
 	echo[
@@ -570,20 +569,25 @@ if !BUILD_MICRO! == 1 (
 		exit /b 1
 	)
 	call copy "%classic_cpp_folder%"\perftest_publisher.cxx "%classic_cpp_folder%"\perftest_subscriber.cxx
-	call type NULL > "%classic_cpp_folder%"\perftestApplication.h
-	call type NULL > "%classic_cpp_folder%"\perftestApplication.cxx
 	call copy "%idl_location%\perftest.idl" "%classic_cpp_folder%"\perftest.idl
+	call echo. > "%classic_cpp_folder%"\perftestApplication.h
+	call echo. > "%classic_cpp_folder%"\perftestApplication.cxx
 
 	echo[
 	echo [INFO]: Compiling %classic_cpp_lang_string%
 
+	if not x!cmake_generator! == x (
+		set "cmake_generator_command=-G %cmake_generator%"
+	)
+
 	cd "%classic_cpp_folder%"
-	call !CMAKE_EXE! -DCMAKE_BUILD_TYPE=!RELEASE_DEBUG! --target perftest_publisher -G %cmake_generator% -B./perftest_build -H. -DRTIME_TARGET_NAME=%architecture% -DPLATFORM_LIBS="netapi32.lib;advapi32.lib;user32.lib;winmm.lib;WS2_32.lib;"
+	call !CMAKE_EXE! -DCMAKE_BUILD_TYPE=!RELEASE_DEBUG! --target perftest_publisher !cmake_generator_command! -B./perftest_build -H. -DRTIME_TARGET_NAME=%architecture% -DPLATFORM_LIBS="netapi32.lib;advapi32.lib;user32.lib;winmm.lib;WS2_32.lib;"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %classic_cpp_lang_string%.
 		cd ..
 		exit /b 1
 	)
+
 	call !CMAKE_EXE! --build ./perftest_build --config !RELEASE_DEBUG!
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %classic_cpp_lang_string%.
