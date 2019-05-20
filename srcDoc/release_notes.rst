@@ -163,6 +163,14 @@ A new commands line parameters `-noBlockingSockets` has been added:
 -  Potencialy it can reduce the lost packets.
 -  CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT PERFORMANCE VARIATIONS.
 
+
+Added --compiler and --linker command line parameters to build.sh (#152)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When building in Unix, the user can now use the `--compiler` and/or `--linker`
+command line parameters to explicitly specify to the `build.sh` script the
+compiler/linker executables that will be used by *Rtiddsgen*.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
