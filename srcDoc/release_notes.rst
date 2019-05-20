@@ -168,11 +168,11 @@ Ensure compatibility for the Classic C++ Implementation (#114)
 Some of the changes added for #55 broke compatibility when compiling certain
 platforms with no support for C++11. This issue has been fixed.
 
-Run RTI Perftest easier in VxWorks (#167)
+Run *RTI Perftest* easier in *VxWorks* (#167)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-It was not clear how to run Perftest in VxWorks before; you had to append each command line parameter to the `argv` array inside `publisher_main` and `subscriber_main` in `perftest_publisher.cxx`. It made you have to recompile perftest each time you wanted to run it with different command line parameters in VxWorks. Now this issue has been fixed.
+For previous releases, it was not clear how to run *RTI Perftest* in *VxWorks*: Each command line parameter had to be appended to the ``argv`` array inside ``publisher_main`` and ``subscriber_main`` in ``perftest_publisher.cxx``. This required recompile each time the parameters change. Now this issue has been fixed.
 
-In order to run Perftest in VxWorks now, call `perftest_cpp_main` function which receives a a simple string containing all the command line parameters.
+This behavior has been simplified: In order to run in *VxWorks*, the ``perftest_cpp_main`` can be called, receiving a simple string containing all the command line parameters.
 
 Release Notes 2.4
 -----------------
