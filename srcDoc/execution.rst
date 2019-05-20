@@ -85,13 +85,13 @@ In such case, add the *OpenSSL* libraries in
    ``%PATH%``
    
 When using *RTI Perftest* in *VxWorks* kernel mode
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After compiling for *VxWorks* (see `Compilation <https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/compilation.rst>`__), load the shared object (.so):
+After compiling for *VxWorks* (see `Compilation <https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/compilation.rst>`__), the shared object need to be loaded in the kernel, by doing:
 
 ``ld 1 < bin/<architecture>/release/perftest_cpp.so``
 
-And the run it by executing ``perftest_main_cpp`` function with a string as an argument containing all your `command line parameters <https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/command_line_parameters.rst>`__ for perftest.
+Now, the code can be executed by calling the ``perftest_main_cpp`` function with a string as an argument containing all the `command line parameters <https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/command_line_parameters.rst>`__.
 
 E.g. ``perftest_cpp_main "-pub -domain 0 -latencyCount 1 -dataLen 1000 -latencyTest -multicast"``
 
