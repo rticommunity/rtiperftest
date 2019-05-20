@@ -75,7 +75,7 @@ int perftest_cpp_main(char *args)
     int argc = 0;
 
     // Run() expects also the executable name argv[0]
-    arguments.push_back("perftest_cpp");
+    arguments.push_back((char *) "perftest_cpp");
 
     // split args by " " and add each one to dynamic array
     next = strtok(args, " ");
