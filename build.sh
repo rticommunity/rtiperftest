@@ -31,6 +31,8 @@ BUILD_CPP03=1
 BUILD_JAVA=1
 MAKE_EXE=make
 CMAKE_EXE=cmake
+COMPILER_EXE="" # let rtiddsgen choose the default
+LINKER_EXE="" # let rtiddsgen choose the default
 PERL_EXEC=perl
 JAVAC_EXE=javac
 JAVA_EXE=java
@@ -101,6 +103,14 @@ function usage()
     echo "                                 parameter is not present, cmake executable     "
     echo "                                 should be available from your \$PATH variable. "
     echo "                                 will clean all the generated code and binaries "
+    echo "    --compiler <path>            Path to (or name of) the compiler executable.  "
+    echo "                                 If this parameter is not a full path, the named"
+    echo "                                 executable should be available from your       "
+    echo "                                 \$PATH variable. (NOTE: c++/c++03 builds only) "
+    echo "    --linker <path>              Path to (or name of) the linker executable.    "
+    echo "                                 If this parameter is not a full path, the named"
+    echo "                                 executable should be available from your       "
+    echo "                                 \$PATH variable. (NOTE: c++/c++03 builds only) "
     echo "    --perl <path>                Path to PERL executable. If this parameter is  "
     echo "                                 not present, the path to PERL should be        "
     echo "                                 available from your \$PATH variable.           "
@@ -244,6 +254,38 @@ function executable_checking()
             if [ -z `which "${MAKE_EXE}"` ]
             then
                 echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp03 will not be built."
+            fi
+        fi
+
+        # Is COMPILER in the path?
+        if [[ "${BUILD_CPP}" -eq "1" ]] && [[ ! -z ${COMPILER_EXE} ]]; then
+            if [ -z `which "${COMPILER_EXE}"` ]
+            then
+                echo -e "${YELLOW}[WARNING]:${NC} ${COMPILER_EXE} executable not found, perftest_cpp will not be built."
+                BUILD_CPP=0
+            fi
+        fi
+        if [[ "${BUILD_CPP03}" -eq "1" ]] && [[ ! -z ${COMPILER_EXE} ]]; then
+            if [ -z `which "${COMPILER_EXE}"` ]
+            then
+                echo -e "${YELLOW}[WARNING]:${NC} ${COMPILER_EXE} executable not found, perftest_cpp03 will not be built."
+                BUILD_CPP03=0
+            fi
+        fi
+
+        # Is LINKER in the path?
+        if [[ "${BUILD_CPP}" -eq "1" ]] && [[ ! -z ${LINKER_EXE} ]]; then
+            if [ -z `which "${LINKER_EXE}"` ]
+            then
+                echo -e "${YELLOW}[WARNING]:${NC} ${LINKER_EXE} executable not found, perftest_cpp will not be built."
+                BUILD_CPP=0
+            fi
+        fi
+        if [[ "${BUILD_CPP03}" -eq "1" ]] && [[ ! -z ${LINKER_EXE} ]]; then
+            if [ -z `which "${LINKER_EXE}"` ]
+            then
+                echo -e "${YELLOW}[WARNING]:${NC} ${LINKER_EXE} executable not found, perftest_cpp03 will not be built."
+                BUILD_CPP03=0
             fi
         fi
 
@@ -507,6 +549,15 @@ function build_cpp()
 
     ##############################################################################
     # Compile srcCpp code
+    #
+    # If the user requested a specific compiler or linker, set up those variables
+    # now and feed them to the command we run against the makefile.
+    if [ ! -z "$COMPILER_EXE" ]; then
+        export COMPILER=$COMPILER_EXE
+    fi
+    if [ ! -z "$LINKER_EXE" ]; then
+        export LINKER=$LINKER_EXE
+    fi
     echo ""
     echo -e "${INFO_TAG} Compiling perftest_cpp"
     "${MAKE_EXE}" -C "${classic_cpp_folder}" -f makefile_perftest_${platform}
@@ -678,6 +729,15 @@ function build_cpp03()
 
     ##############################################################################
     # Compile srcCpp03 code
+    #
+    # If the user requested a specific compiler or linker, set up those variables
+    # now and feed them to the command we run against the makefile.
+    if [ ! -z "$COMPILER_EXE" ]; then
+        export COMPILER=$COMPILER_EXE
+    fi
+    if [ ! -z "$LINKER_EXE" ]; then
+        export LINKER=$LINKER_EXE
+    fi
     echo ""
     echo -e "${INFO_TAG} Compiling perftest_cpp03."
     "${MAKE_EXE}" -C "${modern_cpp_folder}" -f makefile_perftest_${platform}
@@ -895,6 +955,14 @@ while [ "$1" != "" ]; do
             ;;
         --cmake)
             CMAKE_EXE=$2
+            shift
+            ;;
+        --compiler)
+            COMPILER_EXE=$2
+            shift
+            ;;
+        --linker)
+            LINKER_EXE=$2
             shift
             ;;
         --perl)
