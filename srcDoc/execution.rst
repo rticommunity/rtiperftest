@@ -83,6 +83,17 @@ In such case, add the *OpenSSL* libraries in
    ``$DYLD_LIBRARY_PATH``
 -  On Windows systems, add ``%OPENSSLHOME$/<debug or release>/bin`` to
    ``%PATH%``
+   
+When using *RTI Perftest* in *VxWorks* kernel mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After compiling for *VxWorks* (see `Compilation <https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/compilation.rst>`__), load the shared object (.so):
+
+``ld 1 < bin/<architecture>/release/perftest_cpp.so``
+
+And the run it by executing ``perftest_main_cpp`` function with a string as an argument containing all your `command line parameters <https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/command_line_parameters.rst>`__ for perftest.
+
+E.g. ``perftest_cpp_main "-pub -domain 0 -latencyCount 1 -dataLen 1000 -latencyTest -multicast"``
 
 Java executable
 ---------------
