@@ -218,7 +218,6 @@ bool configureTcpTransport(
         DDS_DomainParticipantQos& qos,
         ParameterManager *_PM)
 {
-
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
 
     if (!addPropertyToParticipantQos(
@@ -742,7 +741,8 @@ std::string PerftestTransport::printTransportConfigurationSummary()
                 << "\n\t\tLatency Address: "
                 << multicastAddrMap[LATENCY_TOPIC_NAME].c_str()
                 << "\n\t\tAnnouncement Address: "
-                << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str();
+                << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str()
+                << "\n";
     }
 
     if (transportConfig.kind == TRANSPORT_TCPv4
@@ -1012,6 +1012,13 @@ bool PerftestTransport::parse_multicast_addresses(const char *arg)
         fprintf(stderr, "\tUse -help option to see the correct sintax\n");
 
         return false;
+    }
+
+    // We only need to set the secure properties for this
+    if (transportConfig.kind == TRANSPORT_TLSv4
+            || transportConfig.kind == TRANSPORT_DTLSv4
+            || transportConfig.kind == TRANSPORT_WANv4) {
+        populateSecurityFiles();
     }
 
     return true;

@@ -21,7 +21,8 @@ void ParameterManager::initialize()
     bestEffort->set_type(T_BOOL);
     bestEffort->set_extra_argument(NO);
     bestEffort->set_group(GENERAL);
-    bestEffort->set_supported_middleware(Middleware::RTIDDSPRO);
+    bestEffort->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("bestEffort",  bestEffort);
 
     Parameter<unsigned long long> *dataLen =
@@ -33,7 +34,8 @@ void ParameterManager::initialize()
     dataLen->set_extra_argument(YES);
     dataLen->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_PERFTEST_SAMPLE_SIZE);
     dataLen->set_group(GENERAL);
-    dataLen->set_supported_middleware(Middleware::RTIDDSPRO);
+    dataLen->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("dataLen", dataLen);
 
 
@@ -46,7 +48,8 @@ void ParameterManager::initialize()
     verbosity->set_extra_argument(YES);
     verbosity->set_range(0, 3);
     verbosity->set_group(GENERAL);
-    verbosity->set_supported_middleware(Middleware::RTIDDSPRO);
+    verbosity->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("verbosity", verbosity);
 
     Parameter<bool> *dynamicData = new Parameter<bool>(false);
@@ -81,7 +84,8 @@ void ParameterManager::initialize()
     domain->set_extra_argument(YES);
     domain->set_range(0, 250);
     domain->set_group(GENERAL);
-    domain->set_supported_middleware(Middleware::RTIDDSPRO);
+    domain->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("domain", domain);
 
     Parameter<long> *instances = new Parameter<long>(1);
@@ -158,7 +162,8 @@ void ParameterManager::initialize()
     noPrintIntervals->set_type(T_BOOL);
     noPrintIntervals->set_extra_argument(NO);
     noPrintIntervals->set_group(GENERAL);
-    noPrintIntervals->set_supported_middleware(Middleware::RTIDDSPRO);
+    noPrintIntervals->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("noPrintIntervals", noPrintIntervals);
 
     Parameter<std::string> *qosFile =
@@ -202,7 +207,8 @@ void ParameterManager::initialize()
     useReadThread->set_type(T_BOOL);
     useReadThread->set_extra_argument(NO);
     useReadThread->set_group(GENERAL);
-    useReadThread->set_supported_middleware(Middleware::RTIDDSPRO);
+    useReadThread->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("useReadThread", useReadThread);
 
     Parameter<unsigned long long> *waitsetDelayUsec =
@@ -268,7 +274,8 @@ void ParameterManager::initialize()
     cpu->set_type(T_BOOL);
     cpu->set_extra_argument(NO);
     cpu->set_group(GENERAL);
-    cpu->set_supported_middleware(Middleware::RTIDDSPRO);
+    cpu->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("cpu", cpu);
 
     Parameter<int> *unbounded = new Parameter<int>(0);
@@ -299,7 +306,8 @@ void ParameterManager::initialize()
     threadPriorities->set_type(T_STR);
     threadPriorities->set_extra_argument(YES);
     threadPriorities->set_group(GENERAL);
-    threadPriorities->set_supported_middleware(Middleware::RTIDDSPRO);
+    threadPriorities->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("threadPriorities", threadPriorities);
 
 
@@ -316,7 +324,8 @@ void ParameterManager::initialize()
     batchSize->set_extra_argument(YES);
     batchSize->set_range(0, MAX_SYNCHRONOUS_SIZE - 1);
     batchSize->set_group(PUB);
-    batchSize->set_supported_middleware(Middleware::RTIDDSPRO);
+    batchSize->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("batchSize", batchSize);
 
     Parameter<bool> *enableAutoThrottle = new Parameter<bool>(false);
@@ -347,7 +356,8 @@ void ParameterManager::initialize()
     pub->set_type(T_BOOL);
     pub->set_extra_argument(NO);
     pub->set_group(PUB);
-    pub->set_supported_middleware(Middleware::RTIDDSPRO);
+    pub->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("pub", pub);
 
     Parameter<unsigned long long> *latencyCount =
@@ -362,7 +372,8 @@ void ParameterManager::initialize()
     latencyCount->set_extra_argument(YES);
     latencyCount->set_range(1, MAX_ULLONG);
     latencyCount->set_group(PUB);
-    latencyCount->set_supported_middleware(Middleware::RTIDDSPRO);
+    latencyCount->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("latencyCount", latencyCount);
 
     Parameter<unsigned long long> *executionTime =
@@ -377,7 +388,8 @@ void ParameterManager::initialize()
     executionTime->set_extra_argument(YES);
     executionTime->set_range(1, MAX_ULLONG);
     executionTime->set_group(PUB);
-    executionTime->set_supported_middleware(Middleware::RTIDDSPRO);
+    executionTime->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("executionTime", executionTime);
 
     Parameter<bool> *latencyTest = new Parameter<bool>(false);
@@ -388,7 +400,8 @@ void ParameterManager::initialize()
     latencyTest->set_type(T_BOOL);
     latencyTest->set_extra_argument(NO);
     latencyTest->set_group(PUB);
-    latencyTest->set_supported_middleware(Middleware::RTIDDSPRO);
+    latencyTest->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("latencyTest", latencyTest);
 
     Parameter<unsigned long long> *numIter =
@@ -402,7 +415,8 @@ void ParameterManager::initialize()
     numIter->set_extra_argument(YES);
     numIter->set_range(1, MAX_ULLONG);
     numIter->set_group(PUB);
-    numIter->set_supported_middleware(Middleware::RTIDDSPRO);
+    numIter->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("numIter", numIter);
 
     Parameter<int> *numSubscribers = new Parameter<int>(1);
@@ -413,7 +427,8 @@ void ParameterManager::initialize()
     numSubscribers->set_extra_argument(YES);
     numSubscribers->set_range(1, INT_MAX);
     numSubscribers->set_group(PUB);
-    numSubscribers->set_supported_middleware(Middleware::RTIDDSPRO);
+    numSubscribers->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("numSubscribers", numSubscribers);
 
     Parameter<int> *pidMultiPubTest = new Parameter<int>(0);
@@ -425,7 +440,8 @@ void ParameterManager::initialize()
     pidMultiPubTest->set_extra_argument(YES);
     pidMultiPubTest->set_range(0, INT_MAX);
     pidMultiPubTest->set_group(PUB);
-    pidMultiPubTest->set_supported_middleware(Middleware::RTIDDSPRO);
+    pidMultiPubTest->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("pidMultiPubTest", pidMultiPubTest);
 
     ParameterPair<unsigned long long, std::string> *pubRate =
@@ -439,7 +455,8 @@ void ParameterManager::initialize()
     pubRate->set_type(T_PAIR_NUMERIC_STR);
     pubRate->set_extra_argument(YES);
     pubRate->set_group(PUB);
-    pubRate->set_supported_middleware(Middleware::RTIDDSPRO);
+    pubRate->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     pubRate->set_range(1, 10000000);
     pubRate->add_valid_str_value("sleep");
     pubRate->add_valid_str_value("spin");
@@ -485,7 +502,8 @@ void ParameterManager::initialize()
     sendQueueSize->set_type(T_NUMERIC_D);
     sendQueueSize->set_extra_argument(YES);
     sendQueueSize->set_group(PUB);
-    sendQueueSize->set_supported_middleware(Middleware::RTIDDSPRO);
+    sendQueueSize->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     sendQueueSize->set_range(1, INT_MAX);
     create("sendQueueSize", sendQueueSize);
 
@@ -497,7 +515,8 @@ void ParameterManager::initialize()
     sleep->set_extra_argument(YES);
     sleep->set_range(1, MAX_ULLONG);
     sleep->set_group(PUB);
-    sleep->set_supported_middleware(Middleware::RTIDDSPRO);
+    sleep->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("sleep", sleep);
 
     Parameter<unsigned long long> *spin = new Parameter<unsigned long long>(0);
@@ -507,7 +526,8 @@ void ParameterManager::initialize()
     spin->set_extra_argument(YES);
     spin->set_range(1, MAX_ULLONG);
     spin->set_group(PUB);
-    spin->set_supported_middleware(Middleware::RTIDDSPRO);
+    spin->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("spin", spin);
 
     Parameter<bool> *writerStats = new Parameter<bool>(false);
@@ -518,7 +538,8 @@ void ParameterManager::initialize()
     writerStats->set_type(T_BOOL);
     writerStats->set_extra_argument(NO);
     writerStats->set_group(PUB);
-    writerStats->set_supported_middleware(Middleware::RTIDDSPRO);
+    writerStats->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("writerStats", writerStats);
 
     Parameter<long> *writeInstance =
@@ -532,7 +553,8 @@ void ParameterManager::initialize()
     writeInstance->set_extra_argument(YES);
     writeInstance->set_range(0, LONG_MAX);
     writeInstance->set_group(PUB);
-    writeInstance->set_supported_middleware(Middleware::RTIDDSPRO);
+    writeInstance->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("writeInstance", writeInstance);
 
     ////////////////////////////////////////////////////////////////////////////
@@ -543,7 +565,8 @@ void ParameterManager::initialize()
     sub->set_type(T_BOOL);
     sub->set_extra_argument(NO);
     sub->set_group(SUB);
-    sub->set_supported_middleware(Middleware::RTIDDSPRO);
+    sub->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("sub", sub);
 
     Parameter<int> *sidMultiSubTest = new Parameter<int>(0);
@@ -555,7 +578,8 @@ void ParameterManager::initialize()
     sidMultiSubTest->set_extra_argument(YES);
     sidMultiSubTest->set_range(0, INT_MAX);
     sidMultiSubTest->set_group(SUB);
-    sidMultiSubTest->set_supported_middleware(Middleware::RTIDDSPRO);
+    sidMultiSubTest->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("sidMultiSubTest", sidMultiSubTest);
 
     Parameter<int> *numPublishers = new Parameter<int>(1);
@@ -566,7 +590,8 @@ void ParameterManager::initialize()
     numPublishers->set_extra_argument(YES);
     numPublishers->set_range(1, INT_MAX);
     numPublishers->set_group(SUB);
-    numPublishers->set_supported_middleware(Middleware::RTIDDSPRO);
+    numPublishers->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("numPublishers", numPublishers);
 
     ParameterVector<unsigned long long> *cft =
@@ -596,7 +621,8 @@ void ParameterManager::initialize()
     nic->set_type(T_STR);
     nic->set_extra_argument(YES);
     nic->set_group(TRANSPORT);
-    nic->set_supported_middleware(Middleware::RTIDDSPRO);
+    nic->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("nic", nic);
 
     Parameter<std::string> *allowInterfaces = new Parameter<std::string>();
@@ -607,7 +633,8 @@ void ParameterManager::initialize()
     allowInterfaces->set_type(T_STR);
     allowInterfaces->set_extra_argument(YES);
     allowInterfaces->set_group(TRANSPORT);
-    allowInterfaces->set_supported_middleware(Middleware::RTIDDSPRO);
+    allowInterfaces->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     allowInterfaces->set_internal(true);
     create("allowInterfaces", allowInterfaces);
 
@@ -615,11 +642,14 @@ void ParameterManager::initialize()
     peer->set_command_line_argument("-peer", "<address>");
     peer->set_description(
             "Adds a peer to the peer host address list.\n"
+            "If -rawTransport is used, a optional ID of the subscriber could be"
+            "provied\n"
             "This argument may be repeated to indicate multiple peers");
     peer->set_type(T_VECTOR_STR);
     peer->set_extra_argument(YES);
     peer->set_group(TRANSPORT);
-    peer->set_supported_middleware(Middleware::RTIDDSPRO);
+    peer->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("peer", peer);
 
     Parameter<std::string> *transport = new Parameter<std::string>("Use XML");
@@ -632,7 +662,8 @@ void ParameterManager::initialize()
     transport->set_type(T_STR);
     transport->set_extra_argument(YES);
     transport->set_group(TRANSPORT);
-    transport->set_supported_middleware(Middleware::RTIDDSPRO);
+    transport->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     transport->add_valid_str_value("UDPv4");
     transport->add_valid_str_value("UDPv6");
     transport->add_valid_str_value("SHMEM");
@@ -657,9 +688,9 @@ void ParameterManager::initialize()
     multicast->set_type(T_BOOL);
     multicast->set_extra_argument(NO);
     multicast->set_group(TRANSPORT);
-    multicast->set_supported_middleware(Middleware::RTIDDSPRO);
+    multicast->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("multicast", multicast);
-
 
     Parameter<std::string> *multicastAddr = new Parameter<std::string>();
     multicastAddr->set_command_line_argument("-multicastAddr", "<address>");
@@ -677,7 +708,8 @@ void ParameterManager::initialize()
     multicastAddr->set_type(T_STR);
     multicastAddr->set_extra_argument(YES);
     multicastAddr->set_group(TRANSPORT);
-    multicastAddr->set_supported_middleware(Middleware::RTIDDSPRO);
+    multicastAddr->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("multicastAddr", multicastAddr);
 
     Parameter<std::string> *transportVerbosity = new Parameter<std::string>();
@@ -689,7 +721,8 @@ void ParameterManager::initialize()
     transportVerbosity->set_type(T_STR);
     transportVerbosity->set_extra_argument(YES);
     transportVerbosity->set_group(TRANSPORT);
-    transportVerbosity->set_supported_middleware(Middleware::RTIDDSPRO);
+    transportVerbosity->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("transportVerbosity", transportVerbosity);
 
     Parameter<std::string> *transportServerBindPort =
@@ -728,7 +761,8 @@ void ParameterManager::initialize()
     transportPublicAddress->set_type(T_STR);
     transportPublicAddress->set_extra_argument(YES);
     transportPublicAddress->set_group(TRANSPORT);
-    transportPublicAddress->set_supported_middleware(Middleware::RTIDDSPRO);
+    transportPublicAddress->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("transportPublicAddress", transportPublicAddress);
 
     Parameter<std::string> *transportWanServerAddress =
@@ -816,6 +850,33 @@ void ParameterManager::initialize()
     transportPrivateKey->set_group(TRANSPORT);
     transportPrivateKey->set_supported_middleware(Middleware::RTIDDSPRO);
     create("transportPrivateKey", transportPrivateKey);
+
+    ////////////////////////////////////////////////////////////////////////////
+    // RAWTRANSPORT PARAMTER:
+
+    Parameter<bool> *rawTransport = new Parameter<bool>(false);
+    rawTransport->set_command_line_argument("-rawTransport", "");
+    rawTransport->set_description(
+            "Use sockets as a transport instead of DDS protocol.\n"
+            "Support UDPv4 and Shared Memory (SHMEM).\n"
+            "Many of the parameters are not supported with sockets.\n");
+    rawTransport->set_type(T_BOOL);
+    rawTransport->set_extra_argument(NO);
+    rawTransport->set_group(RAWTRANSPORT);
+    rawTransport->set_supported_middleware(Middleware::RAWTRANSPORT);
+    create("rawTransport", rawTransport);
+
+    Parameter<bool> *noBlockingSockets = new Parameter<bool>(false);
+    noBlockingSockets->set_command_line_argument("-noBlockingSockets", "");
+    noBlockingSockets->set_description(
+            "Control blocking behavior of send sockets to never block.\n"
+            "CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT"
+            "PERFORMANCE PROBLEMS.\n");
+    noBlockingSockets->set_type(T_BOOL);
+    noBlockingSockets->set_extra_argument(NO);
+    noBlockingSockets->set_group(RAWTRANSPORT);
+    noBlockingSockets->set_supported_middleware(Middleware::RAWTRANSPORT);
+    create("noBlockingSockets", noBlockingSockets);
 
     ////////////////////////////////////////////////////////////////////////////
     // SECURE PARAMETER:
@@ -1228,6 +1289,21 @@ bool ParameterManager::check_incompatible_parameters()
             }
         }
     }
+
+    // Check incompatibilities with rawTransport
+    if (get<bool>("rawTransport")) {
+        for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
+            if (it->second.get()->get_isSet()
+                    && !(it->second.get()->get_supported_middleware()
+                            & Middleware::RAWTRANSPORT)) {
+                fprintf(stderr,
+                        "Cannot use '%s' while setting '-rawTransport'.\n",
+                        it->second.get()->get_option().c_str());
+                success = false;
+            }
+        }
+    }
+
     return success;
 }
 

@@ -1391,8 +1391,12 @@ namespace PerformanceTest {
                 } else { // < 0 (Meaning, Disabled by RTI Perftest)
                     sb.Append("\"Disabled by RTI Perftest.\"\n");
                     if (batchSize == -1) {
-                        sb.Append("\t\t  BatchSize is smaller than 2 times\n");
-                        sb.Append("\t\t  the minimum sample size.\n");
+                        if (_LatencyTest) {
+                            sb.Append("\t\t  BatchSize disabled for a Latency Test\n");
+                        } else {
+                            sb.Append("\t\t  BatchSize is smaller than 2 times\n");
+                            sb.Append("\t\t  the minimum sample size.\n");
+                        }
                     }
                     if (batchSize == -2) {
                         sb.Append("\t\t  BatchSize cannot be used with\n");
@@ -2580,19 +2584,25 @@ namespace PerformanceTest {
             Perftest_ProductVersion_t perftestV = GetPerftestVersion();
             ProductVersion_t ddsV = GetDDSVersion();
 
-            Console.Write(
-                    "RTI Perftest "
-                    + perftestV.major + "."
-                    + perftestV.minor + "."
-                    + perftestV.release);
-            if (perftestV.revision != 0) {
-                Console.Write("." + perftestV.revision);
+            if (perftestV.major == 9
+                    && perftestV.minor == 9
+                    && perftestV.release == 9) {
+                Console.Write("RTI Perftest Master");
+            } else {
+                Console.Write(
+                        "RTI Perftest "
+                        + perftestV.major + "."
+                        + perftestV.minor + "."
+                        + perftestV.release);
+                if (perftestV.revision != 0) {
+                    Console.Write("." + perftestV.revision);
+                }
+                Console.Write(
+                        " (RTI Connext DDS: "
+                        + ddsV.major + "."
+                        + ddsV.minor + "."
+                        + ddsV.release + ")\n");
             }
-            Console.Write(
-                    " (RTI Connext DDS: "
-                    + ddsV.major + "."
-                    + ddsV.minor + "."
-                    + ddsV.release + ")\n");
         }
 
         public struct Perftest_ProductVersion_t

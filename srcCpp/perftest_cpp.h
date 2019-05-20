@@ -38,7 +38,7 @@
 #endif
 
 #include "MessagingIF.h"
-#include "perftestThreadPriorities.h"
+#include "ThreadPriorities.h"
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
 #include "ParameterManager.h"
@@ -60,7 +60,7 @@ class perftest_cpp
     bool validate_input();
     void PrintConfiguration();
     unsigned int GetSamplesPerBatch();
-    const PerftestThreadPriorities get_thread_priorities();
+    const ThreadPriorities get_thread_priorities();
     static void MilliSleep(unsigned int millisec);
     static const DDS_ProductVersion_t GetDDSVersion();
     static const Perftest_ProductVersion_t GetPerftestVersion();
@@ -82,6 +82,8 @@ class perftest_cpp
     static void SetTimeout(
             unsigned int executionTimeInSeconds,
             bool isScan = false);
+    template <class ListenerType>
+    bool finalize_read_thread(RTIOsapiThread *thread, ListenerType *listener);
 
     // Private members
     ParameterManager _PM;
@@ -91,7 +93,7 @@ class perftest_cpp
     static const Perftest_ProductVersion_t _version;
 
     // Priorities for the threads used by perftest and domain participant
-    PerftestThreadPriorities _threadPriorities;
+    ThreadPriorities _threadPriorities;
 
     /*
      * The following members are used in a static callback

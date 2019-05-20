@@ -7,6 +7,7 @@
  */
 
 #include <string>
+#include "osapi/osapi_semaphore.h"
 #include "ParameterManager.h"
 
 /* Forward declaration of perftest_cpp to avoid circular dependencies */
@@ -45,10 +46,36 @@ class IMessagingCB
 {
   public:
     bool  end_test;
+    RTIOsapiSemaphore *syncSemaphore;
 
   public:
-    virtual ~IMessagingCB() {}
+    IMessagingCB() : end_test(false), syncSemaphore(NULL){}
+
+    virtual ~IMessagingCB() {
+        if (syncSemaphore != NULL) {
+            RTIOsapiSemaphore_delete(syncSemaphore);
+            syncSemaphore = NULL;
+        }
+    }
+
+    /* Create a semaphore if is not been created yet, and then return it */
+    RTIOsapiSemaphore *get_synchronization_semaphore()
+    {
+        if (syncSemaphore == NULL) {
+            syncSemaphore = RTIOsapiSemaphore_new(
+                    RTI_OSAPI_SEMAPHORE_KIND_BINARY, NULL);
+
+            if (syncSemaphore == NULL) {
+                fprintf(stderr,
+                        "Fail to create a Semaphore for IMessagingCB\n");
+                return NULL;
+            }
+        }
+        return syncSemaphore;
+    }
+
     virtual void ProcessMessage(TestMessage &message) = 0;
+
 };
 
 class IMessagingReader
@@ -60,6 +87,9 @@ class IMessagingReader
 
     // only used for non-callback test
     virtual TestMessage *ReceiveMessage() = 0;
+
+    // Unblock a receive function. Needed whe a thread is blocked receiving data
+    virtual bool unblock() {return true;}
 
     // only used for non-callback test to cleanup
     // the thread
@@ -135,6 +165,11 @@ class IMessaging
      * to get data
      */
     virtual IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback) = 0;
+
+    /* Get information about witch features are supported by the medleware */
+    virtual bool supports_listener() = 0;
+    virtual bool supports_discovery() = 0;
+
 };
 
 

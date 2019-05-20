@@ -257,6 +257,7 @@ public class PerftestTransport {
             sb.append(getMulticastAddr(LATENCY_TOPIC_NAME.VALUE));
             sb.append("\n\t\tAnnouncement Address: ");
             sb.append(getMulticastAddr(ANNOUNCEMENT_TOPIC_NAME.VALUE));
+            sb.append("\n");
         }
 
         if (transportConfig.kind == Transport.TRANSPORT_TCPv4

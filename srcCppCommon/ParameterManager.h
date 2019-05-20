@@ -75,6 +75,7 @@ class ParameterManager
                         it->second.get<T>()))->get_value();
             } else {
                 return T(); // Return the default
+                // TODO throw exception
             }
         }
 
@@ -89,6 +90,7 @@ class ParameterManager
                         it->second.get_vector<T>()))->get_value();
             } else {
                 return std::vector<T>(); // Return the default
+                // TODO throw exception
             }
         }
 
@@ -103,6 +105,7 @@ class ParameterManager
                     it->second.get_pair<K,V>()))->get_value();
             } else {
                 return std::pair<K,V>(); // Return the default
+                // TODO throw exception
             }
         }
 

@@ -1271,7 +1271,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
         return false;
     }
     _parent = parent;
-    PerftestThreadPriorities threadPriorities = parent->get_thread_priorities();
+    ThreadPriorities threadPriorities = parent->get_thread_priorities();
 
     std::map<std::string, std::string> properties =
             qos.policy<Property>().get_all();

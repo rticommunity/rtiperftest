@@ -4,9 +4,9 @@
  */
 
 
-#include "perftestThreadPriorities.h"
+#include "ThreadPriorities.h"
 
-PerftestThreadPriorities::PerftestThreadPriorities()
+ThreadPriorities::ThreadPriorities()
         : main(0), receive(0), dbAndEvent(0), isSet(false)
 {
     #ifdef RTI_WIN32
@@ -21,7 +21,7 @@ PerftestThreadPriorities::PerftestThreadPriorities()
     #endif
 }
 
-bool PerftestThreadPriorities::set_priorities(
+bool ThreadPriorities::set_priorities(
         char mainThreadPrio,
         char receiveThreadPrio,
         char dBEventThread)
@@ -38,7 +38,7 @@ bool PerftestThreadPriorities::set_priorities(
     return false;
 }
 
-bool PerftestThreadPriorities::set_main_thread_priority()
+bool ThreadPriorities::set_main_thread_priority()
 {
     int priority = main;
 
@@ -89,7 +89,7 @@ bool PerftestThreadPriorities::set_main_thread_priority()
     return true;
 }
 
-bool PerftestThreadPriorities::check_priority_range(int value)
+bool ThreadPriorities::check_priority_range(int value)
 {
     bool success = true;
 #ifdef RTI_WIN32
@@ -121,7 +121,7 @@ bool PerftestThreadPriorities::check_priority_range(int value)
     return true;
 }
 
-bool PerftestThreadPriorities::parse_priority(std::string arg)
+bool ThreadPriorities::parse_priority(std::string arg)
 {
     char x, y, z;
 

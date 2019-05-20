@@ -244,12 +244,19 @@ public final class PerfTest {
         ProductVersion_t ddsV = getDDSVersion();
 
         StringBuffer perftestVString = new StringBuffer(128);
-        perftestVString.append((int)perftestV.major).append(".");
-        perftestVString.append((int)perftestV.minor).append(".");
-        perftestVString.append((int)perftestV.release);
 
-        if( perftestV.revision != 0 ) {
-            perftestVString.append(".").append((int) perftestV.revision);
+        if ((int)perftestV.major == 9
+                && (int)perftestV.minor == 9
+                && (int)perftestV.release == 9) {
+            perftestVString.append("Master");
+        } else {
+            perftestVString.append((int)perftestV.major).append(".");
+            perftestVString.append((int)perftestV.minor).append(".");
+            perftestVString.append((int)perftestV.release);
+
+            if( perftestV.revision != 0 ) {
+                perftestVString.append(".").append((int) perftestV.revision);
+            }
         }
 
         StringBuffer ddsVString = new StringBuffer(128);
@@ -841,8 +848,12 @@ public final class PerfTest {
             } else { // < 0 (Meaning, Disabled by RTI Perftest)
                 sb.append("\"Disabled by RTI Perftest.\"\n");
                 if (batchSize == -1) {
-                    sb.append("\t\t  BatchSize is smaller than 2 times\n");
-                    sb.append("\t\t  the minimum sample size.\n");
+                    if (_latencyTest) {
+                        sb.append("\t\t  BatchSize disabled for a Latency Test\n");
+                    } else {
+                        sb.append("\t\t  BatchSize is smaller than 2 times\n");
+                        sb.append("\t\t  the minimum sample size.\n");
+                    }
                 }
                 if (batchSize == -2) {
                     sb.append("\t\t  BatchSize cannot be used with\n");

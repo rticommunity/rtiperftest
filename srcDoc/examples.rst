@@ -187,6 +187,120 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 63000 -secureSign -secureEncryptData
 
 
+1-to-1, RawTransport, Unicast, BestEffort (Same Machine)
+--------------------------------------------------------
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -dataLen 63000 -executionTime 100
+
+-  Subscriber
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport
+
+
+1-to-2, RawTransport, Unicast, BestEffort (Same Machine)
+--------------------------------------------------------
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -peer 127.0.0.1 -peer 127.0.0.1:4 -numSubscribers 2 -dataLen 63000 -executionTime 100
+
+-  Subscriber 1
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -sidMultiSubTest 0
+
+-  Subscriber 2
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -sidMultiSubTest 4
+
+
+
+1-to-1, RawTransport, Unicast, BestEffort (Different Machine)
+-------------------------------------------------------------
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -peer 10.70.1.50 -nic 10.70.1.49  -dataLen 63000 -executionTime 100
+
+-  Subscriber
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -peer 10.70.1.49 -nic 10.70.1.50
+
+1-to-2, RawTransport, Multicast, BestEffort
+-------------------------------------------
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -multicastAddr 225.0.0.1 -nic 10.70.1.1 -numSubscribers 2 -dataLen 63000 -executionTime 100
+
+-  Subscriber 1
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -multicastAddr 225.0.0.1 -nic 10.70.2.1
+
+-  Subscriber 2
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -multicastAddr 225.0.0.1 -nic 10.70.2.2
+
+
+1-to-1, RawTransport, SharedMemory, Unicast, BestEffort
+--------------------------------------------------------
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -transport SHMEM -dataLen 63000 -executionTime 100
+
+-  Subscriber
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -rawTransport
+
+
+1-to-2, RawTransport, SharedMemory, Unicast, BestEffort
+--------------------------------------------------------
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -transport SHMEM -peer 127.0.0.1:0 -peer 127.0.0.1:4 -numSubscribers 2 -dataLen 63000 -executionTime 100
+
+-  Subscriber 1
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -transport SHMEM -sidMultiSubTest 0
+
+-  Subscriber 2
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -transport SHMEM -sidMultiSubTest 4
+
+
 .. _section-large_sample:
 
 Use-Cases

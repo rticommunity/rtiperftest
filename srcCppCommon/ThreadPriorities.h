@@ -19,7 +19,7 @@
 #include <string.h>
 #include <string>
 
-class PerftestThreadPriorities {
+class ThreadPriorities {
   public:
     int main;
     int receive;
@@ -28,7 +28,7 @@ class PerftestThreadPriorities {
 
     std::map<char, int> defaultPriorities;
 
-    PerftestThreadPriorities();
+    ThreadPriorities();
     bool set_priorities(char x, char y, char z);
     bool set_main_thread_priority();
     bool check_priority_range(int value);

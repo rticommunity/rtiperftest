@@ -32,7 +32,7 @@ RTI_UINT64 perftest_cpp::_Clock_usec = 0;
 const long timeout_wait_for_ack_sec = 0;
 const unsigned long timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {9, 9, 9, 9};
-PerftestThreadPriorities _threadPriorities;
+ThreadPriorities _threadPriorities;
 
 /*
  * PERFTEST-108
@@ -174,13 +174,19 @@ void perftest_cpp::PrintVersion()
     Perftest_ProductVersion_t perftestV = perftest_cpp::GetPerftestVersion();
     rti::core::ProductVersion ddsV = perftest_cpp::GetDDSVersion();
 
-    printf("RTI Perftest %d.%d.%d",
-            perftestV.major,
-            perftestV.minor,
-            perftestV.release);
+    if (perftestV.major == 9
+            && perftestV.minor == 9
+            && perftestV.release == 9) {
+        printf("RTI Perftest Master");
+    } else {
+        printf("RTI Perftest %d.%d.%d",
+                perftestV.major,
+                perftestV.minor,
+                perftestV.release);
 
-    if (perftestV.revision != 0) {
-        printf(".%d", perftestV.revision);
+        if (perftestV.revision != 0) {
+            printf(".%d", perftestV.revision);
+        }
     }
 
     printf(" (RTI Connext DDS %d.%d.%d)\n",
@@ -383,9 +389,6 @@ bool perftest_cpp::validate_input()
         }
     }
 
-    // TODO: Manage the parameter: -threadPriorities
-    // _PM.get<std::string>("threadPriorities");
-
     return true;
 }
 
@@ -394,8 +397,6 @@ bool perftest_cpp::validate_input()
  */
 void perftest_cpp::PrintConfiguration()
 {
-    // TODO: Print Perftest and Connext DDS versions
-
     std::ostringstream stringStream;
     // Throughput/Latency mode
     if (_PM.get<bool>("pub")) {
@@ -470,8 +471,12 @@ void perftest_cpp::PrintConfiguration()
         } else { // < 0
             stringStream << "Disabled by RTI Perftest.\n";
             if (_PM.get<long>("batchSize") == -1) {
-                stringStream << "\t\t  BatchSize is smaller than 2 times\n"
-                             << "\t\t  the sample size.\n";
+                if (_PM.get<bool>("latencyTest")) {
+                    stringStream << "\t\t  BatchSize disabled for a Latency Test\n";
+                } else {
+                    stringStream << "\t\t  BatchSize is smaller than 2 times\n"
+                                 << "\t\t  the sample size.\n";
+                }
             } else if (_PM.get<long>("batchSize") == -2) {
                 stringStream << "\t\t  BatchSize cannot be used with\n"
                              << "\t\t  Large Data.\n";
@@ -1830,7 +1835,7 @@ inline unsigned int perftest_cpp::GetSamplesPerBatch() {
     }
 }
 
-const PerftestThreadPriorities perftest_cpp::get_thread_priorities()
+const ThreadPriorities perftest_cpp::get_thread_priorities()
 {
     return _threadPriorities;
 }
