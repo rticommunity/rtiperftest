@@ -68,20 +68,31 @@ int main(int argc, char *argv[])
 }
 
 #if defined(RTI_VXWORKS)
-int publisher_main()
+int perftest_cpp_main(char *args)
 {
-    const char *argv[] = {"perftest_cpp", "-pub"};
-    int argc = sizeof(argv)/sizeof(const char*);
+    std::vector<char *> arguments;   
+    char *next = NULL;
+    char **argv = NULL;
+    int argc = 0;
 
-    return main(argc, (char **) argv);
-}
+    // Run() expects also the executable name argv[0]
+    arguments.push_back((char *) "perftest_cpp");
 
-int subscriber_main()
-{
-    const char *argv[] = {"perftest_cpp", "-sub"};
-    int argc = sizeof(argv)/sizeof(const char*);
+    // split args by " " and add each one to dynamic array
+    next = strtok(args, " ");
+    while (next != NULL) {
+        arguments.push_back(next);
+        next = strtok(NULL, " ");
+    } 
 
-    return main(argc, (char **) argv);
+    // Copy dynamic array to the original
+    argc = arguments.size();
+    argv = new char*[argc];
+
+    std::copy(arguments.begin(), arguments.end(), argv);
+
+    // Call original main function with the splitted arguments
+    return main(argc, argv);
 }
 #endif
 
