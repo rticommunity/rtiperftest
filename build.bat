@@ -16,6 +16,7 @@ set "qos_file=%script_location%perftest_qos_profiles.xml"
 
 @REM # By default we will build pro, not micro
 set BUILD_MICRO=0
+set CMAKE_GENERATOR="NMake Makefiles"
 
 @REM # In case we build micro, which version.
 set BUILD_MICRO_24x_COMPATIBILITY=0
@@ -149,7 +150,7 @@ if NOT "%1"=="" (
 				SET "CMAKE_EXE=%2"
 				SHIFT
 		) ELSE if "%1"=="--cmake-generator" (
-				SET "cmake_generator=%2"
+				SET "CMAKE_GENERATOR=%2"
 				SHIFT
 		) ELSE if "%1"=="--customType" (
 				SET USE_CUSTOM_TYPE=1
@@ -576,12 +577,12 @@ if !BUILD_MICRO! == 1 (
 	echo[
 	echo [INFO]: Compiling %classic_cpp_lang_string%
 
-	if not x!cmake_generator! == x (
-		set "cmake_generator_command=-G %cmake_generator%"
+	if x!CMAKE_GENERATOR! == x"NMake Makefiles" (
+		echo[
+		echo [INFO]: Using NMake for the CMake generator, use --cmake-generator to specify other.
 	)
-
 	cd "%classic_cpp_folder%"
-	call !CMAKE_EXE! -DCMAKE_BUILD_TYPE=!RELEASE_DEBUG! --target perftest_publisher !cmake_generator_command! -B./perftest_build -H. -DRTIME_TARGET_NAME=%architecture% -DPLATFORM_LIBS="netapi32.lib;advapi32.lib;user32.lib;winmm.lib;WS2_32.lib;"
+	call !CMAKE_EXE! -DCMAKE_BUILD_TYPE=!RELEASE_DEBUG! --target perftest_publisher -G !CMAKE_GENERATOR! -B./perftest_build -H. -DRTIME_TARGET_NAME=%architecture% -DPLATFORM_LIBS="netapi32.lib;advapi32.lib;user32.lib;winmm.lib;WS2_32.lib;"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %classic_cpp_lang_string%.
 		cd ..
@@ -596,9 +597,15 @@ if !BUILD_MICRO! == 1 (
 	)
 	cd ..
 
+	echo[
 	echo [INFO]: Copying perftest_cpp executable file:
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
-	copy /Y "%classic_cpp_folder%"\objs\%architecture%\!RELEASE_DEBUG!\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp_micro.exe
+
+	if x!CMAKE_GENERATOR! == x"NMake Makefiles" (
+		copy /Y "%classic_cpp_folder%"\objs\%architecture%\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp_micro.exe
+	) else (
+		copy /Y "%classic_cpp_folder%"\objs\%architecture%\!RELEASE_DEBUG!\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp_micro.exe
+	)
 )
 
 
