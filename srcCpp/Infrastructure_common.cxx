@@ -25,7 +25,9 @@ void *PerftestTimer::waitAndExecuteHandler(void *timer)
     PerftestTimer::timeoutTask(0);
 
     // Free up space from the allocation of the uint
-    delete t;
+    if (t != NULL) {
+        delete t;
+    }
 }
 
 PerftestTimer::PerftestTimer()
