@@ -5,8 +5,6 @@
 
 #include "Infrastructure_common.h"
 
-#include <chrono>
-
 /* Perftest Timmer class */
 #ifdef RTI_WIN32
 LARGE_INTEGER PerftestTimer::_ClockFrequency = {0, 0};
