@@ -1388,6 +1388,7 @@ int perftest_cpp::Publisher()
     IMessagingReader *announcement_reader;
     IMessagingReader *reader;
     struct PerftestThread *latencyReadThread = NULL;
+    struct PerftestThread *executionTimeoutThread = NULL;
     unsigned long num_latency;
     unsigned long announcementSampleCount = 50;
     unsigned int samplesPerBatch = GetSamplesPerBatch();
@@ -1633,6 +1634,8 @@ int perftest_cpp::Publisher()
     unsigned long long time_now = 0, time_last_check = 0, time_delta = 0;
     unsigned long pubRate_sample_period = 1;
     unsigned long rate = 0;
+    unsigned int executionTime = 
+            (unsigned int)_PM.get<unsigned long long>("executionTime");
 
     time_last_check = PerftestClock::getInstance().getTimeUsec();
 
@@ -1648,8 +1651,8 @@ int perftest_cpp::Publisher()
 
     if (_PM.get<unsigned long long>("executionTime") > 0
             && !_PM.is_set("scan")) {
-        PerftestTimer::getInstance().setTimeout(
-                (unsigned int)_PM.get<unsigned long long>("executionTime"),
+        executionTimeoutThread = PerftestTimer::getInstance().setTimeout(
+                executionTime,
                 Timeout);
     }
     /*
@@ -1684,6 +1687,7 @@ int perftest_cpp::Publisher()
     const std::vector<unsigned long long> scanList =
             _PM.get_vector<unsigned long long>("scan");
     const bool isSetPubRate = _PM.is_set("pubRate");
+    
     /********************
      *  Main sending loop
      */
@@ -1755,8 +1759,8 @@ int perftest_cpp::Publisher()
                 // after executionTime
                 if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    PerftestTimer::getInstance().setTimeout(
-                        (unsigned int)_PM.get<unsigned long long>("executionTime"),
+                    executionTimeoutThread = PerftestTimer::getInstance().setTimeout(
+                        executionTime,
                         Timeout_scan);
 
                     // flush anything that was previously sent
@@ -1907,6 +1911,11 @@ int perftest_cpp::Publisher()
     delete []message.data;
 
     if (_testCompleted) {
+        // Delete timeout thread
+        if (executionTimeoutThread != NULL) {
+            PerftestThread_delete(executionTimeoutThread);
+        }
+
         fprintf(stderr,"Finishing test due to timer...\n");
     } else {
         fprintf(stderr,"Finishing test...\n");

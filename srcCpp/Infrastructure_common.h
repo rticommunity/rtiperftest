@@ -31,21 +31,16 @@
 /* Perftest Timer Class */
 class PerftestTimer
 {
-
   private:
-  #ifdef RTI_WIN32
-    static HANDLE _hTimerQueue;
-    static HANDLE _hTimer;
-    static LARGE_INTEGER _ClockFrequency;
-  #endif
     static void (*_handlerFunction)(void);
-    static void *waitAndExecuteHandler(void *timer);
+    static void *waitAndExecuteHandler(void *timerSeconds);
 
   public:
     PerftestTimer();
     ~PerftestTimer();
     static PerftestTimer &getInstance();
-    void setTimeout(unsigned int executionTimeInSeconds, void (*function)(void));
+    PerftestThread *setTimeout(unsigned int &executionTimeInSeconds, 
+            void (*function)(void));
   #ifdef RTI_WIN32
     static VOID CALLBACK timeoutTask(PVOID lpParam, BOOLEAN timerOrWaitFired);
   #else

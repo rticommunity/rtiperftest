@@ -14,20 +14,15 @@ HANDLE PerftestTimer::_hTimer = NULL;
 #endif
 void (*PerftestTimer::_handlerFunction)(void) = NULL;
 
-void *PerftestTimer::waitAndExecuteHandler(void *timer) 
+void *PerftestTimer::waitAndExecuteHandler(void *timerSeconds) 
 {
-    unsigned int *t = static_cast<unsigned int *>(timer);
+    const unsigned int *t = static_cast<const unsigned int *>(timerSeconds);
 
     // Sleep for t milliseconds
-    PerftestClock::milliSleep(*t);
+    PerftestClock::milliSleep((*t) * 1000u);
 
     // Call the scheduled function with the args
     PerftestTimer::timeoutTask(0);
-
-    // Free up space from the allocation of the uint
-    if (t != NULL) {
-        delete t;
-    }
 }
 
 PerftestTimer::PerftestTimer()
@@ -48,6 +43,7 @@ PerftestTimer::~PerftestTimer()
         DeleteTimerQueue(_hTimerQueue);
     }
   #endif
+
 }
 
 PerftestTimer &PerftestTimer::getInstance()
@@ -56,24 +52,14 @@ PerftestTimer &PerftestTimer::getInstance()
     return instance;
 }
 
-void PerftestTimer::setTimeout(
-        unsigned int executionTimeInSeconds,
+PerftestThread* PerftestTimer::setTimeout(
+        unsigned int &executionTimeInSeconds,
         void (*function)(void))
 {
     struct PerftestThread *timerThread = NULL;
 
     _handlerFunction = function;
 
-  #ifdef RTI_WIN32
-    CreateTimerQueueTimer(
-            &_hTimer,
-            _hTimerQueue,
-            (WAITORTIMERCALLBACK)PerftestTimer::timeoutTask,
-            NULL,
-            executionTimeInSeconds * 1000,
-            0,
-            0);
-  #else
     // We have to create a new pointer to the timer so 
     // it is not removed when this function ends
     timerThread = PerftestThread_new(
@@ -81,11 +67,12 @@ void PerftestTimer::setTimeout(
             Perftest_THREAD_PRIORITY_DEFAULT,
             Perftest_THREAD_OPTION_DEFAULT,
             waitAndExecuteHandler,
-            new uint(executionTimeInSeconds * 1000u));
+            &executionTimeInSeconds);
     if (timerThread == NULL) {
         fprintf(stderr, "Problem creating timer thread.\n");
     }
-  #endif
+
+    return timerThread;
 }
 
 #ifdef RTI_WIN32
