@@ -186,6 +186,10 @@ perftest_cpp::perftest_cpp()
  */
 bool perftest_cpp::validate_input()
 {
+    // Manage parameter -batchSize for micro
+  #ifdef RTI_MICRO
+    _PM.set("batchSize", 0);
+  #endif
 
     // Manage parameter -sleep
     // It is copied because it is used in the critical path
