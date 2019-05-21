@@ -1,6 +1,23 @@
 {
     "configurations": [
         {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/srcCpp/",
+                "${workspaceFolder}/srcCppCommon/",
+                "${NDDSHOME}/include",
+                "${NDDSHOME}/include/ndds"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "intelliSenseMode": "${default}",
+            "cStandard": "c11",
+            "cppStandard": "c++11"
+        },
+        {
             "name": "Pro (Win32)",
             "includePath": [
                 "${workspaceFolder}/srcCpp",
