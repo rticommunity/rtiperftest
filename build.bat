@@ -589,7 +589,7 @@ if !BUILD_MICRO! == 1 (
 		exit /b 1
 	)
 
-	call !CMAKE_EXE! --build ./perftest_build --config !RELEASE_DEBUG!
+	call !CMAKE_EXE! --build ./perftest_build --config !RELEASE_DEBUG! --target perftest_publisher
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %classic_cpp_lang_string%.
 		cd ..
