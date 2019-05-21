@@ -5,6 +5,8 @@
 
 #include "Infrastructure_common.h"
 
+#include <chrono>
+
 /* Perftest Timmer class */
 #ifdef RTI_WIN32
 LARGE_INTEGER PerftestTimer::_ClockFrequency = {0, 0};
@@ -13,6 +15,20 @@ HANDLE PerftestTimer::_hTimerQueue = NULL;
 HANDLE PerftestTimer::_hTimer = NULL;
 #endif
 void (*PerftestTimer::_handlerFunction)(void) = NULL;
+
+void *PerftestTimer::waitAndExecuteHandler(void *timer) 
+{
+    unsigned int *t = static_cast<unsigned int *>(timer);
+
+    // Sleep for t milliseconds
+    PerftestClock::milliSleep(*t);
+
+    // Call the scheduled function with the args
+    PerftestTimer::timeoutTask(0);
+
+    // Free up space from the allocation of the uint
+    delete t;
+}
 
 PerftestTimer::PerftestTimer()
 {
@@ -44,6 +60,7 @@ void PerftestTimer::setTimeout(
         unsigned int executionTimeInSeconds,
         void (*function)(void))
 {
+    struct PerftestThread *timerThread = NULL;
 
     _handlerFunction = function;
 
@@ -57,8 +74,17 @@ void PerftestTimer::setTimeout(
             0,
             0);
   #else
-    signal(SIGALRM, PerftestTimer::timeoutTask);
-    alarm(executionTimeInSeconds);
+    // We have to create a new pointer to the timer so 
+    // it is not removed when this function ends
+    timerThread = PerftestThread_new(
+            "timerThread", 
+            Perftest_THREAD_PRIORITY_DEFAULT,
+            Perftest_THREAD_OPTION_DEFAULT,
+            waitAndExecuteHandler,
+            new uint(executionTimeInSeconds * 1000u));
+    if (timerThread == NULL) {
+        fprintf(stderr, "Problem creating timer thread.\n");
+    }
   #endif
 }
 

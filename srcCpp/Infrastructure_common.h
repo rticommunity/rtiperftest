@@ -39,6 +39,7 @@ class PerftestTimer
     static LARGE_INTEGER _ClockFrequency;
   #endif
     static void (*_handlerFunction)(void);
+    static void *waitAndExecuteHandler(void *timer);
 
   public:
     PerftestTimer();
