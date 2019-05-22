@@ -10,7 +10,6 @@
 void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo) 
 {
     ScheduleInfo *info = static_cast<ScheduleInfo *>(scheduleInfo);
-    const double timerThreshold = 1;
     double elapsedTime, targetTime;
     struct timeval t_orig, t_now;
 
@@ -26,9 +25,6 @@ void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo)
       do {
           PerftestClock::milliSleep(info->timer * 1000u);
           gettimeofday(&t_now, NULL);
-
-          printf("\t[#######] Dormido %d s\n", t_now.tv_sec - t_orig.tv_sec);
-          printf("\t[#######] Restante %f s\n", targetTime - t_now.tv_sec);
       } while (t_now.tv_sec < targetTime);
     #else
       PerftestClock::milliSleep(info->timer * 1000u);
