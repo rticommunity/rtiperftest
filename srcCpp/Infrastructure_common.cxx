@@ -10,15 +10,6 @@
 void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo) 
 {
     ScheduleInfo *info = static_cast<ScheduleInfo *>(scheduleInfo);
-    double elapsedTime, targetTime;
-    struct timeval t_orig, t_now;
-
-    gettimeofday(&t_orig, NULL);
-    targetTime = t_orig.tv_sec + info->timer;
-
-    printf("[++++++++++] Voy a dormir %u s\n", info->timer);   
-    printf("[#####] Now %d s\n", t_orig.tv_sec);
-    printf("[#####] Target %f s\n", targetTime);
 
     // Sleep until timer is reached
     #ifdef RTI_VXWORKS
@@ -30,10 +21,6 @@ void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo)
     #else
       PerftestClock::milliSleep(info->timer * 1000u);
     #endif
-
-    gettimeofday(&t_now, NULL);
-    elapsedTime = (t_now.tv_sec - t_orig.tv_sec);
-    printf("[----------] Ya he dormido %f s\n", elapsedTime);
 
     // Call the scheduled function with the args
     info->handlerFunction();
