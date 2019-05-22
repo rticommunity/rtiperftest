@@ -16,6 +16,7 @@
 
 #ifdef RTI_VXWORKS
   #include <unistd.h>
+//   #include <sys/time.h>
 #endif
 
 /* Disable certain warnings for Windows */

@@ -22,10 +22,11 @@ void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo)
 
     // Sleep until timer is reached
     #ifdef RTI_VXWORKS
-      do {
-          PerftestClock::milliSleep(info->timer * 1000u);
-          gettimeofday(&t_now, NULL);
-      } while (t_now.tv_sec < targetTime);
+      struct timespec sleepTime;
+      sleepTime.tv_sec = info->timer;
+      sleepTime.tv_nsec = 0;
+
+      nanosleep(&nsTime, NULL);
     #else
       PerftestClock::milliSleep(info->timer * 1000u);
     #endif
