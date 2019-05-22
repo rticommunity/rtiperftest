@@ -26,7 +26,7 @@ void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo)
       sleepTime.tv_sec = info->timer;
       sleepTime.tv_nsec = 0;
 
-      nanosleep(&nsTime, NULL);
+      nanosleep(&sleepTime, NULL);
     #else
       PerftestClock::milliSleep(info->timer * 1000u);
     #endif
