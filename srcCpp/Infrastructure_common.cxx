@@ -18,7 +18,7 @@ void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo)
     targetTime = t_orig.tv_sec + info->timer;
 
     printf("[++++++++++] Voy a dormir %u s\n", info->timer);   
-    printf("[#####] Now %f s\n", t_orig.tv_sec);
+    printf("[#####] Now %d s\n", t_orig.tv_sec);
     printf("[#####] Target %f s\n", targetTime);
 
     // Sleep until timer is reached
@@ -27,7 +27,7 @@ void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo)
           PerftestClock::milliSleep(info->timer * 1000u);
           gettimeofday(&t_now, NULL);
 
-          printf("\t[#######] Dormido %f s\n", t_now.tv_sec - t_orig.tv_sec);
+          printf("\t[#######] Dormido %d s\n", t_now.tv_sec - t_orig.tv_sec);
           printf("\t[#######] Restante %f s\n", targetTime - t_now.tv_sec);
       } while (t_now.tv_sec < targetTime);
     #else
