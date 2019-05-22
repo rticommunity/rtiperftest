@@ -22,6 +22,8 @@ void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo)
 
     // Call the scheduled function with the args
     info->handlerFunction();
+
+    return NULL;
 }
 
 PerftestTimer &PerftestTimer::getInstance()
