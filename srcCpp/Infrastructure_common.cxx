@@ -5,8 +5,6 @@
 
 #include "Infrastructure_common.h"
 
-#include <sys/time.h>
-
 void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo) 
 {
     ScheduleInfo *info = static_cast<ScheduleInfo *>(scheduleInfo);
