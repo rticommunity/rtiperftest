@@ -1633,9 +1633,12 @@ int perftest_cpp::Publisher()
 
     unsigned long long time_now = 0, time_last_check = 0, time_delta = 0;
     unsigned long pubRate_sample_period = 1;
-    unsigned long rate = 0;
-    unsigned int executionTime = 
-            (unsigned int)_PM.get<unsigned long long>("executionTime");
+    unsigned long rate = 0;          
+
+    struct PerftestTimer::ScheduleInfo schedInfo = {
+            (unsigned int)_PM.get<unsigned long long>("executionTime"),
+            Timeout
+    };
 
     time_last_check = PerftestClock::getInstance().getTimeUsec();
 
@@ -1651,10 +1654,10 @@ int perftest_cpp::Publisher()
 
     if (_PM.get<unsigned long long>("executionTime") > 0
             && !_PM.is_set("scan")) {
-        executionTimeoutThread = PerftestTimer::getInstance().setTimeout(
-                executionTime,
-                Timeout);
+        executionTimeoutThread = 
+            PerftestTimer::getInstance().setTimeout(schedInfo);
     }
+
     /*
      * Copy variable to no query the ParameterManager in every iteration.
      * They should not be modified:
@@ -1687,6 +1690,11 @@ int perftest_cpp::Publisher()
     const std::vector<unsigned long long> scanList =
             _PM.get_vector<unsigned long long>("scan");
     const bool isSetPubRate = _PM.is_set("pubRate");
+
+    struct PerftestTimer::ScheduleInfo schedInfo_scan = {
+            (unsigned int)_PM.get<unsigned long long>("executionTime"),
+            Timeout_scan
+    };
     
     /********************
      *  Main sending loop
@@ -1759,9 +1767,8 @@ int perftest_cpp::Publisher()
                 // after executionTime
                 if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    executionTimeoutThread = PerftestTimer::getInstance().setTimeout(
-                        executionTime,
-                        Timeout_scan);
+                    executionTimeoutThread = 
+                            PerftestTimer::getInstance().setTimeout(schedInfo_scan);
 
                     // flush anything that was previously sent
                     writer->Flush();

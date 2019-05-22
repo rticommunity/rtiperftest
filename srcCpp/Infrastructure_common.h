@@ -20,32 +20,20 @@
   #pragma warning(disable : 4996)
 #endif
 
-#ifndef RTI_WIN32
-  #include <sys/time.h>
-  #include <unistd.h>
-  #include <sched.h>
-  #include <fcntl.h>
-  #include <signal.h>
-#endif
-
 /* Perftest Timer Class */
 class PerftestTimer
 {
   private:
-    static void (*_handlerFunction)(void);
     static void *waitAndExecuteHandler(void *timerSeconds);
 
   public:
-    PerftestTimer();
-    ~PerftestTimer();
+    struct ScheduleInfo {
+        unsigned int timer;
+        void (*handlerFunction)(void);
+    };
+
     static PerftestTimer &getInstance();
-    PerftestThread *setTimeout(unsigned int &executionTimeInSeconds, 
-            void (*function)(void));
-  #ifdef RTI_WIN32
-    static VOID CALLBACK timeoutTask(PVOID lpParam, BOOLEAN timerOrWaitFired);
-  #else
-    static void timeoutTask(int sign);
-  #endif
+    PerftestThread *setTimeout(ScheduleInfo &info);
 };
 
 #endif /* INFRASTRUCTURE_COMMON_H_ */
