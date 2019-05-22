@@ -11,31 +11,31 @@ void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo)
 {
     ScheduleInfo *info = static_cast<ScheduleInfo *>(scheduleInfo);
     const double timerThreshold = 1;
-    struct timeval t1, t2;
-    double elapsedTime;
+    double elapsedTime, targetTime;
+    struct timeval t_orig, t_now;
 
-
-    printf("[++++++++++] Voy a dormir %u s\n", info->timer);
-    struct timeval t_orig;
     gettimeofday(&t_orig, NULL);
+    targetTime = t_orig.tv_sec + info->timer;
+
+    printf("[++++++++++] Voy a dormir %u s\n", info->timer);   
+    printf("[#####] Now %f s\n", t_orig.tv_sec);
+    printf("[#####] Target %f s\n", targetTime);
 
     // Sleep until timer is reached
     #ifdef RTI_VXWORKS
       do {
-          gettimeofday(&t1, NULL);
           PerftestClock::milliSleep(info->timer * 1000u);
-          gettimeofday(&t2, NULL);
-          elapsedTime = (t2.tv_sec - t1.tv_sec);
+          gettimeofday(&t_now, NULL);
 
-          printf("\t[#######] Dormido %f s\n", elapsedTime);
-          printf("\t[#######] Restante %f s\n", info->timer - elapsedTime);
-      } while (info->timer - elapsedTime > timerThreshold);
+          printf("\t[#######] Dormido %f s\n", t_now.tv_sec - t_orig.tv_sec);
+          printf("\t[#######] Restante %f s\n", targetTime - t_now.tv_sec);
+      } while (t_now.tv_sec < targetTime);
     #else
       PerftestClock::milliSleep(info->timer * 1000u);
     #endif
 
-    gettimeofday(&t2, NULL);
-    elapsedTime = (t2.tv_sec - t_orig.tv_sec);
+    gettimeofday(&t_now, NULL);
+    elapsedTime = (t_now.tv_sec - t_orig.tv_sec);
     printf("[----------] Ya he dormido %f s\n", elapsedTime);
 
     // Call the scheduled function with the args
