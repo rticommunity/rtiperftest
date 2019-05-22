@@ -5,22 +5,23 @@
 
 #include "Infrastructure_common.h"
 
-#include <chrono>
+#include <sys/time.h>
 
 void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo) 
 {
     ScheduleInfo *info = static_cast<ScheduleInfo *>(scheduleInfo);
 
-    using namespace std::chrono;
+    struct timeval t1, t2;
+    double elapsedTime;
     printf("[++++++++++] Voy a dormir %u ms\n", info->timer);
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    gettimeofday(&t1, NULL);
 
     // Sleep for t milliseconds
     PerftestClock::milliSleep(info->timer * 1000u);
 
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-    printf("[----------] Ya he dormido %f s\n", time_span.count());
+    gettimeofday(&t2, NULL);
+    elapsedTime = (t2.tv_sec - t1.tv_sec);
+    printf("[----------] Ya he dormido %f s\n", elapsedTime);
 
     // Call the scheduled function with the args
     info->handlerFunction();
