@@ -13,11 +13,15 @@ void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo)
 
     struct timeval t1, t2;
     double elapsedTime;
-    printf("[++++++++++] Voy a dormir %u ms\n", info->timer);
+    printf("[++++++++++] Voy a dormir %u s\n", info->timer);
     gettimeofday(&t1, NULL);
 
     // Sleep for t milliseconds
-    PerftestClock::milliSleep(info->timer * 1000u);
+    #ifdef RTI_VXWORKS
+      sleep(info->timer);
+    #else
+      PerftestClock::milliSleep(info->timer * 1000u);
+    #endif
 
     gettimeofday(&t2, NULL);
     elapsedTime = (t2.tv_sec - t1.tv_sec);

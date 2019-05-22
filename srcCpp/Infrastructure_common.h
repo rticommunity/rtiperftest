@@ -14,6 +14,10 @@
   #include "Infrastructure_pro.h"
 #endif
 
+#ifdef RTI_VXWORKS
+  #include <unistd.h>
+#endif
+
 /* Disable certain warnings for Windows */
 #if defined(RTI_WIN32)
   #pragma warning(push)
