@@ -10,15 +10,22 @@
 void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo) 
 {
     ScheduleInfo *info = static_cast<ScheduleInfo *>(scheduleInfo);
-
+    const double timerThreshold = 1;
     struct timeval t1, t2;
     double elapsedTime;
+
+
     printf("[++++++++++] Voy a dormir %u s\n", info->timer);
     gettimeofday(&t1, NULL);
 
-    // Sleep for t milliseconds
+    // Sleep until timer is reached
     #ifdef RTI_VXWORKS
-      sleep(info->timer);
+      do {
+          gettimeofday(&t1, NULL);
+          PerftestClock::milliSleep(info->timer * 1000u);
+          gettimeofday(&t2, NULL);
+          elapsedTime = (t2.tv_sec - t1.tv_sec);
+      } while (info->timer - elapsedTime > timerThreshold);
     #else
       PerftestClock::milliSleep(info->timer * 1000u);
     #endif
