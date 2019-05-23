@@ -67,9 +67,9 @@ class perftest_cpp
     static void Timeout_scan();
 
   public:
-    static int  subID;
-    static bool printIntervals;
-    static bool showCpu;
+    int  subID;
+    bool printIntervals;
+    bool showCpu;
 
     // Number of bytes sent in messages besides user data
   #ifdef RTI_CUSTOM_TYPE
