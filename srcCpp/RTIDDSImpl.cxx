@@ -72,8 +72,16 @@ void RTIDDSImpl<T>::Shutdown()
         }
 
         _participant->delete_contained_entities();
-        DDSTheParticipantFactory->delete_participant(_participant);
+
+        // If there is at least one participant in the domain,
+        // lookup_participan() wont retun NULL.
+        // We need our domain to not to be empty of participants 
+        // in order to delete it.
+        if (DDSTheParticipantFactory->lookup_participant(_participant->get_domain_id()) != NULL) {
+            DDSTheParticipantFactory->delete_participant(_participant);
+        }
     }
+    
     if(_pongSemaphore != NULL) {
         PerftestSemaphore_delete(_pongSemaphore);
         _pongSemaphore = NULL;
