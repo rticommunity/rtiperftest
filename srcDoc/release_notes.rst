@@ -226,6 +226,16 @@ This behavior has been simplified: In order to run in `VxWorks` the
 `perftest_cpp_main` function can be called, receiving a simple string
 containing all the command line parameters.
 
+Stop using alarm function to schedule functions since it is deprecated
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+When using `-executionTime <seconds>` parameter, internally, *Perftest* was scheduling a
+function call by using it as a handler when an ALARM signal was received. 
+This ALARM signal was set to be signaled in the amount of seconds specified by the *executionTime*
+parameter using the `alarm()` function available in Unix-like systems, 
+which is deprecated or even already missing in some of RTI's supported platforms.
+
+Now this issue has been fixed by using a thread that sleeps for the amount of seconds specified and then it calls the desired function.
+
 Release Notes 2.4
 -----------------
 
