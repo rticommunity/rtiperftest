@@ -77,6 +77,8 @@ int perftest_cpp::Run(int argc, char *argv[])
 {
     PrintVersion();
 
+    printf("[#####] PM addr: %p\n", &_PM);
+
     try {
         _PM.initialize();
     } catch(std::exception &ex) {
@@ -661,6 +663,8 @@ class ThroughputListener : public IMessagingCB
             }
 
             begin_time = PerftestClock::getInstance().getTimeUsec();
+
+            printf("[#####] printIntervals addr: %p\n", &printIntervals);
 
             if (printIntervals) {
                 printf("\n\n********** New data length is %d\n",
