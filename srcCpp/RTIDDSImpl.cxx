@@ -73,13 +73,7 @@ void RTIDDSImpl<T>::Shutdown()
 
         _participant->delete_contained_entities();
 
-        // If there is at least one participant in the domain,
-        // lookup_participan() wont retun NULL.
-        // We need our domain to not to be empty of participants 
-        // in order to delete it.
-        if (DDSTheParticipantFactory->lookup_participant(_participant->get_domain_id()) != NULL) {
-            DDSTheParticipantFactory->delete_participant(_participant);
-        }
+        DDSTheParticipantFactory->delete_participant(_participant);
     }
     
     if(_pongSemaphore != NULL) {
@@ -115,7 +109,14 @@ void RTIDDSImpl<T>::Shutdown()
     }
   #endif
 
-    DDSDomainParticipantFactory::finalize_instance();
+    DDSDomainParticipantSeq participants;
+    DDSTheParticipantFactory->get_participants(participants);
+
+    if (participants.length() == 0) {
+        DDSDomainParticipantFactory::finalize_instance();
+    } else {
+        printf("Warning! Cannot delete Domain Factory since it is being in use");
+    }
 }
 
 /*********************************************************
