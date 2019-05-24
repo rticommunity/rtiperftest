@@ -77,11 +77,16 @@ void RTIDDSImpl<T>::Shutdown()
         // lookup_participan() wont retun NULL.
         // We need our domain to not to be empty of participants 
         // in order to delete it.
+        printf("[######] Debug\n");
+        printf("\t[######] Participant domain: %d\n", _participant->get_domain_id());
+        printf("\t[######] Lookup result null?: %d\n", DDSTheParticipantFactory->lookup_participant(_participant->get_domain_id()) != NULL);
         if (DDSTheParticipantFactory->lookup_participant(_participant->get_domain_id()) != NULL) {
+            printf("\t\t[######] Hola\n");
             DDSTheParticipantFactory->delete_participant(_participant);
+            printf("\t\t[######] Adios\n");
         }
     }
-    
+
     if(_pongSemaphore != NULL) {
         PerftestSemaphore_delete(_pongSemaphore);
         _pongSemaphore = NULL;
