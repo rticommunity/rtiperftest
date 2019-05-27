@@ -136,7 +136,7 @@ void RTIDDSImpl<T>::Shutdown()
         _finalizeFactorySemaphore = NULL;
         return;
     } else {
-        printf("[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)");
+        printf("[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)\n");
     }
 
     if (!PerftestSemaphore_give(_finalizeFactorySemaphore)) {
