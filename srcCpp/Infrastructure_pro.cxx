@@ -15,7 +15,7 @@
         s << n;
         return s.str();
     }
-  }  
+  }
 #endif
 
 /* Perftest Clock class */
@@ -58,7 +58,7 @@ void PerftestClock::milliSleep(unsigned int millisec)
   #if defined(RTI_WIN32)
     Sleep(millisec);
   #elif defined(RTI_VXWORKS)
-    DDS_Duration_t sleep_period = {0, millisec * 1000000};
+    DDS_Duration_t sleep_period = DDS_Duration_t::from_millis(millisec);
     NDDSUtility::sleep(sleep_period);
   #else
     usleep(millisec * 1000);
@@ -855,4 +855,3 @@ bool PerftestConfigureSecurity(
 
 /********************************************************************/
 /* Security Related Functions */
-
