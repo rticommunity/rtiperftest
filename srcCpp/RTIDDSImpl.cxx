@@ -2601,9 +2601,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     DDSDataReader *reader = NULL;
     DDS_DataReaderQos dr_qos;
     std::string qos_profile;
-  #ifndef RTI_MICRO
     DDSTopicDescription* topic_desc = NULL; // Used to create the DDS DataReader
-  #endif
 
     DDSTopic *topic = _participant->create_topic(
                        topic_name, _typename,
@@ -2614,9 +2612,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         fprintf(stderr,"Problem creating topic %s.\n", topic_name);
         return NULL;
     }
-  #ifndef RTI_MICRO
     topic_desc = topic;
-  #endif
 
     qos_profile = get_qos_profile_name(topic_name);
     if (qos_profile.empty()) {
@@ -2801,11 +2797,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     if (callback != NULL) {
         if (!_PM->get<bool>("dynamicData")) {
             reader = _subscriber->create_datareader(
-                  #ifndef RTI_MICRO
                     topic_desc,
-                  #else
-                    topic,
-                  #endif
                     dr_qos,
                     new ReceiverListener<T>(callback),
                     DDS_DATA_AVAILABLE_STATUS);
@@ -2824,11 +2816,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
     } else {
         reader = _subscriber->create_datareader(
-              #ifndef RTI_MICRO
                 topic_desc,
-              #else
-                topic,
-              #endif
                 dr_qos,
                 NULL,
                 DDS_STATUS_MASK_NONE);
