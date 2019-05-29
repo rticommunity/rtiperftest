@@ -34,10 +34,6 @@ PerftestSecurity::PerftestSecurity()
 {
 }
 
-PerftestSecurity::~PerftestSecurity()
-{
-}
-
 void PerftestSecurity::initialize(ParameterManager *PM)
 {
     _PM = PM;
