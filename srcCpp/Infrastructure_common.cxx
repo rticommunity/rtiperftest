@@ -5,8 +5,6 @@
 
 #include "Infrastructure_common.h"
 
-#include <sys/time.h>
-
 void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo)
 {
     ScheduleInfo *info = static_cast<ScheduleInfo *>(scheduleInfo);
@@ -14,6 +12,8 @@ void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo)
     PerftestClock::milliSleep(info->timer * 1000u);
 
     info->handlerFunction();
+
+    return NULL;
 }
 
 PerftestTimer &PerftestTimer::getInstance()
