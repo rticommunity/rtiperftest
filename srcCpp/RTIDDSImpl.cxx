@@ -576,7 +576,7 @@ class RTIPublisher : public IMessagingWriter
             if (status.current_count >= numSubscribers) {
                 break;
             }
-            PerftestClock::milliSleep(1000);
+            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         }
     }
 
@@ -959,7 +959,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             if (status.current_count >= numSubscribers) {
                 break;
             }
-            PerftestClock::milliSleep(1000);
+            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         }
     }
 
@@ -1442,7 +1442,7 @@ class RTISubscriber : public IMessagingReader
             if (status.current_count >= numPublishers) {
                 break;
             }
-            PerftestClock::milliSleep(1000);
+            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         }
     }
 
@@ -1675,7 +1675,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
             if (status.current_count >= numPublishers) {
                 break;
             }
-            PerftestClock::milliSleep(1000);
+            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         }
     }
 };
@@ -2773,7 +2773,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
       #else
-        /* This is only needed for Micro 2.4.x. False unbounded sequences are 
+        /* This is only needed for Micro 2.4.x. False unbounded sequences are
          * available in Micro 3.0 */
         #if RTI_MICRO_24x_COMPATIBILITY
           fprintf(stderr,

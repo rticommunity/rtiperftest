@@ -36,16 +36,11 @@
   #include <signal.h>
 #endif
 
-/*
- * This is needed by MilliSleep in VxWorks, since in some versions the usleep
- * function does not exist. In the rest of OS we won't make use of it.
- */
-#if defined(RTI_VXWORKS)
-  #include <rti/util/util.hpp>
-#endif
-
+#include <rti/util/util.hpp>
 #include "MessagingIF.h"
 #include "ThreadPriorities.h"
+
+#define PERFTEST_DISCOVERY_TIME_MSEC 1000   // 1 second
 
 struct Perftest_ProductVersion_t
 {

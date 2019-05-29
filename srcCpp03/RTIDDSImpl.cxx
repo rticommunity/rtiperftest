@@ -428,7 +428,7 @@ public:
     void waitForReaders(int numSubscribers) {
         while (_writer.publication_matched_status().current_count()
                 < numSubscribers) {
-            perftest_cpp::MilliSleep(1000);
+            perftest_cpp::MilliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         }
     }
 
@@ -791,7 +791,7 @@ public:
 
     void waitForWriters(int numPublishers) {
         while (_reader.subscription_matched_status().current_count() < numPublishers) {
-            perftest_cpp::MilliSleep(1000);
+            perftest_cpp::MilliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         }
     }
 };
@@ -1560,7 +1560,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     if (_PM->get<int>("unbounded") > 0) {
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
-        properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] = 
+        properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] =
                 buf;
     }
 
