@@ -42,14 +42,7 @@ unsigned long long PerftestClock::getTimeUsec()
 
 void PerftestClock::milliSleep(unsigned int millisec)
 {
-  #if defined(RTI_WIN32)
-    Sleep(millisec);
-  #elif defined(RTI_VXWORKS)
-    DDS_Duration_t sleep_period = {0, millisec * 1000000};
-    NDDSUtility::sleep(sleep_period);
-  #else
-    usleep(millisec * 1000);
-  #endif
+    NDDSUtility::sleep(DDS_Duration_t::from_millis(millisec));
 }
 
 void PerftestConfigureVerbosity(int verbosityLevel)
@@ -839,7 +832,3 @@ bool PerftestConfigureSecurity(
     return true;
 }
 #endif
-
-/********************************************************************/
-/* Security Related Functions */
-

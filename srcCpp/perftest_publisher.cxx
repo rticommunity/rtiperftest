@@ -874,11 +874,11 @@ int perftest_cpp::Subscriber()
     announcement_msg.data = new char[LENGTH_CHANGED_SIZE];
 
     // Send announcement message
-    do{
+    do {
         announcement_writer->Send(announcement_msg);
         announcement_writer->Flush();
 
-        if (_MessagingImpl->supports_discovery()){
+        if (_MessagingImpl->supports_discovery()) {
             /*
              * If the middleware support discovery there is no need to wait
              * until the writer answer due to we already know the writer is
@@ -886,7 +886,7 @@ int perftest_cpp::Subscriber()
              */
             break;
         }
-        PerftestClock::milliSleep(1000);
+        PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         /* Send announcement message until the publisher send us something*/
     } while (reader_listener->packets_received == 0);
 
@@ -912,7 +912,7 @@ int perftest_cpp::Subscriber()
 
     while (true) {
         prev_time = now;
-        PerftestClock::milliSleep(1000);
+        PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         now = PerftestClock::getInstance().getTimeUsec();
 
         if (reader_listener->change_size) { // ACK change_size
@@ -1564,7 +1564,7 @@ int perftest_cpp::Publisher()
     fflush(stderr);
     while (_PM.get<int>("numSubscribers")
             > (int)announcement_reader_listener->subscriber_list.size()) {
-        PerftestClock::milliSleep(1000);
+        PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
     }
 
     // Allocate data and set size
