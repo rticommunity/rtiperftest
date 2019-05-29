@@ -5,12 +5,11 @@
 
 #include "Infrastructure_common.h"
 
-void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo)
+void *PerftestTimer::waitAndExecute(void *scheduleInfo)
 {
     ScheduleInfo *info = static_cast<ScheduleInfo *>(scheduleInfo);
 
     PerftestClock::milliSleep(info->timer * 1000u);
-
     info->handlerFunction();
 
     return NULL;
@@ -22,21 +21,16 @@ PerftestTimer &PerftestTimer::getInstance()
     return instance;
 }
 
-PerftestThread* PerftestTimer::setTimeout(PerftestTimer::ScheduleInfo &info)
+PerftestThread *PerftestTimer::setTimeout(PerftestTimer::ScheduleInfo &info)
 {
     struct PerftestThread *timerThread = NULL;
 
-    // We have to create a new pointer to the timer so
-    // it is not removed when this function ends
     timerThread = PerftestThread_new(
             "timerThread",
             Perftest_THREAD_PRIORITY_DEFAULT,
             Perftest_THREAD_OPTION_DEFAULT,
-            waitAndExecuteHandler,
+            waitAndExecute,
             &info);
-    if (timerThread == NULL) {
-        fprintf(stderr, "Problem creating timer thread.\n");
-    }
 
     return timerThread;
 }

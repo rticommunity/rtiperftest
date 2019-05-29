@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 #if defined(RTI_VXWORKS)
 int perftest_cpp_main(char *args)
 {
-    std::vector<char *> arguments;   
+    std::vector<char *> arguments;
     char *next = NULL;
     char **argv = NULL;
     int argc = 0;
@@ -64,7 +64,7 @@ int perftest_cpp_main(char *args)
     while (next != NULL) {
         arguments.push_back(next);
         next = strtok(NULL, " ");
-    } 
+    }
 
     // Copy dynamic array to the original
     argc = arguments.size();
@@ -1644,7 +1644,7 @@ int perftest_cpp::Publisher()
 
     unsigned long long time_now = 0, time_last_check = 0, time_delta = 0;
     unsigned long pubRate_sample_period = 1;
-    unsigned long rate = 0;          
+    unsigned long rate = 0;
 
     struct PerftestTimer::ScheduleInfo schedInfo = {
             (unsigned int)_PM.get<unsigned long long>("executionTime"),
@@ -1665,8 +1665,12 @@ int perftest_cpp::Publisher()
 
     if (_PM.get<unsigned long long>("executionTime") > 0
             && !_PM.is_set("scan")) {
-        executionTimeoutThread = 
+        executionTimeoutThread =
             PerftestTimer::getInstance().setTimeout(schedInfo);
+        if (executionTimeoutThread == NULL) {
+            fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
+            return -1;
+        }
     }
 
     /*
@@ -1706,7 +1710,7 @@ int perftest_cpp::Publisher()
             (unsigned int)_PM.get<unsigned long long>("executionTime"),
             Timeout_scan
     };
-    
+
     /********************
      *  Main sending loop
      */
@@ -1778,8 +1782,12 @@ int perftest_cpp::Publisher()
                 // after executionTime
                 if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    executionTimeoutThread = 
+                    executionTimeoutThread =
                             PerftestTimer::getInstance().setTimeout(schedInfo_scan);
+                    if (executionTimeoutThread == NULL) {
+                        fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
+                        return -1;
+                    }
 
                     // flush anything that was previously sent
                     writer->Flush();

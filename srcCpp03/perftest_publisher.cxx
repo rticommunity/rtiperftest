@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 int perftest_cpp_main(char *args)
 {
     // Run() expects also the executable name argv[0]
-    std::vector<char *> arguments = {"perftest_cpp"};   
+    std::vector<char *> arguments = {"perftest_cpp"};
     char *next = NULL;
     char **argv = NULL;
     int argc = 0;
@@ -79,7 +79,7 @@ int perftest_cpp_main(char *args)
     while (next != NULL) {
         arguments.push_back(next);
         next = strtok(NULL, " ");
-    } 
+    }
 
     // Copy dynamic array to the original
     argc = arguments.size();
@@ -1336,6 +1336,8 @@ int perftest_cpp::RunPublisher()
     unsigned long num_latency;
     unsigned long announcementSampleCount = 50;
     unsigned int samplesPerBatch = GetSamplesPerBatch();
+    struct RTIOsapiThread *executionTimeoutThread = NULL;
+
     // create throughput/ping writer
     writer = _MessagingImpl->CreateWriter(THROUGHPUT_TOPIC_NAME);
 
@@ -1528,6 +1530,11 @@ int perftest_cpp::RunPublisher()
     unsigned long pubRate_sample_period = 1;
     unsigned long rate = 0;
 
+    struct ScheduleInfo schedInfo = {
+            (unsigned int)_PM.get<unsigned long long>("executionTime"),
+            Timeout
+    };
+
     time_last_check = perftest_cpp::GetTimeUsec();
 
     /* Minimum value for spin_sample_period will be 1 so we execute 100 times
@@ -1542,7 +1549,12 @@ int perftest_cpp::RunPublisher()
 
     if (_PM.get<unsigned long long>("executionTime") > 0
             && !_PM.is_set("scan")) {
-        SetTimeout((unsigned int)_PM.get<unsigned long long>("executionTime"));
+        executionTimeoutThread = SetTimeout(schedInfo);
+        if (executionTimeoutThread == NULL) {
+            std::cerr << "[Error] Problem creating timeoutThread for executionTime."
+                    << std::endl;
+            return -1;
+        }
     }
     /*
      * Copy variable to no query the ParameterManager in every iteration.
@@ -1576,6 +1588,12 @@ int perftest_cpp::RunPublisher()
     const std::vector<unsigned long long> scanList =
             _PM.get_vector<unsigned long long>("scan");
     const bool isSetPubRate = _PM.is_set("pubRate");
+
+    struct ScheduleInfo schedInfo_scan = {
+            (unsigned int)_PM.get<unsigned long long>("executionTime"),
+            Timeout_scan
+    };
+
     /********************
      *  Main sending loop
      */
@@ -1643,9 +1661,12 @@ int perftest_cpp::RunPublisher()
                 // after _executionTime
                 if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    SetTimeout(
-                            (unsigned int)_PM.get<unsigned long long>("executionTime"),
-                            isScan);
+                    executionTimeoutThread = SetTimeout(schedInfo_scan);
+                    if (executionTimeoutThread == NULL) {
+                        std::cerr << "[Error] Problem creating timeoutThread for executionTime."
+                                << std::endl;
+                        return -1;
+                    }
 
                     // flush anything that was previously sent
                     writer->flush();
@@ -1787,10 +1808,17 @@ int perftest_cpp::RunPublisher()
     }
 
     if (_testCompleted) {
+        // Delete timeout thread
+        if (executionTimeoutThread != NULL) {
+            RTIOsapiThread_delete(executionTimeoutThread);
+        }
+
         std::cerr <<  "[Info] Finishing test due to timer..." << std::endl;
     } else {
         std::cerr <<  "[Info] Finishing test..." << std::endl;
     }
+
+
 
     return 0;
 }
@@ -1810,28 +1838,28 @@ inline unsigned long long perftest_cpp::GetTimeUsec() {
     return perftest_cpp::_Clock_usec + 1000000 * perftest_cpp::_Clock_sec;
 }
 
-inline void perftest_cpp::SetTimeout(
-        unsigned int executionTimeInSeconds,
-        bool isScan) {
-    if (isScan) {
-      #ifdef RTI_WIN32
-        CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout_scan,
-                NULL , executionTimeInSeconds * 1000, 0, 0);
-      #else
-        signal(SIGALRM, Timeout_scan);
-        alarm(executionTimeInSeconds);
-      #endif
-    } else {
-        std::cerr <<  "[Info] Setting timeout to " << executionTimeInSeconds
-                  <<  " seconds." << std::endl;
-      #ifdef RTI_WIN32
-        CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout,
-                NULL , executionTimeInSeconds * 1000, 0, 0);
-      #else
-        signal(SIGALRM, Timeout);
-        alarm(executionTimeInSeconds);
-      #endif
-    }
+void *perftest_cpp::waitAndExecute(void *scheduleInfo) {
+    ScheduleInfo *info = static_cast<ScheduleInfo *>(scheduleInfo);
+
+    perftest_cpp::MilliSleep(info->timer * 1000u);
+    info->handlerFunction();
+
+    return NULL;
+}
+
+inline RTIOsapiThread *perftest_cpp::SetTimeout(ScheduleInfo &info) {
+    struct RTIOsapiThread *timerThread = NULL;
+
+    timerThread = RTIOsapiThread_new(
+            "timerThread",
+            RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
+            RTI_OSAPI_THREAD_OPTION_DEFAULT,
+            RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
+            NULL,
+            waitAndExecute,
+            &info);
+
+    return timerThread;
 }
 
 inline unsigned int perftest_cpp::GetSamplesPerBatch() {
@@ -1863,10 +1891,10 @@ inline VOID CALLBACK perftest_cpp::Timeout_scan(PVOID lpParam, BOOLEAN timerOrWa
 }
   #pragma warning(pop)
 #else
-inline void perftest_cpp::Timeout(int sign) {
+inline void perftest_cpp::Timeout() {
     _testCompleted = true;
 }
-inline void perftest_cpp::Timeout_scan(int sign) {
+inline void perftest_cpp::Timeout_scan() {
     _testCompleted_scan = true;
 }
 #endif

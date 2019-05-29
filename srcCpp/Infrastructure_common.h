@@ -24,7 +24,7 @@
 class PerftestTimer
 {
   private:
-    static void *waitAndExecuteHandler(void *timerSeconds);
+    static void *waitAndExecute(void *scheduleInfo);
 
   public:
     struct ScheduleInfo {
