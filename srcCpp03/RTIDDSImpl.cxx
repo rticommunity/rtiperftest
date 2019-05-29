@@ -73,7 +73,7 @@ DynamicDataMembersId &DynamicDataMembersId::GetInstance()
 
 int DynamicDataMembersId::at(std::string key)
 {
-   return membersId.at(key);
+   return membersId[key];
 }
 
 template <typename T>
@@ -1560,7 +1560,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
     if (_PM->get<int>("unbounded") > 0) {
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
-        properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] = 
+        properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] =
                 buf;
     }
 
