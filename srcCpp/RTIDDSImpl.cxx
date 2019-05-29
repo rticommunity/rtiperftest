@@ -97,6 +97,13 @@ void RTIDDSImpl<T>::Shutdown()
         if (!registry->unregister("wh", NULL, NULL)) {
             //printf("failed to unregister wh\n");
         }
+      #ifdef RTI_SECURE_PERFTEST
+        if (!SECCORE_SecurePluginFactory::unregister_suite(
+                    registry,
+                    SECCORE_DEFAULT_SUITE_NAME)) {
+            //printf("failed to unregister security plugins\n");
+        }
+      #endif
     }
   #endif
 
@@ -245,6 +252,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     // Domain ID
     stringStream << "\tDomain: " << _PM->get<int>("domain") << "\n";
 
+  #ifndef RTI_MICRO
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
     if (_PM->get<bool>("dynamicData")) {
@@ -258,8 +266,10 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     } else {
         stringStream << "No\n";
     }
+  #endif
 
-    // Dynamic Data
+  #ifndef RTI_MICRO
+    // Asynchronous Publishing
     if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
         if (_isLargeData || _PM->get<bool>("asynchronous")) {
@@ -271,6 +281,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
             stringStream << "No\n";
         }
     }
+  #endif
 
     // Turbo Mode / AutoThrottle
     if (_PM->get<bool>("enableTurboMode")) {
@@ -280,6 +291,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "\tAutoThrottle: Enabled\n";
     }
 
+  #ifndef RTI_MICRO
     // XML File
     stringStream << "\tXML File: ";
     if (_PM->get<bool>("noXmlQos")) {
@@ -287,6 +299,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     } else {
         stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
+  #endif
 
     stringStream << "\n"
                  << _transport.printTransportConfigurationSummary();

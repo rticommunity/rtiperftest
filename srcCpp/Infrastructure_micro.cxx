@@ -230,7 +230,7 @@ bool configureShmemTransport(
 
     DPDE_DiscoveryPluginProperty dpde_properties;
     NETIO_SHMEMInterfaceFactoryProperty shmem_property;
-    
+
     /* We don't need UDP transport. Unregister it */
     if (!registry->unregister(NETIO_DEFAULT_UDP_NAME, NULL, NULL)) {
         printf("Micro: Failed to unregister udp\n");
@@ -329,6 +329,141 @@ bool PerftestConfigureSecurity(
         DDS_DomainParticipantQos &qos,
         ParameterManager *_PM)
 {
+    // configure use of security plugins, based on provided arguments
+    RTRegistry *registry =
+            DDSDomainParticipantFactory::get_instance()->get_registry();
+
+    // Properties to register built-in security plugins
+    SECCORE_SecurePluginFactoryProperty sec_plugin_prop;
+
+    DDS_Boolean retval;
+    std::string governanceFilePath;
+
+    // register plugin factory with registry
+    if (!SECCORE_SecurePluginFactory::register_suite(
+                    registry,SECCORE_DEFAULT_SUITE_NAME,sec_plugin_prop))
+    {
+        printf("Failed to register security plugins factory\n");
+        return false;
+    }
+
+    // Enable security in DomainParticipantQos
+    if (!qos.trust.suite.set_name(SECCORE_DEFAULT_SUITE_NAME))
+    {
+        printf("Failed to set security suite name: %s\n",
+               SECCORE_DEFAULT_SUITE_NAME);
+        return false;
+    }
+
+    // check if governance file provided
+    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
+        // choose a pre-built governance file
+        governanceFilePath = "file:./resource/secure/signed_PerftestGovernance_";
+        if (_PM->get<bool>("secureEncryptDiscovery")) {
+            governanceFilePath += "Discovery";
+        }
+        if (_PM->get<bool>("secureSign")) {
+            governanceFilePath += "Sign";
+        }
+        if (_PM->get<bool>("secureEncryptData")
+                && _PM->get<bool>("secureEncryptSM")) {
+            governanceFilePath += "EncryptBoth";
+        } else if (_PM->get<bool>("secureEncryptData")) {
+            governanceFilePath += "EncryptData";
+        } else if (_PM->get<bool>("secureEncryptSM")) {
+            governanceFilePath += "EncryptSubmessage";
+        }
+
+        governanceFilePath += ".xml";
+
+        retval = qos.property.value.assert_property(
+                        "dds.sec.access.governance",
+                        governanceFilePath.c_str(),
+                        false);
+    } else {
+        retval = qos.property.value.assert_property(
+                        "dds.sec.access.governance",
+                        governanceFilePath.c_str(),
+                        false);
+    }
+    if (!retval) {
+        printf("Failed to add property "
+                "dds.sec.access.governance\n");
+        return false;
+    }
+
+    /*
+     * Save the local variable governanceFilePath into
+     * the parameter "secureGovernanceFile"
+     */
+    _PM->set("secureGovernanceFile", governanceFilePath);
+
+    // permissions file
+    if (!qos.property.value.assert_property(
+                "dds.sec.access.permissions",
+                _PM->get<std::string>("securePermissionsFile").c_str(),
+                false))
+    {
+        printf("Failed to add property "
+                "dds.sec.access.permissions\n");
+        return false;
+    }
+
+    // permissions authority file
+    if (!qos.property.value.assert_property(
+                "dds.sec.access.permissions_ca",
+                _PM->get<std::string>("secureCertAuthority").c_str(),
+                false))
+    {
+        printf("Failed to add property "
+                "dds.sec.access.permissions_ca\n");
+        return false;
+    }
+
+    // certificate authority
+    if (!qos.property.value.assert_property(
+                "dds.sec.auth.identity_ca",
+                _PM->get<std::string>("secureCertAuthority").c_str(),
+                false))
+    {
+        printf("Failed to add property "
+                "dds.sec.auth.identity_ca\n");
+        return false;
+    }
+
+    // public key
+    if (!qos.property.value.assert_property(
+                "dds.sec.auth.identity_certificate",
+                _PM->get<std::string>("secureCertFile").c_str(),
+                false))
+    {
+        printf("Failed to add property "
+                "dds.sec.auth.identity_certificate\n");
+        return false;
+    }
+
+    // private key
+    if (!qos.property.value.assert_property(
+                "dds.sec.auth.private_key",
+                _PM->get<std::string>("secureCertFile").c_str(),
+                false))
+    {
+        printf("Failed to add property "
+                "dds.sec.auth.private_key\n");
+        return false;
+    }
+
+    if (_PM->is_set("secureDebug")) {
+        if (!qos.property.value.assert_property(
+                    "logging.log_level",
+                    std::to_string(_PM->get<int>("secureDebug")).c_str(),
+                    false))
+        {
+            printf("Failed to add property "
+                    "logging.log_level\n");
+            return false;
+        }
+    }
     return true;
 }
 #endif

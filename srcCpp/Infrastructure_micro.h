@@ -14,6 +14,11 @@
 #include "rti_me_cpp.hxx"
 #include "PerftestTransport.h"
 
+#ifdef RTI_SECURE_PERFTEST
+  #include "sec_core/sec_core_cpp.h"
+  #include "PerftestSecurity.h"
+#endif
+
 /********************************************************************/
 /*
  * In order to unify the implementations for Micro and Pro, we wrap the

@@ -419,6 +419,7 @@ void perftest_cpp::PrintConfiguration()
             stringStream << _PM.get<unsigned long long>("dataLen") << "\n";
         }
 
+      #ifndef RTI_MICRO
         // Batching
         stringStream << "\tBatching: ";
         if (_PM.get<long>("batchSize") > 0) {
@@ -440,6 +441,7 @@ void perftest_cpp::PrintConfiguration()
                              << "\t\t  Large Data.\n";
             }
         }
+      #endif
 
         // Publication Rate
         stringStream << "\tPublication Rate: ";
@@ -455,6 +457,7 @@ void perftest_cpp::PrintConfiguration()
         } else {
             stringStream << "Unlimited (Not set)\n";
         }
+
         // Execution Time or NumIter
         if (_PM.get<unsigned long long>("executionTime") > 0) {
             stringStream << "\tExecution time: "
