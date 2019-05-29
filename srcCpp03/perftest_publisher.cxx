@@ -215,12 +215,6 @@ perftest_cpp::perftest_cpp() :
         _SleepNanosec(0),
         _MessagingImpl(NULL)
 {
-#ifdef RTI_WIN32
-    if (_hTimerQueue == NULL) {
-        _hTimerQueue = CreateTimerQueue();
-    }
-    QueryPerformanceFrequency(&_ClockFrequency);
-#endif
 }
 ;
 
@@ -233,11 +227,6 @@ perftest_cpp::~perftest_cpp() {
         if (_MessagingImpl != NULL) {
             delete _MessagingImpl;
         }
-      #ifdef RTI_WIN32
-        if (_hTimerQueue != NULL) {
-            DeleteTimerQueue(_hTimerQueue);
-        }
-      #endif
 
         if (perftest_cpp::_Clock != NULL) {
             RTIHighResolutionClock_delete(perftest_cpp::_Clock);
@@ -1879,24 +1868,9 @@ const ThreadPriorities perftest_cpp::get_thread_priorities()
     return _threadPriorities;
 }
 
-#ifdef RTI_WIN32
-inline VOID CALLBACK perftest_cpp::Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired) {
-    /* This is to avoid the warning of non using lpParam */
-    (void) lpParam;
-    _testCompleted = true;
-}
-
-inline VOID CALLBACK perftest_cpp::Timeout_scan(PVOID lpParam, BOOLEAN timerOrWaitFired) {
-    /* This is to avoid the warning of non using lpParam */
-    (void) lpParam;
-    _testCompleted_scan = true;
-}
-  #pragma warning(pop)
-#else
 inline void perftest_cpp::Timeout() {
     _testCompleted = true;
 }
 inline void perftest_cpp::Timeout_scan() {
     _testCompleted_scan = true;
 }
-#endif

@@ -71,13 +71,8 @@ class perftest_cpp
     static void PrintVersion();
     static void ThreadYield();
     static unsigned long long GetTimeUsec();
-  #ifdef RTI_WIN32
-    static VOID CALLBACK Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired);
-    static VOID CALLBACK Timeout_scan(PVOID lpParam, BOOLEAN timerOrWaitFired);
-  #else
     static void Timeout();
     static void Timeout_scan();
-  #endif
 
   private:
     struct ScheduleInfo {
@@ -103,10 +98,6 @@ class perftest_cpp
        and so they have to be static */
     static bool _testCompleted;
     static bool _testCompleted_scan;
-  #ifdef RTI_WIN32
-    static HANDLE _hTimerQueue;
-    static HANDLE _hTimer;
-  #endif
 
   public:
     static int  subID;
