@@ -446,7 +446,7 @@ bool PerftestConfigureSecurity(
     // private key
     if (!qos.property.value.assert_property(
                 "dds.sec.auth.private_key",
-                _PM->get<std::string>("secureCertFile").c_str(),
+                _PM->get<std::string>("securePrivateKey").c_str(),
                 false))
     {
         printf("Failed to add property "
