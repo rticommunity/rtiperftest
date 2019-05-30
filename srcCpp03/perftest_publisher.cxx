@@ -153,10 +153,12 @@ void perftest_cpp::MilliSleep(unsigned int millisec) {
   #if defined(RTI_WIN32)
     Sleep(millisec);
   #elif defined(RTI_VXWORKS)
-    rti::util::sleep(dds::core::Duration(0,millisec*1000000));
+    rti::util::sleep(dds::core::Duration::from_millisecs(millisec));
   #else
     usleep(millisec * 1000);
   #endif
+
+  DDS_Duration_t sleep_period = DDS_Duration_t::from_millis(millisec);
 }
 
 void perftest_cpp::ThreadYield() {
