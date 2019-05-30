@@ -381,6 +381,7 @@ bool PerftestConfigureSecurity(
                         governanceFilePath.c_str(),
                         false);
     } else {
+        governanceFilePath = _PM->get<std::string>("secureGovernanceFile");
         retval = qos.property.value.assert_property(
                         "dds.sec.access.governance",
                         governanceFilePath.c_str(),

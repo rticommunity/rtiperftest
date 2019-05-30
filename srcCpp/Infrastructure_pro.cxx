@@ -753,6 +753,7 @@ bool PerftestConfigureSecurity(
             return false;
         }
     } else {
+        governanceFilePath = _PM->get<std::string>("secureGovernanceFile");
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.access_control.governance_file",
