@@ -226,15 +226,26 @@ This behavior has been simplified: In order to run in `VxWorks` the
 `perftest_cpp_main` function can be called, receiving a simple string
 containing all the command line parameters.
 
-Stop using alarm function to schedule functions since it is deprecated
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-When using `-executionTime <seconds>` parameter, internally, *Perftest* was scheduling a
-function call by using it as a handler when an ALARM signal was received. 
+Stop using alarm function to schedule functions since it is deprecated (#164)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using `-executionTime <seconds>` parameter, internally, *RTI Perftest* was scheduling a
+function call by using it as a handler when an ALARM signal was received.
 This ALARM signal was set to be signaled in the amount of seconds specified by the *executionTime*
-parameter using the `alarm()` function available in Unix-like systems, 
+parameter using the `alarm()` function available in Unix-like systems,
 which is deprecated or even already missing in some of RTI's supported platforms.
 
 Now this issue has been fixed by using a thread that sleeps for the amount of seconds specified and then it calls the desired function.
+
+Use Connext DDS implementation for the `milliSleep` method in C++ (#180)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The `PerftestClock::milliSleep()` method has been modified in the classic and
+modern C++ implementations to always use the *RTI Connext DDS* sleep functionality.
+This makes the function OS independent.
+
+At the same time, the code has been improved avoid overflowing the time for the sleeping
+period.
 
 Release Notes 2.4
 -----------------
@@ -525,7 +536,7 @@ Default Values for ``Reliability`` and ``Transport`` can be Modified via XML
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Starting with this release, the Reliability and Transport settings are not set
-via code for the different languages, but are set in the XML profile. 
+via code for the different languages, but are set in the XML profile.
 This allows you to easily modify these settings without needing to recompile.
 
 These settings can still be modified via command-line parameters.
@@ -550,11 +561,11 @@ changed to ``-qosFile`` to better reflect its use.
 
 Improved ``-scan`` Command-line Parameter Functionality
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In the previous release, using ``-scan`` caused *RTI Perftest* to execute with 
-a predefined set of values for -dataLen, and with execution durations related to 
-the number of latency pings. This behavior has been changed. Now ``-scan`` allows 
-you to specify a set of -datalen sizes to be used (or you can use the default set). 
-In addition, the value specified for the '-executionTime' parameter is now used 
+In the previous release, using ``-scan`` caused *RTI Perftest* to execute with
+a predefined set of values for -dataLen, and with execution durations related to
+the number of latency pings. This behavior has been changed. Now ``-scan`` allows
+you to specify a set of -datalen sizes to be used (or you can use the default set).
+In addition, the value specified for the '-executionTime' parameter is now used
 for each execution during the scan, regardless of the number of latency pings.
 
 When using ``-batchSize`` at the same time as ``-scan`` and not using large
@@ -564,8 +575,8 @@ data, the same batch size will be applied to all the data sizes being used by
 Deprecated Some Command-Line Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To simplify the number of parameters *RTI Perftest* accepts, we reviewed and 
-deprecated some parameters. These parameters will still work for this 
+To simplify the number of parameters *RTI Perftest* accepts, we reviewed and
+deprecated some parameters. These parameters will still work for this
 release, but they will be deleted or altered for future ones.
 
 -  Deprecated ``-instanceHashBuckets <n>``
@@ -608,26 +619,26 @@ What's Fixed in 2.3
 Failure when Using ``-peer`` Command-Line Parameter for C#
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Using the ``-peer`` option in the C# implementation caused 
+Using the ``-peer`` option in the C# implementation caused
 *RTI Perftest* to fail due to an issue reserving memory. This behavior
 has been fixed.
 
 ``-nic`` Command-Line Parameter not Working when Using UDPv6 Transport
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``-nic`` command-line parameter was not taken into account when 
+The ``-nic`` command-line parameter was not taken into account when
 using the UDPv6 transport. This behavior has been fixed.
 
 
 Failure when Using -batchSize or -enableTurboMode if -dataLen Exceeded Async Publishing Threshold
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Using ``-batchSize`` along with a ``-dataLen`` value greater than the asynchronous 
-publishing threshold caused the application to show an error and exit. 
-Starting with this release, the ``-batchSize`` option will be ignored in this scenario 
-(and a warning message displayed). 
+Using ``-batchSize`` along with a ``-dataLen`` value greater than the asynchronous
+publishing threshold caused the application to show an error and exit.
+Starting with this release, the ``-batchSize`` option will be ignored in this scenario
+(and a warning message displayed).
 
-This change (ignoring ``-batchSize``) won't be applied if you explicitly set ``-asynchronous``; 
+This change (ignoring ``-batchSize``) won't be applied if you explicitly set ``-asynchronous``;
 in this case, the behavior will remain the same as before (it will show an error and exit).
 
 This change also applies to the use of ``-enableTurboMode``.
@@ -637,8 +648,8 @@ Issues when Finishing Performance Test or Changing Sample Size
 
 In order to make the mechanism to finish the performance test or change sample sizes
 more robust, we now use the ``Announcement`` topic on the Subscriber side to notify
-the Publisher side of the arrival of special samples sent to signal a change of sample 
-size or to signal that the test is finishing. In previous releases, this process was 
+the Publisher side of the arrival of special samples sent to signal a change of sample
+size or to signal that the test is finishing. In previous releases, this process was
 not reliable and may have caused hangs in certain scenarios.
 
 Unreliable Behavior Finishing Tests when Using ContentFilteredTopic (CFT)
@@ -646,9 +657,9 @@ Unreliable Behavior Finishing Tests when Using ContentFilteredTopic (CFT)
 
 In previous releases when using CFTs, in order to finish a test, the Publisher
 needed to send as many samples signaling that the test is finishing as the
-number of instances that were being used by the test (1 sample per instance). 
-This could result in a very long process, and in scenarios where the reliability 
-was set to BEST_EFFORT, in a higher chance of losing one of those samples, 
+number of instances that were being used by the test (1 sample per instance).
+This could result in a very long process, and in scenarios where the reliability
+was set to BEST_EFFORT, in a higher chance of losing one of those samples,
 making the test hang.
 
 This behavior has been modified by using a specific key for the signaling

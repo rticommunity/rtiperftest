@@ -153,13 +153,8 @@ int perftest_cpp::Run(int argc, char *argv[]) {
 }
 
 void perftest_cpp::MilliSleep(unsigned int millisec) {
-  #if defined(RTI_WIN32)
-    Sleep(millisec);
-  #elif defined(RTI_VXWORKS)
-    rti::util::sleep(dds::core::Duration::from_millisecs(millisec));
-  #else
-    usleep(millisec * 1000);
-  #endif
+    rti::util::sleep(
+            dds::core::Duration::from_millisecs(millisec));
 }
 
 void perftest_cpp::ThreadYield() {
@@ -886,7 +881,7 @@ int perftest_cpp::RunSubscriber()
 
     while (true) {
         prev_time = now;
-        MilliSleep(1000);
+        MilliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         now = GetTimeUsec();
 
         if (reader_listener->change_size) { // ACK change_size
@@ -1453,7 +1448,7 @@ int perftest_cpp::RunPublisher()
     std::cerr << "[Info] Waiting for subscribers announcement ..." << std::endl;
     while (_PM.get<int>("numSubscribers")
             > (int)announcement_reader_listener->subscriber_list.size()) {
-        MilliSleep(1000);
+        MilliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
     }
 
     // Allocate data and set size
