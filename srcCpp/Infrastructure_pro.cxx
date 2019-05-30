@@ -5,6 +5,19 @@
 
 #include "Infrastructure_pro.h"
 
+// Since std::to_string is not defined in c++98
+// we will define it here for VxWorks
+#ifdef RTI_VXWORKS
+  namespace std {
+    template<typename T>
+    std::string to_string(const T &n) {
+        std::ostringstream s;
+        s << n;
+        return s.str();
+    }
+  }
+#endif
+
 /* Perftest Clock class */
 
 PerftestClock::PerftestClock()

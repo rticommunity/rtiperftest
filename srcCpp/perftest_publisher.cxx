@@ -49,20 +49,31 @@ int main(int argc, char *argv[])
 }
 
 #if defined(RTI_VXWORKS)
-int publisher_main()
+int perftest_cpp_main(char *args)
 {
-    const char *argv[] = {"perftest_cpp", "-pub"};
-    int argc = sizeof(argv)/sizeof(const char*);
+    std::vector<char *> arguments;
+    char *next = NULL;
+    char **argv = NULL;
+    int argc = 0;
 
-    return main(argc, (char **) argv);
-}
+    // Run() expects also the executable name argv[0]
+    arguments.push_back((char *) "perftest_cpp");
 
-int subscriber_main()
-{
-    const char *argv[] = {"perftest_cpp", "-sub"};
-    int argc = sizeof(argv)/sizeof(const char*);
+    // split args by " " and add each one to dynamic array
+    next = strtok(args, " ");
+    while (next != NULL) {
+        arguments.push_back(next);
+        next = strtok(NULL, " ");
+    }
 
-    return main(argc, (char **) argv);
+    // Copy dynamic array to the original
+    argc = arguments.size();
+    argv = new char*[argc];
+
+    std::copy(arguments.begin(), arguments.end(), argv);
+
+    // Call original main function with the splitted arguments
+    return main(argc, argv);
 }
 #endif
 
@@ -1391,6 +1402,7 @@ int perftest_cpp::Publisher()
     IMessagingReader *announcement_reader;
     IMessagingReader *reader;
     struct PerftestThread *latencyReadThread = NULL;
+    struct PerftestThread *executionTimeoutThread = NULL;
     unsigned long num_latency;
     unsigned long announcementSampleCount = 50;
     unsigned int samplesPerBatch = GetSamplesPerBatch();
@@ -1637,6 +1649,11 @@ int perftest_cpp::Publisher()
     unsigned long pubRate_sample_period = 1;
     unsigned long rate = 0;
 
+    struct PerftestTimer::ScheduleInfo schedInfo = {
+            (unsigned int)_PM.get<unsigned long long>("executionTime"),
+            Timeout
+    };
+
     time_last_check = PerftestClock::getInstance().getTimeUsec();
 
     /* Minimum value for pubRate_sample_period will be 1 so we execute 100 times
@@ -1651,10 +1668,14 @@ int perftest_cpp::Publisher()
 
     if (_PM.get<unsigned long long>("executionTime") > 0
             && !_PM.is_set("scan")) {
-        PerftestTimer::getInstance().setTimeout(
-                (unsigned int)_PM.get<unsigned long long>("executionTime"),
-                Timeout);
+        executionTimeoutThread =
+            PerftestTimer::getInstance().setTimeout(schedInfo);
+        if (executionTimeoutThread == NULL) {
+            fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
+            return -1;
+        }
     }
+
     /*
      * Copy variable to no query the ParameterManager in every iteration.
      * They should not be modified:
@@ -1687,6 +1708,12 @@ int perftest_cpp::Publisher()
     const std::vector<unsigned long long> scanList =
             _PM.get_vector<unsigned long long>("scan");
     const bool isSetPubRate = _PM.is_set("pubRate");
+
+    struct PerftestTimer::ScheduleInfo schedInfo_scan = {
+            (unsigned int)_PM.get<unsigned long long>("executionTime"),
+            Timeout_scan
+    };
+
     /********************
      *  Main sending loop
      */
@@ -1758,9 +1785,12 @@ int perftest_cpp::Publisher()
                 // after executionTime
                 if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    PerftestTimer::getInstance().setTimeout(
-                        (unsigned int)_PM.get<unsigned long long>("executionTime"),
-                        Timeout_scan);
+                    executionTimeoutThread =
+                            PerftestTimer::getInstance().setTimeout(schedInfo_scan);
+                    if (executionTimeoutThread == NULL) {
+                        fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
+                        return -1;
+                    }
 
                     // flush anything that was previously sent
                     writer->Flush();
@@ -1910,6 +1940,11 @@ int perftest_cpp::Publisher()
     delete []message.data;
 
     if (_testCompleted) {
+        // Delete timeout thread
+        if (executionTimeoutThread != NULL) {
+            PerftestThread_delete(executionTimeoutThread);
+        }
+
         fprintf(stderr,"Finishing test due to timer...\n");
     } else {
         fprintf(stderr,"Finishing test...\n");

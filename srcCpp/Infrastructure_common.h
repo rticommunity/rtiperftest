@@ -20,36 +20,22 @@
   #pragma warning(disable : 4996)
 #endif
 
-#ifndef RTI_WIN32
-  #include <sys/time.h>
-  #include <unistd.h>
-  #include <sched.h>
-  #include <fcntl.h>
-  #include <signal.h>
-#endif
-
 /* Perftest Timer Class */
 class PerftestTimer
 {
-
   private:
-  #ifdef RTI_WIN32
-    static HANDLE _hTimerQueue;
-    static HANDLE _hTimer;
-    static LARGE_INTEGER _ClockFrequency;
-  #endif
-    static void (*_handlerFunction)(void);
+    static void *waitAndExecute(void *scheduleInfo);
 
   public:
-    PerftestTimer();
-    ~PerftestTimer();
+    struct ScheduleInfo {
+        unsigned int timer;
+        void (*handlerFunction)(void);
+    };
+
+    PerftestTimer() {}  // We need empty constructor and destructor for VxWorks
+    ~PerftestTimer() {}
     static PerftestTimer &getInstance();
-    void setTimeout(unsigned int executionTimeInSeconds, void (*function)(void));
-  #ifdef RTI_WIN32
-    static VOID CALLBACK timeoutTask(PVOID lpParam, BOOLEAN timerOrWaitFired);
-  #else
-    static void timeoutTask(int sign);
-  #endif
+    PerftestThread *setTimeout(ScheduleInfo &info);
 };
 
 #endif /* INFRASTRUCTURE_COMMON_H_ */

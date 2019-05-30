@@ -73,7 +73,7 @@ DynamicDataMembersId &DynamicDataMembersId::GetInstance()
 
 int DynamicDataMembersId::at(std::string key)
 {
-   return membersId.at(key);
+   return membersId[key];
 }
 
 template <typename T>

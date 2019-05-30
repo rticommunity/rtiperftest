@@ -74,6 +74,7 @@ void RTIDDSImpl<T>::Shutdown()
         _participant->delete_contained_entities();
         DDSTheParticipantFactory->delete_participant(_participant);
     }
+
     if(_pongSemaphore != NULL) {
         PerftestSemaphore_delete(_pongSemaphore);
         _pongSemaphore = NULL;

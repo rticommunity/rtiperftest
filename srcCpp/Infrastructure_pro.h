@@ -16,6 +16,10 @@
   #include "PerftestSecurity.h"
 #endif
 
+#ifdef RTI_VXWORKS
+  #include<sstream>
+#endif
+
 /*
  * In order to unify the implementations for Micro and Pro, we wrap the
  * semaphores to a common PerftestSemaphore implementation.

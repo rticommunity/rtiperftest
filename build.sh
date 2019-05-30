@@ -597,6 +597,8 @@ function build_cpp()
         executable_extension=""
     elif [ -e "${perftest_cpp_name_beginning}.so" ]; then
         executable_extension=".so"
+    elif [ -e "${perftest_cpp_name_beginning}.lo" ]; then
+        executable_extension=".lo"
     elif [ -e "${perftest_cpp_name_beginning}.vxe" ]; then
         executable_extension=".vxe"
     fi
@@ -715,6 +717,8 @@ function build_micro_cpp()
         executable_extension=""
     elif [ -e "${perftest_cpp_name_beginning}.so" ]; then
         executable_extension=".so"
+    elif [ -e "${perftest_cpp_name_beginning}.lo" ]; then
+        executable_extension=".lo"
     elif [ -e "${perftest_cpp_name_beginning}.vxe" ]; then
         executable_extension=".vxe"
     fi
@@ -781,6 +785,8 @@ function build_cpp03()
 
     if [ -e "$perftest_cpp03_name_beginning" ]; then
         executable_extension=""
+    elif [ -e "${perftest_cpp03_name_beginning}.so" ]; then
+        executable_extension=".so"
     elif [ -e "${perftest_cpp03_name_beginning}.lo" ]; then
         executable_extension=".lo"
     elif [ -e "${perftest_cpp03_name_beginning}.vxe" ]; then

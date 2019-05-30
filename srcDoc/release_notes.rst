@@ -214,6 +214,29 @@ Ensure compatibility for the Classic C++ Implementation (#114)
 Some of the changes added for #55 broke compatibility when compiling certain
 platforms with no support for C++11. This issue has been fixed.
 
+Ease the execution of *RTI Perftest* in *VxWorks* (#167)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For previous releases, it was not clear how to run `RTI Perftest` in `VxWorks`:
+Each command line parameter had to be appended to the `argv` array inside
+`publisher_main` and `subscriber_main` in `perftest_publisher.cxx`. This
+required recompile each time the parameters change.
+
+This behavior has been simplified: In order to run in `VxWorks` the
+`perftest_cpp_main` function can be called, receiving a simple string
+containing all the command line parameters.
+
+Stop using alarm function to schedule functions since it is deprecated (#164)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using `-executionTime <seconds>` parameter, internally, *RTI Perftest* was scheduling a
+function call by using it as a handler when an ALARM signal was received.
+This ALARM signal was set to be signaled in the amount of seconds specified by the *executionTime*
+parameter using the `alarm()` function available in Unix-like systems,
+which is deprecated or even already missing in some of RTI's supported platforms.
+
+Now this issue has been fixed by using a thread that sleeps for the amount of seconds specified and then it calls the desired function.
+
 Use Connext DDS implementation for the `milliSleep` method in C++ (#180)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
