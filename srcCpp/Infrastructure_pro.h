@@ -16,9 +16,7 @@
   #include "PerftestSecurity.h"
 #endif
 
-#ifdef RTI_VXWORKS
-  #include<sstream>
-#endif
+#include <sstream>
 
 /*
  * In order to unify the implementations for Micro and Pro, we wrap the

@@ -19,6 +19,8 @@
   #include "PerftestSecurity.h"
 #endif
 
+#include <sstream>
+
 /********************************************************************/
 /*
  * In order to unify the implementations for Micro and Pro, we wrap the
