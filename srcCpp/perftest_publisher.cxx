@@ -1553,10 +1553,6 @@ int perftest_cpp::Publisher()
                         "Error initializing spin per microsecond. '-pubRate'"
                         "cannot be used\nExiting...\n");
                 return -1;
-            } else if (spinPerUsec == -1) {
-                fprintf(stderr,
-                        "'-pubRate spin' not supported in micro. Use '-pubRate sleep'\n");
-                return -1;
             }
             _SpinLoopCount = 1000000 * spinPerUsec /
                     _PM.get_pair<unsigned long long, std::string>("pubRate").first;
