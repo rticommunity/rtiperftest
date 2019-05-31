@@ -92,12 +92,11 @@ public:
 
 private:
 
-    static std::map<std::string, TransportConfig> transportConfigMap;
+    std::map<std::string, TransportConfig> transportConfigMap;
     std::map<std::string, std::string> multicastAddrMap;
     ParameterManager *_PM;
     /**************************************************************************/
 
-    static const std::map<std::string, TransportConfig>& getTransportConfigMap();
     bool setTransport(std::string transportString);
     void populateSecurityFiles();
   #ifndef RTI_MICRO
