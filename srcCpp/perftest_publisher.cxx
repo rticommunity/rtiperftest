@@ -1671,7 +1671,6 @@ int perftest_cpp::Publisher()
     unsigned long pubRate_sample_period = 1;
     unsigned long rate = 0;
 
-
     struct PerftestTimer::ScheduleInfo schedInfo = {
             (unsigned int)_PM.get<unsigned long long>("executionTime"),
             Timeout
