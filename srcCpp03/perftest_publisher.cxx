@@ -68,11 +68,13 @@ int main(int argc, char *argv[])
 #if defined(RTI_VXWORKS)
 int perftest_cpp_main(char *args)
 {
-    // Run() expects also the executable name argv[0]
-    std::vector<char *> arguments = {"perftest_cpp"};   
+    std::vector<char *> arguments;
     char *next = NULL;
     char **argv = NULL;
     int argc = 0;
+
+    // Run() expects also the executable name argv[0]
+    arguments.push_back((char *) "perftest_cpp");
 
     // split args by " " and add each one to dynamic array
     next = strtok(args, " ");
@@ -154,10 +156,12 @@ void perftest_cpp::MilliSleep(unsigned int millisec) {
   #if defined(RTI_WIN32)
     Sleep(millisec);
   #elif defined(RTI_VXWORKS)
-    rti::util::sleep(dds::core::Duration(0,millisec*1000000));
+    rti::util::sleep(dds::core::Duration::from_millisecs(millisec));
   #else
     usleep(millisec * 1000);
   #endif
+
+  DDS_Duration_t sleep_period = DDS_Duration_t::from_millis(millisec);
 }
 
 void perftest_cpp::ThreadYield() {
