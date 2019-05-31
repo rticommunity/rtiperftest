@@ -60,11 +60,12 @@ void RTIDDSImpl<T>::Shutdown()
     DDSDomainParticipantSeq participants;
     DDS_ReturnCode_t retcode;
 
-    // Get semaphore so other processes cannot dispose at the same time 
+    // Get semaphore so other processes cannot dispose at the same time
     if (_finalizeFactorySemaphore == NULL) {
-        _finalizeFactorySemaphore = PerftestSemaphore_new();
-    } else if (!PerftestSemaphore_take(_finalizeFactorySemaphore, 
-            PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
+        _finalizeFactorySemaphore = RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_MUTEX, NULL);
+    }
+
+    if (!PerftestSemaphore_take(_finalizeFactorySemaphore, PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
         fprintf(stderr,"Unexpected error taking semaphore\n");
         return;
     }
@@ -89,7 +90,7 @@ void RTIDDSImpl<T>::Shutdown()
 
         DDSTheParticipantFactory->delete_participant(_participant);
     }
-    
+
     if(_pongSemaphore != NULL) {
         PerftestSemaphore_delete(_pongSemaphore);
         _pongSemaphore = NULL;
@@ -122,7 +123,7 @@ void RTIDDSImpl<T>::Shutdown()
         NDDSConfigLogger::finalize_instance();
     }
   #endif
-    
+
     retcode = DDSTheParticipantFactory->get_participants(participants);
     if (retcode != DDS_RETCODE_OK) {
         printf("Error getting participants. Retcode: %d", retcode);
@@ -2812,7 +2813,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
       #else
-        /* This is only needed for Micro 2.4.x. False unbounded sequences are 
+        /* This is only needed for Micro 2.4.x. False unbounded sequences are
          * available in Micro 3.0 */
         #if RTI_MICRO_24x_COMPATIBILITY
           fprintf(stderr,

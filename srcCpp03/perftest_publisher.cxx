@@ -81,7 +81,7 @@ int perftest_cpp_main(char *args)
     while (next != NULL) {
         arguments.push_back(next);
         next = strtok(NULL, " ");
-    } 
+    }
 
     // Copy dynamic array to the original
     argc = arguments.size();
@@ -160,8 +160,6 @@ void perftest_cpp::MilliSleep(unsigned int millisec) {
   #else
     usleep(millisec * 1000);
   #endif
-
-  DDS_Duration_t sleep_period = DDS_Duration_t::from_millis(millisec);
 }
 
 void perftest_cpp::ThreadYield() {
@@ -1789,6 +1787,7 @@ int perftest_cpp::RunPublisher()
         announcement_reader->Shutdown();
         delete(announcement_reader);
     }
+
 
     if (_testCompleted) {
         std::cerr <<  "[Info] Finishing test due to timer..." << std::endl;
