@@ -139,23 +139,24 @@ void RTIDDSImpl<T>::Shutdown()
     if (participants.length() == 0) {
         DDSDomainParticipantFactory::finalize_instance();
 
-        // Give semaphore so the mutex can be properly closed
+        if (_finalizeFactorySemaphore != NULL) {
+            // Give semaphore so the mutex can be properly closed
+            if (!PerftestSemaphore_give(_finalizeFactorySemaphore)) {
+                fprintf(stderr, "Unexpected error giving semaphore\n");
+                return;
+            }
+
+            // Delete semaphore since no one else is going to need it
+            PerftestSemaphore_delete(_finalizeFactorySemaphore);
+            _finalizeFactorySemaphore = NULL;
+        }
+    } else {
+        printf("[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)\n");
+
         if (!PerftestSemaphore_give(_finalizeFactorySemaphore)) {
             fprintf(stderr, "Unexpected error giving semaphore\n");
             return;
         }
-
-        // Delete semaphore since no one else is going to need it
-        PerftestSemaphore_delete(_finalizeFactorySemaphore);
-        _finalizeFactorySemaphore = NULL;
-        return;
-    } else {
-        printf("[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)\n");
-    }
-
-    if (!PerftestSemaphore_give(_finalizeFactorySemaphore)) {
-        fprintf(stderr, "Unexpected error giving semaphore\n");
-        return;
     }
 }
 
