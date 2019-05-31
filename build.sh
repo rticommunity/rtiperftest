@@ -382,6 +382,20 @@ function additional_defines_calculation_micro()
         fi
     fi
     additional_defines="RTI_LANGUAGE_CPP_TRADITIONAL RTI_MICRO O3"${additional_defines}
+
+    if [ "${USE_SECURE_LIBS}" == "1" ]; then
+        additional_defines="${additional_defines} RTI_SECURE_PERFTEST"
+
+        if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
+            echo -e "${INFO_TAG} Using security plugin. Linking Dynamically."
+        else
+            if [ "${RTI_OPENSSLHOME}" == "" ]; then
+                echo -e "${ERROR_TAG} In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option."
+                exit -1
+            fi
+            echo -e "${INFO_TAG} Using security plugin. Linking Statically."
+        fi
+    fi
 }
 
 # Generate code for the type of the customer.
@@ -602,11 +616,17 @@ function build_micro_cpp()
 
     ##############################################################################
     # Generate files for srcCpp
-        if [ "${BUILD_MICRO_24x_COMPATIBILITY}" -eq "1" ]; then
-            additional_defines=${additional_defines}" RTI_MICRO_24x_COMPATIBILITY"
+    if [ "${BUILD_MICRO_24x_COMPATIBILITY}" -eq "1" ]; then
+        additional_defines=${additional_defines}" RTI_MICRO_24x_COMPATIBILITY"
+    else
+        rtiddsgen_extra_options="${rtiddsgen_extra_options} -sequenceSize ${MICRO_UNBOUNDED_SEQUENCE_SIZE}"
+
+        if [ "${USE_SECURE_LIBS}" != "1" ]; then
+            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries \"nddsmetp\""
         else
-            rtiddsgen_extra_options="${rtiddsgen_extra_options} -sequenceSize ${MICRO_UNBOUNDED_SEQUENCE_SIZE} -additionalRtiLibraries nddsmetp"
+            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries \"rti_me_netioshmem rti_me_netioshmem rti_me_seccore\" -additionalLibraries \"sslz cryptoz\" -additionalLibraryPaths \"${RTI_OPENSSLHOME}/${RELEASE_DEBUG}/lib\""
         fi
+    fi
 
     additional_header_files=" \
         ThreadPriorities.h \

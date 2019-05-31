@@ -228,10 +228,31 @@ containing all the command line parameters.
 
 Fix shared parameters for *Perftest* within executions in the same VxWorks machine (#166)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 In *VxWorks* when running two or more instances of *Perftest* in the same machine some parameters
 where shared between instances. This happened because static objects are shared across instances
 of *Perftest* within the same *VxWorks* machine. This issue has ben fixed.
 
+Stop using alarm function to schedule functions since it is deprecated (#164)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using `-executionTime <seconds>` parameter, internally, *RTI Perftest* was scheduling a
+function call by using it as a handler when an ALARM signal was received.
+This ALARM signal was set to be signaled in the amount of seconds specified by the *executionTime*
+parameter using the `alarm()` function available in Unix-like systems,
+which is deprecated or even already missing in some of RTI's supported platforms.
+
+Now this issue has been fixed by using a thread that sleeps for the amount of seconds specified and then it calls the desired function.
+
+Use Connext DDS implementation for the `milliSleep` method in C++ (#180)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The `PerftestClock::milliSleep()` method has been modified in the classic and
+modern C++ implementations to always use the *RTI Connext DDS* sleep functionality.
+This makes the function OS independent.
+
+At the same time, the code has been improved avoid overflowing the time for the sleeping
+period.
 
 Release Notes 2.4
 -----------------

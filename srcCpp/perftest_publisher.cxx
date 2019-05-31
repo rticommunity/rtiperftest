@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 #if defined(RTI_VXWORKS)
 int perftest_cpp_main(char *args)
 {
-    std::vector<char *> arguments;   
+    std::vector<char *> arguments;
     char *next = NULL;
     char **argv = NULL;
     int argc = 0;
@@ -60,7 +60,7 @@ int perftest_cpp_main(char *args)
     while (next != NULL) {
         arguments.push_back(next);
         next = strtok(NULL, " ");
-    } 
+    }
 
     // Copy dynamic array to the original
     argc = arguments.size();
@@ -430,6 +430,7 @@ void perftest_cpp::PrintConfiguration()
             stringStream << _PM.get<unsigned long long>("dataLen") << "\n";
         }
 
+      #ifndef RTI_MICRO
         // Batching
         stringStream << "\tBatching: ";
         if (_PM.get<long>("batchSize") > 0) {
@@ -451,6 +452,7 @@ void perftest_cpp::PrintConfiguration()
                              << "\t\t  Large Data.\n";
             }
         }
+      #endif
 
         // Publication Rate
         stringStream << "\tPublication Rate: ";
@@ -466,6 +468,7 @@ void perftest_cpp::PrintConfiguration()
         } else {
             stringStream << "Unlimited (Not set)\n";
         }
+
         // Execution Time or NumIter
         if (_PM.get<unsigned long long>("executionTime") > 0) {
             stringStream << "\tExecution time: "
@@ -546,9 +549,9 @@ class ThroughputListener : public IMessagingCB
 
     ThroughputListener(
             ParameterManager &PM,
-            IMessagingWriter *writer, 
-            IMessagingReader *reader = NULL, 
-            bool UseCft = false, 
+            IMessagingWriter *writer,
+            IMessagingReader *reader = NULL,
+            bool UseCft = false,
             int numPublishers = 1)
     {
         packets_received = 0;
@@ -903,11 +906,11 @@ int perftest_cpp::Subscriber()
     announcement_msg.data = new char[LENGTH_CHANGED_SIZE];
 
     // Send announcement message
-    do{
+    do {
         announcement_writer->Send(announcement_msg);
         announcement_writer->Flush();
 
-        if (_MessagingImpl->supports_discovery()){
+        if (_MessagingImpl->supports_discovery()) {
             /*
              * If the middleware support discovery there is no need to wait
              * until the writer answer due to we already know the writer is
@@ -915,7 +918,7 @@ int perftest_cpp::Subscriber()
              */
             break;
         }
-        PerftestClock::milliSleep(1000);
+        PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         /* Send announcement message until the publisher send us something*/
     } while (reader_listener->packets_received == 0);
 
@@ -941,7 +944,7 @@ int perftest_cpp::Subscriber()
 
     while (true) {
         prev_time = now;
-        PerftestClock::milliSleep(1000);
+        PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         now = PerftestClock::getInstance().getTimeUsec();
 
         if (reader_listener->change_size) { // ACK change_size
@@ -1576,10 +1579,6 @@ int perftest_cpp::Publisher()
                         "Error initializing spin per microsecond. '-pubRate'"
                         "cannot be used\nExiting...\n");
                 return -1;
-            } else if (spinPerUsec == -1) {
-                fprintf(stderr,
-                        "'-pubRate spin' not supported in micro. Use '-pubRate sleep'\n");
-                return -1;
             }
             _SpinLoopCount = 1000000 * spinPerUsec /
                     _PM.get_pair<unsigned long long, std::string>("pubRate").first;
@@ -1602,7 +1601,7 @@ int perftest_cpp::Publisher()
     fflush(stderr);
     while (_PM.get<int>("numSubscribers")
             > (int)announcement_reader_listener->subscriber_list.size()) {
-        PerftestClock::milliSleep(1000);
+        PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
     }
 
     // Allocate data and set size
@@ -1670,7 +1669,7 @@ int perftest_cpp::Publisher()
 
     unsigned long long time_now = 0, time_last_check = 0, time_delta = 0;
     unsigned long pubRate_sample_period = 1;
-    unsigned long rate = 0;          
+    unsigned long rate = 0;
 
     struct PerftestTimer::ScheduleInfo schedInfo = {
             (unsigned int)_PM.get<unsigned long long>("executionTime"),
@@ -1691,8 +1690,12 @@ int perftest_cpp::Publisher()
 
     if (_PM.get<unsigned long long>("executionTime") > 0
             && !_PM.is_set("scan")) {
-        executionTimeoutThread = 
+        executionTimeoutThread =
             PerftestTimer::getInstance().setTimeout(schedInfo);
+        if (executionTimeoutThread == NULL) {
+            fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
+            return -1;
+        }
     }
 
     /*
@@ -1732,7 +1735,7 @@ int perftest_cpp::Publisher()
             (unsigned int)_PM.get<unsigned long long>("executionTime"),
             Timeout_scan
     };
-    
+
     /********************
      *  Main sending loop
      */
@@ -1804,8 +1807,12 @@ int perftest_cpp::Publisher()
                 // after executionTime
                 if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    executionTimeoutThread = 
+                    executionTimeoutThread =
                             PerftestTimer::getInstance().setTimeout(schedInfo_scan);
+                    if (executionTimeoutThread == NULL) {
+                        fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
+                        return -1;
+                    }
 
                     // flush anything that was previously sent
                     writer->Flush();

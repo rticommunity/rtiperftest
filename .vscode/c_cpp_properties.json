@@ -72,6 +72,7 @@
             ],
             "defines": [
                 "RTI_MICRO=1",
+                "RTI_SECURE_PERFTEST=1",
                 "RTI_UNIX=1",
                 "RTI_LANGUAGE_CPP_TRADITIONAL=1"
             ],

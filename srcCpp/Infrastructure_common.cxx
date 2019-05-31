@@ -5,22 +5,11 @@
 
 #include "Infrastructure_common.h"
 
-void *PerftestTimer::waitAndExecuteHandler(void *scheduleInfo) 
+void *PerftestTimer::waitAndExecute(void *scheduleInfo)
 {
     ScheduleInfo *info = static_cast<ScheduleInfo *>(scheduleInfo);
 
-    // Sleep until timer is reached
-    #ifdef RTI_VXWORKS
-      struct timespec sleepTime;
-      sleepTime.tv_sec = info->timer;
-      sleepTime.tv_nsec = 0;
-
-      nanosleep(&sleepTime, NULL);
-    #else
-      PerftestClock::milliSleep(info->timer * 1000u);
-    #endif
-
-    // Call the scheduled function with the args
+    PerftestClock::milliSleep(info->timer * 1000u);
     info->handlerFunction();
 
     return NULL;
@@ -32,21 +21,16 @@ PerftestTimer &PerftestTimer::getInstance()
     return instance;
 }
 
-PerftestThread* PerftestTimer::setTimeout(ScheduleInfo &info)
+PerftestThread *PerftestTimer::setTimeout(PerftestTimer::ScheduleInfo &info)
 {
     struct PerftestThread *timerThread = NULL;
 
-    // We have to create a new pointer to the timer so 
-    // it is not removed when this function ends
     timerThread = PerftestThread_new(
-            "timerThread", 
+            "timerThread",
             Perftest_THREAD_PRIORITY_DEFAULT,
             Perftest_THREAD_OPTION_DEFAULT,
-            waitAndExecuteHandler,
+            waitAndExecute,
             &info);
-    if (timerThread == NULL) {
-        fprintf(stderr, "Problem creating timer thread.\n");
-    }
 
     return timerThread;
 }

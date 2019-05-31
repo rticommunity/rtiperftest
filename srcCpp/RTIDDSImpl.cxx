@@ -74,6 +74,7 @@ void RTIDDSImpl<T>::Shutdown()
         _participant->delete_contained_entities();
         DDSTheParticipantFactory->delete_participant(_participant);
     }
+
     if(_pongSemaphore != NULL) {
         PerftestSemaphore_delete(_pongSemaphore);
         _pongSemaphore = NULL;
@@ -97,6 +98,13 @@ void RTIDDSImpl<T>::Shutdown()
         if (!registry->unregister("wh", NULL, NULL)) {
             //printf("failed to unregister wh\n");
         }
+      #ifdef RTI_SECURE_PERFTEST
+        if (!SECCORE_SecurePluginFactory::unregister_suite(
+                    registry,
+                    SECCORE_DEFAULT_SUITE_NAME)) {
+            //printf("failed to unregister security plugins\n");
+        }
+      #endif
     }
   #endif
 
@@ -245,6 +253,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     // Domain ID
     stringStream << "\tDomain: " << _PM->get<int>("domain") << "\n";
 
+  #ifndef RTI_MICRO
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
     if (_PM->get<bool>("dynamicData")) {
@@ -258,8 +267,10 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     } else {
         stringStream << "No\n";
     }
+  #endif
 
-    // Dynamic Data
+  #ifndef RTI_MICRO
+    // Asynchronous Publishing
     if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
         if (_isLargeData || _PM->get<bool>("asynchronous")) {
@@ -271,6 +282,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
             stringStream << "No\n";
         }
     }
+  #endif
 
     // Turbo Mode / AutoThrottle
     if (_PM->get<bool>("enableTurboMode")) {
@@ -280,6 +292,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "\tAutoThrottle: Enabled\n";
     }
 
+  #ifndef RTI_MICRO
     // XML File
     stringStream << "\tXML File: ";
     if (_PM->get<bool>("noXmlQos")) {
@@ -287,6 +300,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     } else {
         stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
+  #endif
 
     stringStream << "\n"
                  << _transport.printTransportConfigurationSummary();
@@ -576,7 +590,7 @@ class RTIPublisher : public IMessagingWriter
             if (status.current_count >= numSubscribers) {
                 break;
             }
-            PerftestClock::milliSleep(1000);
+            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         }
     }
 
@@ -959,7 +973,7 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             if (status.current_count >= numSubscribers) {
                 break;
             }
-            PerftestClock::milliSleep(1000);
+            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         }
     }
 
@@ -1442,7 +1456,7 @@ class RTISubscriber : public IMessagingReader
             if (status.current_count >= numPublishers) {
                 break;
             }
-            PerftestClock::milliSleep(1000);
+            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         }
     }
 
@@ -1675,7 +1689,7 @@ class RTIDynamicDataSubscriber : public IMessagingReader
             if (status.current_count >= numPublishers) {
                 break;
             }
-            PerftestClock::milliSleep(1000);
+            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         }
     }
 };
@@ -2601,9 +2615,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     DDSDataReader *reader = NULL;
     DDS_DataReaderQos dr_qos;
     std::string qos_profile;
-  #ifndef RTI_MICRO
     DDSTopicDescription* topic_desc = NULL; // Used to create the DDS DataReader
-  #endif
 
     DDSTopic *topic = _participant->create_topic(
                        topic_name, _typename,
@@ -2614,9 +2626,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         fprintf(stderr,"Problem creating topic %s.\n", topic_name);
         return NULL;
     }
-  #ifndef RTI_MICRO
     topic_desc = topic;
-  #endif
 
     qos_profile = get_qos_profile_name(topic_name);
     if (qos_profile.empty()) {
@@ -2777,7 +2787,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
       #else
-        /* This is only needed for Micro 2.4.x. False unbounded sequences are 
+        /* This is only needed for Micro 2.4.x. False unbounded sequences are
          * available in Micro 3.0 */
         #if RTI_MICRO_24x_COMPATIBILITY
           fprintf(stderr,
@@ -2801,11 +2811,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     if (callback != NULL) {
         if (!_PM->get<bool>("dynamicData")) {
             reader = _subscriber->create_datareader(
-                  #ifndef RTI_MICRO
                     topic_desc,
-                  #else
-                    topic,
-                  #endif
                     dr_qos,
                     new ReceiverListener<T>(callback),
                     DDS_DATA_AVAILABLE_STATUS);
@@ -2824,11 +2830,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
     } else {
         reader = _subscriber->create_datareader(
-              #ifndef RTI_MICRO
                 topic_desc,
-              #else
-                topic,
-              #endif
                 dr_qos,
                 NULL,
                 DDS_STATUS_MASK_NONE);
