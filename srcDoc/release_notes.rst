@@ -226,12 +226,13 @@ This behavior has been simplified: In order to run in `VxWorks` the
 `perftest_cpp_main` function can be called, receiving a simple string
 containing all the command line parameters.
 
-Fix shared parameters for *Perftest* within executions in the same VxWorks machine (#166)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Remove the use of certain static variables that caused issues in *VxWorks* kernel mode (#166)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In *VxWorks* when running two or more instances of *Perftest* in the same machine some parameters
-where shared between instances. This happened because static objects are shared across instances
-of *Perftest* within the same *VxWorks* machine. This issue has ben fixed.
+When running in *VxWorks* kernel mode two or more instances of *RTI Perftest* whithin the same machine
+some parameters were shared between instances. This happened because static variables are shared
+across different runs of the same *RTI Perftest* libraries/executables and changes in one run would cause
+changes in the other. This issue has ben fixed.
 
 Stop using alarm function to schedule functions since it is deprecated (#164)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
