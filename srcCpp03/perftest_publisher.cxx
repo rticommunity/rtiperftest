@@ -40,13 +40,6 @@ ThreadPriorities _threadPriorities;
  */
 const unsigned long long numIterDefaultLatencyTest = 10000000;
 
-#ifdef RTI_WIN32
-LARGE_INTEGER perftest_cpp::_ClockFrequency = {0, 0};
-/* This parameter is not thread safe */
-HANDLE perftest_cpp::_hTimerQueue = NULL;
-HANDLE perftest_cpp::_hTimer = NULL;
-#endif
-
 /*********************************************************
  * Main
  */
