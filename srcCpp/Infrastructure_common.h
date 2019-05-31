@@ -29,7 +29,7 @@
 class PerftestTimer
 {
   private:
-    static void *waitAndExecuteHandler(void *timerSeconds);
+    static void *waitAndExecute(void *scheduleInfo);
 
   public:
     struct ScheduleInfo {
@@ -37,6 +37,8 @@ class PerftestTimer
         void (*handlerFunction)(void);
     };
 
+    PerftestTimer() {}  // We need empty constructor and destructor for VxWorks
+    ~PerftestTimer() {}
     static PerftestTimer &getInstance();
     PerftestThread *setTimeout(ScheduleInfo &info);
 };

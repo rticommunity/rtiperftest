@@ -5,6 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Pro Debug clang++",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/${architecture}/debug/perftest_cpp",
+            "args": ["-pub"],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+        },
+        {
             "name": "Micro Debug clang++",
             "type": "cppdbg",
             "request": "launch",

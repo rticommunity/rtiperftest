@@ -226,9 +226,18 @@ This behavior has been simplified: In order to run in `VxWorks` the
 `perftest_cpp_main` function can be called, receiving a simple string
 containing all the command line parameters.
 
-Stop using alarm function to schedule functions since it is deprecated
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-When using `-executionTime <seconds>` parameter, internally, *Perftest* was scheduling a
+Remove the use of certain static variables that caused issues in *VxWorks* kernel mode (#166)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When running in *VxWorks* kernel mode two or more instances of *RTI Perftest* whithin the same machine
+some parameters were shared between instances. This happened because static variables are shared
+across different runs of the same *RTI Perftest* libraries/executables and changes in one run would cause
+changes in the other. This issue has ben fixed.
+
+Stop using alarm function to schedule functions since it is deprecated (#164)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using `-executionTime <seconds>` parameter, internally, *RTI Perftest* was scheduling a
 function call by using it as a handler when an ALARM signal was received.
 This ALARM signal was set to be signaled in the amount of seconds specified by the *executionTime*
 parameter using the `alarm()` function available in Unix-like systems,
@@ -236,16 +245,27 @@ which is deprecated or even already missing in some of RTI's supported platforms
 
 Now this issue has been fixed by using a thread that sleeps for the amount of seconds specified and then it calls the desired function.
 
-Wait for all perftest executions to finish before finalizing participants factory (#167)
+Wait for all perftest executions to finish before finalizing participants factory (#120)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In *VxWorks*, static objects are shared across executions of *Perftest* within the same machine.
+In *VxWorks*, static objects are shared across different runs of the same *RTI Perftest* libraries/executables
+and changes in one run would cause changes in the other.
 When finalizing the participants factory after deleting the participant of a *Perftest* execution,
 an error about outstanding participants in the domain was printed. This occurred because the participants
-factory was shared accross executions in the same machine and therefore participants from other executions
+factory was shared accross run in the same machine and therefore participants from other executions
 were preventing the factory from being properly finalized.
 
-This issue is fixed now by checking that the factory is empty of participants before finalizing it.
+This issue has been fixed by checking that the factory is empty of participants before finalizing it.
+
+Use Connext DDS implementation for the `milliSleep` method in C++ (#180)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The `PerftestClock::milliSleep()` method has been modified in the classic and
+modern C++ implementations to always use the *RTI Connext DDS* sleep functionality.
+This makes the function OS independent.
+
+At the same time, the code has been improved avoid overflowing the time for the sleeping
+period.
 
 Release Notes 2.4
 -----------------

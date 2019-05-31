@@ -5,18 +5,18 @@
 
 #include "Infrastructure_pro.h"
 
-// Since std::to_string is not defined in c++98
-// we will define it here for VxWorks
-#ifdef RTI_VXWORKS
-  namespace std {
+/*
+ * Since std::to_string is not defined until c++11
+ * we will define it here.
+ */
+namespace std {
     template<typename T>
     std::string to_string(const T &n) {
         std::ostringstream s;
         s << n;
         return s.str();
     }
-  }  
-#endif
+}
 
 /* Perftest Clock class */
 
@@ -55,14 +55,7 @@ unsigned long long PerftestClock::getTimeUsec()
 
 void PerftestClock::milliSleep(unsigned int millisec)
 {
-  #if defined(RTI_WIN32)
-    Sleep(millisec);
-  #elif defined(RTI_VXWORKS)
-    DDS_Duration_t sleep_period = {0, millisec * 1000000};
-    NDDSUtility::sleep(sleep_period);
-  #else
-    usleep(millisec * 1000);
-  #endif
+    NDDSUtility::sleep(DDS_Duration_t::from_millis(millisec));
 }
 
 void PerftestConfigureVerbosity(int verbosityLevel)
@@ -773,6 +766,7 @@ bool PerftestConfigureSecurity(
             return false;
         }
     } else {
+        governanceFilePath = _PM->get<std::string>("secureGovernanceFile");
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.access_control.governance_file",
@@ -852,7 +846,3 @@ bool PerftestConfigureSecurity(
     return true;
 }
 #endif
-
-/********************************************************************/
-/* Security Related Functions */
-

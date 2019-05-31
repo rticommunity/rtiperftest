@@ -16,9 +16,7 @@
   #include "PerftestSecurity.h"
 #endif
 
-#ifdef RTI_VXWORKS
-  #include<sstream>
-#endif
+#include <sstream>
 
 /*
  * In order to unify the implementations for Micro and Pro, we wrap the
@@ -52,6 +50,8 @@ inline bool PerftestSemaphore_give(PerftestSemaphore *sem)
     return RTIOsapiSemaphore_give(sem) == RTI_OSAPI_SEMAPHORE_STATUS_OK;
 }
 
+#define PERFTEST_DISCOVERY_TIME_MSEC 1000 // 1 second
+
 /* Perftest Clock Class */
 class PerftestClock
 {
@@ -69,6 +69,7 @@ class PerftestClock
     static PerftestClock &getInstance();
     unsigned long long getTimeUsec();
     static void milliSleep(unsigned int millisec);
+
 };
 
 const std::string GetDDSVersionString();
@@ -80,7 +81,7 @@ void PerftestConfigureVerbosity(int verbosityLevel);
 /* THREADS */
 
 #define PerftestThread RTIOsapiThread
-#define PerftestThread_delete  RTIOsapiThread_delete 
+#define PerftestThread_delete  RTIOsapiThread_delete
 
 #define Perftest_THREAD_PRIORITY_DEFAULT RTI_OSAPI_THREAD_PRIORITY_DEFAULT
 #define Perftest_THREAD_SETTINGS_REALTIME_PRIORITY DDS_THREAD_SETTINGS_REALTIME_PRIORITY

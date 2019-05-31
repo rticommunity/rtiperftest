@@ -14,6 +14,13 @@
 #include "rti_me_cpp.hxx"
 #include "PerftestTransport.h"
 
+#ifdef RTI_SECURE_PERFTEST
+  #include "sec_core/sec_core_cpp.h"
+  #include "PerftestSecurity.h"
+#endif
+
+#include <sstream>
+
 /********************************************************************/
 /*
  * In order to unify the implementations for Micro and Pro, we wrap the
@@ -30,6 +37,8 @@ inline RTI_BOOL PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
 {
     return OSAPI_Semaphore_take(sem, timeout, NULL);
 }
+
+#define PERFTEST_DISCOVERY_TIME_MSEC 1000 // 1 second
 
 /* Perftest Clock Class */
 class PerftestClock {
