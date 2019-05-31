@@ -14,10 +14,6 @@
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
 
-int  perftest_cpp::subID = 0;
-bool perftest_cpp::printIntervals = true;
-bool perftest_cpp::showCpu = false;
-
 bool perftest_cpp::_testCompleted = false;
 bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
 const int timeout_wait_for_ack_sec = 0;
@@ -186,6 +182,10 @@ perftest_cpp::perftest_cpp()
     : _PM(true)
 #endif
 {
+    subID = 0;
+    printIntervals = true;
+    showCpu = false;
+
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
     _MessagingImpl = NULL;
@@ -212,15 +212,15 @@ bool perftest_cpp::validate_input()
 
     // Manage parameter -printIterval
     // It is copied because it is used in the critical path
-    perftest_cpp::printIntervals = !_PM.get<bool>("noPrintIntervals");
+    printIntervals = !_PM.get<bool>("noPrintIntervals");
 
     // Manage parameter -cpu
     // It is copied because it is used in the critical path
-    perftest_cpp::showCpu = _PM.get<bool>("cpu");
+    showCpu = _PM.get<bool>("cpu");
 
     // Manage parameter -sidMultiSubTest
     // It is copied because it is used in the critical path
-    perftest_cpp::subID = _PM.get<int>("sidMultiSubTest");
+    subID = _PM.get<int>("sidMultiSubTest");
 
     // Manage parameter -latencyTest
     if (_PM.get<bool>("latencyTest")) {
@@ -515,6 +515,12 @@ void perftest_cpp::PrintConfiguration()
  */
 class ThroughputListener : public IMessagingCB
 {
+  private:
+    ParameterManager *_PM;
+    int  subID;
+    bool printIntervals;
+    bool showCpu;
+
   public:
 
     unsigned long long packets_received;
@@ -540,9 +546,13 @@ class ThroughputListener : public IMessagingCB
     bool _useCft;
     bool change_size;
 
-  public:
 
-    ThroughputListener(IMessagingWriter *writer, IMessagingReader *reader = NULL, bool UseCft = false, int numPublishers = 1)
+    ThroughputListener(
+            ParameterManager &PM,
+            IMessagingWriter *writer,
+            IMessagingReader *reader = NULL,
+            bool UseCft = false,
+            int numPublishers = 1)
     {
         packets_received = 0;
         bytes_received = 0;
@@ -567,6 +577,12 @@ class ThroughputListener : public IMessagingCB
         }
 
         _num_publishers = numPublishers;
+
+        _PM = &PM;
+
+        printIntervals = !_PM->get<bool>("noPrintIntervals");
+        showCpu = _PM->get<bool>("cpu");
+        subID = _PM->get<int>("sidMultiSubTest");
     }
 
     ~ThroughputListener() {
@@ -623,7 +639,7 @@ class ThroughputListener : public IMessagingCB
         }
 
         // Send back a packet if this is a ping
-        if ((message.latency_ping == perftest_cpp::subID)
+        if ((message.latency_ping == subID)
                 || (_useCft && message.latency_ping != -1)) {
             _writer->Send(message);
             _writer->Flush();
@@ -649,7 +665,7 @@ class ThroughputListener : public IMessagingCB
 
             begin_time = PerftestClock::getInstance().getTimeUsec();
 
-            if (perftest_cpp::printIntervals) {
+            if (printIntervals) {
                 printf("\n\n********** New data length is %d\n",
                        message.size + perftest_cpp::OVERHEAD_BYTES);
                 fflush(stdout);
@@ -712,7 +728,7 @@ class ThroughputListener : public IMessagingCB
             }
 
             std::string outputCpu = "";
-            if (perftest_cpp::showCpu) {
+            if (showCpu) {
                 outputCpu = cpu.get_cpu_average();
             }
             printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
@@ -808,6 +824,7 @@ int perftest_cpp::Subscriber()
     if (!_PM.get<bool>("useReadThread")) {
         // create latency pong reader
         reader_listener = new ThroughputListener(
+                _PM,
                 writer,
                 NULL,
                 _PM.is_set("cft"),
@@ -830,6 +847,7 @@ int perftest_cpp::Subscriber()
             return -1;
         }
         reader_listener = new ThroughputListener(
+                _PM,
                 writer,
                 reader,
                 _PM.is_set("cft"),
@@ -918,7 +936,7 @@ int perftest_cpp::Subscriber()
     unsigned long long msgsent, bytes, last_msgs, last_bytes;
     float missing_packets_percent = 0;
 
-    if (perftest_cpp::showCpu) {
+    if (showCpu) {
         reader_listener->cpu.initialize();
     }
 
@@ -945,7 +963,7 @@ int perftest_cpp::Subscriber()
             break;
         }
 
-        if (perftest_cpp::printIntervals) {
+        if (printIntervals) {
             if (last_data_length != reader_listener->last_data_length)
             {
                 last_data_length = reader_listener->last_data_length;
@@ -983,7 +1001,7 @@ int perftest_cpp::Subscriber()
 
             if (last_msgs > 0) {
                 std::string outputCpu = "";
-                if (perftest_cpp::showCpu) {
+                if (showCpu) {
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
                 printf("Packets: %8llu  Packets/s: %7llu  Packets/s(ave): %7.0lf  "
@@ -1109,6 +1127,10 @@ class LatencyListener : public IMessagingCB
     unsigned int       _num_latency;
     IMessagingWriter *_writer;
     ParameterManager *_PM;
+    int  subID;
+    bool printIntervals;
+    bool showCpu;
+
 public:
     IMessagingReader *_reader;
     CpuMonitor cpu;
@@ -1159,6 +1181,10 @@ public:
         _reader = reader;
         _writer = writer;
         _PM = &PM;
+
+        subID = _PM->get<int>("sidMultiSubTest");
+        printIntervals = !_PM->get<bool>("noPrintIntervals");
+        showCpu = _PM->get<bool>("cpu");
     }
 
     void print_summary_latency(){
@@ -1192,7 +1218,7 @@ public:
         latency_ave = (double)latency_sum / count;
         latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-        if (perftest_cpp::showCpu) {
+        if (showCpu) {
             outputCpu = cpu.get_cpu_average();
         }
 
@@ -1360,18 +1386,18 @@ public:
         {
             last_data_length = message.size;
 
-            if (perftest_cpp::printIntervals) {
+            if (printIntervals) {
                 printf("\n\n********** New data length is %d\n",
                        last_data_length + perftest_cpp::OVERHEAD_BYTES);
             }
         }
         else {
-            if (perftest_cpp::printIntervals) {
+            if (printIntervals) {
                 latency_ave = (double)latency_sum / (double)count;
                 latency_std = sqrt(
                         (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-                if (perftest_cpp::showCpu) {
+                if (showCpu) {
                     outputCpu = cpu.get_cpu_instant();
                 }
                 printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us "
@@ -1585,7 +1611,7 @@ int perftest_cpp::Publisher()
             ((int)_PM.get<unsigned long long>("dataLen"),
             (int)LENGTH_CHANGED_SIZE)];
 
-    if (perftest_cpp::showCpu && _PM.get<int>("pidMultiPubTest") == 0) {
+    if (showCpu && _PM.get<int>("pidMultiPubTest") == 0) {
         reader_listener->cpu.initialize();
     }
 
@@ -1840,7 +1866,7 @@ int perftest_cpp::Publisher()
                 ping_index_in_batch = (ping_index_in_batch + 1) % samplesPerBatch;
                 sentPing = true;
 
-                if (writerStats && perftest_cpp::printIntervals) {
+                if (writerStats && printIntervals) {
                     printf("Pulled samples: %7d\n",
                             writer->getPulledSampleCount());
                 }

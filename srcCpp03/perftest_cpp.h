@@ -95,10 +95,6 @@ class perftest_cpp
     static bool _testCompleted_scan;
 
   public:
-    static int  subID;
-    static bool printIntervals;
-    static bool showCpu;
-
     static struct RTIClock *_Clock;
     static struct RTINtpTime _ClockTime_aux;
     static RTI_UINT64 _Clock_sec;
@@ -123,6 +119,10 @@ class perftest_cpp
      * been reset.
      */
     static const unsigned long LATENCY_RESET_VALUE = ULONG_MAX;
+
+    int  subID;
+    bool printIntervals;
+    bool showCpu;
 
 };
 
