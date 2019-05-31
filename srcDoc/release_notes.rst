@@ -255,6 +255,12 @@ This makes the function OS independent.
 At the same time, the code has been improved avoid overflowing the time for the sleeping
 period.
 
+Update Maximum sample size accepted by *RTI Perftest* (#136)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The maximum size of a sample accepted by *RTI Perftest* has been updated to
+be compatible with *RTI Connext DDS 6.0.0*. This new value is 2147482620 Bytes.
+
 Release Notes 2.4
 -----------------
 

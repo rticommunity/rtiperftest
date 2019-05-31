@@ -526,7 +526,7 @@ void ParameterManager::initialize()
     scan->set_description(
             "Run test in scan mode, traversing\n"
             "a range of sample data sizes from\n"
-            "[32,63000] or [63001,2147483128] bytes,\n"
+            "[32,63000] or [63001,2147482620] bytes,\n"
             "in the case that you are using large data or not.\n"
             "The list of sizes is optional.\n"
             "Default values are "
