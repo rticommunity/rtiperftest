@@ -54,7 +54,7 @@ Test Parameters for Publishing and Subscribing Applications
    Length of payload in bytes for each send.
 
    | **Default:** ``100 bytes.``
-   | **Range:** ``28 - 2147483128 bytes``
+   | **Range:** ``28 - 2147482620 bytes``
 
    The lower limit is the number of "overhead" bytes in the message
    (i.e., the timestamp, sequence number, and other meta-data used by
@@ -645,7 +645,7 @@ Test Parameters Only For Publishing Applications
 -  ``-scan <size1>:<size2>:...:<sizeN>``
 
    Run test in scan mode. The list of sizes is optional and can be either in the
-   [32,63000] range or the [63001,2147483128] range (Large Data cannot be tested
+   [32,63000] range or the [63001,2147482620] range (Large Data cannot be tested
    in the same scan test as small data sizes). Default values to test with are
    '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'
    The ``-executionTime`` parameter is applied for every size of the scan.
