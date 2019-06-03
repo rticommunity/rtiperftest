@@ -246,14 +246,14 @@ which is deprecated or even already missing in some of RTI's supported platforms
 Now this issue has been fixed by using a thread that sleeps for the amount of seconds specified and then it calls the desired function.
 
 Wait for all perftest executions to finish before finalizing participants factory (#120)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In *VxWorks*, static objects are shared across different runs of the same *RTI Perftest* libraries/executables
-and changes in one run would cause changes in the other.
-When finalizing the participants factory after deleting the participant of a *Perftest* execution,
-an error about outstanding participants in the domain was printed. This occurred because the participants
-factory was shared accross run in the same machine and therefore participants from other executions
-were preventing the factory from being properly finalized.
+In *VxWorks* kernel mode, static objects are shared across different runs of the same
+*RTI Perftest* libraries/executables and changes in one run would cause changes in the other.
+When finalizing the *Participant Factory* after deleting the participant of a *RTI Perftest* execution,
+an error about outstanding participants in the domain was printed. This occurred
+because the *Participant Factory* was shared accross runs in the same machine
+and therefore participants from other executions were preventing the factory from being properly finalized.
 
 This issue has been fixed by checking that the factory is empty of participants before finalizing it.
 
