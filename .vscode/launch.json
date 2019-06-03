@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Pro Debug clang++",
             "type": "cppdbg",
@@ -27,6 +28,30 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb",
+        },
+        {
+            "name": "Pro Debug g++",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/x64Linux4gcc7.3.0/debug/perftest_cpp",
+            "args": ["-pub", "-domain", "0", "-latencyCount", "1", "-dataLen", "1000", "-latencyTest", "-multicast", "-executionTime", "2", "-noPrint"],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+        },
+        {
+            "name": "Micro Debug g++",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/x64Linux4gcc7.3.0/debug/perftest_cpp_micro",
+            "args": ["-pub"],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
         }
     ]
 }

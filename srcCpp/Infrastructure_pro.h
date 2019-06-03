@@ -50,6 +50,32 @@ inline bool PerftestSemaphore_give(PerftestSemaphore *sem)
     return RTIOsapiSemaphore_give(sem) == RTI_OSAPI_SEMAPHORE_STATUS_OK;
 }
 
+#define PerftestMutex RTIOsapiSemaphore
+#define PerftestMutex_new() \
+        RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_MUTEX, NULL)
+#define PerftestMutex_delete RTIOsapiSemaphore_delete
+
+inline bool PerftestMutex_give(PerftestSemaphore *sem)
+{
+    return RTIOsapiSemaphore_give(sem) == RTI_OSAPI_SEMAPHORE_STATUS_OK;
+}
+
+inline bool PerftestMutex_take(PerftestSemaphore *sem, int timeout=PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)
+{
+    struct RTINtpTime block_duration = RTI_NTP_TIME_MAX;
+    if (timeout != PERFTEST_SEMAPHORE_TIMEOUT_INFINITE) {
+        RTINtpTime_packFromMillisec(block_duration, 0, timeout);
+    }
+    /*
+     * RTIOsapiSemaphore_take can return 3 values:
+     * - OK
+     * - TIMEOUT
+     * - ERROR
+     * We will only return false if ERROR
+     */
+    return RTIOsapiSemaphore_take(sem, &block_duration) != RTI_OSAPI_SEMAPHORE_STATUS_ERROR;
+}
+
 #define PERFTEST_DISCOVERY_TIME_MSEC 1000 // 1 second
 
 /* Perftest Clock Class */

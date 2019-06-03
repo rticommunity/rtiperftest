@@ -141,7 +141,7 @@ public:
 
 private:
     // This semaphore is used in VxWorks to synchronize finalizing a factory
-    static PerftestSemaphore     *_finalizeFactorySemaphore;
+    static PerftestMutex     *_finalizeFactoryMutex;
 
     long                         _instanceMaxCountReader;
     bool                         _isLargeData;
@@ -165,4 +165,3 @@ private:
 };
 
 #endif // __RTIDDSIMPL_H__
-

@@ -65,9 +65,9 @@ void PerftestClock::milliSleep(unsigned int millisec)
 const std::string GetDDSVersionString()
 {
     return "RTI Connext DDS Micro "
-            + std::to_string(RTIME_DDS_VERSION_MAJOR) + "."
-            + std::to_string(RTIME_DDS_VERSION_MINOR) + "."
-            + std::to_string(RTIME_DDS_VERSION_REVISION);
+            + std::to_string((int) RTIME_DDS_VERSION_MAJOR) + "."
+            + std::to_string((int) RTIME_DDS_VERSION_MINOR) + "."
+            + std::to_string((int) RTIME_DDS_VERSION_REVISION);
 }
 
 void PerftestConfigureVerbosity(int verbosityLevel)
@@ -215,9 +215,9 @@ bool configureUDPv4Transport(
     if (_PM->get<bool>("multicast")) {
         DDS_StringSeq_set_maximum(&qos.user_traffic.enabled_transports, 1);
         DDS_StringSeq_set_length(&qos.user_traffic.enabled_transports, 1);
-        *DDS_StringSeq_get_reference(&qos.user_traffic.enabled_transports, 0) = 
+        *DDS_StringSeq_get_reference(&qos.user_traffic.enabled_transports, 0) =
                 DDS_String_dup("_udp://239.255.0.1");
-    } 
+    }
 
     /* if there are more remote or local endpoints, you may need to increase these limits */
     qos.resource_limits.max_destination_ports = 32;
