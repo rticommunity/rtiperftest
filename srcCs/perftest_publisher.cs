@@ -1429,7 +1429,7 @@ namespace PerformanceTest {
                     sb.Append("\n");
                 }
             } else {
-                if (_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE) {
+                if (_DataLen > (ulong)MAX_SYNCHRONOUS_SIZE.VALUE) {
                     sb.Append("\tExpecting Large Data Type\n");
                 }
             }
