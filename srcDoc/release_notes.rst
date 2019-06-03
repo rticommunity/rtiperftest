@@ -372,6 +372,17 @@ Migrate RTI Routing Service XML configuration to 6.0.0
 The RTI Routing Service configuration file has been updated and
 it is now supported in the version 6.0.0.
 
+Issues compiling in certain Platforms due to static variable `transportConfigMap` (#161)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In certain architectures the use of the static variable: `static std::map<std::string, TransportConfig> transportConfigMap`
+would cause some issues when referencing it from a static context.
+
+In order to avoid this issue, the variable is not static anymore
+and it will be initialized in the constructor of the `PerftestTransport` class.
+
+This issue affected both the Modern C++ Implementation and the Classic one.
+
 Release Notes 2.3.2
 -------------------
 
