@@ -1428,6 +1428,10 @@ namespace PerformanceTest {
                     sb.Append(_NumIter);
                     sb.Append("\n");
                 }
+            } else {
+                if (_DataLen > MAX_SYNCHRONOUS_SIZE.VALUE) {
+                    sb.Append("\tExpecting Large Data Type\n");
+                }
             }
 
             // Listener/WaitSets

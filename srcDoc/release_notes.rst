@@ -257,6 +257,18 @@ and therefore participants from other executions were preventing the factory fro
 
 This issue has been fixed by checking that the factory is empty of participants before finalizing it.
 
+Display in *RTI Perftest*'s subscriber side if the type expected is large data (#123)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* requires to specify in the subscriber side the Data Length parameter
+if the Data to be received is larger than the `MAX_SYNCHRONOUS_SIZE` constant. This
+is used to change from the regular `TestData_t` type to `TestDataLarge_t` (used for
+large data). However, this was not displayed anywhere in the summary shown by
+the subscriber.
+
+This issue has been fixed and now the subscriber will show a short message stating
+that it is expecting the Large Data Type.
+
 Use Connext DDS implementation for the `milliSleep` method in C++ (#180)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -885,6 +885,10 @@ public final class PerfTest {
                 sb.append(_numIter);
                 sb.append("\n");
             }
+        } else {
+            if (_dataLen > MAX_SYNCHRONOUS_SIZE.VALUE) {
+                sb.append("\tExpecting Large Data Type\n");
+            }
         }
 
         // Listener/WaitSets
