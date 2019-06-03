@@ -161,7 +161,6 @@ void RTIDDSImpl<T>::Shutdown()
             fprintf(stderr, "Unexpected error giving semaphore\n");
             return;
     }
-
 }
 
 /*********************************************************
