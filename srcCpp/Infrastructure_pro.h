@@ -50,6 +50,20 @@ inline bool PerftestSemaphore_give(PerftestSemaphore *sem)
     return RTIOsapiSemaphore_give(sem) == RTI_OSAPI_SEMAPHORE_STATUS_OK;
 }
 
+/*
+ * Implementation for Mutex. Since in Pro it is based in semaphore, we will use
+ * the existing implementation of the functions we have created for
+ * PerftestSemaphore
+ */
+
+#define PerftestMutex RTIOsapiSemaphore
+#define PerftestMutex_new() \
+        RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_MUTEX, NULL)
+#define PerftestMutex_delete RTIOsapiSemaphore_delete
+#define PerftestMutex_give PerftestSemaphore_give
+#define PerftestMutex_take(sem) \
+        PerftestSemaphore_take(sem, PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)
+
 #define PERFTEST_DISCOVERY_TIME_MSEC 1000 // 1 second
 
 /* Perftest Clock Class */

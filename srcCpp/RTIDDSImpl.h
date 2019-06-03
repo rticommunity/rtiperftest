@@ -140,8 +140,8 @@ public:
     const std::string get_qos_profile_name(const char *topicName);
 
 private:
-    // This semaphore is used in VxWorks to synchronize finalizing a factory
-    static PerftestSemaphore     *_finalizeFactorySemaphore;
+    // This Mutex is used in VxWorks to synchronize when finalizing the factory
+    static PerftestMutex     *_finalizeFactoryMutex;
 
     long                         _instanceMaxCountReader;
     bool                         _isLargeData;
@@ -165,4 +165,3 @@ private:
 };
 
 #endif // __RTIDDSIMPL_H__
-

@@ -40,6 +40,12 @@ inline RTI_BOOL PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
 
 #define PERFTEST_DISCOVERY_TIME_MSEC 1000 // 1 second
 
+#define PerftestMutex OSAPI_Mutex_T
+#define PerftestMutex_new OSAPI_Mutex_new
+#define PerftestMutex_delete OSAPI_Mutex_delete
+#define PerftestMutex_give OSAPI_Mutex_give
+#define PerftestMutex_take OSAPI_Mutex_take
+
 /* Perftest Clock Class */
 class PerftestClock {
 

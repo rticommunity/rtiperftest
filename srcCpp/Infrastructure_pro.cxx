@@ -85,10 +85,11 @@ void PerftestConfigureVerbosity(int verbosityLevel)
 const std::string GetDDSVersionString() {
     DDS_ProductVersion_t productVersion =
             NDDSConfigVersion::get_instance().get_product_version();
+
     return "RTI Connext DDS "
-            + std::to_string(productVersion.major) + "."
-            + std::to_string(productVersion.minor) + "."
-            + std::to_string(productVersion.release);
+            + std::to_string((int) productVersion.major) + "."
+            + std::to_string((int) productVersion.minor) + "."
+            + std::to_string((int) productVersion.release);
 }
 
 
