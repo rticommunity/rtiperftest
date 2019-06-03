@@ -48,6 +48,9 @@ const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME = "nddssecurity";
 
 std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
 
+template <typename T>
+rti::core::Semaphore RTIDDSImpl<T>::_finalizeFactorySemaphore(RTI_OSAPI_SEMAPHORE_KIND_MUTEX, NULL);
+
 /* Perftest DynamicDataMembersId class */
 DynamicDataMembersId::DynamicDataMembersId()
 {
@@ -101,12 +104,24 @@ RTIDDSImpl<T>::RTIDDSImpl():
 template <typename T>
 void RTIDDSImpl<T>::Shutdown()
 {
-    /* RTI Connext provides finalize_instance() method on
-     * domain participant factory for people who want to release memory used
-     * by the participant factory. Uncomment the following block of code for
-     * clean destruction of the singleton. */
-    /* _participant.finalize_participant_factory(); */
+    std::vector<dds::domain::DomainParticipant> participants;
 
+    _finalizeFactorySemaphore.take();
+
+    // We have to explicitly close the DomainParticipant to finalize the factory
+    _participant.close();
+
+    // Find outstanding participants. Finding 1 is enought
+    rti::domain::find_participants(std::back_inserter(participants), 1);
+
+    // Delete factory only I am the only participant
+    if (participants.empty()){
+        _participant.finalize_participant_factory();
+    } else {
+        std::cout << "[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)" << std::endl;
+    }
+
+    _finalizeFactorySemaphore.give();
 }
 
 /*********************************************************

@@ -1814,6 +1814,7 @@ int perftest_cpp::RunPublisher()
         delete(announcement_reader);
     }
 
+
     if (_testCompleted) {
         // Delete timeout thread
         if (executionTimeoutThread != NULL) {

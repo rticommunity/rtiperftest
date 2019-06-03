@@ -16,6 +16,9 @@
 
 std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
 
+template <typename T>
+PerftestSemaphore *RTIDDSImpl<T>::_finalizeFactorySemaphore = NULL;
+
 /* Perftest DynamicDataMembersId class */
 DynamicDataMembersId::DynamicDataMembersId()
 {
@@ -54,6 +57,18 @@ int DynamicDataMembersId::at(std::string key)
 template <typename T>
 void RTIDDSImpl<T>::Shutdown()
 {
+    DDSDomainParticipantSeq participants;
+    DDS_ReturnCode_t retcode;
+
+    // Get semaphore so other processes cannot dispose at the same time
+    if (_finalizeFactorySemaphore == NULL) {
+        _finalizeFactorySemaphore = RTIOsapiSemaphore_new(RTI_OSAPI_SEMAPHORE_KIND_MUTEX, NULL);
+    }
+
+    if (!PerftestSemaphore_take(_finalizeFactorySemaphore, PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
+        fprintf(stderr,"Unexpected error taking semaphore\n");
+        return;
+    }
 
     if (_participant != NULL) {
         PerftestClock::milliSleep(2000);
@@ -72,6 +87,7 @@ void RTIDDSImpl<T>::Shutdown()
         }
 
         _participant->delete_contained_entities();
+
         DDSTheParticipantFactory->delete_participant(_participant);
     }
 
@@ -115,7 +131,33 @@ void RTIDDSImpl<T>::Shutdown()
     }
   #endif
 
-    DDSDomainParticipantFactory::finalize_instance();
+    retcode = DDSTheParticipantFactory->get_participants(participants);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("Error getting participants. Retcode: %d", retcode);
+    }
+
+    if (participants.length() == 0) {
+        DDSDomainParticipantFactory::finalize_instance();
+
+        if (_finalizeFactorySemaphore != NULL) {
+            // Give semaphore so the mutex can be properly closed
+            if (!PerftestSemaphore_give(_finalizeFactorySemaphore)) {
+                fprintf(stderr, "Unexpected error giving semaphore\n");
+                return;
+            }
+
+            // Delete semaphore since no one else is going to need it
+            PerftestSemaphore_delete(_finalizeFactorySemaphore);
+            _finalizeFactorySemaphore = NULL;
+        }
+    } else {
+        printf("[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)\n");
+
+        if (!PerftestSemaphore_give(_finalizeFactorySemaphore)) {
+            fprintf(stderr, "Unexpected error giving semaphore\n");
+            return;
+        }
+    }
 }
 
 /*********************************************************
