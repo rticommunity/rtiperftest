@@ -172,6 +172,13 @@ if NOT "%1"=="" (
 
 ::------------------------------------------------------------------------------
 
+if "x!architecture!" == "x" (
+	echo [ERROR]: The platform argument is missing.
+	exit /b 1
+)
+
+::------------------------------------------------------------------------------
+
 if !BUILD_MICRO! == 1 (
 
 	@REM # Is RTIMEHOME set?
@@ -543,18 +550,37 @@ if %BUILD_JAVA% == 1 (
 
 if !BUILD_MICRO! == 1 (
 
-	call::solution_compilation_flag_calculation
 	call::copy_src_cpp_common
+	call::solution_compilation_flag_calculation
+
+	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_TRADITIONAL"
 
 	if !BUILD_MICRO_24x_COMPATIBILITY! == 1 (
 		set "ADDITIONAL_DEFINES=RTI_MICRO_24x_COMPATIBILITY !ADDITIONAL_DEFINES!"
 	) else (
-		set "rtiddsgen_extra_options=!rtiddsgen_extra_options! -sequenceSize !MICRO_UNBOUNDED_SEQUENCE_SIZE! -additionalRtiLibraries nddsmetp"
+
+		if !USE_SECURE_LIBS! == 1 (
+
+			if "x!RTI_OPENSSLHOME!" == "x" (
+				echo [ERROR]: In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option.
+				exit /b 1
+			)
+
+			set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_SECURE_PERFTEST"
+			set "additional_rti_libraries=rti_me_netioshmem rti_me_netioshmem rti_me_seccore"
+
+			set rtiddsgen_extra_options= -additionalLibraries "libeay32z ssleay32z"
+			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!/static_!RELEASE_DEBUG!/lib"
+			echo [INFO] Using security plugin. Linking Statically.
+		) else (
+			set "additional_rti_libraries=nddsmetp"
+		)
+		set rtiddsgen_extra_options=!rtiddsgen_extra_options! -sequenceSize !MICRO_UNBOUNDED_SEQUENCE_SIZE! -additionalRtiLibraries "!additional_rti_libraries!"
 	)
 
 	set "ADDITIONAL_DEFINES=RTI_WIN32 RTI_MICRO !ADDITIONAL_DEFINES!"
-	set "additional_header_files=ParameterManager.h Parameter.h ThreadPriorities.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h"
-	set "additional_source_files=ParameterManager.cxx Parameter.cxx ThreadPriorities.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx"
+	set "additional_header_files=ParameterManager.h Parameter.h ThreadPriorities.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h PerftestSecurity.h"
+	set "additional_source_files=ParameterManager.cxx Parameter.cxx ThreadPriorities.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx PerftestSecurity.cxx"
 
 	@REM # Generate files for srcCpp
 	echo[
