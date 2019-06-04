@@ -22,6 +22,12 @@ publishing application and the ``-sub`` specifies a subscribing
 application. If you do not specify See ``-pub`` then ``-sub`` is
 assumed.
 
+Some of these parameters are valid when using *RTI Connext DDS Pro* and
+*RTI Connext DDS Micro* and *Raw Transport*, however, some of them are just
+available for some of the implementations, this should be stated both in each
+of the descriptions of the parameters and in the ``-help`` information displayed
+by the application.
+
 For additional information on setting the parameters, see sections:
 
 -  :ref:`Publication rate and Spinning vs. Sleeping`
@@ -63,8 +69,12 @@ Test Parameters for Publishing and Subscribing Applications
    size of 64KB.
 
    If ``<bytes>`` is bigger than 63000 *RTI Perftest* will enable the
-   use of *Asynchronous Publishing* and *Unbounded Sequences*. If See
-   ``-scan`` is specified, this value is ignored.
+   use of *Asynchronous Publishing* and *Unbounded Sequences*. When using
+   *RTI Connext DDS Micro*, the type is not really unbounded, the size is
+   given by the ``MICRO_UNBOUNDED_SEQUENCE_SIZE`` constant, that can be
+   modified in the ``build.bat`` and ``build.sh`` scripts.
+
+   If ``-scan`` is specified, this value is ignored.
 
 -  ``-verbosity``
 
@@ -149,7 +159,7 @@ Test Parameters for Publishing and Subscribing Applications
    | **throughput:** ``239.255.1.1``
    | **announcement:** ``239.255.1.100``
 
-    See ``-multicastAddr <address>`` for how to change these IP addresses.
+   See ``-multicastAddr <address>`` for how to change these IP addresses.
 
    **Default:** Do not use multicast.
 
@@ -293,7 +303,8 @@ Test Parameters for Publishing and Subscribing Applications
 
 -  ``-asynchronous``
 
-   Enable asynchronous publishing in the DataWriter QoS.
+   Enable asynchronous publishing in the DataWriter QoS, even for data sizes
+   smaller than ``MAX_SYNCRONOUS_SIZE`` (63000 Bytes).
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
@@ -312,7 +323,7 @@ Test Parameters for Publishing and Subscribing Applications
    ['default','10Gbps','1Gbps'].
 
    This parameter is not available when compiling against *RTI Connext DDS
-   Micro*.
+   Micro*, in this case *RTI Perftest* will use the default Flow Controller.
 
    | **Default:** ``default``
    | **Values:** ``['default','10Gbps','1Gbps']``
@@ -330,11 +341,11 @@ Test Parameters for Publishing and Subscribing Applications
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
 
-   **Default:** ``2*dataLen up to 63000 bytes.``\  **Range:** ``28 - 63000 bytes``
+   **Default:** ``2 * dataLen up to 63000 bytes.``\  **Range:** ``28 - 63000 bytes``
 
 -  ``-peer <address>|<addres>[:<id>]``
 
-   Adds a peer to the peer host address list. If -rawTransport is used, a
+   Adds a peer to the peer host address list. If ``-rawTransport`` is used, a
    optional ID of the subscriber could beprovied. This argument may be repeated
    to indicate multiple peers.
 
@@ -365,7 +376,7 @@ Test Parameters for Publishing and Subscribing Applications
     - Table 12.7 Thread-Priority Definitions for Windows Platforms
 
    This parameter is not available when compiling against *RTI Connext DDS
-   Micro*.
+   Micro* nor for *Raw Transport*.
 
    **Default:**
    ``Not set. The priority will not be modified.``
@@ -387,7 +398,10 @@ by using the `Transport` spececific command-line parameters.
    | **Options Micro:** ``UDPv4``, ``SHMEM``.
    | **Default Micro:** ``UDPv4``.
 
--  ``-nic <ipaddr> / -allowInterfaces <ipaddr>``
+   | **Options Raw Transport:** ``UDPv4``, ``SHMEM``.
+   | **Default Raw Transport:** ``UDPv4``.
+
+-  ``-allowInterfaces <ipaddr> / -nic <ipaddr>``
 
   Restrict RTI Connext DDS to sending output through this interface.
   The value should be the IP address assigned to any of the available network
@@ -509,8 +523,8 @@ by using the `Transport` spececific command-line parameters.
 
 .. _Test Parameters Only For Publishing Applications:
 
-Test Parameters Only For Publishing Applications 
--------------------------------------------------
+Test Parameters Only For Publishing Applications
+------------------------------------------------
 
 -  ``-batchSize <bytes>``
 
@@ -582,6 +596,7 @@ Test Parameters Only For Publishing Applications
    See ``-pidMultiPubTest <id>``).
 
    **Default:** ``false``
+
 -  ``-numIter <count>``
 
    Number of samples to send.
@@ -695,8 +710,8 @@ Test Parameters Only For Publishing Applications
 
 .. _Test Parameters Only For Subscribing Applications:
 
-Test Parameters Only For Subscribing Applications 
---------------------------------------------------
+Test Parameters Only For Subscribing Applications
+-------------------------------------------------
 
 -  ``-numPublishers <count>``
 
@@ -736,7 +751,7 @@ Test Parameters Only For Subscribing Applications
 
 .. _Test Parameters to Control RTI Connext DDS Secure Options:
 
-Test Parameters to Control RTI Connext DDS Secure Options 
+Test Parameters to Control RTI Connext DDS Secure Options
 ---------------------------------------------------------
 
 -  ``-secureEncryptDiscovery``
@@ -805,9 +820,10 @@ RawTransport Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -  ``-rawTransport``
 
-   Use sockets as a transport instead of DDS protocol. Support UDPv4 and Shared
-   Memory (SHMEM).
-   Many of the parameters are not supported with sockets.
+   Use sockets as a transport instead of DDS protocol. It supports 
+   ``UDPv4`` and Shared Memory (``SHMEM``).
+   Some of the *RTI Connext DDS* parameters are not supported when using
+   sockets.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
@@ -1118,14 +1134,12 @@ Optimizing Windows Systems
    ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\ Services\Tcpip\Parameters``
 
    -  Add the ``DWORD`` key: ``MaximumReassemblyHeaders``
-   -  Set the value to ``0xffff`` (this is the max value)
-   -  See http://support.microsoft.com/kb/811003 for more information.
+   -  Set the value to ``0xffff`` (this is the max value).
 
 3. Change this entry:
    ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\ Services\AFD\Parameters``
 
    -  Add the ``DWORD`` key: ``FastSendDatagramThreshold``
-   -  Set the value to ``65536`` (``0x10000``) See
-      http://support.microsoft.com/kb/235257 for more information.
+   -  Set the value to ``65536`` (``0x10000``).
 
 4. Reboot your machine for the changes to take effect.

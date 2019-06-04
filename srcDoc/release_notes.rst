@@ -1162,7 +1162,9 @@ If you want to skip the use of Shared Memory in *RTI Perftest*, specify the tran
 Warning when compiling the *Traditional* C++ API Implementation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*RTI Perftest* might show these warnings when compiling the *Traditional* C++ API implementation:
+*RTI Perftest* might show these warnings when compiling the *Traditional* C++
+API implementation for *RTI Connext DDS Pro* (in versions prior to 6.0.0) and
+for *RTI Connext DDS Micro*:
 
 ::
 
@@ -1179,7 +1181,8 @@ Warning when compiling the *Traditional* C++ API Implementation
                             ^
 
 These warnings are the result of a known issue in *RTI Code Generator (rtiddsgen)* (CODEGENII-873) related to the way in which
-the code for a const string is generated. This issue will be fixed in future releases of *RTI Connext DDS*.
+the code for a const string is generated. This issue will be fixed in future releases of *RTI Connext DDS Micro* and has been
+already fixed for *RTI Connext DDS Pro* 6.0.0.
 
 
 Building RTI Perftest Java API against RTI Connext DDS 5.2.0.x
@@ -1233,3 +1236,13 @@ configurations:
 The new *RTI Perftest* build system, however, is focused on compiling
 only one of those modes at a time. To choose the compilation mode,
 use the ``-debug`` and ``-dynamic`` flags.
+
+Dynamic compilation modes for *RTI Connext DDS Micro*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When building against the *RTI Connext DDS Micro* libraries, only the static
+compilation modes are supported. Therefore the ``--dynamic`` option will have
+no effect.
+
+``Rtiddsgen`` code generator will fail with the following message: ``Option
+-sharedLib is not supported by this version of rtiddsgen``.

@@ -729,7 +729,7 @@ GOTO:EOF
 	echo[
 	echo.    --micro                Build RTI Perftest for RTI Connext Micro
 	echo.                           By default RTI Perftest will assume it will be
-	echo.                           built against RTI Connext DDS Professional
+	echo.                           built against RTI Connext DDS Professional.
 	echo.    --platform your_arch   Platform for which build.sh is going to compile
 	echo.                           RTI Perftest.
 	echo.    --nddshome path        Path to the *RTI Connext DDS Professional
@@ -759,7 +759,8 @@ GOTO:EOF
 	echo.    --cmake  path          Path to the CMAKE executable. If this
 	echo.                           parameter is not present, Cmake variable
 	echo.                           should be available from your $PATH variable.
-	echo.    --cmake-generator g    CMake generator to use
+	echo.    --cmake-generator g    CMake generator to use. By default, NMake
+	echo.                           makefiles will be generated.
 	echo.    --perl path            Path to PERL executable. If this parameter is
 	echo.                           not present, the path to PERL should be
 	echo.                           available from your \$PATH variable.
@@ -777,6 +778,8 @@ GOTO:EOF
 	echo.                           Default is not enabled.
 	echo.    --openssl-home path    Path to the openssl home. This will be used
 	echo.                           when compiling statically and using security
+	echo.                           Note: For Micro provide this path with /
+	echo.                           instead of \, required by cmake.
 	echo.    --clean                If this option is present, the build.sh script
 	echo.                           will clean all the generated code and binaries
 	echo.                           from previous executions.

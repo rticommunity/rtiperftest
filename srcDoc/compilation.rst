@@ -155,6 +155,7 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | not present, ``cmake``            |
 |                      |           | variable should be available from |
 |                      |           | your ``$PATH`` variable.          |
++----------------------+-----------+-----------------------------------+
 | --compiler           | Optional  | Path to (or name of) the compiler |
 |                      |           | executable. If this parameter is  |
 |                      |           | not a full path, the named        |
@@ -350,6 +351,12 @@ The ``build.bat`` script accepts the following list of parameters:
 |                      |           | ``%NDDSHOME%`` variable should    |
 |                      |           | be.                               |
 +----------------------+-----------+-----------------------------------+
+| --rtimehome          | Optional  | Path to the *RTI Connext DDS      |
+|                      |           | Micro installation*. If this      |
+|                      |           | is not present, the               |
+|                      |           | ``%RTIMEHOME%`` variable should   |
+|                      |           | be set.                           |
++----------------------+-----------+-----------------------------------+
 | --skip-java-build    | Optional  | Avoid ``Java ByteCode``           |
 |                      |           | generation and ``.jar`` creation. |
 +----------------------+-----------+-----------------------------------+
@@ -393,6 +400,19 @@ The ``build.bat`` script accepts the following list of parameters:
 |                      |           | directory. Needed when compiling  |
 |                      |           | using the --secure option and     |
 |                      |           | statically.                       |
+|                      |           | Note: For Micro provide this path |
+|                      |           | with '/' instead of '\'. This is  |
+|                      |           | required by ``cmake``.            |
++----------------------+-----------+-----------------------------------+
+| --cmake              | Optional  | Path to the ``cmake``             |
+|                      |           | executable. If this parameter is  |
+|                      |           | not present, ``cmake``            |
+|                      |           | variable should be available from |
+|                      |           | your ``$PATH`` variable.          |
++----------------------+-----------+-----------------------------------+
+| --cmake-generator    | Optional  | ``cmake`` generator to be used    |
+|                      |           | By default, NMake makefiles will  |
+|                      |           | be generated.                     |
 +----------------------+-----------+-----------------------------------+
 | --msbuild            | Optional  | Path to the ``msbuild.exe``       |
 |                      |           | executable. If this parameter is  |
@@ -470,6 +490,21 @@ examples:
    ::
 
        ./build.bat --platform x64Win64VS2012 --secure --dynamic
+
+-  Generation and compilation for a given architecture
+   (``x64Win64VS2012``) for Micro, specifying the RTIMEHOME.
+
+   ::
+
+       ./build.bat --platform x64Win64VS2012 --micro --rtimehome <PATH>
+
+-  Generation and compilation for a given architecture
+   (``x64Win64VS2012``) for Micro with security, debug,
+   specifying the RTIMEHOME.
+
+   ::
+
+       ./build.bat --platform x64Win64VS2012 --micro --rtimehome <PATH> --secure --openssl-home <PATH/WITH/FORWARD/SLASHES>
 
 -  *RTI Perftest* directory clean-up.
 
