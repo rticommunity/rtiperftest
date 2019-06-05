@@ -639,6 +639,24 @@ echo[
 echo ================================================================================
 GOTO:EOF
 
+:solution_compilation_flag_calculation
+
+	echo[
+
+	set "solution_compilation_mode_flag="
+	if x!STATIC_DYNAMIC!==xdynamic (
+		set "solution_compilation_mode_flag= DLL"
+	)
+	if x!RELEASE_DEBUG!==xdebug (
+		set solution_compilation_mode_flag=debug!solution_compilation_mode_flag!
+	) else (
+		set solution_compilation_mode_flag=release!solution_compilation_mode_flag!
+	)
+
+	echo [INFO]: Compilation flag for msbuild is: !solution_compilation_mode_flag!
+
+GOTO:EOF
+
 ::------------------------------------------------------------------------------
 @REM #FUNCTIONS:
 
@@ -703,23 +721,6 @@ GOTO:EOF
 		set solution_name_cs=%begin_sol_cs%csharp.sln
 	)
 	set cs_bin_path=bin\%cs_64%!RELEASE_DEBUG!-%end_sol%
-
-GOTO:EOF
-
-:solution_compilation_flag_calculation
-  echo[
-
-	set "solution_compilation_mode_flag="
-	if x!STATIC_DYNAMIC!==xdynamic (
-		set "solution_compilation_mode_flag= DLL"
-  )
-  if x!RELEASE_DEBUG!==xdebug (
-		set solution_compilation_mode_flag=debug!solution_compilation_mode_flag!
-  ) else (
-		set solution_compilation_mode_flag=release!solution_compilation_mode_flag!
-  )
-
-	echo [INFO]: Compilation flag for msbuild is: !solution_compilation_mode_flag!
 
 GOTO:EOF
 
