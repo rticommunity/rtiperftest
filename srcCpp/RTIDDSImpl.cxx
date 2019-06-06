@@ -304,7 +304,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     if (_PM->get<bool>("dynamicData")) {
         stringStream << "Yes";
       #ifdef RTI_LEGACY_DD_IMPL
-        if (_useLegacyDynamicDataImpl) {
+        if (_PM->get<bool>("useLegacyDynamicData")) {
             stringStream << " (Legacy Implementation)";
         }
       #endif
@@ -1983,7 +1983,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
   #ifndef RTI_MICRO
   #ifdef RTI_LEGACY_DD_IMPL
     // If we are using Dynamic Data, check if we want to use the new or old impl
-    if (_isDynamicData && _useLegacyDynamicDataImpl) {
+    if (_PM->get<bool>("dynamicData") && _PM->get<bool>("useLegacyDynamicData")) {
         DDS_DynamicData_enable_legacy_impl();
     }
   #endif
