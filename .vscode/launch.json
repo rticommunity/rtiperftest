@@ -6,6 +6,8 @@
     "configurations": [
 
 
+
+
         {
             "name": "Pro Debug clang++",
             "type": "cppdbg",
@@ -31,16 +33,42 @@
             "MIMode": "lldb",
         },
         {
-            "name": "Pro Debug g++",
+            "name": "Pro Debug g++ (Publisher)",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/x64Linux4gcc7.3.0/debug/perftest_cpp03",
-            "args": ["-pub", "-domain", "0", "-latencyCount", "1", "-dataLen", "1000", "-latencyTest", "-multicast", "-executionTime", "2", "-noPrint"],
+            "args": ["-pub", "-domain", "0", "-latencyCount", "1", "-dataLen", "1000", "-latencyTest", "-multicast", "-executionTime", "2", "-noPrint", "-flatData"],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable all-exceptions",
+                    "text": "-exec \"catch throw\"",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Pro Debug g++ (Subscriber)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/x64Linux4gcc7.3.0/debug/perftest_cpp03",
+            "args": ["-sub", "-domain", "0", "-multicast", "-flatData"],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable all-exceptions",
+                    "text": "-exec \"catch throw\"",
+                    "ignoreFailures": true
+                }
+            ]
         },
         {
             "name": "Micro Debug g++",

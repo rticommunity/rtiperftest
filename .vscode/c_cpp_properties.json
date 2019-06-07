@@ -7,7 +7,7 @@
                 "${workspaceFolder}/srcCppCommon/",
                 "${NDDSHOME}/include",
                 "${NDDSHOME}/include/ndds",
-                "/home/salva/rti_connext_dds-6.0.0/include/ndds/hpp"
+                "${NDDSHOME}/include/ndds/hpp"
             ],
             "defines": [
                 "_DEBUG",

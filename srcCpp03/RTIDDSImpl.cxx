@@ -647,13 +647,6 @@ public:
         bin_data_builder.add_n(message.size);
         bin_data_builder.finish();
 
-        // Build the data to be sent
-        _data = builder.finish_sample();
-        if (_data == NULL) {
-            std::cerr << "[Error] Cannot build data" << std::endl;  // TODO: Throw an exception here
-            return false;
-        }
-
         // calculate key and add it
         if (!isCftWildcardKey && this->_num_instances > 1) {
             key = (this->_instancesToBeWritten == -1)
@@ -664,6 +657,13 @@ public:
         }
 
         add_key(builder, key);
+
+        // Build the data to be sent
+        _data = builder.finish_sample();
+        if (_data == NULL) {
+            std::cerr << "[Error] Cannot build data" << std::endl;  // TODO: Throw an exception here
+            return false;
+        }
 
         // Send data through the writer
         if (!isCftWildcardKey) {
@@ -1929,7 +1929,7 @@ dds::sub::qos::DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profil
     using namespace dds::core::policy;
     using namespace rti::core::policy;
 
-    dds::sub::qos::DataReaderQos *dr_qos = NULL;
+    dds::sub::qos::DataReaderQos *dr_qos = new dds::sub::qos::DataReaderQos();
     dds::core::QosProvider qos_provider = getQosProviderForProfile(
        _PM->get<std::string>("qosLibrary"),
         qos_profile

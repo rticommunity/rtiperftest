@@ -1082,7 +1082,6 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
       </datawriter_qos>
     </qos_profile>
 
-
     <qos_profile name="FlatData_ThroughputQos" base_name="ThroughputQos">
       <!-- TODO: Add config here -->
     </qos_profile>
@@ -1131,5 +1130,15 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </property>
       </participant_qos>
     </qos_profile>
+
+    <qos_profile name="FlatData_AnnouncementQos">
+      <base_name>
+        <element>AnnouncementQos</element>
+        <!-- Will override duplicate elements with LatencyQoS profile inherited from AnnouncementQos -->
+        <element>FlatData_LatencyQos</element>
+      </base_name>
+      <!-- TODO: Add config here -->
+    </qos_profile>
+
   </qos_library>
 </dds>
