@@ -338,6 +338,18 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("threadPriorities", threadPriorities);
 
+    Parameter<bool> *flatData = new Parameter<bool>(false);
+    flatData->set_command_line_argument("-flatData", "");
+    flatData->set_description(
+            "Use FlatData language binding\nDefault: Not set");
+    flatData->set_type(T_BOOL);
+    flatData->set_extra_argument(NO);
+    flatData->set_group(GENERAL);
+    flatData->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("flatdata", flatData);
 
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER

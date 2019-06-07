@@ -11,6 +11,7 @@
 #include "perftest.hpp"
 #include "MessagingIF.h"
 #include <sstream>
+#include <type_traits>
 #ifdef RTI_SECURE_PERFTEST
 #include "security/security_default.h"
 #endif
@@ -72,7 +73,7 @@ class RTIDDSImpl : public IMessaging
     const std::string get_qos_profile_name(std::string topicName);
 
 
-  private:
+  protected:
     // This semaphore is used in VxWorks to synchronize finalizing a factory
     static rti::core::Semaphore _finalizeFactorySemaphore;
 
@@ -109,7 +110,18 @@ class RTIDDSImpl : public IMessaging
     static const std::string SECURE_LIBRARY_NAME;
   #endif
 
+    dds::sub::qos::DataReaderQos *setup_DR_QoS(std::string qos_profile, std::string topic_name);
+    dds::pub::qos::DataWriterQos *setup_DW_QoS(std::string qos_profile, std::string topic_name);
+
 };
 
+template <typename T>
+class RTIDDSImpl_FlatData: public RTIDDSImpl<TestData_t> {
+public:
+    IMessagingWriter *CreateWriter(const std::string &topic_name);
+    // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
+    // to get data
+    IMessagingReader *CreateReader(const std::string &topic_name, IMessagingCB *callback);
+};
 
 #endif // __RTIDDSIMPL_H__

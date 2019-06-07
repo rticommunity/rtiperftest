@@ -117,15 +117,31 @@ int perftest_cpp::Run(int argc, char *argv[]) {
 
     if (_PM.get<int>("unbounded") == 0) {
         if (_PM.get<bool>("keyed")) {
-            _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
+            if (_PM.get<bool>("flatdata")) {
+                _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>();
+            } else {
+                _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
+            }
         } else {
-            _MessagingImpl = new RTIDDSImpl<TestData_t>();
+            if (_PM.get<bool>("flatdata")) {
+                _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
+            } else {
+                _MessagingImpl = new RTIDDSImpl<TestData_t>();
+            }
         }
     } else {
         if (_PM.get<bool>("keyed")) {
-            _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
+            if (_PM.get<bool>("flatdata")) {
+                _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
+            } else {
+                _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
+            }
         } else {
-            _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
+            if (_PM.get<bool>("flatdata")) {
+                _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
+            } else {
+                _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
+            }
         }
     }
 

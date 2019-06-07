@@ -250,8 +250,8 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
       </participant_qos>
 
-      <!-- === Publisher Configuration: ================================= 
-        
+      <!-- === Publisher Configuration: =================================
+
       The base configuration of the Publisher object.
 
       This element corresponds to the PublisherQos type, which is described
@@ -264,7 +264,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           <!--
           Access Scope: Determines the largest scope spanning the entities
           for which the order and coherency of changes can be preserved.
-          
+
           Ordered Access: Specifies support for ordered access to the samples
           received at the subscription end.
           -->
@@ -273,8 +273,8 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </presentation>
       </publisher_qos>
 
-      <!-- === Subscriber Configuration: ================================= 
-      
+      <!-- === Subscriber Configuration: =================================
+
       The base configuration of the Subscriber object.
 
       This element corresponds to the SubscriberQos type, which is described
@@ -287,7 +287,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           <!--
           Access Scope: Determines the largest scope spanning the entities
           for which the order and coherency of changes can be preserved.
-          
+
           Ordered Access: Specifies support for ordered access to the samples
           received at the subscription end.
           -->
@@ -295,9 +295,9 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           <ordered_access>true</ordered_access>
         </presentation>
       </subscriber_qos>
-      
+
       <!-- === DataWriter Configuration: ==================================
-      
+
       The base configuration of the DataWriter object that produces throughput
       data (the -pub side of the application).
 
@@ -310,37 +310,37 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         <resource_limits>
           <!--
           The number of instances for which the throughput DataWriter will
-          allocate space. The throughput topic is not keyed, so there is no 
+          allocate space. The throughput topic is not keyed, so there is no
           need for more than one instance.
 
           See Section 2.2 "Data Types, Topics, Keys, Instances, and Samples"
-          in the Connext Core Libraries and Utilities User's Manual 
+          in the Connext Core Libraries and Utilities User's Manual
           for more information about keys and instances.
-          
-          Important: These settings are configured automatically within the 
+
+          Important: These settings are configured automatically within the
           source code. The default value of _InstanceCount is 1. The default
           value of _InstanceHashBuckets is -1.
-          
+
           <max_instances>_InstanceCount</max_instances>
           <initial_instances>_InstanceCount</initial_instances>
-          
-          if _InstanceCount is greater than 1  
+
+          if _InstanceCount is greater than 1
             if _InstanceHashBuckets is greater than 0
               <instance_hash_buckets>_InstanceHashBuckets</instance_hash_buckets>
-            
+
             if _InstanceHashBuckets is equal or lower than 0
               <instance_hash_buckets>_InstanceCount</instance_hash_buckets>
-          
+
           -->
         </resource_limits>
-        
+
         <protocol>
             <rtps_reliable_writer>
                 <!--
-                When positive acknowledgements have been disabled, the DataWriter will 
-                consider samples as positively "acknowledged" after this duration has 
+                When positive acknowledgements have been disabled, the DataWriter will
+                consider samples as positively "acknowledged" after this duration has
                 elapsed if it has not heard otherwise.
-                
+
                 We disable the positive acknowledgements in perftest by using:
                 -disablePositiveAcks. You can alternatively enable them via QoS by
                 adding <disable_positive_acks>true</disable_positive_acks> in the
@@ -374,27 +374,27 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           <!--
           The initial and maximum number of instances for which the middleware
           will allocate space. See the corresponding DataWriterQos comment above
-          for more information. 
-          
+          for more information.
+
           Important: This settings are configured automatically within the source code.
           The default value of _InstanceCount is 1.
           The default value of _InstanceMaxCountReader is -1.
           The default value of _InstanceHashBuckets is -1.
-          
+
           <max_instances>_InstanceMaxCountReader</max_instances>
           <initial_instances>_InstanceCount</initial_instances>
-          
-          if _InstanceCount is greater than 1 and 
+
+          if _InstanceCount is greater than 1 and
             if _InstanceHashBuckets is greater than 0
               <instance_hash_buckets>_InstanceHashBuckets</instance_hash_buckets>
-            
+
             if _InstanceHashBuckets is equal or lower than 0
               <instance_hash_buckets>_InstanceCount</instance_hash_buckets>
-          
+
           -->
         </resource_limits>
       </datareader_qos>
-      
+
     </qos_profile>
 
     <!-- ================================================================= -->
@@ -409,8 +409,8 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
     -->
     <qos_profile name="ThroughputQos" base_name="BaseProfileQos">
 
-      <!-- === DataWriter Configuration: ================================= 
-      
+      <!-- === DataWriter Configuration: =================================
+
       The base configuration of the DataWriter object that produces throughput
       data (the -pub side of the application).
 
@@ -425,7 +425,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </writer_resource_limits>
         <!--
         Setting history.kind = KEEP_ALL, Connext will attempt to maintain
-        and deliver all the values of the instance to existing subscribers. 
+        and deliver all the values of the instance to existing subscribers.
         The resources that Connext can use to keep this history are limited
         by the settings of the RESOURCE_LIMITS.
         -->
@@ -433,9 +433,9 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           <kind>KEEP_ALL_HISTORY_QOS</kind>
         </history>
         <!--
-        Setting reliability.kind = RELIABLE_RELIABILITY_QOS, data samples 
+        Setting reliability.kind = RELIABLE_RELIABILITY_QOS, data samples
         originating from a single DataWriter cannot be made available to the
-        DataReader if there are previous data samples that have not been 
+        DataReader if there are previous data samples that have not been
         received yet due to a communication error.
 
         The default value of reliability.kind is RELIABLE_RELIABILITY_QOS.
@@ -461,30 +461,30 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
           See the parallel DataReaderQos comment above for more information
           about the relationships between these three values.
-          
-          Important: These settings are configured automatically within the 
+
+          Important: These settings are configured automatically within the
           source code.
             _SendQueueSize = 50 (default)
             _SendQueueSize can be configured using the command-line option -sendQueueSize <value>
-          
+
           if batching is not set:
             <max_samples>_SendQueueSize</max_samples>
             <initial_samples>_SendQueueSize</initial_samples>
             <max_samples_per_instance>_SendQueueSize</max_samples_per_instance>
-            
+
           if batching is set:
             <max_samples>DDS_LENGTH_UNLIMITED</max_samples>
             <initial_samples>_SendQueueSize</initial_samples>
             <max_samples_per_instance>DDS_LENGTH_UNLIMITED</max_samples_per_instance>
           -->
         </resource_limits>
-        
+
         <protocol>
           <rtps_reliable_writer>
             <!--
             When the writer's cache gets down to this number of samples, it
             will slow the rate at which it sends heartbeats to readers.
-            
+
             Important: This setting is configured automatically within the source code.
             <low_watermark>_SendQueueSize * 0.1</low_watermark>
             -->
@@ -494,19 +494,19 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
             sending heartbeats at a faster rate in order to spur faster
             acknowledgements (positive or negative) of its samples to allow it
             to empty its cache and avoid blocking.
-            
+
             Important: This setting is configured automatically within the source code.
             <high_watermark>_SendQueueSize * 0.9</high_watermark>
             -->
 
             <!--
             Governs how often heartbeats are "piggybacked" on data samples.
-            
+
             Important: This setting is configured automatically within the source code.
             <heartbeats_per_max_samples>_SendQueueSize * 0.1</heartbeats_per_max_samples>
             -->
 
-            <!-- 
+            <!--
             Minimum and maximum size of send window of unacknowledged samples.
 
             Important: These settings are configured automatically within the source code.
@@ -523,7 +523,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
               <sec>DURATION_ZERO_SEC</sec>
               <nanosec>10000000</nanosec>
             </heartbeat_period>
-            
+
             <!--
             If the number of samples in the writer's cache has risen to
             high_watermark, and has not yet fallen to low_watermark, this is
@@ -582,19 +582,19 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
               <nanosec>DURATION_ZERO_NSEC</nanosec>
             </max_nack_response_delay>
           </rtps_reliable_writer>
-          
+
         </protocol>
 
         <!--
-        When sending many small data-samples, you can increated network efficiency 
-        by batching multiple samples together in a single protocol-level message 
-        (usually corresponding to a single network datagram). Batching can offer very 
-        substantial throughput gains, but often at the expense of latency, although 
-        in some configurations, the latency penalty can be very small or zero, 
+        When sending many small data-samples, you can increated network efficiency
+        by batching multiple samples together in a single protocol-level message
+        (usually corresponding to a single network datagram). Batching can offer very
+        substantial throughput gains, but often at the expense of latency, although
+        in some configurations, the latency penalty can be very small or zero,
         possibly even negative.
         -->
 
-        <!-- 
+        <!--
         Important: This setting is configured automatically within the source code,
         but only if batching is enabled. _SendQueueSize = 50 (default)
         <writer_resource_limits>
@@ -618,7 +618,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           accumulated sample meta-data (e.g., timestamps, sequence numbers,
           etc.), and/or the number of samples. Whenever the first of these
           limits is reached, the batch will be flushed.
-          
+
           Important: This setting is configured automatically within the source code.
           <max_data_bytes>_BatchSize</max_data_bytes>
           -->
@@ -647,8 +647,8 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           </source_timestamp_resolution>
 
           <!--
-          The maximum flush delay. A batch is flushed automatically after the 
-          delay specified by this parameter. As its value is DURATION_INFINITE, 
+          The maximum flush delay. A batch is flushed automatically after the
+          delay specified by this parameter. As its value is DURATION_INFINITE,
           the flush event will be triggered by max_data_bytes.
           -->
           <max_flush_delay>
@@ -837,8 +837,8 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
     -->
     <qos_profile name="LatencyQos" base_name="BaseProfileQos">
 
-      <!-- === DataWriter Configuration: ================================= 
-      
+      <!-- === DataWriter Configuration: =================================
+
       The base configuration of the DataWriter object that consumes latency
       data (on the -sub side of the application).
 
@@ -850,7 +850,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
       <datawriter_qos>
         <!--
         Setting history.kind = KEEP_ALL, Connext will attempt to maintain
-        and deliver all the values of the instance to existing subscribers. 
+        and deliver all the values of the instance to existing subscribers.
         The resources that Connext can use to keep this history are limited
         by the settings of the RESOURCE_LIMITS.
         -->
@@ -859,9 +859,9 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </history>
 
         <!--
-        Setting reliability.kind = RELIABLE_RELIABILITY_QOS, data samples 
+        Setting reliability.kind = RELIABLE_RELIABILITY_QOS, data samples
         originating from a single DataWriter cannot be made available to the
-        DataReader if there are previous data samples that have not been 
+        DataReader if there are previous data samples that have not been
         received yet due to a communication error.
 
         The default value is RELIABLE_RELIABILITY_QOS.
@@ -877,18 +877,18 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </reliability>
 
         <!--
-        
-        The Durability QoS policy specifies whether or not Connext will store and 
-        deliver previously published data samples to new DataReaders that join the 
+
+        The Durability QoS policy specifies whether or not Connext will store and
+        deliver previously published data samples to new DataReaders that join the
         network later.
-        
+
         Important: durability.kind and durability.direct_communication are configured
         automatically within the source code. To modify them, use the input commands
         -durability and -noDirectCommunication.
-        
+
         The default value of _DirectCommunication is true.
         The default value of _Durability is DDS_VOLATILE_DURABILITY_QOS
-        
+
         if _DirectCommunication is false
           if _Durability is DDS_TRANSIENT_DURABILITY_QOS or DDS_PERSISTENT_DURABILITY_QOS
             <durability>
@@ -896,7 +896,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
               <direct_communication>_DirectCommunication</direct_communication>
             </durability>
         -->
-        
+
         <!--
         The number of samples for which Connext will set aside space.
         See the comments above for more information.
@@ -906,7 +906,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           <initial_samples>100</initial_samples>
           <max_samples_per_instance>LENGTH_UNLIMITED</max_samples_per_instance>
         </resource_limits>
-        
+
         <!--
         The behavioral contract under which the DataWriter will carry out the
         reliability protocol. See the comments above for more information.
@@ -949,8 +949,8 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
       </datawriter_qos>
 
 
-      <!-- === DataReader Configuration: ================================= 
-      
+      <!-- === DataReader Configuration: =================================
+
       The base configuration of the DataReader object that consumes latency
       data (on the -pub side of the application).
 
@@ -961,8 +961,8 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
       -->
       <datareader_qos>
         <!--
-        The default value of reliability.kind is RELIABLE_RELIABILITY_QOS. 
-        
+        The default value of reliability.kind is RELIABLE_RELIABILITY_QOS.
+
         The reliability.kind can be modified to BEST_EFFORT_RELIABILITY_QOS
         by using the command-line option -bestEffort.
         -->
@@ -971,17 +971,17 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </reliability>
 
         <!--
-        DurabilityQos policy specifies whether or not Connext will store and 
-        deliver previously published data samples to new DDSDataReader entities 
+        DurabilityQos policy specifies whether or not Connext will store and
+        deliver previously published data samples to new DDSDataReader entities
         that join the network later.
-        
+
         Important: durability.kind and durability.direct_communication are configured
         automatically within the source code. To modify them, use the input commands
         -durability and -noDirectCommunication.
-        
+
         The default value of _DirectCommunication is true.
         The default value of _Durability is DDS_VOLATILE_DURABILITY_QOS
-        
+
         if _DirectCommunication is false
           if _Durability is DDS_TRANSIENT_DURABILITY_QOS or DDS_PERSISTENT_DURABILITY_QOS
             <durability>
@@ -989,7 +989,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
               <direct_communication>_DirectCommunication</direct_communication>
             </durability>
         -->
-        
+
         <!--
         The number of samples for which the middleware will set aside space.
         See the comments above for more information.
@@ -1025,7 +1025,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           </rtps_reliable_reader>
         </protocol>
       </datareader_qos>
-      
+
     </qos_profile>
 
     <!-- ================================================================= -->
@@ -1053,7 +1053,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
             <nanosec>DURATION_INFINITE_NSEC</nanosec>
           </max_blocking_time>
         </reliability>
-        
+
         <history>
           <kind>KEEP_ALL_HISTORY_QOS</kind>
         </history>
@@ -1072,7 +1072,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
             <nanosec>DURATION_INFINITE_NSEC</nanosec>
           </max_blocking_time>
         </reliability>
-        
+
         <history>
           <kind>KEEP_ALL_HISTORY_QOS</kind>
         </history>
@@ -1080,6 +1080,56 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           <kind>DDS_TRANSIENT_LOCAL_DURABILITY_QOS</kind>
         </durability>
       </datawriter_qos>
+    </qos_profile>
+
+
+    <qos_profile name="FlatData_ThroughputQos" base_name="ThroughputQos">
+      <!-- TODO: Add config here -->
+    </qos_profile>
+
+    <qos_profile name="FlatData_LatencyQos" base_name="LatencyQos">
+      <!-- Configure DataWriter to prevent dynamic allocation of serialization buffer -->
+      <datawriter_qos>
+        <property>
+          <value>
+            <element>
+              <name>dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size</name>
+              <value>LENGTH_UNLIMITED</value>
+            </element>
+          </value>
+        </property>
+      </datawriter_qos>
+
+      <!-- Configure DataReader to prevent dynamic allocation of buffer used for storing received fragments -->
+      <datareader_qos>
+        <reader_resource_limits>
+          <dynamically_allocate_fragmented_samples>false</dynamically_allocate_fragmented_samples>
+        </reader_resource_limits>
+      </datareader_qos>
+
+      <!-- Config participants buffers to be big enough to not to need dynamic allocating too often -->
+      <participant_qos>
+        <property>
+          <value>
+            <element>
+              <name>dds.transport.shmem.builtin.received_message_count_max</name>
+              <value>1000</value>
+            </element>
+            <element>
+              <name>dds.transport.shmem.builtin.receive_buffer_size</name>
+              <value>60000000</value>
+            </element>
+            <element>
+              <name>dds.transport.UDPv4.builtin.send_socket_buffer_size</name>
+              <value>1000000</value>
+            </element>
+            <element>
+              <name>dds.transport.UDPv4.builtin.recv_socket_buffer_size</name>
+              <value>2000000</value>
+            </element>
+          </value>
+        </property>
+      </participant_qos>
     </qos_profile>
   </qos_library>
 </dds>

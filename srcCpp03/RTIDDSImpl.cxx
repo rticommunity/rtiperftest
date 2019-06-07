@@ -564,6 +564,121 @@ public:
     }
 };
 
+
+// TODO: Make TestData_FlatData_t a template
+template<typename T>
+class RTIFlatDataPublisher: public RTIPublisherBase<T> {
+static_assert(std::is_same<T, TestData_FlatData_t>::value
+        || std::is_same<T, TestDataKeyed_FlatData_t>::value
+        || std::is_same<T, TestDataLarge_FlatData_t>::value
+        || std::is_same<T, TestDataKeyedLarge_FlatData_t>::value,
+        "Cannot instantiate with other types than FlatData ones");
+
+protected:
+    typedef typename rti::flat::flat_type_traits<T>::builder Builder;
+
+    int _last_message_size;
+    T *_data;
+
+    void add_key(Builder &builder, unsigned long int i) {
+        auto key_offset = builder.add_key();
+
+        for (int j = 0; j < KEY_SIZE; ++j) {
+            // The key will be i but splitted in bytes
+            key_offset.set_element(j, (unsigned char) (i >> j * 8));
+        }
+    }
+
+public:
+    RTIFlatDataPublisher(
+            dds::pub::DataWriter<T> writer,
+            int num_instances,
+            rti::core::Semaphore& pongSemaphore,
+            bool useSemaphore,
+            int instancesToBeWritten,
+            ParameterManager *PM
+            )
+            :
+            RTIPublisherBase<T>(
+                    writer,
+                    num_instances,
+                    pongSemaphore,
+                    useSemaphore,
+                    instancesToBeWritten,
+                    PM),
+            _last_message_size(0)
+    {
+        for (unsigned long int i = 0; i < this->_num_instances; ++i) {
+            Builder builder = rti::flat::build_data(writer);
+            add_key(builder, i);
+
+            T *sample = builder.finish_sample();
+
+            this->_instance_handles.push_back(
+                this->_writer.register_instance(*sample));
+
+            this->_writer.extensions().discard_loan(*sample); // TODO: What does it do?
+        }
+
+        // Register the key of MAX_CFT_VALUE
+        Builder builder = rti::flat::build_data(writer);
+        add_key(builder, MAX_CFT_VALUE);
+        T *sample = builder.finish_sample();
+
+        this->_instance_handles.push_back(
+            this->_writer.register_instance(*sample));
+
+        this->_writer.extensions().discard_loan(*sample);
+    }
+
+    bool send(TestMessage &message, bool isCftWildcardKey) {
+        Builder builder = rti::flat::build_data(this->_writer);
+        long key = 0;
+
+        // Initialize Information data
+        builder.add_entity_id(message.entity_id);
+        builder.add_seq_num(message.seq_num);
+        builder.add_timestamp_sec(message.timestamp_sec);
+        builder.add_timestamp_usec(message.timestamp_usec);
+        builder.add_latency_ping(message.latency_ping);
+
+        // Add payload
+        auto bin_data_builder = builder.build_bin_data();
+        bin_data_builder.add_n(message.size);
+        bin_data_builder.finish();
+
+        // Build the data to be sent
+        _data = builder.finish_sample();
+        if (_data == NULL) {
+            std::cerr << "[Error] Cannot build data" << std::endl;  // TODO: Throw an exception here
+            return false;
+        }
+
+        // calculate key and add it
+        if (!isCftWildcardKey && this->_num_instances > 1) {
+            key = (this->_instancesToBeWritten == -1)
+                    ? this->_instance_counter++ % this->_num_instances
+                    : this->_instancesToBeWritten;
+        } else {
+            key = MAX_CFT_VALUE;
+        }
+
+        add_key(builder, key);
+
+        // Send data through the writer
+        if (!isCftWildcardKey) {
+            this->_writer.write(*_data, this->_instance_handles[key]);
+        } else {
+            this->_writer.write(
+                    *_data,
+                    this->_instance_handles[this->_num_instances]);
+        }
+
+        return true;
+    }
+};
+
+
 class RTIDynamicDataPublisher: public RTIPublisherBase<DynamicData> {
 
 protected:
@@ -712,6 +827,35 @@ public:
     }
 };
 
+template<typename T>
+class FlatDataReceiverListener : public ReceiverListenerBase<T> {
+public:
+    FlatDataReceiverListener(IMessagingCB *callback) :
+        ReceiverListenerBase<T>(callback) {
+    }
+
+    void on_data_available(dds::sub::DataReader<T> &reader) {
+        this->samples = reader.take();
+
+        for (uint i = 0; i < this->samples.length(); ++i) {
+            if (this->samples[i].info().valid()) {
+                const T &sample = this->samples[i].data();
+                auto message = sample.root();
+
+                this->_message.entity_id = message.entity_id();
+                this->_message.seq_num = message.seq_num();
+                this->_message.timestamp_sec = message.timestamp_sec();
+                this->_message.timestamp_usec = message.timestamp_usec();
+                this->_message.latency_ping = message.latency_ping();
+                this->_message.size = (int) message.bin_data().element_count();
+                // bin_data should be retrieved here
+
+                this->_callback->ProcessMessage(this->_message);
+            }
+        }
+    }
+};
+
 class DynamicDataReceiverListener: public ReceiverListenerBase<DynamicData> {
 
 public:
@@ -817,7 +961,7 @@ class RTISubscriber: public RTISubscriberBase<T> {
 public:
     RTISubscriber(
             dds::sub::DataReader<T> reader,
-            ReceiverListener<T> *readerListener,
+            ReceiverListenerBase<T> *readerListener,
             ParameterManager *PM)
           :
             RTISubscriberBase<T>(
@@ -889,6 +1033,95 @@ public:
                     this->_message.latency_ping = sample.latency_ping();
                     this->_message.size = (int) sample.bin_data().size();
                     //_message.data = sample.bin_data();
+                    listener->ProcessMessage(this->_message);
+                }
+            }
+        }
+    }
+};
+
+template<typename T>
+class RTIFlatDataSubscriber: public RTISubscriberBase<T> {
+
+public:
+    RTIFlatDataSubscriber(
+            dds::sub::DataReader<T> reader,
+            ReceiverListenerBase<T> *readerListener,
+            ParameterManager *PM)
+          :
+            RTISubscriberBase<T>(
+                    reader,
+                    readerListener,
+                    PM)
+    {}
+
+    TestMessage *ReceiveMessage() {
+
+        int seq_length;
+
+        while (true) {
+
+            if (this->_no_data) {
+                this->_waitset.wait(dds::core::Duration::infinite());
+
+            }
+            dds::sub::LoanedSamples<T> samples = this->_reader.take();
+
+            this->_data_idx = 0;
+            this->_no_data = false;
+
+            seq_length = samples.length();
+            if (this->_data_idx == seq_length) {
+                this->_no_data = true;
+                continue;
+            }
+
+            // skip non-valid data
+            while ((!samples[this->_data_idx].info().valid())
+                    && (++(this->_data_idx) < seq_length))
+                ;
+
+            // may have hit end condition
+            if (this->_data_idx == seq_length) {
+                continue;
+            }
+
+            const T &data_sample = samples[this->_data_idx].data();
+            auto data = data_sample.root();
+
+            this->_message.entity_id = data.entity_id();
+            this->_message.seq_num = data.seq_num();
+            this->_message.timestamp_sec = data.timestamp_sec();
+            this->_message.timestamp_usec = data.timestamp_usec();
+            this->_message.latency_ping = data.latency_ping();
+            this->_message.size = (int) data.bin_data().element_count();
+            //_message.data = samples[_data_idx].data().bin_data();
+
+            ++(this->_data_idx);
+
+            return &(this->_message);
+        }
+        return NULL;
+    }
+
+    void ReceiveAndProccess(IMessagingCB *listener) {
+        while (!listener->end_test) {
+
+            this->_waitset.dispatch(dds::core::Duration::infinite());
+            dds::sub::LoanedSamples<T> samples = this->_reader.take();
+
+            for (unsigned int i = 0; i < samples.length(); ++i) {
+                if (samples[i].info().valid()) {
+                    const T & data_sample = samples[i].data();
+                    auto data = data_sample.root();
+
+                    this->_message.entity_id = data.entity_id();
+                    this->_message.seq_num = data.seq_num();
+                    this->_message.timestamp_sec = data.timestamp_sec();
+                    this->_message.timestamp_usec = data.timestamp_usec();
+                    this->_message.latency_ping = data.latency_ping();
+                    this->_message.size = (int) data.bin_data().element_count();
+                    //_message.data = data.bin_data();
                     listener->ProcessMessage(this->_message);
                 }
             }
@@ -1427,171 +1660,15 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::core::QosProvider qos_provider = getQosProviderForProfile(
-            _PM->get<std::string>("qosLibrary"),
-            qos_profile);
-    dds::pub::qos::DataWriterQos dw_qos = qos_provider.datawriter_qos();
-
-    Reliability qos_reliability = dw_qos.policy<Reliability>();
-    ResourceLimits qos_resource_limits = dw_qos.policy<ResourceLimits>();
-    DataWriterResourceLimits qos_dw_resource_limits =
-            dw_qos.policy<DataWriterResourceLimits>();
-    Durability qos_durability = dw_qos.policy<Durability>();
-    PublishMode dwPublishMode= dw_qos.policy<PublishMode>();
-    Batch dwBatch = dw_qos.policy<Batch>();
-    rti::core::policy::DataWriterProtocol dw_dataWriterProtocol =
-            dw_qos.policy<rti::core::policy::DataWriterProtocol>();
-    RtpsReliableWriterProtocol dw_reliableWriterProtocol =
-            dw_dataWriterProtocol.rtps_reliable_writer();
-
-
-    // This will allow us to load some properties.
-    std::map<std::string, std::string> properties =
-            dw_qos.policy<Property>().get_all();
-
-    if (_PM->get<bool>("noPositiveAcks")
-            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
-        dw_dataWriterProtocol.disable_positive_acks(true);
-        if (_PM->is_set("keepDurationUsec")) {
-            dw_reliableWriterProtocol
-                    .disable_positive_acks_min_sample_keep_duration(
-                            dds::core::Duration::from_microsecs(
-                                    _PM->get<unsigned long long>(
-                                            "keepDurationUsec")));
-        }
+    dds::pub::qos::DataWriterQos *dw_qos = setup_DW_QoS(qos_profile, topic_name);
+    if (dw_qos == NULL) {
+        throw std::logic_error("[Error] Could not create Writer QoS");
     }
-
-    if (_isLargeData || _PM->get<bool>("asynchronous")) {
-        if (_PM->get<std::string>("flowController") != "default") {
-            dwPublishMode = PublishMode::Asynchronous(
-                    "dds.flow_controller.token_bucket."
-                    + _PM->get<std::string>("flowController"));
-       } else{
-           dwPublishMode = PublishMode::Asynchronous();
-       }
-   }
-
-    // Only force reliability on throughput/latency topics
-    if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
-        if (!_PM->get<bool>("bestEffort")) {
-            // default: use the setting specified in the qos profile
-            // qos_reliability = Reliability::Reliable(dds::core::Duration::infinite());
-        } else {
-            // override to best-effort
-            qos_reliability = Reliability::BestEffort();
-        }
-    }
-
-    // These QOS's are only set for the Throughput datawriter
-    if (qos_profile == "ThroughputQos") {
-
-        if (_PM->get<bool>("multicast")) {
-            dw_reliableWriterProtocol.enable_multicast_periodic_heartbeat(true);
-        }
-
-        if (_PM->get<long>("batchSize") > 0) {
-            dwBatch.enable(true);
-            dwBatch.max_data_bytes(_PM->get<long>("batchSize"));
-            qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
-            qos_dw_resource_limits.max_batches(_PM->get<int>("sendQueueSize"));
-        } else {
-            qos_resource_limits.max_samples(_PM->get<int>("sendQueueSize"));
-        }
-
-        if (_PM->get<bool>("enableAutoThrottle")) {
-            properties["dds.data_writer.auto_throttle.enable"] = "true";
-        }
-
-        if (_PM->get<bool>("enableTurboMode")) {
-            properties["dds.data_writer.enable_turbo_mode.enable"] = "true";
-            dwBatch.enable(false);
-            qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
-            qos_dw_resource_limits.max_batches(_PM->get<int>("sendQueueSize"));
-        }
-
-        qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
-        qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
-
-        if (_PM->get<int>("durability") == DDS_VOLATILE_DURABILITY_QOS) {
-            qos_durability = dds::core::policy::Durability::Volatile();
-        } else if (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS) {
-            qos_durability = dds::core::policy::Durability::TransientLocal();
-        } else {
-            qos_durability = dds::core::policy::Durability::Persistent();
-        }
-        qos_durability->direct_communication(
-                !_PM->get<bool>("noDirectCommunication"));
-
-        dw_reliableWriterProtocol.heartbeats_per_max_samples(
-                _PM->get<int>("sendQueueSize") / 10);
-        dw_reliableWriterProtocol.low_watermark(
-                _PM->get<int>("sendQueueSize") * 1 / 10);
-        dw_reliableWriterProtocol.high_watermark(
-                _PM->get<int>("sendQueueSize") * 9 / 10);
-
-        /*
-         * If _SendQueueSize is 1 low watermark and high watermark would both be
-         * 0, which would cause the middleware to fail. So instead we set the
-         * high watermark to the low watermark + 1 in such case.
-         */
-        if (dw_reliableWriterProtocol.high_watermark()
-                == dw_reliableWriterProtocol.high_watermark()) {
-            dw_reliableWriterProtocol.high_watermark(
-                    dw_reliableWriterProtocol.high_watermark() + 1);
-        }
-
-        dw_reliableWriterProtocol.max_send_window_size(
-                _PM->get<int>("sendQueueSize"));
-        dw_reliableWriterProtocol.min_send_window_size(
-                _PM->get<int>("sendQueueSize"));
-    }
-
-    if (qos_profile == "LatencyQos"
-            && _PM->get<bool>("noDirectCommunication")
-            && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
-            || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
-        if (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS) {
-            qos_durability = dds::core::policy::Durability::TransientLocal();
-        } else {
-            qos_durability = dds::core::policy::Durability::Persistent();
-        }
-        qos_durability->direct_communication(
-                !_PM->get<bool>("noDirectCommunication"));
-    }
-
-    qos_resource_limits.max_instances(_PM->get<long>("instances") + 1); // One extra for MAX_CFT_VALUE
-    qos_resource_limits->initial_instances(_PM->get<long>("instances") + 1);
-
-    if (_PM->get<long>("instances") > 1) {
-        if (_PM->is_set("instanceHashBuckets")) {
-            qos_resource_limits->instance_hash_buckets(
-                    _PM->get<long>("instanceHashBuckets"));
-        } else {
-            qos_resource_limits->instance_hash_buckets(
-                    _PM->get<long>("instances"));
-        }
-    }
-
-    if (_PM->get<int>("unbounded") > 0) {
-        char buf[10];
-        sprintf(buf, "%d", _PM->get<int>("unbounded"));
-        properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] =
-                buf;
-    }
-
-    dw_qos << qos_reliability;
-    dw_qos << qos_resource_limits;
-    dw_qos << qos_dw_resource_limits;
-    dw_qos << qos_durability;
-    dw_qos << dwPublishMode;
-    dw_qos << dwBatch;
-    dw_dataWriterProtocol.rtps_reliable_writer(dw_reliableWriterProtocol);
-    dw_qos << dw_dataWriterProtocol;
-    dw_qos << Property(properties.begin(), properties.end(), true);
 
     if (!_PM->get<bool>("dynamicData")) {
         dds::topic::Topic<T> topic(_participant, topic_name);
-        dds::pub::DataWriter<T> writer(_publisher, topic, dw_qos);
+        dds::pub::DataWriter<T> writer(_publisher, topic, *dw_qos);
+
         return new RTIPublisher<T>(
                 writer,
                 _PM->get<long>("instances"),
@@ -1599,6 +1676,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
                 _PM->get<bool>("latencyTest"),
                 _PM->get<long>("writeInstance"),
                 _PM);
+
     } else {
         const dds::core::xtypes::StructType& type =
                 rti::topic::dynamic_type<T>::get();
@@ -1609,7 +1687,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         dds::pub::DataWriter<DynamicData> writer(
                 _publisher,
                 topic,
-                dw_qos);
+                *dw_qos);
+
+        delete dw_qos;
+
         return new RTIDynamicDataPublisher(
                 writer,
                 _PM->get<long>("instances"),
@@ -1719,30 +1800,152 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         const std::string &topic_name,
         IMessagingCB *callback)
 {
-    using namespace dds::core::policy;
-    using namespace rti::core::policy;
-
     std::string qos_profile;
     qos_profile = get_qos_profile_name(topic_name);
     if (qos_profile.empty()) {
         throw std::logic_error("[Error] Topic name");
     }
 
+    dds::sub::qos::DataReaderQos *dr_qos = setup_DR_QoS(qos_profile, topic_name);
+    if (dr_qos == NULL) {
+        throw std::logic_error("[Error] Could not create Reader QoS");
+    }
+
+    if (!_PM->get<bool>("dynamicData")) {
+        dds::topic::Topic<T> topic(_participant, topic_name);
+        dds::sub::DataReader<T> reader(dds::core::null);
+        ReceiverListener<T> *reader_listener = NULL;
+
+        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _PM->is_set("cft")) {
+            /* Create CFT Topic */
+            dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
+                    topic_name,
+                    topic);
+            if (callback != NULL) {
+                reader_listener = new ReceiverListener<T>(callback);
+                reader = dds::sub::DataReader<T>(
+                        _subscriber,
+                        topicCft,
+                        *dr_qos,
+                        reader_listener,
+                        dds::core::status::StatusMask::data_available());
+            } else {
+                reader = dds::sub::DataReader<T>(_subscriber, topicCft, *dr_qos);
+            }
+        } else {
+            if (callback != NULL) {
+                reader_listener = new ReceiverListener<T>(callback);
+                reader = dds::sub::DataReader<T>(
+                        _subscriber,
+                        topic,
+                        *dr_qos,
+                        reader_listener,
+                        dds::core::status::StatusMask::data_available());
+            } else {
+                reader = dds::sub::DataReader<T>(_subscriber, topic, *dr_qos);
+            }
+        }
+
+        delete dr_qos;
+
+        return new RTISubscriber<T>(
+                reader,
+                reader_listener,
+                _PM);
+
+    } else {
+        const dds::core::xtypes::StructType& type =
+                rti::topic::dynamic_type<T>::get();
+        dds::topic::Topic<DynamicData> topic(
+                _participant,
+                topic_name,
+                type);
+        dds::sub::DataReader<DynamicData> reader(dds::core::null);
+        DynamicDataReceiverListener *dynamic_data_reader_listener = NULL;
+        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _PM->is_set("cft")) {
+            /* Create CFT Topic */
+            dds::topic::ContentFilteredTopic<DynamicData> topicCft = CreateCft(
+                    topic_name,
+                    topic);
+            if (callback != NULL) {
+                dynamic_data_reader_listener =
+                        new DynamicDataReceiverListener(callback);
+                reader = dds::sub::DataReader<DynamicData>(
+                        _subscriber,
+                        topicCft,
+                        *dr_qos,
+                        dynamic_data_reader_listener,
+                        dds::core::status::StatusMask::data_available());
+            } else {
+                reader = dds::sub::DataReader<DynamicData>(
+                        _subscriber,
+                        topicCft,
+                        *dr_qos);
+            }
+        } else {
+            if (callback != NULL) {
+                dynamic_data_reader_listener =
+                        new DynamicDataReceiverListener(callback);
+                reader = dds::sub::DataReader<DynamicData>(
+                        _subscriber,
+                        topic,
+                        *dr_qos,
+                        dynamic_data_reader_listener,
+                        dds::core::status::StatusMask::data_available());
+            } else {
+                reader = dds::sub::DataReader<DynamicData>(
+                        _subscriber,
+                        topic,
+                        *dr_qos);
+            }
+        }
+
+        delete dr_qos;
+
+        return new RTIDynamicDataSubscriber(
+                reader,
+                dynamic_data_reader_listener,
+                _PM);
+    }
+}
+
+template <typename T>
+const std::string RTIDDSImpl<T>::get_qos_profile_name(std::string topicName)
+{
+    if (_qoSProfileNameMap[topicName].empty()) {
+        fprintf(stderr,
+                "topic name must either be %s or %s or %s.\n",
+                THROUGHPUT_TOPIC_NAME.c_str(),
+                LATENCY_TOPIC_NAME.c_str(),
+                ANNOUNCEMENT_TOPIC_NAME.c_str());
+    }
+
+    /* If the topic name dont match any key return a empty string */
+    return _qoSProfileNameMap[topicName];
+}
+
+template <typename T>
+dds::sub::qos::DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::string topic_name) {
+    using namespace dds::core::policy;
+    using namespace rti::core::policy;
+
+    dds::sub::qos::DataReaderQos *dr_qos = NULL;
     dds::core::QosProvider qos_provider = getQosProviderForProfile(
-            _PM->get<std::string>("qosLibrary"),
-            qos_profile);
-    dds::sub::qos::DataReaderQos dr_qos = qos_provider.datareader_qos();
+       _PM->get<std::string>("qosLibrary"),
+        qos_profile
+    );
 
+    *dr_qos = qos_provider.datareader_qos();
 
-    Reliability qos_reliability = dr_qos.policy<Reliability>();
-    ResourceLimits qos_resource_limits = dr_qos.policy<ResourceLimits>();
-    Durability qos_durability = dr_qos.policy<Durability>();
+    Reliability qos_reliability = dr_qos->policy<Reliability>();
+    ResourceLimits qos_resource_limits = dr_qos->policy<ResourceLimits>();
+    Durability qos_durability = dr_qos->policy<Durability>();
     rti::core::policy::DataReaderProtocol dr_DataReaderProtocol =
-            dr_qos.policy<rti::core::policy::DataReaderProtocol>();
+            dr_qos->policy<rti::core::policy::DataReaderProtocol>();
 
     // This will allow us to load some properties.
     std::map<std::string, std::string> properties =
-            dr_qos.policy<Property>().get_all();
+            dr_qos->policy<Property>().get_all();
 
     // only force reliability on throughput/latency topics
     if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
@@ -1760,7 +1963,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     }
 
     // only apply durability on Throughput datareader
-    if (qos_profile == "ThroughputQos") {
+    // TODO: ADD FLATDATA here
+    if (qos_profile == "ThroughputQos" || qos_profile == "FlatData_ThroughputQos") {
 
         if (_PM->get<int>("durability") == DDS_VOLATILE_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::Volatile();
@@ -1773,7 +1977,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 !_PM->get<bool>("noDirectCommunication"));
     }
 
-    if ((qos_profile == "LatencyQos")
+    // TODO: Maybe we have to touch more things for FlatData here
+    if ((qos_profile == "LatencyQoS" || qos_profile == "FlatData_LatencyQos")
             && _PM->get<bool>("noDirectCommunication")
             && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
             || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
@@ -1823,128 +2028,299 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         rti::core::TransportMulticastSettingsSeq multicast_seq;
         multicast_seq.push_back(multicast_settings);
 
-        dr_qos << rti::core::policy::TransportMulticast(multicast_seq,
+        (*dr_qos) << rti::core::policy::TransportMulticast(multicast_seq,
                 rti::core::policy::TransportMulticastKind::AUTOMATIC);
     }
 
+    // TODO: Do magic for FlatData here
     if (_PM->get<int>("unbounded") > 0) {
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
         properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = buf;
     }
 
-    dr_qos << qos_reliability;
-    dr_qos << qos_resource_limits;
-    dr_qos << qos_durability;
-    dr_qos << dr_DataReaderProtocol;
-    dr_qos << Property(properties.begin(), properties.end(), true);
+    (*dr_qos) << qos_reliability;
+    (*dr_qos) << qos_resource_limits;
+    (*dr_qos) << qos_durability;
+    (*dr_qos) << dr_DataReaderProtocol;
+    (*dr_qos) << Property(properties.begin(), properties.end(), true);
 
-    if (!_PM->get<bool>("dynamicData")) {
-        dds::topic::Topic<T> topic(_participant, topic_name);
-        dds::sub::DataReader<T> reader(dds::core::null);
-        ReceiverListener<T> *reader_listener = NULL;
-
-        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _PM->is_set("cft")) {
-            /* Create CFT Topic */
-            dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
-                    topic_name,
-                    topic);
-            if (callback != NULL) {
-                reader_listener = new ReceiverListener<T>(callback);
-                reader = dds::sub::DataReader<T>(
-                        _subscriber,
-                        topicCft,
-                        dr_qos,
-                        reader_listener,
-                        dds::core::status::StatusMask::data_available());
-            } else {
-                reader = dds::sub::DataReader<T>(_subscriber, topicCft, dr_qos);
-            }
-        } else {
-            if (callback != NULL) {
-                reader_listener = new ReceiverListener<T>(callback);
-                reader = dds::sub::DataReader<T>(
-                        _subscriber,
-                        topic,
-                        dr_qos,
-                        reader_listener,
-                        dds::core::status::StatusMask::data_available());
-            } else {
-                reader = dds::sub::DataReader<T>(_subscriber, topic, dr_qos);
-            }
-        }
-        return new RTISubscriber<T>(
-                reader,
-                reader_listener,
-                _PM);
-
-    } else {
-        const dds::core::xtypes::StructType& type =
-                rti::topic::dynamic_type<T>::get();
-        dds::topic::Topic<DynamicData> topic(
-                _participant,
-                topic_name,
-                type);
-        dds::sub::DataReader<DynamicData> reader(dds::core::null);
-        DynamicDataReceiverListener *dynamic_data_reader_listener = NULL;
-        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _PM->is_set("cft")) {
-            /* Create CFT Topic */
-            dds::topic::ContentFilteredTopic<DynamicData> topicCft = CreateCft(
-                    topic_name,
-                    topic);
-            if (callback != NULL) {
-                dynamic_data_reader_listener =
-                        new DynamicDataReceiverListener(callback);
-                reader = dds::sub::DataReader<DynamicData>(
-                        _subscriber,
-                        topicCft,
-                        dr_qos,
-                        dynamic_data_reader_listener,
-                        dds::core::status::StatusMask::data_available());
-            } else {
-                reader = dds::sub::DataReader<DynamicData>(
-                        _subscriber,
-                        topicCft,
-                        dr_qos);
-            }
-        } else {
-            if (callback != NULL) {
-                dynamic_data_reader_listener =
-                        new DynamicDataReceiverListener(callback);
-                reader = dds::sub::DataReader<DynamicData>(
-                        _subscriber,
-                        topic,
-                        dr_qos,
-                        dynamic_data_reader_listener,
-                        dds::core::status::StatusMask::data_available());
-            } else {
-                reader = dds::sub::DataReader<DynamicData>(
-                        _subscriber,
-                        topic,
-                        dr_qos);
-            }
-        }
-
-        return new RTIDynamicDataSubscriber(
-                reader,
-                dynamic_data_reader_listener,
-                _PM);
-    }
+    return dr_qos;
 }
 
 template <typename T>
-const std::string RTIDDSImpl<T>::get_qos_profile_name(std::string topicName)
-{
-    if (_qoSProfileNameMap[topicName].empty()) {
-        fprintf(stderr,
-                "topic name must either be %s or %s or %s.\n",
-                THROUGHPUT_TOPIC_NAME.c_str(),
-                LATENCY_TOPIC_NAME.c_str(),
-                ANNOUNCEMENT_TOPIC_NAME.c_str());
+dds::pub::qos::DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile, std::string topic_name) {
+    using namespace dds::core::policy;
+    using namespace rti::core::policy;
+
+    dds::pub::qos::DataWriterQos *dw_qos = new dds::pub::qos::DataWriterQos();
+    dds::core::QosProvider qos_provider = getQosProviderForProfile(
+            _PM->get<std::string>("qosLibrary"),
+            qos_profile);
+
+    (*dw_qos) = qos_provider.datawriter_qos();
+
+    Reliability qos_reliability = dw_qos->policy<Reliability>();
+    ResourceLimits qos_resource_limits = dw_qos->policy<ResourceLimits>();
+    DataWriterResourceLimits qos_dw_resource_limits =
+            dw_qos->policy<DataWriterResourceLimits>();
+    Durability qos_durability = dw_qos->policy<Durability>();
+    PublishMode dwPublishMode= dw_qos->policy<PublishMode>();
+    Batch dwBatch = dw_qos->policy<Batch>();
+    rti::core::policy::DataWriterProtocol dw_dataWriterProtocol =
+            dw_qos->policy<rti::core::policy::DataWriterProtocol>();
+    RtpsReliableWriterProtocol dw_reliableWriterProtocol =
+            dw_dataWriterProtocol.rtps_reliable_writer();
+
+    // This will allow us to load some properties.
+    std::map<std::string, std::string> properties =
+            dw_qos->policy<Property>().get_all();
+
+    if (_PM->get<bool>("noPositiveAcks")
+            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
+        dw_dataWriterProtocol.disable_positive_acks(true);
+        if (_PM->is_set("keepDurationUsec")) {
+            dw_reliableWriterProtocol
+                    .disable_positive_acks_min_sample_keep_duration(
+                            dds::core::Duration::from_microsecs(
+                                    _PM->get<unsigned long long>(
+                                            "keepDurationUsec")));
+        }
     }
 
-    /* If the topic name dont match any key return a empty string */
-    return _qoSProfileNameMap[topicName];
+    if (_isLargeData || _PM->get<bool>("asynchronous")) {
+        if (_PM->get<std::string>("flowController") != "default") {
+            dwPublishMode = PublishMode::Asynchronous(
+                    "dds.flow_controller.token_bucket."
+                    + _PM->get<std::string>("flowController"));
+       } else{
+           dwPublishMode = PublishMode::Asynchronous();
+       }
+   }
+
+    // Only force reliability on throughput/latency topics
+    if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
+        if (!_PM->get<bool>("bestEffort")) {
+            // default: use the setting specified in the qos profile
+            // qos_reliability = Reliability::Reliable(dds::core::Duration::infinite());
+        } else {
+            // override to best-effort
+            qos_reliability = Reliability::BestEffort();
+        }
+    }
+
+    // These QOS's are only set for the Throughput datawriter
+    if (qos_profile == "ThroughputQos" || qos_profile == "FlatDataThroughputQos") {
+
+        if (_PM->get<bool>("multicast")) {
+            dw_reliableWriterProtocol.enable_multicast_periodic_heartbeat(true);
+        }
+
+        if (_PM->get<long>("batchSize") > 0) {
+            dwBatch.enable(true);
+            dwBatch.max_data_bytes(_PM->get<long>("batchSize"));
+            qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
+            qos_dw_resource_limits.max_batches(_PM->get<int>("sendQueueSize"));
+        } else {
+            qos_resource_limits.max_samples(_PM->get<int>("sendQueueSize"));
+        }
+
+        if (_PM->get<bool>("enableAutoThrottle")) {
+            properties["dds.data_writer.auto_throttle.enable"] = "true";
+        }
+
+        if (_PM->get<bool>("enableTurboMode")) {
+            properties["dds.data_writer.enable_turbo_mode.enable"] = "true";
+            dwBatch.enable(false);
+            qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
+            qos_dw_resource_limits.max_batches(_PM->get<int>("sendQueueSize"));
+        }
+
+        qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
+        qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
+
+        if (_PM->get<int>("durability") == DDS_VOLATILE_DURABILITY_QOS) {
+            qos_durability = dds::core::policy::Durability::Volatile();
+        } else if (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS) {
+            qos_durability = dds::core::policy::Durability::TransientLocal();
+        } else {
+            qos_durability = dds::core::policy::Durability::Persistent();
+        }
+        qos_durability->direct_communication(
+                !_PM->get<bool>("noDirectCommunication"));
+
+        dw_reliableWriterProtocol.heartbeats_per_max_samples(
+                _PM->get<int>("sendQueueSize") / 10);
+        dw_reliableWriterProtocol.low_watermark(
+                _PM->get<int>("sendQueueSize") * 1 / 10);
+        dw_reliableWriterProtocol.high_watermark(
+                _PM->get<int>("sendQueueSize") * 9 / 10);
+
+        /*
+         * If _SendQueueSize is 1 low watermark and high watermark would both be
+         * 0, which would cause the middleware to fail. So instead we set the
+         * high watermark to the low watermark + 1 in such case.
+         */
+        if (dw_reliableWriterProtocol.high_watermark()
+                == dw_reliableWriterProtocol.high_watermark()) {
+            dw_reliableWriterProtocol.high_watermark(
+                    dw_reliableWriterProtocol.high_watermark() + 1);
+        }
+
+        dw_reliableWriterProtocol.max_send_window_size(
+                _PM->get<int>("sendQueueSize"));
+        dw_reliableWriterProtocol.min_send_window_size(
+                _PM->get<int>("sendQueueSize"));
+    }
+
+    // TODO: Maybe we have to touch more things for FlatData here
+    // also check if I have changed sth I should not
+    if (qos_profile == "FlatData_LatencyQos"
+            && _PM->get<bool>("noDirectCommunication")
+            && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+            || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
+        if (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS) {
+            qos_durability = dds::core::policy::Durability::TransientLocal();
+        } else {
+            qos_durability = dds::core::policy::Durability::Persistent();
+        }
+        qos_durability->direct_communication(
+                !_PM->get<bool>("noDirectCommunication"));
+    }
+
+    qos_resource_limits.max_instances(_PM->get<long>("instances") + 1); // One extra for MAX_CFT_VALUE
+    qos_resource_limits->initial_instances(_PM->get<long>("instances") + 1);
+
+    if (_PM->get<long>("instances") > 1) {
+        if (_PM->is_set("instanceHashBuckets")) {
+            qos_resource_limits->instance_hash_buckets(
+                    _PM->get<long>("instanceHashBuckets"));
+        } else {
+            qos_resource_limits->instance_hash_buckets(
+                    _PM->get<long>("instances"));
+        }
+    }
+
+    // TODO: Add Magic for FlatData here
+    if (_PM->get<int>("unbounded") > 0) {
+        char buf[10];
+        sprintf(buf, "%d", _PM->get<int>("unbounded"));
+        properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] =
+                buf;
+    }
+
+    (*dw_qos) << qos_reliability;
+    (*dw_qos) << qos_resource_limits;
+    (*dw_qos) << qos_dw_resource_limits;
+    (*dw_qos) << qos_durability;
+    (*dw_qos) << dwPublishMode;
+    (*dw_qos) << dwBatch;
+    dw_dataWriterProtocol.rtps_reliable_writer(dw_reliableWriterProtocol);
+    (*dw_qos) << dw_dataWriterProtocol;
+    (*dw_qos) << Property(properties.begin(), properties.end(), true);
+
+    return dw_qos;
+}
+
+/*********************************************************
+ * CreateReader FlatData
+ */
+template <typename T>
+IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
+        const std::string &topic_name,
+        IMessagingCB *callback)
+{
+    using namespace dds::core::policy;
+    using namespace rti::core::policy;
+
+    std::string qos_profile = "FlatData_";
+
+    qos_profile += this->get_qos_profile_name(topic_name);
+    if (qos_profile.empty()) {
+        throw std::logic_error("[Error] Topic name");
+    }
+
+    dds::sub::qos::DataReaderQos *dr_qos = setup_DR_QoS(qos_profile, topic_name);
+    if (dr_qos == NULL) {
+        throw std::logic_error("[Error] Could not create Reader QoS");
+    }
+
+    dds::topic::Topic<T> topic(this->_participant, topic_name);
+    dds::sub::DataReader<T> reader(dds::core::null);
+    ReceiverListenerBase<T> *reader_listener = NULL;
+
+    if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && this->_PM->is_set("cft")) {
+        /* Create CFT Topic */
+        dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
+                topic_name,
+                topic);
+        if (callback != NULL) {
+
+            reader_listener = new FlatDataReceiverListener<T>(callback);
+
+            reader = dds::sub::DataReader<T>(
+                    this->_subscriber,
+                    topicCft,
+                    *dr_qos,
+                    reader_listener,
+                    dds::core::status::StatusMask::data_available());
+        } else {
+            reader = dds::sub::DataReader<T>(this->_subscriber, topicCft, *dr_qos);
+        }
+    } else {
+
+        if (callback != NULL) {
+
+            reader_listener = new FlatDataReceiverListener<T>(callback);
+
+            reader = dds::sub::DataReader<T>(
+                    this->_subscriber,
+                    topic,
+                    *dr_qos,
+                    reader_listener,
+                    dds::core::status::StatusMask::data_available());
+        } else {
+            reader = dds::sub::DataReader<T>(this->_subscriber, topic, *dr_qos);
+        }
+    }
+
+    return new RTIFlatDataSubscriber<T>(
+            reader,
+            reader_listener,
+            this->_PM);
+}
+
+/*********************************************************
+ * CreateWriter
+ */
+template <typename T>
+IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const std::string &topic_name)
+{
+    using namespace dds::core::policy;
+    using namespace rti::core::policy;
+
+    std::string qos_profile = "FlatData_";
+
+    qos_profile += this->get_qos_profile_name(topic_name);
+    if (qos_profile.empty()) {
+        throw std::logic_error("[Error] Topic name");
+    }
+
+    dds::pub::qos::DataWriterQos *dw_qos = this->setup_DW_QoS(qos_profile, topic_name);
+    if (dw_qos == NULL) {
+        throw std::logic_error("[Error] Could not create Writer QoS");
+    }
+
+    dds::topic::Topic<T> topic(this->_participant, topic_name);
+    dds::pub::DataWriter<T> writer(this->_publisher, topic, *dw_qos);
+
+    return new RTIFlatDataPublisher<T>(
+            writer,
+            this->_PM->get<long>("instances"),
+            this->_pongSemaphore,
+            this->_PM->get<bool>("latencyTest"),
+            this->_PM->get<long>("writeInstance"),
+            this->_PM);
 }
 
 template class RTIDDSImpl<TestDataKeyed_t>;
@@ -1952,6 +2328,10 @@ template class RTIDDSImpl<TestData_t>;
 template class RTIDDSImpl<TestDataKeyedLarge_t>;
 template class RTIDDSImpl<TestDataLarge_t>;
 
+template class RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>;
+template class RTIDDSImpl_FlatData<TestData_FlatData_t>;
+template class RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>;
+template class RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>;
 
 #ifdef RTI_WIN32
   #pragma warning(pop)
