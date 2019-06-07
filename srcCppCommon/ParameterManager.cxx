@@ -351,6 +351,20 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("flatdata", flatData);
 
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    Parameter<bool> *useLegacyDynamicData = new Parameter<bool>(false);
+    useLegacyDynamicData->set_command_line_argument("-useLegacyDynamicData", "");
+    useLegacyDynamicData->set_description(
+            "Use the Legacy Dynamic Data implementation");
+    useLegacyDynamicData->set_type(T_BOOL);
+    useLegacyDynamicData->set_extra_argument(NO);
+    useLegacyDynamicData->set_group(GENERAL);
+    useLegacyDynamicData->set_supported_middleware(
+            Middleware::RTIDDSPRO);
+    create("useLegacyDynamicData", useLegacyDynamicData);
+  #endif
+
+
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER
 
@@ -937,6 +951,7 @@ void ParameterManager::initialize()
     transportPrivateKey->set_supported_middleware(Middleware::RTIDDSPRO);
     create("transportPrivateKey", transportPrivateKey);
 
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
     ////////////////////////////////////////////////////////////////////////////
     // RAWTRANSPORT PARAMTER:
 
@@ -963,6 +978,7 @@ void ParameterManager::initialize()
     noBlockingSockets->set_group(RAWTRANSPORT);
     noBlockingSockets->set_supported_middleware(Middleware::RAWTRANSPORT);
     create("noBlockingSockets", noBlockingSockets);
+  #endif
 
     ////////////////////////////////////////////////////////////////////////////
     // SECURE PARAMETER:

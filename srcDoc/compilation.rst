@@ -251,12 +251,12 @@ examples:
    ::
 
        ./build.sh --platform x64Darwin15clang7.0 --secure --dynamic
-       
+
 -  Generation and cross-compilation for a non-native architecture (``armv8Linux4.4gcc5.4.0``).
    Note how you can specify the Compiler/Linker used by *Rtiddsgen*.
-   
+
    ::
-   
+
       ./build.sh --platform armv8Linux4.4gcc5.4.0 --compiler aarch64-linux-gnu-g++ --linker aarch64-linux-gnu-g++
 
 -  Generation and compilation for a given architecture
@@ -271,6 +271,14 @@ examples:
    ::
 
        ./build.sh --clean
+
+Note: Build script execution for *VxWorks* Kernel Mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After building the *RTI Perftest* executables for *VxWorks* kernel mode, an
+extra step is needed: "Munching", this process is automatically done in
+*RTI Connext DDS Professional* starting in 6.0.0. However, for previous versions
+and for *RTI Connext DDS Micro*, the process has to be done manually.
 
 Windows systems
 ---------------
