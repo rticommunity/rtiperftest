@@ -351,6 +351,19 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("flatdata", flatData);
 
+    Parameter<bool> *zerocopy = new Parameter<bool>(false);
+    zerocopy->set_command_line_argument("-zeroCopy", "");
+    zerocopy->set_description(
+            "Use Zero Copy transfer mode. FlatData must be used too\nDefault: Not set");
+    zerocopy->set_type(T_BOOL);
+    zerocopy->set_extra_argument(NO);
+    zerocopy->set_group(GENERAL);
+    zerocopy->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("zerocopy", zerocopy);
+
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
     Parameter<bool> *useLegacyDynamicData = new Parameter<bool>(false);
     useLegacyDynamicData->set_command_line_argument("-useLegacyDynamicData", "");

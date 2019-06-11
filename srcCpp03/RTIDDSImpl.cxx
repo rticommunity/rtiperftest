@@ -312,6 +312,22 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "No\n";
     }
 
+    // FlatData
+    stringStream << "\tFlatData: ";
+    if (_PM->get<bool>("flatdata")) {
+        stringStream << "Yes\n";
+    } else {
+        stringStream << "No\n";
+    }
+
+    // Zero Copy
+    stringStream << "\tZero Copy: ";
+    if (_PM->get<bool>("zerocopy")) {
+        stringStream << "Yes\n";
+    } else {
+        stringStream << "No\n";
+    }
+
     // Dynamic Data
     if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
@@ -568,12 +584,6 @@ public:
 // TODO: Make TestData_FlatData_t a template
 template<typename T>
 class RTIFlatDataPublisher: public RTIPublisherBase<T> {
-static_assert(std::is_same<T, TestData_FlatData_t>::value
-        || std::is_same<T, TestDataKeyed_FlatData_t>::value
-        || std::is_same<T, TestDataLarge_FlatData_t>::value
-        || std::is_same<T, TestDataKeyedLarge_FlatData_t>::value,
-        "Cannot instantiate with other types than FlatData ones");
-
 protected:
     typedef typename rti::flat::flat_type_traits<T>::builder Builder;
 
@@ -613,6 +623,7 @@ public:
             add_key(builder, i);
 
             T *sample = builder.finish_sample();
+            // std::cout << *sample << std::endl;
 
             this->_instance_handles.push_back(
                 this->_writer.register_instance(*sample));
@@ -624,6 +635,7 @@ public:
         Builder builder = rti::flat::build_data(writer);
         add_key(builder, MAX_CFT_VALUE);
         T *sample = builder.finish_sample();
+        // std::cout << *sample << std::endl;
 
         this->_instance_handles.push_back(
             this->_writer.register_instance(*sample));
@@ -631,8 +643,8 @@ public:
         this->_writer.extensions().discard_loan(*sample);
     }
 
-    bool send(TestMessage &message, bool isCftWildcardKey) {
-        Builder builder = rti::flat::build_data(this->_writer);
+    inline bool send(TestMessage &message, bool isCftWildcardKey) {
+        auto builder = rti::flat::build_data(this->_writer);
         long key = 0;
 
         // Initialize Information data
@@ -659,18 +671,15 @@ public:
         add_key(builder, key);
 
         // Build the data to be sent
-        _data = builder.finish_sample();
-        if (_data == NULL) {
-            std::cerr << "[Error] Cannot build data" << std::endl;  // TODO: Throw an exception here
-            return false;
-        }
+        T *sample = builder.finish_sample();
+        //std::cout << *sample << std::endl;
 
         // Send data through the writer
         if (!isCftWildcardKey) {
-            this->_writer.write(*_data, this->_instance_handles[key]);
+            this->_writer.write(*sample, this->_instance_handles[key]);
         } else {
             this->_writer.write(
-                    *_data,
+                    *sample,
                     this->_instance_handles[this->_num_instances]);
         }
 
@@ -835,19 +844,21 @@ public:
     }
 
     void on_data_available(dds::sub::DataReader<T> &reader) {
-        this->samples = reader.take();
+        dds::sub::LoanedSamples<T> samples = reader.take();
 
-        for (uint i = 0; i < this->samples.length(); ++i) {
-            if (this->samples[i].info().valid()) {
-                const T &sample = this->samples[i].data();
+        for (uint i = 0; i < samples.length(); ++i) {
+            if (samples[i].info().valid()) {
+                const T &sample = samples[i].data();
                 auto message = sample.root();
+
+                // std::cout << sample << std::endl;
 
                 this->_message.entity_id = message.entity_id();
                 this->_message.seq_num = message.seq_num();
                 this->_message.timestamp_sec = message.timestamp_sec();
                 this->_message.timestamp_usec = message.timestamp_usec();
                 this->_message.latency_ping = message.latency_ping();
-                this->_message.size = (int) message.bin_data().element_count();
+                this->_message.size = message.bin_data().element_count();
                 // bin_data should be retrieved here
 
                 this->_callback->ProcessMessage(this->_message);
@@ -1094,7 +1105,7 @@ public:
             this->_message.timestamp_sec = data.timestamp_sec();
             this->_message.timestamp_usec = data.timestamp_usec();
             this->_message.latency_ping = data.latency_ping();
-            this->_message.size = (int) data.bin_data().element_count();
+            this->_message.size = data.bin_data().element_count();
             //_message.data = samples[_data_idx].data().bin_data();
 
             ++(this->_data_idx);
@@ -1112,7 +1123,7 @@ public:
 
             for (unsigned int i = 0; i < samples.length(); ++i) {
                 if (samples[i].info().valid()) {
-                    const T & data_sample = samples[i].data();
+                    const T &data_sample = samples[i].data();
                     auto data = data_sample.root();
 
                     this->_message.entity_id = data.entity_id();
@@ -1120,7 +1131,7 @@ public:
                     this->_message.timestamp_sec = data.timestamp_sec();
                     this->_message.timestamp_usec = data.timestamp_usec();
                     this->_message.latency_ping = data.latency_ping();
-                    this->_message.size = (int) data.bin_data().element_count();
+                    this->_message.size = data.bin_data().element_count();
                     //_message.data = data.bin_data();
                     listener->ProcessMessage(this->_message);
                 }
@@ -1660,14 +1671,11 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::pub::qos::DataWriterQos *dw_qos = setup_DW_QoS(qos_profile, topic_name);
-    if (dw_qos == NULL) {
-        throw std::logic_error("[Error] Could not create Writer QoS");
-    }
+    dds::pub::qos::DataWriterQos dw_qos = setup_DW_QoS(qos_profile, topic_name);
 
     if (!_PM->get<bool>("dynamicData")) {
         dds::topic::Topic<T> topic(_participant, topic_name);
-        dds::pub::DataWriter<T> writer(_publisher, topic, *dw_qos);
+        dds::pub::DataWriter<T> writer(_publisher, topic, dw_qos);
 
         return new RTIPublisher<T>(
                 writer,
@@ -1687,9 +1695,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         dds::pub::DataWriter<DynamicData> writer(
                 _publisher,
                 topic,
-                *dw_qos);
+                dw_qos);
 
-        delete dw_qos;
 
         return new RTIDynamicDataPublisher(
                 writer,
@@ -1806,10 +1813,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::sub::qos::DataReaderQos *dr_qos = setup_DR_QoS(qos_profile, topic_name);
-    if (dr_qos == NULL) {
-        throw std::logic_error("[Error] Could not create Reader QoS");
-    }
+    dds::sub::qos::DataReaderQos dr_qos = setup_DR_QoS(qos_profile, topic_name);
 
     if (!_PM->get<bool>("dynamicData")) {
         dds::topic::Topic<T> topic(_participant, topic_name);
@@ -1826,11 +1830,11 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 reader = dds::sub::DataReader<T>(
                         _subscriber,
                         topicCft,
-                        *dr_qos,
+                        dr_qos,
                         reader_listener,
                         dds::core::status::StatusMask::data_available());
             } else {
-                reader = dds::sub::DataReader<T>(_subscriber, topicCft, *dr_qos);
+                reader = dds::sub::DataReader<T>(_subscriber, topicCft, dr_qos);
             }
         } else {
             if (callback != NULL) {
@@ -1838,15 +1842,13 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 reader = dds::sub::DataReader<T>(
                         _subscriber,
                         topic,
-                        *dr_qos,
+                        dr_qos,
                         reader_listener,
                         dds::core::status::StatusMask::data_available());
             } else {
-                reader = dds::sub::DataReader<T>(_subscriber, topic, *dr_qos);
+                reader = dds::sub::DataReader<T>(_subscriber, topic, dr_qos);
             }
         }
-
-        delete dr_qos;
 
         return new RTISubscriber<T>(
                 reader,
@@ -1873,14 +1875,14 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 reader = dds::sub::DataReader<DynamicData>(
                         _subscriber,
                         topicCft,
-                        *dr_qos,
+                        dr_qos,
                         dynamic_data_reader_listener,
                         dds::core::status::StatusMask::data_available());
             } else {
                 reader = dds::sub::DataReader<DynamicData>(
                         _subscriber,
                         topicCft,
-                        *dr_qos);
+                        dr_qos);
             }
         } else {
             if (callback != NULL) {
@@ -1889,18 +1891,16 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 reader = dds::sub::DataReader<DynamicData>(
                         _subscriber,
                         topic,
-                        *dr_qos,
+                        dr_qos,
                         dynamic_data_reader_listener,
                         dds::core::status::StatusMask::data_available());
             } else {
                 reader = dds::sub::DataReader<DynamicData>(
                         _subscriber,
                         topic,
-                        *dr_qos);
+                        dr_qos);
             }
         }
-
-        delete dr_qos;
 
         return new RTIDynamicDataSubscriber(
                 reader,
@@ -1925,27 +1925,26 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(std::string topicName)
 }
 
 template <typename T>
-dds::sub::qos::DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::string topic_name) {
+dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::string topic_name) {
     using namespace dds::core::policy;
     using namespace rti::core::policy;
 
-    dds::sub::qos::DataReaderQos *dr_qos = new dds::sub::qos::DataReaderQos();
     dds::core::QosProvider qos_provider = getQosProviderForProfile(
        _PM->get<std::string>("qosLibrary"),
         qos_profile
     );
 
-    *dr_qos = qos_provider.datareader_qos();
+    dds::sub::qos::DataReaderQos dr_qos = qos_provider.datareader_qos();
 
-    Reliability qos_reliability = dr_qos->policy<Reliability>();
-    ResourceLimits qos_resource_limits = dr_qos->policy<ResourceLimits>();
-    Durability qos_durability = dr_qos->policy<Durability>();
+    Reliability qos_reliability = dr_qos.policy<Reliability>();
+    ResourceLimits qos_resource_limits = dr_qos.policy<ResourceLimits>();
+    Durability qos_durability = dr_qos.policy<Durability>();
     rti::core::policy::DataReaderProtocol dr_DataReaderProtocol =
-            dr_qos->policy<rti::core::policy::DataReaderProtocol>();
+            dr_qos.policy<rti::core::policy::DataReaderProtocol>();
 
     // This will allow us to load some properties.
     std::map<std::string, std::string> properties =
-            dr_qos->policy<Property>().get_all();
+            dr_qos.policy<Property>().get_all();
 
     // only force reliability on throughput/latency topics
     if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
@@ -2019,7 +2018,6 @@ dds::sub::qos::DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profil
                       << LATENCY_TOPIC_NAME << " or "
                       << ANNOUNCEMENT_TOPIC_NAME << std::endl;
             throw std::logic_error("[Error] Topic name");
-            return NULL;
         }
         rti::core::TransportMulticastSettings multicast_settings(
                 transports,
@@ -2028,7 +2026,7 @@ dds::sub::qos::DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profil
         rti::core::TransportMulticastSettingsSeq multicast_seq;
         multicast_seq.push_back(multicast_settings);
 
-        (*dr_qos) << rti::core::policy::TransportMulticast(multicast_seq,
+        dr_qos << rti::core::policy::TransportMulticast(multicast_seq,
                 rti::core::policy::TransportMulticastKind::AUTOMATIC);
     }
 
@@ -2039,45 +2037,45 @@ dds::sub::qos::DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profil
         properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = buf;
     }
 
-    (*dr_qos) << qos_reliability;
-    (*dr_qos) << qos_resource_limits;
-    (*dr_qos) << qos_durability;
-    (*dr_qos) << dr_DataReaderProtocol;
-    (*dr_qos) << Property(properties.begin(), properties.end(), true);
+    dr_qos << qos_reliability;
+    dr_qos << qos_resource_limits;
+    dr_qos << qos_durability;
+    dr_qos << dr_DataReaderProtocol;
+    dr_qos << Property(properties.begin(), properties.end(), true);
 
     return dr_qos;
 }
 
 template <typename T>
-dds::pub::qos::DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile, std::string topic_name) {
+dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile, std::string topic_name) {
     using namespace dds::core::policy;
     using namespace rti::core::policy;
 
-    dds::pub::qos::DataWriterQos *dw_qos = new dds::pub::qos::DataWriterQos();
     dds::core::QosProvider qos_provider = getQosProviderForProfile(
             _PM->get<std::string>("qosLibrary"),
             qos_profile);
 
-    (*dw_qos) = qos_provider.datawriter_qos();
+    dds::pub::qos::DataWriterQos dw_qos = qos_provider.datawriter_qos();
 
-    Reliability qos_reliability = dw_qos->policy<Reliability>();
-    ResourceLimits qos_resource_limits = dw_qos->policy<ResourceLimits>();
+    Reliability qos_reliability = dw_qos.policy<Reliability>();
+    ResourceLimits qos_resource_limits = dw_qos.policy<ResourceLimits>();
     DataWriterResourceLimits qos_dw_resource_limits =
-            dw_qos->policy<DataWriterResourceLimits>();
-    Durability qos_durability = dw_qos->policy<Durability>();
-    PublishMode dwPublishMode= dw_qos->policy<PublishMode>();
-    Batch dwBatch = dw_qos->policy<Batch>();
+            dw_qos.policy<DataWriterResourceLimits>();
+    Durability qos_durability = dw_qos.policy<Durability>();
+    PublishMode dwPublishMode= dw_qos.policy<PublishMode>();
+    Batch dwBatch = dw_qos.policy<Batch>();
     rti::core::policy::DataWriterProtocol dw_dataWriterProtocol =
-            dw_qos->policy<rti::core::policy::DataWriterProtocol>();
+            dw_qos.policy<rti::core::policy::DataWriterProtocol>();
     RtpsReliableWriterProtocol dw_reliableWriterProtocol =
             dw_dataWriterProtocol.rtps_reliable_writer();
 
     // This will allow us to load some properties.
     std::map<std::string, std::string> properties =
-            dw_qos->policy<Property>().get_all();
+            dw_qos.policy<Property>().get_all();
 
     if (_PM->get<bool>("noPositiveAcks")
-            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
+            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos"
+            || qos_profile == "FlatData_ThroughputQos" || qos_profile == "FlatData_LatencyQos")) {
         dw_dataWriterProtocol.disable_positive_acks(true);
         if (_PM->is_set("keepDurationUsec")) {
             dw_reliableWriterProtocol
@@ -2110,7 +2108,7 @@ dds::pub::qos::DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profil
     }
 
     // These QOS's are only set for the Throughput datawriter
-    if (qos_profile == "ThroughputQos" || qos_profile == "FlatDataThroughputQos") {
+    if (qos_profile == "ThroughputQos" || qos_profile == "FlatData_ThroughputQos") {
 
         if (_PM->get<bool>("multicast")) {
             dw_reliableWriterProtocol.enable_multicast_periodic_heartbeat(true);
@@ -2175,7 +2173,7 @@ dds::pub::qos::DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profil
 
     // TODO: Maybe we have to touch more things for FlatData here
     // also check if I have changed sth I should not
-    if (qos_profile == "FlatData_LatencyQos"
+    if ((qos_profile == "LatencyQos" || qos_profile == "FlatData_LatencyQos")
             && _PM->get<bool>("noDirectCommunication")
             && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
             || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
@@ -2209,15 +2207,15 @@ dds::pub::qos::DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profil
                 buf;
     }
 
-    (*dw_qos) << qos_reliability;
-    (*dw_qos) << qos_resource_limits;
-    (*dw_qos) << qos_dw_resource_limits;
-    (*dw_qos) << qos_durability;
-    (*dw_qos) << dwPublishMode;
-    (*dw_qos) << dwBatch;
+    dw_qos << qos_reliability;
+    dw_qos << qos_resource_limits;
+    dw_qos << qos_dw_resource_limits;
+    dw_qos << qos_durability;
+    dw_qos << dwPublishMode;
+    dw_qos << dwBatch;
     dw_dataWriterProtocol.rtps_reliable_writer(dw_reliableWriterProtocol);
-    (*dw_qos) << dw_dataWriterProtocol;
-    (*dw_qos) << Property(properties.begin(), properties.end(), true);
+    dw_qos << dw_dataWriterProtocol;
+    dw_qos << Property(properties.begin(), properties.end(), true);
 
     return dw_qos;
 }
@@ -2240,10 +2238,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::sub::qos::DataReaderQos *dr_qos = setup_DR_QoS(qos_profile, topic_name);
-    if (dr_qos == NULL) {
-        throw std::logic_error("[Error] Could not create Reader QoS");
-    }
+    dds::sub::qos::DataReaderQos dr_qos = setup_DR_QoS(qos_profile, topic_name);
 
     dds::topic::Topic<T> topic(this->_participant, topic_name);
     dds::sub::DataReader<T> reader(dds::core::null);
@@ -2261,11 +2256,11 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
             reader = dds::sub::DataReader<T>(
                     this->_subscriber,
                     topicCft,
-                    *dr_qos,
+                    dr_qos,
                     reader_listener,
                     dds::core::status::StatusMask::data_available());
         } else {
-            reader = dds::sub::DataReader<T>(this->_subscriber, topicCft, *dr_qos);
+            reader = dds::sub::DataReader<T>(this->_subscriber, topicCft, dr_qos);
         }
     } else {
 
@@ -2276,11 +2271,11 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
             reader = dds::sub::DataReader<T>(
                     this->_subscriber,
                     topic,
-                    *dr_qos,
+                    dr_qos,
                     reader_listener,
                     dds::core::status::StatusMask::data_available());
         } else {
-            reader = dds::sub::DataReader<T>(this->_subscriber, topic, *dr_qos);
+            reader = dds::sub::DataReader<T>(this->_subscriber, topic, dr_qos);
         }
     }
 
@@ -2306,13 +2301,10 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const std::string &topic_
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::pub::qos::DataWriterQos *dw_qos = this->setup_DW_QoS(qos_profile, topic_name);
-    if (dw_qos == NULL) {
-        throw std::logic_error("[Error] Could not create Writer QoS");
-    }
+    dds::pub::qos::DataWriterQos dw_qos = this->setup_DW_QoS(qos_profile, topic_name);
 
     dds::topic::Topic<T> topic(this->_participant, topic_name);
-    dds::pub::DataWriter<T> writer(this->_publisher, topic, *dw_qos);
+    dds::pub::DataWriter<T> writer(this->_publisher, topic, dw_qos);
 
     return new RTIFlatDataPublisher<T>(
             writer,
@@ -2332,6 +2324,11 @@ template class RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>;
 template class RTIDDSImpl_FlatData<TestData_FlatData_t>;
 template class RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>;
 template class RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>;
+
+template class RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>;
+template class RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>;
+template class RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>;
+template class RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>;
 
 #ifdef RTI_WIN32
   #pragma warning(pop)
