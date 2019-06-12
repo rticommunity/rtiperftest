@@ -571,7 +571,7 @@ public:
             this->data.key()[c] = (unsigned char) (key >> c * 8);
         }
         if (!isCftWildCardKey) {
-            this->_writer.write(this->data, this->_instance_handles[key]);
+            this->_writer.write(this->data, this->_instance_handles.back());
         } else {
             this->_writer.write(this->data,
                     this->_instance_handles[this->_num_instances]);
@@ -635,7 +635,7 @@ public:
         Builder builder = rti::flat::build_data(writer);
         add_key(builder, MAX_CFT_VALUE);
         T *sample = builder.finish_sample();
-        // std::cout << *sample << std::endl;
+        std::cout << *sample << std::endl;
 
         this->_instance_handles.push_back(
             this->_writer.register_instance(*sample));
@@ -672,11 +672,11 @@ public:
 
         // Build the data to be sent
         T *sample = builder.finish_sample();
-        //std::cout << *sample << std::endl;
 
         // Send data through the writer
         if (!isCftWildcardKey) {
-            this->_writer.write(*sample, this->_instance_handles[key]);
+            // .back() because the CFT Handler is always the last one to be pushed back
+            this->_writer.write(*sample, this->_instance_handles.back());
         } else {
             this->_writer.write(
                     *sample,
@@ -780,7 +780,7 @@ public:
                 DynamicDataMembersId::GetInstance().at("key"),
                 key_octets);
         if (!isCftWildCardKey) {
-            this->_writer.write(this->data, this->_instance_handles[key]);
+            this->_writer.write(this->data, this->_instance_handles.back());
         } else {
             this->_writer.write(this->data,
                     this->_instance_handles[this->_num_instances]);
