@@ -1095,6 +1095,7 @@ bool RTIRawTransportImpl::configure_sockets_transport()
             break;
     }
 
+    #if !defined(RTI_ANDROID)
     case TRANSPORT_SHMEM:
     {
         struct NDDS_Transport_Shmem_Property_t shmem_prop =
@@ -1142,6 +1143,7 @@ bool RTIRawTransportImpl::configure_sockets_transport()
 
         break;
     }
+    #endif
 
     case TRANSPORT_UDPv6:
     case TRANSPORT_TCPv4:
