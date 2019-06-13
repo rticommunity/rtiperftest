@@ -2303,15 +2303,12 @@ IMessagingWriter *RTIDDSImpl_FlatData<T, U>::CreateWriter(const std::string &top
     dds::topic::Topic<T> topic(this->_participant, topic_name);
     dds::pub::DataWriter<T> writer(this->_publisher, topic, dw_qos);
 
-    /* since _PM->get is a template member dependent on a template parameter,
-     * you need to tell the compiler it's a template
-     */
     return new RTIFlatDataPublisher<T>(
             writer,
-            this->_PM->template get<long>("instances"),
+            this->_PM->get<long>("instances"),
             this->_pongSemaphore,
-            this->_PM->template get<bool>("latencyTest"),
-            this->_PM->template get<long>("writeInstance"),
+            this->_PM->get<bool>("latencyTest"),
+            this->_PM->get<long>("writeInstance"),
             this->_PM);
 }
 
