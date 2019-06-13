@@ -585,12 +585,14 @@ template<typename T>
 class RTIFlatDataPublisher: public RTIPublisherBase<T> {
 protected:
     typedef typename rti::flat::flat_type_traits<T>::builder Builder;
+    typedef typename rti::flat::PrimitiveArrayOffset<unsigned char, 4> KeyBuilder;
+    typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
 
     int _last_message_size;
     T *_data;
 
     void add_key(Builder &builder, unsigned long int i) {
-        auto key_offset = builder.add_key();
+        KeyBuilder key_offset = builder.add_key();
 
         for (int j = 0; j < KEY_SIZE; ++j) {
             // The key will be i but splitted in bytes
@@ -641,7 +643,7 @@ public:
     }
 
     inline bool send(TestMessage &message, bool isCftWildcardKey) {
-        auto builder = rti::flat::build_data(this->_writer);
+        Builder builder = rti::flat::build_data(this->_writer);
         long key = 0;
 
         // Initialize Information data
@@ -652,7 +654,7 @@ public:
         builder.add_latency_ping(message.latency_ping);
 
         // Add payload
-        auto bin_data_builder = builder.build_bin_data();
+        BinDataBuilder bin_data_builder = builder.build_bin_data();
         bin_data_builder.add_n(message.size);
         bin_data_builder.finish();
 
@@ -836,6 +838,8 @@ public:
 template<typename T>
 class FlatDataReceiverListener : public ReceiverListenerBase<T> {
 public:
+    typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
+
     FlatDataReceiverListener(IMessagingCB *callback) :
         ReceiverListenerBase<T>(callback) {
     }
@@ -846,7 +850,7 @@ public:
         for (uint i = 0; i < samples.length(); ++i) {
             if (samples[i].info().valid()) {
                 const T &sample = samples[i].data();
-                auto message = sample.root();
+                ConstOffset message = sample.root();
 
                 this->_message.entity_id = message.entity_id();
                 this->_message.seq_num = message.seq_num();
@@ -1050,6 +1054,8 @@ template<typename T>
 class RTIFlatDataSubscriber: public RTISubscriberBase<T> {
 
 public:
+    typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
+
     RTIFlatDataSubscriber(
             dds::sub::DataReader<T> reader,
             ReceiverListenerBase<T> *readerListener,
@@ -1092,16 +1098,15 @@ public:
                 continue;
             }
 
-            const T &data_sample = samples[this->_data_idx].data();
-            auto data = data_sample.root();
+            const T &message_sample = samples[this->_data_idx].data();
+            ConstOffset message = message_sample.root();
 
-            this->_message.entity_id = data.entity_id();
-            this->_message.seq_num = data.seq_num();
-            this->_message.timestamp_sec = data.timestamp_sec();
-            this->_message.timestamp_usec = data.timestamp_usec();
-            this->_message.latency_ping = data.latency_ping();
-            this->_message.size = data.bin_data().element_count();
-            //_message.data = samples[_data_idx].data().bin_data();
+            this->_message.entity_id = message.entity_id();
+            this->_message.seq_num = message.seq_num();
+            this->_message.timestamp_sec = message.timestamp_sec();
+            this->_message.timestamp_usec = message.timestamp_usec();
+            this->_message.latency_ping = message.latency_ping();
+            this->_message.size = message.bin_data().element_count();
 
             ++(this->_data_idx);
 
@@ -1118,16 +1123,17 @@ public:
 
             for (unsigned int i = 0; i < samples.length(); ++i) {
                 if (samples[i].info().valid()) {
-                    const T &data_sample = samples[i].data();
-                    auto data = data_sample.root();
+                    const T &message_sample = samples[i].data();
+                    ConstOffset message = message_sample.root();
 
-                    this->_message.entity_id = data.entity_id();
-                    this->_message.seq_num = data.seq_num();
-                    this->_message.timestamp_sec = data.timestamp_sec();
-                    this->_message.timestamp_usec = data.timestamp_usec();
-                    this->_message.latency_ping = data.latency_ping();
-                    this->_message.size = data.bin_data().element_count();
-                    //_message.data = data.bin_data();
+                    this->_message.entity_id = message.entity_id();
+                    this->_message.seq_num = message.seq_num();
+                    this->_message.timestamp_sec = message.timestamp_sec();
+                    this->_message.timestamp_usec = message.timestamp_usec();
+                    this->_message.latency_ping = message.latency_ping();
+                    this->_message.size = message.bin_data().element_count();
+                    //_message.data = message.bin_data();
+
                     listener->ProcessMessage(this->_message);
                 }
             }

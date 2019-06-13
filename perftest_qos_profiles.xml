@@ -1083,15 +1083,6 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
     </qos_profile>
 
     <qos_profile name="FlatData_ThroughputQos" base_name="ThroughputQos">
-      <!-- TODO: Add config here -->
-    </qos_profile>
-
-    <qos_profile name="FlatData_LatencyQos">
-      <base_name>
-        <element>BuiltinQosLibExp::Generic.StrictReliable.LargeData</element>
-        <!-- Will override duplicate elements with LatencyQoS profile inherited from AnnouncementQos -->
-        <element>LatencyQos</element>
-      </base_name>
       <!-- Configure DataWriter to prevent dynamic allocation of serialization buffer -->
       <datawriter_qos>
         <!-- <publish_mode>
@@ -1155,6 +1146,8 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </property>
       </participant_qos>
     </qos_profile>
+
+    <qos_profile name="FlatData_LatencyQos" base_name="LatencyQos"/>
 
     <qos_profile name="FlatData_AnnouncementQos">
       <base_name>
