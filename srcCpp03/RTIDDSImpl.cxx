@@ -585,12 +585,11 @@ template<typename T>
 class RTIFlatDataPublisher: public RTIPublisherBase<T> {
 protected:
     typedef typename rti::flat::flat_type_traits<T>::builder Builder;
-
-    int _last_message_size;
-    T *_data;
+    typedef typename rti::flat::PrimitiveArrayOffset<unsigned char, 4> KeyBuilder;
+    typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> DataBuilder;
 
     void add_key(Builder &builder, unsigned long int i) {
-        auto key_offset = builder.add_key();
+        KeyBuilder key_offset = builder.add_key();
 
         for (int j = 0; j < KEY_SIZE; ++j) {
             // The key will be i but splitted in bytes
@@ -614,8 +613,7 @@ public:
                     pongSemaphore,
                     useSemaphore,
                     instancesToBeWritten,
-                    PM),
-            _last_message_size(0)
+                    PM)
     {
         for (unsigned long int i = 0; i < this->_num_instances; ++i) {
             Builder builder = rti::flat::build_data(writer);
@@ -626,7 +624,7 @@ public:
             this->_instance_handles.push_back(
                 this->_writer.register_instance(*sample));
 
-            this->_writer.extensions().discard_loan(*sample); // TODO: What does it do?
+            this->_writer.extensions().discard_loan(*sample);
         }
 
         // Register the key of MAX_CFT_VALUE
@@ -641,7 +639,7 @@ public:
     }
 
     inline bool send(TestMessage &message, bool isCftWildcardKey) {
-        auto builder = rti::flat::build_data(this->_writer);
+        Builder builder = rti::flat::build_data(this->_writer);
         long key = 0;
 
         // Initialize Information data
@@ -652,7 +650,7 @@ public:
         builder.add_latency_ping(message.latency_ping);
 
         // Add payload
-        auto bin_data_builder = builder.build_bin_data();
+        DataBuilder bin_data_builder = builder.build_bin_data();
         bin_data_builder.add_n(message.size);
         bin_data_builder.finish();
 
@@ -833,9 +831,11 @@ public:
     }
 };
 
-template<typename T>
+template<typename T, typename U>
 class FlatDataReceiverListener : public ReceiverListenerBase<T> {
 public:
+    typedef typename rti::flat::Sample<U>::ConstOffset Message;
+
     FlatDataReceiverListener(IMessagingCB *callback) :
         ReceiverListenerBase<T>(callback) {
     }
@@ -846,7 +846,7 @@ public:
         for (uint i = 0; i < samples.length(); ++i) {
             if (samples[i].info().valid()) {
                 const T &sample = samples[i].data();
-                auto message = sample.root();
+                Message message = sample.root();
 
                 this->_message.entity_id = message.entity_id();
                 this->_message.seq_num = message.seq_num();
@@ -1046,10 +1046,12 @@ public:
     }
 };
 
-template<typename T>
+template<typename T, typename U>
 class RTIFlatDataSubscriber: public RTISubscriberBase<T> {
 
 public:
+    typedef typename rti::flat::Sample<U>::ConstOffset Message;
+
     RTIFlatDataSubscriber(
             dds::sub::DataReader<T> reader,
             ReceiverListenerBase<T> *readerListener,
@@ -1093,7 +1095,7 @@ public:
             }
 
             const T &data_sample = samples[this->_data_idx].data();
-            auto data = data_sample.root();
+            Message data = data_sample.root();
 
             this->_message.entity_id = data.entity_id();
             this->_message.seq_num = data.seq_num();
@@ -1119,7 +1121,7 @@ public:
             for (unsigned int i = 0; i < samples.length(); ++i) {
                 if (samples[i].info().valid()) {
                     const T &data_sample = samples[i].data();
-                    auto data = data_sample.root();
+                    Message data = data_sample.root();
 
                     this->_message.entity_id = data.entity_id();
                     this->_message.seq_num = data.seq_num();
@@ -2218,8 +2220,8 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
 /*********************************************************
  * CreateReader FlatData
  */
-template <typename T>
-IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
+template <typename T, typename U>
+IMessagingReader *RTIDDSImpl_FlatData<T, U>::CreateReader(
         const std::string &topic_name,
         IMessagingCB *callback)
 {
@@ -2246,7 +2248,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
                 topic);
         if (callback != NULL) {
 
-            reader_listener = new FlatDataReceiverListener<T>(callback);
+            reader_listener = new FlatDataReceiverListener<T, U>(callback);
 
             reader = dds::sub::DataReader<T>(
                     this->_subscriber,
@@ -2261,7 +2263,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
 
         if (callback != NULL) {
 
-            reader_listener = new FlatDataReceiverListener<T>(callback);
+            reader_listener = new FlatDataReceiverListener<T, U>(callback);
 
             reader = dds::sub::DataReader<T>(
                     this->_subscriber,
@@ -2274,7 +2276,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         }
     }
 
-    return new RTIFlatDataSubscriber<T>(
+    return new RTIFlatDataSubscriber<T, U>(
             reader,
             reader_listener,
             this->_PM);
@@ -2283,8 +2285,8 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
 /*********************************************************
  * CreateWriter
  */
-template <typename T>
-IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const std::string &topic_name)
+template <typename T, typename U>
+IMessagingWriter *RTIDDSImpl_FlatData<T, U>::CreateWriter(const std::string &topic_name)
 {
     using namespace dds::core::policy;
     using namespace rti::core::policy;
@@ -2315,15 +2317,15 @@ template class RTIDDSImpl<TestData_t>;
 template class RTIDDSImpl<TestDataKeyedLarge_t>;
 template class RTIDDSImpl<TestDataLarge_t>;
 
-template class RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>;
-template class RTIDDSImpl_FlatData<TestData_FlatData_t>;
-template class RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>;
-template class RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>;
+template class RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t, TestDataKeyed_FlatData_tOffset>;
+template class RTIDDSImpl_FlatData<TestData_FlatData_t, TestData_FlatData_tOffset>;
+template class RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t, TestDataKeyedLarge_FlatData_tOffset>;
+template class RTIDDSImpl_FlatData<TestDataLarge_FlatData_t, TestDataLarge_FlatData_tOffset>;
 
-template class RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>;
-template class RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>;
-template class RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>;
-template class RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>;
+template class RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t, TestDataKeyed_ZeroCopy_w_FlatData_tOffset>;
+template class RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t, TestData_ZeroCopy_w_FlatData_tOffset>;
+template class RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t, TestDataKeyedLarge_ZeroCopy_w_FlatData_tOffset>;
+template class RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t, TestDataLarge_ZeroCopy_w_FlatData_tOffset>;
 
 #ifdef RTI_WIN32
   #pragma warning(pop)

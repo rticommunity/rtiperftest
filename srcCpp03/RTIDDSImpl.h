@@ -114,7 +114,7 @@ class RTIDDSImpl : public IMessaging
 
 };
 
-template <typename T>
+template <typename T, typename U>
 class RTIDDSImpl_FlatData: public RTIDDSImpl<TestData_t> {
 public:
     IMessagingWriter *CreateWriter(const std::string &topic_name);
