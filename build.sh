@@ -336,7 +336,15 @@ function library_sufix_calculation()
 
 function additional_defines_calculation()
 {
-    additional_defines="O3"
+    additional_defines=""
+
+    # Avoid optimized out variables when debugging
+    if [ "${RELEASE_DEBUG}" == "release" ]; then
+        echo -e "${INFO_TAG} C++ code will be optimized."
+        additional_defines=${additional_defines}"O3"
+    else
+        additional_defines=${additional_defines}"O0"
+    fi
 
     if [ "${LEGACY_DD_IMPL}" == "1" ]; then
         echo -e "${INFO_TAG} Allow the use of both legacy and new Dynamic Data Impl."

@@ -11,7 +11,6 @@
 #include "perftest.hpp"
 #include "MessagingIF.h"
 #include <sstream>
-#include <type_traits>
 #ifdef RTI_SECURE_PERFTEST
 #include "security/security_default.h"
 #endif

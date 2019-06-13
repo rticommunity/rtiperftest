@@ -553,7 +553,6 @@ public:
         this->data.bin_data().resize(message.size);
         //data.bin_data(message.data);
 
-
         long key = 0;
         if (!isCftWildCardKey) {
             if (this->_num_instances > 1) {
@@ -623,7 +622,6 @@ public:
             add_key(builder, i);
 
             T *sample = builder.finish_sample();
-            // std::cout << *sample << std::endl;
 
             this->_instance_handles.push_back(
                 this->_writer.register_instance(*sample));
@@ -635,7 +633,6 @@ public:
         Builder builder = rti::flat::build_data(writer);
         add_key(builder, MAX_CFT_VALUE);
         T *sample = builder.finish_sample();
-        std::cout << *sample << std::endl;
 
         this->_instance_handles.push_back(
             this->_writer.register_instance(*sample));
@@ -850,8 +847,6 @@ public:
             if (samples[i].info().valid()) {
                 const T &sample = samples[i].data();
                 auto message = sample.root();
-
-                // std::cout << sample << std::endl;
 
                 this->_message.entity_id = message.entity_id();
                 this->_message.seq_num = message.seq_num();
@@ -2031,7 +2026,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     }
 
     // TODO: Do magic for FlatData here
-    if (_PM->get<int>("unbounded") > 0) {
+    if (_PM->get<int>("unbounded") > 0 && !_PM->get<int>("flatdata")) {
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
         properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = buf;
@@ -2200,7 +2195,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
     }
 
     // TODO: Add Magic for FlatData here
-    if (_PM->get<int>("unbounded") > 0) {
+    if (_PM->get<int>("unbounded") > 0 && !_PM->get<int>("flatdata")) {
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
         properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] =
