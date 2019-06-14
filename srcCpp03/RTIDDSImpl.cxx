@@ -847,7 +847,7 @@ public:
     void on_data_available(dds::sub::DataReader<T> &reader) {
         dds::sub::LoanedSamples<T> samples = reader.take();
 
-        for (uint i = 0; i < samples.length(); ++i) {
+        for (unsigned int i = 0; i < samples.length(); ++i) {
             if (samples[i].info().valid()) {
                 const T &sample = samples[i].data();
                 ConstOffset message = sample.root();
@@ -1043,6 +1043,7 @@ public:
                     this->_message.latency_ping = sample.latency_ping();
                     this->_message.size = (int) sample.bin_data().size();
                     //_message.data = sample.bin_data();
+
                     listener->ProcessMessage(this->_message);
                 }
             }
@@ -2309,10 +2310,10 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const std::string &topic_
 
     return new RTIFlatDataPublisher<T>(
             writer,
-            this->_PM->get<long>("instances"),
+            this->_PM->template get<long>("instances"),
             this->_pongSemaphore,
-            this->_PM->get<bool>("latencyTest"),
-            this->_PM->get<long>("writeInstance"),
+            this->_PM->template get<bool>("latencyTest"),
+            this->_PM->template get<long>("writeInstance"),
             this->_PM);
 }
 

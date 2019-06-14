@@ -1052,6 +1052,10 @@ while [ "$1" != "" ]; do
             RTI_OPENSSLHOME=$2
             shift
             ;;
+        --flatdata-max-size)
+            RTI_FLATDATA_SIZE=$2
+            shift
+            ;;
         *)
             echo -e "${ERROR_TAG} unknown parameter \"$1\""
             usage
