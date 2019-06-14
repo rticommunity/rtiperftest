@@ -51,8 +51,8 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
-Ability to use your own type in RTI Perftest
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ability to use your own type in RTI Perftest (#33)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* now supports the ability to use your own custom type.
 It is possible to measure the performance of your own type.
@@ -169,6 +169,24 @@ Added --compiler and --linker command line parameters to build.sh (#152)
 When building in Unix, the user can now use the `--compiler` and/or `--linker`
 command line parameters to explicitly specify to the `build.sh` script the
 compiler/linker executables that will be used by *Rtiddsgen*.
+
+Support for RTI Connext DDS Micro 3.0.0 (#78)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting with this release, *RTI Perftest* will have support for *RTI Connext
+DDS Micro* 3.0.0 and above.
+
+By using the ``--micro`` and the ``--RTIMEHOME path`` command line options at
+compilation time, *RTI Perftest* will generate code for *RTI Connext Micro* and
+it will try to compile using ``cmake`` (which path can also be configured by
+a command line parameter in the build script). The executable will be placed
+similarly as the *RTI Connext DDS Professional*, however it will be named
+``perftest_cpp_micro``.
+
+Most of the features are available when using *RTI Connext Micro*, however some
+command line parameters and options are available just for *RTI Connext DDS
+Professional*, more information about the supported parameters can be found in
+the command line parameters section of the documentation.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
