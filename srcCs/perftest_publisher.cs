@@ -758,7 +758,7 @@ namespace PerformanceTest {
                 "\t                          default 1\n" +
                 "\t-scan <size1>:<size2>:...:<sizeN> - Run test in scan mode, traversing\n" +
                 "\t                                    a range of sample data sizes from\n" +
-                "\t                                    [32,63000] or [63001,2147483128] bytes,\n" +
+                "\t                                    [32,63000] or [63001,2147482620] bytes,\n" +
                 "\t                                    in the case that you are using large data or not.\n" +
                 "\t                                    The list of sizes is optional.\n" +
                 "\t                                    Default values are '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\n" +
@@ -1427,6 +1427,10 @@ namespace PerformanceTest {
                     sb.Append("\tNumber of samples: " );
                     sb.Append(_NumIter);
                     sb.Append("\n");
+                }
+            } else {
+                if (_DataLen > (ulong)MAX_SYNCHRONOUS_SIZE.VALUE) {
+                    sb.Append("\tExpecting Large Data Type\n");
                 }
             }
 

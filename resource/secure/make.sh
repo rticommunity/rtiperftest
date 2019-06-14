@@ -1,4 +1,4 @@
-export OPENSSL_EXE=openssl
+export OPENSSL_EXE=/local/preship/openssl/openssl-1.0.2o/x64Linux3gcc4.8.2/release/bin/openssl
 
 rm -rf *.xml *.csr *.pem demoCA/* demoCA/private/*
 

@@ -36,16 +36,11 @@
   #include <signal.h>
 #endif
 
-/*
- * This is needed by MilliSleep in VxWorks, since in some versions the usleep
- * function does not exist. In the rest of OS we won't make use of it.
- */
-#if defined(RTI_VXWORKS)
-  #include <rti/util/util.hpp>
-#endif
-
+#include <rti/util/util.hpp>
 #include "MessagingIF.h"
 #include "ThreadPriorities.h"
+
+#define PERFTEST_DISCOVERY_TIME_MSEC 1000   // 1 second
 
 struct Perftest_ProductVersion_t
 {
@@ -71,21 +66,19 @@ class perftest_cpp
     static void PrintVersion();
     static void ThreadYield();
     static unsigned long long GetTimeUsec();
-  #ifdef RTI_WIN32
-    static VOID CALLBACK Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired);
-    static VOID CALLBACK Timeout_scan(PVOID lpParam, BOOLEAN timerOrWaitFired);
-  #else
-    static void Timeout(int sign);
-    static void Timeout_scan(int sign);
-  #endif
+    static void Timeout();
+    static void Timeout_scan();
 
   private:
+    struct ScheduleInfo {
+        unsigned int timer;
+        void (*handlerFunction)(void);
+    };
+
     int RunPublisher();
     int RunSubscriber();
-    static void SetTimeout(
-            unsigned int executionTimeInSeconds,
-            bool _isScan = false);
-
+    static void *waitAndExecute(void *scheduleInfo);
+    static RTIOsapiThread *SetTimeout(ScheduleInfo &info);
 
     // Private members
     ParameterManager _PM;
@@ -100,16 +93,8 @@ class perftest_cpp
        and so they have to be static */
     static bool _testCompleted;
     static bool _testCompleted_scan;
-  #ifdef RTI_WIN32
-    static HANDLE _hTimerQueue;
-    static HANDLE _hTimer;
-  #endif
 
   public:
-    static int  subID;
-    static bool printIntervals;
-    static bool showCpu;
-
     static struct RTIClock *_Clock;
     static struct RTINtpTime _ClockTime_aux;
     static RTI_UINT64 _Clock_sec;
@@ -134,6 +119,10 @@ class perftest_cpp
      * been reset.
      */
     static const unsigned long LATENCY_RESET_VALUE = ULONG_MAX;
+
+    int  subID;
+    bool printIntervals;
+    bool showCpu;
 
 };
 

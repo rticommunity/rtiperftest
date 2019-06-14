@@ -35,3 +35,11 @@ srcDoc/_build
 /srcCpp/CpuMonitor*
 /srcCpp/ThreadPriorities.*
 /srcCpp03/ThreadPriorities.*
+
+# Micro specific files related to code Generation
+/srcCpp/README.txt
+/srcCpp/perftestApplication.cxx
+/srcCpp/perftestApplication.h
+/srcCpp/gen/*
+/srcCpp/perftest_build
+/srcCpp/CMakeLists.txt

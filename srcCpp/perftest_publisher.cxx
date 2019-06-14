@@ -2,33 +2,17 @@
  * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
+
 #define STRINGIFY(x) #x
 #define TO_STRING(x) STRINGIFY(x)
+
 #include "RTIDDSImpl.h"
-#include "RTIRawTransportImpl.h"
+#ifndef RTI_MICRO
+  #include "RTIRawTransportImpl.h"
+#endif
 #include "perftest_cpp.h"
 #include "CpuMonitor.h"
-
-#if defined(RTI_WIN32)
-  #pragma warning(push)
-  #pragma warning(disable : 4996)
-  #define STRNCASECMP _strnicmp
-#elif defined(RTI_VXWORKS)
-  #define STRNCASECMP strncmp
-#else
-  #define STRNCASECMP strncasecmp
-#endif
-#define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
-
-int  perftest_cpp::subID = 0;
-bool perftest_cpp::printIntervals = true;
-bool perftest_cpp::showCpu = false;
-
-/* Clock related variables */
-struct RTIClock* perftest_cpp::_Clock = RTIHighResolutionClock_new();
-struct RTINtpTime perftest_cpp::_ClockTime_aux = RTI_NTP_TIME_ZERO;
-RTI_UINT64 perftest_cpp::_Clock_sec = 0;
-RTI_UINT64 perftest_cpp::_Clock_usec = 0;
+#include "Infrastructure_common.h"
 
 bool perftest_cpp::_testCompleted = false;
 bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
@@ -44,13 +28,6 @@ const Perftest_ProductVersion_t perftest_cpp::_version = {9, 9, 9, 9};
  * parameter sets the size of certain arrays in the latency test mode.
  */
 const unsigned long long numIterDefaultLatencyTest = 10000000;
-
-#ifdef RTI_WIN32
-LARGE_INTEGER perftest_cpp::_ClockFrequency = {0, 0};
-/* This parameter is not thread safe */
-HANDLE perftest_cpp::_hTimerQueue = NULL;
-HANDLE perftest_cpp::_hTimer = NULL;
-#endif
 
 /*********************************************************
  * Main
@@ -70,7 +47,7 @@ int main(int argc, char *argv[])
 #if defined(RTI_VXWORKS)
 int perftest_cpp_main(char *args)
 {
-    std::vector<char *> arguments;   
+    std::vector<char *> arguments;
     char *next = NULL;
     char **argv = NULL;
     int argc = 0;
@@ -83,7 +60,7 @@ int perftest_cpp_main(char *args)
     while (next != NULL) {
         arguments.push_back(next);
         next = strtok(NULL, " ");
-    } 
+    }
 
     // Copy dynamic array to the original
     argc = arguments.size();
@@ -125,7 +102,9 @@ int perftest_cpp::Run(int argc, char *argv[])
     }
 
     if (_PM.get<bool>("rawTransport")) {
+      #ifndef RTI_MICRO
         _MessagingImpl = new RTIRawTransportImpl();
+      #endif
     } else {
         if (_PM.get<int>("unbounded") == 0) {
             if (_PM.get<bool>("keyed")) {
@@ -155,30 +134,6 @@ int perftest_cpp::Run(int argc, char *argv[])
     }
 }
 
-void perftest_cpp::MilliSleep(unsigned int millisec) {
-  #if defined(RTI_WIN32)
-    Sleep(millisec);
-  #elif defined(RTI_VXWORKS)
-    DDS_Duration_t sleep_period = {0, millisec*1000000};
-    NDDSUtility::sleep(sleep_period);
-  #else
-    usleep(millisec * 1000);
-  #endif
-}
-
-void perftest_cpp::ThreadYield() {
-  #ifdef RTI_WIN32
-    Sleep(0);
-  #else
-    sched_yield();
-  #endif
-}
-
-const DDS_ProductVersion_t perftest_cpp::GetDDSVersion()
-{
-    return NDDSConfigVersion::get_instance().get_product_version();
-}
-
 const Perftest_ProductVersion_t perftest_cpp::GetPerftestVersion()
 {
     return _version;
@@ -187,7 +142,6 @@ const Perftest_ProductVersion_t perftest_cpp::GetPerftestVersion()
 void perftest_cpp::PrintVersion()
 {
     Perftest_ProductVersion_t perftestV = perftest_cpp::GetPerftestVersion();
-    DDS_ProductVersion_t ddsV = perftest_cpp::GetDDSVersion();
 
     if (perftestV.major == 9
             && perftestV.minor == 9
@@ -202,10 +156,7 @@ void perftest_cpp::PrintVersion()
             printf(".%d", perftestV.revision);
         }
     }
-    printf(" (RTI Connext DDS %d.%d.%d)\n",
-            ddsV.major,
-            ddsV.minor,
-            ddsV.release);
+    printf(" (%s)\n", GetDDSVersionString().c_str());
 
     fflush(stdout);
 }
@@ -219,16 +170,6 @@ perftest_cpp::~perftest_cpp()
         delete _MessagingImpl;
     }
 
-    if (perftest_cpp::_Clock != NULL) {
-        RTIHighResolutionClock_delete(perftest_cpp::_Clock);
-    }
-
-  #ifdef RTI_WIN32
-    if (_hTimerQueue != NULL) {
-        DeleteTimerQueue(_hTimerQueue);
-    }
-  #endif
-
     fprintf(stderr, "Test ended.\n");
     fflush(stderr);
 }
@@ -237,17 +178,17 @@ perftest_cpp::~perftest_cpp()
  * Constructor
  */
 perftest_cpp::perftest_cpp()
+#ifdef RTI_MICRO
+    : _PM(true)
+#endif
 {
+    subID = 0;
+    printIntervals = true;
+    showCpu = false;
+
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
     _MessagingImpl = NULL;
-
-#ifdef RTI_WIN32
-    if (_hTimerQueue == NULL) {
-        _hTimerQueue = CreateTimerQueue();
-    }
-    QueryPerformanceFrequency(&_ClockFrequency);
-#endif
 };
 
 
@@ -256,6 +197,10 @@ perftest_cpp::perftest_cpp()
  */
 bool perftest_cpp::validate_input()
 {
+    // Manage parameter -batchSize for micro
+  #ifdef RTI_MICRO
+    _PM.set("batchSize", 0);
+  #endif
 
     // Manage parameter -sleep
     // It is copied because it is used in the critical path
@@ -267,15 +212,15 @@ bool perftest_cpp::validate_input()
 
     // Manage parameter -printIterval
     // It is copied because it is used in the critical path
-    perftest_cpp::printIntervals = !_PM.get<bool>("noPrintIntervals");
+    printIntervals = !_PM.get<bool>("noPrintIntervals");
 
     // Manage parameter -cpu
     // It is copied because it is used in the critical path
-    perftest_cpp::showCpu = _PM.get<bool>("cpu");
+    showCpu = _PM.get<bool>("cpu");
 
     // Manage parameter -sidMultiSubTest
     // It is copied because it is used in the critical path
-    perftest_cpp::subID = _PM.get<int>("sidMultiSubTest");
+    subID = _PM.get<int>("sidMultiSubTest");
 
     // Manage parameter -latencyTest
     if (_PM.get<bool>("latencyTest")) {
@@ -485,6 +430,7 @@ void perftest_cpp::PrintConfiguration()
             stringStream << _PM.get<unsigned long long>("dataLen") << "\n";
         }
 
+      #ifndef RTI_MICRO
         // Batching
         stringStream << "\tBatching: ";
         if (_PM.get<long>("batchSize") > 0) {
@@ -506,6 +452,7 @@ void perftest_cpp::PrintConfiguration()
                              << "\t\t  Large Data.\n";
             }
         }
+      #endif
 
         // Publication Rate
         stringStream << "\tPublication Rate: ";
@@ -521,6 +468,7 @@ void perftest_cpp::PrintConfiguration()
         } else {
             stringStream << "Unlimited (Not set)\n";
         }
+
         // Execution Time or NumIter
         if (_PM.get<unsigned long long>("executionTime") > 0) {
             stringStream << "\tExecution time: "
@@ -530,6 +478,10 @@ void perftest_cpp::PrintConfiguration()
             stringStream << "\tNumber of samples: "
                          << _PM.get<unsigned long long>("numIter")
                          << "\n";
+        }
+    } else  {
+        if (_PM.get<unsigned long long>("dataLen") > MAX_SYNCHRONOUS_SIZE) {
+            stringStream << "\tExpecting Large Data Type\n";
         }
     }
 
@@ -567,6 +519,12 @@ void perftest_cpp::PrintConfiguration()
  */
 class ThroughputListener : public IMessagingCB
 {
+  private:
+    ParameterManager *_PM;
+    int  subID;
+    bool printIntervals;
+    bool showCpu;
+
   public:
 
     unsigned long long packets_received;
@@ -592,9 +550,13 @@ class ThroughputListener : public IMessagingCB
     bool _useCft;
     bool change_size;
 
-  public:
 
-    ThroughputListener(IMessagingWriter *writer, IMessagingReader *reader = NULL, bool UseCft = false, int numPublishers = 1)
+    ThroughputListener(
+            ParameterManager &PM,
+            IMessagingWriter *writer,
+            IMessagingReader *reader = NULL,
+            bool UseCft = false,
+            int numPublishers = 1)
     {
         packets_received = 0;
         bytes_received = 0;
@@ -619,6 +581,12 @@ class ThroughputListener : public IMessagingCB
         }
 
         _num_publishers = numPublishers;
+
+        _PM = &PM;
+
+        printIntervals = !_PM->get<bool>("noPrintIntervals");
+        showCpu = _PM->get<bool>("cpu");
+        subID = _PM->get<int>("sidMultiSubTest");
     }
 
     ~ThroughputListener() {
@@ -675,7 +643,7 @@ class ThroughputListener : public IMessagingCB
         }
 
         // Send back a packet if this is a ping
-        if ((message.latency_ping == perftest_cpp::subID)
+        if ((message.latency_ping == subID)
                 || (_useCft && message.latency_ping != -1)) {
             _writer->Send(message);
             _writer->Flush();
@@ -699,9 +667,9 @@ class ThroughputListener : public IMessagingCB
                 _last_seq_num[i] = 0;
             }
 
-            begin_time = perftest_cpp::GetTimeUsec();
+            begin_time = PerftestClock::getInstance().getTimeUsec();
 
-            if (perftest_cpp::printIntervals) {
+            if (printIntervals) {
                 printf("\n\n********** New data length is %d\n",
                        message.size + perftest_cpp::OVERHEAD_BYTES);
                 fflush(stdout);
@@ -733,7 +701,7 @@ class ThroughputListener : public IMessagingCB
     void print_summary(TestMessage &message){
 
         // store the info for this interval
-        unsigned long long now = perftest_cpp::GetTimeUsec();
+        unsigned long long now = PerftestClock::getInstance().getTimeUsec();
 
         if (interval_data_length != last_data_length) {
 
@@ -764,7 +732,7 @@ class ThroughputListener : public IMessagingCB
             }
 
             std::string outputCpu = "";
-            if (perftest_cpp::showCpu) {
+            if (showCpu) {
                 outputCpu = cpu.get_cpu_average();
             }
             printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
@@ -800,7 +768,7 @@ static void *ReadThread(void *arg)
     ListenerType *listener = static_cast<ListenerType *>(arg);
     TestMessage *message = NULL;
 
-    RTIOsapiSemaphore *semaphore = listener->get_synchronization_semaphore();
+    PerftestSemaphore *semaphore = listener->get_synchronization_semaphore();
 
     if (semaphore == NULL) {
         fprintf(stderr,
@@ -829,8 +797,7 @@ static void *ReadThread(void *arg)
 
     // This will allow the main thread to delete the thread that used this function.
 
-    if (RTIOsapiSemaphore_give(semaphore)
-            != RTI_OSAPI_SEMAPHORE_STATUS_OK) {
+    if (!PerftestSemaphore_give(semaphore)) {
         fprintf(stderr, "Unexpected error giving semaphore\n");
         return NULL;
     }
@@ -847,7 +814,7 @@ int perftest_cpp::Subscriber()
     IMessagingReader   *reader;
     IMessagingWriter   *writer;
     IMessagingWriter   *announcement_writer;
-    struct RTIOsapiThread *throughputThread = NULL;
+    struct PerftestThread *throughputThread = NULL;
 
     // create latency pong writer
     writer = _MessagingImpl->CreateWriter(LATENCY_TOPIC_NAME);
@@ -861,6 +828,7 @@ int perftest_cpp::Subscriber()
     if (!_PM.get<bool>("useReadThread")) {
         // create latency pong reader
         reader_listener = new ThroughputListener(
+                _PM,
                 writer,
                 NULL,
                 _PM.is_set("cft"),
@@ -883,30 +851,28 @@ int perftest_cpp::Subscriber()
             return -1;
         }
         reader_listener = new ThroughputListener(
+                _PM,
                 writer,
                 reader,
                 _PM.is_set("cft"),
                 _PM.get<int>("numPublishers"));
 
-        int threadPriority = RTI_OSAPI_THREAD_PRIORITY_DEFAULT;
-        int threadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
+        int threadPriority = Perftest_THREAD_PRIORITY_DEFAULT;
+        int threadOptions = Perftest_THREAD_OPTION_DEFAULT;
 
         if (_threadPriorities.isSet) {
-            threadOptions = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
-                    | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
+            threadOptions = Perftest_THREAD_SETTINGS_REALTIME_PRIORITY
+                    | Perftest_THREAD_SETTINGS_PRIORITY_ENFORCE;
             threadPriority = _threadPriorities.receive;
         }
 
-        struct RTIOsapiThread *receiverThread = NULL;
-        receiverThread = RTIOsapiThread_new(
+        throughputThread = PerftestThread_new(
                 "ReceiverThread",
                 threadPriority,
                 threadOptions,
-                RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                NULL,
                 ReadThread<ThroughputListener>,
                 reader_listener);
-        if (receiverThread == NULL) {
+        if (throughputThread == NULL) {
             fprintf(stderr, "Problem creating ReceiverThread for ThroughputReadThread.\n");
             return -1;
         }
@@ -944,11 +910,11 @@ int perftest_cpp::Subscriber()
     announcement_msg.data = new char[LENGTH_CHANGED_SIZE];
 
     // Send announcement message
-    do{
+    do {
         announcement_writer->Send(announcement_msg);
         announcement_writer->Flush();
 
-        if (_MessagingImpl->supports_discovery()){
+        if (_MessagingImpl->supports_discovery()) {
             /*
              * If the middleware support discovery there is no need to wait
              * until the writer answer due to we already know the writer is
@@ -956,7 +922,7 @@ int perftest_cpp::Subscriber()
              */
             break;
         }
-        perftest_cpp::MilliSleep(1000);
+        PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         /* Send announcement message until the publisher send us something*/
     } while (reader_listener->packets_received == 0);
 
@@ -974,16 +940,16 @@ int perftest_cpp::Subscriber()
     unsigned long long msgsent, bytes, last_msgs, last_bytes;
     float missing_packets_percent = 0;
 
-    if (perftest_cpp::showCpu) {
+    if (showCpu) {
         reader_listener->cpu.initialize();
     }
 
-    now = GetTimeUsec();
+    now = PerftestClock::getInstance().getTimeUsec();
 
     while (true) {
         prev_time = now;
-        MilliSleep(1000);
-        now = GetTimeUsec();
+        PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
+        now = PerftestClock::getInstance().getTimeUsec();
 
         if (reader_listener->change_size) { // ACK change_size
             announcement_msg.entity_id = subID;
@@ -1001,7 +967,7 @@ int perftest_cpp::Subscriber()
             break;
         }
 
-        if (perftest_cpp::printIntervals) {
+        if (printIntervals) {
             if (last_data_length != reader_listener->last_data_length)
             {
                 last_data_length = reader_listener->last_data_length;
@@ -1039,7 +1005,7 @@ int perftest_cpp::Subscriber()
 
             if (last_msgs > 0) {
                 std::string outputCpu = "";
-                if (perftest_cpp::showCpu) {
+                if (showCpu) {
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
                 printf("Packets: %8llu  Packets/s: %7llu  Packets/s(ave): %7.0lf  "
@@ -1055,7 +1021,12 @@ int perftest_cpp::Subscriber()
         }
     }
 
-    perftest_cpp::MilliSleep(2000);
+    PerftestClock::milliSleep(2000);
+
+    if (!finalize_read_thread(throughputThread, reader_listener)) {
+        fprintf(stderr, "Error deleting throughputThread\n");
+        return -1;
+    }
 
     if (!finalize_read_thread(throughputThread, reader_listener)) {
         fprintf(stderr, "Error deleting throughputThread\n");
@@ -1160,6 +1131,10 @@ class LatencyListener : public IMessagingCB
     unsigned int       _num_latency;
     IMessagingWriter *_writer;
     ParameterManager *_PM;
+    int  subID;
+    bool printIntervals;
+    bool showCpu;
+
 public:
     IMessagingReader *_reader;
     CpuMonitor cpu;
@@ -1210,13 +1185,19 @@ public:
         _reader = reader;
         _writer = writer;
         _PM = &PM;
+
+        subID = _PM->get<int>("sidMultiSubTest");
+        printIntervals = !_PM->get<bool>("noPrintIntervals");
+        showCpu = _PM->get<bool>("cpu");
     }
 
     void print_summary_latency(){
 
         double latency_ave;
         double latency_std;
+      #ifndef RTI_MICRO
         double serializeTime, deserializeTime;
+      #endif
         int totalSampleSize = last_data_length + perftest_cpp::OVERHEAD_BYTES;
 
         int unbounded = _PM->get<int>("unbounded");
@@ -1241,7 +1222,7 @@ public:
         latency_ave = (double)latency_sum / count;
         latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-        if (perftest_cpp::showCpu) {
+        if (showCpu) {
             outputCpu = cpu.get_cpu_average();
         }
 
@@ -1259,6 +1240,7 @@ public:
         );
         fflush(stdout);
 
+      #ifndef RTI_MICRO
         if (!unbounded) {
             if (isKeyed) {
                 serializeTime = RTIDDSImpl<TestDataKeyed_t>::
@@ -1290,6 +1272,7 @@ public:
                serializeTime,
                deserializeTime,
                serializeTime + deserializeTime);
+      #endif
 
         latency_sum = 0;
         latency_sum_square = 0;
@@ -1318,7 +1301,7 @@ public:
         double latency_std;
         std::string outputCpu = "";
 
-        now = perftest_cpp::GetTimeUsec();
+        now = PerftestClock::getInstance().getTimeUsec();
 
         switch (message.size)
         {
@@ -1407,18 +1390,18 @@ public:
         {
             last_data_length = message.size;
 
-            if (perftest_cpp::printIntervals) {
+            if (printIntervals) {
                 printf("\n\n********** New data length is %d\n",
                        last_data_length + perftest_cpp::OVERHEAD_BYTES);
             }
         }
         else {
-            if (perftest_cpp::printIntervals) {
+            if (printIntervals) {
                 latency_ave = (double)latency_sum / (double)count;
                 latency_std = sqrt(
                         (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-                if (perftest_cpp::showCpu) {
+                if (showCpu) {
                     outputCpu = cpu.get_cpu_instant();
                 }
                 printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us "
@@ -1448,7 +1431,8 @@ int perftest_cpp::Publisher()
     AnnouncementListener  *announcement_reader_listener = NULL;
     IMessagingReader *announcement_reader;
     IMessagingReader *reader;
-    struct RTIOsapiThread *latencyReadThread = NULL;
+    struct PerftestThread *latencyReadThread = NULL;
+    struct PerftestThread *executionTimeoutThread = NULL;
     unsigned long num_latency;
     unsigned long announcementSampleCount = 50;
     unsigned int samplesPerBatch = GetSamplesPerBatch();
@@ -1514,25 +1498,22 @@ int perftest_cpp::Publisher()
                     _PM.get<bool>("latencyTest") ? writer : NULL,
                     _PM);
 
-            int threadPriority = RTI_OSAPI_THREAD_PRIORITY_DEFAULT;
-            int threadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
+            int threadPriority = Perftest_THREAD_PRIORITY_DEFAULT;
+            int threadOptions = Perftest_THREAD_OPTION_DEFAULT;
 
             if (_threadPriorities.isSet) {
                 threadPriority = _threadPriorities.receive;
-                threadOptions = DDS_THREAD_SETTINGS_REALTIME_PRIORITY
-                        | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
+                threadOptions = Perftest_THREAD_SETTINGS_REALTIME_PRIORITY
+                        | Perftest_THREAD_SETTINGS_PRIORITY_ENFORCE;
             }
 
-            struct RTIOsapiThread *receiverThread = NULL;
-            receiverThread = RTIOsapiThread_new(
+            latencyReadThread = PerftestThread_new(
                     "ReceiverThread",
                     threadPriority,
                     threadOptions,
-                    RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                    NULL,
                     ReadThread<LatencyListener>,
                     reader_listener);
-            if (receiverThread == NULL) {
+            if (latencyReadThread == NULL) {
                 fprintf(stderr, "Problem creating ReceiverThread for LatencyReadThread.\n");
                 return -1;
             }
@@ -1561,19 +1542,31 @@ int perftest_cpp::Publisher()
         return -1;
     }
 
-    struct RTIOsapiThread * announcementReadThread = NULL;
+    struct PerftestThread *announcementReadThread = NULL;
     if (!_MessagingImpl->supports_listener()) {
         announcement_reader_listener
                 = new AnnouncementListener(announcement_reader);
 
-        announcementReadThread = RTIOsapiThread_new(
+        int threadPriority = Perftest_THREAD_PRIORITY_DEFAULT;
+        int threadOptions = Perftest_THREAD_OPTION_DEFAULT;
+
+        //TODO Alfonso: Review thread priorities, do they apply here?
+        if (_threadPriorities.isSet) {
+            threadPriority = _threadPriorities.receive;
+            threadOptions = Perftest_THREAD_SETTINGS_REALTIME_PRIORITY
+                    | Perftest_THREAD_SETTINGS_PRIORITY_ENFORCE;
+        }
+
+        announcementReadThread = PerftestThread_new(
                 "announcementReadThread",
-                RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-                RTI_OSAPI_THREAD_OPTION_DEFAULT,
-                RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
-                NULL,
+                threadPriority,
+                threadOptions,
                 ReadThread<AnnouncementListener>,
                 announcement_reader_listener);
+        if (latencyReadThread == NULL) {
+            fprintf(stderr, "Problem creating Thread for announcementReadThread.\n");
+            return -1;
+        }
     }
 
     unsigned long long spinPerUsec = 0;
@@ -1612,7 +1605,7 @@ int perftest_cpp::Publisher()
     fflush(stderr);
     while (_PM.get<int>("numSubscribers")
             > (int)announcement_reader_listener->subscriber_list.size()) {
-        MilliSleep(1000);
+        PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
     }
 
     // Allocate data and set size
@@ -1622,7 +1615,7 @@ int perftest_cpp::Publisher()
             ((int)_PM.get<unsigned long long>("dataLen"),
             (int)LENGTH_CHANGED_SIZE)];
 
-    if (perftest_cpp::showCpu && _PM.get<int>("pidMultiPubTest") == 0) {
+    if (showCpu && _PM.get<int>("pidMultiPubTest") == 0) {
         reader_listener->cpu.initialize();
     }
 
@@ -1669,7 +1662,7 @@ int perftest_cpp::Publisher()
     message.size = (int)_PM.get<unsigned long long>("dataLen") - OVERHEAD_BYTES;
 
     // Sleep 1 second, then begin test
-    MilliSleep(1000);
+    PerftestClock::milliSleep(1000);
 
     int num_pings = 0;
     unsigned int scan_count = 0;
@@ -1682,7 +1675,12 @@ int perftest_cpp::Publisher()
     unsigned long pubRate_sample_period = 1;
     unsigned long rate = 0;
 
-    time_last_check = perftest_cpp::GetTimeUsec();
+    struct PerftestTimer::ScheduleInfo schedInfo = {
+            (unsigned int)_PM.get<unsigned long long>("executionTime"),
+            Timeout
+    };
+
+    time_last_check = PerftestClock::getInstance().getTimeUsec();
 
     /* Minimum value for pubRate_sample_period will be 1 so we execute 100 times
        the control loop every second, or every sample if we want to send less
@@ -1696,8 +1694,14 @@ int perftest_cpp::Publisher()
 
     if (_PM.get<unsigned long long>("executionTime") > 0
             && !_PM.is_set("scan")) {
-        SetTimeout((unsigned int)_PM.get<unsigned long long>("executionTime"));
+        executionTimeoutThread =
+            PerftestTimer::getInstance().setTimeout(schedInfo);
+        if (executionTimeoutThread == NULL) {
+            fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
+            return -1;
+        }
     }
+
     /*
      * Copy variable to no query the ParameterManager in every iteration.
      * They should not be modified:
@@ -1730,6 +1734,12 @@ int perftest_cpp::Publisher()
     const std::vector<unsigned long long> scanList =
             _PM.get_vector<unsigned long long>("scan");
     const bool isSetPubRate = _PM.is_set("pubRate");
+
+    struct PerftestTimer::ScheduleInfo schedInfo_scan = {
+            (unsigned int)_PM.get<unsigned long long>("executionTime"),
+            Timeout_scan
+    };
+
     /********************
      *  Main sending loop
      */
@@ -1741,11 +1751,15 @@ int perftest_cpp::Publisher()
            that modifies the publication rate according to -pubRate */
         if (isSetPubRate && (loop > 0) && (loop % pubRate_sample_period == 0)) {
 
-            time_now = perftest_cpp::GetTimeUsec();
+            time_now = PerftestClock::getInstance().getTimeUsec();
 
             time_delta = time_now - time_last_check;
             time_last_check = time_now;
-            rate = (pubRate_sample_period * 1000000) / (unsigned long)time_delta;
+            if (time_delta > 0) {
+                rate = (pubRate_sample_period * 1000000) / (unsigned long) time_delta;
+            } else {
+                rate = pubRate_sample_period * 1000000;
+            }
             if (pubRateMethodSpin) {
                 if (rate > pubRate) {
                     _SpinLoopCount += spinPerUsec;
@@ -1797,9 +1811,12 @@ int perftest_cpp::Publisher()
                 // after executionTime
                 if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    SetTimeout(
-                            (unsigned int)_PM.get<unsigned long long>("executionTime"),
-                            isScan);
+                    executionTimeoutThread =
+                            PerftestTimer::getInstance().setTimeout(schedInfo_scan);
+                    if (executionTimeoutThread == NULL) {
+                        fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
+                        return -1;
+                    }
 
                     // flush anything that was previously sent
                     writer->Flush();
@@ -1846,14 +1863,14 @@ int perftest_cpp::Publisher()
 
                 // Each time ask a different subscriber to echo back
                 pingID = num_pings % numSubscribers;
-                unsigned long long now = GetTimeUsec();
+                unsigned long long now = PerftestClock::getInstance().getTimeUsec();
                 message.timestamp_sec = (int)((now >> 32) & 0xFFFFFFFF);
                 message.timestamp_usec = (unsigned int)(now & 0xFFFFFFFF);
                 ++num_pings;
                 ping_index_in_batch = (ping_index_in_batch + 1) % samplesPerBatch;
                 sentPing = true;
 
-                if (writerStats && perftest_cpp::printIntervals) {
+                if (writerStats && printIntervals) {
                     printf("Pulled samples: %7d\n",
                             writer->getPulledSampleCount());
                 }
@@ -1949,6 +1966,11 @@ int perftest_cpp::Publisher()
     delete []message.data;
 
     if (_testCompleted) {
+        // Delete timeout thread
+        if (executionTimeoutThread != NULL) {
+            PerftestThread_delete(executionTimeoutThread);
+        }
+
         fprintf(stderr,"Finishing test due to timer...\n");
     } else {
         fprintf(stderr,"Finishing test...\n");
@@ -1958,37 +1980,9 @@ int perftest_cpp::Publisher()
     return 0;
 }
 
-
-/*********************************************************
- * Utility functions
- */
-
-inline void perftest_cpp::SetTimeout(
-        unsigned int executionTimeInSeconds,
-        bool isScan) {
-    if (isScan) {
-      #ifdef RTI_WIN32
-        CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout_scan,
-                NULL , executionTimeInSeconds * 1000, 0, 0);
-      #else
-        signal(SIGALRM, Timeout_scan);
-        alarm(executionTimeInSeconds);
-      #endif
-    } else {
-        fprintf(stderr,"Setting timeout to %u seconds\n", executionTimeInSeconds);
-      #ifdef RTI_WIN32
-        CreateTimerQueueTimer(&_hTimer, _hTimerQueue, (WAITORTIMERCALLBACK)Timeout,
-                NULL , executionTimeInSeconds * 1000, 0, 0);
-      #else
-        signal(SIGALRM, Timeout);
-        alarm(executionTimeInSeconds);
-      #endif
-    }
-}
-
 template <class ListenerType>
 bool perftest_cpp::finalize_read_thread(
-        RTIOsapiThread *thread,
+        PerftestThread *thread,
         ListenerType *listener)
 {
     listener->end_test = true;
@@ -2000,26 +1994,16 @@ bool perftest_cpp::finalize_read_thread(
              * If the thread is created but the creation of the semaphore fail,
              * syncSemaphore could be null
              */
-            if (RTIOsapiSemaphore_take(listener->syncSemaphore, NULL)
-                    == RTI_OSAPI_SEMAPHORE_STATUS_ERROR) {
-                fprintf(stderr, "Unexpected error taking semaphore\n");
+            if (!PerftestSemaphore_take(
+                    listener->syncSemaphore,
+                    PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
+                fprintf(stderr,"Unexpected error taking semaphore\n");
                 return false;
             }
         }
-        RTIOsapiThread_delete(thread);
+        PerftestThread_delete(thread);
     }
     return true;
-}
-
-unsigned long long perftest_cpp::GetTimeUsec() {
-    perftest_cpp::_Clock->getTime(
-            perftest_cpp::_Clock,
-            &perftest_cpp::_ClockTime_aux);
-    RTINtpTime_unpackToMicrosec(
-            perftest_cpp::_Clock_sec,
-            perftest_cpp::_Clock_usec,
-            perftest_cpp::_ClockTime_aux);
-    return perftest_cpp::_Clock_usec + 1000000 * perftest_cpp::_Clock_sec;
 }
 
 inline unsigned int perftest_cpp::GetSamplesPerBatch() {
@@ -2037,26 +2021,10 @@ const ThreadPriorities perftest_cpp::get_thread_priorities()
     return _threadPriorities;
 }
 
-#ifdef RTI_WIN32
-inline VOID CALLBACK perftest_cpp::Timeout(PVOID lpParam, BOOLEAN timerOrWaitFired) {
-    /* This is to avoid the warning of non using lpParam */
-    (void) lpParam;
+void perftest_cpp::Timeout() {
     _testCompleted = true;
 }
 
-inline VOID CALLBACK perftest_cpp::Timeout_scan(PVOID lpParam, BOOLEAN timerOrWaitFired) {
-    /* This is to avoid the warning of non using lpParam */
-    (void) lpParam;
+void perftest_cpp::Timeout_scan() {
     _testCompleted_scan = true;
 }
-
-  #pragma warning(pop)
-#else
-inline void perftest_cpp::Timeout(int sign) {
-    _testCompleted = true;
-}
-
-inline void perftest_cpp::Timeout_scan(int sign) {
-    _testCompleted_scan = true;
-}
-#endif

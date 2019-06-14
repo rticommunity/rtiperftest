@@ -16,6 +16,7 @@
 #endif
 #include "rti/config/Logger.hpp"
 #include "PerftestTransport.h"
+#include <rti/domain/find.hpp>
 
 #define RTIPERFTEST_MAX_PEERS 1024
 
@@ -72,6 +73,8 @@ class RTIDDSImpl : public IMessaging
 
 
   private:
+    // This semaphore is used in VxWorks to synchronize finalizing a factory
+    static rti::core::Semaphore _finalizeFactorySemaphore;
 
 
     // Specific functions to configure the Security plugin

@@ -97,12 +97,12 @@ bool RTIRawTransportImpl::validate_input() {
      * Manage parameter -dataLen
      */
     if (_PM->get<unsigned long long>("dataLen")
-            > (unsigned long) std::min(
+            > (unsigned long) (std::min)(
                     MAX_SYNCHRONOUS_SIZE,
                     NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX)) {
         fprintf(stderr,
                 "The maximun dataLen for rawTransport is %d.\n",
-                std::min(
+                (std::min)(
                         MAX_SYNCHRONOUS_SIZE,
                         NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX));
         return false;
@@ -402,9 +402,9 @@ class RTIRawTransportPublisher : public IMessagingWriter {
             return false;
         }
 
-        /* 
+        /*
          * actualCdrLength is update to the length of the serialize sample when
-         * the TestData_tPlugin_serialize_to_cdr_buffer was called. 
+         * the TestData_tPlugin_serialize_to_cdr_buffer was called.
          */
         _sendBuffer.length += actualCdrLength;
 
@@ -462,7 +462,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
         return 0;
     };
 
-    void wait_for_acknowledgments(long sec, unsigned long nsec) {
+    void waitForAck(int sec, unsigned int nsec) {
         /* --- Dummy Function --- */
     }
 };
@@ -693,9 +693,18 @@ bool RTIRawTransportImpl::Initialize(ParameterManager &PM, perftest_cpp *parent)
     /* Set paramter manager */
     _PM = &PM;
 
-    /* Set a default interface */
+    /*
+     * "-allowInterfaces" and "-nic" are the same parameter, although
+     * "-allowInterfaces" has precedence.
+     *
+     * If both are empty, then we will use localhost.
+     */
     if (_PM->get<std::string>("allowInterfaces").empty()) {
-        _PM->set<std::string>("allowInterfaces", std::string("127.0.0.1"));
+        if (!_PM->get<std::string>("nic").empty()) {
+            _PM->set<std::string>("allowInterfaces", _PM->get<std::string>("nic"));
+        } else {
+            _PM->set<std::string>("allowInterfaces", std::string("127.0.0.1"));
+        }
     }
 
     _transport.initialize(_PM);
@@ -743,7 +752,7 @@ unsigned int RTIRawTransportImpl::get_peer_unicast_port(
 
     return PRESRtps_getWellKnownUnicastPort(
             _PM->get<int>("domain"), /* domainId */
-            _PM->get<bool>("pub") ? subId + 1 : 0, /* participantId */
+            _PM->get<bool>("pub") ? _PM->get<int>("sidMultiSubTest") + 1 : 0, /* participantId */
             wellKnownPorts.port_base,
             wellKnownPorts.domain_id_gain,
             wellKnownPorts.participant_id_gain,
@@ -775,7 +784,7 @@ RTIRawTransportImpl::get_receive_unicast_port(const char *topicName)
      */
     return PRESRtps_getWellKnownUnicastPort(
             _PM->get<int>("domain"), /* domainId */
-            _PM->get<bool>("pub") ? 0 : perftest_cpp::subID + 1, /* participantId */
+            _PM->get<bool>("pub") ? 0 :  _PM->get<int>("sidMultiSubTest") + 1, /* participantId */
             wellKnownPorts.port_base,
             wellKnownPorts.domain_id_gain,
             wellKnownPorts.participant_id_gain,

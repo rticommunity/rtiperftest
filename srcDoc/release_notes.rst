@@ -163,9 +163,8 @@ A new commands line parameters `-noBlockingSockets` has been added:
 -  Potencialy it can reduce the lost packets.
 -  CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT PERFORMANCE VARIATIONS.
 
-
-Support for --compiler and --linker command line parameters to build.sh (#152)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Added --compiler and --linker command line parameters to build.sh (#152)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When building in Unix, the user can now use the `--compiler` and/or `--linker`
 command line parameters to explicitly specify to the `build.sh` script the
@@ -244,6 +243,65 @@ required recompile each time the parameters change.
 This behavior has been simplified: In order to run in `VxWorks` the
 `perftest_cpp_main` function can be called, receiving a simple string
 containing all the command line parameters.
+
+Remove the use of certain static variables that caused issues in *VxWorks* kernel mode (#166)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When running in *VxWorks* kernel mode two or more instances of *RTI Perftest* whithin the same machine
+some parameters were shared between instances. This happened because static variables are shared
+across different runs of the same *RTI Perftest* libraries/executables and changes in one run would cause
+changes in the other. This issue has ben fixed.
+
+Stop using alarm function to schedule functions since it is deprecated (#164)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using `-executionTime <seconds>` parameter, internally, *RTI Perftest* was scheduling a
+function call by using it as a handler when an ALARM signal was received.
+This ALARM signal was set to be signaled in the amount of seconds specified by the *executionTime*
+parameter using the `alarm()` function available in Unix-like systems,
+which is deprecated or even already missing in some of RTI's supported platforms.
+
+Now this issue has been fixed by using a thread that sleeps for the amount of seconds specified and then it calls the desired function.
+
+Wait for all perftest executions to finish before finalizing participants factory (#120)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In *VxWorks* kernel mode, static objects are shared across different runs of the same
+*RTI Perftest* libraries/executables and changes in one run would cause changes in the other.
+When finalizing the *Participant Factory* after deleting the participant of a *RTI Perftest* execution,
+an error about outstanding participants in the domain was printed. This occurred
+because the *Participant Factory* was shared accross runs in the same machine
+and therefore participants from other executions were preventing the factory from being properly finalized.
+
+This issue has been fixed by checking that the factory is empty of participants before finalizing it.
+
+Display in *RTI Perftest*'s subscriber side if the type expected is large data (#123)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* requires to specify in the subscriber side the Data Length parameter
+if the Data to be received is larger than the `MAX_SYNCHRONOUS_SIZE` constant. This
+is used to change from the regular `TestData_t` type to `TestDataLarge_t` (used for
+large data). However, this was not displayed anywhere in the summary shown by
+the subscriber.
+
+This issue has been fixed and now the subscriber will show a short message stating
+that it is expecting the Large Data Type.
+
+Use Connext DDS implementation for the `milliSleep` method in C++ (#180)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The `PerftestClock::milliSleep()` method has been modified in the classic and
+modern C++ implementations to always use the *RTI Connext DDS* sleep functionality.
+This makes the function OS independent.
+
+At the same time, the code has been improved avoid overflowing the time for the sleeping
+period.
+
+Update Maximum sample size accepted by *RTI Perftest* (#136)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The maximum size of a sample accepted by *RTI Perftest* has been updated to
+be compatible with *RTI Connext DDS 6.0.0*. This new value is 2147482620 Bytes.
 
 Release Notes 2.4
 -----------------
@@ -545,7 +603,7 @@ Default Values for ``Reliability`` and ``Transport`` can be Modified via XML
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Starting with this release, the Reliability and Transport settings are not set
-via code for the different languages, but are set in the XML profile. 
+via code for the different languages, but are set in the XML profile.
 This allows you to easily modify these settings without needing to recompile.
 
 These settings can still be modified via command-line parameters.
@@ -570,11 +628,11 @@ changed to ``-qosFile`` to better reflect its use.
 
 Improved ``-scan`` Command-line Parameter Functionality
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In the previous release, using ``-scan`` caused *RTI Perftest* to execute with 
-a predefined set of values for -dataLen, and with execution durations related to 
-the number of latency pings. This behavior has been changed. Now ``-scan`` allows 
-you to specify a set of -datalen sizes to be used (or you can use the default set). 
-In addition, the value specified for the '-executionTime' parameter is now used 
+In the previous release, using ``-scan`` caused *RTI Perftest* to execute with
+a predefined set of values for -dataLen, and with execution durations related to
+the number of latency pings. This behavior has been changed. Now ``-scan`` allows
+you to specify a set of -datalen sizes to be used (or you can use the default set).
+In addition, the value specified for the '-executionTime' parameter is now used
 for each execution during the scan, regardless of the number of latency pings.
 
 When using ``-batchSize`` at the same time as ``-scan`` and not using large
@@ -584,8 +642,8 @@ data, the same batch size will be applied to all the data sizes being used by
 Deprecated Some Command-Line Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To simplify the number of parameters *RTI Perftest* accepts, we reviewed and 
-deprecated some parameters. These parameters will still work for this 
+To simplify the number of parameters *RTI Perftest* accepts, we reviewed and
+deprecated some parameters. These parameters will still work for this
 release, but they will be deleted or altered for future ones.
 
 -  Deprecated ``-instanceHashBuckets <n>``
@@ -628,26 +686,26 @@ What's Fixed in 2.3
 Failure when Using ``-peer`` Command-Line Parameter for C#
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Using the ``-peer`` option in the C# implementation caused 
+Using the ``-peer`` option in the C# implementation caused
 *RTI Perftest* to fail due to an issue reserving memory. This behavior
 has been fixed.
 
 ``-nic`` Command-Line Parameter not Working when Using UDPv6 Transport
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``-nic`` command-line parameter was not taken into account when 
+The ``-nic`` command-line parameter was not taken into account when
 using the UDPv6 transport. This behavior has been fixed.
 
 
 Failure when Using -batchSize or -enableTurboMode if -dataLen Exceeded Async Publishing Threshold
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Using ``-batchSize`` along with a ``-dataLen`` value greater than the asynchronous 
-publishing threshold caused the application to show an error and exit. 
-Starting with this release, the ``-batchSize`` option will be ignored in this scenario 
-(and a warning message displayed). 
+Using ``-batchSize`` along with a ``-dataLen`` value greater than the asynchronous
+publishing threshold caused the application to show an error and exit.
+Starting with this release, the ``-batchSize`` option will be ignored in this scenario
+(and a warning message displayed).
 
-This change (ignoring ``-batchSize``) won't be applied if you explicitly set ``-asynchronous``; 
+This change (ignoring ``-batchSize``) won't be applied if you explicitly set ``-asynchronous``;
 in this case, the behavior will remain the same as before (it will show an error and exit).
 
 This change also applies to the use of ``-enableTurboMode``.
@@ -657,8 +715,8 @@ Issues when Finishing Performance Test or Changing Sample Size
 
 In order to make the mechanism to finish the performance test or change sample sizes
 more robust, we now use the ``Announcement`` topic on the Subscriber side to notify
-the Publisher side of the arrival of special samples sent to signal a change of sample 
-size or to signal that the test is finishing. In previous releases, this process was 
+the Publisher side of the arrival of special samples sent to signal a change of sample
+size or to signal that the test is finishing. In previous releases, this process was
 not reliable and may have caused hangs in certain scenarios.
 
 Unreliable Behavior Finishing Tests when Using ContentFilteredTopic (CFT)
@@ -666,9 +724,9 @@ Unreliable Behavior Finishing Tests when Using ContentFilteredTopic (CFT)
 
 In previous releases when using CFTs, in order to finish a test, the Publisher
 needed to send as many samples signaling that the test is finishing as the
-number of instances that were being used by the test (1 sample per instance). 
-This could result in a very long process, and in scenarios where the reliability 
-was set to BEST_EFFORT, in a higher chance of losing one of those samples, 
+number of instances that were being used by the test (1 sample per instance).
+This could result in a very long process, and in scenarios where the reliability
+was set to BEST_EFFORT, in a higher chance of losing one of those samples,
 making the test hang.
 
 This behavior has been modified by using a specific key for the signaling
@@ -1122,7 +1180,9 @@ If you want to skip the use of Shared Memory in *RTI Perftest*, specify the tran
 Warning when compiling the *Traditional* C++ API Implementation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*RTI Perftest* might show these warnings when compiling the *Traditional* C++ API implementation:
+*RTI Perftest* might show these warnings when compiling the *Traditional* C++
+API implementation for *RTI Connext DDS Pro* (in versions prior to 6.0.0) and
+for *RTI Connext DDS Micro*:
 
 ::
 
@@ -1139,7 +1199,8 @@ Warning when compiling the *Traditional* C++ API Implementation
                             ^
 
 These warnings are the result of a known issue in *RTI Code Generator (rtiddsgen)* (CODEGENII-873) related to the way in which
-the code for a const string is generated. This issue will be fixed in future releases of *RTI Connext DDS*.
+the code for a const string is generated. This issue will be fixed in future releases of *RTI Connext DDS Micro* and has been
+already fixed for *RTI Connext DDS Pro* 6.0.0.
 
 
 Building RTI Perftest Java API against RTI Connext DDS 5.2.0.x
@@ -1193,3 +1254,13 @@ configurations:
 The new *RTI Perftest* build system, however, is focused on compiling
 only one of those modes at a time. To choose the compilation mode,
 use the ``-debug`` and ``-dynamic`` flags.
+
+Dynamic compilation modes for *RTI Connext DDS Micro*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When building against the *RTI Connext DDS Micro* libraries, only the static
+compilation modes are supported. Therefore the ``--dynamic`` option will have
+no effect.
+
+``Rtiddsgen`` code generator will fail with the following message: ``Option
+-sharedLib is not supported by this version of rtiddsgen``.

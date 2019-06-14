@@ -14,11 +14,20 @@ set "bin_folder=%script_location%bin"
 set "cStringifyFile_script=%script_location%resource\scripts\cStringifyFile.pl"
 set "qos_file=%script_location%perftest_qos_profiles.xml"
 
+@REM # By default we will build pro, not micro
+set BUILD_MICRO=0
+set CMAKE_GENERATOR="NMake Makefiles"
+
+@REM # In case we build micro, which version.
+set BUILD_MICRO_24x_COMPATIBILITY=0
+set MICRO_UNBOUNDED_SEQUENCE_SIZE=1048576
+
 @REM # Default values:
 set BUILD_CPP=1
 set BUILD_CPP03=1
 set BUILD_CS=1
 set BUILD_JAVA=1
+set CMAKE_EXE=cmake
 set MSBUILD_EXE=msbuild
 set JAVAC_EXE=javac
 set JAVA_EXE=java
@@ -35,6 +44,11 @@ set /a rtiddsgen_version_number_new_solution_name=236
 
 @REM # Needed when compiling statically using security
 set RTI_OPENSSLHOME=""
+
+set "classic_cpp_lang_string=C++"
+set "modern_cpp_lang_string=C++03"
+set "cs_lang_string=C#"
+set "java_lang_string=java"
 
 @REM # Variables for customType
 set "custom_type_folder=%idl_location%\customType"
@@ -68,6 +82,11 @@ if NOT "%1"=="" (
 		) ELSE if "%1"=="-h" (
 				call:help
 				exit /b 0
+		) ELSE if "%1"=="--micro-24x-compatibility" (
+				SET BUILD_MICRO=1
+				SET BUILD_MICRO_24x_COMPATIBILITY=1
+		) ELSE if "%1"=="--micro" (
+				SET BUILD_MICRO=1
 		) ELSE if "%1"=="--skip-java-build" (
 				SET BUILD_JAVA=0
 		) ELSE if "%1"=="--skip-cpp-build" (
@@ -124,6 +143,15 @@ if NOT "%1"=="" (
 		) ELSE if "%1"=="--nddshome" (
 				SET "NDDSHOME=%2"
 				SHIFT
+		) ELSE if "%1"=="--rtimehome" (
+				SET "RTIMEHOME=%2"
+				SHIFT
+		) ELSE if "%1"=="--cmake" (
+				SET "CMAKE_EXE=%2"
+				SHIFT
+		) ELSE if "%1"=="--cmake-generator" (
+				SET "CMAKE_GENERATOR=%2"
+				SHIFT
 		) ELSE if "%1"=="--customType" (
 				SET USE_CUSTOM_TYPE=1
 				SET "custom_type=%2"
@@ -144,40 +172,73 @@ if NOT "%1"=="" (
 
 ::------------------------------------------------------------------------------
 
-if not exist "%NDDSHOME%" (
-		echo [ERROR]: The NDDSHOME variable is not set.
+if "x!architecture!" == "x" (
+	echo [ERROR]: The platform argument is missing.
+	exit /b 1
+)
+
+::------------------------------------------------------------------------------
+
+if !BUILD_MICRO! == 1 (
+
+	@REM # Is RTIMEHOME set?
+	if not exist "%RTIMEHOME%" (
+		@REM # Is NDDSHOME set?
+		if not exist "%NDDSHOME%" (
+			echo [ERROR]: Nor RTIMEHOME nor NDDSHOME variables are set.
+			exit /b 1
+		) else (
+			echo [WARNING]: The RTIMEHOME variable is not set, using NDDSHOME.
+		)
+	) else (
+		set "NDDSHOME=!RTIMEHOME!"
+	)
+
+	call !MSBUILD_EXE! /version > nul
+	if not !ERRORLEVEL! == 0 (
+		echo [WARNING]: !MSBUILD_EXE! executable not found, perftest_cpp_micro will not be built.
+		set BUILD_MICRO=0
 		exit /b 1
+	)
+
+) else (
+
+	if not exist "%NDDSHOME%" (
+			echo [ERROR]: The NDDSHOME variable is not set.
+			exit /b 1
+	)
+
+	if !BUILD_CPP! == 1 (
+		call !MSBUILD_EXE! /version > nul
+		if not !ERRORLEVEL! == 0 (
+			echo [WARNING]: !MSBUILD_EXE! executable not found, perftest_cpp will not be built.
+			set BUILD_CPP=0
+		)
+	)
+	if !BUILD_CPP03! == 1 (
+		call !MSBUILD_EXE! /version > nul
+		if not !ERRORLEVEL! == 0 (
+			echo [WARNING]: !MSBUILD_EXE! executable not found, perftest_cpp03 will not be built.
+			set BUILD_CPP03=0
+		)
+	)
+	if !BUILD_CS! == 1 (
+		call !MSBUILD_EXE! /version > nul
+		if not !ERRORLEVEL! == 0 (
+			echo [WARNING]: !MSBUILD_EXE! executable not found, perftest_cs will not be built.
+			set BUILD_CS=0
+		)
+	)
+
+	if !BUILD_JAVA! == 1 (
+		call !JAVAC_EXE! -version > nul 2>nul
+		if not !ERRORLEVEL! == 0 (
+			echo [WARNING]: !JAVAC_EXE! executable not found, perftest_java will not be built.
+			set BUILD_JAVA=0
+		)
+	)
 )
 
-if !BUILD_CPP! == 1 (
-	call !MSBUILD_EXE! /version > nul
-	if not !ERRORLEVEL! == 0 (
-		echo [WARNING]: !MSBUILD_EXE! executable not found, perftest_cpp will not be built.
-		set BUILD_CPP=0
-	)
-)
-if !BUILD_CPP03! == 1 (
-	call !MSBUILD_EXE! /version > nul
-	if not !ERRORLEVEL! == 0 (
-		echo [WARNING]: !MSBUILD_EXE! executable not found, perftest_cpp03 will not be built.
-		set BUILD_CPP03=0
-	)
-)
-if !BUILD_CS! == 1 (
-	call !MSBUILD_EXE! /version > nul
-	if not !ERRORLEVEL! == 0 (
-		echo [WARNING]: !MSBUILD_EXE! executable not found, perftest_cs will not be built.
-		set BUILD_CS=0
-	)
-)
-
-if !BUILD_JAVA! == 1 (
-	call !JAVAC_EXE! -version > nul 2>nul
-	if not !ERRORLEVEL! == 0 (
-		echo [WARNING]: !JAVAC_EXE! executable not found, perftest_java will not be built.
-		set BUILD_JAVA=0
-	)
-)
 ::------------------------------------------------------------------------------
 
 if !BUILD_CPP! == 1 (
@@ -202,15 +263,21 @@ if !BUILD_CPP03! == 1 (
 
 ::------------------------------------------------------------------------------
 
-@REM # This calls the function in charge of getting the name of the solution for C++
-@REM # given the architecture.
-call::get_solution_name
+if !BUILD_MICRO! == 1 (
 
-set "rtiddsgen_executable=!NDDSHOME!/bin/rtiddsgen.bat"
-set "classic_cpp_lang_string=C++"
-set "modern_cpp_lang_string=C++03"
-set "cs_lang_string=C#"
-set "java_lang_string=java"
+	set BUILD_CPP=0
+	set BUILD_CPP03=0
+	set BUILD_JAVA=0
+	set BUILD_CS=0
+
+	set "rtiddsgen_executable=!NDDSHOME!/rtiddsgen/scripts/rtiddsgen.bat"
+) else (
+	@REM # This calls the function in charge of getting the name of the solution for C++
+	@REM # given the architecture.
+	call::get_solution_name
+
+	set "rtiddsgen_executable=!NDDSHOME!/bin/rtiddsgen.bat"
+)
 
 ::------------------------------------------------------------------------------
 if !BUILD_CPP! == 1 (
@@ -281,20 +348,26 @@ if !BUILD_CPP! == 1 (
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
 		)
+		set "additional_header_files=!additional_header_files! PerftestSecurity.h"
+		set "additional_source_files=!additional_source_files! PerftestSecurity.cxx"
 	)
+
 	if !USE_CUSTOM_TYPE! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_CUSTOM_TYPE=%custom_type% RTI_CUSTOM_TYPE_FILE_NAME_SUPPORT=!custom_type_file_name_support!"
 	)
 
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
+	set "additional_header_files=!additional_header_files_custom_type!!additional_header_files!RTIRawTransportImpl.h Parameter.h ParameterManager.h ThreadPriorities.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_pro.h"
+	set "additional_source_files=!additional_source_files_custom_type!!additional_source_files!RTIRawTransportImpl.cxx Parameter.cxx ParameterManager.cxx ThreadPriorities.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_pro.cxx"
 
 	@REM # Generate files for srcCpp
 	echo[
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
-	-additionalHeaderFiles "!additional_header_files_custom_type!RTIRawTransportImpl.h Parameter.h ParameterManager.h ThreadPriorities.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
-	-additionalSourceFiles "!additional_source_files_custom_type!RTIRawTransportImpl.cxx Parameter.cxx ParameterManager.cxx ThreadPriorities.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
+	-additionalHeaderFiles "!additional_header_files!"^
+	-additionalSourceFiles "!additional_source_files!"^
+	-additionalDefines "!ADDITIONAL_DEFINES!"^
 	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
@@ -319,6 +392,8 @@ if !BUILD_CPP! == 1 (
 	copy /Y "%classic_cpp_folder%"\objs\%architecture%\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp.exe
 	call::clean_src_cpp_common
 )
+
+::------------------------------------------------------------------------------
 
 if !BUILD_CPP03! == 1 (
 	call::copy_src_cpp_common
@@ -409,7 +484,7 @@ if %BUILD_CS% == 1 (
 
 ::------------------------------------------------------------------------------
 
-if	%BUILD_JAVA% == 1 (
+if %BUILD_JAVA% == 1 (
 
 	@REM Generate files for Java
 	echo[
@@ -471,8 +546,115 @@ if	%BUILD_JAVA% == 1 (
 
 )
 
+::------------------------------------------------------------------------------
+
+if !BUILD_MICRO! == 1 (
+
+	call::copy_src_cpp_common
+	call::solution_compilation_flag_calculation
+
+	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_TRADITIONAL"
+
+	if !BUILD_MICRO_24x_COMPATIBILITY! == 1 (
+		set "ADDITIONAL_DEFINES=RTI_MICRO_24x_COMPATIBILITY !ADDITIONAL_DEFINES!"
+	) else (
+
+		if !USE_SECURE_LIBS! == 1 (
+
+			if "x!RTI_OPENSSLHOME!" == "x" (
+				echo [ERROR]: In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option.
+				exit /b 1
+			)
+
+			set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_SECURE_PERFTEST"
+			set "additional_rti_libraries=rti_me_netioshmem rti_me_netioshmem rti_me_seccore"
+
+			set rtiddsgen_extra_options= -additionalLibraries "libeay32z ssleay32z"
+			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!/static_!RELEASE_DEBUG!/lib"
+			echo [INFO] Using security plugin. Linking Statically.
+		) else (
+			set "additional_rti_libraries=nddsmetp"
+		)
+		set rtiddsgen_extra_options=!rtiddsgen_extra_options! -sequenceSize !MICRO_UNBOUNDED_SEQUENCE_SIZE! -additionalRtiLibraries "!additional_rti_libraries!"
+	)
+
+	set "ADDITIONAL_DEFINES=RTI_WIN32 RTI_MICRO !ADDITIONAL_DEFINES!"
+	set "additional_header_files=ParameterManager.h Parameter.h ThreadPriorities.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h PerftestSecurity.h"
+	set "additional_source_files=ParameterManager.cxx Parameter.cxx ThreadPriorities.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx PerftestSecurity.cxx"
+
+	@REM # Generate files for srcCpp
+	echo[
+	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
+	call "%rtiddsgen_executable%" -micro -language %classic_cpp_lang_string% -replace^
+	-create typefiles -create makefiles^
+	-additionalHeaderFiles "!additional_header_files!"^
+	-additionalSourceFiles "!additional_source_files!" -additionalDefines "!ADDITIONAL_DEFINES!"^
+	!rtiddsgen_extra_options!^
+	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
+	if not !ERRORLEVEL! == 0 (
+		echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
+		exit /b 1
+	)
+	call copy "%classic_cpp_folder%"\perftest_publisher.cxx "%classic_cpp_folder%"\perftest_subscriber.cxx
+	call copy "%idl_location%\perftest.idl" "%classic_cpp_folder%"\perftest.idl
+	call echo. > "%classic_cpp_folder%"\perftestApplication.h
+	call echo. > "%classic_cpp_folder%"\perftestApplication.cxx
+
+	echo[
+	echo [INFO]: Compiling %classic_cpp_lang_string%
+
+	if x!CMAKE_GENERATOR! == x"NMake Makefiles" (
+		echo[
+		echo [INFO]: Using NMake for the CMake generator, use --cmake-generator to specify other.
+	)
+	cd "%classic_cpp_folder%"
+	call !CMAKE_EXE! -DCMAKE_BUILD_TYPE=!RELEASE_DEBUG! --target perftest_publisher -G !CMAKE_GENERATOR! -B./perftest_build -H. -DRTIME_TARGET_NAME=%architecture% -DPLATFORM_LIBS="netapi32.lib;advapi32.lib;user32.lib;winmm.lib;WS2_32.lib;"
+	if not !ERRORLEVEL! == 0 (
+		echo [ERROR]: Failure compiling code for %classic_cpp_lang_string%.
+		cd ..
+		exit /b 1
+	)
+
+	call !CMAKE_EXE! --build ./perftest_build --config !RELEASE_DEBUG! --target perftest_publisher
+	if not !ERRORLEVEL! == 0 (
+		echo [ERROR]: Failure compiling code for %classic_cpp_lang_string%.
+		cd ..
+		exit /b 1
+	)
+	cd ..
+
+	echo[
+	echo [INFO]: Copying perftest_cpp executable file:
+	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
+
+	if x!CMAKE_GENERATOR! == x"NMake Makefiles" (
+		copy /Y "%classic_cpp_folder%"\objs\%architecture%\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp_micro.exe
+	) else (
+		copy /Y "%classic_cpp_folder%"\objs\%architecture%\!RELEASE_DEBUG!\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp_micro.exe
+	)
+)
+
+
 echo[
 echo ================================================================================
+GOTO:EOF
+
+:solution_compilation_flag_calculation
+
+	echo[
+
+	set "solution_compilation_mode_flag="
+	if x!STATIC_DYNAMIC!==xdynamic (
+		set "solution_compilation_mode_flag= DLL"
+	)
+	if x!RELEASE_DEBUG!==xdebug (
+		set solution_compilation_mode_flag=debug!solution_compilation_mode_flag!
+	) else (
+		set solution_compilation_mode_flag=release!solution_compilation_mode_flag!
+	)
+
+	echo [INFO]: Compilation flag for msbuild is: !solution_compilation_mode_flag!
+
 GOTO:EOF
 
 ::------------------------------------------------------------------------------
@@ -542,42 +724,44 @@ GOTO:EOF
 
 GOTO:EOF
 
-:solution_compilation_flag_calculation
-  echo[
-
-	set "solution_compilation_mode_flag="
-	if x!STATIC_DYNAMIC!==xdynamic (
-		set "solution_compilation_mode_flag= DLL"
-  )
-  if x!RELEASE_DEBUG!==xdebug (
-		set solution_compilation_mode_flag=debug!solution_compilation_mode_flag!
-  ) else (
-		set solution_compilation_mode_flag=release!solution_compilation_mode_flag!
-  )
-
-	echo [INFO]: Compilation flag for msbuild is: !solution_compilation_mode_flag!
-
-GOTO:EOF
-
 :help
 	echo[
 	echo This scripts accepts the following parameters:
 	echo[
+	echo.    --micro                Build RTI Perftest for RTI Connext Micro
+	echo.                           By default RTI Perftest will assume it will be
+	echo.                           built against RTI Connext DDS Professional.
 	echo.    --platform your_arch   Platform for which build.sh is going to compile
 	echo.                           RTI Perftest.
-	echo.    --nddshome path        Path to the *RTI Connext DDS installation*. If
-	echo.                           this parameter is not present, the $NDDSHOME
-	echo.                           variable should be set.
+	echo.    --nddshome path        Path to the *RTI Connext DDS Professional
+	echo.                           installation*. If this parameter is not present
+	echo.                           the $NDDSHOME variable should be set.
+	echo.                           If provided when building micro, it will be
+	echo.                           used as $RTIMEHOME
+	echo.    --rtimehome path       Path to the *RTI Connext DDS Micro
+	echo.                           installation*. If this parameter is not present
+	echo.                           the $RTIMEHOME variable should be set
 	echo.    --skip-java-build      Avoid Java ByteCode generation creation.
+	echo.                           (No effect when building for Micro)
 	echo.    --skip-cpp-build       Avoid C++ code generation and compilation.
 	echo.    --skip-cpp03-build     Avoid C++ New PSM code generation and
 	echo.                           compilation.
+	echo.                           (No effect when building for Micro)
 	echo.    --skip-cs-build        Avoid C Sharp code generation and compilation.
+	echo.                           (No effect when building for Micro)
 	echo.    --java-build           Only Java ByteCode generation creation.
+	echo.                           (No effect when building for Micro)
 	echo.    --cpp-build            Only C++ code generation and compilation.
 	echo.    --cpp03-build          Only C++ New PSM code generation and
 	echo.                           compilation.
+	echo.                           (No effect when building for Micro)
 	echo.    --cs-build             Only C Sharp code generation and compilation.
+	echo.                           (No effect when building for Micro)
+	echo.    --cmake  path          Path to the CMAKE executable. If this
+	echo.                           parameter is not present, Cmake variable
+	echo.                           should be available from your $PATH variable.
+	echo.    --cmake-generator g    CMake generator to use. By default, NMake
+	echo.                           makefiles will be generated.
 	echo.    --perl path            Path to PERL executable. If this parameter is
 	echo.                           not present, the path to PERL should be
 	echo.                           available from your \$PATH variable.
@@ -585,14 +769,18 @@ GOTO:EOF
 	echo.                           parameter is not present, javac, jar and java
 	echo.                           executables should be available from your
 	echo.                           $PATH variable.
+	echo.                           (No effect when building for Micro)
 	echo.    --debug                Compile against the RTI Connext Debug
 	echo.                           libraries. Default is against release ones.
 	echo.    --dynamic              Compile against the RTI Connext Dynamic
 	echo.                           libraries. Default is against static ones.
+	echo.                           (No effect when building for Micro)
 	echo.    --secure               Enable the security options for compilation.
 	echo.                           Default is not enabled.
 	echo.    --openssl-home path    Path to the openssl home. This will be used
 	echo.                           when compiling statically and using security
+	echo.                           Note: For Micro provide this path with /
+	echo.                           instead of \, required by cmake.
 	echo.    --clean                If this option is present, the build.sh script
 	echo.                           will clean all the generated code and binaries
 	echo.                           from previous executions.
@@ -646,6 +834,13 @@ GOTO:EOF
 	del %script_location%srcCpp\perftestPlugin.* > nul 2>nul
 	del %script_location%srcCpp\perftestSupport.* > nul 2>nul
 	del %script_location%srcCpp\perftest_subscriber.cxx > nul 2>nul
+	del %script_location%srcCpp\perftestApplication.h > nul 2>nul
+	del %script_location%srcCpp\perftestApplication.cxx > nul 2>nul
+	del %script_location%srcCpp\perftest.idl > nul 2>nul
+	del %script_location%srcCpp\CMakeLists.txt > nul 2>nul
+	del %script_location%srcCpp\README.txt > nul 2>nul
+	rmdir /s /q "%script_location%srcCpp\gen" > nul 2>nul
+	rmdir /s /q "%script_location%srcCpp\perftest_build" > nul 2>nul
 	rmdir /s /q %script_location%srcCpp03\objs > nul 2>nul
 	del %script_location%srcCpp03\*.vcxproj > nul 2>nul
 	del %script_location%srcCpp03\*.vcproj > nul 2>nul

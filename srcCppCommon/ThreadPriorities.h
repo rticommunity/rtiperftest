@@ -3,15 +3,18 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
+#ifndef THREADPRIORITIES_H
+#define THREADPRIORITIES_H
+
 /*
  * This class is used to keep the values of the priorities in the case where
  * the user provide them.
  */
 #ifdef RTI_WIN32
-#include <windows.h>
-#elif RTI_UNIX
-#include <sched.h>
-#include <pthread.h>
+  #include <windows.h>
+#elif defined(RTI_UNIX)
+  #include <sched.h>
+  #include <pthread.h>
 #endif
 #include <errno.h>
 #include <map>
@@ -34,3 +37,5 @@ class ThreadPriorities {
     bool check_priority_range(int value);
     bool parse_priority(std::string arg);
 };
+
+#endif

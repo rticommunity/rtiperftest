@@ -9,9 +9,7 @@
 #include <string>
 #include <map>
 #include <sstream>
-#include "perftest.h"
 #include "ParameterManager.h"
-#include "ndds/ndds_cpp.h"
 
 /******************************************************************************/
 enum Transport {
@@ -81,6 +79,7 @@ public:
     // Check if the transport allows the use of multicast.
     bool allowsMulticast();
 
+  #ifndef RTI_MICRO
     /*
      * Given the name of a Perftest-defined topic, returns its multicast
      * address.
@@ -89,6 +88,7 @@ public:
 
     /* Used to validate a multicast address */
     bool is_multicast(std::string addr);
+  #endif
 
 private:
 
@@ -99,14 +99,13 @@ private:
 
     bool setTransport(std::string transportString);
     void populateSecurityFiles();
+  #ifndef RTI_MICRO
     bool parse_multicast_addresses(const char *arg);
     bool increase_address_by_one(const std::string addr, std::string &nextAddr);
-
+  #endif
 };
 
-bool configureTransport(
-        PerftestTransport &transport,
-        DDS_DomainParticipantQos &qos,
-        ParameterManager *_PM);
+// Tag used when adding logging output.
+const std::string classLoggingString = "PerftestTransport:";
 
 #endif /* PERFTEST_2_0_SRCCPP_PERFTESTTRANSPORT_H_ */
