@@ -47,7 +47,7 @@ LEGACY_DD_IMPL=0
 # Needed when compiling statically using security
 RTI_OPENSSLHOME=""
 
-#Variables for customType
+# Variables for customType
 custom_type_folder="${idl_location}/customType"
 USE_CUSTOM_TYPE=0
 custom_type="" # Type of the customer
@@ -55,6 +55,8 @@ custom_type_file_name_support="" # Name of the file with the type. "TSupport.h"
 # Intermediate file for including the custom type file #include "file.idl"
 custom_idl_file="${custom_type_folder}/custom.idl"
 
+# Variables for FlatData
+flatdata_size=10485760 # 10MB
 
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
@@ -135,6 +137,9 @@ function usage()
     echo "    --customType <type>          Use the Custom type feature with your type.    "
     echo "                                 See details and examples of use in the         "
     echo "                                 documentation.                                 "
+    echo "    --flatdata-max-size <size>   Specify the maximum bounded size in bytes      "
+    echo "                                 for sequences when using FlatData language     "
+    echo "                                 binding. Default 10MB                          "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
@@ -514,6 +519,10 @@ function build_cpp()
     fi
     additional_defines_calculation "CPPtraditional"
 
+    # Adding RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as macro
+    rtiddsgen_extra_options=${rtiddsgen_extra_options}" -D RTI_FLATDATA_AVAILABLE"
+    rtiddsgen_extra_options=${rtiddsgen_extra_options}" -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
+
     additional_header_files="${additional_header_files_custom_type} \
         RTIRawTransportImpl.h \
         ThreadPriorities.h \
@@ -740,9 +749,13 @@ function build_cpp03()
 {
     copy_src_cpp_common
     additional_defines_calculation "CPPModern"
+
+    # Adding RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as macro
+    rtiddsgen_extra_options=${rtiddsgen_extra_options}" -D RTI_FLATDATA_AVAILABLE"
+    rtiddsgen_extra_options=${rtiddsgen_extra_options}" -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
+
     ##############################################################################
     # Generate files for srcCpp03
-
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles \"ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
@@ -1053,7 +1066,12 @@ while [ "$1" != "" ]; do
             shift
             ;;
         --flatdata-max-size)
-            RTI_FLATDATA_SIZE=$2
+            flatdata_size=$2
+            if [ -z "${flatdata_size}" ]; then
+                echo -e "${ERROR_TAG} --flatdata-max-size should be followed by the maximum size for the type."
+                usage
+                exit -1
+            fi
             shift
             ;;
         *)
