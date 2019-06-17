@@ -492,7 +492,7 @@ by using the `Transport` spececific command-line parameters.
 
    | **Default:** ``Not set``
 
--  ``-transporCertAuthority <file>``
+-  ``-transportCertAuthority <file>``
 
    For TLS, DTLS and Secure WAN. Certificate authority file to be used by TLS.
 
@@ -502,7 +502,7 @@ by using the `Transport` spececific command-line parameters.
    | **Default for Publisher:** ``./resource/secure/pub.pem``
    | **Default for Subscriber:** ``./resource/secure/sub.pem``
 
--  ``-transporCertFile <file>``
+-  ``-transportCertFile <file>``
 
    For TLS, DTLS and Secure WAN. Certificate file to be used by TLS.
 
@@ -511,7 +511,7 @@ by using the `Transport` spececific command-line parameters.
 
    | **Default:** ``./resource/secure/cacert.pem``
 
--  ``-transporPrivateKey <file>``
+-  ``-transportPrivateKey <file>``
 
    For TLS, DTLS and Secure WAN. Private key file to be used by TLS.
 
