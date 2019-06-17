@@ -1550,7 +1550,6 @@ int perftest_cpp::Publisher()
         int threadPriority = Perftest_THREAD_PRIORITY_DEFAULT;
         int threadOptions = Perftest_THREAD_OPTION_DEFAULT;
 
-        //TODO Alfonso: Review thread priorities, do they apply here?
         if (_threadPriorities.isSet) {
             threadPriority = _threadPriorities.receive;
             threadOptions = Perftest_THREAD_SETTINGS_REALTIME_PRIORITY

@@ -95,7 +95,7 @@ void PerftestConfigureVerbosity(int verbosityLevel);
 /* THREADS */
 
 #define PerftestThread RTIOsapiThread
-#define PerftestThread_delete  RTIOsapiThread_delete
+#define PerftestThread_delete RTIOsapiThread_delete
 
 #define Perftest_THREAD_PRIORITY_DEFAULT RTI_OSAPI_THREAD_PRIORITY_DEFAULT
 #define Perftest_THREAD_SETTINGS_REALTIME_PRIORITY DDS_THREAD_SETTINGS_REALTIME_PRIORITY

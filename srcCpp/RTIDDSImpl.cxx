@@ -1857,7 +1857,6 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
     const std::vector<std::string> peerList =
         _PM->get_vector<std::string>("peer");
     if (!peerList.empty()) {
-        //TODO FRANCIS: Review this code.
         qos.discovery.initial_peers.maximum((int) peerList.size());
         qos.discovery.initial_peers.length((int) peerList.size());
         for(unsigned int i = 0; i < peerList.size(); ++i) {
@@ -1871,7 +1870,6 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
                 DDS_String_dup("239.255.0.1");
         *qos.discovery.initial_peers.get_reference(1) =
                 DDS_String_dup("127.0.0.1");
-        //TODO FRANCIS: Discovery in Shmem if available.
     }
     qos.discovery.accept_unknown_peers = DDS_BOOLEAN_TRUE;
 
@@ -2404,8 +2402,6 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
       #else
         dw_qos.resource_limits.max_samples = _PM->get<int>("sendQueueSize");
       #endif
-
-        //TODO: Hearbeat period for MICRO
 
       #ifndef RTI_MICRO
         if (_PM->get<bool>("enableAutoThrottle")) {
