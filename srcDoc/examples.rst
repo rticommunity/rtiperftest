@@ -1055,7 +1055,7 @@ C++ (Traditional) API:
         ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint
         RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
 
-        Using user provided type 'Test'
+        Custom Type provided: 'Test'
 
         Mode: THROUGHPUT TEST
             (Use "-latencyTest" for Latency Mode)
@@ -1095,7 +1095,7 @@ C++ (Traditional) API:
         ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint
         RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
 
-        Using user provided type 'Test'
+        Custom Type provided: 'Test'
 
         Perftest Configuration:
             Reliability: Reliable
@@ -1125,7 +1125,7 @@ C++ (Traditional) API:
         ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint -dynamicData
         RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
 
-        Using user provided type 'Test'
+        Custom Type provided: 'Test'
 
         Mode: THROUGHPUT TEST
             (Use "-latencyTest" for Latency Mode)
@@ -1166,7 +1166,7 @@ C++ (Traditional) API:
         ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint -dynamicData
         RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
 
-        Using user provided type 'Test'
+        Custom Type provided: 'Test'
 
         Perftest Configuration:
             Reliability: Reliable

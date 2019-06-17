@@ -364,7 +364,7 @@ void perftest_cpp::PrintConfiguration()
     std::ostringstream stringStream;
 
   #ifdef RTI_CUSTOM_TYPE
-    stringStream << "\nUsing user provided type '"
+    stringStream << "\nCustom Type provided: '"
                  << TO_STRING(RTI_CUSTOM_TYPE)
                  << "'\n";
   #endif
