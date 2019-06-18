@@ -1149,14 +1149,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
     <qos_profile name="FlatData_LatencyQos" base_name="LatencyQos"/>
 
-    <qos_profile name="FlatData_AnnouncementQos">
-      <base_name>
-        <element>AnnouncementQos</element>
-        <!-- Will override duplicate elements with LatencyQoS profile inherited from AnnouncementQos -->
-        <element>FlatData_LatencyQos</element>
-      </base_name>
-      <!-- TODO: Add config here -->
-    </qos_profile>
+    <qos_profile name="FlatData_AnnouncementQos" base_name="AnnouncementQos"/>
 
   </qos_library>
 </dds>
