@@ -56,7 +56,7 @@ custom_type_file_name_support="" # Name of the file with the type. "TSupport.h"
 custom_idl_file="${custom_type_folder}/custom.idl"
 
 # Variables for FlatData
-flatdata_size=536870912 # 512MB
+flatdata_size=10485760 # 10MB
 
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
