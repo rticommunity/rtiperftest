@@ -297,7 +297,7 @@ if !BUILD_CPP! == 1 (
 	set "additional_source_files_custom_type="
 	
 	REM # Set FlatData defines
-	set "additional_defines_flatdata=-D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE=!flatdata_size!"
+	set additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=%flatdata_size%"
 
 	if !USE_CUSTOM_TYPE! == 1 (
 		REM # Search the file which contains "Struct ${custom_type} {" and include it to ${custom_idl_file}
@@ -373,7 +373,6 @@ if !BUILD_CPP! == 1 (
 	echo[
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
-	%%
 	-create typefiles -create makefiles -platform %architecture%^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
@@ -392,8 +391,7 @@ if !BUILD_CPP! == 1 (
 	echo[
 	echo [INFO]: Appending nddssecurity library to makefile
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
-	%%
-	%additional_defines_flatdata%
+	!additional_defines_flatdata!^
 	-create typefiles -platform %architecture%^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
@@ -431,7 +429,7 @@ if !BUILD_CPP03! == 1 (
 	call::solution_compilation_flag_calculation
 
 	REM # Set FlatData defines
-	set "additional_defines_flatdata=-D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE=!flatdata_size!"
+	set "additional_defines_flatdata=-D ""RTI_FLATDATA_AVAILABLE"" -D ""RTI_FLATDATA_MAX_SIZE=%flatdata_size%"" "
 
 	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_MODERN"
 	if !USE_SECURE_LIBS! == 1 (
@@ -473,8 +471,7 @@ if !BUILD_CPP03! == 1 (
 	echo[
 	echo [INFO]: Appending nddssecurity library to makefile
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
-	%%
-	%additional_defines_flatdata%
+	!additional_defines_flatdata!
 	-create typefiles -platform %architecture%^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
