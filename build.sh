@@ -412,31 +412,6 @@ function additional_defines_calculation_micro()
     fi
 }
 
-function add_security_lib_to_makefile() {
-    if [ ! "${USE_SECURE_LIBS}" == "1" ] || [ "${STATIC_DYNAMIC}" == "dynamic" ]; then 
-        echo -e "${ERROR_TAG} Do not use this function if secure is not being used or linking is dynamics"
-        return -1
-    fi
-
-    if [ "${1}" == "CPPTraditional" ]; then
-        path="./srcCpp"
-    elif [ "${1}" == "CPPModern" ]; then
-        path="./srcCpp03"
-    else
-        echo -e "${ERROR_TAG} ${1} is not supported in this function"
-        return -1
-    fi
-
-    file="${path}/makefile_perftest_${platform}"
-
-    if [ ! -f "${file}" ]; then
-        echo -e "${ERROR_TAG} ${file} does not exist"
-        return -1
-    fi
-
-    sed -i '/-lnddsmetp$(SHAREDLIB_SFX)$(DEBUG_SFX)/a \ \ \ \ \ \ \ -lnddssecurity$(SHAREDLIB_SFX)$(DEBUG_SFX)  \\' ${file}
-}
-
 # Generate code for the type of the customer.
 # Fill additional source and header files for custom type.
 function build_cpp_custom_type()
@@ -597,15 +572,29 @@ function build_cpp()
         clean_src_cpp_common
         exit -1
     fi
-    cp "${classic_cpp_folder}/perftest_publisher.cxx" \
-    "${classic_cpp_folder}/perftest_subscriber.cxx"
 
     # rtiddsgen ignores any specified rti addional library if using ZeroCopy
-    # Therefore, we need to append the security lib manually
-    if [ ! "${USE_SECURE_LIBS}" == "1" ] && [ ! "${STATIC_DYNAMIC}" == "dynamic" ]; then
-        echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
-        add_security_lib_to_makefile "CPPtraditional"
+    # Therefore, we need to generate a makefile that contains
+    # nddsmetp and nddssecurity libraries
+    echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
+        ${additional_defines_flatdata} \
+        -unboundedSupport -replace -create typefiles \
+        -platform ${platform} \
+        -additionalHeaderFiles \"${additional_header_files}\" \
+        -additionalSourceFiles \"${additional_source_files} \" \
+        -additionalDefines \"${additional_defines}\" \
+        ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
+        -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\""
+    eval $rtiddsgen_command
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
+        clean_src_cpp_common
+        exit -1
     fi
+
+    cp "${classic_cpp_folder}/perftest_publisher.cxx" \
+    "${classic_cpp_folder}/perftest_subscriber.cxx"
 
     ##############################################################################
     # Compile srcCpp code
@@ -782,8 +771,8 @@ function build_cpp03()
     ##############################################################################
     # Generate files for srcCpp03
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
-    ${additional_defines_flatdata} \
-    -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} \
+    -create makefiles \
+    -unboundedSupport -replace -create typefiles -platform ${platform} \
     -additionalHeaderFiles \"ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" \
     -additionalSourceFiles \"ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" \
     -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} \
@@ -800,15 +789,28 @@ function build_cpp03()
         clean_src_cpp_common
         exit -1
     fi
-    cp "${modern_cpp_folder}/perftest_publisher.cxx" \
-    "${modern_cpp_folder}/perftest_subscriber.cxx"
 
     # rtiddsgen ignores any specified rti addional library if using ZeroCopy
-    # Therefore, we need to append the security lib manually
-    if [ "${USE_SECURE_LIBS}" == "1" ] && [ ! "${STATIC_DYNAMIC}" == "dynamic" ]; then 
-        echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
-        add_security_lib_to_makefile "CPPModern"
+    # Therefore, we need to generate a makefile that contains
+    # nddsmetp and nddssecurity libraries
+    echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
+    ${additional_defines_flatdata} \
+    -unboundedSupport -replace -create typefiles -platform ${platform} \
+    -additionalHeaderFiles \"ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" \
+    -additionalSourceFiles \"ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" \
+    -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} \
+    -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
+
+    eval $rtiddsgen_command
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
+        clean_src_cpp_common
+        exit -1
     fi
+
+    cp "${modern_cpp_folder}/perftest_publisher.cxx" \
+    "${modern_cpp_folder}/perftest_subscriber.cxx"
 
     ##############################################################################
     # Compile srcCpp03 code

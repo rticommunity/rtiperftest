@@ -58,6 +58,9 @@ set "custom_type=" @REM # Type of the customer
 set "custom_type_file_name_support="
 @REM # Intermediate file for including the custom type file #include "file.idl"
 set "custom_idl_file=%custom_type_folder%\custom.idl"
+
+@REM # Variables for FlatData
+set "flatdata_size=10485760" @REM # 10MB
 ::------------------------------------------------------------------------------
 
 @REM # Initial message
@@ -160,6 +163,9 @@ if NOT "%1"=="" (
 					call:help
 					exit /b 1
 				)
+				SHIFT
+		) ELSE if "%1"=="flatdata-max-size" (
+				SET "flatdata_size=%2"
 				SHIFT
 		) ELSE (
 				echo [ERROR]: Unknown argument "%1"
@@ -289,6 +295,9 @@ if !BUILD_CPP! == 1 (
 	set "additional_defines_custom_type="
 	set "additional_header_files_custom_type="
 	set "additional_source_files_custom_type="
+	
+	REM # Set FlatData defines
+	set "additional_defines_flatdata=-D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE=!flatdata_size!"
 
 	if !USE_CUSTOM_TYPE! == 1 (
 		REM # Search the file which contains "Struct ${custom_type} {" and include it to ${custom_idl_file}
@@ -344,7 +353,7 @@ if !BUILD_CPP! == 1 (
 				echo [ERROR]: In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option.
 				exit /b 1
 			)
-			set rtiddsgen_extra_options=-additionalRtiLibraries nddssecurity -additionalLibraries "libeay32z ssleay32z"
+			set rtiddsgen_extra_options=-additionalRtiLibraries "nddssecurity nddsmetp" -additionalLibraries "libeay32z ssleay32z"
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
 		)
@@ -364,6 +373,7 @@ if !BUILD_CPP! == 1 (
 	echo[
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
+	%%
 	-create typefiles -create makefiles -platform %architecture%^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
@@ -375,6 +385,27 @@ if !BUILD_CPP! == 1 (
 		call::clean_src_cpp_common
 		exit /b 1
 	)
+
+	@REM # rtiddsgen ignores any specified rti addional library if using ZeroCopy
+    @REM # Therefore, we need to generate a makefile that contains
+    @REM # nddsmetp and nddssecurity libraries
+	echo[
+	echo [INFO]: Appending nddssecurity library to makefile
+	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
+	%%
+	%additional_defines_flatdata%
+	-create typefiles -platform %architecture%^
+	-additionalHeaderFiles "!additional_header_files!"^
+	-additionalSourceFiles "!additional_source_files!"^
+	-additionalDefines "!ADDITIONAL_DEFINES!"^
+	!rtiddsgen_extra_options! !additional_defines_custom_type!^
+	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
+	if not !ERRORLEVEL! == 0 (
+		echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
+		call::clean_src_cpp_common
+		exit /b 1
+	)
+
 	call copy "%classic_cpp_folder%"\perftest_publisher.cxx "%classic_cpp_folder%"\perftest_subscriber.cxx
 
 	echo[
@@ -399,6 +430,9 @@ if !BUILD_CPP03! == 1 (
 	call::copy_src_cpp_common
 	call::solution_compilation_flag_calculation
 
+	REM # Set FlatData defines
+	set "additional_defines_flatdata=-D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE=!flatdata_size!"
+
 	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_MODERN"
 	if !USE_SECURE_LIBS! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_SECURE_PERFTEST"
@@ -420,6 +454,7 @@ if !BUILD_CPP03! == 1 (
 	echo[
 	echo [INFO]: Generating types and makefiles for %modern_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %modern_cpp_lang_string% -unboundedSupport -replace^
+	%additional_defines_flatdata%
 	-create typefiles -create makefiles -platform %architecture%^
 	-additionalHeaderFiles "ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
 	-additionalSourceFiles "ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
@@ -431,6 +466,27 @@ if !BUILD_CPP03! == 1 (
 		call::clean_src_cpp_common
 		exit /b 1
 	)
+
+	@REM # rtiddsgen ignores any specified rti addional library if using ZeroCopy
+    @REM # Therefore, we need to generate a makefile that contains
+    @REM # nddsmetp and nddssecurity libraries
+	echo[
+	echo [INFO]: Appending nddssecurity library to makefile
+	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
+	%%
+	%additional_defines_flatdata%
+	-create typefiles -platform %architecture%^
+	-additionalHeaderFiles "!additional_header_files!"^
+	-additionalSourceFiles "!additional_source_files!"^
+	-additionalDefines "!ADDITIONAL_DEFINES!"^
+	!rtiddsgen_extra_options! !additional_defines_custom_type!^
+	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
+	if not !ERRORLEVEL! == 0 (
+		echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
+		call::clean_src_cpp_common
+		exit /b 1
+	)
+
 	call copy "%modern_cpp_folder%"\perftest_publisher.cxx "%modern_cpp_folder%"\perftest_subscriber.cxx
 
 	echo[
@@ -728,66 +784,69 @@ GOTO:EOF
 	echo[
 	echo This scripts accepts the following parameters:
 	echo[
-	echo.    --micro                Build RTI Perftest for RTI Connext Micro
-	echo.                           By default RTI Perftest will assume it will be
-	echo.                           built against RTI Connext DDS Professional.
-	echo.    --platform your_arch   Platform for which build.sh is going to compile
-	echo.                           RTI Perftest.
-	echo.    --nddshome path        Path to the *RTI Connext DDS Professional
-	echo.                           installation*. If this parameter is not present
-	echo.                           the $NDDSHOME variable should be set.
-	echo.                           If provided when building micro, it will be
-	echo.                           used as $RTIMEHOME
-	echo.    --rtimehome path       Path to the *RTI Connext DDS Micro
-	echo.                           installation*. If this parameter is not present
-	echo.                           the $RTIMEHOME variable should be set
-	echo.    --skip-java-build      Avoid Java ByteCode generation creation.
-	echo.                           (No effect when building for Micro)
-	echo.    --skip-cpp-build       Avoid C++ code generation and compilation.
-	echo.    --skip-cpp03-build     Avoid C++ New PSM code generation and
-	echo.                           compilation.
-	echo.                           (No effect when building for Micro)
-	echo.    --skip-cs-build        Avoid C Sharp code generation and compilation.
-	echo.                           (No effect when building for Micro)
-	echo.    --java-build           Only Java ByteCode generation creation.
-	echo.                           (No effect when building for Micro)
-	echo.    --cpp-build            Only C++ code generation and compilation.
-	echo.    --cpp03-build          Only C++ New PSM code generation and
-	echo.                           compilation.
-	echo.                           (No effect when building for Micro)
-	echo.    --cs-build             Only C Sharp code generation and compilation.
-	echo.                           (No effect when building for Micro)
-	echo.    --cmake  path          Path to the CMAKE executable. If this
-	echo.                           parameter is not present, Cmake variable
-	echo.                           should be available from your $PATH variable.
-	echo.    --cmake-generator g    CMake generator to use. By default, NMake
-	echo.                           makefiles will be generated.
-	echo.    --perl path            Path to PERL executable. If this parameter is
-	echo.                           not present, the path to PERL should be
-	echo.                           available from your \$PATH variable.
-	echo.    --java-home path       Path to the Java JDK home folder. If this
-	echo.                           parameter is not present, javac, jar and java
-	echo.                           executables should be available from your
-	echo.                           $PATH variable.
-	echo.                           (No effect when building for Micro)
-	echo.    --debug                Compile against the RTI Connext Debug
-	echo.                           libraries. Default is against release ones.
-	echo.    --dynamic              Compile against the RTI Connext Dynamic
-	echo.                           libraries. Default is against static ones.
-	echo.                           (No effect when building for Micro)
-	echo.    --secure               Enable the security options for compilation.
-	echo.                           Default is not enabled.
-	echo.    --openssl-home path    Path to the openssl home. This will be used
-	echo.                           when compiling statically and using security
-	echo.                           Note: For Micro provide this path with /
-	echo.                           instead of \, required by cmake.
-	echo.    --clean                If this option is present, the build.sh script
-	echo.                           will clean all the generated code and binaries
-	echo.                           from previous executions.
-	echo.    --customType type      Use the Custom type feature with your type.
-	echo.                           See details and examples of use in the
-	echo.                           documentation.
-	echo.    --help -h              Display this message.
+	echo.    --micro                	  Build RTI Perftest for RTI Connext Micro
+	echo.                           	  By default RTI Perftest will assume it will be
+	echo.                           	  built against RTI Connext DDS Professional.
+	echo.    --platform your_arch   	  Platform for which build.sh is going to compile
+	echo.                           	  RTI Perftest.
+	echo.    --nddshome path        	  Path to the *RTI Connext DDS Professional
+	echo.                           	  installation*. If this parameter is not present
+	echo.                           	  the $NDDSHOME variable should be set.
+	echo.                           	  If provided when building micro, it will be
+	echo.                           	  used as $RTIMEHOME
+	echo.    --rtimehome path       	  Path to the *RTI Connext DDS Micro
+	echo.                           	  installation*. If this parameter is not present
+	echo.                           	  the $RTIMEHOME variable should be set
+	echo.    --skip-java-build      	  Avoid Java ByteCode generation creation.
+	echo.                           	  (No effect when building for Micro)
+	echo.    --skip-cpp-build       	  Avoid C++ code generation and compilation.
+	echo.    --skip-cpp03-build     	  Avoid C++ New PSM code generation and
+	echo.                           	  compilation.
+	echo.                           	  (No effect when building for Micro)
+	echo.    --skip-cs-build        	  Avoid C Sharp code generation and compilation.
+	echo.                           	  (No effect when building for Micro)
+	echo.    --java-build           	  Only Java ByteCode generation creation.
+	echo.                           	  (No effect when building for Micro)
+	echo.    --cpp-build            	  Only C++ code generation and compilation.
+	echo.    --cpp03-build          	  Only C++ New PSM code generation and
+	echo.                           	  compilation.
+	echo.                           	  (No effect when building for Micro)
+	echo.    --cs-build             	  Only C Sharp code generation and compilation.
+	echo.                           	  (No effect when building for Micro)
+	echo.    --cmake  path          	  Path to the CMAKE executable. If this
+	echo.                           	  parameter is not present, Cmake variable
+	echo.                           	  should be available from your $PATH variable.
+	echo.    --cmake-generator g    	  CMake generator to use. By default, NMake
+	echo.                           	  makefiles will be generated.
+	echo.    --perl path            	  Path to PERL executable. If this parameter is
+	echo.                           	  not present, the path to PERL should be
+	echo.                           	  available from your \$PATH variable.
+	echo.    --java-home path       	  Path to the Java JDK home folder. If this
+	echo.                           	  parameter is not present, javac, jar and java
+	echo.                           	  executables should be available from your
+	echo.                           	  $PATH variable.
+	echo.                           	  (No effect when building for Micro)
+	echo.    --debug                	  Compile against the RTI Connext Debug
+	echo.                           	  libraries. Default is against release ones.
+	echo.    --dynamic                    Compile against the RTI Connext Dynamic
+	echo.                           	  libraries. Default is against static ones.
+	echo.                           	  (No effect when building for Micro)
+	echo.    --secure               	  Enable the security options for compilation.
+	echo.                           	  Default is not enabled.
+	echo.    --openssl-home path    	  Path to the openssl home. This will be used
+	echo.                           	  when compiling statically and using security
+	echo.                           	  Note: For Micro provide this path with /
+	echo.                           	  instead of \, required by cmake.
+	echo.    --clean                	  If this option is present, the build.sh script
+	echo.                           	  will clean all the generated code and binaries
+	echo.                           	  from previous executions.
+	echo.    --customType type      	  Use the Custom type feature with your type.
+	echo.                           	  See details and examples of use in the
+	echo.                           	  documentation.
+	echo.    --flatdata-max-size size     Specify the maximum bounded size in bytes      
+    echo.                                 for sequences when using FlatData language     
+    echo.                                 binding. Default 10MB                          
+	echo.    --help -h                    Display this message.
 	echo[
 	echo ================================================================================
 GOTO:EOF
