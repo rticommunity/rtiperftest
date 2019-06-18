@@ -1,17 +1,19 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "Pro (Linux)",
             "includePath": [
-                "${workspaceFolder}/srcCpp/",
-                "${workspaceFolder}/srcCppCommon/",
+                "${workspaceFolder}/srcCpp",
+                "${workspaceFolder}/srcCppCommon",
                 "${NDDSHOME}/include",
                 "${NDDSHOME}/include/ndds"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
-                "_UNICODE"
+                "_UNICODE",
+                "RTI_MICRO=0",
+                "RTI_SECURE_PERFTEST=1"
             ],
             "intelliSenseMode": "${default}",
             "cStandard": "c11",
@@ -29,6 +31,8 @@
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE",
+                "RTI_MICRO=0",
+                "RTI_SECURE_PERFTEST=1",
                 "RTI_WIN32"
             ],
             "intelliSenseMode": "${default}",

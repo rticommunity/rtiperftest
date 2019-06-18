@@ -2397,10 +2397,12 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
             dw_qos.writer_resource_limits.max_batches =
                     _PM->get<int>("sendQueueSize");
         } else {
-            dw_qos.resource_limits.max_samples = _PM->get<int>("sendQueueSize");
+            // See github issue "Reaching max samples #130"
+            dw_qos.resource_limits.max_samples = GetInitializationSampleCount();
         }
       #else
-        dw_qos.resource_limits.max_samples = _PM->get<int>("sendQueueSize");
+        // See github issue "Reaching max samples #130"
+        dw_qos.resource_limits.max_samples = GetInitializationSampleCount();
       #endif
 
       #ifndef RTI_MICRO

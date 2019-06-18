@@ -271,6 +271,14 @@ In the 2.4 release a regression was introduced and the use of `-unbounded`
 would cause a failure when using datasizes from `28` to `63000 Bytes`. This
 issue has been resolved.
 
+Fix incorrect number for the max samples QoS for the Throughput Writer (#130)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous versions, the value used for max samples in the QoS for the 
+Throughput Writer in the *RTI Perftest* Publisher side was set to the 
+"Send Window"'s size. This could lead to a situation where the writer
+exceeds max entries. This issue has been resolved.
+
 Update Maximum sample size accepted by *RTI Perftest* (#136)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -896,7 +896,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 dwQos.resource_limits.max_samples = ResourceLimitsQosPolicy.LENGTH_UNLIMITED;
                 dwQos.writer_resource_limits.max_batches = _sendQueueSize;
             } else {
-                dwQos.resource_limits.max_samples = _sendQueueSize;
+                // See github issue "Reaching max samples #130"
+                dwQos.resource_limits.max_samples = getInitializationSampleCount();
             }
 
             if (_heartbeatPeriod.sec > 0 || _heartbeatPeriod.nanosec > 0) {

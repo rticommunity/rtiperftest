@@ -1905,7 +1905,8 @@ namespace PerformanceTest
                 }
                 else
                 {
-                    dw_qos.resource_limits.max_samples = _SendQueueSize;
+                    // See github issue "Reaching max samples #130"
+                    dw_qos.resource_limits.max_samples = GetInitializationSampleCount();
                 }
 
                 if (_HeartbeatPeriod.sec > 0 || _HeartbeatPeriod.nanosec > 0)

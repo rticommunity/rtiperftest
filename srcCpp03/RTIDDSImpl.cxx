@@ -1495,7 +1495,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
             qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
             qos_dw_resource_limits.max_batches(_PM->get<int>("sendQueueSize"));
         } else {
-            qos_resource_limits.max_samples(_PM->get<int>("sendQueueSize"));
+            // See github issue "Reaching max samples #130"
+            qos_resource_limits.max_samples(GetInitializationSampleCount());
         }
 
         if (_PM->get<bool>("enableAutoThrottle")) {
