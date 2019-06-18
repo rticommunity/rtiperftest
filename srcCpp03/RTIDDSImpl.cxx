@@ -1699,7 +1699,6 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
                 topic,
                 dw_qos);
 
-
         return new RTIDynamicDataPublisher(
                 writer,
                 _PM->get<long>("instances"),

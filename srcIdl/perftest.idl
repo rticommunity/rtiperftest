@@ -39,7 +39,6 @@ struct TestData_t {
 
 }; //@Extensibility FINAL_EXTENSIBILITY
 
-
 struct TestDataKeyed_t {
     @key
     octet key[KEY_SIZE];
@@ -104,7 +103,7 @@ struct TestData_FlatData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE
     RTI_CUSTOM_TYPE custom_type;
     // custom_type_size is the serialize size of the field custom_type
@@ -125,7 +124,7 @@ struct TestDataKeyed_FlatData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE
     @key
     RTI_CUSTOM_TYPE custom_type;
@@ -184,7 +183,7 @@ struct TestData_ZeroCopy_w_FlatData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE
     RTI_CUSTOM_TYPE custom_type;
     // custom_type_size is the serialize size of the field custom_type
@@ -206,7 +205,7 @@ struct TestDataKeyed_ZeroCopy_w_FlatData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE
     @key
     RTI_CUSTOM_TYPE custom_type;

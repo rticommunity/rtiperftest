@@ -56,7 +56,7 @@ custom_type_file_name_support="" # Name of the file with the type. "TSupport.h"
 custom_idl_file="${custom_type_folder}/custom.idl"
 
 # Variables for FlatData
-flatdata_size=10485760 # 10MB
+flatdata_size=536870912 # 512MB
 
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
@@ -347,8 +347,6 @@ function additional_defines_calculation()
     if [ "${RELEASE_DEBUG}" == "release" ]; then
         echo -e "${INFO_TAG} C++ code will be optimized."
         additional_defines=${additional_defines}"O3"
-    else
-        additional_defines=${additional_defines}"O0"
     fi
 
     if [ "${LEGACY_DD_IMPL}" == "1" ]; then
@@ -366,7 +364,7 @@ function additional_defines_calculation()
                 echo -e "${ERROR_TAG} In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option."
                 exit -1
             fi
-            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries nddssecurity -additionalLibraries \"sslz cryptoz\""
+            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries \"nddssecurity nddsmetp\" -additionalLibraries \"sslz cryptoz\""
             rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraryPaths \"${RTI_OPENSSLHOME}/${RELEASE_DEBUG}/lib\""
             echo -e "${INFO_TAG} Using security plugin. Linking Statically."
         fi
@@ -384,7 +382,7 @@ function additional_defines_calculation()
     fi
 
     # Adding RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as macro
-    additional_defines_flatdata="-D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE=${flatdata_size} "
+    additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
 }
 
 function additional_defines_calculation_micro()
@@ -412,6 +410,31 @@ function additional_defines_calculation_micro()
             echo -e "${INFO_TAG} Using security plugin. Linking Statically."
         fi
     fi
+}
+
+function add_security_lib_to_makefile() {
+    if [ ! "${USE_SECURE_LIBS}" == "1" ] || [ "${STATIC_DYNAMIC}" == "dynamic" ]; then 
+        echo -e "${ERROR_TAG} Do not use this function if secure is not being used or linking is dynamics"
+        return -1
+    fi
+
+    if [ "${1}" == "CPPTraditional" ]; then
+        path="./srcCpp"
+    elif [ "${1}" == "CPPModern" ]; then
+        path="./srcCpp03"
+    else
+        echo -e "${ERROR_TAG} ${1} is not supported in this function"
+        return -1
+    fi
+
+    file="${path}/makefile_perftest_${platform}"
+
+    if [ ! -f "${file}" ]; then
+        echo -e "${ERROR_TAG} ${file} does not exist"
+        return -1
+    fi
+
+    sed -i '/-lnddsmetp$(SHAREDLIB_SFX)$(DEBUG_SFX)/a \ \ \ \ \ \ \ -lnddssecurity$(SHAREDLIB_SFX)$(DEBUG_SFX)  \\' ${file}
 }
 
 # Generate code for the type of the customer.
@@ -560,7 +583,7 @@ function build_cpp()
         -additionalHeaderFiles \"${additional_header_files}\" \
         -additionalSourceFiles \"${additional_source_files} \" \
         -additionalDefines \"${additional_defines}\" \
-        ${rtiddsgen_extra_options} ${additional_defines_custom_type} ${additional_defines_flatdata} \
+        ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
         -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
@@ -576,6 +599,13 @@ function build_cpp()
     fi
     cp "${classic_cpp_folder}/perftest_publisher.cxx" \
     "${classic_cpp_folder}/perftest_subscriber.cxx"
+
+    # rtiddsgen ignores any specified rti addional library if using ZeroCopy
+    # Therefore, we need to append the security lib manually
+    if [ ! "${USE_SECURE_LIBS}" == "1" ] && [ ! "${STATIC_DYNAMIC}" == "dynamic" ]; then
+        echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
+        add_security_lib_to_makefile "CPPtraditional"
+    fi
 
     ##############################################################################
     # Compile srcCpp code
@@ -751,7 +781,13 @@ function build_cpp03()
 
     ##############################################################################
     # Generate files for srcCpp03
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles \"ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} ${additional_defines_flatdata} -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
+    ${additional_defines_flatdata} \
+    -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} \
+    -additionalHeaderFiles \"ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" \
+    -additionalSourceFiles \"ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" \
+    -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} \
+    -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${modern_cpp_lang_string}."
@@ -766,6 +802,13 @@ function build_cpp03()
     fi
     cp "${modern_cpp_folder}/perftest_publisher.cxx" \
     "${modern_cpp_folder}/perftest_subscriber.cxx"
+
+    # rtiddsgen ignores any specified rti addional library if using ZeroCopy
+    # Therefore, we need to append the security lib manually
+    if [ "${USE_SECURE_LIBS}" == "1" ] && [ ! "${STATIC_DYNAMIC}" == "dynamic" ]; then 
+        echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
+        add_security_lib_to_makefile "CPPModern"
+    fi
 
     ##############################################################################
     # Compile srcCpp03 code
@@ -1062,11 +1105,6 @@ while [ "$1" != "" ]; do
             ;;
         --flatdata-max-size)
             flatdata_size=$2
-            if [ -z "${flatdata_size}" ]; then
-                echo -e "${ERROR_TAG} --flatdata-max-size should be followed by the maximum size for the type."
-                usage
-                exit -1
-            fi
             shift
             ;;
         *)

@@ -126,7 +126,6 @@ struct PerftestThread* PerftestThread_new(
         MicroThreadOnSpawnedMethod method,
         void *threadParam)
 {
-    //TODO Francis: Support priorities for threads in Micro
     struct OSAPI_ThreadProperty prio = OSAPI_ThreadProperty_INITIALIZER;
     PerftestMicroThreadOnSpawnedMethod *data = new PerftestMicroThreadOnSpawnedMethod();
     data->method = method;
@@ -143,6 +142,13 @@ struct PerftestThread* PerftestThread_new(
         return NULL;
     }
     return thread;
+}
+
+void PerftestThread_delete(struct PerftestThread* thread)
+{
+    if (!OSAPI_Thread_destroy(thread)) {
+        printf("Error deleting thread");
+    }
 }
 
 /********************************************************************/

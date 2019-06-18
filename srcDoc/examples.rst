@@ -21,8 +21,11 @@ different use cases.
 -  To measure CPU usage while running these tests, use "-cpu" argument
    or TOP utility.
 
+RTI Connext DDS Professional
+----------------------------
+
 1-to-1, Multicast, Best Latency as a Function of Message Size
--------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -41,7 +44,7 @@ Set ``-executionTime <seconds>`` to be >=100 for statistically better
 results.
 
 1-to-1, Multicast, Maximum Throughput as a Function of Message Size (with Batching)
------------------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -68,7 +71,7 @@ Note: For larger data sizes (``8000 bytes`` and higher), batching often
 does not improve throughput, at least for 1-Gig networks.
 
 1-to-1, Multicast, Latency vs. Throughput for 200-byte Messages (with Batching)
--------------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -85,7 +88,7 @@ does not improve throughput, at least for 1-Gig networks.
 To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 1-to-1, Multicast, Reliable UDPv4, All Sizes
---------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -100,7 +103,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -multicast
 
 1-to-1, Unicast, Best-Effort, UDPv4|SHMEM, 1 Size
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -115,7 +118,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 1024 -bestEffort
 
 1-to-1, Multicast, Reliable, UDPv4, Batching Enabled
-----------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -130,7 +133,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 200 -batchSize 6400 -transport UDPv4 -multicast
 
 1-to-2, Multicast, Reliable, UDPv4
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -151,7 +154,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -multicast -sidMultiSubTest 1
 
 2-to-1, Multicast, Reliable, UDPv4
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher 1:
 
@@ -172,7 +175,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 200 -numPublishers 2 -sidMultiSubTest 0 -multicast
 
 1-to-1, Unicast, Reliable Using Security: Signing Packages, Encrypting Data
----------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -188,7 +191,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 
 1-to-1, RawTransport, Unicast, BestEffort (Same Machine)
---------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -204,7 +207,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 
 1-to-2, RawTransport, Unicast, BestEffort (Same Machine)
---------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -227,7 +230,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 
 1-to-1, RawTransport, Unicast, BestEffort (Different Machine)
--------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -242,7 +245,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -peer 10.70.1.49 -nic 10.70.1.50
 
 1-to-2, RawTransport, Multicast, BestEffort
--------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -264,7 +267,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 
 1-to-1, RawTransport, SharedMemory, Unicast, BestEffort
---------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -280,7 +283,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 
 1-to-2, RawTransport, SharedMemory, Unicast, BestEffort
---------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -302,6 +305,28 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 
 .. _section-large_sample:
+
+RTI Connext DDS Micro
+---------------------
+
+1-to-1, Unicast, Best Latency as a Function of Message Size
+-------------------------------------------------------------
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp_micro -pub -noPrint -nic <ipaddr> -domain <ID> -latencyCount 1 -dataLen <length> -latencyTest -executionTime 100
+
+-  Subscriber:
+
+::
+
+    bin/<arch>/release/perftest_cpp_micro -sub -noPrint -nic <ipaddr> -domain <ID>
+
+Modify ``-dataLen <bytes>`` to see latencies for different data sizes.
+Set ``-executionTime <seconds>`` to be >=100 for statistically better
+results.
 
 Use-Cases
 =========
@@ -474,15 +499,17 @@ Content-Filtered Topics
 using Content-Filtered Topics (*CFTs*). This is specially useful in
 scenarios with many subscribers.
 
-Using *CFTs* will allow you to:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*CFTs* support is just implemented for *RTI Connext DDS Professional*.
+
+Using *CFTs* will allow you to
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Limit the number of data samples a DataReader has to process, which
    results in less CPU consumption.
 -  Reduce the amount of data sent over the network.
 
-Command-Line Parameters:
-~~~~~~~~~~~~~~~~~~~~~~~~
+Command-Line Parameters
+~~~~~~~~~~~~~~~~~~~~~~~
 
 To enable the use of CFTs on the subscriber side, the following
 parameter is required:
@@ -503,8 +530,8 @@ the following parameter:
 
    Set the number of instances to be sent.
 
-Example Command Lines for Running the Performance Test:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Example Command Lines for Running the Performance Test
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following are examples of how to run *RTI Perftest* for the
 different scenarios using *CFT*.
@@ -555,7 +582,7 @@ Latency test, 1 Publisher and 2 Subscribers, Publisher sending using a Round-Rob
 .. _section-routing_service:
 
 RTI Routing-Service
--------------------------------------------
+-------------------
 
 This wrapper has been created to test the effects of introducing *RTI
 Routing Service* when using *RTI Perftest* in latency and Throughput. It

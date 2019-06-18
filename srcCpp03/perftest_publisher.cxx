@@ -1901,7 +1901,7 @@ inline RTIOsapiThread *perftest_cpp::SetTimeout(ScheduleInfo &info) {
 
     timerThread = RTIOsapiThread_new(
             "timerThread",
-            RTI_OSAPI_THREAD_PRIORITY_ABOVE_NORMAL,
+            RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
             RTI_OSAPI_THREAD_OPTION_DEFAULT,
             RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
             NULL,
