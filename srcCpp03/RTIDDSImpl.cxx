@@ -580,16 +580,12 @@ public:
 };
 
 
-// TODO: Make TestData_FlatData_t a template
 template<typename T>
 class RTIFlatDataPublisher: public RTIPublisherBase<T> {
 protected:
     typedef typename rti::flat::flat_type_traits<T>::builder Builder;
     typedef typename rti::flat::PrimitiveArrayOffset<unsigned char, 4> KeyBuilder;
     typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
-
-    int _last_message_size;
-    T *_data;
 
     void add_key(Builder &builder, unsigned long int i) {
         KeyBuilder key_offset = builder.add_key();
@@ -616,8 +612,7 @@ public:
                     pongSemaphore,
                     useSemaphore,
                     instancesToBeWritten,
-                    PM),
-            _last_message_size(0)
+                    PM)
     {
         for (unsigned long int i = 0; i < this->_num_instances; ++i) {
             Builder builder = rti::flat::build_data(writer);
@@ -628,7 +623,7 @@ public:
             this->_instance_handles.push_back(
                 this->_writer.register_instance(*sample));
 
-            this->_writer.extensions().discard_loan(*sample); // TODO: What does it do?
+            this->_writer.extensions().discard_loan(*sample);
         }
 
         // Register the key of MAX_CFT_VALUE
