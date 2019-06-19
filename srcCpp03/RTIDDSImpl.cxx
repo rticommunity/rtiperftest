@@ -2316,15 +2316,17 @@ template class RTIDDSImpl<TestData_t>;
 template class RTIDDSImpl<TestDataKeyedLarge_t>;
 template class RTIDDSImpl<TestDataLarge_t>;
 
-template class RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>;
-template class RTIDDSImpl_FlatData<TestData_FlatData_t>;
-template class RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>;
-template class RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>;
+#ifdef RTI_FLATDATA_AVAILABLE
+  template class RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>;
+  template class RTIDDSImpl_FlatData<TestData_FlatData_t>;
+  template class RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>;
+  template class RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>;
 
-template class RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>;
-template class RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>;
-template class RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>;
-template class RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>;
+  template class RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>;
+  template class RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>;
+  template class RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>;
+  template class RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>;
+#endif // RTI_FLATDATA_AVAILABLE
 
 #ifdef RTI_WIN32
   #pragma warning(pop)

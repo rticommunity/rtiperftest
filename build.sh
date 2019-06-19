@@ -57,6 +57,8 @@ custom_idl_file="${custom_type_folder}/custom.idl"
 
 # Variables for FlatData
 flatdata_size=10485760 # 10MB
+flatdata_ddsgen_version=300 #3.0.0
+FLAT_DATA_AVAILABLE=0
 
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
@@ -342,6 +344,7 @@ function library_sufix_calculation()
 function additional_defines_calculation()
 {
     additional_defines=""
+    additional_rti_libs=""
 
     # Avoid optimized out variables when debugging
     if [ "${RELEASE_DEBUG}" == "release" ]; then
@@ -364,7 +367,8 @@ function additional_defines_calculation()
                 echo -e "${ERROR_TAG} In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option."
                 exit -1
             fi
-            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries \"nddssecurity nddsmetp\" -additionalLibraries \"sslz cryptoz\""
+            additional_rti_libs="nddssecurity ${additional_rti_libs}"
+            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"sslz cryptoz\""
             rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraryPaths \"${RTI_OPENSSLHOME}/${RELEASE_DEBUG}/lib\""
             echo -e "${INFO_TAG} Using security plugin. Linking Statically."
         fi
@@ -382,7 +386,11 @@ function additional_defines_calculation()
     fi
 
     # Adding RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as macro
-    additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
+    if [ "${FLAT_DATA_AVAILABLE}" == "1" ]; then
+        additional_rti_libs="nddsmetp ${additional_rti_libs}"
+        additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE"
+        additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
+    fi    
 }
 
 function additional_defines_calculation_micro()
@@ -457,6 +465,7 @@ function build_cpp_custom_type()
             additional_source_files_custom_type="${name_file}Plugin.cxx ${name_file}.cxx ${name_file}Support.cxx "$additional_source_files_custom_type
         fi
     done
+
     # Adding RTI_USE_CUSTOM_TYPE as a macro
     additional_defines_custom_type=" -D RTI_CUSTOM_TYPE="${custom_type}
 }
@@ -505,6 +514,16 @@ function clean_src_cpp_common()
     done
 }
 
+function check_flatdata_available() {
+    version=$(awk -F"version" '/version/ { split($2, a, " "); print a[1] }' <<< $(rtiddsgen -version)) # e.g. 3.0.0
+    ddsgen_version="${version//\./}" # e.g. 300
+
+    if [[ $ddsgen_version -ge $flatdata_ddsgen_version ]]; then
+        echo -e "${INFO_TAG} FlatData is available"
+        FLAT_DATA_AVAILABLE="1"
+    fi 
+}
+
 function build_cpp()
 {
     copy_src_cpp_common
@@ -518,6 +537,8 @@ function build_cpp()
     if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
         build_cpp_custom_type
     fi
+
+    check_flatdata_available
     additional_defines_calculation "CPPtraditional"
 
     additional_header_files="${additional_header_files_custom_type} \
@@ -552,12 +573,16 @@ function build_cpp()
     ##############################################################################
     # Generate files for srcCpp
 
+    # rtiddsgen ignores any specified rti addional library if using ZeroCopy
+    # Therefore, we need to generate a makefile that contains
+    # nddsmetp and nddssecurity libraries
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
         -unboundedSupport -replace -create typefiles -create makefiles \
         -platform ${platform} \
         -additionalHeaderFiles \"${additional_header_files}\" \
         -additionalSourceFiles \"${additional_source_files} \" \
         -additionalDefines \"${additional_defines}\" \
+        -additionalRtiLibraries \"${additional_rti_libs}\" \
         ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
         -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
@@ -576,8 +601,9 @@ function build_cpp()
     # rtiddsgen ignores any specified rti addional library if using ZeroCopy
     # Therefore, we need to generate a makefile that contains
     # nddsmetp and nddssecurity libraries
-    echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
+    if [ "${FLAT_DATA_AVAILABLE}" == "1" ]; then
+        echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
+        rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
         ${additional_defines_flatdata} \
         -unboundedSupport -replace -create typefiles \
         -platform ${platform} \
@@ -586,11 +612,13 @@ function build_cpp()
         -additionalDefines \"${additional_defines}\" \
         ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
         -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\""
-    eval $rtiddsgen_command
-    if [ "$?" != 0 ]; then
-        echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
-        exit -1
+        
+        eval $rtiddsgen_command
+        if [ "$?" != 0 ]; then
+            echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
+            clean_src_cpp_common
+            exit -1
+        fi
     fi
 
     cp "${classic_cpp_folder}/perftest_publisher.cxx" \
@@ -766,6 +794,7 @@ function build_micro_cpp()
 function build_cpp03()
 {
     copy_src_cpp_common
+    check_flatdata_available
     additional_defines_calculation "CPPModern"
 
     ##############################################################################
@@ -776,6 +805,7 @@ function build_cpp03()
     -additionalHeaderFiles \"ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" \
     -additionalSourceFiles \"ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" \
     -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} \
+    -additionalRtiLibraries \"${additional_rti_libs}\" \
     -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
@@ -793,20 +823,22 @@ function build_cpp03()
     # rtiddsgen ignores any specified rti addional library if using ZeroCopy
     # Therefore, we need to generate a makefile that contains
     # nddsmetp and nddssecurity libraries
-    echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
-    ${additional_defines_flatdata} \
-    -unboundedSupport -replace -create typefiles -platform ${platform} \
-    -additionalHeaderFiles \"ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" \
-    -additionalSourceFiles \"ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" \
-    -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} \
-    -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
-
-    eval $rtiddsgen_command
-    if [ "$?" != 0 ]; then
-        echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
-        clean_src_cpp_common
-        exit -1
+    if [ "${FLAT_DATA_AVAILABLE}" == "1" ]; then
+        echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
+        rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
+        ${additional_defines_flatdata} \
+        -unboundedSupport -replace -create typefiles -platform ${platform} \
+        -additionalHeaderFiles \"ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" \
+        -additionalSourceFiles \"ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" \
+        -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} \
+        -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
+        
+        eval $rtiddsgen_command
+        if [ "$?" != 0 ]; then
+            echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
+            clean_src_cpp_common
+            exit -1
+        fi
     fi
 
     cp "${modern_cpp_folder}/perftest_publisher.cxx" \

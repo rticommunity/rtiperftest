@@ -338,6 +338,7 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("threadPriorities", threadPriorities);
 
+  #ifdef RTI_FLATDATA_AVAILABLE
     Parameter<bool> *flatData = new Parameter<bool>(false);
     flatData->set_command_line_argument("-flatData", "");
     flatData->set_description(
@@ -363,6 +364,7 @@ void ParameterManager::initialize()
             | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO);
     create("zerocopy", zerocopy);
+  #endif
 
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
     Parameter<bool> *useLegacyDynamicData = new Parameter<bool>(false);

@@ -118,21 +118,25 @@ int perftest_cpp::Run(int argc, char *argv[]) {
     if (_PM.get<int>("unbounded") == 0) {
         if (_PM.get<bool>("keyed")) {
             if (_PM.get<bool>("flatdata")) {
-                if (_PM.get<bool>("zerocopy")) {
+                #ifdef RTI_FLATDATA_AVAILABLE
+                 if (_PM.get<bool>("zerocopy")) {
                     _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>();
-                } else {
+                 } else {
                     _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>();
-                }
+                 }
+                #endif //RTI_FLATDATA_AVAILABLE
             } else {
                 _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
             }
         } else {
             if (_PM.get<bool>("flatdata")) {
-                if (_PM.get<bool>("zerocopy")) {
-                    _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>();
-                } else {
-                    _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
-                }
+                #ifdef RTI_FLATDATA_AVAILABLE
+                  if (_PM.get<bool>("zerocopy")) {
+                      _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>();
+                  } else {
+                      _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
+                  }
+                #endif //RTI_FLATDATA_AVAILABLE
             } else {
                 _MessagingImpl = new RTIDDSImpl<TestData_t>();
             }
@@ -140,21 +144,25 @@ int perftest_cpp::Run(int argc, char *argv[]) {
     } else {
         if (_PM.get<bool>("keyed")) {
             if (_PM.get<bool>("flatdata")) {
-                if (_PM.get<bool>("zerocopy")) {
-                    _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>();
-                } else {
-                    _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
-                }
+                #ifdef RTI_FLATDATA_AVAILABLE
+                  if (_PM.get<bool>("zerocopy")) {
+                      _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>();
+                  } else {
+                      _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
+                  }
+                #endif //RTI_FLATDATA_AVAILABLE
             } else {
                 _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
             }
         } else {
             if (_PM.get<bool>("flatdata")) {
-                if (_PM.get<bool>("zerocopy")) {
-                    _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>();
-                } else {
-                    _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
-                }
+                #ifdef RTI_FLATDATA_AVAILABLE
+                  if (_PM.get<bool>("zerocopy")) {
+                      _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>();
+                  } else {
+                      _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
+                  }
+                #endif //RTI_FLATDATA_AVAILABLE
             } else {
                 _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
             }
@@ -406,10 +414,12 @@ bool perftest_cpp::validate_input()
         }
     }
 
-    if (_PM.get<bool>("zerocopy") && !_PM.get<bool>("flatdata")) {
-        fprintf(stderr, "Zero Copy must be run along with Flat Data.\n");
-        return false;
-    }
+    #ifdef RTI_FLATDATA_AVAILABLE
+      if (_PM.get<bool>("zerocopy") && !_PM.get<bool>("flatdata")) {
+          fprintf(stderr, "Zero Copy must be run along with Flat Data.\n");
+          return false;
+      }
+    #endif
 
     return true;
 }

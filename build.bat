@@ -353,12 +353,13 @@ if !BUILD_CPP! == 1 (
 				echo [ERROR]: In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option.
 				exit /b 1
 			)
-			set rtiddsgen_extra_options=-additionalRtiLibraries "nddssecurity nddsmetp" -additionalLibraries "libeay32z ssleay32z"
+			set additional_rti_libs=!additional_rti_libs! nddssecurity
+			set rtiddsgen_extra_options=-additionalLibraries "libeay32z ssleay32z"
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
 		)
-		set "additional_header_files=!additional_header_files! PerftestSecurity.h"
-		set "additional_source_files=!additional_source_files! PerftestSecurity.cxx"
+		set "additional_header_files=PerftestSecurity.h !additional_header_files!"
+		set "additional_source_files=PerftestSecurity.cxx !additional_source_files!"
 	)
 
 	if !USE_CUSTOM_TYPE! == 1 (
@@ -369,6 +370,15 @@ if !BUILD_CPP! == 1 (
 	set "additional_header_files=!additional_header_files_custom_type!!additional_header_files!RTIRawTransportImpl.h Parameter.h ParameterManager.h ThreadPriorities.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_pro.h"
 	set "additional_source_files=!additional_source_files_custom_type!!additional_source_files!RTIRawTransportImpl.cxx Parameter.cxx ParameterManager.cxx ThreadPriorities.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_pro.cxx"
 
+	echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
+	-create typefiles -create makefiles -platform %architecture%^
+	-additionalHeaderFiles "!additional_header_files!"^
+	-additionalSourceFiles "!additional_source_files!"^
+	-additionalDefines "!ADDITIONAL_DEFINES!"^
+	-additionalRtiLibraries "nddsmetp!additional_rti_libs!"^
+	!rtiddsgen_extra_options! !additional_defines_custom_type!^
+	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
+
 	@REM # Generate files for srcCpp
 	echo[
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
@@ -377,6 +387,7 @@ if !BUILD_CPP! == 1 (
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
+	-additionalRtiLibraries "nddsmetp!additional_rti_libs!"^
 	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
@@ -384,6 +395,15 @@ if !BUILD_CPP! == 1 (
 		call::clean_src_cpp_common
 		exit /b 1
 	)
+
+	echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
+	!additional_defines_flatdat!^
+	-create typefiles -platform %architecture%^
+	-additionalHeaderFiles "!additional_header_files!"^
+	-additionalSourceFiles "!additional_source_files!"^
+	-additionalDefines "!ADDITIONAL_DEFINES!"^
+	!rtiddsgen_extra_options! !additional_defines_custom_type!^
+	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 
 	@REM # rtiddsgen ignores any specified rti addional library if using ZeroCopy
     @REM # Therefore, we need to generate a makefile that contains
@@ -441,21 +461,30 @@ if !BUILD_CPP03! == 1 (
 				echo [ERROR]: In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option.
 				exit /b 1
 			)
-			set rtiddsgen_extra_options=-additionalRtiLibraries nddssecurity -additionalLibraries "libeay32z ssleay32z"
+			set additional_rti_libs= nddssecurity
+			set rtiddsgen_extra_options=-additionalLibraries "libeay32z ssleay32z"
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
 		)
 	)
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
 
+	echo "%rtiddsgen_executable%" -language %modern_cpp_lang_string% -unboundedSupport -replace^
+	-create typefiles -create makefiles -platform %architecture%^
+	-additionalHeaderFiles "ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
+	-additionalSourceFiles "ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
+	-additionalRtiLibraries "nddsmetp additional_rti_libs!"^
+	!rtiddsgen_extra_options!^
+	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
+
 	@REM #Generate files for srcCpp03
 	echo[
 	echo [INFO]: Generating types and makefiles for %modern_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %modern_cpp_lang_string% -unboundedSupport -replace^
-	%additional_defines_flatdata%
 	-create typefiles -create makefiles -platform %architecture%^
 	-additionalHeaderFiles "ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
 	-additionalSourceFiles "ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
+	-additionalRtiLibraries "nddsmetp additional_rti_libs!"^
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
 
@@ -465,13 +494,23 @@ if !BUILD_CPP03! == 1 (
 		exit /b 1
 	)
 
+	echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
+	%additional_defines_flatdata%^
+	-create typefiles -platform %architecture%^
+	-additionalHeaderFiles "!additional_header_files!"^
+	-additionalSourceFiles "!additional_source_files!"^
+	-additionalDefines "!ADDITIONAL_DEFINES!"^
+	!rtiddsgen_extra_options! !additional_defines_custom_type!^
+	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
+
+
 	@REM # rtiddsgen ignores any specified rti addional library if using ZeroCopy
     @REM # Therefore, we need to generate a makefile that contains
     @REM # nddsmetp and nddssecurity libraries
 	echo[
 	echo [INFO]: Appending nddssecurity library to makefile
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
-	!additional_defines_flatdata!
+	%additional_defines_flatdata%^
 	-create typefiles -platform %architecture%^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
