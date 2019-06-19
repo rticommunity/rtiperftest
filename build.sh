@@ -807,7 +807,7 @@ function build_cpp03()
     -additionalHeaderFiles \"ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" \
     -additionalSourceFiles \"ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" \
     -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} \
-    \"${additional_rti_libs}\" \
+    ${additional_rti_libs} \
     -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
