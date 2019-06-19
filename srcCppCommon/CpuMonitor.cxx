@@ -109,7 +109,7 @@ std::string CpuMonitor::get_cpu_instant()
         _lastUserCPU = timeSample.tms_utime;
     }
 
-#elif defined(RTI_WIN32) || defined(RTI_INTIME)
+#elif defined(RTI_WIN32)
 
     FILETIME ftime, fsys, fuser;
     ULARGE_INTEGER now, sys, user;
