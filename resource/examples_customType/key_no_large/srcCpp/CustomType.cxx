@@ -5,10 +5,6 @@
 #ifdef RTI_CUSTOM_TYPE
 #include "CustomType.h"
 
-#ifdef RTI_WIN32
-  #define snprintf sprintf_s
-#endif
-
 /*
  * This is the source code file that contains the implementation of the API
  * required to work with the Custom type.

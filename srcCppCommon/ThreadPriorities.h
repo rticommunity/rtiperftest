@@ -10,7 +10,7 @@
  * This class is used to keep the values of the priorities in the case where
  * the user provide them.
  */
-#ifdef RTI_WIN32
+#if defined(RTI_WIN32) || defined(RTI_INTIME)
   #include <windows.h>
 #elif defined(RTI_UNIX)
   #include <sched.h>

@@ -14,6 +14,10 @@
 #include "perftest_cpp.h"
 #include <string>
 
+#if defined(RTI_WIN32) || defined(RTI_INTIME)
+  #define snprintf sprintf_s
+#endif
+
 /*
  * This file contains the definition of the API required to work with the Custom
  * Type.

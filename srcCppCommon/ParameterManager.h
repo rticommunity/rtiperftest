@@ -14,7 +14,7 @@
 #include "Parameter.h"
 #include <map>
 
-#if defined(RTI_WIN32)
+#if defined(RTI_WIN32) || defined(RTI_INTIME)
   #pragma warning(push)
   #pragma warning(disable : 4996)
   #define STRNCASECMP _strnicmp
