@@ -350,6 +350,8 @@ function additional_defines_calculation()
     if [ "${RELEASE_DEBUG}" == "release" ]; then
         echo -e "${INFO_TAG} C++ code will be optimized."
         additional_defines=${additional_defines}"O3"
+    else
+        additional_defines=${additional_defines}"O0"
     fi
 
     if [ "${LEGACY_DD_IMPL}" == "1" ]; then
@@ -805,7 +807,7 @@ function build_cpp03()
     -additionalHeaderFiles \"ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" \
     -additionalSourceFiles \"ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" \
     -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} \
-    -additionalRtiLibraries \"${additional_rti_libs}\" \
+    \"${additional_rti_libs}\" \
     -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
