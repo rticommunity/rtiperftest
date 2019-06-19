@@ -26,6 +26,7 @@
 
 #ifdef RTI_WIN32
   #include <windows.h>
+#elif defined RTI_INTIME
 #else
   #ifndef RTI_VXWORKS
     #include <sys/time.h>
@@ -100,7 +101,7 @@ class perftest_cpp
     static RTI_UINT64 _Clock_sec;
     static RTI_UINT64 _Clock_usec;
 
-  #ifdef RTI_WIN32
+  #if defined(RTI_WIN32) || defined(RTI_INTIME)
     static LARGE_INTEGER _ClockFrequency;
   #endif
 

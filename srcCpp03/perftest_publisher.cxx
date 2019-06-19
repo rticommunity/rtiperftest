@@ -6,7 +6,7 @@
 #include "perftest_cpp.h"
 #include "CpuMonitor.h"
 
-#if defined(RTI_WIN32)
+#if defined(RTI_WIN32) || defined(RTI_INTIME)
   #define STRNCASECMP _strnicmp
   #pragma warning(push)
   #pragma warning(disable : 4996)

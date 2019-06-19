@@ -177,6 +177,13 @@ if "x!architecture!" == "x" (
 	exit /b 1
 )
 
+
+if not x%architecture:INtime=%==x%architecture% (
+		set "executable_extension=.rta"
+) else (
+		set "executable_extension=.exe"
+)
+
 ::------------------------------------------------------------------------------
 
 if !BUILD_MICRO! == 1 (
@@ -389,7 +396,7 @@ if !BUILD_CPP! == 1 (
 
 	echo [INFO]: Copying perftest_cpp executable file:
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
-	copy /Y "%classic_cpp_folder%"\objs\%architecture%\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp.exe
+	copy /Y "%classic_cpp_folder%"\objs\%architecture%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp"%executable_extension%"
 	call::clean_src_cpp_common
 )
 
@@ -445,7 +452,7 @@ if !BUILD_CPP03! == 1 (
 
 	echo [INFO]: Copying perftest_cpp executable file:
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
-	copy /Y "%modern_cpp_folder%"\objs\%architecture%\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp03.exe
+	copy /Y "%modern_cpp_folder%"\objs\%architecture%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp03"%executable_extension%"
 	call::clean_src_cpp_common
 )
 
@@ -477,7 +484,7 @@ if %BUILD_CS% == 1 (
 
 	echo [INFO]: Copying files
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
-	copy /Y "%cs_folder%"\%cs_bin_path%\perftest_publisher.exe "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cs.exe
+	copy /Y "%cs_folder%"\%cs_bin_path%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cs"%executable_extension%"
 	copy /Y "%cs_folder%"\%cs_bin_path%\perftest_*.dll "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
 	copy /Y "%cs_folder%"\%cs_bin_path%\nddsdotnet*.dll "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
 )
@@ -674,7 +681,11 @@ GOTO:EOF
 		set Revision=%%c
 	)
 
-	if not x%architecture:x64=%==x%architecture% (
+	if not x%architecture:INtime=%==x%architecture% (
+		set begin_sol=perftest_publisher-
+		set begin_sol_cs=perftest-
+		set win_arch=INtime
+	) else if not x%architecture:x64=%==x%architecture% (
 		set begin_sol=perftest_publisher-64-
 		set begin_sol_cs=perftest-64-
 		set cs_64=x64\

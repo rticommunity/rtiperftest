@@ -2923,6 +2923,7 @@ template class RTIDDSImpl<TestDataKeyed_t>;
 template class RTIDDSImpl<TestData_t>;
 template class RTIDDSImpl<TestDataKeyedLarge_t>;
 template class RTIDDSImpl<TestDataLarge_t>;
-#ifdef RTI_WIN32
+
+#if defined(RTI_WIN32) || defined(RTI_INTIME)
   #pragma warning(pop)
 #endif
