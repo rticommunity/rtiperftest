@@ -61,6 +61,8 @@ set "custom_idl_file=%custom_type_folder%\custom.idl"
 
 @REM # Variables for FlatData
 set "flatdata_size=10485760" @REM # 10MB
+set flatdata_ddsgen_version=300
+set FLATDATA_AVAILABLE=0
 ::------------------------------------------------------------------------------
 
 @REM # Initial message
@@ -290,15 +292,13 @@ if !BUILD_CPP! == 1 (
 
 	call::copy_src_cpp_common
 	call::solution_compilation_flag_calculation
+	call::get_flatdata_available
 
 	REM # Generate files for the custom type files
 	set "additional_defines_custom_type="
 	set "additional_header_files_custom_type="
 	set "additional_source_files_custom_type="
 	
-	REM # Set FlatData defines
-	set additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=%flatdata_size%"
-
 	if !USE_CUSTOM_TYPE! == 1 (
 		REM # Search the file which contains "Struct ${custom_type} {" and include it to ${custom_idl_file}
 		set found_idl=0
@@ -343,6 +343,7 @@ if !BUILD_CPP! == 1 (
 	)
 
 	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_TRADITIONAL"
+	set "additional_rti_libs="
 
 	if !USE_SECURE_LIBS! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_SECURE_PERFTEST"
@@ -353,13 +354,19 @@ if !BUILD_CPP! == 1 (
 				echo [ERROR]: In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option.
 				exit /b 1
 			)
-			set additional_rti_libs=!additional_rti_libs! nddssecurity
+			set additional_rti_libs=nddssecurity !additional_rti_libs!
 			set rtiddsgen_extra_options=-additionalLibraries "libeay32z ssleay32z"
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
 		)
 		set "additional_header_files=PerftestSecurity.h !additional_header_files!"
 		set "additional_source_files=PerftestSecurity.cxx !additional_source_files!"
+	)
+
+	if !FLATDATA_AVAILABLE! == 1 (
+		set "additional_rti_libs=-additionalRtiLibraries ""nddsmetp !additional_rti_libs!"""
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_AVAILABLE"
+		set additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=%flatdata_size%"
 	)
 
 	if !USE_CUSTOM_TYPE! == 1 (
@@ -370,12 +377,13 @@ if !BUILD_CPP! == 1 (
 	set "additional_header_files=!additional_header_files_custom_type!!additional_header_files!RTIRawTransportImpl.h Parameter.h ParameterManager.h ThreadPriorities.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_pro.h"
 	set "additional_source_files=!additional_source_files_custom_type!!additional_source_files!RTIRawTransportImpl.cxx Parameter.cxx ParameterManager.cxx ThreadPriorities.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_pro.cxx"
 
+	@REM # TODO: REMOVE THIS
 	echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	-additionalRtiLibraries "nddsmetp!additional_rti_libs!"^
+	!additional_rti_libs!^
 	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 
@@ -387,7 +395,7 @@ if !BUILD_CPP! == 1 (
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	-additionalRtiLibraries "nddsmetp!additional_rti_libs!"^
+	!additional_rti_libs!^
 	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
@@ -396,32 +404,35 @@ if !BUILD_CPP! == 1 (
 		exit /b 1
 	)
 
-	echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
-	!additional_defines_flatdat!^
-	-create typefiles -platform %architecture%^
-	-additionalHeaderFiles "!additional_header_files!"^
-	-additionalSourceFiles "!additional_source_files!"^
-	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	!rtiddsgen_extra_options! !additional_defines_custom_type!^
-	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
+	if !FLATDATA_AVAILABLE! == 1 (
+		@REM # TODO: REMOVE THIS
+		echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
+		!additional_defines_flatdat!^
+		-create typefiles -platform %architecture%^
+		-additionalHeaderFiles "!additional_header_files!"^
+		-additionalSourceFiles "!additional_source_files!"^
+		-additionalDefines "!ADDITIONAL_DEFINES!"^
+		!rtiddsgen_extra_options! !additional_defines_custom_type!^
+		-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 
-	@REM # rtiddsgen ignores any specified rti addional library if using ZeroCopy
-    @REM # Therefore, we need to generate a makefile that contains
-    @REM # nddsmetp and nddssecurity libraries
-	echo[
-	echo [INFO]: Appending nddssecurity library to makefile
-	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
-	!additional_defines_flatdata!^
-	-create typefiles -platform %architecture%^
-	-additionalHeaderFiles "!additional_header_files!"^
-	-additionalSourceFiles "!additional_source_files!"^
-	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	!rtiddsgen_extra_options! !additional_defines_custom_type!^
-	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
-	if not !ERRORLEVEL! == 0 (
-		echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
-		call::clean_src_cpp_common
-		exit /b 1
+		@REM # rtiddsgen ignores any specified rti addional library if using ZeroCopy
+		@REM # Therefore, we need to generate a makefile that contains
+		@REM # nddsmetp and nddssecurity libraries
+		echo[
+		echo [INFO]: Appending nddssecurity library to makefile
+		call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
+		!additional_defines_flatdata!^
+		-create typefiles -platform %architecture%^
+		-additionalHeaderFiles "!additional_header_files!"^
+		-additionalSourceFiles "!additional_source_files!"^
+		-additionalDefines "!ADDITIONAL_DEFINES!"^
+		!rtiddsgen_extra_options! !additional_defines_custom_type!^
+		-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
+		if not !ERRORLEVEL! == 0 (
+			echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
+			call::clean_src_cpp_common
+			exit /b 1
+		)
 	)
 
 	call copy "%classic_cpp_folder%"\perftest_publisher.cxx "%classic_cpp_folder%"\perftest_subscriber.cxx
@@ -447,11 +458,11 @@ if !BUILD_CPP! == 1 (
 if !BUILD_CPP03! == 1 (
 	call::copy_src_cpp_common
 	call::solution_compilation_flag_calculation
-
-	REM # Set FlatData defines
-	set "additional_defines_flatdata=-D ""RTI_FLATDATA_AVAILABLE"" -D ""RTI_FLATDATA_MAX_SIZE=%flatdata_size%"" "
+	call::get_flatdata_available
 
 	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_MODERN"
+	set additional_rti_libs=""
+
 	if !USE_SECURE_LIBS! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_SECURE_PERFTEST"
 		if "x!STATIC_DYNAMIC!" == "xdynamic" (
@@ -461,19 +472,26 @@ if !BUILD_CPP03! == 1 (
 				echo [ERROR]: In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option.
 				exit /b 1
 			)
-			set additional_rti_libs= nddssecurity
+			set additional_rti_libs=nddssecurity !additional_rti_libs!
 			set rtiddsgen_extra_options=-additionalLibraries "libeay32z ssleay32z"
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
 		)
 	)
+
+	if !FLATDATA_AVAILABLE! == 1 (
+		set "additional_rti_libs=-additionalRtiLibraries ""nddsmetp !additional_rti_libs!"""
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_AVAILABLE"
+		set additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=%flatdata_size%"
+	)
+
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
 
 	echo "%rtiddsgen_executable%" -language %modern_cpp_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
 	-additionalHeaderFiles "ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
 	-additionalSourceFiles "ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
-	-additionalRtiLibraries "nddsmetp additional_rti_libs!"^
+	!additional_rti_libs!^
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
 
@@ -484,7 +502,7 @@ if !BUILD_CPP03! == 1 (
 	-create typefiles -create makefiles -platform %architecture%^
 	-additionalHeaderFiles "ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
 	-additionalSourceFiles "ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
-	-additionalRtiLibraries "nddsmetp additional_rti_libs!"^
+	!additional_rti_libs!^
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
 
@@ -494,33 +512,35 @@ if !BUILD_CPP03! == 1 (
 		exit /b 1
 	)
 
-	echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
-	%additional_defines_flatdata%^
-	-create typefiles -platform %architecture%^
-	-additionalHeaderFiles "!additional_header_files!"^
-	-additionalSourceFiles "!additional_source_files!"^
-	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	!rtiddsgen_extra_options! !additional_defines_custom_type!^
-	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
+	if !FLATDATA_AVAILABLE! == 1 (
+		echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
+		!additional_defines_flatdata!^
+		-create typefiles -platform %architecture%^
+		-additionalHeaderFiles "!additional_header_files!"^
+		-additionalSourceFiles "!additional_source_files!"^
+		-additionalDefines "!ADDITIONAL_DEFINES!"^
+		!rtiddsgen_extra_options! !additional_defines_custom_type!^
+		-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 
 
-	@REM # rtiddsgen ignores any specified rti addional library if using ZeroCopy
-    @REM # Therefore, we need to generate a makefile that contains
-    @REM # nddsmetp and nddssecurity libraries
-	echo[
-	echo [INFO]: Appending nddssecurity library to makefile
-	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
-	%additional_defines_flatdata%^
-	-create typefiles -platform %architecture%^
-	-additionalHeaderFiles "!additional_header_files!"^
-	-additionalSourceFiles "!additional_source_files!"^
-	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	!rtiddsgen_extra_options! !additional_defines_custom_type!^
-	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
-	if not !ERRORLEVEL! == 0 (
-		echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
-		call::clean_src_cpp_common
-		exit /b 1
+		@REM # rtiddsgen ignores any specified rti addional library if using ZeroCopy
+		@REM # Therefore, we need to generate a makefile that contains
+		@REM # nddsmetp and nddssecurity libraries
+		echo[
+		echo [INFO]: Appending nddssecurity library to makefile
+		call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
+		!additional_defines_flatdata!^
+		-create typefiles -platform %architecture%^
+		-additionalHeaderFiles "!additional_header_files!"^
+		-additionalSourceFiles "!additional_source_files!"^
+		-additionalDefines "!ADDITIONAL_DEFINES!"^
+		!rtiddsgen_extra_options! !additional_defines_custom_type!^
+		-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
+		if not !ERRORLEVEL! == 0 (
+			echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
+			call::clean_src_cpp_common
+			exit /b 1
+		)
 	)
 
 	call copy "%modern_cpp_folder%"\perftest_publisher.cxx "%modern_cpp_folder%"\perftest_subscriber.cxx
@@ -752,9 +772,7 @@ GOTO:EOF
 ::------------------------------------------------------------------------------
 @REM #FUNCTIONS:
 
-:get_solution_name
-
-	@REM #The name of the solution will depend on the rtiddsgen version
+:get_ddsgen_version
 	for /F "delims=" %%i in ('"%NDDSHOME%\bin\rtiddsgen.bat" -version ^| findstr /R /C:rtiddsgen') do (
 		set version_line=%%i
 	)
@@ -765,6 +783,23 @@ GOTO:EOF
 		set Minor=%%b
 		set Revision=%%c
 	)
+
+	set /a version_number=%Major%%Minor%%Revision%
+GOTO:EOF
+
+
+
+:get_flatdata_available
+	call::get_ddsgen_version
+
+	if %version_number% GEQ %flatdata_ddsgen_version% (
+		echo [INFO] FlatData is available
+		set FLATDATA_AVAILABLE=1
+	)
+goto:EOF
+
+:get_solution_name
+	call::get_ddsgen_version
 
 	if not x%architecture:x64=%==x%architecture% (
 		set begin_sol=perftest_publisher-64-
@@ -803,8 +838,6 @@ GOTO:EOF
 		set extension=.vcxproj
 	)
 
-	set /a version_number=%Major%%Minor%%Revision%
-
 	if %version_number% GEQ %rtiddsgen_version_number_new_solution_name% (
 		set solution_name_cpp=perftest_publisher-%architecture%%extension%
 		set solution_name_cs=perftest-%architecture%.sln
@@ -813,7 +846,6 @@ GOTO:EOF
 		set solution_name_cs=%begin_sol_cs%csharp.sln
 	)
 	set cs_bin_path=bin\%cs_64%!RELEASE_DEBUG!-%end_sol%
-
 GOTO:EOF
 
 :help

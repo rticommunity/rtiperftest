@@ -58,7 +58,7 @@ custom_idl_file="${custom_type_folder}/custom.idl"
 # Variables for FlatData
 flatdata_size=10485760 # 10MB
 flatdata_ddsgen_version=300 #3.0.0
-FLAT_DATA_AVAILABLE=0
+FLATDATA_AVAILABLE=0
 
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
@@ -386,8 +386,8 @@ function additional_defines_calculation()
     fi
 
     # Adding RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as macro
-    if [ "${FLAT_DATA_AVAILABLE}" == "1" ]; then
-        additional_rti_libs="nddsmetp ${additional_rti_libs}"
+    if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
+        additional_rti_libs="-additionalRtiLibraries \"nddsmetp ${additional_rti_libs}\""
         additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE"
         additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
     fi    
@@ -520,7 +520,7 @@ function check_flatdata_available() {
 
     if [[ $ddsgen_version -ge $flatdata_ddsgen_version ]]; then
         echo -e "${INFO_TAG} FlatData is available"
-        FLAT_DATA_AVAILABLE="1"
+        FLATDATA_AVAILABLE="1"
     fi 
 }
 
@@ -582,7 +582,7 @@ function build_cpp()
         -additionalHeaderFiles \"${additional_header_files}\" \
         -additionalSourceFiles \"${additional_source_files} \" \
         -additionalDefines \"${additional_defines}\" \
-        -additionalRtiLibraries \"${additional_rti_libs}\" \
+        ${additional_rti_libs} \
         ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
         -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
@@ -601,7 +601,7 @@ function build_cpp()
     # rtiddsgen ignores any specified rti addional library if using ZeroCopy
     # Therefore, we need to generate a makefile that contains
     # nddsmetp and nddssecurity libraries
-    if [ "${FLAT_DATA_AVAILABLE}" == "1" ]; then
+    if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
         echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
         rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
         ${additional_defines_flatdata} \
@@ -823,7 +823,7 @@ function build_cpp03()
     # rtiddsgen ignores any specified rti addional library if using ZeroCopy
     # Therefore, we need to generate a makefile that contains
     # nddsmetp and nddssecurity libraries
-    if [ "${FLAT_DATA_AVAILABLE}" == "1" ]; then
+    if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
         echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
         rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
         ${additional_defines_flatdata} \

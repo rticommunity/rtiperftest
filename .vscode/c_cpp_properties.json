@@ -12,7 +12,8 @@
             "defines": [
                 "_DEBUG",
                 "UNICODE",
-                "_UNICODE"
+                "_UNICODE",
+                "RTI_FLATDATA_AVAILABLE"
             ],
             "intelliSenseMode": "${default}",
             "cStandard": "c11",
