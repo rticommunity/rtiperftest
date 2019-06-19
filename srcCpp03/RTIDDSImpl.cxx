@@ -2116,7 +2116,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
             dw_reliableWriterProtocol.enable_multicast_periodic_heartbeat(true);
         }
 
-        if (_PM->get<long>("batchSize") > 0) {
+        if (_PM->get<long>("batchSize") > 0 && qos_profile = "FlatData_ThroughputQos") {
             dwBatch.enable(true);
             dwBatch.max_data_bytes(_PM->get<long>("batchSize"));
             qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
@@ -2137,16 +2137,18 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
         }
 
         // If FlatData and LargeData, automatically estimate initial_samples here
-        if (qos_profile == "FlatData_ThroughputQos" && _PM->get<int>("unbounded") != 0) {
+        if (qos_profile == "FlatData_ThroughputQos" && _isLargeData) {
             unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
 
             initial_samples = std::max(
-                    1ull,
+                    1ull,   // TODO: Add 512MB here
                     (128 * MAX_BOUNDED_SEQ_SIZE) / datalen
             );
         } else {
             initial_samples = _PM->get<int>("sendQueueSize");
         }
+
+        std::cout << "[########] Initial samples: " << initial_samples << std::endl;
 
         qos_resource_limits->initial_samples(initial_samples);
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
