@@ -2052,6 +2052,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
     using namespace dds::core::policy;
     using namespace rti::core::policy;
 
+    unsigned long long initial_samples;
     dds::core::QosProvider qos_provider = getQosProviderForProfile(
             _PM->get<std::string>("qosLibrary"),
             qos_profile);
@@ -2135,7 +2136,19 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
             qos_dw_resource_limits.max_batches(_PM->get<int>("sendQueueSize"));
         }
 
-        qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
+        // If FlatData and LargeData, automatically estimate initial_samples here
+        if (qos_profile == "FlatData_ThroughputQos" && _PM->get<int>("unbounded") != 0) {
+            unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
+
+            initial_samples = std::max(
+                    1ull,
+                    (128 * MAX_BOUNDED_SEQ_SIZE) / datalen
+            );
+        } else {
+            initial_samples = _PM->get<int>("sendQueueSize");
+        }
+
+        qos_resource_limits->initial_samples(initial_samples);
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
 
         if (_PM->get<int>("durability") == DDS_VOLATILE_DURABILITY_QOS) {
