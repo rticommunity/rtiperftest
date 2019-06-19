@@ -515,7 +515,7 @@ function clean_src_cpp_common()
 }
 
 function check_flatdata_available() {
-    version=$(awk -F"version" '/version/ { split($2, a, " "); print a[1] }' <<< $(rtiddsgen -version)) # e.g. 3.0.0
+    version=$(awk -F"version" '/version/ { split($2, a, " "); print a[1] }' <<< $(${rtiddsgen_executable} -version)) # e.g. 3.0.0
     ddsgen_version="${version//\./}" # e.g. 300
 
     if [[ $ddsgen_version -ge $flatdata_ddsgen_version ]]; then
