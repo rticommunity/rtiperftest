@@ -9,7 +9,7 @@
 ThreadPriorities::ThreadPriorities()
         : main(0), receive(0), dbAndEvent(0), isSet(false)
 {
-    #if defined(RTI_WIN32) || defined(RTI_INTIME)
+    #ifdef RTI_WIN32
         defaultPriorities['h'] = THREAD_PRIORITY_TIME_CRITICAL;
         defaultPriorities['n'] = THREAD_PRIORITY_NORMAL;
         defaultPriorities['l'] = THREAD_PRIORITY_IDLE;
@@ -42,7 +42,7 @@ bool ThreadPriorities::set_main_thread_priority()
 {
     int priority = main;
 
-#if defined(RTI_WIN32) || defined(RTI_INTIME)
+#ifdef RTI_WIN32
     unsigned long error;
 
     if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS)) {
@@ -92,7 +92,7 @@ bool ThreadPriorities::set_main_thread_priority()
 bool ThreadPriorities::check_priority_range(int value)
 {
     bool success = true;
-#if defined(RTI_WIN32) || defined(RTI_INTIME)
+#ifdef RTI_WIN32
     if (value < -7 || value > 6) {
         if (value != THREAD_PRIORITY_TIME_CRITICAL
             && value != THREAD_PRIORITY_IDLE) {

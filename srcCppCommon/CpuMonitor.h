@@ -45,7 +45,7 @@ private:
     long double _cpuUsageTotal;
 #if defined(RTI_LINUX) || defined(RTI_DARWIN)
     clock_t _lastCPU, _lastSysCPU, _lastUserCPU;
-#elif defined(RTI_WIN32) || defined(RTI_INTIME)
+#elif defined(RTI_WIN32)
     ULARGE_INTEGER _lastCPU, _lastSysCPU, _lastUserCPU;
     HANDLE self;
 #endif
