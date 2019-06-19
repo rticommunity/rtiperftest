@@ -343,7 +343,7 @@ if !BUILD_CPP! == 1 (
 	)
 
 	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_TRADITIONAL"
-	set "additional_rti_libs="
+	set additional_rti_libs=
 
 	if !USE_SECURE_LIBS! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_SECURE_PERFTEST"
@@ -461,7 +461,7 @@ if !BUILD_CPP03! == 1 (
 	call::get_flatdata_available
 
 	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_MODERN"
-	set additional_rti_libs=""
+	set additional_rti_libs=
 
 	if !USE_SECURE_LIBS! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_SECURE_PERFTEST"

@@ -579,107 +579,108 @@ public:
     }
 };
 
+#ifdef RTI_FLATDATA_AVAILABLE
+  template<typename T>
+  class RTIFlatDataPublisher: public RTIPublisherBase<T> {
+  protected:
+      typedef typename rti::flat::flat_type_traits<T>::builder Builder;
+      typedef typename rti::flat::PrimitiveArrayOffset<unsigned char, 4> KeyBuilder;
+      typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
 
-template<typename T>
-class RTIFlatDataPublisher: public RTIPublisherBase<T> {
-protected:
-    typedef typename rti::flat::flat_type_traits<T>::builder Builder;
-    typedef typename rti::flat::PrimitiveArrayOffset<unsigned char, 4> KeyBuilder;
-    typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
+      void add_key(Builder &builder, unsigned long int i) {
+          KeyBuilder key_offset = builder.add_key();
 
-    void add_key(Builder &builder, unsigned long int i) {
-        KeyBuilder key_offset = builder.add_key();
+          for (int j = 0; j < KEY_SIZE; ++j) {
+              // The key will be i but splitted in bytes
+              key_offset.set_element(j, (unsigned char) (i >> j * 8));
+          }
+      }
 
-        for (int j = 0; j < KEY_SIZE; ++j) {
-            // The key will be i but splitted in bytes
-            key_offset.set_element(j, (unsigned char) (i >> j * 8));
-        }
-    }
+  public:
+      RTIFlatDataPublisher(
+              dds::pub::DataWriter<T> writer,
+              int num_instances,
+              rti::core::Semaphore& pongSemaphore,
+              bool useSemaphore,
+              int instancesToBeWritten,
+              ParameterManager *PM
+              )
+              :
+              RTIPublisherBase<T>(
+                      writer,
+                      num_instances,
+                      pongSemaphore,
+                      useSemaphore,
+                      instancesToBeWritten,
+                      PM)
+      {
+          for (unsigned long int i = 0; i < this->_num_instances; ++i) {
+              Builder builder = rti::flat::build_data(writer);
+              add_key(builder, i);
 
-public:
-    RTIFlatDataPublisher(
-            dds::pub::DataWriter<T> writer,
-            int num_instances,
-            rti::core::Semaphore& pongSemaphore,
-            bool useSemaphore,
-            int instancesToBeWritten,
-            ParameterManager *PM
-            )
-            :
-            RTIPublisherBase<T>(
-                    writer,
-                    num_instances,
-                    pongSemaphore,
-                    useSemaphore,
-                    instancesToBeWritten,
-                    PM)
-    {
-        for (unsigned long int i = 0; i < this->_num_instances; ++i) {
-            Builder builder = rti::flat::build_data(writer);
-            add_key(builder, i);
+              T *sample = builder.finish_sample();
 
-            T *sample = builder.finish_sample();
+              this->_instance_handles.push_back(
+                  this->_writer.register_instance(*sample));
 
-            this->_instance_handles.push_back(
-                this->_writer.register_instance(*sample));
+              this->_writer.extensions().discard_loan(*sample);
+          }
 
-            this->_writer.extensions().discard_loan(*sample);
-        }
+          // Register the key of MAX_CFT_VALUE
+          Builder builder = rti::flat::build_data(writer);
+          add_key(builder, MAX_CFT_VALUE);
+          T *sample = builder.finish_sample();
 
-        // Register the key of MAX_CFT_VALUE
-        Builder builder = rti::flat::build_data(writer);
-        add_key(builder, MAX_CFT_VALUE);
-        T *sample = builder.finish_sample();
+          this->_instance_handles.push_back(
+              this->_writer.register_instance(*sample));
 
-        this->_instance_handles.push_back(
-            this->_writer.register_instance(*sample));
+          this->_writer.extensions().discard_loan(*sample);
+      }
 
-        this->_writer.extensions().discard_loan(*sample);
-    }
+      inline bool send(TestMessage &message, bool isCftWildcardKey) {
+          Builder builder = rti::flat::build_data(this->_writer);
+          long key = 0;
 
-    inline bool send(TestMessage &message, bool isCftWildcardKey) {
-        Builder builder = rti::flat::build_data(this->_writer);
-        long key = 0;
+          // Initialize Information data
+          builder.add_entity_id(message.entity_id);
+          builder.add_seq_num(message.seq_num);
+          builder.add_timestamp_sec(message.timestamp_sec);
+          builder.add_timestamp_usec(message.timestamp_usec);
+          builder.add_latency_ping(message.latency_ping);
 
-        // Initialize Information data
-        builder.add_entity_id(message.entity_id);
-        builder.add_seq_num(message.seq_num);
-        builder.add_timestamp_sec(message.timestamp_sec);
-        builder.add_timestamp_usec(message.timestamp_usec);
-        builder.add_latency_ping(message.latency_ping);
+          // Add payload
+          BinDataBuilder bin_data_builder = builder.build_bin_data();
+          bin_data_builder.add_n(message.size);
+          bin_data_builder.finish();
 
-        // Add payload
-        BinDataBuilder bin_data_builder = builder.build_bin_data();
-        bin_data_builder.add_n(message.size);
-        bin_data_builder.finish();
+          // calculate key and add it
+          if (!isCftWildcardKey && this->_num_instances > 1) {
+              key = (this->_instancesToBeWritten == -1)
+                      ? this->_instance_counter++ % this->_num_instances
+                      : this->_instancesToBeWritten;
+          } else {
+              key = MAX_CFT_VALUE;
+          }
 
-        // calculate key and add it
-        if (!isCftWildcardKey && this->_num_instances > 1) {
-            key = (this->_instancesToBeWritten == -1)
-                    ? this->_instance_counter++ % this->_num_instances
-                    : this->_instancesToBeWritten;
-        } else {
-            key = MAX_CFT_VALUE;
-        }
+          add_key(builder, key);
 
-        add_key(builder, key);
+          // Build the data to be sent
+          T *sample = builder.finish_sample();
 
-        // Build the data to be sent
-        T *sample = builder.finish_sample();
+          // Send data through the writer
+          if (!isCftWildcardKey) {
+              // .back() because the CFT Handler is always the last one to be pushed back
+              this->_writer.write(*sample, this->_instance_handles.back());
+          } else {
+              this->_writer.write(
+                      *sample,
+                      this->_instance_handles[this->_num_instances]);
+          }
 
-        // Send data through the writer
-        if (!isCftWildcardKey) {
-            // .back() because the CFT Handler is always the last one to be pushed back
-            this->_writer.write(*sample, this->_instance_handles.back());
-        } else {
-            this->_writer.write(
-                    *sample,
-                    this->_instance_handles[this->_num_instances]);
-        }
-
-        return true;
-    }
-};
+          return true;
+      }
+  };
+#endif
 
 
 class RTIDynamicDataPublisher: public RTIPublisherBase<DynamicData> {
@@ -830,36 +831,38 @@ public:
     }
 };
 
-template<typename T>
-class FlatDataReceiverListener : public ReceiverListenerBase<T> {
-public:
-    typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
+#ifdef RTI_FLATDATA_AVAILABLE
+  template<typename T>
+  class FlatDataReceiverListener : public ReceiverListenerBase<T> {
+  public:
+      typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
 
-    FlatDataReceiverListener(IMessagingCB *callback) :
-        ReceiverListenerBase<T>(callback) {
-    }
+      FlatDataReceiverListener(IMessagingCB *callback) :
+          ReceiverListenerBase<T>(callback) {
+      }
 
-    void on_data_available(dds::sub::DataReader<T> &reader) {
-        dds::sub::LoanedSamples<T> samples = reader.take();
+      void on_data_available(dds::sub::DataReader<T> &reader) {
+          dds::sub::LoanedSamples<T> samples = reader.take();
 
-        for (unsigned int i = 0; i < samples.length(); ++i) {
-            if (samples[i].info().valid()) {
-                const T &sample = samples[i].data();
-                ConstOffset message = sample.root();
+          for (unsigned int i = 0; i < samples.length(); ++i) {
+              if (samples[i].info().valid()) {
+                  const T &sample = samples[i].data();
+                  ConstOffset message = sample.root();
 
-                this->_message.entity_id = message.entity_id();
-                this->_message.seq_num = message.seq_num();
-                this->_message.timestamp_sec = message.timestamp_sec();
-                this->_message.timestamp_usec = message.timestamp_usec();
-                this->_message.latency_ping = message.latency_ping();
-                this->_message.size = message.bin_data().element_count();
-                // bin_data should be retrieved here
+                  this->_message.entity_id = message.entity_id();
+                  this->_message.seq_num = message.seq_num();
+                  this->_message.timestamp_sec = message.timestamp_sec();
+                  this->_message.timestamp_usec = message.timestamp_usec();
+                  this->_message.latency_ping = message.latency_ping();
+                  this->_message.size = message.bin_data().element_count();
+                  // bin_data should be retrieved here
 
-                this->_callback->ProcessMessage(this->_message);
-            }
-        }
-    }
-};
+                  this->_callback->ProcessMessage(this->_message);
+              }
+          }
+      }
+  };
+#endif
 
 class DynamicDataReceiverListener: public ReceiverListenerBase<DynamicData> {
 
@@ -1046,96 +1049,98 @@ public:
     }
 };
 
-template<typename T>
-class RTIFlatDataSubscriber: public RTISubscriberBase<T> {
+#ifdef RTI_FLATDATA_AVAILABLE
+  template<typename T>
+  class RTIFlatDataSubscriber: public RTISubscriberBase<T> {
 
-public:
-    typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
+  public:
+      typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
 
-    RTIFlatDataSubscriber(
-            dds::sub::DataReader<T> reader,
-            ReceiverListenerBase<T> *readerListener,
-            ParameterManager *PM)
-          :
-            RTISubscriberBase<T>(
-                    reader,
-                    readerListener,
-                    PM)
-    {}
+      RTIFlatDataSubscriber(
+              dds::sub::DataReader<T> reader,
+              ReceiverListenerBase<T> *readerListener,
+              ParameterManager *PM)
+            :
+              RTISubscriberBase<T>(
+                      reader,
+                      readerListener,
+                      PM)
+      {}
 
-    TestMessage *ReceiveMessage() {
+      TestMessage *ReceiveMessage() {
 
-        int seq_length;
+          int seq_length;
 
-        while (true) {
+          while (true) {
 
-            if (this->_no_data) {
-                this->_waitset.wait(dds::core::Duration::infinite());
+              if (this->_no_data) {
+                  this->_waitset.wait(dds::core::Duration::infinite());
 
-            }
-            dds::sub::LoanedSamples<T> samples = this->_reader.take();
+              }
+              dds::sub::LoanedSamples<T> samples = this->_reader.take();
 
-            this->_data_idx = 0;
-            this->_no_data = false;
+              this->_data_idx = 0;
+              this->_no_data = false;
 
-            seq_length = samples.length();
-            if (this->_data_idx == seq_length) {
-                this->_no_data = true;
-                continue;
-            }
+              seq_length = samples.length();
+              if (this->_data_idx == seq_length) {
+                  this->_no_data = true;
+                  continue;
+              }
 
-            // skip non-valid data
-            while ((!samples[this->_data_idx].info().valid())
-                    && (++(this->_data_idx) < seq_length))
-                ;
+              // skip non-valid data
+              while ((!samples[this->_data_idx].info().valid())
+                      && (++(this->_data_idx) < seq_length))
+                  ;
 
-            // may have hit end condition
-            if (this->_data_idx == seq_length) {
-                continue;
-            }
+              // may have hit end condition
+              if (this->_data_idx == seq_length) {
+                  continue;
+              }
 
-            const T &message_sample = samples[this->_data_idx].data();
-            ConstOffset message = message_sample.root();
+              const T &message_sample = samples[this->_data_idx].data();
+              ConstOffset message = message_sample.root();
 
-            this->_message.entity_id = message.entity_id();
-            this->_message.seq_num = message.seq_num();
-            this->_message.timestamp_sec = message.timestamp_sec();
-            this->_message.timestamp_usec = message.timestamp_usec();
-            this->_message.latency_ping = message.latency_ping();
-            this->_message.size = message.bin_data().element_count();
+              this->_message.entity_id = message.entity_id();
+              this->_message.seq_num = message.seq_num();
+              this->_message.timestamp_sec = message.timestamp_sec();
+              this->_message.timestamp_usec = message.timestamp_usec();
+              this->_message.latency_ping = message.latency_ping();
+              this->_message.size = message.bin_data().element_count();
 
-            ++(this->_data_idx);
+              ++(this->_data_idx);
 
-            return &(this->_message);
-        }
-        return NULL;
-    }
+              return &(this->_message);
+          }
+          return NULL;
+      }
 
-    void ReceiveAndProccess(IMessagingCB *listener) {
-        while (!listener->end_test) {
+      void ReceiveAndProccess(IMessagingCB *listener) {
+          while (!listener->end_test) {
 
-            this->_waitset.dispatch(dds::core::Duration::infinite());
-            dds::sub::LoanedSamples<T> samples = this->_reader.take();
+              this->_waitset.dispatch(dds::core::Duration::infinite());
+              dds::sub::LoanedSamples<T> samples = this->_reader.take();
 
-            for (unsigned int i = 0; i < samples.length(); ++i) {
-                if (samples[i].info().valid()) {
-                    const T &message_sample = samples[i].data();
-                    ConstOffset message = message_sample.root();
+              for (unsigned int i = 0; i < samples.length(); ++i) {
+                  if (samples[i].info().valid()) {
+                      const T &message_sample = samples[i].data();
+                      ConstOffset message = message_sample.root();
 
-                    this->_message.entity_id = message.entity_id();
-                    this->_message.seq_num = message.seq_num();
-                    this->_message.timestamp_sec = message.timestamp_sec();
-                    this->_message.timestamp_usec = message.timestamp_usec();
-                    this->_message.latency_ping = message.latency_ping();
-                    this->_message.size = message.bin_data().element_count();
-                    //_message.data = message.bin_data();
+                      this->_message.entity_id = message.entity_id();
+                      this->_message.seq_num = message.seq_num();
+                      this->_message.timestamp_sec = message.timestamp_sec();
+                      this->_message.timestamp_usec = message.timestamp_usec();
+                      this->_message.latency_ping = message.latency_ping();
+                      this->_message.size = message.bin_data().element_count();
+                      //_message.data = message.bin_data();
 
-                    listener->ProcessMessage(this->_message);
-                }
-            }
-        }
-    }
-};
+                      listener->ProcessMessage(this->_message);
+                  }
+              }
+          }
+      }
+  };
+#endif
 
 class RTIDynamicDataSubscriber: public RTISubscriberBase<DynamicData> {
 
