@@ -243,6 +243,12 @@ function executable_checking()
             BUILD_JAVA=0
         fi
     fi
+
+    # If the platform is android, we will just build C++ Classic by default.
+    if [[ ${platform} == *"Android"* ]]; then
+        BUILD_CPP03=0
+        BUILD_JAVA=0
+    fi
 }
 
 function library_sufix_calculation()
@@ -835,6 +841,7 @@ rtiddsgen_executable="$NDDSHOME/bin/rtiddsgen"
 classic_cpp_lang_string=C++
 modern_cpp_lang_string=C++03
 java_lang_string=java
+
 ############################################################################
 # Generate qos_string.h
 geneate_qos_string
