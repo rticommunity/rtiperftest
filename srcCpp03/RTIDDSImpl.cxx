@@ -208,7 +208,7 @@ bool RTIDDSImpl<T>::validate_input()
         }
 
         if (_isFlatData) {
-            if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
+            if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") > 0) {
                 fprintf(stderr, "Batching cannot be used with FlatData.\n");
                 return false;
             } else {
@@ -1946,7 +1946,6 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     );
 
     dds::sub::qos::DataReaderQos dr_qos = qos_provider.datareader_qos();
-
     Reliability qos_reliability = dr_qos.policy<Reliability>();
     ResourceLimits qos_resource_limits = dr_qos.policy<ResourceLimits>();
     Durability qos_durability = dr_qos.policy<Durability>();
@@ -1956,6 +1955,10 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     // This will allow us to load some properties.
     std::map<std::string, std::string> properties =
             dr_qos.policy<Property>().get_all();
+
+    unsigned int qos_initial_samples = qos_resource_limits->initial_samples();
+    unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
+    unsigned long long initial_samples;
 
     // only force reliability on throughput/latency topics
     if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
@@ -1973,7 +1976,6 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     }
 
     // only apply durability on Throughput datareader
-    // TODO: ADD FLATDATA here
     if (qos_profile == "ThroughputQos" || qos_profile == "FlatData_ThroughputQos") {
 
         if (_PM->get<int>("durability") == DDS_VOLATILE_DURABILITY_QOS) {
@@ -1987,7 +1989,6 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
                 !_PM->get<bool>("noDirectCommunication"));
     }
 
-    // TODO: Maybe we have to touch more things for FlatData here
     if ((qos_profile == "LatencyQoS" || qos_profile == "FlatData_LatencyQos")
             && _PM->get<bool>("noDirectCommunication")
             && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
@@ -2018,6 +2019,20 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
         }
     }
 
+    // If FlatData and LargeData, automatically estimate initial_samples here
+    if (_isLargeData && _isFlatData) {
+        initial_samples = std::max(
+                1ull,
+                MAX_PERFTEST_SAMPLE_SIZE / datalen
+        );
+
+        if (initial_samples < qos_initial_samples) {
+            qos_resource_limits->initial_samples(initial_samples);
+        }
+    }
+
+    std::cout << "[########] DR Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
+
     if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
         dds::core::StringSeq transports;
         transports.push_back("udpv4");
@@ -2041,8 +2056,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
                 rti::core::policy::TransportMulticastKind::AUTOMATIC);
     }
 
-    // TODO: Do magic for FlatData here
-    if (_PM->get<int>("unbounded") > 0 && !_PM->get<int>("flatdata")) {
+    if (_PM->get<int>("unbounded") > 0 && !_isFlatData) {
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
         properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = buf;
@@ -2062,7 +2076,6 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
     using namespace dds::core::policy;
     using namespace rti::core::policy;
 
-    unsigned long long initial_samples;
     dds::core::QosProvider qos_provider = getQosProviderForProfile(
             _PM->get<std::string>("qosLibrary"),
             qos_profile);
@@ -2084,6 +2097,9 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
     // This will allow us to load some properties.
     std::map<std::string, std::string> properties =
             dw_qos.policy<Property>().get_all();
+
+    unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
+    unsigned long long initial_samples;
 
     if (_PM->get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos"
@@ -2147,20 +2163,24 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
         }
 
         // If FlatData and LargeData, automatically estimate initial_samples here
-        if (qos_profile == "FlatData_ThroughputQos" && _isLargeData) {
-            unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
-
+        // in a range from 1 up to the initial samples specifies in the QoS file
+        if (_isLargeData && _isFlatData) {
             initial_samples = std::max(
-                    1ull,   // TODO: Add 512MB here
-                    (128 * MAX_BOUNDED_SEQ_SIZE) / datalen
+                    1ull,
+                    MAX_PERFTEST_SAMPLE_SIZE / datalen
             );
+
+            if (initial_samples < _PM->get<int>("sendQueueSize")) {
+                qos_resource_limits->initial_samples(initial_samples);
+            } else {
+                qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
+            }
         } else {
-            initial_samples = _PM->get<int>("sendQueueSize");
+            qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
         }
 
-        std::cout << "[########] Initial samples: " << initial_samples << std::endl;
+        std::cout << "[########] DW Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
 
-        qos_resource_limits->initial_samples(initial_samples);
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
 
         if (_PM->get<int>("durability") == DDS_VOLATILE_DURABILITY_QOS) {
@@ -2197,8 +2217,6 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
                 _PM->get<int>("sendQueueSize"));
     }
 
-    // TODO: Maybe we have to touch more things for FlatData here
-    // also check if I have changed sth I should not
     if ((qos_profile == "LatencyQos" || qos_profile == "FlatData_LatencyQos")
             && _PM->get<bool>("noDirectCommunication")
             && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
@@ -2225,8 +2243,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
         }
     }
 
-    // TODO: Add Magic for FlatData here
-    if (_PM->get<int>("unbounded") > 0 && _isFlatData) {
+    if (_PM->get<int>("unbounded") > 0 && !_isFlatData) {
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
         properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] =
