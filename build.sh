@@ -305,6 +305,12 @@ function executable_checking()
             fi
         fi
 
+        # If the platform is android, we will just build C++ Classic by default.
+        if [[ ${platform} == *"Android"* ]]; then
+            BUILD_CPP03=0
+            BUILD_JAVA=0
+        fi
+
     fi #Micro/Pro
 
 }
