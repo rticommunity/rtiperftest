@@ -80,10 +80,11 @@ int DynamicDataMembersId::at(std::string key)
 }
 
 template <typename T>
-RTIDDSImpl<T>::RTIDDSImpl():
+RTIDDSImpl<T>::RTIDDSImpl(bool isFlatData):
         _InstanceMaxCountReader(dds::core::LENGTH_UNLIMITED), //(-1)
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED), //(-1)
         _isLargeData(false),
+        _isFlatData(isFlatData),
 
 
         _participant(dds::core::null),
@@ -203,6 +204,15 @@ bool RTIDDSImpl<T>::validate_input()
             }
             else {
                 _PM->set<long>("batchSize", 0); // Disable Batching
+            }
+        }
+
+        if (_isFlatData) {
+            if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
+                fprintf(stderr, "Batching cannot be used with FlatData.\n");
+                return false;
+            } else {
+                _PM->set<long>("batchSize", -3);
             }
         }
     }
@@ -2116,7 +2126,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
             dw_reliableWriterProtocol.enable_multicast_periodic_heartbeat(true);
         }
 
-        if (_PM->get<long>("batchSize") > 0 && qos_profile = "FlatData_ThroughputQos") {
+        if (_PM->get<long>("batchSize") > 0) {
             dwBatch.enable(true);
             dwBatch.max_data_bytes(_PM->get<long>("batchSize"));
             qos_resource_limits.max_samples(dds::core::LENGTH_UNLIMITED);
@@ -2216,7 +2226,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
     }
 
     // TODO: Add Magic for FlatData here
-    if (_PM->get<int>("unbounded") > 0 && !_PM->get<int>("flatdata")) {
+    if (_PM->get<int>("unbounded") > 0 && _isFlatData) {
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
         properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] =
@@ -2235,6 +2245,9 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
 
     return dw_qos;
 }
+
+template <typename T>
+RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData(): RTIDDSImpl(true) {}
 
 /*********************************************************
  * CreateReader FlatData

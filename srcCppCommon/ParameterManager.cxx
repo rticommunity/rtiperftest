@@ -346,10 +346,7 @@ void ParameterManager::initialize()
     flatData->set_type(T_BOOL);
     flatData->set_extra_argument(NO);
     flatData->set_group(GENERAL);
-    flatData->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+    flatData->set_supported_middleware(Middleware::RTIDDSPRO);
     create("flatdata", flatData);
 
     Parameter<bool> *zerocopy = new Parameter<bool>(false);
@@ -359,10 +356,7 @@ void ParameterManager::initialize()
     zerocopy->set_type(T_BOOL);
     zerocopy->set_extra_argument(NO);
     zerocopy->set_group(GENERAL);
-    zerocopy->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+    zerocopy->set_supported_middleware(Middleware::RTIDDSPRO);
     create("zerocopy", zerocopy);
   #endif
 

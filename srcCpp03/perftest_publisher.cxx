@@ -512,6 +512,9 @@ void perftest_cpp::PrintConfiguration()
             } else if (_PM.get<long>("batchSize") == -2) {
                 stringStream << "\t\t  BatchSize cannot be used with\n"
                              << "\t\t  Large Data.\n";
+            } else if (_PM.get<long>("batchSize") == -3) {
+                stringStream << "\t\t  BatchSize cannot be used with\n"
+                             << "\t\t  FlatData.\n";
             }
         }
 
