@@ -25,6 +25,51 @@
   #pragma warning(disable : 4996)
 #endif
 
+#if defined(RTI_ANDROID)
+
+#include <android/log.h>
+typedef int (*RTIAndroidOnPrintfMethod)(const char *format, va_list ap);
+static RTIAndroidOnPrintfMethod publisher_onPrintf = NULL;
+
+#define printf Android_printf
+#define fprintf Android_fprintf
+
+static int Android_printf(const char *format, ...) {
+    int len;
+    va_list ap;
+    va_start(ap, format);
+
+    if (publisher_onPrintf!= NULL) {
+        len = publisher_onPrintf(format, ap);
+    } else {
+        len = __android_log_vprint(ANDROID_LOG_INFO, "RTIConnextLog", format, ap);
+    }
+
+    va_end(ap);
+    return len;
+}
+
+static int Android_fprintf(FILE *fptr, const char *format, ...) {
+    int len;
+    va_list ap;
+    va_start(ap, format);
+
+    if (publisher_onPrintf!= NULL) {
+        len = publisher_onPrintf(format, ap);
+    } else {
+        len = __android_log_vprint(ANDROID_LOG_INFO, "RTIConnextLog", format, ap);
+    }
+
+    va_end(ap);
+    return len;
+}
+
+extern "C" void RTIAndroid_registerOnPrintf(RTIAndroidOnPrintfMethod onPrintf) {
+    publisher_onPrintf = onPrintf;
+}
+
+#endif
+
 /* Perftest Timer Class */
 class PerftestTimer
 {

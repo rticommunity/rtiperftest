@@ -582,6 +582,20 @@ function build_cpp()
     fi
     echo -e "${INFO_TAG} Compilation successful"
 
+    # If the platform is android, there are other compile and build steps to be done
+    # in order to create the shared object (.so), create the projects and build the apk.
+    if [[ ${platform} == *"Android"* ]]; then
+        echo ""
+        echo -e "${INFO_TAG} Additional compile steps for Android architectures"
+        "${MAKE_EXE}" -C "${classic_cpp_folder}" -f makefile_perftest_${platform} perftest.so perftest.projects perftest.apks
+        if [ "$?" != 0 ]; then
+                echo -e "${ERROR_TAG} Failure building apk in ${classic_cpp_lang_string} of ${platform}."
+                clean_src_cpp_common
+                exit -1
+        fi
+        echo -e "${INFO_TAG} Building apk successful"
+    fi
+
     echo ""
     echo -e "${INFO_TAG} Copying executable into: \"bin/${platform}/${RELEASE_DEBUG}\" folder"
 
@@ -593,6 +607,11 @@ function build_cpp()
     destination_folder="${bin_folder}/${platform}/${RELEASE_DEBUG}"
     mkdir -p "${bin_folder}/${platform}/${RELEASE_DEBUG}"
 
+    # In Android the path of the built apk slightly differs from other built binaries.
+    if [[ ${platform} == *"Android"* ]]; then
+        perftest_cpp_name_beginning="${classic_cpp_folder}/objs/${platform}/publisher/bin/perftest_publisher-debug"
+    fi
+
     if [ -e "$perftest_cpp_name_beginning" ]; then
         executable_extension=""
     elif [ -e "${perftest_cpp_name_beginning}.so" ]; then
@@ -601,6 +620,8 @@ function build_cpp()
         executable_extension=".lo"
     elif [ -e "${perftest_cpp_name_beginning}.vxe" ]; then
         executable_extension=".vxe"
+    elif [ -e "${perftest_cpp_name_beginning}.apk" ]; then
+        executable_extension=".apk"
     fi
     cp -f "${perftest_cpp_name_beginning}${executable_extension}" \
     "${destination_folder}/perftest_cpp${executable_extension}"
@@ -772,6 +793,20 @@ function build_cpp03()
     fi
     echo -e "${INFO_TAG} Compilation successful"
 
+    # If the platform is android, there are other compile and build steps to be done
+    # in order to create the shared object (.so), create the projects and build the apk.
+    if [[ ${platform} == *"Android"* ]]; then
+        echo ""
+        echo -e "${INFO_TAG} Additional compile steps for Android architectures"
+        "${MAKE_EXE}" -C "${modern_cpp_folder}" -f makefile_perftest_${platform} perftest.so perftest.projects perftest.apks
+        if [ "$?" != 0 ]; then
+                echo -e "${ERROR_TAG} Failure building apk in ${modern_cpp_folder} of ${platform}."
+                clean_src_cpp_common
+                exit -1
+        fi
+        echo -e "${INFO_TAG} Building apk successful"
+    fi
+
     echo ""
     echo -e "${INFO_TAG} Copying executable into: \"bin/${platform}/${RELEASE_DEBUG}\" folder"
 
@@ -783,6 +818,11 @@ function build_cpp03()
     destination_folder="${bin_folder}/${platform}/${RELEASE_DEBUG}"
     mkdir -p "${bin_folder}/${platform}/${RELEASE_DEBUG}"
 
+    # In Android the path of the built apk slightly differs from other built binaries.
+    if [[ ${platform} == *"Android"* ]]; then
+        perftest_cpp03_name_beginning="${modern_cpp_folder}/objs/${platform}/publisher/bin/perftest_publisher-debug"
+    fi
+
     if [ -e "$perftest_cpp03_name_beginning" ]; then
         executable_extension=""
     elif [ -e "${perftest_cpp03_name_beginning}.so" ]; then
@@ -791,6 +831,8 @@ function build_cpp03()
         executable_extension=".lo"
     elif [ -e "${perftest_cpp03_name_beginning}.vxe" ]; then
         executable_extension=".vxe"
+    elif [ -e "${perftest_cpp03_name_beginning}.apk" ]; then
+        executable_extension=".apk"
     fi
     cp -f "${perftest_cpp03_name_beginning}${executable_extension}" \
     "${destination_folder}/perftest_cpp03${executable_extension}"
