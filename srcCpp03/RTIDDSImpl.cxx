@@ -1956,7 +1956,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     std::map<std::string, std::string> properties =
             dr_qos.policy<Property>().get_all();
 
-    unsigned int qos_initial_samples = qos_resource_limits->initial_samples();
+    unsigned int qos_initial_samples = (unsigned) qos_resource_limits->initial_samples();
     unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
     unsigned long long initial_samples;
 
@@ -2031,6 +2031,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
         }
     }
 
+    std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
     std::cout << "[########] DR Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
 
     if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
@@ -2170,7 +2171,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
                     MAX_PERFTEST_SAMPLE_SIZE / datalen
             );
 
-            if (initial_samples < _PM->get<int>("sendQueueSize")) {
+            if (initial_samples < (unsigned) _PM->get<int>("sendQueueSize")) {
                 qos_resource_limits->initial_samples(initial_samples);
             } else {
                 qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
@@ -2179,6 +2180,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
             qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
         }
 
+        std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
         std::cout << "[########] DW Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
 
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
