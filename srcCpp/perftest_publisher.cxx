@@ -14,6 +14,52 @@
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
 
+
+#if defined(RTI_ANDROID)
+
+#include <android/log.h>
+typedef int (*RTIAndroidOnPrintfMethod)(const char *format, va_list ap);
+static RTIAndroidOnPrintfMethod publisher_onPrintf = NULL;
+
+#define printf Android_printf
+#define fprintf Android_fprintf
+
+static int Android_printf(const char *format, ...) {
+    int len;
+    va_list ap;
+    va_start(ap, format);
+
+    if (publisher_onPrintf!= NULL) {
+        len = publisher_onPrintf(format, ap);
+    } else {
+        len = __android_log_vprint(ANDROID_LOG_INFO, "RTIConnextLog", format, ap);
+    }
+
+    va_end(ap);
+    return len;
+}
+
+static int Android_fprintf(FILE *fptr, const char *format, ...) {
+    int len;
+    va_list ap;
+    va_start(ap, format);
+
+    if (publisher_onPrintf!= NULL) {
+        len = publisher_onPrintf(format, ap);
+    } else {
+        len = __android_log_vprint(ANDROID_LOG_INFO, "RTIConnextLog", format, ap);
+    }
+
+    va_end(ap);
+    return len;
+}
+
+extern "C" void RTIAndroid_registerOnPrintf(RTIAndroidOnPrintfMethod onPrintf) {
+    publisher_onPrintf = onPrintf;
+}
+
+#endif
+
 bool perftest_cpp::_testCompleted = false;
 bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
 const int timeout_wait_for_ack_sec = 0;
@@ -364,7 +410,7 @@ void perftest_cpp::PrintConfiguration()
     std::ostringstream stringStream;
 
   #ifdef RTI_CUSTOM_TYPE
-    stringStream << "\nUsing user provided type '"
+    stringStream << "\nCustom Type provided: '"
                  << TO_STRING(RTI_CUSTOM_TYPE)
                  << "'\n";
   #endif

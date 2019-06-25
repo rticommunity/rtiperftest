@@ -25,6 +25,7 @@
     #include <cstddef>
 #elif defined(RTI_WIN32)
     #include "windows.h"
+#elif defined(RTI_INTIME)
 #endif
 
 class CpuMonitor
