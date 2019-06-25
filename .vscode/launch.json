@@ -32,17 +32,16 @@
             "name": "Pro Debug g++ (Publisher)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/x64Linux4gcc7.3.0/debug/perftest_cpp03",
+            "program": "${workspaceFolder}/bin/${architecture}/debug/perftest_cpp",
             "args": [
                 "-pub", 
                 "-noPrint",
                 "-domain", "207",
-                "-verbosity", "2" 
+                "-verbosity", "2",
                 "-executionTime", "15", 
                 "-transport", "UDPv4",
-                "-latencyCount", "1", 
-                "-dataLen", "100000000", 
-                //"-flatData",
+                "-dataLen", "10000000", 
+                "-flatData",
             ],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
@@ -61,15 +60,70 @@
             "name": "Pro Debug g++ (Subscriber)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/x64Linux4gcc7.3.0/debug/perftest_cpp03",
+            "program": "${workspaceFolder}/bin/${architecture}/debug/perftest_cpp",
             "args": [
                 "-sub", 
                 "-noPrint", 
                 "-domain", "207", 
                 "-transport", "UDPv4", 
                 "-verbosity", "2", 
-                "-dataLen", "100000000", 
-                //"-flatData",
+                "-dataLen", "10000000", 
+                "-flatData",
+            ],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable all-exceptions",
+                    "text": "-exec \"catch throw\"",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+        "name": "Pro Debug g++ (Publisher) 03",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/${architecture}/debug/perftest_cpp03",
+            "args": [
+                "-pub", 
+                "-noPrint",
+                "-domain", "207",
+                "-verbosity", "2",
+                "-executionTime", "15", 
+                "-transport", "UDPv4",
+                "-dataLen", "10000000", 
+                "-flatData",
+            ],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable all-exceptions",
+                    "text": "-exec \"catch throw\"",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Pro Debug g++ (Subscriber) 03",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/${architecture}/debug/perftest_cpp03",
+            "args": [
+                "-sub", 
+                "-noPrint", 
+                "-domain", "207", 
+                "-transport", "UDPv4", 
+                "-verbosity", "2", 
+                "-dataLen", "10000000", 
+                "-flatData",
             ],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",

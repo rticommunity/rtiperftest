@@ -38,7 +38,7 @@ class RTIDDSImpl : public IMessaging
 {
   public:
 
-    RTIDDSImpl(bool isFlatData=false);
+    RTIDDSImpl();
 
     ~RTIDDSImpl()
     {

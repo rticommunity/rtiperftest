@@ -298,7 +298,7 @@ if !BUILD_CPP! == 1 (
 	set "additional_defines_custom_type="
 	set "additional_header_files_custom_type="
 	set "additional_source_files_custom_type="
-	
+
 	if !USE_CUSTOM_TYPE! == 1 (
 		REM # Search the file which contains "Struct ${custom_type} {" and include it to ${custom_idl_file}
 		set found_idl=0
@@ -343,7 +343,6 @@ if !BUILD_CPP! == 1 (
 	)
 
 	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_TRADITIONAL"
-	set additional_rti_libs=
 
 	if !USE_SECURE_LIBS! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_SECURE_PERFTEST"

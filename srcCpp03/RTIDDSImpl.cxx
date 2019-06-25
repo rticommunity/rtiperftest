@@ -80,11 +80,11 @@ int DynamicDataMembersId::at(std::string key)
 }
 
 template <typename T>
-RTIDDSImpl<T>::RTIDDSImpl(bool isFlatData):
+RTIDDSImpl<T>::RTIDDSImpl():
         _InstanceMaxCountReader(dds::core::LENGTH_UNLIMITED), //(-1)
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED), //(-1)
         _isLargeData(false),
-        _isFlatData(isFlatData),
+        _isFlatData(false),
 
 
         _participant(dds::core::null),
@@ -119,7 +119,8 @@ void RTIDDSImpl<T>::Shutdown()
     if (participants.empty()){
         _participant.finalize_participant_factory();
     } else {
-        std::cout << "[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)" << std::endl;
+        std::cout << "[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)" 
+                  << std::endl;
     }
 
     _finalizeFactorySemaphore.give();
@@ -138,9 +139,8 @@ bool RTIDDSImpl<T>::validate_input()
 
     // Manage parameter -peer
     if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
-        fprintf(stderr,
-                "The maximun of 'initial_peers' is %d\n",
-                RTIPERFTEST_MAX_PEERS);
+        std::cerr << "The maximun of 'initial_peers' is " << RTIPERFTEST_MAX_PEERS 
+                  << std::endl;
         return false;
     }
 
@@ -158,7 +158,8 @@ bool RTIDDSImpl<T>::validate_input()
         // We will not use batching for a latency test
         if (_PM->get<bool>("latencyTest")) {
             if (_PM->is_set("batchSize")) {
-                fprintf(stderr, "Batching cannot be used in a Latency test.\n");
+                std::cerr << "Batching cannot be used in a Latency test." 
+                          << std::endl;
                 return false;
             } else {
                 _PM->set<long>("batchSize", 0);  // Disable Batching
@@ -168,8 +169,8 @@ bool RTIDDSImpl<T>::validate_input()
         // Check if using asynchronous
         if (_PM->get<bool>("asynchronous")) {
             if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
-                fprintf(stderr,
-                        "Batching cannot be used with asynchronous writing.\n");
+                std::cerr << "Batching cannot be used with asynchronous writing." 
+                          << std::endl;
                 return false;
             } else {
                 _PM->set<long>("batchSize", 0);  // Disable Batching
@@ -183,7 +184,8 @@ bool RTIDDSImpl<T>::validate_input()
          */
         if (_isLargeData) {
             if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
-                fprintf(stderr, "Batching cannot be used with Large Data.\n");
+                std::cerr << "Batching cannot be used with Large Data." 
+                          << std::endl;
                 return false;
             } else {
                 _PM->set<long>("batchSize", -2);
@@ -209,7 +211,8 @@ bool RTIDDSImpl<T>::validate_input()
 
         if (_isFlatData) {
             if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") > 0) {
-                fprintf(stderr, "Batching cannot be used with FlatData.\n");
+                std::cerr << "Batching cannot be used with FlatData." 
+                          << std::endl;
                 return false;
             } else {
                 _PM->set<long>("batchSize", -3);
@@ -245,7 +248,7 @@ bool RTIDDSImpl<T>::validate_input()
 
     // Manage transport parameter
     if (!_transport.validate_input()) {
-         std::cerr << "[Error] Failure validation the transport options."
+         std::cerr << "[Error] Failure validation the transport options." 
                    << std::endl;
         return false;
     };
@@ -259,27 +262,28 @@ bool RTIDDSImpl<T>::validate_input()
             case 0:
                 rti::config::Logger::instance().verbosity(
                         rti::config::Verbosity::SILENT);
-                fprintf(stderr, "Setting verbosity to SILENT\n");
+                std::cerr << "Setting verbosity to SILENT." << std::endl;
                 break;
             case 1:
                 rti::config::Logger::instance().verbosity(
                         rti::config::Verbosity::ERRORY);
-                fprintf(stderr, "Setting verbosity to ERROR\n");
+                std::cerr << "Setting verbosity to ERROR." << std::endl;
                 break;
             case 2:
                 rti::config::Logger::instance().verbosity(
                         rti::config::Verbosity::WARNING);
-                fprintf(stderr, "Setting verbosity to WARNING\n");
+                std::cerr << "Setting verbosity to WARNING." << std::endl;
                 break;
             case 3: rti::config::Logger::instance().verbosity(
                         rti::config::Verbosity::STATUS_ALL);
-                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
+                std::cerr << "Setting verbosity to STATUS_ALL." << std::endl;
                 break;
             default:
                 std::cerr << "[Info]: Invalid value for the verbosity"
                           << " parameter. Using default value (1)"
+                          << std::endl
+                          << "Invalid value for the '-verbosity' parameter." 
                           << std::endl;
-                fprintf(stderr, "Invalid value for the '-verbosity' parameter\n");
                 return false;
         }
     }
@@ -439,6 +443,14 @@ protected:
     bool _isReliable;
     ParameterManager *_PM;
 
+     /* Returns the instance handler for the content filtered topic.
+      * It must the last element pushed to _instance_handles
+      * when appending instances to that sequence.
+      */
+    dds::core::InstanceHandle &getCftInstanceHandle() {
+        return _instance_handles.back();
+    }
+
 public:
     RTIPublisherBase(
             dds::pub::DataWriter<T> writer,
@@ -552,7 +564,7 @@ public:
                 this->_writer.register_instance(this->data));
     }
 
-    inline bool send(TestMessage &message, bool isCftWildCardKey) {
+    bool send(TestMessage &message, bool isCftWildCardKey) {
 
         this->data.entity_id(message.entity_id);
         this->data.seq_num(message.seq_num);
@@ -580,7 +592,7 @@ public:
             this->data.key()[c] = (unsigned char) (key >> c * 8);
         }
         if (!isCftWildCardKey) {
-            this->_writer.write(this->data, this->_instance_handles.back());
+            this->_writer.write(this->data, this->getCftInstanceHandle());
         } else {
             this->_writer.write(this->data,
                     this->_instance_handles[this->_num_instances]);
@@ -613,10 +625,8 @@ public:
               rti::core::Semaphore& pongSemaphore,
               bool useSemaphore,
               int instancesToBeWritten,
-              ParameterManager *PM
-              )
-              :
-              RTIPublisherBase<T>(
+              ParameterManager *PM)
+              : RTIPublisherBase<T>(
                       writer,
                       num_instances,
                       pongSemaphore,
@@ -647,7 +657,7 @@ public:
           this->_writer.extensions().discard_loan(*sample);
       }
 
-      inline bool send(TestMessage &message, bool isCftWildcardKey) {
+      bool send(TestMessage &message, bool isCftWildcardKey) {
           Builder builder = rti::flat::build_data(this->_writer);
           long key = 0;
 
@@ -679,8 +689,7 @@ public:
 
           // Send data through the writer
           if (!isCftWildcardKey) {
-              // .back() because the CFT Handler is always the last one to be pushed back
-              this->_writer.write(*sample, this->_instance_handles.back());
+              this->_writer.write(*sample, this->getCftInstanceHandle());
           } else {
               this->_writer.write(
                       *sample,
@@ -741,7 +750,7 @@ public:
                 this->_writer.register_instance(this->data));
     }
 
-    inline bool send(TestMessage &message, bool isCftWildCardKey) {
+    bool send(TestMessage &message, bool isCftWildCardKey) {
         if (_last_message_size != message.size) {
             this->data.clear_all_members();
             std::vector<uint8_t> octec_seq(message.size);
@@ -785,7 +794,7 @@ public:
                 DynamicDataMembersId::GetInstance().at("key"),
                 key_octets);
         if (!isCftWildCardKey) {
-            this->_writer.write(this->data, this->_instance_handles.back());
+            this->_writer.write(this->data, this->getCftInstanceHandle());
         } else {
             this->_writer.write(this->data,
                     this->_instance_handles[this->_num_instances]);
@@ -1494,7 +1503,7 @@ dds::core::QosProvider RTIDDSImpl<T>::getQosProviderForProfile(
 
     if (!_PM->get<bool>("noXmlQos")) {
         qosProvider = dds::core::QosProvider(
-                _PM->get<std::string>("qosFile").c_str(),
+                _PM->get<std::string>("qosFile"),
                 library_name + "::" + profile_name);
     } else {
         rti::core::QosProviderParams perftestQosProviderParams;
@@ -1831,7 +1840,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         dds::sub::DataReader<T> reader(dds::core::null);
         ReceiverListener<T> *reader_listener = NULL;
 
-        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _PM->is_set("cft")) {
+        if (topic_name == THROUGHPUT_TOPIC_NAME && _PM->is_set("cft")) {
             /* Create CFT Topic */
             dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
                     topic_name,
@@ -1875,7 +1884,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 type);
         dds::sub::DataReader<DynamicData> reader(dds::core::null);
         DynamicDataReceiverListener *dynamic_data_reader_listener = NULL;
-        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _PM->is_set("cft")) {
+        if (topic_name == THROUGHPUT_TOPIC_NAME && _PM->is_set("cft")) {
             /* Create CFT Topic */
             dds::topic::ContentFilteredTopic<DynamicData> topicCft = CreateCft(
                     topic_name,
@@ -1924,11 +1933,11 @@ template <typename T>
 const std::string RTIDDSImpl<T>::get_qos_profile_name(std::string topicName)
 {
     if (_qoSProfileNameMap[topicName].empty()) {
-        fprintf(stderr,
-                "topic name must either be %s or %s or %s.\n",
-                THROUGHPUT_TOPIC_NAME.c_str(),
-                LATENCY_TOPIC_NAME.c_str(),
-                ANNOUNCEMENT_TOPIC_NAME.c_str());
+        std::cerr << "topic name must either be %s or %s or %s.\n"
+                  << THROUGHPUT_TOPIC_NAME << " or "
+                  << LATENCY_TOPIC_NAME << " or "
+                  << ANNOUNCEMENT_TOPIC_NAME << "."
+                  << std::endl;
     }
 
     /* If the topic name dont match any key return a empty string */
@@ -1958,10 +1967,10 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
 
     unsigned int qos_initial_samples = (unsigned) qos_resource_limits->initial_samples();
     unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
-    unsigned long long initial_samples;
+    unsigned long long initial_samples = 0;
 
     // only force reliability on throughput/latency topics
-    if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
+    if (topic_name != ANNOUNCEMENT_TOPIC_NAME) {
         if (!_PM->get<bool>("bestEffort")) {
             qos_reliability = dds::core::policy::Reliability::Reliable();
         } else {
@@ -2100,7 +2109,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
             dw_qos.policy<Property>().get_all();
 
     unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
-    unsigned long long initial_samples;
+    unsigned long long initial_samples = 0;
 
     if (_PM->get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos"
@@ -2126,7 +2135,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
    }
 
     // Only force reliability on throughput/latency topics
-    if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
+    if (topic_name != ANNOUNCEMENT_TOPIC_NAME) {
         if (!_PM->get<bool>("bestEffort")) {
             // default: use the setting specified in the qos profile
             // qos_reliability = Reliability::Reliable(dds::core::Duration::infinite());
@@ -2181,6 +2190,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
         }
 
         std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
+        std::cout << "[########] DW Initial samples (calculated): " << initial_samples << std::endl;
         std::cout << "[########] DW Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
 
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
@@ -2266,7 +2276,9 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
 }
 
 template <typename T>
-RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData(): RTIDDSImpl(true) {}
+RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData() {
+    this->_isFlatData = true;
+}
 
 /*********************************************************
  * CreateReader FlatData
@@ -2292,7 +2304,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
     dds::sub::DataReader<T> reader(dds::core::null);
     ReceiverListenerBase<T> *reader_listener = NULL;
 
-    if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && this->_PM->is_set("cft")) {
+    if (topic_name == THROUGHPUT_TOPIC_NAME && this->_PM->is_set("cft")) {
         /* Create CFT Topic */
         dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
                 topic_name,
