@@ -326,21 +326,23 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "No\n";
     }
 
-    // FlatData
-    stringStream << "\tFlatData: ";
-    if (_PM->get<bool>("flatdata")) {
-        stringStream << "Yes\n";
-    } else {
-        stringStream << "No\n";
-    }
+    #ifdef RTI_FLATDATA_AVAILABLE
+      // FlatData
+      stringStream << "\tFlatData: ";
+      if (_PM->get<bool>("flatdata")) {
+          stringStream << "Yes\n";
+      } else {
+          stringStream << "No\n";
+      }
 
-    // Zero Copy
-    stringStream << "\tZero Copy: ";
-    if (_PM->get<bool>("zerocopy")) {
-        stringStream << "Yes\n";
-    } else {
-        stringStream << "No\n";
-    }
+      // Zero Copy
+      stringStream << "\tZero Copy: ";
+      if (_PM->get<bool>("zerocopy")) {
+          stringStream << "Yes\n";
+      } else {
+          stringStream << "No\n";
+      }
+    #endif
 
     // Dynamic Data
     if (_PM->get<bool>("pub")) {
@@ -585,17 +587,16 @@ public:
                 }
             }
         } else {
-            key = MAX_CFT_VALUE;
+            key = this->_instance_handles.size()-1;
         }
 
         for (int c = 0; c < KEY_SIZE; c++) {
             this->data.key()[c] = (unsigned char) (key >> c * 8);
         }
         if (!isCftWildCardKey) {
-            this->_writer.write(this->data, this->getCftInstanceHandle());
+            this->_writer.write(this->data, this->_instance_handles[key]);
         } else {
-            this->_writer.write(this->data,
-                    this->_instance_handles[this->_num_instances]);
+            this->_writer.write(this->data, this->getCftInstanceHandle());
         }
         return true;
     }
@@ -679,7 +680,7 @@ public:
                       ? this->_instance_counter++ % this->_num_instances
                       : this->_instancesToBeWritten;
           } else {
-              key = MAX_CFT_VALUE;
+              key = this->_instance_handles.size()-1;
           }
 
           add_key(builder, key);
@@ -689,11 +690,9 @@ public:
 
           // Send data through the writer
           if (!isCftWildcardKey) {
-              this->_writer.write(*sample, this->getCftInstanceHandle());
+              this->_writer.write(*sample, this->_instance_handles[key]);
           } else {
-              this->_writer.write(
-                      *sample,
-                      this->_instance_handles[this->_num_instances]);
+              this->_writer.write(*sample, this->getCftInstanceHandle());
           }
 
           return true;
@@ -717,8 +716,7 @@ public:
             int instancesToBeWritten,
             const dds::core::xtypes::StructType& typeCode,
             ParameterManager *PM)
-          :
-            RTIPublisherBase<DynamicData>(
+            : RTIPublisherBase<DynamicData>(
                     writer,
                     num_instances,
                     pongSemaphore,
@@ -785,7 +783,7 @@ public:
                 }
             }
         } else {
-            key = MAX_CFT_VALUE;
+            key = this->_instance_handles.size()-1;
         }
         for (int c = 0; c < KEY_SIZE; c++) {
             key_octets[c] = (uint8_t) (key >> c * 8);
@@ -794,10 +792,9 @@ public:
                 DynamicDataMembersId::GetInstance().at("key"),
                 key_octets);
         if (!isCftWildCardKey) {
-            this->_writer.write(this->data, this->getCftInstanceHandle());
+            this->_writer.write(this->data, this->_instance_handles[key]);
         } else {
-            this->_writer.write(this->data,
-                    this->_instance_handles[this->_num_instances]);
+            this->_writer.write(this->data, this->getCftInstanceHandle());
         }
         return true;
     }
