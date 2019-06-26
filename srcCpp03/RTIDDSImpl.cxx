@@ -2022,7 +2022,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
             qos_resource_limits->instance_hash_buckets(
                     _PM->get<long>("instances"));
         }
-    }
+    }    
 
     // If FlatData and LargeData, automatically estimate initial_samples here
     if (_isLargeData && _isFlatData) {
@@ -2031,10 +2031,18 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
                 MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE
         );
 
-        if (initial_samples < qos_initial_samples) {
-            qos_resource_limits->initial_samples(initial_samples);
-        }
+        initial_samples = std::min(
+            initial_samples,
+            (unsigned long long) qos_initial_samples
+        );
+
+        qos_resource_limits->initial_samples(initial_samples);
     }
+
+    std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
+    std::cout << "[########] QoS DR Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
+    std::cout << "[########] DR Initial samples (calculated): " << initial_samples << std::endl;
+    std::cout << "[########] DR Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
 
     if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
         dds::core::StringSeq transports;
@@ -2172,20 +2180,21 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
                     MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE
             );
 
-            if (initial_samples < (unsigned) _PM->get<int>("sendQueueSize")) {
-                qos_resource_limits->initial_samples(initial_samples);
-            } else {
-                qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
-            }
+            initial_samples = std::min(
+                initial_samples,
+                (unsigned long long) _PM->get<int>("sendQueueSize")
+            );
         } else {
-            qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
+            initial_samples = _PM->get<int>("sendQueueSize");
         }
 
+        qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
+        qos_resource_limits->initial_samples(initial_samples);
         std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
+        std::cout << "[########] QoS DW Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
+        std::cout << "[########] SendQueueSize: " << _PM->get<int>("sendQueueSize") << std::endl;
         std::cout << "[########] DW Initial samples (calculated): " << initial_samples << std::endl;
         std::cout << "[########] DW Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
-
-        qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
 
         if (_PM->get<int>("durability") == DDS_VOLATILE_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::Volatile();
