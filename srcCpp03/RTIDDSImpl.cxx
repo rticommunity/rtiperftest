@@ -1963,7 +1963,6 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
             dr_qos.policy<Property>().get_all();
 
     unsigned int qos_initial_samples = (unsigned) qos_resource_limits->initial_samples();
-    unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
     unsigned long long initial_samples = 0;
 
     // only force reliability on throughput/latency topics
@@ -2028,17 +2027,14 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     // If FlatData and LargeData, automatically estimate initial_samples here
     if (_isLargeData && _isFlatData) {
         initial_samples = std::max(
-                1ull,
-                MAX_PERFTEST_SAMPLE_SIZE / datalen
+                1,
+                MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE
         );
 
         if (initial_samples < qos_initial_samples) {
             qos_resource_limits->initial_samples(initial_samples);
         }
     }
-
-    std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
-    std::cout << "[########] DR Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
 
     if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
         dds::core::StringSeq transports;
@@ -2105,7 +2101,6 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
     std::map<std::string, std::string> properties =
             dw_qos.policy<Property>().get_all();
 
-    unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
     unsigned long long initial_samples = 0;
 
     if (_PM->get<bool>("noPositiveAcks")
@@ -2173,8 +2168,8 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
         // in a range from 1 up to the initial samples specifies in the QoS file
         if (_isLargeData && _isFlatData) {
             initial_samples = std::max(
-                    1ull,
-                    MAX_PERFTEST_SAMPLE_SIZE / datalen
+                    1,
+                    MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE
             );
 
             if (initial_samples < (unsigned) _PM->get<int>("sendQueueSize")) {

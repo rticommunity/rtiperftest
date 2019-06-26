@@ -56,7 +56,7 @@ custom_type_file_name_support="" # Name of the file with the type. "TSupport.h"
 custom_idl_file="${custom_type_folder}/custom.idl"
 
 # Variables for FlatData
-flatdata_size=10485760 # 10MB
+flatdata_size=104857600 # 100MB
 flatdata_ddsgen_version=300 #3.0.0
 FLATDATA_AVAILABLE=0
 
@@ -396,7 +396,7 @@ function additional_defines_calculation()
     # Adding RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as macro
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
         additional_rti_libs="-additionalRtiLibraries \"nddsmetp ${additional_rti_libs}\""
-        additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE"
+        additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE DRTI_FLATDATA_MAX_SIZE=${flatdata_size}"
         additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
     fi    
 }
