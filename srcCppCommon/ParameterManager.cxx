@@ -610,6 +610,28 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("writerStats", writerStats);
 
+
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    Parameter<bool> *lowPrecisionClock = new Parameter<bool>(false);
+    lowPrecisionClock->set_command_line_argument("-lowPrecisionClock", "");
+    lowPrecisionClock->set_description(
+            "Reports at the end of the test the average\n"
+            "latency time to send all the samples.\n"
+            "This option should be used if the machine's\n"
+            "clock is not precise enough and the latency\n"
+            "measurements report 0 most of the times.\n"
+            "This should only be used if latencyCount = 1\n"
+            "(Latency Test)\n"
+            "Default: Not set");
+    lowPrecisionClock->set_type(T_BOOL);
+    lowPrecisionClock->set_extra_argument(NO);
+    lowPrecisionClock->set_group(PUB);
+    lowPrecisionClock->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
+    create("lowPrecisionClock", lowPrecisionClock);
+  #endif
+
     Parameter<long> *writeInstance =
             new Parameter<long>(-1); // (-1) By default use round-robin (-1)
     writeInstance->set_command_line_argument("-writeInstance", "<instance>");
