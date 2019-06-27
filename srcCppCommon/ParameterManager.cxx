@@ -612,9 +612,9 @@ void ParameterManager::initialize()
 
 
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
-    Parameter<bool> *lowPrecisionClock = new Parameter<bool>(false);
-    lowPrecisionClock->set_command_line_argument("-lowPrecisionClock", "");
-    lowPrecisionClock->set_description(
+    Parameter<bool> *lowResolutionClock = new Parameter<bool>(false);
+    lowResolutionClock->set_command_line_argument("-lowResolutionClock", "");
+    lowResolutionClock->set_description(
             "Reports at the end of the test the average\n"
             "latency time to send all the samples.\n"
             "This option should be used if the machine's\n"
@@ -623,13 +623,13 @@ void ParameterManager::initialize()
             "This should only be used if latencyCount = 1\n"
             "(Latency Test)\n"
             "Default: Not set");
-    lowPrecisionClock->set_type(T_BOOL);
-    lowPrecisionClock->set_extra_argument(NO);
-    lowPrecisionClock->set_group(PUB);
-    lowPrecisionClock->set_supported_middleware(
+    lowResolutionClock->set_type(T_BOOL);
+    lowResolutionClock->set_extra_argument(NO);
+    lowResolutionClock->set_group(PUB);
+    lowResolutionClock->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RTIDDSMICRO);
-    create("lowPrecisionClock", lowPrecisionClock);
+    create("lowResolutionClock", lowResolutionClock);
   #endif
 
     Parameter<long> *writeInstance =
