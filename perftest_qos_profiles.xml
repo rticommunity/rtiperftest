@@ -1083,6 +1083,45 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
     </qos_profile>
 
     <qos_profile name="FlatData_ThroughputQos" base_name="ThroughputQos">
+      <!-- Configure DataWriter to prevent dynamic allocation of serialization buffer -->
+      <datawriter_qos>
+        <!-- <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+          <flow_controller_name>DEFAULT_FLOW_CONTROLLER_NAME</flow_controller_name>
+        </publish_mode>
+        <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
+        </reliability> -->
+        <property>
+          <value>
+            <element>
+              <name>dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size</name>
+              <value>LENGTH_UNLIMITED</value>
+            </element>
+          </value>
+        </property>
+      </datawriter_qos>
+
+      <!-- Configure DataReader to prevent dynamic allocation of buffer used for storing received fragments -->
+      <datareader_qos>
+        <reader_resource_limits>
+          <dynamically_allocate_fragmented_samples>false</dynamically_allocate_fragmented_samples>
+        </reader_resource_limits>
+      </datareader_qos>
+
+      <!-- Config participants buffers to be big enough to not to need dynamic allocating too often -->
+      <participant_qos>
+        <!-- Avoid IP Fragmentation https://community.rti.com/kb/i-am-not-receiving-samples-could-it-be-ip-fragmentation -->
+        <!-- <discovery_config>
+          <publication_writer_publish_mode>
+              <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+          </publication_writer_publish_mode>
+          <subscription_writer_publish_mode>
+              <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+          </subscription_writer_publish_mode>
+        </discovery_config> -->
+        
+      </participant_qos>
     </qos_profile>
 
     <qos_profile name="FlatData_LatencyQos" base_name="LatencyQos">
