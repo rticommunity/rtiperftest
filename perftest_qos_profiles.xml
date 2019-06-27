@@ -1086,13 +1086,6 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
       <!-- Configure DataWriter to prevent dynamic allocation of serialization buffer -->
       
 
-      <!-- Configure DataReader to prevent dynamic allocation of buffer used for storing received fragments -->
-      <datareader_qos>
-        <reader_resource_limits>
-          <dynamically_allocate_fragmented_samples>false</dynamically_allocate_fragmented_samples>
-        </reader_resource_limits>
-      </datareader_qos>
-
       <!-- Config participants buffers to be big enough to not to need dynamic allocating too often -->
       <participant_qos>
         <!-- Avoid IP Fragmentation https://community.rti.com/kb/i-am-not-receiving-samples-could-it-be-ip-fragmentation -->
