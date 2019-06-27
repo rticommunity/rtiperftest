@@ -2025,19 +2025,19 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     }    
 
     // If FlatData and LargeData, automatically estimate initial_samples here
-    if (_isLargeData && _isFlatData) {
-        initial_samples = std::max(
-                1,
-                MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE
-        );
+    // if (_isLargeData && _isFlatData) {
+    //     initial_samples = std::max(
+    //             1,
+    //             MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE
+    //     );
 
-        initial_samples = std::min(
-            initial_samples,
-            (unsigned long long) qos_initial_samples
-        );
+    //     initial_samples = std::min(
+    //         initial_samples,
+    //         (unsigned long long) qos_initial_samples
+    //     );
 
-        qos_resource_limits->initial_samples(initial_samples);
-    }
+    //     qos_resource_limits->initial_samples(initial_samples);
+    // }
 
     std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
     std::cout << "[########] QoS DR Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
@@ -2174,22 +2174,22 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
 
         // If FlatData and LargeData, automatically estimate initial_samples here
         // in a range from 1 up to the initial samples specifies in the QoS file
-        if (_isLargeData && _isFlatData) {
-            initial_samples = std::max(
-                    1,
-                    MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE
-            );
+        // if (_isLargeData && _isFlatData) {
+        //     initial_samples = std::max(
+        //             1,
+        //             MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE
+        //     );
 
-            initial_samples = std::min(
-                initial_samples,
-                (unsigned long long) _PM->get<int>("sendQueueSize")
-            );
-        } else {
-            initial_samples = _PM->get<int>("sendQueueSize");
-        }
+        //     initial_samples = std::min(
+        //         initial_samples,
+        //         (unsigned long long) _PM->get<int>("sendQueueSize")
+        //     );
+        // } else {
+        //     initial_samples = _PM->get<int>("sendQueueSize");
+        // }
 
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
-        qos_resource_limits->initial_samples(initial_samples);
+        qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize")); // TODO: REPLACE _PM->get.. FOR initial_samples!!!!!!!!!
         std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
         std::cout << "[########] QoS DW Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
         std::cout << "[########] SendQueueSize: " << _PM->get<int>("sendQueueSize") << std::endl;
