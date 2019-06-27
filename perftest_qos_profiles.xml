@@ -1096,19 +1096,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
       </datawriter_qos>
     </qos_profile>
 
-    <qos_profile name="FlatData_LatencyQos" base_name="LatencyQos">
-      <!-- Configure DataWriter to prevent dynamic allocation of serialization buffer -->
-      <datawriter_qos>
-          <property>
-            <value>
-              <element>
-                <name>dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size</name>
-                <value>LENGTH_UNLIMITED</value>
-              </element>
-            </value>
-          </property>
-        </datawriter_qos>
-    </qos_profile>
+    <qos_profile name="FlatData_LatencyQos" base_name="LatencyQos"/>
 
     <qos_profile name="FlatData_AnnouncementQos" base_name="AnnouncementQos"/>
 
