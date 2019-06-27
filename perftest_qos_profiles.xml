@@ -1103,11 +1103,11 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
       </datawriter_qos>
 
       <!-- Configure DataReader to prevent dynamic allocation of buffer used for storing received fragments -->
-      <datareader_qos>
+      <!-- <datareader_qos>
         <reader_resource_limits>
           <dynamically_allocate_fragmented_samples>false</dynamically_allocate_fragmented_samples>
         </reader_resource_limits>
-      </datareader_qos>
+      </datareader_qos> -->
 
       <!-- Config participants buffers to be big enough to not to need dynamic allocating too often -->
       <participant_qos>
@@ -1120,7 +1120,30 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
               <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
           </subscription_writer_publish_mode>
         </discovery_config> -->
-        
+        <property>
+          <value>
+            <element>
+              <name>dds.transport.shmem.builtin.received_message_count_max</name>
+              <value>1000</value>
+            </element>
+            <element>
+              <name>dds.transport.shmem.builtin.receive_buffer_size</name>
+              <value>60000000</value>
+            </element>
+            <element>
+              <name>dds.transport.UDPv4.builtin.send_socket_buffer_size</name>
+              <value>1000000</value>
+            </element>
+            <element>
+              <name>dds.transport.UDPv4.builtin.recv_socket_buffer_size</name>
+              <value>2000000</value>
+            </element>
+            <!-- <element>
+               <name>dds.transport.UDPv4.builtin.parent.message_size_max</name>
+               <value>1450</value>
+           </element> -->
+          </value>
+        </property>
       </participant_qos>
     </qos_profile>
 
