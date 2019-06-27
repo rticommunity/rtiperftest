@@ -1083,48 +1083,29 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
     </qos_profile>
 
     <qos_profile name="FlatData_ThroughputQos" base_name="ThroughputQos">
-      <!-- Configure DataWriter to prevent dynamic allocation of serialization buffer -->
-      
-
-      <!-- Config participants buffers to be big enough to not to need dynamic allocating too often -->
-      <participant_qos>
-        <!-- Avoid IP Fragmentation https://community.rti.com/kb/i-am-not-receiving-samples-could-it-be-ip-fragmentation -->
-        <!-- <discovery_config>
-          <publication_writer_publish_mode>
-              <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
-          </publication_writer_publish_mode>
-          <subscription_writer_publish_mode>
-              <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
-          </subscription_writer_publish_mode>
-        </discovery_config> -->
+      <datawriter_qos>
         <property>
           <value>
             <element>
-              <name>dds.transport.shmem.builtin.received_message_count_max</name>
-              <value>1000</value>
+              <name>dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size</name>
+              <value>LENGTH_UNLIMITED</value>
             </element>
-            <element>
-              <name>dds.transport.shmem.builtin.receive_buffer_size</name>
-              <value>60000000</value>
-            </element>
-            <element>
-              <name>dds.transport.UDPv4.builtin.send_socket_buffer_size</name>
-              <value>1000000</value>
-            </element>
-            <element>
-              <name>dds.transport.UDPv4.builtin.recv_socket_buffer_size</name>
-              <value>2000000</value>
-            </element>
-            <!-- <element>
-               <name>dds.transport.UDPv4.builtin.parent.message_size_max</name>
-               <value>1450</value>
-           </element> -->
           </value>
         </property>
-      </participant_qos>
+      </datawriter_qos>
     </qos_profile>
 
     <qos_profile name="FlatData_LatencyQos" base_name="LatencyQos">
+      <datawriter_qos>
+          <property>
+            <value>
+              <element>
+                <name>dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size</name>
+                <value>LENGTH_UNLIMITED</value>
+              </element>
+            </value>
+          </property>
+        </datawriter_qos>
     </qos_profile>
 
     <qos_profile name="FlatData_AnnouncementQos" base_name="AnnouncementQos"/>
