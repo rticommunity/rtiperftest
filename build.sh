@@ -610,7 +610,7 @@ function build_cpp()
     # Therefore, we need to generate a makefile that contains
     # nddsmetp and nddssecurity libraries
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
-        echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
+        echo -e "${INFO_TAG} Generating FlatData code"
         rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
         ${additional_defines_flatdata} \
         -unboundedSupport -replace -create typefiles \
@@ -853,7 +853,7 @@ function build_cpp03()
     # Therefore, we need to generate a makefile that contains
     # nddsmetp and nddssecurity libraries
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
-        echo -e "${INFO_TAG} Appending nddssecurity library to makefile"
+        echo -e "${INFO_TAG} Generating FlatData code"
         rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
         ${additional_defines_flatdata} \
         -unboundedSupport -replace -create typefiles -platform ${platform} \
