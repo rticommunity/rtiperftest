@@ -597,6 +597,27 @@ Test Parameters Only For Publishing Applications
 
    **Default:** ``false``
 
+-  ``-lowResolutionClock``
+
+   This option enables the measurement of the latency for systems where the
+   clock resolution is not good enough and the measurements per samples are
+   not accurate.
+
+   If the machine where *RTI Perftest* is being executed has a low resolution
+   clock, the regular logic might not report accurate latency numbers. Therefore
+   *RTI Perftest* implements a simple solution to get a rough estimation of the
+   latency:
+
+   Before sending the first sample *RTI Perftest* takes the time and right after
+   receiving the last pong the time is taken again. Then, under the assumption that
+   the processing time is negligible, the average latency is calculated as half of 
+   the taken time divided by the number of samples sent.
+   
+   This calculation does only make sense if latencyCount = 1 (Latency Test), since
+   it assumes that every single ping is answered.
+
+   **Default:** ``not set``
+
 -  ``-numIter <count>``
 
    Number of samples to send.

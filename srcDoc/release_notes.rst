@@ -288,6 +288,22 @@ Update Maximum sample size accepted by *RTI Perftest* (#136)
 The maximum size of a sample accepted by *RTI Perftest* has been updated to
 be compatible with *RTI Connext DDS 6.0.0*. This new value is 2147482620 Bytes.
 
+Add option to enable latency measurements in machines with low resolution clocks (#162)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If the machine where *RTI Perftest* is being executed has a low resolution
+clock, the regular logic might not report accurate latency numbers. Therefore
+the application now implements a simple solution to get a rough estimation of the
+latency.
+
+Before sending the first sample *RTI Perftest* takes the time and right after
+receiving the last pong the time is taken again. Then, under the assumption that
+the processing time is negligible, the average latency is calculated as half of 
+the taken time divided by the number of samples sent.
+
+This calculation does only make sense if latencyCount = 1 (Latency Test), since
+it assumes that every single ping is answered.
+
 Stop using alarm function to schedule functions since it is deprecated (#164)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
