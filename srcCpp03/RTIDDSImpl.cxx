@@ -2189,7 +2189,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
         }
 
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
-        qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize")); // TODO: REPLACE _PM->get.. FOR initial_samples!!!!!!!!!
+        qos_resource_limits->initial_samples(initial_samples); // TODO: REPLACE _PM->get.. FOR initial_samples!!!!!!!!!
         std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
         std::cout << "[########] QoS DW Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
         std::cout << "[########] SendQueueSize: " << _PM->get<int>("sendQueueSize") << std::endl;
