@@ -1981,7 +1981,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     }
 
     // only apply durability on Throughput datareader
-    if (qos_profile == "ThroughputQos" || qos_profile == "FlatData_ThroughputQos") {
+    if (qos_profile == "ThroughputQos") {
 
         if (_PM->get<int>("durability") == DDS_VOLATILE_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::Volatile();
@@ -1994,7 +1994,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
                 !_PM->get<bool>("noDirectCommunication"));
     }
 
-    if ((qos_profile == "LatencyQoS" || qos_profile == "FlatData_LatencyQos")
+    if ((qos_profile == "LatencyQoS")
             && _PM->get<bool>("noDirectCommunication")
             && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
             || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
@@ -2027,14 +2027,11 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     // If FlatData and LargeData, automatically estimate initial_samples here
     if (_isLargeData && _isFlatData) {
         initial_samples = std::max(
-                1,
-                MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE
-        );
+                1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
 
         initial_samples = std::min(
-            initial_samples,
-            (unsigned long long) qos_initial_samples
-        );
+                initial_samples,
+                (unsigned long long) qos_initial_samples);
 
         qos_resource_limits->initial_samples(initial_samples);
     }
@@ -2112,8 +2109,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
     unsigned long long initial_samples = 0;
 
     if (_PM->get<bool>("noPositiveAcks")
-            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos"
-            || qos_profile == "FlatData_ThroughputQos" || qos_profile == "FlatData_LatencyQos")) {
+            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
         dw_dataWriterProtocol.disable_positive_acks(true);
         if (_PM->is_set("keepDurationUsec")) {
             dw_reliableWriterProtocol
@@ -2146,7 +2142,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
     }
 
     // These QOS's are only set for the Throughput datawriter
-    if (qos_profile == "ThroughputQos" || qos_profile == "FlatData_ThroughputQos") {
+    if (qos_profile == "ThroughputQos") {
 
         if (_PM->get<bool>("multicast")) {
             dw_reliableWriterProtocol.enable_multicast_periodic_heartbeat(true);
@@ -2172,24 +2168,28 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
             qos_dw_resource_limits.max_batches(_PM->get<int>("sendQueueSize"));
         }
 
-        // If FlatData and LargeData, automatically estimate initial_samples here
-        // in a range from 1 up to the initial samples specifies in the QoS file
-        if (_isLargeData && _isFlatData) {
-            initial_samples = std::max(
-                    1,
-                    MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE
-            );
+        initial_samples = _PM->get<int>("sendQueueSize");
 
-            initial_samples = std::min(
-                initial_samples,
-                (unsigned long long) _PM->get<int>("sendQueueSize")
-            );
-        } else {
-            initial_samples = _PM->get<int>("sendQueueSize");
+        if (_isFlatData) {
+            // Configure DataWriter to prevent dynamic allocation of serialization buffer
+            dw_qos.policy<Property>().set(Property::Entry(
+                    "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size", 
+                     std::to_string(dds::core::LENGTH_UNLIMITED)));
+
+            // If FlatData and LargeData, automatically estimate initial_samples here
+            // in a range from 1 up to the initial samples specifies in the QoS file
+            if (_isLargeData) {
+                initial_samples = std::max(
+                        1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+
+                initial_samples = std::min(
+                        initial_samples, 
+                        (unsigned long long) _PM->get<int>("sendQueueSize"));
+            }
         }
 
+        qos_resource_limits->initial_samples(initial_samples);
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
-        qos_resource_limits->initial_samples(initial_samples); // TODO: REPLACE _PM->get.. FOR initial_samples!!!!!!!!!
         std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
         std::cout << "[########] QoS DW Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
         std::cout << "[########] SendQueueSize: " << _PM->get<int>("sendQueueSize") << std::endl;
@@ -2230,7 +2230,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
                 _PM->get<int>("sendQueueSize"));
     }
 
-    if ((qos_profile == "LatencyQos" || qos_profile == "FlatData_LatencyQos")
+    if ((qos_profile == "LatencyQos")
             && _PM->get<bool>("noDirectCommunication")
             && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
             || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
@@ -2292,9 +2292,9 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
     using namespace dds::core::policy;
     using namespace rti::core::policy;
 
-    std::string qos_profile = "FlatData_";
+    std::string qos_profile = "";
 
-    qos_profile += this->get_qos_profile_name(topic_name);
+    qos_profile = this->get_qos_profile_name(topic_name);
     if (qos_profile.empty()) {
         throw std::logic_error("[Error] Topic name");
     }
@@ -2355,9 +2355,9 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const std::string &topic_
     using namespace dds::core::policy;
     using namespace rti::core::policy;
 
-    std::string qos_profile = "FlatData_";
+    std::string qos_profile = "";
 
-    qos_profile += this->get_qos_profile_name(topic_name);
+    qos_profile = this->get_qos_profile_name(topic_name);
     if (qos_profile.empty()) {
         throw std::logic_error("[Error] Topic name");
     }
