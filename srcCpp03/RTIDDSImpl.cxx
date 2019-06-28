@@ -2037,10 +2037,11 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
         }
     }    
 
+    
     // If FlatData and LargeData, automatically estimate initial_samples here
-    if (_isLargeData && _isFlatData) {
+    if (_isFlatData && _isLargeData) {
         initial_samples = std::max(
-                1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+            1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
 
         initial_samples = std::min(
                 initial_samples,
@@ -2188,6 +2189,11 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
             dw_qos.policy<Property>().set(Property::Entry(
                     "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size", 
                      std::to_string(dds::core::LENGTH_UNLIMITED)));
+
+            if (_PM->get<std::string>("transport") == "UPDv4") {
+                properties["dds.transport.UDPv4.builtin.send_socket_buffer_size"] = "1000000";
+                properties["dds.transport.UDPv4.builtin.recv_socket_buffer_size"] = "2000000";
+            }
 
             // If FlatData and LargeData, automatically estimate initial_samples here
             // in a range from 1 up to the initial samples specifies in the QoS file
