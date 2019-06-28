@@ -2190,11 +2190,6 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
                     "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size", 
                      std::to_string(dds::core::LENGTH_UNLIMITED)));
 
-            if (_PM->get<std::string>("transport") == "UPDv4") {
-                properties["dds.transport.UDPv4.builtin.send_socket_buffer_size"] = "1000000";
-                properties["dds.transport.UDPv4.builtin.recv_socket_buffer_size"] = "2000000";
-            }
-
             // If FlatData and LargeData, automatically estimate initial_samples here
             // in a range from 1 up to the initial samples specifies in the QoS file
             if (_isLargeData) {
