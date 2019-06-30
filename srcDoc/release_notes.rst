@@ -1286,6 +1286,25 @@ The new *RTI Perftest* build system, however, is focused on compiling
 only one of those modes at a time. To choose the compilation mode,
 use the ``-debug`` and ``-dynamic`` flags.
 
+Warnings Compiling on Windows systems when using the *RTI Security* plugin
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We have found that in certain instalations of *Openssl* a missing `pdb` file
+causes several warnings when compiling statically *RTI Perftest* for C++ 
+(classic and modern implementations). The warning that will show should be
+similar to this one:
+
+```
+libeay32z.lib(wp_block.obj) : warning LNK4099: PDB 'lib.pdb' was not found with
+'libeay32z.lib(wp_block.obj)' or at 'rtiperftest\srcCpp03\objs\i86Win32VS2015\lib.pdb';
+linking object as if no debug info [srcCpp03\perftest_publisher-i86Win32VS2015.vcxproj]
+
+    403 Warning(s)
+    0 Error(s)
+```
+
+This warning should be innocuous.
+
 Dynamic compilation modes for *RTI Connext DDS Micro*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

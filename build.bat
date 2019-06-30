@@ -398,6 +398,14 @@ if !BUILD_CPP! == 1 (
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
 	copy /Y "%classic_cpp_folder%"\objs\%architecture%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp"%executable_extension%"
 	call::clean_src_cpp_common
+
+	if "x!STATIC_DYNAMIC!" == "xdynamic" (
+		echo [INFO]: Code compiled dynamically, Add "NDDSHOME/lib/%platform%"
+		if !USE_SECURE_LIBS! == 1 (
+			echo and <OPENSSL_HOME>\!RELEASE_DEBUG!\bin
+		)
+		echo to your PATH variable
+	)
 )
 
 ::------------------------------------------------------------------------------
@@ -454,6 +462,14 @@ if !BUILD_CPP03! == 1 (
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
 	copy /Y "%modern_cpp_folder%"\objs\%architecture%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp03"%executable_extension%"
 	call::clean_src_cpp_common
+
+	if "x!STATIC_DYNAMIC!" == "xdynamic" (
+		echo [INFO]: Code compiled dynamically, Add "NDDSHOME/lib/%platform%"
+		if !USE_SECURE_LIBS! == 1 (
+			echo and <OPENSSL_HOME>\!RELEASE_DEBUG!\bin
+		)
+		echo to your PATH variable
+	)
 )
 
 ::------------------------------------------------------------------------------
