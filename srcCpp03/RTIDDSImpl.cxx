@@ -2084,7 +2084,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     // If FlatData and LargeData, automatically estimate initial_samples here
     if (_isFlatData && _isLargeData) {
         initial_samples = std::max(
-            1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+            1ll, (long long) (MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE));
 
         initial_samples = std::min(
                 initial_samples,
@@ -2295,7 +2295,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
      */
     if (_isFlatData && _isLargeData) {
         initial_samples = std::max(
-                1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+                1ll, (long long) (MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE));
 
         initial_samples = std::min(
                 initial_samples, 
