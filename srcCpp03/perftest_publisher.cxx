@@ -171,7 +171,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
             if (_PM.get<bool>("flatdata")) {
                 #ifdef RTI_FLATDATA_AVAILABLE
                  if (_PM.get<bool>("zerocopy")) {
-                    _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>();
+                    _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>(true);
                  } else {
                     _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>();
                  }
@@ -183,7 +183,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
             if (_PM.get<bool>("flatdata")) {
                 #ifdef RTI_FLATDATA_AVAILABLE
                   if (_PM.get<bool>("zerocopy")) {
-                      _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>();
+                      _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
                   } else {
                       _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
                   }
@@ -197,7 +197,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
             if (_PM.get<bool>("flatdata")) {
                 #ifdef RTI_FLATDATA_AVAILABLE
                   if (_PM.get<bool>("zerocopy")) {
-                      _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>();
+                      _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>(true);
                   } else {
                       _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
                   }
@@ -209,7 +209,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
             if (_PM.get<bool>("flatdata")) {
                 #ifdef RTI_FLATDATA_AVAILABLE
                   if (_PM.get<bool>("zerocopy")) {
-                      _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>();
+                      _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>(true);
                   } else {
                       _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
                   }
@@ -709,6 +709,7 @@ public:
                     "message.entity_id out of bounds." << std::endl;
             return;
         }
+
         // Check for test initialization messages
         if (size == perftest_cpp::INITIALIZE_SIZE) {
             _writer->send(message);
