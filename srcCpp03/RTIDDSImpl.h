@@ -89,6 +89,7 @@ class RTIDDSImpl : public IMessaging
     int _InstanceHashBuckets;
     bool _isLargeData;
     bool _isFlatData;
+    bool _isZeroCopy;
     PerftestTransport _transport;
     dds::domain::DomainParticipant _participant;
     dds::sub::Subscriber _subscriber;
@@ -118,7 +119,7 @@ class RTIDDSImpl : public IMessaging
 template <typename T>
 class RTIDDSImpl_FlatData: public RTIDDSImpl<TestData_t> {
 public:
-    RTIDDSImpl_FlatData();
+    RTIDDSImpl_FlatData(bool isZeroCopy=false);
     
     IMessagingWriter *CreateWriter(const std::string &topic_name);
     // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()

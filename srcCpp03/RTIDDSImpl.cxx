@@ -98,7 +98,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED), //(-1)
         _isLargeData(false),
         _isFlatData(false),
-
+        _isZeroCopy(false),
 
         _participant(dds::core::null),
         _subscriber(dds::core::null),
@@ -863,11 +863,14 @@ public:
 #ifdef RTI_FLATDATA_AVAILABLE
   template<typename T>
   class FlatDataReceiverListener : public ReceiverListenerBase<T> {
+  protected:
+      bool _isZeroCopy;
+
   public:
       typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
 
-      FlatDataReceiverListener(IMessagingCB *callback) :
-          ReceiverListenerBase<T>(callback) {
+      FlatDataReceiverListener(IMessagingCB *callback, bool isZeroCopy) :
+          ReceiverListenerBase<T>(callback), _isZeroCopy(isZeroCopy) {
       }
 
       void on_data_available(dds::sub::DataReader<T> &reader) {
@@ -885,6 +888,11 @@ public:
                   this->_message.latency_ping = message.latency_ping();
                   this->_message.size = message.bin_data().element_count();
                   // bin_data should be retrieved here
+
+                  // Check that the sample was not modified on the publisher side when using Zero Copy.
+                  if (_isZeroCopy && !reader->is_data_consistent(samples[i])) {
+                      continue;
+                  }
 
                   this->_callback->ProcessMessage(this->_message);
               }
@@ -1081,6 +1089,8 @@ public:
 #ifdef RTI_FLATDATA_AVAILABLE
   template<typename T>
   class RTIFlatDataSubscriber: public RTISubscriberBase<T> {
+  protected:
+      bool _isZeroCopy;
 
   public:
       typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
@@ -1089,12 +1099,12 @@ public:
               dds::sub::DataReader<T> reader,
               ReceiverListenerBase<T> *readerListener,
               ParameterManager *PM)
-            :
-              RTISubscriberBase<T>(
-                      reader,
-                      readerListener,
-                      PM)
-      {}
+          :RTISubscriberBase<T>(
+                    reader,
+                    readerListener,
+                    PM) { 
+              _isZeroCopy = PM->get<bool>("zerocopy");
+          }
 
       TestMessage *ReceiveMessage() {
 
@@ -1120,7 +1130,7 @@ public:
               // skip non-valid data
               while ((!samples[this->_data_idx].info().valid())
                       && (++(this->_data_idx) < seq_length))
-                  ;
+                  continue;
 
               // may have hit end condition
               if (this->_data_idx == seq_length) {
@@ -1138,6 +1148,12 @@ public:
               this->_message.size = message.bin_data().element_count();
 
               ++(this->_data_idx);
+              
+              // Check that the sample was not modified on the publisher side when using Zero Copy.
+              if (_isZeroCopy && !this->_reader->is_data_consistent(
+                        samples[this->_data_idx])) {
+                  continue;
+              }
 
               return &(this->_message);
           }
@@ -1162,6 +1178,11 @@ public:
                       this->_message.latency_ping = message.latency_ping();
                       this->_message.size = message.bin_data().element_count();
                       //_message.data = message.bin_data();
+
+                      // Check that the sample was not modified on the publisher side when using Zero Copy.
+                      if (_isZeroCopy && !this->_reader->is_data_consistent(samples[i])) {
+                          continue;
+                      }
 
                       listener->ProcessMessage(this->_message);
                   }
@@ -2063,7 +2084,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     // If FlatData and LargeData, automatically estimate initial_samples here
     if (_isFlatData && _isLargeData) {
         initial_samples = std::max(
-            1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+            1ll, (long long) (MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE));
 
         initial_samples = std::min(
                 initial_samples,
@@ -2133,7 +2154,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
         }
     }
 
-    if (_isLargeData || _PM->get<bool>("asynchronous")) {
+    if ((_isLargeData && !_isZeroCopy) || _PM->get<bool>("asynchronous")) {
         if (_PM->get<std::string>("flowController") != "default") {
             dwPublishMode = PublishMode::Asynchronous(
                     "dds.flow_controller.token_bucket."
@@ -2186,6 +2207,12 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
             dw_qos.policy<Property>().set(Property::Entry(
                     "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size", 
                      std::to_string(dds::core::LENGTH_UNLIMITED)));
+
+            // Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
+            // This sequence number is used by a ZeroCopy DataReader to check for sample consistency.
+            if (_isZeroCopy) {
+                dw_qos << DataWriterTransferMode::ShmemRefSettings(true);
+            }
         }
 
         qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
@@ -2259,11 +2286,16 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
                 buf;
     }
 
-    // If FlatData and LargeData, automatically estimate initial_samples here
-    // in a range from 1 up to the initial samples specifies in the QoS file
+    /*  
+     * Since unbounded sequences are not allowed in FlatData,
+     * if FlatData and LargeData, automatically estimate initial_samples here
+     * in a range from 1 up to the initial samples specifies in the QoS file
+     * For Zero Copy it is not necessary since we are sending a pointer,
+     * not the entire data
+     */
     if (_isFlatData && _isLargeData) {
         initial_samples = std::max(
-                1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+                1ll, (long long) (MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE));
 
         initial_samples = std::min(
                 initial_samples, 
@@ -2292,8 +2324,9 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
 }
 
 template <typename T>
-RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData() {
+RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData(bool isZeroCopy) {
     this->_isFlatData = true;
+    this->_isZeroCopy = isZeroCopy;
 }
 
 /*********************************************************
@@ -2327,7 +2360,8 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
                 topic);
         if (callback != NULL) {
 
-            reader_listener = new FlatDataReceiverListener<T>(callback);
+            reader_listener = new FlatDataReceiverListener<T>(
+                    callback, _PM->get<bool>("zerocopy"));
 
             reader = dds::sub::DataReader<T>(
                     this->_subscriber,
@@ -2342,7 +2376,8 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
 
         if (callback != NULL) {
 
-            reader_listener = new FlatDataReceiverListener<T>(callback);
+            reader_listener = new FlatDataReceiverListener<T>(
+                    callback, _PM->get<bool>("zerocopy"));
 
             reader = dds::sub::DataReader<T>(
                     this->_subscriber,
