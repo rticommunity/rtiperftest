@@ -10,6 +10,7 @@
 #include "perftest_cpp.h"
 #include "RTIDDSImpl.h"
 #ifndef RTI_MICRO
+  #include <algorithm>    // std::max
   #include "ndds/ndds_cpp.h"
   #include "qos_string.h"
 #endif
@@ -243,6 +244,15 @@ bool RTIDDSImpl<T>::validate_input()
                 _PM->set<long>("batchSize", 0); // Disable Batching
             }
         }
+
+        if (_isFlatData) {
+            if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") > 0) {
+                fprintf(stderr, "Batching cannot be used with FlatData.\n");
+                return false;
+            } else {
+                _PM->set<long>("batchSize", -3);
+            }
+        }
     }
 
     // Manage parameter -enableTurboMode
@@ -309,6 +319,24 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         }
       #endif
         stringStream << "\n";
+    } else {
+        stringStream << "No\n";
+    }
+  #endif
+  
+  #ifdef RTI_FLATDATA_AVAILABLE
+    // FlatData
+    stringStream << "\tFlatData: ";
+    if (_PM->get<bool>("flatdata")) {
+        stringStream << "Yes\n";
+    } else {
+        stringStream << "No\n";
+    }
+
+    // Zero Copy
+    stringStream << "\tZero Copy: ";
+    if (_PM->get<bool>("zerocopy")) {
+        stringStream << "Yes\n";
     } else {
         stringStream << "No\n";
     }
@@ -409,12 +437,12 @@ class DomainListener : public DDSDomainParticipantListener
 /*********************************************************
  * RTIPublisher
  */
+
 template<typename T>
-class RTIPublisher : public IMessagingWriter
+class RTIPublisherBase : public IMessagingWriter
 {
-  private:
+  protected:
     typename T::DataWriter *_writer;
-    T data;
     unsigned long _num_instances;
     unsigned long _instance_counter;
     DDS_InstanceHandle_t *_instance_handles;
@@ -427,8 +455,12 @@ class RTIPublisher : public IMessagingWriter
     bool _isReliable;
     ParameterManager *_PM;
 
+    DDS_InstanceHandle_t &getCftInstanceHandle() {
+        return _instance_handles[_num_instances];
+    }
+
  public:
-    RTIPublisher(
+    RTIPublisherBase(
             DDSDataWriter *writer,
             unsigned long num_instances,
             PerftestSemaphore * pongSemaphore,
@@ -455,10 +487,6 @@ class RTIPublisher : public IMessagingWriter
       #endif
         _PM = PM;
         _writer = T::DataWriter::narrow(writer);
-        if (!data.bin_data.maximum(0)) {
-            Shutdown();
-            throw std::runtime_error("bin_data.maximum failed");
-        }
         _num_instances = num_instances;
         _instance_counter = 0;
         _instance_handles = (DDS_InstanceHandle_t *) malloc(
@@ -471,34 +499,16 @@ class RTIPublisher : public IMessagingWriter
         _pongSemaphore = pongSemaphore;
         _instancesToBeWritten = instancesToBeWritten;
 
-        for (unsigned long i = 0; i < _num_instances; ++i) {
-            for (int c = 0; c < KEY_SIZE; c++) {
-                data.key[c] = (unsigned char) (i >> c * 8);
-            }
-          #ifdef RTI_CUSTOM_TYPE
-            register_custom_type_data(data.custom_type, i);
-          #endif
-            _instance_handles[i] = _writer->register_instance(data);
-        }
-        // Register the key of MAX_CFT_VALUE
-        for (int c = 0; c < KEY_SIZE; c++) {
-            data.key[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
-        }
-      #ifdef RTI_CUSTOM_TYPE
-        register_custom_type_data(data.custom_type, MAX_CFT_VALUE);
-      #endif
-        _instance_handles[_num_instances] = _writer->register_instance(data);
-
         DDS_DataWriterQos qos;
         _writer->get_qos(qos);
         _isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
     }
 
-    ~RTIPublisher() {
+    ~RTIPublisherBase() {
         try {
             Shutdown();
         } catch (const std::exception &ex) {
-            fprintf(stderr, "Exception in RTIPublisher::~RTIPublisher(): %s.\n", ex.what());
+            fprintf(stderr, "Exception in RTIPublisherBase::~RTIPublisherBase(): %s.\n", ex.what());
         }
     }
 
@@ -528,95 +538,6 @@ class RTIPublisher : public IMessagingWriter
       #ifndef RTI_MICRO
         _writer->flush();
       #endif
-    }
-
-    bool Send(const TestMessage &message, bool isCftWildCardKey)
-    {
-        DDS_ReturnCode_t retcode;
-        bool success = true;
-        long key = 0;
-
-        if (!isCftWildCardKey) {
-            if (_num_instances > 1) {
-                if (_instancesToBeWritten == -1) {
-                    key = _instance_counter++ % _num_instances;
-                } else { // send sample to a specific subscriber
-                    key = _instancesToBeWritten;
-                }
-            }
-        } else {
-            key = MAX_CFT_VALUE;
-        }
-        for (int c = 0; c < KEY_SIZE; c++) {
-            data.key[c] = (unsigned char)(key >> c * 8);
-        }
-
-        data.entity_id = message.entity_id;
-        data.seq_num = message.seq_num;
-        data.timestamp_sec = message.timestamp_sec;
-        data.timestamp_usec = message.timestamp_usec;
-        data.latency_ping = message.latency_ping;
-      #ifdef RTI_CUSTOM_TYPE
-        /**
-         * Using custom type the size of the data is set in data.custom_type_size:
-         *      If the message.size is a sentinel size value used to handle the test:
-         *          data.custom_type_size = message.size
-         *      Else:
-         *          If the message.size is different from the last iteration:
-         *              data.custom_type_size of the custom type (data.custom_type)
-         *              is measured from the function serialize_data_to_cdr_buffer()
-         *          Else:
-         *              data.custom_type_size is the same as the last iteration
-        */
-        if (is_sentinel_size(message.size)) {
-            data.custom_type_size = message.size;
-        } else {
-            if (!set_custom_type_data(
-                    data.custom_type,
-                    key,
-                    message.size - _minCustomTypeSerializeSize)) {
-                fprintf(stderr, "set_custom_type_data failed.\n");
-                return false;
-            }
-            if ((unsigned int)message.size != _lastMessageSize) {
-                success = get_serialize_size_custom_type_data(
-                        (unsigned int &)data.custom_type_size);
-                if (!success) {
-                    return false;
-                }
-                _lastMessageSize = message.size;
-            }
-        }
-      #else
-        success = data.bin_data.loan_contiguous(
-                (DDS_Octet*)message.data,
-                message.size,
-                message.size);
-        if (!success) {
-            fprintf(stderr, "bin_data.loan_contiguous() failed.\n");
-            return false;
-        }
-      #endif
-        if (!isCftWildCardKey) {
-            retcode = _writer->write(data, _instance_handles[key]);
-        } else { // send CFT_MAX sample
-            retcode = _writer->write(data, _instance_handles[_num_instances]);
-        }
-
-      #ifndef RTI_CUSTOM_TYPE
-        success = data.bin_data.unloan();
-        if (!success) {
-            fprintf(stderr, "bin_data.unloan() failed.\n");
-            return false;
-        }
-      #endif
-
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr,"Write error %d.\n", retcode);
-            return false;
-        }
-
-        return true;
     }
 
     void WaitForReaders(int numSubscribers)
@@ -722,26 +643,263 @@ class RTIPublisher : public IMessagingWriter
 #endif
 };
 
-#ifndef RTI_MICRO //Dynamic Data not supported for micro
+template<typename T>
+class RTIPublisher : public RTIPublisherBase<T>
+{
+  protected:
+    T data;
+
+ public:
+    RTIPublisher(
+            DDSDataWriter *writer,
+            unsigned long num_instances,
+            PerftestSemaphore * pongSemaphore,
+            int instancesToBeWritten,
+            ParameterManager *PM)
+            : RTIPublisherBase<T>(
+                    writer,
+                    num_instances,
+                    pongSemaphore,
+                    instancesToBeWritten,
+                    PM)
+    {
+        for (unsigned long i = 0; i < this->_num_instances; ++i) {
+            for (int c = 0; c < KEY_SIZE; c++) {
+                data.key[c] = (unsigned char) (i >> c * 8);
+            }
+          #ifdef RTI_CUSTOM_TYPE
+            register_custom_type_data(data.custom_type, i);
+          #endif
+            this->_instance_handles[i] = this->_writer->register_instance(data);
+        }
+
+        // Register the key of MAX_CFT_VALUE
+        for (int c = 0; c < KEY_SIZE; c++) {
+            data.key[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
+        }
+
+      #ifdef RTI_CUSTOM_TYPE
+        register_custom_type_data(data.custom_type, MAX_CFT_VALUE);
+      #endif
+
+        this->_instance_handles[this->_num_instances] = this->_writer->register_instance(data);
+    }
+
+    ~RTIPublisher() {
+        try {
+            this->Shutdown();
+        } catch (const std::exception &ex) {
+            fprintf(stderr, "Exception in RTIPublisher::~RTIPublisher(): %s.\n", ex.what());
+        }
+    }
+
+    bool Send(const TestMessage &message, bool isCftWildCardKey)
+    {
+        DDS_ReturnCode_t retcode;
+        bool success = true;
+        long key = 0;
+
+        if (!isCftWildCardKey) {
+            if (this->_num_instances > 1) {
+                if (this->_instancesToBeWritten == -1) {
+                    key = this->_instance_counter++ % this->_num_instances;
+                } else { // send sample to a specific subscriber
+                    key = this->_instancesToBeWritten;
+                }
+            }
+        } else {
+            key = this->_num_instances;
+        }
+        for (int c = 0; c < KEY_SIZE; c++) {
+            data.key[c] = (unsigned char)(key >> c * 8);
+        }
+
+        data.entity_id = message.entity_id;
+        data.seq_num = message.seq_num;
+        data.timestamp_sec = message.timestamp_sec;
+        data.timestamp_usec = message.timestamp_usec;
+        data.latency_ping = message.latency_ping;
+      #ifdef RTI_CUSTOM_TYPE
+        /**
+         * Using custom type the size of the data is set in data.custom_type_size:
+         *      If the message.size is a sentinel size value used to handle the test:
+         *          data.custom_type_size = message.size
+         *      Else:
+         *          If the message.size is different from the last iteration:
+         *              data.custom_type_size of the custom type (data.custom_type)
+         *              is measured from the function serialize_data_to_cdr_buffer()
+         *          Else:
+         *              data.custom_type_size is the same as the last iteration
+        */
+        if (is_sentinel_size(message.size)) {
+            data.custom_type_size = message.size;
+        } else {
+            if (!set_custom_type_data(
+                    data.custom_type,
+                    key,
+                    message.size - this->_minCustomTypeSerializeSize)) {
+                fprintf(stderr, "set_custom_type_data failed.\n");
+                return false;
+            }
+            if ((unsigned int)message.size != this->_lastMessageSize) {
+                success = get_serialize_size_custom_type_data(
+                        (unsigned int &)data.custom_type_size);
+                if (!success) {
+                    return false;
+                }
+                this->_lastMessageSize = message.size;
+            }
+        }
+      #else
+        success = data.bin_data.loan_contiguous(
+                (DDS_Octet*)message.data,
+                message.size,
+                message.size);
+        if (!success) {
+            fprintf(stderr, "bin_data.loan_contiguous() failed.\n");
+            return false;
+        }
+      #endif
+        if (!isCftWildCardKey) {
+            retcode = this->_writer->write(data, this->_instance_handles[key]);
+        } else { // send CFT_MAX sample
+            retcode = this->_writer->write(data, this->getCftInstanceHandle());
+        }
+
+      #ifndef RTI_CUSTOM_TYPE
+        success = data.bin_data.unloan();
+        if (!success) {
+            fprintf(stderr, "bin_data.unloan() failed.\n");
+            return false;
+        }
+      #endif
+
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr,"Write error %d.\n", retcode);
+            return false;
+        }
+
+        return true;
+    }
+};
+
+#ifndef RTI_MICRO //Dynamic Data and FlatData are not supported for micro
+
+#ifdef RTI_FLATDATA_AVAILABLE
+
+template<typename T>
+class RTIFlatDataPublisher: public RTIPublisherBase<T> {
+protected:
+    typedef typename rti::flat::flat_type_traits<T>::builder Builder;
+    typedef typename rti::flat::PrimitiveArrayOffset<unsigned char, 4> KeyBuilder;
+    typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
+
+    void add_key(Builder &builder, unsigned long int i) {
+        KeyBuilder key_offset = builder.add_key();
+
+        for (int j = 0; j < KEY_SIZE; ++j) {
+            // The key will be i but splitted in bytes
+            key_offset.set_element(j, (unsigned char) (i >> j * 8));
+        }
+    }
+
+public:
+    RTIFlatDataPublisher(
+            DDSDataWriter *writer,
+            unsigned long num_instances,
+            PerftestSemaphore *pongSemaphore,
+            int instancesToBeWritten,
+            ParameterManager *PM)
+            : RTIPublisherBase<T>(
+                    writer,
+                    num_instances,
+                    pongSemaphore,
+                    instancesToBeWritten,
+                    PM) 
+    {
+        for (unsigned long i = 0; i < this->_num_instances; ++i) {
+            Builder builder = rti::flat::build_data<T>(this->_writer);
+            add_key(builder, i);
+            T *sample = builder.finish_sample();
+
+          #ifdef RTI_CUSTOM_TYPE
+            // TODO: Check this
+            register_custom_type_data(sample.custom_type, i);
+          #endif
+            this->_instance_handles[i] = this->_writer->register_instance(*sample);
+        }
+
+        Builder builder = rti::flat::build_data<T>(this->_writer);
+        add_key(builder, MAX_CFT_VALUE);
+        T *sample = builder.finish_sample();
+
+      #ifdef RTI_CUSTOM_TYPE
+        // TODO: Check this
+        register_custom_type_data(sample.custom_type, MAX_CFT_VALUE);
+      #endif
+
+        this->_instance_handles[this->_num_instances] = this->_writer->register_instance(*sample);
+        this->_writer->discard_loan(*sample);
+    }
+
+    ~RTIFlatDataPublisher() {
+        try {
+            this->Shutdown();
+        } catch (const std::exception &ex) {
+            fprintf(stderr, "Exception in RTIPublisher::~RTIPublisher(): %s.\n", ex.what());
+        }
+    }
+
+    bool Send(const TestMessage &message, bool isCftWildCardKey) {
+        Builder builder = rti::flat::build_data<T>(this->_writer);
+        long key = 0;
+
+        // Initialize Information data
+        builder.add_entity_id(message.entity_id);
+        builder.add_seq_num(message.seq_num);
+        builder.add_timestamp_sec(message.timestamp_sec);
+        builder.add_timestamp_usec(message.timestamp_usec); // TODO: Put this after add_n
+        builder.add_latency_ping(message.latency_ping);
+
+        // Add payload
+        BinDataBuilder bin_data_builder = builder.build_bin_data();
+        bin_data_builder.add_n(message.size);
+        bin_data_builder.finish();
+
+        // calculate key and add it
+        if (!isCftWildCardKey && this->_num_instances > 1) {
+            key = (this->_instancesToBeWritten == -1)
+                    ? this->_instance_counter++ % this->_num_instances
+                    : this->_instancesToBeWritten;
+        } else {
+            key = this->_num_instances; // TODO: Maybe this causes the error as in Modern C++ in that case do _num_instances-1
+        }
+
+        add_key(builder, key);
+
+        // Build the data to be sent
+        T *sample = builder.finish_sample();
+
+        // Send data through the writer
+        if (!isCftWildCardKey) {
+            this->_writer->write(*sample, this->_instance_handles[key]);
+        } else {
+            this->_writer->write(*sample, this->getCftInstanceHandle());
+        }
+
+        return true;
+    }
+};
+
+#endif
 
 /* Dynamic Data equivalent function from RTIPublisher */
-class RTIDynamicDataPublisher : public IMessagingWriter
+class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
 {
   private:
     DDSDynamicDataWriter *_writer;
     DDS_DynamicData data;
-    unsigned long _num_instances;
-    unsigned long _instance_counter;
-    DDS_InstanceHandle_t *_instance_handles;
-    PerftestSemaphore *_pongSemaphore;
-    long _instancesToBeWritten;
-  #ifdef RTI_CUSTOM_TYPE
-    unsigned int _minCustomTypeSerializeSize;
-    unsigned int _customTypeSize;
-  #endif
     int _lastMessageSize;
-    bool _isReliable;
-    ParameterManager *_PM;
 
   public:
     RTIDynamicDataPublisher(
@@ -750,39 +908,20 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             PerftestSemaphore *pongSemaphore,
             DDS_TypeCode *typeCode,
             int instancesToBeWritten,
-            ParameterManager *PM) :
-            data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT)
-
+            ParameterManager *PM) 
+            : RTIPublisherBase<DDS_DynamicData>(
+                    writer,
+                    num_instances,
+                    pongSemaphore,
+                    instancesToBeWritten,
+                    PM),
+            data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT),
+            _lastMessageSize(0)
     {
         DDS_ReturnCode_t retcode;
-
-      #ifdef RTI_CUSTOM_TYPE
-        // Calculate size_alignment_type of DDS_DynamicData object
-        if (!get_serialize_size_custom_type_data(_minCustomTypeSerializeSize)) {
-            throw std::runtime_error("get_serialize_size_custom_type_data failed");
-        }
-        // Initialize data
-        if (!initialize_custom_type_dynamic_data(data)) {
-            // ~DDS_DynamicData() will be called and data will be free
-            throw std::runtime_error("initialize_custom_type_dynamic_data failed");
-        }
-      #endif
-        _PM = PM;
-        _writer = DDSDynamicDataWriter::narrow(writer);
         DDS_Octet key_octets[KEY_SIZE];
 
-        _lastMessageSize = 0;
-        _num_instances = num_instances;
-        _instance_counter = 0;
-        _instancesToBeWritten = instancesToBeWritten;
-        _instance_handles = (DDS_InstanceHandle_t *) malloc(
-                sizeof(DDS_InstanceHandle_t) * (num_instances + 1));
-        if (_instance_handles == NULL) {
-            Shutdown();
-            fprintf(stderr, "_instance_handles malloc failed\n");
-            throw std::bad_alloc();
-        }
-        _pongSemaphore = pongSemaphore;
+        this->_writer = DDSDynamicDataWriter::narrow(writer);
 
         for (unsigned long i = 0; i < _num_instances; ++i) {
             for (int c = 0; c < KEY_SIZE; c++) {
@@ -799,15 +938,19 @@ class RTIDynamicDataPublisher : public IMessagingWriter
                 sprintf(errorMessage, "set_octet_array(key) failed: %d", retcode);
                 throw std::runtime_error(errorMessage);
             }
+
           #ifdef RTI_CUSTOM_TYPE
             register_custom_type_dynamic_data(data, i);
           #endif
-            _instance_handles[i] = _writer->register_instance(data);
+
+            this->_instance_handles[i] = this->_writer->register_instance(data);
         }
+
         // Register the key of MAX_CFT_VALUE
         for (int c = 0; c < KEY_SIZE; c++) {
             key_octets[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
         }
+
         retcode = data.set_octet_array(
                     "key",
                     DynamicDataMembersId::GetInstance().at("key"),
@@ -819,43 +962,20 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             sprintf(errorMessage, "set_octet_array(key) failed: %d", retcode);
             throw std::runtime_error(errorMessage);
         }
+
       #ifdef RTI_CUSTOM_TYPE
         register_custom_type_dynamic_data(data, MAX_CFT_VALUE);
       #endif
-        _instance_handles[_num_instances] = _writer->register_instance(data);
 
-        DDS_DataWriterQos qos;
-        _writer->get_qos(qos);
-        _isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
+        this->_instance_handles[_num_instances] = this->_writer->register_instance(data);
     }
 
     ~RTIDynamicDataPublisher() {
         try {
-            Shutdown();
+            this->Shutdown();
         } catch (const std::exception &ex) {
             fprintf(stderr, "Exception in RTIDynamicDataPublisher::~RTIDynamicDataPublisher(): %s.\n", ex.what());
         }
-    }
-
-    void Shutdown() {
-        if (_writer->get_listener() != NULL) {
-            delete(_writer->get_listener());
-            _writer->set_listener(NULL);
-        }
-        if (_instance_handles != NULL) {
-            free(_instance_handles);
-            _instance_handles = NULL;
-        }
-      #ifdef RTI_CUSTOM_TYPE
-        if (!finalize_custom_type_dynamic_data(data)) {
-            throw std::runtime_error("finalize_custom_type_dynamic_data failed");
-        }
-      #endif
-    }
-
-    void Flush()
-    {
-        _writer->flush();
     }
 
     bool Send(const TestMessage &message, bool isCftWildCardKey)
@@ -864,15 +984,15 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         DDS_Octet key_octets[KEY_SIZE];
         long key = 0;
         if (!isCftWildCardKey) {
-            if (_num_instances > 1) {
-                if (_instancesToBeWritten == -1) {
-                    key = _instance_counter++ % _num_instances;
+            if (this->_num_instances > 1) {
+                if (this->_instancesToBeWritten == -1) {
+                    key = this->_instance_counter++ % this->_num_instances;
                 } else { // send sample to a specific subscriber
-                    key = _instancesToBeWritten;
+                    key = this->_instancesToBeWritten;
                 }
             }
         } else {
-            key = MAX_CFT_VALUE;
+            key = this->_num_instances;
         }
         for (int c = 0; c < KEY_SIZE; c++) {
             key_octets[c] = (unsigned char) (key >> c * 8);
@@ -968,19 +1088,19 @@ class RTIDynamicDataPublisher : public IMessagingWriter
             if (!set_custom_type_dynamic_data(
                     data,
                     key,
-                    message.size - _minCustomTypeSerializeSize)) {
+                    message.size - this->_minCustomTypeSerializeSize)) {
                 fprintf(stderr, "set_custom_type_dynamic_data failed.\n");
                 return false;
             }
-            if (message.size != _lastMessageSize) {
-                if (!get_serialize_size_custom_type_data(_customTypeSize)) {
+            if (message.size != this->_lastMessageSize) {
+                if (!get_serialize_size_custom_type_data(this->_customTypeSize)) {
                     fprintf(stderr, "get_serialize_size_custom_type_data.\n");
                 }
             }
             retcode = data.set_long(
                     "custom_type_size",
                     DynamicDataMembersId::GetInstance().at("custom_type_size"),
-                    _customTypeSize);
+                    this->_customTypeSize);
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr, "set_long(custom_type_size) failed: %d.\n", retcode);
                 return false;
@@ -990,9 +1110,9 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         _lastMessageSize = message.size;
 
         if (!isCftWildCardKey) {
-            retcode = _writer->write(data, _instance_handles[key]);
+            retcode = this->_writer->write(data, this->_instance_handles[key]);
         } else {
-            retcode = _writer->write(data, _instance_handles[_num_instances]);
+            retcode = this->_writer->write(data, this->getCftInstanceHandle());
         }
 
         if (retcode != DDS_RETCODE_OK) {
@@ -1001,117 +1121,6 @@ class RTIDynamicDataPublisher : public IMessagingWriter
         }
         return true;
     }
-
-    void WaitForReaders(int numSubscribers)
-    {
-        DDS_PublicationMatchedStatus status;
-
-        while (true) {
-            DDS_ReturnCode_t retcode = _writer->get_publication_matched_status(
-                    status);
-            if (retcode != DDS_RETCODE_OK) {
-                fprintf(stderr,
-                        "WaitForReaders _writer->get_publication_matched_status "
-                        "failed: %d.\n",
-                        retcode);
-            }
-            if (status.current_count >= numSubscribers) {
-                break;
-            }
-            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
-        }
-    }
-
-    bool waitForPingResponse() {
-        if (_pongSemaphore != NULL) {
-            if (!PerftestSemaphore_take(
-                    _pongSemaphore,
-                    PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
-                fprintf(stderr, "Unexpected error taking semaphore\n");
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /* time out in milliseconds */
-    bool waitForPingResponse(int timeout) {
-        if (_pongSemaphore != NULL) {
-            if (!PerftestSemaphore_take(_pongSemaphore, timeout)) {
-                fprintf(stderr, "Unexpected error taking semaphore\n");
-                return false;
-            }
-        }
-        return true;
-    }
-
-    bool notifyPingResponse() {
-        if (_pongSemaphore != NULL) {
-            if (!PerftestSemaphore_give(_pongSemaphore)) {
-                fprintf(stderr, "Unexpected error giving semaphore\n");
-                return false;
-            }
-        }
-        return true;
-    }
-
-    unsigned int getPulledSampleCount() {
-        DDS_DataWriterProtocolStatus status;
-        _writer->get_datawriter_protocol_status(status);
-        return (unsigned int)status.pulled_sample_count;
-    };
-
-    void waitForAck(int sec, unsigned int nsec) {
-        if (_isReliable) {
-            DDS_Duration_t timeout = {sec, nsec};
-            _writer->wait_for_acknowledgments(timeout);
-        } else {
-            PerftestClock::milliSleep(nsec / 1000000);
-        }
-    }
-
-#ifdef RTI_CUSTOM_TYPE
-  private:
-    bool is_sentinel_size(int size) {
-        return size == perftest_cpp::INITIALIZE_SIZE
-                || size == perftest_cpp::FINISHED_SIZE
-                || size == perftest_cpp::LENGTH_CHANGED_SIZE
-                || size == 0;
-    }
-
-    bool get_serialize_size_custom_type_data(unsigned int &size) {
-        char *buffer = NULL;
-        DDS_ReturnCode_t retcode = data.to_cdr_buffer(
-                NULL,
-                (unsigned int &)size);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "to_cdr_buffer failed: %d.\n", retcode);
-            return false;
-        }
-        RTIOsapiHeap_allocateBufferAligned(
-                &buffer,
-                size,
-                RTI_OSAPI_ALIGNMENT_DEFAULT);
-        if (buffer == NULL) {
-            fprintf(stderr, "RTIOsapiHeap_allocateBufferAligned failed.\n");
-            return false;
-        }
-        retcode = data.to_cdr_buffer(
-                buffer,
-                (unsigned int &)size);
-        if (retcode != DDS_RETCODE_OK) {
-            fprintf(stderr, "to_cdr_buffer failed: %d.\n", retcode);
-            return false;
-        }
-        if (buffer != NULL) {
-            RTIOsapiHeap_freeBufferAligned(buffer);
-            buffer = NULL;
-        }
-        size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
-        size -= perftest_cpp::OVERHEAD_BYTES;
-        return true;
-    }
-#endif
 };
 
 #endif //!RTI_MICRO: Dynamic Data not supported for micro
@@ -1120,10 +1129,9 @@ class RTIDynamicDataPublisher : public IMessagingWriter
  * ReceiverListener
  */
 template <typename T>
-class ReceiverListener : public DDSDataReaderListener
+class ReceiverListenerBase : public DDSDataReaderListener
 {
-  private:
-
+  protected:
     typename T::Seq     _data_seq;
     DDS_SampleInfoSeq _info_seq;
     TestMessage       _message;
@@ -1131,14 +1139,23 @@ class ReceiverListener : public DDSDataReaderListener
 
   public:
 
-    ReceiverListener(IMessagingCB *callback): _message()
+    ReceiverListenerBase(IMessagingCB *callback): _message()
     {
         _callback = callback;
+    }
+};
+
+
+template <typename T>
+class ReceiverListener : public ReceiverListenerBase<T>
+{
+  public:
+    ReceiverListener(IMessagingCB *callback)
+            : ReceiverListenerBase<T>(callback) {
     }
 
     void on_data_available(DDSDataReader *reader)
     {
-
         typename T::DataReader *datareader;
 
         datareader = T::DataReader::narrow(reader);
@@ -1149,7 +1166,7 @@ class ReceiverListener : public DDSDataReaderListener
         }
 
         DDS_ReturnCode_t retcode = datareader->take(
-                _data_seq, _info_seq,
+                this->_data_seq, this->_info_seq,
                 DDS_LENGTH_UNLIMITED,
                 DDS_ANY_SAMPLE_STATE,
                 DDS_ANY_VIEW_STATE,
@@ -1166,29 +1183,28 @@ class ReceiverListener : public DDSDataReaderListener
             return;
         }
 
-        int seq_length = _data_seq.length();
+        int seq_length = this->_data_seq.length();
         for (int i = 0; i < seq_length; ++i)
         {
-            if (_info_seq[i].valid_data)
+            if (this->_info_seq[i].valid_data)
             {
-                _message.entity_id = _data_seq[i].entity_id;
-                _message.seq_num = _data_seq[i].seq_num;
-                _message.timestamp_sec = _data_seq[i].timestamp_sec;
-                _message.timestamp_usec = _data_seq[i].timestamp_usec;
-                _message.latency_ping = _data_seq[i].latency_ping;
+                this->_message.entity_id = this->_data_seq[i].entity_id;
+                this->_message.seq_num = this->_data_seq[i].seq_num;
+                this->_message.timestamp_sec = this->_data_seq[i].timestamp_sec;
+                this->_message.timestamp_usec = this->_data_seq[i].timestamp_usec;
+                this->_message.latency_ping = this->_data_seq[i].latency_ping;
               #ifdef RTI_CUSTOM_TYPE
-                _message.size = _data_seq[i].custom_type_size;
+                this->_message.size = this->_data_seq[i].custom_type_size;
               #else
-                _message.size = _data_seq[i].bin_data.length();
+                this->_message.size = this->_data_seq[i].bin_data.length();
               #endif
-                _message.data = (char *)_data_seq[i].bin_data.get_contiguous_buffer();
+                this->_message.data = (char *)this->_data_seq[i].bin_data.get_contiguous_buffer();
 
-                _callback->ProcessMessage(_message);
-
+                this->_callback->ProcessMessage(this->_message);
             }
         }
 
-        retcode = datareader->return_loan(_data_seq, _info_seq);
+        retcode = datareader->return_loan(this->_data_seq, this->_info_seq);
         if (retcode != DDS_RETCODE_OK)
         {
             fprintf(stderr,"Error during return loan %d.\n", retcode);
@@ -1200,21 +1216,94 @@ class ReceiverListener : public DDSDataReaderListener
 };
 
 
-#ifndef RTI_MICRO //Dynamic Data not supported for micro
+#ifndef RTI_MICRO //Dynamic Data and FlatData are not supported for micro
+
+#ifdef RTI_FLATDATA_AVAILABLE
+template <typename T>
+class FlatDataReceiverListener : public ReceiverListenerBase<T>
+{
+    public:
+    typedef typename rti::flat::flat_type_traits<T>::offset Offset;
+
+    FlatDataReceiverListener(IMessagingCB *callback)
+            : ReceiverListenerBase<T>(callback) {
+    }
+
+    void on_data_available(DDSDataReader *reader)
+    {
+        typename T::DataReader *datareader;
+
+        datareader = T::DataReader::narrow(reader);
+        if (datareader == NULL)
+        {
+            fprintf(stderr,"DataReader narrow error.\n");
+            return;
+        }
+
+        DDS_ReturnCode_t retcode = datareader->take(
+                this->_data_seq, this->_info_seq,
+                DDS_LENGTH_UNLIMITED,
+                DDS_ANY_SAMPLE_STATE,
+                DDS_ANY_VIEW_STATE,
+                DDS_ANY_INSTANCE_STATE);
+
+        if (retcode == DDS_RETCODE_NO_DATA)
+        {
+            fprintf(stderr,"called back no data\n");
+            return;
+        }
+        else if (retcode != DDS_RETCODE_OK)
+        {
+            fprintf(stderr,"Error during taking data %d\n", retcode);
+            return;
+        }
+
+        int seq_length = this->_data_seq.length();
+        for (int i = 0; i < seq_length; ++i)
+        {
+            if (this->_info_seq[i].valid_data)
+            {
+                Offset message = this->_data_seq[i].root();
+
+                this->_message.entity_id = message.entity_id();
+                this->_message.seq_num = message.seq_num();
+                this->_message.timestamp_sec = message.timestamp_sec();
+                this->_message.timestamp_usec = message.timestamp_usec();
+                this->_message.latency_ping = message.latency_ping();
+              #ifdef RTI_CUSTOM_TYPE
+                this->_message.size = message.custom_type_size();
+              #else
+                this->_message.size = message.bin_data().element_count();
+              #endif
+                //TODO: _message.data = (char *)_data_seq[i].bin_data.get_contiguous_buffer();
+
+                this->_callback->ProcessMessage(this->_message);
+
+            }
+        }
+
+        retcode = datareader->return_loan(this->_data_seq, this->_info_seq);
+        if (retcode != DDS_RETCODE_OK)
+        {
+            fprintf(stderr,"Error during return loan %d.\n", retcode);
+            fflush(stderr);
+        }
+
+    }
+};
+#endif //RTI_FLATDATA_AVAILABLE
+
+
 
 /* Dynamic Data equivalent function from ReceiverListener */
-class DynamicDataReceiverListener : public DDSDataReaderListener
+class DynamicDataReceiverListener : public ReceiverListenerBase<DDS_DynamicData>
 {
   private:
     DDS_DynamicDataSeq _data_seq;
-    DDS_SampleInfoSeq _info_seq;
-    TestMessage _message;
-    IMessagingCB *_callback;
 
   public:
-    DynamicDataReceiverListener(IMessagingCB *callback): _message()
-    {
-        _callback = callback;
+    DynamicDataReceiverListener(IMessagingCB *callback)
+            : ReceiverListenerBase<DDS_DynamicData>(callback) {
     }
 
     void on_data_available(DDSDataReader *reader)
@@ -1226,8 +1315,8 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
         }
 
         DDS_ReturnCode_t retcode = datareader->take(
-                _data_seq,
-                _info_seq,
+                this->_data_seq,
+                this->_info_seq,
                 DDS_LENGTH_UNLIMITED,
                 DDS_ANY_SAMPLE_STATE,
                 DDS_ANY_VIEW_STATE,
@@ -1242,71 +1331,71 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
         }
 
         DDS_OctetSeq octetSeq;
-        for (int i = 0; i < _data_seq.length(); ++i) {
-            if (_info_seq[i].valid_data) {
-                retcode = _data_seq[i].get_long(
-                        _message.entity_id,
+        for (int i = 0; i < this->_data_seq.length(); ++i) {
+            if (this->_info_seq[i].valid_data) {
+                retcode = this->_data_seq[i].get_long(
+                        this->_message.entity_id,
                         "entity_id",
                         DynamicDataMembersId::GetInstance().at("entity_id"));
                 if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_long(entity_id) failed: %d.\n",
                             retcode);
-                    _message.entity_id = 0;
+                    this->_message.entity_id = 0;
                 }
-                retcode = _data_seq[i].get_ulong(
-                        _message.seq_num,
+                retcode = this->_data_seq[i].get_ulong(
+                        this->_message.seq_num,
                         "seq_num",
                         DynamicDataMembersId::GetInstance().at("seq_num"));
                 if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_ulong(seq_num) failed: %d.\n",
                             retcode);
-                    _message.seq_num = 0;
+                    this->_message.seq_num = 0;
                 }
-                retcode = _data_seq[i].get_long(
-                        _message.timestamp_sec,
+                retcode = this->_data_seq[i].get_long(
+                        this->_message.timestamp_sec,
                         "timestamp_sec",
                         DynamicDataMembersId::GetInstance().at("timestamp_sec"));
                 if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_long(timestamp_sec) failed: %d.\n",
                             retcode);
-                    _message.timestamp_sec = 0;
+                    this->_message.timestamp_sec = 0;
                 }
                 retcode = _data_seq[i].get_ulong(
-                        _message.timestamp_usec,
+                        this->_message.timestamp_usec,
                         "timestamp_usec",
                         DynamicDataMembersId::GetInstance().at("timestamp_usec"));
                 if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_ulong(timestamp_usec) failed: %d.\n",
                             retcode);
-                    _message.timestamp_usec = 0;
+                    this->_message.timestamp_usec = 0;
                 }
-                retcode = _data_seq[i].get_long(
-                        _message.latency_ping,
+                retcode = this->_data_seq[i].get_long(
+                        this->_message.latency_ping,
                         "latency_ping",
                         DynamicDataMembersId::GetInstance().at("latency_ping"));
                 if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_long(latency_ping) failed: %d.\n",
                             retcode);
-                    _message.latency_ping = 0;
+                    this->_message.latency_ping = 0;
                 }
               #ifdef RTI_CUSTOM_TYPE
                 retcode = _data_seq[i].get_long(
-                        _message.size,
+                        this->_message.size,
                         "custom_type_size",
                         DynamicDataMembersId::GetInstance().at("custom_type_size"));
                 if (retcode != DDS_RETCODE_OK) {
                     fprintf(stderr,
                             "on_data_available() get_long(size) failed: %d.\n",
                             retcode);
-                    _message.size = 0;
+                    this->_message.size = 0;
                 }
               #else
-                retcode = _data_seq[i].get_octet_seq(
+                retcode = this->_data_seq[i].get_octet_seq(
                         octetSeq,
                         "bin_data",
                         DynamicDataMembersId::GetInstance().at("bin_data"));
@@ -1315,15 +1404,15 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
                             "on_data_available() get_octet_seq(bin_data) failed: %d.\n",
                             retcode);
                 }
-                _message.size = octetSeq.length();
-                _message.data = (char *)octetSeq.get_contiguous_buffer();
+                this->_message.size = octetSeq.length();
+                this->_message.data = (char *)octetSeq.get_contiguous_buffer();
               #endif
 
-                _callback->ProcessMessage(_message);
+                this->_callback->ProcessMessage(this->_message);
             }
         }
 
-        retcode = datareader->return_loan(_data_seq, _info_seq);
+        retcode = datareader->return_loan(this->_data_seq, this->_info_seq);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "Error during return loan %d.\n", retcode);
             fflush(stderr);
@@ -1335,10 +1424,11 @@ class DynamicDataReceiverListener : public DDSDataReaderListener
 /*********************************************************
  * RTISubscriber
  */
+
 template <typename T>
-class RTISubscriber : public IMessagingReader
+class RTISubscriberBase : public IMessagingReader
 {
-  private:
+  protected:
     typename T::DataReader *_reader;
     typename T::Seq         _data_seq;
     DDS_SampleInfoSeq       _info_seq;
@@ -1353,7 +1443,7 @@ class RTISubscriber : public IMessagingReader
 
   public:
 
-    RTISubscriber(DDSDataReader *reader, ParameterManager *PM): _message()
+    RTISubscriberBase(DDSDataReader *reader, ParameterManager *PM): _message()
     {
         _reader = T::DataReader::narrow(reader);
         _data_idx = 0;
@@ -1385,7 +1475,7 @@ class RTISubscriber : public IMessagingReader
         }
     }
 
-    ~RTISubscriber()
+    ~RTISubscriberBase()
     {
         Shutdown();
     }
@@ -1410,86 +1500,6 @@ class RTISubscriber : public IMessagingReader
         }
         // loan may be outstanding during shutdown
         _reader->return_loan(_data_seq, _info_seq);
-    }
-
-    TestMessage *ReceiveMessage()
-    {
-        DDS_ReturnCode_t retcode;
-        int seq_length;
-
-        while (!_endTest) {
-
-            // no outstanding reads
-            if (_no_data)
-            {
-                _waitset->wait(_active_conditions, DDS_DURATION_INFINITE);
-
-                if (_active_conditions.length() == 0)
-                {
-                    //printf("Read thread woke up but no data\n.");
-                    //return NULL;
-                    continue;
-                }
-
-                retcode = _reader->take(
-                    _data_seq, _info_seq,
-                    DDS_LENGTH_UNLIMITED,
-                    DDS_ANY_SAMPLE_STATE,
-                    DDS_ANY_VIEW_STATE,
-                    DDS_ANY_INSTANCE_STATE);
-                if (retcode == DDS_RETCODE_NO_DATA)
-                {
-                    //printf("Called back no data.\n");
-                    //return NULL;
-                    continue;
-                }
-                else if (retcode != DDS_RETCODE_OK)
-                {
-                    fprintf(stderr,"Error during taking data %d.\n", retcode);
-                    return NULL;
-                }
-
-                _data_idx = 0;
-                _no_data = false;
-            }
-
-            seq_length = _data_seq.length();
-            // check to see if hit end condition
-            if (_data_idx == seq_length)
-            {
-                _reader->return_loan(_data_seq, _info_seq);
-                _no_data = true;
-                continue;
-            }
-
-            // skip non-valid data
-            while ( (_info_seq[_data_idx].valid_data == false)
-                        && (++_data_idx < seq_length)){
-                //No operation required
-            }
-
-            // may have hit end condition
-            if (_data_idx == seq_length) {
-                continue;
-            }
-
-            _message.entity_id = _data_seq[_data_idx].entity_id;
-            _message.seq_num = _data_seq[_data_idx].seq_num;
-            _message.timestamp_sec = _data_seq[_data_idx].timestamp_sec;
-            _message.timestamp_usec = _data_seq[_data_idx].timestamp_usec;
-            _message.latency_ping = _data_seq[_data_idx].latency_ping;
-          #ifdef RTI_CUSTOM_TYPE
-            _message.size = _data_seq[_data_idx].custom_type_size;
-          #else
-            _message.size = _data_seq[_data_idx].bin_data.length();
-          #endif
-            _message.data = (char *)_data_seq[_data_idx].bin_data.get_contiguous_buffer();
-
-            ++_data_idx;
-
-            return &_message;
-        }
-        return NULL;
     }
 
     void WaitForWriters(int numPublishers)
@@ -1518,37 +1528,223 @@ class RTISubscriber : public IMessagingReader
     }
 };
 
+template <typename T>
+class RTISubscriber : public RTISubscriberBase<T>
+{
+  public:
+    RTISubscriber(DDSDataReader *reader, ParameterManager *PM)
+            : RTISubscriberBase<T>(reader, PM) {
+    }
+
+    ~RTISubscriber()
+    {
+        this->Shutdown();
+    }
+
+    TestMessage *ReceiveMessage()
+    {
+        DDS_ReturnCode_t retcode;
+        int seq_length;
+
+        while (!this->_endTest) {
+
+            // no outstanding reads
+            if (this->_no_data)
+            {
+                this->_waitset->wait(this->_active_conditions, DDS_DURATION_INFINITE);
+
+                if (this->_active_conditions.length() == 0)
+                {
+                    //printf("Read thread woke up but no data\n.");
+                    //return NULL;
+                    continue;
+                }
+
+                retcode = this->_reader->take(
+                    this->_data_seq, this->_info_seq,
+                    DDS_LENGTH_UNLIMITED,
+                    DDS_ANY_SAMPLE_STATE,
+                    DDS_ANY_VIEW_STATE,
+                    DDS_ANY_INSTANCE_STATE);
+                if (retcode == DDS_RETCODE_NO_DATA)
+                {
+                    //printf("Called back no data.\n");
+                    //return NULL;
+                    continue;
+                }
+                else if (retcode != DDS_RETCODE_OK)
+                {
+                    fprintf(stderr,"Error during taking data %d.\n", retcode);
+                    return NULL;
+                }
+
+                this->_data_idx = 0;
+                this->_no_data = false;
+            }
+
+            seq_length = this->_data_seq.length();
+            // check to see if hit end condition
+            if (this->_data_idx == seq_length)
+            {
+                this->_reader->return_loan(this->_data_seq, this->_info_seq);
+                this->_no_data = true;
+                continue;
+            }
+
+            // skip non-valid data
+            while ( (this->_info_seq[this->_data_idx].valid_data == false)
+                        && (++this->_data_idx < seq_length)){
+                //No operation required
+            }
+
+            // may have hit end condition
+            if (this->_data_idx == seq_length) {
+                continue;
+            }
+
+            this->_message.entity_id = this->_data_seq[this->_data_idx].entity_id;
+            this->_message.seq_num = this->_data_seq[this->_data_idx].seq_num;
+            this->_message.timestamp_sec = this->_data_seq[this->_data_idx].timestamp_sec;
+            this->_message.timestamp_usec = this->_data_seq[this->_data_idx].timestamp_usec;
+            this->_message.latency_ping = this->_data_seq[this->_data_idx].latency_ping;
+          #ifdef RTI_CUSTOM_TYPE
+            this->_message.size = this->_data_seq[this->_data_idx].custom_type_size;
+          #else
+            this->_message.size = this->_data_seq[this->_data_idx].bin_data.length();
+          #endif
+            this->_message.data = (char *)this->_data_seq[this->_data_idx].bin_data.get_contiguous_buffer();
+
+            ++this->_data_idx;
+
+            return &this->_message;
+        }
+        return NULL;
+    }
+};
+
 #ifndef RTI_MICRO
+
+#ifdef RTI_FLATDATA_AVAILABLE
+template <typename T>
+class RTIFlatDataSubscriber : public RTISubscriberBase<T>
+{
+  public:
+    typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
+
+    RTIFlatDataSubscriber(DDSDataReader *reader, ParameterManager *PM)
+            : RTISubscriberBase<T>(reader, PM) {
+    }
+
+    ~RTIFlatDataSubscriber()
+    {
+        this->Shutdown();
+    }
+
+    TestMessage *ReceiveMessage()
+    {
+        DDS_ReturnCode_t retcode;
+        int seq_length;
+
+        while (!this->_endTest) {
+
+            // no outstanding reads
+            if (this->_no_data)
+            {
+                this->_waitset->wait(this->_active_conditions, DDS_DURATION_INFINITE);
+
+                if (this->_active_conditions.length() == 0)
+                {
+                    //printf("Read thread woke up but no data\n.");
+                    //return NULL;
+                    continue;
+                }
+
+                retcode = this->_reader->take(
+                    this->_data_seq, this->_info_seq,
+                    DDS_LENGTH_UNLIMITED,
+                    DDS_ANY_SAMPLE_STATE,
+                    DDS_ANY_VIEW_STATE,
+                    DDS_ANY_INSTANCE_STATE);
+                if (retcode == DDS_RETCODE_NO_DATA)
+                {
+                    //printf("Called back no data.\n");
+                    //return NULL;
+                    continue;
+                }
+                else if (retcode != DDS_RETCODE_OK)
+                {
+                    fprintf(stderr,"Error during taking data %d.\n", retcode);
+                    return NULL;
+                }
+
+                this->_data_idx = 0;
+                this->_no_data = false;
+            }
+
+            seq_length = this->_data_seq.length();
+            // check to see if hit end condition
+            if (this->_data_idx == seq_length)
+            {
+                this->_reader->return_loan(this->_data_seq, this->_info_seq);
+                this->_no_data = true;
+                continue;
+            }
+
+            // skip non-valid data
+            while ( (this->_info_seq[this->_data_idx].valid_data == false)
+                        && (++this->_data_idx < seq_length)){
+                //No operation required
+            }
+
+            // may have hit end condition
+            if (this->_data_idx == seq_length) {
+                continue;
+            }
+
+            const T &message_sample = this->_data_seq[this->_data_idx];
+            ConstOffset message = message_sample.root();
+
+            this->_message.entity_id = message.entity_id();
+            this->_message.seq_num = message.seq_num();
+            this->_message.timestamp_sec = message.timestamp_sec();
+            this->_message.timestamp_usec = message.timestamp_usec();
+            this->_message.latency_ping = message.latency_ping();
+          #ifdef RTI_CUSTOM_TYPE
+            this->_message.size = message.custom_type_size;
+          #else
+            this->_message.size = message.bin_data().element_count();
+          #endif
+            // TODO: this->_message.data = (char *)_data_seq[_data_idx].bin_data.get_contiguous_buffer();
+
+            ++this->_data_idx;
+
+            return &this->_message;
+        }
+        return NULL;
+    }
+};
+#endif
 
 /* Dynamic Data equivalent function from RTISubscriber */
 template <typename T>
-class RTIDynamicDataSubscriber : public IMessagingReader
+class RTIDynamicDataSubscriber : public RTISubscriberBase<DDS_DynamicData>
 {
   private:
     DDSDynamicDataReader *_reader;
     DDS_DynamicDataSeq _data_seq;
-    DDS_SampleInfoSeq _info_seq;
-    TestMessage _message;
-    DDSWaitSet *_waitset;
-    DDSConditionSeq _active_conditions;
-
-    int _data_idx;
-    bool _no_data;
-    ParameterManager *_PM;
 
   public:
-
     RTIDynamicDataSubscriber(
             DDSDataReader *reader,
-            ParameterManager *PM) : _message()
+            ParameterManager *PM) 
+            : RTISubscriberBase<DDS_DynamicData>(reader, PM)
     {
         _reader = DDSDynamicDataReader::narrow(reader);
         if (_reader == NULL) {
             fprintf(stderr,"DDSDynamicDataReader::narrow(reader) error.\n");
         }
-        _data_idx = 0;
-        _no_data = false;
-        _PM = PM;
+        
+        // TODO: Figure out how to do this in Base class
         // null listener means using receive thread
         if (_reader->get_listener() == NULL) {
 
@@ -1561,27 +1757,17 @@ class RTIDynamicDataSubscriber : public IMessagingReader
             property.max_event_delay.nanosec =
                     (_PM->get<unsigned long long>("waitsetDelayUsec") % 1000000)
                     * 1000;
-            _waitset = new DDSWaitSet(property);
+            this->_waitset = new DDSWaitSet(property);
             DDSStatusCondition *reader_status;
             reader_status = reader->get_statuscondition();
             reader_status->set_enabled_statuses(DDS_DATA_AVAILABLE_STATUS);
-            _waitset->attach_condition(reader_status);
+            this->_waitset->attach_condition(reader_status);
         }
     }
 
     ~RTIDynamicDataSubscriber()
     {
-        Shutdown();
-    }
-
-    void Shutdown()
-    {
-        if (_reader->get_listener() != NULL) {
-            delete(_reader->get_listener());
-            _reader->set_listener(NULL);
-        }
-        // loan may be outstanding during shutdown
-        _reader->return_loan(_data_seq, _info_seq);
+        this->Shutdown();
     }
 
     TestMessage *ReceiveMessage()
@@ -1592,18 +1778,18 @@ class RTIDynamicDataSubscriber : public IMessagingReader
 
         while (true) {
             // no outstanding reads
-            if (_no_data)
+            if (this->_no_data)
             {
-                _waitset->wait(_active_conditions, DDS_DURATION_INFINITE);
+                this->_waitset->wait(this->_active_conditions, DDS_DURATION_INFINITE);
 
-                if (_active_conditions.length() == 0)
+                if (this->_active_conditions.length() == 0)
                 {
                     continue;
                 }
 
-                retcode = _reader->take(
-                        _data_seq,
-                        _info_seq,
+                retcode = this->_reader->take(
+                        this->_data_seq,
+                        this->_info_seq,
                         DDS_LENGTH_UNLIMITED,
                         DDS_ANY_SAMPLE_STATE,
                         DDS_ANY_VIEW_STATE,
@@ -1620,93 +1806,93 @@ class RTIDynamicDataSubscriber : public IMessagingReader
                     return NULL;
                 }
 
-                _data_idx = 0;
-                _no_data = false;
+                this->_data_idx = 0;
+                this->_no_data = false;
             }
 
-            seq_length = _data_seq.length();
+            seq_length = this->_data_seq.length();
             // check to see if hit end condition
-            if (_data_idx == seq_length)
+            if (this->_data_idx == seq_length)
             {
-                _reader->return_loan(_data_seq, _info_seq);
-                _no_data = true;
+                this->_reader->return_loan(this->_data_seq, this->_info_seq);
+                this->_no_data = true;
                 continue;
             }
 
             // skip non-valid data
-            while ( (_info_seq[_data_idx].valid_data == false) &&
-                    (++_data_idx < seq_length)){
+            while ( (this->_info_seq[_data_idx].valid_data == false) &&
+                    (++this->_data_idx < seq_length)){
                 //No operation required
             }
 
             // may have hit end condition
-            if (_data_idx == seq_length) {
+            if (this->_data_idx == seq_length) {
                 continue;
             }
 
-            retcode = _data_seq[_data_idx].get_long(
-                _message.entity_id,
+            retcode = this->_data_seq[this->_data_idx].get_long(
+                this->_message.entity_id,
                 "entity_id",
                 DynamicDataMembersId::GetInstance().at("entity_id"));
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
                         "ReceiveMessage() get_long(entity_id) failed: %d.\n",
                         retcode);
-                _message.entity_id = 0;
+                this->_message.entity_id = 0;
             }
-            retcode = _data_seq[_data_idx].get_ulong(
-                _message.seq_num,
+            retcode = this->_data_seq[this->_data_idx].get_ulong(
+                this->_message.seq_num,
                 "seq_num",
                 DynamicDataMembersId::GetInstance().at("seq_num"));
             if (retcode != DDS_RETCODE_OK){
                 fprintf(stderr,
                         "ReceiveMessage() get_ulong(seq_num) failed: %d.\n",
                         retcode);
-                _message.seq_num = 0;
+                this->_message.seq_num = 0;
             }
-            retcode = _data_seq[_data_idx].get_long(
-                _message.timestamp_sec,
+            retcode = this->_data_seq[this->_data_idx].get_long(
+                this->_message.timestamp_sec,
                 "timestamp_sec",
                 DynamicDataMembersId::GetInstance().at("timestamp_sec"));
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
                         "ReceiveMessage() get_long(timestamp_sec) failed: %d.\n",
                         retcode);
-                _message.timestamp_sec = 0;
+                this->_message.timestamp_sec = 0;
             }
-            retcode = _data_seq[_data_idx].get_ulong(
-                _message.timestamp_usec,
+            retcode = this->_data_seq[this->_data_idx].get_ulong(
+                this->_message.timestamp_usec,
                 "timestamp_usec",
                 DynamicDataMembersId::GetInstance().at("timestamp_usec"));
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
                         "ReceiveMessage() get_ulong(timestamp_usec) failed: %d.\n",
                         retcode);
-                _message.timestamp_usec = 0;
+                this->_message.timestamp_usec = 0;
             }
-            retcode = _data_seq[_data_idx].get_long(
-                _message.latency_ping,
+            retcode = this->_data_seq[this->_data_idx].get_long(
+                this->_message.latency_ping,
                 "latency_ping",
                 DynamicDataMembersId::GetInstance().at("latency_ping"));
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
                         "ReceiveMessage() get_long(latency_ping) failed: %d.\n",
                         retcode);
-                _message.latency_ping = 0;
+                this->_message.latency_ping = 0;
             }
             #ifdef RTI_CUSTOM_TYPE
-            retcode = _data_seq[_data_idx].get_long(
-                    _message.size,
+            retcode = this->_data_seq[this->_data_idx].get_long(
+                    this->_message.size,
                     "custom_type_size",
                     DynamicDataMembersId::GetInstance().at("custom_type_size"));
             if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
                         "on_data_available() get_long(size) failed: %d.\n",
                         retcode);
-                _message.size = 0;
+                this->_message.size = 0;
             }
           #else
-            retcode = _data_seq[_data_idx].get_octet_seq(
+            retcode = this->_data_seq[this->_data_idx].get_octet_seq(
                     octetSeq,
                     "bin_data",
                     DynamicDataMembersId::GetInstance().at("bin_data"));
@@ -1715,26 +1901,13 @@ class RTIDynamicDataSubscriber : public IMessagingReader
                         "ReceiveMessage() get_octet_seq(bin_data) failed: %d.\n",
                         retcode);
             }
-            _message.size = octetSeq.length();
-            _message.data = (char *)octetSeq.get_contiguous_buffer();
+            this->_message.size = octetSeq.length();
+            this->_message.data = (char *)octetSeq.get_contiguous_buffer();
           #endif
 
-            ++_data_idx;
+            ++this->_data_idx;
 
-            return &_message;
-        }
-    }
-
-    void WaitForWriters(int numPublishers)
-    {
-        DDS_SubscriptionMatchedStatus status;
-
-        while (true) {
-            _reader->get_subscription_matched_status(status);
-            if (status.current_count >= numPublishers) {
-                break;
-            }
-            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
+            return &this->_message;
         }
     }
 };
@@ -2297,15 +2470,414 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
 }
 #endif //RTI_MICRO
 
+template <typename T>
+DDS_DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile, std::string topic_name)
+{
+    unsigned long long initial_samples = 0;
+    DDS_DataWriterQos *dw_qos = NULL;
+
+    #ifndef RTI_MICRO
+    if (_factory->get_datawriter_qos_from_profile(
+            *dw_qos,
+            _PM->get<std::string>("qosLibrary").c_str(),
+            qos_profile.c_str())
+            != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
+                qos_profile.c_str(),
+                _PM->get<std::string>("qosLibrary").c_str(),
+                _PM->get<std::string>("qosFile").c_str());
+        return NULL;
+    }
+
+    if (_PM->get<bool>("noPositiveAcks")
+            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
+        dw_qos->protocol.disable_positive_acks = true;
+        if (_PM->is_set("keepDurationUsec")) {
+            dw_qos->protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
+                    DDS_Duration_t::from_micros(
+                            _PM->get<unsigned long long>("keepDurationUsec"));
+        }
+    }
+
+    if (_isLargeData || _PM->get<bool>("asynchronous")) {
+        dw_qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+        if (_PM->get<std::string>("flowController") != "default") {
+            dw_qos->publish_mode.flow_controller_name =
+                    DDS_String_dup(("dds.flow_controller.token_bucket." +
+                    _PM->get<std::string>("flowController")).c_str());
+        }
+    }
+  #endif
+
+    // Only force reliability on throughput/latency topics
+    if (strcmp(topic_name.c_str(), ANNOUNCEMENT_TOPIC_NAME) != 0) {
+        if (!_PM->get<bool>("bestEffort")) {
+            // default: use the setting specified in the qos profile
+            // dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
+          #ifdef RTI_MICRO
+            dw_qos->reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
+          #endif
+        }
+        else {
+            // override to best-effort
+            dw_qos->reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
+        }
+    }
+
+  #ifdef RTI_MICRO
+    if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) == 0) {
+        dw_qos->reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
+        dw_qos->durability.kind = DDS_TRANSIENT_LOCAL_DURABILITY_QOS;
+    }
+  #endif
+
+    // These QOS's are only set for the Throughput datawriter
+    if (qos_profile == "ThroughputQos") {
+
+      #ifndef RTI_MICRO
+        if (_PM->get<bool>("multicast")) {
+            dw_qos->protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
+                    RTI_TRUE;
+        }
+
+        if (_PM->get<long>("batchSize") > 0) {
+            dw_qos->batch.enable = true;
+            dw_qos->batch.max_data_bytes = _PM->get<long>("batchSize");
+            dw_qos->resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
+            dw_qos->writer_resource_limits.max_batches =
+                    _PM->get<int>("sendQueueSize");
+        } else {
+            dw_qos->resource_limits.max_samples = _PM->get<int>("sendQueueSize");
+        }
+      #else
+        dw_qos->resource_limits.max_samples = _PM->get<int>("sendQueueSize");
+      #endif
+
+      #ifndef RTI_MICRO
+        if (_PM->get<bool>("enableAutoThrottle")) {
+            DDSPropertyQosPolicyHelper::add_property(dw_qos->property,
+                    "dds.data_writer.auto_throttle.enable", "true", false);
+        }
+
+        if (_PM->get<bool>("enableTurboMode")) {
+            DDSPropertyQosPolicyHelper::add_property(dw_qos->property,
+                    "dds.data_writer.enable_turbo_mode",
+                    "true",
+                    false);
+            dw_qos->batch.enable = false;
+            dw_qos->resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
+            dw_qos->writer_resource_limits.max_batches =
+                    _PM->get<int>("sendQueueSize");
+        }
+
+        if (_isFlatData) {
+            char buf[2];
+            sprintf(buf, "%d", DDS_LENGTH_UNLIMITED);
+            DDSPropertyQosPolicyHelper::add_property(dw_qos->property,
+                    "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
+                    buf,
+                    false);
+        }
+
+        dw_qos->resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
+      #endif
+        dw_qos->resource_limits.max_samples_per_instance =
+                dw_qos->resource_limits.max_samples;
+
+        dw_qos->durability.kind =
+                (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
+
+      #ifndef RTI_MICRO
+        dw_qos->durability.direct_communication =
+                !_PM->get<bool>("noDirectCommunication");
+      #endif
+
+
+        dw_qos->protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+                _PM->get<int>("sendQueueSize") / 10;
+      #ifndef RTI_MICRO
+        dw_qos->protocol.rtps_reliable_writer.low_watermark =
+                _PM->get<int>("sendQueueSize") * 1 / 10;
+        dw_qos->protocol.rtps_reliable_writer.high_watermark =
+                _PM->get<int>("sendQueueSize") * 9 / 10;
+
+        /*
+         * If _SendQueueSize is 1 low watermark and high watermark would both be
+         * 0, which would cause the middleware to fail. So instead we set the
+         * high watermark to the low watermark + 1 in such case.
+         */
+        if (dw_qos->protocol.rtps_reliable_writer.high_watermark
+                == dw_qos->protocol.rtps_reliable_writer.low_watermark) {
+            dw_qos->protocol.rtps_reliable_writer.high_watermark =
+                    dw_qos->protocol.rtps_reliable_writer.low_watermark + 1;
+        }
+
+        dw_qos->protocol.rtps_reliable_writer.max_send_window_size =
+                _PM->get<int>("sendQueueSize");
+        dw_qos->protocol.rtps_reliable_writer.min_send_window_size =
+                _PM->get<int>("sendQueueSize");
+      #else
+        #if RTI_MICRO_24x_COMPATIBILITY
+          // Keep all not supported in Micro 2.4.x
+          dw_qos->history.kind = DDS_KEEP_LAST_HISTORY_QOS;
+        #else
+          dw_qos->history.kind = DDS_KEEP_ALL_HISTORY_QOS;
+        #endif
+        dw_qos->history.depth = _PM->get<int>("sendQueueSize");
+        // Same values we use for Pro (See perftest_qos_profiles.xml).
+        dw_qos->protocol.rtps_reliable_writer.heartbeat_period.sec = 0;
+        dw_qos->protocol.rtps_reliable_writer.heartbeat_period.nanosec = 10000000;
+      #endif
+    }
+
+    if (qos_profile == "LatencyQos"
+            && _PM->get<bool>("noDirectCommunication")
+            && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+            || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
+        dw_qos->durability.kind =
+                (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
+      #ifndef RTI_MICRO
+        dw_qos->durability.direct_communication =
+                !_PM->get<bool>("noDirectCommunication");
+      #endif
+    }
+
+    dw_qos->resource_limits.max_instances =
+            _PM->get<long>("instances") + 1; // One extra for MAX_CFT_VALUE
+  #ifndef RTI_MICRO
+    dw_qos->resource_limits.initial_instances = _PM->get<long>("instances") + 1;
+
+    if (_PM->get<int>("unbounded") != 0) {
+        char buf[10];
+        sprintf(buf, "%d", _PM->get<int>("unbounded"));
+        DDSPropertyQosPolicyHelper::add_property(dw_qos->property,
+               "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
+               buf,
+               false);
+    }
+
+    if (_PM->get<long>("instances") > 1) {
+        if (_PM->is_set("instanceHashBuckets")) {
+            dw_qos->resource_limits.instance_hash_buckets =
+                    _PM->get<long>("instanceHashBuckets");
+        } else {
+            dw_qos->resource_limits.instance_hash_buckets =
+                    _PM->get<long>("instances");
+        }
+    }
+
+    if (_isFlatData && _isLargeData) {
+        initial_samples = std::max(
+                1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+
+        initial_samples = std::min(
+                initial_samples,
+                (unsigned long long) _PM->get<int>("sendQueueSize"));
+
+        dw_qos->resource_limits.initial_samples = initial_samples;
+    }
+  #endif
+
+    return dw_qos;
+}
+
+template <typename T>
+DDS_DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::string topic_name)
+{
+    unsigned long long initial_samples = 0;
+    unsigned int qos_initial_samples = 0;
+    DDS_DataReaderQos *dr_qos = NULL;
+
+    #ifndef RTI_MICRO
+    if (_factory->get_datareader_qos_from_profile(
+            *dr_qos,
+            _PM->get<std::string>("qosLibrary").c_str(),
+            qos_profile.c_str())
+            != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "No QOS Profile named \"%s\" found in QOS Library "
+                "\"%s\" in file %s.\n",
+                qos_profile.c_str(),
+                _PM->get<std::string>("qosLibrary").c_str(),
+                _PM->get<std::string>("qosFile").c_str());
+        return NULL;
+    }
+  #endif
+
+    // Only force reliability on throughput/latency topics
+    if (strcmp(topic_name.c_str(), ANNOUNCEMENT_TOPIC_NAME) != 0) {
+        if (!_PM->get<bool>("bestEffort")) {
+            dr_qos->reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
+        } else {
+            dr_qos->reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
+        }
+    }
+
+  #ifndef RTI_MICRO
+    if (_PM->get<bool>("noPositiveAcks")
+            && (qos_profile == "ThroughputQos"
+            || qos_profile == "LatencyQos")) {
+        dr_qos->protocol.disable_positive_acks = true;
+    }
+  #endif
+
+    // only apply durability on Throughput datareader
+    if (qos_profile == "ThroughputQos"
+            || (qos_profile == "LatencyQos"
+            && _PM->get<bool>("noDirectCommunication")
+            && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+            || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS))) {
+        dr_qos->durability.kind =
+                (DDS_DurabilityQosPolicyKind) _PM->get<int>("durability");
+      #ifndef RTI_MICRO
+        dr_qos->durability.direct_communication =
+                !_PM->get<bool>("noDirectCommunication");
+      #endif
+
+    }
+
+  #ifdef RTI_MICRO
+
+    if (qos_profile == "ThroughputQos") {
+        /*
+         * For Connext DDS Pro settings are set so initial samples are set to
+         * a lower value than max_samples, so we can grow if needed. For micro
+         * however we do not have the initial_samples parameter, therefore we
+         * must choose a value for max_samples since the beginning. We chose to
+         * use 10000. This value should be large enough to handle most of the
+         * communications.
+         *
+         * We could potentially modify this with a new command line parameter
+         */
+        if (_PM->get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
+            dr_qos->resource_limits.max_samples = 50;
+            dr_qos->resource_limits.max_samples_per_instance = 50;
+            dr_qos->history.depth = 50;
+        }
+        else {
+            dr_qos->resource_limits.max_samples = 10000;
+            dr_qos->resource_limits.max_samples_per_instance = 10000;
+            dr_qos->history.depth = 10000;
+        }
+        /*
+         * In micro 2.4.x we don't have keep all, this means we need to set the
+         * history to keep last and chose a history depth. For the depth value
+         * we can we same value as max_samples
+         */
+        #if RTI_MICRO_24x_COMPATIBILITY
+          // Keep all not supported in Micro 2.4.x
+          dr_qos->history.kind = DDS_KEEP_LAST_HISTORY_QOS;
+        #else
+          dr_qos->history.kind = DDS_KEEP_ALL_HISTORY_QOS;
+        #endif
+
+    } else { // "LatencyQos" or "AnnouncementQos"
+
+        /*
+         * By default Micro will use a max_samples = 1. This is too low for the
+         * initial burst of data. In pro we set this value via QoS to
+         * LENGTH_UNLIMITED. In Micro we will use a lower number due to
+         * memory restrictions.
+         */
+        if (_PM->get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
+            dr_qos->resource_limits.max_samples = 50;
+        }
+        else {
+            dr_qos->resource_limits.max_samples = 1000;
+        }
+    }
+
+    /*
+     * We could potentially use here the number of subscriber, right now this
+     * class does not have access to the number of subscriber though.
+     */
+    dr_qos->reader_resource_limits.max_remote_writers = 50;
+    dr_qos->reader_resource_limits.max_remote_writers_per_instance = 50;
+  #endif
+
+  #ifndef RTI_MICRO
+    dr_qos->resource_limits.initial_instances = _PM->get<long>("instances") + 1;
+    if (_instanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
+        _instanceMaxCountReader++;
+    }
+  #endif
+    dr_qos->resource_limits.max_instances = _instanceMaxCountReader;
+
+  #ifndef RTI_MICRO
+    if (_PM->get<long>("instances") > 1) {
+        if (_PM->is_set("instanceHashBuckets")) {
+            dr_qos->resource_limits.instance_hash_buckets =
+                    _PM->get<long>("instanceHashBuckets");
+        } else {
+            dr_qos->resource_limits.instance_hash_buckets =
+                    _PM->get<long>("instances");
+        }
+    }
+
+    if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
+        dr_qos->multicast.value.ensure_length(1, 1);
+        dr_qos->multicast.value[0].receive_address = DDS_String_dup(
+                _transport.getMulticastAddr(topic_name.c_str()).c_str());
+
+        if (dr_qos->multicast.value[0].receive_address == NULL) {
+            fprintf(stderr,
+                    "topic name must either be %s or %s or %s.\n",
+                    THROUGHPUT_TOPIC_NAME,
+                    LATENCY_TOPIC_NAME,
+                    ANNOUNCEMENT_TOPIC_NAME);
+            return NULL;
+        }
+
+        dr_qos->multicast.value[0].receive_port = 0;
+        dr_qos->multicast.value[0].transports.length(0);
+    }
+
+    if (_isFlatData && _isLargeData) {
+        qos_initial_samples = (unsigned) dr_qos->resource_limits.initial_samples;
+
+        initial_samples = std::max(
+            1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+
+        initial_samples = std::min(
+                initial_samples,
+                (unsigned long long) qos_initial_samples);
+
+        dr_qos->resource_limits.initial_samples = initial_samples;
+    }
+  #endif
+
+    if (_PM->get<int>("unbounded") != 0) {
+      #ifndef RTI_MICRO
+        char buf[10];
+        sprintf(buf, "%d", _PM->get<int>("unbounded"));
+        DDSPropertyQosPolicyHelper::add_property(dr_qos->property,
+                "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
+                buf, false);
+      #else
+        /* This is only needed for Micro 2.4.x. False unbounded sequences are
+         * available in Micro 3.0 */
+        #if RTI_MICRO_24x_COMPATIBILITY
+          fprintf(stderr,
+                  "Unbounded sequences not supported on Micro.\n");
+          return NULL;
+        #endif
+      #endif
+    }
+
+    return dr_qos;
+}
+
+
 /*********************************************************
  * CreateWriter
  */
 template <typename T>
 IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 {
+    DDS_DataWriterQos *dw_qos = NULL;
     DDSDataWriter *writer = NULL;
-    DDS_DataWriterQos dw_qos;
-    std::string qos_profile;
+    std::string qos_profile = "";
 
     DDSTopic *topic = _participant->create_topic(
                        topic_name,
@@ -2325,192 +2897,20 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-   #ifndef RTI_MICRO
-    if (_factory->get_datawriter_qos_from_profile(
-            dw_qos,
-            _PM->get<std::string>("qosLibrary").c_str(),
-            qos_profile.c_str())
-            != DDS_RETCODE_OK) {
-        fprintf(stderr,
-                "No QOS Profile named \"%s\" found in QOS Library \"%s\" in file %s.\n",
-                qos_profile.c_str(),
-                _PM->get<std::string>("qosLibrary").c_str(),
-                _PM->get<std::string>("qosFile").c_str());
+    dw_qos = setup_DW_QoS(qos_profile, topic_name);  // TODO: Change char* to string
+    if (dw_qos == NULL) {
+        fprintf(stderr, "Problem creating additional QoS settings.\n");
         return NULL;
     }
 
-    if (_PM->get<bool>("noPositiveAcks")
-            && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
-        dw_qos.protocol.disable_positive_acks = true;
-        if (_PM->is_set("keepDurationUsec")) {
-            dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
-                    DDS_Duration_t::from_micros(
-                            _PM->get<unsigned long long>("keepDurationUsec"));
-        }
-    }
-
-    if (_isLargeData || _PM->get<bool>("asynchronous")) {
-        dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
-        if (_PM->get<std::string>("flowController") != "default") {
-            dw_qos.publish_mode.flow_controller_name =
-                    DDS_String_dup(("dds.flow_controller.token_bucket." +
-                    _PM->get<std::string>("flowController")).c_str());
-        }
-    }
-  #endif
-
-    // Only force reliability on throughput/latency topics
-    if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0) {
-        if (!_PM->get<bool>("bestEffort")) {
-            // default: use the setting specified in the qos profile
-            // dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
-          #ifdef RTI_MICRO
-            dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
-          #endif
-        }
-        else {
-            // override to best-effort
-            dw_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
-        }
-    }
-
-  #ifdef RTI_MICRO
-    if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) == 0) {
-        dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
-        dw_qos.durability.kind = DDS_TRANSIENT_LOCAL_DURABILITY_QOS;
-    }
-  #endif
-
-    // These QOS's are only set for the Throughput datawriter
-    if (qos_profile == "ThroughputQos") {
-
-      #ifndef RTI_MICRO
-        if (_PM->get<bool>("multicast")) {
-            dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
-                    RTI_TRUE;
-        }
-
-        if (_PM->get<long>("batchSize") > 0) {
-            dw_qos.batch.enable = true;
-            dw_qos.batch.max_data_bytes = _PM->get<long>("batchSize");
-            dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
-            dw_qos.writer_resource_limits.max_batches =
-                    _PM->get<int>("sendQueueSize");
-        } else {
-            dw_qos.resource_limits.max_samples = _PM->get<int>("sendQueueSize");
-        }
-      #else
-        dw_qos.resource_limits.max_samples = _PM->get<int>("sendQueueSize");
-      #endif
-
-      #ifndef RTI_MICRO
-        if (_PM->get<bool>("enableAutoThrottle")) {
-            DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
-                    "dds.data_writer.auto_throttle.enable", "true", false);
-        }
-
-        if (_PM->get<bool>("enableTurboMode")) {
-            DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
-                    "dds.data_writer.enable_turbo_mode",
-                    "true",
-                    false);
-            dw_qos.batch.enable = false;
-            dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
-            dw_qos.writer_resource_limits.max_batches =
-                    _PM->get<int>("sendQueueSize");
-        }
-
-        dw_qos.resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
-      #endif
-        dw_qos.resource_limits.max_samples_per_instance =
-                dw_qos.resource_limits.max_samples;
-
-        dw_qos.durability.kind =
-                (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
-
-      #ifndef RTI_MICRO
-        dw_qos.durability.direct_communication =
-                !_PM->get<bool>("noDirectCommunication");
-      #endif
-
-
-        dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
-                _PM->get<int>("sendQueueSize") / 10;
-      #ifndef RTI_MICRO
-        dw_qos.protocol.rtps_reliable_writer.low_watermark =
-                _PM->get<int>("sendQueueSize") * 1 / 10;
-        dw_qos.protocol.rtps_reliable_writer.high_watermark =
-                _PM->get<int>("sendQueueSize") * 9 / 10;
-
-        /*
-         * If _SendQueueSize is 1 low watermark and high watermark would both be
-         * 0, which would cause the middleware to fail. So instead we set the
-         * high watermark to the low watermark + 1 in such case.
-         */
-        if (dw_qos.protocol.rtps_reliable_writer.high_watermark
-                == dw_qos.protocol.rtps_reliable_writer.low_watermark) {
-            dw_qos.protocol.rtps_reliable_writer.high_watermark =
-                    dw_qos.protocol.rtps_reliable_writer.low_watermark + 1;
-        }
-
-        dw_qos.protocol.rtps_reliable_writer.max_send_window_size =
-                _PM->get<int>("sendQueueSize");
-        dw_qos.protocol.rtps_reliable_writer.min_send_window_size =
-                _PM->get<int>("sendQueueSize");
-      #else
-        #if RTI_MICRO_24x_COMPATIBILITY
-          // Keep all not supported in Micro 2.4.x
-          dw_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
-        #else
-          dw_qos.history.kind = DDS_KEEP_ALL_HISTORY_QOS;
-        #endif
-        dw_qos.history.depth = _PM->get<int>("sendQueueSize");
-        // Same values we use for Pro (See perftest_qos_profiles.xml).
-        dw_qos.protocol.rtps_reliable_writer.heartbeat_period.sec = 0;
-        dw_qos.protocol.rtps_reliable_writer.heartbeat_period.nanosec = 10000000;
-      #endif
-    }
-
-    if (qos_profile == "LatencyQos"
-            && _PM->get<bool>("noDirectCommunication")
-            && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
-            || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
-        dw_qos.durability.kind =
-                (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
-      #ifndef RTI_MICRO
-        dw_qos.durability.direct_communication =
-                !_PM->get<bool>("noDirectCommunication");
-      #endif
-    }
-
-    dw_qos.resource_limits.max_instances =
-            _PM->get<long>("instances") + 1; // One extra for MAX_CFT_VALUE
-  #ifndef RTI_MICRO
-    dw_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
-
-    if (_PM->get<int>("unbounded") != 0) {
-        char buf[10];
-        sprintf(buf, "%d", _PM->get<int>("unbounded"));
-        DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
-               "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
-               buf,
-               false);
-    }
-
-    if (_PM->get<long>("instances") > 1) {
-        if (_PM->is_set("instanceHashBuckets")) {
-            dw_qos.resource_limits.instance_hash_buckets =
-                    _PM->get<long>("instanceHashBuckets");
-        } else {
-            dw_qos.resource_limits.instance_hash_buckets =
-                    _PM->get<long>("instances");
-        }
-    }
-  #endif
-
     writer = _publisher->create_datawriter(
-        topic, dw_qos, NULL,
+        topic, *dw_qos, NULL,
         DDS_STATUS_MASK_NONE);
+    
+    if (dw_qos != NULL) {
+        delete dw_qos;
+        dw_qos = NULL;
+    }
 
     if (writer == NULL)
     {
@@ -2551,6 +2951,65 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
       #endif
     }
 
+}
+
+template <typename T>
+IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const char *topic_name)
+{
+    DDS_DataWriterQos *dw_qos = NULL;
+    DDSDataWriter *writer = NULL;
+    std::string qos_profile = "";
+
+    DDSTopic *topic = _participant->create_topic(
+                       topic_name,
+                       _typename,
+                       DDS_TOPIC_QOS_DEFAULT,
+                       NULL,
+                       DDS_STATUS_MASK_NONE);
+
+    if (topic == NULL) {
+        fprintf(stderr,"Problem creating topic %s.\n", topic_name);
+        return NULL;
+    }
+
+    qos_profile = get_qos_profile_name(topic_name);
+    if (qos_profile.empty()) {
+        fprintf(stderr, "Problem getting qos profile.\n");
+        return NULL;
+    }
+
+    dw_qos = setup_DW_QoS(qos_profile, topic_name);  // TODO: Change char* to string
+    if (dw_qos == NULL) {
+        fprintf(stderr, "Problem creating additional QoS settings.\n");
+        return NULL;
+    }
+
+    writer = _publisher->create_datawriter(
+        topic, *dw_qos, NULL,
+        DDS_STATUS_MASK_NONE);
+
+    if (dw_qos != NULL) {
+        delete dw_qos;
+        dw_qos = NULL;
+    }
+
+    if (writer == NULL) {
+        fprintf(stderr,"Problem creating writer.\n");
+        return NULL;
+    }
+
+    try {
+        return new RTIFlatDataPublisher<T>(
+                writer,
+                _PM->get<long>("instances"),
+                _pongSemaphore,
+                _PM->get<long>("writeInstance"),
+                _PM);
+    } catch (const std::exception &ex) {
+        fprintf(stderr,
+                "Exception in RTIDDSImpl_FlatData<T>::CreateWriter(): %s.\n", ex.what());
+        return NULL;
+    }
 }
 
 #ifndef RTI_MICRO
@@ -2654,8 +3113,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         IMessagingCB *callback)
 {
     DDSDataReader *reader = NULL;
-    DDS_DataReaderQos dr_qos;
-    std::string qos_profile;
+    DDS_DataReaderQos *dr_qos;
+    std::string qos_profile = "";
     DDSTopicDescription* topic_desc = NULL; // Used to create the DDS DataReader
 
     DDSTopic *topic = _participant->create_topic(
@@ -2675,167 +3134,10 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-  #ifndef RTI_MICRO
-    if (_factory->get_datareader_qos_from_profile(
-            dr_qos,
-            _PM->get<std::string>("qosLibrary").c_str(),
-            qos_profile.c_str())
-            != DDS_RETCODE_OK) {
-        fprintf(stderr,
-                "No QOS Profile named \"%s\" found in QOS Library "
-                "\"%s\" in file %s.\n",
-                qos_profile.c_str(),
-                _PM->get<std::string>("qosLibrary").c_str(),
-                _PM->get<std::string>("qosFile").c_str());
+    dr_qos = setup_DR_QoS(qos_profile, topic_name);  // TODO: Change char* to string
+    if (dr_qos == NULL) {
+        fprintf(stderr, "Problem creating additional QoS settings.\n");
         return NULL;
-    }
-  #endif
-
-    // Only force reliability on throughput/latency topics
-    if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) != 0) {
-        if (!_PM->get<bool>("bestEffort")) {
-            dr_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
-        } else {
-            dr_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
-        }
-    }
-
-  #ifndef RTI_MICRO
-    if (_PM->get<bool>("noPositiveAcks")
-            && (qos_profile == "ThroughputQos"
-            || qos_profile == "LatencyQos")) {
-        dr_qos.protocol.disable_positive_acks = true;
-    }
-  #endif
-
-    // only apply durability on Throughput datareader
-    if (qos_profile == "ThroughputQos"
-            || (qos_profile == "LatencyQos"
-            && _PM->get<bool>("noDirectCommunication")
-            && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
-            || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS))) {
-        dr_qos.durability.kind =
-                (DDS_DurabilityQosPolicyKind) _PM->get<int>("durability");
-      #ifndef RTI_MICRO
-        dr_qos.durability.direct_communication =
-                !_PM->get<bool>("noDirectCommunication");
-      #endif
-
-    }
-
-  #ifdef RTI_MICRO
-
-    if (qos_profile == "ThroughputQos") {
-        /*
-         * For Connext DDS Pro settings are set so initial samples are set to
-         * a lower value than max_samples, so we can grow if needed. For micro
-         * however we do not have the initial_samples parameter, therefore we
-         * must choose a value for max_samples since the beginning. We chose to
-         * use 10000. This value should be large enough to handle most of the
-         * communications.
-         *
-         * We could potentially modify this with a new command line parameter
-         */
-        if (_PM->get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
-            dr_qos.resource_limits.max_samples = 50;
-            dr_qos.resource_limits.max_samples_per_instance = 50;
-            dr_qos.history.depth = 50;
-        }
-        else {
-            dr_qos.resource_limits.max_samples = 10000;
-            dr_qos.resource_limits.max_samples_per_instance = 10000;
-            dr_qos.history.depth = 10000;
-        }
-        /*
-         * In micro 2.4.x we don't have keep all, this means we need to set the
-         * history to keep last and chose a history depth. For the depth value
-         * we can we same value as max_samples
-         */
-        #if RTI_MICRO_24x_COMPATIBILITY
-          // Keep all not supported in Micro 2.4.x
-          dr_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
-        #else
-          dr_qos.history.kind = DDS_KEEP_ALL_HISTORY_QOS;
-        #endif
-
-    } else { // "LatencyQos" or "AnnouncementQos"
-
-        /*
-         * By default Micro will use a max_samples = 1. This is too low for the
-         * initial burst of data. In pro we set this value via QoS to
-         * LENGTH_UNLIMITED. In Micro we will use a lower number due to
-         * memory restrictions.
-         */
-        if (_PM->get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
-            dr_qos.resource_limits.max_samples = 50;
-        }
-        else {
-            dr_qos.resource_limits.max_samples = 1000;
-        }
-    }
-
-    /*
-     * We could potentially use here the number of subscriber, right now this
-     * class does not have access to the number of subscriber though.
-     */
-    dr_qos.reader_resource_limits.max_remote_writers = 50;
-    dr_qos.reader_resource_limits.max_remote_writers_per_instance = 50;
-  #endif
-
-  #ifndef RTI_MICRO
-    dr_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
-    if (_instanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
-        _instanceMaxCountReader++;
-    }
-  #endif
-    dr_qos.resource_limits.max_instances = _instanceMaxCountReader;
-
-  #ifndef RTI_MICRO
-    if (_PM->get<long>("instances") > 1) {
-        if (_PM->is_set("instanceHashBuckets")) {
-            dr_qos.resource_limits.instance_hash_buckets =
-                    _PM->get<long>("instanceHashBuckets");
-        } else {
-            dr_qos.resource_limits.instance_hash_buckets =
-                    _PM->get<long>("instances");
-        }
-    }
-
-    if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
-        dr_qos.multicast.value.ensure_length(1, 1);
-        dr_qos.multicast.value[0].receive_address = DDS_String_dup(
-                _transport.getMulticastAddr(topic_name).c_str());
-
-        if (dr_qos.multicast.value[0].receive_address == NULL) {
-            fprintf(stderr,
-                    "topic name must either be %s or %s or %s.\n",
-                    THROUGHPUT_TOPIC_NAME,
-                    LATENCY_TOPIC_NAME,
-                    ANNOUNCEMENT_TOPIC_NAME);
-            return NULL;
-        }
-
-        dr_qos.multicast.value[0].receive_port = 0;
-        dr_qos.multicast.value[0].transports.length(0);
-    }
-  #endif
-
-    if (_PM->get<int>("unbounded") != 0) {
-      #ifndef RTI_MICRO
-        char buf[10];
-        sprintf(buf, "%d", _PM->get<int>("unbounded"));
-        DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
-                "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
-                buf, false);
-      #else
-        /* This is only needed for Micro 2.4.x. False unbounded sequences are
-         * available in Micro 3.0 */
-        #if RTI_MICRO_24x_COMPATIBILITY
-          fprintf(stderr,
-                  "Unbounded sequences not supported on Micro.\n");
-          return NULL;
-        #endif
-      #endif
     }
 
   #ifndef RTI_MICRO
@@ -2853,14 +3155,14 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         if (!_PM->get<bool>("dynamicData")) {
             reader = _subscriber->create_datareader(
                     topic_desc,
-                    dr_qos,
+                    *dr_qos,
                     new ReceiverListener<T>(callback),
                     DDS_DATA_AVAILABLE_STATUS);
         } else {
           #ifndef RTI_MICRO
             reader = _subscriber->create_datareader(
                     topic_desc,
-                    dr_qos,
+                    *dr_qos,
                     new DynamicDataReceiverListener(callback),
                     DDS_DATA_AVAILABLE_STATUS);
           #else
@@ -2872,9 +3174,14 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     } else {
         reader = _subscriber->create_datareader(
                 topic_desc,
-                dr_qos,
+                *dr_qos,
                 NULL,
                 DDS_STATUS_MASK_NONE);
+    }
+
+    if (dr_qos != NULL) {
+        delete dr_qos;
+        dr_qos = NULL;
     }
 
     if (reader == NULL) {
@@ -2915,6 +3222,83 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(const char *topicName)
 }
 
 
+template <typename T>
+IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
+        const char *topic_name,
+        IMessagingCB *callback)
+{
+    DDS_DataReaderQos *dr_qos = NULL;
+    DDSDataReader *reader = NULL;
+    std::string qos_profile = "";
+    DDSTopicDescription* topic_desc = NULL; // Used to create the DDS DataReader
+
+    DDSTopic *topic = _participant->create_topic(
+                       topic_name, _typename,
+                       DDS_TOPIC_QOS_DEFAULT, NULL,
+                       DDS_STATUS_MASK_NONE);
+
+    if (topic == NULL) {
+        fprintf(stderr,"Problem creating topic %s.\n", topic_name);
+        return NULL;
+    }
+    topic_desc = topic;
+
+    qos_profile = get_qos_profile_name(topic_name);
+    if (qos_profile.empty()) {
+        fprintf(stderr, "Problem getting qos profile.\n");
+        return NULL;
+    }
+
+    dr_qos = setup_DR_QoS(qos_profile, topic_name);  // TODO: Change char* to string
+    if (dr_qos == NULL) {
+        fprintf(stderr, "Problem creating additional QoS settings.\n");
+        return NULL;
+    }
+    
+
+  #ifndef RTI_MICRO
+    /* Create CFT Topic */
+    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && _PM->is_set("cft")) {
+        topic_desc = CreateCft(topic_name, topic);
+        if (topic_desc == NULL) {
+            printf("Create_contentfilteredtopic error\n");
+            return NULL;
+        }
+    }
+  #endif
+
+    if (callback != NULL) {
+        reader = _subscriber->create_datareader(
+                topic_desc,
+                *dr_qos,
+                new FlatDataReceiverListener<T>(callback),
+                DDS_DATA_AVAILABLE_STATUS);
+    } else {
+        reader = _subscriber->create_datareader(
+                topic_desc,
+                *dr_qos,
+                NULL,
+                DDS_STATUS_MASK_NONE);
+    }
+
+    if (dr_qos != NULL) {
+        delete dr_qos;
+        dr_qos = NULL;
+    }
+
+    if (reader == NULL) {
+        fprintf(stderr, "Problem creating reader.\n");
+        return NULL;
+    }
+
+    if (!strcmp(topic_name, THROUGHPUT_TOPIC_NAME) ||
+        !strcmp(topic_name, LATENCY_TOPIC_NAME)) {
+        _reader = reader;
+    }
+
+    return new RTIFlatDataSubscriber<T>(reader, _PM);
+}
+
 /*
  * This instantiation is to avoid a undefined reference of a templated static
  * function of obtain_dds_de/serialize_time_costs.
@@ -2923,6 +3307,18 @@ template class RTIDDSImpl<TestDataKeyed_t>;
 template class RTIDDSImpl<TestData_t>;
 template class RTIDDSImpl<TestDataKeyedLarge_t>;
 template class RTIDDSImpl<TestDataLarge_t>;
+
+#ifdef RTI_FLATDATA_AVAILABLE
+  template class RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>;
+  template class RTIDDSImpl_FlatData<TestData_FlatData_t>;
+  template class RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>;
+  template class RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>;
+
+  template class RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>;
+  template class RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>;
+  template class RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>;
+  template class RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>;
+#endif // RTI_FLATDATA_AVAILABLE
 
 #if defined(RTI_WIN32) || defined(RTI_INTIME)
   #pragma warning(pop)

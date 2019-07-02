@@ -649,7 +649,7 @@ public:
                       PM)
       {
           for (unsigned long int i = 0; i < this->_num_instances; ++i) {
-              Builder builder = rti::flat::build_data(writer);
+              Builder builder = rti::flat::build_data(this->writer);
               add_key(builder, i);
 
               T *sample = builder.finish_sample();
@@ -661,7 +661,7 @@ public:
           }
 
           // Register the key of MAX_CFT_VALUE
-          Builder builder = rti::flat::build_data(writer);
+          Builder builder = rti::flat::build_data(this->writer);
           add_key(builder, MAX_CFT_VALUE);
           T *sample = builder.finish_sample();
 
@@ -2062,7 +2062,6 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
 
     // If FlatData and LargeData, automatically estimate initial_samples here
     if (_isFlatData && _isLargeData) {
-        std::cout << "HOLAAAAAAAAAAAAAAAA" << std::endl;
         initial_samples = std::max(
             1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
 

@@ -68,6 +68,7 @@ public:
         _instanceMaxCountReader = 1;
       #endif
         _isLargeData = false;
+        _isFlatData = false;
         _factory = NULL;
         _participant = NULL;
         _subscriber = NULL;
@@ -139,12 +140,13 @@ public:
 
     const std::string get_qos_profile_name(const char *topicName);
 
-private:
+protected:
     // This Mutex is used in VxWorks to synchronize when finalizing the factory
-    static PerftestMutex     *_finalizeFactoryMutex;
+    static PerftestMutex        *_finalizeFactoryMutex;
 
     long                         _instanceMaxCountReader;
     bool                         _isLargeData;
+    bool                         _isFlatData;
     PerftestTransport            _transport;
   #ifdef RTI_SECURE_PERFTEST
     PerftestSecurity             _security;
@@ -162,6 +164,25 @@ private:
     ParameterManager            *_PM;
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
+
+    DDS_DataReaderQos *setup_DR_QoS(std::string qos_profile, std::string topic_name);
+    DDS_DataWriterQos *setup_DW_QoS(std::string qos_profile, std::string topic_name);
+};
+
+template <typename T>
+class RTIDDSImpl_FlatData: public RTIDDSImpl<TestData_t> {
+public:
+    RTIDDSImpl_FlatData() {
+      this->_isFlatData = true;
+    };
+    
+    IMessagingWriter *CreateWriter(const char *topic_name);
+
+    /*
+     * Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
+     * to get data
+     */
+    IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
 };
 
 #endif // __RTIDDSIMPL_H__
