@@ -2082,7 +2082,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     }
 
     // If FlatData and LargeData, automatically estimate initial_samples here
-    if (_isFlatData && !_isZerocopy && _isLargeData) {
+    if (_isFlatData && !_isZeroCopy && _isLargeData) {
         initial_samples = std::max(
             1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
 
@@ -2324,9 +2324,9 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
 }
 
 template <typename T>
-RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData(bool isZeroCopy=false) {
+RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData(bool isZeroCopy) {
     this->_isFlatData = true;
-    this->_isZeroCopy = isZeroCopy
+    this->_isZeroCopy = isZeroCopy;
 }
 
 /*********************************************************
