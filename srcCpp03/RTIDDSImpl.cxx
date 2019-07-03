@@ -890,9 +890,9 @@ public:
                   // bin_data should be retrieved here
 
                   // Check that the sample was not modified on the publisher side when using Zero Copy.
-                //   if (_isZeroCopy && !reader->is_data_consistent(samples[i])) {
-                //       continue;
-                //   }
+                  if (_isZeroCopy && !reader->is_data_consistent(samples[i])) {
+                      continue;
+                  }
 
                   this->_callback->ProcessMessage(this->_message);
               }
@@ -1988,6 +1988,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     dds::sub::qos::DataReaderQos dr_qos = qos_provider.datareader_qos();
     Reliability qos_reliability = dr_qos.policy<Reliability>();
     ResourceLimits qos_resource_limits = dr_qos.policy<ResourceLimits>();
+    DataReaderResourceLimits qos_dr_resource_limits = dr_qos.policy<DataReaderResourceLimits>();
     Durability qos_durability = dr_qos.policy<Durability>();
     rti::core::policy::DataReaderProtocol dr_DataReaderProtocol =
             dr_qos.policy<rti::core::policy::DataReaderProtocol>();
@@ -2203,7 +2204,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
         }
 
         if (_isFlatData) {
-
+            // Configure DataWriter to prevent dynamic allocation of serialization buffer
             dw_qos.policy<Property>().set(Property::Entry(
                     "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size", 
                      std::to_string(dds::core::LENGTH_UNLIMITED)));
