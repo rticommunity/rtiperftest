@@ -1495,9 +1495,6 @@ class RTISubscriberBase : public IMessagingReader
             delete _waitset;
         }
 
-        if (_waitset != NULL) {
-            delete _waitset;
-        }
         // loan may be outstanding during shutdown
         _reader->return_loan(_data_seq, _info_seq);
     }

@@ -649,7 +649,7 @@ public:
                       PM)
       {
           for (unsigned long int i = 0; i < this->_num_instances; ++i) {
-              Builder builder = rti::flat::build_data(this->writer);
+              Builder builder = rti::flat::build_data(this->_writer);
               add_key(builder, i);
 
               T *sample = builder.finish_sample();
@@ -661,7 +661,7 @@ public:
           }
 
           // Register the key of MAX_CFT_VALUE
-          Builder builder = rti::flat::build_data(this->writer);
+          Builder builder = rti::flat::build_data(this->_writer);
           add_key(builder, MAX_CFT_VALUE);
           T *sample = builder.finish_sample();
 
@@ -890,9 +890,9 @@ public:
                   // bin_data should be retrieved here
 
                   // Check that the sample was not modified on the publisher side when using Zero Copy.
-                  if (_isZeroCopy && !reader->is_data_consistent(samples[i])) {
-                      continue;
-                  }
+                //   if (_isZeroCopy && !reader->is_data_consistent(samples[i])) {
+                //       continue;
+                //   }
 
                   this->_callback->ProcessMessage(this->_message);
               }
@@ -2203,7 +2203,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
         }
 
         if (_isFlatData) {
-            // Configure DataWriter to prevent dynamic allocation of serialization buffer
+
             dw_qos.policy<Property>().set(Property::Entry(
                     "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size", 
                      std::to_string(dds::core::LENGTH_UNLIMITED)));
@@ -2303,6 +2303,10 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
 
         qos_resource_limits->initial_samples(initial_samples);
     }
+
+    std::cout << "[###] isLargeData: " << _isLargeData << std::endl;
+    std::cout << "[########] isFlatData: " << _isFlatData << std::endl;
+    std::cout << "[########] isZeroCopy: " << _isZeroCopy << std::endl;
 
     std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
     std::cout << "[########] QoS DW Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
