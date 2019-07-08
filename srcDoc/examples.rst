@@ -12,7 +12,7 @@ different use cases.
 
 -  The tests below print final results only; if you want to see
    intermediate values, remove the ``-noprint`` argument from the
-   command line.
+   command-line.
 
 -  If you are running on 2 unequal machines, i.e., one machine is faster
    (has better processors) than another, you will see better performance
@@ -21,8 +21,11 @@ different use cases.
 -  To measure CPU usage while running these tests, use "-cpu" argument
    or TOP utility.
 
+RTI Connext DDS Professional
+----------------------------
+
 1-to-1, Multicast, Best Latency as a Function of Message Size
--------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -41,7 +44,7 @@ Set ``-executionTime <seconds>`` to be >=100 for statistically better
 results.
 
 1-to-1, Multicast, Maximum Throughput as a Function of Message Size (with Batching)
------------------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -68,7 +71,7 @@ Note: For larger data sizes (``8000 bytes`` and higher), batching often
 does not improve throughput, at least for 1-Gig networks.
 
 1-to-1, Multicast, Latency vs. Throughput for 200-byte Messages (with Batching)
--------------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -85,7 +88,7 @@ does not improve throughput, at least for 1-Gig networks.
 To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 1-to-1, Multicast, Reliable UDPv4, All Sizes
---------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -100,7 +103,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -multicast
 
 1-to-1, Unicast, Best-Effort, UDPv4|SHMEM, 1 Size
----------------------------------------======----
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -115,7 +118,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 1024 -bestEffort
 
 1-to-1, Multicast, Reliable, UDPv4, Batching Enabled
-----------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -130,7 +133,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 200 -batchSize 6400 -transport UDPv4 -multicast
 
 1-to-2, Multicast, Reliable, UDPv4
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -151,7 +154,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -multicast -sidMultiSubTest 1
 
 2-to-1, Multicast, Reliable, UDPv4
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher 1:
 
@@ -172,7 +175,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 200 -numPublishers 2 -sidMultiSubTest 0 -multicast
 
 1-to-1, Unicast, Reliable Using Security: Signing Packages, Encrypting Data
----------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -187,7 +190,143 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 63000 -secureSign -secureEncryptData
 
 
+1-to-1, RawTransport, Unicast, BestEffort (Same Machine)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -dataLen 63000 -executionTime 100
+
+-  Subscriber
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport
+
+
+1-to-2, RawTransport, Unicast, BestEffort (Same Machine)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -peer 127.0.0.1 -peer 127.0.0.1:4 -numSubscribers 2 -dataLen 63000 -executionTime 100
+
+-  Subscriber 1
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -sidMultiSubTest 0
+
+-  Subscriber 2
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -sidMultiSubTest 4
+
+
+
+1-to-1, RawTransport, Unicast, BestEffort (Different Machine)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -peer 10.70.1.50 -nic 10.70.1.49  -dataLen 63000 -executionTime 100
+
+-  Subscriber
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -peer 10.70.1.49 -nic 10.70.1.50
+
+1-to-2, RawTransport, Multicast, BestEffort
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -multicastAddr 225.0.0.1 -nic 10.70.1.1 -numSubscribers 2 -dataLen 63000 -executionTime 100
+
+-  Subscriber 1
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -multicastAddr 225.0.0.1 -nic 10.70.2.1
+
+-  Subscriber 2
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -multicastAddr 225.0.0.1 -nic 10.70.2.2
+
+
+1-to-1, RawTransport, SharedMemory, Unicast, BestEffort
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -transport SHMEM -dataLen 63000 -executionTime 100
+
+-  Subscriber
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -rawTransport
+
+
+1-to-2, RawTransport, SharedMemory, Unicast, BestEffort
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -transport SHMEM -peer 127.0.0.1:0 -peer 127.0.0.1:4 -numSubscribers 2 -dataLen 63000 -executionTime 100
+
+-  Subscriber 1
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -transport SHMEM -sidMultiSubTest 0
+
+-  Subscriber 2
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -transport SHMEM -sidMultiSubTest 4
+
+
 .. _section-large_sample:
+
+RTI Connext DDS Micro
+---------------------
+
+1-to-1, Unicast, Best Latency as a Function of Message Size
+-------------------------------------------------------------
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp_micro -pub -noPrint -nic <ipaddr> -domain <ID> -latencyCount 1 -dataLen <length> -latencyTest -executionTime 100
+
+-  Subscriber:
+
+::
+
+    bin/<arch>/release/perftest_cpp_micro -sub -noPrint -nic <ipaddr> -domain <ID>
+
+Modify ``-dataLen <bytes>`` to see latencies for different data sizes.
+Set ``-executionTime <seconds>`` to be >=100 for statistically better
+results.
 
 Use-Cases
 =========
@@ -360,15 +499,17 @@ Content-Filtered Topics
 using Content-Filtered Topics (*CFTs*). This is specially useful in
 scenarios with many subscribers.
 
-Using *CFTs* will allow you to:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*CFTs* support is just implemented for *RTI Connext DDS Professional*.
+
+Using *CFTs* will allow you to
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Limit the number of data samples a DataReader has to process, which
    results in less CPU consumption.
 -  Reduce the amount of data sent over the network.
 
-Command-Line Parameters:
-~~~~~~~~~~~~~~~~~~~~~~~~
+Command-Line Parameters
+~~~~~~~~~~~~~~~~~~~~~~~
 
 To enable the use of CFTs on the subscriber side, the following
 parameter is required:
@@ -389,8 +530,8 @@ the following parameter:
 
    Set the number of instances to be sent.
 
-Example Command Lines for Running the Performance Test:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Example Command Lines for Running the Performance Test
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following are examples of how to run *RTI Perftest* for the
 different scenarios using *CFT*.
@@ -441,7 +582,7 @@ Latency test, 1 Publisher and 2 Subscribers, Publisher sending using a Round-Rob
 .. _section-routing_service:
 
 RTI Routing-Service
--------------------------------------------
+-------------------
 
 This wrapper has been created to test the effects of introducing *RTI
 Routing Service* when using *RTI Perftest* in latency and Throughput. It
@@ -600,3 +741,448 @@ Maximum Throughput -- 2 *Routing Service*
 ::
 
     bin/<arch>/release/perftest_cpp -sub -noPrint -nic <ipaddr> -domain <ID+2> -dataLen <length>
+
+Using Custom Types
+------------------
+
+The Custom Types feature allows you to use your own customized types instead of
+the one provided by *RTI Perftest*. It is designed in such a way that the number
+of changes in the code and configuration files is minimal.
+
+Briefly, the steps you need to perform to use your custom type in *RTI Perftest* are as follows:
+
+-  Copy your IDL files into `~/rtiperftest/srcIdl/custom/`
+-  Implement the API custom type functions of customtype.cxx
+-  Run the build script with the command-line parameter ``--customType <type>``
+-  Run *RTI Perftest* as usual.
+
+Full example using Custom Types
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The custom type that will be used for this example is the following:
+
+::
+
+    const long SIZE_TEST_SEQ = 100;
+    const long SIZE_TEST_STRING = 128;
+    enum TestEnum {
+        ENUM1,
+        ENUM2
+    };//@Extensibility FINAL_EXTENSIBILITY
+    struct StringTest {
+        string<SIZE_TEST_STRING> test_string;
+    };//@Extensibility FINAL_EXTENSIBILITY
+    struct SeqTest {
+        sequence<long, SIZE_TEST_SEQ> test_seq;
+    };//@Extensibility FINAL_EXTENSIBILITY
+    struct Test {
+        long test_long;
+        TestEnum test_enum;
+        StringTest test_string;
+        SeqTest test_seq;
+    };//@Extensibility FINAL_EXTENSIBILITY
+
+These are the steps needed to use the above type in *RTI Perftest* for the
+C++ (Traditional) API:
+
+
+
+1. Copy your IDL files into `~/rtiperftest/srcIdl/customType/` folder.
+
+2. The following functions should be implemented (optionally) to properly
+   initialize and set the Custom Type structures.
+
+    - **initialize_custom_type_data**:
+        This function is used to initialize your data.
+        Using this function, you will be able to allocate memory or set an immutable
+        field of the data.
+        The function takes one argument:
+
+            - A reference to custom type data.
+
+    ::
+
+        bool initialize_custom_type_data(RTI_CUSTOM_TYPE &data)
+        {
+            bool success = true;
+            if (!data.test_seq.test_seq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
+                success = false;
+            }
+            data.test_enum = ENUM1;
+            return success;
+        }
+
+    - **register_custom_type_data**:
+        This function is used to set your data before being registered. It is only
+        required for key types. Set the key field of the data based on the key input.
+        There is a one-to-one mapping between an input key
+        and an instance.
+        The function takes two arguments:
+
+            - A reference to custom type data.
+            - A specific number unique for every key.
+
+    ::
+
+        void register_custom_type_data(RTI_CUSTOM_TYPE & data, unsigned long key)
+        {
+            data.test_long = key;
+        }
+
+    - **set_custom_type_data**:
+        This function is used to set your data before it is sent.
+        It is called every time the data is sent.
+        You must set the Custom type data before it is sent with the right
+        "key" value and the "targetDataLen".
+        The function takes three arguments:
+
+            - A reference to custom type data.
+            - A specific number unique for every key.
+            - The target size set by the command-line parameter ``-dataLen <bytes>``
+              minus the overhead of *RTI Perftest*. If applicable, you can use this
+              value to set the content of the data.
+
+    ::
+
+        bool set_custom_type_data(
+                RTI_CUSTOM_TYPE & data,
+                unsigned long key,
+                int targetDataLen)
+        {
+            bool success = true;
+            data.test_long = key;
+            if (sprintf(data.test_string.test_string, "Hello World! %lu", key) < 0) {
+                success = false;
+            }
+            return success;
+        }
+
+    - **finalize_custom_type_data**:
+        This function is used to remove your data. It is called in the destructor.
+        The function takes one argument:
+
+            - A reference to custom type data.
+
+    ::
+
+        bool finalize_custom_type_data(RTI_CUSTOM_TYPE & data)
+        {
+            bool success = true;
+            if (!data.test_seq.test_seq.maximum(0)) {
+                success = false;
+            }
+            return success;
+        }
+
+    - **initialize_custom_type_dynamic_data**:
+        This function is used to initialize your DynamicData.
+        Using this function, you will be able to allocate memory or set an immutable
+        field of the data.
+        The function takes one argument:
+
+            - A reference to the full DDS_DynamicData object that includes custom_type.
+
+    ::
+
+        bool initialize_custom_type_dynamic_data(DDS_DynamicData & data)
+        {
+            bool success = true;
+            if (!longSeq.ensure_length(SIZE_TEST_SEQ, SIZE_TEST_SEQ)) {
+                success = false;
+                fprintf(stderr, "longSeq.ensure_length failed.\n");
+            }
+            return success;
+        }
+
+    - **register_custom_type_dynamic_data**:
+        This function is used to set your DynamicData before it has been registered.
+        It is only required for key types.
+        Set the key field of the data based on the key input.
+        There is a one-to-one mapping between an input key and an instance.
+        The function takes two arguments:
+
+            - A reference to the full DDS_DynamicData object that includes custom_type.
+            - A specific number unique for every key.
+
+    ::
+
+        void register_custom_type_dynamic_data(DDS_DynamicData & data, unsigned long key)
+        {
+            DDS_ReturnCode_t retcode = data.set_long(
+                    "custom_type.test_long",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                    key);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_long(test_long) failed: %d.\n", retcode);
+            }
+        }
+
+    - **set_custom_type_dynamic_data**:
+        This function is used to set your DynamicData before it is sent.
+        It is called every time the data is sent.
+        Set the Custom type data before it is sent with the right "key"
+        value and the "targetDataLen".
+        The function takes three arguments:
+
+            - A reference to the full DDS_DynamicData object that includes custom_type.
+            - A specific number unique for every key.
+            - The target size set by the command-line parameter ``-dataLen <bytes>``
+              minus the overhead of *RTI Perftest*. If applicable, you can use this
+              value to set the content of the data.
+
+    ::
+
+        bool set_custom_type_dynamic_data(
+                DDS_DynamicData & data,
+                unsigned long key,
+                int targetDataLen)
+        {
+            DDS_ReturnCode_t retcode;
+            char test_string[SIZE_TEST_STRING]; //size of member_name
+            bool success = true;
+            DDS_DynamicData customTypeData(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
+            DDS_DynamicData testSeqData(NULL, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
+
+            retcode = data.bind_complex_member(
+                    customTypeData,
+                    "custom_type",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "bind_complex_member(custom_type) failed: %d.\n",
+                        retcode);
+                success = false;
+            }
+
+            retcode = customTypeData.set_long(
+                    "test_long",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                    key);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_long(test_long) failed: %d.\n", retcode);
+                success = false;
+            }
+
+            retcode = customTypeData.set_long(
+                    "test_enum",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                    ENUM1);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_long(test_enum) failed: %d.\n", retcode);
+                success = false;
+            }
+
+            if (snprintf(test_string, SIZE_TEST_STRING, "Hello World! %lu", key) < 0) {
+                success = false;
+            }
+            retcode = customTypeData.set_string(
+                    "test_string.test_string",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                    test_string);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_string(test_string) failed: %d.\n", retcode);
+                success = false;
+            }
+
+            retcode = customTypeData.bind_complex_member(
+                    testSeqData,
+                    "test_seq",
+                    DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "bind_complex_member(testSeqData) failed: %d.\n",
+                        retcode);
+                success = false;
+            }
+            retcode = testSeqData.set_long_seq(
+                        "test_seq",
+                        DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED,
+                        longSeq);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "set_long(test_seq) failed: %d.\n", retcode);
+                success = false;
+            }
+            retcode = customTypeData.unbind_complex_member(testSeqData);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "unbind_complex_member(testSeqData) failed: %d.\n",
+                        retcode);
+                success = false;
+            }
+            retcode = data.unbind_complex_member(custom_type_data);
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr,
+                        "unbind_complex_member(custom_type) failed: %d.\n",
+                        retcode);
+                success = false;
+            }
+            return success;
+        }
+
+    - **finalize_custom_type_dynamic_data**:
+        This function is used to remove your data. It is called in the destructor.
+        The function takes one argument:
+
+            - A reference to the full DDS_DynamicData object that includes custom_type.
+
+    ::
+
+        bool finalize_custom_type_dynamic_data(DDS_DynamicData & data)
+        {
+            bool success = true;
+            if (!longSeq.ensure_length(0, 0)) {
+                success = false;
+                fprintf(stderr, "longSeq.ensure_length failed.\n");
+            }
+            DDS_ReturnCode_t retcode = data.clear_all_members();
+            if (retcode != DDS_RETCODE_OK) {
+                fprintf(stderr, "clear_all_members failed: %d.\n", retcode);
+                success = false;
+            }
+            return success;
+        }
+
+3. Build *RTI Perftest* using ``--customType <type>``.
+
+    ::
+
+        ./build.sh --platform x64Linux3gcc5.4.0 --nddshome /home/rti_connext_dds-5.3.0 --cpp-build --customType Test
+
+4. Launch *RTI Perftest*.
+
+    ::
+
+        ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint
+        RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+
+        Custom Type provided: 'Test'
+
+        Mode: THROUGHPUT TEST
+            (Use "-latencyTest" for Latency Mode)
+
+        Perftest Configuration:
+            Reliability: Reliable
+            Keyed: No
+            Publisher ID: 0
+            Latency count: 1 latency sample every 10000 samples
+            Data Size: 100
+            Batching: 8192 Bytes (Use "-batchSize 0" to disable batching)
+            Publication Rate: Unlimited (Not set)
+            Execution time: 60 seconds
+            Receive using: Listeners
+            Domain: 1
+            Dynamic Data: No
+            Asynchronous Publishing: No
+            XML File: perftest_qos_profiles.xml
+
+        Transport Configuration:
+            Kind: UDPv4 & SHMEM (taken from QoS XML file)
+            Use Multicast: False
+
+        Waiting to discover 1 subscribers ...
+        Waiting for subscribers announcement ...
+        Sending 4050 initialization pings ...
+        Publishing data ...
+        Setting timeout to 60 seconds
+        Length:   464  Latency: Ave     39 us  Std   30.7 us  Min     21 us  Max    276 us  50%     30 us  90%     60 us  99%    276 us  99.99%    276 us  99.9999%    276 us
+        Finishing test due to timer...
+        Test ended.
+
+
+
+    ::
+
+        ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint
+        RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+
+        Custom Type provided: 'Test'
+
+        Perftest Configuration:
+            Reliability: Reliable
+            Keyed: No
+            Subscriber ID: 0
+            Receive using: Listeners
+            Domain: 1
+            Dynamic Data: No
+            XML File: perftest_qos_profiles.xml
+
+        Transport Configuration:
+            Kind: UDPv4 & SHMEM (taken from QoS XML file)
+            Use Multicast: False
+
+        Waiting to discover 1 publishers ...
+        Waiting for data...
+        Length:   464  Packets: 68081040  Packets/s(ave): 1134692  Mbps(ave):  4212.0  Lost:     0 (0.00%)
+        Finishing test...
+        Test ended.
+
+
+
+5. Besides, you can launch *RTI Perftest* with your customType using DynamicData.
+
+    ::
+
+        ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint -dynamicData
+        RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+
+        Custom Type provided: 'Test'
+
+        Mode: THROUGHPUT TEST
+            (Use "-latencyTest" for Latency Mode)
+
+        Perftest Configuration:
+            Reliability: Reliable
+            Keyed: No
+            Publisher ID: 0
+            Latency count: 1 latency sample every 10000 samples
+            Data Size: 100
+            Batching: 8192 Bytes (Use "-batchSize 0" to disable batching)
+            Publication Rate: Unlimited (Not set)
+            Execution time: 60 seconds
+            Receive using: Listeners
+            Domain: 1
+            Dynamic Data: Yes
+            Asynchronous Publishing: No
+            XML File: perftest_qos_profiles.xml
+
+        Transport Configuration:
+            Kind: UDPv4 & SHMEM (taken from QoS XML file)
+            Use Multicast: False
+
+        Waiting to discover 1 subscribers ...
+        Waiting for subscribers announcement ...
+        Sending 4050 initialization pings ...
+        Publishing data ...
+        Setting timeout to 60 seconds
+        Length:   464  Latency: Ave    158 us  Std  166.5 us  Min     71 us  Max    678 us  50%    105 us  90%    169 us  99%    678 us  99.99%    678 us  99.9999%    678 us
+        Finishing test due to timer...
+        Test ended.
+
+
+
+
+    ::
+
+        ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint -dynamicData
+        RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+
+        Custom Type provided: 'Test'
+
+        Perftest Configuration:
+            Reliability: Reliable
+            Keyed: No
+            Subscriber ID: 0
+            Receive using: Listeners
+            Domain: 1
+            Dynamic Data: Yes
+            XML File: perftest_qos_profiles.xml
+
+        Transport Configuration:
+            Kind: UDPv4 & SHMEM (taken from QoS XML file)
+            Use Multicast: False
+
+        Waiting to discover 1 publishers ...
+        Waiting for data...
+        Length:   464  Packets:  8146078  Packets/s(ave):  135770  Mbps(ave):   504.0  Lost:     0 (0.00%)
+        Finishing test...
+        Test ended.
