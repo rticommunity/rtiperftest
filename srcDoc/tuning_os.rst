@@ -51,8 +51,8 @@ Optimizing Windows Systems
 
 4. Reboot your machine for the changes to take effect.
 
-The following articles in RTI's Community portal might also help to improve the
-performance of your Windows System:
+Read the following articles in RTI's Community portal to see more possible
+improvements for your Windows system
 
 - `Improve Windows performance under heavy load <https://community.rti.com/kb/how-can-i-improve-performance-windows-under-heavy-load>`__.
 - `Reduce latency in Windows by disabling the Interrupt coalescing <https://community.rti.com/kb/how-reduce-latency-windows-disabling-interrupt-coalescing>`__.
