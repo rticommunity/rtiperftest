@@ -712,10 +712,18 @@ void ParameterManager::initialize()
     ////////////////////////////////////////////////////////////////////////////
     // TRANSPORT PARAMETER:
     Parameter<std::string> *nic = new Parameter<std::string>();
-    nic->set_command_line_argument("-nic", "<ipaddr>");
+    nic->set_command_line_argument("-nic", "<ipaddr/name>");
     nic->set_description(
-            "Use only the nic specified by <ipaddr>.\n"
-            "If not specified, use all available interfaces");
+            "Use only the NIC specified by <ipaddr> to receive\n"
+            "packets. This will be the only address announced\n"
+            "at discovery time. If not specified, use all"
+            "available interfaces"
+          #ifdef RTI_MICRO
+            "\n"
+            "When using RTI Connext DDS Micro, always specify the\n"
+            "name, not the IP Address."
+          #endif
+            );
     nic->set_type(T_STR);
     nic->set_extra_argument(YES);
     nic->set_group(TRANSPORT);
@@ -728,8 +736,16 @@ void ParameterManager::initialize()
     Parameter<std::string> *allowInterfaces = new Parameter<std::string>();
     allowInterfaces->set_command_line_argument("-allowInterfaces", "<ipaddr>");
     allowInterfaces->set_description(
-            "Use only the nic specified by <ipaddr>.\n"
-            "If not specified, use all available interfaces");
+            "Use only the NIC specified by <ipaddr> to receive\n"
+            "packets. This will be the only address announced\n"
+            "at discovery time. If not specified, use all"
+            "available interfaces"
+          #ifdef RTI_MICRO
+            "\n"
+            "When using RTI Connext DDS Micro, always specify the\n"
+            "name, not the IP Address."
+          #endif
+            );
     allowInterfaces->set_type(T_STR);
     allowInterfaces->set_extra_argument(YES);
     allowInterfaces->set_group(TRANSPORT);

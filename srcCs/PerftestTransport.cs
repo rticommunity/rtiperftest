@@ -240,7 +240,9 @@ namespace PerformanceTest
             sb.Append("\t                                    DTLS\n");
             sb.Append("\t                                    WAN\n");
             sb.Append("\t                                Default: UDPv4\n");
-            sb.Append("\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n");
+            sb.Append("\t-nic/-allowInterfaces <addr>  - Use only the NIC specified by <ipaddr> to\n");
+            sb.Append("\t                                receive packets. This will be the only\n");
+            sb.Append("\t                                address announced at discovery time.\n");
             sb.Append("\t                                If not specified, use all available\n");
             sb.Append("\t                                interfaces\n");
             sb.Append("\t-multicast                    - Use multicast to send data. Each topic");
