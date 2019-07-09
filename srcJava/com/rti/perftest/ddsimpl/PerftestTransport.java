@@ -174,7 +174,9 @@ public class PerftestTransport {
     sb.append("\t                                    WAN\n");
     sb.append("\t                                    Use XML\n");
     sb.append("\t                                Default: Use XML (UDPv4|SHMEM).\n");
-    sb.append("\t-nic <ipaddr>                 - Use only the nic specified by <ipaddr>.\n");
+    sb.append("\t-nic/-allowInterfaces <addr>  - Use only the NIC specified by <ipaddr> to\n");
+    sb.append("\t                                receive packets. This will be the only\n");
+    sb.append("\t                                address announced at discovery time.\n");
     sb.append("\t                                If not specified, use all available\n");
     sb.append("\t                                interfaces\n");
     sb.append("\t-multicast                    - Use multicast to send data. Each topic");
