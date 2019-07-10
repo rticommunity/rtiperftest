@@ -28,6 +28,19 @@ PerftestClock::PerftestClock()
     OSAPI_NtpTime_from_millisec(&clockTimeAux, 0, 0);
     clockSec = 0;
     clockUsec = 0;
+
+#if defined(RTI_WIN32)
+
+    PCFreq = 0.0;
+    LARGE_INTEGER li;
+    if(!QueryPerformanceFrequency(&li)){
+        printf("QueryPerformanceFrequency failed!\n");
+    }
+
+    PCFreq = double(li.QuadPart);
+
+#endif
+
 }
 
 PerftestClock::~PerftestClock()
@@ -43,6 +56,8 @@ PerftestClock &PerftestClock::getInstance()
 unsigned long long PerftestClock::getTimeUsec()
 {
 
+#ifndef(RTI_WIN32)
+
     if (!OSAPI_System_get_time((OSAPI_NtpTime*)&clockTimeAux)) {
         return 0;
     }
@@ -51,7 +66,17 @@ unsigned long long PerftestClock::getTimeUsec()
             &clockSec,
             &clockUsec,
             (struct OSAPI_NtpTime*)&clockTimeAux);
-    return clockUsec + 1000000 * clockSec;
+    return clockUsec + (unsigned long long)1000000 * clockSec;
+
+#else
+
+    LARGE_INTEGER li;
+    QueryPerformanceCounter(&li);
+    return (unsigned long long)(li.QuadPart)/PCFreq;
+
+#endif
+
+
 }
 
 void PerftestClock::milliSleep(unsigned int millisec)

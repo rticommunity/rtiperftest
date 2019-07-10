@@ -19,6 +19,12 @@
   #include "PerftestSecurity.h"
 #endif
 
+#if defined(RTI_WIN32)
+  #include "windows.h"
+#endif
+
+
+
 #include <sstream>
 
 /********************************************************************/
@@ -53,6 +59,10 @@ class PerftestClock {
     OSAPI_NtpTime clockTimeAux;
     RTI_INT32 clockSec;
     RTI_UINT32 clockUsec;
+
+#if defined(RTI_WIN32)
+    double PCFreq = 0.0;
+#endif
 
   public:
     PerftestClock();
