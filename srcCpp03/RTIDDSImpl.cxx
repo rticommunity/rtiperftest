@@ -2024,12 +2024,13 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
             qos_durability = dds::core::policy::Durability::TransientLocal();
         } else {
             qos_durability = dds::core::policy::Durability::Persistent();
-        }
+        }        
+
         qos_durability->direct_communication(
                 !_PM->get<bool>("noDirectCommunication"));
     }
 
-    if ((qos_profile == "LatencyQoS")
+    if ((qos_profile == "LatencyQos")
             && _PM->get<bool>("noDirectCommunication")
             && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
             || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
@@ -2105,10 +2106,22 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
         properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = buf;
     }
 
+    // if (_isFlatData) {
+    //     properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = "-1";
+
+    //     qos_dr_resource_limits.dynamically_allocate_fragmented_samples(true);
+
+    //     properties["dds.transport.shmem.builtin.received_message_count_max"] = "1000";
+    //     properties["dds.transport.shmem.builtin.receive_buffer_size"] = "60000000";
+        
+    //     properties["dds.transport.UDPv4.builtin.recv_socket_buffer_size"] = "60000000";
+    // }
+
     dr_qos << qos_reliability;
     dr_qos << qos_resource_limits;
     dr_qos << qos_durability;
     dr_qos << dr_DataReaderProtocol;
+    //dr_qos << qos_dr_resource_limits;
     dr_qos << Property(properties.begin(), properties.end(), true);
 
     return dr_qos;
@@ -2205,9 +2218,11 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
 
         if (_isFlatData) {
             // Configure DataWriter to prevent dynamic allocation of serialization buffer
-            dw_qos.policy<Property>().set(Property::Entry(
-                    "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size", 
-                     std::to_string(dds::core::LENGTH_UNLIMITED)));
+            properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] =
+                    "-1"; // DDS::CORE::UNLIMITED
+
+            // properties["dds.transport.UDPv4.builtin.send_socket_buffer_size"] = 
+            //         "60000000";
 
             // Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
             // This sequence number is used by a ZeroCopy DataReader to check for sample consistency.
@@ -2254,7 +2269,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
                 _PM->get<int>("sendQueueSize"));
     }
 
-    if ((qos_profile == "LatencyQos")
+    if (qos_profile == "LatencyQos"
             && _PM->get<bool>("noDirectCommunication")
             && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
             || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
