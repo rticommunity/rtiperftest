@@ -56,7 +56,7 @@ PerftestClock &PerftestClock::getInstance()
 unsigned long long PerftestClock::getTimeUsec()
 {
 
-#ifndef(RTI_WIN32)
+#ifndef RTI_WIN32
 
     if (!OSAPI_System_get_time((OSAPI_NtpTime*)&clockTimeAux)) {
         return 0;
@@ -72,7 +72,7 @@ unsigned long long PerftestClock::getTimeUsec()
 
     LARGE_INTEGER li;
     QueryPerformanceCounter(&li);
-    return (unsigned long long)(li.QuadPart)/PCFreq;
+    return (unsigned long long)(li.QuadPart)/(PCFreq/1000000.0);
 
 #endif
 
