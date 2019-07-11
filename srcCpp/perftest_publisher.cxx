@@ -1291,6 +1291,7 @@ public:
 
         int unbounded = _PM->get<int>("unbounded");
         bool isKeyed = _PM->get<bool>("keyed");
+        bool isFlatData = _PM->get<bool>("flatdatas");
 
         std::string outputCpu = "";
         if (count == 0)
@@ -1330,31 +1331,35 @@ public:
         fflush(stdout);
 
       #ifndef RTI_MICRO
-        if (!unbounded) {
-            if (isKeyed) {
-                serializeTime = RTIDDSImpl<TestDataKeyed_t>::
-                        obtain_dds_serialize_time_cost(totalSampleSize);
-                deserializeTime = RTIDDSImpl<TestDataKeyed_t>::
-                        obtain_dds_deserialize_time_cost(totalSampleSize);
+        // TODO: Do this for FlatData. In the meanwhile, protect this to avoid displaying errors
+        if (!isFlatData)  {
+            if (!unbounded) {
+                if (isKeyed) {
+                    serializeTime = RTIDDSImpl<TestDataKeyed_t>::
+                            obtain_dds_serialize_time_cost(totalSampleSize);
+                    deserializeTime = RTIDDSImpl<TestDataKeyed_t>::
+                            obtain_dds_deserialize_time_cost(totalSampleSize);
+                } else {
+                    serializeTime = RTIDDSImpl<TestData_t>::
+                            obtain_dds_serialize_time_cost(totalSampleSize);
+                    deserializeTime = RTIDDSImpl<TestData_t>::
+                            obtain_dds_deserialize_time_cost(totalSampleSize);
+                }
             } else {
-                serializeTime = RTIDDSImpl<TestData_t>::
-                        obtain_dds_serialize_time_cost(totalSampleSize);
-                deserializeTime = RTIDDSImpl<TestData_t>::
-                        obtain_dds_deserialize_time_cost(totalSampleSize);
-            }
-        } else {
-            if (isKeyed) {
-                serializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
-                        obtain_dds_serialize_time_cost(totalSampleSize);
-                deserializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
-                        obtain_dds_deserialize_time_cost(totalSampleSize);
-            } else {
-                serializeTime = RTIDDSImpl<TestDataLarge_t>::
-                        obtain_dds_serialize_time_cost(totalSampleSize);
-                deserializeTime = RTIDDSImpl<TestDataLarge_t>::
-                        obtain_dds_deserialize_time_cost(totalSampleSize);
+                if (isKeyed) {
+                    serializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
+                            obtain_dds_serialize_time_cost(totalSampleSize);
+                    deserializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
+                            obtain_dds_deserialize_time_cost(totalSampleSize);
+                } else {
+                    serializeTime = RTIDDSImpl<TestDataLarge_t>::
+                            obtain_dds_serialize_time_cost(totalSampleSize);
+                    deserializeTime = RTIDDSImpl<TestDataLarge_t>::
+                            obtain_dds_deserialize_time_cost(totalSampleSize);
+                }
             }
         }
+        
 
         printf("Serialization/Deserialization: %0.3f us / %0.3f us / TOTAL: "
                 "%0.3f us\n",
