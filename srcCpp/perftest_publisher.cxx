@@ -1291,7 +1291,7 @@ public:
 
         int unbounded = _PM->get<int>("unbounded");
         bool isKeyed = _PM->get<bool>("keyed");
-        bool isFlatData = _PM->get<bool>("flatdatas");
+        bool isFlatData = _PM->get<bool>("flatdata");
 
         std::string outputCpu = "";
         if (count == 0)
@@ -1358,7 +1358,7 @@ public:
                             obtain_dds_deserialize_time_cost(totalSampleSize);
                 }
             }
-        }
+        
         
 
         printf("Serialization/Deserialization: %0.3f us / %0.3f us / TOTAL: "
@@ -1366,6 +1366,7 @@ public:
                serializeTime,
                deserializeTime,
                serializeTime + deserializeTime);
+        }
       #endif
 
         latency_sum = 0;
