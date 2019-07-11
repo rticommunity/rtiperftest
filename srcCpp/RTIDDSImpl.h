@@ -165,8 +165,8 @@ protected:
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
 
-    DDS_DataReaderQos *setup_DR_QoS(std::string qos_profile, std::string topic_name);
-    DDS_DataWriterQos *setup_DW_QoS(std::string qos_profile, std::string topic_name);
+    DDS_ReturnCode_t setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::string qos_profile, std::string topic_name);
+    DDS_ReturnCode_t setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::string qos_profile, std::string topic_name);
 };
 
 template <typename T>
@@ -174,6 +174,7 @@ class RTIDDSImpl_FlatData: public RTIDDSImpl<TestData_t> {
 public:
     RTIDDSImpl_FlatData() {
       this->_isFlatData = true;
+      this->_typename = T::TypeSupport::get_type_name();
     };
     
     IMessagingWriter *CreateWriter(const char *topic_name);

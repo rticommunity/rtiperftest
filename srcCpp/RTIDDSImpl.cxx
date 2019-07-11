@@ -461,7 +461,6 @@ class RTIPublisherBase : public IMessagingWriter
 
  public:
     RTIPublisherBase(
-            DDSDataWriter *writer,
             unsigned long num_instances,
             PerftestSemaphore * pongSemaphore,
             int instancesToBeWritten,
@@ -486,7 +485,6 @@ class RTIPublisherBase : public IMessagingWriter
         }
       #endif
         _PM = PM;
-        _writer = T::DataWriter::narrow(writer);
         _num_instances = num_instances;
         _instance_counter = 0;
         _instance_handles = (DDS_InstanceHandle_t *) malloc(
@@ -498,10 +496,6 @@ class RTIPublisherBase : public IMessagingWriter
         }
         _pongSemaphore = pongSemaphore;
         _instancesToBeWritten = instancesToBeWritten;
-
-        DDS_DataWriterQos qos;
-        _writer->get_qos(qos);
-        _isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
     }
 
     ~RTIPublisherBase() {
@@ -657,12 +651,17 @@ class RTIPublisher : public RTIPublisherBase<T>
             int instancesToBeWritten,
             ParameterManager *PM)
             : RTIPublisherBase<T>(
-                    writer,
                     num_instances,
                     pongSemaphore,
                     instancesToBeWritten,
                     PM)
     {
+        this->_writer = T::DataWriter::narrow(writer);    // TODO: Fix this
+
+        DDS_DataWriterQos qos;
+        this->_writer->get_qos(qos); // Gota fix the writer narrow to fix seg fault here
+        this->_isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
+
         for (unsigned long i = 0; i < this->_num_instances; ++i) {
             for (int c = 0; c < KEY_SIZE; c++) {
                 data.key[c] = (unsigned char) (i >> c * 8);
@@ -811,12 +810,17 @@ public:
             int instancesToBeWritten,
             ParameterManager *PM)
             : RTIPublisherBase<T>(
-                    writer,
                     num_instances,
                     pongSemaphore,
                     instancesToBeWritten,
                     PM) 
     {
+        this->_writer = T::DataWriter::narrow(writer);    // TODO: Fix this
+
+        DDS_DataWriterQos qos;
+        this->_writer->get_qos(qos); // Gota fix the writer narrow to fix seg fault here
+        this->_isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
+
         for (unsigned long i = 0; i < this->_num_instances; ++i) {
             Builder builder = rti::flat::build_data<T>(this->_writer);
             add_key(builder, i);
@@ -910,7 +914,6 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
             int instancesToBeWritten,
             ParameterManager *PM) 
             : RTIPublisherBase<DDS_DynamicData>(
-                    writer,
                     num_instances,
                     pongSemaphore,
                     instancesToBeWritten,
@@ -922,6 +925,10 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
         DDS_Octet key_octets[KEY_SIZE];
 
         this->_writer = DDSDynamicDataWriter::narrow(writer);
+
+        DDS_DataWriterQos qos;
+        this->_writer->get_qos(qos); // Gota fix the writer narrow to fix seg fault here
+        this->_isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
 
         for (unsigned long i = 0; i < _num_instances; ++i) {
             for (int c = 0; c < KEY_SIZE; c++) {
@@ -2157,21 +2164,26 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
   #endif
   #endif
 
-    // Register the types and create the topics
-    if (!_PM->get<bool>("dynamicData")) {
-        T::TypeSupport::register_type(_participant, _typename);
-    } else {
-      #ifndef RTI_MICRO
-        DDSDynamicDataTypeSupport* dynamicDataTypeSupportObject =
-                new DDSDynamicDataTypeSupport(
-                        T::TypeSupport::get_typecode(),
-                        DDS_DYNAMIC_DATA_TYPE_PROPERTY_DEFAULT);
-        dynamicDataTypeSupportObject->register_type(_participant, _typename);
-      #else
-        fprintf(stderr, "Dynamic data not supported in Micro.\n");
-        return false;
-      #endif
+    /* Register the types and create the topics except for FlatData types,
+     * They will be registered in  RTIDDSImpl_FlatData
+     */ 
+    if (!_isFlatData) {
+        if (!_PM->get<bool>("dynamicData")) {
+            T::TypeSupport::register_type(_participant, _typename);
+        } else {
+        #ifndef RTI_MICRO
+            DDSDynamicDataTypeSupport* dynamicDataTypeSupportObject =
+                    new DDSDynamicDataTypeSupport(
+                            T::TypeSupport::get_typecode(),
+                            DDS_DYNAMIC_DATA_TYPE_PROPERTY_DEFAULT);
+            dynamicDataTypeSupportObject->register_type(_participant, _typename);
+        #else
+            fprintf(stderr, "Dynamic data not supported in Micro.\n");
+            return false;
+        #endif
+        }
     }
+    
 
   #ifndef RTI_MICRO
     _factory->get_publisher_qos_from_profile(
@@ -2468,14 +2480,13 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
 #endif //RTI_MICRO
 
 template <typename T>
-DDS_DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile, std::string topic_name)
+DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::string qos_profile, std::string topic_name)
 {
     unsigned long long initial_samples = 0;
-    DDS_DataWriterQos *dw_qos = NULL;
 
     #ifndef RTI_MICRO
     if (_factory->get_datawriter_qos_from_profile(
-            *dw_qos,
+            dw_qos,
             _PM->get<std::string>("qosLibrary").c_str(),
             qos_profile.c_str())
             != DDS_RETCODE_OK) {
@@ -2484,23 +2495,23 @@ DDS_DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile, std::str
                 qos_profile.c_str(),
                 _PM->get<std::string>("qosLibrary").c_str(),
                 _PM->get<std::string>("qosFile").c_str());
-        return NULL;
+        return DDS_RETCODE_ERROR;
     }
 
     if (_PM->get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
-        dw_qos->protocol.disable_positive_acks = true;
+        dw_qos.protocol.disable_positive_acks = true;
         if (_PM->is_set("keepDurationUsec")) {
-            dw_qos->protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
+            dw_qos.protocol.rtps_reliable_writer.disable_positive_acks_min_sample_keep_duration =
                     DDS_Duration_t::from_micros(
                             _PM->get<unsigned long long>("keepDurationUsec"));
         }
     }
 
     if (_isLargeData || _PM->get<bool>("asynchronous")) {
-        dw_qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+        dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
         if (_PM->get<std::string>("flowController") != "default") {
-            dw_qos->publish_mode.flow_controller_name =
+            dw_qos.publish_mode.flow_controller_name =
                     DDS_String_dup(("dds.flow_controller.token_bucket." +
                     _PM->get<std::string>("flowController")).c_str());
         }
@@ -2513,19 +2524,19 @@ DDS_DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile, std::str
             // default: use the setting specified in the qos profile
             // dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
           #ifdef RTI_MICRO
-            dw_qos->reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
+            dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
           #endif
         }
         else {
             // override to best-effort
-            dw_qos->reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
+            dw_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
         }
     }
 
   #ifdef RTI_MICRO
     if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) == 0) {
-        dw_qos->reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
-        dw_qos->durability.kind = DDS_TRANSIENT_LOCAL_DURABILITY_QOS;
+        dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
+        dw_qos.durability.kind = DDS_TRANSIENT_LOCAL_DURABILITY_QOS;
     }
   #endif
 
@@ -2534,69 +2545,69 @@ DDS_DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile, std::str
 
       #ifndef RTI_MICRO
         if (_PM->get<bool>("multicast")) {
-            dw_qos->protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
+            dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
                     RTI_TRUE;
         }
 
         if (_PM->get<long>("batchSize") > 0) {
-            dw_qos->batch.enable = true;
-            dw_qos->batch.max_data_bytes = _PM->get<long>("batchSize");
-            dw_qos->resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
-            dw_qos->writer_resource_limits.max_batches =
+            dw_qos.batch.enable = true;
+            dw_qos.batch.max_data_bytes = _PM->get<long>("batchSize");
+            dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
+            dw_qos.writer_resource_limits.max_batches =
                     _PM->get<int>("sendQueueSize");
         } else {
-            dw_qos->resource_limits.max_samples = _PM->get<int>("sendQueueSize");
+            dw_qos.resource_limits.max_samples = _PM->get<int>("sendQueueSize");
         }
       #else
-        dw_qos->resource_limits.max_samples = _PM->get<int>("sendQueueSize");
+        dw_qos.resource_limits.max_samples = _PM->get<int>("sendQueueSize");
       #endif
 
       #ifndef RTI_MICRO
         if (_PM->get<bool>("enableAutoThrottle")) {
-            DDSPropertyQosPolicyHelper::add_property(dw_qos->property,
+            DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.auto_throttle.enable", "true", false);
         }
 
         if (_PM->get<bool>("enableTurboMode")) {
-            DDSPropertyQosPolicyHelper::add_property(dw_qos->property,
+            DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.enable_turbo_mode",
                     "true",
                     false);
-            dw_qos->batch.enable = false;
-            dw_qos->resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
-            dw_qos->writer_resource_limits.max_batches =
+            dw_qos.batch.enable = false;
+            dw_qos.resource_limits.max_samples = DDS_LENGTH_UNLIMITED;
+            dw_qos.writer_resource_limits.max_batches =
                     _PM->get<int>("sendQueueSize");
         }
 
         if (_isFlatData) {
             char buf[2];
             sprintf(buf, "%d", DDS_LENGTH_UNLIMITED);
-            DDSPropertyQosPolicyHelper::add_property(dw_qos->property,
+            DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
                     buf,
                     false);
         }
 
-        dw_qos->resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
+        dw_qos.resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
       #endif
-        dw_qos->resource_limits.max_samples_per_instance =
-                dw_qos->resource_limits.max_samples;
+        dw_qos.resource_limits.max_samples_per_instance =
+                dw_qos.resource_limits.max_samples;
 
-        dw_qos->durability.kind =
+        dw_qos.durability.kind =
                 (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
 
       #ifndef RTI_MICRO
-        dw_qos->durability.direct_communication =
+        dw_qos.durability.direct_communication =
                 !_PM->get<bool>("noDirectCommunication");
       #endif
 
 
-        dw_qos->protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+        dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
                 _PM->get<int>("sendQueueSize") / 10;
       #ifndef RTI_MICRO
-        dw_qos->protocol.rtps_reliable_writer.low_watermark =
+        dw_qos.protocol.rtps_reliable_writer.low_watermark =
                 _PM->get<int>("sendQueueSize") * 1 / 10;
-        dw_qos->protocol.rtps_reliable_writer.high_watermark =
+        dw_qos.protocol.rtps_reliable_writer.high_watermark =
                 _PM->get<int>("sendQueueSize") * 9 / 10;
 
         /*
@@ -2604,27 +2615,27 @@ DDS_DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile, std::str
          * 0, which would cause the middleware to fail. So instead we set the
          * high watermark to the low watermark + 1 in such case.
          */
-        if (dw_qos->protocol.rtps_reliable_writer.high_watermark
-                == dw_qos->protocol.rtps_reliable_writer.low_watermark) {
-            dw_qos->protocol.rtps_reliable_writer.high_watermark =
-                    dw_qos->protocol.rtps_reliable_writer.low_watermark + 1;
+        if (dw_qos.protocol.rtps_reliable_writer.high_watermark
+                == dw_qos.protocol.rtps_reliable_writer.low_watermark) {
+            dw_qos.protocol.rtps_reliable_writer.high_watermark =
+                    dw_qos.protocol.rtps_reliable_writer.low_watermark + 1;
         }
 
-        dw_qos->protocol.rtps_reliable_writer.max_send_window_size =
+        dw_qos.protocol.rtps_reliable_writer.max_send_window_size =
                 _PM->get<int>("sendQueueSize");
-        dw_qos->protocol.rtps_reliable_writer.min_send_window_size =
+        dw_qos.protocol.rtps_reliable_writer.min_send_window_size =
                 _PM->get<int>("sendQueueSize");
       #else
         #if RTI_MICRO_24x_COMPATIBILITY
           // Keep all not supported in Micro 2.4.x
-          dw_qos->history.kind = DDS_KEEP_LAST_HISTORY_QOS;
+          dw_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
         #else
-          dw_qos->history.kind = DDS_KEEP_ALL_HISTORY_QOS;
+          dw_qos.history.kind = DDS_KEEP_ALL_HISTORY_QOS;
         #endif
-        dw_qos->history.depth = _PM->get<int>("sendQueueSize");
+        dw_qos.history.depth = _PM->get<int>("sendQueueSize");
         // Same values we use for Pro (See perftest_qos_profiles.xml).
-        dw_qos->protocol.rtps_reliable_writer.heartbeat_period.sec = 0;
-        dw_qos->protocol.rtps_reliable_writer.heartbeat_period.nanosec = 10000000;
+        dw_qos.protocol.rtps_reliable_writer.heartbeat_period.sec = 0;
+        dw_qos.protocol.rtps_reliable_writer.heartbeat_period.nanosec = 10000000;
       #endif
     }
 
@@ -2632,23 +2643,23 @@ DDS_DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile, std::str
             && _PM->get<bool>("noDirectCommunication")
             && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
             || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
-        dw_qos->durability.kind =
+        dw_qos.durability.kind =
                 (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
       #ifndef RTI_MICRO
-        dw_qos->durability.direct_communication =
+        dw_qos.durability.direct_communication =
                 !_PM->get<bool>("noDirectCommunication");
       #endif
     }
 
-    dw_qos->resource_limits.max_instances =
+    dw_qos.resource_limits.max_instances =
             _PM->get<long>("instances") + 1; // One extra for MAX_CFT_VALUE
   #ifndef RTI_MICRO
-    dw_qos->resource_limits.initial_instances = _PM->get<long>("instances") + 1;
+    dw_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
 
-    if (_PM->get<int>("unbounded") != 0) {
+    if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {  // TODO: We are writting this before for flat Data
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
-        DDSPropertyQosPolicyHelper::add_property(dw_qos->property,
+        DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
                buf,
                false);
@@ -2656,10 +2667,10 @@ DDS_DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile, std::str
 
     if (_PM->get<long>("instances") > 1) {
         if (_PM->is_set("instanceHashBuckets")) {
-            dw_qos->resource_limits.instance_hash_buckets =
+            dw_qos.resource_limits.instance_hash_buckets =
                     _PM->get<long>("instanceHashBuckets");
         } else {
-            dw_qos->resource_limits.instance_hash_buckets =
+            dw_qos.resource_limits.instance_hash_buckets =
                     _PM->get<long>("instances");
         }
     }
@@ -2672,23 +2683,22 @@ DDS_DataWriterQos *RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile, std::str
                 initial_samples,
                 (unsigned long long) _PM->get<int>("sendQueueSize"));
 
-        dw_qos->resource_limits.initial_samples = initial_samples;
+        dw_qos.resource_limits.initial_samples = initial_samples;
     }
   #endif
 
-    return dw_qos;
+    return DDS_RETCODE_OK;
 }
 
 template <typename T>
-DDS_DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::string topic_name)
+DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::string qos_profile, std::string topic_name)
 {
     unsigned long long initial_samples = 0;
     unsigned int qos_initial_samples = 0;
-    DDS_DataReaderQos *dr_qos = NULL;
 
     #ifndef RTI_MICRO
     if (_factory->get_datareader_qos_from_profile(
-            *dr_qos,
+            dr_qos,
             _PM->get<std::string>("qosLibrary").c_str(),
             qos_profile.c_str())
             != DDS_RETCODE_OK) {
@@ -2698,16 +2708,16 @@ DDS_DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::str
                 qos_profile.c_str(),
                 _PM->get<std::string>("qosLibrary").c_str(),
                 _PM->get<std::string>("qosFile").c_str());
-        return NULL;
+        return DDS_RETCODE_ERROR;
     }
   #endif
 
     // Only force reliability on throughput/latency topics
     if (strcmp(topic_name.c_str(), ANNOUNCEMENT_TOPIC_NAME) != 0) {
         if (!_PM->get<bool>("bestEffort")) {
-            dr_qos->reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
+            dr_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         } else {
-            dr_qos->reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
+            dr_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
         }
     }
 
@@ -2715,7 +2725,7 @@ DDS_DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::str
     if (_PM->get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos"
             || qos_profile == "LatencyQos")) {
-        dr_qos->protocol.disable_positive_acks = true;
+        dr_qos.protocol.disable_positive_acks = true;
     }
   #endif
 
@@ -2725,10 +2735,10 @@ DDS_DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::str
             && _PM->get<bool>("noDirectCommunication")
             && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
             || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS))) {
-        dr_qos->durability.kind =
+        dr_qos.durability.kind =
                 (DDS_DurabilityQosPolicyKind) _PM->get<int>("durability");
       #ifndef RTI_MICRO
-        dr_qos->durability.direct_communication =
+        dr_qos.durability.direct_communication =
                 !_PM->get<bool>("noDirectCommunication");
       #endif
 
@@ -2748,14 +2758,14 @@ DDS_DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::str
          * We could potentially modify this with a new command line parameter
          */
         if (_PM->get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
-            dr_qos->resource_limits.max_samples = 50;
-            dr_qos->resource_limits.max_samples_per_instance = 50;
-            dr_qos->history.depth = 50;
+            dr_qos.resource_limits.max_samples = 50;
+            dr_qos.resource_limits.max_samples_per_instance = 50;
+            dr_qos.history.depth = 50;
         }
         else {
-            dr_qos->resource_limits.max_samples = 10000;
-            dr_qos->resource_limits.max_samples_per_instance = 10000;
-            dr_qos->history.depth = 10000;
+            dr_qos.resource_limits.max_samples = 10000;
+            dr_qos.resource_limits.max_samples_per_instance = 10000;
+            dr_qos.history.depth = 10000;
         }
         /*
          * In micro 2.4.x we don't have keep all, this means we need to set the
@@ -2764,9 +2774,9 @@ DDS_DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::str
          */
         #if RTI_MICRO_24x_COMPATIBILITY
           // Keep all not supported in Micro 2.4.x
-          dr_qos->history.kind = DDS_KEEP_LAST_HISTORY_QOS;
+          dr_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
         #else
-          dr_qos->history.kind = DDS_KEEP_ALL_HISTORY_QOS;
+          dr_qos.history.kind = DDS_KEEP_ALL_HISTORY_QOS;
         #endif
 
     } else { // "LatencyQos" or "AnnouncementQos"
@@ -2778,10 +2788,10 @@ DDS_DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::str
          * memory restrictions.
          */
         if (_PM->get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
-            dr_qos->resource_limits.max_samples = 50;
+            dr_qos.resource_limits.max_samples = 50;
         }
         else {
-            dr_qos->resource_limits.max_samples = 1000;
+            dr_qos.resource_limits.max_samples = 1000;
         }
     }
 
@@ -2789,49 +2799,49 @@ DDS_DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::str
      * We could potentially use here the number of subscriber, right now this
      * class does not have access to the number of subscriber though.
      */
-    dr_qos->reader_resource_limits.max_remote_writers = 50;
-    dr_qos->reader_resource_limits.max_remote_writers_per_instance = 50;
+    dr_qos.reader_resource_limits.max_remote_writers = 50;
+    dr_qos.reader_resource_limits.max_remote_writers_per_instance = 50;
   #endif
 
   #ifndef RTI_MICRO
-    dr_qos->resource_limits.initial_instances = _PM->get<long>("instances") + 1;
+    dr_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
     if (_instanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
         _instanceMaxCountReader++;
     }
   #endif
-    dr_qos->resource_limits.max_instances = _instanceMaxCountReader;
+    dr_qos.resource_limits.max_instances = _instanceMaxCountReader;
 
   #ifndef RTI_MICRO
     if (_PM->get<long>("instances") > 1) {
         if (_PM->is_set("instanceHashBuckets")) {
-            dr_qos->resource_limits.instance_hash_buckets =
+            dr_qos.resource_limits.instance_hash_buckets =
                     _PM->get<long>("instanceHashBuckets");
         } else {
-            dr_qos->resource_limits.instance_hash_buckets =
+            dr_qos.resource_limits.instance_hash_buckets =
                     _PM->get<long>("instances");
         }
     }
 
     if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
-        dr_qos->multicast.value.ensure_length(1, 1);
-        dr_qos->multicast.value[0].receive_address = DDS_String_dup(
+        dr_qos.multicast.value.ensure_length(1, 1);
+        dr_qos.multicast.value[0].receive_address = DDS_String_dup(
                 _transport.getMulticastAddr(topic_name.c_str()).c_str());
 
-        if (dr_qos->multicast.value[0].receive_address == NULL) {
+        if (dr_qos.multicast.value[0].receive_address == NULL) {
             fprintf(stderr,
                     "topic name must either be %s or %s or %s.\n",
                     THROUGHPUT_TOPIC_NAME,
                     LATENCY_TOPIC_NAME,
                     ANNOUNCEMENT_TOPIC_NAME);
-            return NULL;
+            return DDS_RETCODE_ERROR;
         }
 
-        dr_qos->multicast.value[0].receive_port = 0;
-        dr_qos->multicast.value[0].transports.length(0);
+        dr_qos.multicast.value[0].receive_port = 0;
+        dr_qos.multicast.value[0].transports.length(0);
     }
 
     if (_isFlatData && _isLargeData) {
-        qos_initial_samples = (unsigned) dr_qos->resource_limits.initial_samples;
+        qos_initial_samples = (unsigned) dr_qos.resource_limits.initial_samples;
 
         initial_samples = std::max(
             1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
@@ -2840,7 +2850,7 @@ DDS_DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::str
                 initial_samples,
                 (unsigned long long) qos_initial_samples);
 
-        dr_qos->resource_limits.initial_samples = initial_samples;
+        dr_qos.resource_limits.initial_samples = initial_samples;
     }
   #endif
 
@@ -2848,7 +2858,7 @@ DDS_DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::str
       #ifndef RTI_MICRO
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
-        DDSPropertyQosPolicyHelper::add_property(dr_qos->property,
+        DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
       #else
@@ -2862,7 +2872,7 @@ DDS_DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::str
       #endif
     }
 
-    return dr_qos;
+    return DDS_RETCODE_OK;
 }
 
 
@@ -2872,9 +2882,15 @@ DDS_DataReaderQos *RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::str
 template <typename T>
 IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 {
-    DDS_DataWriterQos *dw_qos = NULL;
+    DDS_DataWriterQos dw_qos;
     DDSDataWriter *writer = NULL;
     std::string qos_profile = "";
+
+    /* Since we have to instantiate RTIDDSImpl<T> class 
+     * with T=TestData_t, we have to register the FlatData
+     * type here.
+     */ 
+    T::TypeSupport::register_type(_participant, _typename);
 
     DDSTopic *topic = _participant->create_topic(
                        topic_name,
@@ -2894,20 +2910,14 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    dw_qos = setup_DW_QoS(qos_profile, topic_name);  // TODO: Change char* to string
-    if (dw_qos == NULL) {
-        fprintf(stderr, "Problem creating additional QoS settings.\n");
+    if (setup_DW_QoS(dw_qos, qos_profile, topic_name) != DDS_RETCODE_OK) {
+        fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
 
     writer = _publisher->create_datawriter(
-        topic, *dw_qos, NULL,
+        topic, dw_qos, NULL,
         DDS_STATUS_MASK_NONE);
-    
-    if (dw_qos != NULL) {
-        delete dw_qos;
-        dw_qos = NULL;
-    }
 
     if (writer == NULL)
     {
@@ -2953,9 +2963,15 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 template <typename T>
 IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const char *topic_name)
 {
-    DDS_DataWriterQos *dw_qos = NULL;
+    DDS_DataWriterQos dw_qos;
     DDSDataWriter *writer = NULL;
     std::string qos_profile = "";
+
+    /* Since we have to instantiate RTIDDSImpl<T> class 
+     * with T=TestData_t, we have to register the FlatData
+     * type here.
+     */ 
+    T::TypeSupport::register_type(_participant, _typename);
 
     DDSTopic *topic = _participant->create_topic(
                        topic_name,
@@ -2975,20 +2991,14 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    dw_qos = setup_DW_QoS(qos_profile, topic_name);  // TODO: Change char* to string
-    if (dw_qos == NULL) {
-        fprintf(stderr, "Problem creating additional QoS settings.\n");
+    if (setup_DW_QoS(dw_qos, qos_profile, topic_name) != DDS_RETCODE_OK) {
+        fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
 
     writer = _publisher->create_datawriter(
-        topic, *dw_qos, NULL,
+        topic, dw_qos, NULL,
         DDS_STATUS_MASK_NONE);
-
-    if (dw_qos != NULL) {
-        delete dw_qos;
-        dw_qos = NULL;
-    }
 
     if (writer == NULL) {
         fprintf(stderr,"Problem creating writer.\n");
@@ -3110,7 +3120,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         IMessagingCB *callback)
 {
     DDSDataReader *reader = NULL;
-    DDS_DataReaderQos *dr_qos;
+    DDS_DataReaderQos dr_qos;
     std::string qos_profile = "";
     DDSTopicDescription* topic_desc = NULL; // Used to create the DDS DataReader
 
@@ -3131,9 +3141,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-    dr_qos = setup_DR_QoS(qos_profile, topic_name);  // TODO: Change char* to string
-    if (dr_qos == NULL) {
-        fprintf(stderr, "Problem creating additional QoS settings.\n");
+    if (setup_DR_QoS(dr_qos, qos_profile, topic_name) != DDS_RETCODE_OK) {
+        fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
 
@@ -3152,14 +3161,14 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         if (!_PM->get<bool>("dynamicData")) {
             reader = _subscriber->create_datareader(
                     topic_desc,
-                    *dr_qos,
+                    dr_qos,
                     new ReceiverListener<T>(callback),
                     DDS_DATA_AVAILABLE_STATUS);
         } else {
           #ifndef RTI_MICRO
             reader = _subscriber->create_datareader(
                     topic_desc,
-                    *dr_qos,
+                    dr_qos,
                     new DynamicDataReceiverListener(callback),
                     DDS_DATA_AVAILABLE_STATUS);
           #else
@@ -3171,14 +3180,9 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     } else {
         reader = _subscriber->create_datareader(
                 topic_desc,
-                *dr_qos,
+                dr_qos,
                 NULL,
                 DDS_STATUS_MASK_NONE);
-    }
-
-    if (dr_qos != NULL) {
-        delete dr_qos;
-        dr_qos = NULL;
     }
 
     if (reader == NULL) {
@@ -3224,7 +3228,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         const char *topic_name,
         IMessagingCB *callback)
 {
-    DDS_DataReaderQos *dr_qos = NULL;
+    DDS_DataReaderQos dr_qos;
     DDSDataReader *reader = NULL;
     std::string qos_profile = "";
     DDSTopicDescription* topic_desc = NULL; // Used to create the DDS DataReader
@@ -3246,13 +3250,11 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         return NULL;
     }
 
-    dr_qos = setup_DR_QoS(qos_profile, topic_name);  // TODO: Change char* to string
-    if (dr_qos == NULL) {
-        fprintf(stderr, "Problem creating additional QoS settings.\n");
+    if (setup_DR_QoS(dr_qos, qos_profile, topic_name) != DDS_RETCODE_OK) {
+        fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
     
-
   #ifndef RTI_MICRO
     /* Create CFT Topic */
     if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && _PM->is_set("cft")) {
@@ -3267,20 +3269,15 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
     if (callback != NULL) {
         reader = _subscriber->create_datareader(
                 topic_desc,
-                *dr_qos,
+                dr_qos,
                 new FlatDataReceiverListener<T>(callback),
                 DDS_DATA_AVAILABLE_STATUS);
     } else {
         reader = _subscriber->create_datareader(
                 topic_desc,
-                *dr_qos,
+                dr_qos,
                 NULL,
                 DDS_STATUS_MASK_NONE);
-    }
-
-    if (dr_qos != NULL) {
-        delete dr_qos;
-        dr_qos = NULL;
     }
 
     if (reader == NULL) {
