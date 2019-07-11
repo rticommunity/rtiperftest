@@ -470,6 +470,13 @@ bool perftest_cpp::validate_input()
           fprintf(stderr, "Zero Copy must be run along with Flat Data.\n");
           return false;
       }
+
+      if (_PM.get<bool>("zerocopy") && 
+            !(_PM.get<std::string>("transport") == "SHMEM" 
+            || _PM.get<std::string>("transport") == "Use XML")) {
+          fprintf(stderr, "Zero Copy must be run with SHMEM as transport\n");
+          return false;
+      }
     #endif
 
     return true;
