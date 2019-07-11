@@ -31,13 +31,13 @@ PerftestClock::PerftestClock()
 
 #if defined(RTI_WIN32)
 
-    PCFreq = 0.0;
-    LARGE_INTEGER li;
-    if(!QueryPerformanceFrequency(&li)){
+    _frequency = 0.0;
+    LARGE_INTEGER ticks;
+    if(!QueryPerformanceFrequency(&ticks)){
         printf("QueryPerformanceFrequency failed!\n");
     }
 
-    PCFreq = double(li.QuadPart);
+    _frequency = double(ticks.QuadPart);
 
 #endif
 
@@ -69,10 +69,15 @@ unsigned long long PerftestClock::getTimeUsec()
     return clockUsec + (unsigned long long)1000000 * clockSec;
 
 #else
-
-    LARGE_INTEGER li;
-    QueryPerformanceCounter(&li);
-    return (unsigned long long)(li.QuadPart)/(PCFreq/1000000.0);
+    /*
+        The currect clock used by Micro on Windows is measured in milliseconds,
+        in order to obtain enough precission for a latencyTest we are going to
+        use the native API QueryPerformanceCounter function measured in
+        microseconds as RTI Connext DDS Pro.
+    */
+    LARGE_INTEGER ticks;
+    QueryPerformanceCounter(&ticks);
+    return (unsigned long long)(ticks.QuadPart)/(_frequency/1000000.0);
 
 #endif
 

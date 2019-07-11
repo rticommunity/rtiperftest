@@ -61,7 +61,7 @@ class PerftestClock {
     RTI_UINT32 clockUsec;
 
 #if defined(RTI_WIN32)
-    double PCFreq = 0.0;
+    double _frequency = 0.0;
 #endif
 
   public:
