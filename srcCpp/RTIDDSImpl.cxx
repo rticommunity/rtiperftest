@@ -3057,6 +3057,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 
 }
 
+#ifdef RTI_FLATDATA_AVAILABLE
 template <typename T>
 IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const char *topic_name)
 {
@@ -3115,6 +3116,7 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 }
+#endif
 
 #ifndef RTI_MICRO
 /*********************************************************
@@ -3319,7 +3321,7 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(const char *topicName)
     return _qoSProfileNameMap[std::string(topicName)];
 }
 
-
+#ifdef RTI_FLATDATA_AVAILABLE
 template <typename T>
 IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         const char *topic_name,
@@ -3329,6 +3331,12 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
     DDSDataReader *reader = NULL;
     std::string qos_profile = "";
     DDSTopicDescription* topic_desc = NULL; // Used to create the DDS DataReader
+
+    /* Since we have to instantiate RTIDDSImpl<T> class 
+     * with T=TestData_t, we have to register the FlatData
+     * type here.
+     */ 
+    T::TypeSupport::register_type(_participant, _typename);
 
     DDSTopic *topic = _participant->create_topic(
                        topic_name, _typename,
@@ -3390,6 +3398,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
 
     return new RTIFlatDataSubscriber<T>(reader, _PM);
 }
+#endif
 
 /*
  * This instantiation is to avoid a undefined reference of a templated static
