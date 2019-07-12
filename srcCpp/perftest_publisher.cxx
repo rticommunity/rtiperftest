@@ -157,7 +157,7 @@ int perftest_cpp::Run(int argc, char *argv[])
                 if (_PM.get<bool>("flatdata")) {
                     #ifdef RTI_FLATDATA_AVAILABLE
                     if (_PM.get<bool>("zerocopy")) {
-                        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>();
+                        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>(true);
                     } else {
                         _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>();
                     }
@@ -169,7 +169,7 @@ int perftest_cpp::Run(int argc, char *argv[])
                 if (_PM.get<bool>("flatdata")) {
                     #ifdef RTI_FLATDATA_AVAILABLE
                     if (_PM.get<bool>("zerocopy")) {
-                        _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>();
+                        _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
                     } else {
                         _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
                     }
@@ -183,7 +183,7 @@ int perftest_cpp::Run(int argc, char *argv[])
                 if (_PM.get<bool>("flatdata")) {
                     #ifdef RTI_FLATDATA_AVAILABLE
                     if (_PM.get<bool>("zerocopy")) {
-                        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>();
+                        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>(true);
                     } else {
                         _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
                     }
@@ -195,7 +195,7 @@ int perftest_cpp::Run(int argc, char *argv[])
                 if (_PM.get<bool>("flatdata")) {
                     #ifdef RTI_FLATDATA_AVAILABLE
                     if (_PM.get<bool>("zerocopy")) {
-                        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>();
+                        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>(true);
                     } else {
                         _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
                     }

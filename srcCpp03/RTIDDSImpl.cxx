@@ -94,8 +94,8 @@ int DynamicDataMembersId::at(std::string key)
 
 template <typename T>
 RTIDDSImpl<T>::RTIDDSImpl():
-        _InstanceMaxCountReader(dds::core::LENGTH_UNLIMITED), //(-1)
-        _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED), //(-1)
+        _InstanceMaxCountReader(dds::core::LENGTH_UNLIMITED),
+        _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED),
         _isLargeData(false),
         _isFlatData(false),
         _isZeroCopy(false),
@@ -458,7 +458,8 @@ protected:
     bool _isReliable;
     ParameterManager *_PM;
 
-     /* Returns the instance handler for the content filtered topic.
+     /* 
+      * Returns the instance handler for the content filtered topic.
       * It must the last element pushed to _instance_handles
       * when appending instances to that sequence.
       */
@@ -616,6 +617,13 @@ public:
 };
 
 #ifdef RTI_FLATDATA_AVAILABLE
+  /**
+   * Implementation of RTIPublisherBase for FlatData types.
+   * 
+   * Since building a FlatData sample differs from
+   * a classic type, we need to reimplement the Send() method with the
+   * FlatData API.
+   */
   template<typename T>
   class RTIFlatDataPublisher: public RTIPublisherBase<T> {
   protected:
@@ -671,6 +679,12 @@ public:
           this->_writer.extensions().discard_loan(*sample);
       }
 
+      /**
+       * Build and send a sample from a given message using FlatData API.
+       * 
+       * @param message the message that contains the information to build the sample
+       * @param isCftWildcardKey states if CFT is being used
+       */
       bool send(TestMessage &message, bool isCftWildcardKey) {
           Builder builder = rti::flat::build_data(this->_writer);
           long key = 0;
@@ -861,6 +875,12 @@ public:
 };
 
 #ifdef RTI_FLATDATA_AVAILABLE
+  /**
+   * Implements ReceiverListenerBase with FlatData API.
+   * 
+   * Since reading a FlatData sample differs from a classic type we need 
+   * to reimplement on_data_available method.
+   */
   template<typename T>
   class FlatDataReceiverListener : public ReceiverListenerBase<T> {
   protected:
@@ -869,10 +889,22 @@ public:
   public:
       typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
 
+      /**
+       * Contructor of FlatDataReceiverListener
+       * 
+       * @param callback callback that will process received messages
+       * 
+       * @param isZeroCopy states if Zero Copy will be used
+       */
       FlatDataReceiverListener(IMessagingCB *callback, bool isZeroCopy) :
           ReceiverListenerBase<T>(callback), _isZeroCopy(isZeroCopy) {
       }
 
+      /**
+       * Take a new sample and process it using FlatData API.
+       * 
+       * @param reader is the reader to take samples from
+       */
       void on_data_available(dds::sub::DataReader<T> &reader) {
           dds::sub::LoanedSamples<T> samples = reader.take();
 
@@ -1087,6 +1119,12 @@ public:
 };
 
 #ifdef RTI_FLATDATA_AVAILABLE
+  /**
+   * Implements RTISubscriberBase with FlatData API.
+   * 
+   * Since reading a FlatData sample differs from a classic type we need 
+   * to reimplement ReceiveMessage method.
+   */
   template<typename T>
   class RTIFlatDataSubscriber: public RTISubscriberBase<T> {
   protected:
@@ -1106,6 +1144,11 @@ public:
               _isZeroCopy = PM->get<bool>("zerocopy");
           }
 
+      /**
+       * Receive a new sample when it is available. It uses a waitset
+       * 
+       * @return a message with the information from the sample
+       */
       TestMessage *ReceiveMessage() {
 
           int seq_length;
@@ -1160,6 +1203,12 @@ public:
           return NULL;
       }
 
+      /**
+       * Take arriving samples from the reader and process them.
+       * 
+       * @param listener that implements the ProcessMessage method
+       *    that will be used to process received samples.
+       */
       void ReceiveAndProccess(IMessagingCB *listener) {
           while (!listener->end_test) {
 
@@ -2060,8 +2109,11 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
         }
     }    
 
+    #ifdef RTI_FLATDATA_AVAILABLE
     // If FlatData and LargeData, automatically estimate initial_samples here
     if (_isLargeData && _isFlatData) {
+        properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = "-1";
+
         initial_samples = std::max(
                 1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
 
@@ -2071,6 +2123,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
 
         qos_resource_limits->initial_samples(initial_samples);
     }
+    #endif
 
     std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
     std::cout << "[########] QoS DR Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
@@ -2235,14 +2288,17 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
 
         initial_samples = _PM->get<int>("sendQueueSize");
 
+        #ifdef RTI_FLATDATA_AVAILABLE
         if (_isFlatData) {
             // Configure DataWriter to prevent dynamic allocation of serialization buffer
             dw_qos.policy<Property>().set(Property::Entry(
                     "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size", 
                      std::to_string(dds::core::LENGTH_UNLIMITED)));
 
-            // If FlatData and LargeData, automatically estimate initial_samples here
-            // in a range from 1 up to the initial samples specifies in the QoS file
+            /**
+             *  If FlatData and LargeData, automatically estimate initial_samples here
+             * in a range from 1 up to the initial samples specifies in the QoS file
+             */
             if (_isLargeData) {
                 initial_samples = std::max(
                         1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
@@ -2255,12 +2311,15 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
             // properties["dds.transport.UDPv4.builtin.send_socket_buffer_size"] = 
             //         "60000000";
 
-            // Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
-            // This sequence number is used by a ZeroCopy DataReader to check for sample consistency.
+            /**
+             * Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
+             * his sequence number is used by a ZeroCopy DataReader to check for sample consistency.
+             */
             if (_isZeroCopy) {
                 dw_qos << DataWriterTransferMode::ShmemRefSettings(true);
             }
         }
+        #endif
 
         // qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
         // qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());

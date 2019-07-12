@@ -583,7 +583,7 @@ function build_cpp()
 
     # rtiddsgen ignores any specified rti addional library if using ZeroCopy
     # Therefore, we need to generate a makefile that contains
-    # nddsmetp and nddssecurity libraries
+    # nddsmetp and nddssecurity libraries without compiling ZeroCopy code
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
         -unboundedSupport -replace -create typefiles -create makefiles \
         -platform ${platform} \
@@ -606,9 +606,8 @@ function build_cpp()
         exit -1
     fi
 
-    # rtiddsgen ignores any specified rti addional library if using ZeroCopy
-    # Therefore, we need to generate a makefile that contains
-    # nddsmetp and nddssecurity libraries
+    # Now that we have the makefile with all the additional RTI Libs that we might need,
+    # Generate ZeroCopy and FlatData code without overwritting the previously generated makefile
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
         echo -e "${INFO_TAG} Generating FlatData code"
         rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
@@ -826,13 +825,32 @@ function build_cpp03()
     check_flatdata_available
     additional_defines_calculation "CPPModern"
 
+    additional_header_files=" \
+        ThreadPriorities.h \
+        Parameter.h \
+        ParameterManager.h \
+        MessagingIF.h \
+        RTIDDSImpl.h \
+        perftest_cpp.h \
+        qos_string.h \
+        CpuMonitor.h \
+        PerftestTransport.h"
+
+    additional_source_files=" \
+        ThreadPriorities.cxx \
+        Parameter.cxx \
+        ParameterManager.cxx \
+        RTIDDSImpl.cxx \
+        CpuMonitor.cxx \
+        PerftestTransport.cxx"
+
     ##############################################################################
     # Generate files for srcCpp03
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
     -create makefiles \
     -unboundedSupport -replace -create typefiles -platform ${platform} \
-    -additionalHeaderFiles \"ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" \
-    -additionalSourceFiles \"ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" \
+    -additionalHeaderFiles \"$additional_header_files\" \
+    -additionalSourceFiles \"$additional_source_files\" \
     -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} \
     ${additional_rti_libs} \
     -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""

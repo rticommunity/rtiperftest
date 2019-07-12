@@ -147,6 +147,7 @@ protected:
     long                         _instanceMaxCountReader;
     bool                         _isLargeData;
     bool                         _isFlatData;
+    bool                         _isZeroCopy;
     PerftestTransport            _transport;
   #ifdef RTI_SECURE_PERFTEST
     PerftestSecurity             _security;
@@ -169,21 +170,49 @@ protected:
     DDS_ReturnCode_t setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::string qos_profile, std::string topic_name);
 };
 
-template <typename T>
-class RTIDDSImpl_FlatData: public RTIDDSImpl<TestData_t> {
-public:
-    RTIDDSImpl_FlatData() {
-      this->_isFlatData = true;
-      this->_typename = T::TypeSupport::get_type_name();
-    };
-    
-    IMessagingWriter *CreateWriter(const char *topic_name);
-
-    /*
-     * Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
-     * to get data
+#ifdef RTI_FLATDATA_AVAILABLE
+  /**
+     * Overwrites CreateWriter and CreateReader from RTIDDSImpl
+     * to return Writers and Readers that make use of FlatData API
      */
-    IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
-};
+  template <typename T>
+  class RTIDDSImpl_FlatData: public RTIDDSImpl<TestData_t> {
+  public:
+      /**
+         * Constructor for RTIDDSImpl_FlatData
+         * 
+         * @param isZeroCopy states if the type is also ZeroCopy
+         */
+      RTIDDSImpl_FlatData(bool isZeroCopy=false) {
+        this->_isZeroCopy = isZeroCopy;
+        this->_isFlatData = true;
+        this->_typename = T::TypeSupport::get_type_name();
+      };
+      
+      /**
+         * Creates a Publisher that uses the FlatData API 
+         * 
+         * @param topic_name is the name of the topic where 
+         *      the created writer will write new samples to
+         * 
+         * @return a RTIFlatDataPublisher  
+         */
+      IMessagingWriter *CreateWriter(const char *topic_name);
+
+      /**
+         * Creates a Subscriber that uses the FlatData API 
+         * 
+         * @param topic_name is the name of the topic where 
+         *      the created reader will read new samples from
+         * 
+         * @param callback is the callback that will process 
+         *      the receibed message once it has been taken by the reader.
+         *      Pass null for callback if using IMessagingSubscriber.ReceiveMessage() to get data
+         * 
+         * @return a RTIFlatDataSubscriber  
+         */
+      IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
+  };
+#endif // RTI_FLATDATA_AVAILABLE
 
 #endif // __RTIDDSIMPL_H__
