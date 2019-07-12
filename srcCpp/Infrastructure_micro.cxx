@@ -25,7 +25,7 @@ namespace std {
 
 PerftestClock::PerftestClock()
 {
-  #ifndef(RTI_WIN32)
+  #ifndef RTI_WIN32
 
     OSAPI_NtpTime_from_millisec(&clockTimeAux, 0, 0);
     clockSec = 0;
