@@ -1920,7 +1920,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         dds::sub::DataReader<T> reader(dds::core::null);
         ReceiverListener<T> *reader_listener = NULL;
 
-        if (topic_name == THROUGHPUT_TOPIC_NAME && _PM->is_set("cft")) {
+        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _PM->is_set("cft")) {
             /* Create CFT Topic */
             dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
                     topic_name,
@@ -1964,7 +1964,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                 type);
         dds::sub::DataReader<DynamicData> reader(dds::core::null);
         DynamicDataReceiverListener *dynamic_data_reader_listener = NULL;
-        if (topic_name == THROUGHPUT_TOPIC_NAME && _PM->is_set("cft")) {
+        if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _PM->is_set("cft")) {
             /* Create CFT Topic */
             dds::topic::ContentFilteredTopic<DynamicData> topicCft = CreateCft(
                     topic_name,
@@ -2476,7 +2476,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
     dds::sub::DataReader<T> reader(dds::core::null);
     ReceiverListenerBase<T> *reader_listener = NULL;
 
-    if (topic_name == THROUGHPUT_TOPIC_NAME && this->_PM->is_set("cft")) {
+    if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && this->_PM->is_set("cft")) {
         /* Create CFT Topic */
         dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
                 topic_name,
