@@ -2609,7 +2609,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
     }
 
   #ifdef RTI_MICRO
-    if (strcmp(topic_name, ANNOUNCEMENT_TOPIC_NAME) == 0) {
+    if (strcmp(topic_name.c_str(), ANNOUNCEMENT_TOPIC_NAME) == 0) {
         dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         dw_qos.durability.kind = DDS_TRANSIENT_LOCAL_DURABILITY_QOS;
     }
