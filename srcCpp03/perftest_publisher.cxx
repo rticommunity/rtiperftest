@@ -480,6 +480,10 @@ bool perftest_cpp::validate_input()
           fprintf(stderr, "Zero Copy must be run with SHMEM as transport\n");
           return false;
       }
+
+      if (_PM.get<bool>("checkconsistency") && !_PM.get<bool>("zerocopy")) {
+          fprintf(stderr, "checkConsistency can only be used along with Zero Copy\n");
+      }
     #endif
 
     return true;

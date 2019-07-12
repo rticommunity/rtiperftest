@@ -351,7 +351,13 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
       // Zero Copy
       stringStream << "\tZero Copy: ";
       if (_PM->get<bool>("zerocopy")) {
-          stringStream << "Yes\n";
+          stringStream << "Yes";
+
+          if (_PM->get<bool>("checkconsistency")) {
+              stringStream << " (Check Consistency)";
+          }
+
+          stringStream << std::endl;
       } else {
           stringStream << "No\n";
       }
@@ -885,6 +891,7 @@ public:
   class FlatDataReceiverListener : public ReceiverListenerBase<T> {
   protected:
       bool _isZeroCopy;
+      bool _checkConsistency;
 
   public:
       typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
@@ -896,8 +903,10 @@ public:
        * 
        * @param isZeroCopy states if Zero Copy will be used
        */
-      FlatDataReceiverListener(IMessagingCB *callback, bool isZeroCopy) :
-          ReceiverListenerBase<T>(callback), _isZeroCopy(isZeroCopy) {
+      FlatDataReceiverListener(IMessagingCB *callback, bool isZeroCopy, bool checkConsistency) :
+          ReceiverListenerBase<T>(callback), 
+          _isZeroCopy(isZeroCopy), 
+          _checkConsistency(checkConsistency) {
       }
 
       /**
@@ -922,8 +931,8 @@ public:
                   // bin_data should be retrieved here
 
                   // Check that the sample was not modified on the publisher side when using Zero Copy.
-                  if (_isZeroCopy && !reader->is_data_consistent(samples[i])) {
-                      continue;
+                  if (_isZeroCopy && _checkConsistency) {
+                      if (!reader->is_data_consistent(samples[i])) continue;
                   }
 
                   this->_callback->ProcessMessage(this->_message);
@@ -1129,6 +1138,7 @@ public:
   class RTIFlatDataSubscriber: public RTISubscriberBase<T> {
   protected:
       bool _isZeroCopy;
+      bool _checkConsistency;
 
   public:
       typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
@@ -1142,6 +1152,7 @@ public:
                     readerListener,
                     PM) { 
               _isZeroCopy = PM->get<bool>("zerocopy");
+              _checkConsistency = PM->get<bool>("checkconsistency");
           }
 
       /**
@@ -1193,9 +1204,8 @@ public:
               ++(this->_data_idx);
               
               // Check that the sample was not modified on the publisher side when using Zero Copy.
-              if (_isZeroCopy && !this->_reader->is_data_consistent(
-                        samples[this->_data_idx])) {
-                  continue;
+              if (_isZeroCopy && _checkConsistency) {
+                  if (!this->_reader->is_data_consistent(samples[this->_data_idx])) continue;
               }
 
               return &(this->_message);
@@ -1229,8 +1239,8 @@ public:
                       //_message.data = message.bin_data();
 
                       // Check that the sample was not modified on the publisher side when using Zero Copy.
-                      if (_isZeroCopy && !this->_reader->is_data_consistent(samples[i])) {
-                          continue;
+                      if (_isZeroCopy && _checkConsistency) {
+                          if (!this->_reader->is_data_consistent(samples[i])) continue;
                       }
 
                       listener->ProcessMessage(this->_message);
@@ -2484,7 +2494,9 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         if (callback != NULL) {
 
             reader_listener = new FlatDataReceiverListener<T>(
-                    callback, _PM->get<bool>("zerocopy"));
+                    callback, 
+                    _PM->get<bool>("zerocopy"),
+                    _PM->get<bool>("checkconsistency"));
 
             reader = dds::sub::DataReader<T>(
                     this->_subscriber,
@@ -2500,7 +2512,9 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         if (callback != NULL) {
 
             reader_listener = new FlatDataReceiverListener<T>(
-                    callback, _PM->get<bool>("zerocopy"));
+                    callback, 
+                    _PM->get<bool>("zerocopy"),
+                    _PM->get<bool>("checkconsistency"));
 
             reader = dds::sub::DataReader<T>(
                     this->_subscriber,

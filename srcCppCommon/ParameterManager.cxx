@@ -358,6 +358,16 @@ void ParameterManager::initialize()
     zerocopy->set_group(GENERAL);
     zerocopy->set_supported_middleware(Middleware::RTIDDSPRO);
     create("zerocopy", zerocopy);
+
+    Parameter<bool> *checkconsistency = new Parameter<bool>(false);
+    checkconsistency->set_command_line_argument("-checkConsistency", "");
+    checkconsistency->set_description(
+            "Check if samples sent with Zero Copy are consistent\nDefault: Not set");
+    checkconsistency->set_type(T_BOOL);
+    checkconsistency->set_extra_argument(NO);
+    zerocopy->set_group(GENERAL);
+    checkconsistency->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("checkconsistency", checkconsistency);
   #endif
 
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
