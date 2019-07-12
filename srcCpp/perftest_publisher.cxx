@@ -439,6 +439,23 @@ bool perftest_cpp::validate_input()
         _PM.set("useReadThread", true);
     }
 
+    #ifdef RTI_FLATDATA_AVAILABLE
+      if (_PM.get<bool>("zerocopy") && !_PM.get<bool>("flatdata")) {
+          fprintf(stderr, "Zero Copy must be run along with Flat Data.\n");
+          return false;
+      }
+
+      if (_PM.get<bool>("zerocopy") && 
+            !(_PM.get<std::string>("transport") == "SHMEM" 
+            || _PM.get<std::string>("transport") == "Use XML"
+            || _PM.get<std::string>("transport") == "UDPv4 & SHMEM"
+            || _PM.get<std::string>("transport") == "UDPv6 & SHMEM"
+            || _PM.get<std::string>("transport") == "UDPv4 & UDPv6 & SHMEM")) {
+          fprintf(stderr, "Zero Copy must be run with SHMEM as transport\n");
+          return false;
+      }
+    #endif
+
     return true;
 }
 
