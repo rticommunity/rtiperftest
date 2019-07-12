@@ -334,18 +334,6 @@ This makes the function OS independent.
 At the same time, the code has been improved avoid overflowing the time for the sleeping
 period.
 
-Incorrect time stamp using micro on windows (#202)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The calculation of the timestamp using Micro has been fixed to avoid a lost of
-precision due to a bad casting.
-
-Also, the actual Micro Clock for Windows only measure in millisecond, this is
-not enough for a regular Latency Test. Instead of this clock, we are going to
-use the native API QueryPerformanceCounter. This API from Windows will give us a
-microseconds precision and is the one used by RTI Connext DDS Pro.
-
-
 Release Notes 2.4
 -----------------
 
