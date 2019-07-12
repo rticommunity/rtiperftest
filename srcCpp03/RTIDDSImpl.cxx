@@ -2050,7 +2050,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     unsigned long long initial_samples = 0;
 
     // only force reliability on throughput/latency topics
-    if (topic_name.c_str() != ANNOUNCEMENT_TOPIC_NAME) {
+    if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
         if (!_PM->get<bool>("bestEffort")) {
             qos_reliability = dds::core::policy::Reliability::Reliable();
         } else {
@@ -2249,7 +2249,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
    }
 
     // Only force reliability on throughput/latency topics
-    if (topic_name.c_str() != ANNOUNCEMENT_TOPIC_NAME) {
+    if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
         if (!_PM->get<bool>("bestEffort")) {
             // default: use the setting specified in the qos profile
             // qos_reliability = Reliability::Reliable(dds::core::Duration::infinite());
