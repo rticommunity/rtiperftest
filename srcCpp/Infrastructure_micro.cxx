@@ -71,11 +71,11 @@ unsigned long long PerftestClock::getTimeUsec()
 
   #else
     /*
-     * Micro take the timestamp by GetSystemTimeAsFileTime, this function should
-     * have a resolution of 100 nanoseconds but GetSystemTimeAsFileTime is a
-     * non-realtime time & busy loop (very fast) in implementation. The system
-     * time is obtained from SharedUserData, which is fill by system on every
-     * hardware clock interruption. MICRO-2099
+     * RTI Connext DDS Micro takes the timestamp by GetSystemTimeAsFileTime,
+     * this function shouldhave a resolution of 100 nanoseconds but
+     * GetSystemTimeAsFileTime is a non-realtime time & busy loop (very fast)
+     * in implementation. The system time is obtained from SharedUserData, which
+     * is fill by system on every hardware clock interruption. MICRO-2099
      *
      * More info here:
      * https://docs.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps
