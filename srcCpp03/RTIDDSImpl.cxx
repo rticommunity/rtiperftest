@@ -2050,7 +2050,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
     unsigned long long initial_samples = 0;
 
     // only force reliability on throughput/latency topics
-    if (topic_name != ANNOUNCEMENT_TOPIC_NAME) {
+    if (topic_name.c_str() != ANNOUNCEMENT_TOPIC_NAME) {
         if (!_PM->get<bool>("bestEffort")) {
             qos_reliability = dds::core::policy::Reliability::Reliable();
         } else {
@@ -2249,7 +2249,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
    }
 
     // Only force reliability on throughput/latency topics
-    if (topic_name != ANNOUNCEMENT_TOPIC_NAME) {
+    if (topic_name.c_str() != ANNOUNCEMENT_TOPIC_NAME) {
         if (!_PM->get<bool>("bestEffort")) {
             // default: use the setting specified in the qos profile
             // qos_reliability = Reliability::Reliable(dds::core::Duration::infinite());
@@ -2445,6 +2445,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
     return dw_qos;
 }
 
+#ifdef RTI_FLATDATA_AVAILABLE
 template <typename T>
 RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData(bool isZeroCopy) {
     this->_isFlatData = true;
@@ -2547,6 +2548,7 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const std::string &topic_
             this->_PM->template get<long>("writeInstance"),
             this->_PM);
 }
+#endif
 
 template class RTIDDSImpl<TestDataKeyed_t>;
 template class RTIDDSImpl<TestData_t>;
