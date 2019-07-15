@@ -870,7 +870,7 @@ public:
     bool Send(const TestMessage &message, bool isCftWildCardKey) {
         long key = 0;
         Builder builder = rti::flat::build_data<T>(this->_writer);
-        if (!builder.check_failure()) {
+        if (builder.check_failure()) {
             fprintf(stderr, "Builder creation error\n");
             return false;
         }
@@ -890,7 +890,7 @@ public:
         }
 
         bin_data_builder.add_n(message.size);
-        if (!bin_data_builder.check_failure()) {
+        if (bin_data_builder.check_failure()) {
             fprintf(stderr, "Cannot allocate space for payload\n");
             return false;
         }

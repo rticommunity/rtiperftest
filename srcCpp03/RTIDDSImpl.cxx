@@ -1782,7 +1782,8 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::pub::qos::DataWriterQos dw_qos = setup_DW_QoS(qos_profile, topic_name);
+    dds::pub::qos::DataWriterQos dw_qos; 
+    setup_DW_QoS(dw_qos, qos_profile, topic_name);
 
     if (!_PM->get<bool>("dynamicData")) {
         dds::topic::Topic<T> topic(_participant, topic_name);
@@ -1923,7 +1924,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::sub::qos::DataReaderQos dr_qos = setup_DR_QoS(qos_profile, topic_name);
+    dds::sub::qos::DataReaderQos dr_qos;
+    setup_DR_QoS(dr_qos, qos_profile, topic_name);
 
     if (!_PM->get<bool>("dynamicData")) {
         dds::topic::Topic<T> topic(_participant, topic_name);
@@ -2035,7 +2037,10 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(std::string topicName)
 }
 
 template <typename T>
-dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile, std::string topic_name) {
+void RTIDDSImpl<T>::setup_DR_QoS(
+        dds::sub::qos::DataReaderQos &dr_qos,
+        std::string qos_profile, 
+        std::string topic_name) {
     using namespace dds::core::policy;
     using namespace rti::core::policy;
 
@@ -2044,10 +2049,10 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
         qos_profile
     );
 
-    dds::sub::qos::DataReaderQos dr_qos = qos_provider.datareader_qos();
+    dr_qos = qos_provider.datareader_qos();
     Reliability qos_reliability = dr_qos.policy<Reliability>();
     ResourceLimits qos_resource_limits = dr_qos.policy<ResourceLimits>();
-    //DataReaderResourceLimits qos_dr_resource_limits = dr_qos.policy<DataReaderResourceLimits>();
+    DataReaderResourceLimits qos_dr_resource_limits = dr_qos.policy<DataReaderResourceLimits>();
     Durability qos_durability = dr_qos.policy<Durability>();
     rti::core::policy::DataReaderProtocol dr_DataReaderProtocol =
             dr_qos.policy<rti::core::policy::DataReaderProtocol>();
@@ -2119,27 +2124,6 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
         }
     }    
 
-    #ifdef RTI_FLATDATA_AVAILABLE
-    // If FlatData and LargeData, automatically estimate initial_samples here
-    if (_isLargeData && _isFlatData) {
-        properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = "-1";
-
-        initial_samples = std::max(
-                1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
-
-        initial_samples = std::min(
-                initial_samples,
-                (unsigned long long) qos_initial_samples);
-
-        qos_resource_limits->initial_samples(initial_samples);
-    }
-    #endif
-
-    std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
-    std::cout << "[########] QoS DR Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
-    std::cout << "[########] DR Initial samples (calculated): " << initial_samples << std::endl;
-    std::cout << "[########] DR Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
-
     if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
         dds::core::StringSeq transports;
         transports.push_back("udpv4");
@@ -2163,52 +2147,48 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(std::string qos_profile
                 rti::core::policy::TransportMulticastKind::AUTOMATIC);
     }
 
-    // // If FlatData and LargeData, automatically estimate initial_samples here
-    // if (_isFlatData && _isLargeData) {
-    //     initial_samples = std::max(
-    //         1ll, (long long) (MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE));
-
-    //     initial_samples = std::min(
-    //             initial_samples,
-    //             (unsigned long long) qos_initial_samples);
-
-    //     qos_resource_limits->initial_samples(initial_samples);
-    // }
-
-    // std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
-    // std::cout << "[########] QoS DR Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
-    // std::cout << "[########] DR Initial samples (calculated): " << initial_samples << std::endl;
-    // std::cout << "[########] DR Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
-
     if (_PM->get<int>("unbounded") > 0 && !_isFlatData) {
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
         properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = buf;
     }
 
-    // if (_isFlatData) {
-    //     properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = "-1";
+    if (_isFlatData) {
+        properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = 
+                std::to_string(dds::core::LENGTH_UNLIMITED);
 
-    //     qos_dr_resource_limits.dynamically_allocate_fragmented_samples(true);
+        initial_samples = std::max(
+                1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
 
-    //     properties["dds.transport.shmem.builtin.received_message_count_max"] = "1000";
-    //     properties["dds.transport.shmem.builtin.receive_buffer_size"] = "60000000";
-        
-    //     properties["dds.transport.UDPv4.builtin.recv_socket_buffer_size"] = "60000000";
-    // }
+        initial_samples = std::min(
+                initial_samples,
+                (unsigned long long) qos_initial_samples);
+
+        qos_resource_limits->initial_samples(initial_samples);
+
+        qos_dr_resource_limits.dynamically_allocate_fragmented_samples(true);
+    }
+
+    properties["dds.transport.shmem.builtin.receive_buffer_size"] = "60000000";
+    properties["dds.transport.shmem.builtin.received_message_count_max"] = "1000";
 
     dr_qos << qos_reliability;
     dr_qos << qos_resource_limits;
     dr_qos << qos_durability;
     dr_qos << dr_DataReaderProtocol;
-    //dr_qos << qos_dr_resource_limits;
+    dr_qos << qos_dr_resource_limits;
     dr_qos << Property(properties.begin(), properties.end(), true);
 
-    return dr_qos;
+    //return dr_qos;
+
+    std::cout << "2nd" << std::endl;
 }
 
 template <typename T>
-dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile, std::string topic_name) {
+void RTIDDSImpl<T>::setup_DW_QoS(
+    dds::pub::qos::DataWriterQos &dw_qos,
+    std::string qos_profile, 
+    std::string topic_name) {
     using namespace dds::core::policy;
     using namespace rti::core::policy;
 
@@ -2216,7 +2196,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
             _PM->get<std::string>("qosLibrary"),
             qos_profile);
 
-    dds::pub::qos::DataWriterQos dw_qos = qos_provider.datawriter_qos();
+    dw_qos = qos_provider.datawriter_qos();
 
     Reliability qos_reliability = dw_qos.policy<Reliability>();
     ResourceLimits qos_resource_limits = dw_qos.policy<ResourceLimits>();
@@ -2297,43 +2277,6 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
         }
 
         initial_samples = _PM->get<int>("sendQueueSize");
-
-        #ifdef RTI_FLATDATA_AVAILABLE
-        if (_isFlatData) {
-            // Configure DataWriter to prevent dynamic allocation of serialization buffer
-            dw_qos.policy<Property>().set(Property::Entry(
-                    "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size", 
-                     std::to_string(dds::core::LENGTH_UNLIMITED)));
-
-            /**
-             *  If FlatData and LargeData, automatically estimate initial_samples here
-             * in a range from 1 up to the initial samples specifies in the QoS file
-             */
-            if (_isLargeData) {
-                initial_samples = std::max(
-                        1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
-
-                initial_samples = std::min(
-                        initial_samples, 
-                        (unsigned long long) _PM->get<int>("sendQueueSize"));
-            }
-
-            // properties["dds.transport.UDPv4.builtin.send_socket_buffer_size"] = 
-            //         "60000000";
-
-            /**
-             * Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
-             * his sequence number is used by a ZeroCopy DataReader to check for sample consistency.
-             */
-            if (_isZeroCopy) {
-                dw_qos << DataWriterTransferMode::ShmemRefSettings(true);
-            }
-        }
-        #endif
-
-        // qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
-        // qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
-
         qos_resource_limits->initial_samples(initial_samples);
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
         std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
@@ -2409,38 +2352,37 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
                 buf;
     }
 
-    // /*  
-    //  * Since unbounded sequences are not allowed in FlatData,
-    //  * if FlatData and LargeData, automatically estimate initial_samples here
-    //  * in a range from 1 up to the initial samples specifies in the QoS file
-    //  * For Zero Copy it is not necessary since we are sending a pointer,
-    //  * not the entire data
-    //  */
-    // if (_isFlatData && _isLargeData) {
-    //     properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] = "-1"; // DDS::CORE::UNLIMITED
+    #ifdef RTI_FLATDATA_AVAILABLE
+        if (_isFlatData) {
+            // Configure DataWriter to prevent dynamic allocation of serialization buffer
+            properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] =
+                    std::to_string(dds::core::LENGTH_UNLIMITED);
 
-    //     properties["dds.transport.shmem.builtin.received_message_count_max"] = "1000";
-    //     properties["dds.transport.shmem.builtin.receive_buffer_size"] = "60000000";
+            /**
+             *  If FlatData and LargeData, automatically estimate initial_samples here
+             * in a range from 1 up to the initial samples specifies in the QoS file
+             */
+            if (_isLargeData) {
+                initial_samples = std::max(
+                        1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
 
-    //     initial_samples = std::max(
-    //             1ll, (long long) (MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE));
+                initial_samples = std::min(
+                        initial_samples, 
+                        (unsigned long long) _PM->get<int>("sendQueueSize"));
+            }
 
-    //     initial_samples = std::min(
-    //             initial_samples, 
-    //             (unsigned long long) _PM->get<int>("sendQueueSize"));
+            /**
+             * Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
+             * his sequence number is used by a ZeroCopy DataReader to check for sample consistency.
+             */
+            if (_isZeroCopy) {
+                dw_qos << DataWriterTransferMode::ShmemRefSettings(true);
+            }
+        }
+    #endif
 
-    //     qos_resource_limits->initial_samples(initial_samples);
-    // }
-
-    // std::cout << "[###] isLargeData: " << _isLargeData << std::endl;
-    // std::cout << "[########] isFlatData: " << _isFlatData << std::endl;
-    // std::cout << "[########] isZeroCopy: " << _isZeroCopy << std::endl;
-
-    // std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
-    // std::cout << "[########] QoS DW Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
-    // std::cout << "[########] SendQueueSize: " << _PM->get<int>("sendQueueSize") << std::endl;
-    // std::cout << "[########] DW Initial samples (calculated): " << initial_samples << std::endl;
-    // std::cout << "[########] DW Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
+    properties["dds.transport.shmem.builtin.receive_buffer_size"] = "60000000";
+    properties["dds.transport.shmem.builtin.received_message_count_max"] = "1000";
 
     dw_qos << qos_reliability;
     dw_qos << qos_resource_limits;
@@ -2451,8 +2393,6 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(std::string qos_profile
     dw_dataWriterProtocol.rtps_reliable_writer(dw_reliableWriterProtocol);
     dw_qos << dw_dataWriterProtocol;
     dw_qos << Property(properties.begin(), properties.end(), true);
-
-    return dw_qos;
 }
 
 #ifdef RTI_FLATDATA_AVAILABLE
@@ -2480,7 +2420,8 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::sub::qos::DataReaderQos dr_qos = setup_DR_QoS(qos_profile, topic_name);
+    dds::sub::qos::DataReaderQos dr_qos;
+    setup_DR_QoS(dr_qos, qos_profile, topic_name);
 
     dds::topic::Topic<T> topic(this->_participant, topic_name);
     dds::sub::DataReader<T> reader(dds::core::null);
@@ -2549,7 +2490,8 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const std::string &topic_
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::pub::qos::DataWriterQos dw_qos = this->setup_DW_QoS(qos_profile, topic_name);
+    dds::pub::qos::DataWriterQos dw_qos;
+    this->setup_DW_QoS(dw_qos, qos_profile, topic_name);
 
     dds::topic::Topic<T> topic(this->_participant, topic_name);
     dds::pub::DataWriter<T> writer(this->_publisher, topic, dw_qos);

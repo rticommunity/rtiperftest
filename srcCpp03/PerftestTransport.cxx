@@ -278,6 +278,14 @@ void configureShmemTransport(
     string_stream_object << received_message_count_max;
     qos_properties["dds.transport.shmem.builtin.received_message_count_max"] =
             string_stream_object.str();
+
+    // TODO: This is here to avoid a bottleneck due to SHMEM.
+    // We should configure it here according to some kind of rule rather
+    // than hardcoding it
+    qos_properties["dds.transport.shmem.builtin.receive_buffer_size"] = "60000000";
+    qos_properties["dds.transport.shmem.builtin.received_message_count_max"] = "1000";
+    
+    std::cout << "1st" << std::endl;
 }
 
 bool configureTransport(
