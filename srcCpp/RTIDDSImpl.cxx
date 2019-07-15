@@ -868,8 +868,12 @@ public:
      * @param isCftWildcardKey states if CFT is being used
      */
     bool Send(const TestMessage &message, bool isCftWildCardKey) {
-        Builder builder = rti::flat::build_data<T>(this->_writer);
         long key = 0;
+        Builder builder = rti::flat::build_data<T>(this->_writer);
+        if (!builder.check_failure()) {
+            fprintf(stderr, "Builder creation error\n");
+            return false;
+        }
 
         // Initialize Information data
         builder.add_entity_id(message.entity_id);
@@ -880,7 +884,17 @@ public:
 
         // Add payload
         BinDataBuilder bin_data_builder = builder.build_bin_data();
+        if (!bin_data_builder.is_valid()) {
+            fprintf(stderr, "Cannot create payload (bin_data) builder\n");
+            return false;
+        }
+
         bin_data_builder.add_n(message.size);
+        if (!bin_data_builder.check_failure()) {
+            fprintf(stderr, "Cannot allocate space for payload\n");
+            return false;
+        }
+
         bin_data_builder.finish();
 
         // calculate key and add it
@@ -896,6 +910,10 @@ public:
 
         // Build the data to be sent
         T *sample = builder.finish_sample();
+        if (sample == NULL) {
+            fprintf(stderr, "finish_sample() error")
+            return false;
+        }
 
         // Send data through the writer
         if (!isCftWildCardKey) {
