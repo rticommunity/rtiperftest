@@ -911,7 +911,7 @@ public:
         // Build the data to be sent
         T *sample = builder.finish_sample();
         if (sample == NULL) {
-            fprintf(stderr, "finish_sample() error")
+            fprintf(stderr, "finish_sample() error");
             return false;
         }
 
