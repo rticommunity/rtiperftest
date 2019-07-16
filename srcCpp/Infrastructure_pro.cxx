@@ -508,14 +508,32 @@ bool configureShmemTransport(
         received_message_count_max = 1;
     }
 
-    std::ostringstream string_stream_object;
-    string_stream_object << received_message_count_max;
+    // std::ostringstream string_stream_object;
+    // string_stream_object << received_message_count_max;
+    // if (!assertPropertyToParticipantQos(
+    //         qos,
+    //         "dds.transport.shmem.builtin.received_message_count_max",
+    //         string_stream_object.str())) {
+    //     return false;
+    // }
+
+    // TODO: This is here to avoid a bottleneck due to SHMEM.
+    // We should configure it here according to some kind of rule rather
+    // than hardcoding it
     if (!assertPropertyToParticipantQos(
             qos,
             "dds.transport.shmem.builtin.received_message_count_max",
-            string_stream_object.str())) {
+            "1000")) {
         return false;
     }
+
+    if (!assertPropertyToParticipantQos(
+            qos,
+            "dds.transport.shmem.builtin.receive_buffer_size",
+            "60000000")) {
+        return false;
+    }
+
     return true;
 }
 
