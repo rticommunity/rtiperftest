@@ -336,7 +336,13 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     // Zero Copy
     stringStream << "\tZero Copy: ";
     if (_PM->get<bool>("zerocopy")) {
-        stringStream << "Yes\n";
+        stringStream << "Yes";
+
+        if (_PM->get<bool>("checkconsistency")) {
+            stringStream << " (Check Consistency)";
+        }
+
+        stringStream << std::endl;
     } else {
         stringStream << "No\n";
     }
@@ -1268,6 +1274,7 @@ class FlatDataReceiverListener : public ReceiverListenerBase<T>
 {
 protected:
     bool _isZeroCopy;
+    bool _checkConsistency;
 
 public:
     typedef typename rti::flat::flat_type_traits<T>::offset Offset;
@@ -1279,8 +1286,10 @@ public:
      * 
      * @param isZeroCopy states if Zero Copy will be used
      */
-    FlatDataReceiverListener(IMessagingCB *callback, bool isZeroCopy)
-            : ReceiverListenerBase<T>(callback), _isZeroCopy(isZeroCopy) {
+    FlatDataReceiverListener(IMessagingCB *callback, bool isZeroCopy, bool checkConsistency)
+            : ReceiverListenerBase<T>(callback), 
+            _isZeroCopy(isZeroCopy),
+            _checkConsistency(checkConsistency) {
     }
 
     /**
@@ -1338,7 +1347,7 @@ public:
                 //TODO: _message.data = (char *)_data_seq[i].bin_data.get_contiguous_buffer();
 
                 // Check that the sample was not modified on the publisher side when using Zero Copy.
-                if (_isZeroCopy) {
+                if (_isZeroCopy && _checkConsistency) {
                     if (datareader->is_data_consistent(
                             isConsistent, 
                             this->_data_seq[i], 
@@ -1704,6 +1713,7 @@ class RTIFlatDataSubscriber : public RTISubscriberBase<T>
 {
 protected:
     bool _isZeroCopy;
+    bool _checkConsistency;
 
 public:
     typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
@@ -1711,6 +1721,7 @@ public:
     RTIFlatDataSubscriber(DDSDataReader *reader, ParameterManager *PM)
             : RTISubscriberBase<T>(reader, PM) {
         _isZeroCopy = PM->get<bool>("zerocopy");
+        _checkConsistency = PM->get<bool>("checkconsistency");
     }
 
     ~RTIFlatDataSubscriber()
@@ -1803,7 +1814,7 @@ public:
             ++this->_data_idx;
 
             // Check that the sample was not modified on the publisher side when using Zero Copy.
-            if (_isZeroCopy) {
+            if (_isZeroCopy && _checkConsistency) {
                 if (this->_reader->is_data_consistent(
                         isConsistent, 
                         this->_data_seq[this->_data_idx], 
@@ -3394,7 +3405,9 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
                 topic_desc,
                 dr_qos,
                 new FlatDataReceiverListener<T>(
-                        callback, _PM->get<bool>("zerocopy")),
+                        callback, 
+                        _PM->get<bool>("zerocopy"),
+                        _PM->get<bool>("checkconsistency")),
                 DDS_DATA_AVAILABLE_STATUS);
     } else {
         reader = _subscriber->create_datareader(
