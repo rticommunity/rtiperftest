@@ -19,14 +19,14 @@ application, or both:
 
 As you will see in the tables, the ``-pub`` parameter specifies a
 publishing application and the ``-sub`` specifies a subscribing
-application. If you do not specify See ``-pub`` then ``-sub`` is
+application. If you do not specify See ``-pub``, then ``-sub`` is
 assumed.
 
-Some of these parameters are valid when using *RTI Connext DDS Pro* and
-*RTI Connext DDS Micro* and *Raw Transport*, however, some of them are just
-available for some of the implementations, this should be stated both in each
-of the descriptions of the parameters and in the ``-help`` information displayed
-by the application.
+Some of these parameters are valid when using *RTI Connext DDS Professional*, 
+*RTI Connext DDS Micro*, and *Raw Transport*; however, some of them are 
+available for just some of the implementations. Whether or not a parameter is available 
+should be stated both in each of the descriptions of the parameters and in the ``-help`` 
+information displayed by the application.
 
 For additional information on setting the parameters, see sections:
 
@@ -63,22 +63,22 @@ Test Parameters for Publishing and Subscribing Applications
    | **Range:** ``28 - 2147482620 bytes``
 
    The lower limit is the number of "overhead" bytes in the message
-   (i.e., the timestamp, sequence number, and other meta-data used by
+   (i.e., the timestamp, sequence number, and other metadata used by
    the test); the upper limit ensures that, when the overhead of the
    wire protocol is added, it doesn't overflow the UDP maximum datagram
    size of 64KB.
 
-   If ``<bytes>`` is bigger than 63000 *RTI Perftest* will enable the
+   If ``<bytes>`` is bigger than 63000, *RTI Perftest* will enable the
    use of *Asynchronous Publishing* and *Unbounded Sequences*. When using
-   *RTI Connext DDS Micro*, the type is not really unbounded, the size is
-   given by the ``MICRO_UNBOUNDED_SEQUENCE_SIZE`` constant, that can be
+   *RTI Connext DDS Micro*, the type is not really unbounded; the size is
+   given by the ``MICRO_UNBOUNDED_SEQUENCE_SIZE`` constant, which can be
    modified in the ``build.bat`` and ``build.sh`` scripts.
 
    If ``-scan`` is specified, this value is ignored.
 
 -  ``-verbosity``
 
-   Run with different levels of verbosity for RTI Connext DDS.
+   Run with different levels of verbosity for *RTI Connext DDS*.
 
    | ``0`` - ``SILENT``
    | ``1`` - ``ERROR`` (default)
