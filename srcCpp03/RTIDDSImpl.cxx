@@ -1782,8 +1782,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::pub::qos::DataWriterQos dw_qos; 
-    setup_DW_QoS(dw_qos, qos_profile, topic_name);
+    dds::pub::qos::DataWriterQos dw_qos = setup_DW_QoS(qos_profile, topic_name);
 
     if (!_PM->get<bool>("dynamicData")) {
         dds::topic::Topic<T> topic(_participant, topic_name);
@@ -1924,8 +1923,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::sub::qos::DataReaderQos dr_qos;
-    setup_DR_QoS(dr_qos, qos_profile, topic_name);
+    dds::sub::qos::DataReaderQos dr_qos = setup_DR_QoS(qos_profile, topic_name);
 
     if (!_PM->get<bool>("dynamicData")) {
         dds::topic::Topic<T> topic(_participant, topic_name);
@@ -2037,10 +2035,8 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(std::string topicName)
 }
 
 template <typename T>
-void RTIDDSImpl<T>::setup_DR_QoS(
-        dds::sub::qos::DataReaderQos &dr_qos,
-        std::string qos_profile, 
-        std::string topic_name) {
+dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
+        std::string qos_profile, std::string topic_name) {
     using namespace dds::core::policy;
     using namespace rti::core::policy;
 
@@ -2049,7 +2045,7 @@ void RTIDDSImpl<T>::setup_DR_QoS(
         qos_profile
     );
 
-    dr_qos = qos_provider.datareader_qos();
+    dds::sub::qos::DataReaderQos dr_qos = qos_provider.datareader_qos();
     Reliability qos_reliability = dr_qos.policy<Reliability>();
     ResourceLimits qos_resource_limits = dr_qos.policy<ResourceLimits>();
     DataReaderResourceLimits qos_dr_resource_limits = dr_qos.policy<DataReaderResourceLimits>();
@@ -2061,7 +2057,6 @@ void RTIDDSImpl<T>::setup_DR_QoS(
     std::map<std::string, std::string> properties =
             dr_qos.policy<Property>().get_all();
 
-    unsigned int qos_initial_samples = (unsigned) qos_resource_limits->initial_samples();
     unsigned long long initial_samples = 0;
 
     // only force reliability on throughput/latency topics
@@ -2162,15 +2157,12 @@ void RTIDDSImpl<T>::setup_DR_QoS(
 
         initial_samples = std::min(
                 initial_samples,
-                (unsigned long long) qos_initial_samples);
+                (unsigned long long) qos_resource_limits->initial_samples());
 
         qos_resource_limits->initial_samples(initial_samples);
 
         qos_dr_resource_limits.dynamically_allocate_fragmented_samples(true);
     }
-
-    properties["dds.transport.shmem.builtin.receive_buffer_size"] = "60000000";
-    properties["dds.transport.shmem.builtin.received_message_count_max"] = "1000";
 
     dr_qos << qos_reliability;
     dr_qos << qos_resource_limits;
@@ -2179,16 +2171,12 @@ void RTIDDSImpl<T>::setup_DR_QoS(
     dr_qos << qos_dr_resource_limits;
     dr_qos << Property(properties.begin(), properties.end(), true);
 
-    //return dr_qos;
-
-    std::cout << "2nd" << std::endl;
+    return dr_qos;
 }
 
 template <typename T>
-void RTIDDSImpl<T>::setup_DW_QoS(
-    dds::pub::qos::DataWriterQos &dw_qos,
-    std::string qos_profile, 
-    std::string topic_name) {
+dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
+        std::string qos_profile, std::string topic_name) {
     using namespace dds::core::policy;
     using namespace rti::core::policy;
 
@@ -2196,7 +2184,7 @@ void RTIDDSImpl<T>::setup_DW_QoS(
             _PM->get<std::string>("qosLibrary"),
             qos_profile);
 
-    dw_qos = qos_provider.datawriter_qos();
+    dds::pub::qos::DataWriterQos dw_qos = qos_provider.datawriter_qos();
 
     Reliability qos_reliability = dw_qos.policy<Reliability>();
     ResourceLimits qos_resource_limits = dw_qos.policy<ResourceLimits>();
@@ -2276,14 +2264,8 @@ void RTIDDSImpl<T>::setup_DW_QoS(
             qos_dw_resource_limits.max_batches(_PM->get<int>("sendQueueSize"));
         }
 
-        initial_samples = _PM->get<int>("sendQueueSize");
-        qos_resource_limits->initial_samples(initial_samples);
+        qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
-        std::cout << "[########] QoS Profile: " << qos_profile << std::endl;
-        std::cout << "[########] QoS DW Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
-        std::cout << "[########] SendQueueSize: " << _PM->get<int>("sendQueueSize") << std::endl;
-        std::cout << "[########] DW Initial samples (calculated): " << initial_samples << std::endl;
-        std::cout << "[########] DW Initial samples: " << qos_resource_limits->initial_samples() << std::endl;
 
         if (_PM->get<int>("durability") == DDS_VOLATILE_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::Volatile();
@@ -2368,7 +2350,9 @@ void RTIDDSImpl<T>::setup_DW_QoS(
 
                 initial_samples = std::min(
                         initial_samples, 
-                        (unsigned long long) _PM->get<int>("sendQueueSize"));
+                        (unsigned long long) qos_resource_limits->initial_samples());
+
+                qos_resource_limits->initial_samples(initial_samples);
             }
 
             /**
@@ -2381,9 +2365,6 @@ void RTIDDSImpl<T>::setup_DW_QoS(
         }
     #endif
 
-    properties["dds.transport.shmem.builtin.receive_buffer_size"] = "60000000";
-    properties["dds.transport.shmem.builtin.received_message_count_max"] = "1000";
-
     dw_qos << qos_reliability;
     dw_qos << qos_resource_limits;
     dw_qos << qos_dw_resource_limits;
@@ -2393,6 +2374,8 @@ void RTIDDSImpl<T>::setup_DW_QoS(
     dw_dataWriterProtocol.rtps_reliable_writer(dw_reliableWriterProtocol);
     dw_qos << dw_dataWriterProtocol;
     dw_qos << Property(properties.begin(), properties.end(), true);
+
+    return dw_qos;
 }
 
 #ifdef RTI_FLATDATA_AVAILABLE
@@ -2420,8 +2403,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::sub::qos::DataReaderQos dr_qos;
-    setup_DR_QoS(dr_qos, qos_profile, topic_name);
+    dds::sub::qos::DataReaderQos dr_qos = setup_DR_QoS(qos_profile, topic_name);
 
     dds::topic::Topic<T> topic(this->_participant, topic_name);
     dds::sub::DataReader<T> reader(dds::core::null);
@@ -2490,8 +2472,7 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const std::string &topic_
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::pub::qos::DataWriterQos dw_qos;
-    this->setup_DW_QoS(dw_qos, qos_profile, topic_name);
+    dds::pub::qos::DataWriterQos dw_qos = this->setup_DW_QoS(qos_profile, topic_name);
 
     dds::topic::Topic<T> topic(this->_participant, topic_name);
     dds::pub::DataWriter<T> writer(this->_publisher, topic, dw_qos);

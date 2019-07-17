@@ -111,9 +111,8 @@ class RTIDDSImpl : public IMessaging
     static const std::string SECURE_LIBRARY_NAME;
   #endif
 
-    void setup_DR_QoS(dds::sub::qos::DataReaderQos &dr_qos, std::string qos_profile, std::string topic_name);
-    void setup_DW_QoS(dds::pub::qos::DataWriterQos &dw_qos, std::string qos_profile, std::string topic_name);
-
+    dds::sub::qos::DataReaderQos setup_DR_QoS(std::string qos_profile, std::string topic_name);
+    dds::pub::qos::DataWriterQos setup_DW_QoS(std::string qos_profile, std::string topic_name);
 };
 
 #ifdef RTI_FLATDATA_AVAILABLE

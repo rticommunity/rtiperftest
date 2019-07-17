@@ -874,33 +874,19 @@ public:
      * @param isCftWildcardKey states if CFT is being used
      */
     bool Send(const TestMessage &message, bool isCftWildCardKey) {
-        long key = 0;
         Builder builder = rti::flat::build_data<T>(this->_writer);
-        if (builder.check_failure()) {
-            fprintf(stderr, "Builder creation error\n");
-            return false;
-        }
+        long key = 0;
 
         // Initialize Information data
         builder.add_entity_id(message.entity_id);
         builder.add_seq_num(message.seq_num);
         builder.add_timestamp_sec(message.timestamp_sec);
-        builder.add_timestamp_usec(message.timestamp_usec); // TODO: Put this after add_n
+        builder.add_timestamp_usec(message.timestamp_usec);
         builder.add_latency_ping(message.latency_ping);
 
         // Add payload
         BinDataBuilder bin_data_builder = builder.build_bin_data();
-        if (!bin_data_builder.is_valid()) {
-            fprintf(stderr, "Cannot create payload (bin_data) builder\n");
-            return false;
-        }
-
         bin_data_builder.add_n(message.size);
-        if (bin_data_builder.check_failure()) {
-            fprintf(stderr, "Cannot allocate space for payload\n");
-            return false;
-        }
-
         bin_data_builder.finish();
 
         // calculate key and add it
@@ -916,11 +902,7 @@ public:
 
         // Build the data to be sent
         T *sample = builder.finish_sample();
-        if (sample == NULL) {
-            fprintf(stderr, "finish_sample() error");
-            return false;
-        }
-
+        
         // Send data through the writer
         if (!isCftWildCardKey) {
             this->_writer->write(*sample, this->_instance_handles[key]);
@@ -931,7 +913,6 @@ public:
         return true;
     }
 };
-
 #endif
 
 /* Dynamic Data equivalent function from RTIPublisher */
@@ -2587,6 +2568,7 @@ template <typename T>
 DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::string qos_profile, std::string topic_name)
 {
     unsigned long long initial_samples = 0;
+    unsigned int qos_initial_samples = 0;
 
     #ifndef RTI_MICRO
     if (_factory->get_datawriter_qos_from_profile(
@@ -2612,7 +2594,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
         }
     }
 
-    if (_isLargeData || _PM->get<bool>("asynchronous")) {
+    if ((_isLargeData && !_isZeroCopy) || _PM->get<bool>("asynchronous")) {
         dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
         if (_PM->get<std::string>("flowController") != "default") {
             dw_qos.publish_mode.flow_controller_name =
@@ -2683,40 +2665,6 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
                     _PM->get<int>("sendQueueSize");
         }
 
-        #ifdef RTI_FLATDATA_AVAILABLE
-        if (_isFlatData) {
-            char buf[2];
-            sprintf(buf, "%d", DDS_LENGTH_UNLIMITED);
-            DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
-                    "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
-                    buf,
-                    false);
-
-            /**
-             *  If FlatData and LargeData, automatically estimate initial_samples here
-             * in a range from 1 up to the initial samples specifies in the QoS file
-             */ 
-            if (_isLargeData) {
-                initial_samples = std::max(
-                        1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
-
-                initial_samples = std::min(
-                        initial_samples,
-                        (unsigned long long) _PM->get<int>("sendQueueSize"));
-
-                dw_qos.resource_limits.initial_samples = initial_samples;
-            }
-
-            /**
-             * Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
-             * his sequence number is used by a ZeroCopy DataReader to check for sample consistency.
-             */
-            if (_isZeroCopy) {
-                dw_qos.transfer_mode.shmem_ref_settings = DDS_DataWriterShmemRefTransferModeSettings{RTI_TRUE};
-            }
-        }
-        #endif
-
         dw_qos.resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
       #endif
         dw_qos.resource_limits.max_samples_per_instance =
@@ -2785,7 +2733,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
   #ifndef RTI_MICRO
     dw_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
 
-    if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {  // TODO: We are writting this before for flat Data
+    if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
@@ -2801,6 +2749,45 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
         } else {
             dw_qos.resource_limits.instance_hash_buckets =
                     _PM->get<long>("instances");
+        }
+    }
+  #endif
+
+  #ifdef RTI_FLATDATA_AVAILABLE
+    if (_isFlatData) {
+        char buf[2];
+        sprintf(buf, "%d", DDS_LENGTH_UNLIMITED);
+        DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
+                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
+                buf,
+                false);
+
+        /**
+         *  If FlatData and LargeData, automatically estimate initial_samples here
+         * in a range from 1 up to the initial samples specifies in the QoS file
+         */ 
+        if (_isLargeData) {
+            qos_initial_samples = dw_qos.resource_limits.initial_samples;
+
+            initial_samples = std::max(
+                    1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+
+            initial_samples = std::min(
+                    initial_samples,
+                    (unsigned long long) qos_initial_samples);
+
+            dw_qos.resource_limits.initial_samples = initial_samples;
+
+            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count = 
+                2 * initial_samples;
+        }
+
+        /**
+         * Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
+         * his sequence number is used by a ZeroCopy DataReader to check for sample consistency.
+         */
+        if (_isZeroCopy) {
+            dw_qos.transfer_mode.shmem_ref_settings.enable_data_consistency_check = RTI_TRUE;
         }
     }
   #endif
@@ -2971,6 +2958,10 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::str
 
         dr_qos.resource_limits.initial_samples = initial_samples;
 
+        // Prevent dynamic allocation of reassembly buffer
+        dr_qos.reader_resource_limits.dynamically_allocate_fragmented_samples = 
+                DDS_BOOLEAN_FALSE;
+
         char buf[10];
         sprintf(buf, "%d", DDS_LENGTH_UNLIMITED);
         DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
@@ -3123,9 +3114,8 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    writer = _publisher->create_datawriter(
-        topic, dw_qos, NULL,
-        DDS_STATUS_MASK_NONE);
+    writer = _publisher->create_datawriter(topic, dw_qos, NULL, 
+            DDS_STATUS_MASK_NONE);
 
     if (writer == NULL) {
         fprintf(stderr,"Problem creating writer.\n");
