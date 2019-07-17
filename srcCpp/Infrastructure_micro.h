@@ -59,7 +59,7 @@ class PerftestClock {
     RTI_INT32 clockSec;
     RTI_UINT32 clockUsec;
   #else
-    double _frequency = 0.0;
+    double _frequency;
   #endif
 
   public:
