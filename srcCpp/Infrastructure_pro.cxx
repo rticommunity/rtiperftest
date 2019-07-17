@@ -502,11 +502,11 @@ bool configureShmemTransport(
         ParameterManager *_PM)
 {
     // Number of messages that can be buffered in the receive queue.
-    int received_message_count_max = 1024 * 1024 * 2
-            / (int) _PM->get<unsigned long long>("dataLen");
-    if (received_message_count_max < 1) {
-        received_message_count_max = 1;
-    }
+    // int received_message_count_max = 1024 * 1024 * 2
+    //         / (int) _PM->get<unsigned long long>("dataLen");
+    // if (received_message_count_max < 1) {
+    //     received_message_count_max = 1;
+    // }
 
     // std::ostringstream string_stream_object;
     // string_stream_object << received_message_count_max;
@@ -517,20 +517,14 @@ bool configureShmemTransport(
     //     return false;
     // }
 
-    // TODO: This is here to avoid a bottleneck due to SHMEM.
-    // We should configure it here according to some kind of rule rather
-    // than hardcoding it
-    if (!assertPropertyToParticipantQos(
-            qos,
-            "dds.transport.shmem.builtin.received_message_count_max",
-            "1000")) {
-        return false;
-    }
+    // Avoid bottleneck due to SHMEM.
+    std::ostringstream ss;
+    ss << 2 * _PM->get<int>("sendQueueSize");
 
     if (!assertPropertyToParticipantQos(
             qos,
-            "dds.transport.shmem.builtin.receive_buffer_size",
-            "60000000")) {
+            "dds.transport.shmem.builtin.received_message_count_max",
+            ss.str())) {
         return false;
     }
 
