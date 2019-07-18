@@ -23,6 +23,12 @@
 #include "CustomType.h"
 #endif
 
+/* Undefine Windows max and min micros. 
+   They conflict with std::min and std::max
+*/
+#undef max
+#undef min
+
 #define RTIPERFTEST_MAX_PEERS 1024
 
 /* Forward declaration of perftest_cpp to avoid circular dependencies */

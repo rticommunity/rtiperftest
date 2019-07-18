@@ -370,9 +370,9 @@ if !BUILD_CPP! == 1 (
 	)
 
 	if !FLATDATA_AVAILABLE! == 1 (
-		set "additional_rti_libs=-additionalRtiLibraries ""nddsmetp !additional_rti_libs!"""
-		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_AVAILABLE"
-		set additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=%flatdata_size%"
+		set "additional_rti_libs=-additionalRtiLibraries "nddsmetp !additional_rti_libs!""
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!flatdata_size! RTI_FLATDATA_AVAILABLE"
+		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=!flatdata_size!""
 	)
 
 	if !USE_CUSTOM_TYPE! == 1 (
@@ -406,9 +406,6 @@ if !BUILD_CPP! == 1 (
 	@REM # Now that we have the makefile with all the additional RTI Libs that we might need,
     @REM # Generate ZeroCopy and FlatData code without overwritting the previously generated makefile
 	if !FLATDATA_AVAILABLE! == 1 (
-		@REM # rtiddsgen ignores any specified rti addional library if using ZeroCopy
-		@REM # Therefore, we need to generate a makefile that contains
-		@REM # nddsmetp and nddssecurity libraries
 		echo[
 		echo [INFO]: Appending nddssecurity library to makefile
 		call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
@@ -471,9 +468,9 @@ if !BUILD_CPP03! == 1 (
 	)
 
 	if !FLATDATA_AVAILABLE! == 1 (
-		set "additional_rti_libs=-additionalRtiLibraries ""nddsmetp !additional_rti_libs!"""
-		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_AVAILABLE"
-		set additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=%flatdata_size%"
+		set "additional_rti_libs=-additionalRtiLibraries "nddsmetp !additional_rti_libs!""
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!flatdata_size! RTI_FLATDATA_AVAILABLE"
+		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=!flatdata_size!""
 	)
 
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
