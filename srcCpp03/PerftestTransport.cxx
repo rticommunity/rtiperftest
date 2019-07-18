@@ -284,7 +284,7 @@ void configureShmemTransport(
     // Avoid bottleneck due to SHMEM.
     ss << 2 * _PM->get<int>("sendQueueSize");
     qos_properties["dds.transport.shmem.builtin.received_message_count_max"] = 
-        ss.str();    
+        "1000";    
 
     qos_properties["dds.transport.shmem.builtin.receive_buffer_size"] = 
         "60000000"; 
