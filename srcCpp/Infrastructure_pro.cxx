@@ -528,6 +528,13 @@ bool configureShmemTransport(
         return false;
     }
 
+    if (!assertPropertyToParticipantQos(
+            qos,
+            "dds.transport.shmem.builtin.receive_buffer_size",
+            "60000000")) {
+        return false;
+    }
+
     return true;
 }
 

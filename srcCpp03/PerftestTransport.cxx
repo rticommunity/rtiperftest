@@ -285,6 +285,9 @@ void configureShmemTransport(
     ss << 2 * _PM->get<int>("sendQueueSize");
     qos_properties["dds.transport.shmem.builtin.received_message_count_max"] = 
         ss.str();    
+
+    qos_properties["dds.transport.shmem.builtin.receive_buffer_size"] = 
+        "60000000"; 
 }
 
 bool configureTransport(
