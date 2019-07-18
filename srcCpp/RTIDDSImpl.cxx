@@ -1511,6 +1511,7 @@ class RTISubscriberBase : public IMessagingReader
         _no_data = false;
         _endTest = false;
         _PM = PM;
+        _waitset = NULL;
 
         // null listener means using receive thread
         if (_reader->get_listener() == NULL) {
@@ -2777,10 +2778,11 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
                     (unsigned long long) qos_initial_samples);
 
             dw_qos.resource_limits.initial_samples = initial_samples;
-
-            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count = 
-                2 * initial_samples;
         }
+
+        // Ensure enought samples to loan in the writer queue
+        dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count = 
+                2 * dw_qos.resource_limits.initial_samples;
 
         /**
          * Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
