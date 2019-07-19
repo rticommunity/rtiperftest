@@ -33,20 +33,20 @@ Traditional and Modern C++ APIs unless otherwise noted.
 Middleware
 ----------
 
-*RTI Perftest* can be built against *RTI Connext DDS Pro* and *RTI Connext
+*RTI Perftest* can be built against *RTI Connext DDS Professional* and *RTI Connext
 DDS Micro* 3.0.0 (also 2.4.11 with some limitations).
 
 *RTI Perftest* can also be used to test raw ``UDPv4`` or ``SHMEM`` performance.
-In order to achieve this functionality, it uses the *RTI Connext DDS Pro* internal
-transport layer to interact with sockets. In this mode *RTI Perftest* skips
+To do this, *RTI Perftest* uses the *RTI Connext DDS Professional* internal
+transport layer to interact with sockets. In this mode, *RTI Perftest* skips
 the DDS protocol to directly send the data, which is serialized using the same
-functions *RTI Connext DDS Pro* use.
+functions that *RTI Connext DDS Professional* uses.
 
 Overview
 --------
 
 The publishing side of the test writes data as fast as it can. Every few
-samples (configured through the command-line), it sends a special sample
+samples (configured through the command line), it sends a special sample
 requesting an echo from the subscribing side. It uses this
 ``request -> echo`` exchange to measure round-trip latency.
 
@@ -55,7 +55,7 @@ requesting an echo from the subscribing side. It uses this
 
    PerfTest Overview Diagram
 
-As you will see in Section 8, there are several command-line options,
+As you will see in :numref:`section-command_line_parameters`, there are several command-line options,
 including ones to designate whether the application will act as the
 publisher or subscriber.
 
@@ -74,41 +74,41 @@ prints the throughput results.
 Latency Test vs Throughput Test
 -------------------------------
 
-*RTI Perftest* allows 2 operational modes: **Throghput Test** and **Latency Test**.
+*RTI Perftest* allows 2 operational modes: **Throughput Test** and **Latency Test**.
 
 Throughput Test
 ~~~~~~~~~~~~~~~
 
-This is the default mode when a *RTI Perftest* Publisher and a Subscriber
+The throughput test is the default mode when *RTI Perftest* publisher and subscriber
 applications are started.
 
-In this mode, The Publisher side will start sending samples as fast
-as possible, and once every `latencyCount` samples (which for a Throughput
-test is 10000 samples by default), it will mark the sample so it is answered
-by the Subscriber side. The answer is the exact same sample, so, by getting the
-time when it was sent and the time when the Publisher receives it back the
+In this mode, the publisher side starts sending samples as fast
+as possible. Once every `latencyCount` samples (which for a throughput
+test is 10000 samples by default), *RTI Perftest* marks the sample so it is answered
+by the subscriber side. The answer is the exact same sample. Therefore, based on the
+time the sample was sent and the time the publisher receives it, the
 Round-Trip Time (RTT) can be calculated.
 
-Doing a Throughput test will provide the maximum throughput (Mbps) at what
-the Publisher will be able to send samples to a Subscriber. The latency obtained
-in this test will be also displayed by the Publisher application, however,
-that latency is impacted by the fact that the Publisher and the Subscriber will
+Doing a throughput test provides the maximum throughput (Mbps) at which
+the publisher will be able to send samples to a subscriber. The latency obtained
+in this test will also be displayed by the publisher application; however,
+that latency is affected by the fact that the Publisher and Subscriber will
 be flooding the network and filling all their internal queues (sending and
 receiver queues, as well as the Nic queues). Therefore, for measuring the pure
-latency in the best case scenario, the **Latency Test** Mode should be used.
+latency in the best-case scenario, the **Latency Test** mode should be used.
 
 Latency Test
 ~~~~~~~~~~~~
 
-In this mode the Publisher side changes its behavior: Every sample it sends
+In this mode, the publisher side changes its behavior: every sample it sends
 is marked as a latency sample (``LatencyCount`` is equal to 1 in this case).
-It will also wait until the sample is sent back and received by the Publisher
-prior to send the next sample (what it is called ``Stop-and-wait`` mode or
+The Publisher also waits until the sample is sent back and received by the Publisher
+before sending the next sample (called ``stop-and-wait`` mode or
 ``ping-pong``mode).
 
-By doing so, this mode is able to send samples ensuring all the *RTI Connext
+This way, the latency test mode is able to send samples, ensuring all the *RTI Connext
 DDS* queues will be empty.
 
-The only requirement to change the operation mode to do a **Latency Test** is to
-provide the ``-latencyTest`` command line parameter to the Publisher side. See
-the **Command Line Parameters** section for more details.
+The only requirement to change the operation mode to do a latency test is to
+provide the ``-latencyTest`` command-line parameter to the publisher side. See
+:numref:`section-command_line_parameters` for more details.
