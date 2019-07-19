@@ -892,7 +892,6 @@ public:
   protected:
       bool _isZeroCopy;
       bool _checkConsistency;
-      bool _zerocopy_error_msg_displayed;
 
   public:
       typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
@@ -907,8 +906,7 @@ public:
       FlatDataReceiverListener(IMessagingCB *callback, bool isZeroCopy, bool checkConsistency) :
           ReceiverListenerBase<T>(callback), 
           _isZeroCopy(isZeroCopy), 
-          _checkConsistency(checkConsistency),
-          _zerocopy_error_msg_displayed(false) {
+          _checkConsistency(checkConsistency){
       }
 
       /**
@@ -918,18 +916,6 @@ public:
        */
       void on_data_available(dds::sub::DataReader<T> &reader) {
           dds::sub::LoanedSamples<T> samples = reader.take();
-
-          /**
-           * Avoid displaying on_data_available:!null offset
-           * 
-           * We would use a custom Logger as in Traditional C++
-           * but it is not available in Modern C++ API
-           * http://jira:8085/browse/CORE-7895
-           */
-          rti::config::Verbosity previous = 
-                rti::config::Logger::instance().verbosity();
-          rti::config::Logger::instance().verbosity(
-                rti::config::Verbosity::SILENT);
 
           for (unsigned int i = 0; i < samples.length(); ++i) {
               if (samples[i].info().valid()) {
@@ -945,26 +931,13 @@ public:
                   // bin_data should be retrieved here
 
                   // Check that the sample was not modified on the publisher side when using Zero Copy.
-                  if (_isZeroCopy && _checkConsistency 
-                            && !reader->is_data_consistent(samples[i])) {
-                        if (!_zerocopy_error_msg_displayed) {
-                            std::cerr << "Warning: The Publisher is reusing memory to send different samples"
-                                    << "before the original samples are processed by the subscriber, leading to inconsistent samples."
-                                    << std::endl << "This is expected with the current perftest configuration. See more on the User manual:"
-                                    << "22.5.1.3 Checking data consistency with Zero Copy transfer over shared memory on page 870 ."
-                                    << std::endl << "Unconsistent samples will be reported as lost." << std::endl;
-
-                            _zerocopy_error_msg_displayed = true;
-                        } 
-
-                        continue;
+                  if (_isZeroCopy && _checkConsistency) {
+                      if (!reader->is_data_consistent(samples[i])) continue;
                   }
 
                   this->_callback->ProcessMessage(this->_message);
               }
           }
-
-          rti::config::Logger::instance().verbosity(previous);
       }
   };
 #endif
@@ -1166,7 +1139,6 @@ public:
   protected:
       bool _isZeroCopy;
       bool _checkConsistency;
-      bool _zerocopy_error_msg_displayed;
 
   public:
       typedef typename rti::flat::flat_type_traits<T>::offset::ConstOffset ConstOffset;
@@ -1181,7 +1153,6 @@ public:
                     PM) { 
               _isZeroCopy = PM->get<bool>("zerocopy");
               _checkConsistency = PM->get<bool>("checkconsistency");
-              _zerocopy_error_msg_displayed = false;
           }
 
       /**
@@ -1220,18 +1191,6 @@ public:
                   continue;
               }
 
-              /**
-               * Avoid displaying on_data_available:!null offset
-               * 
-               * We would use a custom Logger as in Traditional C++
-               * but it is not available in Modern C++ API
-               * http://jira:8085/browse/CORE-7895
-               */
-              rti::config::Verbosity previous = 
-                      rti::config::Logger::instance().verbosity();
-              rti::config::Logger::instance().verbosity(
-                      rti::config::Verbosity::SILENT);
-
               const T &message_sample = samples[this->_data_idx].data();
               ConstOffset message = message_sample.root();
 
@@ -1245,22 +1204,9 @@ public:
               ++(this->_data_idx);
               
               // Check that the sample was not modified on the publisher side when using Zero Copy.
-              if (_isZeroCopy && _checkConsistency 
-                      && !this->_reader->is_data_consistent(samples[this->_data_idx])) {
-                  if (!_zerocopy_error_msg_displayed) {
-                      std::cerr << "Warning: The Publisher is reusing memory to send different samples"
-                              << "before the original samples are processed by the subscriber, leading to inconsistent samples."
-                              << std::endl << "This is expected with the current perftest configuration. See more on the User manual:"
-                              << "22.5.1.3 Checking data consistency with Zero Copy transfer over shared memory on page 870 ."
-                              << std::endl << "Unconsistent samples will be reported as lost." << std::endl;
-
-                      _zerocopy_error_msg_displayed = true;
-                  } 
-
-                  continue;
+              if (_isZeroCopy && _checkConsistency) {
+                  if (!this->_reader->is_data_consistent(samples[this->_data_idx])) continue;
               }
-
-              rti::config::Logger::instance().verbosity(previous);
 
               return &(this->_message);
           }
@@ -1279,18 +1225,6 @@ public:
               this->_waitset.dispatch(dds::core::Duration::infinite());
               dds::sub::LoanedSamples<T> samples = this->_reader.take();
 
-               /**
-               * Avoid displaying on_data_available:!null offset
-               * 
-               * We would use a custom Logger as in Traditional C++
-               * but it is not available in Modern C++ API
-               * http://jira:8085/browse/CORE-7895
-               */
-              rti::config::Verbosity previous = 
-                      rti::config::Logger::instance().verbosity();
-              rti::config::Logger::instance().verbosity(
-                      rti::config::Verbosity::SILENT);
-
               for (unsigned int i = 0; i < samples.length(); ++i) {
                   if (samples[i].info().valid()) {
                       const T &message_sample = samples[i].data();
@@ -1305,26 +1239,13 @@ public:
                       //_message.data = message.bin_data();
 
                       // Check that the sample was not modified on the publisher side when using Zero Copy.
-                      if (_isZeroCopy && _checkConsistency 
-                              && !this->_reader->is_data_consistent(samples[i])) {
-                          if (!_zerocopy_error_msg_displayed) {
-                              std::cerr << "Warning: The Publisher is reusing memory to send different samples"
-                                      << "before the original samples are processed by the subscriber, leading to inconsistent samples."
-                                      << std::endl << "This is expected with the current perftest configuration. See more on the User manual:"
-                                      << "22.5.1.3 Checking data consistency with Zero Copy transfer over shared memory on page 870 ."
-                                      << std::endl << "Unconsistent samples will be reported as lost." << std::endl;
-
-                              _zerocopy_error_msg_displayed = true;
-                          } 
-
-                          continue;
+                      if (_isZeroCopy && _checkConsistency) {
+                          if (!this->_reader->is_data_consistent(samples[i])) continue;
                       }
 
                       listener->ProcessMessage(this->_message);
                   }
               }
-
-              rti::config::Logger::instance().verbosity(previous);
           }
       }
   };

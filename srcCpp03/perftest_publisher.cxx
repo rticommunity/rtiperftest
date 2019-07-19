@@ -467,7 +467,7 @@ bool perftest_cpp::validate_input()
 
     #ifdef RTI_FLATDATA_AVAILABLE
       if (_PM.get<bool>("zerocopy") && !_PM.get<bool>("flatdata")) {
-          fprintf(stderr, "Zero Copy must be run along with Flat Data.\n");
+          std::cerr << "[Error] Zero Copy must be run along with Flat Data." << std::endl;
           return false;
       }
 
@@ -477,12 +477,35 @@ bool perftest_cpp::validate_input()
             || _PM.get<std::string>("transport") == "UDPv4 & SHMEM"
             || _PM.get<std::string>("transport") == "UDPv6 & SHMEM"
             || _PM.get<std::string>("transport") == "UDPv4 & UDPv6 & SHMEM")) {
-          fprintf(stderr, "Zero Copy must be run with SHMEM as transport\n");
+          std::cerr << "[Error] Zero Copy must be run with SHMEM as transport" << std::endl;
           return false;
       }
 
       if (_PM.get<bool>("checkconsistency") && !_PM.get<bool>("zerocopy")) {
-          fprintf(stderr, "checkConsistency can only be used along with Zero Copy\n");
+          std::cerr << "checkConsistency can only be used along with Zero Copy" << std::endl;
+          return false;
+      }
+
+      /**
+       * Avoid displaying on_data_available:!null offset
+       * 
+       * We would use a custom Logger as in Traditional C++
+       * but it is not available in Modern C++ API
+       * http://jira:8085/browse/CORE-7895
+       */
+      if (_PM.get<bool>("sub") && _PM.get<bool>("zerocopy") && _PM.get<bool>("bestEffort")) {
+          std::cerr << "[Warning] The Publisher is reusing memory to send different samples"
+                    << "before the original samples are processed by the subscriber, leading to inconsistent samples."
+                    << std::endl << "This is expected with the current perftest configuration. See more on the User manual: "
+                    << "22.5.1.3 Checking data consistency with Zero Copy transfer over shared memory on page 870."
+                    << std::endl << "Unconsistent samples will be reported as lost." << std::endl
+                    << "To avoid displaying 'on_data_available:!null offset' error, consider using -verbosity 0"
+                    << std::endl;
+
+          if (!_PM.get<bool>("checkconsistency")) {
+              std::cerr << "[Error] Please enable consistency check by using -checkConsistency" << std::endl;
+              return false;
+          }
       }
     #endif
 
