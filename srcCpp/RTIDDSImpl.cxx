@@ -1336,7 +1336,9 @@ public:
                         fprintf(stderr, "Error checking sample consistency\n");
                     }
 
-                    if (!isConsistent) continue;
+                    if (!isConsistent) {
+                        continue;
+                    }
                 }
 
                 this->_callback->ProcessMessage(this->_message);
