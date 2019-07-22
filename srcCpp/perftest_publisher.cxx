@@ -1313,6 +1313,7 @@ public:
         int unbounded = _PM->get<int>("unbounded");
         bool isKeyed = _PM->get<bool>("keyed");
         bool isFlatData = _PM->get<bool>("flatdata");
+        bool isZeroCopy = _PM->get<bool>("zerocopy");
 
         std::string outputCpu = "";
         if (count == 0)
@@ -1352,7 +1353,6 @@ public:
         fflush(stdout);
 
       #ifndef RTI_MICRO
-        // TODO: Do this for FlatData. In the meanwhile, protect this to avoid displaying errors
         if (!isFlatData)  {
             if (!unbounded) {
                 if (isKeyed) {
@@ -1379,15 +1379,68 @@ public:
                             obtain_dds_deserialize_time_cost(totalSampleSize);
                 }
             }
+        } else {
+            if (!unbounded) {
+                if (isKeyed) {
+                    if (isZeroCopy) {
+                        serializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
+                                obtain_dds_serialize_time_cost_override(totalSampleSize);
+                        deserializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
+                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                    } else {
+                        serializeTime = RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>::
+                                obtain_dds_serialize_time_cost_override(totalSampleSize);
+                        deserializeTime = RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>::
+                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                    }
+                } else {
+                    if (isZeroCopy) {
+                        serializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
+                            obtain_dds_serialize_time_cost_override(totalSampleSize);
+                        deserializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
+                                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                    } else {
+                        serializeTime = RTIDDSImpl_FlatData<TestData_FlatData_t>::
+                                obtain_dds_serialize_time_cost_override(totalSampleSize);
+                        deserializeTime = RTIDDSImpl_FlatData<TestData_FlatData_t>::
+                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                    }
+                }
+            } else {
+                if (isKeyed) {
+                    if (isZeroCopy) {
+                        serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>::
+                                obtain_dds_serialize_time_cost_override(totalSampleSize);
+                        deserializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>::
+                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                    } else {
+                        serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
+                                obtain_dds_serialize_time_cost_override(totalSampleSize);
+                        deserializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
+                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                    }
+                } else {
+                    if (isZeroCopy) {
+                        serializeTime = RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>::
+                                obtain_dds_serialize_time_cost_override(totalSampleSize);
+                        deserializeTime = RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>::
+                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                    } else {
+                        serializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
+                                obtain_dds_serialize_time_cost_override(totalSampleSize);
+                        deserializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
+                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                    }
+                    
+                }
+            }
+        }
         
-        
-
         printf("Serialization/Deserialization: %0.3f us / %0.3f us / TOTAL: "
                 "%0.3f us\n",
                serializeTime,
                deserializeTime,
                serializeTime + deserializeTime);
-        }
       #endif
 
         latency_sum = 0;

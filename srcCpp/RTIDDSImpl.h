@@ -218,6 +218,30 @@ protected:
          * @return a RTIFlatDataSubscriber  
          */
       IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
+
+      /**
+       * Obtain average serialization time
+       * 
+       * @param sampleSize size of the payload to serialize
+       * @param iters number of times to serialize the payload
+       * 
+       * @return average serialization time in microseconds
+       */
+      static double obtain_dds_serialize_time_cost_override(
+            unsigned int sampleSize,
+            unsigned int iters = 1000);
+
+      /**
+       * Obtain average deserialization time
+       * 
+       * @param sampleSize size of the payload to deserialize
+       * @param iters number of times to deserialize the payload
+       * 
+       * @return average serialization time in microseconds
+       */
+      static double obtain_dds_deserialize_time_cost_override(
+            unsigned int sampleSize,
+            unsigned int iters = 1000);
   };
 #endif // RTI_FLATDATA_AVAILABLE
 

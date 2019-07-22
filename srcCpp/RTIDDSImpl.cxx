@@ -662,7 +662,7 @@ class RTIPublisher : public RTIPublisherBase<T>
                     instancesToBeWritten,
                     PM)
     {
-        this->_writer = T::DataWriter::narrow(writer);    // TODO: Fix this
+        this->_writer = T::DataWriter::narrow(writer);
 
         DDS_DataWriterQos qos;
         this->_writer->get_qos(qos); // Gota fix the writer narrow to fix seg fault here
@@ -828,7 +828,7 @@ public:
                     instancesToBeWritten,
                     PM) 
     {
-        this->_writer = T::DataWriter::narrow(writer);    // TODO: Fix this
+        this->_writer = T::DataWriter::narrow(writer);
 
         DDS_DataWriterQos qos;
         this->_writer->get_qos(qos); // Gota fix the writer narrow to fix seg fault here
@@ -895,7 +895,7 @@ public:
                     ? this->_instance_counter++ % this->_num_instances
                     : this->_instancesToBeWritten;
         } else {
-            key = this->_num_instances; // TODO: Maybe this causes the error as in Modern C++ in that case do _num_instances-1
+            key = this->_num_instances;
         }
 
         add_key(builder, key);
@@ -1836,7 +1836,6 @@ class RTIDynamicDataSubscriber : public RTISubscriberBase<DDS_DynamicData>
             fprintf(stderr,"DDSDynamicDataReader::narrow(reader) error.\n");
         }
         
-        // TODO: Figure out how to do this in Base class
         // null listener means using receive thread
         if (_reader->get_listener() == NULL) {
 
@@ -2950,7 +2949,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::str
     }
 
     #ifdef RTI_FLATDATA_AVAILABLE
-    if (_isFlatData && _isLargeData) {
+    if (_isFlatData) {
         qos_initial_samples = (unsigned) dr_qos.resource_limits.initial_samples;
 
         initial_samples = std::max(
@@ -3422,6 +3421,80 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
     }
 
     return new RTIFlatDataSubscriber<T>(reader, _PM);
+}
+
+template <typename T>
+double RTIDDSImpl_FlatData<T>::obtain_dds_serialize_time_cost_override(
+        unsigned int sampleSize,
+        unsigned int iters) 
+{
+    typedef typename rti::flat::flat_type_traits<T>::builder Builder;
+    typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
+
+    int serializedSize = 27 + RTI_FLATDATA_MAX_SIZE;
+    unsigned char buffer[serializedSize];
+    double total_time = 0.0;
+
+    for (unsigned int i = 0; i < iters; i++) {
+        Builder builder(buffer, serializedSize);
+
+        // leave uninitialized
+        builder.add_key();
+        builder.add_entity_id(0);
+        builder.add_seq_num(0);
+        builder.add_timestamp_sec(0);
+        builder.add_timestamp_usec(0);
+        builder.add_latency_ping(0);
+
+        // Add payload
+        BinDataBuilder bin_data = builder.build_bin_data();
+        bin_data.add_n(sampleSize);
+        bin_data.finish();
+
+        double start = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+        builder.finish_sample();
+        double end = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+        total_time += end - start;
+    }
+    
+    return total_time / (float) iters;
+}
+
+template <typename T>
+double RTIDDSImpl_FlatData<T>::obtain_dds_deserialize_time_cost_override(
+        unsigned int sampleSize,
+        unsigned int iters) 
+{
+    typedef typename rti::flat::flat_type_traits<T>::builder Builder;
+    typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
+
+    int serializedSize = 27 + RTI_FLATDATA_MAX_SIZE;
+    unsigned char buffer[serializedSize];
+
+    Builder builder(buffer, serializedSize);
+
+    // Leave uninitialized
+    builder.add_key();
+    builder.add_entity_id(0);
+    builder.add_seq_num(0);
+    builder.add_timestamp_sec(0);
+    builder.add_timestamp_usec(0);
+    builder.add_latency_ping(0);
+
+    // Add payload
+    BinDataBuilder bin_data = builder.build_bin_data();
+    bin_data.add_n(sampleSize);
+    bin_data.finish();
+
+    builder.finish_sample();
+
+    double start = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+    for (unsigned int i = 0; i < iters; i++) {
+        T::from_buffer(buffer);
+    }
+    double end = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+    
+    return (end-start) / (float) iters;
 }
 #endif
 
