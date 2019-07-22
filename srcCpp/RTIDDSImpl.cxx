@@ -3428,36 +3428,38 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_serialize_time_cost_override(
         unsigned int sampleSize,
         unsigned int iters) 
 {
-    typedef typename rti::flat::flat_type_traits<T>::builder Builder;
-    typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
+    // typedef typename rti::flat::flat_type_traits<T>::builder Builder;
+    // typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
 
-    int serializedSize = 27 + RTI_FLATDATA_MAX_SIZE;
-    unsigned char buffer[serializedSize];
-    double total_time = 0.0;
+    // int serializedSize = 27 + RTI_FLATDATA_MAX_SIZE;
+    // unsigned char buffer[serializedSize];
+    // double total_time = 0.0;
 
-    for (unsigned int i = 0; i < iters; i++) {
-        Builder builder(buffer, serializedSize);
+    // for (unsigned int i = 0; i < iters; i++) {
+    //     Builder builder(buffer, serializedSize);
 
-        // leave uninitialized
-        builder.add_key();
-        builder.add_entity_id(0);
-        builder.add_seq_num(0);
-        builder.add_timestamp_sec(0);
-        builder.add_timestamp_usec(0);
-        builder.add_latency_ping(0);
+    //     // leave uninitialized
+    //     builder.add_key();
+    //     builder.add_entity_id(0);
+    //     builder.add_seq_num(0);
+    //     builder.add_timestamp_sec(0);
+    //     builder.add_timestamp_usec(0);
+    //     builder.add_latency_ping(0);
 
-        // Add payload
-        BinDataBuilder bin_data = builder.build_bin_data();
-        bin_data.add_n(sampleSize);
-        bin_data.finish();
+    //     // Add payload
+    //     BinDataBuilder bin_data = builder.build_bin_data();
+    //     bin_data.add_n(sampleSize);
+    //     bin_data.finish();
 
-        double start = (unsigned int) PerftestClock::getInstance().getTimeUsec();
-        builder.finish_sample();
-        double end = (unsigned int) PerftestClock::getInstance().getTimeUsec();
-        total_time += end - start;
-    }
+    //     double start = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+    //     builder.finish_sample();
+    //     double end = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+    //     total_time += end - start;
+    // }
     
-    return total_time / (float) iters;
+    // return total_time / (float) iters;
+
+    return 0.0;
 }
 
 template <typename T>
@@ -3465,36 +3467,38 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_deserialize_time_cost_override(
         unsigned int sampleSize,
         unsigned int iters) 
 {
-    typedef typename rti::flat::flat_type_traits<T>::builder Builder;
-    typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
+    // typedef typename rti::flat::flat_type_traits<T>::builder Builder;
+    // typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
 
-    int serializedSize = 27 + RTI_FLATDATA_MAX_SIZE;
-    unsigned char buffer[serializedSize];
+    // int serializedSize = 27 + RTI_FLATDATA_MAX_SIZE;
+    // unsigned char buffer[serializedSize];
 
-    Builder builder(buffer, serializedSize);
+    // Builder builder(buffer, serializedSize);
 
-    // Leave uninitialized
-    builder.add_key();
-    builder.add_entity_id(0);
-    builder.add_seq_num(0);
-    builder.add_timestamp_sec(0);
-    builder.add_timestamp_usec(0);
-    builder.add_latency_ping(0);
+    // // Leave uninitialized
+    // builder.add_key();
+    // builder.add_entity_id(0);
+    // builder.add_seq_num(0);
+    // builder.add_timestamp_sec(0);
+    // builder.add_timestamp_usec(0);
+    // builder.add_latency_ping(0);
 
-    // Add payload
-    BinDataBuilder bin_data = builder.build_bin_data();
-    bin_data.add_n(sampleSize);
-    bin_data.finish();
+    // // Add payload
+    // BinDataBuilder bin_data = builder.build_bin_data();
+    // bin_data.add_n(sampleSize);
+    // bin_data.finish();
 
-    builder.finish_sample();
+    // builder.finish_sample();
 
-    double start = (unsigned int) PerftestClock::getInstance().getTimeUsec();
-    for (unsigned int i = 0; i < iters; i++) {
-        T::from_buffer(buffer);
-    }
-    double end = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+    // double start = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+    // for (unsigned int i = 0; i < iters; i++) {
+    //     T::from_buffer(buffer);
+    // }
+    // double end = (unsigned int) PerftestClock::getInstance().getTimeUsec();
     
-    return (end-start) / (float) iters;
+    // return (end-start) / (float) iters;
+
+    return 0.0;
 }
 #endif
 
