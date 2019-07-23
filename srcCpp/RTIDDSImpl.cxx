@@ -2757,7 +2757,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
 
   #ifdef RTI_FLATDATA_AVAILABLE
     if (_isFlatData) {
-        char buf[2];
+        char buf[10];
         sprintf(buf, "%d", DDS_LENGTH_UNLIMITED);
         DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                 "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
@@ -3435,6 +3435,8 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_serialize_time_cost_override(
     // unsigned char buffer[serializedSize];
     // double total_time = 0.0;
 
+    // std::cout << "Serialize" << std::endl;
+
     // for (unsigned int i = 0; i < iters; i++) {
     //     Builder builder(buffer, serializedSize);
 
@@ -3472,6 +3474,8 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_deserialize_time_cost_override(
 
     // int serializedSize = 27 + RTI_FLATDATA_MAX_SIZE;
     // unsigned char buffer[serializedSize];
+
+    // std::cout << "Deserialize" << std::endl;
 
     // Builder builder(buffer, serializedSize);
 
