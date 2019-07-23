@@ -2769,14 +2769,12 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
          * in a range from 1 up to the initial samples specifies in the QoS file
          */ 
         if (_isLargeData) {
-            qos_initial_samples = dw_qos.resource_limits.initial_samples;
-
             initial_samples = std::max(
                     1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
 
             initial_samples = std::min(
                     initial_samples,
-                    (unsigned long long) qos_initial_samples);
+                    (unsigned long long) dw_qos.resource_limits.initial_samples);
 
             dw_qos.resource_limits.initial_samples = initial_samples;
         }
@@ -2950,26 +2948,24 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::str
 
     #ifdef RTI_FLATDATA_AVAILABLE
     if (_isFlatData) {
-        qos_initial_samples = (unsigned) dr_qos.resource_limits.initial_samples;
-
-        initial_samples = std::max(
-            1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
-
-        initial_samples = std::min(
-                initial_samples,
-                (unsigned long long) qos_initial_samples);
-
-        dr_qos.resource_limits.initial_samples = initial_samples;
-
-        // Prevent dynamic allocation of reassembly buffer
-        dr_qos.reader_resource_limits.dynamically_allocate_fragmented_samples = 
-                DDS_BOOLEAN_FALSE;
-
         char buf[10];
         sprintf(buf, "%d", DDS_LENGTH_UNLIMITED);
         DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
+
+        initial_samples = std::max(
+                1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+
+        initial_samples = std::min(
+                initial_samples,
+                (unsigned long long) dr_qos.resource_limits.initial_samples);
+
+        dr_qos.resource_limits.initial_samples = initial_samples;
+
+        // Prevent dynamic allocation of reassembly buffer
+        dr_qos.reader_resource_limits.dynamically_allocate_fragmented_samples = 
+                DDS_BOOLEAN_TRUE;
     }
     #endif
   #endif

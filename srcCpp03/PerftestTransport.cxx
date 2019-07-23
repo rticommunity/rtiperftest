@@ -279,15 +279,27 @@ void configureShmemTransport(
     // qos_properties["dds.transport.shmem.builtin.received_message_count_max"] =
     //         string_stream_object.str();
 
+    /** TODO: From user manual p780:
+     * To optimize memory usage, specify a receive queue size less than that required to hold the maximum
+     * number of messages which are all of the maximum size.
+     * 
+     * In most situations, the average message size may be far less than the maximum message size. 
+     * So for example, if the maximum message size is 64K bytes, and you configure the plugin to buffer 
+     * at least 10 messages, then 640K bytes of memory would be needed if all messages were 64K bytes. 
+     * Should this be desired, then receive_buffer_size should be set to 640K bytes.
+     * 
+     * However, if the average message size is only 10K bytes, then you could set the receive_buffer_size to
+     * 100K bytes. This allows you to optimize the memory usage of the plugin for the average case and 
+     * yet allow the plugin to handle the extreme case.
+     */
     std::ostringstream ss;
 
     // Avoid bottleneck due to SHMEM.
-    ss << 2 * _PM->get<int>("sendQueueSize");
     qos_properties["dds.transport.shmem.builtin.received_message_count_max"] = 
-        "1000";    
+        "1000";
 
     qos_properties["dds.transport.shmem.builtin.receive_buffer_size"] = 
-        "60000000"; 
+        "60000000";
 }
 
 bool configureTransport(

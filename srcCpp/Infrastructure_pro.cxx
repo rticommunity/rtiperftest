@@ -517,6 +517,13 @@ bool configureShmemTransport(
     //     return false;
     // }
 
+    /** TODO: From user manual p780
+     * To optimize memory usage, specify a receive queue size less than that required to hold the maximum
+     * number of messages which are all of the maximum size.
+     * 
+     * 
+     */
+
     // Avoid bottleneck due to SHMEM.
     std::ostringstream ss;
     ss << 2 * _PM->get<int>("sendQueueSize");
