@@ -1089,11 +1089,6 @@ int perftest_cpp::Subscriber()
         return -1;
     }
 
-    if (!finalize_read_thread(throughputThread, reader_listener)) {
-        fprintf(stderr, "Error deleting throughputThread\n");
-        return -1;
-    }
-
     if (reader != NULL)
     {
         delete(reader);
