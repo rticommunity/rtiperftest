@@ -828,7 +828,7 @@ static void *ThroughputReadThread(void *arg) {
  */
 int perftest_cpp::RunSubscriber()
 {
-
+    struct RTIOsapiThread *receiverThread = NULL;
     ThroughputListener *reader_listener = NULL;
     IMessagingReader   *reader = NULL;
     IMessagingWriter   *writer = NULL;
@@ -880,7 +880,6 @@ int perftest_cpp::RunSubscriber()
                     | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
         }
 
-        struct RTIOsapiThread *receiverThread = NULL;
         receiverThread = RTIOsapiThread_new(
                 "ReceiverThread",
                 threadPriority,
@@ -1018,6 +1017,11 @@ int perftest_cpp::RunSubscriber()
     }
 
     perftest_cpp::MilliSleep(1000);
+
+    // TODO: Finalize receiverThread
+    if (receiverThread != NULL) {
+        RTIOsapiThread_delete(receiverThread);
+    }
 
     if (announcement_writer != NULL) {
         delete(announcement_writer);
@@ -1397,6 +1401,7 @@ int perftest_cpp::RunPublisher()
     unsigned long announcementSampleCount = 50;
     unsigned int samplesPerBatch = GetSamplesPerBatch();
     struct RTIOsapiThread *executionTimeoutThread = NULL;
+    struct RTIOsapiThread *receiverThread = NULL;
 
     // create throughput/ping writer
     writer = _MessagingImpl->CreateWriter(THROUGHPUT_TOPIC_NAME);
@@ -1459,7 +1464,6 @@ int perftest_cpp::RunPublisher()
                         | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
             }
 
-            struct RTIOsapiThread *receiverThread = NULL;
             receiverThread = RTIOsapiThread_new(
                     "ReceiverThread",
                     threadPriority,
@@ -1845,6 +1849,10 @@ int perftest_cpp::RunPublisher()
 
     if (_PM.get<bool>("writerStats")) {
         printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
+    }
+
+    if (receiverThread != NULL) {
+        RTIOsapiThread_delete(receiverThread);
     }
 
     if (writer != NULL) {
