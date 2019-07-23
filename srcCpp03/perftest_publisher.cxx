@@ -1018,7 +1018,6 @@ int perftest_cpp::RunSubscriber()
 
     perftest_cpp::MilliSleep(1000);
 
-    // TODO: Finalize receiverThread
     if (receiverThread != NULL) {
         RTIOsapiThread_delete(receiverThread);
     }
