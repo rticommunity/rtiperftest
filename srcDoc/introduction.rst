@@ -14,15 +14,14 @@ a given throughput level. It can help you answer questions such as:
 
 -  For a given publishing configuration (e.g., queue size, batching
    settings), sample size, and subscribing configuration (e.g., queue
-   size, Listener vs. WaitSet) what is the throughput of my network?
+   size, Listener vs. WaitSet), what is the throughput of my network?
 
 -  When my network is heavily loaded, what latency can I expect?
 
 -  For a given configuration, what is the best-case latency with no
    other traffic on the network?
 
-For examples of specific configurations, see See Example Command Lines
-for Running the Performance Test.
+For examples of specific configurations, see :numref:`section-command_line_examples`.
 
 This performance test is implemented in C++ (Traditional and Modern
 APIs), C# and Java.
@@ -104,7 +103,7 @@ In this mode, the publisher side changes its behavior: every sample it sends
 is marked as a latency sample (``LatencyCount`` is equal to 1 in this case).
 The Publisher also waits until the sample is sent back and received by the Publisher
 before sending the next sample (called ``stop-and-wait`` mode or
-``ping-pong``mode).
+``ping-pong`` mode).
 
 This way, the latency test mode is able to send samples, ensuring all the *RTI Connext
 DDS* queues will be empty.

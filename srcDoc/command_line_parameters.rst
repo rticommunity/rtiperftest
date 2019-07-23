@@ -18,8 +18,8 @@ application, or both:
 -  :ref:`Test Parameters to Control RTI Connext DDS Secure Options`
 
 As you will see in the tables, the ``-pub`` parameter specifies a
-publishing application and the ``-sub`` specifies a subscribing
-application. If you do not specify See ``-pub``, then ``-sub`` is
+publishing application and ``-sub`` specifies a subscribing
+application. If you do not specify ``-pub``, then ``-sub`` is
 assumed.
 
 Some of these parameters are valid when using *RTI Connext DDS Professional*, 
@@ -107,8 +107,8 @@ Test Parameters for Publishing and Subscribing Applications
    For an introduction to the RTI durability model, see the Historical
    Data design pattern in the RTI Connext DDS Core Libraries Getting
    Started Guide. See also: Mechanisms for Achieving Information
-   Durability and Persistence, Chapter 12, in the RTI Connext DDS Core
-   Libraries User’s Manual.
+   Durability and Persistence, Chapter 12, in the *RTI Connext DDS Core
+   Libraries User’s Manual*.
 
    ``PERSISTENT`` is not available when compiling against *RTI Connext DDS
    Micro*.
@@ -233,8 +233,8 @@ Test Parameters for Publishing and Subscribing Applications
    therefore setting them in the XML file has no effect; see the See
    Note:.
 
-   See comments in ``perftest_qos_profiles.xml``, as well as
-   **Configuring QoS with XML, Chapter 17** in the *RTI Connext DDS Core
+   See comments in ``perftest_qos_profiles.xml``, as well as the 
+   **Configuring QoS with XML** chapter in the *RTI Connext DDS Core
    Libraries* User’s Manual.
 
 -  ``-qosLibrary <library name>``
@@ -258,7 +258,7 @@ Test Parameters for Publishing and Subscribing Applications
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
 
-   **Noste:** This option is only present in ``C++`` traditional and new
+   **Note:** This option is only present in ``C++`` traditional and modern
    PSM.
 
 -  ``-useReadThread``
@@ -274,7 +274,7 @@ Test Parameters for Publishing and Subscribing Applications
    Process incoming data in groups, based on time, rather than
    individually.
 
-   Only used if the See ``-useReadThread`` option is specified on the
+   Only used if the ``-useReadThread`` is specified on the
    subscriber side.
 
    See :ref:`WaitSet Event Count and Delay`.
@@ -290,7 +290,7 @@ Test Parameters for Publishing and Subscribing Applications
    Process incoming data in groups, based on the number of samples,
    rather than individually.
 
-   Only used if the See ``-useReadThread`` option is specified on the
+   Only used if ``-useReadThread`` is specified on the
    subscriber side.
 
    See :ref:`WaitSet Event Count and Delay`.
@@ -343,11 +343,11 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** ``2 * dataLen up to 63000 bytes.``\  **Range:** ``28 - 63000 bytes``
 
--  ``-peer <address>|<addres>[:<id>]``
+-  ``-peer <address>|<address>[:<id>]``
 
    Adds a peer to the peer host address list. If ``-rawTransport`` is used, 
-   you can provide an optional subscriber ID. This argument may be repeated
-   to indicate multiple peers.
+   you can provide an optional subscriber ID. This argument may be repeated to 
+   indicate multiple peers. For example: -peer 1.1.1.1 -peer 2.2.2.2 -peer 3.3.3.3.
 
    **Default:**
    ``Not set. RTI Perftest will use the default initial peers (localhost, shared-memory and multicast).``
@@ -358,22 +358,23 @@ Test Parameters for Publishing and Subscribing Applications
     implementations.
 
     Set the priorities for the application threads:
-        X -- For the Main Thread, which will be the one sending the data, or 
-             for the Asynchronous thread if that one is used.
-        Y -- For the Receive Threads or, if the -useReadThread is used, for
-             the thread created to receive and process data.
-        Z -- For the rest of the threads created by the middleware: Event and
-             Database Threads.
 
-    Three default values: h (high), n (normal) and l (low) can be used
-    instead of numbers.
+    - **X** for the Main Thread, which will be the one sending the data, or 
+      for the Asynchronous thread if that one is used.
+    - **Y** for the Receive Threads or, if ``-useReadThread`` is used, for
+      the thread created to receive and process data.
+    - **Z** for the rest of the threads created by the middleware: Event and Database Threads.
 
-    To see what values can be used for the different threads, see
-    *RTI Connext DDS Core Libraries Platform Notes Version 5.3.1*.
+    This parameter accepts either three numeric values (whichever numeric values you choose) 
+    representing the priority of each of the threads or, instead, three characters representing 
+    the priorities. These characters are h (high), n (normal) and l (low). 
 
-    - Table 6.7 Thread-Priority Definitions for Linux Platforms
-    - Table 8.6 Thread-Priority Definitions for OS X Platforms
-    - Table 12.7 Thread-Priority Definitions for Windows Platforms
+    To see what values can be used for the different threads, see the 
+    following tables in the *RTI Connext DDS Core Libraries Platform Notes*:
+
+    - the "Thread-Priority Definitions for Linux Platforms" table
+    - the "Thread-Priority Definitions for OS X Platforms" table
+    - the "Thread-Priority Definitions for Windows Platforms" table
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro* or using the Raw Transport feature.
@@ -392,22 +393,22 @@ by using the transport-spececific command-line parameters.
 
    Set the transport to be used. The rest of the transports will be disabled.
 
-   | **Options Pro:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS`` and ``WAN``.
-   | **Default Pro:** ``Transport defined in the XML profile (UDPv4 and SHMEM if no changes).``
+   | **Options Pro:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS`` and ``WAN``
+   | **Default Pro:** Transport defined in the XML profile (``UDPv4`` and ``SHMEM`` if the XML profile is not changed)
 
-   | **Options Micro:** ``UDPv4``, ``SHMEM``.
+   | **Options Micro:** ``UDPv4``, ``SHMEM``
    | **Default Micro:** ``UDPv4``
 
-   | **Options Raw Transport:** ``UDPv4``, ``SHMEM``.
+   | **Options Raw Transport:** ``UDPv4``, ``SHMEM``
    | **Default Raw Transport:** ``UDPv4``
 
 -  ``-allowInterfaces <ipaddr> / -nic <ipaddr>``
 
-  Restrict RTI Connext DDS to sending output through this interface.
+  Restrict *RTI Connext DDS* to sending output through this interface.
   The value should be the IP address assigned to any of the available network
-  interfaces on the machine. On UNIX systems the name of the interface is also
-  valid. This command line parameter is mapped to the "allow_interfaces_list"
-  property in RTI Connext DDS.
+  interfaces on the machine. On UNIX systems, the name of the interface is also
+  valid. This command-line parameter is mapped to the **allow_interfaces_list**
+  property in *RTI Connext DDS*.
 
   By default, RTI Connext DDS will attempt to contact all possible
   subscribing nodes on all available network interfaces. Even on a
@@ -535,10 +536,10 @@ Test Parameters Only For Publishing Applications
    | **Range:** ``1 to 63000``
 
    For more information on batching data for high throughput, see the
-   **High Throughput design pattern** in the *RTI Connext DDS Core
+   **High Throughput for Streaming Data** design pattern in the *RTI Connext DDS Core
    Libraries Getting Started Guide*. See also: **How to Measure Latency
-   for a Given Throughput and the BATCH QosPolicy, Section 6.5.2** in
-   the *RTI Connext DDS Core Libraries Getting User’s Manual*.
+   for a Given Throughput** and the **BATCH QosPolicy** section in
+   the *RTI Connext DDS Core Libraries User’s Manual*.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.

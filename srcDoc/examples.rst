@@ -4,22 +4,24 @@
 Use-Cases and Examples
 ======================
 
+.. _section-command_line_examples:
+
 Example Command Lines for Running the Performance Test
 ======================================================
 
-The followings are examples of how to run the performance test for
-different use cases.
+The following are examples of how to run the performance test for
+different use cases:
 
 -  The tests below print final results only; if you want to see
    intermediate values, remove the ``-noprint`` argument from the
    command line.
 
--  If you are running on two unequal machines, i.e., one machine is faster
-   (has better processors) than another, you will see better performance
+-  If you are running on two unequal machines---i.e., one machine is faster
+   (has better processors) than another---you will see better performance
    by running the Publisher on the slower machine.
 
--  To measure CPU usage while running these tests, use "-cpu" argument
-   or TOP utility.
+-  To measure CPU usage while running these tests, use ``-cpu`` 
+   or the TOP utility.
 
 RTI Connext DDS Professional
 ----------------------------
@@ -413,10 +415,11 @@ By using a flow controller ``-flowController <default,1Gbps,10Gbps>``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Since the sample size is bigger than 63000 Bytes, *RTI Perftest* will
-enable Asynchronous Publishing. By enabling Asynchronous Publishing, you also make use of the
-default *FlowController*, which might not be optimal. It might be a
-good practice to specify a *FlowController* tailored for the network
-where the scenario is.
+enable Asynchronous Publishing. By enabling Asynchronous Publishing, you also 
+make use of the default FlowController, which might not be optimal. 
+Therefore, it is a good practice to also specify a FlowController that fits 
+with the characteristics (bandwidth, latency, etc.) of the network where the 
+*RTI Perftest* applications are going to run.
 
 *RTI Perftest* provides options to use a flow controller designed for a
 10Gbps network and a 1Gbps one. However, by accessing the
@@ -1046,14 +1049,14 @@ C++ (Traditional) API:
 
     ::
 
-        ./build.sh --platform x64Linux3gcc5.4.0 --nddshome /home/rti_connext_dds-5.3.0 --cpp-build --customType Test
+        ./build.sh --platform x64Linux3gcc5.4.0 --nddshome /home/rti_connext_dds-6.0.0 --cpp-build --customType Test
 
 4. Launch *RTI Perftest*.
 
     ::
 
         ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint
-        RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+        RTI Perftest 3.0.0 (RTI Connext DDS 6.0.0)
 
         Custom Type provided: 'Test'
 
@@ -1093,7 +1096,7 @@ C++ (Traditional) API:
     ::
 
         ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint
-        RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+        RTI Perftest 3.0.0 (RTI Connext DDS 6.0.0)
 
         Custom Type provided: 'Test'
 
@@ -1123,7 +1126,7 @@ C++ (Traditional) API:
     ::
 
         ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint -dynamicData
-        RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+        RTI Perftest 3.0.0 (RTI Connext DDS 6.0.0)
 
         Custom Type provided: 'Test'
 
@@ -1164,7 +1167,7 @@ C++ (Traditional) API:
     ::
 
         ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint -dynamicData
-        RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
+        RTI Perftest 3.0.0 (RTI Connext DDS 6.0.0)
 
         Custom Type provided: 'Test'
 
