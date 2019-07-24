@@ -2570,7 +2570,6 @@ template <typename T>
 DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::string qos_profile, std::string topic_name)
 {
     unsigned long long initial_samples = 0;
-    unsigned int qos_initial_samples = 0;
 
     #ifndef RTI_MICRO
     if (_factory->get_datawriter_qos_from_profile(
@@ -2800,7 +2799,6 @@ template <typename T>
 DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::string qos_profile, std::string topic_name)
 {
     unsigned long long initial_samples = 0;
-    unsigned int qos_initial_samples = 0;
 
     #ifndef RTI_MICRO
     if (_factory->get_datareader_qos_from_profile(

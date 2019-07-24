@@ -154,55 +154,63 @@ int perftest_cpp::Run(int argc, char *argv[])
     } else {
         if (_PM.get<int>("unbounded") == 0) {
             if (_PM.get<bool>("keyed")) {
+              #ifdef RTI_FLATDATA_AVAILABLE
                 if (_PM.get<bool>("flatdata")) {
-                    #ifdef RTI_FLATDATA_AVAILABLE
                     if (_PM.get<bool>("zerocopy")) {
                         _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>(true);
                     } else {
                         _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>();
                     }
-                    #endif //RTI_FLATDATA_AVAILABLE
                 } else {
                     _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
                 }
+              #else
+                _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
+              #endif //RTI_FLATDATA_AVAILABLE
             } else {
+              #ifdef RTI_FLATDATA_AVAILABLE
                 if (_PM.get<bool>("flatdata")) {
-                    #ifdef RTI_FLATDATA_AVAILABLE
                     if (_PM.get<bool>("zerocopy")) {
                         _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
                     } else {
                         _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
                     }
-                    #endif //RTI_FLATDATA_AVAILABLE
                 } else {
                     _MessagingImpl = new RTIDDSImpl<TestData_t>();
                 }
+              #else
+                _MessagingImpl = new RTIDDSImpl<TestData_t>();
+              #endif //RTI_FLATDATA_AVAILABLE
             }
         } else {
             if (_PM.get<bool>("keyed")) {
+              #ifdef RTI_FLATDATA_AVAILABLE
                 if (_PM.get<bool>("flatdata")) {
-                    #ifdef RTI_FLATDATA_AVAILABLE
                     if (_PM.get<bool>("zerocopy")) {
                         _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>(true);
                     } else {
                         _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
                     }
-                    #endif //RTI_FLATDATA_AVAILABLE
                 } else {
                     _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
                 }
+              #else
+                _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
+              #endif //RTI_FLATDATA_AVAILABLE
             } else {
+              #ifdef RTI_FLATDATA_AVAILABLE
                 if (_PM.get<bool>("flatdata")) {
-                    #ifdef RTI_FLATDATA_AVAILABLE
                     if (_PM.get<bool>("zerocopy")) {
                         _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>(true);
                     } else {
                         _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
                     }
-                    #endif //RTI_FLATDATA_AVAILABLE
                 } else {
                     _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
                 }
+              #else
+                _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
+              #endif //RTI_FLATDATA_AVAILABLE
             }
         }
     }
