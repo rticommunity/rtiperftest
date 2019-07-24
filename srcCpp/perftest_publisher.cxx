@@ -447,6 +447,15 @@ bool perftest_cpp::validate_input()
         _PM.set("useReadThread", true);
     }
 
+    // Manage the lowResolutionClock parameter
+    if (_PM.get<bool>("lowResolutionClock")
+                && _PM.get<unsigned long long>("latencyCount") != 1) {
+            fprintf(stderr,
+            "The -lowResolutionClock option should only be used if "
+            "latencyCount is 1. Ignoring command line option.\n");
+            _PM.set<bool>("lowResolutionClock", false);
+    }
+
     #ifdef RTI_FLATDATA_AVAILABLE
       if (_PM.get<bool>("zerocopy") && !_PM.get<bool>("flatdata")) {
           fprintf(stderr, "Zero Copy must be run along with Flat Data.\n");
@@ -597,7 +606,13 @@ void perftest_cpp::PrintConfiguration()
                          << _PM.get<unsigned long long>("numIter")
                          << "\n";
         }
-    } else  {
+
+        // Manage the lowResolutionClock parameter
+        if (_PM.get<bool>("lowResolutionClock")) {
+            stringStream << "\tLow resolution clock latency measurements.\n";
+        }
+
+    } else {
         if (_PM.get<unsigned long long>("dataLen") > MAX_SYNCHRONOUS_SIZE) {
             stringStream << "\tExpecting Large Data Type\n";
         }
@@ -1848,6 +1863,7 @@ int perftest_cpp::Publisher()
     bool sentPing = false;
 
     unsigned long long time_now = 0, time_last_check = 0, time_delta = 0;
+    unsigned long long startTestTime = 0;
     unsigned long pubRate_sample_period = 1;
     unsigned long rate = 0;
 
@@ -1916,12 +1932,28 @@ int perftest_cpp::Publisher()
             Timeout_scan
     };
 
+
+    /*
+     * If the machine where we are executing the publisher has a low resolution
+     * clock, this logic might not report accurate latency numbers. Therefore
+     * we are implementing a simple solution to get a rough estimation of the
+     * latency:
+     * Before sending the first sample we are taking the time and right after
+     * receiving the last pong we are taking the time again. We will assume
+     * that the average latency is equivalent to half of that time divided by
+     * the number of iterations we did (which assumes that every sample is
+     * answered -- that means that latencyCount = 1 -- Latency Test).
+     */
+
+    if (_PM.get<bool>("lowResolutionClock")) {
+        startTestTime = PerftestClock::getInstance().getTimeUsec();
+    }
+
     /********************
      *  Main sending loop
      */
-    for (unsigned long long loop = 0;
-            (isScan || (loop < numIter)) && (!_testCompleted);
-            ++loop) {
+    unsigned long long loop = 0;
+    for (loop = 0; (isScan || (loop < numIter)) && (!_testCompleted); ++loop) {
 
         /* This if has been included to perform the control loop
            that modifies the publication rate according to -pubRate */
@@ -2076,6 +2108,17 @@ int perftest_cpp::Publisher()
     // In case of batching, flush
     writer->Flush();
 
+    /*
+     * This is where we report the time when using the low resolution clock
+     * feature, as mentioned above, this time is a rough estimation.
+     */
+    if (_PM.get<bool>("lowResolutionClock")) {
+        fprintf(stdout,
+                "Average Latency time = %llu (us)\n",
+                (PerftestClock::getInstance().getTimeUsec()
+                    - startTestTime)
+                        / (2 * loop));
+    }
     // Test has finished, send end of test message, send multiple
     // times in case of best effort
     if (FINISHED_SIZE > MAX_PERFTEST_SAMPLE_SIZE) {

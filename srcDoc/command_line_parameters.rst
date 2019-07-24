@@ -37,7 +37,6 @@ For additional information on setting the parameters, see sections:
 -  :ref:`WaitSet Event Count and Delay`
 -  :ref:`How to Measure Latency for a Given Throughput`
 -  :ref:`Auto Tuning and Turbo Mode`
--  :ref:`Optimizing Your OS For Network Performance`
 
 .. _Test Parameters for Publishing and Subscribing Applications:
 
@@ -597,6 +596,27 @@ Test Parameters Only For Publishing Applications
 
    **Default:** ``false``
 
+-  ``-lowResolutionClock``
+
+   This option enables the measurement of the latency for systems where the
+   clock resolution is not good enough and the measurements per samples are
+   not accurate.
+
+   If the machine where *RTI Perftest* is being executed has a low resolution
+   clock, the regular logic might not report accurate latency numbers. Therefore
+   *RTI Perftest* implements a simple solution to get a rough estimation of the
+   latency:
+
+   Before sending the first sample *RTI Perftest* takes the time and right after
+   receiving the last pong the time is taken again. Then, under the assumption that
+   the processing time is negligible, the average latency is calculated as half of 
+   the taken time divided by the number of samples sent.
+   
+   This calculation does only make sense if latencyCount = 1 (Latency Test), since
+   it assumes that every single ping is answered.
+
+   **Default:** ``not set``
+
 -  ``-numIter <count>``
 
    Number of samples to send.
@@ -1093,53 +1113,3 @@ is ignored.
 
 To achieve the best latency under maximum throughput conditions, use See
 ``-enableAutoThrottle`` and See ``-enableTurboMode`` in combination.
-
-.. _Optimizing Your OS For Network Performance:
-
-Optimizing Your OS For Network Performance
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The network stacks of popular operating systems are not always tuned for
-maximum performance out of the box. RTI has found that the following
-configuration changes frequently improve performance for a broad set of
-demanding applications. Consider testing your network performance with
-and without these changes to learn if they can benefit your system.
-
-Optimizing Linux Systems
-************************
-
-Edit the file ``/etc/sysctl.conf`` and add the following:
-
-::
-
-    net.core.wmem_max = 16777216
-    net.core.wmem_default = 131072
-    net.core.rmem_max = 16777216
-    net.core.rmem_default = 131072
-    net.ipv4.tcp_rmem = 4096 131072 16777216
-    net.ipv4.tcp_wmem = 4096 131072 16777216
-    net.ipv4.tcp_mem = 4096 131072 16777216
-
-    net.core.netdev_max_backlog = 30000
-    net.ipv4.ipfrag_high_threshold = 8388608
-
-    run /sbin/sysctl -p
-
-Optimizing Windows Systems
-**************************
-
-1. From the Start button, select Run..., then enter ``regedit``.
-
-2. Change this entry:
-   ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\ Services\Tcpip\Parameters``
-
-   -  Add the ``DWORD`` key: ``MaximumReassemblyHeaders``
-   -  Set the value to ``0xffff`` (this is the max value).
-
-3. Change this entry:
-   ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\ Services\AFD\Parameters``
-
-   -  Add the ``DWORD`` key: ``FastSendDatagramThreshold``
-   -  Set the value to ``65536`` (``0x10000``).
-
-4. Reboot your machine for the changes to take effect.

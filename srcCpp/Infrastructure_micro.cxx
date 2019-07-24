@@ -25,9 +25,23 @@ namespace std {
 
 PerftestClock::PerftestClock()
 {
+  #ifndef RTI_WIN32
+
     OSAPI_NtpTime_from_millisec(&clockTimeAux, 0, 0);
     clockSec = 0;
     clockUsec = 0;
+
+  #else
+    _frequency = 0.0;
+    LARGE_INTEGER ticks;
+    if(!QueryPerformanceFrequency(&ticks)){
+        printf("QueryPerformanceFrequency failed!\n");
+    }
+
+    _frequency = double(ticks.QuadPart);
+
+  #endif
+
 }
 
 PerftestClock::~PerftestClock()
@@ -43,6 +57,8 @@ PerftestClock &PerftestClock::getInstance()
 unsigned long long PerftestClock::getTimeUsec()
 {
 
+  #ifndef RTI_WIN32
+
     if (!OSAPI_System_get_time((OSAPI_NtpTime*)&clockTimeAux)) {
         return 0;
     }
@@ -51,7 +67,30 @@ unsigned long long PerftestClock::getTimeUsec()
             &clockSec,
             &clockUsec,
             (struct OSAPI_NtpTime*)&clockTimeAux);
-    return clockUsec + 1000000 * clockSec;
+    return clockUsec + (unsigned long long) 1000000 * clockSec;
+
+  #else
+    /*
+     * RTI Connext DDS Micro takes the timestamp by GetSystemTimeAsFileTime,
+     * this function shouldhave a resolution of 100 nanoseconds but
+     * GetSystemTimeAsFileTime is a non-realtime time & busy loop (very fast)
+     * in implementation. The system time is obtained from SharedUserData, which
+     * is fill by system on every hardware clock interruption. MICRO-2099
+     *
+     * More info here:
+     * https://docs.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps
+     *
+     * In order to obtain enough precission for a latencyTest we are going to
+     * use the native API QueryPerformanceCounter function measured in
+     * microseconds as RTI Connext DDS Pro does.
+     */
+    LARGE_INTEGER ticks;
+    QueryPerformanceCounter(&ticks);
+    return ticks.QuadPart / (unsigned long long) (_frequency /1000000.0);
+
+  #endif
+
+
 }
 
 void PerftestClock::milliSleep(unsigned int millisec)

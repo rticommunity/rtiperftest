@@ -19,6 +19,10 @@
   #include "PerftestSecurity.h"
 #endif
 
+#ifdef RTI_WIN32
+  #include "windows.h"
+#endif
+
 #include <sstream>
 
 /********************************************************************/
@@ -50,9 +54,13 @@ inline RTI_BOOL PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
 class PerftestClock {
 
   private:
+  #ifndef RTI_WIN32
     OSAPI_NtpTime clockTimeAux;
     RTI_INT32 clockSec;
     RTI_UINT32 clockUsec;
+  #else
+    double _frequency;
+  #endif
 
   public:
     PerftestClock();

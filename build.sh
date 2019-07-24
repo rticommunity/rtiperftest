@@ -696,9 +696,23 @@ function build_cpp()
     cp -f "${perftest_cpp_name_beginning}${executable_extension}" \
     "${destination_folder}/perftest_cpp${executable_extension}"
 
-    clean_src_cpp_common
-}
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure copying code for ${classic_cpp_lang_string}."
+        clean_src_cpp_common
+        exit -1
+    else
+        echo -e "${INFO_TAG} Copy successful for ${classic_cpp_lang_string}."
+        clean_src_cpp_common
+    fi
 
+    if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
+            echo -e "${INFO_TAG} Code compiled dynamically, Add \"${NDDSHOME}/lib/${platform}\""
+            if [ "${USE_SECURE_LIBS}" == "1" ]; then
+                echo -e "        and <OPENSSL_HOME>/${RELEASE_DEBUG}/lib"
+            fi
+            echo -e "        to your LD_LIBRARY_PATH or DYLD_LIBRARY PATH"
+    fi
+}
 
 function build_micro_cpp()
 {
@@ -815,8 +829,14 @@ function build_micro_cpp()
     fi
     cp -f "${perftest_cpp_name_beginning}${executable_extension}" \
     "${destination_folder}/perftest_cpp_micro${executable_extension}"
-
-    clean_src_cpp_common
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure copying code for ${classic_cpp_lang_string}."
+        clean_src_cpp_common
+        exit -1
+    else
+        echo -e "${INFO_TAG} Copy successful for ${classic_cpp_lang_string}."
+        clean_src_cpp_common
+    fi
 }
 
 function build_cpp03()
@@ -955,8 +975,22 @@ function build_cpp03()
     fi
     cp -f "${perftest_cpp03_name_beginning}${executable_extension}" \
     "${destination_folder}/perftest_cpp03${executable_extension}"
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure copying code for ${classic_cpp_lang_string}."
+        clean_src_cpp_common
+        exit -1
+    else
+        echo -e "${INFO_TAG} Copy successful for ${classic_cpp_lang_string}."
+        clean_src_cpp_common
+    fi
 
-    clean_src_cpp_common
+    if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
+            echo -e "${INFO_TAG} Code compiled dynamically, Add \"${NDDSHOME}/lib/${platform}\""
+            if [ "${USE_SECURE_LIBS}" == "1" ]; then
+                echo -e "        and <OPENSSL_HOME>/${RELEASE_DEBUG}/lib"
+            fi
+            echo -e "        to your LD_LIBRARY_PATH or DYLD_LIBRARY PATH"
+    fi
 }
 
 function build_java()

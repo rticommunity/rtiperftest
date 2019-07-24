@@ -642,6 +642,28 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("writerStats", writerStats);
 
+
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    Parameter<bool> *lowResolutionClock = new Parameter<bool>(false);
+    lowResolutionClock->set_command_line_argument("-lowResolutionClock", "");
+    lowResolutionClock->set_description(
+            "Reports at the end of the test the average\n"
+            "latency time to send all the samples.\n"
+            "This option should be used if the machine's\n"
+            "clock is not precise enough and the latency\n"
+            "measurements report 0 most of the times.\n"
+            "This should only be used if latencyCount = 1\n"
+            "(Latency Test)\n"
+            "Default: Not set");
+    lowResolutionClock->set_type(T_BOOL);
+    lowResolutionClock->set_extra_argument(NO);
+    lowResolutionClock->set_group(PUB);
+    lowResolutionClock->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
+    create("lowResolutionClock", lowResolutionClock);
+  #endif
+
     Parameter<long> *writeInstance =
             new Parameter<long>(-1); // (-1) By default use round-robin (-1)
     writeInstance->set_command_line_argument("-writeInstance", "<instance>");
@@ -722,10 +744,18 @@ void ParameterManager::initialize()
     ////////////////////////////////////////////////////////////////////////////
     // TRANSPORT PARAMETER:
     Parameter<std::string> *nic = new Parameter<std::string>();
-    nic->set_command_line_argument("-nic", "<ipaddr>");
+    nic->set_command_line_argument("-nic", "<ipaddr/name>");
     nic->set_description(
-            "Use only the nic specified by <ipaddr>.\n"
-            "If not specified, use all available interfaces");
+            "Use only the NIC specified by <ipaddr> to receive\n"
+            "packets. This will be the only address announced\n"
+            "at discovery time. If not specified, use all"
+            "available interfaces"
+          #ifdef RTI_MICRO
+            "\n"
+            "When using RTI Connext DDS Micro, always specify the\n"
+            "name, not the IP Address."
+          #endif
+            );
     nic->set_type(T_STR);
     nic->set_extra_argument(YES);
     nic->set_group(TRANSPORT);
@@ -738,8 +768,16 @@ void ParameterManager::initialize()
     Parameter<std::string> *allowInterfaces = new Parameter<std::string>();
     allowInterfaces->set_command_line_argument("-allowInterfaces", "<ipaddr>");
     allowInterfaces->set_description(
-            "Use only the nic specified by <ipaddr>.\n"
-            "If not specified, use all available interfaces");
+            "Use only the NIC specified by <ipaddr> to receive\n"
+            "packets. This will be the only address announced\n"
+            "at discovery time. If not specified, use all"
+            "available interfaces"
+          #ifdef RTI_MICRO
+            "\n"
+            "When using RTI Connext DDS Micro, always specify the\n"
+            "name, not the IP Address."
+          #endif
+            );
     allowInterfaces->set_type(T_STR);
     allowInterfaces->set_extra_argument(YES);
     allowInterfaces->set_group(TRANSPORT);
