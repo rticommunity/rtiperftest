@@ -795,6 +795,8 @@ class ThroughputListener : public IMessagingCB
             std::string outputCpu = "";
             if (showCpu) {
                 outputCpu = cpu.get_cpu_average();
+                cpu = CpuMonitor();
+                cpu.initialize();
             }
             printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
                    "Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%) %s\n",
@@ -1285,6 +1287,8 @@ public:
 
         if (showCpu) {
             outputCpu = cpu.get_cpu_average();
+            cpu = CpuMonitor();
+            cpu.initialize();
         }
 
         printf("Length: %5d  Latency: Ave %6.0lf us  Std %6.1lf us  "
