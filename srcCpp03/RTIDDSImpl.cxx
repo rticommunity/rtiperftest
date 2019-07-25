@@ -261,7 +261,7 @@ bool RTIDDSImpl<T>::validate_input()
 
     // Manage transport parameter
     if (!_transport.validate_input()) {
-         std::cerr << "[Error] Failure validation the transport options." 
+         std::cerr << "[Error] Failure validation the transport options."
                    << std::endl;
         return false;
     };
@@ -943,7 +943,6 @@ public:
 #endif
 
 class DynamicDataReceiverListener: public ReceiverListenerBase<DynamicData> {
-
 public:
     DynamicDataReceiverListener(IMessagingCB *callback) :
         ReceiverListenerBase<DynamicData>(callback) {
@@ -1057,7 +1056,6 @@ public:
     {}
 
     TestMessage *ReceiveMessage() {
-
         int seq_length;
 
         while (true) {
@@ -1252,8 +1250,6 @@ public:
 #endif
 
 class RTIDynamicDataSubscriber: public RTISubscriberBase<DynamicData> {
-
-
 public:
     RTIDynamicDataSubscriber(
             dds::sub::DataReader<DynamicData> reader,

@@ -88,7 +88,6 @@ struct TestDataKeyedLarge_t {
   #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 
-
 #ifdef RTI_FLATDATA_AVAILABLE
 /*
  * FLATDATA
@@ -110,7 +109,6 @@ struct TestData_FlatData_t {
     // in the the sample that we send on the wire
     long custom_type_size;
   #endif
-
 };
 
 @mutable
@@ -168,7 +166,6 @@ struct TestDataKeyedLarge_FlatData_t {
   #endif
 };
 
-
 /*
  * ZERO COPY WITH FLATDATA
  */
@@ -190,7 +187,6 @@ struct TestData_ZeroCopy_w_FlatData_t {
     // in the the sample that we send on the wire
     long custom_type_size;
   #endif
-
 };
 
 @mutable
