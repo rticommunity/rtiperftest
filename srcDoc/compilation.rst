@@ -128,6 +128,11 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | Not available when compiling for  |
 |                      |           | *RTI Connext DDS Micro.           |
 +----------------------+-----------+-----------------------------------+
+| --flatdata-max-size  | Optional  | Specify the maximum size in Bytes |
+| <size>               |           | of the sample to be sent when     |
+|                      |           | using FlatData language binding.  |
+|                      |           | Default: 10485760                 |
++----------------------+-----------+-----------------------------------+
 | --debug              | Optional  | Compile using the RTI Connext DDS |
 |                      |           | debug libraries. Default: Release |
 |                      |           | Libraries.                        |
@@ -251,6 +256,15 @@ examples:
    ::
 
        ./build.sh --platform x64Darwin15clang7.0 --secure --dynamic
+
+-  Generation and compilation for a given architecture 
+   (``x64Linux4gcc7.3.0``) for all supported languages, modifiying the default 
+   maximum size of a Perftest type sample when using *RTI FlatData* language 
+   binding to 100MB (104857600B). 
+
+   ::
+
+       ./build.sh --platform x64Linux4gcc7.3.0 --flatdata-max-size 104857600
 
 -  Generation and cross-compilation for a non-native architecture (``armv8Linux4.4gcc5.4.0``).
    Note how you can specify the Compiler/Linker used by *Rtiddsgen*.
@@ -393,6 +407,11 @@ The ``build.bat`` script accepts the following list of parameters:
 |                      |           | dynamic libraries. Default:       |
 |                      |           | Static Libraries.                 |
 +----------------------+-----------+-----------------------------------+
+| --flatdata-max-size  | Optional  | Specify the maximum size in Bytes |
+| <size>               |           | of the sample to be sent when     |
+|                      |           | using FlatData language binding.  |
+|                      |           | Default: 10485760                 |
++----------------------+-----------+-----------------------------------+
 | --debug              | Optional  | Compile using the RTI Connext DDS |
 |                      |           | debug libraries. Default: Release |
 |                      |           | Libraries.                        |
@@ -498,6 +517,15 @@ examples:
    ::
 
        ./build.bat --platform x64Win64VS2012 --secure --dynamic
+
+-  Generation and compilation for a given architecture 
+   (``x64Win64VS2012``) for all supported languages, modifiying the default
+   maximum size of a Perftest type sample when using *RTI FlatData* language 
+   binding to 100MB (104857600B). 
+
+   ::
+
+       ./build.bat -platform x64Win64VS2012 --flatdata-max-size 104857600
 
 -  Generation and compilation for a given architecture
    (``x64Win64VS2012``) for Micro, specifying the RTIMEHOME.
