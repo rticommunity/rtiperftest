@@ -2222,7 +2222,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
             DDS_INCONSISTENT_TOPIC_STATUS |
             DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
             DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
-
+    
   #ifndef RTI_MICRO
     if (_participant == NULL || _loggerDevice.checkShmemErrors()) {
         if (_loggerDevice.checkShmemErrors()) {
@@ -3453,8 +3453,6 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_serialize_time_cost_override(
 
     delete[] buffer;
 
-    std::cout << "Serialize" << std::endl;
-
     return total_time / (float) iters;
 
     return 0.0;
@@ -3470,8 +3468,6 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_deserialize_time_cost_override(
 
     int serializedSize = 27 + RTI_FLATDATA_MAX_SIZE;
     unsigned char *buffer = new unsigned char[serializedSize];
-
-    std::cout << "Deserialize" << std::endl;
 
     Builder builder(buffer, serializedSize);
 

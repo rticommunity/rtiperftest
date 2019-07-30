@@ -279,7 +279,7 @@ void configureShmemTransport(
     // qos_properties["dds.transport.shmem.builtin.received_message_count_max"] =
     //         string_stream_object.str();
 
-    /** TODO: From user manual p780:
+    /** From user manual p780:
      * To optimize memory usage, specify a receive queue size less than that required to hold the maximum
      * number of messages which are all of the maximum size.
      * 
@@ -292,14 +292,49 @@ void configureShmemTransport(
      * 100K bytes. This allows you to optimize the memory usage of the plugin for the average case and 
      * yet allow the plugin to handle the extreme case.
      */
+    std::cout << "Send Queue Size: " << _PM->get<int>("sendQueueSize") << std::endl;
+    std::cout << "Flow Controller: " << _PM->get<std::string>("flowController") << std::endl;
+    std::cout << "Data Len:" << _PM->get<unsigned long long>("dataLen") << std::endl;
+    
     std::ostringstream ss;
+    const int perftest_overhead = 27;
+    const int rtps_overhead = 512;
+    std::string flow_controller = _PM->get<std::string>("flowController");
+    int parent_msg_size_max = atoi(qos_properties["dds.transport.shmem.builtin.parent.message_size_max"].c_str());
+    int flow_controller_token_size = atoi(
+            qos_properties["dds.flow_controller.token_bucket." + flow_controller + ".token_bucket.bytes_per_token"].c_str());
+
+    // If there is no default token size set
+    if (flow_controller_token_size == 0) flow_controller_token_size = INT_MAX;
+
+    int fragment_size = std::min(
+            parent_msg_size_max - rtps_overhead, 
+            flow_controller_token_size) ;
+
+    // max(1, (sample_serialized_size/fragment_size))
+    int rtps_messages_per_sample = std::max(
+            1ull, (perftest_overhead + _PM->get<unsigned long long>("dataLen")) / fragment_size);
+
+    int received_message_count_max = 
+            2 * _PM->get<int>("sendQueueSize") * rtps_messages_per_sample;
+
+    // min(60MB, received_message_count_max * rtps_message_size)
+    int receive_buffer_size = std::min(
+        60000000, received_message_count_max * (rtps_overhead + fragment_size));
 
     // Avoid bottleneck due to SHMEM.
+    ss << received_message_count_max;
     qos_properties["dds.transport.shmem.builtin.received_message_count_max"] = 
-        "1000";
+        ss.str();
 
+    ss.str("");
+    ss.clear();
+    ss << receive_buffer_size;
     qos_properties["dds.transport.shmem.builtin.receive_buffer_size"] = 
-        "60000000";
+        ss.str();
+
+    std::cout << "Count_Max: " << qos_properties["dds.transport.shmem.builtin.received_message_count_max"] << std::endl;
+    std::cout << "Buffer_Size: " << qos_properties["dds.transport.shmem.builtin.receive_buffer_size"] << std::endl;
 }
 
 bool configureTransport(
@@ -315,7 +350,6 @@ bool configureTransport(
      * provided by the Participant Qos, so first we read it from there and
      * update the value of transportConfig.kind with whatever was already set.
      */
-
 
     if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
 
