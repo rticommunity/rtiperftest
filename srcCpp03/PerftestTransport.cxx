@@ -278,7 +278,7 @@ void configureShmemTransport(
     RTI_UINT64 pid = RTIOsapiProcess_getId();
     RTIBool success = RTI_FALSE;
     int retcode;
-    int key = 2;
+    int key = rand();
     int step = 1048576; // 1MB
     int maxBufferSize = 60817408; // 58MB
 

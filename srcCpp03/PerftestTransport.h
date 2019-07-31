@@ -14,6 +14,7 @@
 #include <dds/dds.hpp>
 #include "osapi/osapi_process.h"
 #include "osapi/osapi_sharedMemorySegment.h"
+#include <stdlib.h>
 
 /******************************************************************************/
 
