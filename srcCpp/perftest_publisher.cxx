@@ -457,9 +457,9 @@ bool perftest_cpp::validate_input()
     }
 
     #ifdef RTI_FLATDATA_AVAILABLE
+      // Automatically enable FlatData when using Zero Copy
       if (_PM.get<bool>("zerocopy") && !_PM.get<bool>("flatdata")) {
-          fprintf(stderr, "Zero Copy must be run along with Flat Data.\n");
-          return false;
+           _PM.set<bool>("flatdata", true);
       }
 
       if (_PM.get<bool>("zerocopy") && 
