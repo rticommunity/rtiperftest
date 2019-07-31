@@ -277,24 +277,29 @@ void configureShmemTransport(
     RTIOsapiSharedMemorySegmentHandle handle;
     RTI_UINT64 pid = RTIOsapiProcess_getId();
     RTIBool success = RTI_FALSE;
-    int *retcode = NULL;
-    int key = 1;
+    int retcode;
+    int key = 2;
     int step = 1048576; // 1MB
-    int maxSize = 60817408; // 58MB
-    int maxBufferSize;    
+    int maxBufferSize = 60817408; // 58MB
 
-    for (maxBufferSize = maxSize; maxBufferSize > 0 && !success; maxBufferSize -= step) {
+    do {
         // Reset handles to known state
         RTIOsapiMemory_zero(&handle,
                 sizeof(struct RTIOsapiSharedMemorySegmentHandle));
 
         success = RTIOsapiSharedMemorySegment_create(
-                &handle, retcode, key, maxBufferSize, pid);
-        
+                &handle, &retcode, key, maxBufferSize, pid);
+
         RTIOsapiSharedMemorySegment_delete(&handle);
-    }
+
+        maxBufferSize -= step;
+    } while (maxBufferSize > 0 && success == RTI_FALSE);
 
     std::cout << "Maximum SHMEM allocable size: " << maxBufferSize << " Bytes." << std::endl;
+
+    if (success && !RTIOsapiSharedMemorySegment_delete(&handle)) {
+        std::cout << "Failure deleting segment (size: " << maxBufferSize << ")" << std::endl;
+    }
 
     /** From user manual p780:
      * To optimize memory usage, specify a receive queue size less than that required to hold the maximum
