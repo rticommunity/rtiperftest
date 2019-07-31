@@ -276,19 +276,19 @@ void configureShmemTransport(
      */
     RTIOsapiSharedMemorySegmentHandle handle;
     RTI_UINT64 pid = RTIOsapiProcess_getId();
-    RTIBool failed = RTI_TRUE;
+    RTIBool success = RTI_FALSE;
     int *retcode = NULL;
     int key = 1;
     int step = 1048576; // 1MB
     int maxSize = 60817408; // 58MB
     int maxBufferSize;    
 
-    for (maxBufferSize = maxSize; maxBufferSize > 0 && failed; maxBufferSize -= step) {
+    for (maxBufferSize = maxSize; maxBufferSize > 0 && !success; maxBufferSize -= step) {
         // Reset handles to known state
         RTIOsapiMemory_zero(&handle,
                 sizeof(struct RTIOsapiSharedMemorySegmentHandle));
 
-        failed = RTIOsapiSharedMemorySegment_create(
+        success = RTIOsapiSharedMemorySegment_create(
                 &handle, retcode, key, maxBufferSize, pid);
         
         RTIOsapiSharedMemorySegment_delete(&handle);
