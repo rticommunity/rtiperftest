@@ -168,8 +168,8 @@ Test Parameters for Publishing and Subscribing Applications
    Enable the use of multicast. In addition, the Datawriter heartbeats
    will be sent using multicast instead of unicast.
 
-   The <address> will be used by the 3 topics **latency:**, **throughput:**
-   and **announcement:**.
+   The <address> will be used by the 3 topics **latency**, **throughput**
+   and **announcement**.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
