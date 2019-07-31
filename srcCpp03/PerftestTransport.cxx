@@ -279,13 +279,11 @@ void configureShmemTransport(
     RTIBool failed = RTI_FALSE;
     int *retcode = NULL;
     int key = 1;
-    int minSize = 1048576; // 1MB
-    int maxSize = 60000000; // 60MB
-    int maxBufferSize = minSize;    
+    int step = 1048576; // 1MB
+    int maxSize = 60817408; // 58MB
+    int maxBufferSize = maxSize;    
 
-    for (int i = 1; maxBufferSize < maxSize && failed == RTI_FALSE; ++i) {
-        maxBufferSize = minSize * i;
-
+    for (maxBufferSize = maxSize; maxBufferSize > 0 && failed; maxBufferSize -= step) {
         // Reset handles to known state
         RTIOsapiMemory_zero(&handle,
                 sizeof(struct RTIOsapiSharedMemorySegmentHandle));
