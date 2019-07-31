@@ -510,12 +510,12 @@ bool configureShmemTransport(
      */
     RTIOsapiSharedMemorySegmentHandle handle;
     RTI_UINT64 pid = RTIOsapiProcess_getId();
-    RTIBool failed = RTI_FALSE;
+    RTIBool failed = RTI_TRUE;
     int *retcode = NULL;
     int key = 1;
     int step = 1048576; // 1MB
     int maxSize = 60817408; // 58MB
-    int maxBufferSize = maxSize;    
+    int maxBufferSize;    
 
     for (maxBufferSize = maxSize; maxBufferSize > 0 && failed; maxBufferSize -= step) {
         // Reset handles to known state
