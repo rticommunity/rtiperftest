@@ -8,6 +8,8 @@
 
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
+#include "osapi/osapi_process.h"
+#include "osapi/osapi_sharedMemorySegment.h"
 #include "ndds/ndds_cpp.h"
 #include "PerftestTransport.h"
 

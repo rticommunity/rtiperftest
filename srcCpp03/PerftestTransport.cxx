@@ -267,17 +267,36 @@ void configureShmemTransport(
         std::map<std::string, std::string> &qos_properties,
         ParameterManager *_PM)
 {
-    // Number of messages that can be buffered in the receive queue.
-    // int received_message_count_max = 1024 * 1024 * 2
-    //         / (int) _PM->get<unsigned long long>("dataLen");
-    // if (received_message_count_max < 1) {
-    //     received_message_count_max = 1;
-    // }
+    /** 
+     * The maximum size of a SHMEM segment highly depends on the platform.
+     * So that, we need to find out the maximum allocable space to avoid 
+     * runtime errors.
+     * 
+     * Perform an incremental search of allocable space in range (minSize, maxSize).
+     */
+    RTIOsapiSharedMemorySegmentHandle handle;
+    RTI_UINT64 pid = RTIOsapiProcess_getId();
+    RTIBool failed = RTI_FALSE;
+    int *retcode = NULL;
+    int key = 1;
+    int minSize = 1048576; // 1MB
+    int maxSize = 60000000; // 60MB
+    int maxBufferSize = minSize;    
 
-    // std::ostringstream string_stream_object;
-    // string_stream_object << received_message_count_max;
-    // qos_properties["dds.transport.shmem.builtin.received_message_count_max"] =
-    //         string_stream_object.str();
+    for (int i = 1; maxBufferSize < maxSize && failed == RTI_FALSE; ++i) {
+        maxBufferSize = minSize * i;
+
+        // Reset handles to known state
+        RTIOsapiMemory_zero(&handle,
+                sizeof(struct RTIOsapiSharedMemorySegmentHandle));
+
+        failed = RTIOsapiSharedMemorySegment_create(
+                &handle, retcode, key, maxBufferSize, pid);
+        
+        RTIOsapiSharedMemorySegment_delete(&handle);
+    }
+
+    std::cout << "Maximum SHMEM allocable size: " << maxBufferSize << " Bytes." << std::endl;
 
     /** From user manual p780:
      * To optimize memory usage, specify a receive queue size less than that required to hold the maximum
@@ -293,7 +312,6 @@ void configureShmemTransport(
      * yet allow the plugin to handle the extreme case.
      */
     std::cout << "Send Queue Size: " << _PM->get<int>("sendQueueSize") << std::endl;
-    std::cout << "Flow Controller: " << _PM->get<std::string>("flowController") << std::endl;
     std::cout << "Data Len:" << _PM->get<unsigned long long>("dataLen") << std::endl;
     
     std::ostringstream ss;
@@ -318,9 +336,9 @@ void configureShmemTransport(
     int received_message_count_max = 
             2 * _PM->get<int>("sendQueueSize") * rtps_messages_per_sample;
 
-    // min(60MB, received_message_count_max * rtps_message_size)
+    // min(maxBufferSize, received_message_count_max * rtps_message_size)
     int receive_buffer_size = std::min(
-        60000000, received_message_count_max * (rtps_overhead + fragment_size));
+        maxBufferSize, received_message_count_max * (rtps_overhead + fragment_size));
 
     // Avoid bottleneck due to SHMEM.
     ss << received_message_count_max;

@@ -501,46 +501,126 @@ bool configureShmemTransport(
         DDS_DomainParticipantQos& qos,
         ParameterManager *_PM)
 {
-    // Number of messages that can be buffered in the receive queue.
-    // int received_message_count_max = 1024 * 1024 * 2
-    //         / (int) _PM->get<unsigned long long>("dataLen");
-    // if (received_message_count_max < 1) {
-    //     received_message_count_max = 1;
-    // }
+    /** 
+     * The maximum size of a SHMEM segment highly depends on the platform.
+     * So that, we need to find out the maximum allocable space to avoid 
+     * runtime errors.
+     * 
+     * Perform an incremental search of allocable space in range (minSize, maxSize).
+     */
+    RTIOsapiSharedMemorySegmentHandle handle;
+    RTI_UINT64 pid = RTIOsapiProcess_getId();
+    RTIBool failed = RTI_FALSE;
+    int *retcode = NULL;
+    int key = 1;
+    int minSize = 1048576; // 1MB
+    int maxSize = 60000000; // 60MB
+    int maxBufferSize = minSize;    
 
-    // std::ostringstream string_stream_object;
-    // string_stream_object << received_message_count_max;
-    // if (!assertPropertyToParticipantQos(
-    //         qos,
-    //         "dds.transport.shmem.builtin.received_message_count_max",
-    //         string_stream_object.str())) {
-    //     return false;
-    // }
+    for (int i = 1; maxBufferSize < maxSize && failed == RTI_FALSE; ++i) {
+        maxBufferSize = minSize * i;
 
-    /** TODO: From user manual p780
+        // Reset handles to known state
+        RTIOsapiMemory_zero(&handle,
+                sizeof(struct RTIOsapiSharedMemorySegmentHandle));
+
+        failed = RTIOsapiSharedMemorySegment_create(
+                &handle, retcode, key, maxBufferSize, pid);
+        
+        RTIOsapiSharedMemorySegment_delete(&handle);
+    }
+
+    std::cout << "Maximum SHMEM allocable size: " << maxBufferSize << " Bytes." << std::endl;
+
+    /** From user manual p780:
      * To optimize memory usage, specify a receive queue size less than that required to hold the maximum
      * number of messages which are all of the maximum size.
      * 
+     * In most situations, the average message size may be far less than the maximum message size. 
+     * So for example, if the maximum message size is 64K bytes, and you configure the plugin to buffer 
+     * at least 10 messages, then 640K bytes of memory would be needed if all messages were 64K bytes. 
+     * Should this be desired, then receive_buffer_size should be set to 640K bytes.
      * 
+     * However, if the average message size is only 10K bytes, then you could set the receive_buffer_size to
+     * 100K bytes. This allows you to optimize the memory usage of the plugin for the average case and 
+     * yet allow the plugin to handle the extreme case.
      */
+    DDS_Property_t *prop = DDSPropertyQosPolicyHelper::lookup_property(qos.property,
+                "dds.transport.shmem.builtin.parent.message_size_max");
+
+    std::cout << "Send Queue Size: " << _PM->get<int>("sendQueueSize") << std::endl;
+    std::cout << "Flow Controller: " << _PM->get<std::string>("flowController") << std::endl;
+    std::cout << "Data Len:" << _PM->get<unsigned long long>("dataLen") << std::endl;
+    
+    std::ostringstream ss;
+    const int perftest_overhead = 27;
+    const int rtps_overhead = 512;
+    std::string flow_controller = _PM->get<std::string>("flowController");
+    int parent_msg_size_max = atoi(prop->value);
+    // int flow_controller_token_size = atoi(
+    //         qos_properties["dds.flow_controller.token_bucket." + flow_controller + ".token_bucket.bytes_per_token"].c_str());
+    int flow_controller_token_size = 0;
+
+    // If there is no default token size set
+    if (flow_controller_token_size == 0) flow_controller_token_size = INT_MAX;
+
+    int fragment_size = std::min(
+            parent_msg_size_max - rtps_overhead, 
+            flow_controller_token_size) ;
+
+    // max(1, (sample_serialized_size/fragment_size))
+    int rtps_messages_per_sample = std::max(
+            1ull, (perftest_overhead + _PM->get<unsigned long long>("dataLen")) / fragment_size);
+
+    int received_message_count_max = 
+            2 * _PM->get<int>("sendQueueSize") * rtps_messages_per_sample;
+
+    // min(maxBufferSize, received_message_count_max * rtps_message_size)
+    int receive_buffer_size = std::min(
+        maxBufferSize, received_message_count_max * (rtps_overhead + fragment_size));
 
     // Avoid bottleneck due to SHMEM.
-    std::ostringstream ss;
-    ss << 2 * _PM->get<int>("sendQueueSize");
-
+    ss << received_message_count_max;
     if (!assertPropertyToParticipantQos(
             qos,
             "dds.transport.shmem.builtin.received_message_count_max",
-            "1000")) {
+            ss.str())) {
         return false;
     }
 
+    /**
+     * OSAPI
+     * SHMEMegment_create and do an incremental search of 1MB
+     * avoid on MICRO.
+     * 
+     * Print on perftest header
+     * If you cannot allocate as in MAC, show message (we already do it)
+     * 
+     * osapi.1.0/interface/SharedMemorySegment.ifc
+     *      RTIOsapiSharedMemorySegment_create
+     *      RTIOsapiSharedMemorySegment_delete
+     * 
+     * osapi.1.0/interface/SharedMemorySegment_impl.ifc
+     *      RTIOsapiSharedMemorySegmentHandleImpl
+     */
+
+    ss.str("");
+    ss.clear();
+    ss << receive_buffer_size;
     if (!assertPropertyToParticipantQos(
             qos,
             "dds.transport.shmem.builtin.receive_buffer_size",
-            "60000000")) {
+            ss.str())) {
         return false;
     }
+
+    DDS_Property_t *str_count = DDSPropertyQosPolicyHelper::lookup_property(qos.property,
+                "dds.transport.shmem.builtin.received_message_count_max");
+    DDS_Property_t *str_buff = DDSPropertyQosPolicyHelper::lookup_property(qos.property,
+                "dds.transport.shmem.builtin.receive_buffer_size");
+
+    printf("received_message_count_max: %s\n", str_count->value);
+    printf("receive_buffer_size: %s\n", str_buff->value);
 
     return true;
 }
