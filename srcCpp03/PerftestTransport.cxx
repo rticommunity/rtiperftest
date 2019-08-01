@@ -313,16 +313,22 @@ void configureShmemTransport(
      * However, if the average message size is only 10K bytes, then you could set the receive_buffer_size to
      * 100K bytes. This allows you to optimize the memory usage of the plugin for the average case and 
      * yet allow the plugin to handle the extreme case.
-     */
-    std::cout << "Send Queue Size: " << _PM->get<int>("sendQueueSize") << std::endl;
-    std::cout << "Data Len:" << _PM->get<unsigned long long>("dataLen") << std::endl;
-    
+     */    
     std::ostringstream ss;
     const int perftest_overhead = 27;
     const int rtps_overhead = 512;
     std::string flow_controller = _PM->get<std::string>("flowController");
     int flow_controller_token_size = atoi(
             qos_properties["dds.flow_controller.token_bucket." + flow_controller + ".token_bucket.bytes_per_token"].c_str());
+    int datalen = _PM->get<unsigned long long>("dataLen");
+
+  #ifdef RTI_FLATDATA_AVAILABLE
+    // Zero Copy sends 16-byte references
+    if (_PM->get<bool>("zerocopy")) datalen = 16;
+  #endif
+
+    std::cout << "Send Queue Size: " << _PM->get<int>("sendQueueSize") << std::endl;
+    std::cout << "Data Len:" << datalen << std::endl;
 
     // If there is no default token size set
     if (flow_controller_token_size == 0) flow_controller_token_size = INT_MAX;
@@ -333,7 +339,7 @@ void configureShmemTransport(
 
     // max(1, (sample_serialized_size/fragment_size))
     int rtps_messages_per_sample = std::max(
-            1ull, (perftest_overhead + _PM->get<unsigned long long>("dataLen")) / fragment_size);
+            1, (perftest_overhead + datalen) / fragment_size);
 
     int received_message_count_max = 
             2 * _PM->get<int>("sendQueueSize") * rtps_messages_per_sample;
