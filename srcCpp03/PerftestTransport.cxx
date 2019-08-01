@@ -267,6 +267,9 @@ void configureShmemTransport(
         std::map<std::string, std::string> &qos_properties,
         ParameterManager *_PM)
 {
+    int parent_msg_size_max = atoi(qos_properties["dds.transport.shmem.builtin.parent.message_size_max"].c_str());
+    std::cout << "message_size_max: " << parent_msg_size_max << std::endl;
+
     /** 
      * The maximum size of a SHMEM segment highly depends on the platform.
      * So that, we need to find out the maximum allocable space to avoid 
@@ -279,8 +282,9 @@ void configureShmemTransport(
     RTIBool success = RTI_FALSE;
     int retcode;
     int key = rand();
-    int step = 1048576; // 1MB
-    int maxBufferSize = 60817408; // 58MB
+    int minSize = parent_msg_size_max;
+    int step = 1048576 + parent_msg_size_max; // 1MB + parent_msg_size_max
+    int maxBufferSize = 60817408 + parent_msg_size_max; // 58MB
 
     do {
         // Reset handles to known state
@@ -293,13 +297,9 @@ void configureShmemTransport(
         RTIOsapiSharedMemorySegment_delete(&handle);
 
         maxBufferSize -= step;
-    } while (maxBufferSize > 0 && success == RTI_FALSE);
+    } while (maxBufferSize > minSize && success == RTI_FALSE);
 
     std::cout << "Maximum SHMEM allocable size: " << maxBufferSize << " Bytes." << std::endl;
-
-    if (success && !RTIOsapiSharedMemorySegment_delete(&handle)) {
-        std::cout << "Failure deleting segment (size: " << maxBufferSize << ")" << std::endl;
-    }
 
     /** From user manual p780:
      * To optimize memory usage, specify a receive queue size less than that required to hold the maximum
@@ -321,7 +321,6 @@ void configureShmemTransport(
     const int perftest_overhead = 27;
     const int rtps_overhead = 512;
     std::string flow_controller = _PM->get<std::string>("flowController");
-    int parent_msg_size_max = atoi(qos_properties["dds.transport.shmem.builtin.parent.message_size_max"].c_str());
     int flow_controller_token_size = atoi(
             qos_properties["dds.flow_controller.token_bucket." + flow_controller + ".token_bucket.bytes_per_token"].c_str());
 
@@ -341,7 +340,7 @@ void configureShmemTransport(
 
     // min(maxBufferSize, received_message_count_max * rtps_message_size)
     int receive_buffer_size = std::min(
-        100, received_message_count_max * (rtps_overhead + fragment_size));
+        parent_msg_size_max + 512, received_message_count_max * (rtps_overhead + fragment_size));
 
     // Avoid bottleneck due to SHMEM.
     ss << received_message_count_max;
