@@ -341,7 +341,7 @@ void configureShmemTransport(
 
     // min(maxBufferSize, received_message_count_max * rtps_message_size)
     int receive_buffer_size = std::min(
-        maxBufferSize, received_message_count_max * (rtps_overhead + fragment_size));
+        100, received_message_count_max * (rtps_overhead + fragment_size));
 
     // Avoid bottleneck due to SHMEM.
     ss << received_message_count_max;
