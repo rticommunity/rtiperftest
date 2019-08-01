@@ -15,6 +15,10 @@
 #include "PerftestTransport.h"
 #include "Infrastructure_common.h"
 
+#ifdef RTI_FLATDATA_AVAILABLE
+#include "perftest_ZeroCopySupport.h"
+#endif
+
 #ifndef RTI_MICRO
 #include "RTIDDSLoggerDevice.h"
 #endif

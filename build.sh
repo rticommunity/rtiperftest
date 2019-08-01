@@ -171,6 +171,7 @@ function clean()
     echo -e "${INFO_TAG} Cleaning generated files."
 
     rm -f  "${script_location}"/srcC*/perftest.*
+    rm -f  "${script_location}"/srcC*/perftest_ZeroCopy*
     rm -f  "${script_location}"/srcC*/perftestPlugin.*
     rm -f  "${script_location}"/srcC*/perftestSupport.*
     rm -f  "${script_location}"/srcC*/perftest_subscriber.*
@@ -395,7 +396,7 @@ function additional_defines_calculation()
 
     # Adding RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as macro
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
-        additional_rti_libs="-additionalRtiLibraries \"nddsmetp ${additional_rti_libs}\""
+        additional_rti_libs="nddsmetp ${additional_rti_libs}"
         additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE DRTI_FLATDATA_MAX_SIZE=${flatdata_size}"
         additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
     fi    
@@ -578,6 +579,18 @@ function build_cpp()
         Infrastructure_common.cxx \
         Infrastructure_pro.cxx"
 
+    if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
+        additional_header_files="${additional_header_files} \
+        perftest_ZeroCopy.h \
+        perftest_ZeroCopyPlugin.h \
+        perftest_ZeroCopySupport.h"
+
+        additional_source_files="${additional_source_files} \
+        perftest_ZeroCopy.cxx \
+        perftest_ZeroCopyPlugin.cxx \
+        perftest_ZeroCopySupport.cxx"
+    fi
+
     ##############################################################################
     # Generate files for srcCpp
 
@@ -585,12 +598,13 @@ function build_cpp()
     # Therefore, we need to generate a makefile that contains
     # nddsmetp and nddssecurity libraries without compiling ZeroCopy code
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
+        ${additional_defines_flatdata} \
         -unboundedSupport -replace -create typefiles -create makefiles \
         -platform ${platform} \
         -additionalHeaderFiles \"${additional_header_files}\" \
         -additionalSourceFiles \"${additional_source_files} \" \
         -additionalDefines \"${additional_defines}\" \
-        ${additional_rti_libs} \
+        -additionalRtiLibraries \"${additional_rti_libs} \" \
         ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
         -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
@@ -606,26 +620,25 @@ function build_cpp()
         exit -1
     fi
 
-    # Now that we have the makefile with all the additional RTI Libs that we might need,
-    # Generate ZeroCopy and FlatData code without overwritting the previously generated makefile
+    # Generate ZeroCopy types avoiding performance degradation issue
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
-        echo -e "${INFO_TAG} Generating FlatData code"
+        echo -e "${INFO_TAG} Generating Zero Copy code"
         rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
         ${additional_defines_flatdata} \
-        -unboundedSupport -replace -create typefiles \
+        -replace -create typefiles \
         -platform ${platform} \
-        -additionalHeaderFiles \"${additional_header_files}\" \
-        -additionalSourceFiles \"${additional_source_files} \" \
-        -additionalDefines \"${additional_defines}\" \
         ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
-        -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\""
+        -d \"${classic_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\""
         
+        echo -e "${INFO_TAG} Command: $rtiddsgen_command"
         eval $rtiddsgen_command
         if [ "$?" != 0 ]; then
             echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
             clean_src_cpp_common
             exit -1
         fi
+
+        rm -rf ${classic_cpp_folder}/makefile_perftest_ZeroCopy_${platform}
     fi
 
     cp "${classic_cpp_folder}/perftest_publisher.cxx" \
@@ -864,15 +877,28 @@ function build_cpp03()
         CpuMonitor.cxx \
         PerftestTransport.cxx"
 
+    if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
+        additional_header_files="${additional_header_files} \
+        perftest_ZeroCopy.hpp \
+        perftest_ZeroCopyPlugin.hpp"
+
+        additional_source_files="${additional_source_files} \
+        perftest_ZeroCopy.cxx \
+        perftest_ZeroCopyPlugin.cxx"
+    fi
+
+
     ##############################################################################
     # Generate files for srcCpp03
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
-    -create makefiles \
-    -unboundedSupport -replace -create typefiles -platform ${platform} \
+    ${additional_defines_flatdata} \
+    -unboundedSupport -replace -create typefiles -create makefiles \
+    -platform ${platform} \
     -additionalHeaderFiles \"$additional_header_files\" \
     -additionalSourceFiles \"$additional_source_files\" \
-    -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} \
-    ${additional_rti_libs} \
+    -additionalDefines \"${additional_defines}\" \
+    -additionalRtiLibraries \"${additional_rti_libs} \" \
+    ${rtiddsgen_extra_options} \
     -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
@@ -885,27 +911,26 @@ function build_cpp03()
         echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
         clean_src_cpp_common
         exit -1
-    fi
+    fi        
 
-    # rtiddsgen ignores any specified rti addional library if using ZeroCopy
-    # Therefore, we need to generate a makefile that contains
-    # nddsmetp and nddssecurity libraries
+    # Generate Zero Copy types avoiding performance degradation issue
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
-        echo -e "${INFO_TAG} Generating FlatData code"
+        echo -e "${INFO_TAG} Generating Zero Copy code"
         rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
         ${additional_defines_flatdata} \
-        -unboundedSupport -replace -create typefiles -platform ${platform} \
-        -additionalHeaderFiles \"ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" \
-        -additionalSourceFiles \"ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" \
-        -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} \
-        -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
+        -replace -create typefiles -platform ${platform} \
+        ${rtiddsgen_extra_options} \
+        -d \"${modern_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\""
         
+        echo -e "${INFO_TAG} Command: $rtiddsgen_command"
         eval $rtiddsgen_command
         if [ "$?" != 0 ]; then
             echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
             clean_src_cpp_common
             exit -1
         fi
+
+        rm -rf ${modern_cpp_folder}/makefile_perftest_ZeroCopy_${platform}
     fi
 
     cp "${modern_cpp_folder}/perftest_publisher.cxx" \

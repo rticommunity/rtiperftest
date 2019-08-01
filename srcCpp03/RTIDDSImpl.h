@@ -18,6 +18,10 @@
 #include "PerftestTransport.h"
 #include <rti/domain/find.hpp>
 
+#ifdef RTI_FLATDATA_AVAILABLE
+#include "perftest_ZeroCopy.hpp"
+#endif
+
 #define RTIPERFTEST_MAX_PEERS 1024
 
 /* Class for the DDS_DynamicDataMemberId of the type of RTI Perftest*/

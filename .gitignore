@@ -1,4 +1,5 @@
 /srcC*/perftest.*
+/srcC*/perftest_ZeroCopy*
 /srcC*/perftestPlugin.*
 /srcC*/perftestSupport.*
 /srcC*/perftest_subscriber.*
