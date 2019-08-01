@@ -284,9 +284,11 @@ void configureShmemTransport(
     int key = rand();
     int minSize = parent_msg_size_max;
     int step = 1048576 + parent_msg_size_max; // 1MB + parent_msg_size_max
-    int maxBufferSize = 60817408 + parent_msg_size_max; // 58MB
+    int maxBufferSize = 60817408 + step; // 58MB
 
     do {
+        maxBufferSize -= step;
+
         // Reset handles to known state
         RTIOsapiMemory_zero(&handle,
                 sizeof(struct RTIOsapiSharedMemorySegmentHandle));
@@ -295,8 +297,6 @@ void configureShmemTransport(
                 &handle, &retcode, key, maxBufferSize, pid);
 
         RTIOsapiSharedMemorySegment_delete(&handle);
-
-        maxBufferSize -= step;
     } while (maxBufferSize > minSize && success == RTI_FALSE);
 
     std::cout << "Maximum SHMEM allocable size: " << maxBufferSize << " Bytes." << std::endl;
@@ -337,16 +337,16 @@ void configureShmemTransport(
             parent_msg_size_max - rtps_overhead, 
             flow_controller_token_size) ;
 
-    // max(1, (sample_serialized_size/fragment_size))
+    // max(1, (sample_serialized_size / fragment_size))
     int rtps_messages_per_sample = std::max(
             1, (perftest_overhead + datalen) / fragment_size);
 
     int received_message_count_max = 
-            2 * _PM->get<int>("sendQueueSize") * rtps_messages_per_sample;
+            2 * (_PM->get<int>("sendQueueSize") + 1) * rtps_messages_per_sample;
 
     // min(maxBufferSize, received_message_count_max * rtps_message_size)
     int receive_buffer_size = std::min(
-        parent_msg_size_max + 512, received_message_count_max * (rtps_overhead + fragment_size));
+        maxBufferSize, received_message_count_max * (rtps_overhead + fragment_size));
 
     // Avoid bottleneck due to SHMEM.
     ss << received_message_count_max;
