@@ -2384,7 +2384,20 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                      */
                     max_allocable_space /= 3;
 
-                    // TODO: Show message about increasing SHMEM settings
+                    /**
+                     * If we wont be able to allocate as many samples as we originally want,
+                     * Display a message letting know the user how to increase SHMEM 
+                     * operative system settings
+                     * 
+                     * TODO: Enable option to set MAX_DARWIN_SHMEM_SIZE for DARWIN on build.sh
+                     */ 
+                    if (max_allocable_space < RTI_FLATDATA_MAX_SIZE *
+                                qos_resource_limits->initial_samples() + 1) {
+                        
+                        std::cout << "[Warn] Not enought Shared Memory space available."
+                                  << "Consider increasing SHMMAX parameter on your system settings." << std::endl
+                                  << "See https://community.rti.com/kb/what-are-possible-solutions-common-shared-memory-issues" << std::endl;
+                    }
                 }
               #endif
                 // The writer_loaned_sample_allocation is initial_simples + 1
@@ -2396,8 +2409,6 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                         (unsigned long long) qos_resource_limits->initial_samples());
 
                 qos_resource_limits->initial_samples(initial_samples);
-
-              
             }
 
             /**
