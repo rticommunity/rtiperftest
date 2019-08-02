@@ -2150,13 +2150,13 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
                 std::to_string(dds::core::LENGTH_UNLIMITED);
 
         if (_isLargeData) {
-            max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE
+            max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
 
           #ifdef RTI_DARWIN
             // In OSX, we might not be able to allocate all the samples
             // TODO: Should we use /2 in case we run two perftest instances?
             if (_isZeroCopy) {
-                max_allocable_space = MAX_DARWIN_SHMEM_SIZE
+                max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
             }
           #endif
 
@@ -2362,7 +2362,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                 // In OSX, we might not be able to allocate all the samples
                 // TODO: Should we use /2 in case we run two perftest instances?
                 if (_isZeroCopy) {
-                    max_allocable_space = MAX_DARWIN_SHMEM_SIZE
+                    max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
                 }
               #endif
 
