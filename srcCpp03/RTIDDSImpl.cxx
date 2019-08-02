@@ -2389,7 +2389,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
               #endif
                 // The writer_loaned_sample_allocation is initial_simples + 1
                 initial_samples = std::max(
-                        1, max_allocable_space - RTI_FLATDATA_MAX_SIZE / RTI_FLATDATA_MAX_SIZE);
+                        1, (max_allocable_space - RTI_FLATDATA_MAX_SIZE) / RTI_FLATDATA_MAX_SIZE);
 
                 initial_samples = std::min(
                         initial_samples, 
