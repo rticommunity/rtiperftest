@@ -9,7 +9,6 @@
 #include "clock/clock_highResolution.h"
 #include "osapi/osapi_ntptime.h"
 #include "osapi/osapi_process.h"
-#include "osapi/osapi_sharedMemorySegment.h"
 #include "ndds/ndds_cpp.h"
 #include "PerftestTransport.h"
 
@@ -17,6 +16,12 @@
   #include "security/security_default.h"
   #include "PerftestSecurity.h"
 #endif
+
+/* Undefine Windows max and min micros. 
+   They conflict with std::min and std::max
+*/
+#undef max
+#undef min
 
 #include <sstream>
 

@@ -16,6 +16,13 @@
 #include "osapi/osapi_sharedMemorySegment.h"
 #include <stdlib.h>
 
+
+/* Undefine Windows max and min micros. 
+   They conflict with std::min and std::max
+*/
+#undef max
+#undef min
+
 /******************************************************************************/
 
 enum Transport {

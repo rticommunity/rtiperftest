@@ -5,6 +5,9 @@
 
 #include "Infrastructure_pro.h"
 
+// If we import this on .h it will fail
+#include "osapi/osapi_sharedMemorySegment.h"
+
 /*
  * Since std::to_string is not defined until c++11
  * we will define it here.
