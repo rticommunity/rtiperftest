@@ -2180,6 +2180,10 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
     dr_qos << qos_dr_resource_limits;
     dr_qos << Property(properties.begin(), properties.end(), true);
 
+    std::cout << "Setup DR" << std::endl;
+    std::cout << "Initial Samples: " << qos_resource_limits->initial_samples() << std::endl;
+    std::cout << "Allocable Samples: " << (max_allocable_space / RTI_FLATDATA_MAX_SIZE) << std::endl << std::endl;
+
     return dr_qos;
 }
 
@@ -2356,7 +2360,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
              * // TODO: Do here the SHMEM allocation calculations
              */
             if (_isLargeData) {
-                int max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
+                max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
 
               #ifdef RTI_DARWIN
                 // In OSX, we might not be able to allocate all the samples
@@ -2387,6 +2391,10 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
             }
         }
     #endif
+
+    std::cout << "Setup DW" << std::endl;
+    std::cout << "Initial Samples: " << qos_resource_limits->initial_samples() << std::endl;
+    std::cout << "Allocable Samples: " << (max_allocable_space / RTI_FLATDATA_MAX_SIZE) << std::endl << std::endl;
 
     dw_qos << qos_reliability;
     dw_qos << qos_resource_limits;
