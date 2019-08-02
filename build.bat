@@ -383,18 +383,20 @@ if !BUILD_CPP! == 1 (
 	set "additional_header_files=!additional_header_files_custom_type!!additional_header_files!RTIRawTransportImpl.h Parameter.h ParameterManager.h ThreadPriorities.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_pro.h"
 	set "additional_source_files=!additional_source_files_custom_type!!additional_source_files!RTIRawTransportImpl.cxx Parameter.cxx ParameterManager.cxx ThreadPriorities.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_pro.cxx"
 
-	@REM # Generate files for srcCpp
-	@REM # rtiddsgen ignores any specified rti addional library if using ZeroCopy
-    @REM # Therefore, we need to generate a makefile that contains
-    @REM # nddsmetp and nddssecurity libraries without compiling ZeroCopy code
+	if !FLATDATA_AVAILABLE! == 1 (
+		set "additional_header_files=!additional_header_files! perftest_ZeroCopy.h perftest_ZeroCopyPlugin.h perftest_ZeroCopySupport.h"
+		set "additional_source_files=!additional_source_files! perftest_ZeroCopy.cxx perftest_ZeroCopyPlugin.cxx perftest_ZeroCopySupport.cxx"
+	)
+
 	echo[
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
-	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
-	-create typefiles -create makefiles -platform %architecture%^
+	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
+	-unboundedSupport -replace -create typefiles -create makefiles^
+	-platform %architecture%^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	!additional_rti_libs!^
+	-additionalRtiLibraries "!additional_rti_libs!"^
 	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
@@ -403,19 +405,16 @@ if !BUILD_CPP! == 1 (
 		exit /b 1
 	)
 
-	@REM # Now that we have the makefile with all the additional RTI Libs that we might need,
-    @REM # Generate ZeroCopy and FlatData code without overwritting the previously generated makefile
+    @REM # Generate ZeroCopy types avoiding performance degradation issue
 	if !FLATDATA_AVAILABLE! == 1 (
 		echo[
-		echo [INFO]: Appending nddssecurity library to makefile
-		call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
+		echo [INFO]: Generating Zero Copy code
+		call "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
 		!additional_defines_flatdata!^
-		-create typefiles -platform %architecture%^
-		-additionalHeaderFiles "!additional_header_files!"^
-		-additionalSourceFiles "!additional_source_files!"^
-		-additionalDefines "!ADDITIONAL_DEFINES!"^
+		-replace -create typefiles^
+		-platform %architecture%^
 		!rtiddsgen_extra_options! !additional_defines_custom_type!^
-		-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
+		-d "%classic_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
 		if not !ERRORLEVEL! == 0 (
 			echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
 			call::clean_src_cpp_common
@@ -476,29 +475,41 @@ if !BUILD_CPP03! == 1 (
 	)
 
 	if !FLATDATA_AVAILABLE! == 1 (
-		set "additional_rti_libs=-additionalRtiLibraries "nddsmetp !additional_rti_libs!""
+		set "additional_rti_libs=nddsmetp !additional_rti_libs!"
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!flatdata_size! RTI_FLATDATA_AVAILABLE"
 		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=!flatdata_size!""
 	)
 
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
 
-	echo "%rtiddsgen_executable%" -language %modern_cpp_lang_string% -unboundedSupport -replace^
-	-create typefiles -create makefiles -platform %architecture%^
-	-additionalHeaderFiles "ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
-	-additionalSourceFiles "ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
-	!additional_rti_libs!^
+	set "additional_header_files=ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"
+	set "additional_source_files=ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx"
+
+	if !FLATDATA_AVAILABLE! == 1 (
+		set "additional_header_files=!additional_header_files! perftest_ZeroCopy.hpp perftest_ZeroCopyPlugin.hpp"
+		set "additional_source_files=!additional_source_files! perftest_ZeroCopy.cxx perftest_ZeroCopyPlugin.cxx"
+	)
+
+	echo "%rtiddsgen_executable%" -language %modern_cpp_lang_string% ^
+	-unboundedSupport -replace -create typefiles -create makefiles^
+	-platform %architecture%^
+	-additionalHeaderFiles "!additional_header_files!"^
+	-additionalSourceFiles "!additional_source_files!"^
+	-additionalDefines "!ADDITIONAL_DEFINES!"^
+	-additionalRtiLibraries "!additional_rti_libs!"^
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
 
 	@REM #Generate files for srcCpp03
 	echo[
 	echo [INFO]: Generating types and makefiles for %modern_cpp_lang_string%
-	call "%rtiddsgen_executable%" -language %modern_cpp_lang_string% -unboundedSupport -replace^
-	-create typefiles -create makefiles -platform %architecture%^
-	-additionalHeaderFiles "ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"^
-	-additionalSourceFiles "ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx" -additionalDefines "!ADDITIONAL_DEFINES!"^
-	!additional_rti_libs!^
+	call "%rtiddsgen_executable%" -language %modern_cpp_lang_string% ^
+	-unboundedSupport -replace -create typefiles -create makefiles^
+	-platform %architecture%^
+	-additionalHeaderFiles "!additional_header_files!"^
+	-additionalSourceFiles "!additional_source_files!"^
+	-additionalDefines "!ADDITIONAL_DEFINES!"^
+	-additionalRtiLibraries "!additional_rti_libs!"^
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
 
@@ -509,29 +520,21 @@ if !BUILD_CPP03! == 1 (
 	)
 
 	if !FLATDATA_AVAILABLE! == 1 (
-		echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
+		echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
 		!additional_defines_flatdata!^
-		-create typefiles -platform %architecture%^
-		-additionalHeaderFiles "!additional_header_files!"^
-		-additionalSourceFiles "!additional_source_files!"^
-		-additionalDefines "!ADDITIONAL_DEFINES!"^
-		!rtiddsgen_extra_options! !additional_defines_custom_type!^
-		-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
+		-replace -create typefiles -platform %architecture%^
+		!rtiddsgen_extra_options!^
+		-d "%modern_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
 
 
-		@REM # rtiddsgen ignores any specified rti addional library if using ZeroCopy
-		@REM # Therefore, we need to generate a makefile that contains
-		@REM # nddsmetp and nddssecurity libraries
+		@REM # Generate Zero Copy types avoiding performance degradation issue
 		echo[
-		echo [INFO]: Appending nddssecurity library to makefile
-		call "%rtiddsgen_executable%" -language %classic_cpp_lang_string% -unboundedSupport -replace^
+		echo [INFO]: Generating Zero Copy code
+		call "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
 		!additional_defines_flatdata!^
-		-create typefiles -platform %architecture%^
-		-additionalHeaderFiles "!additional_header_files!"^
-		-additionalSourceFiles "!additional_source_files!"^
-		-additionalDefines "!ADDITIONAL_DEFINES!"^
-		!rtiddsgen_extra_options! !additional_defines_custom_type!^
-		-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
+		-replace -create typefiles -platform %architecture%^
+		!rtiddsgen_extra_options!^
+		-d "%modern_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
 		if not !ERRORLEVEL! == 0 (
 			echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
 			call::clean_src_cpp_common
