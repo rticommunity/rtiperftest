@@ -2152,19 +2152,19 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
         if (_isLargeData) {
             max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
 
-          #ifdef RTI_DARWIN
-            /**
-             * In OSX, we might not be able to allocate all the send queue samples
-             * We only need this on the DW since it will allocate the samples
-             * on Zero Copy
-             */
-            if (_isZeroCopy) {
-                max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
+        //   #ifdef RTI_DARWIN
+        //     /**
+        //      * In OSX, we might not be able to allocate all the send queue samples
+        //      * We only need this on the DW since it will allocate the samples
+        //      * on Zero Copy
+        //      */
+        //     if (_isZeroCopy) {
+        //         max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
 
-                // Leave enought room for other perftest participants
-                max_allocable_space /= _PM->get<int>("numSubscribers") + 1;
-            }
-          #endif
+        //         // Leave enought room for other perftest participants
+        //         max_allocable_space /= _PM->get<int>("numSubscribers") + 1;
+        //     }
+        //   #endif
 
             initial_samples = std::max(
                     1, max_allocable_space / RTI_FLATDATA_MAX_SIZE);
@@ -2373,12 +2373,14 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                  * In OSX, we might not be able to allocate all the send queue samples
                  * We only need this on the DW since it will allocate the samples
                  * on Zero Copy
+                 * 
+                 * TODO: Show message about increasing SHMEM settings
                  */
                 if (_isZeroCopy) {
-                    max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
+                    max_allocable_space = MAX_DARWIN_SHMEM_SIZE - RTI_FLATDATA_MAX_SIZE;
 
-                    // Leave enought room for other perftest participants
-                    max_allocable_space /= _PM->get<int>("numSubscribers") + 1;
+                    // Leave enought room for at least one participant
+                    max_allocable_space /= 2;
                 }
               #endif
 
