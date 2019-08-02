@@ -59,6 +59,7 @@ custom_idl_file="${custom_type_folder}/custom.idl"
 flatdata_size=10485760 # 10MB
 flatdata_ddsgen_version=300 #3.0.0
 FLATDATA_AVAILABLE=0
+MAX_DARWIN_SHMEM_SIZE=419430400
 
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
@@ -397,7 +398,7 @@ function additional_defines_calculation()
     # Adding RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as macro
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
         additional_rti_libs="nddsmetp ${additional_rti_libs}"
-        additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE DRTI_FLATDATA_MAX_SIZE=${flatdata_size}"
+        additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE DRTI_FLATDATA_MAX_SIZE=${flatdata_size} DMAX_DARWIN_SHMEM_SIZE=${MAX_DARWIN_SHMEM_SIZE}"
         additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
     fi    
 }

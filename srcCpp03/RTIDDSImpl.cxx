@@ -2054,6 +2054,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
             dr_qos.policy<Property>().get_all();
 
     unsigned long long initial_samples = 0;
+    int max_allocable_space = 0;
 
     // only force reliability on throughput/latency topics
     if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
@@ -2148,14 +2149,26 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
         properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = 
                 std::to_string(dds::core::LENGTH_UNLIMITED);
 
-        initial_samples = std::max(
-                1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+        if (_isLargeData) {
+            max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE
 
-        initial_samples = std::min(
-                initial_samples,
-                (unsigned long long) qos_resource_limits->initial_samples());
+          #ifdef RTI_DARWIN
+            // In OSX, we might not be able to allocate all the samples
+            // TODO: Should we use /2 in case we run two perftest instances?
+            if (_isZeroCopy) {
+                max_allocable_space = MAX_DARWIN_SHMEM_SIZE
+            }
+          #endif
 
-        qos_resource_limits->initial_samples(initial_samples);
+            initial_samples = std::max(
+                    1, max_allocable_space / RTI_FLATDATA_MAX_SIZE);
+
+            initial_samples = std::min(
+                    initial_samples,
+                    (unsigned long long) qos_resource_limits->initial_samples());
+
+            qos_resource_limits->initial_samples(initial_samples);
+        }
 
         qos_dr_resource_limits.dynamically_allocate_fragmented_samples(true);
     }
@@ -2199,6 +2212,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
             dw_qos.policy<Property>().get_all();
 
     unsigned long long initial_samples = 0;
+    int max_allocable_space = 0;
 
     if (_PM->get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos" || qos_profile == "LatencyQos")) {
@@ -2339,16 +2353,29 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
             /**
              *  If FlatData and LargeData, automatically estimate initial_samples here
              * in a range from 1 up to the initial samples specifies in the QoS file
+             * // TODO: Do here the SHMEM allocation calculations
              */
             if (_isLargeData) {
+                int max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
+
+              #ifdef RTI_DARWIN
+                // In OSX, we might not be able to allocate all the samples
+                // TODO: Should we use /2 in case we run two perftest instances?
+                if (_isZeroCopy) {
+                    max_allocable_space = MAX_DARWIN_SHMEM_SIZE
+                }
+              #endif
+
                 initial_samples = std::max(
-                        1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+                        1, max_allocable_space / RTI_FLATDATA_MAX_SIZE);
 
                 initial_samples = std::min(
                         initial_samples, 
                         (unsigned long long) qos_resource_limits->initial_samples());
 
                 qos_resource_limits->initial_samples(initial_samples);
+
+              
             }
 
             /**

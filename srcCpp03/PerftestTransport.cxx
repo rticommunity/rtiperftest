@@ -335,7 +335,7 @@ void configureShmemTransport(
 
     int fragment_size = std::min(
             parent_msg_size_max - rtps_overhead, 
-            flow_controller_token_size) ;
+            flow_controller_token_size);
 
     // max(1, (sample_serialized_size / fragment_size))
     int rtps_messages_per_sample = std::max(
