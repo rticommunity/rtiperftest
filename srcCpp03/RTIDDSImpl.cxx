@@ -2056,9 +2056,11 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
     std::cout << cmd << ": " << buffer << std::endl;
 
     // Split cmd output by blankspaces and get second position 
-    strtok(buffer, " ")
+    strtok(buffer, " ");
     char *size = strtok(NULL, " ");
-    shmmax = atoi(size)
+    shmmax = atoi(size);
+
+    std::cout << "SHMMAX: " << shmmax << std::endl;
 
     // Close file and process
     pclose(file);
