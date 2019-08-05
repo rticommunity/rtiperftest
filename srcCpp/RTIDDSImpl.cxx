@@ -2577,14 +2577,14 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
 
     // Execute cmd and get file pointer 
     if ((file = popen(cmd, "r")) == NULL) {
-        fprinf(stderr, "Could not run cmd '%s'. Using default size: %d bytes.\n",
+        fprintf(stderr, "Could not run cmd '%s'. Using default size: %d bytes.\n",
                 cmd, shmmax);
         return shmmax;
     }
 
     // Read cmd output from its file pointer
     if (fgets(buffer, buffSize, file) == NULL) {
-       fprinf(stderr, "Could not read '%s' output. Using default size: %d bytes.\n",
+       fprintf(stderr, "Could not read '%s' output. Using default size: %d bytes.\n",
                 cmd, shmmax);
         return shmmax;
     }
@@ -2596,7 +2596,7 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
     char *size = strtok(NULL, " ");
     shmmax = atoi(size);
 
-    fprintf(stdout, "SHMMAX: %d\n", shmmax);
+    fprintf(stdout, "SHMMAX: %lu\n", shmmax);
 
     // Close file and process
     pclose(file);
@@ -2834,10 +2834,11 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
                  */ 
                 if (max_allocable_space < RTI_FLATDATA_MAX_SIZE *
                             dw_qos.resource_limits.initial_samples + 1) {
-                    fprintf(stderr, "%s %s\n%s\n", 
+                    fprintf(stderr, "%s %s\n%s\n%s\n", 
                             "[Warn] Performace Degradation: Not enought Shared Memory space available to allocate intial samples. ",
                             "Consider increasing SHMMAX parameter on your system settings or select a different transport.",
-                            "See https://community.rti.com/kb/what-are-possible-solutions-common-shared-memory-issues");
+                            "See https://community.rti.com/kb/what-are-possible-solutions-common-shared-memory-issues"
+                            "If you still run into this issue, consider cleaning your Shared Memory segments.");
                 }
             }
           #endif

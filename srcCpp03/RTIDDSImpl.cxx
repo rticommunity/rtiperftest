@@ -2419,7 +2419,8 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                         
                         std::cout << "[Warn] Performace Degradation: Not enought Shared Memory space available to allocate intial samples. "
                                   << "Consider increasing SHMMAX parameter on your system settings or select a different transport." << std::endl
-                                  << "See https://community.rti.com/kb/what-are-possible-solutions-common-shared-memory-issues" << std::endl;
+                                  << "See https://community.rti.com/kb/what-are-possible-solutions-common-shared-memory-issues" << std::endl
+                                  << "If you still run into this issue, consider cleaning your Shared Memory segments." << std::endl;
                     }
                 }
               #endif
