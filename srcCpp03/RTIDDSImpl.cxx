@@ -2030,6 +2030,38 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(std::string topicName)
     return _qoSProfileNameMap[topicName];
 }
 
+#ifdef RTI_DARWIN
+template <typename T>
+unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
+    unsigned long int shmmax = MAX_DARWIN_SHMEM_SIZE;
+    const char *cmd = "sysctl kern.sysv.shmmax";
+    int buffSize = 100;
+    char buffer[buffSize];
+    FILE *file = NULL;
+
+    // Execute cmd and get file pointer 
+    if ((file = popen(cmd, "r")) == NULL) {
+        std::cerr << "Could not parse cmd '" << cmd << "'. "
+                  << "Using default size: " << shmmax << " bytes." << std::endl;
+        return shmmax;
+    }
+
+    // Read cmd output from its file pointer
+    if (fgets(buffer, buffSize, file) == NULL) {
+        std::cerr << "Could not read '" << cmd << "' output. "
+                  << "Using default size: " << shmmax << " bytes." << std::endl;
+        return shmmax;
+    }
+
+    std::cout << cmd << ": " << buffer << std::endl;
+
+    // Close file and process
+    pclose(file);
+
+    return shmmax;
+}
+#endif
+
 template <typename T>
 dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
         std::string qos_profile, std::string topic_name) {
@@ -2151,20 +2183,6 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
 
         if (_isLargeData) {
             max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
-
-        //   #ifdef RTI_DARWIN
-        //     /**
-        //      * In OSX, we might not be able to allocate all the send queue samples
-        //      * We only need this on the DW since it will allocate the samples
-        //      * on Zero Copy
-        //      */
-        //     if (_isZeroCopy) {
-        //         max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
-
-        //         // Leave enought room for other perftest participants
-        //         max_allocable_space /= _PM->get<int>("numSubscribers") + 1;
-        //     }
-        //   #endif
 
             initial_samples = std::max(
                     1, max_allocable_space / RTI_FLATDATA_MAX_SIZE);
@@ -2363,7 +2381,6 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
             /**
              *  If FlatData and LargeData, automatically estimate initial_samples here
              * in a range from 1 up to the initial samples specifies in the QoS file
-             * // TODO: Do here the SHMEM allocation calculations
              */
             if (_isLargeData) {
                 max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
@@ -2375,6 +2392,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                  * on Zero Copy
                  */
                 if (_isZeroCopy) {
+                    max_allocable_space = getShmemSHMMAX();
                     max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
 
                     /**

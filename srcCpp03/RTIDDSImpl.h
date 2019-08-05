@@ -22,6 +22,10 @@
 #include "perftest_ZeroCopy.hpp"
 #endif
 
+//#ifdef RTI_DARWIN
+#include <stdio.h>
+//#endif
+
 #define RTIPERFTEST_MAX_PEERS 1024
 
 /* Class for the DDS_DynamicDataMemberId of the type of RTI Perftest*/
@@ -115,6 +119,9 @@ class RTIDDSImpl : public IMessaging
     static const std::string SECURE_LIBRARY_NAME;
   #endif
 
+  #ifdef RTI_DARWIN
+    unsigned long int getShmemSHMMAX();
+  #endif
     dds::sub::qos::DataReaderQos setup_DR_QoS(std::string qos_profile, std::string topic_name);
     dds::pub::qos::DataWriterQos setup_DW_QoS(std::string qos_profile, std::string topic_name);
 };
