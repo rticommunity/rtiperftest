@@ -2577,14 +2577,14 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
 
     // Execute cmd and get file pointer 
     if ((file = popen(cmd, "r")) == NULL) {
-        fprintf(stderr, "Could not run cmd '%s'. Using default size: %d bytes.\n",
+        fprintf(stderr, "Could not run cmd '%s'. Using default size: %lu bytes.\n",
                 cmd, shmmax);
         return shmmax;
     }
 
     // Read cmd output from its file pointer
     if (fgets(buffer, buffSize, file) == NULL) {
-       fprintf(stderr, "Could not read '%s' output. Using default size: %d bytes.\n",
+       fprintf(stderr, "Could not read '%s' output. Using default size: %lu bytes.\n",
                 cmd, shmmax);
         return shmmax;
     }
@@ -2818,7 +2818,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
              */
             if (_isZeroCopy) {
                 max_allocable_space = getShmemSHMMAX();
-                max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
+                //max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
 
                 /**
                  * Leave enought room for an sceneario of two participants:

@@ -2400,7 +2400,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                  */
                 if (_isZeroCopy) {
                     max_allocable_space = getShmemSHMMAX();
-                    max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
+                    //max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
 
                     /**
                      * Leave enought room for an sceneario of two participants:
