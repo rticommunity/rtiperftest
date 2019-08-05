@@ -2570,6 +2570,7 @@ template <typename T>
 DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::string qos_profile, std::string topic_name)
 {
     unsigned long long initial_samples = 0;
+    int max_allocable_space = 0;
 
     #ifndef RTI_MICRO
     if (_factory->get_datawriter_qos_from_profile(
@@ -2768,8 +2769,43 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
          * in a range from 1 up to the initial samples specifies in the QoS file
          */ 
         if (_isLargeData) {
+            max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
+
+          #ifdef RTI_DARWIN
+            /**
+             * In OSX, we might not be able to allocate all the send queue samples
+             * We only need this on the DW since it will allocate the samples
+             * on Zero Copy
+             */
+            if (_isZeroCopy) {
+                max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
+
+                /**
+                 * Leave enought room for an sceneario of two participants:
+                 *   - One Publisher with one DW (throughput topic)
+                 *   - One Subscriber with two DW (Latency topic and Announcement)
+                 */
+                max_allocable_space /= 3;
+
+                /**
+                 * If we wont be able to allocate as many samples as we originally want,
+                 * Display a message letting know the user how to increase SHMEM 
+                 * operative system settings
+                 * 
+                 * TODO: Enable option to set MAX_DARWIN_SHMEM_SIZE for DARWIN on build.sh
+                 *          or read it from '/etc/sysctl.conf' or with command 'sysctl kern.sysv.shmmax'
+                 */ 
+                if (max_allocable_space < RTI_FLATDATA_MAX_SIZE *
+                            dw_qos.resource_limits.initial_samples + 1) {
+                    fprintf(stderr, "%s %s\n%s\n", 
+                            "[Warn] Performace Degradation: Not enought Shared Memory space available to allocate intial samples. ",
+                            "Consider increasing SHMMAX parameter on your system settings or select a different transport.",
+                            "See https://community.rti.com/kb/what-are-possible-solutions-common-shared-memory-issues");
+                }
+            }
+          #endif
             initial_samples = std::max(
-                    1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+                    1, max_allocable_space / RTI_FLATDATA_MAX_SIZE);
 
             initial_samples = std::min(
                     initial_samples,
