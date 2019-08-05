@@ -175,7 +175,10 @@ protected:
     ParameterManager            *_PM;
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
-
+  
+  #ifdef RTI_DARWIN
+    unsigned long int getShmemSHMMAX();
+  #endif
     DDS_ReturnCode_t setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::string qos_profile, std::string topic_name);
     DDS_ReturnCode_t setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::string qos_profile, std::string topic_name);
 };

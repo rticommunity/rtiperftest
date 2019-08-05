@@ -2041,7 +2041,7 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
 
     // Execute cmd and get file pointer 
     if ((file = popen(cmd, "r")) == NULL) {
-        std::cerr << "Could not parse cmd '" << cmd << "'. "
+        std::cerr << "Could not run cmd '" << cmd << "'. "
                   << "Using default size: " << shmmax << " bytes." << std::endl;
         return shmmax;
     }
@@ -2413,9 +2413,6 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                      * If we wont be able to allocate as many samples as we originally want,
                      * Display a message letting know the user how to increase SHMEM 
                      * operative system settings
-                     * 
-                     * TODO: Enable option to set MAX_DARWIN_SHMEM_SIZE for DARWIN on build.sh
-                     *          or read it from '/etc/sysctl.conf' or with command 'sysctl kern.sysv.shmmax'
                      */ 
                     if (max_allocable_space < RTI_FLATDATA_MAX_SIZE *
                                 qos_resource_limits->initial_samples() + 1) {

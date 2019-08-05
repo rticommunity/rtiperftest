@@ -2566,6 +2566,45 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
 }
 #endif //RTI_MICRO
 
+#ifdef RTI_DARWIN
+template <typename T>
+unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
+    unsigned long int shmmax = MAX_DARWIN_SHMEM_SIZE;
+    const char *cmd = "sysctl kern.sysv.shmmax";
+    int buffSize = 100;
+    char buffer[buffSize];
+    FILE *file = NULL;
+
+    // Execute cmd and get file pointer 
+    if ((file = popen(cmd, "r")) == NULL) {
+        fprinf(stderr, "Could not run cmd '%s'. Using default size: %d bytes.\n",
+                cmd, shmmax);
+        return shmmax;
+    }
+
+    // Read cmd output from its file pointer
+    if (fgets(buffer, buffSize, file) == NULL) {
+       fprinf(stderr, "Could not read '%s' output. Using default size: %d bytes.\n",
+                cmd, shmmax);
+        return shmmax;
+    }
+
+    fprintf(stdout, "%s: %s\n", cmd, buffer);
+
+    // Split cmd output by blankspaces and get second position 
+    strtok(buffer, " ");
+    char *size = strtok(NULL, " ");
+    shmmax = atoi(size);
+
+    fprintf(stdout, "SHMMAX: %d\n", shmmax);
+
+    // Close file and process
+    pclose(file);
+
+    return shmmax;
+}
+#endif
+
 template <typename T>
 DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::string qos_profile, std::string topic_name)
 {
@@ -2778,6 +2817,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
              * on Zero Copy
              */
             if (_isZeroCopy) {
+                max_allocable_space = getShmemSHMMAX();
                 max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
 
                 /**
@@ -2791,9 +2831,6 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
                  * If we wont be able to allocate as many samples as we originally want,
                  * Display a message letting know the user how to increase SHMEM 
                  * operative system settings
-                 * 
-                 * TODO: Enable option to set MAX_DARWIN_SHMEM_SIZE for DARWIN on build.sh
-                 *          or read it from '/etc/sysctl.conf' or with command 'sysctl kern.sysv.shmmax'
                  */ 
                 if (max_allocable_space < RTI_FLATDATA_MAX_SIZE *
                             dw_qos.resource_limits.initial_samples + 1) {
