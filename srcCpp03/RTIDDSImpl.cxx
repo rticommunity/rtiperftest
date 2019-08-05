@@ -2390,12 +2390,13 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                      * operative system settings
                      * 
                      * TODO: Enable option to set MAX_DARWIN_SHMEM_SIZE for DARWIN on build.sh
+                     *          or read it from '/etc/sysctl.conf' or with command 'sysctl kern.sysv.shmmax'
                      */ 
                     if (max_allocable_space < RTI_FLATDATA_MAX_SIZE *
                                 qos_resource_limits->initial_samples() + 1) {
                         
-                        std::cout << "[Warn] Not enought Shared Memory space available."
-                                  << "Consider increasing SHMMAX parameter on your system settings." << std::endl
+                        std::cout << "[Warn] Performace Degradation: Not enought Shared Memory space available to allocate intial samples. "
+                                  << "Consider increasing SHMMAX parameter on your system settings or select a different transport." << std::endl
                                   << "See https://community.rti.com/kb/what-are-possible-solutions-common-shared-memory-issues" << std::endl;
                     }
                 }

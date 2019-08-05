@@ -59,7 +59,7 @@ custom_idl_file="${custom_type_folder}/custom.idl"
 flatdata_size=10485760 # 10MB
 flatdata_ddsgen_version=300 #3.0.0
 FLATDATA_AVAILABLE=0
-MAX_DARWIN_SHMEM_SIZE=419430400
+darwin_shmem_size=419430400
 
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
@@ -140,9 +140,11 @@ function usage()
     echo "    --customType <type>          Use the Custom type feature with your type.    "
     echo "                                 See details and examples of use in the         "
     echo "                                 documentation.                                 "
-    echo "    --flatdata-max-size <size>   Specify the maximum bounded size in bytes      "
+    echo "    --flatdata-max-size <size>   Specify the maximum bounded size on bytes      "
     echo "                                 for sequences when using FlatData language     "
     echo "                                 binding. Default 10MB                          "
+    echo "    --osx-shmem-shmmax <size>    Total amount of shared memory available on     "
+    echo "                                 bytes. Default 400MB                           "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
@@ -398,7 +400,7 @@ function additional_defines_calculation()
     # Adding RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as macro
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
         additional_rti_libs="nddsmetp ${additional_rti_libs}"
-        additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE DRTI_FLATDATA_MAX_SIZE=${flatdata_size} DMAX_DARWIN_SHMEM_SIZE=${MAX_DARWIN_SHMEM_SIZE}"
+        additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE DRTI_FLATDATA_MAX_SIZE=${flatdata_size} DMAX_DARWIN_SHMEM_SIZE=${darwin_shmem_size}"
         additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
     fi    
 }
@@ -1267,6 +1269,10 @@ while [ "$1" != "" ]; do
             ;;
         --flatdata-max-size)
             flatdata_size=$2
+            shift
+            ;;
+        --osx-shmem-shmmax)
+            darwin_shmem_size=$2
             shift
             ;;
         *)
