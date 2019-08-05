@@ -2033,38 +2033,21 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(std::string topicName)
 #ifdef RTI_DARWIN
 template <typename T>
 unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
-    unsigned long int shmmax = MAX_DARWIN_SHMEM_SIZE;
-    const char *cmd = "sysctl kern.sysv.shmmax";
-    int buffSize = 100;
-    char buffer[buffSize];
-    FILE *file = NULL;
+    unsigned long int shmmax;
+    int mib[2];
+    size_t len;
 
-    // Execute cmd and get file pointer 
-    if ((file = popen(cmd, "r")) == NULL) {
-        std::cerr << "Could not run cmd '" << cmd << "'. "
-                  << "Using default size: " << shmmax << " bytes." << std::endl;
-        return shmmax;
+    mib[0] = CTL_KERN;
+    mib[1] = KERN_SHMMAX;
+    len = sizeof(shmmax);
+
+    if (sysctl(mib, 2, &shmmax, &len, NULL, 0) == -1) {
+        fprintf(stderr, "Could not retrieve 'kern.sysv.shmmax'."
+                " Using default size: %lu bytes.\n",
+                MAX_DARWIN_SHMEM_SIZE);
+        return MAX_DARWIN_SHMEM_SIZE;
     }
-
-    // Read cmd output from its file pointer
-    if (fgets(buffer, buffSize, file) == NULL) {
-        std::cerr << "Could not read '" << cmd << "' output. "
-                  << "Using default size: " << shmmax << " bytes." << std::endl;
-        return shmmax;
-    }
-
-    std::cout << cmd << ": " << buffer << std::endl;
-
-    // Split cmd output by blankspaces and get second position 
-    strtok(buffer, " ");
-    char *size = strtok(NULL, " ");
-    shmmax = atoi(size);
-
-    std::cout << "SHMMAX: " << shmmax << std::endl;
-
-    // Close file and process
-    pclose(file);
-
+    
     return shmmax;
 }
 #endif
