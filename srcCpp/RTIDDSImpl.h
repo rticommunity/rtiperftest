@@ -27,6 +27,11 @@
 #include "CustomType.h"
 #endif
 
+#if defined(RTI_DARWIN) && !defined(RTI_MICRO)
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#endif
+
 /* Undefine Windows max and min micros. 
    They conflict with std::min and std::max
 */

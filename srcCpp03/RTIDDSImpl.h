@@ -22,9 +22,10 @@
 #include "perftest_ZeroCopy.hpp"
 #endif
 
-//#ifdef RTI_DARWIN
-#include <stdio.h>
-//#endif
+#ifdef RTI_DARWIN
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#endif
 
 #define RTIPERFTEST_MAX_PEERS 1024
 
