@@ -2569,21 +2569,34 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
 #if defined(RTI_DARWIN) && !defined(RTI_MICRO)
 template <typename T>
 unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
-    unsigned long int shmmax;
-    int mib[2];
-    size_t len;
+    unsigned long int shmmax = MAX_DARWIN_SHMEM_SIZE;
+    const char *cmd = "sysctl kern.sysv.shmmax";
+    int buffSize = 100;
+    char buffer[buffSize];
+    FILE *file = NULL;
 
-    mib[0] = CTL_KERN;
-    mib[1] = KERN_SHMMAX;
-    len = sizeof(shmmax);
-
-    if (sysctl(mib, 2, &shmmax, &len, NULL, 0) == -1) {
-        fprintf(stderr, "Could not retrieve 'kern.sysv.shmmax'."
-                " Using default size: %lu bytes.\n",
-                MAX_DARWIN_SHMEM_SIZE);
-        return MAX_DARWIN_SHMEM_SIZE;
+    // Execute cmd and get file pointer 
+    if ((file = popen(cmd, "r")) == NULL) {
+        fprintf(stderr, "Could not run cmd '%s'. Using default size: %lu bytes.\n",
+                cmd, shmmax);
+        return shmmax;
     }
-    
+
+    // Read cmd output from its file pointer
+    if (fgets(buffer, buffSize, file) == NULL) {
+       fprintf(stderr, "Could not read '%s' output. Using default size: %lu bytes.\n",
+                cmd, shmmax);
+        return shmmax;
+    }
+
+    // Split cmd output by blankspaces and get second position 
+    strtok(buffer, " ");
+    char *size = strtok(NULL, " ");
+    shmmax = atoi(size);
+
+    // Close file and process
+    pclose(file);
+
     return shmmax;
 }
 #endif
@@ -2801,6 +2814,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
              */
             if (_isZeroCopy) {
                 max_allocable_space = getShmemSHMMAX();
+                fprintf(stdout, "SHMMAX: %lu\n", max_allocable_space);
                 //max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
 
                 /**
