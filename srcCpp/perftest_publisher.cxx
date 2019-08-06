@@ -250,6 +250,11 @@ void perftest_cpp::PrintVersion()
             printf(".%d", perftestV.revision);
         }
     }
+
+  #ifdef PERFTEST_COMMIT_ID
+    printf(" %s", PERFTEST_COMMIT_ID);
+  #endif
+
     printf(" (%s)\n", GetDDSVersionString().c_str());
 
     fflush(stdout);

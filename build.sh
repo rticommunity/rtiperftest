@@ -397,6 +397,11 @@ function additional_defines_calculation()
         additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_MODERN"
     fi
 
+    if [ -x "$(command -v git)" ]; then
+        commit_id="$(git rev-parse --short HEAD)"
+        additional_defines=${additional_defines}" DPERFTEST_COMMIT_ID='\\\"${commit_id}\\\"'"
+    fi
+
     # Adding RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as macro
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
         additional_rti_libs="nddsmetp ${additional_rti_libs}"
