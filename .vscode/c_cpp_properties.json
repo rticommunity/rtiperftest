@@ -46,7 +46,6 @@
                 "${NDDSHOME}/include/ndds"
             ],
             "defines": [
-                "RTI_MICRO=0",
                 "RTI_SECURE_PERFTEST=1"
             ],
             "macFrameworkPath": [
