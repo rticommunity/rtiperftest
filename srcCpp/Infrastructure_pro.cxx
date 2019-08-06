@@ -554,7 +554,8 @@ bool configureShmemTransport(
     int flow_controller_token_size = 0;
 
     // If there is no default token size set
-    if (flow_controller_token_size == 0) flow_controller_token_size = INT_MAX;
+    if (flow_controller_token_size == 0) 
+        flow_controller_token_size = INT_MAX;
 
     int fragment_size = std::min(
             parent_msg_size_max - rtps_overhead, 

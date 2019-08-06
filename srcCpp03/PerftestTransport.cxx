@@ -318,8 +318,9 @@ void configureShmemTransport(
     const int perftest_overhead = 27;
     const int rtps_overhead = 512;
     std::string flow_controller = _PM->get<std::string>("flowController");
-    int flow_controller_token_size = atoi(
-            qos_properties["dds.flow_controller.token_bucket." + flow_controller + ".token_bucket.bytes_per_token"].c_str());
+    // int flow_controller_token_size = atoi(
+    //         qos_properties["dds.flow_controller.token_bucket." + flow_controller + ".token_bucket.bytes_per_token"].c_str());
+    int flow_controller_token_size = 0;
     int datalen = _PM->get<unsigned long long>("dataLen");
 
   #ifdef RTI_FLATDATA_AVAILABLE
@@ -331,7 +332,8 @@ void configureShmemTransport(
     std::cout << "Data Len:" << datalen << std::endl;
 
     // If there is no default token size set
-    if (flow_controller_token_size == 0) flow_controller_token_size = INT_MAX;
+    if (flow_controller_token_size == 0) 
+        flow_controller_token_size = INT_MAX;
 
     int fragment_size = std::min(
             parent_msg_size_max - rtps_overhead, 
