@@ -2444,9 +2444,9 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
         }
     #endif
 
-    std::cout << "Setup DW" << std::endl;
-    std::cout << "Initial Samples: " << qos_resource_limits->initial_samples() << std::endl;
-    std::cout << "Allocable Samples: " << (max_allocable_space / RTI_FLATDATA_MAX_SIZE) << std::endl << std::endl;
+    // std::cout << "Setup DW" << std::endl;
+    // std::cout << "Initial Samples: " << qos_resource_limits->initial_samples() << std::endl;
+    // std::cout << "Allocable Samples: " << (max_allocable_space / RTI_FLATDATA_MAX_SIZE) << std::endl << std::endl;
 
     dw_qos << qos_reliability;
     dw_qos << qos_resource_limits;

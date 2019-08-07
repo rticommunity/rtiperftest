@@ -2864,9 +2864,9 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
     }
   #endif
 
-    std::cout << "Setup DW" << std::endl;
-    std::cout << "Initial Samples: " << dw_qos.resource_limits.initial_samples << std::endl;
-    std::cout << "Allocable Samples: " << (max_allocable_space / RTI_FLATDATA_MAX_SIZE) << std::endl << std::endl;
+    // std::cout << "Setup DW" << std::endl;
+    // std::cout << "Initial Samples: " << dw_qos.resource_limits.initial_samples << std::endl;
+    // std::cout << "Allocable Samples: " << (max_allocable_space / RTI_FLATDATA_MAX_SIZE) << std::endl << std::endl;
 
 
     return DDS_RETCODE_OK;
