@@ -2180,6 +2180,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
         properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = buf;
     }
 
+    #ifdef RTI_FLATDATA_AVAILABLE
     if (_isFlatData) {
         properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = 
                 std::to_string(dds::core::LENGTH_UNLIMITED);
@@ -2199,6 +2200,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
 
         qos_dr_resource_limits.dynamically_allocate_fragmented_samples(true);
     }
+    #endif
 
     dr_qos << qos_reliability;
     dr_qos << qos_resource_limits;

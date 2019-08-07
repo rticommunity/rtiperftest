@@ -2851,8 +2851,8 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
         }
 
         // Ensure enought samples to loan in the writer queue
-        dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count = 
-                2 * dw_qos.resource_limits.initial_samples;
+        // dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count = 
+        //         2 * dw_qos.resource_limits.initial_samples;
 
         /**
          * Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
@@ -2864,6 +2864,11 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
     }
   #endif
 
+    std::cout << "Setup DW" << std::endl;
+    std::cout << "Initial Samples: " << dw_qos.resource_limits.initial_samples << std::endl;
+    std::cout << "Allocable Samples: " << (max_allocable_space / RTI_FLATDATA_MAX_SIZE) << std::endl << std::endl;
+
+
     return DDS_RETCODE_OK;
 }
 
@@ -2871,6 +2876,7 @@ template <typename T>
 DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::string qos_profile, std::string topic_name)
 {
     unsigned long long initial_samples = 0;
+    int max_allocable_space = 0;
 
     #ifndef RTI_MICRO
     if (_factory->get_datareader_qos_from_profile(
@@ -3024,14 +3030,18 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::str
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
 
-        initial_samples = std::max(
-                1, MAX_PERFTEST_SAMPLE_SIZE / RTI_FLATDATA_MAX_SIZE);
+        if (_isLargeData) {
+            max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
 
-        initial_samples = std::min(
-                initial_samples,
-                (unsigned long long) dr_qos.resource_limits.initial_samples);
+            initial_samples = std::max(
+                    1, max_allocable_space / RTI_FLATDATA_MAX_SIZE);
 
-        dr_qos.resource_limits.initial_samples = initial_samples;
+            initial_samples = std::min(
+                    initial_samples,
+                    (unsigned long long) dr_qos.resource_limits.initial_samples);
+
+            dr_qos.resource_limits.initial_samples = initial_samples;
+        }        
 
         // Prevent dynamic allocation of reassembly buffer
         dr_qos.reader_resource_limits.dynamically_allocate_fragmented_samples = 
@@ -3057,6 +3067,10 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::str
         #endif
       #endif
     }
+
+    std::cout << "Setup DR" << std::endl;
+    std::cout << "Initial Samples: " << dr_qos.resource_limits.initial_samples << std::endl;
+    std::cout << "Allocable Samples: " << (max_allocable_space / RTI_FLATDATA_MAX_SIZE) << std::endl << std::endl;
 
     return DDS_RETCODE_OK;
 }

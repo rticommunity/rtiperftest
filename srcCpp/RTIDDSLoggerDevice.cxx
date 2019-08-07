@@ -12,7 +12,7 @@ RTIDDSLoggerDevice::RTIDDSLoggerDevice():
 
 void RTIDDSLoggerDevice::write(const NDDS_Config_LogMessage *message)
 {
-    if (message && (!_shmemErrors || !_zerocopyErrors)) {
+    if (message) {
         if (message->level == NDDS_CONFIG_LOG_LEVEL_ERROR) {
             if (std::string(message->text).find(
                     NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE)
@@ -33,7 +33,11 @@ void RTIDDSLoggerDevice::write(const NDDS_Config_LogMessage *message)
                 }
 
                 _zerocopyErrors = true;
+            } else {
+                printf("%s", message->text);
             }
+        } else {
+            printf("%s", message->text);
         }
     }
 }
