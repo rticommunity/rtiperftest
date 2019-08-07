@@ -375,6 +375,12 @@ function additional_defines_calculation()
     if [ "${1}}" = "CPPmodern" ]; then
         additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_MODERN"
     fi
+    
+    if [ -x "$(command -v git)" ]; then
+        commit_id="$(git rev-parse --short HEAD)"
+        additional_defines=${additional_defines}" DPERFTEST_COMMIT_ID='\\\"${commit_id}\\\"'"
+
+    fi
 }
 
 function additional_defines_calculation_micro()

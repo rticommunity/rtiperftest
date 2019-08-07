@@ -236,6 +236,10 @@ void perftest_cpp::PrintVersion()
         }
     }
 
+  #ifdef PERFTEST_COMMIT_ID
+    printf(" %s", PERFTEST_COMMIT_ID);
+  #endif
+
     printf(" (RTI Connext DDS %d.%d.%d)\n",
            ddsV.major_version(),
            ddsV.minor_version(),
