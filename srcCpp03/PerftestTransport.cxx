@@ -340,15 +340,15 @@ void configureShmemTransport(
             flow_controller_token_size);
 
     // max(1, (sample_serialized_size / fragment_size))
-    int rtps_messages_per_sample = std::max(
+    unsigned long long int rtps_messages_per_sample = std::max(
             1, (perftest_overhead + datalen) / fragment_size);
 
-    int received_message_count_max = 
+    unsigned long long int received_message_count_max = 
             2 * (_PM->get<int>("sendQueueSize") + 1) * rtps_messages_per_sample;
 
     // min(maxBufferSize, received_message_count_max * rtps_message_size)
-    int receive_buffer_size = std::min(
-        maxBufferSize, received_message_count_max * (rtps_overhead + fragment_size));
+    unsigned long long int receive_buffer_size = std::min(
+        (unsigned long long) maxBufferSize, received_message_count_max * (rtps_overhead + fragment_size));
 
     // Avoid bottleneck due to SHMEM.
     ss << received_message_count_max;
