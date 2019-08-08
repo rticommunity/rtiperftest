@@ -2198,6 +2198,12 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
             qos_resource_limits->initial_samples(initial_samples);
         }
 
+        // Ensure enought samples to loan in the writer queue
+        // if (!_isZeroCopy) {
+        //     dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count = 
+        //         2 * dw_qos.resource_limits.initial_samples;
+        // }
+
         qos_dr_resource_limits.dynamically_allocate_fragmented_samples(true);
     }
     #endif

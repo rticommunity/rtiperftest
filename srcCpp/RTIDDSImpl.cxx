@@ -2850,15 +2850,15 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
             dw_qos.resource_limits.initial_samples = initial_samples;
         }
 
-        // Ensure enought samples to loan in the writer queue
-        // dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count = 
-        //         2 * dw_qos.resource_limits.initial_samples;
-
-        /**
-         * Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
-         * his sequence number is used by a ZeroCopy DataReader to check for sample consistency.
-         */
-        if (_isZeroCopy) {
+        if (!_isZeroCopy) {
+            // Ensure enought samples to loan in the writer queue
+            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count = 
+                2 * dw_qos.resource_limits.initial_samples;
+        } else {
+            /**
+             * Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
+             * his sequence number is used by a ZeroCopy DataReader to check for sample consistency.
+             */
             dw_qos.transfer_mode.shmem_ref_settings.enable_data_consistency_check = RTI_TRUE;
         }
     }
