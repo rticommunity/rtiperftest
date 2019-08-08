@@ -2363,8 +2363,6 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
                 (unsigned long long) initializeSampleCount);
     }
 
-
-
     return initializeSampleCount;
 }
 
