@@ -2233,7 +2233,6 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
             qos_profile);
 
     dds::pub::qos::DataWriterQos dw_qos = qos_provider.datawriter_qos();
-
     Reliability qos_reliability = dw_qos.policy<Reliability>();
     ResourceLimits qos_resource_limits = dw_qos.policy<ResourceLimits>();
     DataWriterResourceLimits qos_dw_resource_limits =
@@ -2440,11 +2439,17 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                 qos_resource_limits->initial_samples(initial_samples);
             }
 
-            /**
-             * Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
-             * his sequence number is used by a ZeroCopy DataReader to check for sample consistency.
-             */
-            if (_isZeroCopy) {
+            if (!_isZeroCopy) {
+                // Ensure enought samples to loan in the writer queue
+                qos_dw_resource_limits.writer_loaned_sample_allocation().max_count(
+                        2 * qos_resource_limits->initial_samples());
+                qos_dw_resource_limits.writer_loaned_sample_allocation().initial_count(
+                        qos_resource_limits->initial_samples());
+            } else {
+                /**
+                 * Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
+                 * his sequence number is used by a ZeroCopy DataReader to check for sample consistency.
+                 */
                 dw_qos << DataWriterTransferMode::ShmemRefSettings(true);
             }
         }

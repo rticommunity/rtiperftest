@@ -2363,6 +2363,8 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
                 (unsigned long long) initializeSampleCount);
     }
 
+
+
     return initializeSampleCount;
 }
 
@@ -2854,6 +2856,8 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
             // Ensure enought samples to loan in the writer queue
             dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count = 
                 2 * dw_qos.resource_limits.initial_samples;
+            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count =
+                dw_qos.resource_limits.initial_samples;
         } else {
             /**
              * Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
@@ -3511,7 +3515,7 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_serialize_time_cost_override(
     typedef typename rti::flat::flat_type_traits<T>::builder Builder;
     typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
 
-    int serializedSize = 27 + RTI_FLATDATA_MAX_SIZE;
+    unsigned long int serializedSize = 68 + RTI_FLATDATA_MAX_SIZE;
     unsigned char *buffer = new unsigned char[serializedSize];
     double total_time = 0.0;
 
@@ -3532,7 +3536,7 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_serialize_time_cost_override(
         bin_data.finish();
 
         double start = (unsigned int) PerftestClock::getInstance().getTimeUsec();
-        builder.finish_sample();
+        T *sample = builder.finish_sample();
         double end = (unsigned int) PerftestClock::getInstance().getTimeUsec();
         total_time += end - start;
     }
@@ -3552,7 +3556,7 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_deserialize_time_cost_override(
     typedef typename rti::flat::flat_type_traits<T>::builder Builder;
     typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
 
-    int serializedSize = 27 + RTI_FLATDATA_MAX_SIZE;
+    unsigned long int serializedSize = 68 + RTI_FLATDATA_MAX_SIZE;
     unsigned char *buffer = new unsigned char[serializedSize];
 
     Builder builder(buffer, serializedSize);
