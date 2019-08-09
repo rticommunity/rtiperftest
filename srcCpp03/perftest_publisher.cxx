@@ -889,6 +889,8 @@ public:
             std::string outputCpu = "";
             if (showCpu) {
                 outputCpu = cpu.get_cpu_average();
+                cpu = CpuMonitor();
+                cpu.initialize();
             }
             printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
                    "Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%) %s\n",
@@ -929,7 +931,7 @@ static void *ThroughputReadThread(void *arg) {
  */
 int perftest_cpp::RunSubscriber()
 {
-
+    struct RTIOsapiThread *receiverThread = NULL;
     ThroughputListener *reader_listener = NULL;
     IMessagingReader   *reader = NULL;
     IMessagingWriter   *writer = NULL;
@@ -981,7 +983,6 @@ int perftest_cpp::RunSubscriber()
                     | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
         }
 
-        struct RTIOsapiThread *receiverThread = NULL;
         receiverThread = RTIOsapiThread_new(
                 "ReceiverThread",
                 threadPriority,
@@ -1119,6 +1120,10 @@ int perftest_cpp::RunSubscriber()
     }
 
     perftest_cpp::MilliSleep(1000);
+
+    if (receiverThread != NULL) {
+        RTIOsapiThread_delete(receiverThread);
+    }
 
     if (announcement_writer != NULL) {
         delete(announcement_writer);
@@ -1426,6 +1431,8 @@ class LatencyListener : public IMessagingCB
 
         if (showCpu) {
             outputCpu = cpu.get_cpu_average();
+            cpu = CpuMonitor();
+            cpu.initialize();
         }
 
         printf("Length: %5d  Latency: Ave %6.0lf us  Std %6.1lf us  "
@@ -1498,6 +1505,7 @@ int perftest_cpp::RunPublisher()
     unsigned long announcementSampleCount = 50;
     unsigned int samplesPerBatch = GetSamplesPerBatch();
     struct RTIOsapiThread *executionTimeoutThread = NULL;
+    struct RTIOsapiThread *receiverThread = NULL;
 
     // create throughput/ping writer
     writer = _MessagingImpl->CreateWriter(THROUGHPUT_TOPIC_NAME);
@@ -1560,7 +1568,6 @@ int perftest_cpp::RunPublisher()
                         | DDS_THREAD_SETTINGS_PRIORITY_ENFORCE;
             }
 
-            struct RTIOsapiThread *receiverThread = NULL;
             receiverThread = RTIOsapiThread_new(
                     "ReceiverThread",
                     threadPriority,
@@ -1946,6 +1953,10 @@ int perftest_cpp::RunPublisher()
 
     if (_PM.get<bool>("writerStats")) {
         printf("Pulled samples: %7d\n", writer->getPulledSampleCount());
+    }
+
+    if (receiverThread != NULL) {
+        RTIOsapiThread_delete(receiverThread);
     }
 
     if (writer != NULL) {

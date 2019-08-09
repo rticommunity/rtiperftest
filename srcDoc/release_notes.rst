@@ -28,17 +28,17 @@ Compilation Restrictions
 *RTI Perftest* is designed to compile and work against the *RTI Connext
 DDS* 5.2.x, 5.3.x and 6.0.0 releases.
 
-However, certain features are not compatible with all the *RTI Connext
+Certain features, however, are not compatible with all the *RTI Connext
 DDS* versions, since the build scripts make use of certain specific
-parameters in *Rtiddsgen* that might change or not be present between
+parameters in *rtiddsgen* that might change or not be present between
 releases:
 
 -  The ``--secure`` and ``--openssl-home`` parameters will not work for
    versions prior to *RTI Connext DDS* 5.2.5.
 
--  Java code generation against *RTI Connext DDS 5.2.0.x* will fail out
-   of the box. You can disable this by adding the ``--skip-java-build``
-   flag. See the Known issues section for more information and
+-  Java code generation against *RTI Connext DDS 5.2.0.x* will fail 
+   out-of-the-box. You can disable this by adding the ``--skip-java-build``
+   flag. See the Known Issues section for more information and
    alternatives.
 
 -  C# code generation against *RTI Connext DDS 5.2.0.x* is not
@@ -58,19 +58,20 @@ Ability to use your own type in RTI Perftest (#33)
 It is possible to measure the performance of your own type.
 
 The Custom Types feature allows you to use your own customized types instead of
-the one provided by RTI Perftest. It is designed in such a way that the number
+the one provided by *RTI Perftest*. It is designed in such a way that the number
 of changes in the code and configuration files is minimal.
 
 RTI Perftest thread priorities can be configured via command-line parameter (#65)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For the Classic and Modern C++ API Implementations, a new parameter,
-`-threadPriorities`, has been added to RTI Perftest. This parameter allows the
-user to set the priorities on the different threads created by RTI Connext DDS
+For the Traditional and Modern C++ API Implementations, a new parameter,
+`-threadPriorities`, has been added to *RTI Perftest*. This parameter allows you 
+to set the priorities on the different threads created by *RTI Connext DDS*
 and by the application itself.
 
-This parameter accepts either 3 numeric values representing the priority of each
-thread, or 3 string values: h (high), n (normal) and l (low). These parameters
+This parameter accepts either three numeric values (whichever numeric values you choose) 
+representing the priority of each of the threads or, instead, three characters representing 
+the priorities. These characters are h (high), n (normal) and l (low). These parameters
 can be used as follows:
 
 ::
@@ -79,54 +80,54 @@ can be used as follows:
 
 Where:
 
-- *X* is for the priority of the main Thread that manage all the communication
-  and it's also used for the asynchronous thread when using large data.
-- *Y* is the priotiry for all the receive thread. This value will be used for
-  the receive thread created by *RTI Connext DDS*, but also for the thread in
-  charge of receiving the data when the -useReadThread option (use Waitsets)
-  is provided.
-- *Z* is the priority for the Event and DataBase threads created at the
+- **X** is for the priority of the Main Thread that manages all the communication. 
+  X is also used for the Asynchronous Thread when using large data.
+- **Y** is the priority for all the receive threads. This value will be used for
+  the Receive Thread created by *RTI Connext DDS*. If ``-useReadThread`` (use waitsets) 
+  is used, Y is for the thread in charge of receiving the data.
+- **Z** is the priority for the Event and DataBase Threads created at the
   *RTI Connext DDS* level.
 
 This feature will only work for *RTI Connext DDS Professional*.
 To see what values should be used for the different threads see
-*RTI Connext DDS Core Libraries Platform Notes*.
+the following information in the *RTI Connext DDS Core Libraries Platform Notes*:
 
-- Table 6.7 Thread-Priority Definitions for Linux Platforms
-- Table 8.6 Thread-Priority Definitions for OS X Platforms
-- Table 12.7 Thread-Priority Definitions for Windows Platforms
+- The "Thread-Priority Definitions for Linux Platforms" table
+- The "Thread-Priority Definitions for OS X Platforms" table
+- The "Thread-Priority Definitions for Windows Platforms" table
 
 Raw Transport Support (#77)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* now supports raw transport communications. This allows the
-application to performance tests skipping the DDS protocol. The purpose of this
+application to conduct performance tests skipping the DDS protocol. The purpose of this
 feature is to allow the calculation of protocol overhead and time differences.
 
 To run a test with this feature, the ``-rawTransport`` command line option is
 required.
 
-RawTransport feature it's only aviable for C++ and support two kind of transport
-protocols, UDPv4 and Shared Memory
+The Raw Transport feature is only aviable for C++ and supports two kinds of transport
+protocols, UDPv4 and Shared Memory.
 
-The Raw-Transport Feature allows the following configurations:
+The Raw Transport feature allows the following configurations:
 
--  `Multicast` (Only for UDPv4)
+-  `Multicast` (only for UDPv4)
 -  `One-to-many communication` (Pub -> Sub)
 -  `Latency Test` / `Throughput Test`
 -  `Scan`
 
-Some of the command line parameter that exist for DDS are not supported if
+Some of the command-line parameters that exist for DDS are not supported if
 ``-rawTransport`` is used.
 
-For the command ``-peer`` the behavior has been modify. You can used it to set a
+For the command ``-peer``, the behavior has been modified. You can use ``-peer`` to set a
 peer address and a new optional ID:
 
-    Sintax: -peer <x.x.x.x>|<x.x.x.x:id>
+    Syntax: -peer <x.x.x.x>|<x.x.x.x:id>
 
-    If no id is provided, it's set as zero.
+    If no ID is provided, it's set as zero.
 
-    Any number of peers can be set until 1024 that correspond to RTIPERFTEST_MAX_PEERS.
+    You can set multiple peers; the maximum value of accepted peers is RTIPERFTEST_MAX_PEERS, 
+    which corresponds to 1024.
 
     Example:
 
@@ -135,12 +136,12 @@ peer address and a new optional ID:
     perftest_cpp -pub -rawTransport -peer 127.0.0.1:5 -peer 127.0.0.1:6
 
 
-A new commands line parameters `-noBlockingSockets` has been added:
+A new command-line parameter, `-noBlockingSockets`, has been added:
 
--  This command change the blocking behavior of send sockets to `never block`.
--  It only aviable with RawTransport with UDPv4 as protocol.
--  Potencialy it can reduce the lost packets.
--  CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT PERFORMANCE VARIATIONS.
+-  This parameter changes the blocking behavior of send sockets to `never block`.
+-  It is only available when ``-rawTransport`` is set with UDPv4 as the protocol.
+-  This parameter can reduce the lost packets.
+-  CHANGING THIS PARAMETER FROM THE DEFAULT CAN CAUSE SIGNIFICANT PERFORMANCE VARIATIONS.
 
 Support for RTI Connext DDS Micro 3.0.0 (#78)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -148,80 +149,81 @@ Support for RTI Connext DDS Micro 3.0.0 (#78)
 Starting with this release, *RTI Perftest* will have support for *RTI Connext
 DDS Micro* 3.0.0 and above.
 
-By using the ``--micro`` and the ``--RTIMEHOME path`` command line options at
-compilation time, *RTI Perftest* will generate code for *RTI Connext Micro* and
-it will try to compile using ``cmake`` (which path can also be configured by
-a command line parameter in the build script). The executable will be placed
-similarly as the *RTI Connext DDS Professional*, however it will be named
-``perftest_cpp_micro``.
+By using the ``--micro`` and the ``--RTIMEHOME path`` command-line options at
+compile time, *RTI Perftest* will generate code for *RTI Connext DDS Micro* and
+try to compile using ``cmake`` (the path for which can also be configured by
+a command-line parameter in the build script). In this case, the 
+*RTI Perftest* executable will be placed similarly to *RTI Connext DDS Professional's* 
+executable; however, it will be named ``perftest_cpp_micro``.
 
-Most of the features are available when using *RTI Connext Micro*, however some
-command line parameters and options are available just for *RTI Connext DDS
-Professional*, more information about the supported parameters can be found in
-the command line parameters section of the documentation.
+Most *RTI Perftest* features are available when using *RTI Connext Micro*; however, some
+command-line parameters and options are available only for *RTI Connext DDS
+Professional*. More information about the supported parameters can be found in
+:numref:`section-command_line_parameters`.
 
 Build HTML and PDF documentation (#94)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-RTI Perftest build script for linux now offers the option to generate the HTML
-and PDF documentation from the rst files in srcDoc.
+*RTI Perftest*'s build script for Linux now offers the option to generate the HTML
+and PDF documentation from the .rst files in srcDoc.
 
 Allow 3 differents addresses for -multicastAddr feature (#97)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In previous versions of *RTI Perftest*, the `-multicatAddr` command-line
+In previous versions of *RTI Perftest*, the `-multicastAddr` command-line
 parameter only supported a single address as input. This behavior has been
-improved, and now it supports in addition to only providing one address, also
-providing tree different addresses for each of the tree topics used by
-*RTI Perftest* (Throughput, Latency and Announcement).
+improved. In addition to providing only one address, this parameter also
+allows you to provide three different addresses for each of the three topics used by
+*RTI Perftest* (Throughput, Latency, and Announcement).
 
 Both IPv4 and IPv6 addresses are supported and can be set together on the same
 input command. All the input addresses must be in multicast range.
 
-If only one address is set, *RTI Perftest* will use that one and the two
-consecutive ones. The higher values supported are `239.255.255.253` (for IPv4)
+If you specify only one address, *RTI Perftest* will use that one 
+and the two consecutive ones: for example, if you give 1.1.1.1, *RTI Perftest* will use 
+1.1.1.1 + 1.1.1.2 + 1.1.1.3. The higher values supported are `239.255.255.253` for IPv4
 and `FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFC` for IPv6.
 
-Display in *RTI Perftest*'s subscriber side if the type expected is large data (#123)
+Display in RTI Perftest's subscriber side if the type expected is large data (#123)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-*RTI Perftest* requires to specify in the subscriber side the Data Length parameter
-if the Data to be received is larger than the `MAX_SYNCHRONOUS_SIZE` constant. This
-is used to change from the regular `TestData_t` type to `TestDataLarge_t` (used for
+*RTI Perftest* requires you to specify on the subscriber side the Data Length parameter
+if the data to be received is larger than the `MAX_SYNCHRONOUS_SIZE` constant. This
+parameter is used to change from the regular `TestData_t` type to `TestDataLarge_t` (used for
 large data). However, this was not displayed anywhere in the summary shown by
 the subscriber.
 
-This issue has been fixed and now the subscriber will show a short message stating
-that it is expecting the Large Data Type.
+This issue has been fixed. Now the subscriber will show a short message stating
+that it is expecting the large data type.
 
-Added --compiler and --linker command line parameters to build.sh (#152)
+Added --compiler and --linker command-line parameters to build.sh (#152)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When building in Unix, the user can now use the `--compiler` and/or `--linker`
-command line parameters to explicitly specify to the `build.sh` script the
-compiler/linker executables that will be used by *Rtiddsgen*.
+When building in Unix, you can now use the `--compiler` and/or `--linker`
+command-line parameters to explicitly specify to the `build.sh` script the
+compiler/linker executables that will be used by *rtiddsgen*.
 
 Ease the execution of *RTI Perftest* in *VxWorks* (#167)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For previous releases, it was not clear how to run `RTI Perftest` in `VxWorks`:
-Each command line parameter had to be appended to the `argv` array inside
+In previous releases, it was not clear how to run `RTI Perftest` in `VxWorks`:
+each command-line parameter had to be appended to the `argv` array inside
 `publisher_main` and `subscriber_main` in `perftest_publisher.cxx`. This
-required recompile each time the parameters change.
+required recompiling each time the parameters changed.
 
-This behavior has been simplified: In order to run in `VxWorks` the
-`perftest_cpp_main` function can be called, receiving a simple string
-containing all the command line parameters.
+This behavior has been simplified: in order to run in `VxWorks`, you can 
+call the `perftest_cpp_main` function and receive a simple string
+containing all the command-line parameters.
 
 Support *RTI Perftest* on *Android* platforms (#186)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Although the code for *RTI Perftest* is supposed to be platform independent, it
-might not work out of the box for mobile OS, since it expects to be used in a
+Although the code for *RTI Perftest* is supposed to be platform-independent, it
+might not work out-of-the-box for mobile operating systems, since it expects to be used in a
 terminal.
 
 Starting in version 3.0.0, *RTI Perftest* can also be compiled and used for
-Android platforms, using the basic graphic interface generated by *Rtiddsgen*
+Android platforms, using the basic graphical interface generated by *rtiddsgen*
 to print the output of the application.
 
 Support *RTI Connext DDS 6.0.0* *FlatData* and *Zero-Copy* features (#211)
@@ -250,33 +252,33 @@ What's Fixed in Master
 Migrate RTI Routing Service XML configuration to 6.0.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-RTI Routing Service configuration file has been updated and
-it is now supported by RTI Routing Service 6.0.0.
+The *RTI Routing Service* configuration file has been updated and
+is now supported by *RTI Routing Service* 6.0.0.
 
 Remove duplicate code on RTIDDSImpl when the topic name is checked (#99)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Each time a reader o writer was created, the topic name was compared with all the
-default topic names (throughput, latency, announcement), in order to get
-the proper QoS Profile Name. This leaded to a lot of duplicated code on the
+Each time a DataReader or DataWriter was created, the topic name was compared with all the
+default topic names (Throughput, Latency, Announcement), in order to get
+the proper QoS Profile Name. This led to a lot of duplicated code on the
 `createWriter` and `createReader` functions.
 
 This behavior has been fixed by creating a new function `getQoSProfileName`
-that access to a new map `_qoSProfileNameMap` witch contains the tree topic
-names and its corresponding profiles names.
+that accesses a new map, `_qoSProfileNameMap`, which contains the three topic
+names and their corresponding profile names.
 
 Fix incorrect parsing of the `-executionTime` command-line parameter (#102)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In previous releases, for the Classic and Modern C++ API implementations,
-the `-executionTime <sec>` command-line parameter would ignore any Invalid
+In previous releases, for the Traditional and Modern C++ API implementations,
+the `-executionTime <sec>` command-line parameter would ignore any invalid
 value for the `<sec>` parameter without any notification to the user.
 
 This behavior has been fixed and unified for all the API implementations,
-showing now an error when finding a wrong value for the `<sec>` option.
+which now show an error when finding a wrong value for the `<sec>` option.
 
-Ensure compatibility for the Classic C++ Implementation (#114)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ensure compatibility for the Traditional and Modern C++ Implementation (#114)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some of the changes added for #55 broke compatibility when compiling certain
 platforms with no support for C++11. This issue has been fixed.
@@ -285,11 +287,11 @@ Wait for all perftest executions to finish before finalizing participants factor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In *VxWorks* kernel mode, static objects are shared across different runs of the same
-*RTI Perftest* libraries/executables and changes in one run would cause changes in the other.
-When finalizing the *Participant Factory* after deleting the participant of a *RTI Perftest* execution,
-an error about outstanding participants in the domain was printed. This occurred
-because the *Participant Factory* was shared accross runs in the same machine
-and therefore participants from other executions were preventing the factory from
+*RTI Perftest* libraries/executables, and changes in one run would cause changes in the other.
+When finalizing the *Participant Factory* after deleting the participant of an *RTI Perftest* execution,
+an error about outstanding participants in the domain was printed. This error occurred
+because the *Participant Factory* was shared accross runs in the same machine; 
+therefore, participants from other executions prevented the factory from
 being properly finalized.
 
 This issue has been fixed by checking that the factory is empty of participants
@@ -298,30 +300,30 @@ before finalizing it.
 Fix incorrect behavior for the `-unbounded` command-line option when not using large data (#125)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In the 2.4 release a regression was introduced and the use of `-unbounded`
-would cause a failure when using datasizes from `28` to `63000 Bytes`. This
+In the 2.4 release, a regression was introduced: the use of `-unbounded`
+caused a failure when using datasizes from 28 to 63000 bytes. This
 issue has been resolved.
 
-Update Maximum sample size accepted by *RTI Perftest* (#136)
+Update maximum sample size accepted by *RTI Perftest* (#136)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The maximum size of a sample accepted by *RTI Perftest* has been updated to
-be compatible with *RTI Connext DDS 6.0.0*. This new value is 2147482620 Bytes.
+be compatible with *RTI Connext DDS 6.0.0*. This new value is 2147482620 bytes.
 
 Add option to enable latency measurements in machines with low resolution clocks (#162)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If the machine where *RTI Perftest* is being executed has a low resolution
-clock, the regular logic might not report accurate latency numbers. Therefore
-the application now implements a simple solution to get a rough estimation of the
+clock, the regular logic might not report accurate latency numbers. Therefore,
+the application now implements a simple solution to get a rough estimate of the
 latency.
 
-Before sending the first sample *RTI Perftest* takes the time and right after
-receiving the last pong the time is taken again. Then, under the assumption that
-the processing time is negligible, the average latency is calculated as half of 
-the taken time divided by the number of samples sent.
+Before sending the first sample, *RTI Perftest* records the time; right after 
+receiving the last pong, the time is recorded again. Under the assumption that 
+the processing time is negligible, the average latency is calculated as half  
+the time taken divided by the number of samples sent.
 
-This calculation does only make sense if latencyCount = 1 (Latency Test), since
+This calculation only makes sense if latencyCount = 1 (Latency Test), since
 it assumes that every single ping is answered.
 
 Stop using alarm function to schedule functions since it is deprecated (#164)
@@ -330,28 +332,28 @@ Stop using alarm function to schedule functions since it is deprecated (#164)
 When using `-executionTime <seconds>` parameter, internally, *RTI Perftest* was scheduling a
 function call by using it as a handler when an ALARM signal was received.
 This ALARM signal was set to be signaled in the amount of seconds specified by the *executionTime*
-parameter using the `alarm()` function available in Unix-like systems,
-which is deprecated or even already missing in some of RTI's supported platforms.
+parameter using the `alarm()` function available in Unix-like systems; however, 
+this alarm function has been deprecated or is even missing in some of RTI's supported platforms.
 
 This issue has been fixed by using a thread that sleeps for the amount of
-seconds specified and then it calls the desired function.
+seconds specified, after which the thread calls the desired function.
 
 Remove the use of certain static variables that caused issues in *VxWorks* kernel mode (#166)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When running in *VxWorks* kernel mode two or more instances of *RTI Perftest* whithin the same machine
-some parameters were shared between instances. This happened because static variables are shared
-across different runs of the same *RTI Perftest* libraries/executables and changes in one run would cause
+When running two or more instances of *RTI Perftest* within the same machine in *VxWorks* kernel mode, 
+some parameters were shared between instances. This sharing happened because static variables are shared
+across different runs of the same *RTI Perftest* libraries/executables, and changes in one run would cause
 changes in the other. This issue has ben fixed.
 
 Use Connext DDS implementation for the `milliSleep` method in C++ (#180)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The `PerftestClock::milliSleep()` method has been modified in the classic and
-modern C++ implementations to always use the *RTI Connext DDS* sleep functionality.
-This makes the function OS independent.
+The ``PerftestClock::milliSleep()`` method has been modified in the Traditional and Modern C++ implementations 
+to always use the *RTI Connext DDS* sleep functionality.
+This change makes the sleep functionality independent of the operating system.
 
-At the same time, the code has been improved avoid overflowing the time for the sleeping
+At the same time, the code has been improved to avoid overflowing the time of the sleeping
 period.
 
 Fix Bottleneck due to low SHMEM QoS resources settings
@@ -522,7 +524,7 @@ would cause some issues when referencing it from a static context.
 In order to avoid this issue, the variable is not static anymore
 and it will be initialized in the constructor of the `PerftestTransport` class.
 
-This issue affected both the Modern C++ Implementation and the Classic one.
+This issue affected both the Traditional and Modern C++ implementations.
 
 Release Notes 2.3.2
 -------------------
@@ -530,11 +532,11 @@ Release Notes 2.3.2
 What's Fixed in 2.3.2
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Classic C++ Semaphore Take() and Give() operations not checking for errors properly (#47)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Traditional C++ Semaphore Take() and Give() operations not checking for errors properly (#47)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In previous versions, the semaphore Take() and Give() operations
-were not being checked for error in a correct way in the Classic C++ API implementation.
+were not being checked for errors correctly in the Traditional C++ API implementation.
 This has been fixed.
 
 Update Security Certificates and Governance files (#49)
@@ -1075,7 +1077,7 @@ What's New
 Platform support and build system
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-*RTI Perftest 2.0* makes use of the *RTI Connext DDS* *Rtiddsgen* tool
+*RTI Perftest 2.0* makes use of the *RTI Connext DDS* *rtiddsgen* tool
 in order to generate part of its code and also the makefile/project
 files used to compile that code.
 
@@ -1084,8 +1086,8 @@ solutions have been removed and now the build system depends on 2
 scripts: ``build.sh`` for Unix-based systems and ``build.bat`` for
 Windows systems.
 
-*RTI Perftest* scripts works for every platform for which *Rtiddsgen*
-can generate an example, except for those in which *Rtiddsgen* doesn't
+*RTI Perftest* scripts works for every platform for which *rtiddsgen*
+can generate an example, except for those in which *rtiddsgen* doesn't
 generate regular makefiles or *Visual Studio Solutions* but specific
 project files. That is the case of *Android* platforms as well as the
 *iOS* ones.
@@ -1144,7 +1146,7 @@ Support for Dynamic data
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Added command-line parameter to specify the use of the Dynamic Data API
-instead of the regular *Rtiddsgen* generated code use.
+instead of the regular *rtiddsgen* generated code use.
 
 Simplified execution in VxWorks kernel mode
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1325,17 +1327,17 @@ Warnings Compiling on Windows systems when using the *RTI Security* plugin
 
 We have found that in certain instalations of *Openssl* a missing `pdb` file
 causes several warnings when compiling statically *RTI Perftest* for C++ 
-(classic and modern implementations). The warning that will show should be
+(Traditional and Modern implementations). The warning that will show should be
 similar to this one:
 
-```
-libeay32z.lib(wp_block.obj) : warning LNK4099: PDB 'lib.pdb' was not found with
-'libeay32z.lib(wp_block.obj)' or at 'rtiperftest\srcCpp03\objs\i86Win32VS2015\lib.pdb';
-linking object as if no debug info [srcCpp03\perftest_publisher-i86Win32VS2015.vcxproj]
+::
+
+    libeay32z.lib(wp_block.obj) : warning LNK4099: PDB 'lib.pdb' was not found with
+    'libeay32z.lib(wp_block.obj)' or at 'rtiperftest\srcCpp03\objs\i86Win32VS2015\lib.pdb';
+    linking object as if no debug info [srcCpp03\perftest_publisher-i86Win32VS2015.vcxproj]
 
     403 Warning(s)
     0 Error(s)
-```
 
 This warning should be innocuous.
 
@@ -1346,5 +1348,5 @@ When building against the *RTI Connext DDS Micro* libraries, only the static
 compilation modes are supported. Therefore the ``--dynamic`` option will have
 no effect.
 
-``Rtiddsgen`` code generator will fail with the following message: ``Option
+``rtiddsgen`` code generator will fail with the following message: ``Option
 -sharedLib is not supported by this version of rtiddsgen``.
