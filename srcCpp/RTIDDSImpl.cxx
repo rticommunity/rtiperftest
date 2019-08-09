@@ -874,8 +874,11 @@ public:
      * @param isCftWildcardKey states if CFT is being used
      */
     bool Send(const TestMessage &message, bool isCftWildCardKey) {
-        Builder builder = rti::flat::build_data<T>(this->_writer);
         long key = 0;
+        Builder builder = rti::flat::build_data<T>(this->_writer);
+        if (!builder.is_valid()) {
+            return false;
+        }
 
         // Initialize Information data
         builder.add_entity_id(message.entity_id);
@@ -2854,7 +2857,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
              *  ERROR: Out of resources for writer loaned samples
              */
             dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count =
-                DDS_LENGTH_UNLIMITED; 
+                2 * dw_qos.resource_limits.initial_samples;
             dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count =
                 dw_qos.resource_limits.initial_samples;
         }

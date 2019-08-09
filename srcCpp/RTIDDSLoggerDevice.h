@@ -34,7 +34,12 @@ const std::string NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE =
     "NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key";
 
 const std::string NDDS_ZEROCOPY_NULL_OFFSET_ERROR = 
-    "rti::flat:!precondition: null offset";
+    "rti::flat:!precondition"; // Not complete to increse performance
+
+const std::string NDDS_OUT_OF_LOANED_SAMPLES =
+    "DDS_DataWriter_get_loan_untypedI"; // Not complete to increse performance
+const std::string NDDS_OUT_OF_LOANED_SAMPLES_2 =
+    "TDataWriter::get_loan:!";
 
 class RTIDDSLoggerDevice : public NDDSConfigLoggerDevice {
 
@@ -49,6 +54,12 @@ class RTIDDSLoggerDevice : public NDDSConfigLoggerDevice {
      * False by default. In case a ZeroCopy error appears it will be set to 'True'.
      */
     bool _zerocopyErrors;
+
+    /**
+     * False by default. In case a NDDS_OUT_OF_LOANED_SAMPLES error appears it
+     * will be set to true.
+     */
+    bool _outOfLoanedSamples;
   public:
 
     /*
