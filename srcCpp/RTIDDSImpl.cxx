@@ -2340,7 +2340,7 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
      * There is a minimum number of samples that we want to send no matter what
      * the conditions are:
      */
-    unsigned long initializeSampleCount = 50;
+    unsigned long initializeSampleCount = this->_sendQueueSize;
 
     /*
      * If we are using reliable, the maximum burst of that we can send is limited
@@ -2350,9 +2350,9 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
      *
      * If we are not using reliability this should not matter.
      */
-    initializeSampleCount = (std::max)(
-            initializeSampleCount,
-            (unsigned long) _PM->get<int>("sendQueueSize"));
+    // initializeSampleCount = (std::max)(
+    //         initializeSampleCount,
+    //         (unsigned long) _PM->get<int>("sendQueueSize"));
 
     /*
      * If we are using batching we need to take into account tha the Send Queue
@@ -2706,6 +2706,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
         }
 
         dw_qos.resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
+        this->_sendQueueSize = dw_qos.resource_limits.initial_samples;
       #endif
         dw_qos.resource_limits.max_samples_per_instance =
                 dw_qos.resource_limits.max_samples;
@@ -2803,8 +2804,8 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
                 false);
 
         /**
-         *  If FlatData and LargeData, automatically estimate initial_samples here
-         * in a range from 1 up to the initial samples specifies in the QoS file
+         * If FlatData and LargeData, automatically estimate initial_samples here
+         * in a range from 1 up to the initial samples specifies in the QoS file.
          */ 
         if (_isLargeData) {
             max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
@@ -2850,16 +2851,33 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
                     initial_samples,
                     (unsigned long long) dw_qos.resource_limits.initial_samples);
 
+            this->_sendQueueSize = initial_samples;
             dw_qos.resource_limits.initial_samples = initial_samples;
 
             /**
-             * Make sure there are always enought samples to loan in order to avoid:
-             *  ERROR: Out of resources for writer loaned samples
-             */
-            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count =
-                2 * dw_qos.resource_limits.initial_samples;
-            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count =
-                dw_qos.resource_limits.initial_samples;
+             * Since for ZeroCopy we are sending small data (16B reference),
+             * we do not need these settings
+             */ 
+            if (!_isZeroCopy) {
+                /**
+                 * Replace previously set reduce limits by the new ones from the initial_samples
+                 * size calculations
+                */
+                dw_qos.resource_limits.max_samples = initial_samples;
+                dw_qos.resource_limits.max_samples_per_instance = initial_samples;
+                dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples = std::max(1.0, 0.1 * initial_samples);
+                dw_qos.protocol.rtps_reliable_writer.high_watermark = 0.9 * initial_samples;
+                dw_qos.protocol.rtps_reliable_writer.low_watermark = std::max(1.0, 0.1 * initial_samples);
+
+                /**
+                 * Make sure there are always enought samples to loan in order to avoid:
+                 *  ERROR: Out of resources for writer loaned samples
+                 */
+                dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count =
+                    2 * dw_qos.resource_limits.initial_samples;
+                dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count =
+                    dw_qos.resource_limits.initial_samples;
+            }
         }
 
         /**
@@ -2872,10 +2890,11 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
     }
   #endif
 
-    // std::cout << "Setup DW" << std::endl;
-    // std::cout << "Initial Samples: " << dw_qos.resource_limits.initial_samples << std::endl;
-    // std::cout << "Allocable Samples: " << (max_allocable_space / RTI_FLATDATA_MAX_SIZE) << std::endl << std::endl;
-
+  #ifdef RTI_FLATDATA_AVAILABLE
+    std::cout << "Setup DW" << std::endl;
+    std::cout << "Initial Samples: " << dw_qos.resource_limits.initial_samples << std::endl;
+    std::cout << "Allocable Samples: " << (max_allocable_space / RTI_FLATDATA_MAX_SIZE) << std::endl << std::endl;
+  #endif
 
     return DDS_RETCODE_OK;
 }
@@ -3041,14 +3060,18 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::str
         if (_isLargeData) {
             max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
 
+            // The writer_loaned_sample_allocation is initial_simples + 1
             initial_samples = std::max(
-                    1, max_allocable_space / RTI_FLATDATA_MAX_SIZE);
+                    1, (max_allocable_space - RTI_FLATDATA_MAX_SIZE) / RTI_FLATDATA_MAX_SIZE);
 
             initial_samples = std::min(
                     initial_samples,
                     (unsigned long long) dr_qos.resource_limits.initial_samples);
 
             dr_qos.resource_limits.initial_samples = initial_samples;
+            dr_qos.resource_limits.max_samples = initial_samples;
+            dr_qos.resource_limits.max_samples_per_instance = initial_samples;
+            dr_qos.reader_resource_limits.max_samples_per_remote_writer = initial_samples;
         }        
 
         // Prevent dynamic allocation of reassembly buffer
@@ -3540,7 +3563,7 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_serialize_time_cost_override(
         bin_data.finish();
 
         double start = (unsigned int) PerftestClock::getInstance().getTimeUsec();
-        T *sample = builder.finish_sample();
+        builder.finish_sample();
         double end = (unsigned int) PerftestClock::getInstance().getTimeUsec();
         total_time += end - start;
     }

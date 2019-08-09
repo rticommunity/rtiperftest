@@ -73,6 +73,7 @@ public:
     {
       #ifndef RTI_MICRO
         _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
+        _sendQueueSize = 0;
       #else
         /*
          * For micro we want to restrict the use of memory, and since we need
@@ -160,6 +161,7 @@ protected:
     static PerftestMutex        *_finalizeFactoryMutex;
 
     long                         _instanceMaxCountReader;
+    unsigned long                _sendQueueSize;
     bool                         _isLargeData;
     bool                         _isFlatData;
     bool                         _isZeroCopy;
