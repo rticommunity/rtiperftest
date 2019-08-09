@@ -95,6 +95,7 @@ int DynamicDataMembersId::at(std::string key)
 template <typename T>
 RTIDDSImpl<T>::RTIDDSImpl():
         _InstanceMaxCountReader(dds::core::LENGTH_UNLIMITED),
+        _sendQueueSize(0),
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED),
         _isLargeData(false),
         _isFlatData(false),
@@ -1737,12 +1738,6 @@ template <typename T>
 unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
 {
     /*
-     * There is a minimum number of samples that we want to send no matter what
-     * the conditions are:
-     */
-    unsigned long initializeSampleCount = 50;
-
-    /*
      * If we are using reliable, the maximum burst of that we can send is limited
      * by max_send_window_size (or max samples, but we will assume this is not
      * the case for this). In such case we should send max_send_window_size
@@ -1750,9 +1745,7 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
      *
      * If we are not using reliability this should not matter.
      */
-    initializeSampleCount = (std::max)(
-            initializeSampleCount,
-            (unsigned long) _PM->get<int>("sendQueueSize"));
+    unsigned long initializeSampleCount = this->_sendQueueSize;
 
     /*
      * If we are using batching we need to take into account tha the Send Queue
@@ -2202,6 +2195,16 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
                     (unsigned long long) qos_resource_limits->initial_samples());
 
             qos_resource_limits->initial_samples(initial_samples);
+
+            /**
+             * Since for ZeroCopy we are sending small data (16B reference),
+             * we do not need these settings
+             */
+            if (!_isZeroCopy) {
+                qos_resource_limits->max_samples(initial_samples);
+                qos_resource_limits->max_samples_per_instance(initial_samples);
+                qos_dr_resource_limits.max_samples_per_remote_writer(initial_samples);
+            }
         }
 
         qos_dr_resource_limits.dynamically_allocate_fragmented_samples(true);
@@ -2314,6 +2317,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
 
         qos_resource_limits->initial_samples(_PM->get<int>("sendQueueSize"));
         qos_resource_limits.max_samples_per_instance(qos_resource_limits.max_samples());
+        this->_sendQueueSize = qos_resource_limits->initial_samples();
 
         if (_PM->get<int>("durability") == DDS_VOLATILE_DURABILITY_QOS) {
             qos_durability = dds::core::policy::Durability::Volatile();
@@ -2428,6 +2432,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                     }
                 }
               #endif
+
                 // The writer_loaned_sample_allocation is initial_simples + 1
                 initial_samples = std::max(
                         1ul, (max_allocable_space - RTI_FLATDATA_MAX_SIZE) / RTI_FLATDATA_MAX_SIZE);
@@ -2437,16 +2442,36 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                         (unsigned long long) qos_resource_limits->initial_samples());
 
                 qos_resource_limits->initial_samples(initial_samples);
+                this->_sendQueueSize = initial_samples;
 
                 /**
-                 * Make sure there are always enought samples to loan in order to avoid:
-                 *  ERROR: Out of resources for writer loaned samples
-                 */
+                 * Since for ZeroCopy we are sending small data (16B reference),
+                 * we do not need these settings
+                 */ 
                 if (!_isZeroCopy) {
-                  qos_dw_resource_limits.writer_loaned_sample_allocation().max_count(
-                          2 * qos_resource_limits->initial_samples());
-                  qos_dw_resource_limits.writer_loaned_sample_allocation().initial_count(
-                          qos_resource_limits->initial_samples());
+                    /**
+                     * Replace previously set reduce limits by the new ones 
+                     * from the initial_samples size calculations 
+                     */
+                    qos_resource_limits->max_samples(
+                            qos_resource_limits->initial_samples());
+                    qos_resource_limits->max_samples_per_instance(
+                            qos_resource_limits->initial_samples());
+                    dw_reliableWriterProtocol.heartbeats_per_max_samples(
+                            std::max(1.0, 0.1 * initial_samples));
+                    dw_reliableWriterProtocol.high_watermark(
+                            0.9 * initial_samples);
+                    dw_reliableWriterProtocol.low_watermark(
+                            std::max(1.0, 0.1 * initial_samples));
+
+                    /**
+                     * Make sure there are always enought samples to loan in order to avoid:
+                     *  ERROR: Out of resources for writer loaned samples
+                     */
+                    qos_dw_resource_limits.writer_loaned_sample_allocation().max_count(
+                            2 * qos_resource_limits->initial_samples());
+                    qos_dw_resource_limits.writer_loaned_sample_allocation().initial_count(
+                            qos_resource_limits->initial_samples());
                 }
             }
 

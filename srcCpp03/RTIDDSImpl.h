@@ -95,6 +95,7 @@ class RTIDDSImpl : public IMessaging
 
 
     long _InstanceMaxCountReader;
+    unsigned long _sendQueueSize;
     int _InstanceHashBuckets;
     bool _isLargeData;
     bool _isFlatData;

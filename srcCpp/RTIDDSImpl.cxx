@@ -2337,12 +2337,6 @@ template <typename T>
 unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
 {
     /*
-     * There is a minimum number of samples that we want to send no matter what
-     * the conditions are:
-     */
-    unsigned long initializeSampleCount = this->_sendQueueSize;
-
-    /*
      * If we are using reliable, the maximum burst of that we can send is limited
      * by max_send_window_size (or max samples, but we will assume this is not
      * the case for this). In such case we should send max_send_window_size
@@ -2350,9 +2344,7 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
      *
      * If we are not using reliability this should not matter.
      */
-    // initializeSampleCount = (std::max)(
-    //         initializeSampleCount,
-    //         (unsigned long) _PM->get<int>("sendQueueSize"));
+    unsigned long initializeSampleCount = this->_sendQueueSize;
 
     /*
      * If we are using batching we need to take into account tha the Send Queue
@@ -2686,6 +2678,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
         }
       #else
         dw_qos.resource_limits.max_samples = _PM->get<int>("sendQueueSize");
+        this->_sendQueueSize = dw_qos.resource_limits.max_samples;
       #endif
 
       #ifndef RTI_MICRO
@@ -2843,6 +2836,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
                 }
             }
           #endif
+
             // The writer_loaned_sample_allocation is initial_simples + 1
             initial_samples = std::max(
                     1ul, (max_allocable_space - RTI_FLATDATA_MAX_SIZE) / RTI_FLATDATA_MAX_SIZE);
@@ -2851,8 +2845,8 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
                     initial_samples,
                     (unsigned long long) dw_qos.resource_limits.initial_samples);
 
-            this->_sendQueueSize = initial_samples;
             dw_qos.resource_limits.initial_samples = initial_samples;
+            this->_sendQueueSize = initial_samples;
 
             /**
              * Since for ZeroCopy we are sending small data (16B reference),
@@ -2865,9 +2859,12 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
                 */
                 dw_qos.resource_limits.max_samples = initial_samples;
                 dw_qos.resource_limits.max_samples_per_instance = initial_samples;
-                dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples = std::max(1.0, 0.1 * initial_samples);
-                dw_qos.protocol.rtps_reliable_writer.high_watermark = 0.9 * initial_samples;
-                dw_qos.protocol.rtps_reliable_writer.low_watermark = std::max(1.0, 0.1 * initial_samples);
+                dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples = 
+                        std::max(1.0, 0.1 * initial_samples);
+                dw_qos.protocol.rtps_reliable_writer.high_watermark = 
+                        0.9 * initial_samples;
+                dw_qos.protocol.rtps_reliable_writer.low_watermark = 
+                        std::max(1.0, 0.1 * initial_samples);
 
                 /**
                  * Make sure there are always enought samples to loan in order to avoid:
@@ -3067,11 +3064,18 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::str
             initial_samples = std::min(
                     initial_samples,
                     (unsigned long long) dr_qos.resource_limits.initial_samples);
-
+            
             dr_qos.resource_limits.initial_samples = initial_samples;
-            dr_qos.resource_limits.max_samples = initial_samples;
-            dr_qos.resource_limits.max_samples_per_instance = initial_samples;
-            dr_qos.reader_resource_limits.max_samples_per_remote_writer = initial_samples;
+            
+            /**
+             * Since for ZeroCopy we are sending small data (16B reference),
+             * we do not need these settings
+             */
+            if (!_isZeroCopy) {
+                dr_qos.resource_limits.max_samples = initial_samples;
+                dr_qos.resource_limits.max_samples_per_instance = initial_samples;
+                dr_qos.reader_resource_limits.max_samples_per_remote_writer = initial_samples;
+            }
         }        
 
         // Prevent dynamic allocation of reassembly buffer
