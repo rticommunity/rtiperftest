@@ -70,10 +70,10 @@ If you compiled the performance test executable dynamically add the
 -  The ``$DYLD_LIBRARY_PATH`` variable if you are on OSX.
 -  The ``%PATH%`` variable (if you are on Windows).
 
-When using *RTI Secure DDS Plugin* and using dynamic linking
+When using *RTI Security Plugins* and using dynamic linking
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In such case, add the *OpenSSL* libraries in
+In this case, add the *OpenSSL* libraries in
 ``$OPENSSLHOME/<debug or release>/lib`` to the ``$LD_LIBRARY_PATH``,
 ``$DYLD_LIBRARY_PATH`` or ``%PATH%`` variable:
 
@@ -87,13 +87,16 @@ In such case, add the *OpenSSL* libraries in
 When using *RTI Perftest* in *VxWorks* kernel mode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After compiling for *VxWorks* (see `Compilation <https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/compilation.rst>`__), the shared object need to be loaded in the kernel, by doing:
+After compiling for *VxWorks* (see `Compilation <https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/compilation.rst>`__), 
+the shared object needs to be loaded in the kernel, by doing:
 
 ``ld 1 < bin/<architecture>/release/perftest_cpp.so``
 
-Now, the code can be executed by calling the ``perftest_main_cpp`` function with a string as an argument containing all the `command line parameters <https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/command_line_parameters.rst>`__.
+Now, the code can be executed by calling the ``perftest_main_cpp`` function 
+with a string as an argument containing all the `command-line parameters <https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/command_line_parameters.rst>`__.
+For example
 
-E.g. ``perftest_cpp_main "-pub -domain 0 -latencyCount 1 -dataLen 1000 -latencyTest -multicast"``
+``perftest_cpp_main "-pub -domain 0 -latencyCount 1 -dataLen 1000 -latencyTest -multicast"``
 
 Java executable
 ---------------
@@ -132,17 +135,17 @@ Alternatively, you can directly run the Java ``jar`` files:
 
     java -cp "<RTI Perftest Path>/bin/<release or debug>/perftest_java.jar:<NDDSHOME>/lib/java/<nddsjava.jar or nddsjava.jar>" com.rti.perftest.ddsimpl.PerfTestLauncher
 
-In such case, add the ``$NDDSHOME/lib/<architecture>`` and the
+In such a case, add the ``$NDDSHOME/lib/<architecture>`` and the
 ``$NDDSHOME/lib/java`` folders to:
 
 -  The ``$LD_LIBRARY_PATH`` variable if you are on Linux systems.
 -  The ``$DYLD_LIBRARY_PATH`` variable if you are on OSX.
 -  The ``%PATH%`` variable (if you are on Windows).
 
-When using Java on UNIX-based systems with RTI Secure DDS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When using Java on UNIX-based systems with *RTI Security Plugins*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In such case, add the *OpenSSL* libraries in
+In this case, add the *OpenSSL* libraries in
 ``$OPENSSLHOME/<debug or release>/lib`` to the ``$LD_LIBRARY_PATH`` or
 ``%PATH%`` variable:
 
@@ -158,7 +161,7 @@ Launching the application
 
 The test uses an XML configuration file. It locates this file based on
 its path relative to the directory from which the test is run. To use
-this configuration file move to *RTI Perftest* top-level location.
+this configuration file, move to *RTI Perftest*'s top-level location.
 
 Start the test applications. You can start the publisher or subscribers
 first, the order does not matter. When selecting your optional

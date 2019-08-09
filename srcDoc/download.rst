@@ -6,12 +6,12 @@ Download
 Supported Platforms
 -------------------
 
-*RTI Perftest* makes use of the *RTI Connext DDS* *Rtiddsgen* tool in
+*RTI Perftest* makes use of the *RTI Connext DDS* *rtiddsgen* tool in
 order to generate part of its code and also the makefile/project files
 used to compile that code.
 
-*RTI Perftest* scripts works for every platform for which *Rtiddsgen*
-can generate an example, except for those in which *Rtiddsgen* doesn't
+*RTI Perftest* scripts works for every platform for which *rtiddsgen*
+can generate an example, except for those in which *rtiddsgen* doesn't
 generate regular makefiles or *Visual Studio Solutions* but specific
 project files. That is the case of *Android* platforms as well as the
 *iOS* ones.

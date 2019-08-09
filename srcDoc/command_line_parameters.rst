@@ -18,15 +18,15 @@ application, or both:
 -  :ref:`Test Parameters to Control RTI Connext DDS Secure Options`
 
 As you will see in the tables, the ``-pub`` parameter specifies a
-publishing application and the ``-sub`` specifies a subscribing
-application. If you do not specify See ``-pub`` then ``-sub`` is
+publishing application and ``-sub`` specifies a subscribing
+application. If you do not specify ``-pub``, then ``-sub`` is
 assumed.
 
-Some of these parameters are valid when using *RTI Connext DDS Pro* and
-*RTI Connext DDS Micro* and *Raw Transport*, however, some of them are just
-available for some of the implementations, this should be stated both in each
-of the descriptions of the parameters and in the ``-help`` information displayed
-by the application.
+Some of these parameters are valid when using *RTI Connext DDS Professional*, 
+*RTI Connext DDS Micro*, and the Raw Transport feature; however, some of them are 
+available for just some of the implementations. Whether or not a parameter is available 
+should be stated both in each of the descriptions of the parameters and in the ``-help`` 
+information displayed by the application.
 
 For additional information on setting the parameters, see sections:
 
@@ -62,22 +62,22 @@ Test Parameters for Publishing and Subscribing Applications
    | **Range:** ``28 - 2147482620 bytes``
 
    The lower limit is the number of "overhead" bytes in the message
-   (i.e., the timestamp, sequence number, and other meta-data used by
+   (i.e., the timestamp, sequence number, and other metadata used by
    the test); the upper limit ensures that, when the overhead of the
    wire protocol is added, it doesn't overflow the UDP maximum datagram
    size of 64KB.
 
-   If ``<bytes>`` is bigger than 63000 *RTI Perftest* will enable the
+   If ``<bytes>`` is bigger than 63000, *RTI Perftest* will enable the
    use of *Asynchronous Publishing* and *Unbounded Sequences*. When using
-   *RTI Connext DDS Micro*, the type is not really unbounded, the size is
-   given by the ``MICRO_UNBOUNDED_SEQUENCE_SIZE`` constant, that can be
+   *RTI Connext DDS Micro*, the type is not really unbounded; the size is
+   given by the ``MICRO_UNBOUNDED_SEQUENCE_SIZE`` constant, which can be
    modified in the ``build.bat`` and ``build.sh`` scripts.
 
    If ``-scan`` is specified, this value is ignored.
 
 -  ``-verbosity``
 
-   Run with different levels of verbosity for RTI Connext DDS.
+   Run with different levels of verbosity for *RTI Connext DDS*.
 
    | ``0`` - ``SILENT``
    | ``1`` - ``ERROR`` (default)
@@ -132,8 +132,8 @@ Test Parameters for Publishing and Subscribing Applications
    For an introduction to the RTI durability model, see the Historical
    Data design pattern in the RTI Connext DDS Core Libraries Getting
    Started Guide. See also: Mechanisms for Achieving Information
-   Durability and Persistence, Chapter 12, in the RTI Connext DDS Core
-   Libraries User’s Manual.
+   Durability and Persistence, Chapter 12, in the *RTI Connext DDS Core
+   Libraries User’s Manual*.
 
    ``PERSISTENT`` is not available when compiling against *RTI Connext DDS
    Micro*.
@@ -193,8 +193,8 @@ Test Parameters for Publishing and Subscribing Applications
    Enable the use of multicast. In addition, the Datawriter heartbeats
    will be sent using multicast instead of unicast.
 
-   The <address> will be used by the 3 topics **latency:**, **throughput:**
-   and **announcement:**.
+   The <address> will be used by the 3 topics **latency**, **throughput**
+   and **announcement**.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
@@ -258,8 +258,8 @@ Test Parameters for Publishing and Subscribing Applications
    therefore setting them in the XML file has no effect; see the See
    Note:.
 
-   See comments in ``perftest_qos_profiles.xml``, as well as
-   **Configuring QoS with XML, Chapter 17** in the *RTI Connext DDS Core
+   See comments in ``perftest_qos_profiles.xml``, as well as the 
+   **Configuring QoS with XML** chapter in the *RTI Connext DDS Core
    Libraries* User’s Manual.
 
 -  ``-qosLibrary <library name>``
@@ -283,7 +283,7 @@ Test Parameters for Publishing and Subscribing Applications
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
 
-   **Noste:** This option is only present in ``C++`` traditional and new
+   **Note:** This option is only present in ``C++`` traditional and modern
    PSM.
 
 -  ``-useReadThread``
@@ -299,7 +299,7 @@ Test Parameters for Publishing and Subscribing Applications
    Process incoming data in groups, based on time, rather than
    individually.
 
-   Only used if the See ``-useReadThread`` option is specified on the
+   Only used if the ``-useReadThread`` is specified on the
    subscriber side.
 
    See :ref:`WaitSet Event Count and Delay`.
@@ -315,7 +315,7 @@ Test Parameters for Publishing and Subscribing Applications
    Process incoming data in groups, based on the number of samples,
    rather than individually.
 
-   Only used if the See ``-useReadThread`` option is specified on the
+   Only used if ``-useReadThread`` is specified on the
    subscriber side.
 
    See :ref:`WaitSet Event Count and Delay`.
@@ -348,7 +348,7 @@ Test Parameters for Publishing and Subscribing Applications
    ['default','10Gbps','1Gbps'].
 
    This parameter is not available when compiling against *RTI Connext DDS
-   Micro*, in this case *RTI Perftest* will use the default Flow Controller.
+   Micro*; in this case, *RTI Perftest* will use the default FlowController.
 
    | **Default:** ``default``
    | **Values:** ``['default','10Gbps','1Gbps']``
@@ -368,71 +368,72 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** ``2 * dataLen up to 63000 bytes.``\  **Range:** ``28 - 63000 bytes``
 
--  ``-peer <address>|<addres>[:<id>]``
+-  ``-peer <address>|<address>[:<id>]``
 
-   Adds a peer to the peer host address list. If ``-rawTransport`` is used, a
-   optional ID of the subscriber could beprovied. This argument may be repeated
-   to indicate multiple peers.
+   Adds a peer to the peer host address list. If ``-rawTransport`` is used, 
+   you can provide an optional subscriber ID. This argument may be repeated to 
+   indicate multiple peers. For example: -peer 1.1.1.1 -peer 2.2.2.2 -peer 3.3.3.3.
 
    **Default:**
    ``Not set. RTI Perftest will use the default initial peers (localhost, shared-memory and multicast).``
 
 -  ``-threadPriorities X:Y:Z``
 
-    This Command Line parameter is supported only for the C++ and C++03 API
-    Implementations.
+    This command-line parameter is supported only for the C++ and C++03 API
+    implementations.
 
-    Set the priorities for the application Threads:
-        X -- For the Main Thread, which will be the one sending the data. Also
-             for the Asynchronous thread if that one is used.
-        Y -- For the Receive Threads, If the -useReadThread is used, also for
-             the thread created to receive and process data.
-        Z -- For the rest of the threads created by the middleware: Event and
-             Database Threads.
+    Set the priorities for the application threads:
 
-    Three default values: h (high), n (normal) and l (low) can be used
-    instead of numbers.
+    - **X** for the Main Thread, which will be the one sending the data, or 
+      for the Asynchronous thread if that one is used.
+    - **Y** for the Receive Threads or, if ``-useReadThread`` is used, for
+      the thread created to receive and process data.
+    - **Z** for the rest of the threads created by the middleware: Event and Database Threads.
 
-    To see what values can be used for the different threads see
-    *RTI Connext DDS Core Libraries Platform Notes Version 5.3.1*
+    This parameter accepts either three numeric values (whichever numeric values you choose) 
+    representing the priority of each of the threads or, instead, three characters representing 
+    the priorities. These characters are h (high), n (normal) and l (low). 
 
-    - Table 6.7 Thread-Priority Definitions for Linux Platforms
-    - Table 8.6 Thread-Priority Definitions for OS X Platforms
-    - Table 12.7 Thread-Priority Definitions for Windows Platforms
+    To see what values can be used for the different threads, see the 
+    following tables in the *RTI Connext DDS Core Libraries Platform Notes*:
+
+    - the "Thread-Priority Definitions for Linux Platforms" table
+    - the "Thread-Priority Definitions for OS X Platforms" table
+    - the "Thread-Priority Definitions for Windows Platforms" table
 
    This parameter is not available when compiling against *RTI Connext DDS
-   Micro* nor for *Raw Transport*.
+   Micro* or using the Raw Transport feature.
 
    **Default:**
    ``Not set. The priority will not be modified.``
 
-Transport Specific Options
+Transport-Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default, *RTI Perftest* will try to use the transport settings provided via the
-`xml` configuration file. However, it is possible to override these values directly
-by using the `Transport` spececific command-line parameters.
+XML configuration file. However, it is possible to override these values directly
+by using the transport-spececific command-line parameters.
 
 -  ``-transport <TRANSPORT NAME>``
 
    Set the transport to be used. The rest of the transports will be disabled.
 
-   | **Options Pro:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS`` and ``WAN``.
-   | **Default Pro:** ``Transport defined in the XML profile. (UDPv4 and SHMEM if no changes).``
+   | **Options Pro:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS`` and ``WAN``
+   | **Default Pro:** Transport defined in the XML profile (``UDPv4`` and ``SHMEM`` if the XML profile is not changed)
 
-   | **Options Micro:** ``UDPv4``, ``SHMEM``.
-   | **Default Micro:** ``UDPv4``.
+   | **Options Micro:** ``UDPv4``, ``SHMEM``
+   | **Default Micro:** ``UDPv4``
 
-   | **Options Raw Transport:** ``UDPv4``, ``SHMEM``.
-   | **Default Raw Transport:** ``UDPv4``.
+   | **Options Raw Transport:** ``UDPv4``, ``SHMEM``
+   | **Default Raw Transport:** ``UDPv4``
 
 -  ``-allowInterfaces <ipaddr> / -nic <ipaddr>``
 
-  Restrict RTI Connext DDS to sending output through this interface.
+  Restrict *RTI Connext DDS* to sending output through this interface.
   The value should be the IP address assigned to any of the available network
-  interfaces on the machine. On UNIX systems the name of the interface is also
-  valid. This command line parameter is mapped to the "allow_interfaces_list"
-  property in RTI Connext DDS.
+  interfaces on the machine. On UNIX systems, the name of the interface is also
+  valid. This command-line parameter is mapped to the **allow_interfaces_list**
+  property in *RTI Connext DDS*.
 
   By default, RTI Connext DDS will attempt to contact all possible
   subscribing nodes on all available network interfaces. Even on a
@@ -441,12 +442,12 @@ by using the `Transport` spececific command-line parameters.
   critical for a proper test.
 
   When compiling against *RTI Connext DDS Micro*, this option should always use
-  the name of the interface, not the ip address (which it is valid when compiling
-  against *RTI Connext DDS Pro*).
+  the name of the interface, not the IP address (which is valid when compiling
+  against *RTI Connext DDS Professional*).
 
 -  ``-transportVerbosity <level>``
 
-   Especific verbosity of the transport plugin.
+   Verbosity of the transport plugin.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
@@ -464,7 +465,7 @@ by using the `Transport` spececific command-line parameters.
 
 -  ``-transportWan``
 
-   For TCP and TLS. Use tcp across LANs and firewalls.
+   For TCP and TLS. Use TCP across LANs and firewalls.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
@@ -501,7 +502,7 @@ by using the `Transport` spececific command-line parameters.
 
 -  ``-transportWanId <id>``
 
-   For WAN transport. Id to be used for the WAN transport. Required when using WAN.
+   For WAN transport. ID to be used for the WAN transport. Required when using WAN.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
@@ -519,7 +520,7 @@ by using the `Transport` spececific command-line parameters.
 
 -  ``-transportCertAuthority <file>``
 
-   For TLS, DTLS and Secure WAN. Certificate authority file to be used by TLS.
+   For TLS, DTLS, and Secure WAN. Certificate authority file to be used by TLS.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
@@ -560,10 +561,10 @@ Test Parameters Only For Publishing Applications
    | **Range:** ``1 to 63000``
 
    For more information on batching data for high throughput, see the
-   **High Throughput design pattern** in the *RTI Connext DDS Core
+   **High Throughput for Streaming Data** design pattern in the *RTI Connext DDS Core
    Libraries Getting Started Guide*. See also: **How to Measure Latency
-   for a Given Throughput and the BATCH QosPolicy, Section 6.5.2** in
-   the *RTI Connext DDS Core Libraries Getting User’s Manual*.
+   for a Given Throughput** and the **BATCH QosPolicy** section in
+   the *RTI Connext DDS Core Libraries User’s Manual*.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
@@ -624,21 +625,21 @@ Test Parameters Only For Publishing Applications
 
 -  ``-lowResolutionClock``
 
-   This option enables the measurement of the latency for systems where the
+   This option enables measurement of latency for systems in which the
    clock resolution is not good enough and the measurements per samples are
    not accurate.
 
    If the machine where *RTI Perftest* is being executed has a low resolution
-   clock, the regular logic might not report accurate latency numbers. Therefore
-   *RTI Perftest* implements a simple solution to get a rough estimation of the
+   clock, the regular logic might not report accurate latency numbers. Therefore, 
+   *RTI Perftest* implements a simple solution to get a rough estimate of the
    latency:
 
-   Before sending the first sample *RTI Perftest* takes the time and right after
-   receiving the last pong the time is taken again. Then, under the assumption that
+   Before sending the first sample, *RTI Perftest* records the time; right after
+   receiving the last pong, the time is recorded again. Under the assumption that
    the processing time is negligible, the average latency is calculated as half of 
-   the taken time divided by the number of samples sent.
+   the time taken divided by the number of samples sent.
    
-   This calculation does only make sense if latencyCount = 1 (Latency Test), since
+   This calculation only makes sense if latencyCount = 1 (Latency Test), since
    it assumes that every single ping is answered.
 
    **Default:** ``not set``
@@ -881,11 +882,11 @@ Test Parameters to Control RTI Connext DDS Secure Options
    for Subscriber:** ``./resource/secure/subkey.pem``
 
 
-RawTransport Specific Options
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Raw Transport Options
+~~~~~~~~~~~~~~~~~~~~~
 -  ``-rawTransport``
 
-   Use sockets as a transport instead of DDS protocol. It supports 
+   Use sockets as a transport instead of DDS protocol. This option supports 
    ``UDPv4`` and Shared Memory (``SHMEM``).
    Some of the *RTI Connext DDS* parameters are not supported when using
    sockets.
@@ -898,7 +899,7 @@ RawTransport Specific Options
 -  ``-noBlockingSockets``
 
    Control blocking behavior of send sockets to never block.
-   CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANTPERFORMANCE PROBLEMS.
+   CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT PERFORMANCE PROBLEMS.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
@@ -925,7 +926,7 @@ in ``$(RTIPERFTESTHOME)/resource/secure/make.sh``.
 
 .. _Publication rate and Spinning vs. Sleeping:
 
-Publication rate and Spinning vs. Sleeping
+Publication Rate and Spinning vs. Sleeping
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When the publisher is writing as fast as it can, sooner or later, it is

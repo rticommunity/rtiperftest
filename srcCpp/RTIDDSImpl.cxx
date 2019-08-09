@@ -2372,6 +2372,7 @@ double RTIDDSImpl<T>::obtain_dds_serialize_time_cost(
     double timeInit = 0;
     double timeFinish = 0;
     bool success = true;
+    unsigned int sequenceSize = sampleSize - perftest_cpp::OVERHEAD_BYTES;
 
     unsigned int maxSizeSerializedSample = 0;
     char *buffer = NULL;
@@ -2390,24 +2391,17 @@ double RTIDDSImpl<T>::obtain_dds_serialize_time_cost(
     }
 
     /* --- Initialize data --- */
-    data.bin_data.maximum(0);
     data.entity_id = 0;
     data.seq_num = 0;
     data.timestamp_sec = 0;
     data.timestamp_usec = 0;
     data.latency_ping = 0;
-
-    /* Does not matter what it's inside */
-    data.bin_data.loan_contiguous(
-            (DDS_Octet *) buffer,
-            sampleSize,
-            sampleSize);
+    data.bin_data.ensure_length(sequenceSize, sequenceSize);
 
     if (DDS_RETCODE_OK != T::TypeSupport::serialize_data_to_cdr_buffer(
                 NULL, maxSizeSerializedSample, &data)) {
         fprintf(stderr,
                 "Fail to serialize sample on obtain_dds_serialize_time_cost\n");
-        data.bin_data.unloan();
         if (buffer != NULL) {
             RTIOsapiHeap_freeBuffer(buffer);
         }
@@ -2437,8 +2431,6 @@ double RTIDDSImpl<T>::obtain_dds_serialize_time_cost(
 
     serializeTime = timeFinish - timeInit;
 
-    data.bin_data.unloan();
-
     if (buffer != NULL) {
         RTIOsapiHeap_freeBuffer(buffer);
     }
@@ -2463,6 +2455,7 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
     double timeFinish = 0;
     double deSerializeTime = 0;
     bool success = true;
+    unsigned int sequenceSize = sampleSize - perftest_cpp::OVERHEAD_BYTES;
 
     unsigned int maxSizeSerializedSample = 0;
     char *buffer = NULL;
@@ -2481,15 +2474,12 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
     }
 
     /* --- Initialize data --- */
-    data.bin_data.maximum(0);
     data.entity_id = 0;
     data.seq_num = 0;
     data.timestamp_sec = 0;
     data.timestamp_usec = 0;
     data.latency_ping = 0;
-
-    /* Does not matter what it's inside */
-    data.bin_data.loan_contiguous((DDS_Octet *) buffer, sampleSize, sampleSize);
+    data.bin_data.ensure_length(sequenceSize, sequenceSize);
 
     if (DDS_RETCODE_OK != T::TypeSupport::serialize_data_to_cdr_buffer(
             NULL,
@@ -2497,7 +2487,6 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
             &data)){
         fprintf(stderr,
                 "Fail to serialize sample on obtain_dds_serialize_time_cost\n");
-        data.bin_data.unloan();
         if (buffer != NULL) {
             RTIOsapiHeap_freeBuffer(buffer);
         }
@@ -2543,8 +2532,6 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
     timeFinish = (unsigned int) PerftestClock::getInstance().getTimeUsec();
 
     deSerializeTime = timeFinish - timeInit;
-
-    data.bin_data.unloan();
 
     if (buffer != NULL) {
         RTIOsapiHeap_freeBuffer(buffer);
