@@ -306,8 +306,8 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 .. _section-large_sample:
 
-1-to-1 FlatData, SharedMemory, Unicast, Reliable, Latency test
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1-to-1, FlatData, SharedMemory, Unicast, Reliable, Latency test, Large Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -322,8 +322,8 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 63001 -flatData
 
 
-1-to-1 FlatData and Zero Copy, SharedMemory, Unicast, Reliable, Latency test
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1-to-1, FlatData and Zero Copy, SharedMemory, Unicast, Reliable, Latency test, Large Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -338,8 +338,8 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 63001 -flatData -zeroCopy
 
 
-1-to-1 FlatData and Zero Copy, SharedMemory, Unicast, BestEffort, Throughput test, Check Consistency
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1-to-1, FlatData and Zero Copy, SharedMemory, Unicast, BestEffort, Throughput test, Large Data, Check Consistency
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -359,7 +359,7 @@ RTI Connext DDS Micro
 ---------------------
 
 1-to-1, Unicast, Best Latency as a Function of Message Size
--------------------------------------------------------------
+-----------------------------------------------------------
 
 -  Publisher:
 
