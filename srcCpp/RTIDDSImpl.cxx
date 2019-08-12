@@ -2786,6 +2786,9 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
         /**
          * If FlatData and LargeData, automatically estimate initial_samples here
          * in a range from 1 up to the initial samples specifies in the QoS file.
+         * 
+         * This is done to avoid using too much memory since DDS allocates
+         * samples of the RTI_FLATDATA_MAX_SIZE size
          */ 
         if (_isLargeData) {
             max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
@@ -2836,32 +2839,26 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
             this->_sendQueueSize = initial_samples;
 
             /**
-             * Since for ZeroCopy we are sending small data (16B reference),
-             * we do not need these settings
-             */ 
-            if (!_isZeroCopy) {
-                /**
-                 * Replace previously set reduce limits by the new ones from the initial_samples
-                 * size calculations
-                */
-                dw_qos.resource_limits.max_samples = initial_samples;
-                dw_qos.resource_limits.max_samples_per_instance = initial_samples;
-                dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples = 
-                        std::max(1.0, 0.1 * initial_samples);
-                dw_qos.protocol.rtps_reliable_writer.high_watermark = 
-                        0.9 * initial_samples;
-                dw_qos.protocol.rtps_reliable_writer.low_watermark = 
-                        std::max(1.0, 0.1 * initial_samples);
+             * Replace previously set reduce limits by the new ones from the initial_samples
+             * size calculations
+            */
+            dw_qos.resource_limits.max_samples = initial_samples;
+            dw_qos.resource_limits.max_samples_per_instance = initial_samples;
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples = 
+                    std::max(1.0, 0.1 * initial_samples);
+            dw_qos.protocol.rtps_reliable_writer.high_watermark = 
+                    0.9 * initial_samples;
+            dw_qos.protocol.rtps_reliable_writer.low_watermark = 
+                    std::max(1.0, 0.1 * initial_samples);
 
-                /**
-                 * Make sure there are always enought samples to loan in order to avoid:
-                 *  ERROR: Out of resources for writer loaned samples
-                 */
-                dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count =
-                    2 * dw_qos.resource_limits.initial_samples;
-                dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count =
-                    dw_qos.resource_limits.initial_samples;
-            }
+            /**
+             * Make sure there are always enought samples to loan in order to avoid:
+             *  ERROR: Out of resources for writer loaned samples
+             */
+            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count =
+                2 * dw_qos.resource_limits.initial_samples;
+            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count =
+                dw_qos.resource_limits.initial_samples;
         }
 
         /**

@@ -2395,6 +2395,9 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
             /**
              *  If FlatData and LargeData, automatically estimate initial_samples here
              * in a range from 1 up to the initial samples specifies in the QoS file
+             * 
+             * This is done to avoid using too much memory since DDS allocates
+             * samples of the RTI_FLATDATA_MAX_SIZE size
              */
             if (_isLargeData) {
                 max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
@@ -2445,34 +2448,28 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                 this->_sendQueueSize = initial_samples;
 
                 /**
-                 * Since for ZeroCopy we are sending small data (16B reference),
-                 * we do not need these settings
-                 */ 
-                if (!_isZeroCopy) {
-                    /**
-                     * Replace previously set reduce limits by the new ones 
-                     * from the initial_samples size calculations 
-                     */
-                    qos_resource_limits->max_samples(
-                            qos_resource_limits->initial_samples());
-                    qos_resource_limits->max_samples_per_instance(
-                            qos_resource_limits->initial_samples());
-                    dw_reliableWriterProtocol.heartbeats_per_max_samples(
-                            std::max(1.0, 0.1 * initial_samples));
-                    dw_reliableWriterProtocol.high_watermark(
-                            0.9 * initial_samples);
-                    dw_reliableWriterProtocol.low_watermark(
-                            std::max(1.0, 0.1 * initial_samples));
+                 * Replace previously set reduce limits by the new ones 
+                 * from the initial_samples size calculations 
+                 */
+                qos_resource_limits->max_samples(
+                        qos_resource_limits->initial_samples());
+                qos_resource_limits->max_samples_per_instance(
+                        qos_resource_limits->initial_samples());
+                dw_reliableWriterProtocol.heartbeats_per_max_samples(
+                        std::max(1.0, 0.1 * initial_samples));
+                dw_reliableWriterProtocol.high_watermark(
+                        0.9 * initial_samples);
+                dw_reliableWriterProtocol.low_watermark(
+                        std::max(1.0, 0.1 * initial_samples));
 
-                    /**
-                     * Make sure there are always enought samples to loan in order to avoid:
-                     *  ERROR: Out of resources for writer loaned samples
-                     */
-                    qos_dw_resource_limits.writer_loaned_sample_allocation().max_count(
-                            2 * qos_resource_limits->initial_samples());
-                    qos_dw_resource_limits.writer_loaned_sample_allocation().initial_count(
-                            qos_resource_limits->initial_samples());
-                }
+                /**
+                 * Make sure there are always enought samples to loan in order to avoid:
+                 *  ERROR: Out of resources for writer loaned samples
+                 */
+                qos_dw_resource_limits.writer_loaned_sample_allocation().max_count(
+                        2 * qos_resource_limits->initial_samples());
+                qos_dw_resource_limits.writer_loaned_sample_allocation().initial_count(
+                        qos_resource_limits->initial_samples());
             }
 
             /**
