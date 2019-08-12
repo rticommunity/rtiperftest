@@ -224,19 +224,23 @@ void perftest_cpp::PrintVersion()
     if (perftestV.major == 9
             && perftestV.minor == 9
             && perftestV.release == 9) {
-        printf("RTI Perftest Master");
+        fprintf(stderr, "RTI Perftest Master");
     } else {
-        printf("RTI Perftest %d.%d.%d",
+        fprintf(stderr, "RTI Perftest %d.%d.%d",
                 perftestV.major,
                 perftestV.minor,
                 perftestV.release);
 
         if (perftestV.revision != 0) {
-            printf(".%d", perftestV.revision);
+            fprintf(stderr, ".%d", perftestV.revision);
         }
     }
 
-    printf(" (RTI Connext DDS %d.%d.%d)\n",
+  #ifdef PERFTEST_COMMIT_ID
+    fprintf(stderr, " %s", PERFTEST_COMMIT_ID);
+  #endif
+
+    fprintf(stderr, " (RTI Connext DDS %d.%d.%d)\n",
            ddsV.major_version(),
            ddsV.minor_version(),
            ddsV.release_version());
