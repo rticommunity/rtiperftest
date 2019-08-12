@@ -368,11 +368,8 @@ if !BUILD_CPP! == 1 (
 		for /f "tokens=* USEBACKQ" %%F in (`git rev-parse --short HEAD`) do (
 			set commit_id=%%F
 		)
-		
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! PERFTEST_COMMIT_ID=\"!commit_id!\""
 	)
-
-	echo [INFO]: BYEEEEE
 
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
 	set "additional_header_files=!additional_header_files_custom_type!!additional_header_files!RTIRawTransportImpl.h Parameter.h ParameterManager.h ThreadPriorities.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_pro.h"
@@ -446,10 +443,9 @@ if !BUILD_CPP03! == 1 (
 		for /f "tokens=* USEBACKQ" %%F in (`git rev-parse --short HEAD`) do (
 			set commit_id=%%F
 		)
-		
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! PERFTEST_COMMIT_ID=\"!commit_id!\""
 	)
-	
+
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
 
 	@REM #Generate files for srcCpp03
