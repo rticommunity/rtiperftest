@@ -121,6 +121,17 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           <value>
 
             <!--
+            Starting after Connext DDS Pro 6.0.0, properties will be validated
+            to avoid mistakes or wrong configurations, however we set certain
+            properties for TCP, and later we decide if we want to use TCP or
+            not, and that would conflict with the Pro feature, so we disable it.
+            -->
+            <element>
+              <name>dds.participant.property_validation_action</name>
+              <value>1</value>
+            </element>
+
+            <!--
             Specifies the configuration to be used with the UDPv4 built-in transport.
             -->
             <element>
