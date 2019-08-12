@@ -1689,20 +1689,19 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 } else {
                     _batchSize = -2;
                 }
-            } else if (_batchSize < _dataLen * 2) {
+            } else if ((_batchSize < _dataLen * 2) && !_isScan) {
                 /*
                  * We don't want to use batching if the batch size is not large
                  * enough to contain at least two samples (in this case we avoid the
                  * checking at the middleware level).
                  */
-                if (isBatchSizeProvided || _isScan) {
+                if (isBatchSizeProvided) {
                     /*
                      * Batchsize disabled. A message will be print if _batchSize < 0 in
                      * perftest_cpp::PrintConfiguration()
                      */
                     _batchSize = -1;
-                }
-                else {
+                } else {
                     _batchSize = 0;
                 }
             }
