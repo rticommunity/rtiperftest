@@ -515,6 +515,7 @@ if !BUILD_CPP03! == 1 (
 		set "additional_rti_libs=nddsmetp !additional_rti_libs!"
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!flatdata_size! RTI_FLATDATA_AVAILABLE"
 		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=!flatdata_size!""
+	)
 
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
 
