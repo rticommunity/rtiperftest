@@ -379,6 +379,14 @@ if !BUILD_CPP! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_CUSTOM_TYPE=%custom_type% RTI_CUSTOM_TYPE_FILE_NAME_SUPPORT=!custom_type_file_name_support!"
 	)
 
+	where git >nul 2>nul
+	If !ERRORLEVEL! == 0 (
+		for /f "tokens=* USEBACKQ" %%F in (`git rev-parse --short HEAD`) do (
+			set commit_id=%%F
+		)
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! PERFTEST_COMMIT_ID=\"!commit_id!\""
+	)
+
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
 	set "additional_header_files=!additional_header_files_custom_type!!additional_header_files!RTIRawTransportImpl.h Parameter.h ParameterManager.h ThreadPriorities.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_pro.h"
 	set "additional_source_files=!additional_source_files_custom_type!!additional_source_files!RTIRawTransportImpl.cxx Parameter.cxx ParameterManager.cxx ThreadPriorities.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_pro.cxx"
@@ -495,11 +503,18 @@ if !BUILD_CPP03! == 1 (
 		)
 	)
 
+	where git >nul 2>nul
+	If !ERRORLEVEL! == 0 (
+		for /f "tokens=* USEBACKQ" %%F in (`git rev-parse --short HEAD`) do (
+			set commit_id=%%F
+		)
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! PERFTEST_COMMIT_ID=\"!commit_id!\""
+	)
+
 	if !FLATDATA_AVAILABLE! == 1 (
 		set "additional_rti_libs=nddsmetp !additional_rti_libs!"
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!flatdata_size! RTI_FLATDATA_AVAILABLE"
 		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=!flatdata_size!""
-	)
 
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
 

@@ -407,7 +407,7 @@ function additional_defines_calculation()
         additional_rti_libs="nddsmetp ${additional_rti_libs}"
         additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE DRTI_FLATDATA_MAX_SIZE=${flatdata_size} DMAX_DARWIN_SHMEM_SIZE=${darwin_shmem_size}"
         additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
-    fi    
+    fi
 }
 
 function additional_defines_calculation_micro()
