@@ -2843,27 +2843,32 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
             dw_qos.resource_limits.initial_samples = initial_samples;
             this->_sendQueueSize = initial_samples;
 
-            /**
-             * Replace previously set reduce limits by the new ones from the initial_samples
-             * size calculations
-            */
-            dw_qos.resource_limits.max_samples = initial_samples;
-            dw_qos.resource_limits.max_samples_per_instance = initial_samples;
-            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
-                    std::max(1.0, 0.1 * initial_samples);
-            dw_qos.protocol.rtps_reliable_writer.high_watermark =
-                    0.9 * initial_samples;
-            dw_qos.protocol.rtps_reliable_writer.low_watermark =
-                    std::max(1.0, 0.1 * initial_samples);
+            if (_PM->get<std::string>("transport") == "SHMEM"
+                    || _PM->get<std::string>("transport") == "Use XML") {
 
-            /**
-             * Make sure there are always enought samples to loan in order to avoid:
-             *  ERROR: Out of resources for writer loaned samples
-             */
-            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count =
-                2 * dw_qos.resource_limits.initial_samples;
-            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count =
-                dw_qos.resource_limits.initial_samples;
+                std::cout << "[!] SETTING MAX SAMPLES" << std::endl;
+                /**
+                 * Replace previously set reduce limits by the new ones from the initial_samples
+                 * size calculations
+                */
+                dw_qos.resource_limits.max_samples = initial_samples;
+                dw_qos.resource_limits.max_samples_per_instance = initial_samples;
+                dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+                        std::max(1.0, 0.1 * initial_samples);
+                dw_qos.protocol.rtps_reliable_writer.high_watermark =
+                        0.9 * initial_samples;
+                dw_qos.protocol.rtps_reliable_writer.low_watermark =
+                        std::max(1.0, 0.1 * initial_samples);
+
+                /**
+                 * Make sure there are always enought samples to loan in order to avoid:
+                 *  ERROR: Out of resources for writer loaned samples
+                 */
+                dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count =
+                    2 * dw_qos.resource_limits.initial_samples;
+                dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count =
+                    dw_qos.resource_limits.initial_samples;
+            }
         }
 
         /**
