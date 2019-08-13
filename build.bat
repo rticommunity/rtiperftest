@@ -355,8 +355,8 @@ if !BUILD_CPP! == 1 (
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
 		)
-		set "additional_header_files=!additional_header_files! PerftestSecurity.h"
-		set "additional_source_files=!additional_source_files! PerftestSecurity.cxx"
+		set "additional_header_files=PerftestSecurity.h !additional_header_files!"
+		set "additional_source_files=PerftestSecurity.cxx !additional_source_files!"
 	)
 
 	if !USE_CUSTOM_TYPE! == 1 (
