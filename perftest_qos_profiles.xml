@@ -140,7 +140,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
             </element>
             <element>
               <name>dds.transport.UDPv4.builtin.send_socket_buffer_size</name>
-              <value>524288</value>
+              <value>1048576</value>
             </element>
             <element>
               <name>dds.transport.UDPv4.builtin.recv_socket_buffer_size</name>

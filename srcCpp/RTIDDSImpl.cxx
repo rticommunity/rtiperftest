@@ -2843,10 +2843,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
             dw_qos.resource_limits.initial_samples = initial_samples;
             this->_sendQueueSize = initial_samples;
 
-            if (_PM->get<std::string>("transport") == "SHMEM"
-                    || _PM->get<std::string>("transport") == "Use XML") {
-
-                std::cout << "[!] SETTING MAX SAMPLES" << std::endl;
+            if (_transport.transportConfig.kind = TRANSPORT_SHMEM) {
                 /**
                  * Replace previously set reduce limits by the new ones from the initial_samples
                  * size calculations
