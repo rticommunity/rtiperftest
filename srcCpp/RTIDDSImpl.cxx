@@ -323,7 +323,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "No\n";
     }
   #endif
-  
+
   #ifdef RTI_FLATDATA_AVAILABLE
     // FlatData
     stringStream << "\tFlatData: ";
@@ -381,9 +381,14 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
   #endif
 
-    stringStream << "\n"
-                 << _transport.printTransportConfigurationSummary();
+    DDS_DomainParticipantQos *qos = new DDS_DomainParticipantQos;
+    if (this->_participant->get_qos(*qos) != DDS_RETCODE_OK) {
+        fprintf(stderr, "Could not get Participant QoS\n");
+    }
 
+    stringStream << "\n" << _transport.printTransportConfigurationSummary(qos);
+
+    if (qos != NULL) delete qos;
 
     const std::vector<std::string> peerList = _PM->get_vector<std::string>("peer");
     if (!peerList.empty()) {
@@ -794,7 +799,7 @@ class RTIPublisher : public RTIPublisherBase<T>
 
 /**
  * Implementation of RTIPublisherBase for FlatData types.
- * 
+ *
  * Since building a FlatData sample differs from
  * a classic type, we need to reimplement the Send() method with the
  * FlatData API.
@@ -826,7 +831,7 @@ public:
                     num_instances,
                     pongSemaphore,
                     instancesToBeWritten,
-                    PM) 
+                    PM)
     {
         this->_writer = T::DataWriter::narrow(writer);
 
@@ -869,7 +874,7 @@ public:
 
     /**
      * Build and send a sample from a given message using FlatData API.
-     * 
+     *
      * @param message the message that contains the information to build the sample
      * @param isCftWildcardKey states if CFT is being used
      */
@@ -905,7 +910,7 @@ public:
 
         // Build the data to be sent
         T *sample = builder.finish_sample();
-        
+
         // Send data through the writer
         if (!isCftWildCardKey) {
             this->_writer->write(*sample, this->_instance_handles[key]);
@@ -933,7 +938,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
             PerftestSemaphore *pongSemaphore,
             DDS_TypeCode *typeCode,
             int instancesToBeWritten,
-            ParameterManager *PM) 
+            ParameterManager *PM)
             : RTIPublisherBase<DDS_DynamicData>(
                     num_instances,
                     pongSemaphore,
@@ -1249,8 +1254,8 @@ class ReceiverListener : public ReceiverListenerBase<T>
 #ifdef RTI_FLATDATA_AVAILABLE
 /**
  * Implements ReceiverListenerBase with FlatData API.
- * 
- * Since reading a FlatData sample differs from a classic type we need 
+ *
+ * Since reading a FlatData sample differs from a classic type we need
  * to reimplement on_data_available method.
  */
 template <typename T>
@@ -1265,20 +1270,20 @@ public:
 
     /**
      * Contructor of FlatDataReceiverListener
-     * 
+     *
      * @param callback callback that will process received messages
-     * 
+     *
      * @param isZeroCopy states if Zero Copy will be used
      */
     FlatDataReceiverListener(IMessagingCB *callback, bool isZeroCopy, bool checkConsistency)
-            : ReceiverListenerBase<T>(callback), 
+            : ReceiverListenerBase<T>(callback),
             _isZeroCopy(isZeroCopy),
             _checkConsistency(checkConsistency) {
     }
 
     /**
      * Take a new sample and process it using FlatData API.
-     * 
+     *
      * @param reader is the reader to take samples from
      */
     void on_data_available(DDSDataReader *reader)
@@ -1333,8 +1338,8 @@ public:
                 // Check that the sample was not modified on the publisher side when using Zero Copy.
                 if (_isZeroCopy && _checkConsistency) {
                     if (datareader->is_data_consistent(
-                            isConsistent, 
-                            this->_data_seq[i], 
+                            isConsistent,
+                            this->_data_seq[i],
                             this->_info_seq[i]) != DDS_RETCODE_OK) {
                         fprintf(stderr, "Error checking sample consistency\n");
                     }
@@ -1691,8 +1696,8 @@ class RTISubscriber : public RTISubscriberBase<T>
 #ifdef RTI_FLATDATA_AVAILABLE
 /**
  * Implements RTISubscriberBase with FlatData API.
- * 
- * Since reading a FlatData sample differs from a classic type we need 
+ *
+ * Since reading a FlatData sample differs from a classic type we need
  * to reimplement ReceiveMessage method.
  */
 template <typename T>
@@ -1718,7 +1723,7 @@ public:
 
     /**
      * Receive a new sample when it is available. It uses a waitset
-     * 
+     *
      * @return a message with the information from the sample
      */
     TestMessage *ReceiveMessage()
@@ -1803,15 +1808,15 @@ public:
             // Check that the sample was not modified on the publisher side when using Zero Copy.
             if (_isZeroCopy && _checkConsistency) {
                 if (this->_reader->is_data_consistent(
-                        isConsistent, 
-                        this->_data_seq[this->_data_idx], 
+                        isConsistent,
+                        this->_data_seq[this->_data_idx],
                         this->_info_seq[this->_data_idx]) != DDS_RETCODE_OK) {
                     fprintf(stderr, "Error checking sample consistency\n");
                 }
 
                 if (!isConsistent) continue;
             }
-            
+
 
             return &this->_message;
         }
@@ -1831,14 +1836,14 @@ class RTIDynamicDataSubscriber : public RTISubscriberBase<DDS_DynamicData>
   public:
     RTIDynamicDataSubscriber(
             DDSDataReader *reader,
-            ParameterManager *PM) 
+            ParameterManager *PM)
             : RTISubscriberBase<DDS_DynamicData>(reader, PM)
     {
         _reader = DDSDynamicDataReader::narrow(reader);
         if (_reader == NULL) {
             fprintf(stderr,"DDSDynamicDataReader::narrow(reader) error.\n");
         }
-        
+
         // null listener means using receive thread
         if (_reader->get_listener() == NULL) {
 
@@ -2225,7 +2230,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
             DDS_INCONSISTENT_TOPIC_STATUS |
             DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
             DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
-    
+
   #ifndef RTI_MICRO
     if (_participant == NULL || _loggerDevice.checkShmemErrors()) {
         if (_loggerDevice.checkShmemErrors()) {
@@ -2256,7 +2261,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
 
     /* Register the types and create the topics except for FlatData types,
      * They will be registered in  RTIDDSImpl_FlatData
-     */ 
+     */
     if (!_isFlatData) {
         if (!_PM->get<bool>("dynamicData")) {
             T::TypeSupport::register_type(_participant, _typename);
@@ -2273,7 +2278,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
         #endif
         }
     }
-    
+
 
   #ifndef RTI_MICRO
     _factory->get_publisher_qos_from_profile(
@@ -2557,7 +2562,7 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
     char buffer[buffSize];
     FILE *file = NULL;
 
-    // Execute cmd and get file pointer 
+    // Execute cmd and get file pointer
     if ((file = popen(cmd, "r")) == NULL) {
         fprintf(stderr, "Could not run cmd '%s'. Using default size: %lu bytes.\n",
                 cmd, shmmax);
@@ -2571,7 +2576,7 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
         return shmmax;
     }
 
-    // Split cmd output by blankspaces and get second position 
+    // Split cmd output by blankspaces and get second position
     strtok(buffer, " ");
     char *size = strtok(NULL, " ");
     shmmax = atoi(size);
@@ -2786,10 +2791,10 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
         /**
          * If FlatData and LargeData, automatically estimate initial_samples here
          * in a range from 1 up to the initial samples specifies in the QoS file.
-         * 
+         *
          * This is done to avoid using too much memory since DDS allocates
          * samples of the RTI_FLATDATA_MAX_SIZE size
-         */ 
+         */
         if (_isLargeData) {
             max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
 
@@ -2813,12 +2818,12 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
 
                 /**
                  * If we wont be able to allocate as many samples as we originally want,
-                 * Display a message letting know the user how to increase SHMEM 
+                 * Display a message letting know the user how to increase SHMEM
                  * operative system settings
-                 */ 
+                 */
                 if (max_allocable_space < RTI_FLATDATA_MAX_SIZE *
                             dw_qos.resource_limits.initial_samples + 1) {
-                    fprintf(stderr, 
+                    fprintf(stderr,
                             "[Warn] Performace Degradation: Not enought Shared Memory space available to allocate intial samples. "
                             "Consider increasing SHMMAX parameter on your system settings or select a different transport.\n"
                             "See https://community.rti.com/kb/what-are-possible-solutions-common-shared-memory-issues\n"
@@ -2844,11 +2849,11 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
             */
             dw_qos.resource_limits.max_samples = initial_samples;
             dw_qos.resource_limits.max_samples_per_instance = initial_samples;
-            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples = 
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
                     std::max(1.0, 0.1 * initial_samples);
-            dw_qos.protocol.rtps_reliable_writer.high_watermark = 
+            dw_qos.protocol.rtps_reliable_writer.high_watermark =
                     0.9 * initial_samples;
-            dw_qos.protocol.rtps_reliable_writer.low_watermark = 
+            dw_qos.protocol.rtps_reliable_writer.low_watermark =
                     std::max(1.0, 0.1 * initial_samples);
 
             /**
@@ -3048,9 +3053,9 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::str
             initial_samples = std::min(
                     initial_samples,
                     (unsigned long long) dr_qos.resource_limits.initial_samples);
-            
+
             dr_qos.resource_limits.initial_samples = initial_samples;
-            
+
             /**
              * Since for ZeroCopy we are sending small data (16B reference),
              * we do not need these settings
@@ -3060,10 +3065,10 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::str
                 dr_qos.resource_limits.max_samples_per_instance = initial_samples;
                 dr_qos.reader_resource_limits.max_samples_per_remote_writer = initial_samples;
             }
-        }        
+        }
 
         // Prevent dynamic allocation of reassembly buffer
-        dr_qos.reader_resource_limits.dynamically_allocate_fragmented_samples = 
+        dr_qos.reader_resource_limits.dynamically_allocate_fragmented_samples =
                 DDS_BOOLEAN_TRUE;
     }
     #endif
@@ -3105,10 +3110,10 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     DDSDataWriter *writer = NULL;
     std::string qos_profile = "";
 
-    /* Since we have to instantiate RTIDDSImpl<T> class 
+    /* Since we have to instantiate RTIDDSImpl<T> class
      * with T=TestData_t, we have to register the FlatData
      * type here.
-     */ 
+     */
     T::TypeSupport::register_type(_participant, _typename);
 
     DDSTopic *topic = _participant->create_topic(
@@ -3187,10 +3192,10 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const char *topic_name)
     DDSDataWriter *writer = NULL;
     std::string qos_profile = "";
 
-    /* Since we have to instantiate RTIDDSImpl<T> class 
+    /* Since we have to instantiate RTIDDSImpl<T> class
      * with T=TestData_t, we have to register the FlatData
      * type here.
-     */ 
+     */
     T::TypeSupport::register_type(_participant, _typename);
 
     DDSTopic *topic = _participant->create_topic(
@@ -3216,7 +3221,7 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    writer = _publisher->create_datawriter(topic, dw_qos, NULL, 
+    writer = _publisher->create_datawriter(topic, dw_qos, NULL,
             DDS_STATUS_MASK_NONE);
 
     if (writer == NULL) {
@@ -3453,10 +3458,10 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
     std::string qos_profile = "";
     DDSTopicDescription* topic_desc = NULL; // Used to create the DDS DataReader
 
-    /* Since we have to instantiate RTIDDSImpl<T> class 
+    /* Since we have to instantiate RTIDDSImpl<T> class
      * with T=TestData_t, we have to register the FlatData
      * type here.
-     */ 
+     */
     T::TypeSupport::register_type(_participant, _typename);
 
     DDSTopic *topic = _participant->create_topic(
@@ -3480,7 +3485,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
-    
+
   #ifndef RTI_MICRO
     /* Create CFT Topic */
     if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && _PM->is_set("cft")) {
@@ -3497,7 +3502,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
                 topic_desc,
                 dr_qos,
                 new FlatDataReceiverListener<T>(
-                        callback, 
+                        callback,
                         _PM->get<bool>("zerocopy"),
                         _PM->get<bool>("checkconsistency")),
                 DDS_DATA_AVAILABLE_STATUS);
@@ -3525,7 +3530,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
 template <typename T>
 double RTIDDSImpl_FlatData<T>::obtain_dds_serialize_time_cost_override(
         unsigned int sampleSize,
-        unsigned int iters) 
+        unsigned int iters)
 {
     typedef typename rti::flat::flat_type_traits<T>::builder Builder;
     typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
@@ -3566,7 +3571,7 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_serialize_time_cost_override(
 template <typename T>
 double RTIDDSImpl_FlatData<T>::obtain_dds_deserialize_time_cost_override(
         unsigned int sampleSize,
-        unsigned int iters) 
+        unsigned int iters)
 {
     typedef typename rti::flat::flat_type_traits<T>::builder Builder;
     typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
@@ -3598,7 +3603,7 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_deserialize_time_cost_override(
     double end = (unsigned int) PerftestClock::getInstance().getTimeUsec();
 
     delete[] buffer;
-    
+
     return (end-start) / (float) iters;
 }
 #endif

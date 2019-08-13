@@ -18,7 +18,7 @@
   #include "PerftestSecurity.h"
 #endif
 
-/* Undefine Windows max and min micros. 
+/* Undefine Windows max and min micros.
    They conflict with std::min and std::max
 */
 #undef max

@@ -78,7 +78,8 @@ public:
 
     /**************************************************************************/
     /* PUBLIC METHODS */
-    std::string printTransportConfigurationSummary();
+    std::string printTransportConfigurationSummary(
+          DDS_DomainParticipantQos *qos = NULL);
 
     bool validate_input();
 

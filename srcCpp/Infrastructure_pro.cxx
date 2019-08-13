@@ -500,17 +500,17 @@ bool configureShmemTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos,
         ParameterManager *_PM)
-{  
+{
     DDS_Property_t *parentProp = DDSPropertyQosPolicyHelper::lookup_property(qos.property,
                 "dds.transport.shmem.builtin.parent.message_size_max");
     int parent_msg_size_max = atoi(parentProp->value);
     std::cout << "message_size_max: " << parent_msg_size_max << std::endl;
 
-    /** 
+    /**
      * The maximum size of a SHMEM segment highly depends on the platform.
-     * So that, we need to find out the maximum allocable space to avoid 
+     * So that, we need to find out the maximum allocable space to avoid
      * runtime errors.
-     * 
+     *
      * Perform an incremental search of allocable space in range (minSize, maxSize).
      */
     RTIOsapiSharedMemorySegmentHandle handle;
@@ -540,16 +540,16 @@ bool configureShmemTransport(
     /** From user manual p780:
      * To optimize memory usage, specify a receive queue size less than that required to hold the maximum
      * number of messages which are all of the maximum size.
-     * 
-     * In most situations, the average message size may be far less than the maximum message size. 
-     * So for example, if the maximum message size is 64K bytes, and you configure the plugin to buffer 
-     * at least 10 messages, then 640K bytes of memory would be needed if all messages were 64K bytes. 
+     *
+     * In most situations, the average message size may be far less than the maximum message size.
+     * So for example, if the maximum message size is 64K bytes, and you configure the plugin to buffer
+     * at least 10 messages, then 640K bytes of memory would be needed if all messages were 64K bytes.
      * Should this be desired, then receive_buffer_size should be set to 640K bytes.
-     * 
+     *
      * However, if the average message size is only 10K bytes, then you could set the receive_buffer_size to
-     * 100K bytes. This allows you to optimize the memory usage of the plugin for the average case and 
+     * 100K bytes. This allows you to optimize the memory usage of the plugin for the average case and
      * yet allow the plugin to handle the extreme case.
-     */    
+     */
     std::ostringstream ss;
     const int perftest_overhead = 27;
     const int rtps_overhead = 512;
@@ -568,18 +568,18 @@ bool configureShmemTransport(
     std::cout << "Data Len:" << datalen << std::endl;
 
     // If there is no default token size set
-    if (flow_controller_token_size == 0) 
+    if (flow_controller_token_size == 0)
         flow_controller_token_size = INT_MAX;
 
     int fragment_size = std::min(
-            parent_msg_size_max - rtps_overhead, 
+            parent_msg_size_max - rtps_overhead,
             flow_controller_token_size);
 
     // max(1, (sample_serialized_size / fragment_size))
     unsigned long long int rtps_messages_per_sample = std::max(
             1, (perftest_overhead + datalen) / fragment_size);
 
-    unsigned long long int received_message_count_max = 
+    unsigned long long int received_message_count_max =
             2 * (_PM->get<int>("sendQueueSize") + 1) * rtps_messages_per_sample;
 
     // min(maxBufferSize, received_message_count_max * rtps_message_size)

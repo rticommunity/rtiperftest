@@ -270,11 +270,11 @@ void configureShmemTransport(
     int parent_msg_size_max = atoi(qos_properties["dds.transport.shmem.builtin.parent.message_size_max"].c_str());
     std::cout << "message_size_max: " << parent_msg_size_max << std::endl;
 
-    /** 
+    /**
      * The maximum size of a SHMEM segment highly depends on the platform.
-     * So that, we need to find out the maximum allocable space to avoid 
+     * So that, we need to find out the maximum allocable space to avoid
      * runtime errors.
-     * 
+     *
      * Perform an incremental search of allocable space in range (minSize, maxSize).
      */
     RTIOsapiSharedMemorySegmentHandle handle;
@@ -304,16 +304,16 @@ void configureShmemTransport(
     /** From user manual p780:
      * To optimize memory usage, specify a receive queue size less than that required to hold the maximum
      * number of messages which are all of the maximum size.
-     * 
-     * In most situations, the average message size may be far less than the maximum message size. 
-     * So for example, if the maximum message size is 64K bytes, and you configure the plugin to buffer 
-     * at least 10 messages, then 640K bytes of memory would be needed if all messages were 64K bytes. 
+     *
+     * In most situations, the average message size may be far less than the maximum message size.
+     * So for example, if the maximum message size is 64K bytes, and you configure the plugin to buffer
+     * at least 10 messages, then 640K bytes of memory would be needed if all messages were 64K bytes.
      * Should this be desired, then receive_buffer_size should be set to 640K bytes.
-     * 
+     *
      * However, if the average message size is only 10K bytes, then you could set the receive_buffer_size to
-     * 100K bytes. This allows you to optimize the memory usage of the plugin for the average case and 
+     * 100K bytes. This allows you to optimize the memory usage of the plugin for the average case and
      * yet allow the plugin to handle the extreme case.
-     */    
+     */
     std::ostringstream ss;
     const int perftest_overhead = 27;
     const int rtps_overhead = 512;
@@ -332,18 +332,18 @@ void configureShmemTransport(
     std::cout << "Data Len:" << datalen << std::endl;
 
     // If there is no default token size set
-    if (flow_controller_token_size == 0) 
+    if (flow_controller_token_size == 0)
         flow_controller_token_size = INT_MAX;
 
     int fragment_size = std::min(
-            parent_msg_size_max - rtps_overhead, 
+            parent_msg_size_max - rtps_overhead,
             flow_controller_token_size);
 
     // max(1, (sample_serialized_size / fragment_size))
     unsigned long long int rtps_messages_per_sample = std::max(
             1, (perftest_overhead + datalen) / fragment_size);
 
-    unsigned long long int received_message_count_max = 
+    unsigned long long int received_message_count_max =
             2 * (_PM->get<int>("sendQueueSize") + 1) * rtps_messages_per_sample;
 
     // min(maxBufferSize, received_message_count_max * rtps_message_size)
@@ -352,13 +352,13 @@ void configureShmemTransport(
 
     // Avoid bottleneck due to SHMEM.
     ss << received_message_count_max;
-    qos_properties["dds.transport.shmem.builtin.received_message_count_max"] = 
+    qos_properties["dds.transport.shmem.builtin.received_message_count_max"] =
         ss.str();
 
     ss.str("");
     ss.clear();
     ss << receive_buffer_size;
-    qos_properties["dds.transport.shmem.builtin.receive_buffer_size"] = 
+    qos_properties["dds.transport.shmem.builtin.receive_buffer_size"] =
         ss.str();
 
     std::cout << "Count_Max: " << qos_properties["dds.transport.shmem.builtin.received_message_count_max"] << std::endl;
@@ -630,16 +630,19 @@ void PerftestTransport::populateSecurityFiles() {
 /******************************************************************************/
 /* PUBLIC METHODS */
 
-std::string PerftestTransport::printTransportConfigurationSummary()
+std::string PerftestTransport::printTransportConfigurationSummary(
+            dds::domain::qos::DomainParticipantQos &qos)
 {
-
     std::ostringstream stringStream;
+    std::map<std::string, std::string> qos_properties =
+            qos.policy<rti::core::policy::Property>().get_all();
+
     stringStream << "Transport Configuration:\n";
     stringStream << "\tKind: " << transportConfig.nameString;
     if (transportConfig.takenFromQoS) {
         stringStream << " (taken from QoS XML file)";
     }
-    stringStream << "\n";
+    stringStream << std::endl;
 
     if (!_PM->get<std::string>("allowInterfaces").empty()) {
         stringStream << "\tNic: "
@@ -666,9 +669,23 @@ std::string PerftestTransport::printTransportConfigurationSummary()
                      << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str()
                      << "\n";
     }
+
+    if (transportConfig.kind == TRANSPORT_SHMEM) {
+        stringStream << "\tMaximum Packet Size: "
+                     << qos_properties["dds.transport.shmem.builtin.parent.message_size_max"]
+                     << std::endl;
+
+        stringStream << "\tReceived message count max: "
+                     << qos_properties["dds.transport.shmem.builtin.received_message_count_max"]
+                     << std::endl;
+
+        stringStream << "\tReceive buffer size: "
+                     << qos_properties["dds.transport.shmem.builtin.receive_buffer_size"]
+                     << std::endl;
+    }
+
     if (transportConfig.kind == TRANSPORT_TCPv4
             || transportConfig.kind == TRANSPORT_TLSv4) {
-
         stringStream << "\tTCP Server Bind Port: "
                      << _PM->get<std::string>("transportServerBindPort")
                      << "\n";
@@ -683,7 +700,6 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     }
 
     if (transportConfig.kind == TRANSPORT_WANv4) {
-
         stringStream << "\tWAN Server Address: "
                      << _PM->get<std::string>("transportWanServerAddress")
                      << ":"

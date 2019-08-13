@@ -112,7 +112,8 @@ void PerftestTransport::populateSecurityFiles() {
 /******************************************************************************/
 /* PUBLIC METHODS */
 
-std::string PerftestTransport::printTransportConfigurationSummary()
+std::string PerftestTransport::printTransportConfigurationSummary(
+        DDS_DomainParticipantQos *qos)
 {
     std::ostringstream stringStream;
     stringStream << "Transport Configuration:\n";
@@ -146,6 +147,26 @@ std::string PerftestTransport::printTransportConfigurationSummary()
                 << "\n\t\tAnnouncement Address: "
                 << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str()
                 << "\n";
+    }
+
+    if (transportConfig.kind == TRANSPORT_SHMEM && qos != NULL) {
+        stringStream << "\tMaximum Packet Size: "
+                     << DDSPropertyQosPolicyHelper::lookup_property(
+                            qos->property,
+                            "dds.transport.shmem.builtin.parent.message_size_max")->value
+                     << std::endl;
+
+        stringStream << "\tReceived message count max: "
+                     << DDSPropertyQosPolicyHelper::lookup_property(
+                            qos->property,
+                            "dds.transport.shmem.builtin.received_message_count_max")->value
+                     << std::endl;
+
+        stringStream << "\tReceive buffer size: "
+                     << DDSPropertyQosPolicyHelper::lookup_property(
+                            qos->property,
+                            "dds.transport.shmem.builtin.receive_buffer_size")->value
+                     << std::endl;
     }
 
     if (transportConfig.kind == TRANSPORT_TCPv4
