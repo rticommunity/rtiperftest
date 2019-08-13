@@ -133,7 +133,7 @@ void RTIDDSImpl<T>::Shutdown()
     if (participants.empty()){
         _participant.finalize_participant_factory();
     } else {
-        std::cout << "[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)" 
+        std::cout << "[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)"
                   << std::endl;
     }
 
@@ -153,7 +153,7 @@ bool RTIDDSImpl<T>::validate_input()
 
     // Manage parameter -peer
     if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
-        std::cerr << "The maximun of 'initial_peers' is " << RTIPERFTEST_MAX_PEERS 
+        std::cerr << "The maximun of 'initial_peers' is " << RTIPERFTEST_MAX_PEERS
                   << std::endl;
         return false;
     }
@@ -172,7 +172,7 @@ bool RTIDDSImpl<T>::validate_input()
         // We will not use batching for a latency test
         if (_PM->get<bool>("latencyTest")) {
             if (_PM->is_set("batchSize")) {
-                std::cerr << "Batching cannot be used in a Latency test." 
+                std::cerr << "Batching cannot be used in a Latency test."
                           << std::endl;
                 return false;
             } else {
@@ -183,7 +183,7 @@ bool RTIDDSImpl<T>::validate_input()
         // Check if using asynchronous
         if (_PM->get<bool>("asynchronous")) {
             if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
-                std::cerr << "Batching cannot be used with asynchronous writing." 
+                std::cerr << "Batching cannot be used with asynchronous writing."
                           << std::endl;
                 return false;
             } else {
@@ -198,7 +198,7 @@ bool RTIDDSImpl<T>::validate_input()
          */
         if (_isLargeData) {
             if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
-                std::cerr << "Batching cannot be used with Large Data." 
+                std::cerr << "Batching cannot be used with Large Data."
                           << std::endl;
                 return false;
             } else {
@@ -225,7 +225,7 @@ bool RTIDDSImpl<T>::validate_input()
 
         if (_isFlatData) {
             if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") > 0) {
-                std::cerr << "Batching cannot be used with FlatData." 
+                std::cerr << "Batching cannot be used with FlatData."
                           << std::endl;
                 return false;
             } else {
@@ -296,7 +296,7 @@ bool RTIDDSImpl<T>::validate_input()
                 std::cerr << "[Info]: Invalid value for the verbosity"
                           << " parameter. Using default value (1)"
                           << std::endl
-                          << "Invalid value for the '-verbosity' parameter." 
+                          << "Invalid value for the '-verbosity' parameter."
                           << std::endl;
                 return false;
         }
@@ -465,7 +465,7 @@ protected:
     bool _isReliable;
     ParameterManager *_PM;
 
-     /* 
+     /*
       * Returns the instance handler for the content filtered topic.
       * It must the last element pushed to _instance_handles
       * when appending instances to that sequence.
@@ -626,7 +626,7 @@ public:
 #ifdef RTI_FLATDATA_AVAILABLE
   /**
    * Implementation of RTIPublisherBase for FlatData types.
-   * 
+   *
    * Since building a FlatData sample differs from
    * a classic type, we need to reimplement the Send() method with the
    * FlatData API.
@@ -688,7 +688,7 @@ public:
 
       /**
        * Build and send a sample from a given message using FlatData API.
-       * 
+       *
        * @param message the message that contains the information to build the sample
        * @param isCftWildcardKey states if CFT is being used
        */
@@ -701,7 +701,7 @@ public:
           } catch (const std::exception &ex) {
               return false;
           }
-          
+
           // Initialize Information data
           builder.add_entity_id(message.entity_id);
           builder.add_seq_num(message.seq_num);
@@ -890,8 +890,8 @@ public:
 #ifdef RTI_FLATDATA_AVAILABLE
   /**
    * Implements ReceiverListenerBase with FlatData API.
-   * 
-   * Since reading a FlatData sample differs from a classic type we need 
+   *
+   * Since reading a FlatData sample differs from a classic type we need
    * to reimplement on_data_available method.
    */
   template<typename T>
@@ -905,20 +905,20 @@ public:
 
       /**
        * Contructor of FlatDataReceiverListener
-       * 
+       *
        * @param callback callback that will process received messages
-       * 
+       *
        * @param isZeroCopy states if Zero Copy will be used
        */
       FlatDataReceiverListener(IMessagingCB *callback, bool isZeroCopy, bool checkConsistency) :
-          ReceiverListenerBase<T>(callback), 
-          _isZeroCopy(isZeroCopy), 
+          ReceiverListenerBase<T>(callback),
+          _isZeroCopy(isZeroCopy),
           _checkConsistency(checkConsistency){
       }
 
       /**
        * Take a new sample and process it using FlatData API.
-       * 
+       *
        * @param reader is the reader to take samples from
        */
       void on_data_available(dds::sub::DataReader<T> &reader) {
@@ -1135,8 +1135,8 @@ public:
 #ifdef RTI_FLATDATA_AVAILABLE
   /**
    * Implements RTISubscriberBase with FlatData API.
-   * 
-   * Since reading a FlatData sample differs from a classic type we need 
+   *
+   * Since reading a FlatData sample differs from a classic type we need
    * to reimplement ReceiveMessage method.
    */
   template<typename T>
@@ -1155,14 +1155,14 @@ public:
           :RTISubscriberBase<T>(
                     reader,
                     readerListener,
-                    PM) { 
+                    PM) {
               _isZeroCopy = PM->get<bool>("zerocopy");
               _checkConsistency = PM->get<bool>("checkconsistency");
           }
 
       /**
        * Receive a new sample when it is available. It uses a waitset
-       * 
+       *
        * @return a message with the information from the sample
        */
       TestMessage *ReceiveMessage() {
@@ -1207,7 +1207,7 @@ public:
               this->_message.size = message.bin_data().element_count();
 
               ++(this->_data_idx);
-              
+
               // Check that the sample was not modified on the publisher side when using Zero Copy.
               if (_isZeroCopy && _checkConsistency) {
                   if (!this->_reader->is_data_consistent(samples[this->_data_idx])) continue;
@@ -1220,7 +1220,7 @@ public:
 
       /**
        * Take arriving samples from the reader and process them.
-       * 
+       *
        * @param listener that implements the ProcessMessage method
        *    that will be used to process received samples.
        */
@@ -2038,7 +2038,7 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
     char buffer[buffSize];
     FILE *file = NULL;
 
-    // Execute cmd and get file pointer 
+    // Execute cmd and get file pointer
     if ((file = popen(cmd, "r")) == NULL) {
         std::cerr << "Could not run cmd '" << cmd << "'. "
                   << "Using default size: " << shmmax << " bytes." << std::endl;
@@ -2052,7 +2052,7 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
         return shmmax;
     }
 
-    // Split cmd output by blankspaces and get second position 
+    // Split cmd output by blankspaces and get second position
     strtok(buffer, " ");
     char *size = strtok(NULL, " ");
     shmmax = atoi(size);
@@ -2114,7 +2114,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
             qos_durability = dds::core::policy::Durability::TransientLocal();
         } else {
             qos_durability = dds::core::policy::Durability::Persistent();
-        }        
+        }
 
         qos_durability->direct_communication(
                 !_PM->get<bool>("noDirectCommunication"));
@@ -2148,7 +2148,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
             qos_resource_limits->instance_hash_buckets(
                     _PM->get<long>("instances"));
         }
-    }    
+    }
 
     if (_PM->get<bool>("multicast") && _transport.allowsMulticast()) {
         dds::core::StringSeq transports;
@@ -2181,7 +2181,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
 
     #ifdef RTI_FLATDATA_AVAILABLE
     if (_isFlatData) {
-        properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = 
+        properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] =
                 std::to_string(dds::core::LENGTH_UNLIMITED);
 
         if (_isLargeData) {
@@ -2395,7 +2395,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
             /**
              *  If FlatData and LargeData, automatically estimate initial_samples here
              * in a range from 1 up to the initial samples specifies in the QoS file
-             * 
+             *
              * This is done to avoid using too much memory since DDS allocates
              * samples of the RTI_FLATDATA_MAX_SIZE size
              */
@@ -2422,12 +2422,12 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
 
                     /**
                      * If we wont be able to allocate as many samples as we originally want,
-                     * Display a message letting know the user how to increase SHMEM 
+                     * Display a message letting know the user how to increase SHMEM
                      * operative system settings
-                     */ 
+                     */
                     if (max_allocable_space < RTI_FLATDATA_MAX_SIZE *
                                 qos_resource_limits->initial_samples() + 1) {
-                        
+
                         std::cout << "[Warn] Performace Degradation: Not enought Shared Memory space available to allocate intial samples. "
                                   << "Consider increasing SHMMAX parameter on your system settings or select a different transport." << std::endl
                                   << "See https://community.rti.com/kb/what-are-possible-solutions-common-shared-memory-issues" << std::endl
@@ -2441,15 +2441,15 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                         1ul, (max_allocable_space - RTI_FLATDATA_MAX_SIZE) / RTI_FLATDATA_MAX_SIZE);
 
                 initial_samples = std::min(
-                        initial_samples, 
+                        initial_samples,
                         (unsigned long long) qos_resource_limits->initial_samples());
 
                 qos_resource_limits->initial_samples(initial_samples);
                 this->_sendQueueSize = initial_samples;
 
                 /**
-                 * Replace previously set reduce limits by the new ones 
-                 * from the initial_samples size calculations 
+                 * Replace previously set reduce limits by the new ones
+                 * from the initial_samples size calculations
                  */
                 qos_resource_limits->max_samples(
                         qos_resource_limits->initial_samples());
@@ -2538,7 +2538,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         if (callback != NULL) {
 
             reader_listener = new FlatDataReceiverListener<T>(
-                    callback, 
+                    callback,
                     _PM->get<bool>("zerocopy"),
                     _PM->get<bool>("checkconsistency"));
 
@@ -2556,7 +2556,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         if (callback != NULL) {
 
             reader_listener = new FlatDataReceiverListener<T>(
-                    callback, 
+                    callback,
                     _PM->get<bool>("zerocopy"),
                     _PM->get<bool>("checkconsistency"));
 

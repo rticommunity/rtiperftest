@@ -644,9 +644,13 @@ void perftest_cpp::PrintConfiguration()
                          << "\n";
         }
     } else  {
+        stringStream << "\tData Size: " << _PM.get<unsigned long long>("dataLen");
+
         if (_PM.get<unsigned long long>("dataLen") > MAX_SYNCHRONOUS_SIZE) {
-            stringStream << "\tExpecting Large Data Type\n";
+            stringStream << " (Expecting Large Data Type)";
         }
+
+        stringStream << std::endl;
     }
 
     // Listener/WaitSets
