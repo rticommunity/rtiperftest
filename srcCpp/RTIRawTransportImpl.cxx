@@ -76,14 +76,15 @@ bool RTIRawTransportImpl::validate_input() {
         }
     }
 
-    if ((unsigned long) _PM->get<long>("batchSize")
-            < _PM->get<unsigned long long>("dataLen") * 2) {
+    if (((unsigned long) _PM->get<long>("batchSize")
+                < _PM->get<unsigned long long>("dataLen") * 2)
+            && !_PM->is_set("scan")) {
         /*
          * We don't want to use batching if the batch size is not large
          * enough to contain at least two samples (in this case we avoid the
          * checking at the middleware level).
          */
-        if (_PM->is_set("batchSize") || _PM->is_set("scan")) {
+        if (_PM->is_set("batchSize")) {
             /*
              * Batchsize disabled. A message will be print if _batchSize < 0
              * in perftest_cpp::PrintConfiguration()
