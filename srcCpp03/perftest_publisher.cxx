@@ -590,6 +590,10 @@ void perftest_cpp::PrintConfiguration()
                     stringStream << ", ";
                 }
             }
+
+            stringStream << "\t(Set the data size on the subscriber"
+                         << " to the maximum data size to achieve maximum performance)"
+                         << std::endl;
         } else {
             stringStream << _PM.get<unsigned long long>("dataLen") << "\n";
         }

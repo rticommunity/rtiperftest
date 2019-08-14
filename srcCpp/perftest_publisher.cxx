@@ -550,11 +550,15 @@ void perftest_cpp::PrintConfiguration()
             for (unsigned long i = 0; i < scanList.size(); i++) {
                 stringStream << scanList[i];
                 if (i == scanList.size() - 1) {
-                    stringStream << "\n";
+                    stringStream << "";
                 } else {
                     stringStream << ", ";
                 }
             }
+
+            stringStream << "\t(Set the data size on the subscriber"
+                         << " to the maximum data size to achieve maximum performance)"
+                         << std::endl;
         } else {
             stringStream << _PM.get<unsigned long long>("dataLen") << "\n";
         }
