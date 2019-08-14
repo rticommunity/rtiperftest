@@ -2456,13 +2456,13 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                     qos_resource_limits->max_samples(
                             qos_resource_limits->initial_samples());
                     qos_resource_limits->max_samples_per_instance(
-                            qos_resource_limits->initial_samples());
+                            qos_resource_limits->max_samples());
                     dw_reliableWriterProtocol.heartbeats_per_max_samples(
-                            std::max(1.0, 0.1 * initial_samples));
+                            std::max(1.0, 0.1 * qos_resource_limits->max_samples()));
                     dw_reliableWriterProtocol.high_watermark(
-                            0.9 * initial_samples);
+                            0.9 * qos_resource_limits->max_samples());
                     dw_reliableWriterProtocol.low_watermark(
-                            std::max(1.0, 0.1 * initial_samples));
+                            std::max(1.0, 0.1 * qos_resource_limits->max_samples()));
 
                     /**
                      * Make sure there are always enought samples to loan in order to avoid:

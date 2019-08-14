@@ -2849,14 +2849,14 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
                  * Replace previously set reduce limits by the new ones from the initial_samples
                  * size calculations
                 */
-                dw_qos.resource_limits.max_samples = initial_samples;
-                dw_qos.resource_limits.max_samples_per_instance = initial_samples;
+                dw_qos.resource_limits.max_samples = 2 * initial_samples;
+                dw_qos.resource_limits.max_samples_per_instance = dw_qos.resource_limits.max_samples;
                 dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
-                        std::max(1.0, 0.1 * initial_samples);
+                        std::max(1.0, 0.1 * dw_qos.resource_limits.max_samples);
                 dw_qos.protocol.rtps_reliable_writer.high_watermark =
-                        0.9 * initial_samples;
+                        0.9 * dw_qos.resource_limits.max_samples;
                 dw_qos.protocol.rtps_reliable_writer.low_watermark =
-                        std::max(1.0, 0.1 * initial_samples);
+                        std::max(1.0, 0.1 * dw_qos.resource_limits.max_samples);
 
                 /**
                  * Make sure there are always enought samples to loan in order to avoid:
