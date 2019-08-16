@@ -166,8 +166,12 @@ if NOT "%1"=="" (
 					exit /b 1
 				)
 				SHIFT
-		) ELSE if "%1"=="flatdata-max-size" (
+		) ELSE if "%1"=="--flatdata-max-size" (
 				SET "flatdata_size=%2"
+				if %flatdata_size!%  LEQ 0 (
+					echo [ERROR]: "--flatdata-max-size n" requires n > 0.
+					exit /b 1
+				)
 				SHIFT
 		) ELSE (
 				echo [ERROR]: Unknown argument "%1"
