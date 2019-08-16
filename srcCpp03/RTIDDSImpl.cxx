@@ -2465,17 +2465,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                     dw_reliableWriterProtocol.high_watermark(
                             0.9 * qos_resource_limits->max_samples());
                     dw_reliableWriterProtocol.low_watermark(
-                            (std::max)(1.0, 0.1 * qos_resource_limits->max_samples()));
-
-                    /**
-                     * Make sure there are always enought samples to loan in
-                     *  order to avoid: ERROR: Out of resources for writer
-                     *  loaned samples
-                     */
-                    qos_dw_resource_limits.writer_loaned_sample_allocation()
-                            .max_count(2 * qos_resource_limits->initial_samples());
-                    qos_dw_resource_limits.writer_loaned_sample_allocation()
-                            .initial_count(qos_resource_limits->initial_samples());
+                            0.1 * qos_resource_limits->max_samples());
                 }
             }
 

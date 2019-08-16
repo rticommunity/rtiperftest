@@ -2863,16 +2863,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(
                 dw_qos.protocol.rtps_reliable_writer.high_watermark =
                         0.9 * dw_qos.resource_limits.max_samples;
                 dw_qos.protocol.rtps_reliable_writer.low_watermark =
-                        (std::max)(1.0, 0.1 * dw_qos.resource_limits.max_samples);
-
-                /**
-                 * Make sure there are always enought samples to loan in order
-                 * to avoid: ERROR: Out of resources for writer loaned samples
-                 */
-                dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count =
-                        2 * dw_qos.resource_limits.initial_samples;
-                dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count =
-                        dw_qos.resource_limits.initial_samples;
+                        0.1 * dw_qos.resource_limits.max_samples;
             }
         }
 
@@ -3102,10 +3093,6 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(
         #endif
       #endif
     }
-
-    std::cout << "Setup DR" << std::endl;
-    std::cout << "Initial Samples: " << dr_qos.resource_limits.initial_samples << std::endl;
-    std::cout << "Allocable Samples: " << (max_allocable_space / RTI_FLATDATA_MAX_SIZE) << std::endl << std::endl;
 
     return DDS_RETCODE_OK;
 }
