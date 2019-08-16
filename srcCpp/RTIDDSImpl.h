@@ -32,12 +32,6 @@
 #include <sys/sysctl.h>
 #endif
 
-/* Undefine Windows max and min micros. 
-   They conflict with std::min and std::max
-*/
-#undef max
-#undef min
-
 #define RTIPERFTEST_MAX_PEERS 1024
 
 /* Forward declaration of perftest_cpp to avoid circular dependencies */
@@ -182,12 +176,18 @@ protected:
     ParameterManager            *_PM;
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
-  
-  #if defined(RTI_DARWIN) && !defined(RTI_MICRO)
+
+  #ifndef RTI_MICRO
     unsigned long int getShmemSHMMAX();
   #endif
-    DDS_ReturnCode_t setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::string qos_profile, std::string topic_name);
-    DDS_ReturnCode_t setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::string qos_profile, std::string topic_name);
+    DDS_ReturnCode_t setup_DR_QoS(
+            DDS_DataReaderQos &dr_qos,
+            std::string qos_profile,
+            std::string topic_name);
+    DDS_ReturnCode_t setup_DW_QoS(
+            DDS_DataWriterQos &dw_qos,
+            std::string qos_profile,
+            std::string topic_name);
 };
 
 #ifdef RTI_FLATDATA_AVAILABLE
@@ -200,7 +200,7 @@ protected:
   public:
       /**
          * Constructor for RTIDDSImpl_FlatData
-         * 
+         *
          * @param isZeroCopy states if the type is also ZeroCopy
          */
       RTIDDSImpl_FlatData(bool isZeroCopy=false) {
@@ -208,37 +208,38 @@ protected:
         this->_isFlatData = true;
         this->_typename = T::TypeSupport::get_type_name();
       };
-      
+
       /**
-         * Creates a Publisher that uses the FlatData API 
-         * 
-         * @param topic_name is the name of the topic where 
+         * Creates a Publisher that uses the FlatData API
+         *
+         * @param topic_name is the name of the topic where
          *      the created writer will write new samples to
-         * 
-         * @return a RTIFlatDataPublisher  
+         *
+         * @return a RTIFlatDataPublisher
          */
       IMessagingWriter *CreateWriter(const char *topic_name);
 
       /**
-         * Creates a Subscriber that uses the FlatData API 
-         * 
-         * @param topic_name is the name of the topic where 
-         *      the created reader will read new samples from
-         * 
-         * @param callback is the callback that will process 
-         *      the receibed message once it has been taken by the reader.
-         *      Pass null for callback if using IMessagingSubscriber.ReceiveMessage() to get data
-         * 
-         * @return a RTIFlatDataSubscriber  
+         * Creates a Subscriber that uses the FlatData API
+         *
+         * @param topic_name is the name of the topic where the created reader
+         *      will read new samples from
+         *
+         * @param callback is the callback that will process the receibed
+         *      message once it has been taken by the reader. Pass null for
+         *      callback if using IMessagingSubscriber.ReceiveMessage() to get
+         *      data
+         *
+         * @return a RTIFlatDataSubscriber
          */
       IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
 
       /**
        * Obtain average serialization time
-       * 
+       *
        * @param sampleSize size of the payload to serialize
        * @param iters number of times to serialize the payload
-       * 
+       *
        * @return average serialization time in microseconds
        */
       static double obtain_dds_serialize_time_cost_override(
@@ -247,10 +248,10 @@ protected:
 
       /**
        * Obtain average deserialization time
-       * 
+       *
        * @param sampleSize size of the payload to deserialize
        * @param iters number of times to deserialize the payload
-       * 
+       *
        * @return average serialization time in microseconds
        */
       static double obtain_dds_deserialize_time_cost_override(

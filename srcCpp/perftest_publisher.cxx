@@ -121,6 +121,7 @@ int perftest_cpp_main(char *args)
 
 int perftest_cpp::Run(int argc, char *argv[])
 {
+    unsigned short mask;
     PrintVersion();
 
     try {
@@ -152,66 +153,62 @@ int perftest_cpp::Run(int argc, char *argv[])
         _MessagingImpl = new RTIRawTransportImpl();
       #endif
     } else {
-        if (_PM.get<int>("unbounded") == 0) {
-            if (_PM.get<bool>("keyed")) {
-              #ifdef RTI_FLATDATA_AVAILABLE
-                if (_PM.get<bool>("flatdata")) {
-                    if (_PM.get<bool>("zerocopy")) {
-                        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>(true);
-                    } else {
-                        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>();
-                    }
-                } else {
-                    _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
-                }
-              #else
-                _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
-              #endif //RTI_FLATDATA_AVAILABLE
-            } else {
-              #ifdef RTI_FLATDATA_AVAILABLE
-                if (_PM.get<bool>("flatdata")) {
-                    if (_PM.get<bool>("zerocopy")) {
-                        _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
-                    } else {
-                        _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
-                    }
-                } else {
-                    _MessagingImpl = new RTIDDSImpl<TestData_t>();
-                }
-              #else
-                _MessagingImpl = new RTIDDSImpl<TestData_t>();
-              #endif //RTI_FLATDATA_AVAILABLE
-            }
-        } else {
-            if (_PM.get<bool>("keyed")) {
-              #ifdef RTI_FLATDATA_AVAILABLE
-                if (_PM.get<bool>("flatdata")) {
-                    if (_PM.get<bool>("zerocopy")) {
-                        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>(true);
-                    } else {
-                        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
-                    }
-                } else {
-                    _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
-                }
-              #else
-                _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
-              #endif //RTI_FLATDATA_AVAILABLE
-            } else {
-              #ifdef RTI_FLATDATA_AVAILABLE
-                if (_PM.get<bool>("flatdata")) {
-                    if (_PM.get<bool>("zerocopy")) {
-                        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>(true);
-                    } else {
-                        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
-                    }
-                } else {
-                    _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
-                }
-              #else
-                _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
-              #endif //RTI_FLATDATA_AVAILABLE
-            }
+        mask = (_PM.get<int>("unbounded") != 0) << 3;
+        mask += _PM.get<int>("keyed") << 2;
+        mask += _PM.get<int>("flatdata") << 1;
+        mask += _PM.get<int>("zerocopy") << 0;
+
+        switch (mask)
+        {
+        case 15: // unbounded + keyed + flat + zero = 1111
+            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>(true);
+            break;
+
+        case 14: // unbounded + keyed + flat = 1110
+            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
+            break;
+
+        case 12: // unbounded + keyed = 1100
+            _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
+            break;
+
+        case 11: // unbounded + flat + zero = 1011
+            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>(true);
+            break;
+
+        case 10: // unbounded + flat = 1010
+            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
+            break;
+
+        case 8: // unbounded = 1000
+            _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
+            break;
+
+        case 7: // keyed + flat + zero = 0111
+            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>(true);
+            break;
+
+        case 6: // Keyed + flat = 0110
+            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>();
+            break;
+
+        case 4: // keyed = 0100
+            _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
+            break;
+
+        case 3: // flat + Zero = 0011
+            _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
+            break;
+
+        case 2: // flat = 0010
+            _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
+            break;
+        case 0: // = 0000 (bounded)
+             _MessagingImpl = new RTIDDSImpl<TestData_t>();
+             break;
+
+        default:
+            break;
         }
     }
 
@@ -288,6 +285,11 @@ perftest_cpp::perftest_cpp()
     _SpinLoopCount = 0;
     _SleepNanosec = 0;
     _MessagingImpl = NULL;
+
+    /** We use rand to generate the key of a SHMEM segment when
+     * we estimate the maximum buffer size for SHMEM
+     */
+    srand(time(NULL));
 };
 
 
@@ -1335,7 +1337,7 @@ public:
     }
 
     void print_summary_latency(){
-
+        unsigned short mask;
         double latency_ave;
         double latency_std;
       #ifndef RTI_MICRO
@@ -1388,89 +1390,100 @@ public:
         fflush(stdout);
 
       #ifndef RTI_MICRO
-        if (!isFlatData)  {
-            if (!unbounded) {
-                if (isKeyed) {
-                    serializeTime = RTIDDSImpl<TestDataKeyed_t>::
-                            obtain_dds_serialize_time_cost(totalSampleSize);
-                    deserializeTime = RTIDDSImpl<TestDataKeyed_t>::
-                            obtain_dds_deserialize_time_cost(totalSampleSize);
-                } else {
-                    serializeTime = RTIDDSImpl<TestData_t>::
-                            obtain_dds_serialize_time_cost(totalSampleSize);
-                    deserializeTime = RTIDDSImpl<TestData_t>::
-                            obtain_dds_deserialize_time_cost(totalSampleSize);
-                }
-            } else {
-                if (isKeyed) {
-                    serializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
-                            obtain_dds_serialize_time_cost(totalSampleSize);
-                    deserializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
-                            obtain_dds_deserialize_time_cost(totalSampleSize);
-                } else {
-                    serializeTime = RTIDDSImpl<TestDataLarge_t>::
-                            obtain_dds_serialize_time_cost(totalSampleSize);
-                    deserializeTime = RTIDDSImpl<TestDataLarge_t>::
-                            obtain_dds_deserialize_time_cost(totalSampleSize);
-                }
-            }
-        } else {
-            if (!unbounded) {
-                if (isKeyed) {
-                    if (isZeroCopy) {
-                        serializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
-                                obtain_dds_serialize_time_cost_override(totalSampleSize);
-                        deserializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
-                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
-                    } else {
-                        serializeTime = RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>::
-                                obtain_dds_serialize_time_cost_override(totalSampleSize);
-                        deserializeTime = RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>::
-                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
-                    }
-                } else {
-                    if (isZeroCopy) {
-                        serializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
-                            obtain_dds_serialize_time_cost_override(totalSampleSize);
-                        deserializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
-                                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
-                    } else {
-                        serializeTime = RTIDDSImpl_FlatData<TestData_FlatData_t>::
-                                obtain_dds_serialize_time_cost_override(totalSampleSize);
-                        deserializeTime = RTIDDSImpl_FlatData<TestData_FlatData_t>::
-                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
-                    }
-                }
-            } else {
-                if (isKeyed) {
-                    if (isZeroCopy) {
-                        serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>::
-                                obtain_dds_serialize_time_cost_override(totalSampleSize);
-                        deserializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>::
-                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
-                    } else {
-                        serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
-                                obtain_dds_serialize_time_cost_override(totalSampleSize);
-                        deserializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
-                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
-                    }
-                } else {
-                    if (isZeroCopy) {
-                        serializeTime = RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>::
-                                obtain_dds_serialize_time_cost_override(totalSampleSize);
-                        deserializeTime = RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>::
-                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
-                    } else {
-                        serializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
-                                obtain_dds_serialize_time_cost_override(totalSampleSize);
-                        deserializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
-                                obtain_dds_deserialize_time_cost_override(totalSampleSize);
-                    }
-                    
-                }
-            }
+        mask = (_PM->get<int>("unbounded") != 0) << 3;
+        mask += _PM->get<int>("keyed") << 2;
+        mask += _PM->get<int>("flatdata") << 1;
+        mask += _PM->get<int>("zerocopy") << 0;
+
+        switch (mask)
+        {
+        case 15: // unbounded + keyed + flat + zero = 1111
+            serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>::
+                    obtain_dds_serialize_time_cost_override(totalSampleSize);
+            deserializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>::
+                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
+            break;
+
+        case 14: // unbounded + keyed + flat = 1110
+            serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
+                    obtain_dds_serialize_time_cost_override(totalSampleSize);
+            deserializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
+                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
+            break;
+
+        case 12: // unbounded + keyed = 1100
+            serializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
+                    obtain_dds_serialize_time_cost(totalSampleSize);
+            deserializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
+                    obtain_dds_deserialize_time_cost(totalSampleSize);
+            break;
+
+        case 11: // unbounded + flat + zero = 1011
+            serializeTime = RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>::
+                    obtain_dds_serialize_time_cost_override(totalSampleSize);
+            deserializeTime = RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>::
+                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
+            break;
+
+        case 10: // unbounded + flat = 1010
+            serializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
+                    obtain_dds_serialize_time_cost_override(totalSampleSize);
+            deserializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
+                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
+            break;
+
+        case 8: // unbounded = 1000
+            serializeTime = RTIDDSImpl<TestDataLarge_t>::
+                    obtain_dds_serialize_time_cost(totalSampleSize);
+            deserializeTime = RTIDDSImpl<TestDataLarge_t>::
+                    obtain_dds_deserialize_time_cost(totalSampleSize);
+            break;
+
+        case 7: // keyed + flat + zero = 0111
+            serializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
+                    obtain_dds_serialize_time_cost_override(totalSampleSize);
+            deserializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
+                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
+            break;
+
+        case 6: // Keyed + flat = 0110
+            serializeTime = RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>::
+                    obtain_dds_serialize_time_cost_override(totalSampleSize);
+            deserializeTime = RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>::
+                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
+            break;
+
+        case 4: // keyed = 0100
+            serializeTime = RTIDDSImpl<TestDataKeyed_t>::
+                    obtain_dds_serialize_time_cost(totalSampleSize);
+            deserializeTime = RTIDDSImpl<TestDataKeyed_t>::
+                    obtain_dds_deserialize_time_cost(totalSampleSize);
+            break;
+
+        case 3: // flat + Zero = 0011
+            serializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
+                    obtain_dds_serialize_time_cost_override(totalSampleSize);
+            deserializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
+                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
+            break;
+
+        case 2: // flat = 0010
+            serializeTime = RTIDDSImpl_FlatData<TestData_FlatData_t>::
+                    obtain_dds_serialize_time_cost_override(totalSampleSize);
+            deserializeTime = RTIDDSImpl_FlatData<TestData_FlatData_t>::
+                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
+            break;
+        case 0: // = 0000 (bounded)
+             serializeTime = RTIDDSImpl<TestData_t>::
+                    obtain_dds_serialize_time_cost(totalSampleSize);
+            deserializeTime = RTIDDSImpl<TestData_t>::
+                    obtain_dds_deserialize_time_cost(totalSampleSize);
+             break;
+
+        default:
+            break;
         }
-        
+
         printf("Serialization/Deserialization: %0.3f us / %0.3f us / TOTAL: "
                 "%0.3f us\n",
                serializeTime,
@@ -1830,19 +1843,19 @@ int perftest_cpp::Publisher()
     message.size = INITIALIZE_SIZE;
 
     /*
-    * Initial burst of data:
-    *
-    * The purpose of this initial burst of Data is to ensure that most
-    * memory allocations in the critical path are done before the test begings,
-    * for both the Writer and the Reader that receives the samples.
-    * It will also serve to make sure that all the instances are registered
-    * in advance in the subscriber application.
-    *
-    * We query the MessagingImplementation class to get the suggested sample
-    * count that we should send. This number might be based on the reliability
-    * protocol implemented by the middleware behind. Then we choose between that
-    * number and the number of instances to be sent.
-    */
+     * Initial burst of data:
+     *
+     * The purpose of this initial burst of Data is to ensure that most
+     * memory allocations in the critical path are done before the test begings,
+     * for both the Writer and the Reader that receives the samples.
+     * It will also serve to make sure that all the instances are registered
+     * in advance in the subscriber application.
+     *
+     * We query the MessagingImplementation class to get the suggested sample
+     * count that we should send. This number might be based on the reliability
+     * protocol implemented by the middleware behind. Then we choose between that
+     * number and the number of instances to be sent.
+     */
     unsigned long initializeSampleCount = (std::max)(
             _MessagingImpl->GetInitializationSampleCount(),
             (unsigned long)_PM.get<long>("instances"));

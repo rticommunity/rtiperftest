@@ -326,26 +326,19 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
   #ifdef RTI_FLATDATA_AVAILABLE
     // FlatData
-    stringStream << "\tFlatData: ";
-    if (_PM->get<bool>("flatdata")) {
-        stringStream << "Yes\n";
-    } else {
-        stringStream << "No\n";
-    }
+    stringStream << "\tFlatData: "
+                 << (_PM->get<bool>("flatdata") ? "Yes" : "No")
+                 << std::endl;
 
     // Zero Copy
-    stringStream << "\tZero Copy: ";
-    if (_PM->get<bool>("zerocopy")) {
-        stringStream << "Yes";
+    stringStream << "\tZero Copy: "
+                 << (_PM->get<bool>("zerocopy") ? "Yes" : "No");
 
-        if (_PM->get<bool>("checkconsistency")) {
+    if (_PM->get<bool>("checkconsistency")) {
             stringStream << " (Check Consistency)";
-        }
-
-        stringStream << std::endl;
-    } else {
-        stringStream << "No\n";
     }
+
+    stringStream << std::endl;
   #endif
 
   #ifndef RTI_MICRO
@@ -388,7 +381,9 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
     stringStream << "\n" << _transport.printTransportConfigurationSummary(qos);
 
-    if (qos != NULL) delete qos;
+    if (qos != NULL){
+        delete qos;
+    }
 
     const std::vector<std::string> peerList = _PM->get_vector<std::string>("peer");
     if (!peerList.empty()) {
@@ -2342,10 +2337,10 @@ template <typename T>
 unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
 {
     /*
-     * If we are using reliable, the maximum burst of that we can send is limited
-     * by max_send_window_size (or max samples, but we will assume this is not
-     * the case for this). In such case we should send max_send_window_size
-     * samples.
+     * If we are using reliable, the maximum burst of that we can send is
+     * limited by max_send_window_size (or max samples, but we will assume this
+     * is not the case for this). In such case we should send
+     * max_send_window_size samples.
      *
      * If we are not using reliability this should not matter.
      */
@@ -2553,10 +2548,13 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
 }
 #endif //RTI_MICRO
 
-#if defined(RTI_DARWIN) && !defined(RTI_MICRO)
+#ifndef RTI_MICRO
 template <typename T>
 unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
-    unsigned long int shmmax = MAX_DARWIN_SHMEM_SIZE;
+    unsigned long int shmmax = 0;
+
+  #ifdef RTI_DARWIN
+    shmax = MAX_DARWIN_SHMEM_SIZE;
     const char *cmd = "sysctl kern.sysv.shmmax";
     int buffSize = 100;
     char buffer[buffSize];
@@ -2564,14 +2562,16 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
 
     // Execute cmd and get file pointer
     if ((file = popen(cmd, "r")) == NULL) {
-        fprintf(stderr, "Could not run cmd '%s'. Using default size: %lu bytes.\n",
+        fprintf(stderr,
+                "Could not run cmd '%s'. Using default size: %lu bytes.\n",
                 cmd, shmmax);
         return shmmax;
     }
 
     // Read cmd output from its file pointer
     if (fgets(buffer, buffSize, file) == NULL) {
-       fprintf(stderr, "Could not read '%s' output. Using default size: %lu bytes.\n",
+       fprintf(stderr,
+                "Could not read '%s' output. Using default size: %lu bytes.\n",
                 cmd, shmmax);
         return shmmax;
     }
@@ -2584,12 +2584,19 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
     // Close file and process
     pclose(file);
 
+  #else
+    // NOT IMPLEMENTED OR NEEDED (YET)
+  #endif
+
     return shmmax;
 }
-#endif
+#endif // !RTI_MICRO
 
 template <typename T>
-DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::string qos_profile, std::string topic_name)
+DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(
+        DDS_DataWriterQos &dw_qos,
+        std::string qos_profile,
+        std::string topic_name)
 {
     unsigned long long initial_samples = 0;
     unsigned long max_allocable_space = 0;
@@ -2759,9 +2766,12 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
   #ifndef RTI_MICRO
     dw_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
 
-    if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {
+    // If is LargeData
+    if (_PM->get<int>("unbounded") != 0) {
         char buf[10];
-        sprintf(buf, "%d", _PM->get<int>("unbounded"));
+        sprintf(buf, "%d", (_isFlatData
+                ? DDS_LENGTH_UNLIMITED // No dynamic alloc of serialize buffer
+                : _PM->get<int>("unbounded")));
         DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
                buf,
@@ -2781,16 +2791,10 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
 
   #ifdef RTI_FLATDATA_AVAILABLE
     if (_isFlatData) {
-        char buf[10];
-        sprintf(buf, "%d", DDS_LENGTH_UNLIMITED);
-        DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
-                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
-                buf,
-                false);
-
-        /**
-         * If FlatData and LargeData, automatically estimate initial_samples here
-         * in a range from 1 up to the initial samples specifies in the QoS file.
+         /**
+         * If FlatData and LargeData, automatically estimate initial_samples
+         * here in a range from 1 up to the initial samples specifies in the QoS
+         * file.
          *
          * This is done to avoid using too much memory since DDS allocates
          * samples of the RTI_FLATDATA_MAX_SIZE size
@@ -2800,43 +2804,45 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
 
           #ifdef RTI_DARWIN
             /**
-             * In OSX, we might not be able to allocate all the send queue samples
-             * We only need this on the DW since it will allocate the samples
-             * on Zero Copy
+             * In OSX, we might not be able to allocate all the send queue
+             * samples We only need this on the DW since it will allocate the
+             * samples on Zero Copy
              */
             if (_isZeroCopy) {
                 max_allocable_space = getShmemSHMMAX();
-                fprintf(stdout, "SHMMAX: %lu\n", max_allocable_space);
-                //max_allocable_space = MAX_DARWIN_SHMEM_SIZE;
 
                 /**
                  * Leave enought room for an sceneario of two participants:
                  *   - One Publisher with one DW (throughput topic)
-                 *   - One Subscriber with two DW (Latency topic and Announcement)
+                 *   - One Subscriber with two DW (Latency topic and
+                 *     Announcement)
                  */
                 max_allocable_space /= 3;
 
                 /**
-                 * If we wont be able to allocate as many samples as we originally want,
-                 * Display a message letting know the user how to increase SHMEM
-                 * operative system settings
+                 * If we wont be able to allocate as many samples as we
+                 * originally want, Display a message letting know the user how
+                 * to increase SHMEM operative system settings
                  */
                 if (max_allocable_space < RTI_FLATDATA_MAX_SIZE *
                             dw_qos.resource_limits.initial_samples + 1) {
                     fprintf(stderr,
-                            "[Warn] Performace Degradation: Not enought Shared Memory space available to allocate intial samples. "
-                            "Consider increasing SHMMAX parameter on your system settings or select a different transport.\n"
+                            "[Warn] Performace Degradation: Not enought Shared "
+                            "Memory space available to allocate intial samples. "
+                            "Consider increasing SHMMAX parameter on your system"
+                            " settings or select a different transport.\n"
                             "See https://community.rti.com/kb/what-are-possible-solutions-common-shared-memory-issues\n"
-                            "If you still run into this issue, consider cleaning your Shared Memory segments.\n");
+                            "If you still run into this issue, consider cleaning "
+                            "your Shared Memory segments.\n");
                 }
             }
           #endif
 
             // The writer_loaned_sample_allocation is initial_simples + 1
-            initial_samples = std::max(
+            initial_samples = (std::max)(
                     1ul, (max_allocable_space - RTI_FLATDATA_MAX_SIZE) / RTI_FLATDATA_MAX_SIZE);
 
-            initial_samples = std::min(
+            initial_samples = (std::min)(
                     initial_samples,
                     (unsigned long long) dw_qos.resource_limits.initial_samples);
 
@@ -2846,50 +2852,50 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(DDS_DataWriterQos &dw_qos, std::str
             if (_transport.transportConfig.kind == TRANSPORT_SHMEM
                     || _transport.transportConfig.kind == TRANSPORT_UDPv4_SHMEM) {
                 /**
-                 * Replace previously set reduce limits by the new ones from the initial_samples
-                 * size calculations
+                 * Replace previously set reduce limits by the new ones from the
+                 * initial_samples size calculations
                 */
                 dw_qos.resource_limits.max_samples = 2 * initial_samples;
-                dw_qos.resource_limits.max_samples_per_instance = dw_qos.resource_limits.max_samples;
+                dw_qos.resource_limits.max_samples_per_instance =
+                        dw_qos.resource_limits.max_samples;
                 dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
-                        std::max(1.0, 0.1 * dw_qos.resource_limits.max_samples);
+                        (std::max)(1.0, 0.1 * dw_qos.resource_limits.max_samples);
                 dw_qos.protocol.rtps_reliable_writer.high_watermark =
                         0.9 * dw_qos.resource_limits.max_samples;
                 dw_qos.protocol.rtps_reliable_writer.low_watermark =
-                        std::max(1.0, 0.1 * dw_qos.resource_limits.max_samples);
+                        (std::max)(1.0, 0.1 * dw_qos.resource_limits.max_samples);
 
                 /**
-                 * Make sure there are always enought samples to loan in order to avoid:
-                 *  ERROR: Out of resources for writer loaned samples
+                 * Make sure there are always enought samples to loan in order
+                 * to avoid: ERROR: Out of resources for writer loaned samples
                  */
                 dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count =
-                    2 * dw_qos.resource_limits.initial_samples;
+                        2 * dw_qos.resource_limits.initial_samples;
                 dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count =
-                    dw_qos.resource_limits.initial_samples;
+                        dw_qos.resource_limits.initial_samples;
             }
         }
 
         /**
-         * Enables a ZeroCopy DataWriter to send a special sequence number as a part of its inline Qos.
-         * his sequence number is used by a ZeroCopy DataReader to check for sample consistency.
+         * Enables a ZeroCopy DataWriter to send a special sequence number as a
+         * part of its inline Qos. his sequence number is used by a ZeroCopy
+         * DataReader to check for sample consistency.
          */
         if (_isZeroCopy) {
-            dw_qos.transfer_mode.shmem_ref_settings.enable_data_consistency_check = RTI_TRUE;
+            dw_qos.transfer_mode.shmem_ref_settings.enable_data_consistency_check =
+                    RTI_TRUE;
         }
     }
-  #endif
-
-  #ifdef RTI_FLATDATA_AVAILABLE
-    std::cout << "Setup DW" << std::endl;
-    std::cout << "Initial Samples: " << dw_qos.resource_limits.initial_samples << std::endl;
-    std::cout << "Allocable Samples: " << (max_allocable_space / RTI_FLATDATA_MAX_SIZE) << std::endl << std::endl;
   #endif
 
     return DDS_RETCODE_OK;
 }
 
 template <typename T>
-DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::string qos_profile, std::string topic_name)
+DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(
+        DDS_DataReaderQos &dr_qos,
+        std::string qos_profile,
+        std::string topic_name)
 {
     unsigned long long initial_samples = 0;
     int max_allocable_space = 0;
@@ -3050,10 +3056,12 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(DDS_DataReaderQos &dr_qos, std::str
             max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
 
             // The writer_loaned_sample_allocation is initial_simples + 1
-            initial_samples = std::max(
-                    1, (max_allocable_space - RTI_FLATDATA_MAX_SIZE) / RTI_FLATDATA_MAX_SIZE);
+            initial_samples = (std::max)(
+                    1,
+                    (max_allocable_space -
+                            RTI_FLATDATA_MAX_SIZE) / RTI_FLATDATA_MAX_SIZE);
 
-            initial_samples = std::min(
+            initial_samples = (std::min)(
                     initial_samples,
                     (unsigned long long) dr_qos.resource_limits.initial_samples);
 

@@ -121,11 +121,11 @@ class RTIDDSImpl : public IMessaging
     static const std::string SECURE_LIBRARY_NAME;
   #endif
 
-  #ifdef RTI_DARWIN
     unsigned long int getShmemSHMMAX();
-  #endif
-    dds::sub::qos::DataReaderQos setup_DR_QoS(std::string qos_profile, std::string topic_name);
-    dds::pub::qos::DataWriterQos setup_DW_QoS(std::string qos_profile, std::string topic_name);
+    dds::sub::qos::DataReaderQos setup_DR_QoS(
+            std::string qos_profile, std::string topic_name);
+    dds::pub::qos::DataWriterQos setup_DW_QoS(
+            std::string qos_profile, std::string topic_name);
 };
 
 #ifdef RTI_FLATDATA_AVAILABLE
@@ -138,34 +138,35 @@ class RTIDDSImpl : public IMessaging
   public:
       /**
        * Constructor for RTIDDSImpl_FlatData
-       * 
+       *
        * @param isZeroCopy states if the type is also ZeroCopy
        */
       RTIDDSImpl_FlatData(bool isZeroCopy=false);
-      
+
       /**
-       * Creates a Publisher that uses the FlatData API 
-       * 
-       * @param topic_name is the name of the topic where 
+       * Creates a Publisher that uses the FlatData API
+       *
+       * @param topic_name is the name of the topic where
        *      the created writer will write new samples to
-       * 
-       * @return a RTIFlatDataPublisher  
+       *
+       * @return a RTIFlatDataPublisher
        */
       IMessagingWriter *CreateWriter(const std::string &topic_name);
 
       /**
-       * Creates a Subscriber that uses the FlatData API 
-       * 
-       * @param topic_name is the name of the topic where 
-       *      the created reader will read new samples from
-       * 
-       * @param callback is the callback that will process 
-       *      the receibed message once it has been taken by the reader.
-       *      Pass null for callback if using IMessagingSubscriber.ReceiveMessage() to get data
-       * 
-       * @return a RTIFlatDataSubscriber  
+       * Creates a Subscriber that uses the FlatData API
+       *
+       * @param topic_name is the name of the topic where the created reader
+       *      will read new samples from
+       *
+       * @param callback is the callback that will process the receibed message
+       *      once it has been taken by the reader. Pass null for callback if
+       *      using IMessagingSubscriber.ReceiveMessage() to get data
+       *
+       * @return a RTIFlatDataSubscriber
        */
-      IMessagingReader *CreateReader(const std::string &topic_name, IMessagingCB *callback);
+      IMessagingReader *CreateReader(
+              const std::string &topic_name, IMessagingCB *callback);
   };
 #endif // RTI_FLATDATA_AVAILABLE
 

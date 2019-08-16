@@ -1274,6 +1274,11 @@ while [ "$1" != "" ]; do
             ;;
         --flatdata-max-size)
             flatdata_size=$2
+            sizeInt=$(($flatdata_size + 0)) # For OSX
+            if [[ sizeInt -le 0 ]]; then
+                echo -e "${ERROR_TAG} \"--flatdata-max-size n\" requires n > 0."
+                exit -1
+            fi
             shift
             ;;
         --osx-shmem-shmmax)

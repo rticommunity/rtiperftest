@@ -139,7 +139,7 @@ int perftest_cpp_main(char *args)
  * Run
  */
 int perftest_cpp::Run(int argc, char *argv[]) {
-
+    unsigned short mask;
     PrintVersion();
 
     try {
@@ -166,66 +166,62 @@ int perftest_cpp::Run(int argc, char *argv[]) {
         return -1;
     }
 
-    if (_PM.get<int>("unbounded") == 0) {
-        if (_PM.get<bool>("keyed")) {
-          #ifdef RTI_FLATDATA_AVAILABLE
-            if (_PM.get<bool>("flatdata")) {
-                 if (_PM.get<bool>("zerocopy")) {
-                    _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>(true);
-                 } else {
-                    _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>();
-                 }
-            } else {
-                _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
-            }
-          #else 
-            _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
-          #endif //RTI_FLATDATA_AVAILABLE
-        } else {
-          #ifdef RTI_FLATDATA_AVAILABLE
-            if (_PM.get<bool>("flatdata")) {
-                  if (_PM.get<bool>("zerocopy")) {
-                      _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
-                  } else {
-                      _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
-                  }
-            } else {
-                _MessagingImpl = new RTIDDSImpl<TestData_t>();
-            }
-          #else
+    mask = (_PM.get<int>("unbounded") != 0) << 3;
+    mask += _PM.get<int>("keyed") << 2;
+    mask += _PM.get<int>("flatdata") << 1;
+    mask += _PM.get<int>("zerocopy") << 0;
+
+    switch (mask)
+    {
+    case 15: // unbounded + keyed + flat + zero = 1111
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>(true);
+        break;
+
+    case 14: // unbounded + keyed + flat = 1110
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
+        break;
+
+    case 12: // unbounded + keyed = 1100
+        _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
+        break;
+
+    case 11: // unbounded + flat + zero = 1011
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>(true);
+        break;
+
+    case 10: // unbounded + flat = 1010
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
+        break;
+
+    case 8: // unbounded = 1000
+        _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
+        break;
+
+    case 7: // keyed + flat + zero = 0111
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>(true);
+        break;
+
+    case 6: // Keyed + flat = 0110
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>();
+        break;
+
+    case 4: // keyed = 0100
+        _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
+        break;
+
+    case 3: // flat + Zero = 0011
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
+        break;
+
+    case 2: // flat = 0010
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
+        break;
+    case 0: // = 0000 (bounded)
             _MessagingImpl = new RTIDDSImpl<TestData_t>();
-          #endif //RTI_FLATDATA_AVAILABLE
-        }
-    } else {
-        if (_PM.get<bool>("keyed")) {
-          #ifdef RTI_FLATDATA_AVAILABLE
-            if (_PM.get<bool>("flatdata")) {
-                  if (_PM.get<bool>("zerocopy")) {
-                      _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>(true);
-                  } else {
-                      _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
-                  }
-            } else {
-                _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
-            }
-          #else
-            _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
-          #endif //RTI_FLATDATA_AVAILABLE
-        } else {
-          #ifdef RTI_FLATDATA_AVAILABLE
-            if (_PM.get<bool>("flatdata")) {
-                  if (_PM.get<bool>("zerocopy")) {
-                      _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>(true);
-                  } else {
-                      _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
-                  }
-            } else {
-                _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
-            }
-          #else
-            _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
-          #endif //RTI_FLATDATA_AVAILABLE
-        }
+            break;
+
+    default:
+        break;
     }
 
     if (!_MessagingImpl->Initialize(_PM, this)) {
@@ -303,6 +299,10 @@ perftest_cpp::perftest_cpp() :
         _SleepNanosec(0),
         _MessagingImpl(NULL)
 {
+    /** We use rand to generate the key of a SHMEM segment when
+     * we estimate the maximum buffer size for SHMEM
+     */
+    srand(time(NULL));
 }
 ;
 
