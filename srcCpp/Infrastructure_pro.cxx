@@ -597,7 +597,7 @@ bool configureShmemTransport(
     ss << receivedMessageCountMax;
     if (!assertPropertyToParticipantQos(
             qos,
-            "dds.transport.shmem.builtin.received_message_countMax",
+            "dds.transport.shmem.builtin.received_message_count_max",
             ss.str())) {
         return false;
     }

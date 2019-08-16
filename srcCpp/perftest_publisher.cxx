@@ -1345,11 +1345,6 @@ public:
       #endif
         int totalSampleSize = last_data_length + perftest_cpp::OVERHEAD_BYTES;
 
-        int unbounded = _PM->get<int>("unbounded");
-        bool isKeyed = _PM->get<bool>("keyed");
-        bool isFlatData = _PM->get<bool>("flatdata");
-        bool isZeroCopy = _PM->get<bool>("zerocopy");
-
         std::string outputCpu = "";
         if (count == 0)
         {
