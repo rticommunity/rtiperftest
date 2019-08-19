@@ -896,20 +896,19 @@ namespace PerformanceTest
                     } else {
                         _BatchSize = -2;
                     }
-                } else if ((ulong) _BatchSize < _DataLen * 2) {
+                } else if (((ulong) _BatchSize < _DataLen * 2) && !_isScan) {
                     /*
                      * We don't want to use batching if the batch size is not large
                      * enough to contain at least two samples (in this case we avoid the
                      * checking at the middleware level).
                      */
-                    if (isBatchSizeProvided || _isScan) {
+                    if (isBatchSizeProvided) {
                         /*
                         * Batchsize disabled. A message will be print if _batchsize < 0 in
                         * perftest_cpp::PrintConfiguration()
                         */
                         _BatchSize = -1;
-                    }
-                    else {
+                    } else {
                         _BatchSize = 0;
                     }
                 }
