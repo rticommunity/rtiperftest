@@ -2612,7 +2612,7 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
 #endif // !RTI_MICRO
 
 template <typename T>
-DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(
+bool RTIDDSImpl<T>::setup_DW_QoS(
         DDS_DataWriterQos &dw_qos,
         std::string qos_profile,
         std::string topic_name)
@@ -2631,7 +2631,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(
                 qos_profile.c_str(),
                 _PM->get<std::string>("qosLibrary").c_str(),
                 _PM->get<std::string>("qosFile").c_str());
-        return DDS_RETCODE_ERROR;
+        return false;
     }
 
     if (_PM->get<bool>("noPositiveAcks")
@@ -2898,11 +2898,11 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DW_QoS(
     }
   #endif
 
-    return DDS_RETCODE_OK;
+    return true;
 }
 
 template <typename T>
-DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(
+bool RTIDDSImpl<T>::setup_DR_QoS(
         DDS_DataReaderQos &dr_qos,
         std::string qos_profile,
         std::string topic_name)
@@ -2922,7 +2922,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(
                 qos_profile.c_str(),
                 _PM->get<std::string>("qosLibrary").c_str(),
                 _PM->get<std::string>("qosFile").c_str());
-        return DDS_RETCODE_ERROR;
+        return false;
     }
   #endif
 
@@ -3047,7 +3047,7 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(
                     THROUGHPUT_TOPIC_NAME,
                     LATENCY_TOPIC_NAME,
                     ANNOUNCEMENT_TOPIC_NAME);
-            return DDS_RETCODE_ERROR;
+            return false;
         }
 
         dr_qos.multicast.value[0].receive_port = 0;
@@ -3108,12 +3108,12 @@ DDS_ReturnCode_t RTIDDSImpl<T>::setup_DR_QoS(
         #if RTI_MICRO_24x_COMPATIBILITY
           fprintf(stderr,
                   "Unbounded sequences not supported on Micro.\n");
-          return NULL;
+          return false;
         #endif
       #endif
     }
 
-    return DDS_RETCODE_OK;
+    return true;
 }
 
 
@@ -3151,7 +3151,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (setup_DW_QoS(dw_qos, qos_profile, topic_name) != DDS_RETCODE_OK) {
+    if (!setup_DW_QoS(dw_qos, qos_profile, topic_name)) {
         fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
@@ -3233,7 +3233,7 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const char *topic_name)
         return NULL;
     }
 
-    if (setup_DW_QoS(dw_qos, qos_profile, topic_name) != DDS_RETCODE_OK) {
+    if (!setup_DW_QoS(dw_qos, qos_profile, topic_name)) {
         fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
@@ -3383,7 +3383,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-    if (setup_DR_QoS(dr_qos, qos_profile, topic_name) != DDS_RETCODE_OK) {
+    if (!setup_DR_QoS(dr_qos, qos_profile, topic_name)) {
         fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
@@ -3498,7 +3498,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         return NULL;
     }
 
-    if (setup_DR_QoS(dr_qos, qos_profile, topic_name) != DDS_RETCODE_OK) {
+    if (!setup_DR_QoS(dr_qos, qos_profile, topic_name)) {
         fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }

@@ -123,9 +123,11 @@ class RTIDDSImpl : public IMessaging
 
     unsigned long int getShmemSHMMAX();
     dds::sub::qos::DataReaderQos setup_DR_QoS(
-            std::string qos_profile, std::string topic_name);
+            std::string qos_profile,
+            std::string topic_name);
     dds::pub::qos::DataWriterQos setup_DW_QoS(
-            std::string qos_profile, std::string topic_name);
+            std::string qos_profile,
+            std::string topic_name);
 };
 
 #ifdef RTI_FLATDATA_AVAILABLE

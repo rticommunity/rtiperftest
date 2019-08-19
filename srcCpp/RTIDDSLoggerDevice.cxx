@@ -41,7 +41,7 @@ void RTIDDSLoggerDevice::write(const NDDS_Config_LogMessage *message)
                         NDDS_OUT_OF_LOANED_SAMPLES_2) != std::string::npos) {
 
                 if (!_outOfLoanedSamples) {
-                    printf("%s\n\tThis is expected. Try to reduce it or avoid it by increasing the send queue size.\n", message->text);
+                    printf("%sThis is expected. Try to reduce it or avoid it by increasing the send queue size.\n", message->text);
                 }
 
                 _outOfLoanedSamples = true;

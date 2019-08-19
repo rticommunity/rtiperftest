@@ -180,11 +180,11 @@ protected:
   #ifndef RTI_MICRO
     unsigned long int getShmemSHMMAX();
   #endif
-    DDS_ReturnCode_t setup_DR_QoS(
+    bool setup_DR_QoS(
             DDS_DataReaderQos &dr_qos,
             std::string qos_profile,
             std::string topic_name);
-    DDS_ReturnCode_t setup_DW_QoS(
+    bool setup_DW_QoS(
             DDS_DataWriterQos &dw_qos,
             std::string qos_profile,
             std::string topic_name);
