@@ -507,7 +507,7 @@ bool configureShmemTransport(
                     "dds.transport.shmem.builtin.parent.message_size_max");
     int parentMsgSizeMax = atoi(parentProp->value);
 
-    /**
+    /*
      * The maximum size of a SHMEM segment highly depends on the platform.
      * So that, we need to find out the maximum allocable space to avoid
      * runtime errors.
@@ -545,7 +545,8 @@ bool configureShmemTransport(
         maxBufferSize -= step;
     } while (maxBufferSize > minBufferSize && success == RTI_FALSE);
 
-    /** From user manual "Properties for Builtin Shared-Memory Transport":
+    /*
+     * From user manual "Properties for Builtin Shared-Memory Transport":
      * To optimize memory usage, specify a receive queue size less than that
      * required to hold the maximum number of messages which are all of the
      * maximum size.
@@ -568,14 +569,24 @@ bool configureShmemTransport(
      * transport
      */
     std::ostringstream ss;
-    int flowControllerTokenSize = INT_MAX;
+    /*
+     * This is the flow Controller default token size. Change this if you modify
+     * the qos file to add a different "bytes_per_token" property
+     */
+    int flowControllerTokenSize = 65536;
     unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
 
   #ifdef RTI_FLATDATA_AVAILABLE
     // Zero Copy sends 16-byte references
-    if (_PM->get<bool>("zerocopy")) datalen = 16;
+    if (_PM->get<bool>("zerocopy")) {
+        datalen = 16;
+    }
   #endif
 
+    /*
+     * We choose the minimum between the flow Controller max fragment size and
+     * the message_size_max - RTPS headers.
+     */
     int fragmentSize = (std::min)(
             parentMsgSizeMax - COMMEND_WRITER_MAX_RTPS_OVERHEAD,
             flowControllerTokenSize);
@@ -593,7 +604,6 @@ bool configureShmemTransport(
         receivedMessageCountMax *
                 (COMMEND_WRITER_MAX_RTPS_OVERHEAD + fragmentSize));
 
-    // Avoid bottleneck due to SHMEM.
     ss << receivedMessageCountMax;
     if (!assertPropertyToParticipantQos(
             qos,
