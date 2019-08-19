@@ -841,7 +841,6 @@ public:
             T *sample = builder.finish_sample();
 
           #ifdef RTI_CUSTOM_TYPE
-            // TODO: Check this
             register_custom_type_data(sample.custom_type, i);
           #endif
             this->_instance_handles[i] = this->_writer->register_instance(*sample);
@@ -852,7 +851,6 @@ public:
         T *sample = builder.finish_sample();
 
       #ifdef RTI_CUSTOM_TYPE
-        // TODO: Check this
         register_custom_type_data(sample.custom_type, MAX_CFT_VALUE);
       #endif
 
@@ -1329,7 +1327,17 @@ public:
               #else
                 this->_message.size = message.bin_data().element_count();
               #endif
-                //TODO: _message.data = (char *)_data_seq[i].bin_data.get_contiguous_buffer();
+                /*
+                 * For regular data in C++ Classic we just use the pointer like
+                 * this:
+                 *
+                 * _message.data = (char *)_data_seq[i].bin_data.get_contiguous_buffer();
+                 *
+                 * In Flat Data we cannot do this though, therefore what we do is
+                 * just assume that the buffer we have created already is what we
+                 * want to send. This should be modified in case we wanted to really
+                 * send some specific Data.
+                 */
 
                 // Check that the sample was not modified on the publisher side when using Zero Copy.
                 if (_isZeroCopy && _checkConsistency) {
@@ -1797,7 +1805,17 @@ public:
           #else
             this->_message.size = message.bin_data().element_count();
           #endif
-            // TODO: this->_message.data = (char *)_data_seq[_data_idx].bin_data.get_contiguous_buffer();
+            /*
+             * For regular data in C++ Classic we just use the pointer like
+             * this:
+             *
+             * this->_message.data = (char *)_data_seq[_data_idx].bin_data.get_contiguous_buffer();
+             *
+             * In Flat Data we cannot do this though, therefore what we do is
+             * just assume that the buffer we have created already is what we
+             * want to send. This should be modified in case we wanted to really
+             * send some specific Data.
+             */
 
             ++this->_data_idx;
 

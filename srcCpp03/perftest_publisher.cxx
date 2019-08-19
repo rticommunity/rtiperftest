@@ -1488,16 +1488,6 @@ static void *LatencyReadThread(void *arg)
         {
             listener->ProcessMessage(*message);
         }
-
-    /*
-    * TODO: -latencyTest plus -useReadThread
-    *
-    * To support -latencyTest plus -useReadThread we need to signal
-    * --HERE-- the internal semaphore used in RTIDDSImpl.cxx as
-    * we now do in the listener on_data_available callback
-    * inside RTIDDSImpl.cxx
-    *
-    */
     }
 
     return NULL;

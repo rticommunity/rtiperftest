@@ -939,16 +939,6 @@ static void *ReadThread(void *arg)
         if (message != NULL) {
             listener->ProcessMessage(*message);
         }
-
-        /*
-        * TODO:
-        *
-        * To support -latencyTest plus -useReadThread we need to signal
-        * --HERE-- the internal semaphore used in RTIDDSImpl.cxx as
-        * we now do in the listener on_data_available callback
-        * inside RTIDDSImpl.cxx
-        *
-        */
     }
 
     // This will allow the main thread to delete the thread that used this function.
