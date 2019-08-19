@@ -167,9 +167,9 @@ int perftest_cpp::Run(int argc, char *argv[]) {
     }
 
     mask = (_PM.get<int>("unbounded") != 0) << 3;
-    mask += _PM.get<int>("keyed") << 2;
-    mask += _PM.get<int>("flatdata") << 1;
-    mask += _PM.get<int>("zerocopy") << 0;
+    mask += _PM.get<bool>("keyed") << 2;
+    mask += _PM.get<bool>("flatdata") << 1;
+    mask += _PM.get<bool>("zerocopy") << 0;
 
     switch (mask)
     {

@@ -154,9 +154,9 @@ int perftest_cpp::Run(int argc, char *argv[])
       #endif
     } else {
         mask = (_PM.get<int>("unbounded") != 0) << 3;
-        mask += _PM.get<int>("keyed") << 2;
-        mask += _PM.get<int>("flatdata") << 1;
-        mask += _PM.get<int>("zerocopy") << 0;
+        mask += _PM.get<bool>("keyed") << 2;
+        mask += _PM.get<bool>("flatdata") << 1;
+        mask += _PM.get<bool>("zerocopy") << 0;
 
         switch (mask)
         {
@@ -286,7 +286,8 @@ perftest_cpp::perftest_cpp()
     _SleepNanosec = 0;
     _MessagingImpl = NULL;
 
-    /** We use rand to generate the key of a SHMEM segment when
+    /*
+     * We use rand to generate the key of a SHMEM segment when
      * we estimate the maximum buffer size for SHMEM
      */
     srand(time(NULL));
@@ -471,10 +472,10 @@ bool perftest_cpp::validate_input()
 
       if (_PM.get<bool>("zerocopy") && 
             !(_PM.get<std::string>("transport") == "SHMEM" 
-            || _PM.get<std::string>("transport") == "Use XML"
-            || _PM.get<std::string>("transport") == "UDPv4 & SHMEM"
-            || _PM.get<std::string>("transport") == "UDPv6 & SHMEM"
-            || _PM.get<std::string>("transport") == "UDPv4 & UDPv6 & SHMEM")) {
+                || _PM.get<std::string>("transport") == "Use XML"
+                || _PM.get<std::string>("transport") == "UDPv4 & SHMEM"
+                || _PM.get<std::string>("transport") == "UDPv6 & SHMEM"
+                || _PM.get<std::string>("transport") == "UDPv4 & UDPv6 & SHMEM")) {
           fprintf(stderr, "Zero Copy must be run with SHMEM as transport\n");
           return false;
       }
@@ -559,7 +560,7 @@ void perftest_cpp::PrintConfiguration()
             }
 
             stringStream << "\t(Set the data size on the subscriber"
-                         << " to the maximum data size to achieve maximum performance)"
+                         << " to the maximum data size to achieve best performance)"
                          << std::endl;
         } else {
             stringStream << _PM.get<unsigned long long>("dataLen") << "\n";
@@ -587,7 +588,7 @@ void perftest_cpp::PrintConfiguration()
                              << "\t\t  Large Data.\n";
             } else if (_PM.get<long>("batchSize") == -3) {
                 stringStream << "\t\t  BatchSize cannot be used with\n"
-                             << "\t\t  FlatData.\n";
+                             << "\t\t  FlatData and/or Zero-Copy.\n";
             }
         }
       #endif
@@ -1386,9 +1387,9 @@ public:
 
       #ifndef RTI_MICRO
         mask = (_PM->get<int>("unbounded") != 0) << 3;
-        mask += _PM->get<int>("keyed") << 2;
-        mask += _PM->get<int>("flatdata") << 1;
-        mask += _PM->get<int>("zerocopy") << 0;
+        mask += _PM->get<bool>("keyed") << 2;
+        mask += _PM->get<bool>("flatdata") << 1;
+        mask += _PM->get<bool>("zerocopy") << 0;
 
         switch (mask)
         {

@@ -10,7 +10,7 @@
 #include "perftest_cpp.h"
 #include "RTIDDSImpl.h"
 #ifndef RTI_MICRO
-  #include <algorithm>    // std::max
+  #include <algorithm> // std::max
   #include "ndds/ndds_cpp.h"
   #include "qos_string.h"
 #endif
@@ -333,13 +333,13 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
     // Zero Copy
     stringStream << "\tZero Copy: "
-                 << (_PM->get<bool>("zerocopy") ? "Yes" : "No");
+                 << (_PM->get<bool>("zerocopy") ? "Yes" : "No")
+                 << std::endl;
 
-    if (_PM->get<bool>("checkconsistency")) {
-            stringStream << " (Check Consistency)";
-    }
-
-    stringStream << std::endl;
+    // Check consistency for Zero Copy or Flat Data
+    stringStream << "\tCheck consistency: "
+                 << (_PM->get<bool>("checkconsistency") ? "Yes" : "No")
+                 << std::endl;
   #endif
 
   #ifndef RTI_MICRO
