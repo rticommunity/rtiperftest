@@ -402,10 +402,14 @@ function additional_defines_calculation()
         additional_defines=${additional_defines}" DPERFTEST_COMMIT_ID='\\\"${commit_id}\\\"'"
     fi
 
+    if [[ $platform == *"Darwin"* ]]; then
+        additional_defines=${additional_defines}" DMAX_DARWIN_SHMEM_SIZE=${darwin_shmem_size}"
+    fi
+
     # Adding RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as macro
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
         additional_rti_libs="nddsmetp ${additional_rti_libs}"
-        additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE DRTI_FLATDATA_MAX_SIZE=${flatdata_size} DMAX_DARWIN_SHMEM_SIZE=${darwin_shmem_size}"
+        additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE DRTI_FLATDATA_MAX_SIZE=${flatdata_size}"
         additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
     fi
 }
@@ -538,7 +542,7 @@ function check_flatdata_available() {
     if [[ $ddsgen_version -ge $flatdata_ddsgen_version ]]; then
         echo -e "${INFO_TAG} FlatData is available"
         FLATDATA_AVAILABLE="1"
-    fi 
+    fi
 }
 
 function build_cpp()
