@@ -153,59 +153,63 @@ int perftest_cpp::Run(int argc, char *argv[])
         _MessagingImpl = new RTIRawTransportImpl();
       #endif
     } else {
-        mask = (_PM.get<int>("unbounded") != 0) << 3;
-        mask += _PM.get<bool>("keyed") << 2;
-        mask += _PM.get<bool>("flatdata") << 1;
-        mask += _PM.get<bool>("zerocopy") << 0;
+        mask = (_PM.get<int>("unbounded") != 0) << 0;
+        mask += _PM.get<bool>("keyed") << 1;
+        mask += _PM.get<bool>("flatdata") << 2;
+        mask += _PM.get<bool>("zerocopy") << 3;
 
         switch (mask)
         {
+        case 0: // = 0000 (bounded)
+            _MessagingImpl = new RTIDDSImpl<TestData_t>();
+            break;
+
+        case 1: // unbounded = 0001
+            _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
+            break;
+
+        case 2: // keyed = 0010
+            _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
+            break;
+
+        case 3: // unbounded + keyed = 0011
+            _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
+            break;
+
+      #ifdef RTI_FLATDATA_AVAILABLE
         case 15: // unbounded + keyed + flat + zero = 1111
             _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>(true);
             break;
 
-        case 14: // unbounded + keyed + flat = 1110
-            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
+        case 14: // keyed + flat + zero = 1110
+            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>(true);
             break;
 
-        case 12: // unbounded + keyed = 1100
-            _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
-            break;
-
-        case 11: // unbounded + flat + zero = 1011
+        case 13: // unbounded + flat + zero = 1101
             _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>(true);
             break;
 
-        case 10: // unbounded + flat = 1010
-            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
+        case 12: // flat + Zero = 1100
+            _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
             break;
 
-        case 8: // unbounded = 1000
-            _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
-            break;
-
-        case 7: // keyed + flat + zero = 0111
-            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>(true);
+        case 7: // unbounded + keyed + flat = 0111
+            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
             break;
 
         case 6: // Keyed + flat = 0110
             _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>();
             break;
 
-        case 4: // keyed = 0100
-            _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
+        case 5: // unbounded + flat = 0101
+            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
             break;
 
-        case 3: // flat + Zero = 0011
-            _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
-            break;
-
-        case 2: // flat = 0010
+        case 4: // flat = 0100
             _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
             break;
-        case 0: // = 0000 (bounded)
-             _MessagingImpl = new RTIDDSImpl<TestData_t>();
              break;
+      #endif
 
         default:
             break;
@@ -1387,13 +1391,42 @@ public:
         fflush(stdout);
 
       #ifndef RTI_MICRO
-        mask = (_PM->get<int>("unbounded") != 0) << 3;
-        mask += _PM->get<bool>("keyed") << 2;
-        mask += _PM->get<bool>("flatdata") << 1;
-        mask += _PM->get<bool>("zerocopy") << 0;
+        mask = (_PM->get<int>("unbounded") != 0) << 0;
+        mask += _PM->get<bool>("keyed") << 1;
+        mask += _PM->get<bool>("flatdata") << 2;
+        mask += _PM->get<bool>("zerocopy") << 3;
 
         switch (mask)
         {
+        case 0: // = 0000 (bounded)
+            serializeTime = RTIDDSImpl<TestData_t>::
+                    obtain_dds_serialize_time_cost(totalSampleSize);
+            deserializeTime = RTIDDSImpl<TestData_t>::
+                    obtain_dds_deserialize_time_cost(totalSampleSize);
+            break;
+
+        case 1: // unbounded = 0001
+            serializeTime = RTIDDSImpl<TestDataLarge_t>::
+                    obtain_dds_serialize_time_cost(totalSampleSize);
+            deserializeTime = RTIDDSImpl<TestDataLarge_t>::
+                    obtain_dds_deserialize_time_cost(totalSampleSize);
+            break;
+
+        case 2: // keyed = 0010
+            serializeTime = RTIDDSImpl<TestDataKeyed_t>::
+                    obtain_dds_serialize_time_cost(totalSampleSize);
+            deserializeTime = RTIDDSImpl<TestDataKeyed_t>::
+                    obtain_dds_deserialize_time_cost(totalSampleSize);
+            break;
+
+        case 3: // unbounded + keyed = 0011
+            serializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
+                    obtain_dds_serialize_time_cost(totalSampleSize);
+            deserializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
+                    obtain_dds_deserialize_time_cost(totalSampleSize);
+            break;
+
+      #ifdef RTI_FLATDATA_AVAILABLE
         case 15: // unbounded + keyed + flat + zero = 1111
             serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>::
                     obtain_dds_serialize_time_cost_override(totalSampleSize);
@@ -1401,45 +1434,31 @@ public:
                     obtain_dds_deserialize_time_cost_override(totalSampleSize);
             break;
 
-        case 14: // unbounded + keyed + flat = 1110
-            serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
+        case 14: // keyed + flat + zero = 1110
+            serializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
                     obtain_dds_serialize_time_cost_override(totalSampleSize);
-            deserializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
+            deserializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
                     obtain_dds_deserialize_time_cost_override(totalSampleSize);
             break;
 
-        case 12: // unbounded + keyed = 1100
-            serializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
-                    obtain_dds_serialize_time_cost(totalSampleSize);
-            deserializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
-                    obtain_dds_deserialize_time_cost(totalSampleSize);
-            break;
-
-        case 11: // unbounded + flat + zero = 1011
+        case 13: // unbounded + flat + zero = 1101
             serializeTime = RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>::
                     obtain_dds_serialize_time_cost_override(totalSampleSize);
             deserializeTime = RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>::
                     obtain_dds_deserialize_time_cost_override(totalSampleSize);
             break;
 
-        case 10: // unbounded + flat = 1010
-            serializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
+        case 12: // flat + Zero = 1100
+            serializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
                     obtain_dds_serialize_time_cost_override(totalSampleSize);
-            deserializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
+            deserializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
                     obtain_dds_deserialize_time_cost_override(totalSampleSize);
             break;
 
-        case 8: // unbounded = 1000
-            serializeTime = RTIDDSImpl<TestDataLarge_t>::
-                    obtain_dds_serialize_time_cost(totalSampleSize);
-            deserializeTime = RTIDDSImpl<TestDataLarge_t>::
-                    obtain_dds_deserialize_time_cost(totalSampleSize);
-            break;
-
-        case 7: // keyed + flat + zero = 0111
-            serializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
+        case 7: // unbounded + keyed + flat = 0111
+            serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
                     obtain_dds_serialize_time_cost_override(totalSampleSize);
-            deserializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
+            deserializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
                     obtain_dds_deserialize_time_cost_override(totalSampleSize);
             break;
 
@@ -1450,32 +1469,21 @@ public:
                     obtain_dds_deserialize_time_cost_override(totalSampleSize);
             break;
 
-        case 4: // keyed = 0100
-            serializeTime = RTIDDSImpl<TestDataKeyed_t>::
-                    obtain_dds_serialize_time_cost(totalSampleSize);
-            deserializeTime = RTIDDSImpl<TestDataKeyed_t>::
-                    obtain_dds_deserialize_time_cost(totalSampleSize);
-            break;
-
-        case 3: // flat + Zero = 0011
-            serializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
+        case 5: // unbounded + flat = 0101
+            serializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
                     obtain_dds_serialize_time_cost_override(totalSampleSize);
-            deserializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
+            deserializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
                     obtain_dds_deserialize_time_cost_override(totalSampleSize);
             break;
 
-        case 2: // flat = 0010
+        case 4: // flat = 0100
             serializeTime = RTIDDSImpl_FlatData<TestData_FlatData_t>::
                     obtain_dds_serialize_time_cost_override(totalSampleSize);
             deserializeTime = RTIDDSImpl_FlatData<TestData_FlatData_t>::
                     obtain_dds_deserialize_time_cost_override(totalSampleSize);
             break;
-        case 0: // = 0000 (bounded)
-             serializeTime = RTIDDSImpl<TestData_t>::
-                    obtain_dds_serialize_time_cost(totalSampleSize);
-            deserializeTime = RTIDDSImpl<TestData_t>::
-                    obtain_dds_deserialize_time_cost(totalSampleSize);
              break;
+      #endif
 
         default:
             break;
