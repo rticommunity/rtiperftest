@@ -98,11 +98,11 @@ Test Parameters for Publishing and Subscribing Applications
 
 -  ``-flatData``
 
-   Use *RTI FlatData* language binding API to build samples where the 
+   Use *RTI FlatData* language binding API to build samples where the
    in-memory representation matches the wire representation.
 
-   This parameter is not available when compiling against *RTI Connext DDS 
-   Micro* or a *RTI Connext DDS* version previous to 6.0.0. 
+   This parameter is not available when compiling against *RTI Connext DDS
+   Micro* or a *RTI Connext DDS* version previous to 6.0.0.
 
    **Default:** false
 
@@ -112,11 +112,19 @@ Test Parameters for Publishing and Subscribing Applications
    copies by using the shared memory (SHMEM) built-in transport to send 16-byte
    references to samples within a SHMEM segment owned by the DataWriter.
 
-   This parameter can only be used along with ``-flatData`` and SHMEM built-in 
+   This parameter can only be used along with ``-flatData`` and SHMEM built-in
    transport.
 
-   This parameter is not available when compiling against *RTI Connext DDS 
-   Micro* or a *RTI Connext DDS* version previous to 6.0.0. 
+   This parameter is not available when compiling against *RTI Connext DDS
+   Micro* or a *RTI Connext DDS* version previous to 6.0.0.
+
+   **Default:** false
+
+-  ``-checkConsistency``
+
+   This option is only valid when using ``-zeroCopy``. When using it, the code
+   will check in the reader side if the sample read by the DataReader is
+   consistent (call to ``is_data_consistent()``).
 
    **Default:** false
 

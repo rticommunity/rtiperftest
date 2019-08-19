@@ -143,8 +143,8 @@ function usage()
     echo "    --flatdata-max-size <size>   Specify the maximum bounded size on bytes      "
     echo "                                 for sequences when using FlatData language     "
     echo "                                 binding. Default 10MB                          "
-    echo "    --osx-shmem-shmmax <size>    Total amount of shared memory available on     "
-    echo "                                 bytes. Default 400MB                           "
+    echo "    --osx-shmem-shmmax <size>    Maximum segment size for shared memory in OSX  "
+    echo "                                 in bytes. Default 400MB                        "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
@@ -535,7 +535,8 @@ function clean_src_cpp_common()
     done
 }
 
-function check_flatdata_available() {
+function check_flatdata_available()
+{
     version=$(awk -F"version" '/version/ { split($2, a, " "); print a[1] }' <<< $(${rtiddsgen_executable} -version)) # e.g. 3.0.0
     ddsgen_version="${version//\./}" # e.g. 300
 

@@ -1,6 +1,15 @@
-/**
- * TODO: Explain why we are using this file. Mention Issue with ZeroCopy 
-*/
+/*
+ * (c) 2005-2019  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
+ */
+
+/*
+ * This file contains the types for Zero Copy used by RTI Perftest. The reason
+ * why these types are separated from the main idl is because in RTI Connext
+ * DDS 6.0.0 we will generate a less efficient code for the non-zero-copy types
+ * if we add zero-copy types in the same idl. This behavior is fixed after 6.0.0
+ * This information is covered in bug id: CORE-9693.
+ */
 
 #ifdef RTI_CUSTOM_TYPE
 #include "custom.idl"

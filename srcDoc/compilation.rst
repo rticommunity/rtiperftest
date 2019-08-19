@@ -128,14 +128,14 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | Not available when compiling for  |
 |                      |           | *RTI Connext DDS Micro*.          |
 +----------------------+-----------+-----------------------------------+
+| --debug              | Optional  | Compile using the RTI Connext DDS |
+|                      |           | debug libraries. Default: Release |
+|                      |           | Libraries.                        |
++----------------------+-----------+-----------------------------------+
 | --flatdata-max-size  | Optional  | Specify the maximum size in Bytes |
 | <size>               |           | of the sample to be sent when     |
 |                      |           | using FlatData language binding.  |
 |                      |           | Default: 10485760                 |
-+----------------------+-----------+-----------------------------------+
-| --debug              | Optional  | Compile using the RTI Connext DDS |
-|                      |           | debug libraries. Default: Release |
-|                      |           | Libraries.                        |
 +----------------------+-----------+-----------------------------------+
 | --secure             | Optional  | Enable the compilation of the     |
 |                      |           | Perfest code specific for         |
@@ -187,6 +187,10 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | ``java`` executables should be    |
 |                      |           | available from your ``$PATH``     |
 |                      |           | variable.                         |
++----------------------+-----------+-----------------------------------+
+| --osx-shmem-shmmax   | Optional  | Specify the maximum segment size  |
+|                      |           | for shared memory in OSX.         |
+|                      |           | Default: 400MB                    |
 +----------------------+-----------+-----------------------------------+
 | --clean              | Optional  | If this option is present, the    |
 |                      |           | ``build.sh`` script will clean    |
@@ -408,14 +412,14 @@ The ``build.bat`` script accepts the following list of parameters:
 |                      |           | dynamic libraries. Default:       |
 |                      |           | Static Libraries.                 |
 +----------------------+-----------+-----------------------------------+
+| --debug              | Optional  | Compile using the RTI Connext DDS |
+|                      |           | debug libraries. Default: Release |
+|                      |           | Libraries.                        |
++----------------------+-----------+-----------------------------------+
 | --flatdata-max-size  | Optional  | Specify the maximum size in Bytes |
 | <size>               |           | of the sample to be sent when     |
 |                      |           | using FlatData language binding.  |
 |                      |           | Default: 10485760                 |
-+----------------------+-----------+-----------------------------------+
-| --debug              | Optional  | Compile using the RTI Connext DDS |
-|                      |           | debug libraries. Default: Release |
-|                      |           | Libraries.                        |
 +----------------------+-----------+-----------------------------------+
 | --secure             | Optional  | Enable the compilation of the     |
 |                      |           | Perfest code specific for         |

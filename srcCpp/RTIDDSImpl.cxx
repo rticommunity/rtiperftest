@@ -333,13 +333,13 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
 
     // Zero Copy
     stringStream << "\tZero Copy: "
-                 << (_PM->get<bool>("zerocopy") ? "Yes" : "No")
-                 << std::endl;
+                 << (_PM->get<bool>("zerocopy") ? "Yes" : "No");
 
-    // Check consistency for Zero Copy or Flat Data
-    stringStream << "\tCheck consistency: "
-                 << (_PM->get<bool>("checkconsistency") ? "Yes" : "No")
-                 << std::endl;
+    if (_PM->get<bool>("checkconsistency")) {
+            stringStream << " (Check Consistency)";
+    }
+
+    stringStream << std::endl;
   #endif
 
   #ifndef RTI_MICRO

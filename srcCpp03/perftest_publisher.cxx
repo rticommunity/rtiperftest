@@ -495,7 +495,7 @@ bool perftest_cpp::validate_input()
       }
 
       if (_PM.get<bool>("checkconsistency") && !_PM.get<bool>("zerocopy")) {
-          std::cerr << "checkConsistency can only be used along with Zero Copy" << std::endl;
+          std::cerr << "[Error] CheckConsistency can only be used along with Zero Copy" << std::endl;
           return false;
       }
 
