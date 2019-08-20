@@ -349,6 +349,7 @@ void ParameterManager::initialize()
     flatData->set_supported_middleware(Middleware::RTIDDSPRO);
     create("flatdata", flatData);
 
+    #if RTI_ZEROCOPY_AVAILABLE
     Parameter<bool> *zerocopy = new Parameter<bool>(false);
     zerocopy->set_command_line_argument("-zeroCopy", "");
     zerocopy->set_description(
@@ -368,6 +369,7 @@ void ParameterManager::initialize()
     zerocopy->set_group(GENERAL);
     checkconsistency->set_supported_middleware(Middleware::RTIDDSPRO);
     create("checkconsistency", checkconsistency);
+    #endif
   #endif
 
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL

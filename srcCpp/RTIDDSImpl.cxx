@@ -3635,11 +3635,12 @@ template class RTIDDSImpl<TestDataLarge_t>;
   template class RTIDDSImpl_FlatData<TestData_FlatData_t>;
   template class RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>;
   template class RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>;
-
+  #ifdef RTI_ZEROCOPY_AVAILABLE
   template class RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>;
   template class RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>;
   template class RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>;
   template class RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>;
+  #endif
 #endif // RTI_FLATDATA_AVAILABLE
 
 #if defined(RTI_WIN32) || defined(RTI_INTIME)

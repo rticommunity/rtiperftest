@@ -175,8 +175,8 @@ int perftest_cpp::Run(int argc, char *argv[])
         case 3: // unbounded + keyed = 0011
             _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
             break;
-
       #ifdef RTI_FLATDATA_AVAILABLE
+        #ifdef RTI_ZEROCOPY_AVAILABLE
         case 15: // unbounded + keyed + flat + zero = 1111
             _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>(true);
             break;
@@ -192,7 +192,7 @@ int perftest_cpp::Run(int argc, char *argv[])
         case 12: // flat + Zero = 1100
             _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
             break;
-
+        #endif
         case 7: // unbounded + keyed + flat = 0111
             _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
             break;
@@ -1418,6 +1418,7 @@ public:
             break;
 
       #ifdef RTI_FLATDATA_AVAILABLE
+        #ifdef RTI_ZEROCOPY_AVAILABLE
         case 15: // unbounded + keyed + flat + zero = 1111
             serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>::
                     obtain_dds_serialize_time_cost_override(totalSampleSize);
@@ -1445,7 +1446,7 @@ public:
             deserializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
                     obtain_dds_deserialize_time_cost_override(totalSampleSize);
             break;
-
+        #endif
         case 7: // unbounded + keyed + flat = 0111
             serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
                     obtain_dds_serialize_time_cost_override(totalSampleSize);

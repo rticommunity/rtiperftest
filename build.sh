@@ -59,6 +59,7 @@ custom_idl_file="${custom_type_folder}/custom.idl"
 flatdata_size=10485760 # 10MB
 flatdata_ddsgen_version=300 #3.0.0
 FLATDATA_AVAILABLE=0
+ZEROCOPY_AVAILABLE=0
 darwin_shmem_size=419430400
 
 # We will use some colors to improve visibility of errors and information
@@ -406,11 +407,16 @@ function additional_defines_calculation()
         additional_defines=${additional_defines}" DMAX_DARWIN_SHMEM_SIZE=${darwin_shmem_size}"
     fi
 
-    # Adding RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as macro
+    # Adding RTI_ZEROCOPY_AVAILABLE, RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as defines
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
-        additional_rti_libs="nddsmetp ${additional_rti_libs}"
         additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE DRTI_FLATDATA_MAX_SIZE=${flatdata_size}"
         additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
+
+        if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+            additional_rti_libs="nddsmetp ${additional_rti_libs}"
+            additional_defines=${additional_defines}" DRTI_ZEROCOPY_AVAILABLE"
+            additional_defines_flatdata=$additional_defines_flatdata" -D RTI_ZEROCOPY_AVAILABLE"
+        fi
     fi
 }
 
@@ -535,7 +541,7 @@ function clean_src_cpp_common()
     done
 }
 
-function check_flatdata_available()
+function check_flatData_zeroCopy_available()
 {
     version=$(awk -F"version" '/version/ { split($2, a, " "); print a[1] }' <<< $(${rtiddsgen_executable} -version)) # e.g. 3.0.0
     ddsgen_version="${version//\./}" # e.g. 300
@@ -543,6 +549,11 @@ function check_flatdata_available()
     if [[ $ddsgen_version -ge $flatdata_ddsgen_version ]]; then
         echo -e "${INFO_TAG} FlatData is available"
         FLATDATA_AVAILABLE="1"
+    fi
+
+    if [[ "${FLATDATA_AVAILABLE}" == "1" ]] && [[ $platform != *"Android"* ]]; then
+        echo -e "${INFO_TAG} Zero-Copy is available"
+        ZEROCOPY_AVAILABLE="1"
     fi
 }
 
@@ -560,7 +571,7 @@ function build_cpp()
         build_cpp_custom_type
     fi
 
-    check_flatdata_available
+    check_flatData_zeroCopy_available
     additional_defines_calculation "CPPtraditional"
 
     additional_header_files="${additional_header_files_custom_type} \
@@ -592,7 +603,7 @@ function build_cpp()
         Infrastructure_common.cxx \
         Infrastructure_pro.cxx"
 
-    if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
         additional_header_files="${additional_header_files} \
         perftest_ZeroCopy.h \
         perftest_ZeroCopyPlugin.h \
@@ -634,7 +645,7 @@ function build_cpp()
     fi
 
     # Generate ZeroCopy types avoiding performance degradation issue
-    if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
         echo -e "${INFO_TAG} Generating Zero Copy code"
         rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
         ${additional_defines_flatdata} \
@@ -642,7 +653,7 @@ function build_cpp()
         -platform ${platform} \
         ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
         -d \"${classic_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\""
-        
+
         echo -e "${INFO_TAG} Command: $rtiddsgen_command"
         eval $rtiddsgen_command
         if [ "$?" != 0 ]; then
@@ -868,7 +879,7 @@ function build_micro_cpp()
 function build_cpp03()
 {
     copy_src_cpp_common
-    check_flatdata_available
+    check_flatData_zeroCopy_available
     additional_defines_calculation "CPPModern"
 
     additional_header_files=" \
@@ -890,7 +901,7 @@ function build_cpp03()
         CpuMonitor.cxx \
         PerftestTransport.cxx"
 
-    if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
         additional_header_files="${additional_header_files} \
         perftest_ZeroCopy.hpp \
         perftest_ZeroCopyPlugin.hpp"
@@ -924,17 +935,17 @@ function build_cpp03()
         echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
         clean_src_cpp_common
         exit -1
-    fi        
+    fi
 
     # Generate Zero Copy types avoiding performance degradation issue
-    if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
         echo -e "${INFO_TAG} Generating Zero Copy code"
         rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
         ${additional_defines_flatdata} \
         -replace -create typefiles -platform ${platform} \
         ${rtiddsgen_extra_options} \
         -d \"${modern_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\""
-        
+
         echo -e "${INFO_TAG} Command: $rtiddsgen_command"
         eval $rtiddsgen_command
         if [ "$?" != 0 ]; then

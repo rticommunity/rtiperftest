@@ -190,6 +190,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
         break;
 
   #ifdef RTI_FLATDATA_AVAILABLE
+    #ifdef RTI_ZEROCOPY_AVAILABLE
     case 15: // unbounded + keyed + flat + zero = 1111
         _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>(true);
         break;
@@ -205,7 +206,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
     case 12: // flat + Zero = 1100
         _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
         break;
-
+    #endif
     case 7: // unbounded + keyed + flat = 0111
         _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
         break;

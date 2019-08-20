@@ -374,9 +374,10 @@ if !BUILD_CPP! == 1 (
 	)
 
 	if !FLATDATA_AVAILABLE! == 1 (
+        @REM On Windows we always enable ZeroCopy if FlatData is available.
 		set additional_rti_libs=nddsmetp !additional_rti_libs!
-		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!flatdata_size! RTI_FLATDATA_AVAILABLE"
-		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=!flatdata_size!""
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!flatdata_size! RTI_FLATDATA_AVAILABLE RTI_ZEROCOPY_AVAILABLE"
+		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=!flatdata_size!""
 	)
 
 	if !USE_CUSTOM_TYPE! == 1 (
