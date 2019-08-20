@@ -149,6 +149,7 @@ std::string PerftestTransport::printTransportConfigurationSummary(
                 << "\n";
     }
 
+  #ifndef RTI_MICRO
     if (transportConfig.kind == TRANSPORT_SHMEM && qos != NULL) {
         stringStream << "\tMaximum Packet Size: "
                      << DDSPropertyQosPolicyHelper::lookup_property(
@@ -168,6 +169,7 @@ std::string PerftestTransport::printTransportConfigurationSummary(
                             "dds.transport.shmem.builtin.receive_buffer_size")->value
                      << std::endl;
     }
+  #endif
 
     if (transportConfig.kind == TRANSPORT_TCPv4
             || transportConfig.kind == TRANSPORT_TLSv4) {

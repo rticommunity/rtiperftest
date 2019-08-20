@@ -503,8 +503,7 @@ bool configureShmemTransport(
         ParameterManager *_PM)
 {
   /**
-   * Android does not support SHMEM. Micro does not provide
-   *    DDSPropertyQosPolicyHelper::lookup_property
+   * OSPAI do not support SHMEM for Android yet
    */
   #if !defined(RTI_ANDROID) && !defined(RTI_MICRO)
     DDS_Property_t *parentProp =
@@ -628,7 +627,7 @@ bool configureShmemTransport(
 
     return true;
   #else
-    // Not supported yet. Use default values for MICRO
+    // Not supported yet.
     return false;
   #endif
 }
