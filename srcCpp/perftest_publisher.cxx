@@ -1337,7 +1337,8 @@ public:
         double latency_ave;
         double latency_std;
       #ifndef RTI_MICRO
-        double serializeTime, deserializeTime;
+        double serializeTime = -1;
+        double deserializeTime = -1;
       #endif
         int totalSampleSize = last_data_length + perftest_cpp::OVERHEAD_BYTES;
 
