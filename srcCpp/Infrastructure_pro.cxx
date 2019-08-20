@@ -502,6 +502,11 @@ bool configureShmemTransport(
         DDS_DomainParticipantQos& qos,
         ParameterManager *_PM)
 {
+  /**
+   * Android does not support SHMEM. Micro does not provide
+   *    DDSPropertyQosPolicyHelper::lookup_property
+   */
+  #if !defined(RTI_ANDROID) && !defined(RTI_MICRO)
     DDS_Property_t *parentProp =
             DDSPropertyQosPolicyHelper::lookup_property(qos.property,
                     "dds.transport.shmem.builtin.parent.message_size_max");
@@ -533,7 +538,6 @@ bool configureShmemTransport(
     int maxBufferSize = 60817408; // 58MB
 
     do {
-
         // Reset handles to known state
         RTIOsapiMemory_zero(&handle,
                 sizeof(struct RTIOsapiSharedMemorySegmentHandle));
@@ -623,6 +627,10 @@ bool configureShmemTransport(
     }
 
     return true;
+  #else
+    // Not supported yet. Use default values for MICRO
+    return false;
+  #endif
 }
 
 bool PerftestConfigureTransport(
