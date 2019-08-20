@@ -505,7 +505,7 @@ bool configureShmemTransport(
   /**
    * OSPAI do not support SHMEM for Android yet
    */
-  #if !defined(RTI_ANDROID) && !defined(RTI_MICRO)
+  #if !defined(RTI_ANDROID)
     DDS_Property_t *parentProp =
             DDSPropertyQosPolicyHelper::lookup_property(qos.property,
                     "dds.transport.shmem.builtin.parent.message_size_max");
