@@ -2086,9 +2086,6 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
     std::map<std::string, std::string> properties =
             dr_qos.policy<Property>().get_all();
 
-    unsigned long long initial_samples = 0;
-    int max_allocable_space = 0;
-
     // only force reliability on throughput/latency topics
     if (topic_name != ANNOUNCEMENT_TOPIC_NAME.c_str()) {
         if (!_PM->get<bool>("bestEffort")) {
@@ -2184,9 +2181,9 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
                 std::to_string(dds::core::LENGTH_UNLIMITED);
 
         if (_isLargeData) {
-            max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
+            int max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
 
-            initial_samples = (std::max)(
+            unsigned long long initial_samples = (std::max)(
                     1, max_allocable_space / RTI_FLATDATA_MAX_SIZE);
 
             initial_samples = (std::min)(

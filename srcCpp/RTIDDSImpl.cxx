@@ -2907,8 +2907,6 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         std::string qos_profile,
         std::string topic_name)
 {
-    unsigned long long initial_samples = 0;
-    int max_allocable_space = 0;
 
     #ifndef RTI_MICRO
     if (_factory->get_datareader_qos_from_profile(
@@ -3063,10 +3061,10 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
                 buf, false);
 
         if (_isLargeData) {
-            max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
+            int max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
 
             // The writer_loaned_sample_allocation is initial_simples + 1
-            initial_samples = (std::max)(
+            unsigned long long initial_samples = (std::max)(
                     1,
                     (max_allocable_space -
                             RTI_FLATDATA_MAX_SIZE) / RTI_FLATDATA_MAX_SIZE);
