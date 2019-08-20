@@ -2884,6 +2884,9 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
             }
         }
 
+        dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count =
+               2 * dw_qos.resource_limits.initial_samples;
+
         /**
          * Enables a ZeroCopy DataWriter to send a special sequence number as a
          * part of its inline Qos. his sequence number is used by a ZeroCopy
