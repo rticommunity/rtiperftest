@@ -2860,7 +2860,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
             if (_transport.transportConfig.kind == TRANSPORT_SHMEM
                     || _transport.transportConfig.kind == TRANSPORT_UDPv4_SHMEM) {
                 /**
-                 * Replace previously set reduce limits by the new ones from the
+                 * Replace previously set resource limits by the new ones from the
                  * initial_samples size calculations
                 */
                 dw_qos.resource_limits.max_samples = 2 * initial_samples;
@@ -2873,10 +2873,19 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                 dw_qos.protocol.rtps_reliable_writer.low_watermark =
                         0.1 * dw_qos.resource_limits.max_samples;
             }
+        } else {
+            /**
+             * Avoid "DDS_DataWriter_get_loan_untypedI:ERROR: Out of resources
+             * for writer loaned samples" error on small data due to not
+             * having enought samples on the writer buffer where FlatData loans
+             * samples from.
+             */
+            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.
+                initial_count = 2 * dw_qos.resource_limits.initial_samples;
+            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.
+                max_count = 1 + dw_qos.writer_resource_limits.
+                        writer_loaned_sample_allocation.initial_count;
         }
-
-        dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count =
-               2 * dw_qos.resource_limits.initial_samples;
 
         /**
          * Enables a ZeroCopy DataWriter to send a special sequence number as a

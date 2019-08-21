@@ -2460,6 +2460,21 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
                     dw_reliableWriterProtocol.low_watermark(
                             0.1 * qos_resource_limits->max_samples());
                 }
+            } else {
+                /**
+                 * Avoid losing samples on
+                 * "DDS_DataWriter_get_loan_untypedI:ERROR: Out of resources for
+                 * writer loaned samples" error on small data due to not having
+                 * enought samples on the writer buffer where FlatData loans
+                 * samples from.
+                 */
+                qos_dw_resource_limits.writer_loaned_sample_allocation()
+                        .initial_count(
+                                2 * qos_resource_limits->initial_samples());
+                qos_dw_resource_limits.
+                    writer_loaned_sample_allocation().max_count(
+                            1 + qos_dw_resource_limits.
+                                    writer_loaned_sample_allocation().initial_count());
             }
 
             /**
