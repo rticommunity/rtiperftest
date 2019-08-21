@@ -5,6 +5,7 @@
 
 #include "Infrastructure_pro.h"
 #include "perftest_cpp.h"
+#include "osapi/osapi_sharedMemorySegment.h"
 
 /*
  * Since std::to_string is not defined until c++11
