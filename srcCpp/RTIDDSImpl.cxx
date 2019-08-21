@@ -375,16 +375,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     }
   #endif
 
-    DDS_DomainParticipantQos *qos = new DDS_DomainParticipantQos;
-    if (this->_participant->get_qos(*qos) != DDS_RETCODE_OK) {
-        fprintf(stderr, "Could not get Participant QoS\n");
-    }
-
-    stringStream << "\n" << _transport.printTransportConfigurationSummary(qos);
-
-    if (qos != NULL){
-        delete qos;
-    }
+    stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
     const std::vector<std::string> peerList = _PM->get_vector<std::string>("peer");
     if (!peerList.empty()) {

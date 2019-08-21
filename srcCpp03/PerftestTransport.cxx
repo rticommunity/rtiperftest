@@ -635,13 +635,9 @@ void PerftestTransport::populateSecurityFiles() {
 /******************************************************************************/
 /* PUBLIC METHODS */
 
-std::string PerftestTransport::printTransportConfigurationSummary(
-            dds::domain::qos::DomainParticipantQos &qos)
+std::string PerftestTransport::printTransportConfigurationSummary()
 {
     std::ostringstream stringStream;
-    std::map<std::string, std::string> qos_properties =
-            qos.policy<rti::core::policy::Property>().get_all();
-
     stringStream << "Transport Configuration:\n";
     stringStream << "\tKind: " << transportConfig.nameString;
     if (transportConfig.takenFromQoS) {
@@ -673,20 +669,6 @@ std::string PerftestTransport::printTransportConfigurationSummary(
                      << "\n\t\tAnnouncement Address: "
                      << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str()
                      << "\n";
-    }
-
-    if (transportConfig.kind == TRANSPORT_SHMEM) {
-        stringStream << "\tMaximum Packet Size: "
-                     << qos_properties["dds.transport.shmem.builtin.parent.message_size_max"]
-                     << std::endl;
-
-        stringStream << "\tReceived message count max: "
-                     << qos_properties["dds.transport.shmem.builtin.received_message_count_max"]
-                     << std::endl;
-
-        stringStream << "\tReceive buffer size: "
-                     << qos_properties["dds.transport.shmem.builtin.receive_buffer_size"]
-                     << std::endl;
     }
 
     if (transportConfig.kind == TRANSPORT_TCPv4

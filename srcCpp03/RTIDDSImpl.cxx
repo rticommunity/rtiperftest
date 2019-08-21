@@ -386,8 +386,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
 
-    dds::domain::qos::DomainParticipantQos participantQos = this->_participant.qos();
-    stringStream << "\n" << _transport.printTransportConfigurationSummary(participantQos);
+    stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
     // set initial peers and not use multicast
     const std::vector<std::string> peerList = _PM->get_vector<std::string>("peer");
