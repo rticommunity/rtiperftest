@@ -802,6 +802,14 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           the expense of some additional memory consumption.
           -->
           <max_samples_per_read>65536</max_samples_per_read>
+
+          <!--
+          Optional setting used to reduce latency. Configure DataReader to
+          prevent dynamic allocation of buffer used for storing received
+          fragments
+          -->
+          <initial_fragmented_samples>2</initial_fragmented_samples>
+          <dynamically_allocate_fragmented_samples>false</dynamically_allocate_fragmented_samples>
         </reader_resource_limits>
 
         <protocol>
@@ -1013,6 +1021,14 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
         <reader_resource_limits>
           <max_samples_per_remote_writer>100</max_samples_per_remote_writer>
+
+          <!--
+          Optional setting used to reduce latency. Configure DataReader to
+          prevent dynamic allocation of buffer used for storing received
+          fragments
+          -->
+          <initial_fragmented_samples>2</initial_fragmented_samples>
+          <dynamically_allocate_fragmented_samples>false</dynamically_allocate_fragmented_samples>
         </reader_resource_limits>
 
         <!--
