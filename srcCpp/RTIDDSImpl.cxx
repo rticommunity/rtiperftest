@@ -2862,7 +2862,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                 /**
                  * Replace previously set resource limits by the new ones from the
                  * initial_samples size calculations
-                */
+                 */
                 dw_qos.resource_limits.max_samples = 2 * initial_samples;
                 dw_qos.resource_limits.max_samples_per_instance =
                         dw_qos.resource_limits.max_samples;
@@ -2872,6 +2872,17 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                         0.9 * dw_qos.resource_limits.max_samples;
                 dw_qos.protocol.rtps_reliable_writer.low_watermark =
                         0.1 * dw_qos.resource_limits.max_samples;
+
+                /*
+                 * If _SendQueueSize is 1 low watermark and high watermark would both be
+                 * 0, which would cause the middleware to fail. So instead we set the
+                 * high watermark to the low watermark + 1 in such case.
+                 */
+                if (dw_qos.protocol.rtps_reliable_writer.high_watermark
+                        == dw_qos.protocol.rtps_reliable_writer.low_watermark) {
+                    dw_qos.protocol.rtps_reliable_writer.high_watermark =
+                            dw_qos.protocol.rtps_reliable_writer.low_watermark + 1;
+                }
             }
         } else {
             /**

@@ -808,7 +808,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           prevent dynamic allocation of buffer used for storing received
           fragments
           -->
-          <initial_fragmented_samples>2</initial_fragmented_samples>
+          <initial_fragmented_samples>1</initial_fragmented_samples>
           <dynamically_allocate_fragmented_samples>false</dynamically_allocate_fragmented_samples>
         </reader_resource_limits>
 
@@ -1027,7 +1027,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           prevent dynamic allocation of buffer used for storing received
           fragments
           -->
-          <initial_fragmented_samples>2</initial_fragmented_samples>
+          <initial_fragmented_samples>1</initial_fragmented_samples>
           <dynamically_allocate_fragmented_samples>false</dynamically_allocate_fragmented_samples>
         </reader_resource_limits>
 
