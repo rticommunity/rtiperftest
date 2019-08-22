@@ -79,6 +79,7 @@ public:
       #endif
         _isLargeData = false;
         _isFlatData = false;
+        _isZeroCopy = false;
         _factory = NULL;
         _participant = NULL;
         _subscriber = NULL;
@@ -191,72 +192,73 @@ protected:
 };
 
 #ifdef RTI_FLATDATA_AVAILABLE
-  /**
-     * Overwrites CreateWriter and CreateReader from RTIDDSImpl
-     * to return Writers and Readers that make use of FlatData API
+/**
+ * Overwrites CreateWriter and CreateReader from RTIDDSImpl
+ * to return Writers and Readers that make use of FlatData API
+ */
+template <typename T>
+class RTIDDSImpl_FlatData: public RTIDDSImpl<TestData_t> {
+public:
+    /**
+     * Constructor for RTIDDSImpl_FlatData
+     *
+     * @param isZeroCopy states if the type is also ZeroCopy
      */
-  template <typename T>
-  class RTIDDSImpl_FlatData: public RTIDDSImpl<TestData_t> {
-  public:
-      /**
-         * Constructor for RTIDDSImpl_FlatData
-         *
-         * @param isZeroCopy states if the type is also ZeroCopy
-         */
-      RTIDDSImpl_FlatData(bool isZeroCopy=false) {
-        this->_isZeroCopy = isZeroCopy;
-        this->_isFlatData = true;
-        this->_typename = T::TypeSupport::get_type_name();
-      };
+    RTIDDSImpl_FlatData(bool isZeroCopy=false)
+    {
+    this->_isZeroCopy = isZeroCopy;
+    this->_isFlatData = true;
+    this->_typename = T::TypeSupport::get_type_name();
+    };
 
-      /**
-         * Creates a Publisher that uses the FlatData API
-         *
-         * @param topic_name is the name of the topic where
-         *      the created writer will write new samples to
-         *
-         * @return a RTIFlatDataPublisher
-         */
-      IMessagingWriter *CreateWriter(const char *topic_name);
+    /**
+     * Creates a Publisher that uses the FlatData API
+     *
+     * @param topic_name is the name of the topic where
+     *      the created writer will write new samples to
+     *
+     * @return a RTIFlatDataPublisher
+     */
+    IMessagingWriter *CreateWriter(const char *topic_name);
 
-      /**
-         * Creates a Subscriber that uses the FlatData API
-         *
-         * @param topic_name is the name of the topic where the created reader
-         *      will read new samples from
-         *
-         * @param callback is the callback that will process the receibed
-         *      message once it has been taken by the reader. Pass null for
-         *      callback if using IMessagingSubscriber.ReceiveMessage() to get
-         *      data
-         *
-         * @return a RTIFlatDataSubscriber
-         */
-      IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
+    /**
+     * Creates a Subscriber that uses the FlatData API
+     *
+     * @param topic_name is the name of the topic where the created reader
+     *      will read new samples from
+     *
+     * @param callback is the callback that will process the receibed
+     *      message once it has been taken by the reader. Pass null for
+     *      callback if using IMessagingSubscriber.ReceiveMessage() to get
+     *      data
+     *
+     * @return a RTIFlatDataSubscriber
+     */
+    IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
 
-      /**
-       * Obtain average serialization time
-       *
-       * @param sampleSize size of the payload to serialize
-       * @param iters number of times to serialize the payload
-       *
-       * @return average serialization time in microseconds
-       */
-      static double obtain_dds_serialize_time_cost_override(
-            unsigned int sampleSize,
-            unsigned int iters = 1000);
+    /**
+     * Obtain average serialization time
+     *
+     * @param sampleSize size of the payload to serialize
+     * @param iters number of times to serialize the payload
+     *
+     * @return average serialization time in microseconds
+     */
+    static double obtain_dds_serialize_time_cost_override(
+        unsigned int sampleSize,
+        unsigned int iters = 1000);
 
-      /**
-       * Obtain average deserialization time
-       *
-       * @param sampleSize size of the payload to deserialize
-       * @param iters number of times to deserialize the payload
-       *
-       * @return average serialization time in microseconds
-       */
-      static double obtain_dds_deserialize_time_cost_override(
-            unsigned int sampleSize,
-            unsigned int iters = 1000);
+    /**
+     * Obtain average deserialization time
+     *
+     * @param sampleSize size of the payload to deserialize
+     * @param iters number of times to deserialize the payload
+     *
+     * @return average serialization time in microseconds
+     */
+    static double obtain_dds_deserialize_time_cost_override(
+        unsigned int sampleSize,
+        unsigned int iters = 1000);
   };
 #endif // RTI_FLATDATA_AVAILABLE
 
