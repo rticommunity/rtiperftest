@@ -3097,10 +3097,6 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
                 dr_qos.reader_resource_limits.max_samples_per_remote_writer = initial_samples;
             }
         }
-
-        // Prevent dynamic allocation of reassembly buffer
-        dr_qos.reader_resource_limits.dynamically_allocate_fragmented_samples =
-                DDS_BOOLEAN_TRUE;
     }
     #endif
   #endif
