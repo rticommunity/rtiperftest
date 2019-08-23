@@ -2201,6 +2201,14 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
                         initial_samples);
                 qos_dr_resource_limits.max_samples_per_remote_writer(
                         initial_samples);
+
+                /**
+                 * Configure DataReader to prevent dynamic allocation of
+                 * buffer used for storing received fragments
+                 */
+                qos_dr_resource_limits.initial_fragmented_samples(1);
+                qos_dr_resource_limits.dynamically_allocate_fragmented_samples(
+                    DDS_BOOLEAN_FALSE);
             }
         }
     }
