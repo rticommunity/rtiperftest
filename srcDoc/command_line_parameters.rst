@@ -128,6 +128,13 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** false
 
+-  ``-preallocateFragmentedSamples``
+
+   Prevent dynamic allocation of buffer used for storing received fragments.
+   Useful for data bigger than 5MB to reduce latency.
+
+   **Default:** false
+
 -  ``-durability <0|1|2|3>``
 
    Sets the Durability kind:

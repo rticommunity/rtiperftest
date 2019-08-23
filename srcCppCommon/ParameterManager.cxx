@@ -366,11 +366,21 @@ void ParameterManager::initialize()
             "Check if samples sent with Zero Copy are consistent\nDefault: Not set");
     checkconsistency->set_type(T_BOOL);
     checkconsistency->set_extra_argument(NO);
-    zerocopy->set_group(GENERAL);
+    checkconsistency->set_group(GENERAL);
     checkconsistency->set_supported_middleware(Middleware::RTIDDSPRO);
     create("checkconsistency", checkconsistency);
     #endif
   #endif
+
+  Parameter<bool> *preallocateFragmentation = new Parameter<bool>(false);
+    preallocateFragmentation->set_command_line_argument("-preallocateFragmentedSamples", "");
+    preallocateFragmentation->set_description(
+            "Prevent dynamic allocation of buffer used for storing received fragments\nUseful for data bigger than 5MB\nDefault: Not set");
+    preallocateFragmentation->set_type(T_BOOL);
+    preallocateFragmentation->set_extra_argument(NO);
+    preallocateFragmentation->set_group(GENERAL);
+    preallocateFragmentation->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("preallocateFragmentedSamples", preallocateFragmentation);
 
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
     Parameter<bool> *useLegacyDynamicData = new Parameter<bool>(false);

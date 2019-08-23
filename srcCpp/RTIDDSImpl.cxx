@@ -3095,19 +3095,21 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
                 dr_qos.resource_limits.max_samples = initial_samples;
                 dr_qos.resource_limits.max_samples_per_instance = initial_samples;
                 dr_qos.reader_resource_limits.max_samples_per_remote_writer = initial_samples;
-
-                /**
-                 * Configure DataReader to prevent dynamic allocation of
-                 * buffer used for storing received fragments
-                 */
-                dr_qos.reader_resource_limits.initial_fragmented_samples = 1;
-                dr_qos.reader_resource_limits.dynamically_allocate_fragmented_samples =
-                    DDS_BOOLEAN_FALSE;
             }
         }
     }
     #endif
   #endif
+
+    /**
+     * Configure DataReader to prevent dynamic allocation of
+     * buffer used for storing received fragments
+     */
+    if (_PM->get<bool>("preallocateFragmentedSamples")) {
+        dr_qos.reader_resource_limits.initial_fragmented_samples = 1;
+        dr_qos.reader_resource_limits.dynamically_allocate_fragmented_samples =
+            DDS_BOOLEAN_FALSE;
+    }
 
     if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {
       #ifndef RTI_MICRO
