@@ -808,10 +808,10 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           Configure DataReader to prevent dynamic allocation of
           buffer used for storing received fragments
           -->
-          <initial_fragmented_samples>4</initial_fragmented_samples>
+          <initial_fragmented_samples>1</initial_fragmented_samples>
           <dynamically_allocate_fragmented_samples>false</dynamically_allocate_fragmented_samples>
         </reader_resource_limits>
-
+g
         <protocol>
           <rtps_reliable_reader>
             <!--
@@ -1027,7 +1027,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           Configure DataReader to prevent dynamic allocation of
           buffer used for storing received fragments
           -->
-          <initial_fragmented_samples>4</initial_fragmented_samples>
+          <initial_fragmented_samples>1</initial_fragmented_samples>
           <dynamically_allocate_fragmented_samples>false</dynamically_allocate_fragmented_samples>
         </reader_resource_limits>
 
@@ -1052,7 +1052,6 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           </rtps_reliable_reader>
         </protocol>
       </datareader_qos>
-      
     </qos_profile>
 
     <!-- ================================================================= -->

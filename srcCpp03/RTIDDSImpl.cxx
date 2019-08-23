@@ -2203,8 +2203,6 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
                         initial_samples);
             }
         }
-
-        qos_dr_resource_limits.dynamically_allocate_fragmented_samples(true);
     }
     #endif
 
