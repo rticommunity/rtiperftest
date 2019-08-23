@@ -60,6 +60,7 @@ flatdata_size=10485760 # 10MB
 flatdata_ddsgen_version=300 #3.0.0
 FLATDATA_AVAILABLE=0
 ZEROCOPY_AVAILABLE=0
+blacklist_zerocopy=0
 darwin_shmem_size=419430400
 
 # We will use some colors to improve visibility of errors and information
@@ -141,6 +142,8 @@ function usage()
     echo "    --customType <type>          Use the Custom type feature with your type.    "
     echo "                                 See details and examples of use in the         "
     echo "                                 documentation.                                 "
+    echo "    --no-zero-copy               Avoid compiling Zero Copy code. Use if your    "
+    echo "                                 architecture do not support Zero Copy          "
     echo "    --flatdata-max-size <size>   Specify the maximum bounded size on bytes      "
     echo "                                 for sequences when using FlatData language     "
     echo "                                 binding. Default 10MB                          "
@@ -551,7 +554,7 @@ function check_flatData_zeroCopy_available()
         FLATDATA_AVAILABLE="1"
     fi
 
-    if [[ "${FLATDATA_AVAILABLE}" == "1" ]] && [[ $platform != *"Android"* ]]; then
+    if [[ "${FLATDATA_AVAILABLE}" == "1" ]] && [[ $blacklist_zerocopy == 0 ]]; then
         echo -e "${INFO_TAG} Zero-Copy is available"
         ZEROCOPY_AVAILABLE="1"
     fi
@@ -1295,6 +1298,10 @@ while [ "$1" != "" ]; do
                 echo -e "${ERROR_TAG} \"--flatdata-max-size n\" requires n > 0."
                 exit -1
             fi
+            shift
+            ;;
+        --no-zero-copy)
+            blacklist_zerocopy=1
             shift
             ;;
         --osx-shmem-shmmax)
