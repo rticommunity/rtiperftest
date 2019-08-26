@@ -94,6 +94,47 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** false
 
+.. _FlatData:
+
+-  ``-flatData``
+
+   Use *RTI FlatData* language binding API to build samples where the
+   in-memory representation matches the wire representation.
+
+   This parameter is not available when compiling against *RTI Connext DDS
+   Micro* or a *RTI Connext DDS* version previous to 6.0.0.
+
+   **Default:** false
+
+-  ``-zeroCopy``
+
+   Use Zero Copy transfer over shared memory. This feature accomplishes zero
+   copies by using the shared memory (SHMEM) built-in transport to send 16-byte
+   references to samples within a SHMEM segment owned by the DataWriter.
+
+   This parameter can only be used along with ``-flatData`` and SHMEM built-in
+   transport.
+
+   This parameter is not available when compiling against *RTI Connext DDS
+   Micro* or a *RTI Connext DDS* version previous to 6.0.0.
+
+   **Default:** false
+
+-  ``-checkConsistency``
+
+   This option is only valid when using ``-zeroCopy``. When using it, the code
+   will check in the reader side if the sample read by the DataReader is
+   consistent (call to ``is_data_consistent()``).
+
+   **Default:** false
+
+-  ``-preallocateFragmentedSamples``
+
+   Prevent dynamic allocation of buffer used for storing received fragments.
+   Useful for data bigger than 5MB to reduce latency.
+
+   **Default:** false
+
 -  ``-durability <0|1|2|3>``
 
    Sets the Durability kind:
@@ -767,6 +808,25 @@ Test Parameters Only For Subscribing Applications
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
+
+   **Default:** ``Not set``
+
+-  ``-checkConsistency``
+
+   Check the consistency of samples sent with Zero Copy transfer over shared 
+   memory.
+
+   The Publisher may be reusing memory to send different samples before the
+   original samples are processed by the subscriber, leading to inconsistent samples.
+   Unconsistent samples will be reported as lost.
+
+   See more on the User manual page 870: 22.5.1.3 Checking data consistency with 
+   Zero Copy transfer over shared memory
+
+   This parameter can only be used along with ``-zeroCopy``.
+
+   This parameter is not available when compiling against *RTI Connext DDS 
+   Micro* or a *RTI Connext DDS* version previous to 6.0.0.
 
    **Default:** ``Not set``
 

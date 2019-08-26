@@ -47,7 +47,7 @@ LEGACY_DD_IMPL=0
 # Needed when compiling statically using security
 RTI_OPENSSLHOME=""
 
-#Variables for customType
+# Variables for customType
 custom_type_folder="${idl_location}/customType"
 USE_CUSTOM_TYPE=0
 custom_type="" # Type of the customer
@@ -55,6 +55,12 @@ custom_type_file_name_support="" # Name of the file with the type. "TSupport.h"
 # Intermediate file for including the custom type file #include "file.idl"
 custom_idl_file="${custom_type_folder}/custom.idl"
 
+# Variables for FlatData
+flatdata_size=10485760 # 10MB
+flatdata_ddsgen_version=300 #3.0.0
+FLATDATA_AVAILABLE=0
+ZEROCOPY_AVAILABLE=0
+darwin_shmem_size=419430400
 
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
@@ -135,6 +141,11 @@ function usage()
     echo "    --customType <type>          Use the Custom type feature with your type.    "
     echo "                                 See details and examples of use in the         "
     echo "                                 documentation.                                 "
+    echo "    --flatdata-max-size <size>   Specify the maximum bounded size on bytes      "
+    echo "                                 for sequences when using FlatData language     "
+    echo "                                 binding. Default 10MB                          "
+    echo "    --osx-shmem-shmmax <size>    Maximum segment size for shared memory in OSX  "
+    echo "                                 in bytes. Default 400MB                        "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
@@ -164,6 +175,7 @@ function clean()
     echo -e "${INFO_TAG} Cleaning generated files."
 
     rm -f  "${script_location}"/srcC*/perftest.*
+    rm -f  "${script_location}"/srcC*/perftest_ZeroCopy*
     rm -f  "${script_location}"/srcC*/perftestPlugin.*
     rm -f  "${script_location}"/srcC*/perftestSupport.*
     rm -f  "${script_location}"/srcC*/perftest_subscriber.*
@@ -342,7 +354,16 @@ function library_sufix_calculation()
 
 function additional_defines_calculation()
 {
-    additional_defines="O3"
+    additional_defines=""
+    additional_rti_libs=""
+
+    # Avoid optimized out variables when debugging
+    if [ "${RELEASE_DEBUG}" == "release" ]; then
+        echo -e "${INFO_TAG} C++ code will be optimized."
+        additional_defines=${additional_defines}"O3"
+    else
+        additional_defines=${additional_defines}"O0"
+    fi
 
     if [ "${LEGACY_DD_IMPL}" == "1" ]; then
         echo -e "${INFO_TAG} Allow the use of both legacy and new Dynamic Data Impl."
@@ -359,7 +380,8 @@ function additional_defines_calculation()
                 echo -e "${ERROR_TAG} In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option."
                 exit -1
             fi
-            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries nddssecurity -additionalLibraries \"sslz cryptoz\""
+            additional_rti_libs="nddssecurity ${additional_rti_libs}"
+            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"sslz cryptoz\""
             rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraryPaths \"${RTI_OPENSSLHOME}/${RELEASE_DEBUG}/lib\""
             echo -e "${INFO_TAG} Using security plugin. Linking Statically."
         fi
@@ -375,11 +397,26 @@ function additional_defines_calculation()
     if [ "${1}}" = "CPPmodern" ]; then
         additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_MODERN"
     fi
-    
+
     if [ -x "$(command -v git)" ]; then
         commit_id="$(git rev-parse --short HEAD)"
         additional_defines=${additional_defines}" DPERFTEST_COMMIT_ID='\\\"${commit_id}\\\"'"
+    fi
 
+    if [[ $platform == *"Darwin"* ]]; then
+        additional_defines=${additional_defines}" DMAX_DARWIN_SHMEM_SIZE=${darwin_shmem_size}"
+    fi
+
+    # Adding RTI_ZEROCOPY_AVAILABLE, RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as defines
+    if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
+        additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE DRTI_FLATDATA_MAX_SIZE=${flatdata_size}"
+        additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
+
+        if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+            additional_rti_libs="nddsmetp ${additional_rti_libs}"
+            additional_defines=${additional_defines}" DRTI_ZEROCOPY_AVAILABLE"
+            additional_defines_flatdata=$additional_defines_flatdata" -D RTI_ZEROCOPY_AVAILABLE"
+        fi
     fi
 }
 
@@ -455,6 +492,7 @@ function build_cpp_custom_type()
             additional_source_files_custom_type="${name_file}Plugin.cxx ${name_file}.cxx ${name_file}Support.cxx "$additional_source_files_custom_type
         fi
     done
+
     # Adding RTI_USE_CUSTOM_TYPE as a macro
     additional_defines_custom_type=" -D RTI_CUSTOM_TYPE="${custom_type}
 }
@@ -503,6 +541,22 @@ function clean_src_cpp_common()
     done
 }
 
+function check_flatData_zeroCopy_available()
+{
+    version=$(awk -F"version" '/version/ { split($2, a, " "); print a[1] }' <<< $(${rtiddsgen_executable} -version)) # e.g. 3.0.0
+    ddsgen_version="${version//\./}" # e.g. 300
+
+    if [[ $ddsgen_version -ge $flatdata_ddsgen_version ]]; then
+        echo -e "${INFO_TAG} FlatData is available"
+        FLATDATA_AVAILABLE="1"
+    fi
+
+    if [[ "${FLATDATA_AVAILABLE}" == "1" ]] && [[ $platform != *"Android"* ]]; then
+        echo -e "${INFO_TAG} Zero-Copy is available"
+        ZEROCOPY_AVAILABLE="1"
+    fi
+}
+
 function build_cpp()
 {
     copy_src_cpp_common
@@ -516,6 +570,8 @@ function build_cpp()
     if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
         build_cpp_custom_type
     fi
+
+    check_flatData_zeroCopy_available
     additional_defines_calculation "CPPtraditional"
 
     additional_header_files="${additional_header_files_custom_type} \
@@ -547,15 +603,32 @@ function build_cpp()
         Infrastructure_common.cxx \
         Infrastructure_pro.cxx"
 
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+        additional_header_files="${additional_header_files} \
+        perftest_ZeroCopy.h \
+        perftest_ZeroCopyPlugin.h \
+        perftest_ZeroCopySupport.h"
+
+        additional_source_files="${additional_source_files} \
+        perftest_ZeroCopy.cxx \
+        perftest_ZeroCopyPlugin.cxx \
+        perftest_ZeroCopySupport.cxx"
+    fi
+
     ##############################################################################
     # Generate files for srcCpp
 
+    # rtiddsgen ignores any specified rti addional library if using ZeroCopy
+    # Therefore, we need to generate a makefile that contains
+    # nddsmetp and nddssecurity libraries without compiling ZeroCopy code
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
+        ${additional_defines_flatdata} \
         -unboundedSupport -replace -create typefiles -create makefiles \
         -platform ${platform} \
         -additionalHeaderFiles \"${additional_header_files}\" \
         -additionalSourceFiles \"${additional_source_files} \" \
         -additionalDefines \"${additional_defines}\" \
+        -additionalRtiLibraries \"${additional_rti_libs} \" \
         ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
         -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
@@ -570,6 +643,28 @@ function build_cpp()
         clean_src_cpp_common
         exit -1
     fi
+
+    # Generate ZeroCopy types avoiding performance degradation issue
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+        echo -e "${INFO_TAG} Generating Zero Copy code"
+        rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
+        ${additional_defines_flatdata} \
+        -replace -create typefiles \
+        -platform ${platform} \
+        ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
+        -d \"${classic_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\""
+
+        echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+        eval $rtiddsgen_command
+        if [ "$?" != 0 ]; then
+            echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
+            clean_src_cpp_common
+            exit -1
+        fi
+
+        rm -rf ${classic_cpp_folder}/makefile_perftest_ZeroCopy_${platform}
+    fi
+
     cp "${classic_cpp_folder}/perftest_publisher.cxx" \
     "${classic_cpp_folder}/perftest_subscriber.cxx"
 
@@ -784,11 +879,51 @@ function build_micro_cpp()
 function build_cpp03()
 {
     copy_src_cpp_common
+    check_flatData_zeroCopy_available
     additional_defines_calculation "CPPModern"
+
+    additional_header_files=" \
+        ThreadPriorities.h \
+        Parameter.h \
+        ParameterManager.h \
+        MessagingIF.h \
+        RTIDDSImpl.h \
+        perftest_cpp.h \
+        qos_string.h \
+        CpuMonitor.h \
+        PerftestTransport.h"
+
+    additional_source_files=" \
+        ThreadPriorities.cxx \
+        Parameter.cxx \
+        ParameterManager.cxx \
+        RTIDDSImpl.cxx \
+        CpuMonitor.cxx \
+        PerftestTransport.cxx"
+
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+        additional_header_files="${additional_header_files} \
+        perftest_ZeroCopy.hpp \
+        perftest_ZeroCopyPlugin.hpp"
+
+        additional_source_files="${additional_source_files} \
+        perftest_ZeroCopy.cxx \
+        perftest_ZeroCopyPlugin.cxx"
+    fi
+
+
     ##############################################################################
     # Generate files for srcCpp03
-
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} -unboundedSupport -replace -create typefiles -create makefiles -platform ${platform} -additionalHeaderFiles \"ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h\" -additionalSourceFiles \"ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx\" -additionalDefines \"${additional_defines}\" ${rtiddsgen_extra_options} -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
+    ${additional_defines_flatdata} \
+    -unboundedSupport -replace -create typefiles -create makefiles \
+    -platform ${platform} \
+    -additionalHeaderFiles \"$additional_header_files\" \
+    -additionalSourceFiles \"$additional_source_files\" \
+    -additionalDefines \"${additional_defines}\" \
+    -additionalRtiLibraries \"${additional_rti_libs} \" \
+    ${rtiddsgen_extra_options} \
+    -d \"${modern_cpp_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${modern_cpp_lang_string}."
@@ -801,6 +936,27 @@ function build_cpp03()
         clean_src_cpp_common
         exit -1
     fi
+
+    # Generate Zero Copy types avoiding performance degradation issue
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+        echo -e "${INFO_TAG} Generating Zero Copy code"
+        rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
+        ${additional_defines_flatdata} \
+        -replace -create typefiles -platform ${platform} \
+        ${rtiddsgen_extra_options} \
+        -d \"${modern_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\""
+
+        echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+        eval $rtiddsgen_command
+        if [ "$?" != 0 ]; then
+            echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
+            clean_src_cpp_common
+            exit -1
+        fi
+
+        rm -rf ${modern_cpp_folder}/makefile_perftest_ZeroCopy_${platform}
+    fi
+
     cp "${modern_cpp_folder}/perftest_publisher.cxx" \
     "${modern_cpp_folder}/perftest_subscriber.cxx"
 
@@ -1130,6 +1286,19 @@ while [ "$1" != "" ]; do
             ;;
         --openssl-home)
             RTI_OPENSSLHOME=$2
+            shift
+            ;;
+        --flatdata-max-size)
+            flatdata_size=$2
+            sizeInt=$(($flatdata_size + 0)) # For OSX
+            if [[ sizeInt -le 0 ]]; then
+                echo -e "${ERROR_TAG} \"--flatdata-max-size n\" requires n > 0."
+                exit -1
+            fi
+            shift
+            ;;
+        --osx-shmem-shmmax)
+            darwin_shmem_size=$2
             shift
             ;;
         *)

@@ -338,6 +338,50 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("threadPriorities", threadPriorities);
 
+  #ifdef RTI_FLATDATA_AVAILABLE
+    Parameter<bool> *flatData = new Parameter<bool>(false);
+    flatData->set_command_line_argument("-flatData", "");
+    flatData->set_description(
+            "Use FlatData language binding\nDefault: Not set");
+    flatData->set_type(T_BOOL);
+    flatData->set_extra_argument(NO);
+    flatData->set_group(GENERAL);
+    flatData->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("flatdata", flatData);
+
+    #if RTI_ZEROCOPY_AVAILABLE
+    Parameter<bool> *zerocopy = new Parameter<bool>(false);
+    zerocopy->set_command_line_argument("-zeroCopy", "");
+    zerocopy->set_description(
+            "Use Zero Copy transfer mode. FlatData must be used too\nDefault: Not set");
+    zerocopy->set_type(T_BOOL);
+    zerocopy->set_extra_argument(NO);
+    zerocopy->set_group(GENERAL);
+    zerocopy->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("zerocopy", zerocopy);
+
+    Parameter<bool> *checkconsistency = new Parameter<bool>(false);
+    checkconsistency->set_command_line_argument("-checkConsistency", "");
+    checkconsistency->set_description(
+            "Check if samples sent with Zero Copy are consistent\nDefault: Not set");
+    checkconsistency->set_type(T_BOOL);
+    checkconsistency->set_extra_argument(NO);
+    checkconsistency->set_group(GENERAL);
+    checkconsistency->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("checkconsistency", checkconsistency);
+    #endif
+  #endif
+
+  Parameter<bool> *preallocateFragmentation = new Parameter<bool>(false);
+    preallocateFragmentation->set_command_line_argument("-preallocateFragmentedSamples", "");
+    preallocateFragmentation->set_description(
+            "Prevent dynamic allocation of buffer used for storing received fragments\nUseful for data bigger than 5MB\nDefault: Not set");
+    preallocateFragmentation->set_type(T_BOOL);
+    preallocateFragmentation->set_extra_argument(NO);
+    preallocateFragmentation->set_group(GENERAL);
+    preallocateFragmentation->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("preallocateFragmentedSamples", preallocateFragmentation);
+
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
     Parameter<bool> *useLegacyDynamicData = new Parameter<bool>(false);
     useLegacyDynamicData->set_command_line_argument("-useLegacyDynamicData", "");

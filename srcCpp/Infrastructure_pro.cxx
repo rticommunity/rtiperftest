@@ -4,6 +4,8 @@
  */
 
 #include "Infrastructure_pro.h"
+#include "perftest_cpp.h"
+#include "osapi/osapi_sharedMemorySegment.h"
 
 /*
  * Since std::to_string is not defined until c++11
@@ -501,22 +503,134 @@ bool configureShmemTransport(
         DDS_DomainParticipantQos& qos,
         ParameterManager *_PM)
 {
-    // Number of messages that can be buffered in the receive queue.
-    int received_message_count_max = 1024 * 1024 * 2
-            / (int) _PM->get<unsigned long long>("dataLen");
-    if (received_message_count_max < 1) {
-        received_message_count_max = 1;
-    }
+  /**
+   * OSPAI do not support SHMEM for Android yet
+   */
+  #if !defined(RTI_ANDROID)
+    DDS_Property_t *parentProp =
+            DDSPropertyQosPolicyHelper::lookup_property(qos.property,
+                    "dds.transport.shmem.builtin.parent.message_size_max");
+    int parentMsgSizeMax = atoi(parentProp->value);
 
-    std::ostringstream string_stream_object;
-    string_stream_object << received_message_count_max;
+    /*
+     * The maximum size of a SHMEM segment highly depends on the platform.
+     * So that, we need to find out the maximum allocable space to avoid
+     * runtime errors.
+     *
+     * minSize is the packet size of the builtin transport for SHMEM.
+     * We need it as the minimum size for a SHMEM segment since otherwise,
+     * DDS would not even be able to send a sample.
+     *
+     * The maxBufferSize is present in order to have a limit on the buffer size
+     * for SHMEM so Perftest does not require unlimited resources.
+     *
+     * Since we are doing a decremental search, we use a step of 1MB to search
+     * down a pseudo-optimal buffer size in the range
+     * [minBufferSize, maxBufferSize].
+     */
+    RTIOsapiSharedMemorySegmentHandle handle;
+    RTI_UINT64 pid = RTIOsapiProcess_getId();
+    RTIBool success = RTI_FALSE;
+    int retcode;
+    int key = rand();
+    int minBufferSize = parentMsgSizeMax;
+    int step = 1048576 + parentMsgSizeMax; // 1MB + parentMsgSizeMax
+    int maxBufferSize = 60817408; // 58MB
+
+    do {
+        // Reset handles to known state
+        RTIOsapiMemory_zero(&handle,
+                sizeof(struct RTIOsapiSharedMemorySegmentHandle));
+
+        success = RTIOsapiSharedMemorySegment_create(
+                &handle, &retcode, key, maxBufferSize, pid);
+
+        RTIOsapiSharedMemorySegment_delete(&handle);
+        maxBufferSize -= step;
+    } while (maxBufferSize > minBufferSize && success == RTI_FALSE);
+
+    /*
+     * From user manual "Properties for Builtin Shared-Memory Transport":
+     * To optimize memory usage, specify a receive queue size less than that
+     * required to hold the maximum number of messages which are all of the
+     * maximum size.
+     *
+     * In most situations, the average message size may be far less than the
+     * maximum message size. So for example, if the maximum message size is 64K
+     * bytes, and you configure the plugin to buffer at least 10 messages, then
+     * 640K bytes of memory would be needed if all messages were 64K bytes.
+     * Should this be desired, then receive_buffer_size should be set to 640K
+     * bytes.
+     *
+     * However, if the average message size is only 10K bytes, then you could
+     * set the receive_buffer_size to 100K bytes. This allows you to optimize
+     * the memory usage of the plugin for the average case and yet allow the
+     * plugin to handle the extreme case.
+     *
+     * The receivedMessageCountMax should be set to a value that can hold
+     * more than “-sendQueueSize" samples in perftest in order block in the
+     * send window before starting to lose messages on the Shared Memory
+     * transport
+     */
+    std::ostringstream ss;
+    /*
+     * This is the flow Controller default token size. Change this if you modify
+     * the qos file to add a different "bytes_per_token" property
+     */
+    int flowControllerTokenSize = 65536;
+    unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
+
+  #ifdef RTI_FLATDATA_AVAILABLE
+    // Zero Copy sends 16-byte references
+    if (_PM->get<bool>("zerocopy")) {
+        datalen = 16;
+    }
+  #endif
+
+    /*
+     * We choose the minimum between the flow Controller max fragment size and
+     * the message_size_max - RTPS headers.
+     */
+    int fragmentSize = (std::min)(
+            parentMsgSizeMax - COMMEND_WRITER_MAX_RTPS_OVERHEAD,
+            flowControllerTokenSize);
+
+    // max(1, (sample_serialized_size / fragmentSize))
+    unsigned long long int rtpsMessagesPerSample = (std::max)(
+            1ull, (perftest_cpp::OVERHEAD_BYTES + datalen) / fragmentSize);
+
+    unsigned long long int receivedMessageCountMax =
+            2 * (_PM->get<int>("sendQueueSize") + 1) * rtpsMessagesPerSample;
+
+    // min(maxBufferSize, receivedMessageCountMax * rtps_message_size)
+    unsigned long long int receiveBufferSize = (std::min)(
+        (unsigned long long) maxBufferSize,
+        receivedMessageCountMax *
+                (COMMEND_WRITER_MAX_RTPS_OVERHEAD + fragmentSize));
+
+    ss << receivedMessageCountMax;
     if (!assertPropertyToParticipantQos(
             qos,
             "dds.transport.shmem.builtin.received_message_count_max",
-            string_stream_object.str())) {
+            ss.str())) {
         return false;
     }
+
+    ss.str("");
+    ss.clear();
+    ss << receiveBufferSize;
+    if (!assertPropertyToParticipantQos(
+            qos,
+            "dds.transport.shmem.builtin.receive_buffer_size",
+            ss.str())) {
+        return false;
+    }
+
     return true;
+  #else
+    // Not supported yet.
+    return false;
+  #endif
 }
 
 bool PerftestConfigureTransport(

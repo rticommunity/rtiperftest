@@ -18,6 +18,15 @@
 #include "PerftestTransport.h"
 #include <rti/domain/find.hpp>
 
+#ifdef RTI_ZEROCOPY_AVAILABLE
+#include "perftest_ZeroCopy.hpp"
+#endif
+
+#ifdef RTI_DARWIN
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#endif
+
 #define RTIPERFTEST_MAX_PEERS 1024
 
 /* Class for the DDS_DynamicDataMemberId of the type of RTI Perftest*/
@@ -72,7 +81,7 @@ class RTIDDSImpl : public IMessaging
     const std::string get_qos_profile_name(std::string topicName);
 
 
-  private:
+  protected:
     // This semaphore is used in VxWorks to synchronize finalizing a factory
     static rti::core::Semaphore _finalizeFactorySemaphore;
 
@@ -86,8 +95,11 @@ class RTIDDSImpl : public IMessaging
 
 
     long _InstanceMaxCountReader;
+    unsigned long _sendQueueSize;
     int _InstanceHashBuckets;
     bool _isLargeData;
+    bool _isFlatData;
+    bool _isZeroCopy;
     PerftestTransport _transport;
     dds::domain::DomainParticipant _participant;
     dds::sub::Subscriber _subscriber;
@@ -109,7 +121,55 @@ class RTIDDSImpl : public IMessaging
     static const std::string SECURE_LIBRARY_NAME;
   #endif
 
+    unsigned long int getShmemSHMMAX();
+    dds::sub::qos::DataReaderQos setup_DR_QoS(
+            std::string qos_profile,
+            std::string topic_name);
+    dds::pub::qos::DataWriterQos setup_DW_QoS(
+            std::string qos_profile,
+            std::string topic_name);
 };
 
+#ifdef RTI_FLATDATA_AVAILABLE
+  /**
+   * Overwrites CreateWriter and CreateReader from RTIDDSImpl
+   * to return Writers and Readers that make use of FlatData API
+   */
+  template <typename T>
+  class RTIDDSImpl_FlatData: public RTIDDSImpl<TestData_t> {
+  public:
+      /**
+       * Constructor for RTIDDSImpl_FlatData
+       *
+       * @param isZeroCopy states if the type is also ZeroCopy
+       */
+      RTIDDSImpl_FlatData(bool isZeroCopy=false);
+
+      /**
+       * Creates a Publisher that uses the FlatData API
+       *
+       * @param topic_name is the name of the topic where
+       *      the created writer will write new samples to
+       *
+       * @return a RTIFlatDataPublisher
+       */
+      IMessagingWriter *CreateWriter(const std::string &topic_name);
+
+      /**
+       * Creates a Subscriber that uses the FlatData API
+       *
+       * @param topic_name is the name of the topic where the created reader
+       *      will read new samples from
+       *
+       * @param callback is the callback that will process the receibed message
+       *      once it has been taken by the reader. Pass null for callback if
+       *      using IMessagingSubscriber.ReceiveMessage() to get data
+       *
+       * @return a RTIFlatDataSubscriber
+       */
+      IMessagingReader *CreateReader(
+              const std::string &topic_name, IMessagingCB *callback);
+  };
+#endif // RTI_FLATDATA_AVAILABLE
 
 #endif // __RTIDDSIMPL_H__

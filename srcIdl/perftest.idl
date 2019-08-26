@@ -39,9 +39,9 @@ struct TestData_t {
 
 }; //@Extensibility FINAL_EXTENSIBILITY
 
-
 struct TestDataKeyed_t {
-    octet key[KEY_SIZE]; //@key
+    @key
+    octet key[KEY_SIZE];
 
     long entity_id;
     unsigned long seq_num;
@@ -50,7 +50,8 @@ struct TestDataKeyed_t {
     long latency_ping;
     sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE
-    RTI_CUSTOM_TYPE custom_type; //@key
+    @key
+    RTI_CUSTOM_TYPE custom_type;
     long custom_type_size;
   #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
@@ -71,7 +72,8 @@ struct TestDataLarge_t {
 }; //@Extensibility FINAL_EXTENSIBILITY
 
 struct TestDataKeyedLarge_t {
-    octet key[KEY_SIZE]; //@key
+    @key
+    octet key[KEY_SIZE];
 
     long entity_id;
     unsigned long seq_num;
@@ -80,8 +82,87 @@ struct TestDataKeyedLarge_t {
     long latency_ping;
     sequence<octet> bin_data;
   #ifdef RTI_CUSTOM_TYPE
-    RTI_CUSTOM_TYPE custom_type; //@key
+    @key
+    RTI_CUSTOM_TYPE custom_type;
     long custom_type_size;
   #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 
+#ifdef RTI_FLATDATA_AVAILABLE
+/*
+ * FLATDATA
+ */
+@mutable
+@language_binding(FLAT_DATA)
+struct TestData_FlatData_t {
+    octet key[KEY_SIZE];
+
+    long entity_id;
+    unsigned long seq_num;
+    long timestamp_sec;
+    unsigned long timestamp_usec;
+    long latency_ping;
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
+  #ifdef RTI_CUSTOM_TYPE
+    RTI_CUSTOM_TYPE custom_type;
+    // custom_type_size is the serialize size of the field custom_type
+    // in the the sample that we send on the wire
+    long custom_type_size;
+  #endif
+};
+
+@mutable
+@language_binding(FLAT_DATA)
+struct TestDataKeyed_FlatData_t {
+    @key
+    octet key[KEY_SIZE];
+
+    long entity_id;
+    unsigned long seq_num;
+    long timestamp_sec;
+    unsigned long timestamp_usec;
+    long latency_ping;
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
+  #ifdef RTI_CUSTOM_TYPE
+    @key
+    RTI_CUSTOM_TYPE custom_type;
+    long custom_type_size;
+  #endif
+};
+
+@mutable
+@language_binding(FLAT_DATA)
+struct TestDataLarge_FlatData_t {
+    octet key[KEY_SIZE];
+
+    long entity_id;
+    unsigned long seq_num;
+    long timestamp_sec;
+    unsigned long timestamp_usec;
+    long latency_ping;
+    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
+  #ifdef RTI_CUSTOM_TYPE
+    RTI_CUSTOM_TYPE custom_type;
+    long custom_type_size;
+  #endif
+};
+
+@mutable
+@language_binding(FLAT_DATA)
+struct TestDataKeyedLarge_FlatData_t {
+    @key
+    octet key[KEY_SIZE];
+
+    long entity_id;
+    unsigned long seq_num;
+    long timestamp_sec;
+    unsigned long timestamp_usec;
+    long latency_ping;
+    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
+  #ifdef RTI_CUSTOM_TYPE
+    @key
+    RTI_CUSTOM_TYPE custom_type;
+    long custom_type_size;
+  #endif
+};
+#endif // RTI_FLATDATA_AVAILABLE

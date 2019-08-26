@@ -15,12 +15,21 @@
 #include "PerftestTransport.h"
 #include "Infrastructure_common.h"
 
+#ifdef RTI_ZEROCOPY_AVAILABLE
+#include "perftest_ZeroCopySupport.h"
+#endif
+
 #ifndef RTI_MICRO
 #include "RTIDDSLoggerDevice.h"
 #endif
 
 #ifdef RTI_CUSTOM_TYPE
 #include "CustomType.h"
+#endif
+
+#if defined(RTI_DARWIN) && !defined(RTI_MICRO)
+#include <sys/types.h>
+#include <sys/sysctl.h>
 #endif
 
 #define RTIPERFTEST_MAX_PEERS 1024
@@ -58,6 +67,7 @@ public:
     {
       #ifndef RTI_MICRO
         _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
+        _sendQueueSize = 0;
       #else
         /*
          * For micro we want to restrict the use of memory, and since we need
@@ -68,6 +78,8 @@ public:
         _instanceMaxCountReader = 1;
       #endif
         _isLargeData = false;
+        _isFlatData = false;
+        _isZeroCopy = false;
         _factory = NULL;
         _participant = NULL;
         _subscriber = NULL;
@@ -139,12 +151,15 @@ public:
 
     const std::string get_qos_profile_name(const char *topicName);
 
-private:
+protected:
     // This Mutex is used in VxWorks to synchronize when finalizing the factory
-    static PerftestMutex     *_finalizeFactoryMutex;
+    static PerftestMutex        *_finalizeFactoryMutex;
 
     long                         _instanceMaxCountReader;
+    unsigned long                _sendQueueSize;
     bool                         _isLargeData;
+    bool                         _isFlatData;
+    bool                         _isZeroCopy;
     PerftestTransport            _transport;
   #ifdef RTI_SECURE_PERFTEST
     PerftestSecurity             _security;
@@ -162,6 +177,89 @@ private:
     ParameterManager            *_PM;
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
+
+  #ifndef RTI_MICRO
+    unsigned long int getShmemSHMMAX();
+  #endif
+    bool setup_DR_QoS(
+            DDS_DataReaderQos &dr_qos,
+            std::string qos_profile,
+            std::string topic_name);
+    bool setup_DW_QoS(
+            DDS_DataWriterQos &dw_qos,
+            std::string qos_profile,
+            std::string topic_name);
 };
+
+#ifdef RTI_FLATDATA_AVAILABLE
+/**
+ * Overwrites CreateWriter and CreateReader from RTIDDSImpl
+ * to return Writers and Readers that make use of FlatData API
+ */
+template <typename T>
+class RTIDDSImpl_FlatData: public RTIDDSImpl<TestData_t> {
+public:
+    /**
+     * Constructor for RTIDDSImpl_FlatData
+     *
+     * @param isZeroCopy states if the type is also ZeroCopy
+     */
+    RTIDDSImpl_FlatData(bool isZeroCopy=false)
+    {
+    this->_isZeroCopy = isZeroCopy;
+    this->_isFlatData = true;
+    this->_typename = T::TypeSupport::get_type_name();
+    };
+
+    /**
+     * Creates a Publisher that uses the FlatData API
+     *
+     * @param topic_name is the name of the topic where
+     *      the created writer will write new samples to
+     *
+     * @return a RTIFlatDataPublisher
+     */
+    IMessagingWriter *CreateWriter(const char *topic_name);
+
+    /**
+     * Creates a Subscriber that uses the FlatData API
+     *
+     * @param topic_name is the name of the topic where the created reader
+     *      will read new samples from
+     *
+     * @param callback is the callback that will process the receibed
+     *      message once it has been taken by the reader. Pass null for
+     *      callback if using IMessagingSubscriber.ReceiveMessage() to get
+     *      data
+     *
+     * @return a RTIFlatDataSubscriber
+     */
+    IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
+
+    /**
+     * Obtain average serialization time
+     *
+     * @param sampleSize size of the payload to serialize
+     * @param iters number of times to serialize the payload
+     *
+     * @return average serialization time in microseconds
+     */
+    static double obtain_dds_serialize_time_cost_override(
+        unsigned int sampleSize,
+        unsigned int iters = 1000);
+
+    /**
+     * Obtain average deserialization time
+     *
+     * @param sampleSize size of the payload to deserialize
+     * @param iters number of times to deserialize the payload
+     *
+     * @return average serialization time in microseconds
+     */
+    static double obtain_dds_deserialize_time_cost_override(
+        unsigned int sampleSize,
+        unsigned int iters = 1000);
+  };
+#endif // RTI_FLATDATA_AVAILABLE
 
 #endif // __RTIDDSIMPL_H__

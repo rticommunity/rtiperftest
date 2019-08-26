@@ -4,7 +4,6 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
         {
             "name": "Pro Debug clang++",
             "type": "cppdbg",
@@ -30,16 +29,129 @@
             "MIMode": "lldb",
         },
         {
-            "name": "Pro Debug g++",
+            "name": "Pro Debug g++ (Publisher)",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/${architecture}/debug/perftest_cpp",
-            "args": ["-pub", "-domain", "0", "-latencyCount", "1", "-dataLen", "1000", "-latencyTest", "-multicast", "-executionTime", "2", "-noPrint"],
+            "args": [
+                "-pub",
+                "-noPrint",
+                "-domain", "207",
+                "-verbosity", "2",
+                "-executionTime", "5",
+                "-transport", "SHMEM",
+                "-latencyTest",
+                "-dataLen", "10000000",
+                "-flatData",
+            ],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "additionalSOLibSearchPath": "/home/salva/rti_connext_dds-6.0.0_tree",
+            "sourceFileMap": {
+                "/home/build3/rti/waveworks/ndds600/connextdds/": "/home/salva/rti_connext_dds-6.0.0_tree",
+            },
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable all-exceptions",
+                    "text": "-exec \"catch throw\"",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Pro Debug g++ (Subscriber)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/${architecture}/debug/perftest_cpp",
+            "args": [
+                "-sub",
+                "-noPrint",
+                "-domain", "207",
+                "-transport", "SHMEM",
+                "-verbosity", "2",
+                "-dataLen", "32",
+                "-rawtransport",
+            ],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
+            // "additionalSOLibSearchPath": "<PATH_TO_TREE>",
+            // "sourceFileMap": {
+            //     "/home/build3/rti/waveworks/ndds600/connextdds/": "<PATH_TO_TREE>",
+            // },
+            "setupCommands": [
+                {
+                    "description": "Enable all-exceptions",
+                    "text": "-exec \"catch throw\"",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+        "name": "Pro Debug g++ (Publisher) 03",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/${architecture}/debug/perftest_cpp03",
+            "args": [
+                "-pub",
+                "-noPrint",
+                "-latencyTest",
+                "-domain", "207",
+                "-verbosity", "2",
+                "-executionTime", "3",
+                "-transport", "SHMEM",
+                "-dataLen", "1000000",
+                "-flatData",
+            ],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            // "additionalSOLibSearchPath": "<PATH_TO_TREE>",
+            // "sourceFileMap": {
+            //     "/home/build3/rti/waveworks/ndds600/connextdds/": "<PATH_TO_TREE>",
+            // },
+            "setupCommands": [
+                {
+                    "description": "Enable all-exceptions",
+                    "text": "-exec \"catch throw\"",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Pro Debug g++ (Subscriber) 03",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/x64Linux4gcc7.3.0/debug/perftest_cpp03",
+            "args": [
+                "-sub",
+                "-noPrint",
+                "-domain", "207",
+                "-verbosity", "2",
+                "-transport", "SHMEM",
+                "-dataLen", "10000000",
+                "-flatData",
+                "-best",
+            ],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable all-exceptions",
+                    "text": "-exec \"catch throw\"",
+                    "ignoreFailures": true
+                }
+            ]
         },
         {
             "name": "Micro Debug g++",

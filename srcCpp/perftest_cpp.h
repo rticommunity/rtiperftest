@@ -19,6 +19,7 @@
 #include "MessagingIF.h"
 #include "ThreadPriorities.h"
 #include "ParameterManager.h"
+#include "Infrastructure_common.h"
 
 struct Perftest_ProductVersion_t
 {

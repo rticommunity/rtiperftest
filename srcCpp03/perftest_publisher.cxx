@@ -139,7 +139,7 @@ int perftest_cpp_main(char *args)
  * Run
  */
 int perftest_cpp::Run(int argc, char *argv[]) {
-
+    unsigned short mask;
     PrintVersion();
 
     try {
@@ -166,18 +166,67 @@ int perftest_cpp::Run(int argc, char *argv[]) {
         return -1;
     }
 
-    if (_PM.get<int>("unbounded") == 0) {
-        if (_PM.get<bool>("keyed")) {
-            _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
-        } else {
-            _MessagingImpl = new RTIDDSImpl<TestData_t>();
-        }
-    } else {
-        if (_PM.get<bool>("keyed")) {
-            _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
-        } else {
-            _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
-        }
+    mask = (_PM.get<int>("unbounded") != 0) << 0;
+    mask += _PM.get<bool>("keyed") << 1;
+    mask += _PM.get<bool>("flatdata") << 2;
+    mask += _PM.get<bool>("zerocopy") << 3;
+
+    switch (mask)
+    {
+    case 0: // = 0000 (bounded)
+        _MessagingImpl = new RTIDDSImpl<TestData_t>();
+        break;
+
+    case 1: // unbounded = 0001
+        _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
+        break;
+
+    case 2: // keyed = 0010
+        _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
+        break;
+
+    case 3: // unbounded + keyed = 0011
+        _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
+        break;
+
+  #ifdef RTI_FLATDATA_AVAILABLE
+    #ifdef RTI_ZEROCOPY_AVAILABLE
+    case 15: // unbounded + keyed + flat + zero = 1111
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>(true);
+        break;
+
+    case 14: // keyed + flat + zero = 1110
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>(true);
+        break;
+
+    case 13: // unbounded + flat + zero = 1101
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>(true);
+        break;
+
+    case 12: // flat + Zero = 1100
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
+        break;
+    #endif
+    case 7: // unbounded + keyed + flat = 0111
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
+        break;
+
+    case 6: // Keyed + flat = 0110
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>();
+        break;
+
+    case 5: // unbounded + flat = 0101
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
+        break;
+
+    case 4: // flat = 0100
+        _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
+        break;
+            break;
+  #endif
+
+    default:
+        break;
     }
 
     if (!_MessagingImpl->Initialize(_PM, this)) {
@@ -255,6 +304,10 @@ perftest_cpp::perftest_cpp() :
         _SleepNanosec(0),
         _MessagingImpl(NULL)
 {
+    /** We use rand to generate the key of a SHMEM segment when
+     * we estimate the maximum buffer size for SHMEM
+     */
+    srand(time(NULL));
 }
 ;
 
@@ -429,6 +482,51 @@ bool perftest_cpp::validate_input()
         }
     }
 
+    #ifdef RTI_FLATDATA_AVAILABLE
+
+      // Automatically enable FlatData when using Zero Copy
+      if (_PM.get<bool>("zerocopy") && !_PM.get<bool>("flatdata")) {
+           _PM.set<bool>("flatdata", true);
+      }
+
+      if (_PM.get<bool>("zerocopy") && 
+            !(_PM.get<std::string>("transport") == "SHMEM" 
+            || _PM.get<std::string>("transport") == "Use XML"
+            || _PM.get<std::string>("transport") == "UDPv4 & SHMEM"
+            || _PM.get<std::string>("transport") == "UDPv6 & SHMEM"
+            || _PM.get<std::string>("transport") == "UDPv4 & UDPv6 & SHMEM")) {
+          std::cerr << "[Error] Zero Copy must be run with SHMEM as transport" << std::endl;
+          return false;
+      }
+
+      if (_PM.get<bool>("checkconsistency") && !_PM.get<bool>("zerocopy")) {
+          std::cerr << "[Error] CheckConsistency can only be used along with Zero Copy" << std::endl;
+          return false;
+      }
+
+      /**
+       * Avoid displaying on_data_available:!null offset
+       * 
+       * We would use a custom Logger as in Traditional C++
+       * but it is not available in Modern C++ API
+       * http://jira:8085/browse/CORE-7895
+       */
+      if (_PM.get<bool>("sub") && _PM.get<bool>("zerocopy") && _PM.get<bool>("bestEffort")) {
+          std::cerr << "[Warning] The Publisher is reusing memory to send different samples"
+                    << "before the original samples are processed by the subscriber, leading to inconsistent samples."
+                    << std::endl << "This is expected with the current perftest configuration. See more on the User manual: "
+                    << "22.5.1.3 Checking data consistency with Zero Copy transfer over shared memory on page 870."
+                    << std::endl << "Unconsistent samples will be reported as lost." << std::endl
+                    << "To avoid displaying 'on_data_available:!null offset' error, consider using -verbosity 0"
+                    << std::endl;
+
+          if (!_PM.get<bool>("checkconsistency")) {
+              std::cerr << "[Error] Please enable consistency check by using -checkConsistency" << std::endl;
+              return false;
+          }
+      }
+    #endif
+
     return true;
 }
 
@@ -497,6 +595,10 @@ void perftest_cpp::PrintConfiguration()
                     stringStream << ", ";
                 }
             }
+
+            stringStream << "\t(Set the data size on the subscriber"
+                         << " to the maximum data size to achieve maximum performance)"
+                         << std::endl;
         } else {
             stringStream << _PM.get<unsigned long long>("dataLen") << "\n";
         }
@@ -520,6 +622,9 @@ void perftest_cpp::PrintConfiguration()
             } else if (_PM.get<long>("batchSize") == -2) {
                 stringStream << "\t\t  BatchSize cannot be used with\n"
                              << "\t\t  Large Data.\n";
+            } else if (_PM.get<long>("batchSize") == -3) {
+                stringStream << "\t\t  BatchSize cannot be used with\n"
+                             << "\t\t  FlatData.\n";
             }
         }
 
@@ -548,9 +653,13 @@ void perftest_cpp::PrintConfiguration()
                          << "\n";
         }
     } else  {
+        stringStream << "\tData Size: " << _PM.get<unsigned long long>("dataLen");
+
         if (_PM.get<unsigned long long>("dataLen") > MAX_SYNCHRONOUS_SIZE) {
-            stringStream << "\tExpecting Large Data Type\n";
+            stringStream << " (Expecting Large Data Type)";
         }
+
+        stringStream << std::endl;
     }
 
     // Listener/WaitSets
@@ -663,6 +772,7 @@ public:
                     "message.entity_id out of bounds." << std::endl;
             return;
         }
+
         // Check for test initialization messages
         if (size == perftest_cpp::INITIALIZE_SIZE) {
             _writer->send(message);
@@ -1379,16 +1489,6 @@ static void *LatencyReadThread(void *arg)
         {
             listener->ProcessMessage(*message);
         }
-
-    /*
-    * TODO: -latencyTest plus -useReadThread
-    *
-    * To support -latencyTest plus -useReadThread we need to signal
-    * --HERE-- the internal semaphore used in RTIDDSImpl.cxx as
-    * we now do in the listener on_data_available callback
-    * inside RTIDDSImpl.cxx
-    *
-    */
     }
 
     return NULL;
@@ -1557,25 +1657,25 @@ int perftest_cpp::RunPublisher()
     message.size = INITIALIZE_SIZE;
 
     /*
-     * Initial burst of data:
-     *
-     * The purpose of this initial burst of Data is to ensure that most
-     * memory allocations in the critical path are done before the test begings,
-     * for both the Writer and the Reader that receives the samples.
-     * It will also serve to make sure that all the instances are registered
-     * in advance in the subscriber application.
-     *
-     * We query the MessagingImplementation class to get the suggested sample
-     * count that we should send. This number might be based on the reliability
-     * protocol implemented by the middleware behind. Then we choose between that
-     * number and the number of instances to be sent.
-     */
+    * Initial burst of data:
+    *
+    * The purpose of this initial burst of Data is to ensure that most
+    * memory allocations in the critical path are done before the test begings,
+    * for both the Writer and the Reader that receives the samples.
+    * It will also serve to make sure that all the instances are registered
+    * in advance in the subscriber application.
+    *
+    * We query the MessagingImplementation class to get the suggested sample
+    * count that we should send. This number might be based on the reliability
+    * protocol implemented by the middleware behind. Then we choose between that
+    * number and the number of instances to be sent.
+    */
     unsigned long initializeSampleCount = (std::max)(
             _MessagingImpl->GetInitializationSampleCount(),
             (unsigned long)_PM.get<long>("instances"));
 
     std::cerr << "[Info] Sending " << initializeSampleCount
-              << " initialization pings ..." << std::endl;
+            << " initialization pings ..." << std::endl;
 
     for (unsigned long i = 0; i < initializeSampleCount; i++) {
         // Send test initialization message

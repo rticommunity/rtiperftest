@@ -308,11 +308,60 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 .. _section-large_sample:
 
+1-to-1, FlatData, SharedMemory, Unicast, Reliable, Latency test, Large Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -transport SHMEM -dataLen 100000 -executionTime 100 -latencyTest -flatData
+
+-  Subscriber
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 63001 -flatData
+
+
+1-to-1, FlatData and Zero Copy, SharedMemory, Unicast, Reliable, Latency test, Large Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -transport SHMEM -dataLen 100000 -executionTime 100 -latencyTest -flatData -zeroCopy
+
+-  Subscriber
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 63001 -flatData -zeroCopy
+
+
+1-to-1, FlatData and Zero Copy, SharedMemory, Unicast, BestEffort, Throughput test, Large Data, Check Consistency
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -transport SHMEM -dataLen 100000 -executionTime 100 -latencyTest -flatData -zeroCopy
+
+-  Subscriber
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 63001 -flatData -zeroCopy -checkConsistency
+
+
+
 RTI Connext DDS Micro
 ---------------------
 
 1-to-1, Unicast, Best Latency as a Function of Message Size
--------------------------------------------------------------
+-----------------------------------------------------------
 
 -  Publisher:
 
@@ -348,7 +397,11 @@ When the sample size is smaller or equal to 63000 Bytes,
 *RTI Perftest* will, by default, use types with Bounded-Sequences (bound
 set to 63000 elements). If the sample size is bigger than 63000 Bytes,
 *RTI Perftest* will automatically switch to types equivalent to the ones
-mentioned previously, but with Unbounded-Sequences.
+mentioned previously, but with Unbounded-Sequences. This is not the case when
+using *Flat Data*, since it require fixed size types. In that case the size
+of the sequence will change to `RTI_FLATDATA_MAX_SIZE`, which is configurable
+and by default is 10MB (See compilation section for more information about how
+to change this.
 
 The reason for this behavior is that, when *RTI Perftest*
 uses Unbounded-Sequences, *RTI Connext DDS* will not pre-allocate the
@@ -487,7 +540,7 @@ samples, the following error may appear:
     Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
 
 This error indicates that memory reserved for the heap is not enough.
-To solve this problem, increase the size *Java* is allowed to reserve, 
+To solve this problem, increase the size *Java* is allowed to reserve,
 by using the command-line parameter ``-Xmx`` in the
 scripts used to run the Java examples: ``bin/Release/perftest_java.sh``
 and ``bin\Release\perftest_java.bat``. The increased amount will depend

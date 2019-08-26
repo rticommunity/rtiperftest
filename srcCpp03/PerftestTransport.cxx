@@ -4,6 +4,7 @@
  */
 
 #include "PerftestTransport.h"
+#include "perftest_cpp.h"
 
 /******************************************************************************/
 
@@ -267,17 +268,106 @@ void configureShmemTransport(
         std::map<std::string, std::string> &qos_properties,
         ParameterManager *_PM)
 {
-    // Number of messages that can be buffered in the receive queue.
-    int received_message_count_max = 1024 * 1024 * 2
-            / (int) _PM->get<unsigned long long>("dataLen");
-    if (received_message_count_max < 1) {
-        received_message_count_max = 1;
-    }
+    int parentMsgSizeMax = atoi(
+            qos_properties["dds.transport.shmem.builtin.parent.message_size_max"]
+            .c_str());
 
-    std::ostringstream string_stream_object;
-    string_stream_object << received_message_count_max;
+    /**
+     * The maximum size of a SHMEM segment highly depends on the platform.
+     * So that, we need to find out the maximum allocable space to avoid
+     * runtime errors.
+     *
+     * minSize is the packet size of the builtin transport for SHMEM.
+     * We need it as the minimum size for a SHMEM segment since otherwise,
+     * DDS would not even be able to send a sample.
+     *
+     * The maxBufferSize is present in order to have a limit on the buffer size
+     * for SHMEM so Perftest does not require unlimited resources.
+     *
+     * Since we are doing a decremental search, we use a step of 1MB to search
+     * down a pseudo-optimal buffer size in the range
+     * [minBufferSize, maxBufferSize].
+     */
+    RTIOsapiSharedMemorySegmentHandle handle;
+    RTI_UINT64 pid = RTIOsapiProcess_getId();
+    RTIBool success = RTI_FALSE;
+    int retcode;
+    int key = rand();
+    int minBufferSize = parentMsgSizeMax;
+    int step = 1048576 + parentMsgSizeMax; // 1MB + parent_msg_size_max
+    int maxBufferSize = 60817408; // 58MB
+
+    do {
+        // Reset handles to known state
+        RTIOsapiMemory_zero(&handle,
+                sizeof(struct RTIOsapiSharedMemorySegmentHandle));
+
+        success = RTIOsapiSharedMemorySegment_create(
+                &handle, &retcode, key, maxBufferSize, pid);
+
+        RTIOsapiSharedMemorySegment_delete(&handle);
+
+        maxBufferSize -= step;
+    } while (maxBufferSize > minBufferSize && success == RTI_FALSE);
+
+    /** From user manual "Properties for Builtin Shared-Memory Transport":
+     * To optimize memory usage, specify a receive queue size less than that
+     * required to hold the maximum number of messages which are all of the
+     * maximum size.
+     *
+     * In most situations, the average message size may be far less than the
+     * maximum message size. So for example, if the maximum message size is 64K
+     * bytes, and you configure the plugin to buffer at least 10 messages, then
+     * 640K bytes of memory would be needed if all messages were 64K bytes.
+     * Should this be desired, then receive_buffer_size should be set to 640K
+     * bytes.
+     *
+     * However, if the average message size is only 10K bytes, then you could
+     * set the receive_buffer_size to 100K bytes. This allows you to optimize
+     * the memory usage of the plugin for the average case and yet allow the
+     * plugin to handle the extreme case.
+     *
+     * The received_message_count_max should be set to a value that can hold
+     * more than “-sendQueueSize" samples in perftest in order block in the
+     * send window before starting to lose messages on the Shared Memory
+     * transport
+     */
+    std::ostringstream ss;
+    int flowControllerTokenSize = INT_MAX;
+    unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
+
+  #ifdef RTI_FLATDATA_AVAILABLE
+    // Zero Copy sends 16-byte references
+    if (_PM->get<bool>("zerocopy")) datalen = 16;
+  #endif
+
+    int fragmentSize = (std::min)(
+            parentMsgSizeMax - COMMEND_WRITER_MAX_RTPS_OVERHEAD,
+            flowControllerTokenSize);
+
+    // max(1, (sample_serialized_size / fragment_size))
+    unsigned long long int rtpsMessagesPerSample = (std::max)(
+            1ull, (perftest_cpp::OVERHEAD_BYTES + datalen) / fragmentSize);
+
+    unsigned long long int receivedMessageCountMax =
+            2 * (_PM->get<int>("sendQueueSize") + 1) * rtpsMessagesPerSample;
+
+    // min(maxBufferSize, received_message_count_max * rtps_message_size)
+    unsigned long long int receiveBufferSize = (std::min)(
+        (unsigned long long) maxBufferSize,
+        receivedMessageCountMax *
+                (COMMEND_WRITER_MAX_RTPS_OVERHEAD + fragmentSize));
+
+    // Avoid bottleneck due to SHMEM.
+    ss << receivedMessageCountMax;
     qos_properties["dds.transport.shmem.builtin.received_message_count_max"] =
-            string_stream_object.str();
+        ss.str();
+
+    ss.str("");
+    ss.clear();
+    ss << receiveBufferSize;
+    qos_properties["dds.transport.shmem.builtin.receive_buffer_size"] =
+        ss.str();
 }
 
 bool configureTransport(
@@ -293,7 +383,6 @@ bool configureTransport(
      * provided by the Participant Qos, so first we read it from there and
      * update the value of transportConfig.kind with whatever was already set.
      */
-
 
     if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
 
@@ -548,14 +637,13 @@ void PerftestTransport::populateSecurityFiles() {
 
 std::string PerftestTransport::printTransportConfigurationSummary()
 {
-
     std::ostringstream stringStream;
     stringStream << "Transport Configuration:\n";
     stringStream << "\tKind: " << transportConfig.nameString;
     if (transportConfig.takenFromQoS) {
         stringStream << " (taken from QoS XML file)";
     }
-    stringStream << "\n";
+    stringStream << std::endl;
 
     if (!_PM->get<std::string>("allowInterfaces").empty()) {
         stringStream << "\tNic: "
@@ -582,9 +670,9 @@ std::string PerftestTransport::printTransportConfigurationSummary()
                      << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str()
                      << "\n";
     }
+
     if (transportConfig.kind == TRANSPORT_TCPv4
             || transportConfig.kind == TRANSPORT_TLSv4) {
-
         stringStream << "\tTCP Server Bind Port: "
                      << _PM->get<std::string>("transportServerBindPort")
                      << "\n";
@@ -599,7 +687,6 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     }
 
     if (transportConfig.kind == TRANSPORT_WANv4) {
-
         stringStream << "\tWAN Server Address: "
                      << _PM->get<std::string>("transportWanServerAddress")
                      << ":"
