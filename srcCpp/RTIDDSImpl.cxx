@@ -3099,7 +3099,6 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         }
     }
     #endif
-  #endif
 
     /**
      * Configure DataReader to prevent dynamic allocation of
@@ -3110,6 +3109,8 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         dr_qos.reader_resource_limits.dynamically_allocate_fragmented_samples =
             DDS_BOOLEAN_FALSE;
     }
+  #endif
+
 
     if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {
       #ifndef RTI_MICRO
