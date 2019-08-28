@@ -204,7 +204,7 @@ public class PerftestTransport {
     sb.append("\t-transportWan                   Use TCP/TLS across LANs and Firewalls.\n");
     sb.append("\t                                Default: Not Set, LAN mode.\n");
     sb.append("\t-transportPublicAddress <ip>  - Public IP address and port (WAN address\n");
-    sb.append("\t                                and port) (separated with ‘:’ ) related\n");
+    sb.append("\t                                and port) (separated with ':' ) related\n");
     sb.append("\t                                to the transport instantiation. This is\n");
     sb.append("\t                                required when using server mode.\n");
     sb.append("\t                                Default: Not Set.\n");
