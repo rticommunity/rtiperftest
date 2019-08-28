@@ -123,9 +123,9 @@ else
     export THROUGHPUT_QOS_MAX_SAMPLES_PER_INSTANCE=LENGTH_UNLIMITED
 fi
 
-export THROUGHPUT_QOS_HIGH_WATERMARK=`printf "%.0f" $(expr $SEND_QUEUE_SIZE*0.9 | bc)`
-export THROUGHPUT_QOS_LOW_WATERMARK=`printf "%.0f" $(expr $SEND_QUEUE_SIZE*0.1 | bc)`
-export THROUGHPUT_QOS_HB_PER_MAX_SAMPLES=`printf "%.0f" $(expr $SEND_QUEUE_SIZE*0.1 | bc)`
+export THROUGHPUT_QOS_HIGH_WATERMARK=`LC_NUMERIC="en_US.UTF-8" printf "%.0f" $(expr $SEND_QUEUE_SIZE*0.9 | bc)`
+export THROUGHPUT_QOS_LOW_WATERMARK=`LC_NUMERIC="en_US.UTF-8" printf "%.0f" $(expr $SEND_QUEUE_SIZE*0.1 | bc)`
+export THROUGHPUT_QOS_HB_PER_MAX_SAMPLES=`LC_NUMERIC="en_US.UTF-8" printf "%.0f" $(expr $SEND_QUEUE_SIZE*0.1 | bc)`
 
 
 if [ "$read_NDDSHOME" = "" ]; then
