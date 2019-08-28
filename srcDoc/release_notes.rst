@@ -158,8 +158,8 @@ executable; however, it will be named ``perftest_cpp_micro``.
 
 Most *RTI Perftest* features are available when using *RTI Connext Micro*; however, some
 command-line parameters and options are available only for *RTI Connext DDS
-Professional*. More information about the supported parameters can be found in
-:numref:`section-command_line_parameters`.
+Professional*. More information about the supported parameters can be found in the
+*Command-Line Parameters* examples section.
 
 Build HTML and PDF documentation (#94)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

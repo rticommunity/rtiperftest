@@ -21,7 +21,7 @@ a given throughput level. It can help you answer questions such as:
 -  For a given configuration, what is the best-case latency with no
    other traffic on the network?
 
-For examples of specific configurations, see :numref:`section-command_line_examples`.
+For examples of specific configurations, see the *Command-Line Parameters* examples section.
 
 This performance test is implemented in C++ (Traditional and Modern
 APIs), C# and Java.
@@ -54,7 +54,7 @@ requesting an echo from the subscribing side. It uses this
 
    PerfTest Overview Diagram
 
-As you will see in :numref:`section-command_line_parameters`, there are several command-line options,
+As you will see in *Command-Line Parameters* section, there are several command-line options,
 including ones to designate whether the application will act as the
 publisher or subscriber.
 
@@ -109,5 +109,5 @@ This way, the latency test mode is able to send samples, ensuring all the *RTI C
 DDS* queues will be empty.
 
 The only requirement to change the operation mode to do a latency test is to
-provide the ``-latencyTest`` command-line parameter to the publisher side. See
-:numref:`section-command_line_parameters` for more details.
+provide the ``-latencyTest`` command-line parameter to the publisher side. See the
+*Command-Line Parameters* section for more details.
