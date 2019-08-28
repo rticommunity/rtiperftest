@@ -912,7 +912,6 @@ public:
 class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
 {
   private:
-    DDSDynamicDataWriter *_writer;
     DDS_DynamicData data;
     int _lastMessageSize;
 
@@ -1139,6 +1138,8 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
         }
         return true;
     }
+
+
 };
 
 #endif //!RTI_MICRO: Dynamic Data not supported for micro
