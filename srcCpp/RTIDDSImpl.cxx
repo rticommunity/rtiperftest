@@ -696,6 +696,7 @@ class RTIPublisher : public RTIPublisherBase<T>
         bool success = true;
         long key = 0;
 
+        // Calculate key and add it if using more than one instance
         if (!isCftWildCardKey) {
             if (this->_num_instances > 1) {
                 if (this->_instancesToBeWritten == -1) {
@@ -705,8 +706,9 @@ class RTIPublisher : public RTIPublisherBase<T>
                 }
             }
         } else {
-            key = this->_num_instances;
+            key = MAX_CFT_VALUE;
         }
+
         for (int c = 0; c < KEY_SIZE; c++) {
             data.key[c] = (unsigned char)(key >> c * 8);
         }
@@ -882,13 +884,15 @@ public:
         bin_data_builder.add_n(message.size);
         bin_data_builder.finish();
 
-        // calculate key and add it
-        if (!isCftWildCardKey && this->_num_instances > 1) {
-            key = (this->_instancesToBeWritten == -1)
-                    ? this->_instance_counter++ % this->_num_instances
-                    : this->_instancesToBeWritten;
+        // Calculate key if using more than one instance
+        if (!isCftWildCardKey) {
+            if (this->_num_instances > 1) {
+                key = (this->_instancesToBeWritten == -1)
+                        ? this->_instance_counter++ % this->_num_instances
+                        : this->_instancesToBeWritten;
+            }
         } else {
-            key = this->_num_instances;
+            key = MAX_CFT_VALUE;
         }
 
         add_key(builder, key);
@@ -1000,6 +1004,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
         DDS_ReturnCode_t retcode;
         DDS_Octet key_octets[KEY_SIZE];
         long key = 0;
+
         if (!isCftWildCardKey) {
             if (this->_num_instances > 1) {
                 if (this->_instancesToBeWritten == -1) {
@@ -1009,8 +1014,9 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
                 }
             }
         } else {
-            key = this->_num_instances;
+            key = MAX_CFT_VALUE;
         }
+
         for (int c = 0; c < KEY_SIZE; c++) {
             key_octets[c] = (unsigned char) (key >> c * 8);
         }

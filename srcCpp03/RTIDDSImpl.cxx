@@ -600,7 +600,7 @@ public:
                 }
             }
         } else {
-            key = this->_instance_handles.size()-1;
+            key = MAX_CFT_VALUE;
         }
 
         for (int c = 0; c < KEY_SIZE; c++) {
@@ -712,7 +712,7 @@ public:
                       ? this->_instance_counter++ % this->_num_instances
                       : this->_instancesToBeWritten;
           } else {
-              key = this->_instance_handles.size()-1;
+              key = MAX_CFT_VALUE;
           }
 
           add_key(builder, key);
@@ -815,19 +815,23 @@ public:
                 }
             }
         } else {
-            key = this->_instance_handles.size()-1;
+            key = MAX_CFT_VALUE;
         }
+
         for (int c = 0; c < KEY_SIZE; c++) {
             key_octets[c] = (uint8_t) (key >> c * 8);
         }
+
         this->data.set_values(
                 DynamicDataMembersId::GetInstance().at("key"),
                 key_octets);
+
         if (!isCftWildCardKey) {
             this->_writer.write(this->data, this->_instance_handles[key]);
         } else {
             this->_writer.write(this->data, this->getCftInstanceHandle());
         }
+
         return true;
     }
 };
