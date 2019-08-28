@@ -1383,11 +1383,10 @@ void RTIDDSImpl<T>::configureSecurePlugin(
      * later versions still support the legacy properties as an alternative.
      */
 
-    std::string governanceFilePath;
     // check if governance file provided
     if (_PM->get<std::string>("secureGovernanceFile").empty()) {
         // choose a pre-built governance file
-        governanceFilePath = "./resource/secure/signed_PerftestGovernance_";
+        std::string governanceFilePath = "./resource/secure/signed_PerftestGovernance_";
         if (_PM->get<bool>("secureEncryptDiscovery")) {
             governanceFilePath += "Discovery";
         }
@@ -1409,16 +1408,17 @@ void RTIDDSImpl<T>::configureSecurePlugin(
 
         dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
                 governanceFilePath;
+
+        /*
+         * Save the local variable governanceFilePath into
+         * the parameter "secureGovernanceFile"
+         */
+        _PM->set("secureGovernanceFile", governanceFilePath);
+
     } else {
         dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
-                governanceFilePath;
+                _PM->get<std::string>("secureGovernanceFile");
     }
-
-    /*
-     * Save the local variable governanceFilePath into
-     * the parameter "secureGovernanceFile"
-     */
-    _PM->set("secureGovernanceFile", governanceFilePath);
 
     // permissions file
     dpQosProperties["com.rti.serv.secure.access_control.permissions_file"]

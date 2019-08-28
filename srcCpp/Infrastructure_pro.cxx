@@ -804,8 +804,6 @@ bool PerftestConfigureSecurity(
         ParameterManager *_PM)
 {
     // configure use of security plugins, based on provided arguments
-
-    DDS_ReturnCode_t retcode;
     std::string governanceFilePath;
 
     if (!addPropertyToParticipantQos(
@@ -833,11 +831,11 @@ bool PerftestConfigureSecurity(
 
   #else // Static library linking
 
-    retcode = DDSPropertyQosPolicyHelper::assert_pointer_property(
+    if(DDSPropertyQosPolicyHelper::assert_pointer_property(
             qos.property,
             "com.rti.serv.secure.create_function_ptr",
-            (void *) RTI_Security_PluginSuite_create);
-    if (retcode != DDS_RETCODE_OK) {
+            (void *) RTI_Security_PluginSuite_create)
+                != DDS_RETCODE_OK) {
         printf("Failed to add pointer_property "
                 "com.rti.serv.secure.create_function_ptr\n");
         return false;
@@ -888,11 +886,6 @@ bool PerftestConfigureSecurity(
                 governanceFilePath)) {
             return false;
         }
-    }
-    if (retcode != DDS_RETCODE_OK) {
-        printf("Failed to add property "
-                "com.rti.serv.secure.access_control.governance_file\n");
-        return false;
     }
 
     /*
