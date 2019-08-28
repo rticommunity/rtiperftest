@@ -3,8 +3,8 @@
 Release Notes
 =============
 
-Compatibility Master
---------------------
+Compatibility 3.0
+-----------------
 
 Using Security
 ~~~~~~~~~~~~~~
@@ -45,11 +45,11 @@ releases:
    supported. You can disable this by adding the ``--skip-cs-build``
    flag.
 
-Release Notes Master
---------------------
+Release Notes 3.0
+-----------------
 
-What's New in Master
-~~~~~~~~~~~~~~~~~~~~
+What's New in 3.0
+~~~~~~~~~~~~~~~~~
 
 Ability to use your own type in RTI Perftest (#33)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -253,8 +253,8 @@ In order to achieve better performance with dealing with Large Data, the
 `send_socket_buffer_size` property has been modified from 500KB to 1MB in the
 *QoS* file.
 
-What's Fixed in Master
-~~~~~~~~~~~~~~~~~~~~~~
+What's Fixed in 3.0
+~~~~~~~~~~~~~~~~~~~
 
 Migrate RTI Routing Service XML configuration to 6.0.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
