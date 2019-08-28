@@ -10,7 +10,10 @@ void *PerftestTimer::waitAndExecute(void *scheduleInfo)
     ScheduleInfo *info = static_cast<ScheduleInfo *>(scheduleInfo);
 
     PerftestClock::milliSleep(info->timer * 1000u);
-    info->handlerFunction();
+
+    if (info->handlerFunction != NULL) {
+        info->handlerFunction();
+    }
 
     return NULL;
 }

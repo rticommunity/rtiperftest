@@ -2041,12 +2041,6 @@ int perftest_cpp::Publisher()
                 // after executionTime
                 if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    executionTimeoutThread =
-                            PerftestTimer::getInstance().setTimeout(schedInfo_scan);
-                    if (executionTimeoutThread == NULL) {
-                        fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
-                        return -1;
-                    }
 
                     // flush anything that was previously sent
                     writer->Flush();
@@ -2056,6 +2050,19 @@ int perftest_cpp::Publisher()
 
                     if (scan_count == scanList.size()) {
                         break; // End of scan test
+                    } else {
+                        // Delete any previous thread
+                        if (executionTimeoutThread != NULL) {
+                            PerftestThread_delete(executionTimeoutThread);
+                        }
+
+                        // Launch new schedule function
+                        executionTimeoutThread =
+                            PerftestTimer::getInstance().setTimeout(schedInfo_scan);
+                        if (executionTimeoutThread == NULL) {
+                            fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
+                            return -1;
+                        }
                     }
 
                     message.size = LENGTH_CHANGED_SIZE;

@@ -1834,12 +1834,6 @@ int perftest_cpp::RunPublisher()
                 // after _executionTime
                 if (isScan && _testCompleted_scan) {
                     _testCompleted_scan = false;
-                    executionTimeoutThread = SetTimeout(schedInfo_scan);
-                    if (executionTimeoutThread == NULL) {
-                        std::cerr << "[Error] Problem creating timeoutThread for executionTime."
-                                << std::endl;
-                        return -1;
-                    }
 
                     // flush anything that was previously sent
                     writer->flush();
@@ -1849,6 +1843,19 @@ int perftest_cpp::RunPublisher()
 
                     if (scan_count == scanList.size()) {
                         break; // End of scan test
+                    } else {
+                        // Delete any previous thread
+                        if (executionTimeoutThread != NULL) {
+                            RTIOsapiThread_delete(executionTimeoutThread);
+                        }
+
+                        // Launch new schedule function
+                        executionTimeoutThread = SetTimeout(schedInfo_scan);
+                        if (executionTimeoutThread == NULL) {
+                            std::cerr << "[Error] Problem creating timeoutThread for executionTime."
+                                    << std::endl;
+                            return -1;
+                        }
                     }
 
 
@@ -2020,7 +2027,10 @@ void *perftest_cpp::waitAndExecute(void *scheduleInfo) {
     ScheduleInfo *info = static_cast<ScheduleInfo *>(scheduleInfo);
 
     perftest_cpp::MilliSleep(info->timer * 1000u);
-    info->handlerFunction();
+
+    if (info->handlerFunction != NULL) {
+        info->handlerFunction();
+    }
 
     return NULL;
 }
