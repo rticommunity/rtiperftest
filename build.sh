@@ -747,7 +747,7 @@ function build_cpp()
             if [ "${USE_SECURE_LIBS}" == "1" ]; then
                 echo -e "        and <OPENSSL_HOME>/${RELEASE_DEBUG}/lib"
             fi
-            echo -e "        to your LD_LIBRARY_PATH or DYLD_LIBRARY PATH"
+            echo -e "        to your LD_LIBRARY_PATH or DYLD_LIBRARY_PATH"
     fi
 }
 
@@ -1038,7 +1038,7 @@ function build_cpp03()
             if [ "${USE_SECURE_LIBS}" == "1" ]; then
                 echo -e "        and <OPENSSL_HOME>/${RELEASE_DEBUG}/lib"
             fi
-            echo -e "        to your LD_LIBRARY_PATH or DYLD_LIBRARY PATH"
+            echo -e "        to your LD_LIBRARY_PATH or DYLD_LIBRARY_PATH"
     fi
 }
 
