@@ -2247,7 +2247,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     if (_participant == NULL || _loggerDevice.checkShmemErrors()) {
         if (_loggerDevice.checkShmemErrors()) {
             fprintf(stderr,
-                    "The participant creation failed due to issues in the Shared Memory configuration of your OS.\n"
+                    "[Error]: The participant creation failed due to issues in the Shared Memory configuration of your OS.\n"
                     "For more information about how to configure Shared Memory see: http://community.rti.com/kb/osx510 \n"
                     "If you want to skip the use of Shared memory in RTI Perftest, "
                     "specify the transport using \"-transport <kind>\", e.g. \"-transport UDPv4\".\n");

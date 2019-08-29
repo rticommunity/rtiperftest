@@ -18,7 +18,14 @@ void RTIDDSLoggerDevice::write(const NDDS_Config_LogMessage *message)
             if (std::string(message->text).find(
                     NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE)
                     != std::string::npos) {
-                
+                if (!_shmemErrors) {
+                    printf("%s", message->text);
+                }
+                _shmemErrors = true;
+            } else if (std::string(message->text).find(
+                    NDDS_TRANSPORT_LOG_SHMEM_SHARED_MEMORY_INSUFFICIENT)
+                    != std::string::npos) {
+
                 if (!_shmemErrors) {
                     printf("%s", message->text);
                 }

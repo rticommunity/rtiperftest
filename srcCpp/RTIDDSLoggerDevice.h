@@ -33,7 +33,10 @@
 const std::string NDDS_TRANSPORT_LOG_SHMEM_FAILED_TO_INIT_RESOURCE =
     "NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key";
 
-const std::string NDDS_ZEROCOPY_NULL_OFFSET_ERROR = 
+const std::string NDDS_TRANSPORT_LOG_SHMEM_SHARED_MEMORY_INSUFFICIENT =
+    "NDDS_Transport_Shmem_create_recvresource_rrEA:It is possible that your system's shared memory settings are not sufficient";
+
+const std::string NDDS_ZEROCOPY_NULL_OFFSET_ERROR =
     "rti::flat:!precondition"; // Not complete to increse performance
 
 const std::string NDDS_OUT_OF_LOANED_SAMPLES =
