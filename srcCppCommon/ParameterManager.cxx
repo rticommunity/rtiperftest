@@ -327,7 +327,7 @@ void ParameterManager::initialize()
             "    is used, also for the thread created to receive\n"
             "    and process data.\n"
             "Z - For the rest of the threads created by the middleware.\n"
-            "3 default values: h (high), n (normal) and l (low) can be used\n"
+            "3 default values: h (high), n (normal) and l (low) can be used\n");
     threadPriorities->set_type(T_STR);
     threadPriorities->set_extra_argument(YES);
     threadPriorities->set_group(GENERAL);
