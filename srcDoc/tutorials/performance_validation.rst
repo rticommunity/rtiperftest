@@ -31,7 +31,9 @@ Getting the tool is fairly easy, in fact, you have 3 different ways in which you
    Go to the `release_page <https://github.com/rticommunity/rtiperftest/releases>`_ for **Perftest** and
    check what is the latest release, then clone that release using `git`. At this point the latest release is 3.0:
 
-     | ``git clone -b release/3.0 https://github.com/rticommunity/rtiperftest.git``
+    .. code::
+
+        git clone -b release/3.0 https://github.com/rticommunity/rtiperftest.git
 
    This command will download the *Github* repository in a folder named
    ``rtiperftest`` and move to the ``release/3.0`` branch.
@@ -66,9 +68,10 @@ to have in the `$PATH` environment variable the path to the compiler and linker 
 
 Therefore the command we will need to execute should look like this:
 
-     | ``export PATH=<Path to the compiler and linker for armv6vfphLinux3.xgcc4.7.2>:$PATH``
-     | ``./build.sh --platform armv6vfphLinux3.xgcc4.7.2 --nddshome <Path to your nddshome> \``
-     | ``--cpp-build``
+    .. code::
+
+        export PATH=<Path to the compiler and linker for armv6vfphLinux3.xgcc4.7.2>:$PATH
+        ./build.sh --platform armv6vfphLinux3.xgcc4.7.2 --nddshome <Path to your nddshome> --cpp-build
 
 Alternatively, you can just point to the compiler and linker using the ``--compiler`` and ``--linker``
 command line options. As you can see we also specified the ``--cpp-build`` option, this is because we
@@ -86,8 +89,10 @@ section of the **Perftest** documentation.
 
 Therefore the command we will need to execute should look like this:
 
-     | ``export PATH=<Path to the compiler and linker for armv6vfphLinux3.xgcc4.7.2>:$PATH``
-     | ``./build.sh --micro --platform armv6vfphLinux3.xgcc4.7.2 --rtimehome <Path to your rtimehome> \``
+    .. code::
+
+        export PATH=<Path to the compiler and linker for armv6vfphLinux3.xgcc4.7.2>:$PATH
+        ./build.sh --micro --platform armv6vfphLinux3.xgcc4.7.2 --rtimehome <Path to your rtimehome>
 
 After executing this, you should have a statically linked binary in `./bin/armv6vfphLinux3.xgcc4.7.2/release`,
 this is all you should need for your testing.
@@ -128,15 +133,19 @@ will use the following commands:
 
 * **Publisher side**
 
-     | ``for DATALEN in 32 64 128 256 512 1024 2048 8192 16384 32768 63000; do``
-     |   ``bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -pub -noPrint -exec 20 -datalen $DATALEN;``
-     | ``done``
+    .. code::
+
+        for DATALEN in 32 64 128 256 512 1024 2048 8192 16384 32768 63000; do
+            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -pub -noPrint -exec 20 -datalen $DATALEN;
+        done
 
 * **Subscriber side**
 
-     | ``for DATALEN in 32 64 128 256 512 1024 2048 8192 16384 32768 63000; do``
-     |   ``bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -peer 10.45.3.120 -nic eth0 -raw -noPrint -datalen $DATALEN;``
-     | ``done``
+    .. code::
+
+        for DATALEN in 32 64 128 256 512 1024 2048 8192 16384 32768 63000; do
+            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -peer 10.45.3.120 -nic eth0 -raw -noPrint -datalen $DATALEN;;
+        done
 
 There are some comments required about the parameters we used:
 
