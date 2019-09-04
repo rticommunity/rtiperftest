@@ -159,7 +159,8 @@ See below the output results of executing this test. The information displayed h
 only what the subscriber side showed, since all the information displayed in the publisher
 side is related to latency not about throughput.
 
-**Throughput (Mbps) -- RAW Transport (UDPv4)**
+Throughput (Mbps) -- RAW Transport (UDPv4)
+::::::::::::::::::::::::::::::::::::::::::
 
     .. csv-table::
         :align: center
