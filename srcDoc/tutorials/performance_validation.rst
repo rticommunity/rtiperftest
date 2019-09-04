@@ -136,7 +136,7 @@ will use the following commands:
     .. code::
 
         for DATALEN in 32 64 128 256 512 1024 2048 8192 16384 32768 63000; do
-            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -pub -noPrint -exec 20 -datalen $DATALEN;
+            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -pub -noPrint -exec 20 -datalen $DATALEN -batchSize 0;
         done
 
 * **Subscriber side**
@@ -153,13 +153,16 @@ Some comments about the parameters we used:
   the different data sizes using a for loop (in `bash`).
 
 * In `Raw Transport Mode` we do not have a discovery mechanishm, as we do have when
-  Using **RTI Connext DDS**, therefore, it is required to use the `-peer` parameter
+  Using **RTI Connext DDS**, therefore, it is required to use the `-peer` parameter.
+
+* In throughput mode, by default **Perftest** uses "batching", we want to disable it for this
+  test, that can be done by using `-batchSize 0`.
 
 See below the output results of executing this test. The information displayed here is
 only what the subscriber side showed, since all the information displayed in the publisher
 side is related to latency not about throughput.
 
-Throughput (Mbps) -- RAW Transport (UDPv4)
+Throughput Results-- RAW Transport (UDPv4)
 ::::::::::::::::::::::::::::::::::::::::::
 
     .. csv-table::
@@ -179,7 +182,50 @@ Throughput (Mbps) -- RAW Transport (UDPv4)
         32768,7307,365,95.7,3,0.04
         63000,3819,190,96.2,0,0.00
 
-
-
 Latency Test
 ------------
+
+Now we want to measure the minimum latency we can expect in the system when the network
+is not saturated, this can be done again with **Perftest**, doing a "Latency Test". In order
+to do that, you only need to add `-latencyTest` to the previous command line parameters of the
+publisher side.
+
+* **Publisher side**
+
+    .. code::
+
+        for DATALEN in 32 64 128 256 512 1024 2048 8192 16384 32768 63000; do
+            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -pub -noPrint -exec 20 -datalen $DATALEN -latencyTest;
+        done
+
+* **Subscriber side**
+
+    .. code::
+
+        for DATALEN in 32 64 128 256 512 1024 2048 8192 16384 32768 63000; do
+            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -peer 10.45.3.120 -nic eth0 -raw -noPrint -datalen $DATALEN;;
+        done
+
+Remember that in this case we are interested in the latency results, not in the
+throughput results (we are doing a ping-pong test, so we cannot expect high throguhput),
+therefore we need to look to the results displayed in the publisher side.
+
+Latency Results -- RAW Transport (UDPv4)
+::::::::::::::::::::::::::::::::::::::::
+
+    .. csv-table::
+        :align: center
+        :header-rows: 1
+
+        "Size", "Ave (us)", "Std (us)", "Min (us)", "Max (us)", "50% (us)", "90% (us)", "99% (us)", "99.99% (us)", "99.9999% (us)"
+        32,357,77.7,310,6094,355,371,470,5436,6094
+        64,370,76.5,305,3935,365,387,491,3693,3935
+        128,386,88.3,318,6573,381,403,512,5549,6573
+        256,419,82.0,360,6451,416,438,546,4810,6451
+        512,485,72.5,435,5913,479,503,610,4571,5913
+        1024,608,96.5,545,6507,602,633,757,6435,6507
+        2048,809,102.2,736,5605,797,845,994,5318,5605
+        8192,1412,106.1,1325,5969,1400,1456,1608,5969,5969
+        16384,2107,222.5,1931,9573,2096,2153,2338,9573,9573
+        32768,3693,223.2,3477,8656,3696,3768,4046,8656,8656
+        63000,6601,212.9,6424,10706,6595,6752,7002,10706,10706
