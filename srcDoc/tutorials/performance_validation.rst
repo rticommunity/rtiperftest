@@ -147,7 +147,7 @@ will use the following commands:
             bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -peer 10.45.3.120 -nic eth0 -raw -noPrint -datalen $DATALEN;;
         done
 
-There are some comments required about the parameters we used:
+Some comments about the parameters we used:
 
 * In `Raw Transport Mode` the `-scan` option is not available, that is why we need to iterate through
   the different data sizes using a for loop (in `bash`).
@@ -164,6 +164,7 @@ Throughput (Mbps) -- RAW Transport (UDPv4)
 
     .. csv-table::
         :align: center
+        :header-rows: 1
 
         "Size", "Packets", "Packets/s (ave)", "Mbps (ave)", "Lost", "Lost (%)"
         32, 503906, 25193, 6.4, 975, 0.19
@@ -182,4 +183,3 @@ Throughput (Mbps) -- RAW Transport (UDPv4)
 
 Latency Test
 ------------
-
