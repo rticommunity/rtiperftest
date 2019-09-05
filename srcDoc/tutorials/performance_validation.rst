@@ -281,7 +281,7 @@ to understand what is being used, is by looking at the initial summary **Perftes
             Publication Rate: Unlimited (Not set)
             Execution time: 20 seconds
             Receive using: Listeners
-            Domain: 11
+            Domain: 1
             Dynamic Data: No
             FlatData: No
             Zero Copy: No
@@ -386,7 +386,7 @@ The *QoS* picked by **Perftest** are the following ones:
             Publication Rate: Unlimited (Not set)
             Execution time: 20 seconds
             Receive using: Listeners
-            Domain: 11
+            Domain: 1
             Dynamic Data: No
             FlatData: No
             Zero Copy: No
@@ -398,10 +398,10 @@ The *QoS* picked by **Perftest** are the following ones:
             Nic: eth0
             Use Multicast: False
 
-And these are the results (taken from the publisher side)
+And these are the results (taken from the publisher side):
 
-Throughput Results -- RTI Connext DDS Professional (UDPv4)
-::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+Latency Results -- RTI Connext DDS Professional (UDPv4)
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
     .. csv-table::
         :align: center
@@ -420,3 +420,145 @@ Throughput Results -- RTI Connext DDS Professional (UDPv4)
         16384,2500,212.8,2279,8992,2465,2615,2940,8992,8992
         32768,4172,214.6,3877,10726,4160,4315,4577,10726,10726
         63000,7073,214.1,6772,9722,7041,7260,7694,9722,9722
+
+
+RTI Connext DDS Micro 3.0.0 (UDPv4)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+We will now repeat the same tests we did for **RTI Connext DDS Professional** but for
+**Micro**.
+
+Throughput Test
+---------------
+
+* **Publisher side**
+
+    .. code::
+
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -pub -nic eth0 -pub -noPrint -exec 20 -scan
+
+* **Subscriber side**
+
+    .. code::
+
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -sub -nic eth0 -noPrint;
+
+Note that we don't use the `-batchSize` option, this is because this option is not yet available
+in **RTI Connext DDS Micro 3.0.0**.
+
+The initial summary **Perftest** shows is the following:
+
+    .. code::
+
+        RTI Perftest 3.0.0 (RTI Connext DDS Micro 3.0.0)
+
+        Mode: THROUGHPUT TEST
+            (Use "-latencyTest" for Latency Mode)
+
+        Perftest Configuration:
+            Reliability: Reliable
+            Keyed: No
+            Publisher ID: 0
+            Latency count: 1 latency sample every 10000 samples
+            Data Size: 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 63000
+            (Set the data size on the subscriber to the maximum data size to achieve best performance)
+            Publication Rate: Unlimited (Not set)
+            Execution time: 20 seconds
+            Receive using: Listeners
+            Domain: 1
+
+        Transport Configuration:
+            Kind: UDPv4
+            Nic: eth0
+            Use Multicast: False
+
+See below the output results of executing this test. Again, the information displayed here is
+only what the subscriber side showed.
+
+Throughput Results -- RTI Connext DDS Micro (UDPv4)
+:::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    .. csv-table::
+        :align: center
+        :header-rows: 1
+
+        "Size", "Packets", "Packets/s (ave)", "Mbps (ave)", "Lost", "Lost (%)"
+        32,174555,8725,2.2,0,0.00
+        64,161835,8091,4.1,0,0.00
+        128,151267,7561,7.7,0,0.00
+        256,152305,7615,15.6,0,0.00
+        512,147956,7397,30.3,0,0.00
+        1024,147902,7393,60.6,0,0.00
+        2048,99530,4975,81.5,0,0.00
+        4096,57451,2870,94.1,0,0.00
+        8196,28964,1447,94.9,0,0.00
+        16384,14435,721,94.5,0,0.00
+        32768,7295,364,95.6,0,0.00
+        63000,3812,190,96.0,0,0.00
+
+Latency Test
+------------
+
+* **Publisher side**
+
+    .. code::
+
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -pub -nic eth0 -pub -noPrint -exec 20 -scan -latencyTest
+
+* **Subscriber side**
+
+    .. code::
+
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -sub -nic eth0 -noPrint;
+
+The initial summary **Perftest** shows is the following:
+
+    .. code::
+
+        RTI Perftest 3.0.0 (RTI Connext DDS Micro 3.0.0)
+
+        Mode: LATENCY TEST (Ping-Pong test)
+
+        Perftest Configuration:
+            Reliability: Reliable
+            Keyed: No
+            Publisher ID: 0
+            Latency count: 1 latency sample every 1 samples
+            Data Size: 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 63000
+            (Set the data size on the subscriber to the maximum data size to achieve best performance)
+            Publication Rate: Unlimited (Not set)
+            Execution time: 20 seconds
+            Receive using: Listeners
+            Domain: 1
+
+        Transport Configuration:
+            Kind: UDPv4
+            Nic: eth0
+            Use Multicast: False
+
+And these are the results (taken from the publisher side):
+
+Latency Results -- RTI Connext DDS Micro (UDPv4)
+::::::::::::::::::::::::::::::::::::::::::::::::
+
+    .. csv-table::
+        :align: center
+        :header-rows: 1
+
+        "Size", "Ave (us)", "Std (us)", "Min (us)", "Max (us)", "50% (us)", "90% (us)", "99% (us)", "99.99% (us)", "99.9999% (us)"
+        32,560,158.9,361,6121,551,652,838,6070,6121
+        64,572,139.4,382,7642,567,665,861,5958,7642
+        128,609,135.6,431,5897,600,687,869,5716,5897
+        256,670,115.0,489,5394,660,749,936,5224,5394
+        512,725,130.1,551,6414,716,799,1002,5175,6414
+        1024,868,366.8,676,36814,851,938,1133,6913,36814
+        2048,1095,162.8,879,6341,1088,1177,1433,6341,6341
+        4096,1309,453.6,1083,38591,1292,1379,1643,38591,38591
+        8192,1666,167.7,1349,6790,1651,1769,2032,6790,6790
+        16384,2416,628.4,2146,39850,2396,2516,2844,39850,39850
+        32768,4046,246.8,3732,8894,4042,4161,4594,8894,8894
+        63000,6909,176.8,6564,9529,6896,7102,7368,9529,9529
+
+
+Understanding the Results
+^^^^^^^^^^^^^^^^^^^^^^^^^
