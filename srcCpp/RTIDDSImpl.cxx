@@ -2994,9 +2994,9 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
             dr_qos.history.depth = 50;
         }
         else {
-            dr_qos.resource_limits.max_samples = 10000;
-            dr_qos.resource_limits.max_samples_per_instance = 10000;
-            dr_qos.history.depth = 10000;
+            dr_qos.resource_limits.max_samples = 5000;
+            dr_qos.resource_limits.max_samples_per_instance = 5000;
+            dr_qos.history.depth = 5000;
         }
         /*
          * In micro 2.4.x we don't have keep all, this means we need to set the
@@ -3137,6 +3137,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
       #endif
     }
 
+    printf("Max samples is %d\n", dr_qos.resource_limits.max_samples);
     return true;
 }
 
