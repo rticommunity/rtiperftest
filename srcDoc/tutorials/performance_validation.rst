@@ -107,7 +107,8 @@ how fast can we send with a simple UDP-socket communication. Luckily this is som
 **Perftest**: By using the `-rawTransport` option, we skip the use of *RTPS* and *DDS* and we
 just send using UDPv4 sockets.
 
-We will be doing a *Latency Test* and a *Throughput Test* (See `this <https://github.com/rticommunity/rtiperftest/blob/3.0/srcDoc/introduction.rst#latency-test-vs-throughput-test>`__ section to understand the
+We will be doing a *Latency Test* and a *Throughput Test* (See
+`this <https://github.com/rticommunity/rtiperftest/blob/3.0/srcDoc/introduction.rst#latency-test-vs-throughput-test>`__ section to understand the
 differences).
 
 Once that is done, we will have a baseline which is going to tell us the minimum latency we can expect
@@ -144,7 +145,7 @@ will use the following commands:
     .. code::
 
         for DATALEN in 32 64 128 256 512 1024 2048 8192 16384 32768 63000; do
-            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -peer 10.45.3.120 -nic eth0 -raw -noPrint -datalen $DATALEN;;
+            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -peer 10.45.3.120 -nic eth0 -raw -noPrint -datalen $DATALEN;
         done
 
 Some comments about the parameters we used:
@@ -203,7 +204,7 @@ publisher side.
     .. code::
 
         for DATALEN in 32 64 128 256 512 1024 2048 8192 16384 32768 63000; do
-            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -peer 10.45.3.120 -nic eth0 -raw -noPrint -datalen $DATALEN;;
+            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -peer 10.45.3.120 -nic eth0 -raw -noPrint -datalen $DATALEN;
         done
 
 Remember that in this case we are interested in the latency results, not in the
@@ -229,3 +230,193 @@ Latency Results -- RAW Transport (UDPv4)
         16384,2107,222.5,1931,9573,2096,2153,2338,9573,9573
         32768,3693,223.2,3477,8656,3696,3768,4046,8656,8656
         63000,6601,212.9,6424,10706,6595,6752,7002,10706,10706
+
+RTI Connext DDS Professional (UDPv4)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Throughput Test
+---------------
+
+The idea is the same as we did in the previous test, get the maximum throughput we can
+achieve, but this time we will use our middleware to test with (**RTI Connext DDS Professional 6.0.0**)
+
+Then, the command line parameters are going to be quite similar:
+
+* **Publisher side**
+
+    .. code::
+
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -nic eth0 -pub -noPrint -exec 20 -scan -batchSize 0
+
+* **Subscriber side**
+
+    .. code::
+
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -nic eth0 -noPrint;
+
+Notice that now we removed the `-raw` parameter, and that we do not need the *for loop* anymore, since
+**Perftest** for **Connext DDS** support the use of the `-scan` parameter. Also notice that we are using
+`-batchSize 0`. We will also later using batching. Lastly, we also removed the `-peer` parameter, the reason
+being that **Connext DDS** uses by default multicast for the discovery phase, so there is no need to specify
+where the counterpart application is.
+
+Since we are using **RTI Connext DDS**, **Perftest** will be choose some *QoS* settings. The best way
+to understand what is being used, is by looking at the initial summary **Perftest** shows:
+
+    .. code::
+
+        RTI Perftest 3.0.0 06ff338 (RTI Connext DDS 6.0.0)
+
+        Mode: THROUGHPUT TEST
+            (Use "-latencyTest" for Latency Mode)
+
+        Perftest Configuration:
+            Reliability: Reliable
+            Keyed: No
+            Publisher ID: 0
+            Latency count: 1 latency sample every 10000 samples
+            Data Size: 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 63000
+            (Set the data size on the subscriber to the maximum data size to achieve best performance)
+            Batching: No (Use "-batchSize" to setup batching)
+            Publication Rate: Unlimited (Not set)
+            Execution time: 20 seconds
+            Receive using: Listeners
+            Domain: 11
+            Dynamic Data: No
+            FlatData: No
+            Zero Copy: No
+            Asynchronous Publishing: No
+            XML File: perftest_qos_profiles.xml
+
+        Transport Configuration:
+            Kind: UDPv4
+            Nic: eth0
+            Use Multicast: False
+
+See below the output results of executing this test. Again, the information displayed here is
+only what the subscriber side showed.
+
+Throughput Results -- RTI Connext DDS Professional (UDPv4) -- No batching
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    .. csv-table::
+        :align: center
+        :header-rows: 1
+
+        "Size", "Packets", "Packets/s (ave)", "Mbps (ave)", "Lost", "Lost (%)"
+        32,140000,7100,1.8,0,0.00
+        64,140000,6719,3.4,0,0.00
+        128,140000,6680,6.8,0,0.00
+        256,140000,6632,13.6,0,0.00
+        512,110000,5663,23.2,0,0.00
+        1024,110000,5383,44.1,0,0.00
+        2048,100000,4810,78.8,0,0.00
+        4096,60000,2690,88.2,0,0.00
+        8192,30000,1445,94.7,0,0.00
+        16384,20000,720,94.4,0,0.00
+        32768,10000,364,95.6,0,0.00
+        63000,10000,190,96.0,0,0.00
+
+We will discuss the results later, but in **RTI Connext DDS Professional** we have a very
+interesting feature worth mentioning:
+`batching <https://community.rti.com/static/documentation/connext-dds/6.0.0/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/BATCH_Qos.htm#sending_2410472787_2558262>`__.
+By using this feature we will be able to send more efficiently and improve our
+maximum throughput. The cost however will be the latency of the packets.
+
+The following results were taken by using **Perftest**'s default batching size: `8192` bytes:
+
+Throughput Results -- RTI Connext DDS Professional (UDPv4) -- Batching (8192 Bytes)
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    .. csv-table::
+        :align: center
+        :header-rows: 1
+
+        "Size", "Packets", "Packets/s (ave)", "Mbps (ave)", "Lost", "Lost (%)"
+        32,1990000,102062,26.1,0,0.00
+        64,1660000,84590,43.3,0,0.00
+        128,1540000,78193,80.1,0,0.00
+        256,810000,40818,83.6,0,0.00
+        512,430000,21257,87.1,0,0.00
+        1024,220000,11200,91.8,0,0.00
+        2048,110000,5568,91.2,0,0.00
+        4096,60000,2837,93.0,0,0.00
+        8192,30000,1416,92.8,0,0.00
+        16384,20000,719,94.4,0,0.00
+        32768,10000,364,95.6,0,0.00
+        63000,10000,190,95.9,0,0.00
+
+You might see already how by using this feature, we can highly improve the thoughput
+achieved for small data samples. See the *Results* section for a deeper analysis.
+
+Latency Test
+------------
+
+We continue doing a latency test, under the same precepts we followed when testing with
+the `-rawTransport` option:
+
+* **Publisher side**
+
+    .. code::
+
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -nic eth0 -pub -noPrint -exec 20 -scan -latencyTest
+
+* **Subscriber side**
+
+    .. code::
+
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -nic eth0 -noPrint;
+
+The *QoS* picked by **Perftest** are the following ones:
+
+    .. code::
+
+        RTI Perftest 3.0.0 06ff338 (RTI Connext DDS 6.0.0)
+
+        Mode: LATENCY TEST (Ping-Pong test)
+
+        Perftest Configuration:
+            Reliability: Reliable
+            Keyed: No
+            Publisher ID: 0
+            Latency count: 1 latency sample every 1 samples
+            Data Size: 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 63000
+            (Set the data size on the subscriber to the maximum data size to achieve best performance)
+            Batching: No (Use "-batchSize" to setup batching)
+            Publication Rate: Unlimited (Not set)
+            Execution time: 20 seconds
+            Receive using: Listeners
+            Domain: 11
+            Dynamic Data: No
+            FlatData: No
+            Zero Copy: No
+            Asynchronous Publishing: No
+            XML File: perftest_qos_profiles.xml
+
+        Transport Configuration:
+            Kind: UDPv4
+            Nic: eth0
+            Use Multicast: False
+
+And these are the results (taken from the publisher side)
+
+Throughput Results -- RTI Connext DDS Professional (UDPv4)
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    .. csv-table::
+        :align: center
+        :header-rows: 1
+
+        "Size", "Ave (us)", "Std (us)", "Min (us)", "Max (us)", "50% (us)", "90% (us)", "99% (us)", "99.99% (us)", "99.9999% (us)"
+        32,632,140.2,480,6999,620,726,939,6985,6999
+        64,633,131.7,480,7571,623,739,952,4615,7571
+        128,670,128.5,497,6541,656,753,961,5355,6541
+        256,709,139.0,542,6941,692,803,1037,5863,6941
+        512,796,172.9,604,7244,777,884,1148,6338,7244
+        1024,926,109.0,784,4626,907,1001,1214,3993,4626
+        2048,1172,184.3,1013,8003,1149,1258,1529,8003,8003
+        4096,1395,145.4,1172,6768,1377,1480,1736,6768,6768
+        8192,1736,198.8,1497,8689,1707,1863,2141,8689,8689
+        16384,2500,212.8,2279,8992,2465,2615,2940,8992,8992
+        32768,4172,214.6,3877,10726,4160,4315,4577,10726,10726
+        63000,7073,214.1,6772,9722,7041,7260,7694,9722,9722
