@@ -614,9 +614,9 @@ performance difference does not justify choosing **Micro** over **Professional**
 Lets continue now plotting the latency results (we will plot the lineal and logarithmic
 scale graphs):
 
-.. image:: performance_validation_files/Throughput_lineal.svg
+.. image:: performance_validation_files/Latency_lineal.svg
 
-.. image:: performance_validation_files/Throughput_log.svg
+.. image:: performance_validation_files/Latency_log.svg
 
 As we saw with the throughput test, **RTI Connext DDS Professional** and **Micro**
 have pretty similar performance results, being the latter slightly better (mainly
