@@ -9,11 +9,11 @@ can expect when sending packets.
 For this demonstration we will use a couple Raspberry Pi boards, connected to a switch. See below the
 information about the environment
 
-   | Target machines: **Raspberry Pi 3B+**
-   |                  OS:
+   | Target machines: 2 x **Raspberry Pi 2 Model B**
+   |                  OS: Raspbian GNU/Linux
+   |                  CPU: ARMv7 Processor rev 5 (v7l)
    |                  NIC: 100Mbps
    | Switch: 1Gbps switch
-   | //TODO add info about the machines to use ``
 
 Prepare the tools
 ~~~~~~~~~~~~~~~~~
@@ -28,7 +28,7 @@ Getting the tool is fairly easy, in fact, you have 3 different ways in which you
 
 -  You can clone it from the official *Github* repository:
 
-   Go to the `release_page <https://github.com/rticommunity/rtiperftest/releases>`_ for **Perftest** and
+   Go to the `release page <https://github.com/rticommunity/rtiperftest/releases>`_ for **Perftest** and
    check what is the latest release, then clone that release using `git`. At this point the latest release is 3.0:
 
     .. code::
@@ -62,8 +62,9 @@ If you already got the compiled binaries, you can skip this step. Else, you will
 binaries. This process is covered in the `compilation <https://github.com/rticommunity/rtiperftest/blob/3.0/srcDoc/compilation.rst>`__
 section of the **Perftest** documentation, so we will just summarize.
 
-We want to build **Perftest** for the *Raspberry Pi* target libraries, this architecture is `armv6vfphLinux3.xgcc4.7.2`, so
-we will need to cross-compile this architecture. This process should be really simple with *Perftest*, since we will just need
+We want to build **Perftest** for the *Raspberry Pi* target libraries, this architecture is `armv6vfphLinux3.xgcc4.7.2`, even
+though you should be able to compile everything in a raspberry pi, we are going to cross-compile this architecture.
+This process should be really simple with *Perftest*, since we will just need
 to have in the `$PATH` environment variable the path to the compiler and linker for the given architecture.
 
 Therefore the command we will need to execute should look like this:
@@ -94,17 +95,17 @@ Therefore the command we will need to execute should look like this:
         export PATH=<Path to the compiler and linker for armv6vfphLinux3.xgcc4.7.2>:$PATH
         ./build.sh --micro --platform armv6vfphLinux3.xgcc4.7.2 --rtimehome <Path to your rtimehome>
 
-After executing this, you should have a statically linked binary in `./bin/armv6vfphLinux3.xgcc4.7.2/release`,
+After executing this, you should have a statically linked binary in ``./bin/armv6vfphLinux3.xgcc4.7.2/release``,
 this is all you should need for your testing.
 
 Tests
 ~~~~~
 
-Our goal is to caracterize how *Connext DDS* behaves in the communication between 2 *Raspberry Pi* nodes connected
+Our goal is to characterize how *Connext DDS* behaves in the communication between 2 *Raspberry Pi* nodes connected
 to one switch. The first thing we will need to know is what is the *minimum latency* and *maximum throughput*
 achievable in that environment, independent on using DDS or not. This means that we need to know
 how fast can we send with a simple UDP-socket communication. Luckily this is something that we can get with
-**Perftest**: By using the `-rawTransport` option, we skip the use of *RTPS* and *DDS* and we
+**Perftest**: By using the ``-rawTransport`` option, we skip the use of *RTPS* and *DDS* and we
 just send using UDPv4 sockets.
 
 We will be doing a *Latency Test* and a *Throughput Test* (See
@@ -136,7 +137,7 @@ will use the following commands:
 
     .. code::
 
-        for DATALEN in 32 64 128 256 512 1024 2048 8192 16384 32768 63000; do
+        for DATALEN in 32 64 128 256 512 1024 2048 4096 8192 16384 32768 63000; do
             bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -pub -noPrint -exec 20 -datalen $DATALEN -batchSize 0;
         done
 
@@ -144,7 +145,7 @@ will use the following commands:
 
     .. code::
 
-        for DATALEN in 32 64 128 256 512 1024 2048 8192 16384 32768 63000; do
+        for DATALEN in 32 64 128 256 512 1024 2048 4096 8192 16384 32768 63000; do
             bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -peer 10.45.3.120 -nic eth0 -raw -noPrint -datalen $DATALEN;
         done
 
@@ -195,7 +196,7 @@ publisher side.
 
     .. code::
 
-        for DATALEN in 32 64 128 256 512 1024 2048 8192 16384 32768 63000; do
+        for DATALEN in 32 64 128 256 512 1024 2048 4096 8192 16384 32768 63000; do
             bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -pub -noPrint -exec 20 -datalen $DATALEN -latencyTest;
         done
 
@@ -203,7 +204,7 @@ publisher side.
 
     .. code::
 
-        for DATALEN in 32 64 128 256 512 1024 2048 8192 16384 32768 63000; do
+        for DATALEN in 32 64 128 256 512 1024 2048 4096 8192 16384 32768 63000; do
             bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -peer 10.45.3.120 -nic eth0 -raw -noPrint -datalen $DATALEN;
         done
 
@@ -562,3 +563,7 @@ Latency Results -- RTI Connext DDS Micro (UDPv4)
 
 Understanding the Results
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Lets go first with the throughput results and plot all the different tests together:
+
+    .. image:: performance_validation_files/Throughput_lineal.svg
