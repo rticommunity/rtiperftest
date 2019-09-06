@@ -154,7 +154,7 @@ Some comments about the parameters we used:
 * In `Raw Transport Mode` the `-scan` option is not available, that is why we need to iterate through
   the different data sizes using a for loop (in `bash`).
 
-* In `Raw Transport Mode` we do not have a discovery mechanishm, as we do have when
+* In `Raw Transport Mode` we do not have a discovery mechanism, as we do have when
   Using **RTI Connext DDS**, therefore, it is required to use the `-peer` parameter.
 
 * In throughput mode, by default **Perftest** uses "batching", we want to disable it for this
@@ -179,6 +179,7 @@ Throughput Results-- RAW Transport (UDPv4)
         512,400530,20043,82.1,7027,1.72
         1024,223798,11191,91.7,4718,2.06
         2048,114800,5737,94.0,119,0.10
+        4096,58412,2919,95.7,1,0.00
         8192,29247,1461,95.8,4,0.01
         16384,14446,722,94.6,0,0.00
         32768,7307,365,95.7,3,0.04
@@ -227,6 +228,7 @@ Latency Results -- RAW Transport (UDPv4)
         512,485,72.5,435,5913,479,503,610,4571,5913
         1024,608,96.5,545,6507,602,633,757,6435,6507
         2048,809,102.2,736,5605,797,845,994,5318,5605
+        4096,1027,120.2,952,8083,1015,1058,1196,8083,8083
         8192,1412,106.1,1325,5969,1400,1456,1608,5969,5969
         16384,2107,222.5,1931,9573,2096,2153,2338,9573,9573
         32768,3693,223.2,3477,8656,3696,3768,4046,8656,8656
@@ -566,4 +568,68 @@ Understanding the Results
 
 Lets go first with the throughput results and plot all the different tests together:
 
-    .. image:: performance_validation_files/Throughput_lineal.svg
+.. image:: performance_validation_files/Throughput_lineal.svg
+
+The first think we see is that at 5KB we are already close to saturate the
+network in all cases, which is something really good to see, but lets focus
+in the behavior for smaller samples. Lets plot the same results with a
+logarithmic scale:
+
+.. image:: performance_validation_files/Throughput_log.svg
+
+Now we can extract more information about the graphs:
+
+1. If we take out the test where we make use of *batching* we can see that using
+   Raw Transport (plain sockets) gives us the best performance.
+
+2. **Connext DDS Pro** and **Connext DDS Micro** behave in a really similar way,
+   being the latter slighly better.
+
+3. The use of *batching* really makes a difference for small samples sizes.
+
+4. After 5kB we can consider that all the tests are able to reach more than a 95%
+   of the network utilization, which all what these boards can offer.
+
+By what we state in 1, one might wonder why not using plain sockets for our communications,
+why having use a middleware for this. However, at this point is when we have to remember
+that when testing with *Plain Sockets*, we had nothing: We didn't have a discovery
+mechanism (we had to specify the peers by hand), we didn't have any reliability and samples
+would not get repaired when lost. In fact we didn't have any *QoS* setting at all.
+Also we would not be able to make use of any multicast feature, so scalability would have been
+an issue as well.
+
+by using **RTI Connext DDS** you are adding a discovery mechanism, a reliability mechanism,
+the option of tuning the *QoS* of the system, etc. Lastly, you have to remember what we
+stated in 4 and 3: The advantage of *Plain Sockets* is only noticeable when the data length
+is quite small, and even in those cases, by using certain features, **RTI Connext DDS** can
+keep up, or even improve the performance provided by *Raw Sockets*.
+
+Another important topic is if we should choose **RTI Connext DDS Micro** instead of
+**Professional** based on the performance you want to achieve. Although it is correct that
+the former will achieve better performance for simple scenarios like this
+one, **Professional** has the advantage of all the features it has (like *batching* or
+*Content-Filtered Topics*), so the answer to this question is that in general the
+performance difference does not justify choosing **Micro** over **Professional**.
+
+Lets continue now plotting the latency results (we will plot the lineal and logarithmic
+scale graphs):
+
+.. image:: performance_validation_files/Throughput_lineal.svg
+
+.. image:: performance_validation_files/Throughput_log.svg
+
+As we saw with the throughput test, **RTI Connext DDS Professional** and **Micro**
+have pretty similar performance results, being the latter slightly better (mainly
+because the code complexity is smaller).
+
+It is also interesting to notice that the difference in terms of microseconds
+between *Raw Sockets* and **RTI Connext DDS Professional** and **Micro** remains
+constant across the different data sizes. The reason behind that is that the
+difference in time is due to the extra logic we use to send and receive (send and
+receive queues, etc), however, that extra logic is independent on the data size.
+
+Based on these test we learned useful information about the use of **RTI Connext DDS**
+in this environment: We know now the maximum throughput that the system can accept,
+so we can design our system to never cross that line. We also got the minimum latency
+we can expect to have, which is going to help us determine if the system will be able
+to meet the deadlines of the different data-flows.
