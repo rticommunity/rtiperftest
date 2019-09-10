@@ -2648,6 +2648,8 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                     _PM->get<std::string>("flowController")).c_str());
         }
     }
+
+    dw_qos.resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
   #endif
 
     // Only force reliability on throughput/latency topics
@@ -2917,6 +2919,11 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
     }
   #endif
 
+    std::cout << std::endl << "DW " << qos_profile << std::endl;
+    std::cout << "Initial Samples: " << dw_qos.resource_limits.initial_samples << std::endl;
+    std::cout << "Max Samples: " << dw_qos.resource_limits.max_samples << std::endl;
+    std::cout << std::endl;
+
     return true;
 }
 
@@ -3026,10 +3033,6 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         }
     }
 
-    if (_PM->is_set("receiveQueueSize")) {
-        dr_qos.resource_limits.initial_samples = _PM->get<int>("receiveQueueSize");
-    }
-
     /*
      * We could potentially use here the number of subscriber, right now this
      * class does not have access to the number of subscriber though.
@@ -3039,6 +3042,10 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
   #endif
 
   #ifndef RTI_MICRO
+    if (_PM->is_set("receiveQueueSize")) {
+        dr_qos.resource_limits.initial_samples = _PM->get<int>("receiveQueueSize");
+    }
+
     dr_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
     if (_instanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
         _instanceMaxCountReader++;
@@ -3140,6 +3147,11 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         #endif
       #endif
     }
+
+    std::cout << std::endl << "DR " << qos_profile << std::endl;
+    std::cout << "Initial Samples: " << dr_qos.resource_limits.initial_samples << std::endl;
+    std::cout << "Max Samples: " << dr_qos.resource_limits.max_samples << std::endl;
+    std::cout << std::endl;
 
     return true;
 }
