@@ -394,6 +394,34 @@ void ParameterManager::initialize()
     create("useLegacyDynamicData", useLegacyDynamicData);
   #endif
 
+    Parameter<int> *sendQueueSize = new Parameter<int>(50);
+    sendQueueSize->set_command_line_argument("-sendQueueSize", "<number>");
+    sendQueueSize->set_description(
+            "Sets number of samples (or batches) in send\nqueue. Default: 50");
+    sendQueueSize->set_type(T_NUMERIC_D);
+    sendQueueSize->set_extra_argument(YES);
+    sendQueueSize->set_group(GENERAL);
+    sendQueueSize->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    sendQueueSize->set_range(1, INT_MAX);
+    create("sendQueueSize", sendQueueSize);
+
+    Parameter<int> *receiveQueueSize = new Parameter<int>(128);
+    receiveQueueSize->set_command_line_argument("-receiveQueueSize", "<number>");
+    receiveQueueSize->set_description(
+            "Sets number of samples (or batches) in receive\nqueue. Default: 128");
+    receiveQueueSize->set_type(T_NUMERIC_D);
+    receiveQueueSize->set_extra_argument(YES);
+    receiveQueueSize->set_group(GENERAL);
+    receiveQueueSize->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    receiveQueueSize->set_range(1, INT_MAX);
+    create("receiveQueueSize", receiveQueueSize);
+
 
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER
@@ -597,20 +625,6 @@ void ParameterManager::initialize()
             Middleware::RTIDDSPRO
             | Middleware::RTIDDSMICRO);
     create("scan", scan);
-
-    Parameter<int> *sendQueueSize = new Parameter<int>(50);
-    sendQueueSize->set_command_line_argument("-sendQueueSize", "<number>");
-    sendQueueSize->set_description(
-            "Sets number of samples (or batches) in send\nqueue. Default: 50");
-    sendQueueSize->set_type(T_NUMERIC_D);
-    sendQueueSize->set_extra_argument(YES);
-    sendQueueSize->set_group(PUB);
-    sendQueueSize->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
-    sendQueueSize->set_range(1, INT_MAX);
-    create("sendQueueSize", sendQueueSize);
 
     Parameter<unsigned long long> *sleep = new Parameter<unsigned long long>(0);
     sleep->set_command_line_argument("-sleep", "<millisec>");

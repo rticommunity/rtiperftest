@@ -3,10 +3,10 @@ Characterize the performance of Connext DDS in a given environment using RTI Per
 
 This article is meant to be a quick guide about the initial steps we recommend to follow to profile and
 characterize the performance between 2 machines in a given environment. This means understanding the maximum
-throughput that **RTI Connext DDS** can maintain in a 1 to 1 communication, as well as the average latency we
+throughput that **RTI Connext DDS** can maintain in a 1-to-1 communication, as well as the average latency we
 can expect when sending packets.
 
-For this demonstration we will use a couple Raspberry Pi boards, connected to a switch. See below the
+For this demonstration we will use a couple of Raspberry Pi boards, connected to a switch. See below the
 information about the environment
 
    | Target machines: 2 x **Raspberry Pi 2 Model B**
@@ -114,7 +114,7 @@ differences).
 
 Once that is done, we will have a baseline which is going to tell us the minimum latency we can expect
 and the maximum throughput achievable in the system, even when not using *RTPS* and *DDS*. The next step
-is then to execute **Perftest** compiled for *Professional* and for *Micro* and see the equivalent results.
+is to execute **Perftest** compiled for *Professional* and for *Micro*, and see the equivalent results.
 
 UDPv4 Communication (Raw Transport)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -138,7 +138,7 @@ will use the following commands:
     .. code::
 
         for DATALEN in 32 64 128 256 512 1024 2048 4096 8192 16384 32768 63000; do
-            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -pub -noPrint -exec 20 -datalen $DATALEN -batchSize 0;
+            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -noPrint -exec 20 -datalen $DATALEN -batchSize 0;
         done
 
 * **Subscriber side**
@@ -162,7 +162,7 @@ Some comments about the parameters we used:
 
 See below the output results of executing this test. The information displayed here is
 only what the subscriber side showed, since all the information displayed in the publisher
-side is related to latency not about throughput.
+side is related to latency, not throughput.
 
 Throughput Results-- RAW Transport (UDPv4)
 ::::::::::::::::::::::::::::::::::::::::::
@@ -198,7 +198,7 @@ publisher side.
     .. code::
 
         for DATALEN in 32 64 128 256 512 1024 2048 4096 8192 16384 32768 63000; do
-            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -pub -noPrint -exec 20 -datalen $DATALEN -latencyTest;
+            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -noPrint -exec 20 -datalen $DATALEN -latencyTest;
         done
 
 * **Subscriber side**
@@ -249,7 +249,7 @@ Then, the command line parameters are going to be quite similar:
 
     .. code::
 
-        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -nic eth0 -pub -noPrint -exec 20 -scan -batchSize 0
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -nic eth0 -noPrint -exec 20 -scan -batchSize 0
 
 * **Subscriber side**
 
@@ -362,7 +362,7 @@ the `-rawTransport` option:
 
     .. code::
 
-        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -nic eth0 -pub -noPrint -exec 20 -scan -latencyTest
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -nic eth0 -noPrint -exec 20 -scan -latencyTest
 
 * **Subscriber side**
 
@@ -438,7 +438,7 @@ Throughput Test
 
     .. code::
 
-        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -pub -nic eth0 -pub -noPrint -exec 20 -scan
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -pub -nic eth0 -noPrint -exec 20 -scan
 
 * **Subscriber side**
 
@@ -506,7 +506,7 @@ Latency Test
 
     .. code::
 
-        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -pub -nic eth0 -pub -noPrint -exec 20 -scan -latencyTest
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -pub -nic eth0 -noPrint -exec 20 -scan -latencyTest
 
 * **Subscriber side**
 
@@ -607,7 +607,7 @@ keep up, or even improve the performance provided by *Raw Sockets*.
 Another important topic is if we should choose **RTI Connext DDS Micro** instead of
 **Professional** based on the performance you want to achieve. Although it is correct that
 the former will achieve better performance for simple scenarios like this
-one, **Professional** has the advantage of all the features it has (like *batching* or
+one, **Professional** has the advantage of all the features it has (e.g. *batching* or
 *Content-Filtered Topics*), so the answer to this question is that in general the
 performance difference does not justify choosing **Micro** over **Professional**.
 
@@ -633,3 +633,91 @@ in this environment: We know now the maximum throughput that the system can acce
 so we can design our system to never cross that line. We also got the minimum latency
 we can expect to have, which is going to help us determine if the system will be able
 to meet the deadlines of the different data-flows.
+
+
+RTI FlatData and Zero Copy
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Lets go one step further. **RTI Connext DDS 6.0.0** came with support for
+*RTI FlatData* language binding and Zero Copy transfer over shared memory.
+These two new features allow the user of DDS to deal faster with large data
+(on the order of MBs) by reducing the number of copies of the object to be sent,
+as well as the time needed to serialize and deserialize the object.
+
+As we can see in the image below, when data is sent from a *Data Writer* to a
+*Data Reader*, it is copied four times for both UDP and Shared Memory.
+The first one is the serialization of the data to be sent from the in-memory
+representation of the publisher to a common format suitable for storage or
+transmission.
+
+The second one, in case we are using shared memory, is a copy of the serialized
+data to the shared memory segment, or a copy made by the socket receive
+operation on the *Data Reader* side in case we are using UDP.
+
+The third one is the reassembly of the serialized data after it is received by
+the subscriber. And finally, the fourth one is the deserialization of the data
+in the subscriber into its in-memory representation.
+
+.. image:: performance_validation_files/DDS_copies.png
+
+In *FlatData* the cost of serialization and deserialization is zero since the
+in-memory representation of the data to be sent matches the representation used
+to send the data to its destination. Therefore, by using *FlatData*, only two
+copies are needed when sharing data across participants.
+
+.. image:: performance_validation_files/FlatData_copies.png
+
+Zero Copy goes one step further reducing the number of copies from four to
+zero by sharing a reference to the *Data Writer* memory address that stores
+the data to be sent instead of sending the data itself. This does not only reduces
+the number of copies, but it also makes the latency independent of the data size.
+
+All this theory sounds good but lets put it into practice and see how *FlatData*
+and Zero Copy are able to achieve even better results than the prevously obtained
+for **Connext DDS Pro**.
+
+Throughput Test
+---------------
+
+We will first run *Perftest* between our two Raspberry Pi comparing *FlatData*
+against regular data. Since Zero Copy needs from Shared Memory to be used, we
+will not get any results for it with this experiment yet.
+
+* **Publisher side**
+
+    .. code::
+
+    for DATALEN in 63001 1048576 5242880 10485760; do
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -nic eth0 -noPrint -exec 20 -flatData -datalen $DATALEN;
+    done
+
+* **Subscriber side**
+
+    .. code::
+
+    for DATALEN in 63001 1048576 5242880 10485760 52428800 104857600 262144000; do
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -nic eth0 -noPrint -flatData -datalen $DATALEN;
+    done
+
+The initial summary **Perftest** shows is the following:
+
+    .. code::
+
+
+See below the output results of executing this test. Again, the information displayed here is
+only what the subscriber side showed.
+
+Throughput Results -- RTI Connext DDS Micro (UDPv4)
+:::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    .. csv-table::
+        :align: center
+        :header-rows: 1
+
+        "Size", "Packets", "Packets/s (ave)", "Mbps (ave)", "Lost", "Lost (%)"
+
+
+As we can see...
+
+Latency Test
+------------

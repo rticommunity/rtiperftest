@@ -3026,6 +3026,10 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         }
     }
 
+    if (_PM->is_set("receiveQueueSize")) {
+        dr_qos.resource_limits.initial_samples = _PM->get<int>("receiveQueueSize");
+    }
+
     /*
      * We could potentially use here the number of subscriber, right now this
      * class does not have access to the number of subscriber though.
