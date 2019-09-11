@@ -1225,6 +1225,20 @@ we could get into the following error:
 Known Issues
 ------------
 
+Compilation Errors in Microsoft Visual Studio 2017 Express
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Due to `this issue <https://community.rti.com/static/documentation/connext-dds/6.0.0/doc/manuals/connext_dds/code_generator/html_files/RTI_CodeGenerator_ReleaseNotes/index.htm#code_generator/ReleaseNotes/KnownIssues/Known_Issues.htm?Highlight=RTI_VS_WINDOWS_TARGET_PLATFORM_VERSION>`__
+documented in the Know Issues for *RTI Connext DDS*, when compiling with
+*Visual Studio 2017 Express*, you need to set the `RTI_VS_WINDOWS_TARGET_PLATFORM_VERSION`
+as follows to avoid compilation errors:
+
+::
+
+    set RTI_VS_WINDOWS_TARGET_PLATFORM_VERSION=10.0.16299.0
+
+[RTI Issue ID CODEGENII-800]
+
 Shared Memory issues when running the Modern C++ API or .Net Implementation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
