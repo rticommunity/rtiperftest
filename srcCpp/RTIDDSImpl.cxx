@@ -3137,7 +3137,6 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
       #endif
     }
 
-    printf("Max samples is %d\n", dr_qos.resource_limits.max_samples);
     return true;
 }
 
