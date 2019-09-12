@@ -1,0 +1,15 @@
+const long MAX_SIZE = 63000;
+
+@final
+struct Test {
+    sequence<octet, MAX_SIZE> test_seq;
+    long test_long; //@key
+};
+
+@mutable
+@language_binding(FLAT_DATA)
+struct Test_flat {
+    sequence<octet, MAX_SIZE> test_seq;
+
+    @key long test_long;
+};

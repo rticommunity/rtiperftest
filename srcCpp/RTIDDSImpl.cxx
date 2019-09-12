@@ -457,6 +457,15 @@ class RTIPublisherBase : public IMessagingWriter
         return _instance_handles[_num_instances];
     }
 
+  #ifdef RTI_CUSTOM_TYPE
+    bool is_sentinel_size(int size) {
+        return size == perftest_cpp::INITIALIZE_SIZE
+                || size == perftest_cpp::FINISHED_SIZE
+                || size == perftest_cpp::LENGTH_CHANGED_SIZE
+                || size == 0;
+    }
+  #endif
+
  public:
     RTIPublisherBase(
             unsigned long num_instances,
@@ -464,24 +473,6 @@ class RTIPublisherBase : public IMessagingWriter
             int instancesToBeWritten,
             ParameterManager *PM)
     {
-      #ifdef RTI_CUSTOM_TYPE
-        _lastMessageSize = 0;
-        // Calculate _minCustomTypeSerializeSize
-        if (!get_serialize_size_custom_type_data(_minCustomTypeSerializeSize)) {
-            throw std::runtime_error("get_serialize_size_custom_type_data failed");
-        }
-        // Initialize data
-        DDS_ReturnCode_t retcode = RTI_CUSTOM_TYPE::TypeSupport::initialize_data(
-                &data.custom_type);
-        if (retcode != DDS_RETCODE_OK) {
-            RTI_CUSTOM_TYPE::TypeSupport::finalize_data(&data.custom_type);
-            throw std::runtime_error("TypeSupport::initialize_data failed");
-        }
-        if (!initialize_custom_type_data(data.custom_type)) {
-            RTI_CUSTOM_TYPE::TypeSupport::finalize_data(&data.custom_type);
-            throw std::runtime_error("initialize_custom_type_data failed");
-        }
-      #endif
         _PM = PM;
         _num_instances = num_instances;
         _instance_counter = 0;
@@ -517,12 +508,6 @@ class RTIPublisherBase : public IMessagingWriter
             free(_instance_handles);
             _instance_handles = NULL;
         }
-      #ifdef RTI_CUSTOM_TYPE
-        if (!finalize_custom_type_data(data.custom_type)) {
-            throw std::runtime_error("finalize_custom_type_data failed");
-        }
-        RTI_CUSTOM_TYPE::TypeSupport::finalize_data(&data.custom_type);
-      #endif
     }
 
     void Flush()
@@ -610,21 +595,19 @@ class RTIPublisherBase : public IMessagingWriter
         }
       #endif
     }
+};
 
-#ifdef RTI_CUSTOM_TYPE
-  private:
-    bool is_sentinel_size(int size) {
-        return size == perftest_cpp::INITIALIZE_SIZE
-                || size == perftest_cpp::FINISHED_SIZE
-                || size == perftest_cpp::LENGTH_CHANGED_SIZE
-                || size == 0;
-    }
+template<typename T>
+class RTIPublisher : public RTIPublisherBase<T>
+{
+    T data;
 
+  #ifdef RTI_CUSTOM_TYPE
     bool get_serialize_size_custom_type_data(unsigned int &size) {
         DDS_ReturnCode_t retcode = RTI_CUSTOM_TYPE::TypeSupport::serialize_data_to_cdr_buffer(
                 NULL,
                 (unsigned int &)size,
-                &data.custom_type);
+                &this->data.custom_type);
         if (retcode != DDS_RETCODE_OK) {
             fprintf(stderr, "serialize_data_to_cdr_buffer failed: %d.\n", retcode);
             return false;
@@ -632,14 +615,7 @@ class RTIPublisherBase : public IMessagingWriter
         size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
         return true;
     }
-#endif
-};
-
-template<typename T>
-class RTIPublisher : public RTIPublisherBase<T>
-{
-  protected:
-    T data;
+  #endif
 
  public:
     RTIPublisher(
@@ -654,6 +630,25 @@ class RTIPublisher : public RTIPublisherBase<T>
                     instancesToBeWritten,
                     PM)
     {
+      #ifdef RTI_CUSTOM_TYPE
+        this->_lastMessageSize = 0;
+        // Calculate _minCustomTypeSerializeSize
+        if (!this->get_serialize_size_custom_type_data(this->_minCustomTypeSerializeSize)) {
+            throw std::runtime_error("get_serialize_size_custom_type_data failed");
+        }
+        // Initialize data
+        DDS_ReturnCode_t retcode = RTI_CUSTOM_TYPE::TypeSupport::initialize_data(
+                &this->data.custom_type);
+        if (retcode != DDS_RETCODE_OK) {
+            RTI_CUSTOM_TYPE::TypeSupport::finalize_data(&this->data.custom_type);
+            throw std::runtime_error("TypeSupport::initialize_data failed");
+        }
+        if (!initialize_custom_type_data(this->data.custom_type)) {
+            RTI_CUSTOM_TYPE::TypeSupport::finalize_data(&this->data.custom_type);
+            throw std::runtime_error("initialize_custom_type_data failed");
+        }
+      #endif
+
         this->_writer = T::DataWriter::narrow(writer);
 
         DDS_DataWriterQos qos;
@@ -684,6 +679,13 @@ class RTIPublisher : public RTIPublisherBase<T>
 
     ~RTIPublisher() {
         try {
+          #ifdef RTI_CUSTOM_TYPE
+            if (!finalize_custom_type_data(this->data.custom_type)) {
+                throw std::runtime_error("finalize_custom_type_data failed");
+            }
+            RTI_CUSTOM_TYPE::TypeSupport::finalize_data(&this->data.custom_type);
+          #endif
+
             this->Shutdown();
         } catch (const std::exception &ex) {
             fprintf(stderr, "Exception in RTIPublisher::~RTIPublisher(): %s.\n", ex.what());
@@ -730,7 +732,7 @@ class RTIPublisher : public RTIPublisherBase<T>
          *          Else:
          *              data.custom_type_size is the same as the last iteration
         */
-        if (is_sentinel_size(message.size)) {
+        if (this->is_sentinel_size(message.size)) {
             data.custom_type_size = message.size;
         } else {
             if (!set_custom_type_data(
@@ -799,6 +801,9 @@ protected:
     typedef typename rti::flat::flat_type_traits<T>::builder Builder;
     typedef typename rti::flat::PrimitiveArrayOffset<unsigned char, 4> KeyBuilder;
     typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
+  #ifdef RTI_CUSTOM_TYPE_FLATDATA
+    typedef typename rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLATDATA>::builder BuilderCT;
+  #endif
 
     void add_key(Builder &builder, unsigned long int i) {
         KeyBuilder key_offset = builder.add_key();
@@ -831,21 +836,28 @@ public:
         for (unsigned long i = 0; i < this->_num_instances; ++i) {
             Builder builder = rti::flat::build_data<T>(this->_writer);
             add_key(builder, i);
+          #ifdef RTI_CUSTOM_TYPE_FLATDATA
+            BuilderCT builderCT = builder.build_custom_type();
+            register_custom_type_data_flatdata(builderCT, i);
+            builderCT.finish();
+          #endif
+
             T *sample = builder.finish_sample();
 
-          #ifdef RTI_CUSTOM_TYPE
-            register_custom_type_data(sample.custom_type, i);
-          #endif
             this->_instance_handles[i] = this->_writer->register_instance(*sample);
         }
 
         Builder builder = rti::flat::build_data<T>(this->_writer);
         add_key(builder, MAX_CFT_VALUE);
+
+        #ifdef RTI_CUSTOM_TYPE_FLATDATA
+          BuilderCT builderCT = builder.build_custom_type();
+          register_custom_type_data_flatdata(builderCT, MAX_CFT_VALUE);
+          builderCT.finish();
+        #endif
+
         T *sample = builder.finish_sample();
 
-      #ifdef RTI_CUSTOM_TYPE
-        register_custom_type_data(sample.custom_type, MAX_CFT_VALUE);
-      #endif
 
         this->_instance_handles[this->_num_instances] = this->_writer->register_instance(*sample);
         this->_writer->discard_loan(*sample);
@@ -880,9 +892,43 @@ public:
         builder.add_latency_ping(message.latency_ping);
 
         // Add payload
+      #ifdef RTI_CUSTOM_TYPE_FLATDATA
+        /**
+         * Using custom type the size of the data is set in data.custom_type_size:
+         *      If the message.size is a sentinel size value used to handle the test:
+         *          data.custom_type_size = message.size
+         *      Else:
+         *          If the message.size is different from the last iteration:
+         *              data.custom_type_size of the custom type (data.custom_type)
+         *              is measured from this member in the buffer
+         *          Else:
+         *              data.custom_type_size is the same as the last iteration
+        */
+        if (this->is_sentinel_size(message.size)) {
+            builder.add_custom_type_size(message.size);
+        } else {
+            BuilderCT customTypeBuilder = builder.build_custom_type();
+
+            if (!set_custom_type_data_flatdata(
+                    customTypeBuilder,
+                    key,
+                    message.size - this->_minCustomTypeSerializeSize)) {
+                fprintf(stderr, "set_custom_type_data failed.\n");
+                return false;
+            }
+
+            rti::flat::OffsetBase ct = customTypeBuilder.finish();
+
+            if ((unsigned int)message.size != this->_lastMessageSize) {
+                builder.add_custom_type_size(ct.get_buffer_size());
+                this->_lastMessageSize = message.size;
+            }
+        }
+      #else
         BinDataBuilder bin_data_builder = builder.build_bin_data();
         bin_data_builder.add_n(message.size);
         bin_data_builder.finish();
+      #endif
 
         // Calculate key if using more than one instance
         if (!isCftWildCardKey) {
@@ -918,6 +964,42 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
   private:
     DDS_DynamicData data;
     int _lastMessageSize;
+    unsigned int _customTypeSize;
+
+  #ifdef RTI_CUSTOM_TYPE
+    bool get_serialize_size_custom_type_data(unsigned int &size) {
+        char *buffer = NULL;
+        DDS_ReturnCode_t retcode = data.to_cdr_buffer(
+                NULL,
+                (unsigned int &)size);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "to_cdr_buffer failed: %d.\n", retcode);
+            return false;
+        }
+        RTIOsapiHeap_allocateBufferAligned(
+                &buffer,
+                size,
+                RTI_OSAPI_ALIGNMENT_DEFAULT);
+        if (buffer == NULL) {
+            fprintf(stderr, "RTIOsapiHeap_allocateBufferAligned failed.\n");
+            return false;
+        }
+        retcode = data.to_cdr_buffer(
+                buffer,
+                (unsigned int &)size);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "to_cdr_buffer failed: %d.\n", retcode);
+            return false;
+        }
+        if (buffer != NULL) {
+            RTIOsapiHeap_freeBufferAligned(buffer);
+            buffer = NULL;
+        }
+        size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
+        size -= perftest_cpp::OVERHEAD_BYTES;
+        return true;
+    }
+  #endif
 
   public:
     RTIDynamicDataPublisher(
@@ -935,10 +1017,23 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
             data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT),
             _lastMessageSize(0)
     {
+      #ifdef RTI_CUSTOM_TYPE
+        // Calculate size_alignment_type of DDS_DynamicData object
+        if (!get_serialize_size_custom_type_data(this->_minCustomTypeSerializeSize)) {
+            throw std::runtime_error("get_serialize_size_custom_type_data failed");
+        }
+        // Initialize data
+        if (!initialize_custom_type_dynamic_data(data)) {
+            // ~DDS_DynamicData() will be called and data will be free
+            throw std::runtime_error("initialize_custom_type_dynamic_data failed");
+        }
+      #endif
+
         DDS_ReturnCode_t retcode;
         DDS_Octet key_octets[KEY_SIZE];
 
         this->_writer = DDSDynamicDataWriter::narrow(writer);
+        data = DDS_DynamicData(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
 
         DDS_DataWriterQos qos;
         this->_writer->get_qos(qos); // Gota fix the writer narrow to fix seg fault here
@@ -964,7 +1059,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
             register_custom_type_dynamic_data(data, i);
           #endif
 
-            this->_instance_handles[i] = this->_writer->register_instance(data);
+            this->_instance_handles[i] = this->_writer->register_instance(this->data);
         }
 
         // Register the key of MAX_CFT_VALUE
@@ -1098,7 +1193,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
          *          Else:
          *              data.custom_type_size is the same as the last iteration
         */
-        if (is_sentinel_size(message.size)) {
+        if (this->is_sentinel_size(message.size)) {
             retcode = data.set_long(
                     "custom_type_size",
                     DynamicDataMembersId::GetInstance().at("custom_type_size"),
@@ -1799,7 +1894,7 @@ public:
             this->_message.timestamp_usec = message.timestamp_usec();
             this->_message.latency_ping = message.latency_ping();
           #ifdef RTI_CUSTOM_TYPE
-            this->_message.size = message.custom_type_size;
+            this->_message.size = message.custom_type_size();
           #else
             this->_message.size = message.bin_data().element_count();
           #endif
