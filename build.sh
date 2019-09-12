@@ -223,11 +223,11 @@ function executable_checking()
         if [ -z "${RTIMEHOME}" ]; then
             # Is NDDSHOME set?
             if [ -z "${NDDSHOME}" ]; then
-                echo -e "${ERROR_TAG} Nor RTIMEHOME nor NDDSHOME variables are set"
+                echo -e "${ERROR_TAG} Nor RTIMEHOME nor NDDSHOME variables are set or the paths do not exist"
                 usage
                 exit -1
             else
-                echo -e "${INFO_TAG} The RTIMEHOME variable is not set, using NDDSHOME"
+                echo -e "${INFO_TAG} The RTIMEHOME variable is not set or the path does not exist, using NDDSHOME instead"
             fi
         else
             export NDDSHOME="${RTIMEHOME}"
@@ -250,7 +250,7 @@ function executable_checking()
 
         # Is NDDSHOME set?
         if [ -z "${NDDSHOME}" ]; then
-            echo -e "${ERROR_TAG} The NDDSHOME variable is not set"
+            echo -e "${ERROR_TAG} The NDDSHOME variable is not set or the path does not exist"
             usage
             exit -1
         fi
