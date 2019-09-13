@@ -2,7 +2,7 @@ Dealing with LargeData using RTI Perftest
 =====================================================================================
 
 This article is meant to be a quick guide about the initial steps we recommend to follow to profile and
-characterize the performance between 2 machines in a given environment when dealing with large data. 
+characterize the performance between 2 machines in a given environment when dealing with large data.
 This means understanding the maximum throughput that **RTI Connext DDS Pro** can
 achieve on a 1-to-1 communication, as well as the average latency we can expect
 when sending packets.
@@ -54,14 +54,13 @@ the data to be sent instead of sending the data itself. This does not only reduc
 the number of copies, but it also makes the latency independent of the data size.
 
 All this theory sounds good but lets put it into practice and see how *FlatData*
-and Zero Copy are able to achieve even better results than the prevously obtained
-for **Connext DDS Pro**.
+and Zero Copy compare to using regular data on **Connext DDS Pro**.
 
 Throughput Test
 ---------------
 
 We will first run *Perftest* between our two Raspberry Pi comparing *FlatData*
-against regular data. Since Zero Copy needs from Shared Memory to be used, we
+against regular data, sending samples of size up to 50MB. Since Zero Copy needs from Shared Memory to be used, we
 will not get any results for it with this experiment yet.
 
 * **Publisher side**
@@ -80,8 +79,8 @@ will not get any results for it with this experiment yet.
             bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -nic eth0 -noPrint -flatData -datalen $DATALEN -sendqueuesize 5;
         done
 
-See below the output results of executing this test. Again, the information displayed here is
-only what the subscriber side showed.
+See below the output results of executing this test. The information displayed here is
+only what the subscriber side showed since we are interested on throughput.
 
 Throughput Results -- FlatData vs Regular Data (UDPv4)
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -99,15 +98,13 @@ Throughput Results -- FlatData vs Regular Data (UDPv4)
         26214400, 72, 91.2
         52428800, 52.4, 83.9
 
-Explit why sendqueuesize
-
-You will have noticed the new parameter *-sendqueuesize*. It specifies the
+You will have noticed the parameter *-sendqueuesize*. It specifies the
 initial length for the queue that Connext will allocate for sending samples.
 In other words, the send window size.
 
 By default, this value is 50 but since we are sending up to 50MB on this test,
 we would need to allocate space for 50 + 1 samples, which are about 2.5 GB, more
-than the amount of RAM available on these Raspberry Pi.
+than the amount of RAM available on these Raspberry Pi (just 1GB).
 
 As can be seen, the throughput on FlatData is considerable higher than on
 regular data due to being able to avoid copying the sample for serialization
@@ -159,9 +156,9 @@ Throughput Results -- Regular Data vs FlatData vs Zero Copy (SHMEM)
         52428800, 803.6, 1554.4, 1758308
 
 As can be seen, *FlatData* still achieves better performance than regular data,
-but Zero Copy outperforms them with a throughput that scales linearly with the
-sample size since we are only sending a pointer to the object on the Data
-Writer queue.
+but with Zero Copy, since we are only sending a pointer to the object on the Data
+Writer queue, outperforms them with a throughput that scales linearly with the
+sample size.
 
 Note that for both cases explored (UDP and SHMEM) we were highly constrained by
 the system and its nic. By using higher-end hardware, we can achieve much better
@@ -170,6 +167,10 @@ result. Please refer to the official benchmark page to see more.
 
 Latency Test
 ------------
+
+It is clear that if our goal is to achieve maximum thorughput we should choose Zero Copy over FlatData if we are on the same machine, and FlatData over regular data if we want to communicate different machines and all of them use the same language.
+
+But, how will these two new technologies perform in terms of latency? Let's check it out.
 
 * **Publisher side**
 
