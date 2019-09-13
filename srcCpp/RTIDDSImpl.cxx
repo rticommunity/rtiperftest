@@ -761,6 +761,7 @@ class RTIPublisher : public RTIPublisherBase<T>
             return false;
         }
       #endif
+
         if (!isCftWildCardKey) {
             retcode = this->_writer->write(data, this->_instance_handles[key]);
         } else { // send CFT_MAX sample
@@ -803,6 +804,8 @@ protected:
     typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char> BinDataBuilder;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     typedef typename rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLATDATA>::builder BuilderCT;
+
+    unsigned int _lastBufferSize;
   #endif
 
     void add_key(Builder &builder, unsigned long int i) {
@@ -832,6 +835,27 @@ public:
         DDS_DataWriterQos qos;
         this->_writer->get_qos(qos); // Gota fix the writer narrow to fix seg fault here
         this->_isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
+
+      #ifdef RTI_CUSTOM_TYPE
+        {
+            this->_lastMessageSize = 0;
+            _lastBufferSize = 0;
+
+            Builder builder = rti::flat::build_data<T>(this->_writer);
+            BuilderCT builderCT = builder.build_custom_type();
+
+            // Create a sample without the sequence
+            if (!set_custom_type_data_flatdata(builderCT, 0, 0)) {
+                throw std::runtime_error("set_custom_type_data_flatdata failed");
+            }
+
+            rti::flat::OffsetBase ct = builderCT.finish();
+            this->_minCustomTypeSerializeSize = ct.get_buffer_size();
+
+            T *sample = builder.finish_sample();
+            this->_writer->discard_loan(*sample);
+        }
+      #endif
 
         for (unsigned long i = 0; i < this->_num_instances; ++i) {
             Builder builder = rti::flat::build_data<T>(this->_writer);
@@ -884,6 +908,19 @@ public:
             return false;
         }
 
+        // Calculate key if using more than one instance
+        if (!isCftWildCardKey) {
+            if (this->_num_instances > 1) {
+                key = (this->_instancesToBeWritten == -1)
+                        ? this->_instance_counter++ % this->_num_instances
+                        : this->_instancesToBeWritten;
+            }
+        } else {
+            key = MAX_CFT_VALUE;
+        }
+
+        add_key(builder, key);
+
         // Initialize Information data
         builder.add_entity_id(message.entity_id);
         builder.add_seq_num(message.seq_num);
@@ -920,28 +957,17 @@ public:
             rti::flat::OffsetBase ct = customTypeBuilder.finish();
 
             if ((unsigned int)message.size != this->_lastMessageSize) {
-                builder.add_custom_type_size(ct.get_buffer_size());
+                _lastBufferSize = ct.get_buffer_size();
                 this->_lastMessageSize = message.size;
             }
+
+            builder.add_custom_type_size(_lastBufferSize);
         }
       #else
         BinDataBuilder bin_data_builder = builder.build_bin_data();
         bin_data_builder.add_n(message.size);
         bin_data_builder.finish();
       #endif
-
-        // Calculate key if using more than one instance
-        if (!isCftWildCardKey) {
-            if (this->_num_instances > 1) {
-                key = (this->_instancesToBeWritten == -1)
-                        ? this->_instance_counter++ % this->_num_instances
-                        : this->_instancesToBeWritten;
-            }
-        } else {
-            key = MAX_CFT_VALUE;
-        }
-
-        add_key(builder, key);
 
         // Build the data to be sent
         T *sample = builder.finish_sample();
@@ -963,10 +989,10 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
 {
   private:
     DDS_DynamicData data;
-    int _lastMessageSize;
-    unsigned int _customTypeSize;
 
   #ifdef RTI_CUSTOM_TYPE
+    unsigned int _customTypeSize;
+
     bool get_serialize_size_custom_type_data(unsigned int &size) {
         char *buffer = NULL;
         DDS_ReturnCode_t retcode = data.to_cdr_buffer(
@@ -1014,10 +1040,11 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
                     pongSemaphore,
                     instancesToBeWritten,
                     PM),
-            data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT),
-            _lastMessageSize(0)
+            data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT)
     {
       #ifdef RTI_CUSTOM_TYPE
+        this->_lastMessageSize = 0;
+
         // Calculate size_alignment_type of DDS_DynamicData object
         if (!get_serialize_size_custom_type_data(this->_minCustomTypeSerializeSize)) {
             throw std::runtime_error("get_serialize_size_custom_type_data failed");
@@ -1116,7 +1143,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
             key_octets[c] = (unsigned char) (key >> c * 8);
         }
 
-        if (_lastMessageSize != message.size) {
+        if (this->_lastMessageSize != message.size) {
             //Cannot use data.clear_member("bind_data") because:
             //DDS_DynamicData_clear_member:unsupported for non-sparse types
             data.clear_all_members();
@@ -1165,7 +1192,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
             fprintf(stderr, "set_long(latency_ping) failed: %d.\n", retcode);
         }
      #ifndef RTI_CUSTOM_TYPE
-        if (_lastMessageSize != message.size) {
+        if (this->_lastMessageSize != message.size) {
             DDS_OctetSeq octetSeq;
             bool succeeded = octetSeq.from_array(
                     (DDS_Octet *) message.data,
@@ -1225,7 +1252,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
             }
         }
       #endif
-        _lastMessageSize = message.size;
+        this->_lastMessageSize = message.size;
 
         if (!isCftWildCardKey) {
             retcode = this->_writer->write(data, this->_instance_handles[key]);
@@ -1415,7 +1442,7 @@ public:
                 this->_message.timestamp_sec = message.timestamp_sec();
                 this->_message.timestamp_usec = message.timestamp_usec();
                 this->_message.latency_ping = message.latency_ping();
-              #ifdef RTI_CUSTOM_TYPE
+              #ifdef RTI_CUSTOM_TYPE_FLATDATA
                 this->_message.size = message.custom_type_size();
               #else
                 this->_message.size = message.bin_data().element_count();
@@ -1893,8 +1920,9 @@ public:
             this->_message.timestamp_sec = message.timestamp_sec();
             this->_message.timestamp_usec = message.timestamp_usec();
             this->_message.latency_ping = message.latency_ping();
-          #ifdef RTI_CUSTOM_TYPE
+          #ifdef RTI_CUSTOM_TYPE_FLATDATA
             this->_message.size = message.custom_type_size();
+            std::cout << "_message.size: " << this->_message.size << std::endl;
           #else
             this->_message.size = message.bin_data().element_count();
           #endif
