@@ -1923,7 +1923,6 @@ public:
             this->_message.latency_ping = message.latency_ping();
           #ifdef RTI_CUSTOM_TYPE_FLATDATA
             this->_message.size = message.custom_type_size();
-            std::cout << "_message.size: " << this->_message.size << std::endl;
           #else
             this->_message.size = message.bin_data().element_count();
           #endif
