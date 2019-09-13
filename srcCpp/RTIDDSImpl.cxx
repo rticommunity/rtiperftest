@@ -989,6 +989,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
 {
   private:
     DDS_DynamicData data;
+    int _lastMessageSize;
 
   #ifdef RTI_CUSTOM_TYPE
     unsigned int _customTypeSize;
@@ -1040,10 +1041,10 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
                     pongSemaphore,
                     instancesToBeWritten,
                     PM),
-            data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT)
+            data(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT),
+            _lastMessageSize(0)
     {
       #ifdef RTI_CUSTOM_TYPE
-        this->_lastMessageSize = 0;
 
         // Calculate size_alignment_type of DDS_DynamicData object
         if (!get_serialize_size_custom_type_data(this->_minCustomTypeSerializeSize)) {
