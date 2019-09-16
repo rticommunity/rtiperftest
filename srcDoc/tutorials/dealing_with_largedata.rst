@@ -39,14 +39,14 @@ The third one is the reassembly of the serialized data after it is received by
 the subscriber. And finally, the fourth one is the deserialization of the data
 in the subscriber into its in-memory representation.
 
-.. image:: performance_validation_files/DDS_copies.png
+.. image:: dealing_with_largedata/DDS_copies.png
 
 In *FlatData* the cost of serialization and deserialization is zero since the
 in-memory representation of the data to be sent matches the representation used
 to send the data to its destination. Therefore, by using *FlatData*, only two
 copies are needed when sharing data across participants.
 
-.. image:: performance_validation_files/FlatData_copies.png
+.. image:: dealing_with_largedata/FlatData_copies.png
 
 Zero Copy goes one step further reducing the number of copies from four to
 zero by sharing a reference to the *Data Writer* memory address that stores
@@ -97,6 +97,8 @@ Throughput Results -- FlatData vs Regular Data (UDPv4)
         10485760, 86.7, 94.3
         26214400, 72, 91.2
         52428800, 52.4, 83.9
+
+.. image:: dealing_with_largedata/udp_throughput.png
 
 You will have noticed the parameter *-sendqueuesize*. It specifies the
 initial length for the queue that *ConnextDDS* will allocate for sending samples.
@@ -155,6 +157,9 @@ Throughput Results -- Regular Data vs FlatData vs Zero Copy (SHMEM)
         26214400, 959.8, 1543.4, 912976.2
         52428800, 803.6, 1554.4, 1758308
 
+.. image:: dealing_with_largedata/shmem_throughput.png
+.. image:: dealing_with_largedata/shmem_throughput_flat.png
+
 As can be seen, *FlatData* still achieves better performance than regular data,
 but Zero Copy, since we are only sending a pointer to the object on the Data
 Writer queue, outperforms them with a throughput that scales linearly with the
@@ -168,7 +173,9 @@ result. Please refer to the official benchmark page to see more.
 Latency Test
 ------------
 
-It is clear that if our goal is to achieve maximum thorughput we should choose Zero Copy over FlatData if we are on the same machine, and FlatData over regular data if we want to communicate different machines and all of them use the same language.
+It is clear that if our goal is to achieve maximum thorughput we should choose
+Zero Copy over FlatData if we are on the same machine, and FlatData over regular
+data if we want to communicate different machines and all of them use the same language.
 
 But, how will these two new technologies perform in terms of latency? Let's check it out.
 
@@ -205,6 +212,8 @@ Latency Results -- Regular Data vs FlatData (UDPv4)
         10485760, 927332, 876613
         26214400, 2313151, 2191383
         52428800, 4633484, 4380210
+
+.. image:: dealing_with_largedata/udp_latency.png
 
 As for Throughput, the difference between FlatData and regular data is noticebly.
 Still, take into account that we are really constrained by our nic so we cannot
@@ -246,6 +255,8 @@ Latency Results -- Regular Data vs FlatData vs Zero Copy (SHMEM)
         10485760, 99888, 52263, 442
         26214400, 248182, 128278, 412
         52428800, 1294789, 257941, 441
+
+.. image:: dealing_with_largedata/shmem_latency.png
 
 As we can see again ZeroCopy outperform regular data and Flat Data when using
 Shared Memory. Furthermore, pay close attention to the average latency; it is
@@ -290,6 +301,8 @@ Latency Results -- Avoid Dynamic Allocation (UDPv4)
         10485760,52263,76712
         26214400,128278,121449
         52428800,257941,191216
+
+.. image:: dealing_with_largedata/preallocateFragments.png
 
 As can be seen, for slightly large data (from 63KB to 10MB), it seems like we are
 paying extra cost by avoiding dynamic allocation of fragments. But, as soon as
