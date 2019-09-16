@@ -101,12 +101,12 @@ Throughput Results -- FlatData vs Regular Data (UDPv4)
 .. image:: dealing_with_largedata/udp_throughput.png
 
 You will have noticed the parameter *-sendqueuesize*. It specifies the
-initial length for the queue that *ConnextDDS* will allocate for sending samples.
+initial length for the queue that **Connext DDS** will allocate for sending samples.
 In other words, the send window size.
 
 By default, this value is 50 but since we are sending up to 50MB on this test,
 we would need to allocate space for 50 + 1 samples, which are about 2.5 GB, more
-than the amount of RAM available on these Raspberry Pi (just 1GB).
+than the total amount of RAM available on these Raspberry Pi (just 1GB).
 
 As can be seen, the throughput on FlatData is considerable higher than on
 regular data due to being able to avoid copying the sample for serialization
@@ -114,10 +114,10 @@ and deserialization.
 
 Note that at a first glance, it may appear as if the network were not being
 saturated but take into account that for large data we need to wait until the
-full sample is received before adding it to the total bytes received used to
-calculate the average throughput achieved.
+full sample is received before adding it to the total bytes received that we
+will use to calculate the average throughput achieved.
 
-Lets now run the same test but this time on the single machine using Shared
+Lets now run the same test but this time on a single machine using Shared
 Memory so we can use Zero Copy.
 
 * **Publisher side**
@@ -157,8 +157,8 @@ Throughput Results -- Regular Data vs FlatData vs Zero Copy (SHMEM)
         26214400, 959.8, 1543.4, 912976.2
         52428800, 803.6, 1554.4, 1758308
 
-.. image:: dealing_with_largedata/shmem_throughput.png
 .. image:: dealing_with_largedata/shmem_throughput_flat.png
+.. image:: dealing_with_largedata/shmem_throughput.png
 
 As can be seen, *FlatData* still achieves better performance than regular data,
 but Zero Copy, since we are only sending a pointer to the object on the Data
@@ -167,8 +167,8 @@ sample size.
 
 Note that for both cases explored (UDP and SHMEM) we were highly constrained by
 the system and its nic. By using higher-end hardware, we can achieve much better
-result. Please refer to the official benchmark page to see more.
-
+result. Please refer to the `official benchmark <https://docs.google.com/spreadsheets/d/16FLhFKd0cpIobWRlnRmyIAvCkEtP23pq3D0RStrJkSk/edit?usp=sharing>`_
+page to see more.
 
 Latency Test
 ------------
@@ -218,7 +218,7 @@ Latency Results -- Regular Data vs FlatData (UDPv4)
 As for Throughput, the difference between FlatData and regular data is noticebly.
 Still, take into account that we are really constrained by our nic so we cannot
 see the potential difference; please take a moment to have a look at the
-official benchmarks where we are not as constrained as here.
+`official benchmark <https://docs.google.com/spreadsheets/d/16FLhFKd0cpIobWRlnRmyIAvCkEtP23pq3D0RStrJkSk/edit?usp=sharing>`_ where we are not as constrained as in here.
 
 Again, lets run this same test on the single machine using Shared Memory so we
 can see how Zero Copy performs.
@@ -262,9 +262,6 @@ As we can see again ZeroCopy outperform regular data and Flat Data when using
 Shared Memory. Furthermore, pay close attention to the average latency; it is
 constant no matter the data size!
 
-ZeroCopy should be your default option if communication over shared memory is
-available.
-
 We can further reduce the latency by preallocating a buffer to store fragmented
 samples. This will save us time by not dynamically allocating space for fragments
 of incomming samples. We can enable this option on *Perftest* with the
@@ -304,10 +301,11 @@ Latency Results -- Avoid Dynamic Allocation (UDPv4)
 
 .. image:: dealing_with_largedata/preallocateFragments.png
 
-As can be seen, for slightly large data (from 63KB to 10MB), it seems like we are
+As can be seen, for slightly large data (from 63KB to 10MB), we are
 paying extra cost by avoiding dynamic allocation of fragments. But, as soon as
 samples are large enought (from 25MB on), we can see how latency is considerably
 reduced.
 
 If you want to learn more about *FlatData* and Zero Copy over shared memory,
-please refer to the official documentation for more details.
+please refer to the `official documentation <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/SendingLargeData.htm%3FTocPath%3DPart%25203%253A%2520Advanced%2520Concepts%7C22.%2520Sending%2520Large%2520Data%7C_____0>`_
+about how to deal with large data for more details.
