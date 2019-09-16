@@ -45,6 +45,30 @@ releases:
    supported. You can disable this by adding the ``--skip-cs-build``
    flag.
 
+Release Notes 3.0.1
+-------------------
+
+What's Fixed in 3.0.1
+~~~~~~~~~~~~~~~~~~~~~
+
+Fix Custom Types failure due to the use of Flat Data (#221)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Custom Types implementation was incomplete for FlatData types causing compilation
+errors when trying to use the feature.
+
+This issue has been fixed and FlatData custom types can be used along with
+regular custom types by using the new ``--customTypeFlatdata`` build option.
+
+The only known limitation is that these FlatData types must be declared as mutable.
+
+Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* has improved the error message when the path provided to the
+`NDDSHOME` or `RTIMEHOME` are incorrect. In previous releases this could be
+misleading since it would claim that the path was not provided.
+
 Release Notes 3.0
 -----------------
 

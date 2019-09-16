@@ -1117,7 +1117,7 @@ C++ (Traditional) API:
     ::
 
         ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint
-        RTI Perftest 3.0.0 (RTI Connext DDS 6.0.0)
+        RTI Perftest 3.0.1 (RTI Connext DDS 6.0.0)
 
         Custom Type provided: 'Test'
 
@@ -1157,7 +1157,7 @@ C++ (Traditional) API:
     ::
 
         ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint
-        RTI Perftest 3.0.0 (RTI Connext DDS 6.0.0)
+        RTI Perftest 3.0.1 (RTI Connext DDS 6.0.0)
 
         Custom Type provided: 'Test'
 
@@ -1187,7 +1187,7 @@ C++ (Traditional) API:
     ::
 
         ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -pub -executionTime 60 -noprint -dynamicData
-        RTI Perftest 3.0.0 (RTI Connext DDS 6.0.0)
+        RTI Perftest 3.0.1 (RTI Connext DDS 6.0.0)
 
         Custom Type provided: 'Test'
 
@@ -1228,7 +1228,7 @@ C++ (Traditional) API:
     ::
 
         ~/rtiperftest$ ./bin/x64Linux3gcc5.4.0/release/perftest_cpp -sub -noprint -dynamicData
-        RTI Perftest 3.0.0 (RTI Connext DDS 6.0.0)
+        RTI Perftest 3.0.1 (RTI Connext DDS 6.0.0)
 
         Custom Type provided: 'Test'
 
