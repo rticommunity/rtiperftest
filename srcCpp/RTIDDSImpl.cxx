@@ -2919,11 +2919,6 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
     }
   #endif
 
-    std::cout << std::endl << "DW " << qos_profile << std::endl;
-    std::cout << "Initial Samples: " << dw_qos.resource_limits.initial_samples << std::endl;
-    std::cout << "Max Samples: " << dw_qos.resource_limits.max_samples << std::endl;
-    std::cout << std::endl;
-
     return true;
 }
 
@@ -3147,11 +3142,6 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         #endif
       #endif
     }
-
-    std::cout << std::endl << "DR " << qos_profile << std::endl;
-    std::cout << "Initial Samples: " << dr_qos.resource_limits.initial_samples << std::endl;
-    std::cout << "Max Samples: " << dr_qos.resource_limits.max_samples << std::endl;
-    std::cout << std::endl;
 
     return true;
 }
