@@ -204,10 +204,10 @@ if !BUILD_MICRO! == 1 (
 	if not exist "%RTIMEHOME%" (
 		@REM # Is NDDSHOME set?
 		if not exist "%NDDSHOME%" (
-			echo [ERROR]: Nor RTIMEHOME nor NDDSHOME variables are set.
+			echo [ERROR]: Nor RTIMEHOME nor NDDSHOME variables are set or the paths do not exist.
 			exit /b 1
 		) else (
-			echo [WARNING]: The RTIMEHOME variable is not set, using NDDSHOME.
+			echo [WARNING]: The RTIMEHOME variable is not set or the path does not exist, using NDDSHOME instead.
 		)
 	) else (
 		set "NDDSHOME=!RTIMEHOME!"
@@ -223,7 +223,7 @@ if !BUILD_MICRO! == 1 (
 ) else (
 
 	if not exist "%NDDSHOME%" (
-			echo [ERROR]: The NDDSHOME variable is not set.
+			echo [ERROR]: The NDDSHOME variable is not set or the path does not exist.
 			exit /b 1
 	)
 
