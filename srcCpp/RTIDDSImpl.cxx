@@ -15,6 +15,10 @@
   #include "qos_string.h"
 #endif
 
+#ifdef RTI_CUSTOM_TYPE
+#include "CustomType.h"
+#endif
+
 std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
 
 template <typename T>
@@ -836,7 +840,7 @@ public:
         this->_writer->get_qos(qos); // Gota fix the writer narrow to fix seg fault here
         this->_isReliable = (qos.reliability.kind == DDS_RELIABLE_RELIABILITY_QOS);
 
-      #ifdef RTI_CUSTOM_TYPE
+      #ifdef RTI_CUSTOM_TYPE_FLATDATA
         {
             this->_lastMessageSize = 0;
             _lastBufferSize = 0;

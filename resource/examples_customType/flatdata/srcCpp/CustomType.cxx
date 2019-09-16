@@ -118,22 +118,22 @@ bool finalize_custom_type_dynamic_data(DDS_DynamicData &data)
     return success;
 }
 
-#ifdef RTI_CUSTOM_TYPE_FLAT
+#ifdef RTI_CUSTOM_TYPE_FLATDATA
 bool initialize_custom_type_data_flatdata(
-        rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLAT>::builder &data)
+        rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLATDATA>::builder &data)
 {
     return true;
 }
 
 void register_custom_type_data_flatdata(
-        rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLAT>::builder &data,
+        rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLATDATA>::builder &data,
         unsigned long key)
 {
     data.add_test_long(key);
 }
 
-bool set_custom_type_data(
-        rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLAT>::builder &data,
+bool set_custom_type_data_flatdata(
+        rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLATDATA>::builder &data,
         unsigned long key,
         int targetDataLen)
 {
@@ -147,11 +147,11 @@ bool set_custom_type_data(
 }
 
 bool finalize_custom_type_data_flatdata(
-        rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLAT>::builder &data)
+        rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLATDATA>::builder &data)
 {
     return true;
 }
 
-#endif // RTI_CUSTOM_TYPE_FLAT
+#endif // RTI_CUSTOM_TYPE_FLATDATA
 
 #endif // RTI_CUSTOM_TYPE
