@@ -15,10 +15,6 @@
   #include "qos_string.h"
 #endif
 
-#ifdef RTI_CUSTOM_TYPE
-#include "CustomType.h"
-#endif
-
 std::string valid_flow_controller[] = {"default", "1Gbps", "10Gbps"};
 
 template <typename T>

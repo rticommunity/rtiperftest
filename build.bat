@@ -985,9 +985,12 @@ GOTO:EOF
 	echo.    --customType type            Use the Custom type feature with your type.
 	echo.                                 See details and examples of use in the
 	echo.                                 documentation.
-	echo.    --flatdata-max-size size     Specify the maximum bounded size in bytes      
-	echo.                                 for sequences when using FlatData language     
-	echo.                                 binding. Default 10MB                          
+	echo.    --customTypeFlatData type    Use the Custom type feature with your FlatData
+	echo.                                 type. See details and examples of use in the
+	echo.                                 documentation.
+	echo.    --flatdata-max-size size     Specify the maximum bounded size in bytes
+	echo.                                 for sequences when using FlatData language
+	echo.                                 binding. Default 10MB
 	echo.    --help -h                    Display this message.
 	echo[
 	echo ================================================================================

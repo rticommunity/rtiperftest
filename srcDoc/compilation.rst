@@ -132,6 +132,16 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | debug libraries. Default: Release |
 |                      |           | Libraries.                        |
 +----------------------+-----------+-----------------------------------+
+| --customType         | Optional  | Use the Custom type feature       |
+|                      |           | with your type. See details       |
+|                      |           | and examples of use in the        |
+|                      |           | documentation                     |
++----------------------+-----------+-----------------------------------+
+| --customTypeFlatData | Optional  | Use the Custom type feature       |
+|                      |           | with your FlatData type. See      |
+|                      |           | details and examples of use in    |
+|                      |           | the documentation                 |
++----------------------+-----------+-----------------------------------+
 | --flatdata-max-size  | Optional  | Specify the maximum size in Bytes |
 | <size>               |           | of the sample to be sent when     |
 |                      |           | using FlatData language binding.  |
@@ -415,6 +425,16 @@ The ``build.bat`` script accepts the following list of parameters:
 | --debug              | Optional  | Compile using the RTI Connext DDS |
 |                      |           | debug libraries. Default: Release |
 |                      |           | Libraries.                        |
++----------------------+-----------+-----------------------------------+
+| --customType         | Optional  | Use the Custom type feature       |
+|                      |           | with your type. See details       |
+|                      |           | and examples of use in the        |
+|                      |           | documentation                     |
++----------------------+-----------+-----------------------------------+
+| --customTypeFlatData | Optional  | Use the Custom type feature       |
+|                      |           | with your FlatData type. See      |
+|                      |           | details and examples of use in    |
+|                      |           | the documentation                 |
 +----------------------+-----------+-----------------------------------+
 | --flatdata-max-size  | Optional  | Specify the maximum size in Bytes |
 | <size>               |           | of the sample to be sent when     |
