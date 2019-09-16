@@ -1065,7 +1065,6 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
         DDS_Octet key_octets[KEY_SIZE];
 
         this->_writer = DDSDynamicDataWriter::narrow(writer);
-        data = DDS_DynamicData(typeCode, DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
 
         DDS_DataWriterQos qos;
         this->_writer->get_qos(qos); // Gota fix the writer narrow to fix seg fault here
@@ -1091,7 +1090,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
             register_custom_type_dynamic_data(data, i);
           #endif
 
-            this->_instance_handles[i] = this->_writer->register_instance(this->data);
+            this->_instance_handles[i] = this->_writer->register_instance(data);
         }
 
         // Register the key of MAX_CFT_VALUE
@@ -3277,13 +3276,6 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
     DDS_DataWriterQos dw_qos;
     DDSDataWriter *writer = NULL;
     std::string qos_profile = "";
-
-    /* Since we have to instantiate RTIDDSImpl<T> class
-     * with T=TestData_t, we have to register the FlatData
-     * type here.
-     */
-    T::TypeSupport::register_type(_participant, _typename);
-
     DDSTopic *topic = _participant->create_topic(
                        topic_name,
                        _typename,
