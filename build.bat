@@ -53,7 +53,9 @@ set "java_lang_string=java"
 @REM # Variables for customType
 set "custom_type_folder=%idl_location%\customType"
 set USE_CUSTOM_TYPE=0
+set USE_CUSTOM_TYPE_FLAT=0
 set "custom_type=" @REM # Type of the customer
+set "custom_type_flat=" @REM # Type of the customer
 @REM # Name of the file with the type. "TSupport.h"
 set "custom_type_file_name_support="
 @REM # Intermediate file for including the custom type file #include "file.idl"
@@ -166,6 +168,15 @@ if NOT "%1"=="" (
 					exit /b 1
 				)
 				SHIFT
+		) ELSE if "%1"=="--customTypeFlatdata" (
+				SET USE_CUSTOM_TYPE_FLAT=1
+				SET "custom_type_flat=%2"
+				if "!custom_type_flat!"== "" (
+					echo [ERROR]: --customTypeFlatdata should be followed by the name of the type.
+					call:help
+					exit /b 1
+				)
+				SHIFT
 		) ELSE if "%1"=="--flatdata-max-size" (
 				SET "flatdata_size=%2"
 				if "!flatdata_size!"  LEQ "0" (
@@ -204,10 +215,10 @@ if !BUILD_MICRO! == 1 (
 	if not exist "%RTIMEHOME%" (
 		@REM # Is NDDSHOME set?
 		if not exist "%NDDSHOME%" (
-			echo [ERROR]: Nor RTIMEHOME nor NDDSHOME variables are set.
+			echo [ERROR]: Nor RTIMEHOME nor NDDSHOME variables are set or the paths do not exist.
 			exit /b 1
 		) else (
-			echo [WARNING]: The RTIMEHOME variable is not set, using NDDSHOME.
+			echo [WARNING]: The RTIMEHOME variable is not set or the path does not exist, using NDDSHOME instead.
 		)
 	) else (
 		set "NDDSHOME=!RTIMEHOME!"
@@ -223,7 +234,7 @@ if !BUILD_MICRO! == 1 (
 ) else (
 
 	if not exist "%NDDSHOME%" (
-			echo [ERROR]: The NDDSHOME variable is not set.
+			echo [ERROR]: The NDDSHOME variable is not set or the path does not exist.
 			exit /b 1
 	)
 
@@ -346,6 +357,10 @@ if !BUILD_CPP! == 1 (
 		set "additional_source_files_custom_type=!additional_source_files_custom_type! "
 		REM # Adding RTI_USE_CUSTOM_TYPE as a macro
 		set "additional_defines_custom_type= -D RTI_CUSTOM_TYPE=%custom_type%"
+
+		if !USE_CUSTOM_TYPE_FLAT! == 1 (
+			set "additional_defines_custom_type=!additional_defines_custom_type! -D RTI_CUSTOM_TYPE_FLATDATA=%custom_type_flat%"
+		)
 	)
 
 	if !LEGACY_DD_IMPL! == 1 (
@@ -382,6 +397,10 @@ if !BUILD_CPP! == 1 (
 
 	if !USE_CUSTOM_TYPE! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_CUSTOM_TYPE=%custom_type% RTI_CUSTOM_TYPE_FILE_NAME_SUPPORT=!custom_type_file_name_support!"
+
+		if !USE_CUSTOM_TYPE_FLAT! == 1 (
+			set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_CUSTOM_TYPE_FLATDATA=%custom_type_flat%"
+		)
 	)
 
 	where git >nul 2>nul
@@ -966,9 +985,12 @@ GOTO:EOF
 	echo.    --customType type            Use the Custom type feature with your type.
 	echo.                                 See details and examples of use in the
 	echo.                                 documentation.
-	echo.    --flatdata-max-size size     Specify the maximum bounded size in bytes      
-	echo.                                 for sequences when using FlatData language     
-	echo.                                 binding. Default 10MB                          
+	echo.    --customTypeFlatData type    Use the Custom type feature with your FlatData
+	echo.                                 type. See details and examples of use in the
+	echo.                                 documentation.
+	echo.    --flatdata-max-size size     Specify the maximum bounded size in bytes
+	echo.                                 for sequences when using FlatData language
+	echo.                                 binding. Default 10MB
 	echo.    --help -h                    Display this message.
 	echo[
 	echo ================================================================================

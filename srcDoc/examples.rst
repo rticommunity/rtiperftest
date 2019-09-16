@@ -812,6 +812,14 @@ Briefly, the steps you need to perform to use your custom type in *RTI Perftest*
 -  Run the build script with the command-line parameter ``--customType <type>``
 -  Run *RTI Perftest* as usual.
 
+Furthermore, if you want to use *FlatData* with your Custom Types, follow these additional steps:
+
+- Create a copy of your original type on the same IDL file.
+- Make this new type mutable (``@mutable``) and make it FlatData compatible (``@language_binding(FLAT_DATA)``).
+- Implement the additional API custom type functions of customtype.cxx for *FlatData* types.
+- Run the build script with the command-line parameter ``--customType <type>`` and ``--customTypeFlatData <flat_type>``.
+- Run *RTI Perftest* as usual.
+
 Full example using Custom Types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

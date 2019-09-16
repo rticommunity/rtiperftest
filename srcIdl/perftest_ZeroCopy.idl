@@ -11,7 +11,7 @@
  * This information is covered in bug id: CORE-9693.
  */
 
-#ifdef RTI_CUSTOM_TYPE
+#ifdef RTI_CUSTOM_TYPE_FLATDATA
 #include "custom.idl"
 #endif
 
@@ -33,8 +33,8 @@ struct TestData_ZeroCopy_w_FlatData_t {
     unsigned long timestamp_usec;
     long latency_ping;
     sequence<octet, MAX_BOUNDED_SEQ_SIZE_cp> bin_data;
-  #ifdef RTI_CUSTOM_TYPE
-    RTI_CUSTOM_TYPE custom_type;
+  #ifdef RTI_CUSTOM_TYPE_FLATDATA
+    RTI_CUSTOM_TYPE_FLATDATA custom_type;
     // custom_type_size is the serialize size of the field custom_type
     // in the the sample that we send on the wire
     long custom_type_size;
@@ -54,9 +54,9 @@ struct TestDataKeyed_ZeroCopy_w_FlatData_t {
     unsigned long timestamp_usec;
     long latency_ping;
     sequence<octet, MAX_BOUNDED_SEQ_SIZE_cp> bin_data;
-  #ifdef RTI_CUSTOM_TYPE
+  #ifdef RTI_CUSTOM_TYPE_FLATDATA
     @key
-    RTI_CUSTOM_TYPE custom_type;
+    RTI_CUSTOM_TYPE_FLATDATA custom_type;
     long custom_type_size;
   #endif
 };
@@ -73,8 +73,8 @@ struct TestDataLarge_ZeroCopy_w_FlatData_t {
     unsigned long timestamp_usec;
     long latency_ping;
     sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
-  #ifdef RTI_CUSTOM_TYPE
-    RTI_CUSTOM_TYPE custom_type;
+  #ifdef RTI_CUSTOM_TYPE_FLATDATA
+    RTI_CUSTOM_TYPE_FLATDATA custom_type;
     long custom_type_size;
   #endif
 };
@@ -92,9 +92,9 @@ struct TestDataKeyedLarge_ZeroCopy_w_FlatData_t {
     unsigned long timestamp_usec;
     long latency_ping;
     sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
-  #ifdef RTI_CUSTOM_TYPE
+  #ifdef RTI_CUSTOM_TYPE_FLATDATA
     @key
-    RTI_CUSTOM_TYPE custom_type;
+    RTI_CUSTOM_TYPE_FLATDATA custom_type;
     long custom_type_size;
   #endif
 };
