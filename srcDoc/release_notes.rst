@@ -377,6 +377,17 @@ The `dds.transport.shmem.builtin.received_message_count_max` and
 `dds.transport.shmem.builtin.receive_buffer_size` QoS settings have been
 increased to avoid this bottleneck.
 
+Fix Custom Types failure due to the use of Flat Data (#221)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+FlatData support for Custom Types was not complete thus errors arise when using
+``--customType`` build option.
+
+Now this issue has been fixed and FlatData custom types can be used along with
+regular custom types by using the new ``--customTypeFlatdata`` build option.
+
+The only known limitation is that these FlatData types must be declared as mutable.
+
 Release Notes 2.4
 -----------------
 
