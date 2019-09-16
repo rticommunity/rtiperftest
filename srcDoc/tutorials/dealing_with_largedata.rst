@@ -7,12 +7,12 @@ This means understanding the maximum throughput that **RTI Connext DDS Pro** can
 achieve on a 1-to-1 communication, as well as the average latency we can expect
 when sending packets.
 
-For this demonstration we will use a couple of Raspberry Pi boards, connected to a switch. See below the
-information about the environment
+For this demonstration we will use a couple of Raspberry Pi boards, connected to a switch.
 
    | Target machines: 2 x **Raspberry Pi 2 Model B**
    |                  OS: Raspbian GNU/Linux
    |                  CPU: ARMv7 Processor rev 5 (v7l)
+   |                  RAM: 1GB
    |                  NIC: 100Mbps
    | Switch: 1Gbps switch
 
@@ -99,7 +99,7 @@ Throughput Results -- FlatData vs Regular Data (UDPv4)
         52428800, 52.4, 83.9
 
 You will have noticed the parameter *-sendqueuesize*. It specifies the
-initial length for the queue that Connext will allocate for sending samples.
+initial length for the queue that *ConnextDDS* will allocate for sending samples.
 In other words, the send window size.
 
 By default, this value is 50 but since we are sending up to 50MB on this test,
@@ -156,7 +156,7 @@ Throughput Results -- Regular Data vs FlatData vs Zero Copy (SHMEM)
         52428800, 803.6, 1554.4, 1758308
 
 As can be seen, *FlatData* still achieves better performance than regular data,
-but with Zero Copy, since we are only sending a pointer to the object on the Data
+but Zero Copy, since we are only sending a pointer to the object on the Data
 Writer queue, outperforms them with a throughput that scales linearly with the
 sample size.
 
@@ -251,5 +251,50 @@ As we can see again ZeroCopy outperform regular data and Flat Data when using
 Shared Memory. Furthermore, pay close attention to the average latency; it is
 constant no matter the data size!
 
-ZeroCopy should be your default option if communication between shared memory is
+ZeroCopy should be your default option if communication over shared memory is
 available.
+
+We can further reduce the latency by preallocating a buffer to store fragmented
+samples. This will save us time by not dynamically allocating space for fragments
+of incomming samples. We can enable this option on *Perftest* with the
+``-preallocateFragmentedSamples`` argument.
+
+* **Publisher side**
+
+    .. code::
+
+        for DATALEN in 63001 512000 1048576 5242880 10485760 26214400 52428800; do
+            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -noPrint -transport SHMEM -exec 23 -flatdata -datalen $DATALEN -sendqueuesize 5  -receivequeue 1 -latencytest -preallocateFragmentedSamples;
+        done
+
+* **Subscriber side**
+
+    .. code::
+
+        for DATALEN in 63001 512000 1048576 5242880 10485760 26214400 52428800; do
+            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -noPrint -transport SHMEM -flatdata -datalen $DATALEN -sendqueuesize 1  -receivequeue 5 -preallocateFragmentedSamples;
+        done
+
+Latency Results -- Avoid Dynamic Allocation (UDPv4)
+:::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    .. csv-table::
+        :align: center
+        :header-rows: 1
+
+        "Size", "FlatData (us)", "FlatData with Preallocation (us)"
+        63001,870,46700
+        512000,2824,48186
+        1048576,6276,49833
+        5242880,26529,61846
+        10485760,52263,76712
+        26214400,128278,121449
+        52428800,257941,191216
+
+As can be seen, for slightly large data (from 63KB to 10MB), it seems like we are
+paying extra cost by avoiding dynamic allocation of fragments. But, as soon as
+samples are large enought (from 25MB on), we can see how latency is considerably
+reduced.
+
+If you want to learn more about *FlatData* and Zero Copy over shared memory,
+please refer to the official documentation for more details.
