@@ -145,7 +145,7 @@ will use the following commands:
     .. code::
 
         for DATALEN in 32 64 128 256 512 1024 2048 4096 8192 16384 32768 63000; do
-            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -pub -noPrint -exec 20 -datalen $DATALEN -batchSize 0;
+            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -noPrint -exec 20 -datalen $DATALEN -batchSize 0;
         done
 
 * **Subscriber side**
@@ -169,7 +169,7 @@ Some comments about the parameters we used:
 
 See below the output results of executing this test. The information displayed here is
 only what the subscriber side showed, since all the information displayed in the publisher
-side is related to latency not about throughput.
+side is related to latency, not throughput.
 
 Throughput Results-- RAW Transport (UDPv4)
 ::::::::::::::::::::::::::::::::::::::::::
@@ -205,7 +205,7 @@ publisher side.
     .. code::
 
         for DATALEN in 32 64 128 256 512 1024 2048 4096 8192 16384 32768 63000; do
-            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -pub -noPrint -exec 20 -datalen $DATALEN -latencyTest;
+            bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -peer 10.45.3.119 -nic eth0 -raw -noPrint -exec 20 -datalen $DATALEN -latencyTest;
         done
 
 * **Subscriber side**
@@ -256,7 +256,7 @@ Then, the command line parameters are going to be quite similar:
 
     .. code::
 
-        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -nic eth0 -pub -noPrint -exec 20 -scan -batchSize 0
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -nic eth0 -noPrint -exec 20 -scan -batchSize 0
 
 * **Subscriber side**
 
@@ -369,7 +369,7 @@ the `-rawTransport` option:
 
     .. code::
 
-        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -nic eth0 -pub -noPrint -exec 20 -scan -latencyTest
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -pub -nic eth0 -noPrint -exec 20 -scan -latencyTest
 
 * **Subscriber side**
 
@@ -445,7 +445,7 @@ Throughput Test
 
     .. code::
 
-        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -pub -nic eth0 -pub -noPrint -exec 20 -scan
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -pub -nic eth0 -noPrint -exec 20 -scan
 
 * **Subscriber side**
 
@@ -513,7 +513,7 @@ Latency Test
 
     .. code::
 
-        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -pub -nic eth0 -pub -noPrint -exec 20 -scan -latencyTest
+        bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -pub -nic eth0 -noPrint -exec 20 -scan -latencyTest
 
 * **Subscriber side**
 
