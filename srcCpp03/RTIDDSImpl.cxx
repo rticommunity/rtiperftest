@@ -1688,8 +1688,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     //We have to copy the properties to the participant_qos object
     qos << rti::core::policy::Property(
             properties.begin(),
-            properties.end(),
-            true);
+            properties.end());
 
     DomainListener *listener = new DomainListener;
 
@@ -2225,7 +2224,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
     dr_qos << qos_durability;
     dr_qos << dr_DataReaderProtocol;
     dr_qos << qos_dr_resource_limits;
-    dr_qos << Property(properties.begin(), properties.end(), true);
+    dr_qos << Property(properties.begin(), properties.end());
 
     return dr_qos;
 }
@@ -2508,7 +2507,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
     dw_qos << dwBatch;
     dw_dataWriterProtocol.rtps_reliable_writer(dw_reliableWriterProtocol);
     dw_qos << dw_dataWriterProtocol;
-    dw_qos << Property(properties.begin(), properties.end(), true);
+    dw_qos << Property(properties.begin(), properties.end());
 
     return dw_qos;
 }

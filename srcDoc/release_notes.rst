@@ -60,6 +60,14 @@ Wrong version in dockerfile for perftest 3.0.1 (#227)
 *RTI Perftest*'s Dockerfile was outdated. It has now been updated to use the
 latest release.
 
+Participant properties always propagate in C++03 (#228)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+QoS properties for Data Readers and Data Writers were being propagated on C++03
+implementation.
+
+This behavious is not needed so has been removed to behave as on Traditional C++.
+
 Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
