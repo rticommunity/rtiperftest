@@ -54,6 +54,12 @@ What's New in Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Wrong version in dockerfile for perftest 3.0.1 (#227)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest*'s Dockerfile was outdated. It has now been updated to use the
+latest release.
+
 Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
