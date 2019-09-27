@@ -1,24 +1,28 @@
 Characterize the performance of Connext DDS in a given environment using RTI Perftest
 =====================================================================================
 
-This article is meant to be a quick guide about the initial steps we recommend to follow to profile and
+This tutorial is meant to be a quick guide about the initial steps we recommend to follow to profile and
 characterize the performance between 2 machines in a given environment. This means understanding the maximum
 throughput that **RTI Connext DDS** can maintain in a 1-to-1 communication, as well as the average latency we
 can expect when sending packets.
 
 For this demonstration we will use a couple of Raspberry Pi boards, connected to a switch. See below the
+
 information about the environment
 
    | Target machines: 2 x **Raspberry Pi 2 Model B**
    |                  OS: Raspbian GNU/Linux
    |                  CPU: ARMv7 Processor rev 5 (v7l)
-   |                  NIC: 100Mbps
+   |                  NIC: 100Mbps - IP1: 10.45.3.119 / IP2: 10.45.3.120
+   |                  Software: RTI Perftest 3.0, C++ Implementation.
+   |                            RTI Connext DDS Professional 6.0.0
+   |                            RTI Connext DDS Micro 3.0.0
    | Switch: 1Gbps switch
 
 Prepare the tools
 ~~~~~~~~~~~~~~~~~
 
-In order to perform this test we will only need **RTI Perftest 3.0** (Perftest). We will compile it against **RTI Connext DDS
+To run this test we will need **RTI Perftest 3.0** (Perftest). We will compile it against **RTI Connext DDS
 Professional 6.0.0** and **RTI Connext DDS Micro 3.0.0**.
 
 Get Perftest
@@ -40,7 +44,7 @@ Getting the tool is fairly easy, in fact, you have 3 different ways in which you
    If you don't include the ``-b release/3.0``, you will clone the ``master`` branch
    of the product.
 
--  You can download a `zip` file containing the **Perftest** source files from
+-  You can download a `zip` file containing the **Perftest** source files for the 3.0 release from
    the **Github** page:
    `github.com/rticommunity/rtiperftest <https://github.com/rticommunity/rtiperftest>`__.
    Once the zip file is downloaded you will need to extract its content,
@@ -75,8 +79,8 @@ Therefore the command we will need to execute should look like this:
         ./build.sh --platform armv6vfphLinux3.xgcc4.7.2 --nddshome <Path to your nddshome> --cpp-build
 
 Alternatively, you can just point to the compiler and linker using the ``--compiler`` and ``--linker``
-command line options. As you can see we also specified the ``--cpp-build`` option, this is because we
-are going to use only that executable to test with.
+command line options. As you can see we also specified the ``--cpp-build`` option,
+this is because we are going to use only the C++ executable to test with.
 
 After executing this, you should have a statically linked binary in `./bin/armv6vfphLinux3.xgcc4.7.2/release`,
 this is all you should need for your testing.
@@ -87,6 +91,11 @@ Compile against RTI Connext DDS Micro 3.0.0
 This process should be equivalent to the one described in the previous step, and it is also covered
 in the `compilation <https://github.com/rticommunity/rtiperftest/blob/3.0/srcDoc/compilation.rst>`__
 section of the **Perftest** documentation.
+
+**Note:** Although you will need to call the build script two times for compiling for **RTI Connext DDS Proffesional**
+and **Micro**, you don't need to use two different directories, since the executables will be stored
+with different names. It is also worth mentioning that cross-testing (Using a **Perftest** Publisher from **Professional**
+and a Subscriber from **Micro** or viceversa) is supported.
 
 Therefore the command we will need to execute should look like this:
 
@@ -102,11 +111,10 @@ Tests
 ~~~~~
 
 Our goal is to characterize how *Connext DDS* behaves in the communication between 2 *Raspberry Pi* nodes connected
-to one switch. The first thing we will need to know is what is the *minimum latency* and *maximum throughput*
-achievable in that environment, independent on using DDS or not. This means that we need to know
-how fast can we send with a simple UDP-socket communication. Luckily this is something that we can get with
-**Perftest**: By using the ``-rawTransport`` option, we skip the use of *RTPS* and *DDS* and we
-just send using UDPv4 sockets.
+to one switch and compare it with the performance of sending samples with UDPv4 sockets.
+The first thing we will need to know is what is the *minimum latency* and *maximum throughput*
+achievable in that environment with UDPv4 sockets. Luckily this is something that we can get with **Perftest**:
+By using the ``-rawTransport`` option, we skip the use of *RTPS** and **DDS** and we just send using UDPv4 sockets.
 
 We will be doing a *Latency Test* and a *Throughput Test* (See
 `this <https://github.com/rticommunity/rtiperftest/blob/3.0/srcDoc/introduction.rst#latency-test-vs-throughput-test>`__ section to understand the
