@@ -345,7 +345,9 @@ void ParameterManager::initialize()
     flatData->set_type(T_BOOL);
     flatData->set_extra_argument(NO);
     flatData->set_group(GENERAL);
-    flatData->set_supported_middleware(Middleware::RTIDDSPRO);
+    flatData->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
     create("flatdata", flatData);
 
     #if RTI_ZEROCOPY_AVAILABLE
@@ -356,7 +358,9 @@ void ParameterManager::initialize()
     zerocopy->set_type(T_BOOL);
     zerocopy->set_extra_argument(NO);
     zerocopy->set_group(GENERAL);
-    zerocopy->set_supported_middleware(Middleware::RTIDDSPRO);
+    zerocopy->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
     create("zerocopy", zerocopy);
 
     Parameter<bool> *checkconsistency = new Parameter<bool>(false);
@@ -366,7 +370,9 @@ void ParameterManager::initialize()
     checkconsistency->set_type(T_BOOL);
     checkconsistency->set_extra_argument(NO);
     checkconsistency->set_group(GENERAL);
-    checkconsistency->set_supported_middleware(Middleware::RTIDDSPRO);
+    checkconsistency->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
     create("checkconsistency", checkconsistency);
     #endif
   #endif

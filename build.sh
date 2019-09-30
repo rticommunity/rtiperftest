@@ -455,6 +455,18 @@ function additional_defines_calculation_micro()
             echo -e "${INFO_TAG} Using security plugin. Linking Statically."
         fi
     fi
+
+    # Adding RTI_ZEROCOPY_AVAILABLE, RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as defines
+    if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
+        additional_defines=${additional_defines}" RTI_FLATDATA_AVAILABLE RTI_FLATDATA_MAX_SIZE=${flatdata_size}"
+        additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
+
+        if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+            additional_rti_libs="nddsmetp ${additional_rti_libs}"
+            additional_defines=${additional_defines}" RTI_ZEROCOPY_AVAILABLE"
+            additional_defines_flatdata=$additional_defines_flatdata" -D RTI_ZEROCOPY_AVAILABLE"
+        fi
+    fi
 }
 
 # Generate code for the type of the customer.
@@ -768,6 +780,7 @@ function build_cpp()
 function build_micro_cpp()
 {
     copy_src_cpp_common
+    check_flatData_zeroCopy_available
     additional_defines_calculation_micro
 
     ##############################################################################
@@ -778,9 +791,10 @@ function build_micro_cpp()
         rtiddsgen_extra_options="${rtiddsgen_extra_options} -sequenceSize ${MICRO_UNBOUNDED_SEQUENCE_SIZE}"
 
         if [ "${USE_SECURE_LIBS}" != "1" ]; then
-            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries \"nddsmetp\""
+            additional_rti_libs="${additional_rti_libs} nddsmetp"
         else
-            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries \"rti_me_netioshmem rti_me_netioshmem rti_me_seccore\" -additionalLibraries \"sslz cryptoz\" -additionalLibraryPaths \"${RTI_OPENSSLHOME}/${RELEASE_DEBUG}/lib\""
+            additional_rti_libs="${additional_rti_libs} rti_me_netioshmem rti_me_netioshmem rti_me_seccore"
+            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"sslz cryptoz\" -additionalLibraryPaths \"${RTI_OPENSSLHOME}/${RELEASE_DEBUG}/lib\""
         fi
     fi
 
@@ -808,11 +822,25 @@ function build_micro_cpp()
         Infrastructure_common.cxx \
         Infrastructure_micro.cxx"
 
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+        additional_header_files="${additional_header_files} \
+        perftest_ZeroCopy.h \
+        perftest_ZeroCopyPlugin.h \
+        perftest_ZeroCopySupport.h"
+
+        additional_source_files="${additional_source_files} \
+        perftest_ZeroCopy.cxx \
+        perftest_ZeroCopyPlugin.cxx \
+        perftest_ZeroCopySupport.cxx"
+    fi
+
     rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} \
+            ${additional_defines_flatdata} \
             -replace -create typefiles -create makefiles \
             -additionalHeaderFiles \"$additional_header_files\" \
             -additionalSourceFiles \"$additional_source_files\" \
             -additionalDefines \"${additional_defines}\" \
+            -additionalRtiLibraries \"${additional_rti_libs} \" \
             ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
 
     echo ""
@@ -825,6 +853,28 @@ function build_micro_cpp()
         echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
         exit -1
     fi
+
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+        echo -e "${INFO_TAG} Generating Zero Copy code"
+        rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} \
+            ${additional_defines_flatdata} \
+            -replace -create typefiles \
+            -additionalDefines \"${additional_defines}\" \
+            ${rtiddsgen_extra_options} \
+            -d \"${classic_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\" "
+
+        echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+        eval $rtiddsgen_command
+        if [ "$?" != 0 ]; then
+            echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
+            clean_src_cpp_common
+            exit -1
+        fi
+
+        rm -rf ${classic_cpp_folder}/makefile_perftest_ZeroCopy_${platform}
+    fi
+
+
     cp "${classic_cpp_folder}/perftest_publisher.cxx" "${classic_cpp_folder}/perftest_subscriber.cxx"
     cp "${idl_location}/perftest.idl" "${classic_cpp_folder}/perftest.idl"
     touch "${classic_cpp_folder}/perftestApplication.cxx"

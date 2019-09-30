@@ -785,10 +785,7 @@ class RTIPublisher : public RTIPublisherBase<T>
     }
 };
 
-#ifndef RTI_MICRO //Dynamic Data and FlatData are not supported for micro
-
 #ifdef RTI_FLATDATA_AVAILABLE
-
 /**
  * Implementation of RTIPublisherBase for FlatData types.
  *
@@ -983,6 +980,9 @@ public:
     }
 };
 #endif
+
+
+#ifndef RTI_MICRO //Dynamic Data is not supported for micro
 
 /* Dynamic Data equivalent function from RTIPublisher */
 class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
@@ -1362,9 +1362,6 @@ class ReceiverListener : public ReceiverListenerBase<T>
 
 };
 
-
-#ifndef RTI_MICRO //Dynamic Data and FlatData are not supported for micro
-
 #ifdef RTI_FLATDATA_AVAILABLE
 /**
  * Implements ReceiverListenerBase with FlatData API.
@@ -1489,6 +1486,7 @@ public:
 #endif //RTI_FLATDATA_AVAILABLE
 
 
+#ifndef RTI_MICRO //Dynamic Data is not supported for micro
 
 /* Dynamic Data equivalent function from ReceiverListener */
 class DynamicDataReceiverListener : public ReceiverListenerBase<DDS_DynamicData>
@@ -1815,8 +1813,6 @@ class RTISubscriber : public RTISubscriberBase<T>
     }
 };
 
-#ifndef RTI_MICRO
-
 #ifdef RTI_FLATDATA_AVAILABLE
 /**
  * Implements RTISubscriberBase with FlatData API.
@@ -1958,6 +1954,8 @@ public:
     }
 };
 #endif
+
+#ifndef RTI_MICRO
 
 /* Dynamic Data equivalent function from RTISubscriber */
 template <typename T>
@@ -2145,7 +2143,7 @@ class RTIDynamicDataSubscriber : public RTISubscriberBase<DDS_DynamicData>
     }
 };
 
-#endif //RTI_MICRO
+#endif //!RTI_MICRO
 
 /*********************************************************
  * configureDomainParticipantQos
@@ -2484,6 +2482,18 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
      * If we are not using reliability this should not matter.
      */
     unsigned long initializeSampleCount = this->_sendQueueSize;
+
+    /**
+     * In Micro, the DW on the subscriber side for the latency topic sets its
+     * max_samples QoS to 1. Therefore, if using FlatData, it runs into
+     * ModuleID=1 Errcode=309 (i.e. cannot loan samples from DW queue).
+     *
+     * We will limit the initial burst to two since
+     * writer_loaned_sample_allocation is set to 2*max_samples
+     */
+//   #ifdef RTI_MICRO
+//     initializeSampleCount = 2;
+//   #endif
 
     /*
      * If we are using batching we need to take into account tha the Send Queue
@@ -2928,6 +2938,13 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
 
   #ifdef RTI_FLATDATA_AVAILABLE
     if (_isFlatData) {
+
+      #ifdef RTI_MICRO
+        if (qos_profile == "LatencyQos") {
+            dw_qos.resource_limits.max_samples = _PM->get<int>("sendQueueSize");
+        }
+      #endif
+
          /**
          * If FlatData and LargeData, automatically estimate initial_samples
          * here in a range from 1 up to the initial samples specifies in the QoS
@@ -2938,6 +2955,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
          */
         if (_isLargeData) {
             unsigned long max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
+            unsigned long qos_initial_samples = 0;
 
           #ifdef RTI_DARWIN
             /**
@@ -2975,16 +2993,24 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
             }
           #endif
 
+          #ifndef RTI_MICRO
+            qos_initial_samples = dw_qos.resource_limits.initial_samples;
+          #else
+            qos_initial_samples = dw_qos.resource_limits.max_samples;
+          #endif
+
             // The writer_loaned_sample_allocation is initial_simples + 1
             unsigned long long initial_samples = (std::max)(
                     1ul, (max_allocable_space - RTI_FLATDATA_MAX_SIZE) / RTI_FLATDATA_MAX_SIZE);
 
             initial_samples = (std::min)(
                     initial_samples,
-                    (unsigned long long) dw_qos.resource_limits.initial_samples);
+                    (unsigned long long) qos_initial_samples);
 
-            dw_qos.resource_limits.initial_samples = initial_samples;
             this->_sendQueueSize = initial_samples;
+
+          #ifndef RTI_MICRO
+            dw_qos.resource_limits.initial_samples = initial_samples;
 
             if (_transport.transportConfig.kind == TRANSPORT_SHMEM
                     || _transport.transportConfig.kind == TRANSPORT_UDPv4_SHMEM) {
@@ -3013,6 +3039,11 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                             dw_qos.protocol.rtps_reliable_writer.low_watermark + 1;
                 }
             }
+
+          #else
+            dw_qos.resource_limits.max_samples = initial_samples;
+            dw_qos.resource_limits.max_samples_per_instance = initial_samples;
+          #endif //!RTIMICRO
         } else {
             /**
              * Avoid "DDS_DataWriter_get_loan_untypedI:ERROR: Out of resources
@@ -3020,11 +3051,16 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
              * having enought samples on the writer buffer where FlatData loans
              * samples from.
              */
+          #ifndef RTI_MICRO
             dw_qos.writer_resource_limits.writer_loaned_sample_allocation.
-                initial_count = 2 * dw_qos.resource_limits.initial_samples;
+                    initial_count = 2 * dw_qos.resource_limits.initial_samples;
             dw_qos.writer_resource_limits.writer_loaned_sample_allocation.
-                max_count = 1 + dw_qos.writer_resource_limits.
-                        writer_loaned_sample_allocation.initial_count;
+                    max_count = 1 + dw_qos.writer_resource_limits.
+                            writer_loaned_sample_allocation.initial_count;
+          #else
+            dw_qos.writer_resource_limits.writer_loaned_sample_allocation =
+                    2 * dw_qos.resource_limits.max_samples;
+          #endif
         }
 
         /**
@@ -3038,6 +3074,16 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         }
     }
   #endif
+
+    std::cout << std::endl << "QOS: " << qos_profile << std::endl;
+    std::cout << "-sendQueueSize: " << _PM->get<int>("sendQueueSize") << std::endl;
+    std::cout << "max_samples: " << dw_qos.resource_limits.max_samples << std::endl;
+    #ifndef RTI_MICRO
+    std::cout << "initial_samples: " << dw_qos.resource_limits.initial_samples << std::endl;
+    std::cout << "writer_loaned_sample_allocation.initial_count: " << dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count << std::endl;
+    #else
+    std::cout << "writer_loaned_sample_allocation: " << dw_qos.writer_resource_limits.writer_loaned_sample_allocation << std::endl;
+    #endif
 
     return true;
 }
@@ -3192,17 +3238,28 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         dr_qos.multicast.value[0].receive_port = 0;
         dr_qos.multicast.value[0].transports.length(0);
     }
+  #endif
 
-    #ifdef RTI_FLATDATA_AVAILABLE
+  #ifdef RTI_FLATDATA_AVAILABLE
     if (_isFlatData) {
+
+      #ifndef RTI_MICRO
         char buf[10];
         sprintf(buf, "%d", DDS_LENGTH_UNLIMITED);
         DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
+      #endif
 
         if (_isLargeData) {
             int max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;
+            unsigned long qos_initial_samples = 0;
+
+         #ifndef RTI_MICRO
+            qos_initial_samples=dr_qos.resource_limits.initial_samples;
+          #else
+            qos_initial_samples=dr_qos.resource_limits.max_samples;
+          #endif
 
             // The writer_loaned_sample_allocation is initial_simples + 1
             unsigned long long initial_samples = (std::max)(
@@ -3212,34 +3269,43 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
 
             initial_samples = (std::min)(
                     initial_samples,
-                    (unsigned long long) dr_qos.resource_limits.initial_samples);
+                    (unsigned long long) qos_initial_samples);
 
+          #ifndef RTI_MICRO
             dr_qos.resource_limits.initial_samples = initial_samples;
+          #else
+            dr_qos.resource_limits.max_samples = initial_samples;
+          #endif
 
             /**
              * Since for ZeroCopy we are sending small data (16B reference),
              * we do not need these settings
              */
             if (!_isZeroCopy) {
-                dr_qos.resource_limits.max_samples = initial_samples;
                 dr_qos.resource_limits.max_samples_per_instance = initial_samples;
+
+              #ifndef RTI_MICRO
+                dr_qos.resource_limits.max_samples = initial_samples;
                 dr_qos.reader_resource_limits.max_samples_per_remote_writer = initial_samples;
+              #endif
             }
         }
     }
-    #endif
+  #endif
 
     /**
      * Configure DataReader to prevent dynamic allocation of
      * buffer used for storing received fragments
      */
     if (_PM->get<bool>("preallocateFragmentedSamples")) {
+      #ifndef RTI_MICRO
         dr_qos.reader_resource_limits.initial_fragmented_samples = 1;
         dr_qos.reader_resource_limits.dynamically_allocate_fragmented_samples =
             DDS_BOOLEAN_FALSE;
+      #else
+        dr_qos.reader_resource_limits.max_fragmented_samples = 1;
+      #endif
     }
-  #endif
-
 
     if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {
       #ifndef RTI_MICRO
