@@ -143,7 +143,7 @@ function usage()
     echo "    --customType <type>          Use the Custom type feature with your type.    "
     echo "                                 See details and examples of use in the         "
     echo "                                 documentation.                                 "
-    echo "    --customTypeFlatdata <type>  Use the Custom type feature with your FlatData "
+    echo "    --customTypeFlatData <type>  Use the Custom type feature with your FlatData "
     echo "                                 Type. See details and examples of use in the   "
     echo "                                 documentation.                                 "
     echo "    --flatdata-max-size <size>   Specify the maximum bounded size on bytes      "
@@ -1294,11 +1294,11 @@ while [ "$1" != "" ]; do
             fi
             shift
             ;;
-        --customTypeFlatdata)
+        --customTypeFlatData)
             USE_CUSTOM_TYPE_FLAT=1
             custom_type_flat=$2
             if [ -z "${custom_type_flat}" ]; then
-                echo -e "${ERROR_TAG} --customTypeFlatdata should be followed by the name of the type."
+                echo -e "${ERROR_TAG} --customTypeFlatData should be followed by the name of the type."
                 usage
                 exit -1
             fi
