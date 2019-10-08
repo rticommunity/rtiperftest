@@ -54,19 +54,33 @@ What's New in Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Wrong capitalization for command line option `--customTypeFlatData` (#232)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Fixed issue in the `build.sh` and `build.bat` where the command line parameter
-used to specify that a custom type for Flat Data was provided was wrongly
-spelled.
-
 Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* has improved the error message when the path provided to the
 `NDDSHOME` or `RTIMEHOME` are incorrect. In previous releases this could be
 misleading since it would claim that the path was not provided.
+
+Wrong version in dockerfile for perftest 3.0.1 (#227)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest*'s Dockerfile was outdated. It has now been updated to use the
+latest release.
+
+Participant properties always propagate in C++03 (#228)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+QoS properties for Data Readers and Data Writers were being propagated on C++03
+implementation.
+
+This behaviour is not needed so has been removed to behave as on Traditional C++.
+
+Wrong capitalization for command line option `--customTypeFlatData` (#232)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed issue in the `build.sh` and `build.bat` where the command line parameter
+used to specify that a custom type for Flat Data was provided was wrongly
+spelled.
 
 Release Notes 3.0
 -----------------
