@@ -168,11 +168,11 @@ if NOT "%1"=="" (
 					exit /b 1
 				)
 				SHIFT
-		) ELSE if "%1"=="--customTypeFlatdata" (
+		) ELSE if "%1"=="--customTypeFlatData" (
 				SET USE_CUSTOM_TYPE_FLAT=1
 				SET "custom_type_flat=%2"
 				if "!custom_type_flat!"== "" (
-					echo [ERROR]: --customTypeFlatdata should be followed by the name of the type.
+					echo [ERROR]: --customTypeFlatData should be followed by the name of the type.
 					call:help
 					exit /b 1
 				)

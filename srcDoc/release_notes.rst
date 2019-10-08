@@ -54,6 +54,13 @@ What's New in Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Wrong capitalization for command line option `--customTypeFlatData` (#232)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed issue in the `build.sh` and `build.bat` where the command line parameter
+used to specify that a custom type for Flat Data was provided was wrongly
+spelled.
+
 Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -400,7 +407,7 @@ FlatData support for Custom Types was not complete thus errors arise when using
 ``--customType`` build option.
 
 Now this issue has been fixed and FlatData custom types can be used along with
-regular custom types by using the new ``--customTypeFlatdata`` build option.
+regular custom types by using the new ``--customTypeFlatData`` build option.
 
 The only known limitation is that these FlatData types must be declared as mutable.
 
