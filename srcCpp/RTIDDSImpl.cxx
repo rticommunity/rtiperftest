@@ -112,6 +112,9 @@ void RTIDDSImpl<T>::Shutdown()
         if (!registry->unregister("wh", NULL, NULL)) {
             //printf("failed to unregister wh\n");
         }
+        if (!registry->unregister("_shmem", NULL, NULL)) {
+            //printf("failed to unregister _shmem\n");
+        }
       #ifdef RTI_SECURE_PERFTEST
         if (!SECCORE_SecurePluginFactory::unregister_suite(
                     registry,
