@@ -63,7 +63,8 @@ set "custom_idl_file=%custom_type_folder%\custom.idl"
 
 @REM # Variables for FlatData
 set "flatdata_size=10485760" @REM # 10MB
-set flatdata_ddsgen_version=300
+@REM #3.0.0 -> 3 We just the first value is needed.
+set flatdata_ddsgen_version=3
 set FLATDATA_AVAILABLE=0
 ::------------------------------------------------------------------------------
 
@@ -862,7 +863,7 @@ GOTO:EOF
 :get_flatdata_available
 	call::get_ddsgen_version
 
-	if %version_number% GEQ %flatdata_ddsgen_version% (
+	if %Major% GEQ %flatdata_ddsgen_version% (
 		echo [INFO] FlatData is available
 		set FLATDATA_AVAILABLE=1
 	)
