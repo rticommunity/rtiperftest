@@ -63,7 +63,7 @@ set "custom_idl_file=%custom_type_folder%\custom.idl"
 
 @REM # Variables for FlatData
 set "flatdata_size=10485760" @REM # 10MB
-@REM #3.0.0 -> 3 We just need the Major first value of the version.
+@REM #3.0.0 -- 3 We just need the Major first value of the version.
 set flatdata_ddsgen_version=3
 set FLATDATA_AVAILABLE=0
 ::------------------------------------------------------------------------------
