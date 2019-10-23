@@ -919,12 +919,15 @@ goto:EOF
 		set Revision_new_sol_name=%%c
 	)
 
-	if %Major% GEQ %Major_new_sol_name%
-	if %Minor% GEQ %Minor_new_sol_name%
-	if %Revision% GEQ %Revision_new_sol_name% (
-		set solution_name_cpp=perftest_publisher-%architecture%%extension%
-		set solution_name_cs=perftest-%architecture%.sln
-	) else (
+	if %Major% GEQ %Major_new_sol_name% (
+		if %Minor% GEQ %Minor_new_sol_name% (
+			if %Revision% GEQ %Revision_new_sol_name% (
+				set solution_name_cpp=perftest_publisher-%architecture%%extension%
+				set solution_name_cs=perftest-%architecture%.sln
+			)
+		)
+	)
+	if [%solution_name_cpp] == [] (
 		set solution_name_cpp=%begin_sol%%end_sol%%extension%
 		set solution_name_cs=%begin_sol_cs%csharp.sln
 	)
