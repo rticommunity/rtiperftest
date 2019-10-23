@@ -59,7 +59,7 @@ custom_idl_file="${custom_type_folder}/custom.idl"
 
 # Variables for FlatData
 flatdata_size=10485760 # 10MB
-flatdata_ddsgen_version=3 # We just need the Mayor value of the version.
+flatdata_ddsgen_version=3 # We just need the Major value of the version.
 FLATDATA_AVAILABLE=0
 ZEROCOPY_AVAILABLE=0
 darwin_shmem_size=419430400
@@ -558,10 +558,10 @@ function clean_src_cpp_common()
 function check_flatData_zeroCopy_available()
 {
     version=$(awk -F"version" '/version/ { split($2, a, " "); print a[1] }' <<< $(${rtiddsgen_executable} -version)) # e.g. 3.0.0
-    # We just need the Mayor value of the version.
-    ddsgen_version="$(echo $version | head -c 1)" # e.g. 3.0.5 -> 3
+    # We just need the Major value of the version.
+    major=`echo $version | awk -F. '{print $1}'`
 
-    if [[ $ddsgen_version -ge $flatdata_ddsgen_version ]]; then
+    if [[ $major -ge $flatdata_ddsgen_version ]]; then
         echo -e "${INFO_TAG} FlatData is available"
         FLATDATA_AVAILABLE="1"
     fi
