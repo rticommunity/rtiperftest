@@ -2043,14 +2043,14 @@ namespace PerformanceTest
         /*********************************************************
          * CreateCFT
          * The CFT allows to the subscriber to receive a specific instance or a range of them.
-         * In order generate the CFT it is necesary to create a condition:
-         *      - In the case of a specific instance, it is necesary to convert to _CFTRange[0] into a key notation.
-         *        Then it is enought with check that every element of key is equal to the instance.
-         *        Exmaple: _CFTRange[0] = 300. condition ="(0 = key[0] AND 0 = key[1] AND 1 = key[2] AND  44 = key[3])"
+         * In order generate the CFT it is necessary to create a condition:
+         *      - In the case of a specific instance, it is necessary to convert to _CFTRange[0] into a key notation.
+         *        Then it is enough with check that every element of key is equal to the instance.
+         *        Example: _CFTRange[0] = 300. condition ="(0 = key[0] AND 0 = key[1] AND 1 = key[2] AND  44 = key[3])"
          *          So, in the case that the key = { 0, 0, 1, 44}, it will be received.
-         *      - In the case of a range of instances, it is necesary to convert to _CFTRange[0] and _CFTRange[1] into a key notation.
-         *        Then it is enought with check that the key is in the range of instances.
-         *        Exmaple: _CFTRange[1] = 300 and _CFTRange[1] = 1.
+         *      - In the case of a range of instances, it is necessary to convert to _CFTRange[0] and _CFTRange[1] into a key notation.
+         *        Then it is enough with check that the key is in the range of instances.
+         *        Example: _CFTRange[1] = 300 and _CFTRange[1] = 1.
          *          condition = ""
          *              "("
          *                  "("
@@ -2065,7 +2065,7 @@ namespace PerformanceTest
          *                      "(1 >= key[3] AND 0 >= key[2] AND 0 >= key[1] AND 0 >= key[0])"
          *                  ")"
          *              ")"
-         *          The main goal for comaparing a instances and a key is by analyze the elemetns by more significant to the lest significant.
+         *          The main goal for comaparing a instances and a key is by analyze the elements by more significant to the lest significant.
          *          So, in the case that the key is between [ {0, 0, 0, 1} and { 0, 0, 1, 44} ], it will be received.
          * Beside, there is a special case where all the subscribers will receive the samples, it is MAX_CFT_VALUE = 65535 = [255,255,0,0,]
          */
@@ -2084,11 +2084,9 @@ namespace PerformanceTest
                 parameters.ensure_length(KEY_SIZE.VALUE * 2,KEY_SIZE.VALUE * 2);
                 Console.Error.WriteLine("CFT enabled for instance range: ["+_CFTRange[0]+","+_CFTRange[1]+"] ");
                 for (int i = 0; i < KEY_SIZE.VALUE * 2 ; i++) {
-                    if ( i < KEY_SIZE.VALUE ) {
-                        parameters.set_at(i,Convert.ToString((byte)(_CFTRange[0] >> i * 8)));
-                    } else { // KEY_SIZE < i < KEY_SIZE * 2
-                        parameters.set_at(i,Convert.ToString((byte)(_CFTRange[1] >> i * 8)));
-                    }
+                    parameters.set_at(i,Convert.ToString((byte)(
+                            _CFTRange[i < KEY_SIZE.VALUE? 0 : 1]
+                                    >> i % KEY_SIZE.VALUE * 8)));
                 }
                 condition = "" +
                         "(" +
@@ -2104,6 +2102,7 @@ namespace PerformanceTest
                                 "(%7 >= key[3] AND %6 >= key[2] AND %5 >= key[1] AND %4 >= key[0])" +
                             ") OR (" +
                                 "255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3]" +
+                            ")" +
                         ")";
             }
             return _participant.create_contentfilteredtopic(
