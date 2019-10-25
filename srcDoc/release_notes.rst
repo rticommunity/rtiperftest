@@ -82,6 +82,15 @@ Fixed issue in the `build.sh` and `build.bat` where the command line parameter
 used to specify that a custom type for Flat Data was provided was wrongly
 spelled.
 
+Fix incorrect incorrect governance file values for Security (#239)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The `PerftestGovernance_RTPSEncryptWithOrigAuthEncryptData.xml` and
+`PerftestGovernance_RTPSSignWithOrigAuthEncryptData.xml` governance files were not
+correctly writen and they would not set the right flags to encrypt the data.
+
+This issue has been fixed.
+
 Release Notes 3.0
 -----------------
 
