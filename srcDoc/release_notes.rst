@@ -91,6 +91,13 @@ correctly writen and they would not set the right flags to encrypt the data.
 
 This issue has been fixed.
 
+Content-Filtered Topics (`-cft`) range option not working properly (#240)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The `-cft` option for the *Perftest subscriber* side was not working correctly
+when specifying a range of values to filter (e.g. `-cft 3:5`. This behavior has
+been corrected.
+
 Release Notes 3.0
 -----------------
 
