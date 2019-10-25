@@ -54,6 +54,17 @@ What's New in Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+The version of *rtiddsgen* is now properly compared to identify the support of certain features (#237)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases the version of *rtiddsgen* was compare as a single value
+ignoring the dots (e.g. 3.0.0 = 300). Using a revision version of *rtiddsgen*
+this comparative would return a invalid result and would enable some compilation
+flags that entail on a additional code with not supported features for that
+*rtiddsgen* version.
+Now, this behavior has been fixed comparing just the intended value, in this
+case the major one.
+
 Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
