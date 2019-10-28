@@ -3443,37 +3443,45 @@ DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
         const char *topic_name,
         DDSTopic *topic)
 {
+    /*
+     * The Key 255,255,0,0 match the internal messages, we do not want
+     * to block those messages, so the instance key will be added to the
+     * condition.
+     */
     std::string condition;
     DDS_StringSeq parameters(2 * KEY_SIZE);
     const std::vector<unsigned long long> cftRange =
             _PM->get_vector<unsigned long long>("cft");
-    if (cftRange.size() == 1) { // If same elements, no range
+
+    /* Reserve memory for the range case, the bigger one. */
+    char cft_param[2 * KEY_SIZE][128];
+    const char* param_list[] = { cft_param[0], cft_param[1],
+            cft_param[2], cft_param[3],cft_param[4],
+            cft_param[5], cft_param[6], cft_param[7]
+    };
+
+    /* Only one element, no range */
+    if (cftRange.size() == 1) {
         printf("CFT enabled for instance: '%llu' \n", cftRange[0]);
-        char cft_param[KEY_SIZE][128];
+
         for (int i = 0; i < KEY_SIZE ; i++) {
             sprintf(cft_param[i], "%d", (unsigned char)(cftRange[0] >> i * 8));
         }
-        const char* param_list[] =
-                {cft_param[0], cft_param[1], cft_param[2], cft_param[3]};
+
         parameters.from_array(param_list, KEY_SIZE);
         condition = "(%0 = key[0] AND %1 = key[1] AND %2 = key[2] AND %3 = key[3]) OR"
                 "(255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3])";
-    } else { // If cftRange.size() == 2 (RANGE)
+
+    } else { /* More than one element, apply a range filter */
         printf("CFT enabled for instance range: [%llu,%llu] \n",
                 cftRange[0],
                 cftRange[1]);
-        char cft_param[2 * KEY_SIZE][128];
+
         for (unsigned int i = 0; i < 2 * KEY_SIZE ; i++ ) {
-            if (i < KEY_SIZE) {
-                sprintf(cft_param[i], "%d", (unsigned char)(cftRange[0] >> i * 8));
-            } else { // KEY_SIZE < i < KEY_SIZE * 2
-                sprintf(cft_param[i], "%d", (unsigned char)(cftRange[1] >> i * 8));
-            }
+            sprintf(cft_param[i], "%d", (unsigned char)
+                    (cftRange[ i < KEY_SIZE? 0 : 1] >> (i % KEY_SIZE) * 8));
         }
-        const char* param_list[] = { cft_param[0], cft_param[1],
-                cft_param[2], cft_param[3],cft_param[4],
-                cft_param[5], cft_param[6], cft_param[7]
-        };
+
         parameters.from_array(param_list, 2 * KEY_SIZE);
         condition = ""
                 "("
