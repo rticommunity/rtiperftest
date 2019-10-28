@@ -54,9 +54,9 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           The receive buffer is used by the receive thread to store the raw data
           that arrives over the transport.
 
-          The ReceiverPoolQosPolicy's buffer_size should be set to be the same value
-          as the maximum ::NDDS_Transport_Property_t::message_size_max across all of
-          the transports being used.
+          The ReceiverPoolQosPolicy's buffer_size should be set to be the same
+          value as the maximum ::NDDS_Transport_Property_t::message_size_max
+          across all of the transports being used.
           -->
           <buffer_size>65536</buffer_size>
         </receiver_pool>
@@ -452,17 +452,17 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
             </max_nack_response_delay>
 
             <!--
-            When positive acknowledgements have been disabled, the DataWriter will
-            consider samples as positively "acknowledged" after this duration has
-            elapsed if it has not heard otherwise.
+            When positive acknowledgements have been disabled, the DataWriter
+            will consider samples as positively "acknowledged" after this
+            duration has elapsed if it has not heard otherwise.
 
             We disable the positive acknowledgements in perftest by using:
             -disablePositiveAcks. You can alternatively enable them via QoS by
             adding <disable_positive_acks>true</disable_positive_acks> in the
             <protocol> QoS of the DW and DR of the ThroughputQoS and LatencyQoS.
 
-            The default value of _KeepDurationUsec can be configured here or via the
-            command line parameter -keepDuration.
+            The default value of _KeepDurationUsec can be configured here or via
+            the command line parameter -keepDuration.
             -->
             <disable_positive_acks_min_sample_keep_duration>
               <sec>DURATION_ZERO_SEC</sec>
@@ -789,9 +789,9 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         deliver previously published data samples to new DataReaders
         that join the network later.
 
-        Important: durability.kind and durability.direct_communication are configured
-        automatically within the source code. To modify them, use the input commands
-        -durability and -noDirectCommunication.
+        Important: durability.kind and durability.direct_communication are
+        configured automatically within the source code. To modify them, use
+        the input commands -durability and -noDirectCommunication.
 
         The default value of _DirectCommunication is true.
         The default value of _Durability is DDS_VOLATILE_DURABILITY_QOS.
@@ -1013,8 +1013,8 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
     to start the test.  Basically, the announcement should be sent/received
     reliably.
 
-    Note: this profile derives from the Latency QoS so we do not have to duplicate
-    the Reliability QoS protocol settings.
+    Note: this profile derives from the Latency QoS so we do not have to
+    duplicate the Reliability QoS protocol settings.
     -->
     <qos_profile name="AnnouncementQos" base_name="LatencyQos">
 
