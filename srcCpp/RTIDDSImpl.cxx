@@ -112,6 +112,14 @@ void RTIDDSImpl<T>::Shutdown()
         if (!registry->unregister("wh", NULL, NULL)) {
             //printf("failed to unregister wh\n");
         }
+        /*
+         * Since Shared Memory is only aviable for Micro 3.0.0 the unregister
+         * call would fail for previous versions. But it's ok if the unregister
+         * call fails since would not affect the execution.
+         */
+        if (!registry->unregister("_shmem", NULL, NULL)) {
+            //printf("failed to unregister _shmem\n");
+        }
       #ifdef RTI_SECURE_PERFTEST
         if (!SECCORE_SecurePluginFactory::unregister_suite(
                     registry,
