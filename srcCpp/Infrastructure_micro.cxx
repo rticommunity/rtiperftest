@@ -106,7 +106,7 @@ const std::string GetDDSVersionString()
     return "RTI Connext DDS Micro "
             + std::to_string((int) RTIME_DDS_VERSION_MAJOR) + "."
             + std::to_string((int) RTIME_DDS_VERSION_MINOR) + "."
-            + std::to_string((int) RTIME_DDS_VERSION_REVISION);
+            + std::to_string((int) RTIME_DDS_VERSION_RELEASE);
 }
 
 void PerftestConfigureVerbosity(int verbosityLevel)
