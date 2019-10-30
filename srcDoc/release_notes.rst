@@ -401,6 +401,12 @@ The `dds.transport.shmem.builtin.received_message_count_max` and
 `dds.transport.shmem.builtin.receive_buffer_size` QoS settings have been
 increased to avoid this bottleneck.
 
+Fix issue displaying the *RTI Connext DDS Micro* release number (#243)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed issue where *RTI Perftest* would display the `RTIME_DDS_VERSION_REVISION`
+instead of the `RTIME_DDS_VERSION_RELEASE`.
+
 Release Notes 2.4
 -----------------
 
