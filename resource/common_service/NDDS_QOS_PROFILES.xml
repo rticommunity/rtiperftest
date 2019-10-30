@@ -1,24 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
+<?xml version="1.0"?>
 <dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-     xsi:noNamespaceSchemaLocation="../schema/rti_recording_service.xsd">
+     xsi:noNamespaceSchemaLocation="http://community.rti.com/schema/6.0.0/rti_dds_qos_profiles.xsd">
 
-    <!-- Qos Library -->
-    <qos_library name="UserQosLib">
-        <qos_profile name="UserReliableQos">
-            <datareader_qos>
-                <reliability>
-                    <kind>RELIABLE_RELIABILITY_QOS</kind>
-                </reliability>
-                <history>
-                    <kind>KEEP_ALL_HISTORY_QOS</kind>
-                </history>
-            </datareader_qos>
-        </qos_profile>
-    </qos_library>
-
-
-    <!-- ================================================================= -->
+    <!-- ================================================================= --> 
     <!-- QoS libraries                                                     -->
     <!-- ================================================================= -->
 
@@ -28,7 +12,7 @@
 
             <participant_qos>
                 <receiver_pool>
-                    <buffer_size>65536</buffer_size>
+                    <buffer_size>65530</buffer_size>
                     <thread>
                         <priority>THREAD_PRIORITY_NORMAL</priority>
                     </thread>
@@ -48,7 +32,7 @@
                     <value>
                         <element>
                             <name>dds.transport.UDPv4.builtin.parent.message_size_max</name>
-                            <value>65536</value>
+                            <value>65530</value>
                         </element>
                         <element>
                             <name>dds.transport.UDPv4.builtin.send_socket_buffer_size</name>
@@ -200,28 +184,6 @@
                 <writer_resource_limits>
                     <max_batches>$(SEND_QUEUE_SIZE)</max_batches>
                 </writer_resource_limits>
-
-                <!--
-                <batch>
-                    <enable>$(BATCHING)</enable>
-
-                    <max_data_bytes>$(BATCH_SIZE)</max_data_bytes>
-                    <max_meta_data_bytes>LENGTH_UNLIMITED</max_meta_data_bytes>
-                    <max_samples>LENGTH_UNLIMITED</max_samples>
-
-                    <source_timestamp_resolution>
-                        <sec>DURATION_INFINITE_SEC</sec>
-                        <nanosec>DURATION_INFINITE_NSEC</nanosec>
-                    </source_timestamp_resolution>
-
-                    <max_flush_delay>
-                        <sec>DURATION_INFINITE_SEC</sec>
-                        <nanosec>DURATION_INFINITE_NSEC</nanosec>
-                    </max_flush_delay>
-
-                    <thread_safe_write>false</thread_safe_write>
-                </batch>
-                -->
 
                 <writer_data_lifecycle>
                     <autodispose_unregistered_instances>false</autodispose_unregistered_instances>
@@ -395,52 +357,42 @@
             </datawriter_qos>
         </qos_profile>
 
+<!-- ####################################################################### -->
+
+        <qos_profile name="recordingProfile" base_name="BaseProfileQos">
+            <!-- Specific QoS for recording service -->
+        </qos_profile>
+
+<!-- ####################################################################### -->
+
+        <qos_profile name="routingProfile" base_name="BaseProfileQos">
+            <!-- Specific QoS for routing service -->
+            <datawriter_qos>
+                <batch>
+                    <enable>$(BATCHING)</enable>
+
+                    <max_data_bytes>$(BATCH_SIZE)</max_data_bytes>
+                    <!-- INTERNAL QOS, THIS SHOULDN'T BE USED -->
+                    <!-- <max_meta_data_bytes>LENGTH_UNLIMITED</max_meta_data_bytes> -->
+                    <max_samples>LENGTH_UNLIMITED</max_samples>
+
+                    <source_timestamp_resolution>
+                        <sec>DURATION_INFINITE_SEC</sec>
+                        <nanosec>DURATION_INFINITE_NSEC</nanosec>
+                    </source_timestamp_resolution>
+
+                    <max_flush_delay>
+                        <sec>DURATION_INFINITE_SEC</sec>
+                        <nanosec>DURATION_INFINITE_NSEC</nanosec>
+                    </max_flush_delay>
+
+                    <thread_safe_write>false</thread_safe_write>
+                </batch>
+            </datawriter_qos>
+        </qos_profile>
+
+<!-- ####################################################################### -->
+
     </qos_library>
-
-
-
-    <recording_service name="RecordingServiceTest">
-        <!--  Top-level storage settings -->
-        <storage>
-            <sqlite>
-                <file>rti_recorder_default</file>
-                <file_suffix>dat</file_suffix>
-            </sqlite>
-
-        </storage>
-
-
-        <!--  Top-level domain settings -->
-        <domain_participant name="Participant0">
-            <domain_id>0</domain_id>
-
-            <participant_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
-        </domain_participant>
-
-        <session name="DefaultSession">
-            <subscriber_qos base_name="PerformanceLibraries_Modified::ThroughputQos"/>
-
-            <thread_pool>
-                <!-- a number greater than 1 requires thread-safe dblink plugin -->
-                <size>$(TEST_THREAD_POOL_SIZE)</size>
-                <priority>THREAD_PRIORITY_HIGH</priority>
-            </thread_pool>
-
-            <topic_group name="RecordAll" participant_ref="Participant0">
-                <allow_topic_name_filter>Throughput</allow_topic_name_filter>
-                <deny_topic_name_filter>rti/*</deny_topic_name_filter>
-                <datareader_qos base_name="PerformanceLibraries_Modified::ThroughputQos">
-                    <multicast>
-                        <value>
-                            <element>
-                                <!-- perftest by default publishes the throughput topic in this address for multicast -->
-                                <receive_address>239.255.1.1</receive_address>
-                            </element>
-                        </value>
-                    </multicast>
-                </datareader_qos>
-            </topic_group>
-        </session>
-    </recording_service>
 
 </dds>

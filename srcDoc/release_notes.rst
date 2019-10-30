@@ -51,6 +51,16 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+The configuration for *Routing* and *Recording* service has been unified (#222)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Now *Routing* and *Recording* services share the same XML configuration file and
+the same wrapper-script to launch and configure both of the services. The file
+`commonservice_wrapper.sh` has been created for this purpose.
+
+Along with this feature, the compatibility with Recording Service 5.3.1 has
+been introduced.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
