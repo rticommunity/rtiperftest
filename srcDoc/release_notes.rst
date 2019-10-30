@@ -91,6 +91,12 @@ correctly writen and they would not set the right flags to encrypt the data.
 
 This issue has been fixed.
 
+Fix issue displaying the *RTI Connext DDS Micro* release number (#243)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed issue where *RTI Perftest* would display the `RTIME_DDS_VERSION_REVISION`
+instead of the `RTIME_DDS_VERSION_RELEASE`.
+
 Release Notes 3.0
 -----------------
 
