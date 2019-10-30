@@ -54,6 +54,14 @@ What's New in Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Error finalizing the application when using `SHMEM` for *RTI Connext DDS Micro* (#234)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using *RTI Connext DDS Micro* and setting the transport to `SHMEM` an error
+would appear at the end of the test in both publisher and subscriber by the time
+he `finalize_instance()` function is called. This errors has been resolved.
+
+
 Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -90,6 +98,13 @@ The `PerftestGovernance_RTPSEncryptWithOrigAuthEncryptData.xml` and
 correctly writen and they would not set the right flags to encrypt the data.
 
 This issue has been fixed.
+
+Content-Filtered Topics (`-cft`) range option not working properly (#240)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The `-cft` option for the *Perftest subscriber* side was not working correctly
+when specifying a range of values to filter (e.g. `-cft 3:5`). This behavior has
+been corrected.
 
 Fix issue displaying the *RTI Connext DDS Micro* release number (#243)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
