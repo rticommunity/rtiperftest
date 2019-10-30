@@ -354,7 +354,8 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     // Asynchronous Publishing
     if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
-        if (_isLargeData || _PM->get<bool>("asynchronous")) {
+        if ((_isLargeData || _PM->get<bool>("asynchronous"))
+                && !_PM->get<bool>("zerocopy")) {
             stringStream << "Yes\n";
             stringStream << "\tFlow Controller: "
                          << _PM->get<std::string>("flowController")
