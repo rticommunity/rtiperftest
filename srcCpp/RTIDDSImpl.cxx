@@ -3169,6 +3169,13 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
     if (_instanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
         _instanceMaxCountReader++;
     }
+  #else
+    /*
+     * In micro we cannot have UNLIMITED instances, this means that we need to
+     * increase the InstanceMaxCountReader (max instances for the dr) in all
+     * cases
+     */
+    _instanceMaxCountReader++;
   #endif
     dr_qos.resource_limits.max_instances = _instanceMaxCountReader;
 

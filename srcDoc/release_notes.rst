@@ -110,7 +110,16 @@ Fix issue displaying the *RTI Connext DDS Micro* release number (#243)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Fixed issue where *RTI Perftest* would display the `RTIME_DDS_VERSION_REVISION`
-instead of the `RTIME_DDS_VERSION_RELEASE`.
+instead of the `RTIME_DDS_VERSION_RELEASE` when compiling against *RTI
+Connext DDS Micro*.
+
+Fix incorrect number of `max_instances` in the *DataReader* when using *Micro* (#244)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The value to `max_instances` assigned to the resouce limits in the *DataReader*
+side in *RTI Perftest* when compiling against *RTI Connext DDS Micro* was not
+set correctly, and it would not account for the extra sample used to skip the
+*CFTs*.
 
 Release Notes 3.0
 -----------------
