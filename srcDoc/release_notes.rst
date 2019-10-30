@@ -54,6 +54,14 @@ What's New in Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Incorrect Asynchronous Publisher information when ZeroCopy is used (#247)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Asynchronous Publisher is not used when ZeroCopy is enable since the actual
+size of the sample cannot be large data. The Message information does not take
+into account if ZeroCopy is used and print an incorrect information. This
+behavior has been fix.
+
 Error finalizing the application when using `SHMEM` for *RTI Connext DDS Micro* (#234)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
