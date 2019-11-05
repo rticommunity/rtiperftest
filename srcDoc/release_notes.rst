@@ -133,6 +133,13 @@ constant, independent on the size of the sample being sent, as it is just a
 reference to where the sample is stored in memory.
 This means that *Asynchronous Publishing* is not needed in any case.
 
+Fix documentation examples for *FlatData* and *Zero-Copy* (#249)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the documentation examples for *FlatData* and *Zero-Copy* the data sizes used
+for publisher and subscriber were not matching. Also, in the *Best Effort* case,
+the command lines were not including the `-bestEffort` option.
+
 Release Notes 3.0
 -----------------
 
