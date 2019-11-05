@@ -54,14 +54,6 @@ What's New in Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Incorrect Asynchronous Publisher information when ZeroCopy is used (#247)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Asynchronous Publisher is not used when ZeroCopy is enable since the actual
-size of the sample cannot be large data. The Message information does not take
-into account if ZeroCopy is used and print an incorrect information. This
-behavior has been fix.
-
 Error finalizing the application when using `SHMEM` for *RTI Connext DDS Micro* (#234)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -128,6 +120,18 @@ The value to `max_instances` assigned to the resouce limits in the *DataReader*
 side in *RTI Perftest* when compiling against *RTI Connext DDS Micro* was not
 set correctly, and it would not account for the extra sample used to skip the
 *CFTs*.
+
+Summary displays *Asynchronous publishing* active when using *Zero-Copy* and *Large Data* (#247)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed issue where *RTI Perftest* would present in the summary of the *Publisher*
+side the *Asynchronous Publishing* set to *true* regardless on if the test was
+using *Zero-Copy* or not.
+
+When using *Zero-Copy*, the size of the message being sent will always be
+constant, independent on the size of the sample being sent, as it is just a
+reference to where the sample is stored in memory.
+This means that *Asynchronous Publishing* is not needed in any case.
 
 Release Notes 3.0
 -----------------
