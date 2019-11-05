@@ -121,7 +121,7 @@ side in *RTI Perftest* when compiling against *RTI Connext DDS Micro* was not
 set correctly, and it would not account for the extra sample used to skip the
 *CFTs*.
 
-Summary displays *Asynchronous publishing* active when using *Zero-Copy* and *Large Data* (#247)
+Summary displays *Asynchronous publishing* active when using *Zero-Copy* and *Large Data* (#246)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Fixed issue where *RTI Perftest* would present in the summary of the *Publisher*
