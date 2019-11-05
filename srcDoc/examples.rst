@@ -321,7 +321,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 63001 -flatData
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 100000 -flatData
 
 
 1-to-1, FlatData and Zero Copy, SharedMemory, Unicast, Reliable, Latency test, Large Data
@@ -337,7 +337,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 63001 -flatData -zeroCopy
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 100000 -flatData -zeroCopy
 
 
 1-to-1, FlatData and Zero Copy, SharedMemory, Unicast, BestEffort, Throughput test, Large Data, Check Consistency
@@ -347,13 +347,13 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -pub -noPrint -transport SHMEM -dataLen 100000 -executionTime 100 -latencyTest -flatData -zeroCopy
+    bin/<arch>/release/perftest_cpp -pub -noPrint -transport SHMEM -dataLen 100000 -executionTime 100 -latencyTest -flatData -zeroCopy -bestEffort
 
 -  Subscriber
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 63001 -flatData -zeroCopy -checkConsistency
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 100000 -flatData -zeroCopy -checkConsistency -bestEffort
 
 
 

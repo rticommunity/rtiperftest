@@ -121,6 +121,13 @@ side in *RTI Perftest* when compiling against *RTI Connext DDS Micro* was not
 set correctly, and it would not account for the extra sample used to skip the
 *CFTs*.
 
+Fix documentation examples for *FlatData* and *Zero-Copy* (#249)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the documentation examples for *FlatData* and *Zero-Copy* the data sizes used
+for publisher and subscriber were not matching. Also, in the *Best Effort* case,
+the command lines were not including the `-bestEffort` option.
+
 Release Notes 3.0
 -----------------
 
