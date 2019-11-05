@@ -121,6 +121,18 @@ side in *RTI Perftest* when compiling against *RTI Connext DDS Micro* was not
 set correctly, and it would not account for the extra sample used to skip the
 *CFTs*.
 
+Summary displays *Asynchronous publishing* active when using *Zero-Copy* and *Large Data* (#246)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed issue where *RTI Perftest* would present in the summary of the *Publisher*
+side the *Asynchronous Publishing* set to *true* regardless on if the test was
+using *Zero-Copy* or not.
+
+When using *Zero-Copy*, the size of the message being sent will always be
+constant, independent on the size of the sample being sent, as it is just a
+reference to where the sample is stored in memory.
+This means that *Asynchronous Publishing* is not needed in any case.
+
 Fix documentation examples for *FlatData* and *Zero-Copy* (#249)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
