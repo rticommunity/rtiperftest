@@ -594,6 +594,30 @@ class RTIPublisherBase : public IMessagingWriter
       #endif
     }
 
+    unsigned int getSampleCount()
+    {
+      #ifndef RTI_MICRO
+        DDS_DataWriterCacheStatus status;
+        _writer->get_datawriter_cache_status(status);
+        return (unsigned int)status.sample_count;
+      #else
+        // Not supported in Micro
+        return 0;
+      #endif
+    }
+
+    unsigned int getSampleCountPeak()
+    {
+      #ifndef RTI_MICRO
+        DDS_DataWriterCacheStatus status;
+        _writer->get_datawriter_cache_status(status);
+        return (unsigned int)status.sample_count_peak;
+      #else
+        // Not supported in Micro
+        return 0;
+      #endif
+    }
+
     void waitForAck(int sec, unsigned int nsec) {
       #ifndef RTI_MICRO
         if (_isReliable) {
@@ -1727,6 +1751,30 @@ class RTISubscriberBase : public IMessagingReader
             return false;
         }
         return true;
+    }
+
+    unsigned int getSampleCount()
+    {
+      #ifndef RTI_MICRO
+        DDS_DataReaderCacheStatus status;
+        _reader->get_datareader_cache_status(status);
+        return (unsigned int)status.sample_count;
+      #else
+        // Not supported in Micro
+        return 0;
+      #endif
+    }
+
+    unsigned int getSampleCountPeak()
+    {
+      #ifndef RTI_MICRO
+        DDS_DataReaderCacheStatus status;
+        _reader->get_datareader_cache_status(status);
+        return (unsigned int)status.sample_count_peak;
+      #else
+        // Not supported in Micro
+        return 0;
+      #endif
     }
 };
 

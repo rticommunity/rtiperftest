@@ -93,6 +93,15 @@ class IMessagingReader
     // only used for non-callback test to cleanup
     // the thread
     virtual void Shutdown() {}
+
+    virtual unsigned int getSampleCount() {
+        return 0;
+    }
+
+    virtual unsigned int getSampleCountPeak() {
+        return 0;
+    }
+
 };
 
 class IMessagingWriter
@@ -124,6 +133,12 @@ class IMessagingWriter
         return true;
     };
     virtual unsigned int getPulledSampleCount() {
+        return 0;
+    };
+    virtual unsigned int getSampleCount() {
+        return 0;
+    };
+    virtual unsigned int getSampleCountPeak() {
         return 0;
     };
     virtual void waitForAck(int /*sec*/, unsigned int /*nsec*/) {

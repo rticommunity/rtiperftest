@@ -36,7 +36,7 @@ releases:
 -  The ``--secure`` and ``--openssl-home`` parameters will not work for
    versions prior to *RTI Connext DDS* 5.2.5.
 
--  Java code generation against *RTI Connext DDS 5.2.0.x* will fail 
+-  Java code generation against *RTI Connext DDS 5.2.0.x* will fail
    out-of-the-box. You can disable this by adding the ``--skip-java-build``
    flag. See the Known Issues section for more information and
    alternatives.
@@ -50,6 +50,14 @@ Release Notes Master
 
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
+
+New command line option to show the *DataWriter* and *DataReader* queue stats (#251)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By using the `-cacheStats` command line parameter *RTI Perftest* now displays the
+*Send Queue* `sample_count` and `sample_count_peak` in the publisher side. For the
+subscriber side, *RTI Perftest* displays the *Receive Queue* `sample_count` and
+`sample_count_peak`.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~

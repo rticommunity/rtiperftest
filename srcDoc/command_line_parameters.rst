@@ -422,6 +422,22 @@ Test Parameters for Publishing and Subscribing Applications
    **Default:**
    ``Not set. The priority will not be modified.``
 
+-  ``-cacheStats``
+
+   Enable extra messages showing the reader/writer queue sample count and
+   sample count peak.
+
+   In the publisher side also shows the *Pulled Sample Count* of the Writer.
+
+   The frequency of these log messages will be determined by the
+   ``-latencyCount`` in the Publisher side, since the message is only shown
+   after a *latency ping*. In the subscriber side it will be shown after once
+   every second.
+
+   This option is just available for the *C++ Traditional* API implementation.
+
+   **Default:** ``Not enabled``
+
 Transport-Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -653,7 +669,7 @@ Test Parameters Only For Publishing Applications
    receiving the last pong, the time is recorded again. Under the assumption that
    the processing time is negligible, the average latency is calculated as half of 
    the time taken divided by the number of samples sent.
-   
+
    This calculation only makes sense if latencyCount = 1 (Latency Test), since
    it assumes that every single ping is answered.
 
