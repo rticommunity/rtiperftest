@@ -32,7 +32,7 @@ struct RealPayload {
 class RealData {
 
     //const unsigned int MAXIMUN_REALDATA_ALLOCABLE = 1073741824; // 1Gb
-    //const unsigned int MAXIMUN_REALDATA_ALLOCABLE = 20000; //TODO: remove // test
+    const unsigned int MAXIMUN_REALDATA_ALLOCABLE = 20000; //TODO: remove // test
 
     std::string _pathToData;
 
@@ -41,10 +41,10 @@ class RealData {
     unsigned int _payloadSize;
     unsigned int _head;
     unsigned int _tail;
-    unsigned int _maxFiles;
     unsigned int _nPayloads;
     unsigned int _mFiles;
-    unsigned int _bytesReadFromLastFile;
+    bool _allDataFit;
+    bool _initializationFinish;
 
     std::vector<std::string> _filesPath;
 
@@ -75,40 +75,106 @@ class RealData {
         RealData *rd = static_cast<RealData *>(arg);
 
         std::vector<char> newPayload(rd->_payloadSize);
-        int actualFileSize = 0;
-        int actualbytesRead = rd->_bytesReadFromLastFile;
 
+        /* Allocate as many entries on the queue as could be possible */
+        rd->_dataBuffer.resize(rd->MAXIMUN_REALDATA_ALLOCABLE / rd->_payloadSize);
+        int currentFileSize = 0;
+        int currentBytesRead = 0;
+        int totalBytesRead = 0;
+        bool queueFull = false;
+        bool allFilesRead = false;
+
+        /* This while condition should not ever be fulfill */
         while(rd->_mFiles < rd->_filesPath.size()) {
 
-            actualFileSize = getFileSize(rd->_filesPath[rd->_mFiles]);
+            currentFileSize = getFileSize(rd->_filesPath[rd->_mFiles]);
 
-            while ((actualFileSize - actualbytesRead) >= (int)rd->_payloadSize) {
-
-                actualbytesRead += readFile(
+            while ((unsigned int)(currentFileSize - currentBytesRead)
+                   >= rd->_payloadSize) {
+                currentBytesRead += readFile(
                         rd->_filesPath[rd->_mFiles],
                         newPayload,
                         rd->_payloadSize,
-                        actualbytesRead);
+                        currentBytesRead);
 
-                if (actualbytesRead == -1) {
+                if (currentBytesRead == -1) {
                     fprintf(stderr,
                             "Error reading file %s\n",
                             rd->_filesPath[rd->_mFiles].c_str());
                     return NULL;
                 }
-                /*
-                 * We do not increment the number of payloads, this thread just
-                 * override an existing one on the queue.
-                 */
 
-                if (!rd->pushPayload(newPayload)){
-                    fprintf(stderr,
-                        "Error pushing payload into the Queue %s\n",
-                        rd->_filesPath[rd->_mFiles].c_str());
-                    return NULL;
-                };
+                if (!queueFull
+                        && (rd->_nPayloads == rd->_dataBuffer.size()) {
+                    /* This code can only be reached one time */
+                    queueFull = true;
+                }
+
+                if (queueFull || allFilesRead) {
+                    /*
+                     * Let the main thread know that we have fill the queue in
+                     * order to start pulling data from the queue.
+                     */
+                    rd->_initializationFinish = true;
+
+                    /*
+                    * We do not increment the number of payloads if the queue is
+                    * full, just override an existing one on the queue.
+                    */
+                    if (!rd->pushPayload(newPayload)) {
+                        fprintf(stderr,
+                                "Error pushing payload into the Queue %s\n",
+                                rd->_filesPath[rd->_mFiles].c_str());
+                        return NULL;
+                    };
+                } else {
+                    /* The Queue is not full yet, so initialize the entries */
+                    rd->_dataBuffer[rd->_nPayloads++]._payload.swap(newPayload);
+                }
             }
-            actualbytesRead = 0;
+
+            if (rd->_nPayloads == 0) {
+                /*
+                 * This condition should be only fulfill if -dataLen has been
+                 * set and the size of the first file is lower than -dataLen.
+                 * This means that we can not allocate any single payload for
+                 * the requested size (-dataLen).
+                 */
+                fprintf(stderr,
+                        "The file %s is to small to allocate the requested"
+                        " size (%d bytes)\n",
+                        rd->_filesPath[rd->_mFiles].c_str(),
+                        rd->_payloadSize);
+                return NULL;
+            }
+
+            /* Calculate the full amount of bytes read and reset counters */
+            totalBytesRead += currentBytesRead;
+            currentBytesRead = 0;
+
+            if (!allFilesRead && rd->_mFiles + 1 == rd->_filesPath.size()) {
+                /*
+                 *-- This code can only be reached one time --
+                 * If this code has been reach, all files has been read, this
+                 * prevent increasing the size of the queue more that it's need.
+                 * For now on the data will be pushed circularly.
+                 */
+                allFilesRead = true;
+                /* Shrink the queue to the actual used size. */
+                rd->_dataBuffer.resize(rd->_nPayloads);
+
+                if (!queueFull) {
+                    /*
+                     * If all the files has been read but the queue is not full,
+                     * this means that all the files fit on memory and this
+                     * thread is not useful anymore
+                     */
+                    rd->_allDataFit = true;
+                    return NULL;
+                }
+            }
+
+            /* Reset the index and start over from the first file */
             rd->_mFiles = (rd->_mFiles + 1) % rd->_filesPath.size();
         }
 
@@ -121,9 +187,10 @@ public:
             : _payloadSize(0),
             _head(0),
             _tail(0),
-            _maxFiles(0),
             _nPayloads(0),
             _mFiles(0),
+            _allDataFit(false),
+            _initializationFinish(false),
             _loadRealDataThread(NULL)
     {};
 
@@ -131,9 +198,10 @@ public:
             : _payloadSize(0),
             _head(0),
             _tail(0),
-            _maxFiles(0),
             _nPayloads(0),
             _mFiles(0),
+            _allDataFit(false),
+            _initializationFinish(false),
             _PM(PM),
             _loadRealDataThread(NULL)
     {};
@@ -143,9 +211,10 @@ public:
             _payloadSize(0),
             _head(0),
             _tail(0),
-            _maxFiles(0),
             _nPayloads(0),
             _mFiles(0),
+            _allDataFit(false),
+            _initializationFinish(false),
             _PM(PM),
             _loadRealDataThread(NULL)
     {
@@ -154,81 +223,40 @@ public:
         }
     }
 
-    // RealData (const RealData &dt)
-    // {
-    //     _pathToData = dt._pathToData;
-    //     _dataBuffer = dt._dataBuffer;
-    //     _head = dt._head;
-    //     _tail = dt._tail;
-    //     _maxFiles = dt._maxFiles;
-    //     _nPayloads = dt._nPayloads;
-    //     _mFiles = dt._mFiles;
-    //     _filesPath = dt._filesPath;
-    //     _waitForData = dt._waitForData;
-    //     _PM = dt._PM;
-    // }
+    // TODO: create destructor
 
     bool initialize(std::string path, ParameterManager *PM)
     {
         _pathToData = path;
         _PM = PM;
-        if (!loadData(path)){
-            //TODO: Call Destructor
-            return false;
-        }
 
-        _loadRealDataThread = PerftestThread_new(
-                "loadingThread",
-                Perftest_THREAD_PRIORITY_DEFAULT,
-                RTI_OSAPI_THREAD_OPTION_STDIO,
-                loadDataAsynchronous,
-                this);
-
-        return true;
-    }
-
-    //TODO: create destructor
-
-    bool loadData(std::string path){
-        _pathToData = path;
         struct stat s;
         int actualbytesRead = 0;
         int actualFileSize = 0;
         int totalBytesRead = 0;
-        _maxFiles = _PM->get<unsigned long long>("maximumFilesOnMemory");
         _payloadSize = 0;
 
-        /* This variable will be necessary for a future implementation of live Data */
+        // TODO: change for ensureOrderReading
         _waitForData = _PM->get<unsigned long long>("waitForNewData");
-        _waitForData = true;
 
-        /*
-         * Initial allocation for _dataBuffer, this will not allocate the
-         * payload, just the RealPayload structure
-         */
-        _dataBuffer.resize(_maxFiles);
-
-        if( stat(path.c_str(),&s) == 0 ) {
-            if( s.st_mode & S_IFDIR ) {
+        if (stat(path.c_str(), &s) == 0) {
+            if (s.st_mode & S_IFDIR) {
                 /* The path is a directory */
                 _filesPath = getFilesPathFromDirectory(path);
-                if (_filesPath.empty()){
-                    fprintf(
-                        stderr,
-                        "Any regular file found on directory %s\n",
-                        path.c_str());
+                if (_filesPath.empty()) {
+                    fprintf(stderr,
+                            "Any regular file found on directory %s\n",
+                            path.c_str());
                     return false;
                 }
-            }
-            else if( s.st_mode & S_IFREG ) {
+            } else if (s.st_mode & S_IFREG) {
                 /* The path is a file */
                 _filesPath.push_back(path);
             }
         } else {
-            fprintf(
-                stderr,
-                "Could not open directory or file %s\n",
-                path.c_str());
+            fprintf(stderr,
+                    "Could not open directory or file %s\n",
+                    path.c_str());
             return false;
         }
 
@@ -246,100 +274,41 @@ public:
             }
             _payloadSize = actualSize;
             if (_payloadSize > MAXIMUN_REALDATA_ALLOCABLE) {
-                fprintf(
-                    stderr,
-                    "[WARNING] - The file/s %s is/are to big to be allocated "
-                    "and sent them as one samples, set -dataLen value to divide"
-                    " the file/s on samples of size of -dataLen. The file/s are"
-                    " going to be truncated to %d size\n"
-                    "Check -realPayload documentation for more information\n",
-                    path.c_str(),
-                    MAXIMUN_REALDATA_ALLOCABLE);
+                fprintf(stderr,
+                        "[WARNING] - The file/s %s is/are to big to be "
+                        "allocated and sent them as one samples, set -dataLen "
+                        "value to divide the file/s on samples of size of "
+                        "-dataLen. The file/s are going to be truncated to %d "
+                        "size\nCheck -realPayload documentation for more "
+                        "information\n",
+                        path.c_str(),
+                        MAXIMUN_REALDATA_ALLOCABLE);
                 _payloadSize = MAXIMUN_REALDATA_ALLOCABLE;
             }
             // TODO: Should we check the range of the valid size?
             _PM->set<unsigned long long>("dataLen", _payloadSize);
         }
 
-        while (_mFiles < _filesPath.size()) {
-
-            actualFileSize = getFileSize(_filesPath[_mFiles]);
-
-            if ((unsigned int)(_payloadSize + totalBytesRead)
-                    > MAXIMUN_REALDATA_ALLOCABLE) {
-                /*
-                 * End the loop. We have reach the maximun data allocable.
-                 * If there are more data that has not been load yet, it will be
-                 * allocable as soon as the main thread send actual data on the
-                 * queue
-                 */
-                break;
-            }
-
-            actualbytesRead = 0;
-            while ((actualFileSize - actualbytesRead) >= (int)_payloadSize
-                    && (_payloadSize + totalBytesRead + actualbytesRead)
-                            <= MAXIMUN_REALDATA_ALLOCABLE) {
-
-                actualbytesRead += readFile(
-                        _filesPath[_mFiles],
-                        _dataBuffer[_nPayloads]._payload,
-                        _payloadSize,
-                        actualbytesRead);
-
-                if (actualbytesRead == -1) {
-                    fprintf(stderr,
-                            "Error reading file %s\n",
-                            _filesPath[_mFiles].c_str());
-                    return false;
-                }
-
-                _nPayloads++;
-
-                /*
-                 * If the queue is full, increase the size, later the queue will
-                 * be shrink to fit. (We reserve the double of memory due to
-                 * performance benefits)
-                 */
-                if (_dataBuffer.size() == _nPayloads) {
-                    _dataBuffer.resize(_nPayloads * 2);
-                }
-
-            }
-            totalBytesRead += actualbytesRead;
-            _mFiles++;
-        }
-
-        // TODO: remove, just for testing
-        printf ("Buffers read: %d --- Files: %d --- PathFiles: %d\n", _nPayloads, _mFiles, _pathToData.size());
-
-        /* Reduce the counter of files to the real value */
-        _mFiles--;
-
-        /* Shrink the queue to the actual used size */
-        _dataBuffer.resize(_nPayloads);
+        /*
+         * Launch the asynchronous thread that will initialize the queue and
+         * will keep writing on it if the real data is to big
+         */
+        _loadRealDataThread = PerftestThread_new(
+                "loadingThread",
+                Perftest_THREAD_PRIORITY_DEFAULT,
+                RTI_OSAPI_THREAD_OPTION_STDIO,
+                loadDataAsynchronous,
+                this);
 
         /*
-         * This will be avoid extra calculation for the loadingThread to resolve
-         * the index of the last buffer read on the initialization.
+         * Wait for the _loadRealDataThread to signal that has fill the queue or
+         * read all the data.
          */
-        _bytesReadFromLastFile = actualbytesRead;
+        while (!_initializationFinish){};
 
         return true;
     }
 
-
-    // std::vector<char>& getFirstPayload()
-    // {
-    //    return _dataBuffer[0]._payload;
-    // }
-
-    // std::vector<char>& getNextPayload()
-    // {
-    //     return _dataBuffer[nextIndex(_head)]._payload;
-    // }
-
-    /* This is a future implementation in case we want to read live Data */
     /* TODO: document properly that function unblock the previous payload */
     std::vector<char>& getNextPayload()
     {
@@ -371,7 +340,7 @@ public:
                     fprintf(stderr, "Unexpected error giving semaphore\n");
                     return *resultPayload;
                 }
-                while (_dataBuffer[_head]._read){}
+                while (_dataBuffer[_head]._read || _allDataFit){}
                 RTIOsapiSemaphore_take(
                     _dataBuffer[_head]._payloadAccessSem,
                     &block_inf);
