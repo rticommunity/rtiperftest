@@ -2562,7 +2562,7 @@ double RTIDDSImpl<T>::obtain_dds_serialize_time_cost(
             RTI_OSAPI_ALIGNMENT_DEFAULT);
 
     /* Serialize time calculating */
-    timeInit = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+    timeInit = (unsigned int) PerftestClock::getInstance().getTime();
 
     for (unsigned int i = 0; i < iters; i++) {
         if (DDS_RETCODE_OK != T::TypeSupport::serialize_data_to_cdr_buffer(
@@ -2575,7 +2575,7 @@ double RTIDDSImpl<T>::obtain_dds_serialize_time_cost(
         }
     }
 
-    timeFinish = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+    timeFinish = (unsigned int) PerftestClock::getInstance().getTime();
 
     serializeTime = timeFinish - timeInit;
 
@@ -2663,7 +2663,7 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
     }
 
     /* Deserialize time calculating */
-    timeInit = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+    timeInit = (unsigned int) PerftestClock::getInstance().getTime();
 
     for (unsigned int i = 0; i < iters; i++) {
         if (DDS_RETCODE_OK != T::TypeSupport::deserialize_data_from_cdr_buffer(
@@ -2677,7 +2677,7 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
         }
     }
 
-    timeFinish = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+    timeFinish = (unsigned int) PerftestClock::getInstance().getTime();
 
     deSerializeTime = timeFinish - timeInit;
 
@@ -3735,9 +3735,9 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_serialize_time_cost_override(
         bin_data.add_n(sampleSize);
         bin_data.finish();
 
-        double start = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+        double start = (unsigned int) PerftestClock::getInstance().getTime();
         builder.finish_sample();
-        double end = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+        double end = (unsigned int) PerftestClock::getInstance().getTime();
         total_time += end - start;
     }
 
@@ -3776,11 +3776,11 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_deserialize_time_cost_override(
 
     builder.finish_sample();
 
-    double start = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+    double start = (unsigned int) PerftestClock::getInstance().getTime();
     for (unsigned int i = 0; i < iters; i++) {
         T::from_buffer(buffer);
     }
-    double end = (unsigned int) PerftestClock::getInstance().getTimeUsec();
+    double end = (unsigned int) PerftestClock::getInstance().getTime();
 
     delete[] buffer;
 

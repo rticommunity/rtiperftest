@@ -67,7 +67,7 @@ class PerftestClock {
     ~PerftestClock();
 
     static PerftestClock &getInstance();
-    unsigned long long getTimeUsec();
+    unsigned long long getTime();
     static void milliSleep(unsigned int millisec);
 
 };
@@ -232,9 +232,9 @@ class NDDSUtility
         PerftestClock clock = PerftestClock::getInstance();
 
         do{
-            usec = clock.getTimeUsec(); // Initial time
+            usec = clock.getTime(); // Initial time
             NDDS_Utility_spin(spinCount * iterations);
-            usec = clock.getTimeUsec() - usec; // Final time
+            usec = clock.getTime() - usec; // Final time
             iterations++;
             /*
              * If the the clock have a low precision, increase spinCount

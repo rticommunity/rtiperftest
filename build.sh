@@ -64,6 +64,10 @@ FLATDATA_AVAILABLE=0
 ZEROCOPY_AVAILABLE=0
 darwin_shmem_size=419430400
 
+# For C++ Classic, variable to control if using or not
+# the native implementation
+RTI_PERFTEST_NANO_CLOCK=0
+
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -151,6 +155,10 @@ function usage()
     echo "                                 binding. Default 10MB                          "
     echo "    --osx-shmem-shmmax <size>    Maximum segment size for shared memory in OSX  "
     echo "                                 in bytes. Default 400MB                        "
+    echo "    --ns-resolution              Try to use the system real-time clock to get   "
+    echo "                                 nano-second resolution.                        "
+    echo "                                 For the Classic C++ Implementation only.       "
+    echo "                                 Default is not enabled.                        "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
@@ -402,6 +410,10 @@ function additional_defines_calculation()
 
     if [ "${1}" = "CPPtraditional" ]; then
         additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_TRADITIONAL"
+
+        if [ "${RTI_PERFTEST_NANO_CLOCK}" == "1" ]; then
+            additional_defines=${additional_defines}" DRTI_PERFTEST_NANO_CLOCK"
+        fi
     fi
 
     if [ "${1}}" = "CPPmodern" ]; then
@@ -1274,6 +1286,9 @@ while [ "$1" != "" ]; do
             ;;
         --debug)
             RELEASE_DEBUG=debug
+            ;;
+        --ns-resolution)
+            RTI_PERFTEST_NANO_CLOCK=1
             ;;
         --dynamic)
             STATIC_DYNAMIC=dynamic

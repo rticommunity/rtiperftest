@@ -54,7 +54,7 @@ PerftestClock &PerftestClock::getInstance()
     return instance;
 }
 
-unsigned long long PerftestClock::getTimeUsec()
+unsigned long long PerftestClock::getTime()
 {
 
   #ifndef RTI_WIN32
