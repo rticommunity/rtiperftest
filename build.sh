@@ -602,7 +602,8 @@ function build_cpp()
         PerftestTransport.h \
         PerftestSecurity.h \
         Infrastructure_common.h \
-        Infrastructure_pro.h"
+        Infrastructure_pro.h \
+        RealDataPopulation.h"
 
     additional_source_files="${additional_source_files_custom_type} \
         RTIRawTransportImpl.cxx \
@@ -615,7 +616,8 @@ function build_cpp()
         PerftestTransport.cxx \
         PerftestSecurity.cxx \
         Infrastructure_common.cxx \
-        Infrastructure_pro.cxx"
+        Infrastructure_pro.cxx \
+        RealDataPopulation.cxx"
 
     if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
         additional_header_files="${additional_header_files} \

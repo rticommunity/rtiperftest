@@ -395,6 +395,15 @@ bool perftest_cpp::validate_input()
         }
     }
 
+    if (_PM.is_set("realPayload")){
+        /*
+         * Load a file/s on memory if realPayload is set.
+         * If dataLen is not set, dataLen will be equal to the minimun
+         * file size found on the given path
+         */
+        _realData.initialize(_PM.get<std::string>("realPayload"), &_PM);
+    }
+
     // Manage the parameter: -unbounded
     if (_PM.is_set("unbounded")) {
         if (_PM.get<int>("unbounded") == 0) { // Is the default
@@ -1824,9 +1833,14 @@ int perftest_cpp::Publisher()
     // Allocate data and set size
     TestMessage message;
     message.entity_id = _PM.get<int>("pidMultiPubTest");
-    message.data = new char[(std::max)
-            ((int)_PM.get<unsigned long long>("dataLen"),
-            (int)LENGTH_CHANGED_SIZE)];
+
+    if (_PM.is_set("realPayload")){
+        message.data = &_realData.getNextPayload()[0];
+    } else {
+        message.data = new char[(std::max)
+                ((int)_PM.get<unsigned long long>("dataLen"),
+                (int)LENGTH_CHANGED_SIZE)];
+    }
 
     if (showCpu && _PM.get<int>("pidMultiPubTest") == 0) {
         reader_listener->cpu.initialize();
@@ -1953,6 +1967,7 @@ int perftest_cpp::Publisher()
             (unsigned int)_PM.get<unsigned long long>("executionTime"),
             Timeout_scan
     };
+    const bool isSetRealPayload = _PM.is_set("realPayload");
 
 
     /*
@@ -2117,6 +2132,10 @@ int perftest_cpp::Publisher()
 
         message.seq_num = (unsigned long) loop;
         message.latency_ping = pingID;
+        if (isSetRealPayload){
+            message.data = &_realData.getNextPayload()[0];
+            // TODO: check if the data returned is valid.
+        }
         writer->Send(message);
         if(latencyTest && sentPing) {
             if (!bestEffort) {

@@ -29,6 +29,9 @@
 doc
 srcDoc/_build
 
+# Data to use for -realPayload
+/resource/real_data/*
+
 # Files copied by the build Script.
 /srcCpp/Parameter*
 /srcCpp03/Parameter*

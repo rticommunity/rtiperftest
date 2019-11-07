@@ -7,6 +7,12 @@
 #define INFRASTRUCTURE_COMMON_H_
 
 #include "perftest.h"
+#include <fstream>
+
+#ifdef RTI_UNIX
+  /* This is a C POSIX library but Microsoft Visual C++ does not include this */
+  #include "dirent.h"
+#endif
 
 #ifdef RTI_MICRO
   #include "Infrastructure_micro.h"
@@ -42,5 +48,15 @@ class PerftestTimer
     static PerftestTimer &getInstance();
     PerftestThread *setTimeout(ScheduleInfo &info);
 };
+
+int getFileSize(std::string const& filename);
+
+std::vector<std::string> getFilesPathFromDirectory(const std::string &dirPath);
+
+int readFile(
+        std::string const& filename,
+        std::vector<char>& fileData,
+        unsigned int bytesToRead = 0, /* File size */
+        unsigned int startPos = 0);
 
 #endif /* INFRASTRUCTURE_COMMON_H_ */

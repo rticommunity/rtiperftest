@@ -48,6 +48,33 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("dataLen", dataLen);
 
+    Parameter<std::string> *realPayload =
+            new Parameter<std::string>;
+    realPayload->set_command_line_argument("-realPayload", "<file/s path>");
+    realPayload->set_description(
+            "Set the file used to populate the payload");
+    realPayload->set_type(T_STR);
+    realPayload->set_extra_argument(YES);
+    realPayload->set_group(GENERAL);
+    realPayload->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("realPayload", realPayload);
+
+    Parameter<int> *maximumFilesOnMemory = new Parameter<int>(10);
+    maximumFilesOnMemory->set_command_line_argument("-maximumFilesOnMemory", "<number>");
+    maximumFilesOnMemory->set_description(
+            "Maximun files to read from -realPayload Path");
+    maximumFilesOnMemory->set_type(T_NUMERIC_LLU);
+    maximumFilesOnMemory->set_extra_argument(YES);
+    maximumFilesOnMemory->set_range(1, 100);
+    maximumFilesOnMemory->set_group(GENERAL);
+    maximumFilesOnMemory->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("maximumFilesOnMemory", maximumFilesOnMemory);
 
     Parameter<int> *verbosity = new Parameter<int>(1);
     verbosity->set_command_line_argument("-verbosity", "<level>");
