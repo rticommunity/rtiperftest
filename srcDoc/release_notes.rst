@@ -51,6 +51,16 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+Compilation option to measure latency time in nano-seconds (#253)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* can now be compiled using the Unix calls to measure latency
+in *nanoseconds*, instead of using the *RTI Connext DDS Professional* calls
+which return the time in *microseconds*.
+
+This option can be enabled at compilation time by using the `--ns-resolution`.
+It is only implemented for Unix Systems.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
