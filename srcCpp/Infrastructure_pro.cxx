@@ -63,7 +63,7 @@ unsigned long long PerftestClock::getTime()
             clockTimeAux);
     return clockUsec + 1000000 * clockSec;
   #else
-    clock_gettime(CLOCK_REALTIME, &timeStruct);
+    clock_gettime(CLOCK_MONOTONIC, &timeStruct);
     return (timeStruct.tv_sec * ONE_BILLION) + timeStruct.tv_nsec;
   #endif
 }

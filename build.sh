@@ -454,6 +454,10 @@ function additional_defines_calculation_micro()
     fi
     additional_defines="RTI_LANGUAGE_CPP_TRADITIONAL RTI_MICRO O3"${additional_defines}
 
+    if [ "${RTI_PERFTEST_NANO_CLOCK}" == "1" ]; then
+        additional_defines=${additional_defines}" DRTI_PERFTEST_NANO_CLOCK"
+    fi
+
     if [ "${USE_SECURE_LIBS}" == "1" ]; then
         additional_defines="${additional_defines} RTI_SECURE_PERFTEST"
 
