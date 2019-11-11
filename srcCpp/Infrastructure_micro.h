@@ -43,6 +43,7 @@ inline RTI_BOOL PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
 }
 
 #define PERFTEST_DISCOVERY_TIME_MSEC 1000 // 1 second
+#define ONE_BILLION  1000000000L // 1 billion (US) == 1 second in ns
 
 #define PerftestMutex OSAPI_Mutex_T
 #define PerftestMutex_new OSAPI_Mutex_new
@@ -54,12 +55,16 @@ inline RTI_BOOL PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
 class PerftestClock {
 
   private:
-  #ifndef RTI_WIN32
+  #ifndef RTI_PERFTEST_NANO_CLOCK
+    #ifndef RTI_WIN32
     OSAPI_NtpTime clockTimeAux;
     RTI_INT32 clockSec;
     RTI_UINT32 clockUsec;
-  #else
+    #else
     double _frequency;
+    #endif
+  #else
+    struct timespec timeStruct;
   #endif
 
   public:
@@ -67,7 +72,7 @@ class PerftestClock {
     ~PerftestClock();
 
     static PerftestClock &getInstance();
-    unsigned long long getTimeUsec();
+    unsigned long long getTime();
     static void milliSleep(unsigned int millisec);
 
 };
@@ -232,9 +237,9 @@ class NDDSUtility
         PerftestClock clock = PerftestClock::getInstance();
 
         do{
-            usec = clock.getTimeUsec(); // Initial time
+            usec = clock.getTime(); // Initial time
             NDDS_Utility_spin(spinCount * iterations);
-            usec = clock.getTimeUsec() - usec; // Final time
+            usec = clock.getTime() - usec; // Final time
             iterations++;
             /*
              * If the the clock have a low precision, increase spinCount

@@ -66,23 +66,28 @@ inline bool PerftestSemaphore_give(PerftestSemaphore *sem)
         PerftestSemaphore_take(sem, PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)
 
 #define PERFTEST_DISCOVERY_TIME_MSEC 1000 // 1 second
+#define ONE_BILLION  1000000000L // 1 billion (US) == 1 second in ns
 
 /* Perftest Clock Class */
 class PerftestClock
 {
 
   private:
+  #ifndef RTI_PERFTEST_NANO_CLOCK
     RTIClock *clock;
     RTINtpTime clockTimeAux;
     RTI_UINT64 clockSec;
     RTI_UINT64 clockUsec;
+  #else
+    struct timespec timeStruct;
+  #endif
 
   public:
     PerftestClock();
     ~PerftestClock();
 
     static PerftestClock &getInstance();
-    unsigned long long getTimeUsec();
+    unsigned long long getTime();
     static void milliSleep(unsigned int millisec);
 
 };

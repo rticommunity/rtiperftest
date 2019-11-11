@@ -825,7 +825,7 @@ class ThroughputListener : public IMessagingCB
                 _last_seq_num[i] = 0;
             }
 
-            begin_time = PerftestClock::getInstance().getTimeUsec();
+            begin_time = PerftestClock::getInstance().getTime();
 
             if (printIntervals) {
                 printf("\n\n********** New data length is %d\n",
@@ -859,7 +859,7 @@ class ThroughputListener : public IMessagingCB
     void print_summary(TestMessage &message){
 
         // store the info for this interval
-        unsigned long long now = PerftestClock::getInstance().getTimeUsec();
+        unsigned long long now = PerftestClock::getInstance().getTime();
 
         if (interval_data_length != last_data_length) {
 
@@ -1101,12 +1101,12 @@ int perftest_cpp::Subscriber()
         reader_listener->cpu.initialize();
     }
 
-    now = PerftestClock::getInstance().getTimeUsec();
+    now = PerftestClock::getInstance().getTime();
 
     while (true) {
         prev_time = now;
         PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
-        now = PerftestClock::getInstance().getTimeUsec();
+        now = PerftestClock::getInstance().getTime();
 
         if (reader_listener->change_size) { // ACK change_size
             announcement_msg.entity_id = subID;
@@ -1385,9 +1385,17 @@ public:
             cpu.initialize();
         }
 
-        printf("Length: %5d  Latency: Ave %6.0lf us  Std %6.1lf us  "
-                "Min %6lu us  Max %6lu us  50%% %6lu us  90%% %6lu us"
-                " 99%% %6lu us  99.99%% %6lu us  99.9999%% %6lu us %s\n",
+        printf("Length: %5d"
+               " Latency: Ave %6.0lf " PERFT_TIME_UNIT
+               " Std %6.1lf " PERFT_TIME_UNIT
+               " Min %6lu " PERFT_TIME_UNIT
+               " Max %6lu " PERFT_TIME_UNIT
+               " 50%% %6lu " PERFT_TIME_UNIT
+               " 90%% %6lu " PERFT_TIME_UNIT
+               " 99%% %6lu " PERFT_TIME_UNIT
+               " 99.99%% %6lu " PERFT_TIME_UNIT
+               " 99.9999%% %6lu " PERFT_TIME_UNIT
+               " %s\n",
                 totalSampleSize,
                 latency_ave, latency_std, latency_min, latency_max,
                 _latency_history[count*50/100],
@@ -1395,8 +1403,7 @@ public:
                 _latency_history[count*99/100],
                 _latency_history[(int)(count*(9999.0/10000))],
                 _latency_history[(int)(count*(999999.0/1000000))],
-                outputCpu.c_str()
-        );
+                outputCpu.c_str());
         fflush(stdout);
 
       #ifndef RTI_MICRO
@@ -1533,7 +1540,7 @@ public:
         double latency_std;
         std::string outputCpu = "";
 
-        now = PerftestClock::getInstance().getTimeUsec();
+        now = PerftestClock::getInstance().getTime();
 
         switch (message.size)
         {
@@ -1636,8 +1643,12 @@ public:
                 if (showCpu) {
                     outputCpu = cpu.get_cpu_instant();
                 }
-                printf("One way Latency: %6lu us  Ave %6.0lf us  Std %6.1lf us "
-                        " Min %6lu us  Max %6lu %s\n",
+                printf("One way Latency: %6lu " PERFT_TIME_UNIT
+                       " Ave %6.0lf " PERFT_TIME_UNIT
+                       " Std %6.1lf " PERFT_TIME_UNIT
+                       " Min %6lu " PERFT_TIME_UNIT
+                       " Max %6lu " PERFT_TIME_UNIT
+                       " %s\n",
                         latency,
                         latency_ave,
                         latency_std,
@@ -1912,7 +1923,7 @@ int perftest_cpp::Publisher()
             Timeout
     };
 
-    time_last_check = PerftestClock::getInstance().getTimeUsec();
+    time_last_check = PerftestClock::getInstance().getTime();
 
     /* Minimum value for pubRate_sample_period will be 1 so we execute 100 times
        the control loop every second, or every sample if we want to send less
@@ -1986,7 +1997,7 @@ int perftest_cpp::Publisher()
      */
 
     if (_PM.get<bool>("lowResolutionClock")) {
-        startTestTime = PerftestClock::getInstance().getTimeUsec();
+        startTestTime = PerftestClock::getInstance().getTime();
     }
 
     /********************
@@ -1999,7 +2010,7 @@ int perftest_cpp::Publisher()
            that modifies the publication rate according to -pubRate */
         if (isSetPubRate && (loop > 0) && (loop % pubRate_sample_period == 0)) {
 
-            time_now = PerftestClock::getInstance().getTimeUsec();
+            time_now = PerftestClock::getInstance().getTime();
 
             time_delta = time_now - time_last_check;
             time_last_check = time_now;
@@ -2118,7 +2129,7 @@ int perftest_cpp::Publisher()
 
                 // Each time ask a different subscriber to echo back
                 pingID = num_pings % numSubscribers;
-                unsigned long long now = PerftestClock::getInstance().getTimeUsec();
+                unsigned long long now = PerftestClock::getInstance().getTime();
                 message.timestamp_sec = (int)((now >> 32) & 0xFFFFFFFF);
                 message.timestamp_usec = (unsigned int)(now & 0xFFFFFFFF);
                 ++num_pings;
@@ -2164,7 +2175,7 @@ int perftest_cpp::Publisher()
     if (_PM.get<bool>("lowResolutionClock")) {
         fprintf(stdout,
                 "Average Latency time = %llu (us)\n",
-                (PerftestClock::getInstance().getTimeUsec()
+                (PerftestClock::getInstance().getTime()
                     - startTestTime)
                         / (2 * loop));
     }

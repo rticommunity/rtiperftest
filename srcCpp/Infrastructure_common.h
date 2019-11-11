@@ -8,6 +8,12 @@
 
 #include "perftest.h"
 
+#ifndef RTI_PERFTEST_NANO_CLOCK
+  #define PERFT_TIME_UNIT "us"
+#else
+  #define PERFT_TIME_UNIT "ns"
+#endif
+
 #ifdef RTI_MICRO
   #include "Infrastructure_micro.h"
 #else

@@ -198,6 +198,14 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | available from your ``$PATH``     |
 |                      |           | variable.                         |
 +----------------------+-----------+-----------------------------------+
+| --ns-resolution      | Optional  | Try to use the system real-time   |
+|                      |           | clock to get nano-second          |
+|                      |           | resolution. Availability will     |
+|                      |           | depend on the OS.                 |
+|                      |           | For the Classic C++ Implementation|
+|                      |           | only.                             |
+|                      |           | Default is not enabled.           |
++----------------------+-----------+-----------------------------------+
 | --osx-shmem-shmmax   | Optional  | Specify the maximum segment size  |
 |                      |           | for shared memory in OSX.         |
 |                      |           | Default: 400MB                    |

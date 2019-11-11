@@ -7,6 +7,10 @@
 #include "perftest_cpp.h"
 #include "osapi/osapi_sharedMemorySegment.h"
 
+
+
+#include <time.h>
+using namespace std;
 /*
  * Since std::to_string is not defined until c++11
  * we will define it here.
@@ -24,6 +28,7 @@ namespace std {
 
 PerftestClock::PerftestClock()
 {
+  #ifndef RTI_PERFTEST_NANO_CLOCK
     clock = RTIHighResolutionClock_new();
     if (clock == NULL) {
         throw std::bad_alloc();
@@ -32,11 +37,14 @@ PerftestClock::PerftestClock()
 
     clockSec = 0;
     clockUsec = 0;
+  #endif
 }
 
 PerftestClock::~PerftestClock()
 {
+  #ifndef RTI_PERFTEST_NANO_CLOCK
     RTIHighResolutionClock_delete(clock);
+  #endif
 }
 
 PerftestClock &PerftestClock::getInstance()
@@ -45,14 +53,19 @@ PerftestClock &PerftestClock::getInstance()
     return instance;
 }
 
-unsigned long long PerftestClock::getTimeUsec()
+unsigned long long PerftestClock::getTime()
 {
+  #ifndef RTI_PERFTEST_NANO_CLOCK
     clock->getTime(clock, &clockTimeAux);
     RTINtpTime_unpackToMicrosec(
             clockSec,
             clockUsec,
             clockTimeAux);
     return clockUsec + 1000000 * clockSec;
+  #else
+    clock_gettime(CLOCK_MONOTONIC, &timeStruct);
+    return (timeStruct.tv_sec * ONE_BILLION) + timeStruct.tv_nsec;
+  #endif
 }
 
 void PerftestClock::milliSleep(unsigned int millisec)

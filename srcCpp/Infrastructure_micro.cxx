@@ -25,6 +25,7 @@ namespace std {
 
 PerftestClock::PerftestClock()
 {
+  #ifndef RTI_PERFTEST_NANO_CLOCK
   #ifndef RTI_WIN32
 
     OSAPI_NtpTime_from_millisec(&clockTimeAux, 0, 0);
@@ -41,7 +42,7 @@ PerftestClock::PerftestClock()
     _frequency = double(ticks.QuadPart);
 
   #endif
-
+  #endif
 }
 
 PerftestClock::~PerftestClock()
@@ -54,10 +55,10 @@ PerftestClock &PerftestClock::getInstance()
     return instance;
 }
 
-unsigned long long PerftestClock::getTimeUsec()
+unsigned long long PerftestClock::getTime()
 {
-
-  #ifndef RTI_WIN32
+  #ifndef RTI_PERFTEST_NANO_CLOCK
+    #ifndef RTI_WIN32
 
     if (!OSAPI_System_get_time((OSAPI_NtpTime*)&clockTimeAux)) {
         return 0;
@@ -69,10 +70,10 @@ unsigned long long PerftestClock::getTimeUsec()
             (struct OSAPI_NtpTime*)&clockTimeAux);
     return clockUsec + (unsigned long long) 1000000 * clockSec;
 
-  #else
+    #else
     /*
      * RTI Connext DDS Micro takes the timestamp by GetSystemTimeAsFileTime,
-     * this function shouldhave a resolution of 100 nanoseconds but
+     * this function should have a resolution of 100 nanoseconds but
      * GetSystemTimeAsFileTime is a non-realtime time & busy loop (very fast)
      * in implementation. The system time is obtained from SharedUserData, which
      * is fill by system on every hardware clock interruption. MICRO-2099
@@ -88,7 +89,11 @@ unsigned long long PerftestClock::getTimeUsec()
     QueryPerformanceCounter(&ticks);
     return ticks.QuadPart / (unsigned long long) (_frequency /1000000.0);
 
-  #endif
+    #endif /* RTI_WIN32 */
+  #else
+    clock_gettime(CLOCK_MONOTONIC, &timeStruct);
+    return (timeStruct.tv_sec * ONE_BILLION) + timeStruct.tv_nsec;
+  #endif /* RTI_PERFTEST_NANO_CLOCK */
 
 
 }
