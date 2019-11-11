@@ -89,11 +89,11 @@ unsigned long long PerftestClock::getTime()
     QueryPerformanceCounter(&ticks);
     return ticks.QuadPart / (unsigned long long) (_frequency /1000000.0);
 
-    #endif
+    #endif /* RTI_WIN32 */
   #else
     clock_gettime(CLOCK_MONOTONIC, &timeStruct);
     return (timeStruct.tv_sec * ONE_BILLION) + timeStruct.tv_nsec;
-  #endif
+  #endif /* RTI_PERFTEST_NANO_CLOCK */
 
 
 }
