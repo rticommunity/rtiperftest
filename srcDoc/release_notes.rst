@@ -54,14 +54,6 @@ What's New in Master
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Error finalizing the application when using `SHMEM` for *RTI Connext DDS Micro* (#234)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-When using *RTI Connext DDS Micro* and setting the transport to `SHMEM` an error
-would appear at the end of the test in both publisher and subscriber by the time
-he `finalize_instance()` function is called. This errors has been resolved.
-
-
 Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -89,6 +81,20 @@ Wrong capitalization for command line option `--customTypeFlatData` (#232)
 Fixed issue in the `build.sh` and `build.bat` where the command line parameter
 used to specify that a custom type for Flat Data was provided was wrongly
 spelled.
+
+Error finalizing the application when using `SHMEM` for *RTI Connext DDS Micro* (#234)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using *RTI Connext DDS Micro* and setting the transport to `SHMEM` an error
+would appear at the end of the test in both publisher and subscriber by the time
+he `finalize_instance()` function is called. This errors has been resolved.
+
+The version of *rtiddsgen* is now properly compared to identify the support of certain features (#237)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, the *rtiddsgen* version number was not correctly obtained
+by the *RTI Perftest* compilation scripts. This would cause the inclusion of the
+wrong compilation flags in certain cases.
 
 Fix incorrect incorrect governance file values for Security (#239)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
