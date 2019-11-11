@@ -127,5 +127,56 @@ bool set_custom_type_dynamic_data(
 */
 bool finalize_custom_type_dynamic_data(DDS_DynamicData &data);
 
+
+#ifdef RTI_CUSTOM_TYPE_FLATDATA
+/*
+*   @brief This function is used to initialize your FlatData data.
+*       Using this function, you will be able to allocate memory or set an
+*       immutable field of the data.
+*   @param data \b InOut. A reference to the custom type data builder.
+*   @return true if the operation was successful, otherwise false.
+*/
+bool initialize_custom_type_data_flatdata(
+        rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLATDATA>::builder &data);
+
+/*
+*   @brief This function is used to set your data before being registered.
+*       It is only required for key types.
+*       Set the key field of the data based on the key input.
+*       There is a one-to-one mapping between an input key and an instance.
+*   @param data \b InOut. A reference to the custom type data builder.
+*   @param key \b In. A specific number unique for every key.
+*/
+void register_custom_type_data_flatdata(
+        rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLATDATA>::builder &data,
+        unsigned long key);
+
+/*
+*   @brief This function is used to set your data before it is sent.
+*       It is called every time the data is sent.
+*       You must set the Custom type data before it is sent with the right
+*       "key" value and the "targetDataLen".
+*   @param data \b InOut. A reference to the custom type data builder.
+*   @param key \b In. A specific number unique for every key.
+*   @param targe_data_len \b In. Value of the command-line parameter
+*       "-dataLen <bytes>" minus the overhead of RTI Perftest.
+*       If applicable, you can use this value to set the content of the data.
+*   @return true if the operation was successful, otherwise false.
+*/
+bool set_custom_type_data_flatdata(
+        rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLATDATA>::builder &data,
+        unsigned long key,
+        int targetDataLen);
+
+/*
+*   @brief This function is used to remove your data. It is called in the destructor.
+*   @param data \b InOut. A reference to the custom type data builder.
+*   @return true if the operation was successful, otherwise false.
+*/
+bool finalize_custom_type_data_flatdata(
+        rti::flat::flat_type_traits<RTI_CUSTOM_TYPE_FLATDATA>::builder &data);
+
+#endif // RTI_CUSTOM_TYPE_FLATDATA
+
 #endif // __CUSTOMTYPE_H__
 #endif // RTI_CUSTOM_TYPE

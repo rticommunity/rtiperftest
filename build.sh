@@ -50,14 +50,16 @@ RTI_OPENSSLHOME=""
 # Variables for customType
 custom_type_folder="${idl_location}/customType"
 USE_CUSTOM_TYPE=0
+USE_CUSTOM_TYPE_FLAT=0
 custom_type="" # Type of the customer
+custom_type_flat="" # Type of the customer
 custom_type_file_name_support="" # Name of the file with the type. "TSupport.h"
 # Intermediate file for including the custom type file #include "file.idl"
 custom_idl_file="${custom_type_folder}/custom.idl"
 
 # Variables for FlatData
 flatdata_size=10485760 # 10MB
-flatdata_ddsgen_version=300 #3.0.0
+flatdata_ddsgen_version=3 # We just need the Major value of the version.
 FLATDATA_AVAILABLE=0
 ZEROCOPY_AVAILABLE=0
 darwin_shmem_size=419430400
@@ -141,6 +143,9 @@ function usage()
     echo "    --customType <type>          Use the Custom type feature with your type.    "
     echo "                                 See details and examples of use in the         "
     echo "                                 documentation.                                 "
+    echo "    --customTypeFlatData <type>  Use the Custom type feature with your FlatData "
+    echo "                                 Type. See details and examples of use in the   "
+    echo "                                 documentation.                                 "
     echo "    --flatdata-max-size <size>   Specify the maximum bounded size on bytes      "
     echo "                                 for sequences when using FlatData language     "
     echo "                                 binding. Default 10MB                          "
@@ -223,11 +228,11 @@ function executable_checking()
         if [ -z "${RTIMEHOME}" ]; then
             # Is NDDSHOME set?
             if [ -z "${NDDSHOME}" ]; then
-                echo -e "${ERROR_TAG} Nor RTIMEHOME nor NDDSHOME variables are set"
+                echo -e "${ERROR_TAG} Nor RTIMEHOME nor NDDSHOME variables are set or the paths do not exist"
                 usage
                 exit -1
             else
-                echo -e "${INFO_TAG} The RTIMEHOME variable is not set, using NDDSHOME"
+                echo -e "${INFO_TAG} The RTIMEHOME variable is not set or the path does not exist, using NDDSHOME instead"
             fi
         else
             export NDDSHOME="${RTIMEHOME}"
@@ -250,7 +255,7 @@ function executable_checking()
 
         # Is NDDSHOME set?
         if [ -z "${NDDSHOME}" ]; then
-            echo -e "${ERROR_TAG} The NDDSHOME variable is not set"
+            echo -e "${ERROR_TAG} The NDDSHOME variable is not set or the path does not exist"
             usage
             exit -1
         fi
@@ -386,8 +391,13 @@ function additional_defines_calculation()
             echo -e "${INFO_TAG} Using security plugin. Linking Statically."
         fi
     fi
+
     if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
         additional_defines=${additional_defines}" DRTI_CUSTOM_TYPE="${custom_type}" DRTI_CUSTOM_TYPE_FILE_NAME_SUPPORT="${custom_type_file_name_support}
+    fi
+
+    if [ "${USE_CUSTOM_TYPE_FLAT}" == "1" ]; then
+        additional_defines=${additional_defines}" DRTI_CUSTOM_TYPE_FLATDATA="${custom_type_flat}" DRTI_CUSTOM_TYPE_FILE_NAME_SUPPORT="${custom_type_file_name_support}
     fi
 
     if [ "${1}" = "CPPtraditional" ]; then
@@ -494,7 +504,11 @@ function build_cpp_custom_type()
     done
 
     # Adding RTI_USE_CUSTOM_TYPE as a macro
-    additional_defines_custom_type=" -D RTI_CUSTOM_TYPE="${custom_type}
+    additional_defines_custom_type=" -D RTI_CUSTOM_TYPE=${custom_type}"
+
+    if [ "${USE_CUSTOM_TYPE_FLAT}" == "1" ]; then
+        additional_defines_custom_type="${additional_defines_custom_type} -D RTI_CUSTOM_TYPE_FLATDATA=${custom_type_flat}"
+    fi
 }
 
 function generate_qos_string()
@@ -544,9 +558,10 @@ function clean_src_cpp_common()
 function check_flatData_zeroCopy_available()
 {
     version=$(awk -F"version" '/version/ { split($2, a, " "); print a[1] }' <<< $(${rtiddsgen_executable} -version)) # e.g. 3.0.0
-    ddsgen_version="${version//\./}" # e.g. 300
+    # We just need the Major value of the version.
+    major=`echo $version | awk -F. '{print $1}'`
 
-    if [[ $ddsgen_version -ge $flatdata_ddsgen_version ]]; then
+    if [[ $major -ge $flatdata_ddsgen_version ]]; then
         echo -e "${INFO_TAG} FlatData is available"
         FLATDATA_AVAILABLE="1"
     fi
@@ -1275,6 +1290,16 @@ while [ "$1" != "" ]; do
             custom_type=$2
             if [ -z "${custom_type}" ]; then
                 echo -e "${ERROR_TAG} --customType should be followed by the name of the type."
+                usage
+                exit -1
+            fi
+            shift
+            ;;
+        --customTypeFlatData)
+            USE_CUSTOM_TYPE_FLAT=1
+            custom_type_flat=$2
+            if [ -z "${custom_type_flat}" ]; then
+                echo -e "${ERROR_TAG} --customTypeFlatData should be followed by the name of the type."
                 usage
                 exit -1
             fi

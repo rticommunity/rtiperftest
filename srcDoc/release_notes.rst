@@ -51,6 +51,107 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+What's Fixed in Master
+~~~~~~~~~~~~~~~~~~~~~~
+
+Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* has improved the error message when the path provided to the
+`NDDSHOME` or `RTIMEHOME` are incorrect. In previous releases this could be
+misleading since it would claim that the path was not provided.
+
+Wrong version in dockerfile for perftest 3.0.1 (#227)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest*'s Dockerfile was outdated. It has now been updated to use the
+latest release.
+
+Participant properties always propagate in C++03 (#228)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+QoS properties for Data Readers and Data Writers were being propagated on C++03
+implementation.
+
+This behaviour is not needed so has been removed to behave as on Traditional C++.
+
+Wrong capitalization for command line option `--customTypeFlatData` (#232)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed issue in the `build.sh` and `build.bat` where the command line parameter
+used to specify that a custom type for Flat Data was provided was wrongly
+spelled.
+
+Error finalizing the application when using `SHMEM` for *RTI Connext DDS Micro* (#234)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using *RTI Connext DDS Micro* and setting the transport to `SHMEM` an error
+would appear at the end of the test in both publisher and subscriber by the time
+he `finalize_instance()` function is called. This errors has been resolved.
+
+The version of *rtiddsgen* is now properly compared to identify the support of certain features (#237)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, the *rtiddsgen* version number was not correctly obtained
+by the *RTI Perftest* compilation scripts. This would cause the inclusion of the
+wrong compilation flags in certain cases.
+
+Fix incorrect incorrect governance file values for Security (#239)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The `PerftestGovernance_RTPSEncryptWithOrigAuthEncryptData.xml` and
+`PerftestGovernance_RTPSSignWithOrigAuthEncryptData.xml` governance files were not
+correctly writen and they would not set the right flags to encrypt the data.
+
+This issue has been fixed.
+
+Content-Filtered Topics (`-cft`) range option not working properly (#240)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The `-cft` option for the *Perftest subscriber* side was not working correctly
+when specifying a range of values to filter (e.g. `-cft 3:5`). This behavior has
+been corrected.
+
+Fix issue displaying the *RTI Connext DDS Micro* release number (#243)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed issue where *RTI Perftest* would display the `RTIME_DDS_VERSION_REVISION`
+instead of the `RTIME_DDS_VERSION_RELEASE` when compiling against *RTI
+Connext DDS Micro*.
+
+Fix incorrect number of `max_instances` in the *DataReader* when using *Micro* (#244)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The value to `max_instances` assigned to the resouce limits in the *DataReader*
+side in *RTI Perftest* when compiling against *RTI Connext DDS Micro* was not
+set correctly, and it would not account for the extra sample used to skip the
+*CFTs*.
+
+Summary displays *Asynchronous publishing* active when using *Zero-Copy* and *Large Data* (#246)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed issue where *RTI Perftest* would present in the summary of the *Publisher*
+side the *Asynchronous Publishing* set to *true* regardless on if the test was
+using *Zero-Copy* or not.
+
+When using *Zero-Copy*, the size of the message being sent will always be
+constant, independent on the size of the sample being sent, as it is just a
+reference to where the sample is stored in memory.
+This means that *Asynchronous Publishing* is not needed in any case.
+
+Fix documentation examples for *FlatData* and *Zero-Copy* (#249)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the documentation examples for *FlatData* and *Zero-Copy* the data sizes used
+for publisher and subscriber were not matching. Also, in the *Best Effort* case,
+the command lines were not including the `-bestEffort` option.
+
+Release Notes 3.0
+-----------------
+
+What's New in 3.0
+~~~~~~~~~~~~~~~~~
+
 Ability to use your own type in RTI Perftest (#33)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -253,8 +354,8 @@ In order to achieve better performance with dealing with Large Data, the
 `send_socket_buffer_size` property has been modified from 500KB to 1MB in the
 *QoS* file.
 
-What's Fixed in Master
-~~~~~~~~~~~~~~~~~~~~~~
+What's Fixed in 3.0
+~~~~~~~~~~~~~~~~~~~
 
 Migrate RTI Routing Service XML configuration to 6.0.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -376,6 +477,17 @@ was being limited.
 The `dds.transport.shmem.builtin.received_message_count_max` and
 `dds.transport.shmem.builtin.receive_buffer_size` QoS settings have been
 increased to avoid this bottleneck.
+
+Fix Custom Types failure due to the use of Flat Data (#221)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+FlatData support for Custom Types was not complete thus errors arise when using
+``--customType`` build option.
+
+Now this issue has been fixed and FlatData custom types can be used along with
+regular custom types by using the new ``--customTypeFlatData`` build option.
+
+The only known limitation is that these FlatData types must be declared as mutable.
 
 Release Notes 2.4
 -----------------
@@ -1224,6 +1336,20 @@ we could get into the following error:
 
 Known Issues
 ------------
+
+Compilation Errors in Microsoft Visual Studio 2017 Express
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Due to `this issue <https://community.rti.com/static/documentation/connext-dds/6.0.0/doc/manuals/connext_dds/code_generator/html_files/RTI_CodeGenerator_ReleaseNotes/index.htm#code_generator/ReleaseNotes/KnownIssues/Known_Issues.htm?Highlight=RTI_VS_WINDOWS_TARGET_PLATFORM_VERSION>`__
+documented in the Know Issues for *RTI Connext DDS*, when compiling with
+*Visual Studio 2017 Express*, you need to set the `RTI_VS_WINDOWS_TARGET_PLATFORM_VERSION`
+as follows to avoid compilation errors:
+
+::
+
+    set RTI_VS_WINDOWS_TARGET_PLATFORM_VERSION=10.0.16299.0
+
+[RTI Issue ID CODEGENII-800]
 
 Shared Memory issues when running the Modern C++ API or .Net Implementation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

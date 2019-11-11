@@ -321,7 +321,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 63001 -flatData
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 100000 -flatData
 
 
 1-to-1, FlatData and Zero Copy, SharedMemory, Unicast, Reliable, Latency test, Large Data
@@ -337,7 +337,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 63001 -flatData -zeroCopy
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 100000 -flatData -zeroCopy
 
 
 1-to-1, FlatData and Zero Copy, SharedMemory, Unicast, BestEffort, Throughput test, Large Data, Check Consistency
@@ -347,13 +347,13 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -pub -noPrint -transport SHMEM -dataLen 100000 -executionTime 100 -latencyTest -flatData -zeroCopy
+    bin/<arch>/release/perftest_cpp -pub -noPrint -transport SHMEM -dataLen 100000 -executionTime 100 -latencyTest -flatData -zeroCopy -bestEffort
 
 -  Subscriber
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 63001 -flatData -zeroCopy -checkConsistency
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 100000 -flatData -zeroCopy -checkConsistency -bestEffort
 
 
 
@@ -811,6 +811,14 @@ Briefly, the steps you need to perform to use your custom type in *RTI Perftest*
 -  Implement the API custom type functions of customtype.cxx
 -  Run the build script with the command-line parameter ``--customType <type>``
 -  Run *RTI Perftest* as usual.
+
+Furthermore, if you want to use *FlatData* with your Custom Types, follow these additional steps:
+
+- Create a copy of your original type on the same IDL file.
+- Make this new type mutable (``@mutable``) and make it FlatData compatible (``@language_binding(FLAT_DATA)``).
+- Implement the additional API custom type functions of customtype.cxx for *FlatData* types.
+- Run the build script with the command-line parameter ``--customType <type>`` and ``--customTypeFlatData <flat_type>``.
+- Run *RTI Perftest* as usual.
 
 Full example using Custom Types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

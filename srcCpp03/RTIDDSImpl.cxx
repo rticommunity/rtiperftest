@@ -360,7 +360,8 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     // Dynamic Data
     if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
-        if (_isLargeData || _PM->get<bool>("asynchronous")) {
+        if ((_isLargeData || _PM->get<bool>("asynchronous"))
+                && !_PM->get<bool>("zerocopy")) {
             stringStream << "Yes\n";
             stringStream << "\tFlow Controller: "
                          << _PM->get<std::string>("flowController")
@@ -1688,8 +1689,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     //We have to copy the properties to the participant_qos object
     qos << rti::core::policy::Property(
             properties.begin(),
-            properties.end(),
-            true);
+            properties.end());
 
     DomainListener *listener = new DomainListener;
 
@@ -1847,35 +1847,38 @@ dds::topic::ContentFilteredTopic<U> RTIDDSImpl<T>::CreateCft(
     std::vector<std::string> parameters(2 * KEY_SIZE);
     const std::vector<unsigned long long> cftRange
             = _PM->get_vector<unsigned long long>("cft");
+
+    /* Only one element, no range */
     if (cftRange.size() == 1) {  // If same elements, no range
         std::cerr << "[Info] CFT enabled for instance: '"
                   << cftRange[0]
                   << "'"
                   <<std::endl;
+
         for (int i = 0; i < KEY_SIZE; i++) {
             std::ostringstream string_stream_object;
             string_stream_object << (int)((unsigned char)(cftRange[0] >> i * 8));
             parameters[i] = string_stream_object.str();
         }
+
         condition = "(%0 = key[0] AND  %1 = key[1] AND %2 = key[2] AND  %3 = key[3]) OR "
                     "(255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3])";
-    } else { // If range cftRange.size() == 2 (RANGE)
+
+    } else { /* More than one element, apply a range filter */
         std::cerr << "[Info] CFT enabled for instance range:["
                   << cftRange[0]
                   << ","
                   << cftRange[1]
                   << "]"
                   << std::endl;
+
         for (int i = 0; i < 2 * KEY_SIZE; i++) {
             std::ostringstream string_stream_object;
-            if (i < KEY_SIZE) {
-                string_stream_object << (int)((unsigned char)(cftRange[0] >> i * 8));
-                parameters[i]= string_stream_object.str();
-            } else { // KEY_SIZE < i < KEY_SIZE * 2
-                string_stream_object << (int)((unsigned char)(cftRange[1] >> i * 8));
-                parameters[i] = string_stream_object.str();
-            }
+            string_stream_object << (int)((unsigned char)
+                    (cftRange[ i < KEY_SIZE? 0 : 1] >> (i % KEY_SIZE) * 8));
+            parameters[i]= string_stream_object.str();
         }
+
         condition = ""
                 "("
                     "("
@@ -1890,9 +1893,10 @@ dds::topic::ContentFilteredTopic<U> RTIDDSImpl<T>::CreateCft(
                         "(%7 >= key[3] AND %6 >= key[2] AND %5 >= key[1] AND %4 >= key[0])"
                     ") OR ("
                         "255 = key[0] AND 255 = key[1] AND 0 = key[2] AND 0 = key[3]"
+                    ")"
                 ")";
-
     }
+
     return dds::topic::ContentFilteredTopic<U> (
             topic, topic_name,
             dds::topic::Filter(
@@ -2225,7 +2229,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
     dr_qos << qos_durability;
     dr_qos << dr_DataReaderProtocol;
     dr_qos << qos_dr_resource_limits;
-    dr_qos << Property(properties.begin(), properties.end(), true);
+    dr_qos << Property(properties.begin(), properties.end());
 
     return dr_qos;
 }
@@ -2508,7 +2512,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
     dw_qos << dwBatch;
     dw_dataWriterProtocol.rtps_reliable_writer(dw_reliableWriterProtocol);
     dw_qos << dw_dataWriterProtocol;
-    dw_qos << Property(properties.begin(), properties.end(), true);
+    dw_qos << Property(properties.begin(), properties.end());
 
     return dw_qos;
 }
