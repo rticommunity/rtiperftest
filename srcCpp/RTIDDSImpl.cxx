@@ -598,7 +598,11 @@ class RTIPublisherBase : public IMessagingWriter
     {
       #ifndef RTI_MICRO
         DDS_DataWriterCacheStatus status;
-        _writer->get_datawriter_cache_status(status);
+        DDS_ReturnCode_t retcode = _writer->get_datawriter_cache_status(status);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "get_datawriter_cache_status failed: %d.\n", retcode);
+            return 0;
+        }
         return (unsigned int)status.sample_count;
       #else
         // Not supported in Micro
@@ -610,7 +614,11 @@ class RTIPublisherBase : public IMessagingWriter
     {
       #ifndef RTI_MICRO
         DDS_DataWriterCacheStatus status;
-        _writer->get_datawriter_cache_status(status);
+        DDS_ReturnCode_t retcode = _writer->get_datawriter_cache_status(status);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "get_datawriter_cache_status failed: %d.\n", retcode);
+            return 0;
+        }
         return (unsigned int)status.sample_count_peak;
       #else
         // Not supported in Micro
@@ -1757,7 +1765,11 @@ class RTISubscriberBase : public IMessagingReader
     {
       #ifndef RTI_MICRO
         DDS_DataReaderCacheStatus status;
-        _reader->get_datareader_cache_status(status);
+        DDS_ReturnCode_t retcode = _reader->get_datareader_cache_status(status);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "get_datareader_cache_status failed: %d.\n", retcode);
+            return 0;
+        }
         return (unsigned int)status.sample_count;
       #else
         // Not supported in Micro
@@ -1769,7 +1781,11 @@ class RTISubscriberBase : public IMessagingReader
     {
       #ifndef RTI_MICRO
         DDS_DataReaderCacheStatus status;
-        _reader->get_datareader_cache_status(status);
+        DDS_ReturnCode_t retcode = _reader->get_datareader_cache_status(status);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "get_datareader_cache_status failed: %d.\n", retcode);
+            return 0;
+        }
         return (unsigned int)status.sample_count_peak;
       #else
         // Not supported in Micro
@@ -2134,7 +2150,7 @@ class RTIDynamicDataSubscriber : public RTISubscriberBase<DDS_DynamicData>
                 this->_message.seq_num,
                 "seq_num",
                 DynamicDataMembersId::GetInstance().at("seq_num"));
-            if (retcode != DDS_RETCODE_OK){
+            if (retcode != DDS_RETCODE_OK) {
                 fprintf(stderr,
                         "ReceiveMessage() get_ulong(seq_num) failed: %d.\n",
                         retcode);

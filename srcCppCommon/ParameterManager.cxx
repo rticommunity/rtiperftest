@@ -650,9 +650,7 @@ void ParameterManager::initialize()
     cacheStats->set_extra_argument(NO);
     cacheStats->set_group(PUB);
     cacheStats->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            Middleware::RTIDDSPRO);
     create("cacheStats", cacheStats);
   #else
     Parameter<bool> *writerStats = new Parameter<bool>(false);
@@ -665,7 +663,6 @@ void ParameterManager::initialize()
     writerStats->set_group(PUB);
     writerStats->set_supported_middleware(
             Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO);
     create("writerStats", writerStats);
   #endif
