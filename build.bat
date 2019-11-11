@@ -40,7 +40,7 @@ set USE_SECURE_LIBS=0
 set LEGACY_DD_IMPL=0
 
 @REM Starting with 5.2.6 (rtiddsgen 2.3.6) the name of the solutions is different
-set /a rtiddsgen_version_number_new_solution_name=236
+set /a rtiddsgen_version_number_new_solution_name=2.3.6
 
 @REM # Needed when compiling statically using security
 set RTI_OPENSSLHOME=""
@@ -63,7 +63,8 @@ set "custom_idl_file=%custom_type_folder%\custom.idl"
 
 @REM # Variables for FlatData
 set "flatdata_size=10485760" @REM # 10MB
-set flatdata_ddsgen_version=300
+@REM #3.0.0 -- 3 We just need the Major first value of the version.
+set flatdata_ddsgen_version=3
 set FLATDATA_AVAILABLE=0
 ::------------------------------------------------------------------------------
 
@@ -862,7 +863,7 @@ GOTO:EOF
 :get_flatdata_available
 	call::get_ddsgen_version
 
-	if %version_number% GEQ %flatdata_ddsgen_version% (
+	if %Major% GEQ %flatdata_ddsgen_version% (
 		echo [INFO] FlatData is available
 		set FLATDATA_AVAILABLE=1
 	)
@@ -912,10 +913,21 @@ goto:EOF
 		set extension=.vcxproj
 	)
 
-	if %version_number% GEQ %rtiddsgen_version_number_new_solution_name% (
-		set solution_name_cpp=perftest_publisher-%architecture%%extension%
-		set solution_name_cs=perftest-%architecture%.sln
-	) else (
+	for /F "tokens=1,2,3 delims=." %%a in ("%version_string%") do (
+		set Major_new_sol_name=%%a
+		set Minor_new_sol_name=%%b
+		set Revision_new_sol_name=%%c
+	)
+
+	if %Major% GEQ %Major_new_sol_name% (
+		if %Minor% GEQ %Minor_new_sol_name% (
+			if %Revision% GEQ %Revision_new_sol_name% (
+				set solution_name_cpp=perftest_publisher-%architecture%%extension%
+				set solution_name_cs=perftest-%architecture%.sln
+			)
+		)
+	)
+	if [%solution_name_cpp] == [] (
 		set solution_name_cpp=%begin_sol%%end_sol%%extension%
 		set solution_name_cs=%begin_sol_cs%csharp.sln
 	)

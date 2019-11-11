@@ -677,6 +677,7 @@ class ThroughputListener : public IMessagingCB
     ParameterManager *_PM;
     int  subID;
     bool printIntervals;
+    bool cacheStats;
     bool showCpu;
 
   public:
@@ -693,6 +694,7 @@ class ThroughputListener : public IMessagingCB
     unsigned long long interval_missing_packets;
     unsigned long long interval_time, begin_time;
     float missing_packets_percent;
+    unsigned int sample_count_peak;
 
     IMessagingWriter *_writer;
     IMessagingReader *_reader;
@@ -722,6 +724,7 @@ class ThroughputListener : public IMessagingCB
         interval_packets_received = 0;
         interval_bytes_received = 0;
         interval_missing_packets = 0;
+        sample_count_peak = 0;
         interval_time = 0;
         missing_packets_percent = 0.0;
         begin_time = 0;
@@ -739,6 +742,7 @@ class ThroughputListener : public IMessagingCB
         _PM = &PM;
 
         printIntervals = !_PM->get<bool>("noPrintIntervals");
+        cacheStats = _PM->get<bool>("cacheStats");
         showCpu = _PM->get<bool>("cpu");
         subID = _PM->get<int>("sidMultiSubTest");
     }
@@ -901,6 +905,11 @@ class ThroughputListener : public IMessagingCB
                    missing_packets_percent,
                    outputCpu.c_str()
             );
+
+            if (cacheStats) {
+                printf("Samples Reader Queue Peak: %4d\n", sample_count_peak);
+            }
+
             fflush(stdout);
         }
 
@@ -1086,6 +1095,8 @@ int perftest_cpp::Subscriber()
     unsigned long long msgsent, bytes, last_msgs, last_bytes;
     float missing_packets_percent = 0;
 
+    const bool cacheStats = _PM.get<bool>("cacheStats");
+
     if (showCpu) {
         reader_listener->cpu.initialize();
     }
@@ -1163,6 +1174,13 @@ int perftest_cpp::Subscriber()
                         outputCpu.c_str()
                 );
                 fflush(stdout);
+
+                if (cacheStats) {
+                    printf("Samples Reader Queue: %4d (Peak: %4d)\n",
+                            reader->getSampleCount(),
+                            reader->getSampleCountPeak());
+                    reader_listener->sample_count_peak = reader->getSampleCountPeak();
+                }
             }
         }
     }
@@ -1938,7 +1956,7 @@ int perftest_cpp::Publisher()
      * - pidMultiPubTest
      * - pubRateMethodSpin
      * - pubRate
-     * - writerStats
+     * - cacheStats
      * - isScan
      * - scanList
      * - isSetPubRate
@@ -1954,7 +1972,7 @@ int perftest_cpp::Publisher()
             _PM.get_pair<unsigned long long, std::string>("pubRate").second == "spin";
     const unsigned long pubRate =
             (unsigned long)_PM.get_pair<unsigned long long, std::string>("pubRate").first;
-    const bool writerStats = _PM.get<bool>("writerStats");
+    const bool cacheStats = _PM.get<bool>("cacheStats");
     const bool isScan = _PM.is_set("scan");
     const std::vector<unsigned long long> scanList =
             _PM.get_vector<unsigned long long>("scan");
@@ -2118,9 +2136,11 @@ int perftest_cpp::Publisher()
                 ping_index_in_batch = (ping_index_in_batch + 1) % samplesPerBatch;
                 sentPing = true;
 
-                if (writerStats && printIntervals) {
-                    printf("Pulled samples: %7d\n",
-                            writer->getPulledSampleCount());
+                if (cacheStats && printIntervals) {
+                    printf("Pulled samples: %3d, Samples Writer Queue: %3d (Peak: %3d)\n",
+                            writer->getPulledSampleCount(),
+                            writer->getSampleCount(),
+                            writer->getSampleCountPeak());
                 }
             }
         }
@@ -2187,9 +2207,10 @@ int perftest_cpp::Publisher()
             "Latency results are only shown when -pidMultiPubTest = 0\n");
     }
 
-    if (_PM.get<bool>("writerStats")) {
-        printf("Pulled samples: %7d\n",
-                writer->getPulledSampleCount());
+    if (_PM.get<bool>("cacheStats")) {
+        printf("Pulled samples: %3d, Samples Writer Queue Peak: %3d\n",
+                writer->getPulledSampleCount(),
+                writer->getSampleCountPeak());
     }
 
     if (!finalize_read_thread(latencyReadThread, reader_listener)) {

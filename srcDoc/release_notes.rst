@@ -36,7 +36,7 @@ releases:
 -  The ``--secure`` and ``--openssl-home`` parameters will not work for
    versions prior to *RTI Connext DDS* 5.2.5.
 
--  Java code generation against *RTI Connext DDS 5.2.0.x* will fail 
+-  Java code generation against *RTI Connext DDS 5.2.0.x* will fail
    out-of-the-box. You can disable this by adding the ``--skip-java-build``
    flag. See the Known Issues section for more information and
    alternatives.
@@ -51,6 +51,24 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+New tutorial section in the documentation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A new tutorial section has been added to the documentation.
+
+The main purpose of that section is to hold examples of how to properly use
+*RTI Perftest* in real life scenarios to gather the limits for throughput
+and latency. It will also help showing what is the impact of using *RTI
+Connext DDS* features.
+
+New command line option to show the *DataWriter* and *DataReader* queue stats (#251)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By using the `-cacheStats` command line parameter *RTI Perftest* now displays the
+*Send Queue* `sample_count` and `sample_count_peak` in the publisher side. For the
+subscriber side, *RTI Perftest* displays the *Receive Queue* `sample_count` and
+`sample_count_peak`.
+
 Compilation option to measure latency time in nano-seconds (#253)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -63,14 +81,6 @@ It is only implemented for Unix Systems.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
-
-Error finalizing the application when using `SHMEM` for *RTI Connext DDS Micro* (#234)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-When using *RTI Connext DDS Micro* and setting the transport to `SHMEM` an error
-would appear at the end of the test in both publisher and subscriber by the time
-he `finalize_instance()` function is called. This errors has been resolved.
-
 
 Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -99,6 +109,20 @@ Wrong capitalization for command line option `--customTypeFlatData` (#232)
 Fixed issue in the `build.sh` and `build.bat` where the command line parameter
 used to specify that a custom type for Flat Data was provided was wrongly
 spelled.
+
+Error finalizing the application when using `SHMEM` for *RTI Connext DDS Micro* (#234)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using *RTI Connext DDS Micro* and setting the transport to `SHMEM` an error
+would appear at the end of the test in both publisher and subscriber by the time
+he `finalize_instance()` function is called. This errors has been resolved.
+
+The version of *rtiddsgen* is now properly compared to identify the support of certain features (#237)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, the *rtiddsgen* version number was not correctly obtained
+by the *RTI Perftest* compilation scripts. This would cause the inclusion of the
+wrong compilation flags in certain cases.
 
 Fix incorrect incorrect governance file values for Security (#239)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

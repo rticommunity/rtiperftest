@@ -15,6 +15,7 @@ Table of Contents
     execution
     command_line_parameters
     examples
+    tutorials
     tuning_os
     release_notes
 
