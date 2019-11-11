@@ -36,7 +36,7 @@ releases:
 -  The ``--secure`` and ``--openssl-home`` parameters will not work for
    versions prior to *RTI Connext DDS* 5.2.5.
 
--  Java code generation against *RTI Connext DDS 5.2.0.x* will fail 
+-  Java code generation against *RTI Connext DDS 5.2.0.x* will fail
    out-of-the-box. You can disable this by adding the ``--skip-java-build``
    flag. See the Known Issues section for more information and
    alternatives.
@@ -50,6 +50,16 @@ Release Notes Master
 
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
+
+New tutorial section in the documentation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A new tutorial section has been added to the documentation.
+
+The main purpose of that section is to hold examples of how to properly use
+*RTI Perftest* in real life scenarios to gather the limits for throughput
+and latency. It will also help showing what is the impact of using *RTI
+Connext DDS* features.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
