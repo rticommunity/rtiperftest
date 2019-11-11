@@ -164,8 +164,10 @@ Some comments about the parameters we used:
 * In `Raw Transport Mode` we do not have a discovery mechanism, as we do have when
   Using **RTI Connext DDS**, therefore, it is required to use the `-peer` parameter.
 
-* In throughput mode, by default **Perftest** uses "batching", we want to disable it for this
-  test, that can be done by using `-batchSize 0`.
+* In throughput mode, by default, **Perftest** uses "batching", as this feature is not
+  native to sending using sockets, we have implemented it at the application level
+  in the **Perftest** application. Therefore, in order to compare the raw transport behavior,
+  we want to disable it for this test, that can be done simply by using `-batchSize 0`.
 
 See below the output results of executing this test. The information displayed here is
 only what the subscriber side showed, since all the information displayed in the publisher
@@ -266,7 +268,7 @@ Then, the command line parameters are going to be quite similar:
 
 Notice that now we removed the `-raw` parameter, and that we do not need the *for loop* anymore, since
 **Perftest** for **Connext DDS** support the use of the `-scan` parameter. Also notice that we are using
-`-batchSize 0`. We will also later using batching. Lastly, we also removed the `-peer` parameter, the reason
+`-batchSize 0`. We will also test later using batching. Lastly, we also removed the `-peer` parameter, the reason
 being that **Connext DDS** uses by default multicast for the discovery phase, so there is no need to specify
 where the counterpart application is.
 
@@ -330,7 +332,8 @@ Throughput Results -- RTI Connext DDS Professional (UDPv4) -- No batching
 We will discuss the results later, but in **RTI Connext DDS Professional** we have a very
 interesting feature worth mentioning:
 `batching <https://community.rti.com/static/documentation/connext-dds/6.0.0/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/BATCH_Qos.htm#sending_2410472787_2558262>`__.
-By using this feature we will be able to send more efficiently and improve our
+By using this feature we will be able to send more efficiently by sending several
+data samples as part of the same packet therefore improving our
 maximum throughput. The cost however will be the latency of the packets.
 
 The following results were taken by using **Perftest**'s default batching size: `8192` bytes:
@@ -577,7 +580,7 @@ Lets go first with the throughput results and plot all the different tests toget
 
 .. image:: performance_validation_files/Throughput_lineal.svg
 
-The first think we see is that at 5KB we are already close to saturate the
+The first thing we see is that at 5KB we are already close to saturate the
 network in all cases, which is something really good to see, but lets focus
 in the behavior for smaller samples. Lets plot the same results with a
 logarithmic scale:
@@ -595,15 +598,13 @@ Now we can extract more information about the graphs:
 3. The use of *batching* really makes a difference for small samples sizes.
 
 4. After 5kB we can consider that all the tests are able to reach more than a 95%
-   of the network utilization, which all what these boards can offer.
+   of the network utilization, which is the maximum bandwidth supported by the NICs.
 
 By what we state in 1, one might wonder why not using plain sockets for our communications,
 why having use a middleware for this. However, at this point is when we have to remember
 that when testing with *Plain Sockets*, we had nothing: We didn't have a discovery
 mechanism (we had to specify the peers by hand), we didn't have any reliability and samples
 would not get repaired when lost. In fact we didn't have any *QoS* setting at all.
-Also we would not be able to make use of any multicast feature, so scalability would have been
-an issue as well.
 
 by using **RTI Connext DDS** you are adding a discovery mechanism, a reliability mechanism,
 the option of tuning the *QoS* of the system, etc. Lastly, you have to remember what we
@@ -614,11 +615,11 @@ keep up, or even improve the performance provided by *Raw Sockets*.
 Another important topic is if we should choose **RTI Connext DDS Micro** instead of
 **Professional** based on the performance you want to achieve. Although it is correct that
 the former will achieve better performance for simple scenarios like this
-one, **Professional** has the advantage of all the features it has (like *batching* or
-*Content-Filtered Topics*), so the answer to this question is that in general the
-performance difference does not justify choosing **Micro** over **Professional**.
+one, **Professional** offers more features than **Micro** (like *batching* or
+*Content-Filtered Topics*). On the other side, Micro is ideal to run in resource
+constrained devices where **Professional** may not fit.
 
-Lets continue now plotting the latency results (we will plot the lineal and logarithmic
+Let's continue now by plotting the latency results (we will plot the lineal and logarithmic
 scale graphs):
 
 .. image:: performance_validation_files/Latency_lineal.svg
