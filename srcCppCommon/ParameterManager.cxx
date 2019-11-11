@@ -639,6 +639,20 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("spin", spin);
 
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    Parameter<bool> *cacheStats = new Parameter<bool>(false);
+    cacheStats->set_command_line_argument("-cacheStats", "");
+    cacheStats->set_description(
+            "Display the reader/writer queue sample count and count_peak.\n"
+            "In the Writer side, also display the Pulled Sample count stats for\n"
+            "reliable protocol debugging purposes.\nDefault: Not set");
+    cacheStats->set_type(T_BOOL);
+    cacheStats->set_extra_argument(NO);
+    cacheStats->set_group(PUB);
+    cacheStats->set_supported_middleware(
+            Middleware::RTIDDSPRO);
+    create("cacheStats", cacheStats);
+  #else
     Parameter<bool> *writerStats = new Parameter<bool>(false);
     writerStats->set_command_line_argument("-writerStats", "");
     writerStats->set_description(
@@ -649,10 +663,9 @@ void ParameterManager::initialize()
     writerStats->set_group(PUB);
     writerStats->set_supported_middleware(
             Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO);
     create("writerStats", writerStats);
-
+  #endif
 
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
     Parameter<bool> *lowResolutionClock = new Parameter<bool>(false);

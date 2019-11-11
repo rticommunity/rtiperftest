@@ -61,6 +61,14 @@ The main purpose of that section is to hold examples of how to properly use
 and latency. It will also help showing what is the impact of using *RTI
 Connext DDS* features.
 
+New command line option to show the *DataWriter* and *DataReader* queue stats (#251)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By using the `-cacheStats` command line parameter *RTI Perftest* now displays the
+*Send Queue* `sample_count` and `sample_count_peak` in the publisher side. For the
+subscriber side, *RTI Perftest* displays the *Receive Queue* `sample_count` and
+`sample_count_peak`.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
