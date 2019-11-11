@@ -18,6 +18,6 @@ Find all the information about RTI Perftest in the following documents:
         6.2.2 [Content-Filtered Topics](srcDoc/examples.rst#content-filtered-topics)  
         6.2.3 [RTI Routing-Service](srcDoc/examples.rst#rti-routing-service)  
         6.2.4 [Custom Types](srcDoc/examples.rst#using-custom-types)  
-8.  [Tutorials](srcDoc/tutorials.rst)
+8.  [Tutorials](srcDoc/tutorials/index.rst)
 9.  [Optimizing Your OS For Network Performance](srcDoc/tuning_os.rst)
 10.  [Release Notes](srcDoc/release_notes.rst)
