@@ -62,19 +62,20 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("realPayload", realPayload);
 
-    Parameter<int> *maximumFilesOnMemory = new Parameter<int>(10);
-    maximumFilesOnMemory->set_command_line_argument("-maximumFilesOnMemory", "<number>");
-    maximumFilesOnMemory->set_description(
-            "Maximun files to read from -realPayload Path");
-    maximumFilesOnMemory->set_type(T_NUMERIC_LLU);
-    maximumFilesOnMemory->set_extra_argument(YES);
-    maximumFilesOnMemory->set_range(1, 100);
-    maximumFilesOnMemory->set_group(GENERAL);
-    maximumFilesOnMemory->set_supported_middleware(
+    Parameter<bool> *ensureRealDataOrder = new Parameter<bool>(false);
+    ensureRealDataOrder->set_command_line_argument("-ensureRealDataOrder","");
+    ensureRealDataOrder->set_description(
+            "If -realPayload is been use, this will ensure that the data is "
+            "sent on the same order that has been read. This can affect to the "
+            "results of the test");
+    ensureRealDataOrder->set_type(T_BOOL);
+    ensureRealDataOrder->set_extra_argument(NO);
+    ensureRealDataOrder->set_group(GENERAL);
+    ensureRealDataOrder->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO);
-    create("maximumFilesOnMemory", maximumFilesOnMemory);
+    create("ensureRealDataOrder", ensureRealDataOrder);
 
     Parameter<int> *verbosity = new Parameter<int>(1);
     verbosity->set_command_line_argument("-verbosity", "<level>");
