@@ -2230,7 +2230,10 @@ int perftest_cpp::Publisher()
         delete announcement_reader_listener;
     }
 
-    delete []message.data;
+    /* If the Payload is set, the RealData class is going to remove this data */
+    if (!isSetRealPayload){
+        delete []message.data;
+    }
 
     if (_testCompleted) {
         // Delete timeout thread

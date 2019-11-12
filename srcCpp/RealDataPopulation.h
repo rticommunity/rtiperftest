@@ -31,6 +31,13 @@ struct RealPayload {
             //TODO: throw exception
         }
     }
+    ~RealPayload()
+    {
+        if (_payloadAccessSem != NULL) {
+            PerftestSemaphore_delete(_payloadAccessSem);
+            _payloadAccessSem = NULL;
+        }
+    }
 };
 
 class RealData {
@@ -114,8 +121,6 @@ public:
             /* Trow Exception */
         }
     }
-
-    // TODO: create destructor
 
     /* Initialice the queue and the asynchronous thread to push the data */
     bool initialize(std::string path, ParameterManager *PM);
