@@ -29,12 +29,13 @@ struct TestData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE
     RTI_CUSTOM_TYPE custom_type;
     // custom_type_size is the serialize size of the field custom_type
     // in the the sample that we send on the wire
     long custom_type_size;
+  #else
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #endif
 
 }; //@Extensibility FINAL_EXTENSIBILITY
@@ -48,11 +49,12 @@ struct TestDataKeyed_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE
     @key
     RTI_CUSTOM_TYPE custom_type;
     long custom_type_size;
+  #else
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 
@@ -64,10 +66,11 @@ struct TestDataLarge_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet> bin_data;
   #ifdef RTI_CUSTOM_TYPE
     RTI_CUSTOM_TYPE custom_type;
     long custom_type_size;
+  #else
+    sequence<octet> bin_data;
   #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 
@@ -80,11 +83,12 @@ struct TestDataKeyedLarge_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet> bin_data;
   #ifdef RTI_CUSTOM_TYPE
     @key
     RTI_CUSTOM_TYPE custom_type;
     long custom_type_size;
+  #else
+    sequence<octet> bin_data;
   #endif
 }; //@Extensibility FINAL_EXTENSIBILITY
 
@@ -102,12 +106,13 @@ struct TestData_FlatData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
     // custom_type_size is the serialize size of the field custom_type
     // in the the sample that we send on the wire
     long custom_type_size;
+  #else
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #endif
 };
 
@@ -122,11 +127,12 @@ struct TestDataKeyed_FlatData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     @key
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
     long custom_type_size;
+  #else
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #endif
 };
 
@@ -140,10 +146,11 @@ struct TestDataLarge_FlatData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
     long custom_type_size;
+  #else
+    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
   #endif
 };
 
@@ -158,11 +165,12 @@ struct TestDataKeyedLarge_FlatData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     @key
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
     long custom_type_size;
+  #else
+    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
   #endif
 };
 #endif // RTI_FLATDATA_AVAILABLE

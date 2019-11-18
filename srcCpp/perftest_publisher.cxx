@@ -8,7 +8,9 @@
 
 #include "RTIDDSImpl.h"
 #ifndef RTI_MICRO
-  #include "RTIRawTransportImpl.h"
+  #ifndef RTI_CUSTOM_TYPE
+    #include "RTIRawTransportImpl.h"
+  #endif
 #endif
 #include "perftest_cpp.h"
 #include "CpuMonitor.h"
@@ -150,7 +152,9 @@ int perftest_cpp::Run(int argc, char *argv[])
 
     if (_PM.get<bool>("rawTransport")) {
       #ifndef RTI_MICRO
+        #ifndef RTI_CUSTOM_TYPE
         _MessagingImpl = new RTIRawTransportImpl();
+        #endif
       #endif
     } else {
         mask = (_PM.get<int>("unbounded") != 0) << 0;

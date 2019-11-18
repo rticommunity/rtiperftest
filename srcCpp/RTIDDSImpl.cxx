@@ -1385,8 +1385,8 @@ class ReceiverListener : public ReceiverListenerBase<T>
                 this->_message.size = this->_data_seq[i].custom_type_size;
               #else
                 this->_message.size = this->_data_seq[i].bin_data.length();
-              #endif
                 this->_message.data = (char *)this->_data_seq[i].bin_data.get_contiguous_buffer();
+              #endif
 
                 this->_callback->ProcessMessage(this->_message);
             }
@@ -1877,8 +1877,8 @@ class RTISubscriber : public RTISubscriberBase<T>
             this->_message.size = this->_data_seq[this->_data_idx].custom_type_size;
           #else
             this->_message.size = this->_data_seq[this->_data_idx].bin_data.length();
-          #endif
             this->_message.data = (char *)this->_data_seq[this->_data_idx].bin_data.get_contiguous_buffer();
+          #endif
 
             ++this->_data_idx;
 
@@ -2608,7 +2608,9 @@ double RTIDDSImpl<T>::obtain_dds_serialize_time_cost(
     data.timestamp_sec = 0;
     data.timestamp_usec = 0;
     data.latency_ping = 0;
+  #ifndef RTI_CUSTOM_TYPE
     data.bin_data.ensure_length(sequenceSize, sequenceSize);
+  #endif
 
     if (DDS_RETCODE_OK != T::TypeSupport::serialize_data_to_cdr_buffer(
                 NULL, maxSizeSerializedSample, &data)) {
@@ -2691,7 +2693,9 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
     data.timestamp_sec = 0;
     data.timestamp_usec = 0;
     data.latency_ping = 0;
+  #ifndef RTI_CUSTOM_TYPE
     data.bin_data.ensure_length(sequenceSize, sequenceSize);
+  #endif
 
     if (DDS_RETCODE_OK != T::TypeSupport::serialize_data_to_cdr_buffer(
             NULL,
@@ -3795,9 +3799,12 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_serialize_time_cost_override(
         builder.add_latency_ping(0);
 
         // Add payload
+        
+      #ifndef RTI_CUSTOM_TYPE_FLATDATA
         BinDataBuilder bin_data = builder.build_bin_data();
         bin_data.add_n(sampleSize);
         bin_data.finish();
+      #endif
 
         double start = (unsigned int) PerftestClock::getInstance().getTime();
         builder.finish_sample();
@@ -3833,10 +3840,11 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_deserialize_time_cost_override(
     builder.add_timestamp_usec(0);
     builder.add_latency_ping(0);
 
-    // Add payload
+  #ifndef RTI_CUSTOM_TYPE_FLATDATA
     BinDataBuilder bin_data = builder.build_bin_data();
     bin_data.add_n(sampleSize);
     bin_data.finish();
+  #endif
 
     builder.finish_sample();
 

@@ -519,8 +519,9 @@ function build_cpp_custom_type()
         fi
     done
 
-    # Adding RTI_USE_CUSTOM_TYPE as a macro
-    additional_defines_custom_type=" -D RTI_CUSTOM_TYPE=${custom_type}"
+    if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
+        additional_defines_custom_type=" -D RTI_CUSTOM_TYPE=${custom_type}"
+    fi
 
     if [ "${USE_CUSTOM_TYPE_FLAT}" == "1" ]; then
         additional_defines_custom_type="${additional_defines_custom_type} -D RTI_CUSTOM_TYPE_FLATDATA=${custom_type_flat}"
@@ -600,13 +601,16 @@ function build_cpp()
 
     if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
         build_cpp_custom_type
+    else
+        additional_header_files_raw_transport="RTIRawTransportImpl.h"
+        additional_source_files_raw_transport="RTIRawTransportImpl.cxx"
     fi
 
     check_flatData_zeroCopy_available
     additional_defines_calculation "CPPtraditional"
 
     additional_header_files="${additional_header_files_custom_type} \
-        RTIRawTransportImpl.h \
+        ${additional_header_files_raw_transport} \
         ThreadPriorities.h \
         Parameter.h \
         ParameterManager.h \
@@ -622,7 +626,7 @@ function build_cpp()
         Infrastructure_pro.h"
 
     additional_source_files="${additional_source_files_custom_type} \
-        RTIRawTransportImpl.cxx \
+        ${additional_source_files_raw_transport} \
         ThreadPriorities.cxx \
         Parameter.cxx \
         ParameterManager.cxx \

@@ -32,12 +32,13 @@ struct TestData_ZeroCopy_w_FlatData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, MAX_BOUNDED_SEQ_SIZE_cp> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
     // custom_type_size is the serialize size of the field custom_type
     // in the the sample that we send on the wire
     long custom_type_size;
+  #else
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE_cp> bin_data;
   #endif
 };
 
@@ -53,11 +54,12 @@ struct TestDataKeyed_ZeroCopy_w_FlatData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, MAX_BOUNDED_SEQ_SIZE_cp> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     @key
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
     long custom_type_size;
+  #else
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE_cp> bin_data;
   #endif
 };
 
@@ -72,10 +74,11 @@ struct TestDataLarge_ZeroCopy_w_FlatData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
     long custom_type_size;
+  #else
+    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
   #endif
 };
 
@@ -91,10 +94,11 @@ struct TestDataKeyedLarge_ZeroCopy_w_FlatData_t {
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     @key
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
     long custom_type_size;
+  #else
+    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
   #endif
 };

@@ -72,12 +72,13 @@ class perftest_cpp
     bool printIntervals;
     bool showCpu;
 
-    // Number of bytes sent in messages besides user data
-  #ifdef RTI_CUSTOM_TYPE
-    static const int OVERHEAD_BYTES = 28 + 4; // 4 for custom_type_size
-  #else
+    /* 
+     * Number of bytes sent in messages besides user data
+     * In the case of using custom types we would need to add 4
+     * bytes for the custom_type_size, but we do not have a sequence
+     * anymore, so we would also substract 4 bytes.
+     */
     static const int OVERHEAD_BYTES = 28;
-  #endif
     // Flag used to indicate message is used for initialization only
     static const int INITIALIZE_SIZE = 1234;
     // Flag used to indicate end of test
