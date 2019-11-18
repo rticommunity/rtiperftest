@@ -174,6 +174,15 @@ In the documentation examples for *FlatData* and *Zero-Copy* the data sizes used
 for publisher and subscriber were not matching. Also, in the *Best Effort* case,
 the command lines were not including the `-bestEffort` option.
 
+Make discovery process more robust (#261)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous versions, *RTI Perftest* was not checking that all the entities of
+the three topics (AnnouncementTopic, ThroughputTopic and LatencyTopic) were
+discovering each other, only the ones for the Throughput topic. This could lead
+to some corner cases where the performance test would not work correctly. This
+behavior has been corrected.
+
 Release Notes 3.0
 -----------------
 
