@@ -11,12 +11,12 @@
  * This information is covered in bug id: CORE-9693.
  */
 
-#ifdef RTI_CUSTOM_TYPE_FLATDATA
-#include "custom.idl"
-#endif
+/* We need to use the definitions from the perftest.idl */
+#include "perftest.idl"
 
-const long MAX_BOUNDED_SEQ_SIZE_cp = 63000;
-const long KEY_SIZE_cp = 4;
+#ifdef RTI_CUSTOM_TYPE_FLATDATA
+  #include "custom.idl"
+#endif
 
 /*
  * ZERO COPY WITH FLATDATA
@@ -25,18 +25,16 @@ const long KEY_SIZE_cp = 4;
 @language_binding(FLAT_DATA)
 @transfer_mode(SHMEM_REF)
 struct TestData_ZeroCopy_w_FlatData_t {
-    octet key[KEY_SIZE_cp];
+    octet key[KEY_SIZE];
 
     long entity_id;
     unsigned long seq_num;
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, MAX_BOUNDED_SEQ_SIZE_cp> bin_data;
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
-    // custom_type_size is the serialize size of the field custom_type
-    // in the the sample that we send on the wire
     long custom_type_size;
   #endif
 };
@@ -46,14 +44,14 @@ struct TestData_ZeroCopy_w_FlatData_t {
 @transfer_mode(SHMEM_REF)
 struct TestDataKeyed_ZeroCopy_w_FlatData_t {
     @key
-    octet key[KEY_SIZE_cp];
+    octet key[KEY_SIZE];
 
     long entity_id;
     unsigned long seq_num;
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, MAX_BOUNDED_SEQ_SIZE_cp> bin_data;
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     @key
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
@@ -65,7 +63,7 @@ struct TestDataKeyed_ZeroCopy_w_FlatData_t {
 @language_binding(FLAT_DATA)
 @transfer_mode(SHMEM_REF)
 struct TestDataLarge_ZeroCopy_w_FlatData_t {
-    octet key[KEY_SIZE_cp];
+    octet key[KEY_SIZE];
 
     long entity_id;
     unsigned long seq_num;
@@ -84,7 +82,7 @@ struct TestDataLarge_ZeroCopy_w_FlatData_t {
 @transfer_mode(SHMEM_REF)
 struct TestDataKeyedLarge_ZeroCopy_w_FlatData_t {
     @key
-    octet key[KEY_SIZE_cp];
+    octet key[KEY_SIZE];
 
     long entity_id;
     unsigned long seq_num;

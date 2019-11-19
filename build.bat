@@ -62,7 +62,6 @@ set "custom_type_file_name_support="
 set "custom_idl_file=%custom_type_folder%\custom.idl"
 
 @REM # Variables for FlatData
-set "flatdata_size=10485760" @REM # 10MB
 @REM #3.0.0 -- 3 We just need the Major first value of the version.
 set flatdata_ddsgen_version=3
 set FLATDATA_AVAILABLE=0
@@ -178,10 +177,10 @@ if NOT "%1"=="" (
 					exit /b 1
 				)
 				SHIFT
-		) ELSE if "%1"=="--flatdata-max-size" (
-				SET "flatdata_size=%2"
-				if "!flatdata_size!"  LEQ "0" (
-					echo [ERROR]: "--flatdata-max-size n" requires "n > 0."
+		) ELSE if "%1"=="--flatData-max-size" (
+				SET "RTI_FLATDATA_MAX_SIZE=%2"
+				if "!RTI_FLATDATA_MAX_SIZE!" LEQ "0" (
+					echo [ERROR]: "--flatData-max-size n" requires "n > 0."
 					exit /b 1
 				)
 				SHIFT
@@ -392,8 +391,12 @@ if !BUILD_CPP! == 1 (
 	if !FLATDATA_AVAILABLE! == 1 (
         @REM On Windows we always enable ZeroCopy if FlatData is available.
 		set additional_rti_libs=nddsmetp !additional_rti_libs!
-		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!flatdata_size! RTI_FLATDATA_AVAILABLE RTI_ZEROCOPY_AVAILABLE"
-		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=!flatdata_size!""
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_AVAILABLE RTI_ZEROCOPY_AVAILABLE"
+		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE""
+		if "!RTI_FLATDATA_MAX_SIZE!" != "" (
+			set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!"
+			set "additional_defines_flatdata=!additional_defines_flatdata! -D "RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!""
+		)
 	)
 
 	if !USE_CUSTOM_TYPE! == 1 (
@@ -538,8 +541,12 @@ if !BUILD_CPP03! == 1 (
 
 	if !FLATDATA_AVAILABLE! == 1 (
 		set "additional_rti_libs=nddsmetp !additional_rti_libs!"
-		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!flatdata_size! RTI_FLATDATA_AVAILABLE"
-		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_FLATDATA_MAX_SIZE=!flatdata_size!""
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_AVAILABLE RTI_ZEROCOPY_AVAILABLE"
+		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE""
+		if "!RTI_FLATDATA_MAX_SIZE!" != "" (
+			set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!"
+			set "additional_defines_flatdata=!additional_defines_flatdata! -D "RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!""
+		)
 	)
 
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
@@ -1000,7 +1007,7 @@ GOTO:EOF
 	echo.    --customTypeFlatData type    Use the Custom type feature with your FlatData
 	echo.                                 type. See details and examples of use in the
 	echo.                                 documentation.
-	echo.    --flatdata-max-size size     Specify the maximum bounded size in bytes
+	echo.    --flatData-max-size size     Specify the maximum bounded size in bytes
 	echo.                                 for sequences when using FlatData language
 	echo.                                 binding. Default 10MB
 	echo.    --help -h                    Display this message.
