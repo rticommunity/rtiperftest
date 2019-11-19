@@ -15,14 +15,14 @@ void *RealData::loadDataAsynchronous(void *arg)
     std::vector<char> newPayload(rd->_payloadSize);
 
     /* Allocate as many entries on the queue as could be possible */
-    rd->_dataBuffer.resize(rd->MAXIMUN_REALDATA_ALLOCABLE / rd->_payloadSize);
+    rd->_dataBuffer.resize(rd->MAX_REALDATA_ALLOCABLE / rd->_payloadSize);
     int currentFileSize = 0;
     int currentBytesRead = 0;
     int totalBytesRead = 0;
     bool queueFull = false;
     bool allFilesRead = false;
 
-    /* This while condition should not ever be fulfill */
+    /* This while condition should not ever be fulfilled */
     while (rd->_mFiles < rd->_filesPath.size()) {
         currentFileSize = getFileSize(rd->_filesPath[rd->_mFiles]);
 
@@ -51,7 +51,7 @@ void *RealData::loadDataAsynchronous(void *arg)
                  * Let the main thread know that we have fill the queue in
                  * order to start pulling data from the queue.
                  */
-                rd->_initializationFinish = true;
+                rd->_initializationFinished = true;
 
                 /*
                  * We do not increment the number of payloads if the queue is
@@ -111,7 +111,7 @@ void *RealData::loadDataAsynchronous(void *arg)
                  * Let the main thread know that we have fill the queue in
                  * order to start pulling data from the queue.
                  */
-                rd->_initializationFinish = true;
+                rd->_initializationFinished = true;
                 return NULL;
             }
         }
@@ -173,7 +173,7 @@ bool RealData::initialize(std::string path, ParameterManager *PM)
             }
         }
         _payloadSize = actualSize;
-        if (_payloadSize > MAXIMUN_REALDATA_ALLOCABLE) {
+        if (_payloadSize > MAX_REALDATA_ALLOCABLE) {
             fprintf(stderr,
                     "[WARNING] - The file/s %s is/are to big to be "
                     "allocated and sent them as one samples, set -dataLen "
@@ -182,8 +182,8 @@ bool RealData::initialize(std::string path, ParameterManager *PM)
                     "size\nCheck -realPayload documentation for more "
                     "information\n",
                     path.c_str(),
-                    MAXIMUN_REALDATA_ALLOCABLE);
-            _payloadSize = MAXIMUN_REALDATA_ALLOCABLE;
+                    MAX_REALDATA_ALLOCABLE);
+            _payloadSize = MAX_REALDATA_ALLOCABLE;
         }
         // TODO: Should we check the range of the valid size?
         _PM->set<unsigned long long>("dataLen", _payloadSize);
@@ -204,7 +204,7 @@ bool RealData::initialize(std::string path, ParameterManager *PM)
      * Wait for the _loadRealDataThread to signal that has fill the queue or
      * read all the data.
      */
-    while (!_initializationFinish) {
+    while (!_initializationFinished) {
         /* We can wait, the test did not start yet */
         PerftestClock::milliSleep(2000);
     };

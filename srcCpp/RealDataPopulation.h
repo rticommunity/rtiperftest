@@ -41,7 +41,7 @@ struct RealPayload {
 };
 
 class RealData {
-    const unsigned int MAXIMUN_REALDATA_ALLOCABLE = 1073741824; // 1Gb
+    const unsigned int MAX_REALDATA_ALLOCABLE = 1073741824; // 1Gb
 
     std::string _pathToData;
 
@@ -53,7 +53,7 @@ class RealData {
     unsigned int _nPayloads;
     unsigned int _mFiles;
     bool _allDataFit;
-    bool _initializationFinish;
+    bool _initializationFinished;
 
     std::vector<std::string> _filesPath;
 
@@ -89,7 +89,7 @@ public:
             _nPayloads(0),
             _mFiles(0),
             _allDataFit(false),
-            _initializationFinish(false),
+            _initializationFinished(false),
             _loadRealDataThread(NULL)
     {};
 
@@ -100,7 +100,7 @@ public:
             _nPayloads(0),
             _mFiles(0),
             _allDataFit(false),
-            _initializationFinish(false),
+            _initializationFinished(false),
             _PM(PM),
             _loadRealDataThread(NULL)
     {};
@@ -113,7 +113,7 @@ public:
             _nPayloads(0),
             _mFiles(0),
             _allDataFit(false),
-            _initializationFinish(false),
+            _initializationFinished(false),
             _PM(PM),
             _loadRealDataThread(NULL)
     {
