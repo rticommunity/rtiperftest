@@ -1748,6 +1748,7 @@ namespace PerformanceTest {
             // Synchronize with publishers
             Console.Error.Write("Waiting to discover {0} publishers ...\n", _NumPublishers);
             reader.WaitForWriters(_NumPublishers);
+            writer.WaitForReaders(_NumPublishers);
             announcement_writer.WaitForReaders(_NumPublishers);
 
             // Send announcement message
@@ -2227,6 +2228,8 @@ namespace PerformanceTest {
 
             Console.Error.Write("Waiting to discover {0} subscribers ...\n", _NumSubscribers);
             writer.WaitForReaders(_NumSubscribers);
+            reader.WaitForWriters(_NumSubscribers);
+            announcement_reader.WaitForWriters(_NumSubscribers);
 
             // We have to wait until every Subscriber sends an announcement message
             // indicating that it has discovered every Publisher

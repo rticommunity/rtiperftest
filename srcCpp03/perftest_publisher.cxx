@@ -1022,6 +1022,7 @@ int perftest_cpp::RunSubscriber()
               << " publishers ..."
               << std::endl;
     reader->waitForWriters(_PM.get<int>("numPublishers"));
+    writer->waitForReaders(_PM.get<int>("numPublishers"));
     announcement_writer->waitForReaders(_PM.get<int>("numPublishers"));
 
     /*
@@ -1629,6 +1630,8 @@ int perftest_cpp::RunPublisher()
               << " subscribers ..."
               << std::endl;
     writer->waitForReaders(_PM.get<int>("numSubscribers"));
+    reader->waitForWriters(_PM.get<int>("numSubscribers"));
+    announcement_reader->waitForWriters(_PM.get<int>("numSubscribers"));
 
     // We have to wait until every Subscriber sends an announcement message
     // indicating that it has discovered every RunPublisher
