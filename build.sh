@@ -58,7 +58,6 @@ custom_type_file_name_support="" # Name of the file with the type. "TSupport.h"
 custom_idl_file="${custom_type_folder}/custom.idl"
 
 # Variables for FlatData
-flatdata_size=10485760 # 10MB
 flatdata_ddsgen_version=3 # We just need the Major value of the version.
 FLATDATA_AVAILABLE=0
 ZEROCOPY_AVAILABLE=0
@@ -150,7 +149,7 @@ function usage()
     echo "    --customTypeFlatData <type>  Use the Custom type feature with your FlatData "
     echo "                                 Type. See details and examples of use in the   "
     echo "                                 documentation.                                 "
-    echo "    --flatdata-max-size <size>   Specify the maximum bounded size on bytes      "
+    echo "    --flatData-max-size <size>   Specify the maximum bounded size on bytes      "
     echo "                                 for sequences when using FlatData language     "
     echo "                                 binding. Default 10MB                          "
     echo "    --osx-shmem-shmmax <size>    Maximum segment size for shared memory in OSX  "
@@ -431,8 +430,13 @@ function additional_defines_calculation()
 
     # Adding RTI_ZEROCOPY_AVAILABLE, RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as defines
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
-        additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE DRTI_FLATDATA_MAX_SIZE=${flatdata_size}"
-        additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE -D RTI_FLATDATA_MAX_SIZE="${flatdata_size}
+        additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE"
+        additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE"
+        if [ "${RTI_FLATDATA_MAX_SIZE}" != "" ]; then
+            additional_defines=${additional_defines}" DRTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
+            additional_defines_flatdata=${additional_defines}" -D RTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
+        fi
+
 
         if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
             additional_rti_libs="nddsmetp ${additional_rti_libs}"
@@ -1332,11 +1336,11 @@ while [ "$1" != "" ]; do
             RTI_OPENSSLHOME=$2
             shift
             ;;
-        --flatdata-max-size)
-            flatdata_size=$2
-            sizeInt=$(($flatdata_size + 0)) # For OSX
-            if [[ sizeInt -le 0 ]]; then
-                echo -e "${ERROR_TAG} \"--flatdata-max-size n\" requires n > 0."
+        --flatData-max-size)
+            RTI_FLATDATA_MAX_SIZE=$2
+            sizeInt=$(($RTI_FLATDATA_MAX_SIZE + 0)) # For OSX
+            if [[ $sizeInt -le 0 ]]; then
+                echo -e "${ERROR_TAG} \"--flatData-max-size n\" requires n > 0."
                 exit -1
             fi
             shift
