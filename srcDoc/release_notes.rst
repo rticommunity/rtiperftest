@@ -183,6 +183,13 @@ discovering each other, only the ones for the Throughput topic. This could lead
 to some corner cases where the performance test would not work correctly. This
 behavior has been corrected.
 
+Workaround for MICRO-2191 (#261)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The combination of the previous issue and a bug in *RTI Connext DDS Micro*
+(MICRO-2191), would cause that the LatencyTopic endpoints were not correctly
+discovered in certain cases, making impossible to gather Latency Numbers.
+
 Release Notes 3.0
 -----------------
 
