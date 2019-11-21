@@ -49,6 +49,8 @@ PerftestTransport::PerftestTransport()
             TRANSPORT_SHMEM,
             "SHMEM",
             "dds.transport.shmem.builtin");
+
+    messageSizeMax = MESSAGE_SIZE_MAX_NOT_SET;
 }
 
 PerftestTransport::~PerftestTransport()

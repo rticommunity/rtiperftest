@@ -11,6 +11,10 @@
 #include <sstream>
 #include "ParameterManager.h"
 
+
+#define DEFAULT_MESSAGE_SIZE_MAX 65536
+#define MESSAGE_SIZE_MAX_NOT_SET -1
+
 /******************************************************************************/
 enum Transport {
     TRANSPORT_NOT_SET,
@@ -53,7 +57,6 @@ struct TransportConfig {
 };
 
 /******************************************************************************/
-
 class PerftestTransport {
 
 public:
@@ -62,6 +65,9 @@ public:
     /* PUBLIC CLASS MEMBERS */
 
     TransportConfig transportConfig;
+    std::map<std::string, TransportConfig> transportConfigMap;
+    long messageSizeMax;
+
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 
@@ -92,7 +98,6 @@ public:
 
 private:
 
-    std::map<std::string, TransportConfig> transportConfigMap;
     std::map<std::string, std::string> multicastAddrMap;
     ParameterManager *_PM;
     /**************************************************************************/

@@ -49,6 +49,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         to a field in that structure with the same name. Any parameter not listed
         here will pick up the documented default value.
         -->
+
         <receiver_pool>
           <!--
           The receive buffer is used by the receive thread to store the raw data
@@ -56,9 +57,10 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
           The ReceiverPoolQosPolicy's buffer_size should be set to be the same value
           as the maximum ::NDDS_Transport_Property_t::message_size_max across all of
-          the transports being used.
+          the transports being used. This value is automatically picked. So we
+          will not set it here
           -->
-          <buffer_size>65536</buffer_size>
+          <!-- <buffer_size>65536</buffer_size> -->
         </receiver_pool>
 
         <resource_limits>

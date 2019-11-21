@@ -2358,6 +2358,12 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
         return false;
     }
 
+    /*
+     * At this point, and not before is when we know the transport message size.
+     * Now we can decide if we need to use asynchronous or not.
+     */
+    //TODO validateTransportRelatedParams();
+
   #ifdef RTI_SECURE_PERFTEST
     // Configure security
     if (_PM->group_is_used(SECURE)) {
