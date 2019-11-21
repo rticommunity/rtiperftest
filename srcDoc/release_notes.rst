@@ -190,6 +190,15 @@ The combination of the previous issue and a bug in *RTI Connext DDS Micro*
 (MICRO-2191), would cause that the LatencyTopic endpoints were not correctly
 discovered in certain cases, making impossible to gather Latency Numbers.
 
+Update the idl to use prefix annotations (#270)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous versions, *RTI Perftest* idls used a combination of the new
+prefix annotations and the old ones. This inconsistency has been fixed.
+
+This imposes a restriction (already existing) in the minimum version for which
+*RTI Perftest* can be compiled to *RTI Connext DDS Professional* 5.3.1.
+
 Release Notes 3.0
 -----------------
 
