@@ -247,7 +247,11 @@ bool RTIDDSImpl<T>::validate_input()
                 "The minimun dataLen allowed for this configuration is %d "
                 "Bytes.\n",
                 perftest_cpp::OVERHEAD_BYTES);
-        // T::TypeSupport::get_type_name(),
+        /*
+         * T::TypeSupport::get_type_name() can not be used since we do need
+         * refractor RTIDDSImpl_FlatData class to properly inherit from a
+         * templated class instead from a final class.
+         */
         return false;
     }
 
