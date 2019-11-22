@@ -218,9 +218,6 @@ int perftest_cpp::Run(int argc, char *argv[])
         }
     }
 
-    printf("\n\n\nTEST -- overhead bytes calculated: %d\n\n",
-           perftest_cpp::OVERHEAD_BYTES);
-
     if (!_MessagingImpl->Initialize(_PM, this)) {
         return -1;
     }

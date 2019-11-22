@@ -114,6 +114,19 @@ bool RTIRawTransportImpl::validate_input() {
     }
 
     /*
+     * Check that the overhead is not bigger than the -dataLen, since we can not
+     * send a lower size that the overhead of the test_type.
+     */
+    if (_PM->get<unsigned long long>("dataLen")
+            < perftest_cpp::OVERHEAD_BYTES) {
+        fprintf(stderr,
+                "The minimun dataLen allowed for %s is %d Bytes.\n",
+                TestData_t::TypeSupport::get_type_name(),
+                perftest_cpp::OVERHEAD_BYTES);
+        return false;
+    }
+
+    /*
      * Manage parameter -verbosity.
      * Setting verbosity if the parameter is provided
      */

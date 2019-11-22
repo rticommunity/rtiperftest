@@ -237,6 +237,20 @@ bool RTIDDSImpl<T>::validate_input()
         return false;
     }
 
+    /*
+     * Check that the overhead is not bigger than the -dataLen, since we can not
+     * send a lower size that the overhead of the test_type.
+     */
+    if (_PM->get<unsigned long long>("dataLen")
+            < perftest_cpp::OVERHEAD_BYTES) {
+        fprintf(stderr,
+                "The minimun dataLen allowed for this configuration is %d "
+                "Bytes.\n",
+                perftest_cpp::OVERHEAD_BYTES);
+        // T::TypeSupport::get_type_name(),
+        return false;
+    }
+
     // Check if we need to enable Large Data. This works also for -scan
     if (_PM->get<unsigned long long>("dataLen") > (unsigned long) (std::min)(
             MAX_SYNCHRONOUS_SIZE,
