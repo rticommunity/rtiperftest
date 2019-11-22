@@ -15,6 +15,7 @@
 #include "perftest.h"
 #include "perftestSupport.h"
 #include "perftest_cpp.h"
+#include "RTIDDSImpl.h"
 #include "transport/transport_socketutil.h"
 #include "transport/transport_udpv4.h"
 
@@ -70,6 +71,16 @@ class RTIRawTransportImpl : public IMessaging {
     {
         return _PM->get<bool>("multicast") && _transport.allowsMulticast();
     }
+
+    /*
+     * @brief This function calculate the overhead bytes that all the
+     * members on TestData_* type add excluding the length of the sequence.
+     *
+     * @param size \b InOut. The size of the overhead of the data type.
+     *
+     * @return true if the operation was successful, otherwise false.
+     */
+    bool get_serialize_overhead_size(unsigned int &overhead_size);
 
   private:
 

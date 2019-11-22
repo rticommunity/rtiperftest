@@ -14,6 +14,8 @@
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
 
+/* A static variable must be initialize */
+unsigned int perftest_cpp::OVERHEAD_BYTES = 0;
 
 #if defined(RTI_ANDROID)
 
@@ -215,6 +217,9 @@ int perftest_cpp::Run(int argc, char *argv[])
             break;
         }
     }
+
+    printf("\n\n\nTEST -- overhead bytes calculated: %d\n\n",
+           perftest_cpp::OVERHEAD_BYTES);
 
     if (!_MessagingImpl->Initialize(_PM, this)) {
         return -1;

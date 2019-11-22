@@ -184,6 +184,18 @@ class IMessaging
     virtual bool supports_listener() = 0;
     virtual bool supports_discovery() = 0;
 
+    /*
+     * @brief This function calculate the overhead bytes that all the
+     * members on TestData_* type add excluding the length of the sequence.
+     *
+     * @param size \b InOut. The size of the overhead of the data type.
+     *
+     * @return true if the operation was successful, otherwise false.
+     */
+    virtual bool get_serialize_overhead_size(unsigned int &overhead_size)
+    {
+        return false;
+    };
 };
 
 

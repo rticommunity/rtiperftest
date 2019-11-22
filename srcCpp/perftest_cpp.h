@@ -74,10 +74,10 @@ class perftest_cpp
 
     // Number of bytes sent in messages besides user data
   #ifdef RTI_CUSTOM_TYPE
-    static const int OVERHEAD_BYTES = 28 + 4; // 4 for custom_type_size
+    static int OVERHEAD_BYTES = 28 + 4; // 4 for custom_type_size
   #else
-    static const int OVERHEAD_BYTES = 28;
-  #endif
+    static unsigned int OVERHEAD_BYTES;
+#endif
     // Flag used to indicate message is used for initialization only
     static const int INITIALIZE_SIZE = 1234;
     // Flag used to indicate end of test

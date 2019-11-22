@@ -55,45 +55,7 @@ class RTIDDSImpl : public IMessaging
 {
 public:
 
-    RTIDDSImpl() :
-        _transport(),
-      #ifdef RTI_SECURE_PERFTEST
-        _security(),
-      #endif
-      #ifndef RTI_MICRO
-        _loggerDevice(),
-      #endif
-        _parent(NULL)
-    {
-      #ifndef RTI_MICRO
-        _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
-        _sendQueueSize = 0;
-      #else
-        /*
-         * For micro we want to restrict the use of memory, and since we need
-         * to set a maximum (other than DDS_LENGTH_UNLIMITED), we decided to use
-         * a default of 1. This means that for Micro, we need to specify the
-         * number of instances that will be received in the reader side.
-         */
-        _instanceMaxCountReader = 1;
-      #endif
-        _isLargeData = false;
-        _isFlatData = false;
-        _isZeroCopy = false;
-        _factory = NULL;
-        _participant = NULL;
-        _subscriber = NULL;
-        _publisher = NULL;
-        _reader = NULL;
-        _typename = T::TypeSupport::get_type_name();
-        _pongSemaphore = NULL;
-        _PM = NULL;
-        _qoSProfileNameMap[LATENCY_TOPIC_NAME] = std::string("LatencyQos");
-        _qoSProfileNameMap[ANNOUNCEMENT_TOPIC_NAME]
-                = std::string("AnnouncementQos");
-        _qoSProfileNameMap[THROUGHPUT_TOPIC_NAME]
-                = std::string("ThroughputQos");
-    }
+    RTIDDSImpl();
 
     ~RTIDDSImpl()
     {
@@ -125,11 +87,21 @@ public:
     bool configureDomainParticipantQos(DDS_DomainParticipantQos &qos);
 
   #ifndef RTI_MICRO
+
+    /**
+     * @brief This function calculate the overhead bytes that all the
+     * members on TestData_* type add excluding the length of the sequence.
+     *
+     * @param size \b InOut. The size of the overhead of the data type.
+     *
+     * @return true if the operation was successful, otherwise false.
+     */
+    virtual bool get_serialize_overhead_size(unsigned int &overhead_size);
+
     /*
      * These two functions calculate the serialization/deserialization time cost
      * with a precision of microseconds.
      */
-
     static double obtain_dds_serialize_time_cost(
             unsigned int sampleSize,
             unsigned int iters = 1000);
@@ -204,12 +176,7 @@ public:
      *
      * @param isZeroCopy states if the type is also ZeroCopy
      */
-    RTIDDSImpl_FlatData(bool isZeroCopy=false)
-    {
-    this->_isZeroCopy = isZeroCopy;
-    this->_isFlatData = true;
-    this->_typename = T::TypeSupport::get_type_name();
-    };
+    RTIDDSImpl_FlatData(bool isZeroCopy=false);
 
     /**
      * Creates a Publisher that uses the FlatData API
@@ -259,6 +226,17 @@ public:
     static double obtain_dds_deserialize_time_cost_override(
         unsigned int sampleSize,
         unsigned int iters = 1000);
+
+
+    /**
+     * @brief This function calculate the overhead bytes that all the
+     * members on TestData_* type add excluding the length of the sequence.
+     *
+     * @param size \b InOut. The size of the overhead of the data type.
+     *
+     * @return true if the operation was successful, otherwise false.
+     */
+    bool get_serialize_overhead_size(unsigned int &overhead_size);
   };
 #endif // RTI_FLATDATA_AVAILABLE
 

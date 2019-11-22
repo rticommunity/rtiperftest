@@ -26,6 +26,10 @@ RTIRawTransportImpl::RTIRawTransportImpl()
           _PM(NULL)
 {
     PeerData::resourcesList.reserve(RTIPERFTEST_MAX_PEERS);
+
+    if (!get_serialize_overhead_size(perftest_cpp::OVERHEAD_BYTES)) {
+        throw std::runtime_error("Fail on obtain overhead size");
+    }
 }
 
 /*********************************************************
@@ -1170,6 +1174,41 @@ bool RTIRawTransportImpl::configure_sockets_transport()
 
     delete interfaceAddr;
 
+    return true;
+}
+
+bool RTIRawTransportImpl::get_serialize_overhead_size(
+        unsigned int &overhead_size)
+{
+    /* Initialize the data elements */
+    TestData_t data;
+    data.entity_id = 0;
+    data.seq_num = 0;
+    data.timestamp_sec = 0;
+    data.timestamp_usec = 0;
+    data.latency_ping = 0;
+
+    /* Set the length of the sequence to zero */
+    data.bin_data.length(0);
+
+    /*
+     * Calling serialize_data_to_cdr_buffer witout a buffer will return the
+     * maximun serialize sample size
+     */
+    if (DDS_RETCODE_OK != TestData_t::TypeSupport::serialize_data_to_cdr_buffer(
+            NULL,
+            overhead_size,
+            &data)) {
+        fprintf(stderr,
+                "Fail to serialize sample on get_serialize_overhead_size\n");
+        return false;
+    }
+
+    /*
+     * We want the overhead from the type so we substract the
+     * RTI_CDR_ENCAPSULATION_HEADER_SIZE
+     */
+    overhead_size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
     return true;
 }
 
