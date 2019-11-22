@@ -172,25 +172,14 @@ void RTIDDSImpl<T>::Shutdown()
     }
 }
 
-/*********************************************************
-
- * Validate and manage the parameters
- */
 template <typename T>
-bool RTIDDSImpl<T>::validate_input()
+bool RTIDDSImpl<T>::data_size_related_calculations()
 {
-    // Manage parameter -instance
-    if (_PM->is_set("instances")) {
-        _instanceMaxCountReader = _PM->get<long>("instances");
+        // Check if we need to enable Large Data. This works also for -scan
+    if (!_PM->get<bool>("asynchronous")) {
+        _isLargeData =
+            (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize);
     }
-    // Manage parameter -peer
-    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
-        fprintf(stderr,
-                "The maximun of 'initial_peers' is %d\n",
-                RTIPERFTEST_MAX_PEERS);
-        return false;
-    }
-
     // Check if we need to enable Large Data. This works also for -scan
     if (_PM->get<unsigned long long>("dataLen") > (unsigned long) (std::min)(
             MAX_SYNCHRONOUS_SIZE,
@@ -288,6 +277,63 @@ bool RTIDDSImpl<T>::validate_input()
         }
     }
 
+    return true;
+}
+
+/*********************************************************
+
+ * Validate and manage the parameters
+ */
+template <typename T>
+bool RTIDDSImpl<T>::validate_input()
+{
+    // Manage parameter -instance
+    if (_PM->is_set("instances")) {
+        _instanceMaxCountReader = _PM->get<long>("instances");
+    }
+
+    // Manage parameter -writeInstance
+    if (_PM->is_set("writeInstance")) {
+        if (_PM->get<long>("instances") < _PM->get<long>("writeInstance")) {
+            fprintf(stderr,
+                    "Specified '-WriteInstance' (%ld) invalid: "
+                    "Bigger than the number of instances (%ld).\n",
+                    _PM->get<long>("writeInstance"),
+                    _PM->get<long>("instances"));
+            return false;
+        }
+    }
+
+    // Manage parameter -peer
+    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
+        fprintf(stderr,
+                "The maximun of 'initial_peers' is %d\n",
+                RTIPERFTEST_MAX_PEERS);
+        return false;
+    }
+
+    // Manage parameter -batchSize
+    if (_PM->get<long>("batchSize") > 0) {
+        // We will not use batching for a latency test
+        if (_PM->get<bool>("latencyTest")) {
+            if (_PM->is_set("batchSize")) {
+                fprintf(stderr, "Batching cannot be used in a Latency test.\n");
+                return false;
+            } else {
+                _PM->set<long>("batchSize", 0); // Disable Batching
+            }
+        }
+
+        if (_isFlatData) {
+            if (_PM->is_set("batchSize")) {
+                fprintf(stderr, "Batching cannot be used with FlatData.\n");
+                return false;
+            } else {
+                _PM->set<long>("batchSize", -3);
+            }
+        }
+    }
+
     // Manage transport parameter
     if (!_transport.validate_input()) {
         fprintf(stderr, "Failure validating the transport options.\n");
@@ -332,6 +378,16 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "No\n";
     }
   #endif
+
+    // Large Data
+    if (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize) {
+        fprintf(stderr,
+                "[IMPORTANT]: Enabling Large Data: -datalen (%lld) is larger\n"
+                "             than the minimum message_size_max across\n"
+                "             all enabled transports (%lld)\n",
+                _PM->get<unsigned long long>("dataLen"),
+                _maxSynchronousSize);
+    }
 
   #ifdef RTI_FLATDATA_AVAILABLE
     // FlatData
@@ -2362,7 +2418,9 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
      * At this point, and not before is when we know the transport message size.
      * Now we can decide if we need to use asynchronous or not.
      */
-    //TODO validateTransportRelatedParams();
+    _maxSynchronousSize = _transport.minimumMessageSizeMax - MESSAGE_OVERHEAD_BYTES;
+
+    data_size_related_calculations();
 
   #ifdef RTI_SECURE_PERFTEST
     // Configure security
