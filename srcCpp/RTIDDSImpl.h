@@ -77,6 +77,7 @@ public:
          */
         _instanceMaxCountReader = 1;
       #endif
+        _maxSynchronousSize = MESSAGE_SIZE_MAX_NOT_SET;
         _isLargeData = false;
         _isFlatData = false;
         _isZeroCopy = false;
@@ -157,6 +158,7 @@ protected:
 
     long                         _instanceMaxCountReader;
     unsigned long                _sendQueueSize;
+    unsigned long long           _maxSynchronousSize;
     bool                         _isLargeData;
     bool                         _isFlatData;
     bool                         _isZeroCopy;

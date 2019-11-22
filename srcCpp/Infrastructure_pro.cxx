@@ -668,16 +668,16 @@ long getMessageSizeMaxForTransport(
             qos.property,
             propertyName.c_str());
     if (parentProp != NULL && parentProp->value != NULL) {
-        printf("Value for %s is %s\n", propertyName.c_str(), parentProp->value);
+        // printf("Value for %s is %s\n", propertyName.c_str(), parentProp->value);
         return atoi(parentProp->value);
     } else {
-        printf("Value for %s not found, returning default\n",propertyName.c_str());
+        // printf("Value for %s not found, returning default\n",propertyName.c_str());
         return DEFAULT_MESSAGE_SIZE_MAX;
     }
 }
 
 /*
- * Configures the MessageSizeMax value in the PerftestTransport object with
+ * Configures the minimumMessageSizeMax value in the PerftestTransport object with
  * the minimum value for all the enabled transports in the XML configuration.
  */
 void configureMessageSizeMaxTransport(
@@ -686,51 +686,71 @@ void configureMessageSizeMaxTransport(
 {
     long qosConfigurationMessageSizeMax = MESSAGE_SIZE_MAX_NOT_SET;
     long transportMessageSizeMax = MESSAGE_SIZE_MAX_NOT_SET;
-
     if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_SHMEM) != 0) {
         transportMessageSizeMax = getMessageSizeMaxForTransport("SHMEM", transport, qos);
-        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET
-                && transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-                    qosConfigurationMessageSizeMax = transportMessageSizeMax;
+
+        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        } else {
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
         }
     }
     if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_UDPv4) != 0) {
         transportMessageSizeMax = getMessageSizeMaxForTransport("UDPv4", transport, qos);
-        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET
-                && transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-                    qosConfigurationMessageSizeMax = transportMessageSizeMax;
+
+        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        } else {
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
         }
     }
     if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_UDPv6) != 0) {
         transportMessageSizeMax = getMessageSizeMaxForTransport("UDPv6", transport, qos);
-        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET
-                && transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-                    qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        } else {
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
         }
     }
     if (transport.transportConfig.kind == TRANSPORT_TCPv4
             || transport.transportConfig.kind == TRANSPORT_TLSv4) {
         transportMessageSizeMax = getMessageSizeMaxForTransport("TCP", transport, qos);
-        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET
-                && transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-                    qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        } else {
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
         }
     }
     if (transport.transportConfig.kind == TRANSPORT_DTLSv4) {
         transportMessageSizeMax = getMessageSizeMaxForTransport("DTLS", transport, qos);
-        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET
-                && transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-                    qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        } else {
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
         }
     }
     if (transport.transportConfig.kind == TRANSPORT_WANv4) {
         transportMessageSizeMax = getMessageSizeMaxForTransport("WAN", transport, qos);
-        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET
-                && transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-                    qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        } else {
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
         }
     }
-    transport.messageSizeMax = transportMessageSizeMax;
+
+    transport.minimumMessageSizeMax = transportMessageSizeMax;
 }
 
 bool PerftestConfigureTransport(
