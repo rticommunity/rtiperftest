@@ -98,14 +98,10 @@ bool RTIRawTransportImpl::validate_input() {
      * Manage parameter -dataLen
      */
     if (_PM->get<unsigned long long>("dataLen")
-            > (unsigned long) (std::min)(
-                    MAX_SYNCHRONOUS_SIZE,
-                    NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX)) {
+            > (unsigned long) NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX) {
         fprintf(stderr,
                 "The maximun dataLen for rawTransport is %d.\n",
-                (std::min)(
-                        MAX_SYNCHRONOUS_SIZE,
-                        NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX));
+                NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
         return false;
     }
 

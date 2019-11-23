@@ -101,6 +101,9 @@ public:
         Shutdown();
     }
 
+
+    bool data_size_related_calculations();
+
     bool validate_input();
 
     std::string PrintConfiguration();

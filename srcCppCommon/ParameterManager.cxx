@@ -406,7 +406,7 @@ void ParameterManager::initialize()
             "(Disabled for LatencyTest mode or if dataLen > 4kB)");
     batchSize->set_type(T_NUMERIC_LD);
     batchSize->set_extra_argument(YES);
-    batchSize->set_range(0, MAX_SYNCHRONOUS_SIZE - 1);
+    batchSize->set_range(0, MAX_PERFTEST_SAMPLE_SIZE - 1);
     batchSize->set_group(PUB);
     batchSize->set_supported_middleware(
             Middleware::RTIDDSPRO

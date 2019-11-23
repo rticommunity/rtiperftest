@@ -175,31 +175,15 @@ void RTIDDSImpl<T>::Shutdown()
 template <typename T>
 bool RTIDDSImpl<T>::data_size_related_calculations()
 {
-        // Check if we need to enable Large Data. This works also for -scan
-    if (!_PM->get<bool>("asynchronous")) {
-        _isLargeData =
-            (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize);
-    }
-    // Check if we need to enable Large Data. This works also for -scan
-    if (_PM->get<unsigned long long>("dataLen") > (unsigned long) (std::min)(
-            MAX_SYNCHRONOUS_SIZE,
-            MAX_BOUNDED_SEQ_SIZE)) {
+    // If the user wants to use asynchronous we enable it
+    if (_PM->get<bool>("asynchronous")) {
         _isLargeData = true;
-    } else { // No Large Data
-        _isLargeData = false;
+    } else { //If the message size max is lower than the datalen
+        _isLargeData = (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize);
     }
 
     // Manage parameter -batchSize
     if (_PM->get<long>("batchSize") > 0) {
-        // We will not use batching for a latency test
-        if (_PM->get<bool>("latencyTest")) {
-            if (_PM->is_set("batchSize")) {
-                fprintf(stderr, "Batching cannot be used in a Latency test.\n");
-                return false;
-            } else {
-                _PM->set<long>("batchSize", 0); // Disable Batching
-            }
-        }
 
         // Check if using asynchronous
         if (_PM->get<bool>("asynchronous")) {
@@ -256,8 +240,7 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
     // Manage parameter -enableTurboMode
     if (_PM->get<bool>("enableTurboMode")) {
         if (_PM->get<bool>("asynchronous")) {
-            fprintf(stderr,
-                    "Turbo Mode cannot be used with asynchronous writing.\n");
+            fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing.\n");
             return false;
         } if (_isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
@@ -265,14 +248,21 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
         }
     }
 
-    // Manage parameter -writeInstance
-    if (_PM->is_set("writeInstance")) {
-        if (_PM->get<long>("instances") < _PM->get<long>("writeInstance")) {
+    // Manage the parameter: -scan
+    if (_PM->is_set("scan")) {
+        const std::vector<unsigned long long> scanList =
+                _PM->get_vector<unsigned long long>("scan");
+
+        // Check if scan is large data or small data
+        if (scanList[0] < (unsigned long long) _maxSynchronousSize
+                && scanList[scanList.size() - 1] > (unsigned long long)_maxSynchronousSize) {
+            fprintf(stderr, "The sizes of -scan [");
+            for (unsigned int i = 0; i < scanList.size(); i++) {
+                fprintf(stderr, "%llu ", scanList[i]);
+            }
             fprintf(stderr,
-                    "Specified '-WriteInstance' (%ld) invalid: "
-                    "Bigger than the number of instances (%ld).\n",
-                    _PM->get<long>("writeInstance"),
-                    _PM->get<long>("instances"));
+                    "] should be either all smaller or all bigger than %lld.\n",
+                    _maxSynchronousSize);
             return false;
         }
     }
@@ -323,15 +313,6 @@ bool RTIDDSImpl<T>::validate_input()
                 _PM->set<long>("batchSize", 0); // Disable Batching
             }
         }
-
-        if (_isFlatData) {
-            if (_PM->is_set("batchSize")) {
-                fprintf(stderr, "Batching cannot be used with FlatData.\n");
-                return false;
-            } else {
-                _PM->set<long>("batchSize", -3);
-            }
-        }
     }
 
     // Manage transport parameter
@@ -378,16 +359,6 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "No\n";
     }
   #endif
-
-    // Large Data
-    if (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize) {
-        fprintf(stderr,
-                "[IMPORTANT]: Enabling Large Data: -datalen (%lld) is larger\n"
-                "             than the minimum message_size_max across\n"
-                "             all enabled transports (%lld)\n",
-                _PM->get<unsigned long long>("dataLen"),
-                _maxSynchronousSize);
-    }
 
   #ifdef RTI_FLATDATA_AVAILABLE
     // FlatData
@@ -460,6 +431,17 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "\n" << _security.printSecurityConfigurationSummary();
     }
    #endif
+
+    // Large Data
+    if (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize) {
+        stringStream << "\n[IMPORTANT]: Enabling Asynchronous publishing: -datalen ("
+                     << std::to_string(_PM->get<unsigned long long>("dataLen"))
+                     << ") is \n"
+                     << "             larger than the minimum message_size_max across\n"
+                     << "             all enabled transports ("
+                     << std::to_string(_maxSynchronousSize)
+                     << ")\n";
+    }
 
     return stringStream.str();
 }
@@ -2420,7 +2402,10 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
      */
     _maxSynchronousSize = _transport.minimumMessageSizeMax - MESSAGE_OVERHEAD_BYTES;
 
-    data_size_related_calculations();
+    if (!data_size_related_calculations()) {
+        fprintf(stderr, "Failed to configure the data size settings\n");
+        return false;
+    }
 
   #ifdef RTI_SECURE_PERFTEST
     // Configure security
