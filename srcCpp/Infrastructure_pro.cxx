@@ -523,7 +523,7 @@ bool configureShmemTransport(
     DDS_Property_t *parentProp =
             DDSPropertyQosPolicyHelper::lookup_property(qos.property,
                     "dds.transport.shmem.builtin.parent.message_size_max");
-    //TODO Fix this
+
     int parentMsgSizeMax = DEFAULT_MESSAGE_SIZE_MAX;
     if (parentProp != NULL && parentProp->value != NULL) {
         int parentMsgSizeMax = atoi(parentProp->value);
