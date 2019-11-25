@@ -11,18 +11,6 @@
 
 #include <time.h>
 using namespace std;
-/*
- * Since std::to_string is not defined until c++11
- * we will define it here.
- */
-namespace std {
-    template<typename T>
-    std::string to_string(const T &n) {
-        std::ostringstream s;
-        s << n;
-        return s.str();
-    }
-}
 
 /* Perftest Clock class */
 
