@@ -95,8 +95,8 @@ int DynamicDataMembersId::at(std::string key)
 template <typename T>
 RTIDDSImpl<T>::RTIDDSImpl():
         _InstanceMaxCountReader(dds::core::LENGTH_UNLIMITED),
-        _maxSynchronousSize(MESSAGE_SIZE_MAX_NOT_SET),
         _sendQueueSize(0),
+        _maxSynchronousSize(MESSAGE_SIZE_MAX_NOT_SET),
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED),
         _isLargeData(false),
         _isFlatData(false),
