@@ -514,7 +514,7 @@ bool configureShmemTransport(
 
     int parentMsgSizeMax = DEFAULT_MESSAGE_SIZE_MAX;
     if (parentProp != NULL && parentProp->value != NULL) {
-        int parentMsgSizeMax = atoi(parentProp->value);
+        parentMsgSizeMax = atoi(parentProp->value);
     }
 
     /*
