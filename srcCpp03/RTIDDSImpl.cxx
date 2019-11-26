@@ -95,6 +95,7 @@ int DynamicDataMembersId::at(std::string key)
 template <typename T>
 RTIDDSImpl<T>::RTIDDSImpl():
         _InstanceMaxCountReader(dds::core::LENGTH_UNLIMITED),
+        _maxSynchronousSize(MESSAGE_SIZE_MAX_NOT_SET),
         _sendQueueSize(0),
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED),
         _isLargeData(false),
@@ -140,45 +141,18 @@ void RTIDDSImpl<T>::Shutdown()
     _finalizeFactorySemaphore.give();
 }
 
-/*********************************************************
- * ParseConfig
- */
 template <typename T>
-bool RTIDDSImpl<T>::validate_input()
+bool RTIDDSImpl<T>::data_size_related_calculations()
 {
-    // Manage parameter -instance
-    if (_PM->is_set("instances")) {
-        _InstanceMaxCountReader = _PM->get<long>("instances");
-    }
-
-    // Manage parameter -peer
-    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
-        std::cerr << "The maximun of 'initial_peers' is " << RTIPERFTEST_MAX_PEERS
-                  << std::endl;
-        return false;
-    }
-
-    // Check if we need to enable Large Data. This works also for -scan
-    if (_PM->get<unsigned long long>("dataLen") > (unsigned long) (std::min)(
-                    MAX_SYNCHRONOUS_SIZE,
-                    MAX_BOUNDED_SEQ_SIZE)) {
+    // If the user wants to use asynchronous we enable it
+    if (_PM->get<bool>("asynchronous")) {
         _isLargeData = true;
-    } else { /* No Large Data */
-        _isLargeData = false;
+    } else { //If the message size max is lower than the datalen
+        _isLargeData = (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize);
     }
 
     // Manage parameter -batchSize
     if (_PM->get<long>("batchSize") > 0) {
-        // We will not use batching for a latency test
-        if (_PM->get<bool>("latencyTest")) {
-            if (_PM->is_set("batchSize")) {
-                std::cerr << "Batching cannot be used in a Latency test."
-                          << std::endl;
-                return false;
-            } else {
-                _PM->set<long>("batchSize", 0);  // Disable Batching
-            }
-        }
 
         // Check if using asynchronous
         if (_PM->get<bool>("asynchronous")) {
@@ -187,7 +161,7 @@ bool RTIDDSImpl<T>::validate_input()
                           << std::endl;
                 return false;
             } else {
-                _PM->set<long>("batchSize", 0);  // Disable Batching
+                _PM->set<long>("batchSize", 0); // Disable Batching
             }
         }
 
@@ -247,6 +221,39 @@ bool RTIDDSImpl<T>::validate_input()
         }
     }
 
+    // Manage the parameter: -scan
+    if (_PM->is_set("scan")) {
+        const std::vector<unsigned long long> scanList =
+                _PM->get_vector<unsigned long long>("scan");
+
+        // Check if scan is large data or small data
+        if (scanList[0] < (unsigned long long) _maxSynchronousSize
+                && scanList[scanList.size() - 1] > (unsigned long long)_maxSynchronousSize) {
+            std::cerr << "The sizes of -scan [";
+            for (unsigned int i = 0; i < scanList.size(); i++) {
+                std::cerr << scanList[i] << " ";
+            }
+            std::cerr << "] should be either all smaller or all bigger than "
+                      << _maxSynchronousSize << "." << std::endl;
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*********************************************************
+
+ * Validate and manage the parameters
+ */
+template <typename T>
+bool RTIDDSImpl<T>::validate_input()
+{
+    // Manage parameter -instance
+    if (_PM->is_set("instances")) {
+        _InstanceMaxCountReader = _PM->get<long>("instances");
+    }
+
     // Manage parameter -writeInstance
     if (_PM->is_set("writeInstance")) {
         if (_PM->get<long>("instances") < _PM->get<long>("writeInstance")) {
@@ -257,6 +264,27 @@ bool RTIDDSImpl<T>::validate_input()
                       << ")."
                       << std::endl;
             return false;
+        }
+    }
+
+    // Manage parameter -peer
+    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
+        std::cerr << "The maximun of 'initial_peers' is " << RTIPERFTEST_MAX_PEERS
+                  << std::endl;
+        return false;
+    }
+
+    // Manage parameter -batchSize
+    if (_PM->get<long>("batchSize") > 0) {
+        // We will not use batching for a latency test
+        if (_PM->get<bool>("latencyTest")) {
+            if (_PM->is_set("batchSize")) {
+                std::cerr << "Batching cannot be used in a Latency test."
+                          << std::endl;
+                return false;
+            } else {
+                _PM->set<long>("batchSize", 0);  // Disable Batching
+            }
         }
     }
 
@@ -408,6 +436,17 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "\n" << printSecureArgs();
     }
    #endif
+
+    // Large Data
+    if (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize) {
+        stringStream << "\n[IMPORTANT]: Enabling Asynchronous publishing: -datalen ("
+                     << std::to_string(_PM->get<unsigned long long>("dataLen"))
+                     << ") is \n"
+                     << "             larger than the minimum message_size_max across\n"
+                     << "             all enabled transports ("
+                     << std::to_string(_maxSynchronousSize)
+                     << ")\n";
+    }
 
     return stringStream.str();
 }
@@ -1664,6 +1703,17 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     if (!configureTransport(_transport, qos, properties, _PM)){
         return false;
     };
+
+    /*
+     * At this point, and not before is when we know the transport message size.
+     * Now we can decide if we need to use asynchronous or not.
+     */
+    _maxSynchronousSize = _transport.minimumMessageSizeMax - MESSAGE_OVERHEAD_BYTES;
+
+    if (!data_size_related_calculations()) {
+        fprintf(stderr, "Failed to configure the data size settings\n");
+        return false;
+    }
 
     // set thread priorities.
     if (threadPriorities.isSet) {

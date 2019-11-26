@@ -16,6 +16,10 @@
 #include "osapi/osapi_sharedMemorySegment.h"
 #include <stdlib.h>
 
+#define DEFAULT_MESSAGE_SIZE_MAX 65536
+#define MESSAGE_SIZE_MAX_NOT_SET -1
+#define MESSAGE_OVERHEAD_BYTES 2536
+
 /******************************************************************************/
 
 enum Transport {
@@ -69,6 +73,14 @@ public:
     /* PUBLIC CLASS MEMBERS */
 
     TransportConfig transportConfig;
+    std::map<std::string, TransportConfig> transportConfigMap;
+
+    /*
+     * This is the minimum size across all the active transports
+     * message_size_max
+     */
+    long minimumMessageSizeMax;
+
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 
@@ -97,7 +109,6 @@ public:
 
 private:
 
-    std::map<std::string, TransportConfig> transportConfigMap;
     std::map<std::string, std::string> multicastAddrMap;
     ParameterManager *_PM;
     /**************************************************************************/

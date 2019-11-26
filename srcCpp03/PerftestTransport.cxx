@@ -268,9 +268,12 @@ void configureShmemTransport(
         std::map<std::string, std::string> &qos_properties,
         ParameterManager *_PM)
 {
-    int parentMsgSizeMax = atoi(
-            qos_properties["dds.transport.shmem.builtin.parent.message_size_max"]
-            .c_str());
+    int parentMsgSizeMax = DEFAULT_MESSAGE_SIZE_MAX;
+    std::string property_value =
+        qos_properties["dds.transport.shmem.builtin.parent.message_size_max"];
+    if (!property_value.empty()) {
+        parentMsgSizeMax = atoi(property_value.c_str());
+    }
 
     /**
      * The maximum size of a SHMEM segment highly depends on the platform.
@@ -369,6 +372,129 @@ void configureShmemTransport(
     qos_properties["dds.transport.shmem.builtin.receive_buffer_size"] =
         ss.str();
 }
+
+
+/*
+ * Gets the MessageSizeMax given the name (String) of a transport from a
+ * DDS_DomainParticipantQos object. If the value is not present, returns
+ * DEFAULT_MESSAGE_SIZE_MAX.
+ */
+long getMessageSizeMaxForTransport(
+        std::string targetTransportName,
+        PerftestTransport &transport,
+        std::map<std::string, std::string> &qos_properties)
+{
+    std::string propertyName =
+            transport.transportConfigMap[targetTransportName].prefixString
+            + ".parent.message_size_max";
+
+    std::string property_value = qos_properties[propertyName];
+    if (!property_value.empty()) {
+        //printf("Value for %s is %s\n", propertyName.c_str(), property_value.c_str());
+        return atoi(property_value.c_str());
+    } else {
+        //printf("Value for %s not found, returning default\n", propertyName.c_str());
+        return DEFAULT_MESSAGE_SIZE_MAX;
+    }
+}
+
+/*
+ * Configures the minimumMessageSizeMax value in the PerftestTransport object with
+ * the minimum value for all the enabled transports in the XML configuration.
+ */
+void configureMessageSizeMaxTransport(
+        PerftestTransport &transport,
+        dds::domain::qos::DomainParticipantQos &qos,
+        std::map<std::string, std::string> &qos_properties)
+{
+    using namespace rti::core::policy;
+
+    long qosConfigurationMessageSizeMax = MESSAGE_SIZE_MAX_NOT_SET;
+    long transportMessageSizeMax = MESSAGE_SIZE_MAX_NOT_SET;
+    TransportBuiltinMask mask = qos.policy<TransportBuiltin>().mask();
+
+    if ((mask & TransportBuiltinMask::shmem()) != 0) {
+        transportMessageSizeMax = getMessageSizeMaxForTransport("SHMEM", transport, qos_properties);
+
+        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        } else {
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
+        }
+    }
+    if ((mask & TransportBuiltinMask::udpv4()) != 0) {
+        transportMessageSizeMax = getMessageSizeMaxForTransport(
+                "UDPv4",
+                transport,
+                qos_properties);
+
+        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        } else {
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
+        }
+    }
+    if ((mask & TransportBuiltinMask::udpv6()) != 0) {
+        transportMessageSizeMax = getMessageSizeMaxForTransport(
+                "UDPv6",
+                transport,
+                qos_properties);
+        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        } else {
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
+        }
+    }
+    if (transport.transportConfig.kind == TRANSPORT_TCPv4
+            || transport.transportConfig.kind == TRANSPORT_TLSv4) {
+        transportMessageSizeMax = getMessageSizeMaxForTransport(
+                "TCP",
+                transport,
+                qos_properties);
+        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        } else {
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
+        }
+    }
+    if (transport.transportConfig.kind == TRANSPORT_DTLSv4) {
+        transportMessageSizeMax = getMessageSizeMaxForTransport(
+                "DTLS",
+                transport,
+                qos_properties);
+        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        } else {
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
+        }
+    }
+    if (transport.transportConfig.kind == TRANSPORT_WANv4) {
+        transportMessageSizeMax = getMessageSizeMaxForTransport(
+                "WAN",
+                transport,
+                qos_properties);
+        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        } else {
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
+        }
+    }
+
+    transport.minimumMessageSizeMax = transportMessageSizeMax;
+}
+
 
 bool configureTransport(
         PerftestTransport &transport,
@@ -512,6 +638,13 @@ bool configureTransport(
     } // Switch
 
     /*
+     * Once the configurations have been stablished, we can get the
+     * MessageSizeMax for the Transport, which should be the minimum of
+     * all the enabled transports
+     */
+    configureMessageSizeMaxTransport(transport, qos, qos_properties);
+
+    /*
      * If the transport is empty or if it is shmem, it does not make sense
      * setting an interface, in those cases, if the allow interfaces is provided
      * we empty it.
@@ -572,6 +705,8 @@ PerftestTransport::PerftestTransport()
             TRANSPORT_SHMEM,
             "SHMEM",
             "dds.transport.shmem.builtin");
+
+    minimumMessageSizeMax = MESSAGE_SIZE_MAX_NOT_SET;
 }
 
 PerftestTransport::~PerftestTransport()
