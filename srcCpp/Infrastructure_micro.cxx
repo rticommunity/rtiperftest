@@ -362,7 +362,7 @@ bool configureShmemTransport(
     qos.resource_limits.remote_reader_allocation = 8;
     qos.resource_limits.remote_writer_allocation = 8;
 
-    transport.minimumMessageSizeMax = shmem_property->max_message_size;
+    transport.minimumMessageSizeMax = shmem_property.max_message_size;
 
     return true;
 }
