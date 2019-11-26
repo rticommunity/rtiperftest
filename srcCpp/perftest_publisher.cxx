@@ -555,7 +555,7 @@ void perftest_cpp::PrintConfiguration()
                 }
             }
 
-            stringStream << "\t(Set the data size on the subscriber"
+            stringStream << "\t\n(Set the data size on the subscriber"
                          << " to the maximum data size to achieve best performance)"
                          << std::endl;
         } else {
