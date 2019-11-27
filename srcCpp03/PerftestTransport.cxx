@@ -379,7 +379,7 @@ void configureShmemTransport(
  * DDS_DomainParticipantQos object. If the value is not present, returns
  * DEFAULT_MESSAGE_SIZE_MAX.
  */
-long getMessageSizeMaxForTransport(
+long getTransportMessageSizeMax(
         std::string targetTransportName,
         PerftestTransport &transport,
         std::map<std::string, std::string> &qos_properties)
@@ -402,7 +402,7 @@ long getMessageSizeMaxForTransport(
  * Configures the minimumMessageSizeMax value in the PerftestTransport object with
  * the minimum value for all the enabled transports in the XML configuration.
  */
-void configureMessageSizeMaxTransport(
+void getTransportMinimumMessageSizeMax(
         PerftestTransport &transport,
         dds::domain::qos::DomainParticipantQos &qos,
         std::map<std::string, std::string> &qos_properties)
@@ -414,81 +414,61 @@ void configureMessageSizeMaxTransport(
     TransportBuiltinMask mask = qos.policy<TransportBuiltin>().mask();
 
     if ((mask & TransportBuiltinMask::shmem()) != 0) {
-        transportMessageSizeMax = getMessageSizeMaxForTransport("SHMEM", transport, qos_properties);
+        transportMessageSizeMax = getTransportMessageSizeMax("SHMEM", transport, qos_properties);
 
-        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+        if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
             qosConfigurationMessageSizeMax = transportMessageSizeMax;
-        } else {
-            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-                qosConfigurationMessageSizeMax = transportMessageSizeMax;
-            }
         }
     }
     if ((mask & TransportBuiltinMask::udpv4()) != 0) {
-        transportMessageSizeMax = getMessageSizeMaxForTransport(
+        transportMessageSizeMax = getTransportMessageSizeMax(
                 "UDPv4",
                 transport,
                 qos_properties);
 
-        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+        if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
             qosConfigurationMessageSizeMax = transportMessageSizeMax;
-        } else {
-            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-                qosConfigurationMessageSizeMax = transportMessageSizeMax;
-            }
         }
     }
     if ((mask & TransportBuiltinMask::udpv6()) != 0) {
-        transportMessageSizeMax = getMessageSizeMaxForTransport(
+        transportMessageSizeMax = getTransportMessageSizeMax(
                 "UDPv6",
                 transport,
                 qos_properties);
-        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+
+        if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
             qosConfigurationMessageSizeMax = transportMessageSizeMax;
-        } else {
-            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-                qosConfigurationMessageSizeMax = transportMessageSizeMax;
-            }
         }
     }
     if (transport.transportConfig.kind == TRANSPORT_TCPv4
             || transport.transportConfig.kind == TRANSPORT_TLSv4) {
-        transportMessageSizeMax = getMessageSizeMaxForTransport(
+        transportMessageSizeMax = getTransportMessageSizeMax(
                 "TCP",
                 transport,
                 qos_properties);
-        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+
+        if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
             qosConfigurationMessageSizeMax = transportMessageSizeMax;
-        } else {
-            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-                qosConfigurationMessageSizeMax = transportMessageSizeMax;
-            }
         }
     }
     if (transport.transportConfig.kind == TRANSPORT_DTLSv4) {
-        transportMessageSizeMax = getMessageSizeMaxForTransport(
+        transportMessageSizeMax = getTransportMessageSizeMax(
                 "DTLS",
                 transport,
                 qos_properties);
-        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+
+        if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
             qosConfigurationMessageSizeMax = transportMessageSizeMax;
-        } else {
-            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-                qosConfigurationMessageSizeMax = transportMessageSizeMax;
-            }
         }
     }
     if (transport.transportConfig.kind == TRANSPORT_WANv4) {
-        transportMessageSizeMax = getMessageSizeMaxForTransport(
+        transportMessageSizeMax = getTransportMessageSizeMax(
                 "WAN",
                 transport,
                 qos_properties);
-        if (transportMessageSizeMax != MESSAGE_SIZE_MAX_NOT_SET) {
+
+        if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
             qosConfigurationMessageSizeMax = transportMessageSizeMax;
-        } else {
-            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-                qosConfigurationMessageSizeMax = transportMessageSizeMax;
-            }
         }
     }
 
@@ -642,7 +622,7 @@ bool configureTransport(
      * MessageSizeMax for the Transport, which should be the minimum of
      * all the enabled transports
      */
-    configureMessageSizeMaxTransport(transport, qos, qos_properties);
+    getTransportMinimumMessageSizeMax(transport, qos, qos_properties);
 
     /*
      * If the transport is empty or if it is shmem, it does not make sense

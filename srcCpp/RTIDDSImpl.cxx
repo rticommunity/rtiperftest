@@ -254,7 +254,7 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
                 _PM->get_vector<unsigned long long>("scan");
 
         // Check if scan is large data or small data
-        if (scanList[0] < (unsigned long long) _maxSynchronousSize
+        if (scanList[0] <= (unsigned long long) _maxSynchronousSize
                 && scanList[scanList.size() - 1] > (unsigned long long)_maxSynchronousSize) {
             fprintf(stderr, "The sizes of -scan [");
             for (unsigned int i = 0; i < scanList.size(); i++) {
@@ -2400,7 +2400,7 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
      * At this point, and not before is when we know the transport message size.
      * Now we can decide if we need to use asynchronous or not.
      */
-    _maxSynchronousSize = _transport.minimumMessageSizeMax - MESSAGE_OVERHEAD_BYTES;
+    _maxSynchronousSize = _transport.minimumMessageSizeMax - (MESSAGE_OVERHEAD_BYTES);
 
     if (!data_size_related_calculations()) {
         fprintf(stderr, "Failed to configure the data size settings\n");

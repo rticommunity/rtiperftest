@@ -308,7 +308,7 @@ void ParameterManager::initialize()
     unbounded->set_command_line_argument("-unbounded", "<allocation_threshold>");
     unbounded->set_description(
             "Use unbounded Sequences\n"
-            "<allocation_threshold> is optional. Default: 63000 Bytes");
+            "<allocation_threshold> is optional. Default: MAX_BOUNDED_SEQ_SIZE Bytes");
     unbounded->set_type(T_NUMERIC_D);
     unbounded->set_extra_argument(POSSIBLE);
     unbounded->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_BOUNDED_SEQ_SIZE);
@@ -575,18 +575,18 @@ void ParameterManager::initialize()
     scanList.push_back(8192);
     scanList.push_back(16384);
     scanList.push_back(32768);
-    scanList.push_back(63000);
+    scanList.push_back(64969);
     ParameterVector<unsigned long long> *scan =
             new ParameterVector<unsigned long long>(scanList);
     scan->set_command_line_argument("-scan", "<size1>:<size2>:...:<sizeN>");
     scan->set_description(
             "Run test in scan mode, traversing\n"
             "a range of sample data sizes from\n"
-            "[32,63000] or [63001,2147482620] bytes,\n"
+            "[32,64969] or [64970,2147482620] bytes,\n"
             "in the case that you are using large data or not.\n"
             "The list of sizes is optional.\n"
             "Default values are "
-            "'32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\n"
+            "'32:64:128:256:512:1024:2048:4096:8192:16384:32768:64969'\n"
             "Default: Not set");
     scan->set_type(T_VECTOR_NUMERIC);
     scan->set_extra_argument(POSSIBLE);

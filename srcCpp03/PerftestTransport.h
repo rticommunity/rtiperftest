@@ -15,10 +15,25 @@
 #include "osapi/osapi_process.h"
 #include "osapi/osapi_sharedMemorySegment.h"
 #include <stdlib.h>
+#include <limits.h>
 
 #define DEFAULT_MESSAGE_SIZE_MAX 65536
-#define MESSAGE_SIZE_MAX_NOT_SET -1
-#define MESSAGE_OVERHEAD_BYTES 2536
+#define MESSAGE_SIZE_MAX_NOT_SET LONG_MAX
+
+/*
+ * This const is used to calculate the maximum size that a packet can have. This
+ * number has to be substracted to the message_size_max.
+ * We calculate this as:
+ * - COMMEND_WRITER_MAX_RTPS_OVERHEAD <- Size of the overhead for RTPS in the
+ *                                       worst case
+ * - 48 <- Max transport overhead (this would be for ipv6).
+ * - Encapsulation (4 bytes) + aligment in the worst case (3)
+ * - 91 <- ???
+ *
+ * TODO: that Encapsulation should be taken out from the sample instead of here.
+ */
+
+#define MESSAGE_OVERHEAD_BYTES (COMMEND_WRITER_MAX_RTPS_OVERHEAD + 48 + 4 + 3 + 91)
 
 /******************************************************************************/
 

@@ -424,8 +424,8 @@ bool perftest_cpp::validate_input()
             _PM.set<unsigned long long>("executionTime", 60);
         }
         // Check if scan is large data or small data
-        if (scanList[0] < (unsigned long long) MAX_BOUNDED_SEQ_SIZE
-                && scanList[scanList.size() - 1] 
+        if (scanList[0] <= (unsigned long long) MAX_BOUNDED_SEQ_SIZE
+                && scanList[scanList.size() - 1]
                     > (unsigned long long) MAX_BOUNDED_SEQ_SIZE) {
             fprintf(stderr, "The sizes of -scan [");
             for (unsigned int i = 0; i < scanList.size(); i++) {

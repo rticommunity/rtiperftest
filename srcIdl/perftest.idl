@@ -7,7 +7,7 @@
 #include "custom.idl"
 #endif
 
-const long MAX_BOUNDED_SEQ_SIZE = 63000;
+const long MAX_BOUNDED_SEQ_SIZE = 1048576; // 1MB
 #ifndef RTI_FLATDATA_MAX_SIZE
   const long RTI_FLATDATA_MAX_SIZE = 10485760; // 10MB
 #endif
