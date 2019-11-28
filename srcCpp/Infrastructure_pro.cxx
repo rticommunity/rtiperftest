@@ -539,8 +539,8 @@ bool configureShmemTransport(
     int retcode;
     int key = rand();
     int minBufferSize = parentMsgSizeMax;
-    int step = 1048576 + parentMsgSizeMax; // 1MB + parentMsgSizeMax
-    int maxBufferSize = 60817408; // 58MB
+    int step = 1048576; // 1MB
+    int maxBufferSize = (std::max)(60817408 /* 58MB */, parentMsgSizeMax);
 
     do {
         // Reset handles to known state
@@ -551,8 +551,22 @@ bool configureShmemTransport(
                 &handle, &retcode, key, maxBufferSize, pid);
 
         RTIOsapiSharedMemorySegment_delete(&handle);
+
+        if (success) {
+            break;
+        }
+
         maxBufferSize -= step;
     } while (maxBufferSize > minBufferSize && success == RTI_FALSE);
+
+    if (!success || maxBufferSize < minBufferSize) {
+        fprintf(stderr,
+                "%s Failed to allocate SHMEM segment equal to dds.transport.shmem.builtin.parent.message_size_max: %d bytes.\n"
+                "Reduce dds.transport.shmem.builtin.parent.message_size_max.\n",
+                classLoggingString.c_str(),
+                parentMsgSizeMax);
+        return false;
+    }
 
     /*
      * From user manual "Properties for Builtin Shared-Memory Transport":
@@ -582,7 +596,7 @@ bool configureShmemTransport(
      * This is the flow Controller default token size. Change this if you modify
      * the qos file to add a different "bytes_per_token" property
      */
-    int flowControllerTokenSize = 65536;
+    int flowControllerTokenSize = transport.minimumMessageSizeMax;
     unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
 
   #ifdef RTI_FLATDATA_AVAILABLE
@@ -598,16 +612,14 @@ bool configureShmemTransport(
      */
     int fragmentSize = (std::min)(
             parentMsgSizeMax - COMMEND_WRITER_MAX_RTPS_OVERHEAD,
-            flowControllerTokenSize);
+            flowControllerTokenSize - COMMEND_WRITER_MAX_RTPS_OVERHEAD);
 
-    // max(1, (sample_serialized_size / fragmentSize))
     unsigned long long int rtpsMessagesPerSample = (std::max)(
-            1ull, (perftest_cpp::OVERHEAD_BYTES + datalen) / fragmentSize);
+            1ull, (datalen / fragmentSize) + 1);
 
     unsigned long long int receivedMessageCountMax =
             2 * (_PM->get<int>("sendQueueSize") + 1) * rtpsMessagesPerSample;
 
-    // min(maxBufferSize, receivedMessageCountMax * rtps_message_size)
     unsigned long long int receiveBufferSize = (std::min)(
         (unsigned long long) maxBufferSize,
         receivedMessageCountMax *
@@ -811,7 +823,6 @@ bool PerftestConfigureTransport(
     }
 
     switch (transport.transportConfig.kind) {
-
         case TRANSPORT_UDPv4:
             qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;
             break;
@@ -822,6 +833,26 @@ bool PerftestConfigureTransport(
 
         case TRANSPORT_SHMEM:
             qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_SHMEM;
+            break;
+
+        default:
+            break;
+    };
+
+    /*
+     * Once the configurations have been stablished, we can get the
+     * MessageSizeMax for the Transport, which should be the minimum of
+     * all the enabled transports
+     */
+    configureMessageSizeMaxTransport(transport, qos);
+
+    switch (transport.transportConfig.kind) {
+
+        case TRANSPORT_UDPv4:
+        case TRANSPORT_UDPv6:
+            break;
+
+        case TRANSPORT_SHMEM:
             if (!configureShmemTransport(transport, qos, _PM)) {
                 fprintf(stderr,
                         "%s Failed to configure SHMEM plugin\n",
@@ -882,13 +913,6 @@ bool PerftestConfigureTransport(
             }
             break;
     } // Switch
-
-    /*
-     * Once the configurations have been stablished, we can get the
-     * MessageSizeMax for the Transport, which should be the minimum of
-     * all the enabled transports
-     */
-    configureMessageSizeMaxTransport(transport, qos);
 
     /*
      * If the transport is empty or if it is shmem, it does not make sense
