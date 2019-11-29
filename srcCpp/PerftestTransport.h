@@ -74,6 +74,12 @@ public:
      */
     long minimumMessageSizeMax;
 
+    /*
+     * When configuring the transport we might need to share information so it
+     * is displayed in the summary, we will save it here.
+     */
+    std::string loggingString;
+
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
 
