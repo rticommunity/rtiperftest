@@ -889,7 +889,7 @@ bool PerftestConfigureTransport(
      * MessageSizeMax for the Transport, which should be the minimum of
      * all the enabled transports
      */
-    configureMessageSizeMaxTransport(transport, qos);
+    getTransportMinimumMessageSizeMax(transport, qos);
 
     switch (transport.transportConfig.kind) {
 
