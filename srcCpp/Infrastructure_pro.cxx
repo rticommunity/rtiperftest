@@ -524,7 +524,7 @@ bool configureShmemTransport(
         datalen = scanList[scanList.size() - 1];
     }
 
-    int parentMsgSizeMax = DEFAULT_MESSAGE_SIZE_MAX;
+    int parentMsgSizeMax = transport.minimumMessageSizeMax;
     std::ostringstream ss;
     bool messageSizeMaxSet = false;
 
@@ -537,9 +537,12 @@ bool configureShmemTransport(
     if (parentProp != NULL && parentProp->value != NULL) {
         parentMsgSizeMax = atoi(parentProp->value);
         messageSizeMaxSet = true;
-    } else if (qos.transport_builtin.mask == DDS_TRANSPORTBUILTIN_SHMEM) {
-        if ((datalen + MESSAGE_OVERHEAD_BYTES) > DEFAULT_MESSAGE_SIZE_MAX) {
-            parentMsgSizeMax = datalen + MESSAGE_OVERHEAD_BYTES;
+    } else {
+        if (qos.transport_builtin.mask == DDS_TRANSPORTBUILTIN_SHMEM) {
+            if ((datalen + MESSAGE_OVERHEAD_BYTES) > parentMsgSizeMax) {
+                parentMsgSizeMax = datalen + MESSAGE_OVERHEAD_BYTES;
+                transport.minimumMessageSizeMax = parentMsgSizeMax;
+            }
         }
 
         ss.str("");
@@ -555,8 +558,6 @@ bool configureShmemTransport(
                 ("\tSHMEM message_size_max: "
                 + ss.str()
                 + "\n");
-
-        transport.minimumMessageSizeMax = parentMsgSizeMax;
     }
 
     /*
@@ -580,9 +581,13 @@ bool configureShmemTransport(
     RTIBool success = RTI_FALSE;
     int retcode;
     int key = rand();
-    int minBufferSize = parentMsgSizeMax;
+    int minBufferSize = 1048576;
     int step = 1048576; // 1MB
     int maxBufferSize = (std::max)(60817408 /* 58MB */, parentMsgSizeMax);
+
+    if (!messageSizeMaxSet) {
+
+    }
 
     do {
         // Reset handles to known state
@@ -599,9 +604,9 @@ bool configureShmemTransport(
         }
 
         maxBufferSize -= step;
-    } while (maxBufferSize > minBufferSize && success == RTI_FALSE);
+    } while (maxBufferSize > minBufferSize);
 
-    if (!success || maxBufferSize < minBufferSize) {
+    if (maxBufferSize < minBufferSize) {
         fprintf(stderr,
                 "%s Failed to allocate SHMEM segment of 1MB.\n"
                 "Change OS settings to test SHMEM.\n",
@@ -612,6 +617,7 @@ bool configureShmemTransport(
     if (!messageSizeMaxSet &&
             parentMsgSizeMax > maxBufferSize) {
         parentMsgSizeMax = maxBufferSize;
+        transport.minimumMessageSizeMax = parentMsgSizeMax;
         ss.str("");
         ss.clear();
         ss << maxBufferSize;
