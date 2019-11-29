@@ -552,7 +552,7 @@ bool configureShmemTransport(
             return false;
         }
         transport.loggingString +=
-                ("\t[SHMEM] message_size_max: "
+                ("\tSHMEM message_size_max: "
                 + ss.str()
                 + "\n");
 
@@ -692,7 +692,7 @@ bool configureShmemTransport(
             return false;
         }
         transport.loggingString +=
-                ("\t[SHMEM] received_message_count_max: "
+                ("\tSHMEM received_message_count_max: "
                 + ss.str()
                 + "\n");
     }
@@ -709,7 +709,7 @@ bool configureShmemTransport(
             return false;
         }
         transport.loggingString +=
-                ("\t[SHMEM] receive_buffer_size: "
+                ("\tSHMEM receive_buffer_size: "
                 + ss.str()
                 + "\n");
     }

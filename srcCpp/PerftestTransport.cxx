@@ -152,8 +152,7 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     }
 
     if (!loggingString.empty()) {
-        stringStream << "\n"
-                     << loggingString;
+        stringStream << loggingString;
     }
 
     if (transportConfig.kind == TRANSPORT_TCPv4
