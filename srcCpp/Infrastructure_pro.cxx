@@ -505,7 +505,7 @@ bool configureShmemTransport(
         ParameterManager *_PM)
 {
   /**
-   * OSPAI do not support SHMEM for Android yet
+   * OSAPI do not support SHMEM for Android yet
    */
   #if !defined(RTI_ANDROID)
     DDS_Property_t *parentProp =
@@ -513,11 +513,14 @@ bool configureShmemTransport(
                     "dds.transport.shmem.builtin.parent.message_size_max");
 
     unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
-
+    /*
+     * If we specify -scan, then we are interested in the highest size.
+     * Since the vector for scan is sorted, that number should be the last
+     * element.
+     */
     if (_PM->is_set("scan")) {
         const std::vector<unsigned long long> scanList =
                 _PM->get_vector<unsigned long long>("scan");
-        /* The biggest datalen */
         datalen = scanList[scanList.size() - 1];
     }
 
@@ -525,14 +528,17 @@ bool configureShmemTransport(
     std::ostringstream ss;
     bool messageSizeMaxSet = false;
 
+    /*
+     * If the property defining the message_size_max for shared memory is not
+     * set and we are using exclusively SHMEM, then we will calculate
+     * automatically the message_size_max to accomodate the sample in a single
+     * packet and avoid fragmentation.
+     */
     if (parentProp != NULL && parentProp->value != NULL) {
         parentMsgSizeMax = atoi(parentProp->value);
         messageSizeMaxSet = true;
     } else if (qos.transport_builtin.mask == DDS_TRANSPORTBUILTIN_SHMEM) {
-        /* If the only transport is SHMEM we configure the message_size_max
-         * to be the dataLen so that we can avoid the usage of async pub 
-         */
-        if ((datalen+MESSAGE_OVERHEAD_BYTES) > DEFAULT_MESSAGE_SIZE_MAX) {
+        if ((datalen + MESSAGE_OVERHEAD_BYTES) > DEFAULT_MESSAGE_SIZE_MAX) {
             parentMsgSizeMax = datalen + MESSAGE_OVERHEAD_BYTES;
         }
 
@@ -545,6 +551,10 @@ bool configureShmemTransport(
                 ss.str())) {
             return false;
         }
+        transport.loggingString +=
+                ("\t[SHMEM] message_size_max: "
+                + ss.str()
+                + "\n");
 
         transport.minimumMessageSizeMax = parentMsgSizeMax;
     }
@@ -570,7 +580,7 @@ bool configureShmemTransport(
     RTIBool success = RTI_FALSE;
     int retcode;
     int key = rand();
-    int minBufferSize = 1048576;
+    int minBufferSize = parentMsgSizeMax;
     int step = 1048576; // 1MB
     int maxBufferSize = (std::max)(60817408 /* 58MB */, parentMsgSizeMax);
 
@@ -681,6 +691,10 @@ bool configureShmemTransport(
                 ss.str())) {
             return false;
         }
+        transport.loggingString +=
+                ("\t[SHMEM] received_message_count_max: "
+                + ss.str()
+                + "\n");
     }
 
     if (DDSPropertyQosPolicyHelper::lookup_property(qos.property,
@@ -694,6 +708,10 @@ bool configureShmemTransport(
                 ss.str())) {
             return false;
         }
+        transport.loggingString +=
+                ("\t[SHMEM] receive_buffer_size: "
+                + ss.str()
+                + "\n");
     }
 
     return true;
