@@ -621,6 +621,10 @@ bool configureShmemTransport(
                 ss.str())) {
             return false;
         }
+        transport.loggingString +=
+                ("\tSHMEM message_size_max: "
+                + ss.str()
+                + "\n");
     }
 
     /*

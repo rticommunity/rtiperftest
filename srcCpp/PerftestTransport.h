@@ -23,13 +23,13 @@
  * - COMMEND_WRITER_MAX_RTPS_OVERHEAD <- Size of the overhead for RTPS in the
  *                                       worst case
  * - 48 <- Max transport overhead (this would be for ipv6).
- * - Encapsulation (4 bytes) + aligment in the worst case (3)
+ * - Encapsulation (RTI_CDR_ENCAPSULATION_HEADER_SIZE) + aligment in the worst case (3)
  *
  * TODO: that Encapsulation should be taken out from the sample instead of here.
  */
 
 #ifndef RTI_MICRO
-  #define MESSAGE_OVERHEAD_BYTES (COMMEND_WRITER_MAX_RTPS_OVERHEAD + 48 + 4 + 3)
+  #define MESSAGE_OVERHEAD_BYTES (COMMEND_WRITER_MAX_RTPS_OVERHEAD + 48 + RTI_CDR_ENCAPSULATION_HEADER_SIZE + 3)
 #else
   #define MESSAGE_OVERHEAD_BYTES 700
 #endif

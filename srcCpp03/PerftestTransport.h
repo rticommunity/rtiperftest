@@ -26,14 +26,15 @@
  * We calculate this as:
  * - COMMEND_WRITER_MAX_RTPS_OVERHEAD <- Size of the overhead for RTPS in the
  *                                       worst case
- * - 48 <- Max transport overhead (this would be for ipv6).
- * - Encapsulation (4 bytes) + aligment in the worst case (3)
- * - 91 <- ???
+ * - 48 <- Max transport overhead (this would be for ipv6). RTI_CDR_ENCAPSULATION_HEADER_SIZE
+ * - Encapsulation (RTI_CDR_ENCAPSULATION_HEADER_SIZE) + aligment in the worst case (3)
  *
  * TODO: that Encapsulation should be taken out from the sample instead of here.
  */
 
-#define MESSAGE_OVERHEAD_BYTES (COMMEND_WRITER_MAX_RTPS_OVERHEAD + 48 + 4 + 3 + 91)
+#define MESSAGE_OVERHEAD_BYTES (COMMEND_WRITER_MAX_RTPS_OVERHEAD + 48 + RTI_CDR_ENCAPSULATION_HEADER_SIZE + 3)
+
+
 
 /******************************************************************************/
 
@@ -95,6 +96,12 @@ public:
      * message_size_max
      */
     long minimumMessageSizeMax;
+
+    /*
+     * When configuring the transport we might need to share information so it
+     * is displayed in the summary, we will save it here.
+     */
+    std::string loggingString;
 
     /**************************************************************************/
     /* CLASS CONSTRUCTOR AND DESTRUCTOR */
