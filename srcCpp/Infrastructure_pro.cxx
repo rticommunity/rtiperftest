@@ -505,16 +505,58 @@ bool configureShmemTransport(
         ParameterManager *_PM)
 {
   /**
-   * OSPAI do not support SHMEM for Android yet
+   * OSAPI do not support SHMEM for Android yet
    */
   #if !defined(RTI_ANDROID)
     DDS_Property_t *parentProp =
             DDSPropertyQosPolicyHelper::lookup_property(qos.property,
                     "dds.transport.shmem.builtin.parent.message_size_max");
 
+    unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
+    /*
+     * If we specify -scan, then we are interested in the highest size.
+     * Since the vector for scan is sorted, that number should be the last
+     * element.
+     */
+    if (_PM->is_set("scan")) {
+        const std::vector<unsigned long long> scanList =
+                _PM->get_vector<unsigned long long>("scan");
+        datalen = scanList[scanList.size() - 1];
+    }
+
     int parentMsgSizeMax = DEFAULT_MESSAGE_SIZE_MAX;
+    std::ostringstream ss;
+    bool messageSizeMaxSet = false;
+
+    /*
+     * If the property defining the message_size_max for shared memory is not
+     * set and we are using exclusively SHMEM, then we will calculate
+     * automatically the message_size_max to accomodate the sample in a single
+     * packet and avoid fragmentation.
+     */
     if (parentProp != NULL && parentProp->value != NULL) {
         parentMsgSizeMax = atoi(parentProp->value);
+        messageSizeMaxSet = true;
+    } else if (qos.transport_builtin.mask == DDS_TRANSPORTBUILTIN_SHMEM) {
+        if ((datalen + MESSAGE_OVERHEAD_BYTES) > DEFAULT_MESSAGE_SIZE_MAX) {
+            parentMsgSizeMax = datalen + MESSAGE_OVERHEAD_BYTES;
+        }
+
+        ss.str("");
+        ss.clear();
+        ss << parentMsgSizeMax;
+        if (!assertPropertyToParticipantQos(
+                qos,
+                "dds.transport.shmem.builtin.parent.message_size_max",
+                ss.str())) {
+            return false;
+        }
+        transport.loggingString +=
+                ("\tSHMEM message_size_max: "
+                + ss.str()
+                + "\n");
+
+        transport.minimumMessageSizeMax = parentMsgSizeMax;
     }
 
     /*
@@ -539,8 +581,8 @@ bool configureShmemTransport(
     int retcode;
     int key = rand();
     int minBufferSize = parentMsgSizeMax;
-    int step = 1048576 + parentMsgSizeMax; // 1MB + parentMsgSizeMax
-    int maxBufferSize = 60817408; // 58MB
+    int step = 1048576; // 1MB
+    int maxBufferSize = (std::max)(60817408 /* 58MB */, parentMsgSizeMax);
 
     do {
         // Reset handles to known state
@@ -551,8 +593,35 @@ bool configureShmemTransport(
                 &handle, &retcode, key, maxBufferSize, pid);
 
         RTIOsapiSharedMemorySegment_delete(&handle);
+
+        if (success) {
+            break;
+        }
+
         maxBufferSize -= step;
     } while (maxBufferSize > minBufferSize && success == RTI_FALSE);
+
+    if (!success || maxBufferSize < minBufferSize) {
+        fprintf(stderr,
+                "%s Failed to allocate SHMEM segment of 1MB.\n"
+                "Change OS settings to test SHMEM.\n",
+                classLoggingString.c_str());
+        return false;
+    }
+
+    if (!messageSizeMaxSet &&
+            parentMsgSizeMax > maxBufferSize) {
+        parentMsgSizeMax = maxBufferSize;
+        ss.str("");
+        ss.clear();
+        ss << maxBufferSize;
+        if (!assertPropertyToParticipantQos(
+                qos,
+                "dds.transport.shmem.builtin.parent.message_size_max",
+                ss.str())) {
+            return false;
+        }
+    }
 
     /*
      * From user manual "Properties for Builtin Shared-Memory Transport":
@@ -577,13 +646,11 @@ bool configureShmemTransport(
      * send window before starting to lose messages on the Shared Memory
      * transport
      */
-    std::ostringstream ss;
     /*
      * This is the flow Controller default token size. Change this if you modify
      * the qos file to add a different "bytes_per_token" property
      */
-    int flowControllerTokenSize = 65536;
-    unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
+    int flowControllerTokenSize = transport.minimumMessageSizeMax;
 
   #ifdef RTI_FLATDATA_AVAILABLE
     // Zero Copy sends 16-byte references
@@ -598,37 +665,53 @@ bool configureShmemTransport(
      */
     int fragmentSize = (std::min)(
             parentMsgSizeMax - COMMEND_WRITER_MAX_RTPS_OVERHEAD,
-            flowControllerTokenSize);
+            flowControllerTokenSize - COMMEND_WRITER_MAX_RTPS_OVERHEAD);
 
-    // max(1, (sample_serialized_size / fragmentSize))
     unsigned long long int rtpsMessagesPerSample = (std::max)(
-            1ull, (perftest_cpp::OVERHEAD_BYTES + datalen) / fragmentSize);
+            1ull, (datalen / fragmentSize) + 1);
 
     unsigned long long int receivedMessageCountMax =
             2 * (_PM->get<int>("sendQueueSize") + 1) * rtpsMessagesPerSample;
 
-    // min(maxBufferSize, receivedMessageCountMax * rtps_message_size)
     unsigned long long int receiveBufferSize = (std::min)(
         (unsigned long long) maxBufferSize,
         receivedMessageCountMax *
                 (COMMEND_WRITER_MAX_RTPS_OVERHEAD + fragmentSize));
 
-    ss << receivedMessageCountMax;
-    if (!assertPropertyToParticipantQos(
-            qos,
-            "dds.transport.shmem.builtin.received_message_count_max",
-            ss.str())) {
-        return false;
+
+    if (DDSPropertyQosPolicyHelper::lookup_property(qos.property,
+            "dds.transport.shmem.builtin.received_message_count_max") == NULL) {
+        ss.str("");
+        ss.clear();
+        ss << receivedMessageCountMax;
+
+        if (!assertPropertyToParticipantQos(
+                qos,
+                "dds.transport.shmem.builtin.received_message_count_max",
+                ss.str())) {
+            return false;
+        }
+        transport.loggingString +=
+                ("\tSHMEM received_message_count_max: "
+                + ss.str()
+                + "\n");
     }
 
-    ss.str("");
-    ss.clear();
-    ss << receiveBufferSize;
-    if (!assertPropertyToParticipantQos(
-            qos,
-            "dds.transport.shmem.builtin.receive_buffer_size",
-            ss.str())) {
-        return false;
+    if (DDSPropertyQosPolicyHelper::lookup_property(qos.property,
+            "dds.transport.shmem.builtin.receive_buffer_size") == NULL) {
+        ss.str("");
+        ss.clear();
+        ss << receiveBufferSize;
+        if (!assertPropertyToParticipantQos(
+                qos,
+                "dds.transport.shmem.builtin.receive_buffer_size",
+                ss.str())) {
+            return false;
+        }
+        transport.loggingString +=
+                ("\tSHMEM receive_buffer_size: "
+                + ss.str()
+                + "\n");
     }
 
     return true;
@@ -785,7 +868,6 @@ bool PerftestConfigureTransport(
     }
 
     switch (transport.transportConfig.kind) {
-
         case TRANSPORT_UDPv4:
             qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;
             break;
@@ -796,6 +878,26 @@ bool PerftestConfigureTransport(
 
         case TRANSPORT_SHMEM:
             qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_SHMEM;
+            break;
+
+        default:
+            break;
+    };
+
+    /*
+     * Once the configurations have been stablished, we can get the
+     * MessageSizeMax for the Transport, which should be the minimum of
+     * all the enabled transports
+     */
+    configureMessageSizeMaxTransport(transport, qos);
+
+    switch (transport.transportConfig.kind) {
+
+        case TRANSPORT_UDPv4:
+        case TRANSPORT_UDPv6:
+            break;
+
+        case TRANSPORT_SHMEM:
             if (!configureShmemTransport(transport, qos, _PM)) {
                 fprintf(stderr,
                         "%s Failed to configure SHMEM plugin\n",
@@ -856,13 +958,6 @@ bool PerftestConfigureTransport(
             }
             break;
     } // Switch
-
-    /*
-     * Once the configurations have been stablished, we can get the
-     * MessageSizeMax for the Transport, which should be the minimum of
-     * all the enabled transports
-     */
-    getTransportMinimumMessageSizeMax(transport, qos);
 
     /*
      * If the transport is empty or if it is shmem, it does not make sense

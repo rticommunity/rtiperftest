@@ -152,24 +152,24 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
             <!--
             Specifies the configuration to be used with the SHMEM built-in transport.
 
-            Important: The commented setting is configured automatically within the
-            source code. The default value of _DataLen is 100.
+            Important: The following settings are configured automatically within the
+            source code. If you wish to set them yourself, uncomment the settings
 
-            Value set in the source code:
-
-            <element>
-              <name>dds.transport.shmem.builtin.received_message_count_max</name>
-              <value>2097152/_DataLen</value>
-            </element>
-            -->
             <element>
               <name>dds.transport.shmem.builtin.parent.message_size_max</name>
               <value>65536</value>
             </element>
+
+            <element>
+              <name>dds.transport.shmem.builtin.received_message_count_max</name>
+              <value>128</value>
+            </element>
+
             <element>
               <name>dds.transport.shmem.builtin.receive_buffer_size</name>
               <value>2097152</value>
             </element>
+            -->
 
             <!--
             Specifies the configuration to be used with the TCP transport.
