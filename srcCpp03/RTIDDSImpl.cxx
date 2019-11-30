@@ -1736,6 +1736,14 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     }
 
     qos << qos_discovery;
+
+    /*
+     * Debug statements to print properties if needed.
+     * for (auto& t : properties)
+     *     std::cout << t.first << " " 
+     *           << t.second << "\n";
+     */
+
     //We have to copy the properties to the participant_qos object
     qos << rti::core::policy::Property(
             properties.begin(),

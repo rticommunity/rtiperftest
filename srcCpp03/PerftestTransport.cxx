@@ -270,9 +270,6 @@ void configureShmemTransport(
         ParameterManager *_PM)
 {
     using namespace rti::core::policy;
-
-    std::string property_value =
-        qos_properties["dds.transport.shmem.builtin.parent.message_size_max"];
     unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
     /*
      * If we specify -scan, then we are interested in the highest size.
@@ -296,8 +293,9 @@ void configureShmemTransport(
      * packet and avoid fragmentation.
      */
     TransportBuiltinMask mask = qos.policy<TransportBuiltin>().mask();
-    if (!property_value.empty()) {
-        parentMsgSizeMax = atoi(property_value.c_str());
+    if (qos_properties.find("dds.transport.shmem.builtin.parent.message_size_max")
+            != qos_properties.end()) {
+        parentMsgSizeMax = atoi(qos_properties["dds.transport.shmem.builtin.parent.message_size_max"].c_str());
         messageSizeMaxSet = true;
     } else if (mask == TransportBuiltinMask::shmem()) {
         if ((datalen + MESSAGE_OVERHEAD_BYTES) > DEFAULT_MESSAGE_SIZE_MAX) {
@@ -449,7 +447,7 @@ void configureShmemTransport(
     if (qos_properties["dds.transport.shmem.builtin.receive_buffer_size"].empty()) {
         ss.str("");
         ss.clear();
-        ss << receivedMessageCountMax;
+        ss << receiveBufferSize;
         qos_properties["dds.transport.shmem.builtin.receive_buffer_size"] = ss.str();
         transport.loggingString +=
                 ("\tSHMEM receive_buffer_size: "
@@ -473,10 +471,9 @@ long getTransportMessageSizeMax(
             transport.transportConfigMap[targetTransportName].prefixString
             + ".parent.message_size_max";
 
-    std::string property_value = qos_properties[propertyName];
-    if (!property_value.empty()) {
-        //printf("Value for %s is %s\n", propertyName.c_str(), property_value.c_str());
-        return atoi(property_value.c_str());
+    if (qos_properties.find(propertyName) != qos_properties.end()) {
+        //printf("Value for %s is %s\n", propertyName.c_str(), qos_properties[propertyName].c_str());
+        return atoi(qos_properties[propertyName].c_str());
     } else {
         //printf("Value for %s not found, returning default\n", propertyName.c_str());
         return DEFAULT_MESSAGE_SIZE_MAX;
