@@ -585,10 +585,6 @@ bool configureShmemTransport(
     int step = 1048576; // 1MB
     int maxBufferSize = (std::max)(60817408 /* 58MB */, parentMsgSizeMax);
 
-    if (!messageSizeMaxSet) {
-
-    }
-
     do {
         // Reset handles to known state
         RTIOsapiMemory_zero(&handle,
