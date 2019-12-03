@@ -282,7 +282,7 @@ void configureShmemTransport(
         datalen = scanList[scanList.size() - 1];
     }
 
-    int parentMsgSizeMax = transport.minimumMessageSizeMax;
+    long parentMsgSizeMax = transport.minimumMessageSizeMax;
     std::ostringstream ss;
     bool messageSizeMaxSet = false;
 
@@ -336,9 +336,9 @@ void configureShmemTransport(
     RTIBool success = RTI_FALSE;
     int retcode;
     int key = rand();
-    int minBufferSize = 1048576;
+    long minBufferSize = 1048576;
     int step = 1048576; // 1MB
-    int maxBufferSize = (std::max)(60817408 /* 58MB */, parentMsgSizeMax);
+    long maxBufferSize = (std::max)((long) 60817408 /* 58MB */, parentMsgSizeMax);
 
     do {
         // Reset handles to known state
@@ -407,7 +407,7 @@ void configureShmemTransport(
      * This is the flow Controller default token size. Change this if you modify
      * the qos file to add a different "bytes_per_token" property
      */
-    int flowControllerTokenSize = transport.minimumMessageSizeMax;
+    long flowControllerTokenSize = transport.minimumMessageSizeMax;
 
   #ifdef RTI_FLATDATA_AVAILABLE
     // Zero Copy sends 16-byte references

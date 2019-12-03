@@ -679,9 +679,9 @@ void perftest_cpp::PrintConfiguration()
     // We want to expose if we are using or not the unbounded type
     if (_PM.get<int>("unbounded")) {
         stringStream << "\n[IMPORTANT]: Using the Unbounded Sequence Type: -datalen ("
-                    << std::to_string(_PM.get<unsigned long long>("dataLen"))
+                    << _PM.get<unsigned long long>("dataLen")
                     << ") is \n             larger than MAX_BOUNDED_SEQ_SIZE ("
-                    << std::to_string(MAX_BOUNDED_SEQ_SIZE)
+                    << MAX_BOUNDED_SEQ_SIZE
                     << ")\n";
     }
 
