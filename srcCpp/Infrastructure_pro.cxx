@@ -539,7 +539,8 @@ bool configureShmemTransport(
         messageSizeMaxSet = true;
     } else {
         if (qos.transport_builtin.mask == DDS_TRANSPORTBUILTIN_SHMEM) {
-            if ((datalen + MESSAGE_OVERHEAD_BYTES) > parentMsgSizeMax) {
+            if ((datalen + MESSAGE_OVERHEAD_BYTES)
+                    > (unsigned long long) parentMsgSizeMax) {
                 parentMsgSizeMax = datalen + MESSAGE_OVERHEAD_BYTES;
                 transport.minimumMessageSizeMax = parentMsgSizeMax;
             }
