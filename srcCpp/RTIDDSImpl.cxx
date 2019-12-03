@@ -2892,6 +2892,9 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                     _PM->get<std::string>("flowController")).c_str());
         }
     }
+
+    dw_qos.resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
+
   #endif
 
     // Only force reliability on throughput/latency topics
@@ -3279,6 +3282,11 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
   #endif
 
   #ifndef RTI_MICRO
+
+    if (_PM->is_set("receiveQueueSize")) {
+        dr_qos.resource_limits.initial_samples = _PM->get<int>("receiveQueueSize");
+    }
+
     dr_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
     if (_instanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
         _instanceMaxCountReader++;
