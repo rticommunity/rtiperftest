@@ -434,9 +434,8 @@ function additional_defines_calculation()
         additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE"
         if [ "${RTI_FLATDATA_MAX_SIZE}" != "" ]; then
             additional_defines=${additional_defines}" DRTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
-            additional_defines_flatdata=${additional_defines}" -D RTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
+            additional_defines_flatdata=${additional_defines_flatdata}" -D RTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
         fi
-
 
         if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
             additional_rti_libs="nddsmetp ${additional_rti_libs}"
@@ -1344,6 +1343,7 @@ while [ "$1" != "" ]; do
                 exit -1
             fi
             shift
+            echo $RTI_FLATDATA_MAX_SIZE
             ;;
         --osx-shmem-shmmax)
             darwin_shmem_size=$2
