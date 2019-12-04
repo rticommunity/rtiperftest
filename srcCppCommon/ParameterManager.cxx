@@ -394,6 +394,48 @@ void ParameterManager::initialize()
     create("useLegacyDynamicData", useLegacyDynamicData);
   #endif
 
+    Parameter<int> *sendQueueSize = new Parameter<int>(50);
+    sendQueueSize->set_command_line_argument("-sendQueueSize", "<number>");
+    sendQueueSize->set_description(
+            "Sets number of samples (or batches) in send\nqueue. Default: 50");
+    sendQueueSize->set_type(T_NUMERIC_D);
+    sendQueueSize->set_extra_argument(YES);
+    sendQueueSize->set_group(GENERAL);
+    sendQueueSize->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    sendQueueSize->set_range(1, INT_MAX);
+    create("sendQueueSize", sendQueueSize);
+
+    Parameter<int> *receiveQueueSize = new Parameter<int>(128);
+    receiveQueueSize->set_command_line_argument("-receiveQueueSize", "<number>");
+    receiveQueueSize->set_description(
+            "Sets number of samples (or batches) in receive\nqueue. Default: 128");
+    receiveQueueSize->set_type(T_NUMERIC_D);
+    receiveQueueSize->set_extra_argument(YES);
+    receiveQueueSize->set_group(GENERAL);
+    receiveQueueSize->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    receiveQueueSize->set_range(1, INT_MAX);
+    create("receiveQueueSize", receiveQueueSize);
+
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    Parameter<bool> *cacheStats = new Parameter<bool>(false);
+    cacheStats->set_command_line_argument("-cacheStats", "");
+    cacheStats->set_description(
+            "Display the reader/writer queue sample count and count_peak.\n"
+            "In the Writer side, also display the Pulled Sample count stats for\n"
+            "reliable protocol debugging purposes.\nDefault: Not set");
+    cacheStats->set_type(T_BOOL);
+    cacheStats->set_extra_argument(NO);
+    receiveQueueSize->set_group(GENERAL);
+    cacheStats->set_supported_middleware(
+            Middleware::RTIDDSPRO);
+    create("cacheStats", cacheStats);
+  #endif
 
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER
@@ -598,20 +640,6 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("scan", scan);
 
-    Parameter<int> *sendQueueSize = new Parameter<int>(50);
-    sendQueueSize->set_command_line_argument("-sendQueueSize", "<number>");
-    sendQueueSize->set_description(
-            "Sets number of samples (or batches) in send\nqueue. Default: 50");
-    sendQueueSize->set_type(T_NUMERIC_D);
-    sendQueueSize->set_extra_argument(YES);
-    sendQueueSize->set_group(PUB);
-    sendQueueSize->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
-    sendQueueSize->set_range(1, INT_MAX);
-    create("sendQueueSize", sendQueueSize);
-
     Parameter<unsigned long long> *sleep = new Parameter<unsigned long long>(0);
     sleep->set_command_line_argument("-sleep", "<millisec>");
     sleep->set_description(
@@ -639,20 +667,7 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("spin", spin);
 
-  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
-    Parameter<bool> *cacheStats = new Parameter<bool>(false);
-    cacheStats->set_command_line_argument("-cacheStats", "");
-    cacheStats->set_description(
-            "Display the reader/writer queue sample count and count_peak.\n"
-            "In the Writer side, also display the Pulled Sample count stats for\n"
-            "reliable protocol debugging purposes.\nDefault: Not set");
-    cacheStats->set_type(T_BOOL);
-    cacheStats->set_extra_argument(NO);
-    cacheStats->set_group(PUB);
-    cacheStats->set_supported_middleware(
-            Middleware::RTIDDSPRO);
-    create("cacheStats", cacheStats);
-  #else
+  #ifndef RTI_LANGUAGE_CPP_TRADITIONAL
     Parameter<bool> *writerStats = new Parameter<bool>(false);
     writerStats->set_command_line_argument("-writerStats", "");
     writerStats->set_description(
