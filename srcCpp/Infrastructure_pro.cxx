@@ -584,7 +584,7 @@ bool configureShmemTransport(
     int key = rand();
     long minBufferSize = 1048576;
     int step = 1048576; // 1MB
-    long maxBufferSize = (std::max)((long) 60817408 /* 58MB */, parentMsgSizeMax);
+    long maxBufferSize = (std::max)((long) 121634816 /* 58MB */, parentMsgSizeMax);
 
     do {
         // Reset handles to known state
