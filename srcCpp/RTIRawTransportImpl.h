@@ -15,7 +15,6 @@
 #include "perftest.h"
 #include "perftestSupport.h"
 #include "perftest_cpp.h"
-#include "RTIDDSImpl.h"
 #include "transport/transport_socketutil.h"
 #include "transport/transport_udpv4.h"
 
@@ -80,7 +79,7 @@ class RTIRawTransportImpl : public IMessaging {
      *
      * @return true if the operation was successful, otherwise false.
      */
-    bool get_serialize_overhead_size(unsigned int &overhead_size);
+    bool get_serialized_overhead_size(unsigned int &overhead_size);
 
   private:
 

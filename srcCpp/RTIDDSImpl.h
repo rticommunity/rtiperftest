@@ -96,7 +96,7 @@ public:
      *
      * @return true if the operation was successful, otherwise false.
      */
-    virtual bool get_serialize_overhead_size(unsigned int &overhead_size);
+    virtual bool get_serialized_overhead_size(unsigned int &overhead_size);
 
     /*
      * These two functions calculate the serialization/deserialization time cost
@@ -229,14 +229,14 @@ public:
 
 
     /**
-     * @brief This function calculate the overhead bytes that all the
-     * members on TestData_* type add excluding the length of the sequence.
+     * @brief This function calculates the overhead bytes added by all the
+     * members on the TestData_* type, excluding the content of the sequence.
      *
      * @param size \b InOut. The size of the overhead of the data type.
      *
      * @return true if the operation was successful, otherwise false.
      */
-    bool get_serialize_overhead_size(unsigned int &overhead_size);
+    bool get_serialized_overhead_size(unsigned int &overhead_size);
   };
 #endif // RTI_FLATDATA_AVAILABLE
 

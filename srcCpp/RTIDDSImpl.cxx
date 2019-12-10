@@ -93,7 +93,7 @@ RTIDDSImpl<T>::RTIDDSImpl()
     _qoSProfileNameMap[THROUGHPUT_TOPIC_NAME] = std::string("ThroughputQos");
 
 
-    if (!get_serialize_overhead_size(perftest_cpp::OVERHEAD_BYTES)) {
+    if (!get_serialized_overhead_size(perftest_cpp::OVERHEAD_BYTES)) {
         throw std::runtime_error("Fail on obtain overhead size");
     }
 }
@@ -2641,7 +2641,7 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
 
 
 template <typename T>
-bool RTIDDSImpl<T>::get_serialize_overhead_size(unsigned int &overhead_size)
+bool RTIDDSImpl<T>::get_serialized_overhead_size(unsigned int &overhead_size)
 {
     /* Initialize the data elements */
     T data;
@@ -2661,20 +2661,20 @@ bool RTIDDSImpl<T>::get_serialize_overhead_size(unsigned int &overhead_size)
 
     /*
      * Calling serialize_data_to_cdr_buffer witout a buffer will return the
-     * maximun serialize sample size
+     * maximun serialized sample size
      */
     if (DDS_RETCODE_OK != T::TypeSupport::serialize_data_to_cdr_buffer(
             NULL,
             overhead_size,
             &data)) {
         fprintf(stderr,
-                "Fail to serialize sample on get_serialize_overhead_size\n");
+                "Fail to serialize sample on get_serialized_overhead_size\n");
         return false;
     }
 
     #ifdef RTI_CUSTOM_TYPE
         /*
-         * If Custom type si used, then we need to substract the size of
+         * If Custom type is used, then we need to substract the size of
          * the custom type.
          */
         unsigned int custom_type_size;
@@ -2685,7 +2685,7 @@ bool RTIDDSImpl<T>::get_serialize_overhead_size(unsigned int &overhead_size)
                         &data.custom_type)) {
             fprintf(stderr,
                     "Fail to serialize sample on "
-                    "get_serialize_overhead_size\n");
+                    "get_serialized_overhead_size\n");
             return false;
         }
 
@@ -3556,7 +3556,7 @@ RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData(bool isZeroCopy /* = false */)
     this->_isFlatData = true;
     this->_typename = T::TypeSupport::get_type_name();
 
-    if (!get_serialize_overhead_size(perftest_cpp::OVERHEAD_BYTES)) {
+    if (!get_serialized_overhead_size(perftest_cpp::OVERHEAD_BYTES)) {
         throw std::runtime_error("Fail on obtain overhead size for FlatData");
     }
 };
@@ -3992,7 +3992,7 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_deserialize_time_cost_override(
 }
 
 template <typename T>
-bool RTIDDSImpl_FlatData<T>::get_serialize_overhead_size(
+bool RTIDDSImpl_FlatData<T>::get_serialized_overhead_size(
         unsigned int &overhead_size)
 {
     typedef typename rti::flat::flat_type_traits<T>::builder Builder;

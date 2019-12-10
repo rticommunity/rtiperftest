@@ -14,8 +14,11 @@
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
 
-/* A static variable must be initialize */
-unsigned int perftest_cpp::OVERHEAD_BYTES = 0;
+/*
+ * We set 28 as the default value since this match with the Micro compilation
+ * and the default perftest compilation.
+ */
+unsigned int perftest_cpp::OVERHEAD_BYTES = 28;
 
 #if defined(RTI_ANDROID)
 

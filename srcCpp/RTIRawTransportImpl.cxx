@@ -27,7 +27,7 @@ RTIRawTransportImpl::RTIRawTransportImpl()
 {
     PeerData::resourcesList.reserve(RTIPERFTEST_MAX_PEERS);
 
-    if (!get_serialize_overhead_size(perftest_cpp::OVERHEAD_BYTES)) {
+    if (!get_serialized_overhead_size(perftest_cpp::OVERHEAD_BYTES)) {
         throw std::runtime_error("Fail on obtain overhead size");
     }
 }
@@ -115,7 +115,7 @@ bool RTIRawTransportImpl::validate_input() {
 
     /*
      * Check that the overhead is not bigger than the -dataLen, since we can not
-     * send a lower size that the overhead of the test_type.
+     * send a smaller size that the overhead of the test_type.
      */
     if (_PM->get<unsigned long long>("dataLen")
             < perftest_cpp::OVERHEAD_BYTES) {
@@ -1190,7 +1190,7 @@ bool RTIRawTransportImpl::configure_sockets_transport()
     return true;
 }
 
-bool RTIRawTransportImpl::get_serialize_overhead_size(
+bool RTIRawTransportImpl::get_serialized_overhead_size(
         unsigned int &overhead_size)
 {
     /* Initialize the data elements */
@@ -1206,14 +1206,14 @@ bool RTIRawTransportImpl::get_serialize_overhead_size(
 
     /*
      * Calling serialize_data_to_cdr_buffer witout a buffer will return the
-     * maximun serialize sample size
+     * maximun serialized sample size
      */
     if (DDS_RETCODE_OK != TestData_t::TypeSupport::serialize_data_to_cdr_buffer(
             NULL,
             overhead_size,
             &data)) {
         fprintf(stderr,
-                "Fail to serialize sample on get_serialize_overhead_size\n");
+                "Fail to serialize sample on get_serialized_overhead_size\n");
         return false;
     }
 
