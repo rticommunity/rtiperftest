@@ -11,8 +11,10 @@
  * This information is covered in bug id: CORE-9693.
  */
 
-/* We need to use the definitions from the perftest.idl */
-#include "perftest.idl"
+const long MAX_BOUNDED_SEQ_SIZE_ZC = 63000;
+const long KEY_SIZE_ZC = 4;
+const long RTI_FLATDATA_MAX_SIZE_ZC = 10485760; // 10MB
+
 
 #ifdef RTI_CUSTOM_TYPE_FLATDATA
   #include "custom.idl"
@@ -25,14 +27,14 @@
 @language_binding(FLAT_DATA)
 @transfer_mode(SHMEM_REF)
 struct TestData_ZeroCopy_w_FlatData_t {
-    octet key[KEY_SIZE];
+    octet key[KEY_SIZE_ZC];
 
     long entity_id;
     unsigned long seq_num;
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE_ZC> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
     long custom_type_size;
@@ -44,14 +46,14 @@ struct TestData_ZeroCopy_w_FlatData_t {
 @transfer_mode(SHMEM_REF)
 struct TestDataKeyed_ZeroCopy_w_FlatData_t {
     @key
-    octet key[KEY_SIZE];
+    octet key[KEY_SIZE_ZC];
 
     long entity_id;
     unsigned long seq_num;
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
+    sequence<octet, MAX_BOUNDED_SEQ_SIZE_ZC> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     @key
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
@@ -63,14 +65,14 @@ struct TestDataKeyed_ZeroCopy_w_FlatData_t {
 @language_binding(FLAT_DATA)
 @transfer_mode(SHMEM_REF)
 struct TestDataLarge_ZeroCopy_w_FlatData_t {
-    octet key[KEY_SIZE];
+    octet key[KEY_SIZE_ZC];
 
     long entity_id;
     unsigned long seq_num;
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
+    sequence<octet, RTI_FLATDATA_MAX_SIZE_ZC> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
     long custom_type_size;
@@ -82,14 +84,14 @@ struct TestDataLarge_ZeroCopy_w_FlatData_t {
 @transfer_mode(SHMEM_REF)
 struct TestDataKeyedLarge_ZeroCopy_w_FlatData_t {
     @key
-    octet key[KEY_SIZE];
+    octet key[KEY_SIZE_ZC];
 
     long entity_id;
     unsigned long seq_num;
     long timestamp_sec;
     unsigned long timestamp_usec;
     long latency_ping;
-    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
+    sequence<octet, RTI_FLATDATA_MAX_SIZE_ZC> bin_data;
   #ifdef RTI_CUSTOM_TYPE_FLATDATA
     @key
     RTI_CUSTOM_TYPE_FLATDATA custom_type;
