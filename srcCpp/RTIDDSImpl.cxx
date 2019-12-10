@@ -2973,9 +2973,14 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                 !_PM->get<bool>("noDirectCommunication");
       #endif
 
-
-        dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+        if (_PM->get<unsigned long long>("dataLen") > DEFAULT_MESSAGE_SIZE_MAX
+             && _isFlatData) {
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+                _PM->get<int>("sendQueueSize");
+        } else {
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
                 _PM->get<int>("sendQueueSize") / 10;
+        }
       #ifndef RTI_MICRO
         dw_qos.protocol.rtps_reliable_writer.low_watermark =
                 _PM->get<int>("sendQueueSize") * 1 / 10;
