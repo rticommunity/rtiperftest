@@ -584,7 +584,7 @@ bool configureShmemTransport(
     int key = rand();
     long minBufferSize = 1048576;
     int step = 1048576; // 1MB
-    long maxBufferSize = (std::max)((long) 60817408 /* 58MB */, parentMsgSizeMax);
+    long maxBufferSize = (std::max)((long) 121634816 /* 58MB */, parentMsgSizeMax);
 
     do {
         // Reset handles to known state
@@ -614,6 +614,7 @@ bool configureShmemTransport(
     if (!messageSizeMaxSet &&
             parentMsgSizeMax > maxBufferSize) {
         parentMsgSizeMax = maxBufferSize;
+
         transport.minimumMessageSizeMax = parentMsgSizeMax;
         ss.str("");
         ss.clear();
@@ -674,13 +675,13 @@ bool configureShmemTransport(
             parentMsgSizeMax - COMMEND_WRITER_MAX_RTPS_OVERHEAD,
             flowControllerTokenSize - COMMEND_WRITER_MAX_RTPS_OVERHEAD);
 
-    unsigned long long int rtpsMessagesPerSample = (std::max)(
+    unsigned long long rtpsMessagesPerSample = (std::max)(
             1ull, (datalen / fragmentSize) + 1);
 
-    unsigned long long int receivedMessageCountMax =
+    unsigned long long receivedMessageCountMax =
             2 * (_PM->get<int>("sendQueueSize") + 1) * rtpsMessagesPerSample;
 
-    unsigned long long int receiveBufferSize = (std::min)(
+    unsigned long long receiveBufferSize = (std::min)(
         (unsigned long long) maxBufferSize,
         receivedMessageCountMax *
                 (COMMEND_WRITER_MAX_RTPS_OVERHEAD + fragmentSize));
@@ -1145,3 +1146,4 @@ bool PerftestConfigureSecurity(
     return true;
 }
 #endif
+
