@@ -3029,35 +3029,14 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         }
 
 
-        dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+        if (_PM->get<unsigned long long>("dataLen") > DEFAULT_MESSAGE_SIZE_MAX) {
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+                _PM->get<int>("sendQueueSize");
+        } else {
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
                 _PM->get<int>("sendQueueSize") / 10;
-      #ifndef RTI_MICRO
-        dw_qos.protocol.rtps_reliable_writer.low_watermark =
-                _PM->get<int>("sendQueueSize") * 1 / 10;
-        dw_qos.protocol.rtps_reliable_writer.high_watermark =
-                _PM->get<int>("sendQueueSize") * 9 / 10;
 
-        /*
-         * If _SendQueueSize is 1 low watermark and high watermark would both be
-         * 0, which would cause the middleware to fail. So instead we set the
-         * high watermark to the low watermark + 1 in such case.
-         */
-        if (dw_qos.protocol.rtps_reliable_writer.high_watermark
-                == dw_qos.protocol.rtps_reliable_writer.low_watermark) {
-            dw_qos.protocol.rtps_reliable_writer.high_watermark =
-                    dw_qos.protocol.rtps_reliable_writer.low_watermark + 1;
         }
-
-        dw_qos.protocol.rtps_reliable_writer.max_send_window_size =
-                _PM->get<int>("sendQueueSize");
-        dw_qos.protocol.rtps_reliable_writer.min_send_window_size =
-                _PM->get<int>("sendQueueSize");
-      #else
-        dw_qos.history.depth = _PM->get<int>("sendQueueSize");
-        // Same values we use for Pro (See perftest_qos_profiles.xml).
-        dw_qos.protocol.rtps_reliable_writer.heartbeat_period.sec = 0;
-        dw_qos.protocol.rtps_reliable_writer.heartbeat_period.nanosec = 10000000;
-      #endif
 
     }
 
