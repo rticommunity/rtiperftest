@@ -49,6 +49,9 @@ PerftestTransport::PerftestTransport()
             TRANSPORT_SHMEM,
             "SHMEM",
             "dds.transport.shmem.builtin");
+
+    minimumMessageSizeMax = MESSAGE_SIZE_MAX_NOT_SET;
+    loggingString = "";
 }
 
 PerftestTransport::~PerftestTransport()
@@ -146,6 +149,10 @@ std::string PerftestTransport::printTransportConfigurationSummary()
                 << "\n\t\tAnnouncement Address: "
                 << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str()
                 << "\n";
+    }
+
+    if (!loggingString.empty()) {
+        stringStream << loggingString;
     }
 
     if (transportConfig.kind == TRANSPORT_TCPv4

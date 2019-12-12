@@ -27,8 +27,8 @@ MICRO_UNBOUNDED_SEQUENCE_SIZE=1048576
 
 # Default values:
 BUILD_CPP=1
-BUILD_CPP03=1
-BUILD_JAVA=1
+BUILD_CPP03=0
+BUILD_JAVA=0
 MAKE_EXE=make
 CMAKE_EXE=cmake
 COMPILER_EXE="" # let rtiddsgen choose the default
@@ -434,9 +434,8 @@ function additional_defines_calculation()
         additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE"
         if [ "${RTI_FLATDATA_MAX_SIZE}" != "" ]; then
             additional_defines=${additional_defines}" DRTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
-            additional_defines_flatdata=${additional_defines}" -D RTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
+            additional_defines_flatdata=${additional_defines_flatdata}" -D RTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
         fi
-
 
         if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
             additional_rti_libs="nddsmetp ${additional_rti_libs}"

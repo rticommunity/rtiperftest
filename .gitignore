@@ -44,3 +44,16 @@ srcDoc/_build
 /srcCpp/gen/*
 /srcCpp/perftest_build
 /srcCpp/CMakeLists.txt
+srcCpp/custom.cxx
+srcCpp/custom.h
+srcCpp/customPlugin.cxx
+srcCpp/customPlugin.h
+srcCpp/customSupport.cxx
+srcCpp/customSupport.h
+srcCpp/test.cxx
+srcCpp/test.h
+srcCpp/testPlugin.cxx
+srcCpp/testPlugin.h
+srcCpp/testSupport.h
+srcCpp/testSupport.cxx
+srcIdl/test.idl

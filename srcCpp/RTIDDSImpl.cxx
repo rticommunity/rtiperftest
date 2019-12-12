@@ -172,45 +172,18 @@ void RTIDDSImpl<T>::Shutdown()
     }
 }
 
-/*********************************************************
-
- * Validate and manage the parameters
- */
 template <typename T>
-bool RTIDDSImpl<T>::validate_input()
+bool RTIDDSImpl<T>::data_size_related_calculations()
 {
-    // Manage parameter -instance
-    if (_PM->is_set("instances")) {
-        _instanceMaxCountReader = _PM->get<long>("instances");
-    }
-    // Manage parameter -peer
-    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
-        fprintf(stderr,
-                "The maximun of 'initial_peers' is %d\n",
-                RTIPERFTEST_MAX_PEERS);
-        return false;
-    }
-
-    // Check if we need to enable Large Data. This works also for -scan
-    if (_PM->get<unsigned long long>("dataLen") > (unsigned long) (std::min)(
-            MAX_SYNCHRONOUS_SIZE,
-            MAX_BOUNDED_SEQ_SIZE)) {
+    // If the user wants to use asynchronous we enable it
+    if (_PM->get<bool>("asynchronous")) {
         _isLargeData = true;
-    } else { // No Large Data
-        _isLargeData = false;
+    } else { //If the message size max is lower than the datalen
+        _isLargeData = (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize);
     }
 
     // Manage parameter -batchSize
     if (_PM->get<long>("batchSize") > 0) {
-        // We will not use batching for a latency test
-        if (_PM->get<bool>("latencyTest")) {
-            if (_PM->is_set("batchSize")) {
-                fprintf(stderr, "Batching cannot be used in a Latency test.\n");
-                return false;
-            } else {
-                _PM->set<long>("batchSize", 0); // Disable Batching
-            }
-        }
 
         // Check if using asynchronous
         if (_PM->get<bool>("asynchronous")) {
@@ -267,13 +240,46 @@ bool RTIDDSImpl<T>::validate_input()
     // Manage parameter -enableTurboMode
     if (_PM->get<bool>("enableTurboMode")) {
         if (_PM->get<bool>("asynchronous")) {
-            fprintf(stderr,
-                    "Turbo Mode cannot be used with asynchronous writing.\n");
+            fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing.\n");
             return false;
         } if (_isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
             _PM->set<bool>("enableTurboMode", false);
         }
+    }
+
+    // Manage the parameter: -scan
+    if (_PM->is_set("scan")) {
+        const std::vector<unsigned long long> scanList =
+                _PM->get_vector<unsigned long long>("scan");
+
+        // Check if scan is large data or small data
+        if (scanList[0] <= (unsigned long long) _maxSynchronousSize
+                && scanList[scanList.size() - 1] > (unsigned long long)_maxSynchronousSize) {
+            fprintf(stderr, "The sizes of -scan [");
+            for (unsigned int i = 0; i < scanList.size(); i++) {
+                fprintf(stderr, "%llu ", scanList[i]);
+            }
+            fprintf(stderr,
+                    "] should be either all smaller or all bigger than %lld.\n",
+                    _maxSynchronousSize);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*********************************************************
+
+ * Validate and manage the parameters
+ */
+template <typename T>
+bool RTIDDSImpl<T>::validate_input()
+{
+    // Manage parameter -instance
+    if (_PM->is_set("instances")) {
+        _instanceMaxCountReader = _PM->get<long>("instances");
     }
 
     // Manage parameter -writeInstance
@@ -285,6 +291,27 @@ bool RTIDDSImpl<T>::validate_input()
                     _PM->get<long>("writeInstance"),
                     _PM->get<long>("instances"));
             return false;
+        }
+    }
+
+    // Manage parameter -peer
+    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
+        fprintf(stderr,
+                "The maximun of 'initial_peers' is %d\n",
+                RTIPERFTEST_MAX_PEERS);
+        return false;
+    }
+
+    // Manage parameter -batchSize
+    if (_PM->get<long>("batchSize") > 0) {
+        // We will not use batching for a latency test
+        if (_PM->get<bool>("latencyTest")) {
+            if (_PM->is_set("batchSize")) {
+                fprintf(stderr, "Batching cannot be used in a Latency test.\n");
+                return false;
+            } else {
+                _PM->set<long>("batchSize", 0); // Disable Batching
+            }
         }
     }
 
@@ -404,6 +431,17 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "\n" << _security.printSecurityConfigurationSummary();
     }
    #endif
+
+    // Large Data
+    if (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize) {
+        stringStream << "\n[IMPORTANT]: Enabling Asynchronous publishing: -datalen ("
+                     << std::to_string(_PM->get<unsigned long long>("dataLen"))
+                     << ") is \n"
+                     << "             larger than the minimum message_size_max across\n"
+                     << "             all enabled transports ("
+                     << std::to_string(_maxSynchronousSize)
+                     << ")\n";
+    }
 
     return stringStream.str();
 }
@@ -2358,6 +2396,25 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
         return false;
     }
 
+    /*
+     * At this point, and not before is when we know the transport message size.
+     * Now we can decide if we need to use asynchronous or not.
+     */
+    _maxSynchronousSize = _transport.minimumMessageSizeMax - (MESSAGE_OVERHEAD_BYTES);
+
+    /*
+     * TODO: This should not be needed after adding changes for #265
+     * Rework idls to handle better custom types and Flat Data
+     */
+    if (_isFlatData) {
+        _maxSynchronousSize -= 17;
+    }
+
+    if (!data_size_related_calculations()) {
+        fprintf(stderr, "Failed to configure the data size settings\n");
+        return false;
+    }
+
   #ifdef RTI_SECURE_PERFTEST
     // Configure security
     if (_PM->group_is_used(SECURE)) {
@@ -2843,6 +2900,9 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                     _PM->get<std::string>("flowController")).c_str());
         }
     }
+
+    dw_qos.resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
+
   #endif
 
     // Only force reliability on throughput/latency topics
@@ -2921,9 +2981,13 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                 !_PM->get<bool>("noDirectCommunication");
       #endif
 
-
-        dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+        if (_PM->get<unsigned long long>("dataLen") > DEFAULT_MESSAGE_SIZE_MAX) {
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+                _PM->get<int>("sendQueueSize");
+        } else {
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
                 _PM->get<int>("sendQueueSize") / 10;
+        }
       #ifndef RTI_MICRO
         dw_qos.protocol.rtps_reliable_writer.low_watermark =
                 _PM->get<int>("sendQueueSize") * 1 / 10;
@@ -2959,16 +3023,29 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
       #endif
     }
 
-    if (qos_profile == "LatencyQos"
-            && _PM->get<bool>("noDirectCommunication")
-            && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
-            || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
-        dw_qos.durability.kind =
-                (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
-      #ifndef RTI_MICRO
-        dw_qos.durability.direct_communication =
-                !_PM->get<bool>("noDirectCommunication");
-      #endif
+    if (qos_profile == "LatencyQos") {
+
+        if (_PM->get<bool>("noDirectCommunication")
+                && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+                || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
+            dw_qos.durability.kind =
+                    (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
+          #ifndef RTI_MICRO
+            dw_qos.durability.direct_communication =
+                    !_PM->get<bool>("noDirectCommunication");
+          #endif
+        }
+
+
+        if (_PM->get<unsigned long long>("dataLen") > DEFAULT_MESSAGE_SIZE_MAX) {
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+                _PM->get<int>("sendQueueSize");
+        } else {
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+                _PM->get<int>("sendQueueSize") / 10;
+
+        }
+
     }
 
     dw_qos.resource_limits.max_instances =
@@ -3230,6 +3307,11 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
   #endif
 
   #ifndef RTI_MICRO
+
+    if (_PM->is_set("receiveQueueSize")) {
+        dr_qos.resource_limits.initial_samples = _PM->get<int>("receiveQueueSize");
+    }
+
     dr_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
     if (_instanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
         _instanceMaxCountReader++;
