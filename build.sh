@@ -1343,7 +1343,6 @@ while [ "$1" != "" ]; do
                 exit -1
             fi
             shift
-            echo $RTI_FLATDATA_MAX_SIZE
             ;;
         --osx-shmem-shmmax)
             darwin_shmem_size=$2
