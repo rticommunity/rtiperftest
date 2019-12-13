@@ -11,6 +11,8 @@ setenv arch x64Linux3gcc4.8.2
 
 ### Regular
 
+#### Commands
+
 - **Publisher**
 
         byte_sizes=(32 64 256 1024 4096 16384 63000 100000 250000 500000 1048576 1548576 2097152 4194304 8388608 10485760 20971520 31457280)
@@ -54,6 +56,12 @@ setenv arch x64Linux3gcc4.8.2
 
 ### Flat Data
 
+#### Note
+
+- For FlatData we cannot make use of the `batching` feature, this is why for small data samples we get lower throughput results.
+
+#### Commands
+
 - **Publisher**
 
         byte_sizes=(32 64 256 1024 4096 16384 63000 100000 250000 500000 1048576 1548576 2097152 4194304 8388608 10485760 20971520 31457280)
@@ -93,11 +101,13 @@ setenv arch x64Linux3gcc4.8.2
     Length: 20971520  Packets:     3957  Packets/s(ave):     131  Mbps(ave): 22074.5  Lost:     0 (0.00%)
     Length: 31457280  Packets:     3436  Packets/s(ave):     113  Mbps(ave): 28518.1  Lost:     0 (0.00%)
 
-#### Notes
-
-- For FlatData we cannot make use of the `batching` feature, this is why for sample sizes < 4096 SHMEM provides better results.
-
 ### Zero-Copy
+
+#### Note
+
+- For FlatData + Zero-Copy we cannot make use of the `batching` feature, this is why for small data samples we get lower throughput results.
+
+#### Commands
 
 - **Publisher**
 
@@ -147,6 +157,8 @@ setenv arch x64Linux3gcc4.8.2
 
 ### Regular
 
+#### Commands
+
 - **Publisher**
 
         byte_sizes=(32 64 256 1024 4096 16384 64969 64970 100000 250000 500000 1048576 1548576 2097152 4194304 8388608 10485760 20971520 31457280)
@@ -190,6 +202,12 @@ setenv arch x64Linux3gcc4.8.2
 
 ### FlatData
 
+#### Note
+
+- For FlatData we cannot make use of the `batching` feature, this is why for small data samples we get lower throughput results.
+
+#### Commands
+
 - **Publisher**
 
         byte_sizes=(32 64 256 1024 4096 16384 32768 64970 100000 250000 500000 1048576 1548576 2097152 4194304 8388608 10485760 20971520 31457280)
@@ -230,6 +248,20 @@ setenv arch x64Linux3gcc4.8.2
     Length: 10485760  Packets:     3448  Packets/s(ave):     114  Mbps(ave):  9620.5  Lost:  3442 (49.96%)
     Length: 20971520  Packets:     1704  Packets/s(ave):      56  Mbps(ave):  9524.7  Lost:  5081 (74.89%)
     Length: 31457280  Packets:     1180  Packets/s(ave):      38  Mbps(ave):  9757.6  Lost: 124827 (99.06%)
+
+#### Notes
+
+We see a bunch of samples lost in some of these tests, and in the publisher you will see:
+
+```
+DDS_DataWriter_get_loan_untypedI:ERROR: Out of resources for writer loaned samples
+This is expected. Try to reduce it or avoid it by increasing the send queue size.
+```
+
+What is going on in this case is that the write path is going to try to write a sample,
+fail to loan the space to create the sample and just skip it and pass to the next one and
+try again, this causes the sample counter to increase and in the subscriber side that gap is
+accounted as a sample lost.
 
 ### Plots
 
@@ -308,6 +340,8 @@ You can check that you are using the right type because you will see at the begi
 
 ### Regular
 
+#### Commands
+
 - **Publisher**
 
         byte_sizes=(32 64 256 1024 4096 16384 63000 100000 250000 500000 1048576 1548576 2097152 4194304 8388608 10485760 20971520 31457280)
@@ -349,6 +383,12 @@ You can check that you are using the right type because you will see at the begi
 
 ### Flat Data
 
+#### Note
+
+- For FlatData we cannot make use of the `batching` feature, this is why for small data samples we get lower throughput results.
+
+#### Commands
+
 - **Publisher**
 
         byte_sizes=(32 64 256 1024 4096 16384 63000 100000 250000 500000 1048576 1548576 2097152 4194304 8388608 10485760 20971520 31457280)
@@ -388,11 +428,13 @@ You can check that you are using the right type because you will see at the begi
     Length: 20971520  Packets:     4618  Packets/s(ave):     152  Mbps(ave): 25601.9  Lost:     0 (0.00%)
     Length: 31457280  Packets:     3327  Packets/s(ave):     109  Mbps(ave): 27507.2  Lost:     0 (0.00%)
 
-#### Notes
-
-- For FlatData we cannot make use of the `batching` feature, this is why for sample sizes < 4096 SHMEM provides better results.
-
 ### Zero-Copy
+
+#### Note
+
+- For FlatData + Zero Copy we cannot make use of the `batching` feature, this is why for small data samples we get lower throughput results.
+
+#### Commands
 
 - **Publisher**
 
@@ -441,6 +483,7 @@ You can check that you are using the right type because you will see at the begi
 ## UDPv4 THROUGHPUT
 
 ### Regular
+#### Commands
 
 - **Publisher**
 
@@ -481,6 +524,12 @@ You can check that you are using the right type because you will see at the begi
 
 ### Flat Data
 
+#### Note
+
+- For FlatData we cannot make use of the `batching` feature, this is why for small data samples we get lower throughput results.
+
+#### Commands
+
 - **Publisher**
 
         byte_sizes=(32 64 256 1024 4096 16384 32768 64970 100000 250000 500000 1048576 1548576 2097152 4194304 8388608 10485760 20971520 31457280)
@@ -516,6 +565,20 @@ You can check that you are using the right type because you will see at the begi
     Length: 10485760  Packets:     3408  Packets/s(ave):     113  Mbps(ave):  9517.3  Lost:    97 (2.77%)
     Length: 20971520  Packets:     1715  Packets/s(ave):      57  Mbps(ave):  9587.0  Lost: 12584 (88.01%)
     Length: 31457280  Packets:     1120  Packets/s(ave):      37  Mbps(ave):  9358.5  Lost: 215763 (99.48%)
+
+#### Notes
+
+We see a bunch of samples lost in some of these tests, and in the publisher you will see:
+
+```
+DDS_DataWriter_get_loan_untypedI:ERROR: Out of resources for writer loaned samples
+This is expected. Try to reduce it or avoid it by increasing the send queue size.
+```
+
+What is going on in this case is that the write path is going to try to write a sample,
+fail to loan the space to create the sample and just skip it and pass to the next one and
+try again, this causes the sample counter to increase and in the subscriber side that gap is
+accounted as a sample lost.
 
 ### Plots
 
