@@ -143,8 +143,6 @@ setenv arch x64Linux3gcc4.8.2
 ![Results SHMEM](images/Default_type_thr_shmem_1.png)
 ![Results SHMEM (No Zero Copy)](images/Default_type_thr_shmem_2.png)
 
-=========================================================================================================
-
 ## UDPv4 THROUGHPUT
 
 ### Regular
@@ -236,8 +234,6 @@ setenv arch x64Linux3gcc4.8.2
 ### Plots
 
 ![Results UDPv4](images/Default_type_thr_udpv4.png)
-
-=========================================================================================================
 
 # Custom Type
 
@@ -442,8 +438,6 @@ You can check that you are using the right type because you will see at the begi
 ![Results SHMEM](images/Custom_type_thr_shmem_1.png)
 ![Results SHMEM (No Zero Copy)](images/Custom_type_thr_shmem_2.png)
 
-=========================================================================================================
-
 ## UDPv4 THROUGHPUT
 
 ### Regular
@@ -526,5 +520,3 @@ You can check that you are using the right type because you will see at the begi
 ### Plots
 
 ![Results UDPv4](images/Custom_type_thr_udpv4.png)
-
-=========================================================================================================
