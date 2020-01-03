@@ -54,6 +54,8 @@ class RTIDDSImpl : public IMessaging
         Shutdown();
     }
 
+    bool data_size_related_calculations();
+
     bool validate_input();
 
     std::string PrintConfiguration();
@@ -98,6 +100,7 @@ class RTIDDSImpl : public IMessaging
     unsigned long _sendQueueSize;
     int _InstanceHashBuckets;
     bool _isLargeData;
+    unsigned long long _maxSynchronousSize;
     bool _isFlatData;
     bool _isZeroCopy;
     PerftestTransport _transport;
