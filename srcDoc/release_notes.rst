@@ -79,6 +79,32 @@ which return the time in *microseconds*.
 This option can be enabled at compilation time by using the `--ns-resolution`.
 It is only implemented for Unix Systems.
 
+Switching value for Bounded to Unbounded-Sequences
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Previously, the value to switch between Bounded and Unbounded-Sequences was set
+to 63000 Bytes (63000 items in the sequence). This value was defined that way to
+be close to the `message_size_max` value for the `UDPv4` transport and make the
+switch for Synchronous to Asynchronous Publishing coincide with the switch
+between Bounded and Unbounded-Sequences.
+
+These 2 changes in behavior have been decoupled. The new maximum value for a
+Bounded-Sequence is 1MB (1048576 items in the sequence).
+
+Behavior for `SHMEM` and Asynchronous publishing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The value to switch to Asynchronous Publishing is no longer a fixed value, but
+it is calculated given then minimum `message_size_max` accross all the enabled
+transports.
+
+In the case of using `SHMEM`, the value of `message_size_max` is not set, but
+instead is calculated to fit samples of the size specified by the user via the
+`-datalen` command-line parameter.
+
+Find more information about this in the **Large Samples (Use-Cases)** section of
+the documentation.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
