@@ -40,7 +40,6 @@ import com.rti.perftest.IMessagingCB;
 import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.IMessagingWriter;
 import com.rti.perftest.TestMessage;
-import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 import com.rti.perftest.gen.MAX_CFT_VALUE;
 import com.rti.perftest.gen.THROUGHPUT_TOPIC_NAME;
@@ -107,6 +106,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean _isDebug = false;
     private boolean _latencyTest = false;
     private boolean _isLargeData = false;
+    private long _maxSynchronousSize = PerftestTransport.MESSAGE_SIZE_MAX_NOT_SET;
     private boolean _isScan = false;
     private boolean _isPublisher = false;
     private boolean _IsAsynchronous = false;
@@ -311,6 +311,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
         System.err.print(usage_string);
     }
 
+    public boolean data_size_related_calculations() {
+        return false;
+    }
+
     public boolean initialize(int argc, String[] argv) {
 
         // Register _loggerDevice
@@ -382,6 +386,17 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         if(!_transport.configureTransport(qos)) {
+            return false;
+        }
+
+        /*
+        * At this point, and not before is when we know the transport message size.
+        * Now we can decide if we need to use asynchronous or not.
+        */
+        _maxSynchronousSize = _transport.minimumMessageSizeMax - (PerftestTransport.MESSAGE_OVERHEAD_BYTES);
+
+        if (!data_size_related_calculations()) {
+            System.err.print("[Error] Failed to configure the data size settings.\n");
             return false;
         }
 
@@ -1168,6 +1183,17 @@ public final class RTIDDSImpl<T> implements IMessaging {
             sb.append(printSecureArgs());
         }
 
+        // Large Data
+        if (_dataLen > _maxSynchronousSize) {
+            sb.append("\n[IMPORTANT]: Enabling Asynchronous publishing: -datalen (");
+            sb.append(_dataLen);
+            sb.append(") is \n");
+            sb.append("             larger than the minimum message_size_max across\n");
+            sb.append("             all enabled transports (");
+            sb.append(_maxSynchronousSize);
+            sb.append(")\n");
+        }
+
         return sb.toString();
     }
 
@@ -1389,11 +1415,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     System.err.print("Bad #bytes for batch\n");
                     return false;
                 }
-                if (_batchSize < 0 || _batchSize > MAX_SYNCHRONOUS_SIZE.VALUE) {
+                if (_batchSize < 0) {
                     System.err.print("Batch size '" + _batchSize +
-                            "' should be between [0," +
-                            MAX_SYNCHRONOUS_SIZE.VALUE +
-                            "]\n");
+                            "' should be between [0,]\n");
                     return false;
                 }
                 isBatchSizeProvided = true;
@@ -1641,9 +1665,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         /* Check if we need to enable Large Data. This works also for -scan */
-        if (_dataLen > Math.min(
-                MAX_SYNCHRONOUS_SIZE.VALUE,
-                MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+        if (_dataLen > MAX_BOUNDED_SEQ_SIZE.VALUE) {
             _isLargeData = true;
             if (_useUnbounded == 0) {
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;

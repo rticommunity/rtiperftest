@@ -13,7 +13,6 @@ import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.IMessagingWriter;
 import com.rti.perftest.TestMessage;
 import com.rti.perftest.harness.PerftestTimerTask;
-import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 import com.rti.perftest.gen.MAX_PERFTEST_SAMPLE_SIZE;
 
@@ -99,6 +98,7 @@ public final class PerfTest {
     private boolean _isPub = false;
     private boolean _isScan = false;
     private ArrayList<Long> _scanDataLenSizes = new ArrayList<Long>();
+    private boolean _useUnbounded = false;
     private boolean _useReadThread = false;
     private long     _spinLoopCount = 0;
     private long    _sleepNanosec = 0;
@@ -453,6 +453,8 @@ public final class PerfTest {
                     return false;
                 }
             }else if ("-unbounded".toLowerCase().startsWith(argv[i].toLowerCase())) {
+
+                _useUnbounded = true;
                 _messagingArgv[_messagingArgc++] = argv[i];
 
                 if ((i == (argc - 1)) || argv[i+1].startsWith("-")) {
@@ -754,14 +756,14 @@ public final class PerfTest {
                 _executionTime = 60;
             }
             // Check if large data or small data
-            if (_scanDataLenSizes.get(0) < Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)
-                    && _scanDataLenSizes.get(_scanDataLenSizes.size() - 1) > Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+            if (_scanDataLenSizes.get(0) < MAX_BOUNDED_SEQ_SIZE.VALUE
+                    && _scanDataLenSizes.get(_scanDataLenSizes.size() - 1) > MAX_BOUNDED_SEQ_SIZE.VALUE) {
                 System.err.printf("The sizes of -scan [");
                 for (int i = 0; i < _scanDataLenSizes.size(); i++) {
                     System.err.printf(_scanDataLenSizes.get(i) + " ");
                 }
                 System.err.printf("] should be either all smaller or all bigger than " +
-                        Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE) + "\n");
+                        MAX_BOUNDED_SEQ_SIZE.VALUE + "\n");
                 return false;
             }
         }
@@ -885,10 +887,6 @@ public final class PerfTest {
                 sb.append(_numIter);
                 sb.append("\n");
             }
-        } else {
-            if (_dataLen > MAX_SYNCHRONOUS_SIZE.VALUE) {
-                sb.append("\tExpecting Large Data Type\n");
-            }
         }
 
         // Listener/WaitSets
@@ -900,6 +898,16 @@ public final class PerfTest {
         }
 
         sb.append(_messagingImpl.printConfiguration());
+
+
+            // We want to expose if we are using or not the unbounded type
+        if (_useUnbounded) {
+            sb.append("\n[IMPORTANT]: Using the Unbounded Sequence Type: -datalen (");
+            sb.append(_dataLen);
+            sb.append(") is \n             larger than MAX_BOUNDED_SEQ_SIZE (");
+            sb.append(MAX_BOUNDED_SEQ_SIZE.VALUE);
+            sb.append(")\n");
+        }
 
         System.err.println(sb.toString());
     }
