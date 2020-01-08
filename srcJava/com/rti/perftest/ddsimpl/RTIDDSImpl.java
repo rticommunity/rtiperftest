@@ -101,6 +101,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private int     _durability = 0;
     private boolean _directCommunication = true;
     private int     _batchSize = DEFAULT_THROUGHPUT_BATCH_SIZE.VALUE;
+    private boolean _isBatchSizeProvided = false;
     private int     _keepDurationUsec = -1;
     private boolean _usePositiveAcks = true;
     private boolean _isDebug = false;
@@ -312,7 +313,71 @@ public final class RTIDDSImpl<T> implements IMessaging {
     }
 
     public boolean data_size_related_calculations() {
-        return false;
+        // If the user wants to use asynchronous we enable it
+        if (_IsAsynchronous) {
+            _isLargeData = true;
+        } else { //If the message size max is lower than the datalen
+            _isLargeData = _dataLen > _maxSynchronousSize;
+        }
+
+        // Manage parameter -batchSize
+        if (_batchSize > 0) {
+
+            /* Check if using asynchronous */
+            if (_IsAsynchronous) {
+                if (_isBatchSizeProvided) {
+                    System.err.println(
+                            "Batching cannot be used with asynchronous writing.\n");
+                    return false;
+                }
+                else {
+                    _batchSize = 0; // Disable Batching
+                }
+            }
+
+            /*
+             * Large Data + batching cannot be set. But batching is enabled by default,
+             * so in that case, we just disabled batching, else, the customer set it up,
+             * so we explitly fail
+             */
+            if (_isLargeData) {
+                if (_isBatchSizeProvided) {
+                    System.err.println(
+                            "Batching cannot be used with Large Data.");
+                    return false;
+                } else {
+                    _batchSize = -2;
+                }
+            } else if ((_batchSize < _dataLen * 2) && !_isScan) {
+                /*
+                 * We don't want to use batching if the batch size is not large
+                 * enough to contain at least two samples (in this case we avoid the
+                 * checking at the middleware level).
+                 */
+                if (_isBatchSizeProvided) {
+                    /*
+                     * Batchsize disabled. A message will be print if _batchSize < 0 in
+                     * perftest_cpp::PrintConfiguration()
+                     */
+                    _batchSize = -1;
+                } else {
+                    _batchSize = 0;
+                }
+            }
+        }
+
+        if (_TurboMode) {
+            if (_IsAsynchronous) {
+                System.err.println("Turbo Mode cannot be used with asynchronous writing.");
+                return false;
+            }
+            if (_isLargeData) {
+                System.err.println("Turbo Mode disabled, using large data.");
+                _TurboMode = false;
+            }
+        }
+
+        return true;
     }
 
     public boolean initialize(int argc, String[] argv) {
@@ -1194,12 +1259,23 @@ public final class RTIDDSImpl<T> implements IMessaging {
             sb.append(")\n");
         }
 
+        // We want to expose if we are using or not the unbounded type
+        if (_useUnbounded != 0) {
+            sb.append("\n[IMPORTANT]: Using the Unbounded Sequence Type.");
+            if (_dataLen > MAX_BOUNDED_SEQ_SIZE.VALUE) {
+                sb.append(" -datalen (");
+                sb.append(_dataLen);
+                sb.append(") is \n             larger than MAX_BOUNDED_SEQ_SIZE (");
+                sb.append(MAX_BOUNDED_SEQ_SIZE.VALUE);
+            }
+            sb.append(")\n");
+        }
+
         return sb.toString();
     }
 
     private boolean parseConfig(int argc, String[] argv) {
         long minScanSize = MAX_PERFTEST_SAMPLE_SIZE.VALUE;
-        boolean isBatchSizeProvided = false;
 
         for (int i = 0; i < argc; ++i) {
 
@@ -1420,7 +1496,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                             "' should be between [0,]\n");
                     return false;
                 }
-                isBatchSizeProvided = true;
+                _isBatchSizeProvided = true;
             }
             else if ("-keepDurationUsec".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
@@ -1679,7 +1755,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
             /* We will not use batching for a latency test */
             if (_latencyTest) {
-                if (isBatchSizeProvided) {
+                if (_isBatchSizeProvided) {
                     System.err.println(
                             "Batching cannot be used in a Latency test.");
                     return false;
@@ -1687,59 +1763,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 else {
                     _batchSize = 0; // Disable Batching
                 }
-            }
-
-            /* Check if using asynchronous */
-            if (_IsAsynchronous) {
-                if (isBatchSizeProvided) {
-                    System.err.println(
-                            "Batching cannot be used with asynchronous writing.\n");
-                    return false;
-                }
-                else {
-                    _batchSize = 0; // Disable Batching
-                }
-            }
-
-            /*
-             * Large Data + batching cannot be set. But batching is enabled by default,
-             * so in that case, we just disabled batching, else, the customer set it up,
-             * so we explitly fail
-             */
-            if (_isLargeData) {
-                if (isBatchSizeProvided) {
-                    System.err.println(
-                            "Batching cannot be used with Large Data.");
-                    return false;
-                } else {
-                    _batchSize = -2;
-                }
-            } else if ((_batchSize < _dataLen * 2) && !_isScan) {
-                /*
-                 * We don't want to use batching if the batch size is not large
-                 * enough to contain at least two samples (in this case we avoid the
-                 * checking at the middleware level).
-                 */
-                if (isBatchSizeProvided) {
-                    /*
-                     * Batchsize disabled. A message will be print if _batchSize < 0 in
-                     * perftest_cpp::PrintConfiguration()
-                     */
-                    _batchSize = -1;
-                } else {
-                    _batchSize = 0;
-                }
-            }
-        }
-
-        if (_TurboMode) {
-            if (_IsAsynchronous) {
-                System.err.println("Turbo Mode cannot be used with asynchronous writing.");
-                return false;
-            }
-            if (_isLargeData) {
-                System.err.println("Turbo Mode disabled, using large data.");
-                _TurboMode = false;
             }
         }
 

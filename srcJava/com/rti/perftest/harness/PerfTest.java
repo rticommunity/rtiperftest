@@ -98,7 +98,6 @@ public final class PerfTest {
     private boolean _isPub = false;
     private boolean _isScan = false;
     private ArrayList<Long> _scanDataLenSizes = new ArrayList<Long>();
-    private boolean _useUnbounded = false;
     private boolean _useReadThread = false;
     private long     _spinLoopCount = 0;
     private long    _sleepNanosec = 0;
@@ -452,19 +451,7 @@ public final class PerfTest {
                     System.err.println("dataLen must be <= " + getMaxPerftestSampleSizeJava());
                     return false;
                 }
-            }else if ("-unbounded".toLowerCase().startsWith(argv[i].toLowerCase())) {
-
-                _useUnbounded = true;
-                _messagingArgv[_messagingArgc++] = argv[i];
-
-                if ((i == (argc - 1)) || argv[i+1].startsWith("-")) {
-                    //It if not necessary on that class, just the validation and parse
-                } else {
-                    ++i;
-                    _messagingArgv[_messagingArgc++] = argv[i];
-                }
-            }
-            else if ( "-spin".toLowerCase().startsWith(argv[i].toLowerCase()))
+            } else if ( "-spin".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
                 System.err.println("-spin option is deprecated. It will be removed "
                         +"in upcoming releases.");
@@ -848,7 +835,7 @@ public final class PerfTest {
             } else if (batchSize == 0) {
                 sb.append("No (Use \"-batchSize\" to setup batching)\n");
             } else { // < 0 (Meaning, Disabled by RTI Perftest)
-                sb.append("\"Disabled by RTI Perftest.\"\n");
+                sb.append("Disabled by RTI Perftest.\n");
                 if (batchSize == -1) {
                     if (_latencyTest) {
                         sb.append("\t\t  BatchSize disabled for a Latency Test\n");
@@ -898,17 +885,6 @@ public final class PerfTest {
         }
 
         sb.append(_messagingImpl.printConfiguration());
-
-
-            // We want to expose if we are using or not the unbounded type
-        if (_useUnbounded) {
-            sb.append("\n[IMPORTANT]: Using the Unbounded Sequence Type: -datalen (");
-            sb.append(_dataLen);
-            sb.append(") is \n             larger than MAX_BOUNDED_SEQ_SIZE (");
-            sb.append(MAX_BOUNDED_SEQ_SIZE.VALUE);
-            sb.append(")\n");
-        }
-
         System.err.println(sb.toString());
     }
 
