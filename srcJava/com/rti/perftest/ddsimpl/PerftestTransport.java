@@ -108,8 +108,6 @@ public class PerftestTransport {
      */
     public String loggingString = "";
 
-
-
     public static long DEFAULT_MESSAGE_SIZE_MAX = 65536;
     public static long MESSAGE_SIZE_MAX_NOT_SET = Long.MAX_VALUE;
     public static long MESSAGE_OVERHEAD_BYTES = 567;

@@ -1493,7 +1493,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 }
                 if (_batchSize < 0) {
                     System.err.print("Batch size '" + _batchSize +
-                            "' should be between [0,]\n");
+                            "' should be greater than 0\n");
                     return false;
                 }
                 _isBatchSizeProvided = true;
