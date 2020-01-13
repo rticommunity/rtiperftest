@@ -1286,13 +1286,13 @@ namespace PerformanceTest {
                     _executionTime = 60;
                 }
                 // Check if large data or small data
-                if (_scanDataLenSizes[0] > (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)
-                        && _scanDataLenSizes[_scanDataLenSizes.Count - 1] > (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                if (_scanDataLenSizes[0] > (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE
+                        && _scanDataLenSizes[_scanDataLenSizes.Count - 1] > (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE) {
                     if (_useUnbounded == 0) {
                         _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
                     }
-                } else if (_scanDataLenSizes[0] <= (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)
-                        && _scanDataLenSizes[_scanDataLenSizes.Count - 1] <= (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                } else if (_scanDataLenSizes[0] <= (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE
+                        && _scanDataLenSizes[_scanDataLenSizes.Count - 1] <= (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE) {
                     if (_useUnbounded != 0) {
                         Console.Error.Write("Unbounded will be ignored since -scan is present.\n");
                         _useUnbounded = 0;
@@ -1303,9 +1303,9 @@ namespace PerformanceTest {
                         Console.Error.Write(_scanDataLenSizes[i] + " ");
                     }
                     Console.Error.Write(
-                            "] should be either all smaller or all bigger than " +
-                             Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE) +
-                             "\n");
+                            "] should be either all smaller or all bigger than "
+                            + MAX_BOUNDED_SEQ_SIZE.VALUE
+                            + "\n");
                     return false;
                 }
             }
@@ -1389,7 +1389,7 @@ namespace PerformanceTest {
                 } else if (batchSize == 0) {
                     sb.Append("No (Use \"-batchSize\" to setup batching)\n");
                 } else { // < 0 (Meaning, Disabled by RTI Perftest)
-                    sb.Append("\"Disabled by RTI Perftest.\"\n");
+                    sb.Append("Disabled by RTI Perftest.\n");
                     if (batchSize == -1) {
                         if (_LatencyTest) {
                             sb.Append("\t\t  BatchSize disabled for a Latency Test\n");
@@ -1427,10 +1427,6 @@ namespace PerformanceTest {
                     sb.Append("\tNumber of samples: " );
                     sb.Append(_NumIter);
                     sb.Append("\n");
-                }
-            } else {
-                if (_DataLen > (ulong)MAX_SYNCHRONOUS_SIZE.VALUE) {
-                    sb.Append("\tExpecting Large Data Type\n");
                 }
             }
 
