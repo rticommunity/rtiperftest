@@ -366,8 +366,6 @@ namespace PerformanceTest
                 sb.Append("\n");
             }
 
-
-            Console.Out.WriteLine("Logging String: " + loggingString);
             if (!string.IsNullOrEmpty(loggingString))
             {
                 sb.Append(loggingString);
