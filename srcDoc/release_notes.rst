@@ -82,6 +82,11 @@ It is only implemented for Unix Systems.
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Fixed port calculation in RawTransport with multiples subscribers (#283)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+RawTransport port calculation has been fixed when we have multiples subscribers.
+
 Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
