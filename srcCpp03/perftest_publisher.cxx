@@ -1291,11 +1291,6 @@ class LatencyListener : public IMessagingCB
         if (_latency_history != NULL) {
             delete [] _latency_history;
         }
-
-        if (_reader != NULL) {
-            _reader->Shutdown();
-            delete(_reader);
-        }
     }
 
     void ProcessMessage(TestMessage &message)
