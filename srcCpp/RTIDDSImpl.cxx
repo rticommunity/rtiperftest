@@ -1677,6 +1677,40 @@ class RTISubscriberBase : public IMessagingReader
     bool                    _endTest;
     ParameterManager       *_PM;
 
+    void Shutdown()
+    {
+        if (_reader->get_listener() != NULL) {
+            delete(_reader->get_listener());
+          #ifndef RTI_MICRO
+            _reader->set_listener(NULL);
+          #else
+            _reader->set_listener(NULL, 0);
+          #endif
+        }
+
+        if (_waitset != NULL) {
+            printf("About to delete the _waitset %p\n", _waitset);
+            delete _waitset;
+            _waitset = NULL;
+        }
+
+        // loan may be outstanding during shutdown
+        _reader->return_loan(_data_seq, _info_seq);
+    }
+
+    void WaitForWriters(int numPublishers)
+    {
+        DDS_SubscriptionMatchedStatus status;
+
+        while (true) {
+            _reader->get_subscription_matched_status(status);
+            if (status.current_count >= numPublishers) {
+                break;
+            }
+            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
+        }
+    }
+
   public:
 
     RTISubscriberBase(DDSDataReader *reader, ParameterManager *PM): _message()
@@ -1717,37 +1751,6 @@ class RTISubscriberBase : public IMessagingReader
         Shutdown();
     }
 
-    void Shutdown()
-    {
-        if (_reader->get_listener() != NULL) {
-            delete(_reader->get_listener());
-          #ifndef RTI_MICRO
-            _reader->set_listener(NULL);
-          #else
-            _reader->set_listener(NULL, 0);
-          #endif
-        }
-
-        if (_waitset != NULL) {
-            delete _waitset;
-        }
-
-        // loan may be outstanding during shutdown
-        _reader->return_loan(_data_seq, _info_seq);
-    }
-
-    void WaitForWriters(int numPublishers)
-    {
-        DDS_SubscriptionMatchedStatus status;
-
-        while (true) {
-            _reader->get_subscription_matched_status(status);
-            if (status.current_count >= numPublishers) {
-                break;
-            }
-            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
-        }
-    }
 
     bool unblock()
     {
@@ -1800,11 +1803,6 @@ class RTISubscriber : public RTISubscriberBase<T>
   public:
     RTISubscriber(DDSDataReader *reader, ParameterManager *PM)
             : RTISubscriberBase<T>(reader, PM) {
-    }
-
-    ~RTISubscriber()
-    {
-        this->Shutdown();
     }
 
     TestMessage *ReceiveMessage()
@@ -1911,11 +1909,6 @@ public:
             : RTISubscriberBase<T>(reader, PM) {
         _isZeroCopy = PM->get<bool>("zerocopy");
         _checkConsistency = PM->get<bool>("checkconsistency");
-    }
-
-    ~RTIFlatDataSubscriber()
-    {
-        this->Shutdown();
     }
 
     /**
@@ -2069,11 +2062,6 @@ class RTIDynamicDataSubscriber : public RTISubscriberBase<DDS_DynamicData>
             reader_status->set_enabled_statuses(DDS_DATA_AVAILABLE_STATUS);
             this->_waitset->attach_condition(reader_status);
         }
-    }
-
-    ~RTIDynamicDataSubscriber()
-    {
-        this->Shutdown();
     }
 
     TestMessage *ReceiveMessage()
