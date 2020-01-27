@@ -1689,7 +1689,6 @@ class RTISubscriberBase : public IMessagingReader
         }
 
         if (_waitset != NULL) {
-            printf("About to delete the _waitset %p\n", _waitset);
             delete _waitset;
             _waitset = NULL;
         }
