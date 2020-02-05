@@ -51,6 +51,13 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+Custom type support for Connext DDS Micro
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The -customType parameter is now compatible with RTI Connext DDS Micro. To
+use this new feature, follow the Using Custom Types example and include the --micro
+paramter when building *RTI Perftest*.
+
 New tutorial section in the documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

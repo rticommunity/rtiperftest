@@ -475,6 +475,68 @@ function additional_defines_calculation_micro()
             echo -e "${INFO_TAG} Using security plugin. Linking Statically."
         fi
     fi
+
+    if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
+        additional_defines=${additional_defines}" RTI_CUSTOM_TYPE="${custom_type}" RTI_CUSTOM_TYPE_FILE_NAME_SUPPORT="${custom_type_file_name_support}
+    fi
+
+    if [ "${USE_CUSTOM_TYPE_FLAT}" == "1" ]; then
+        additional_defines=${additional_defines}" DRTI_CUSTOM_TYPE_FLATDATA="${custom_type_flat}" DRTI_CUSTOM_TYPE_FILE_NAME_SUPPORT="${custom_type_file_name_support}
+    fi
+}
+
+# Generate code for the type of the customer for Micro.
+# Fill additional source and header files for custom type.
+function build_cpp_custom_type_micro()
+{
+    # Search the file which contains "Struct ${custom_type} {" and include it to ${custom_idl_file}
+    found_idl=false
+    for file in ${custom_type_folder}/*.idl
+    do
+        if [ -f $file ]; then
+            if grep -Fq  "struct "${custom_type}" {" ${file}
+            then # found
+                custom_type_file_name_support=$(basename $file)
+                custom_type_file_name_support=${custom_type_file_name_support%.*}
+                custom_type_file_name_support=${custom_type_file_name_support}"Support.h"
+                echo "#include \"$(basename $file)\"" > ${custom_idl_file}
+                found_idl=true
+            fi
+        fi
+    done
+    if [ "$found_idl" = false ]; then
+        echo -e "${ERROR_TAG} Cannot find an idl file with the ${custom_type} structure for custom type test."
+        exit -1
+    fi
+    cp -rf ${custom_type_folder}/* ${idl_location}/
+    additional_header_files_custom_type="CustomType.h"
+    additional_source_files_custom_type="CustomType.cxx"
+    # Find all the files in the folder ${custom_type_folder}
+    # Run codegen with all those files
+    for file in ${custom_type_folder}/*.idl
+    do
+        if [ -f $file ]; then
+            rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -I ${idl_location} -replace -create typefiles -d \"${classic_cpp_folder}\" \"${file}\" "
+            echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+            eval $rtiddsgen_command
+            if [ "$?" != 0 ]; then
+                echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string} with the file ${file}."
+                exit -1
+            fi
+            # Adding the generated file as additional HeaderFiles and SourceFiles
+            name_file=$(basename $file)
+            name_file="${name_file%.*}"
+            additional_header_files_custom_type="${name_file}Plugin.h ${name_file}.h ${name_file}Support.h "$additional_header_files_custom_type
+            additional_source_files_custom_type="${name_file}Plugin.cxx ${name_file}.cxx ${name_file}Support.cxx "$additional_source_files_custom_type
+        fi
+    done
+
+    # Adding RTI_USE_CUSTOM_TYPE as a macro
+    additional_defines_custom_type=" -D RTI_CUSTOM_TYPE=${custom_type}"
+
+    if [ "${USE_CUSTOM_TYPE_FLAT}" == "1" ]; then
+        additional_defines_custom_type="${additional_defines_custom_type} -D RTI_CUSTOM_TYPE_FLATDATA=${custom_type_flat}"
+    fi
 }
 
 # Generate code for the type of the customer.
@@ -789,8 +851,18 @@ function build_cpp()
 function build_micro_cpp()
 {
     copy_src_cpp_common
-    additional_defines_calculation_micro
 
+    ##############################################################################
+    # Generate files for the custom type files
+    additional_defines_custom_type=""
+    additional_header_files_custom_type=""
+    additional_source_files_custom_type=""
+
+    if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
+        build_cpp_custom_type_micro
+    fi
+
+    additional_defines_calculation_micro
     ##############################################################################
     # Generate files for srcCpp
     if [ "${BUILD_MICRO_24x_COMPATIBILITY}" -eq "1" ]; then
@@ -805,7 +877,7 @@ function build_micro_cpp()
         fi
     fi
 
-    additional_header_files=" \
+    additional_header_files="${additional_header_files_custom_type} \
         ThreadPriorities.h \
         Parameter.h \
         ParameterManager.h \
@@ -818,7 +890,7 @@ function build_micro_cpp()
         Infrastructure_common.h \
         Infrastructure_micro.h"
 
-    additional_source_files=" \
+    additional_source_files="${additional_source_files_custom_type} \
         ThreadPriorities.cxx \
         Parameter.cxx \
         ParameterManager.cxx \
@@ -834,7 +906,7 @@ function build_micro_cpp()
             -additionalHeaderFiles \"$additional_header_files\" \
             -additionalSourceFiles \"$additional_source_files\" \
             -additionalDefines \"${additional_defines}\" \
-            ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+            ${rtiddsgen_extra_options} ${additional_defines_custom_type} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${classic_cpp_lang_string}."
