@@ -80,7 +80,7 @@ This option can be enabled at compilation time by using the `--ns-resolution`.
 It is only implemented for Unix Systems.
 
 Added support for -threadPriorities command line parameter in QNX platforms.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The use of -threadPriorities command is now supported on QNX platforms.
 You can either specify three numeric values representing the priority of each
