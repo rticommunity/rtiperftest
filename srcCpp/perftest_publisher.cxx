@@ -655,9 +655,10 @@ void perftest_cpp::PrintConfiguration()
             stringStream << " -datalen ("
                         << _PM.get<unsigned long long>("dataLen")
                         << ") is \n             larger than MAX_BOUNDED_SEQ_SIZE ("
-                        << MAX_BOUNDED_SEQ_SIZE;
+                        << MAX_BOUNDED_SEQ_SIZE
+                        << stringStream << ")";
         }
-        stringStream << ")\n";
+        stringStream << "\n";
     }
 
     fprintf(stderr, "%s\n", stringStream.str().c_str());
