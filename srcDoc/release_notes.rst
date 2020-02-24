@@ -90,7 +90,7 @@ What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Fixed segmentation fault when finishing tests in Traditional/Modern C++ (#288)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The use of `-useReadThread` (which internally would imply using `waitsets`)
 caused a segmentation fault at the end of the test (when *RTI Perftest* deleted
