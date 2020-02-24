@@ -79,8 +79,20 @@ which return the time in *microseconds*.
 This option can be enabled at compilation time by using the `--ns-resolution`.
 It is only implemented for Unix Systems.
 
+Added support for -threadPriorities command line parameter in QNX platforms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The use of -threadPriorities command is now supported on QNX platforms.
+You can either specify three numeric values representing the priority of each
+of the threads or, instead, three characters representing the priorities: h,n,l.  
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
+
+Fixed port calculation in RawTransport with multiples subscribers (#283)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+RawTransport port calculation has been fixed when we have multiples subscribers.
 
 Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -752,8 +752,8 @@ unsigned int RTIRawTransportImpl::get_peer_unicast_port(
             DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
 
     return PRESRtps_getWellKnownUnicastPort(
-            _PM->get<int>("domain"), /* domainId */
-            _PM->get<bool>("pub") ? _PM->get<int>("sidMultiSubTest") + 1 : 0, /* participantId */
+            _PM->get<int>("domain"),           /* domainId */
+            _PM->get<bool>("pub") ? subId + 1 : 0, /* participantId */
             wellKnownPorts.port_base,
             wellKnownPorts.domain_id_gain,
             wellKnownPorts.participant_id_gain,

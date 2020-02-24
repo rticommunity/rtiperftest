@@ -13,7 +13,8 @@ ThreadPriorities::ThreadPriorities()
         defaultPriorities['h'] = THREAD_PRIORITY_TIME_CRITICAL;
         defaultPriorities['n'] = THREAD_PRIORITY_NORMAL;
         defaultPriorities['l'] = THREAD_PRIORITY_IDLE;
-    #elif RTI_UNIX
+        
+    #elif defined(RTI_UNIX)  || defined (RTI_QNX)
         defaultPriorities['h'] = sched_get_priority_max(SCHED_FIFO);
         defaultPriorities['n'] = (sched_get_priority_max(SCHED_FIFO)
                 + sched_get_priority_min(SCHED_FIFO)) / 2;
@@ -66,7 +67,7 @@ bool ThreadPriorities::set_main_thread_priority()
         }
         return false;
     }
-#elif RTI_UNIX
+#elif defined(RTI_UNIX) || defined (RTI_QNX)
     int error = 0;
     struct sched_param sp;
 
@@ -100,7 +101,7 @@ bool ThreadPriorities::check_priority_range(int value)
         }
     }
 
-#elif RTI_UNIX
+#elif defined(RTI_UNIX) || defined (RTI_QNX)
     if (value < sched_get_priority_min(SCHED_FIFO)
         || value > sched_get_priority_max(SCHED_FIFO)) {
         success = false;
