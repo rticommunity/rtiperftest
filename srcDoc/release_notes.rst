@@ -217,6 +217,13 @@ prefix annotations and the old ones. This inconsistency has been fixed.
 This imposes a restriction (already existing) in the minimum version for which
 *RTI Perftest* can be compiled to *RTI Connext DDS Professional* 5.3.1.
 
+`DTLS` transport does not work in Traditional/Modern C++ by default (#281)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default *RTI Perftest* subscriber would fail when the transport was set to
+`DTLS` due to an incorrect private key in the subscriber side. This issue has been
+resolved.
+
 Fixed port calculation in RawTransport with multiples subscribers (#283)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
