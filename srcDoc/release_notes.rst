@@ -84,10 +84,18 @@ Added support for -threadPriorities command line parameter in QNX platforms
 
 The use of -threadPriorities command is now supported on QNX platforms.
 You can either specify three numeric values representing the priority of each
-of the threads or, instead, three characters representing the priorities: h,n,l.  
+of the threads or, instead, three characters representing the priorities: h,n,l.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
+
+Fixed segmentation fault when finishing tests in Traditional/Modern C++ (#288)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The use of `-useReadThread` (which internally would imply using `waitsets`)
+caused a segmentation fault at the end of the test (when *RTI Perftest* deleted
+the entities). This would affect Traditional and Modern C++ Implementations.
+This issue has been fixed.
 
 Fixed port calculation in RawTransport with multiples subscribers (#283)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
