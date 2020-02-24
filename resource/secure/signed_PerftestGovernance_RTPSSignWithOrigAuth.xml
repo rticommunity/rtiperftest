@@ -1,0 +1,100 @@
+MIME-Version: 1.0
+Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg="sha-256"; boundary="----83E0B05C2F7DEF3EC99DC63B8C4C0531"
+
+This is an S/MIME signed message
+
+------83E0B05C2F7DEF3EC99DC63B8C4C0531
+Content-Type: text/plain
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Perftest Governance Doc 
+  Encrypt: none
+  Sign: none
+  Authenticate: none
+-->
+
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="dds_security_governance.xsd">
+
+    <!-- Differences from DDS Security specification 
+     * in domain_id means all domains.
+     ENCRYPT only encrypts. It doesn't sign.
+     SIGN and NONE are the only supported rtps_protection_kinds.
+     ENCRYPT and NONE are the only supported non-rtps_protection_kinds.
+     metadata_protection_kind applies to both metadata and data.
+     DataWriter with metadata_protection_kind = NONE and
+     data_protection_kind = NONE is not compatible with DataReader with
+     metadata_protection_kind != NONE or data_protection_kind != NONE.
+     discovery_protection_kind is ineffective. If a topic sets
+     enable_discovery_protection = true, then its discovery is encrypted.
+     -->
+    <domain_access_rules>
+      <domain_rule>
+        <domains>
+          <id_range>
+            <min>0</min>
+          </id_range>
+        </domains>
+        <allow_unauthenticated_participants>false</allow_unauthenticated_participants>
+        <enable_join_access_control>false</enable_join_access_control>
+        <discovery_protection_kind>NONE</discovery_protection_kind>
+        <liveliness_protection_kind>NONE</liveliness_protection_kind>
+        <rtps_protection_kind>SIGN_WITH_ORIGIN_AUTHENTICATION</rtps_protection_kind>
+        <topic_access_rules>
+          <topic_rule>
+            <topic_expression>*</topic_expression>
+            <enable_discovery_protection>false</enable_discovery_protection>
+            <enable_liveliness_protection>false</enable_liveliness_protection>
+            <enable_read_access_control>false</enable_read_access_control>
+            <enable_write_access_control>false</enable_write_access_control>
+            <metadata_protection_kind>NONE</metadata_protection_kind>
+            <data_protection_kind>NONE</data_protection_kind>
+          </topic_rule>
+        </topic_access_rules>
+      </domain_rule>
+    </domain_access_rules>
+</dds>
+
+------83E0B05C2F7DEF3EC99DC63B8C4C0531
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+
+MIIGVgYJKoZIhvcNAQcCoIIGRzCCBkMCAQExDzANBglghkgBZQMEAgEFADALBgkq
+hkiG9w0BBwGgggN8MIIDeDCCAmACCQDd39R7FGNy0zANBgkqhkiG9w0BAQsFADB+
+MQswCQYDVQQGEwJVUzELMAkGA1UECAwCQ0ExEjAQBgNVBAcMCVN1bm55dmFsZTEe
+MBwGA1UECgwVUmVhbCBUaW1lIElubm92YXRpb25zMQ8wDQYDVQQDDAZSVEkgQ0Ex
+HTAbBgkqhkiG9w0BCQEWDnNlY3VyZUBydGkuY29tMB4XDTE5MTAyNDE0MDQxNloX
+DTI5MTAyMTE0MDQxNlowfjELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAkNBMRIwEAYD
+VQQHDAlTdW5ueXZhbGUxHjAcBgNVBAoMFVJlYWwgVGltZSBJbm5vdmF0aW9uczEP
+MA0GA1UEAwwGUlRJIENBMR0wGwYJKoZIhvcNAQkBFg5zZWN1cmVAcnRpLmNvbTCC
+ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANXPJvLVcNZWAqXtPGWnBfBp
+63z7U2PDhRONlW7cnayisDOaR1vv5g19KD25KezZDNTTo3WcBnzOhJyw4tVD0pnF
+ZwXvLqjCCv9FfZQVcqUuatMyqjeizjPOwB4RzaUNWONGgHog04Fd2hmkTBiJRf/+
+AZ9id2j05Wf8TkPEqu35JHqpkl50thTOipejJZV6fkjp025BuDGwjLYY2XBkZvzP
+JurOmgVYMSJUd6cE7E3lagCuzJlcaSa0+W8o0AXZUQPDnMmjYkElHXL5lz3zNonE
+MbblmtVMtV/EQ9tDxgCwoeZihgMxchBmmXnkNNvWAGQUikyvoYJEHew+3lZ/qQ0C
+AwEAATANBgkqhkiG9w0BAQsFAAOCAQEAxu1qt7VkJnwGK9PyldOeMzW8krm/WzmX
+WtrYXQmO2nKiaWpRrIJOUx4rxh9m8Ymt19TTchFXd4/V6ekOXGhOYxoUJAZnU42G
+mjS/E3EitZaC63mpn7JYa3M5LtwISB1CTLAT3gweBsbSwLZK/TXw+sMqp0lNt0CM
+l2H3TjN8CMOE0GhXWK1j+SjjoziGpj7XHg/cvrVvS5FMVjSaS82sxTNg4LxFs7Mg
+MBtshabrdgA34IVTNI3nwyHQtLJowPrIXH/UobmN0SwP9Ftx/3hfts4vaJiqHsVW
+GVEwTq5W3wgn3L8ikDiF51IJFoF17qJbqeLB80Ie3dsMC5FUVMoGxTGCAp4wggKa
+AgEBMIGLMH4xCzAJBgNVBAYTAlVTMQswCQYDVQQIDAJDQTESMBAGA1UEBwwJU3Vu
+bnl2YWxlMR4wHAYDVQQKDBVSZWFsIFRpbWUgSW5ub3ZhdGlvbnMxDzANBgNVBAMM
+BlJUSSBDQTEdMBsGCSqGSIb3DQEJARYOc2VjdXJlQHJ0aS5jb20CCQDd39R7FGNy
+0zANBglghkgBZQMEAgEFAKCB5DAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
+CSqGSIb3DQEJBTEPFw0yMDAyMjQxNDA5MTdaMC8GCSqGSIb3DQEJBDEiBCATXUJf
+fErvvSh7LN3NVxR2vbAxwCVjeaA6NrfYyTirZzB5BgkqhkiG9w0BCQ8xbDBqMAsG
+CWCGSAFlAwQBKjALBglghkgBZQMEARYwCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMH
+MA4GCCqGSIb3DQMCAgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG
+9w0DAgIBKDANBgkqhkiG9w0BAQEFAASCAQDSgxmjkyXogFDLxExQVrtpL9DyI41L
+RYK7JNwfgLRTtt6TcFUiuVpsCwy5+YROujmSa7sV4XZtYzT1q39CndB7JjHtP3lr
+ANS7oWK2c7vRcG6Mo/eXdYQrTK3eXLYhyZLSjZRkYly6s8Inry/T6LQw4tp3Bqp4
+QnZny3rnSMGEZ1zr0ASsAAofEYqiWblBdNa4mxsbznEPVOw8nuo1Hv4kqkrwGft0
+Ot3cIL96JN1iVqFZMB9nhouxbbIyeyFXIVXC7si+KKjjh/BfBf6vJmIml5w2oagF
+b58Y9UTTfqPVHvNisQAu7EghcfVLqTW8MfAbCiQyRFeGxTXqUnAD4wAP
+
+------83E0B05C2F7DEF3EC99DC63B8C4C0531--
+
