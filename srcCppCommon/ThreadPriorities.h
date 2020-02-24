@@ -12,7 +12,7 @@
  */
 #ifdef RTI_WIN32
   #include <windows.h>
-#elif defined(RTI_UNIX)
+#elif defined(RTI_UNIX) || defined(RTI_QNX) 
   #include <sched.h>
   #include <pthread.h>
 #endif

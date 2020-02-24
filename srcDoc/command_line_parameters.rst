@@ -415,6 +415,7 @@ Test Parameters for Publishing and Subscribing Applications
     - the "Thread-Priority Definitions for Linux Platforms" table
     - the "Thread-Priority Definitions for OS X Platforms" table
     - the "Thread-Priority Definitions for Windows Platforms" table
+    - the "Thread-Priority Definitions for QNX Platforms" table
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro* or using the Raw Transport feature.
