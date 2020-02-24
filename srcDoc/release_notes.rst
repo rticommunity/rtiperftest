@@ -79,6 +79,17 @@ which return the time in *microseconds*.
 This option can be enabled at compilation time by using the `--ns-resolution`.
 It is only implemented for Unix Systems.
 
+Add Security Governance files for Sign And Encrypt with original auth for RTPS (#253)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Added 2 new Governance profiles to the list of generated governance files in
+`resource/secure/input/governances/`:
+
+- `PerftestGovernance_RTPSEncryptWithOrigAuth.xml`
+- `PerftestGovernance_RTPSSignWithOrigAuth.xml`
+
+As well as their respective signed versions (`signed_`...).
+
 Added support for -threadPriorities command line parameter in QNX platforms
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -88,19 +99,6 @@ of the threads or, instead, three characters representing the priorities: h,n,l.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
-
-Fixed segmentation fault when finishing tests in Traditional/Modern C++ (#288)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The use of `-useReadThread` (which internally would imply using `waitsets`)
-caused a segmentation fault at the end of the test (when *RTI Perftest* deleted
-the entities). This would affect Traditional and Modern C++ Implementations.
-This issue has been fixed.
-
-Fixed port calculation in RawTransport with multiples subscribers (#283)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-RawTransport port calculation has been fixed when we have multiples subscribers.
 
 Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -218,6 +216,19 @@ prefix annotations and the old ones. This inconsistency has been fixed.
 
 This imposes a restriction (already existing) in the minimum version for which
 *RTI Perftest* can be compiled to *RTI Connext DDS Professional* 5.3.1.
+
+Fixed port calculation in RawTransport with multiples subscribers (#283)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+RawTransport port calculation has been fixed when we have multiples subscribers.
+
+Fixed segmentation fault when finishing tests in Traditional/Modern C++ (#288)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The use of `-useReadThread` (which internally would imply using `waitsets`)
+caused a segmentation fault at the end of the test (when *RTI Perftest* deleted
+the entities). This would affect Traditional and Modern C++ Implementations.
+This issue has been fixed.
 
 Release Notes 3.0
 -----------------
