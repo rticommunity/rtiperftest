@@ -198,6 +198,12 @@ std::string PerftestTransport::printTransportConfigurationSummary()
                      << "\n";
     }
 
+    if (_PM->is_set("crc")) {
+        stringStream << "\tCRC: "
+                     << _PM->get<int>("crc")
+                     << "\n";
+    }
+
     return stringStream.str();
 }
 

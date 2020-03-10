@@ -369,6 +369,34 @@ bool PerftestConfigureTransport(
         DDS_DomainParticipantQos &qos,
         ParameterManager *_PM)
 {
+    if (_PM->is_set("crc")) {
+        qos.protocol.compute_crc = RTI_TRUE;
+        qos.protocol.check_crc = RTI_TRUE;
+
+        switch (_PM->get<int>("crc")) {
+            case 16:
+                qos.protocol.computed_crc_kind = DDS_CRC_BUILTIN16;
+                qos.protocol.allowed_crc_mask  = DDS_CRC_BUILTIN16;
+                break;
+
+            case 32:
+                qos.protocol.computed_crc_kind = DDS_CRC_BUILTIN32;
+                qos.protocol.allowed_crc_mask  = DDS_CRC_BUILTIN32;
+                break;
+
+            case 64:
+                qos.protocol.computed_crc_kind = DDS_CRC_BUILTIN64;
+                qos.protocol.allowed_crc_mask  = DDS_CRC_BUILTIN64;
+                break;
+
+            default:
+                fprintf(stderr,
+                        "%d bits CRC is not supported. Should be either 16, 32, 64 or 128\n",
+                        _PM->get<int>("crc"));
+                return false;
+        }
+
+    }
 
     if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
         transport.transportConfig.kind = TRANSPORT_UDPv4;

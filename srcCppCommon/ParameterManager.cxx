@@ -1225,7 +1225,20 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     secureDebug->set_internal(true);
     create("secureDebug", secureDebug);
-#endif
+  #endif
+
+  #ifdef RTI_MICRO
+        Parameter<int> *crc = new Parameter<int>(1);
+        crc->set_command_line_argument("-crc", "<16, 32, 64 or 128>");
+        crc->set_type(T_NUMERIC_D);
+        crc->set_extra_argument(YES);
+        crc->set_range(0, 64); // TODO: Should be up to 128 once we support custom CRC functions
+        crc->set_group(TRANSPORT);
+        crc->set_supported_middleware(
+                Middleware::RTIDDSMICRO);
+        crc->set_internal(true);
+        create("crc", crc);
+  #endif
 }
 
 // Parse the command line parameters and set the value
