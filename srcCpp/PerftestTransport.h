@@ -33,9 +33,14 @@ struct TransportConfig {
     std::string prefixString;
     bool takenFromQoS;
 
+  #if RTI_MICRO
+    struct RTPS_InterfaceFactoryProperty *rtps_property;
+  #endif
+
     TransportConfig()
             : kind(TRANSPORT_NOT_SET),
-              takenFromQoS(false)
+              takenFromQoS(false),
+              rtps_property(NULL)
     {
     }
 
@@ -47,8 +52,17 @@ struct TransportConfig {
             kind(inputKind),
             nameString(inputNameString),
             prefixString(inputPrefixString),
-            takenFromQoS(false)
+            takenFromQoS(false),
+            rtps_property(NULL)
     {
+    }
+
+    ~TransportConfig() {
+      #if RTI_MICRO
+        if (rtps_property != NULL) {
+            OSAPI_Heap_free_struct(rtps_property);
+        }
+      #endif
     }
 };
 
