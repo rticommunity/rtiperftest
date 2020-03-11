@@ -821,7 +821,10 @@ function build_micro_cpp()
         PerftestTransport.h \
         PerftestSecurity.h \
         Infrastructure_common.h \
-        Infrastructure_micro.h"
+        Infrastructure_micro.h  \
+        \
+        \
+        CustomCRC.h"
 
     additional_source_files=" \
         ThreadPriorities.cxx \
@@ -832,7 +835,10 @@ function build_micro_cpp()
         PerftestTransport.cxx \
         PerftestSecurity.cxx \
         Infrastructure_common.cxx \
-        Infrastructure_micro.cxx"
+        Infrastructure_micro.cxx\
+        \
+        \
+        CustomCRC.cxx"
 
     rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} \
             -replace -create typefiles -create makefiles \

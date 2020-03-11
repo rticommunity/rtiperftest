@@ -1228,16 +1228,28 @@ void ParameterManager::initialize()
   #endif
 
   #ifdef RTI_MICRO
-        Parameter<int> *crc = new Parameter<int>(1);
-        crc->set_command_line_argument("-crc", "<16, 32, 64 or 128>");
+        Parameter<int> *crc = new Parameter<int>(32);
+        crc->set_command_line_argument("-crc", "<length>");
+        crc->set_description(
+            "Calculate and check CRC checksum for that specific length. 16, 32, 64 or 128");
         crc->set_type(T_NUMERIC_D);
         crc->set_extra_argument(YES);
-        crc->set_range(0, 64); // TODO: Should be up to 128 once we support custom CRC functions
+        crc->set_range(0, 128);
         crc->set_group(TRANSPORT);
         crc->set_supported_middleware(
                 Middleware::RTIDDSMICRO);
-        crc->set_internal(true);
         create("crc", crc);
+
+        Parameter<bool> *customCrc = new Parameter<bool>(false);
+        customCrc->set_command_line_argument("-customCrc", "");
+        customCrc->set_description(
+            "Use custom CRC functions (must be implemented by the user)");
+        customCrc->set_type(T_BOOL);
+        customCrc->set_extra_argument(NO);
+        customCrc->set_group(TRANSPORT);
+        customCrc->set_supported_middleware(
+                Middleware::RTIDDSMICRO);
+        create("customCrc", customCrc);
   #endif
 }
 

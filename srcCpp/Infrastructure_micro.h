@@ -13,6 +13,7 @@
 #include "osapi/osapi_time.h"
 #include "rti_me_cpp.hxx"
 #include "PerftestTransport.h"
+#include "CustomCRC.h"
 
 #ifdef RTI_SECURE_PERFTEST
   #include "sec_core/sec_core_cpp.h"

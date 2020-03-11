@@ -369,31 +369,79 @@ bool PerftestConfigureTransport(
         DDS_DomainParticipantQos &qos,
         ParameterManager *_PM)
 {
+    RTRegistry *registry = DDSDomainParticipantFactory::get_instance()->get_registry();
+    struct RTPS_InterfaceFactoryProperty *rtps_property;
+    struct RTPS_CrcClass custom_crc16 = {-1, NULL, CustomCRC_crc16};
+    struct RTPS_CrcClass custom_crc32 = {-2, NULL, CustomCRC_crc32};
+    struct RTPS_CrcClass custom_crc64 = {-3, NULL, CustomCRC_crc64};
+    struct RTPS_CrcClass custom_crc128 = {-4, NULL, CustomCRC_crc128};
+
     if (_PM->is_set("crc")) {
         qos.protocol.compute_crc = RTI_TRUE;
         qos.protocol.check_crc = RTI_TRUE;
         qos.protocol.allowed_crc_mask = DDS_CRC_BUILTIN16 | DDS_CRC_BUILTIN32 | DDS_CRC_BUILTIN64;
 
+        // If we are goind to use custom CRC functions, we need to register them
+        if (_PM->is_set("customCrc")) {
+            qos.protocol.allowed_crc_mask |= DDS_CRC_CUSTOM16 | DDS_CRC_CUSTOM32 | DDS_CRC_CUSTOM64;
+
+            if (!registry->unregister(NETIO_DEFAULT_RTPS_NAME,
+                    (struct RT_ComponentFactoryProperty **) &rtps_property, NULL)) {
+                fprintf(stderr, "Failed to unregister rtps component\n");
+                return false;
+            }
+
+            // NOTE: Will need to allocate here the rtps property
+            // TODO: Free it when perftest finishes. Ideas:
+            //          1. Unregister again the component outside and get
+            //             the pointer to rtps_property so it can be freed
+            //          2. Use a global variable on infrastructure_micro.h
+            //             and delete it when finished.
+            //       In both cases we will need a PerftestFreeTransport or similar
+            OSAPI_Heap_allocate_struct(&rtps_property, struct RTPS_InterfaceFactoryProperty);
+            *rtps_property = RTPS_INTERFACE_FACTORY_DEFAULT;
+
+            rtps_property->crc.custom_crc16_class = custom_crc16;
+            rtps_property->crc.custom_crc32_class = custom_crc32;
+            rtps_property->crc.custom_crc64_class = custom_crc64;
+            rtps_property->crc.custom_crc128_class = custom_crc128;
+
+            if (!registry->register_component(NETIO_DEFAULT_RTPS_NAME,
+                    RTPS_InterfaceFactory_get_interface(),
+                    (struct RT_ComponentFactoryProperty*) rtps_property,
+                    NULL))
+            {
+                fprintf(stderr, "Failed to register rtps component\n");
+                return false;
+            }
+        }
+
         switch (_PM->get<int>("crc")) {
             case 16:
-                qos.protocol.computed_crc_kind = DDS_CRC_BUILTIN16;
+                qos.protocol.computed_crc_kind = _PM->is_set("customCrc") ?
+                        DDS_CRC_CUSTOM16 : DDS_CRC_BUILTIN16;
                 break;
 
             case 32:
-                qos.protocol.computed_crc_kind = DDS_CRC_BUILTIN32;
+                qos.protocol.computed_crc_kind = _PM->is_set("customCrc") ?
+                        DDS_CRC_CUSTOM32 : DDS_CRC_BUILTIN32;
                 break;
 
             case 64:
-                qos.protocol.computed_crc_kind = DDS_CRC_BUILTIN64;
+                qos.protocol.computed_crc_kind = _PM->is_set("customCrc") ?
+                        DDS_CRC_CUSTOM64 : DDS_CRC_BUILTIN64;
+                break;
+
+            case 128:
+                qos.protocol.computed_crc_kind = DDS_CRC_CUSTOM128;
                 break;
 
             default:
                 fprintf(stderr,
-                        "%d bits CRC is not supported. Should be either 16, 32, 64 or 128\n",
+                        "The %d bits CRC is not supported. Should be either 16, 32, 64 or 128\n",
                         _PM->get<int>("crc"));
                 return false;
         }
-
     }
 
     if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
