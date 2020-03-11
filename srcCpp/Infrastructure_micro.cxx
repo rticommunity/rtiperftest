@@ -372,21 +372,19 @@ bool PerftestConfigureTransport(
     if (_PM->is_set("crc")) {
         qos.protocol.compute_crc = RTI_TRUE;
         qos.protocol.check_crc = RTI_TRUE;
+        qos.protocol.allowed_crc_mask = DDS_CRC_BUILTIN16 | DDS_CRC_BUILTIN32 | DDS_CRC_BUILTIN64;
 
         switch (_PM->get<int>("crc")) {
             case 16:
                 qos.protocol.computed_crc_kind = DDS_CRC_BUILTIN16;
-                qos.protocol.allowed_crc_mask  = DDS_CRC_BUILTIN16;
                 break;
 
             case 32:
                 qos.protocol.computed_crc_kind = DDS_CRC_BUILTIN32;
-                qos.protocol.allowed_crc_mask  = DDS_CRC_BUILTIN32;
                 break;
 
             case 64:
                 qos.protocol.computed_crc_kind = DDS_CRC_BUILTIN64;
-                qos.protocol.allowed_crc_mask  = DDS_CRC_BUILTIN64;
                 break;
 
             default:
