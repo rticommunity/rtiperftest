@@ -2,6 +2,10 @@
 
 #include <immintrin.h> // _mm_crc32_u8, _mm_crc32_u64
 
+#if RTI_LINUX
+#include <linux/crc32.h> // Kernel's crc32
+#endif
+
 RTI_BOOL
 CustomCRC_crc16(void *context,
                 const struct REDA_Buffer *buf,
@@ -74,6 +78,55 @@ CustomCRC_crc32(void *context,
     return RTI_TRUE;
 }
 
+RTI_BOOL
+CustomCRC_crc64(void *context,
+                const struct REDA_Buffer *buf,
+                unsigned int buf_length,
+                union RTPS_CrcChecksum *checksum)
+{
+    RTI_UINT64 crc = 0;
+    unsigned char *data = (unsigned char *) buf[0].pointer;
+    RTI_UINT32 length = buf[0].length;
+    int k;
+
+    UNUSED_ARG(k);
+    UNUSED_ARG(context);
+    UNUSED_ARG(buf_length);
+
+    if (data == NULL)
+    {
+        return 0;
+    }
+
+    while (length--)
+    {
+        crc ^= (unsigned long)(*data++) << 56;
+
+        for (k = 0; k < 8; k++)
+        {
+            crc = crc & 0x8000000000000000 ? (crc << 1) ^ 0x42f0e1eba9ea3693 : crc << 1;
+        }
+    }
+
+    checksum->crc64 = crc;
+
+    return RTI_TRUE;
+}
+
+RTI_BOOL
+CustomCRC_crc128(void *context,
+                 const struct REDA_Buffer *buf,
+                 unsigned int buf_length,
+                 union RTPS_CrcChecksum *checksum)
+{
+    return RTI_TRUE;
+}
+
+
+
+
+// TODO: Only for testing, remove
+
 // Hardware slice by byte
 RTI_BOOL
 CustomCRC_crc32_Hardware_1_byte(void *context,
@@ -124,46 +177,19 @@ CustomCRC_crc32_Hardware_8_byte(void *context,
     return RTI_TRUE;
 }
 
+#if RTI_LINUX
+// Linux Kernel CRC-32 Implementation
 RTI_BOOL
-CustomCRC_crc64(void *context,
-                const struct REDA_Buffer *buf,
-                unsigned int buf_length,
-                union RTPS_CrcChecksum *checksum)
+CustomCRC_crc32_Linux_Kernel(void *context,
+                             const struct REDA_Buffer *buf,
+                             unsigned int buf_length,
+                             union RTPS_CrcChecksum *checksum)
 {
-    RTI_UINT64 crc = 0;
-    unsigned char *data = (unsigned char *) buf[0].pointer;
-    RTI_UINT32 length = buf[0].length;
-    int k;
-
-    UNUSED_ARG(k);
     UNUSED_ARG(context);
     UNUSED_ARG(buf_length);
 
-    if (data == NULL)
-    {
-        return 0;
-    }
-
-    while (length--)
-    {
-        crc ^= (unsigned long)(*data++) << 56;
-
-        for (k = 0; k < 8; k++)
-        {
-            crc = crc & 0x8000000000000000 ? (crc << 1) ^ 0x42f0e1eba9ea3693 : crc << 1;
-        }
-    }
-
-    checksum->crc64 = crc;
+    checksum->crc32 = crc32(0xedb88320, buf[0].pointer, buf[0].length)
 
     return RTI_TRUE;
 }
-
-RTI_BOOL
-CustomCRC_crc128(void *context,
-                 const struct REDA_Buffer *buf,
-                 unsigned int buf_length,
-                 union RTPS_CrcChecksum *checksum)
-{
-    return RTI_TRUE;
-}
+#endif
