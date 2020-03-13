@@ -28,6 +28,8 @@
 *.VC.opendb
 doc
 srcDoc/_build
+logs
+.DS_Store
 
 # Files copied by the build Script.
 /srcCpp/Parameter*

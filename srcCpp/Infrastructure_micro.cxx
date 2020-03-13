@@ -371,7 +371,7 @@ bool PerftestConfigureTransport(
 {
     RTRegistry *registry = DDSDomainParticipantFactory::get_instance()->get_registry();
     struct RTPS_CrcClass custom_crc16 = {-1, NULL, CustomCRC_crc16};
-    struct RTPS_CrcClass custom_crc32 = {-2, NULL, CustomCRC_crc32};
+    struct RTPS_CrcClass custom_crc32 = {-2, NULL, CustomCRC_crc32_Hardware_8_byte}; // TODO: Change for CustomCRC_crc32
     struct RTPS_CrcClass custom_crc64 = {-3, NULL, CustomCRC_crc64};
     struct RTPS_CrcClass custom_crc128 = {-4, NULL, CustomCRC_crc128};
 

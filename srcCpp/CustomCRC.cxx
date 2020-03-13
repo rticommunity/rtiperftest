@@ -1,5 +1,7 @@
 #include "CustomCRC.h"
 
+#include <immintrin.h> // _mm_crc32_u8, _mm_crc32_u64
+
 RTI_BOOL
 CustomCRC_crc16(void *context,
                 const struct REDA_Buffer *buf,
@@ -68,6 +70,56 @@ CustomCRC_crc32(void *context,
     }
 
     checksum->crc32 = ~crc;
+
+    return RTI_TRUE;
+}
+
+// Hardware slice by byte
+RTI_BOOL
+CustomCRC_crc32_Hardware_1_byte(void *context,
+                                const struct REDA_Buffer *buf,
+                                unsigned int buf_length,
+                                union RTPS_CrcChecksum *checksum)
+{
+    RTI_UINT32 crc = 0;
+    unsigned char *data = (unsigned char *) buf[0].pointer;
+    RTI_UINT32 length = buf[0].length;
+    int k;
+
+    UNUSED_ARG(k);
+    UNUSED_ARG(context);
+    UNUSED_ARG(buf_length);
+
+    for (k = 0; k < length; k++) {
+        crc = _mm_crc32_u8(crc, data[k]);
+    }
+
+    checksum->crc32 = crc;
+
+    return RTI_TRUE;
+}
+
+// Hardware slice by 8 bytes
+RTI_BOOL
+CustomCRC_crc32_Hardware_8_byte(void *context,
+                                const struct REDA_Buffer *buf,
+                                unsigned int buf_length,
+                                union RTPS_CrcChecksum *checksum)
+{
+    RTI_UINT32 crc = 0;
+    RTI_UINT64 *data = (RTI_UINT64 *) buf[0].pointer;
+    RTI_UINT32 length = buf[0].length / (sizeof(RTI_UINT64) / sizeof(char));
+    int k;
+
+    UNUSED_ARG(k);
+    UNUSED_ARG(context);
+    UNUSED_ARG(buf_length);
+
+    for (k = 0; k < length; k++) {
+        crc = _mm_crc32_u64(crc, data[k]);
+    }
+
+    checksum->crc32 = crc;
 
     return RTI_TRUE;
 }
