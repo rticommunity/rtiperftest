@@ -869,7 +869,8 @@ function build_micro_cpp()
     cd "${classic_cpp_folder}"
 
     # NOTE: -DCMAKE_CXX_FLAGS=\"-msse4.2\" Just for _mm_crc32_u8, _mm_crc32_u64 -- TODO: Remove
-    cmake_generate_command="${CMAKE_EXE} -D CMAKE_CXX_FLAGS=\"-msse4.2\" -D CMAKE_BUILD_TYPE=${RELEASE_DEBUG} -G \"Unix Makefiles\" -B./perftest_build -H. -DRTIME_TARGET_NAME=${platform} -DPLATFORM_LIBS=\"dl;m;pthread;${additional_included_libraries}\""
+    # NOTE: z in DPLATFORM_LIBS is used to link zlib -- TODO: Remove
+    cmake_generate_command="${CMAKE_EXE} -D CMAKE_CXX_FLAGS=\"-msse4.2\" -D CMAKE_BUILD_TYPE=${RELEASE_DEBUG} -G \"Unix Makefiles\" -B./perftest_build -H. -DRTIME_TARGET_NAME=${platform} -DPLATFORM_LIBS=\"z;dl;m;pthread;${additional_included_libraries}\""
 
 	echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
     eval $cmake_generate_command

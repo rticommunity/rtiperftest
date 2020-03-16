@@ -1,10 +1,7 @@
 #include "CustomCRC.h"
 
 #include <immintrin.h> // _mm_crc32_u8, _mm_crc32_u64
-
-#if RTI_LINUX
-#include <linux/crc32.h> // Kernel's crc32
-#endif
+#include <zlib.h> // Zlib's crc32
 
 RTI_BOOL
 CustomCRC_crc16(void *context,
@@ -177,19 +174,21 @@ CustomCRC_crc32_Hardware_8_byte(void *context,
     return RTI_TRUE;
 }
 
-#if RTI_LINUX
-// Linux Kernel CRC-32 Implementation
+// Zlib CRC-32 Implementation
 RTI_BOOL
-CustomCRC_crc32_Linux_Kernel(void *context,
-                             const struct REDA_Buffer *buf,
-                             unsigned int buf_length,
-                             union RTPS_CrcChecksum *checksum)
+CustomCRC_crc32_Zlib(void *context,
+                     const struct REDA_Buffer *buf,
+                     unsigned int buf_length,
+                     union RTPS_CrcChecksum *checksum)
 {
     UNUSED_ARG(context);
     UNUSED_ARG(buf_length);
 
-    checksum->crc32 = crc32(0xedb88320, buf[0].pointer, buf[0].length)
+    RTI_UINT32 crc = crc32(0L, Z_NULL, 0);
+
+    crc = crc32(crc, (unsigned char*) buf[0].pointer, buf[0].length);
+
+    checksum->crc32  = crc;
 
     return RTI_TRUE;
 }
-#endif
