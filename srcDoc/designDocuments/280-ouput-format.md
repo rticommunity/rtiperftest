@@ -25,42 +25,39 @@ The objective to be achieved would be use some flags to control the output of th
 | `-printSummary`                        | Add summary to file       | boolean |       false        |
 
 ```
+
+====> All samples have -printFormat csv
 ===> Scan (NOT USING -noPrint)
 
-Data Length
-32
-Packets, Packets/s, Packets/s(ave), Mbps, Mbps(ave), Lost
-5242112,2677596,2677596,685.5,685.5,0,0.00
-7974912,2732570,2705083,699.5,692.5,0,0.00
-10717952,2742782,2717649,702.2,695.7,0,0.00
-Length, Packets, Packets/s (ave), Mbps (ave), Lost
+Data Length, Packets, Packets/s, Packets/s(ave), Mbps, Mbps(ave), Lost, Lost(%)
+32, 5242112,2677596,2677596,685.5,685.5,0,0.00
+32, 7974912,2732570,2705083,699.5,692.5,0,0.00
+32, 10717952,2742782,2717649,702.2,695.7,0,0.00
+Length, Packets, Packets/s (ave), Mbps (ave), Lost, Lost(%)
 32,12800020,2683530,687.0,0,0.00
 
-Data Length
-64
-Packets, Packets/s, Packets/s(ave), Mbps, Mbps(ave), Lost
-4534400,2497951,2497951,1279.0,1279.0,0,0.00
-6970752,2435967,2466959,1247.2,1263.1,0,0.00
-9434368,2463502,2465807,1261.3,1262.5,0,0.00
-Length, Packets, Packets/s (ave), Mbps (ave), Lost
+
+Data Length, Packets, Packets/s, Packets/s(ave), Mbps, Mbps(ave), Lost, Lost(%)
+64, 4534400,2497951,2497951,1279.0,1279.0,0,0.00
+64, 6970752,2435967,2466959,1247.2,1263.1,0,0.00
+64, 9434368,2463502,2465807,1261.3,1262.5,0,0.00
+Length, Packets, Packets/s (ave), Mbps (ave), Lost, Lost(%)
 64,11520018,2360357,1208.5,0,0.00
 
 
-Data Length
-128
-Packets, Packets/s, Packets/s(ave), Mbps, Mbps(ave), Lost
-3709601,1927273,1927273,1973.5,1973.5,0,0.00
-5609920,1900146,1913710,1945.7,1959.6,0,0.00
-7504000,1893909,1907109,1939.4,1952.9,0,0.00
-9465984,1961815,1920786,2008.9,1966.9,0,0.00
-Length, Packets, Packets/s (ave), Mbps (ave), Lost
+Data Length, Packets, Packets/s, Packets/s(ave), Mbps, Mbps(ave), Lost, Lost(%)
+128, 3709601,1927273,1927273,1973.5,1973.5,0,0.00
+128, 5609920,1900146,1913710,1945.7,1959.6,0,0.00
+128, 7504000,1893909,1907109,1939.4,1952.9,0,0.00
+128, 9465984,1961815,1920786,2008.9,1966.9,0,0.00
+Length, Packets, Packets/s (ave), Mbps (ave), Lost, Lost(%)
 128,9600015,1886726,1932.0,0,0.00
 
 
 
 ===> Scan (USING -noPrint)
 
-Length, Packets, Packets/s (ave), Mbps (ave), Lost
+Length, Packets, Packets/s (ave), Mbps (ave), Lost, Lost(%)
 32,10240016,2406518,616.1,0,0.00
 64,9600015,2191135,1121.9,0,0.00
 128,7680012,1745687,1787.6,0,0.00
@@ -75,19 +72,17 @@ Length, Packets, Packets/s (ave), Mbps (ave), Lost
 
 ===> Regular (NOT USING -noPrint)
 
-Data Length
-32
-Packets, Packets/s, Packets/s(ave), Mbps, Mbps(ave), Lost
-5242112,2677596,2677596,685.5,685.5,0,0.00
-7974912,2732570,2705083,699.5,692.5,0,0.00
-10717952,2742782,2717649,702.2,695.7,0,0.00
-Length, Packets, Packets/s (ave), Mbps (ave), Lost
+Data Length, Packets, Packets/s, Packets/s(ave), Mbps, Mbps(ave), Lost, Lost(%)
+32, 5242112,2677596,2677596,685.5,685.5,0,0.00
+32, 7974912,2732570,2705083,699.5,692.5,0,0.00
+32, 10717952,2742782,2717649,702.2,695.7,0,0.00
+Length, Packets, Packets/s (ave), Mbps (ave), Lost, Lost(%)
 32,12800020,2683530,687.0,0,0.00
 
 
 ===> Regular (USING -noPrint)
 
-Length, Packets, Packets/s (ave), Mbps (ave), Lost
+Length, Packets, Packets/s (ave), Mbps (ave), Lost, Lost(%)
 32,12800020,2683530,687.0,0,0.00
 
 

@@ -13,6 +13,7 @@
 #include "perftest_cpp.h"
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
+#include "PerftestPrinter.h"
 
 
 #if defined(RTI_ANDROID)
@@ -1166,6 +1167,7 @@ int perftest_cpp::Subscriber()
                 if (showCpu) {
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
+                // printLatencyInterval(structuraConLosDatos);
                 printf("Packets: %8llu  Packets/s: %7llu  Packets/s(ave): %7.0lf  "
                        "Mbps: %7.1lf  Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%) %s\n",
                         last_msgs, mps, mps_ave,
@@ -1291,6 +1293,7 @@ class LatencyListener : public IMessagingCB
     unsigned int       _num_latency;
     IMessagingWriter *_writer;
     ParameterManager *_PM;
+    PerftestPrinter _printer;
     int  subID;
     bool printIntervals;
     bool showCpu;
@@ -1349,6 +1352,9 @@ public:
         subID = _PM->get<int>("sidMultiSubTest");
         printIntervals = !_PM->get<bool>("noPrintIntervals");
         showCpu = _PM->get<bool>("cpu");
+        bool printHeaders = _PM->get<bool>("printHeaders");
+        std::string outputType = _PM->get<std::string>("outputFormat");
+        _printer.setPerftestPrinter(true, outputType);
     }
 
     void print_summary_latency(){
@@ -1631,8 +1637,7 @@ public:
             last_data_length = message.size;
 
             if (printIntervals) {
-                printf("\n\n********** New data length is %d\n",
-                       last_data_length + perftest_cpp::OVERHEAD_BYTES);
+                _printer.set_data_length(last_data_length + perftest_cpp::OVERHEAD_BYTES);
             }
         }
         else {
@@ -1644,19 +1649,20 @@ public:
                 if (showCpu) {
                     outputCpu = cpu.get_cpu_instant();
                 }
-                printf("One way Latency: %6lu " PERFT_TIME_UNIT
-                       " Ave %6.0lf " PERFT_TIME_UNIT
-                       " Std %6.1lf " PERFT_TIME_UNIT
-                       " Min %6lu " PERFT_TIME_UNIT
-                       " Max %6lu " PERFT_TIME_UNIT
-                       " %s\n",
-                        latency,
-                        latency_ave,
-                        latency_std,
-                        latency_min,
-                        latency_max,
-                        outputCpu.c_str()
-                );
+                // printf("One way Latency: %6lu " PERFT_TIME_UNIT
+                //        " Ave %6.0lf " PERFT_TIME_UNIT
+                //        " Std %6.1lf " PERFT_TIME_UNIT
+                //        " Min %6lu " PERFT_TIME_UNIT
+                //        " Max %6lu " PERFT_TIME_UNIT
+                //        " %s\n",
+                //         latency,
+                //         latency_ave,
+                //         latency_std,
+                //         latency_min,
+                //         latency_max,
+                //         outputCpu.c_str()
+                // );
+                _printer.print_pub(latency, latency_ave, latency_std, latency_min, latency_max, outputCpu);
             }
         }
 

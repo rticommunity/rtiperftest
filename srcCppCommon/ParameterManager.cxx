@@ -337,6 +337,61 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("threadPriorities", threadPriorities);
 
+    Parameter<std::string> *outputFormat = new Parameter<std::string>("regular");
+    outputFormat->set_command_line_argument("-outputFormat", "<format>");
+    outputFormat->set_description(
+            "Set the output file format.\n"
+            "There are several types supported:\n"
+            "\t{'csv', 'json', 'regular}\n"
+            "Default: regular");
+    outputFormat->set_type(T_STR);
+    outputFormat->set_extra_argument(YES);
+    outputFormat->add_valid_str_value("csv");
+    outputFormat->add_valid_str_value("json");
+    outputFormat->add_valid_str_value("regular");
+    outputFormat->set_group(GENERAL);
+    outputFormat->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("outputFormat", outputFormat);
+
+    Parameter<bool> *printHeaders = new Parameter<bool>(true);
+    printHeaders->set_command_line_argument("-printHeaders", "");
+    printHeaders->set_description(
+            "printHeaders add header row to the output file\n"
+            "Default: True");
+    printHeaders->set_type(T_BOOL);
+    printHeaders->set_extra_argument(NO);
+    printHeaders->set_group(GENERAL);
+    printHeaders->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("printHeaders", printHeaders);
+
+    Parameter<std::string> *printFileName = new Parameter<std::string>("perftest_output");
+    printFileName->set_command_line_argument("-printFileName", "<filename>");
+    printFileName->set_description(
+            "Set the output filename.\n"
+            "Default: perftest_output");
+    printFileName->set_type(T_STR);
+    printFileName->set_extra_argument(YES);
+    printFileName->set_group(GENERAL);
+    printFileName->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("printFileName", printFileName);
+
+    Parameter<bool> *printSummary = new Parameter<bool>(false);
+    printSummary->set_command_line_argument("-printSummary", "");
+    printSummary->set_description(
+            "printSummary add the summary to the output file"
+            "\nDefault: False");
+    printSummary->set_type(T_BOOL);
+    printSummary->set_extra_argument(NO);
+    printSummary->set_group(GENERAL);
+    printSummary->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("printSummary", printSummary);
+
   #ifdef RTI_FLATDATA_AVAILABLE
     Parameter<bool> *flatData = new Parameter<bool>(false);
     flatData->set_command_line_argument("-flatData", "");
