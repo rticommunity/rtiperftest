@@ -67,6 +67,10 @@ darwin_shmem_size=419430400
 # the native implementation
 RTI_PERFTEST_NANO_CLOCK=0
 
+# Variables for Custom CRC functions
+USE_CUSTOM_CRC=0
+CUSTOM_CRC_NAME=""
+
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -158,6 +162,7 @@ function usage()
     echo "                                 nano-second resolution.                        "
     echo "                                 For the Classic C++ Implementation only.       "
     echo "                                 Default is not enabled.                        "
+    echo "    --customCrc                  Compile with custom CRC functions              "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
@@ -821,10 +826,7 @@ function build_micro_cpp()
         PerftestTransport.h \
         PerftestSecurity.h \
         Infrastructure_common.h \
-        Infrastructure_micro.h  \
-        \
-        \
-        CustomCRC.h"
+        Infrastructure_micro.h"
 
     additional_source_files=" \
         ThreadPriorities.cxx \
@@ -835,10 +837,44 @@ function build_micro_cpp()
         PerftestTransport.cxx \
         PerftestSecurity.cxx \
         Infrastructure_common.cxx \
-        Infrastructure_micro.cxx\
-        \
-        \
-        CustomCRC.cxx"
+        Infrastructure_micro.cxx"
+
+    if [ "${USE_CUSTOM_CRC}" == "1" ]; then
+        additional_header_files="${additional_header_files} CustomCRC.h"
+        additional_source_files="${additional_source_files} CustomCRC.cxx"
+        additional_defines="${additional_defines} CUSTOM_CRC"
+
+        # NOTE: Just for testig -- TODO: Remove
+        if [ "${CUSTOM_CRC_NAME}_" -ne "_" ]; then
+            case $CUSTOM_CRC_NAME in
+                BitByBit)
+                    additional_defines="${additional_defines} CRC_BIT_BY_BIT"
+                    ;;
+                SlideByOne)
+                    additional_defines="${additional_defines} CRC_SLIDE_BY_ONE"
+                    ;;
+                SlideByFour)
+                    additional_defines="${additional_defines} CRC_SLIDE_BY_FOUR"
+                    ;;
+                Hardware_SlideByOne)
+                    additional_defines="${additional_defines} CRC_HARDWARE_SLIDE_BY_ONE"
+                    additional_cmake_options="${additional_cmake_options} -D CMAKE_CXX_FLAGS=\"-msse4.2\""
+                    ;;
+                Hardware_SlideByEight)
+                    additional_defines="${additional_defines} CRC_HARDWARE_SLIDE_BY_EIGHT "
+                    additional_cmake_options="${additional_cmake_options} -D CMAKE_CXX_FLAGS=\"-msse4.2\""
+                    ;;
+                Zlib)
+                    additional_defines="${additional_defines} CRC_ZLIB"
+                    additional_included_libraries="${additional_included_libraries}z;"
+                    ;;
+                *)
+                    echo -e "${ERROR_TAG} Unknown $CUSTOM_CRC_NAME custom crc function."
+                    exit -1
+                    ;;
+            esac
+        fi
+    fi
 
     rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} \
             -replace -create typefiles -create makefiles \
@@ -868,9 +904,7 @@ function build_micro_cpp()
     echo -e "${INFO_TAG} Compiling perftest_cpp"
     cd "${classic_cpp_folder}"
 
-    # NOTE: -DCMAKE_CXX_FLAGS=\"-msse4.2\" Just for _mm_crc32_u8, _mm_crc32_u64 -- TODO: Remove
-    # NOTE: z in DPLATFORM_LIBS is used to link zlib -- TODO: Remove
-    cmake_generate_command="${CMAKE_EXE} -D CMAKE_CXX_FLAGS=\"-msse4.2\" -D CMAKE_BUILD_TYPE=${RELEASE_DEBUG} -G \"Unix Makefiles\" -B./perftest_build -H. -DRTIME_TARGET_NAME=${platform} -DPLATFORM_LIBS=\"z;dl;m;pthread;${additional_included_libraries}\""
+    cmake_generate_command="${CMAKE_EXE} ${additional_cmake_options} -D CMAKE_BUILD_TYPE=${RELEASE_DEBUG} -G \"Unix Makefiles\" -B./perftest_build -H. -DRTIME_TARGET_NAME=${platform} -DPLATFORM_LIBS=\"dl;m;pthread;${additional_included_libraries}\""
 
 	echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
     eval $cmake_generate_command
@@ -1363,6 +1397,13 @@ while [ "$1" != "" ]; do
             ;;
         --osx-shmem-shmmax)
             darwin_shmem_size=$2
+            shift
+            ;;
+        --customCrc)
+            USE_CUSTOM_CRC=1
+            ;;
+        --crcName)
+            CUSTOM_CRC_NAME=$2
             shift
             ;;
         *)

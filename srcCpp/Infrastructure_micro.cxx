@@ -370,10 +370,12 @@ bool PerftestConfigureTransport(
         ParameterManager *_PM)
 {
     RTRegistry *registry = DDSDomainParticipantFactory::get_instance()->get_registry();
+  #ifdef CUSTOM_CRC
     struct RTPS_CrcClass custom_crc16 = {-1, NULL, CustomCRC_crc16};
-    struct RTPS_CrcClass custom_crc32 = {-2, NULL, CustomCRC_crc32_Hardware_8_byte}; // TODO: Change for CustomCRC_crc32
+    struct RTPS_CrcClass custom_crc32 = {-2, NULL, CustomCRC_crc32};
     struct RTPS_CrcClass custom_crc64 = {-3, NULL, CustomCRC_crc64};
     struct RTPS_CrcClass custom_crc128 = {-4, NULL, CustomCRC_crc128};
+  #endif
 
     if (_PM->is_set("crc")) {
         qos.protocol.compute_crc = RTI_TRUE;
@@ -381,6 +383,7 @@ bool PerftestConfigureTransport(
         qos.protocol.allowed_crc_mask = DDS_CRC_BUILTIN16 | DDS_CRC_BUILTIN32 | DDS_CRC_BUILTIN64;
 
         // If we are goind to use custom CRC functions, we need to register them
+      #ifdef CUSTOM_CRC
         if (_PM->is_set("customCrc")) {
             qos.protocol.allowed_crc_mask |= DDS_CRC_CUSTOM16 | DDS_CRC_CUSTOM32 | DDS_CRC_CUSTOM64;
 
@@ -389,6 +392,7 @@ bool PerftestConfigureTransport(
                 return false;
             }
 
+            // The rtps_property struct will be freed on the destructor of TransportConfig
             OSAPI_Heap_allocate_struct(&transport.transportConfig.rtps_property, struct RTPS_InterfaceFactoryProperty);
             *transport.transportConfig.rtps_property = RTPS_INTERFACE_FACTORY_DEFAULT;
 
@@ -406,6 +410,7 @@ bool PerftestConfigureTransport(
                 return false;
             }
         }
+     #endif
 
         switch (_PM->get<int>("crc")) {
             case 16:
