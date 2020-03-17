@@ -200,7 +200,11 @@ std::string PerftestTransport::printTransportConfigurationSummary()
 
     if (_PM->is_set("crc")) {
         stringStream << "\tCRC: "
+                    #if RTI_MICRO
                      << _PM->get<int>("crc");
+                    #else
+                     << "True";
+                    #endif
 
         if (_PM->is_set("customCrc")) {
             stringStream << " (Custom)";
