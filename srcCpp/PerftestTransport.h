@@ -39,9 +39,11 @@ struct TransportConfig {
 
     TransportConfig()
             : kind(TRANSPORT_NOT_SET),
-              takenFromQoS(false),
-              rtps_property(NULL)
+              takenFromQoS(false)
     {
+      #if RTI_MICRO
+        rtps_property = NULL;
+      #endif
     }
 
     TransportConfig(
@@ -52,9 +54,11 @@ struct TransportConfig {
             kind(inputKind),
             nameString(inputNameString),
             prefixString(inputPrefixString),
-            takenFromQoS(false),
-            rtps_property(NULL)
+            takenFromQoS(false)
     {
+      #if RTI_MICRO
+        rtps_property = NULL;
+      #endif
     }
 
     ~TransportConfig() {

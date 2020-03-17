@@ -807,6 +807,11 @@ bool PerftestConfigureTransport(
         return false;
     }
 
+    if (_PM->is_set("crc")) {
+        qos.wire_protocol.compute_crc = RTI_TRUE;
+        qos.wire_protocol.check_crc = RTI_TRUE;
+    }
+
     return true;
 }
 
