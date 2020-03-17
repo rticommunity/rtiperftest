@@ -1250,6 +1250,17 @@ void ParameterManager::initialize()
         customCrc->set_supported_middleware(
                 Middleware::RTIDDSMICRO);
         create("customCrc", customCrc);
+  #else // Pro does not support different CRC functions yet.
+        Parameter<bool> *crc = new Parameter<bool>(false);
+        crc->set_command_line_argument("-crc", "");
+        crc->set_description(
+                "Calculate and check CRC-32 checksum");
+        crc->set_type(T_BOOL);
+        crc->set_extra_argument(NO);
+        crc->set_group(TRANSPORT);
+        crc->set_supported_middleware(
+                Middleware::RTIDDSPRO);
+        create("crc", crc);
   #endif
 }
 
