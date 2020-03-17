@@ -50,7 +50,7 @@ void PerftestPrinter::print_pub(unsigned long latency, double latency_ave,
     switch (_outputFormat)
     {
         case CSV :
-            if (!_headerPrinted)
+            if (_headerPrinted)
             {
                 _headerPrinted = !_headerPrinted;
                 printf("Data Length, Latency (" PERFT_TIME_UNIT

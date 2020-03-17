@@ -1354,7 +1354,7 @@ public:
         printIntervals = !_PM->get<bool>("noPrintIntervals");
         showCpu = _PM->get<bool>("cpu");
         noText = _PM->get<bool>("noPrintText");
-        _printer.set_header_printed(_PM->get<bool>("noPrintHeaders"));
+        _printer.set_header_printed(!(_PM->get<bool>("noPrintHeaders") || noText));
         _printer.set_output_format(_PM->get<std::string>("outputFormat"));
     }
 

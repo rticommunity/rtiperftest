@@ -356,7 +356,7 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("outputFormat", outputFormat);
 
-    Parameter<bool> *noPrintHeaders = new Parameter<bool>(true);
+    Parameter<bool> *noPrintHeaders = new Parameter<bool>(false);
     noPrintHeaders->set_command_line_argument("-noPrintHeaders", "");
     noPrintHeaders->set_description(
             "Not add header row to the output\n"
@@ -370,7 +370,7 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("noPrintHeaders", noPrintHeaders);
 
-    Parameter<bool> *noPrintSummary = new Parameter<bool>(true);
+    Parameter<bool> *noPrintSummary = new Parameter<bool>(false);
     noPrintSummary->set_command_line_argument("-noPrintSummary", "");
     noPrintSummary->set_description(
             "Not add summary to the output\n"
@@ -381,7 +381,7 @@ void ParameterManager::initialize()
     noPrintSummary->set_supported_middleware(Middleware::RTIDDSPRO);
     create("noPrintSummary", noPrintSummary);
 
-    Parameter<bool> *noPrintSerialization = new Parameter<bool>(true);
+    Parameter<bool> *noPrintSerialization = new Parameter<bool>(false);
     noPrintSerialization->set_command_line_argument("-noPrintSerialization", "");
     noPrintSerialization->set_description(
             "Not add serialization to the output\n"
@@ -392,7 +392,7 @@ void ParameterManager::initialize()
     noPrintSerialization->set_supported_middleware(Middleware::RTIDDSPRO);
     create("noPrintSerialization", noPrintSerialization);
 
-    Parameter<bool> *noPrintText = new Parameter<bool>(true);
+    Parameter<bool> *noPrintText = new Parameter<bool>(false);
     noPrintText->set_command_line_argument("-noPrintText", "");
     noPrintText->set_description(
             "Not add any text, just data\n"
