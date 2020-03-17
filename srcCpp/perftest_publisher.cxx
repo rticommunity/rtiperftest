@@ -1297,6 +1297,7 @@ class LatencyListener : public IMessagingCB
     int  subID;
     bool printIntervals;
     bool showCpu;
+    bool noText;
 
 public:
     IMessagingReader *_reader;
@@ -1352,9 +1353,9 @@ public:
         subID = _PM->get<int>("sidMultiSubTest");
         printIntervals = !_PM->get<bool>("noPrintIntervals");
         showCpu = _PM->get<bool>("cpu");
-        bool printHeaders = _PM->get<bool>("printHeaders");
-        std::string outputType = _PM->get<std::string>("outputFormat");
-        _printer.setPerftestPrinter(true, outputType);
+        noText = _PM->get<bool>("noPrintText");
+        _printer.set_header_printed(_PM->get<bool>("noPrintHeaders"));
+        _printer.set_output_format(_PM->get<std::string>("outputFormat"));
     }
 
     void print_summary_latency(){
@@ -1391,28 +1392,30 @@ public:
             cpu = CpuMonitor();
             cpu.initialize();
         }
-
-        printf("Length: %5d"
-               " Latency: Ave %6.0lf " PERFT_TIME_UNIT
-               " Std %6.1lf " PERFT_TIME_UNIT
-               " Min %6lu " PERFT_TIME_UNIT
-               " Max %6lu " PERFT_TIME_UNIT
-               " 50%% %6lu " PERFT_TIME_UNIT
-               " 90%% %6lu " PERFT_TIME_UNIT
-               " 99%% %6lu " PERFT_TIME_UNIT
-               " 99.99%% %6lu " PERFT_TIME_UNIT
-               " 99.9999%% %6lu " PERFT_TIME_UNIT
-               " %s\n",
-                totalSampleSize,
-                latency_ave, latency_std, latency_min, latency_max,
-                _latency_history[count*50/100],
-                _latency_history[count*90/100],
-                _latency_history[count*99/100],
-                _latency_history[(int)(count*(9999.0/10000))],
-                _latency_history[(int)(count*(999999.0/1000000))],
-                outputCpu.c_str());
-        fflush(stdout);
-
+        // Add option to print on csv
+        if(!(_PM->get<bool>("noPrintSummary") || noText))
+        {
+            printf("Length: %5d"
+                " Latency: Ave %6.0lf " PERFT_TIME_UNIT
+                " Std %6.1lf " PERFT_TIME_UNIT
+                " Min %6lu " PERFT_TIME_UNIT
+                " Max %6lu " PERFT_TIME_UNIT
+                " 50%% %6lu " PERFT_TIME_UNIT
+                " 90%% %6lu " PERFT_TIME_UNIT
+                " 99%% %6lu " PERFT_TIME_UNIT
+                " 99.99%% %6lu " PERFT_TIME_UNIT
+                " 99.9999%% %6lu " PERFT_TIME_UNIT
+                " %s\n",
+                    totalSampleSize,
+                    latency_ave, latency_std, latency_min, latency_max,
+                    _latency_history[count*50/100],
+                    _latency_history[count*90/100],
+                    _latency_history[count*99/100],
+                    _latency_history[(int)(count*(9999.0/10000))],
+                    _latency_history[(int)(count*(999999.0/1000000))],
+                    outputCpu.c_str());
+            fflush(stdout);
+        }
       #ifndef RTI_MICRO
         mask = (_PM->get<int>("unbounded") != 0) << 0;
         mask += _PM->get<bool>("keyed") << 1;
@@ -1512,12 +1515,14 @@ public:
         default:
             break;
         }
-
-        printf("Serialization/Deserialization: %0.3f us / %0.3f us / TOTAL: "
-                "%0.3f us\n",
-               serializeTime,
-               deserializeTime,
-               serializeTime + deserializeTime);
+        if(!(_PM->get<bool>("noPrintSerialization") || noText))
+        {
+            printf("Serialization/Deserialization: %0.3f us / %0.3f us / TOTAL: "
+                    "%0.3f us\n",
+                    serializeTime,
+                    deserializeTime,
+                    serializeTime + deserializeTime);
+        }
       #endif
 
         latency_sum = 0;
@@ -1649,19 +1654,6 @@ public:
                 if (showCpu) {
                     outputCpu = cpu.get_cpu_instant();
                 }
-                // printf("One way Latency: %6lu " PERFT_TIME_UNIT
-                //        " Ave %6.0lf " PERFT_TIME_UNIT
-                //        " Std %6.1lf " PERFT_TIME_UNIT
-                //        " Min %6lu " PERFT_TIME_UNIT
-                //        " Max %6lu " PERFT_TIME_UNIT
-                //        " %s\n",
-                //         latency,
-                //         latency_ave,
-                //         latency_std,
-                //         latency_min,
-                //         latency_max,
-                //         outputCpu.c_str()
-                // );
                 _printer.print_pub(latency, latency_ave, latency_std, latency_min, latency_max, outputCpu);
             }
         }

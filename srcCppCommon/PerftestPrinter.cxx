@@ -8,32 +8,34 @@
 
 #include "PerftestPrinter.h"
 
-PerftestOuputType get_output_format(std::string outputFormat)
+PerftestOuputFormat get_output_format(std::string outputFormat)
 {
     if(outputFormat == "csv"){
-        return PerftestOuputType::CSV;
+        return PerftestOuputFormat::CSV;
     } else {
-        return PerftestOuputType::REGULAR;
+        return PerftestOuputFormat::REGULAR;
     }
 }
 
 PerftestPrinter::PerftestPrinter()
 {
     _dataLength = 100;
-    _outputType = PerftestOuputType::REGULAR;
+    _outputFormat = PerftestOuputFormat::REGULAR;
 }
 
-void PerftestPrinter::setPerftestPrinter(bool headerPrinted,
-        std::string outputType)
+void PerftestPrinter::set_header_printed(bool headerPrinted)
 {
-    _headerPrinted = !headerPrinted;
-    _outputType = get_output_format(outputType);
-    _filename = "outputData." + outputType;
+    _headerPrinted = headerPrinted;
+}
+
+void PerftestPrinter::set_output_format(std::string outputFormat)
+{
+    _outputFormat = get_output_format(outputFormat);
 }
 
 void PerftestPrinter::set_data_length(unsigned int dataLength)
 {
-    if (_outputType == PerftestOuputType::REGULAR){
+    if (_outputFormat == PerftestOuputFormat::REGULAR){
         printf("\n\n********** New data length is %d\n",
                 dataLength);
     } else {
@@ -45,24 +47,26 @@ void PerftestPrinter::print_pub(unsigned long latency, double latency_ave,
         double latency_std, unsigned long latency_min,
         unsigned long latency_max, std::string outputCpu)
 {
-    switch (_outputType)
+    switch (_outputFormat)
     {
-        case PerftestOuputType::CSV :
-            outputFile.open(_filename, std::ios::out | std::ios::app);
-
+        case CSV :
             if (!_headerPrinted)
             {
-                _headerPrinted = true;
-                outputFile << "Data Length, Latency, Ave, Std, Min, Max" << std::endl;
+                _headerPrinted = !_headerPrinted;
+                printf("Data Length, Latency (" PERFT_TIME_UNIT
+                        "), Ave (" PERFT_TIME_UNIT
+                        "), Std (" PERFT_TIME_UNIT
+                        "), Min (" PERFT_TIME_UNIT 
+                        "), Max (" PERFT_TIME_UNIT ")\n");
             }
-            outputFile <<  _dataLength << "," << latency << "," << latency_ave << "," << latency_std << "," << latency_min << "," << latency_max << std::endl;
-            outputFile.close();
+            printf("%11d,%13lu,%9.0lf,%9.1lf,%9lu,%9lu\n", _dataLength, latency, latency_ave, 
+                    latency_std, latency_min, latency_max);
             break;
             
-        case PerftestOuputType::JSON :
+        case JSON :
             break;
 
-        case PerftestOuputType::REGULAR :
+        case REGULAR :
             printf("One way Latency: %6lu " PERFT_TIME_UNIT
                     " Ave %6.0lf " PERFT_TIME_UNIT
                     " Std %6.1lf " PERFT_TIME_UNIT

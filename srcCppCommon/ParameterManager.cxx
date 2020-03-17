@@ -342,8 +342,8 @@ void ParameterManager::initialize()
     outputFormat->set_description(
             "Set the output file format.\n"
             "There are several types supported:\n"
-            "\t{'csv', 'json', 'regular}\n"
-            "Default: regular");
+            "\t{'csv', 'json', 'regular'}\n"
+            "Default: 'regular'");
     outputFormat->set_type(T_STR);
     outputFormat->set_extra_argument(YES);
     outputFormat->add_valid_str_value("csv");
@@ -356,41 +356,52 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("outputFormat", outputFormat);
 
-    Parameter<bool> *printHeaders = new Parameter<bool>(true);
-    printHeaders->set_command_line_argument("-printHeaders", "");
-    printHeaders->set_description(
-            "printHeaders add header row to the output file\n"
-            "Default: True");
-    printHeaders->set_type(T_BOOL);
-    printHeaders->set_extra_argument(NO);
-    printHeaders->set_group(GENERAL);
-    printHeaders->set_supported_middleware(
+    Parameter<bool> *noPrintHeaders = new Parameter<bool>(true);
+    noPrintHeaders->set_command_line_argument("-noPrintHeaders", "");
+    noPrintHeaders->set_description(
+            "Not add header row to the output\n"
+            "Default: False");
+    noPrintHeaders->set_type(T_BOOL);
+    noPrintHeaders->set_extra_argument(NO);
+    noPrintHeaders->set_group(GENERAL);
+    noPrintHeaders->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO);
-    create("printHeaders", printHeaders);
+    create("noPrintHeaders", noPrintHeaders);
 
-    Parameter<std::string> *printFileName = new Parameter<std::string>("perftest_output");
-    printFileName->set_command_line_argument("-printFileName", "<filename>");
-    printFileName->set_description(
-            "Set the output filename.\n"
-            "Default: perftest_output");
-    printFileName->set_type(T_STR);
-    printFileName->set_extra_argument(YES);
-    printFileName->set_group(GENERAL);
-    printFileName->set_supported_middleware(Middleware::RTIDDSPRO);
-    create("printFileName", printFileName);
+    Parameter<bool> *noPrintSummary = new Parameter<bool>(true);
+    noPrintSummary->set_command_line_argument("-noPrintSummary", "");
+    noPrintSummary->set_description(
+            "Not add summary to the output\n"
+            "Default: False");
+    noPrintSummary->set_type(T_BOOL);
+    noPrintSummary->set_extra_argument(NO);
+    noPrintSummary->set_group(GENERAL);
+    noPrintSummary->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("noPrintSummary", noPrintSummary);
 
-    Parameter<bool> *printSummary = new Parameter<bool>(false);
-    printSummary->set_command_line_argument("-printSummary", "");
-    printSummary->set_description(
-            "printSummary add the summary to the output file"
-            "\nDefault: False");
-    printSummary->set_type(T_BOOL);
-    printSummary->set_extra_argument(NO);
-    printSummary->set_group(GENERAL);
-    printSummary->set_supported_middleware(Middleware::RTIDDSPRO);
-    create("printSummary", printSummary);
+    Parameter<bool> *noPrintSerialization = new Parameter<bool>(true);
+    noPrintSerialization->set_command_line_argument("-noPrintSerialization", "");
+    noPrintSerialization->set_description(
+            "Not add serialization to the output\n"
+            "Default: False");
+    noPrintSerialization->set_type(T_BOOL);
+    noPrintSerialization->set_extra_argument(NO);
+    noPrintSerialization->set_group(GENERAL);
+    noPrintSerialization->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("noPrintSerialization", noPrintSerialization);
+
+    Parameter<bool> *noPrintText = new Parameter<bool>(true);
+    noPrintText->set_command_line_argument("-noPrintText", "");
+    noPrintText->set_description(
+            "Not add any text, just data\n"
+            "Default: False");
+    noPrintText->set_type(T_BOOL);
+    noPrintText->set_extra_argument(NO);
+    noPrintText->set_group(GENERAL);
+    noPrintText->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("noPrintText", noPrintText);
 
   #ifdef RTI_FLATDATA_AVAILABLE
     Parameter<bool> *flatData = new Parameter<bool>(false);

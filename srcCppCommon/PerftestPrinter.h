@@ -17,13 +17,13 @@
 #include "Infrastructure_common.h"
 #include <fstream>
 
-enum PerftestOuputType {
+enum PerftestOuputFormat {
     CSV,
     JSON,
     REGULAR
 };
 
-PerftestOuputType get_output_format(std::string outputFormat);
+PerftestOuputFormat get_output_format(std::string outputFormat);
 
 class PerftestPrinter {
     private:
@@ -31,18 +31,16 @@ class PerftestPrinter {
         bool _headerPrinted;
         bool  _showCPU; // Control -showcpu flag?
         std::string _latencyIntervalHeader;
-        PerftestOuputType _outputType;
-        std::string _filename;
-        std::ofstream outputFile;
+        PerftestOuputFormat _outputFormat;
 
     public:
         PerftestPrinter();
-        void setPerftestPrinter(bool headerPrinted, std::string outputType);
         ~PerftestPrinter(){ }
 
         // Set and Get members
         void set_data_length(unsigned int dataLength);
-
+        void set_header_printed(bool headerPrinted);
+        void set_output_format(std::string outputFormat);
         // Methods
         void print_pub(unsigned long latency, double latency_ave, double latency_std,
                 unsigned long latency_min, unsigned long latency_max, std::string outputCpu);
@@ -54,16 +52,19 @@ class PerftestPrinter {
 /**
  * TODO
  * - Control "-scan -noprint"
- *   This print just the summary part
- * - Discuss structure with string headers save in the class
- * - One more enum for select what type (pub, sub, pub_summary, sub_summary)
  * - Move Serialization/Deserialization to new row
- * - Have differents constructs for each case (no name, no type, just use the default one and not have to indicate)
- * - Use enum type?
- * - Add delete file option
+ * - Join noPrintHeaders noPrintSummary to noPrintText?
+ * - Change fstream for '>' in exec time "use fprintf(stdout, "text")"
+ * - outputFormat:  - Regular   (default form)
+ *                  - csv
+ *                  - json
+ * - Not need another form to print on terminal, just use '>' or not use
+ * - Create struct for send parameters
+ * - 4 functions for each type ()
+ * - Add to headers type data (us)
  * - Types of Heades:
- *  -
- *    Data Length, Packets, Packets/s, Packets/s(ave), Mbps, Mbps(ave), Lost, Lost(%)
+ *      Data Length, Packets, Packets/s, Packets/s(ave), Mbps, Mbps(ave), Lost, Lost(%) -> Sub
+ *      
  */
 
 
