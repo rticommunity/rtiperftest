@@ -845,7 +845,7 @@ function build_micro_cpp()
         additional_defines="${additional_defines} CUSTOM_CRC"
 
         # NOTE: Just for testig -- TODO: Remove
-        if [ "${CUSTOM_CRC_NAME}_" -ne "_" ]; then
+        if [ ! -z "${CUSTOM_CRC_NAME}" ]; then
             case $CUSTOM_CRC_NAME in
                 BitByBit)
                     additional_defines="${additional_defines} CRC_BIT_BY_BIT"
@@ -873,6 +873,8 @@ function build_micro_cpp()
                     exit -1
                     ;;
             esac
+
+            echo -e "${INFO_TAG} Using custom CRC: $CUSTOM_CRC_NAME."
         fi
     fi
 
