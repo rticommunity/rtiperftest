@@ -1,30 +1,29 @@
 #include "rti_me_cpp.hxx"
 
 RTI_BOOL
-CustomCRC_crc16(void *context,
-                const struct REDA_Buffer *buf,
-                unsigned int buf_length,
-                union RTPS_CrcChecksum *checksum);
-
-RTI_BOOL
 CustomCRC_crc32(void *context,
                 const struct REDA_Buffer *buf,
                 unsigned int buf_length,
-                union RTPS_CrcChecksum *checksum);
+                RTPS_Checksum_T *checksum);
 
 
 RTI_BOOL
 CustomCRC_crc64(void *context,
                 const struct REDA_Buffer *buf,
                 unsigned int buf_length,
-                union RTPS_CrcChecksum *checksum);
+                RTPS_Checksum_T *checksum);
 
 RTI_BOOL
 CustomCRC_crc128(void *context,
                  const struct REDA_Buffer *buf,
                  unsigned int buf_length,
-                 union RTPS_CrcChecksum *checksum);
+                 RTPS_Checksum_T *checksum);
 
+RTI_BOOL
+CustomCRC_crc256(void *context,
+                 const struct REDA_Buffer *buf,
+                 unsigned int buf_length,
+                 RTPS_Checksum_T *checksum);
 
 
 
@@ -34,37 +33,37 @@ inline RTI_BOOL
 CustomCRC_crc32_BitByBit(void *context,
                          const struct REDA_Buffer *buf,
                          unsigned int buf_length,
-                         union RTPS_CrcChecksum *checksum);
+                         RTPS_Checksum_T *checksum);
 
 inline RTI_BOOL
 CustomCRC_crc32_Hardware_SlideByOne(void *context,
                                 const struct REDA_Buffer *buf,
                                 unsigned int buf_length,
-                                union RTPS_CrcChecksum *checksum);
+                                RTPS_Checksum_T *checksum);
 
 inline RTI_BOOL
 CustomCRC_crc32_Hardware_SlideByEight(void *context,
                                 const struct REDA_Buffer *buf,
                                 unsigned int buf_length,
-                                union RTPS_CrcChecksum *checksum);
+                                RTPS_Checksum_T *checksum);
 
 inline RTI_BOOL
 CustomCRC_crc32_Zlib(void *context,
                      const struct REDA_Buffer *buf,
                      unsigned int buf_length,
-                     union RTPS_CrcChecksum *checksum);
+                     RTPS_Checksum_T *checksum);
 
 inline RTI_BOOL
 CustomCRC_crc32_SlideByFour(void *context,
                             const struct REDA_Buffer *buf,
                             unsigned int buf_length,
-                            union RTPS_CrcChecksum *checksum);
+                            RTPS_Checksum_T *checksum);
 
 inline RTI_BOOL
 CustomCRC_crc32_SlideByOne(void *context,
                            const struct REDA_Buffer *buf,
                            unsigned int buf_length,
-                           union RTPS_CrcChecksum *checksum);
+                           RTPS_Checksum_T *checksum);
 
 const RTI_UINT32 crc_table_SlideByFour[][256] =
 {

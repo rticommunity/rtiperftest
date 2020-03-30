@@ -804,7 +804,7 @@ function build_micro_cpp()
     ##############################################################################
     # Generate files for srcCpp
     if [ "${BUILD_MICRO_24x_COMPATIBILITY}" -eq "1" ]; then
-        additional_defines=${additional_defines}" RTI_MICRO_24x_COMPATIBILITY"
+        additional_defines=${additional_defines}" RTI_MICRO_24x_COMPATIBILITY RTIME_HAVE_DPDE"
     else
         rtiddsgen_extra_options="${rtiddsgen_extra_options} -sequenceSize ${MICRO_UNBOUNDED_SEQUENCE_SIZE}"
 

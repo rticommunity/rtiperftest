@@ -371,21 +371,21 @@ bool PerftestConfigureTransport(
 {
     RTRegistry *registry = DDSDomainParticipantFactory::get_instance()->get_registry();
   #ifdef CUSTOM_CRC
-    struct RTPS_CrcClass custom_crc16 = {-1, NULL, CustomCRC_crc16};
-    struct RTPS_CrcClass custom_crc32 = {-2, NULL, CustomCRC_crc32};
-    struct RTPS_CrcClass custom_crc64 = {-3, NULL, CustomCRC_crc64};
-    struct RTPS_CrcClass custom_crc128 = {-4, NULL, CustomCRC_crc128};
+    RTPS_ChecksumClass_T custom_crc32 = {-1, NULL, CustomCRC_crc32};
+    RTPS_ChecksumClass_T custom_crc64 = {-2, NULL, CustomCRC_crc64};
+    RTPS_ChecksumClass_T custom_crc128 = {-3, NULL, CustomCRC_crc128};
+    RTPS_ChecksumClass_T custom_crc256 = {-4, NULL, CustomCRC_crc256};
   #endif
 
     if (_PM->is_set("crc")) {
         qos.protocol.compute_crc = RTI_TRUE;
         qos.protocol.check_crc = RTI_TRUE;
-        qos.protocol.allowed_crc_mask = DDS_CRC_BUILTIN16 | DDS_CRC_BUILTIN32 | DDS_CRC_BUILTIN64;
+        qos.protocol.allowed_crc_mask = DDS_CHECKSUM_BUILTIN32 | DDS_CHECKSUM_BUILTIN64 | DDS_CHECKSUM_BUILTIN128;
 
         // If we are goind to use custom CRC functions, we need to register them
       #ifdef CUSTOM_CRC
         if (_PM->is_set("customCrc")) {
-            qos.protocol.allowed_crc_mask |= DDS_CRC_CUSTOM16 | DDS_CRC_CUSTOM32 | DDS_CRC_CUSTOM64;
+            qos.protocol.allowed_crc_mask |= DDS_CHECKSUM_CUSTOM32 | DDS_CHECKSUM_CUSTOM64 | DDS_CHECKSUM_CUSTOM128 | DDS_CHECKSUM_CUSTOM256;
 
             if (!registry->unregister(NETIO_DEFAULT_RTPS_NAME, NULL, NULL)) {
                 fprintf(stderr, "Failed to unregister rtps component\n");
@@ -396,10 +396,10 @@ bool PerftestConfigureTransport(
             OSAPI_Heap_allocate_struct(&transport.transportConfig.rtps_property, struct RTPS_InterfaceFactoryProperty);
             *transport.transportConfig.rtps_property = RTPS_INTERFACE_FACTORY_DEFAULT;
 
-            transport.transportConfig.rtps_property->crc.custom_crc16_class = custom_crc16;
-            transport.transportConfig.rtps_property->crc.custom_crc32_class = custom_crc32;
-            transport.transportConfig.rtps_property->crc.custom_crc64_class = custom_crc64;
-            transport.transportConfig.rtps_property->crc.custom_crc128_class = custom_crc128;
+            transport.transportConfig.rtps_property->checksum.custom_checksum32_class = custom_crc32;
+            transport.transportConfig.rtps_property->checksum.custom_checksum64_class = custom_crc64;
+            transport.transportConfig.rtps_property->checksum.custom_checksum128_class = custom_crc128;
+            transport.transportConfig.rtps_property->checksum.custom_checksum256_class = custom_crc256;
 
             if (!registry->register_component(NETIO_DEFAULT_RTPS_NAME,
                     RTPS_InterfaceFactory_get_interface(),
@@ -413,28 +413,28 @@ bool PerftestConfigureTransport(
      #endif
 
         switch (_PM->get<int>("crc")) {
-            case 16:
-                qos.protocol.computed_crc_kind = _PM->is_set("customCrc") ?
-                        DDS_CRC_CUSTOM16 : DDS_CRC_BUILTIN16;
-                break;
-
             case 32:
                 qos.protocol.computed_crc_kind = _PM->is_set("customCrc") ?
-                        DDS_CRC_CUSTOM32 : DDS_CRC_BUILTIN32;
+                        DDS_CHECKSUM_CUSTOM32 : DDS_CHECKSUM_BUILTIN32;
                 break;
 
             case 64:
                 qos.protocol.computed_crc_kind = _PM->is_set("customCrc") ?
-                        DDS_CRC_CUSTOM64 : DDS_CRC_BUILTIN64;
+                        DDS_CHECKSUM_CUSTOM64 : DDS_CHECKSUM_BUILTIN64;
                 break;
 
             case 128:
-                qos.protocol.computed_crc_kind = DDS_CRC_CUSTOM128;
+                qos.protocol.computed_crc_kind = _PM->is_set("customCrc") ?
+                        DDS_CHECKSUM_CUSTOM128 : DDS_CHECKSUM_BUILTIN128;
+                break;
+
+            case 256:
+                qos.protocol.computed_crc_kind = DDS_CHECKSUM_CUSTOM256;
                 break;
 
             default:
                 fprintf(stderr,
-                        "The %d bits CRC is not supported. Should be either 16, 32, 64 or 128\n",
+                        "The %d bits CRC is not supported. Should be either 32, 64, 128 or 256\n",
                         _PM->get<int>("crc"));
                 return false;
         }
