@@ -1806,7 +1806,9 @@ int perftest_cpp::RunPublisher()
         }
 
         if (_SleepNanosec > 0) {
-            rti::util::sleep(dds::core::Duration(0,(unsigned int)_SleepNanosec));
+            unsigned int sec = (unsigned int) (_SleepNanosec / 1000000000u);
+            unsigned int nanosec = (unsigned int) _SleepNanosec - sec * 1000000000;
+            rti::util::sleep(dds::core::Duration(sec, nanosec));
         }
 
         pingID = -1;
