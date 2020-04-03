@@ -103,6 +103,11 @@ void PerftestClock::milliSleep(unsigned int millisec)
     OSAPI_Thread_sleep(millisec);
 }
 
+void PerftestClock::sleep(const struct DDS_Duration_t& sleep_period)
+{
+    NDDSUtility::sleep(sleep_period);
+}
+
 /********************************************************************/
 /* Get Connext Micro functions */
 
