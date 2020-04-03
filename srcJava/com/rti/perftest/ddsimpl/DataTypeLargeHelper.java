@@ -7,6 +7,7 @@ package com.rti.perftest.ddsimpl;
 
 import java.util.List;
 import com.rti.dds.topic.TypeSupportImpl;
+import com.rti.dds.cdr.CdrEncapsulation;
 import com.rti.perftest.TestMessage;
 import com.rti.perftest.gen.TestDataLarge_t;
 import com.rti.perftest.gen.TestDataLarge_tSeq;
@@ -93,6 +94,24 @@ public class DataTypeLargeHelper implements TypeHelper<TestDataLarge_t> {
     @SuppressWarnings("rawtypes")
     public int getMaxPerftestSampleSize() {
         return _maxPerftestSampleSize;
+    }
+
+    public long getSerializedOverheadSize() {
+        TestDataLarge_t  myType = new  TestDataLarge_t();
+        myType.entity_id = 0;
+        myType.seq_num = 0;
+        myType.timestamp_sec = 0;
+        myType.timestamp_usec = 0;
+        myType.latency_ping = 0;
+        myType.bin_data.loan(null, 0);
+
+        /*
+         * Setting the input buffer to null, this function will return the serialize
+         * sample size. Also the length will be ignored.
+         */
+        return getTypeSupport().serialize_to_cdr_buffer(null, 0, myType)
+                - CdrEncapsulation.CDR_ENCAPSULATION_HEADER_SIZE;
+
     }
 
     private int _maxPerftestSampleSize = PerfTest.getMaxPerftestSampleSizeJava();

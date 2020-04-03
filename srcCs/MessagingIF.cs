@@ -82,6 +82,15 @@ namespace PerformanceTest
          * to get data
          */
         IMessagingReader CreateReader(string topic_name, IMessagingCB callback);
+
+        /*
+         * Calculates the overhead bytes added by all the members on the
+         * TestData_* type, excluding the content of the sequence.
+         */
+        bool get_serialized_overhead_size(uint overhead_size) {
+            /* If the function is not defined by the middleware just return true */
+            return true;
+        };
     }
 
 
@@ -106,6 +115,9 @@ namespace PerformanceTest
         ITypeHelper<T> clone();
 
         ulong getMaxPerftestSampleSize();
+
+        /* Return the overhead size used by perftest */
+        public long getSerializedOverheadSize();
 
     }
 }

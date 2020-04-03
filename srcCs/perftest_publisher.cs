@@ -108,6 +108,26 @@ namespace PerformanceTest {
             return _maxPerftestSampleSize;
         }
 
+        public long getSerializedOverheadSize() {
+            UInt32 overhead = 0;
+            TestData_t  myType = new  TestData_t();
+            myType.entity_id = 0;
+            myType.seq_num = 0;
+            myType.timestamp_sec = 0;
+            myType.timestamp_usec = 0;
+            myType.latency_ping = 0;
+            myType.bin_data.setMaximum(0);
+            myType.bin_data.setSize(0);
+
+            /*
+            * Setting the input buffer to null, this function will return the
+            * serialize sample size.
+            */
+            getTypeSupport().serialize_to_cdr_buffer(null, overhead, myType);
+            overhead -= CdrEncapsulation.CDR_ENCAPSULATION_HEADER_SIZE;
+            return overhead;
+        }
+
     }
 
     /*********************************************************
@@ -203,6 +223,26 @@ namespace PerformanceTest {
 
         public ulong getMaxPerftestSampleSize() {
             return _maxPerftestSampleSize;
+        }
+
+        public long getSerializedOverheadSize() {
+            UInt32 overhead = 0;
+            TestDataLarge_t  myType = new  TestDataLarge_t();
+            myType.entity_id = 0;
+            myType.seq_num = 0;
+            myType.timestamp_sec = 0;
+            myType.timestamp_usec = 0;
+            myType.latency_ping = 0;
+            myType.bin_data.setMaximum(0);
+            myType.bin_data.setSize(0);
+
+            /*
+            * Setting the input buffer to null, this function will return the
+            * serialize sample size.
+            */
+            getTypeSupport().serialize_to_cdr_buffer(null, overhead, myType);
+            overhead -= CdrEncapsulation.CDR_ENCAPSULATION_HEADER_SIZE;
+            return overhead;
         }
 
     }
@@ -303,6 +343,25 @@ namespace PerformanceTest {
             return _maxPerftestSampleSize;
         }
 
+        public long getSerializedOverheadSize() {
+            UInt32 overhead = 0;
+            TestDataKeyed_t  myType = new  TestDataKeyed_t();
+            myType.entity_id = 0;
+            myType.seq_num = 0;
+            myType.timestamp_sec = 0;
+            myType.timestamp_usec = 0;
+            myType.latency_ping = 0;
+            myType.bin_data.setMaximum(0);
+            myType.bin_data.setSize(0);
+
+            /*
+            * Setting the input buffer to null, this function will return the
+            * serialize sample size.
+            */
+            getTypeSupport().serialize_to_cdr_buffer(null, overhead, myType);
+            overhead -= CdrEncapsulation.CDR_ENCAPSULATION_HEADER_SIZE;
+            return overhead;
+        }
     }
 
     /*********************************************************
@@ -398,6 +457,26 @@ namespace PerformanceTest {
 
         public ulong getMaxPerftestSampleSize() {
             return _maxPerftestSampleSize;
+        }
+
+        public long getSerializedOverheadSize() {
+            UInt32 overhead = 0;
+            TestDataKeyedLarge_t  myType = new  TestDataKeyedLarge_t();
+            myType.entity_id = 0;
+            myType.seq_num = 0;
+            myType.timestamp_sec = 0;
+            myType.timestamp_usec = 0;
+            myType.latency_ping = 0;
+            myType.bin_data.setMaximum(0);
+            myType.bin_data.setSize(0);
+
+            /*
+            * Setting the input buffer to null, this function will return the
+            * serialize sample size.
+            */
+            getTypeSupport().serialize_to_cdr_buffer(null, overhead, myType);
+            overhead -= CdrEncapsulation.CDR_ENCAPSULATION_HEADER_SIZE;
+            return overhead;
         }
 
     }
@@ -584,6 +663,36 @@ namespace PerformanceTest {
 
         public ulong getMaxPerftestSampleSize() {
             return _maxPerftestSampleSize;
+        }
+
+        public long getSerializedOverheadSize() {
+            /* Create a copy of the dynamic data */
+            DynamicDataTypeHelper myType = new DynamicDataTypeHelper(
+                    _myData,
+                    _maxPerftestSampleSize);
+
+            /* Create a test message with a empty sequence */
+            TestMessage message = new TestMessage();
+            message.entity_id = 0;
+            message.seq_num = 0;
+            message.timestamp_sec = 0;
+            message.timestamp_usec = 0;
+            message.latency_ping = 0;
+            message.size = 0;
+
+            /*
+            * Modify the dynamic data by copying from the Test Message, this is
+            * simple than modify the dynamic data fields.
+            */
+            myType.copyFromMessage(message);
+
+            /*
+            * Setting the input buffer to null, this function will return the serialize
+            * sample size.
+            */
+            getTypeSupport().serialize_to_cdr_buffer(null, overhead, myType.getData());
+            overhead -= CdrEncapsulation.CDR_ENCAPSULATION_HEADER_SIZE;
+            return overhead;
         }
     }
 
@@ -2666,7 +2775,7 @@ namespace PerformanceTest {
         public const uint timeout_wait_for_ack_nsec = 10000000;
         public static readonly Perftest_ProductVersion_t _version =
                 new Perftest_ProductVersion_t(9, 9, 9, 9);
-
+        public static int OVERHEAD_BYTES = 28;
 
         /*
          * PERFTEST-108
@@ -2682,7 +2791,6 @@ namespace PerformanceTest {
         public int _MessagingArgc = 0;
 
         // Number of bytes sent in messages besides user data
-        public const int OVERHEAD_BYTES = 28;
 
         // Flag used to indicate message is used for initialization only
         private const int INITIALIZE_SIZE = 1234;

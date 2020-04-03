@@ -69,6 +69,16 @@ class RTIDDSImpl : public IMessaging
     // to get data
     IMessagingReader *CreateReader(const std::string &topic_name, IMessagingCB *callback);
 
+    /**
+     * @brief This function calculate the overhead bytes that all the
+     * members on TestData_* type add excluding the length of the sequence.
+     *
+     * @param size \b InOut. The size of the overhead of the data type.
+     *
+     * @return true if the operation was successful, otherwise false.
+     */
+    virtual bool get_serialized_overhead_size(unsigned int &overhead_size);
+
     dds::core::QosProvider getQosProviderForProfile(
             const std::string &library_name,
             const std::string &profile_name);
@@ -169,6 +179,16 @@ class RTIDDSImpl : public IMessaging
        */
       IMessagingReader *CreateReader(
               const std::string &topic_name, IMessagingCB *callback);
+
+      /**
+       * @brief This function calculates the overhead bytes added by all the
+       * members on the TestData_* type, excluding the content of the sequence.
+       *
+       * @param size \b InOut. The size of the overhead of the data type.
+       *
+       * @return true if the operation was successful, otherwise false.
+       */
+      bool get_serialized_overhead_size(unsigned int &overhead_size);
   };
 #endif // RTI_FLATDATA_AVAILABLE
 

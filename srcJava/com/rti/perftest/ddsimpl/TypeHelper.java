@@ -35,4 +35,7 @@ public interface TypeHelper<T> {
     @SuppressWarnings("rawtypes")
     public int getMaxPerftestSampleSize();
 
+    /* Return the overhead size used by Perftest */
+    public long getSerializedOverheadSize();
+
 }

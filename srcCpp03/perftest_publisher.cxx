@@ -17,6 +17,12 @@
 #endif
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 
+/*
+ * The default perftest compilation use the test type with a size of 28 bytes as
+ * overhead.
+ */
+unsigned int perftest_cpp::OVERHEAD_BYTES = 28;
+
 #if defined(RTI_ANDROID)
 
 #include <android/log.h>

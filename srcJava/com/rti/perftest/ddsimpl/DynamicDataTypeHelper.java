@@ -13,6 +13,7 @@ import com.rti.dds.dynamicdata.DynamicDataTypeSupport;
 import com.rti.dds.infrastructure.ByteSeq;
 import com.rti.dds.topic.TypeSupportImpl;
 import com.rti.dds.typecode.TypeCode;
+import com.rti.dds.cdr.CdrEncapsulation;
 import com.rti.perftest.TestMessage;
 import com.rti.perftest.gen.TestDataKeyed_tTypeSupport;
 import com.rti.perftest.gen.TestData_tTypeSupport;
@@ -155,6 +156,34 @@ public class DynamicDataTypeHelper implements TypeHelper<DynamicData> {
     @SuppressWarnings("rawtypes")
     public int getMaxPerftestSampleSize() {
         return _maxPerftestSampleSize;
+    }
+
+    public long getSerializedOverheadSize() {
+        /* Create a copy of the dynamic data */
+        DynamicDataTypeHelper myType = new DynamicDataTypeHelper(_myData, _maxPerftestSampleSize);
+
+        /* Create a test message with a empty sequence */
+        TestMessage message = new TestMessage();
+        message.entity_id = 0;
+        message.seq_num = 0;
+        message.timestamp_sec = 0;
+        message.timestamp_usec = 0;
+        message.latency_ping = 0;
+        message.size = 0;
+
+        /*
+         * Modify the dynamic data by copying from the Test Message, this is
+         * simple than modify the dynamic data
+         */
+        myType.copyFromMessage(message);
+
+        /*
+         * Setting the input buffer to null, this function will return the serialize
+         * sample size. Also the length will be ignored.
+         */
+        return getTypeSupport().serialize_to_cdr_buffer(null, 0, myType.getData())
+                - CdrEncapsulation.CDR_ENCAPSULATION_HEADER_SIZE;
+
     }
 
     private int _maxPerftestSampleSize = PerfTest.getMaxPerftestSampleSizeJava();
