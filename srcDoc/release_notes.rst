@@ -238,7 +238,7 @@ the entities). This would affect Traditional and Modern C++ Implementations.
 This issue has been fixed.
 
 `-sleep` option not working correctly with values larger than 1 second (#299)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The calculation of the seconds and nanoseconds to sleep between sending samples
 when using the `-sleep` command line option was not correct for both the Traditional
