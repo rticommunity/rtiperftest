@@ -2046,8 +2046,10 @@ int perftest_cpp::Publisher()
         }
 
         if (_SleepNanosec > 0) {
-            sleep_period.nanosec = (DDS_UnsignedLong)_SleepNanosec;
-            NDDSUtility::sleep(sleep_period);
+            sleep_period.sec = (DDS_Long) (_SleepNanosec / 1000000000u);
+            sleep_period.nanosec = (DDS_UnsignedLong) _SleepNanosec
+                                    - (DDS_UnsignedLong) (sleep_period.sec * 1000000000);
+            PerftestClock::sleep(sleep_period);
         }
 
         pingID = -1;

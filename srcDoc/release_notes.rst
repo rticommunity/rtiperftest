@@ -237,6 +237,13 @@ caused a segmentation fault at the end of the test (when *RTI Perftest* deleted
 the entities). This would affect Traditional and Modern C++ Implementations.
 This issue has been fixed.
 
+`-sleep` option not working correctly with values larger than 1 second (#299)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The calculation of the seconds and nanoseconds to sleep between sending samples
+when using the `-sleep` command line option was not correct for both the Traditional
+and the Modern C++ implementations. This issue has been resolved.
+
 Release Notes 3.0
 -----------------
 
