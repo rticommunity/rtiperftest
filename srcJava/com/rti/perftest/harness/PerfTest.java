@@ -1176,7 +1176,10 @@ public final class PerfTest {
 
         System.err.printf("Waiting to discover %1$d subscribers ...\n", _numSubscribers);
         writer.waitForReaders(_numSubscribers);
-        reader.waitForWriters(_numSubscribers);
+        // Only publisher with ID 0 will have a reader.
+        if (reader != null) {
+            reader.waitForWriters(_numSubscribers);
+        }
         announcement_reader.waitForWriters(_numSubscribers);
 
         // We have to wait until every Subscriber sends an announcement message

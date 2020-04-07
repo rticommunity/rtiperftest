@@ -1625,7 +1625,10 @@ int perftest_cpp::RunPublisher()
               << " subscribers ..."
               << std::endl;
     writer->waitForReaders(_PM.get<int>("numSubscribers"));
-    reader->waitForWriters(_PM.get<int>("numSubscribers"));
+    // Only publisher with ID 0 will have a reader.
+    if (reader != NULL) {
+        reader->waitForWriters(_PM.get<int>("numSubscribers"));
+    }
     announcement_reader->waitForWriters(_PM.get<int>("numSubscribers"));
 
     // We have to wait until every Subscriber sends an announcement message

@@ -2228,7 +2228,10 @@ namespace PerformanceTest {
 
             Console.Error.Write("Waiting to discover {0} subscribers ...\n", _NumSubscribers);
             writer.WaitForReaders(_NumSubscribers);
-            reader.WaitForWriters(_NumSubscribers);
+            // Only publisher with ID 0 will have a reader.
+            if (reader != null) {
+                reader.WaitForWriters(_NumSubscribers);
+            }
             announcement_reader.WaitForWriters(_NumSubscribers);
 
             // We have to wait until every Subscriber sends an announcement message
