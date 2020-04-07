@@ -1748,7 +1748,8 @@ namespace PerformanceTest {
             // Synchronize with publishers
             Console.Error.Write("Waiting to discover {0} publishers ...\n", _NumPublishers);
             reader.WaitForWriters(_NumPublishers);
-            writer.WaitForReaders(_NumPublishers);
+            // In a multi publisher test, only the first publisher will have a reader.
+            writer.WaitForReaders(1);
             announcement_writer.WaitForReaders(_NumPublishers);
 
             // Send announcement message
@@ -2228,7 +2229,10 @@ namespace PerformanceTest {
 
             Console.Error.Write("Waiting to discover {0} subscribers ...\n", _NumSubscribers);
             writer.WaitForReaders(_NumSubscribers);
-            reader.WaitForWriters(_NumSubscribers);
+            // Only publisher with ID 0 will have a reader.
+            if (reader != null) {
+                reader.WaitForWriters(_NumSubscribers);
+            }
             announcement_reader.WaitForWriters(_NumSubscribers);
 
             // We have to wait until every Subscriber sends an announcement message
