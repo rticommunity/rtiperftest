@@ -1432,7 +1432,7 @@ namespace PerformanceTest
             _qoSProfileNameMap.Add(ANNOUNCEMENT_TOPIC_NAME.VALUE, "AnnouncementQos");
             _qoSProfileNameMap.Add(THROUGHPUT_TOPIC_NAME.VALUE, "ThroughputQos");
 
-            OVERHEAD_BYTES = myDataTypeHelper.getSerializedOverheadSize();
+            perftest_cs.OVERHEAD_BYTES = (ulong)myDataTypeHelper.getSerializedOverheadSize();
         }
 
         /*********************************************************
