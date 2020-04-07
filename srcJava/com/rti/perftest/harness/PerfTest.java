@@ -958,7 +958,8 @@ public final class PerfTest {
         // Synchronize with publishers
         System.err.printf("Waiting to discover %1$d publishers ...\n", _numPublishers);
         reader.waitForWriters(_numPublishers);
-        writer.waitForReaders(_numPublishers);
+        // In a multi publisher test, only the first publisher will have a reader.
+        writer.waitForReaders(1);
         announcement_writer.waitForReaders(_numPublishers);
 
         // Announcement message that will be used by the announcement_writer

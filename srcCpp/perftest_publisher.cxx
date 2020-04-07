@@ -1048,7 +1048,8 @@ int perftest_cpp::Subscriber()
             _PM.get<int>("numPublishers"));
     fflush(stderr);
     reader->WaitForWriters(_PM.get<int>("numPublishers"));
-    writer->WaitForReaders(_PM.get<int>("numPublishers"));
+    // In a multi publisher test, only the first publisher will have a reader.
+    writer->WaitForReaders(1);
     announcement_writer->WaitForReaders(_PM.get<int>("numPublishers"));
 
     /*
@@ -1843,7 +1844,7 @@ int perftest_cpp::Publisher()
     writer->WaitForReaders(_PM.get<int>("numSubscribers"));
     // Only publisher with ID 0 will have a reader.
     if (reader != NULL) {
-        reader->waitForWriters(_PM.get<int>("numSubscribers"));
+        reader->WaitForWriters(_PM.get<int>("numSubscribers"));
     }
     announcement_reader->WaitForWriters(_PM.get<int>("numSubscribers"));
 

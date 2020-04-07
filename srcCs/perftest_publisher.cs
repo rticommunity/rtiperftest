@@ -1748,7 +1748,8 @@ namespace PerformanceTest {
             // Synchronize with publishers
             Console.Error.Write("Waiting to discover {0} publishers ...\n", _NumPublishers);
             reader.WaitForWriters(_NumPublishers);
-            writer.WaitForReaders(_NumPublishers);
+            // In a multi publisher test, only the first publisher will have a reader.
+            writer.WaitForReaders(1);
             announcement_writer.WaitForReaders(_NumPublishers);
 
             // Send announcement message
