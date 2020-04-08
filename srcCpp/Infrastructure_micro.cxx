@@ -243,6 +243,11 @@ bool configureUDPv4Transport(
         return false;
     }
 
+    /* In order to avoid MICRO-2191 */
+  #if RTIME_DDS_VERSION_MAJOR >= 3 && RTIME_DDS_VERSION_MINOR > 0
+    dpde_properties.max_samples_per_remote_builtin_endpoint_writer = 1;
+  #endif
+
     if (!registry->register_component("dpde",
                 DPDEDiscoveryFactory::get_interface(),
                 &dpde_properties._parent,
@@ -299,6 +304,11 @@ bool configureShmemTransport(
         printf("Micro: Failed to unregister udp\n");
         return false;
     }
+
+    /* In order to avoid MICRO-2191 */
+  #if RTIME_DDS_VERSION_MAJOR >= 3 && RTIME_DDS_VERSION_MINOR > 0
+    dpde_properties.max_samples_per_remote_builtin_endpoint_writer = 1;
+  #endif
 
     if (!registry->register_component("dpde",
                 DPDEDiscoveryFactory::get_interface(),

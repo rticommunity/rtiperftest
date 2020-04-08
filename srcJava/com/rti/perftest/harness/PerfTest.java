@@ -958,6 +958,7 @@ public final class PerfTest {
         // Synchronize with publishers
         System.err.printf("Waiting to discover %1$d publishers ...\n", _numPublishers);
         reader.waitForWriters(_numPublishers);
+        writer.waitForReaders(_numPublishers);
         announcement_writer.waitForReaders(_numPublishers);
 
         // Announcement message that will be used by the announcement_writer
@@ -1175,6 +1176,8 @@ public final class PerfTest {
 
         System.err.printf("Waiting to discover %1$d subscribers ...\n", _numSubscribers);
         writer.waitForReaders(_numSubscribers);
+        reader.waitForWriters(_numSubscribers);
+        announcement_reader.waitForWriters(_numSubscribers);
 
         // We have to wait until every Subscriber sends an announcement message
         // indicating that it has discovered every Publisher

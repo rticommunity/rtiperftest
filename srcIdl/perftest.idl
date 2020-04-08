@@ -24,6 +24,17 @@ const string THROUGHPUT_TOPIC_NAME = "Throughput";
 const string LATENCY_TOPIC_NAME = "Latency";
 const string ANNOUNCEMENT_TOPIC_NAME = "Announcement";
 
+/*
+ * This idl uses prefix annotations. In order to compile with previous versions
+ * of *Connext DDS Professional* modify the following annotations:
+ *
+ * - @final -- Remove it and replace at the
+ *             end with "//@Extensibility FINAL_EXTENSIBILITY"
+ * - @key   -- Remove it and replace it at the end of the member with "//@key"
+ *
+ */
+
+@final
 struct TestData_t {
     octet key[KEY_SIZE];
 
@@ -40,8 +51,9 @@ struct TestData_t {
     long custom_type_size;
   #endif
 
-}; //@Extensibility FINAL_EXTENSIBILITY
+};
 
+@final
 struct TestDataKeyed_t {
     @key
     octet key[KEY_SIZE];
@@ -57,8 +69,9 @@ struct TestDataKeyed_t {
     RTI_CUSTOM_TYPE custom_type;
     long custom_type_size;
   #endif
-}; //@Extensibility FINAL_EXTENSIBILITY
+};
 
+@final
 struct TestDataLarge_t {
     octet key[KEY_SIZE];
 
@@ -72,8 +85,9 @@ struct TestDataLarge_t {
     RTI_CUSTOM_TYPE custom_type;
     long custom_type_size;
   #endif
-}; //@Extensibility FINAL_EXTENSIBILITY
+};
 
+@final
 struct TestDataKeyedLarge_t {
     @key
     octet key[KEY_SIZE];
@@ -89,12 +103,11 @@ struct TestDataKeyedLarge_t {
     RTI_CUSTOM_TYPE custom_type;
     long custom_type_size;
   #endif
-}; //@Extensibility FINAL_EXTENSIBILITY
+};
 
+/********************************** FLATDATA **********************************/
 #ifdef RTI_FLATDATA_AVAILABLE
-/*
- * FLATDATA
- */
+
 @mutable
 @language_binding(FLAT_DATA)
 struct TestData_FlatData_t {
@@ -168,4 +181,5 @@ struct TestDataKeyedLarge_FlatData_t {
     long custom_type_size;
   #endif
 };
+
 #endif // RTI_FLATDATA_AVAILABLE
