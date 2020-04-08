@@ -51,6 +51,13 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
+Overhead from *RTI Perftest* type is now programmatically calculated. (#265)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The overhead size resulting from the serialized sample of the Perftest type is
+now calculated programmatically improving the precision of the desirable total
+bytes sent when CustomTypes or FlatData types are used.
+
 New tutorial section in the documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
