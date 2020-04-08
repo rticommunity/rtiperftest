@@ -2274,10 +2274,13 @@ bool perftest_cpp::finalize_read_thread(
         PerftestThread *thread,
         ListenerType *listener)
 {
-    listener->end_test = true;
+    if (listener != NULL) {
+        listener->end_test = true;
+    }
 
     if (thread != NULL) {
-        if (listener->_reader->unblock()
+        if (listener != NULL
+                && listener->_reader->unblock()
                 && listener->syncSemaphore != NULL) {
             /*
              * If the thread is created but the creation of the semaphore fail,
