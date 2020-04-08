@@ -40,7 +40,7 @@ set USE_SECURE_LIBS=0
 set LEGACY_DD_IMPL=0
 
 @REM Starting with 5.2.6 (rtiddsgen 2.3.6) the name of the solutions is different
-set /a rtiddsgen_version_number_new_solution_name=2.3.6
+set rtiddsgen_version_number_new_solution_name=2.3.6
 
 @REM # Needed when compiling statically using security
 set RTI_OPENSSLHOME=""
@@ -393,7 +393,7 @@ if !BUILD_CPP! == 1 (
 		set additional_rti_libs=nddsmetp !additional_rti_libs!
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_AVAILABLE RTI_ZEROCOPY_AVAILABLE"
 		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE""
-		if "!RTI_FLATDATA_MAX_SIZE!" != "" (
+		if NOT "!RTI_FLATDATA_MAX_SIZE!" == "" (
 			set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!"
 			set "additional_defines_flatdata=!additional_defines_flatdata! -D "RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!""
 		)
@@ -543,7 +543,7 @@ if !BUILD_CPP03! == 1 (
 		set "additional_rti_libs=nddsmetp !additional_rti_libs!"
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_AVAILABLE RTI_ZEROCOPY_AVAILABLE"
 		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE""
-		if "!RTI_FLATDATA_MAX_SIZE!" != "" (
+		if NOT "!RTI_FLATDATA_MAX_SIZE!" == "" (
 			set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!"
 			set "additional_defines_flatdata=!additional_defines_flatdata! -D "RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!""
 		)

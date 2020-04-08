@@ -116,15 +116,15 @@ namespace PerformanceTest {
             myType.timestamp_sec = 0;
             myType.timestamp_usec = 0;
             myType.latency_ping = 0;
-            myType.bin_data.setMaximum(0);
-            myType.bin_data.setSize(0);
+            myType.bin_data.ensure_length(0,0);
 
             /*
             * Setting the input buffer to null, this function will return the
             * serialize sample size.
             */
-            getTypeSupport().serialize_to_cdr_buffer(null, overhead, myType);
-            overhead -= CdrEncapsulation.CDR_ENCAPSULATION_HEADER_SIZE;
+
+            TestData_tTypeSupport.serialize_data_to_cdr_buffer(null, ref overhead, myType);
+            overhead -= perftest_cs.CDR_ENCAPSULATION_HEADER_SIZE;
             return overhead;
         }
 
@@ -233,15 +233,14 @@ namespace PerformanceTest {
             myType.timestamp_sec = 0;
             myType.timestamp_usec = 0;
             myType.latency_ping = 0;
-            myType.bin_data.setMaximum(0);
-            myType.bin_data.setSize(0);
+            myType.bin_data.ensure_length(0,0);
 
             /*
             * Setting the input buffer to null, this function will return the
             * serialize sample size.
             */
-            getTypeSupport().serialize_to_cdr_buffer(null, overhead, myType);
-            overhead -= CdrEncapsulation.CDR_ENCAPSULATION_HEADER_SIZE;
+            TestDataLarge_tTypeSupport.serialize_data_to_cdr_buffer(null, ref overhead, myType);
+            overhead -= perftest_cs.CDR_ENCAPSULATION_HEADER_SIZE;
             return overhead;
         }
 
@@ -351,15 +350,14 @@ namespace PerformanceTest {
             myType.timestamp_sec = 0;
             myType.timestamp_usec = 0;
             myType.latency_ping = 0;
-            myType.bin_data.setMaximum(0);
-            myType.bin_data.setSize(0);
+            myType.bin_data.ensure_length(0,0);
 
             /*
             * Setting the input buffer to null, this function will return the
             * serialize sample size.
             */
-            getTypeSupport().serialize_to_cdr_buffer(null, overhead, myType);
-            overhead -= CdrEncapsulation.CDR_ENCAPSULATION_HEADER_SIZE;
+            TestDataKeyed_tTypeSupport.serialize_data_to_cdr_buffer(null, ref overhead, myType);
+            overhead -= perftest_cs.CDR_ENCAPSULATION_HEADER_SIZE;
             return overhead;
         }
     }
@@ -467,15 +465,14 @@ namespace PerformanceTest {
             myType.timestamp_sec = 0;
             myType.timestamp_usec = 0;
             myType.latency_ping = 0;
-            myType.bin_data.setMaximum(0);
-            myType.bin_data.setSize(0);
+            myType.bin_data.ensure_length(0,0);
 
             /*
             * Setting the input buffer to null, this function will return the
             * serialize sample size.
             */
-            getTypeSupport().serialize_to_cdr_buffer(null, overhead, myType);
-            overhead -= CdrEncapsulation.CDR_ENCAPSULATION_HEADER_SIZE;
+            TestDataKeyedLarge_tTypeSupport.serialize_data_to_cdr_buffer(null, ref overhead, myType);
+            overhead -= perftest_cs.CDR_ENCAPSULATION_HEADER_SIZE;
             return overhead;
         }
 
@@ -666,6 +663,7 @@ namespace PerformanceTest {
         }
 
         public long getSerializedOverheadSize() {
+            UInt32 overhead = 0;
             /* Create a copy of the dynamic data */
             DynamicDataTypeHelper myType = new DynamicDataTypeHelper(
                     _myData,
@@ -680,6 +678,8 @@ namespace PerformanceTest {
             message.latency_ping = 0;
             message.size = 0;
 
+            byte[] buffer = null;
+
             /*
             * Modify the dynamic data by copying from the Test Message, this is
             * simple than modify the dynamic data fields.
@@ -690,8 +690,8 @@ namespace PerformanceTest {
             * Setting the input buffer to null, this function will return the serialize
             * sample size.
             */
-            getTypeSupport().serialize_to_cdr_buffer(null, overhead, myType.getData());
-            overhead -= CdrEncapsulation.CDR_ENCAPSULATION_HEADER_SIZE;
+            overhead = (uint)myType.getData().to_cdr_buffer(buffer);
+            overhead -= perftest_cs.CDR_ENCAPSULATION_HEADER_SIZE;
             return overhead;
         }
     }
@@ -1690,14 +1690,14 @@ namespace PerformanceTest {
                     if (_PrintIntervals)
                     {
                         Console.Write("\n\n********** New data length is {0}\n",
-                                      message.size + OVERHEAD_BYTES);
+                                      message.size + (int)OVERHEAD_BYTES);
                         Console.Out.Flush();
                     }
                 }
 
                 last_data_length = message.size;
                 ++packets_received;
-                bytes_received += (ulong) (message.size + OVERHEAD_BYTES);
+                bytes_received += (ulong) (message.size + (int)OVERHEAD_BYTES);
 
                 // detect missing packets
                 if (!_useCft) {
@@ -1777,7 +1777,7 @@ namespace PerformanceTest {
                     }
                     Console.Write("Length: {0,5}  Packets: {1,8}  Packets/s(ave): {2,7:F0}  " +
                                   "Mbps(ave): {3,7:F1}  Lost: {4,5} ({5,1:p1}){6}\n",
-                                  interval_data_length + OVERHEAD_BYTES,
+                                  interval_data_length + (int)OVERHEAD_BYTES,
                                   interval_packets_received,
                                   interval_packets_received * 1000000 / interval_time,
                                   interval_bytes_received * 1000000.0 / interval_time * 8.0 / 1000.0 / 1000.0,
@@ -2146,7 +2146,7 @@ namespace PerformanceTest {
                         if (_PrintIntervals)
                         {
                             Console.Write("\n\n********** New data length is {0}\n",
-                                          last_data_length + OVERHEAD_BYTES);
+                                          last_data_length + (int)OVERHEAD_BYTES);
                         }
                     }
                 }
@@ -2211,7 +2211,7 @@ namespace PerformanceTest {
                 }
                 Console.Write("Length: {0,5}  Latency: Ave {1,6:F0} us  Std {2,6:F1} us  " +
                               "Min {3,6} us  Max {4,6} us  50% {5,6} us  90% {6,6} us  99% {7,6} us  99.99% {8,6} us  99.9999% {9,6} us{10}\n",
-                              last_data_length + OVERHEAD_BYTES, latency_ave, latency_std, latency_min, latency_max,
+                              last_data_length + (int)OVERHEAD_BYTES, latency_ave, latency_std, latency_min, latency_max,
                               _latency_history[count*50/100],
                               _latency_history[count*90/100],
                               _latency_history[count*99/100],
@@ -2388,7 +2388,7 @@ namespace PerformanceTest {
             Console.Error.Write("Publishing data ...\n");
 
             // Set data size, account for other bytes in message
-            message.size = (int)_DataLen - OVERHEAD_BYTES;
+            message.size = (int)(_DataLen - OVERHEAD_BYTES);
 
             // Sleep 1 second, then begin test
             System.Threading.Thread.Sleep(1000);
@@ -2775,7 +2775,7 @@ namespace PerformanceTest {
         public const uint timeout_wait_for_ack_nsec = 10000000;
         public static readonly Perftest_ProductVersion_t _version =
                 new Perftest_ProductVersion_t(9, 9, 9, 9);
-        public static int OVERHEAD_BYTES = 28;
+        public static ulong OVERHEAD_BYTES = 28;
 
         /*
          * PERFTEST-108
@@ -2805,6 +2805,7 @@ namespace PerformanceTest {
          */
         public const uint LATENCY_RESET_VALUE = uint.MaxValue;
 
+        public const uint CDR_ENCAPSULATION_HEADER_SIZE = 4;
         static public ulong getMaxPerftestSampleSizeCS(){
             if (MAX_PERFTEST_SAMPLE_SIZE.VALUE > 2147483591){
                 return 2147483591; //max value for a buffer in C#
