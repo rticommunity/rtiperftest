@@ -794,7 +794,7 @@ class ThroughputListener : public IMessagingCB
             _finished_publishers.push_back(message.entity_id);
 
             if (_finished_publishers.size() >= (unsigned int)_num_publishers) {
-                print_summary(message);
+                print_summary_throughput(message, true);
                 end_test = true;
             }
             return;
@@ -810,7 +810,7 @@ class ThroughputListener : public IMessagingCB
         // Always check if need to reset internals
         if (message.size == perftest_cpp::LENGTH_CHANGED_SIZE)
         {
-            print_summary(message);
+            print_summary_throughput(message);
             change_size = true;
             return;
         }
@@ -856,7 +856,7 @@ class ThroughputListener : public IMessagingCB
         }
     }
 
-    void print_summary(TestMessage &message){
+    void print_summary_throughput(TestMessage &message, bool endTest = false){
 
         // store the info for this interval
         unsigned long long now = PerftestClock::getInstance().getTime();
@@ -911,6 +911,16 @@ class ThroughputListener : public IMessagingCB
             }
 
             fflush(stdout);
+        } else if (endTest) {
+            fprintf(stderr,
+                    "\nNo samples have been received by the Subscriber side,\n"
+                    "however 1 or more Publishers sent the finalization message.\n\n"
+                    "There are several reasons why this could happen:\n"
+                    "- If you are using large data, make sure to correctly adjust your\n"
+                    "  sendQueue, reliability protocol and flowController.\n"
+                    "- Make sure your -executionTime or -numIter in the Publisher side\n"
+                    "  are big enough.\n"
+                    "- Try sending at a slower rate -pubRate in the Publisher side.\n\n");
         }
 
         packets_received = 0;
@@ -1352,7 +1362,7 @@ public:
         showCpu = _PM->get<bool>("cpu");
     }
 
-    void print_summary_latency(){
+    void print_summary_latency(bool endTest = false){
         unsigned short mask;
         double latency_ave;
         double latency_std;
@@ -1365,6 +1375,17 @@ public:
         std::string outputCpu = "";
         if (count == 0)
         {
+            if (endTest) {
+                fprintf(stderr,
+                        "\nNo Pong samples have been received in the Publisher side.\n"
+                        "If you are interested in latency results, you might need to\n"
+                        "increase the Pong frequency (using the -latencyCount option).\n"
+                        "Alternatively you can increase the number of samples sent\n"
+                        "(-numIter) or the time for the test (-executionTime). If you\n"
+                        "are sending large data, make sure you set the data size (-datalen)\n"
+                        "in the Subscriber side.\n\n");
+                fflush(stderr);
+            }
             return;
         }
 
@@ -2208,7 +2229,7 @@ int perftest_cpp::Publisher()
     }
 
     if (_PM.get<int>("pidMultiPubTest") == 0) {
-        reader_listener->print_summary_latency();
+        reader_listener->print_summary_latency(true);
         reader_listener->end_test = true;
     } else {
         fprintf(

@@ -97,6 +97,16 @@ The use of -threadPriorities command is now supported on QNX platforms.
 You can either specify three numeric values representing the priority of each
 of the threads or, instead, three characters representing the priorities: h,n,l.
 
+
+Added warning messages when no packets have been received at the end of the test (#303)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When performing certain tests, especially with very few samples, or with very large
+ones, the probability of not receiving any samples in Publisher or Subscriber sides
+are higher. Starting in this release we will notify the user when the application receives the
+message that the test has ended, as well as some suggestions on how to fix this.
+
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 

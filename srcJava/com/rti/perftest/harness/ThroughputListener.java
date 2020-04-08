@@ -136,7 +136,7 @@ import com.rti.perftest.TestMessage;
             }
             _finished_publishers.add(message.entity_id);
             if (_finished_publishers.size() >= _numPublishers) {
-                print_summary(message);
+                print_summary_throughput(message, true);
                 end_test = true;
             }
             return;
@@ -155,7 +155,7 @@ import com.rti.perftest.TestMessage;
 
         // reset internals
         if (message.size == PerfTest.LENGTH_CHANGED_SIZE) {
-            print_summary(message);
+            print_summary_throughput(message);
             change_size = true;
             return;
         }
@@ -200,7 +200,11 @@ import com.rti.perftest.TestMessage;
         }
     }
 
-    public void print_summary(TestMessage message) {
+    public void print_summary_throughput(TestMessage message) {
+        print_summary_throughput(message, false);
+    }
+
+    public void print_summary_throughput(TestMessage message, boolean endTest) {
 
         // store the info for this interval
         long now = PerfTest.getTimeUsec();
@@ -248,6 +252,16 @@ import com.rti.perftest.TestMessage;
             );
 
             System.out.flush();
+        } else if (endTest) {
+            System.out.printf(
+                    "\nNo samples have been received by the Subscriber side,\n"
+                    + "however 1 or more Publishers sent the finalization message.\n\n"
+                    + "There are several reasons why this could happen:\n"
+                    + "- If you are using large data, make sure to correctly adjust your\n"
+                    + "  sendQueue, reliability protocol and flowController.\n"
+                    + "- Make sure your -executionTime or -numIter in the Publisher side\n"
+                    + "  are big enough.\n"
+                    + "- Try sending at a slower rate -pubRate in the Publisher side.\n\n");
         }
 
         packetsReceived = 0;
