@@ -55,14 +55,14 @@ Getting the tool is fairly easy, in fact, you have 3 different ways in which you
    in the "Binaries" section. Once the zip file is downloaded you will need to extract its content, this will
    create a folder with the binaries for your architecture.
 
-All this information is covered in the `download <https://github.com/rticommunity/rtiperftest/blob/3.0/srcDoc/download.rst>`__
+All this information is covered in the `download <https://github.com/rticommunity/rtiperftest/blob/release/3.0/srcDoc/download.rst>`__
 section of the **Perftest** documentation.
 
 Compile against RTI Connext DDS Professional 6.0.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you already got the compiled binaries, you can skip this step. Else, you will need to compile the
-binaries. This process is covered in the `compilation <https://github.com/rticommunity/rtiperftest/blob/3.0/srcDoc/compilation.rst>`__
+binaries. This process is covered in the `compilation <https://github.com/rticommunity/rtiperftest/blob/release/3.0/srcDoc/compilation.rst>`__
 section of the **Perftest** documentation, so we will just summarize.
 
 We want to build **Perftest** for the *Raspberry Pi* target libraries, this architecture is `armv6vfphLinux3.xgcc4.7.2`, even
@@ -88,7 +88,7 @@ Compile against RTI Connext DDS Micro 3.0.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This process should be equivalent to the one described in the previous step, and it is also covered
-in the `compilation <https://github.com/rticommunity/rtiperftest/blob/3.0/srcDoc/compilation.rst>`__
+in the `compilation <https://github.com/rticommunity/rtiperftest/blob/release/3.0/srcDoc/compilation.rst>`__
 section of the **Perftest** documentation.
 
 **Note:** Although you will need to call the build script two times for compiling for **RTI Connext DDS Proffesional**
@@ -116,7 +116,7 @@ achievable in that environment with UDPv4 sockets. Luckily this is something tha
 By using the ``-rawTransport`` option, we skip the use of *RTPS** and **DDS** and we just send using UDPv4 sockets.
 
 We will be doing a *Latency Test* and a *Throughput Test* (See
-`this <https://github.com/rticommunity/rtiperftest/blob/3.0/srcDoc/introduction.rst#latency-test-vs-throughput-test>`__ section to understand the
+`this <https://github.com/rticommunity/rtiperftest/blob/release/3.0/srcDoc/introduction.rst#latency-test-vs-throughput-test>`__ section to understand the
 differences).
 
 Once that is done, we will have a baseline which is going to tell us the minimum latency we can expect

@@ -415,6 +415,7 @@ Test Parameters for Publishing and Subscribing Applications
     - the "Thread-Priority Definitions for Linux Platforms" table
     - the "Thread-Priority Definitions for OS X Platforms" table
     - the "Thread-Priority Definitions for Windows Platforms" table
+    - the "Thread-Priority Definitions for QNX Platforms" table
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro* or using the Raw Transport feature.
@@ -785,6 +786,14 @@ Test Parameters Only For Publishing Applications
 
    | **Default:** ``Round-Robin schedule``
    | **Range:** ``0 and instances``
+
+-  ``-showSerializationTime``
+
+   Show serialization/Deserialization times for the sample size(s) of the test.
+   This time will be shown after the test concludes.
+   This command line parameter is only present in the Traditional C++ API implementation.
+
+   **Default:** ``Not enabled``
 
 .. _Test Parameters Only For Subscribing Applications:
 

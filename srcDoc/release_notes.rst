@@ -105,6 +105,44 @@ instead is calculated to fit samples of the size specified by the user via the
 Find more information about this in the **Large Samples (Use-Cases)** section of
 the documentation.
 
+Add Security Governance files for Sign And Encrypt with original auth for RTPS (#253)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Added 2 new Governance profiles to the list of generated governance files in
+`resource/secure/input/governances/`:
+
+- `PerftestGovernance_RTPSEncryptWithOrigAuth.xml`
+- `PerftestGovernance_RTPSSignWithOrigAuth.xml`
+
+As well as their respective signed versions (`signed_`...).
+
+Added support for -threadPriorities command line parameter in QNX platforms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The use of -threadPriorities command is now supported on QNX platforms.
+You can either specify three numeric values representing the priority of each
+of the threads or, instead, three characters representing the priorities: h,n,l.
+
+
+Added warning messages when no packets have been received at the end of the test (#303)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When performing certain tests, especially with very few samples, or with very large
+ones, the probability of not receiving any samples in Publisher or Subscriber sides
+are higher. Starting in this release we will notify the user when the application receives the
+message that the test has ended, as well as some suggestions on how to fix this.
+
+New parameter to control showing the serialization/deserialization times  (#304)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When the feature to show the serialization/deserialization times was added, it was set
+to show the data at the end of the test, in the publisher side, as a new line after the
+latency results.
+
+This was not convenient, since it can conflict when parsing the latency lines. This has
+been resolved adding a new parameter "-showSerializationTime", which enables calculating
+and showing the serialization/deserialization times.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -224,6 +262,33 @@ prefix annotations and the old ones. This inconsistency has been fixed.
 
 This imposes a restriction (already existing) in the minimum version for which
 *RTI Perftest* can be compiled to *RTI Connext DDS Professional* 5.3.1.
+
+`DTLS` transport does not work in Traditional/Modern C++ by default (#281)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default *RTI Perftest* subscriber would fail when the transport was set to
+`DTLS` due to an incorrect private key in the subscriber side. This issue has been
+resolved.
+
+Fixed port calculation in RawTransport with multiples subscribers (#283)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+RawTransport port calculation has been fixed when we have multiples subscribers.
+
+Fixed segmentation fault when finishing tests in Traditional/Modern C++ (#288)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The use of `-useReadThread` (which internally would imply using `waitsets`)
+caused a segmentation fault at the end of the test (when *RTI Perftest* deleted
+the entities). This would affect Traditional and Modern C++ Implementations.
+This issue has been fixed.
+
+`-sleep` option not working correctly with values larger than 1 second (#299)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The calculation of the seconds and nanoseconds to sleep between sending samples
+when using the `-sleep` command line option was not correct for both the Traditional
+and the Modern C++ implementations. This issue has been resolved.
 
 Release Notes 3.0
 -----------------

@@ -186,6 +186,7 @@ function clean()
     echo ""
     echo -e "${INFO_TAG} Cleaning generated files."
 
+    rm -f  "${script_location}"/srcC*/README_*.txt
     rm -f  "${script_location}"/srcC*/perftest.*
     rm -f  "${script_location}"/srcC*/perftest_ZeroCopy*
     rm -f  "${script_location}"/srcC*/perftestPlugin.*
@@ -508,7 +509,7 @@ function build_cpp_custom_type()
     do
         if [ -f $file ]; then
             rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} -unboundedSupport -I ${idl_location} -unboundedSupport -replace -create typefiles -d \"${classic_cpp_folder}\" \"${file}\" "
-            echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+            echo -e "${INFO_TAG} Command (rtiddsgen custom type): $rtiddsgen_command"
             eval $rtiddsgen_command
             if [ "$?" != 0 ]; then
                 echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string} with the file ${file}."
@@ -688,7 +689,7 @@ function build_cpp()
         ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
         -d \"${classic_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\""
 
-        echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+        echo -e "${INFO_TAG} Command (Generating Zero Copy types): $rtiddsgen_command"
         eval $rtiddsgen_command
         if [ "$?" != 0 ]; then
             echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
@@ -783,6 +784,10 @@ function build_cpp()
             fi
             echo -e "        to your LD_LIBRARY_PATH or DYLD_LIBRARY_PATH"
     fi
+
+    # Removing README files if those are created by rtiddsgen
+    rm -f "${classic_cpp_folder}/README_${platform}.txt"
+
 }
 
 function build_micro_cpp()
@@ -980,7 +985,7 @@ function build_cpp03()
         ${rtiddsgen_extra_options} \
         -d \"${modern_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\""
 
-        echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+        echo -e "${INFO_TAG} Command (Generating Zero Copy types): $rtiddsgen_command"
         eval $rtiddsgen_command
         if [ "$?" != 0 ]; then
             echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
@@ -1074,6 +1079,9 @@ function build_cpp03()
             fi
             echo -e "        to your LD_LIBRARY_PATH or DYLD_LIBRARY_PATH"
     fi
+
+    # Removing README files if those are created by rtiddsgen
+    rm -rf "${modern_cpp_folder}/README_${platform}.txt"
 }
 
 function build_java()

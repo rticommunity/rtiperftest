@@ -61,6 +61,11 @@ void PerftestClock::milliSleep(unsigned int millisec)
     NDDSUtility::sleep(DDS_Duration_t::from_millis(millisec));
 }
 
+void PerftestClock::sleep(const struct DDS_Duration_t& sleep_period)
+{
+    NDDSUtility::sleep(sleep_period);
+}
+
 void PerftestConfigureVerbosity(int verbosityLevel)
 {
 

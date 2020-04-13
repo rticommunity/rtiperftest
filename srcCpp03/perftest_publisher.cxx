@@ -811,7 +811,7 @@ public:
             }
             _finished_publishers.push_back(message.entity_id);
             if (_finished_publishers.size() >= (unsigned int)_num_publishers) {
-                print_summary(message);
+                print_summary_throughput(message, true);
                 end_test = true;
             }
             return;
@@ -827,7 +827,7 @@ public:
 
         // Always check if need to reset internals
         if (size == perftest_cpp::LENGTH_CHANGED_SIZE) {
-            print_summary(message);
+            print_summary_throughput(message);
             change_size = true;
             return;
         }
@@ -875,7 +875,7 @@ public:
         }
     }
 
-    void print_summary(TestMessage &message){
+    void print_summary_throughput(TestMessage &message, bool endTest = false) {
 
         // store the info for this interval
         unsigned long long now = perftest_cpp::GetTimeUsec();
@@ -924,6 +924,16 @@ public:
                    outputCpu.c_str()
             );
             fflush(stdout);
+        } else if (endTest) {
+            fprintf(stderr,
+                    "\n[Info] No samples have been received by the Subscriber side,\n"
+                    "however 1 or more Publishers sent the finalization message.\n\n"
+                    "There are several reasons why this could happen:\n"
+                    "- If you are using large data, make sure to correctly adjust your\n"
+                    "  sendQueue, reliability protocol and flowController.\n"
+                    "- Make sure your -executionTime or -numIter in the Publisher side\n"
+                    "  are big enough.\n"
+                    "- Try sending at a slower rate -pubRate in the Publisher side.\n\n");
         }
 
         packets_received = 0;
@@ -1030,7 +1040,8 @@ int perftest_cpp::RunSubscriber()
               << " publishers ..."
               << std::endl;
     reader->waitForWriters(_PM.get<int>("numPublishers"));
-    writer->waitForReaders(_PM.get<int>("numPublishers"));
+    // In a multi publisher test, only the first publisher will have a reader.
+    writer->waitForReaders(1);
     announcement_writer->waitForReaders(_PM.get<int>("numPublishers"));
 
     /*
@@ -1299,11 +1310,6 @@ class LatencyListener : public IMessagingCB
         if (_latency_history != NULL) {
             delete [] _latency_history;
         }
-
-        if (_reader != NULL) {
-            _reader->Shutdown();
-            delete(_reader);
-        }
     }
 
     void ProcessMessage(TestMessage &message)
@@ -1427,12 +1433,23 @@ class LatencyListener : public IMessagingCB
         }
     }
 
-    void print_summary_latency(){
+    void print_summary_latency(bool endTest = false) {
         double latency_ave;
         double latency_std;
         std::string outputCpu = "";
 
         if (count == 0) {
+            if (endTest) {
+                fprintf(stderr,
+                        "\n[Info] No Pong samples have been received in the Publisher side.\n"
+                        "If you are interested in latency results, you might need to\n"
+                        "increase the Pong frequency (using the -latencyCount option).\n"
+                        "Alternatively you can increase the number of samples sent\n"
+                        "(-numIter) or the time for the test (-executionTime). If you\n"
+                        "are sending large data, make sure you set the data size (-datalen)\n"
+                        "in the Subscriber side.\n\n");
+                fflush(stderr);
+            }
             return;
         }
 
@@ -1638,7 +1655,10 @@ int perftest_cpp::RunPublisher()
               << " subscribers ..."
               << std::endl;
     writer->waitForReaders(_PM.get<int>("numSubscribers"));
-    reader->waitForWriters(_PM.get<int>("numSubscribers"));
+    // Only publisher with ID 0 will have a reader.
+    if (reader != NULL) {
+        reader->waitForWriters(_PM.get<int>("numSubscribers"));
+    }
     announcement_reader->waitForWriters(_PM.get<int>("numSubscribers"));
 
     // We have to wait until every Subscriber sends an announcement message
@@ -1819,7 +1839,9 @@ int perftest_cpp::RunPublisher()
         }
 
         if (_SleepNanosec > 0) {
-            rti::util::sleep(dds::core::Duration(0,(unsigned int)_SleepNanosec));
+            unsigned int sec = (unsigned int) (_SleepNanosec / 1000000000u);
+            unsigned int nanosec = (unsigned int) _SleepNanosec - sec * 1000000000;
+            rti::util::sleep(dds::core::Duration(sec, nanosec));
         }
 
         pingID = -1;
@@ -1965,7 +1987,7 @@ int perftest_cpp::RunPublisher()
     }
 
     if (_PM.get<int>("pidMultiPubTest") == 0) {
-        reader_listener->print_summary_latency();
+        reader_listener->print_summary_latency(true);
         reader_listener->end_test = true;
     } else {
         std::cerr << "[Info] Latency results are only shown when "

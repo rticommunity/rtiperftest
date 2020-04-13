@@ -721,6 +721,21 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("writeInstance", writeInstance);
 
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    Parameter<bool> *serializationTime = new Parameter<bool>(false);
+    serializationTime->set_command_line_argument("-showSerializationTime", "");
+    serializationTime->set_description(
+            "Show serialization/Deserialization times for the sample size(s)\n"
+            "of the test. This time will be shown after the test concludes\n"
+            "Default: Not set");
+    serializationTime->set_type(T_BOOL);
+    serializationTime->set_extra_argument(NO);
+    serializationTime->set_group(PUB);
+    serializationTime->set_supported_middleware(
+            Middleware::RTIDDSPRO);
+    create("serializationTime", serializationTime);
+  #endif
+
     ////////////////////////////////////////////////////////////////////////////
     //SUBSCRIBER PARAMETER
     Parameter<bool> *sub = new Parameter<bool>(false);
@@ -1008,8 +1023,12 @@ void ParameterManager::initialize()
     transportSecureWan->set_supported_middleware(Middleware::RTIDDSPRO);
     create("transportSecureWan", transportSecureWan);
 
+    /*
+     * Set this parameter to a empty value by default. This will be set later
+     * if it's needed with the corresponding value.
+     */
     Parameter<std::string> *transportCertAuthority =
-        new Parameter<std::string>(TRANSPORT_CERTAUTHORITY_FILE);
+            new Parameter<std::string>("");
     transportCertAuthority->set_command_line_argument(
             "-transportCertAuthority", "<file>");
     transportCertAuthority->set_description(
@@ -1021,8 +1040,11 @@ void ParameterManager::initialize()
     transportCertAuthority->set_supported_middleware(Middleware::RTIDDSPRO);
     create("transportCertAuthority", transportCertAuthority);
 
-    Parameter<std::string> *transportCertFile = new Parameter<std::string>(
-            TRANSPORT_CERTIFICATE_FILE_PUB);
+    /*
+     * Set this parameter to a empty value by default. This will be set later
+     * if it's needed with the corresponding value.
+     */
+    Parameter<std::string> *transportCertFile = new Parameter<std::string>("");
     transportCertFile->set_command_line_argument("-transportCertFile", "<file>");
     transportCertFile->set_description(
             "Certificate file <optional>.\n"
@@ -1034,8 +1056,12 @@ void ParameterManager::initialize()
     transportCertFile->set_supported_middleware(Middleware::RTIDDSPRO);
     create("transportCertFile", transportCertFile);
 
-    Parameter<std::string> *transportPrivateKey = new Parameter<std::string>(
-            TRANSPORT_CERTIFICATE_FILE_PUB);
+    /*
+     * Set this parameter to a empty value by default. This will be set later
+     * if it's needed with the corresponding value.
+     */
+    Parameter<std::string> *transportPrivateKey
+            = new Parameter<std::string>("");
     transportPrivateKey->set_command_line_argument(
             "-transportPrivateKey", "<file>");
     transportPrivateKey->set_description(
