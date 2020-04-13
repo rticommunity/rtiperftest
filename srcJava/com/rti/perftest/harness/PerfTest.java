@@ -1445,7 +1445,7 @@ public final class PerfTest {
         }
 
         if (pubID == 0) {
-            reader_listener.print_summary_latency();
+            reader_listener.print_summary_latency(true);
             reader_listener.end_test = true;
         } else {
             System.out.println("Latency results are only shown when -pidMultiPubTest = 0");

@@ -189,14 +189,29 @@ import com.rti.perftest.TestMessage;
         }
     }
 
-    public void print_summary_latency(){
+    public void print_summary_latency() {
+        print_summary_latency(false);
+    }
+
+    public void print_summary_latency(boolean endTest) {
         if (_count == 0) {
+            if (endTest) {
+                System.out.printf(
+                        "\nNo Pong samples have been received in the Publisher side.\n"
+                        + "If you are interested in latency results, you might need to\n"
+                        + "increase the Pong frequency (using the -latencyCount option).\n"
+                        + "Alternatively you can increase the number of samples sent\n"
+                        + "(-numIter) or the time for the test (-executionTime). If you\n"
+                        + "are sending large data, make sure you set the data size (-datalen)\n"
+                        + "in the Subscriber side.\n\n");
+            }
             return;
         }
 
         if (_clockSkewCount != 0) {
-            System.out.printf("The following latency result may not be accurate because clock skew happens %1$d times\n",
-                    _clockSkewCount);
+            System.out.printf(
+                "The following latency result may not be accurate because clock skew happens %1$d times\n",
+                _clockSkewCount);
         }
 
         // sort the array (in ascending order)
