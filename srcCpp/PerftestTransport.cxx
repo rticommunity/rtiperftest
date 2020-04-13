@@ -50,8 +50,22 @@ PerftestTransport::PerftestTransport()
             "SHMEM",
             "dds.transport.shmem.builtin");
 
+    /*
+     * Setting the minimum Message Size Max to the max long
+     * value so it can later be compared and reduced to the
+     * minimmum message size max accross transports.
+     */
     minimumMessageSizeMax = MESSAGE_SIZE_MAX_NOT_SET;
+
+    /*
+     * LoggingString will be used by this class to store all
+     * the significant information about the transport that later
+     * will be displayed in the summary. We need to log it here and
+     * not print it because at the RTIDDSImpl level we are not in the
+     * printSummary function.
+     */
     loggingString = "";
+    printf("JAJAJAJAJAJAJAJA %d\n", MESSAGE_OVERHEAD_BYTES);
 }
 
 PerftestTransport::~PerftestTransport()

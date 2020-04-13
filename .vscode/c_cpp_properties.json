@@ -61,8 +61,7 @@
             "includePath": [
                 "${workspaceFolder}/srcCpp",
                 "${workspaceFolder}/srcCppCommon",
-                "/usr/include",
-                "/usr/include/c++/4.2.1",
+                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include",
                 "${NDDSHOME}/include",
                 "${NDDSHOME}/include/ndds"
             ],

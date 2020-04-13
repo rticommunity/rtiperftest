@@ -1030,17 +1030,6 @@ namespace PerformanceTest
                     qos.property_qos,
                     "dds.transport.shmem.builtin.parent.message_size_max");
 
-            // /*
-            //  * If we specify -scan, then we are interested in the highest size.
-            //  * Since the vector for scan is sorted, that number should be the last
-            //  * element.
-            //  */
-            // if (_PM->is_set("scan")) {
-            //     const std::vector<unsigned long long> scanList =
-            //             _PM->get_vector<unsigned long long>("scan");
-            //     datalen = scanList[scanList.size() - 1];
-            // }
-
             ulong parentMsgSizeMax = minimumMessageSizeMax;
             bool messageSizeMaxSet = false;
 
@@ -1094,39 +1083,40 @@ namespace PerformanceTest
 
             }
 
-            // /*
-            // * From user manual "Properties for Builtin Shared-Memory Transport":
-            // * To optimize memory usage, specify a receive queue size less than that
-            // * required to hold the maximum number of messages which are all of the
-            // * maximum size.
-            // *
-            // * In most situations, the average message size may be far less than the
-            // * maximum message size. So for example, if the maximum message size is 64K
-            // * bytes, and you configure the plugin to buffer at least 10 messages, then
-            // * 640K bytes of memory would be needed if all messages were 64K bytes.
-            // * Should this be desired, then receive_buffer_size should be set to 640K
-            // * bytes.
-            // *
-            // * However, if the average message size is only 10K bytes, then you could
-            // * set the receive_buffer_size to 100K bytes. This allows you to optimize
-            // * the memory usage of the plugin for the average case and yet allow the
-            // * plugin to handle the extreme case.
-            // *
-            // * The receivedMessageCountMax should be set to a value that can hold
-            // * more than “-sendQueueSize" samples in perftest in order block in the
-            // * send window before starting to lose messages on the Shared Memory
-            // * transport
-            // */
-            // /*
-            // * This is the flow Controller default token size. Change this if you modify
-            // * the qos file to add a different "bytes_per_token" property
-            // */
+            /*
+             * From user manual "Properties for Builtin Shared-Memory Transport":
+             * To optimize memory usage, specify a receive queue size less than that
+             * required to hold the maximum number of messages which are all of the
+             * maximum size.
+             *
+             * In most situations, the average message size may be far less than the
+             * maximum message size. So for example, if the maximum message size is 64K
+             * bytes, and you configure the plugin to buffer at least 10 messages, then
+             * 640K bytes of memory would be needed if all messages were 64K bytes.
+             * Should this be desired, then receive_buffer_size should be set to 640K
+             * bytes.
+             *
+             * However, if the average message size is only 10K bytes, then you could
+             * set the receive_buffer_size to 100K bytes. This allows you to optimize
+             * the memory usage of the plugin for the average case and yet allow the
+             * plugin to handle the extreme case.
+             *
+             * The receivedMessageCountMax should be set to a value that can hold
+             * more than “-sendQueueSize" samples in perftest in order block in the
+             * send window before starting to lose messages on the Shared Memory
+             * transport
+             */
+
+            /*
+             * This is the flow Controller default token size. Change this if you modify
+             * the qos file to add a different "bytes_per_token" property
+             */
             ulong flowControllerTokenSize = minimumMessageSizeMax;
 
-            // /*
-            // * We choose the minimum between the flow Controller max fragment size and
-            // * the message_size_max - RTPS headers.
-            // */
+            /*
+             * We choose the minimum between the flow Controller max fragment size and
+             * the message_size_max - RTPS headers.
+             */
             ulong fragmentSize = Math.Min(
                     parentMsgSizeMax - COMMEND_WRITER_MAX_RTPS_OVERHEAD,
                     flowControllerTokenSize - COMMEND_WRITER_MAX_RTPS_OVERHEAD);

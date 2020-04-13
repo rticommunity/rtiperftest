@@ -519,9 +519,7 @@ bool configureShmemTransport(
      * element.
      */
     if (_PM->is_set("scan")) {
-        const std::vector<unsigned long long> scanList =
-                _PM->get_vector<unsigned long long>("scan");
-        datalen = scanList[scanList.size() - 1];
+        datalen = _PM->get_vector<unsigned long long>("scan").back();
     }
 
     long parentMsgSizeMax = transport.minimumMessageSizeMax;
@@ -699,8 +697,10 @@ bool configureShmemTransport(
                 (COMMEND_WRITER_MAX_RTPS_OVERHEAD + fragmentSize));
 
 
-    if (DDSPropertyQosPolicyHelper::lookup_property(qos.property,
-            "dds.transport.shmem.builtin.received_message_count_max") == NULL) {
+    if (DDSPropertyQosPolicyHelper::lookup_property(
+                qos.property,
+                "dds.transport.shmem.builtin.received_message_count_max")
+            == NULL) {
         ss.str("");
         ss.clear();
         ss << receivedMessageCountMax;
@@ -717,8 +717,10 @@ bool configureShmemTransport(
                 + "\n");
     }
 
-    if (DDSPropertyQosPolicyHelper::lookup_property(qos.property,
-            "dds.transport.shmem.builtin.receive_buffer_size") == NULL) {
+    if (DDSPropertyQosPolicyHelper::lookup_property(
+                qos.property,
+                "dds.transport.shmem.builtin.receive_buffer_size")
+            == NULL) {
         ss.str("");
         ss.clear();
         ss << receiveBufferSize;
@@ -801,14 +803,12 @@ void getTransportMinimumMessageSizeMax(
         if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
             qosConfigurationMessageSizeMax = transportMessageSizeMax;
         }
-    }
-    if (transport.transportConfig.kind == TRANSPORT_DTLSv4) {
+    } else if (transport.transportConfig.kind == TRANSPORT_DTLSv4) {
         transportMessageSizeMax = getTransportMessageSizeMax("DTLS", transport, qos);
         if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
             qosConfigurationMessageSizeMax = transportMessageSizeMax;
         }
-    }
-    if (transport.transportConfig.kind == TRANSPORT_WANv4) {
+    } else if (transport.transportConfig.kind == TRANSPORT_WANv4) {
         transportMessageSizeMax = getTransportMessageSizeMax("WAN", transport, qos);
         if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
             qosConfigurationMessageSizeMax = transportMessageSizeMax;

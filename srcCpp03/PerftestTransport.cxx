@@ -277,9 +277,7 @@ void configureShmemTransport(
      * element.
      */
     if (_PM->is_set("scan")) {
-        const std::vector<unsigned long long> scanList =
-                _PM->get_vector<unsigned long long>("scan");
-        datalen = scanList[scanList.size() - 1];
+        datalen = _PM->get_vector<unsigned long long>("scan").back();
     }
 
     long parentMsgSizeMax = transport.minimumMessageSizeMax;
@@ -293,8 +291,7 @@ void configureShmemTransport(
      * packet and avoid fragmentation.
      */
     TransportBuiltinMask mask = qos.policy<TransportBuiltin>().mask();
-    if (qos_properties.find("dds.transport.shmem.builtin.parent.message_size_max")
-            != qos_properties.end()) {
+    if (qos_properties.count("dds.transport.shmem.builtin.parent.message_size_max")) {
         parentMsgSizeMax = atoi(qos_properties["dds.transport.shmem.builtin.parent.message_size_max"].c_str());
         messageSizeMaxSet = true;
     } else {
@@ -349,7 +346,7 @@ void configureShmemTransport(
     RTIBool success = RTI_FALSE;
     int retcode;
     int key = rand();
-    long minBufferSize = 1048576;
+    long minBufferSize = 1048576; //1MB
     int step = 1048576; // 1MB
     long maxBufferSize = (std::max)((long) 121634816 /* 116MB */, parentMsgSizeMax);
 
@@ -485,11 +482,9 @@ long getTransportMessageSizeMax(
             transport.transportConfigMap[targetTransportName].prefixString
             + ".parent.message_size_max";
 
-    if (qos_properties.find(propertyName) != qos_properties.end()) {
-        //printf("Value for %s is %s\n", propertyName.c_str(), qos_properties[propertyName].c_str());
+    if (qos_properties.count(propertyName)) {
         return atoi(qos_properties[propertyName].c_str());
     } else {
-        //printf("Value for %s not found, returning default\n", propertyName.c_str());
         return DEFAULT_MESSAGE_SIZE_MAX;
     }
 }
@@ -546,8 +541,7 @@ void getTransportMinimumMessageSizeMax(
         if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
             qosConfigurationMessageSizeMax = transportMessageSizeMax;
         }
-    }
-    if (transport.transportConfig.kind == TRANSPORT_DTLSv4) {
+    } else if (transport.transportConfig.kind == TRANSPORT_DTLSv4) {
         transportMessageSizeMax = getTransportMessageSizeMax(
                 "DTLS",
                 transport,
@@ -556,8 +550,7 @@ void getTransportMinimumMessageSizeMax(
         if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
             qosConfigurationMessageSizeMax = transportMessageSizeMax;
         }
-    }
-    if (transport.transportConfig.kind == TRANSPORT_WANv4) {
+    } else if (transport.transportConfig.kind == TRANSPORT_WANv4) {
         transportMessageSizeMax = getTransportMessageSizeMax(
                 "WAN",
                 transport,

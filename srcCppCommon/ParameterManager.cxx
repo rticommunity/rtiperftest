@@ -397,7 +397,8 @@ void ParameterManager::initialize()
     Parameter<int> *sendQueueSize = new Parameter<int>(50);
     sendQueueSize->set_command_line_argument("-sendQueueSize", "<number>");
     sendQueueSize->set_description(
-            "Sets number of samples (or batches) in send\nqueue. Default: 50");
+            "Sets number of samples (or batches) in send\n"
+            "queue. Default: 50");
     sendQueueSize->set_type(T_NUMERIC_D);
     sendQueueSize->set_extra_argument(YES);
     sendQueueSize->set_group(GENERAL);

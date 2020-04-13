@@ -56,8 +56,8 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
           The ReceiverPoolQosPolicy's buffer_size should be set to be the same value
           as the maximum ::NDDS_Transport_Property_t::message_size_max across all of
-          the transports being used. This value is automatically picked. So we
-          will not set it here
+          the transports being used. This value is automatically picked based on that
+          parameter. So we will not set it here.
           -->
           <!-- <buffer_size>65536</buffer_size> -->
         </receiver_pool>

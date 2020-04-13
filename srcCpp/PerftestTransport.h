@@ -31,7 +31,12 @@
 #ifndef RTI_MICRO
   #define MESSAGE_OVERHEAD_BYTES (COMMEND_WRITER_MAX_RTPS_OVERHEAD + 48 + RTI_CDR_ENCAPSULATION_HEADER_SIZE + 3)
 #else
-  #define MESSAGE_OVERHEAD_BYTES 700
+  /*
+   * For micro we do not have the same variables as for pro. Therefore, for the time being we are
+   * going to choose a value big enough so it fit most of the use-cases. This value can be fine-tuned
+   * if needed
+   */
+  #define MESSAGE_OVERHEAD_BYTES 600
 #endif
 
 /******************************************************************************/
