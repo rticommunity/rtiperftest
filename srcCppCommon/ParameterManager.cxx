@@ -705,6 +705,21 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("writeInstance", writeInstance);
 
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    Parameter<bool> *serializationTime = new Parameter<bool>(false);
+    serializationTime->set_command_line_argument("-showSerializationTime", "");
+    serializationTime->set_description(
+            "Show serialization/Deserialization times for the sample size(s)\n"
+            "of the test. This time will be shown after the test concludes\n"
+            "Default: Not set");
+    serializationTime->set_type(T_BOOL);
+    serializationTime->set_extra_argument(NO);
+    serializationTime->set_group(PUB);
+    serializationTime->set_supported_middleware(
+            Middleware::RTIDDSPRO);
+    create("serializationTime", serializationTime);
+  #endif
+
     ////////////////////////////////////////////////////////////////////////////
     //SUBSCRIBER PARAMETER
     Parameter<bool> *sub = new Parameter<bool>(false);

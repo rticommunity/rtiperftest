@@ -787,6 +787,14 @@ Test Parameters Only For Publishing Applications
    | **Default:** ``Round-Robin schedule``
    | **Range:** ``0 and instances``
 
+-  ``-showSerializationTime``
+
+   Show serialization/Deserialization times for the sample size(s) of the test.
+   This time will be shown after the test concludes.
+   This command line parameter is only present in the Traditional C++ API implementation.
+
+   **Default:** ``Not enabled``
+
 .. _Test Parameters Only For Subscribing Applications:
 
 Test Parameters Only For Subscribing Applications

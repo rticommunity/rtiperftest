@@ -106,6 +106,16 @@ ones, the probability of not receiving any samples in Publisher or Subscriber si
 are higher. Starting in this release we will notify the user when the application receives the
 message that the test has ended, as well as some suggestions on how to fix this.
 
+New parameter to control showing the serialization/deserialization times  (#304)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When the feature to show the serialization/deserialization times was added, it was set
+to show the data at the end of the test, in the publisher side, as a new line after the
+latency results.
+
+This was not convenient, since it can conflict when parsing the latency lines. This has
+been resolved adding a new parameter "-showSerializationTime", which enables calculating
+and showing the serialization/deserialization times.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
