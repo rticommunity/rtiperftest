@@ -65,7 +65,6 @@ PerftestTransport::PerftestTransport()
      * printSummary function.
      */
     loggingString = "";
-    printf("JAJAJAJAJAJAJAJA %d\n", MESSAGE_OVERHEAD_BYTES);
 }
 
 PerftestTransport::~PerftestTransport()
