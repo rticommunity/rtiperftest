@@ -708,7 +708,7 @@ public:
           bin_data_builder.finish();
 
           // calculate key and add it
-          if (!isCftWildcardKey && this->_num_instances > 1) {
+          if (!isCftWildcardKey && this->_num_instances >= 1) {
               key = (this->_instancesToBeWritten == -1)
                       ? this->_instance_counter++ % this->_num_instances
                       : this->_instancesToBeWritten;
