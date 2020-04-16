@@ -264,6 +264,13 @@ The calculation of the seconds and nanoseconds to sleep between sending samples
 when using the `-sleep` command line option was not correct for both the Traditional
 and the Modern C++ implementations. This issue has been resolved.
 
+Error in Modern C++ when using FlatData (#306)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+An error was found when testing *FlatData* in the *Modern C++ API* Implementation
+where the `write()` call would fail to find the right instance handle. This issue
+would show up in any of the 3 topics and would cause an exception.
+
 Release Notes 3.0
 -----------------
 
