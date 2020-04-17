@@ -423,6 +423,19 @@ void ParameterManager::initialize()
     receiveQueueSize->set_range(1, INT_MAX);
     create("receiveQueueSize", receiveQueueSize);
 
+    Parameter<bool> *showResourceLimits = new Parameter<bool>(false);
+    showResourceLimits->set_command_line_argument("-showResourceLimits", "");
+    showResourceLimits->set_description(
+            "Show the resource limits for all different\n"
+            "readers and writers. Default: Not Enabled");
+    showResourceLimits->set_type(T_BOOL);
+    showResourceLimits->set_extra_argument(NO);
+    showResourceLimits->set_group(GENERAL);
+    showResourceLimits->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
+    create("showResourceLimits", showResourceLimits);
+
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
     Parameter<bool> *cacheStats = new Parameter<bool>(false);
     cacheStats->set_command_line_argument("-cacheStats", "");

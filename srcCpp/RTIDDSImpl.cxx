@@ -2848,6 +2848,22 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
 }
 #endif // !RTI_MICRO
 
+/*
+ * The purpose of this function is avoid displaying
+ * "-1" or "-2" values when a QoS is set to
+ * DDS_LENGTH_UNLIMITED or AUTO and display a more
+ * convenient value instead.
+ */
+std::string stringValueQoS(DDS_Long resourceLimitValue) {
+    if (resourceLimitValue == -1) {
+        return "Unlimited";
+    } else if (resourceLimitValue == -2) {
+        return "Auto";
+    } else {
+        return std::to_string(resourceLimitValue);
+    }
+}
+
 template <typename T>
 bool RTIDDSImpl<T>::setup_DW_QoS(
         DDS_DataWriterQos &dw_qos,
@@ -3176,6 +3192,92 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
     }
   #endif
 
+    if (_PM->get<bool>("showResourceLimits")
+            && topic_name.c_str() != ANNOUNCEMENT_TOPIC_NAME) {
+        std::ostringstream stringStream;
+
+        stringStream << "Resource Limits DW (" 
+                    << topic_name
+                    << " topic):\n"
+        // Samples
+                    << "\tSamples ("
+                #ifndef RTI_MICRO
+                    << "Initial/"
+                #endif
+                    << "Max): "
+                #ifndef RTI_MICRO
+                    << stringValueQoS(dw_qos.resource_limits.initial_samples)
+                    << "/"
+                #endif
+                    << stringValueQoS(dw_qos.resource_limits.max_samples)
+                    << "\n";
+
+        if (_PM->get<bool>("keyed")) {
+            // Instances
+            stringStream << "\tInstances ("
+                    #ifndef RTI_MICRO
+                        << "Initial/"
+                    #endif
+                        << "Max): "
+                    #ifndef RTI_MICRO
+                        << stringValueQoS(dw_qos.resource_limits.initial_instances)
+                        << "/"
+                    #endif
+                        << stringValueQoS(dw_qos.resource_limits.max_instances)
+                        << "\n";
+
+            // Samples per Instance
+            stringStream << "\tMax Samples per Instance: "
+                        << stringValueQoS(dw_qos.resource_limits.max_samples_per_instance)
+                        << "\n";
+        }
+
+    #ifndef RTI_MICRO
+        // Batches
+        if (dw_qos.batch.enable) {
+            stringStream << "\tBatching Max Bytes: "
+                        << stringValueQoS(dw_qos.batch.max_data_bytes)
+                        << "\n"
+                        << "\tBatching Max Batches: "
+                        << stringValueQoS(dw_qos.writer_resource_limits.max_batches)
+                        << "\n";
+        }
+
+        // Send Queue
+        stringStream << "\tSend Queue (Min/Max): "
+                    << stringValueQoS(
+                        dw_qos.protocol.rtps_reliable_writer.min_send_window_size)
+                    << "/"
+                    << stringValueQoS(
+                        dw_qos.protocol.rtps_reliable_writer.max_send_window_size)
+                    << "\n";
+
+        // writer_loaned_sample_allocation
+        if (_isFlatData) {
+            stringStream << "\twriter_loaned_sample_allocation (initial_count/max_count): "
+                        << stringValueQoS(
+                            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count)
+                        << "/"
+                        << stringValueQoS(
+                            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count)
+                        << "\n";
+            // Property: pool_buffer_max_size
+            stringStream << "\tfast_pool.pool_buffer_max_size: "
+                        << stringValueQoS(
+                            _isFlatData ? DDS_LENGTH_UNLIMITED : _PM->get<int>("unbounded"))
+                        << "\n";
+        }
+
+        // Heartbeats per max samples
+        stringStream << "\tHeartbeats per max samples: "
+                    << stringValueQoS(
+                        dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples)
+                    << "\n";
+        
+
+    #endif
+        fprintf(stderr, "%s\n", stringStream.str().c_str());
+    }
     return true;
 }
 
@@ -3406,6 +3508,65 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
           return false;
         #endif
       #endif
+    }
+
+    if (_PM->get<bool>("showResourceLimits")
+            && topic_name.c_str() != ANNOUNCEMENT_TOPIC_NAME) {
+        std::ostringstream stringStream;
+
+        stringStream << "Resource Limits DR (" 
+                    << topic_name
+                    << " topic):\n"
+        // Samples
+                    << "\tSamples ("
+                #ifndef RTI_MICRO
+                    << "Initial/"
+                #endif
+                    << "Max): "
+                #ifndef RTI_MICRO
+                    << stringValueQoS(dr_qos.resource_limits.initial_samples)
+                    << "/"
+                #endif
+                    << stringValueQoS(dr_qos.resource_limits.max_samples)
+                    << "\n";
+
+        if (_PM->get<bool>("keyed")){
+            // Instances
+            stringStream << "\tInstances ("
+                    #ifndef RTI_MICRO
+                        << "Initial/"
+                    #endif
+                        << "Max): "
+                    #ifndef RTI_MICRO
+                        << stringValueQoS(dr_qos.resource_limits.initial_instances)
+                        << "/"
+                    #endif
+                        << stringValueQoS(dr_qos.resource_limits.max_instances)
+                        << "\n";
+
+            // Samples per Instance
+            stringStream << "\tMax Samples per Instance: "
+                        << stringValueQoS(dr_qos.resource_limits.max_samples_per_instance)
+                        << "\n";
+        }
+
+    #ifndef RTI_MICRO
+      #ifdef RTI_FLATDATA_AVAILABLE
+        if (_isFlatData) {
+            //tdynamically_allocate_fragmented_samples
+            stringStream << "\tdynamically_allocate_fragmented_samples: "
+                        << stringValueQoS(
+                            dr_qos.reader_resource_limits.dynamically_allocate_fragmented_samples)
+                        << "\n";
+        }
+      #endif
+        stringStream << "\tfast_pool.pool_buffer_max_size: "
+                    << stringValueQoS(
+                        _isFlatData ? DDS_LENGTH_UNLIMITED : _PM->get<int>("unbounded"))
+                    << "\n";
+    #endif
+
+        fprintf(stderr, "%s\n", stringStream.str().c_str());
     }
 
     return true;
