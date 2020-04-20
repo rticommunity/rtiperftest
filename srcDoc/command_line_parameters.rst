@@ -439,6 +439,15 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** ``Not enabled``
 
+- ``-showResourceLimits``
+
+   Show the resource limits for all different readers and writers.
+
+   This option is just available for the *Traditional and Modern C++*
+   API implementations.
+
+   **Default:** ``Not enabled``
+
 Transport-Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

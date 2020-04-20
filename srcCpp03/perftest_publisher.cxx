@@ -1572,7 +1572,6 @@ int perftest_cpp::RunPublisher()
             }
         } else {
 
-            std::cerr << "[Debug] Using Read Thread." << std::endl;
             reader = _MessagingImpl->CreateReader(
                     LATENCY_TOPIC_NAME,
                     NULL);
