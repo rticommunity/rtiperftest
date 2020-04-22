@@ -61,6 +61,14 @@ The main purpose of that section is to hold examples of how to properly use
 and latency. It will also help showing what is the impact of using *RTI
 Connext DDS* features.
 
+New command line option to send data loaded from a file (#210)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting in this release, a new command line option has been added to the
+*Traditional C++* API implementation that allows the customer loading a file
+into memory and send the data of the file instead using an empty buffer as the
+payload for the *RTI Perftest* messages.
+
 New command line option to show the *DataWriter* and *DataReader* queue stats (#251)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

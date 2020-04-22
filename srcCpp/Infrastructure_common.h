@@ -7,6 +7,12 @@
 #define INFRASTRUCTURE_COMMON_H_
 
 #include "perftest.h"
+#include <fstream>
+
+#ifdef RTI_UNIX
+  #include <sys/types.h>
+  #include <sys/stat.h>
+#endif
 
 #ifndef RTI_PERFTEST_NANO_CLOCK
   #define PERFT_TIME_UNIT "us"
@@ -47,6 +53,19 @@ class PerftestTimer
     ~PerftestTimer() {}
     static PerftestTimer &getInstance();
     PerftestThread *setTimeout(ScheduleInfo &info);
+};
+
+
+class PerftestFileHandler
+{
+  public:
+    static bool path_is_file(std::string const& path);
+    static int get_file_size(std::string const& fileName);
+    static int read_file(
+            std::string const& filename,
+            char * fileData,
+            unsigned int bytesToRead = 0,
+            unsigned int startPos = 0);
 };
 
 #endif /* INFRASTRUCTURE_COMMON_H_ */

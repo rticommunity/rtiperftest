@@ -395,6 +395,21 @@ bool perftest_cpp::validate_input()
         }
     }
 
+    if (_PM.is_set("loadDataFromFile")){
+        /*
+         * Load a file in memory if realPayload is set.
+         * If dataLen is not defined, we will use the size of the file.
+         * This function may take some time to load
+         */
+        if(!_fileDataLoader.initialize(
+                _PM.get<std::string>("loadDataFromFile"),
+                &_PM)) {
+            fprintf(stderr, "Could not start the fileDataLoader.\n");
+            return false;
+        }
+
+    }
+
     // Manage the parameter: -unbounded
     if (_PM.is_set("unbounded")) {
         if (_PM.get<int>("unbounded") == 0) { // Is the default
@@ -1883,9 +1898,14 @@ int perftest_cpp::Publisher()
     // Allocate data and set size
     TestMessage message;
     message.entity_id = _PM.get<int>("pidMultiPubTest");
-    message.data = new char[(std::max)
-            ((int)_PM.get<unsigned long long>("dataLen"),
-            (int)LENGTH_CHANGED_SIZE)];
+
+    if (_PM.is_set("loadDataFromFile")) {
+        message.data = _fileDataLoader.get_next_buffer();
+    } else {
+        message.data = new char[(std::max)
+                ((int)_PM.get<unsigned long long>("dataLen"),
+                (int)LENGTH_CHANGED_SIZE)];
+    }
 
     if (showCpu && _PM.get<int>("pidMultiPubTest") == 0) {
         reader_listener->cpu.initialize();
@@ -2012,6 +2032,7 @@ int perftest_cpp::Publisher()
             (unsigned int)_PM.get<unsigned long long>("executionTime"),
             Timeout_scan
     };
+    const bool useDatafromFile = _PM.is_set("loadDataFromFile");
 
 
     /*
@@ -2180,6 +2201,9 @@ int perftest_cpp::Publisher()
 
         message.seq_num = (unsigned long) loop;
         message.latency_ping = pingID;
+        if (useDatafromFile) {
+            message.data = _fileDataLoader.get_next_buffer();
+        }
         writer->Send(message);
         if(latencyTest && sentPing) {
             if (!bestEffort) {
@@ -2275,7 +2299,10 @@ int perftest_cpp::Publisher()
         delete announcement_reader_listener;
     }
 
-    delete []message.data;
+    /* The FileDataLoader class will remove this data, if in use */
+    if (!useDatafromFile) {
+        delete []message.data;
+    }
 
     if (_testCompleted) {
         // Delete timeout thread
