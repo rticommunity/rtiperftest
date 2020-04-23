@@ -5,9 +5,9 @@
             "includePath": [
                 "${workspaceFolder}/srcCpp/",
                 "${workspaceFolder}/srcCppCommon/",
-                "${NDDSHOME}/include",
-                "${NDDSHOME}/include/ndds",
-                "${NDDSHOME}/include/ndds/hpp"
+                "${env.NDDSHOME}/include",
+                "${env.NDDSHOME}/include/ndds",
+                "${env.NDDSHOME}/include/ndds/hpp"
             ],
             "defines": [
                 "_DEBUG",
@@ -25,8 +25,8 @@
             "includePath": [
                 "${workspaceFolder}/srcCpp/",
                 "${workspaceFolder}/srcCppCommon/",
-                "${NDDSHOME}/include",
-                "${NDDSHOME}/include/ndds"
+                "${env.NDDSHOME}/include",
+                "${env.NDDSHOME}/include/ndds"
             ],
             "defines": [
                 "_DEBUG",
@@ -43,8 +43,8 @@
             "includePath": [
                 "${workspaceFolder}/srcCpp",
                 "${workspaceFolder}/srcCppCommon",
-                "${NDDSHOME}/include",
-                "${NDDSHOME}/include/ndds"
+                "${env.NDDSHOME}/include",
+                "${env.NDDSHOME}/include/ndds"
             ],
             "defines": [
                 "_DEBUG",
@@ -61,10 +61,8 @@
             "includePath": [
                 "${workspaceFolder}/srcCpp",
                 "${workspaceFolder}/srcCppCommon",
-                "/usr/include",
-                "/usr/include/c++/4.2.1",
-                "${NDDSHOME}/include",
-                "${NDDSHOME}/include/ndds"
+                "${env.NDDSHOME}/include",
+                "${env.NDDSHOME}/include/ndds"
             ],
             "defines": [
                 "RTI_SECURE_PERFTEST=1",
@@ -85,12 +83,10 @@
             "includePath": [
                 "${workspaceFolder}/srcCpp",
                 "${workspaceFolder}/srcCppCommon",
-                "/usr/include",
-                "/usr/include/c++/4.2.1",
-                "${RTIMEHOME}/include",
-                "${RTIMEHOME}/include/rti_me",
-                "${RTIMEHOME}/include/rti_me/dds_c",
-                "${RTIMEHOME}/include/rti_me/dds_cpp"
+                "${env.RTIMEHOME}/include",
+                "${env.RTIMEHOME}/include/rti_me",
+                "${env.RTIMEHOME}/include/rti_me/dds_c",
+                "${env.RTIMEHOME}/include/rti_me/dds_cpp"
             ],
             "defines": [
                 "RTI_MICRO=1",
