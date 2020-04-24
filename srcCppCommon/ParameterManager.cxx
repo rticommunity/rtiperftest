@@ -539,6 +539,22 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("executionTime", executionTime);
 
+    Parameter<long> *initialBurstSize =
+            new Parameter<long>(0);
+    initialBurstSize->set_command_line_argument("-initialBurstSize", "<samples>");
+    initialBurstSize->set_description(
+            "Set the initial burst size to initialize the queues.\n"
+            "Default Calculated by RTI Perftest");
+    initialBurstSize->set_type(T_NUMERIC_LLU);
+    initialBurstSize->set_extra_argument(YES);
+    initialBurstSize->set_range(0, LONG_MAX);
+    initialBurstSize->set_group(PUB);
+    initialBurstSize->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("initialBurstSize", executionTime);
+
     Parameter<bool> *latencyTest = new Parameter<bool>(false);
     latencyTest->set_command_line_argument("-latencyTest", "");
     latencyTest->set_description(
