@@ -771,8 +771,8 @@ Test Parameters Only For Publishing Applications
 
 -  ``-initialBurstSize <number>``
 
-   Set the size of the initial burst of samples send from the Publisher side to
-   the subscriber side. These samples are all marked as latency Samples, and
+   Set the size of the initial burst of samples sent from the Publisher side to
+   the Subscriber side. These samples are all marked as latency Samples, and
    they are answered back by the Subscriber side.
 
    The use of this initial burst is to ensure all the queues are initialized and
