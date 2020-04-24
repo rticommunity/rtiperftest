@@ -671,13 +671,13 @@ Test Parameters Only For Publishing Applications
    not accurate.
 
    If the machine where *RTI Perftest* is being executed has a low resolution
-   clock, the regular logic might not report accurate latency numbers. Therefore, 
+   clock, the regular logic might not report accurate latency numbers. Therefore,
    *RTI Perftest* implements a simple solution to get a rough estimate of the
    latency:
 
    Before sending the first sample, *RTI Perftest* records the time; right after
    receiving the last pong, the time is recorded again. Under the assumption that
-   the processing time is negligible, the average latency is calculated as half of 
+   the processing time is negligible, the average latency is calculated as half of
    the time taken divided by the number of samples sent.
 
    This calculation only makes sense if latencyCount = 1 (Latency Test), since
@@ -768,6 +768,21 @@ Test Parameters Only For Publishing Applications
    | **Default:** ``50``
    | **Range:** ``[1-100 million]`` or ``-1`` (indicating an unlimited
      length).
+
+-  ``-initialBurstSize <number>``
+
+   Set the size of the initial burst of samples send from the Publisher side to
+   the subscriber side. These samples are all marked as latency Samples, and
+   they are answered back by the Subscriber side.
+
+   The use of this initial burst is to ensure all the queues are initialized and
+   no time is lost in the initialization process when measuring the performance.
+
+   This parameter is only available for the *Traditional and Modern C++ API
+   Implementations*.
+
+   | **Default:** Calculated by the *RTI Perftest*.
+   | **Range:** ``[0 - Max Long Size]``
 
 -  ``-sleep <millisec>``
 

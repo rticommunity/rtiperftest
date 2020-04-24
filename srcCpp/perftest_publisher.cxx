@@ -1187,10 +1187,10 @@ int perftest_cpp::Subscriber()
                 fflush(stdout);
 
                 if (cacheStats) {
-                    printf("Samples Ping Reader Queue: %4d (Peak: %4d)\n",
+                    printf("Samples Ping Reader Queue: %4d (Peak: %4d)",
                             reader->getSampleCount(),
                             reader->getSampleCountPeak());
-                    printf("/ Samples Pong Writer Queue: %3d (Peak: %3d)\n",
+                    printf(" Samples Pong Writer Queue: %3d (Peak: %3d)\n",
                             writer->getSampleCount(),
                             writer->getSampleCountPeak());
                     reader_listener->sample_count_peak = reader->getSampleCountPeak();
@@ -1917,6 +1917,10 @@ int perftest_cpp::Publisher()
     unsigned long initializeSampleCount = (std::max)(
             _MessagingImpl->GetInitializationSampleCount(),
             (unsigned long)_PM.get<long>("instances"));
+
+    if (_PM.is_set("initialBurstSize")) {
+        initializeSampleCount = _PM.get<long>("initialBurstSize");
+    }
 
     fprintf(stderr,
             "Sending %lu initialization pings ...\n",
