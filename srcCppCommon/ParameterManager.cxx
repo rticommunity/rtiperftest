@@ -553,7 +553,7 @@ void ParameterManager::initialize()
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO);
-    create("initialBurstSize", executionTime);
+    create("initialBurstSize", initialBurstSize);
 
     Parameter<bool> *latencyTest = new Parameter<bool>(false);
     latencyTest->set_command_line_argument("-latencyTest", "");
