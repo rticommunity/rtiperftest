@@ -486,6 +486,8 @@ namespace PerformanceTest
                     {
                         Console.Error.Write("Bad sendQueueSize\n");
                         return false;
+                    } else {
+                        _isSetSendQueueSize = true;
                     }
                 }
                 else if ("-heartbeatPeriod".StartsWith(argv[i],true,null))
@@ -2058,6 +2060,13 @@ namespace PerformanceTest
 
                 dw_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
                 dw_qos.durability.direct_communication = _DirectCommunication;
+
+                if (_isSetSendQueueSize) {
+                    dw_qos.protocol.rtps_reliable_writer.max_send_window_size =
+                            _SendQueueSize;
+                    dw_qos.protocol.rtps_reliable_writer.min_send_window_size =
+                            _SendQueueSize;
+                }
             }
 
             dw_qos.resource_limits.max_instances = _InstanceCount + 1; // One extra for MAX_CFT_VALUE
@@ -2345,6 +2354,7 @@ namespace PerformanceTest
         static int RTIPERFTEST_MAX_PEERS = 1024;
 
         private int    _SendQueueSize = 50;
+        private bool   _isSetSendQueueSize = false;
         private ulong    _DataLen = 100;
         private ulong     _useUnbounded = 0;
         private int    _DomainID = 1;

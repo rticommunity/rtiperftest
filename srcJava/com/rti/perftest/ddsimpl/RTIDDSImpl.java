@@ -86,6 +86,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private static final int RTIPERFTEST_MAX_PEERS = 1024;
 
     private int     _sendQueueSize = 50;
+    private boolean     _isSetsendQueueSize = false;
     private Duration_t _heartbeatPeriod = new Duration_t(0,0);
     private Duration_t _fastHeartbeatPeriod = new Duration_t (0,0);
     private long     _dataLen = 100;
@@ -1066,6 +1067,13 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
 
             dwQos.durability.direct_communication = _directCommunication;
+
+            if (_isSetsendQueueSize) {
+                dwQos.protocol.rtps_reliable_writer.max_send_window_size =
+                        _sendQueueSize;
+                dwQos.protocol.rtps_reliable_writer.min_send_window_size =
+                        _sendQueueSize;
+            }
         }
 
         dwQos.resource_limits.max_instances = _instanceCount + 1; // One extra for MAX_CFT_VALUE
@@ -1364,6 +1372,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 }
                 try {
                     _sendQueueSize = Integer.parseInt(argv[i]);
+                    _isSetsendQueueSize = true;
                 } catch (NumberFormatException nfx) {
                     System.err.print("Bad sendQueueSize\n");
                     return false;

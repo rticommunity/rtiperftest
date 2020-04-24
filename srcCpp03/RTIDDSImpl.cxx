@@ -2512,6 +2512,13 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
             dw_reliableWriterProtocol.heartbeats_per_max_samples(
                 _PM->get<int>("sendQueueSize") / 10);
         }
+
+        if (_PM->is_set("sendQueueSize")) {
+            dw_reliableWriterProtocol.max_send_window_size(
+                _PM->get<int>("sendQueueSize"));
+            dw_reliableWriterProtocol.min_send_window_size(
+                _PM->get<int>("sendQueueSize"));
+        }
     }
 
     qos_resource_limits.max_instances(_PM->get<long>("instances") + 1); // One extra for MAX_CFT_VALUE
