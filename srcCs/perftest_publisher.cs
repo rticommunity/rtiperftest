@@ -1675,13 +1675,13 @@ namespace PerformanceTest {
                 } else if (endTest) {
                     Console.Write(
                         "\nNo samples have been received by the Subscriber side,\n"
-                        "however 1 or more Publishers sent the finalization message.\n\n"
-                        "There are several reasons why this could happen:\n"
-                        "- If you are using large data, make sure to correctly adjust your\n"
-                        "  sendQueue, reliability protocol and flowController.\n"
-                        "- Make sure your -executionTime or -numIter in the Publisher side\n"
-                        "  are big enough.\n"
-                        "- Try sending at a slower rate -pubRate in the Publisher side.\n\n");
+                        + "however 1 or more Publishers sent the finalization message.\n\n"
+                        + "There are several reasons why this could happen:\n"
+                        + "- If you are using large data, make sure to correctly adjust your\n"
+                        + "  sendQueue, reliability protocol and flowController.\n"
+                        + "- Make sure your -executionTime or -numIter in the Publisher side\n"
+                        + "  are big enough.\n"
+                        + "- Try sending at a slower rate -pubRate in the Publisher side.\n\n");
                 }
 
                 packets_received = 0;
@@ -2092,12 +2092,12 @@ namespace PerformanceTest {
                     if (endTest) {
                         Console.Error.Write(
                             "\nNo Pong samples have been received in the Publisher side.\n"
-                            "If you are interested in latency results, you might need to\n"
-                            "increase the Pong frequency (using the -latencyCount option).\n"
-                            "Alternatively you can increase the number of samples sent\n"
-                            "(-numIter) or the time for the test (-executionTime). If you\n"
-                            "are sending large data, make sure you set the data size (-datalen)\n"
-                            "in the Subscriber side.\n\n");
+                            + "If you are interested in latency results, you might need to\n"
+                            + "increase the Pong frequency (using the -latencyCount option).\n"
+                            + "Alternatively you can increase the number of samples sent\n"
+                            + "(-numIter) or the time for the test (-executionTime). If you\n"
+                            + "are sending large data, make sure you set the data size (-datalen)\n"
+                            + "in the Subscriber side.\n\n");
                     }
                     return;
                 }
