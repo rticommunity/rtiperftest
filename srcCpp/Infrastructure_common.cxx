@@ -41,7 +41,7 @@ PerftestThread *PerftestTimer::setTimeout(PerftestTimer::ScheduleInfo &info)
 bool PerftestFileHandler::path_is_file(std::string const& path)
 {
 
-  #ifdef RTI_UNIX
+  #if defined(RTI_UNIX) || defined(RTI_WIN32)
     struct stat fileStat;
     if (stat(path.c_str(), &fileStat) == 0) {
         if (fileStat.st_mode & S_IFREG) {
@@ -66,7 +66,7 @@ bool PerftestFileHandler::path_is_file(std::string const& path)
 int PerftestFileHandler::get_file_size(std::string const& fileName)
 {
 
-  #ifdef RTI_UNIX
+  #if defined(RTI_UNIX) || defined(RTI_WIN32)
     std::ifstream ifs(fileName.c_str(), std::ios::binary | std::ios::ate);
     if (!ifs.good()) {
         std::cerr << "[Error] get_file_size: Could not open file: \""
@@ -92,7 +92,7 @@ int PerftestFileHandler::read_file(
         unsigned int bytesToRead,
         unsigned int startPos)
 {
-  #ifdef RTI_UNIX
+  #if defined(RTI_UNIX) || defined(RTI_WIN32)
     std::ifstream ifs(fileName.c_str(), std::ios::binary | std::ios::ate);
 
     if (!ifs.good()) {
