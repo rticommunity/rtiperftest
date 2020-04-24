@@ -25,6 +25,8 @@
     #include <cstddef>
 #elif defined(RTI_WIN32)
     #include "windows.h"
+#elif defined(RTI_QNX)
+    #include "stdio.h"
 #elif defined(RTI_INTIME)
 #endif
 
