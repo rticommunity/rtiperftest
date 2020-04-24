@@ -301,7 +301,7 @@ The calculation of the seconds and nanoseconds to sleep between sending samples
 when using the `-sleep` command line option was not correct for both the Traditional
 and the Modern C++ implementations. This issue has been resolved.
 
-`-sendQueueSize` not correctly applied to the subscriber side (#299)
+`-sendQueueSize` not correctly applied to the subscriber side (#309)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Even though the use of `-sendQueueSize` was modified to be allowed in the
