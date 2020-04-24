@@ -133,7 +133,7 @@ are higher. Starting in this release we will notify the user when the applicatio
 message that the test has ended, as well as some suggestions on how to fix this.
 
 New parameter to control showing the serialization/deserialization times (#304)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When the feature to show the serialization/deserialization times was added, it was set
 to show the data at the end of the test, in the publisher side, as a new line after the
