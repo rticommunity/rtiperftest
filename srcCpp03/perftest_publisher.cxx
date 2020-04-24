@@ -1703,7 +1703,7 @@ int perftest_cpp::RunPublisher()
             _MessagingImpl->GetInitializationSampleCount(),
             (unsigned long)_PM.get<long>("instances"));
 
-    if (!_PM.is_set("initialBurstSize")) {
+    if (_PM.is_set("initialBurstSize")) {
         initializeSampleCount = _PM.get<long>("initialBurstSize");
     }
 
