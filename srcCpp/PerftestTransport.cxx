@@ -11,11 +11,6 @@
 
 PerftestTransport::PerftestTransport()
 {
-    multicastAddrMap[LATENCY_TOPIC_NAME] = TRANSPORT_MULTICAST_ADDR_LATENCY;
-    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] =
-            TRANSPORT_MULTICAST_ADDR_ANNOUNCEMENT;
-    multicastAddrMap[THROUGHPUT_TOPIC_NAME] =
-            TRANSPORT_MULTICAST_ADDR_THROUGHPUT;
 
     transportConfigMap["Use XML"] = TransportConfig(
         TRANSPORT_NOT_SET,
@@ -58,6 +53,23 @@ PerftestTransport::~PerftestTransport()
 void PerftestTransport::initialize(ParameterManager *PM)
 {
     _PM = PM;
+
+    if (_PM->is_set("topicName")) {
+
+        throughputTopicName = _PM->get<std::string>("topicName")
+                + "_" + std::string(LATENCY_TOPIC_NAME);;
+        latencyTopicName =  _PM->get<std::string>("topicName")
+                + "_" + std::string(ANNOUNCEMENT_TOPIC_NAME);
+        announcementTopicName =  _PM->get<std::string>("topicName")
+                + "_" + std::string(THROUGHPUT_TOPIC_NAME);;
+
+        multicastAddrMap[latencyTopicName.c_str()]
+                = TRANSPORT_MULTICAST_ADDR_LATENCY;
+        multicastAddrMap[announcementTopicName.c_str()]
+                = TRANSPORT_MULTICAST_ADDR_ANNOUNCEMENT;
+        multicastAddrMap[throughputTopicName.c_str()]
+                = TRANSPORT_MULTICAST_ADDR_THROUGHPUT;
+    }
 }
 
 /******************************************************************************/
@@ -140,11 +152,11 @@ std::string PerftestTransport::printTransportConfigurationSummary()
     if (_PM->is_set("multicastAddr")) {
         stringStream << "\tUsing custom Multicast Addresses:"
                 << "\n\t\tThroughtput Address: "
-                << multicastAddrMap[THROUGHPUT_TOPIC_NAME].c_str()
+                << multicastAddrMap[throughputTopicName.c_str()].c_str()
                 << "\n\t\tLatency Address: "
-                << multicastAddrMap[LATENCY_TOPIC_NAME].c_str()
+                << multicastAddrMap[latencyTopicName.c_str()].c_str()
                 << "\n\t\tAnnouncement Address: "
-                << multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME].c_str()
+                << multicastAddrMap[announcementTopicName.c_str()].c_str()
                 << "\n";
     }
 
@@ -361,9 +373,9 @@ bool PerftestTransport::parse_multicast_addresses(const char *arg)
             return false;
         }
 
-        multicastAddrMap[THROUGHPUT_TOPIC_NAME] = throughput;
-        multicastAddrMap[LATENCY_TOPIC_NAME] = latency;
-        multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = annonuncement;
+        multicastAddrMap[throughputTopicName.c_str()] = throughput;
+        multicastAddrMap[latencyTopicName.c_str()] = latency;
+        multicastAddrMap[announcementTopicName.c_str()] = annonuncement;
 
     } else if (numberOfAddressess == 1) {
         /* If only one address is given */
@@ -372,12 +384,12 @@ bool PerftestTransport::parse_multicast_addresses(const char *arg)
                     "Error parsing Address for -multicastAddr option\n");
             return false;
         }
-        multicastAddrMap[THROUGHPUT_TOPIC_NAME] = throughput;
+        multicastAddrMap[throughputTopicName.c_str()] = throughput;
 
         /* Calculate the consecutive one */
         if (!increase_address_by_one(
-                multicastAddrMap[THROUGHPUT_TOPIC_NAME],
-                multicastAddrMap[LATENCY_TOPIC_NAME])) {
+                multicastAddrMap[throughputTopicName.c_str()],
+                multicastAddrMap[latencyTopicName.c_str()])) {
             fprintf(stderr,
                     "Fail to increase the value of IP address given\n");
             return false;
@@ -385,8 +397,8 @@ bool PerftestTransport::parse_multicast_addresses(const char *arg)
 
         /* Calculate the consecutive one */
         if (!increase_address_by_one(
-                multicastAddrMap[LATENCY_TOPIC_NAME],
-                multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME])) {
+                multicastAddrMap[latencyTopicName.c_str()],
+                multicastAddrMap[announcementTopicName.c_str()])) {
             fprintf(stderr,
                     "Fail to increase the value of IP address given\n");
             return false;
@@ -401,9 +413,9 @@ bool PerftestTransport::parse_multicast_addresses(const char *arg)
     }
 
     /* Last check. All the IPs must be in IP format and multicast range */
-    if (!is_multicast(multicastAddrMap[THROUGHPUT_TOPIC_NAME])
-            || !is_multicast(multicastAddrMap[LATENCY_TOPIC_NAME])
-            || !is_multicast(multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME])) {
+    if (!is_multicast(multicastAddrMap[throughputTopicName.c_str()])
+            || !is_multicast(multicastAddrMap[latencyTopicName.c_str()])
+            || !is_multicast(multicastAddrMap[announcementTopicName.c_str()])) {
 
         fprintf(stderr,
                 "Error parsing the address/es '%s' for -multicastAddr option\n",

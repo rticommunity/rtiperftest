@@ -2392,6 +2392,16 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     _parent = parent;
     ThreadPriorities threadPriorities = _parent->get_thread_priorities();
 
+    if (_PM->is_set("topicName")) {
+        _qoSProfileNameMap.clear();
+        _qoSProfileNameMap[_parent->latencyTopicName.c_str()]
+                = std::string("LatencyQos");
+        _qoSProfileNameMap[_parent->announcementTopicName.c_str()]
+                = std::string("AnnouncementQos");
+        _qoSProfileNameMap[_parent->throughputTopicName.c_str()]
+                = std::string("ThroughputQos");
+    }
+
   #ifndef RTI_MICRO
     // Register _loggerDevice
     if (!NDDSConfigLogger::get_instance()->set_output_device(&_loggerDevice)) {
@@ -2833,7 +2843,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
   #endif
 
     // Only force reliability on throughput/latency topics
-    if (strcmp(topic_name.c_str(), ANNOUNCEMENT_TOPIC_NAME) != 0) {
+    if (strcmp(topic_name.c_str(), _parent->announcementTopicName.c_str()) != 0) {
         if (!_PM->get<bool>("bestEffort")) {
             // default: use the setting specified in the qos profile
             // dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
@@ -2848,7 +2858,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
     }
 
   #ifdef RTI_MICRO
-    if (strcmp(topic_name.c_str(), ANNOUNCEMENT_TOPIC_NAME) == 0) {
+    if (strcmp(topic_name.c_str(), _parent->announcementTopicName.c_str()) == 0) {
         dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         dw_qos.durability.kind = DDS_TRANSIENT_LOCAL_DURABILITY_QOS;
     }
@@ -3126,7 +3136,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
   #endif
 
     // Only force reliability on throughput/latency topics
-    if (strcmp(topic_name.c_str(), ANNOUNCEMENT_TOPIC_NAME) != 0) {
+    if (strcmp(topic_name.c_str(), _parent->announcementTopicName.c_str()) != 0) {
         if (!_PM->get<bool>("bestEffort")) {
             dr_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         } else {
@@ -3250,9 +3260,9 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         if (dr_qos.multicast.value[0].receive_address == NULL) {
             fprintf(stderr,
                     "topic name must either be %s or %s or %s.\n",
-                    THROUGHPUT_TOPIC_NAME,
-                    LATENCY_TOPIC_NAME,
-                    ANNOUNCEMENT_TOPIC_NAME);
+                    _parent->throughputTopicName.c_str(),
+                    _parent->latencyTopicName.c_str(),
+                    _parent->announcementTopicName.c_str());
             return false;
         }
 
@@ -3604,7 +3614,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
   #ifndef RTI_MICRO
     /* Create CFT Topic */
-    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && _PM->is_set("cft")) {
+    if (strcmp(topic_name, _parent->throughputTopicName.c_str()) == 0 && _PM->is_set("cft")) {
         topic_desc = CreateCft(topic_name, topic);
         if (topic_desc == NULL) {
             printf("Create_contentfilteredtopic error\n");
@@ -3646,8 +3656,8 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-    if (!strcmp(topic_name, THROUGHPUT_TOPIC_NAME) ||
-        !strcmp(topic_name, LATENCY_TOPIC_NAME)) {
+    if (!strcmp(topic_name, _parent->throughputTopicName.c_str()) ||
+        !strcmp(topic_name, _parent->latencyTopicName.c_str())) {
         _reader = reader;
     }
 
@@ -3669,9 +3679,9 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(const char *topicName)
     if (_qoSProfileNameMap[std::string(topicName)].empty()) {
         fprintf(stderr,
                 "topic name must either be %s or %s or %s.\n",
-                THROUGHPUT_TOPIC_NAME,
-                LATENCY_TOPIC_NAME,
-                ANNOUNCEMENT_TOPIC_NAME);
+                _parent->throughputTopicName.c_str(),
+                _parent->latencyTopicName.c_str(),
+                _parent->announcementTopicName.c_str());
     }
 
     /* If the topic name dont match any key return a empty string */
@@ -3719,7 +3729,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
 
   #ifndef RTI_MICRO
     /* Create CFT Topic */
-    if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && _PM->is_set("cft")) {
+    if (strcmp(topic_name, _parent->throughputTopicName.c_str()) == 0 && _PM->is_set("cft")) {
         topic_desc = CreateCft(topic_name, topic);
         if (topic_desc == NULL) {
             printf("Create_contentfilteredtopic error\n");
@@ -3750,8 +3760,8 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         return NULL;
     }
 
-    if (!strcmp(topic_name, THROUGHPUT_TOPIC_NAME) ||
-        !strcmp(topic_name, LATENCY_TOPIC_NAME)) {
+    if (!strcmp(topic_name, _parent->throughputTopicName.c_str()) ||
+        !strcmp(topic_name, _parent->latencyTopicName.c_str())) {
         _reader = reader;
     }
 

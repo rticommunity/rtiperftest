@@ -88,7 +88,8 @@ public:
         _typename = T::TypeSupport::get_type_name();
         _pongSemaphore = NULL;
         _PM = NULL;
-        _qoSProfileNameMap[LATENCY_TOPIC_NAME] = std::string("LatencyQos");
+        _qoSProfileNameMap[LATENCY_TOPIC_NAME]
+                = std::string("LatencyQos");
         _qoSProfileNameMap[ANNOUNCEMENT_TOPIC_NAME]
                 = std::string("AnnouncementQos");
         _qoSProfileNameMap[THROUGHPUT_TOPIC_NAME]

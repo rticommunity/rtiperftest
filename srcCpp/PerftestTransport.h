@@ -95,6 +95,10 @@ private:
     std::map<std::string, TransportConfig> transportConfigMap;
     std::map<std::string, std::string> multicastAddrMap;
     ParameterManager *_PM;
+
+    std::string throughputTopicName;
+    std::string latencyTopicName;
+    std::string announcementTopicName;
     /**************************************************************************/
 
     bool setTransport(std::string transportString);

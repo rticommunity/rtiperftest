@@ -395,6 +395,21 @@ void ParameterManager::initialize()
   #endif
 
 
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    Parameter<std::string> *topicName = new Parameter<std::string>("");
+    topicName->set_command_line_argument("-topicName", "<Topic Name>");
+    topicName->set_description(
+            "This string will be added to the topic name"
+            "Default: Not set\n");
+    topicName->set_type(T_STR);
+    topicName->set_extra_argument(YES);
+    topicName->set_group(GENERAL);
+    topicName->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
+    create("topicName", topicName);
+  #endif
+
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER
 

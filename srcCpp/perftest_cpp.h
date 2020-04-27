@@ -71,6 +71,9 @@ class perftest_cpp
     int  subID;
     bool printIntervals;
     bool showCpu;
+    std::string throughputTopicName;
+    std::string latencyTopicName;
+    std::string announcementTopicName;
 
     // Number of bytes sent in messages besides user data
   #ifdef RTI_CUSTOM_TYPE
