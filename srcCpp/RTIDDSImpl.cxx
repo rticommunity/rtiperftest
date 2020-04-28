@@ -2452,8 +2452,8 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
     _maxSynchronousSize = _transport.minimumMessageSizeMax - (MESSAGE_OVERHEAD_BYTES);
 
     /*
-     * TODO: This should not be needed after adding changes for #265
-     * Rework idls to handle better custom types and Flat Data
+     * We need to account for the different size of the headers when using
+     * flatData.
      */
     if (_isFlatData) {
         _maxSynchronousSize -= 17;

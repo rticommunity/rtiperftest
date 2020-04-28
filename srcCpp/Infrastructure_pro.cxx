@@ -548,11 +548,8 @@ bool configureShmemTransport(
 
                 if (_PM->get<bool>("flatdata")) {
                     /*
-                     * TODO: This should not be needed after adding changes for #265
-                     * Rework idls to handle better custom types and Flat Data
-                     *
-                     * This 17 is due to the incorrect setting of OVERHEAD_BYTES in
-                     * perftest_cpp. which in the case of Flat Data is not right.
+                     * This 17 is due to the incorrecty setting OVERHEAD_BYTES in
+                     * perftest_cpp: In the case of Flat Data is not right.
                      */
                     parentMsgSizeMax += 17;
                 }
