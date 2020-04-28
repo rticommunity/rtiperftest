@@ -1490,6 +1490,9 @@ namespace PerformanceTest
             _qoSProfileNameMap.Add(LATENCY_TOPIC_NAME.VALUE, "LatencyQos");
             _qoSProfileNameMap.Add(ANNOUNCEMENT_TOPIC_NAME.VALUE, "AnnouncementQos");
             _qoSProfileNameMap.Add(THROUGHPUT_TOPIC_NAME.VALUE, "ThroughputQos");
+
+            perftest_cs.OVERHEAD_BYTES
+                = (ulong) myDataTypeHelper.getSerializedOverheadSize();
         }
 
         /*********************************************************

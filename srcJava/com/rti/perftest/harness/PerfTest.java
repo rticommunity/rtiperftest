@@ -46,7 +46,7 @@ public final class PerfTest {
     public static final int timeout_wait_for_ack_nsec = 10000000;
 
     // Number of bytes sent in messages besides user data
-    public static final int OVERHEAD_BYTES = 28;
+    public static int OVERHEAD_BYTES = 28;
 
     // MAX_PERFTEST_SAMPLE_SIZE for java (2GB-5B)
     public static final int MAX_PERFTEST_SAMPLE_SIZE_JAVA = 2147483642;

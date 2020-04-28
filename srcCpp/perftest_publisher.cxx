@@ -14,6 +14,11 @@
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
 
+/*
+ * We set 28 as the default value since this matches with the Micro use-case
+ * and the default Pro use-case.
+ */
+unsigned int perftest_cpp::OVERHEAD_BYTES = 28;
 
 #if defined(RTI_ANDROID)
 

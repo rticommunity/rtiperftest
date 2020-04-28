@@ -52,6 +52,50 @@ int DynamicDataMembersId::at(std::string key)
    return membersId[key];
 }
 
+template <typename T>
+RTIDDSImpl<T>::RTIDDSImpl()
+        : _transport(),
+        #ifdef RTI_SECURE_PERFTEST
+          _security(),
+        #endif
+        #ifndef RTI_MICRO
+          _loggerDevice(),
+        #endif
+          _parent(NULL)
+{
+  #ifndef RTI_MICRO
+    _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
+    _sendQueueSize = 0;
+  #else
+    /*
+     * For micro we want to restrict the use of memory, and since we need
+     * to set a maximum (other than DDS_LENGTH_UNLIMITED), we decided to use
+     * a default of 1. This means that for Micro, we need to specify the
+     * number of instances that will be received in the reader side.
+     */
+    _instanceMaxCountReader = 1;
+  #endif
+    _isLargeData = false;
+    _maxSynchronousSize = MESSAGE_SIZE_MAX_NOT_SET;
+    _isFlatData = false;
+    _isZeroCopy = false;
+    _factory = NULL;
+    _participant = NULL;
+    _subscriber = NULL;
+    _publisher = NULL;
+    _reader = NULL;
+    _typename = T::TypeSupport::get_type_name();
+    _pongSemaphore = NULL;
+    _PM = NULL;
+    _qoSProfileNameMap[LATENCY_TOPIC_NAME] = std::string("LatencyQos");
+    _qoSProfileNameMap[ANNOUNCEMENT_TOPIC_NAME] = std::string("AnnouncementQos");
+    _qoSProfileNameMap[THROUGHPUT_TOPIC_NAME] = std::string("ThroughputQos");
+
+    if (!get_serialized_overhead_size(perftest_cpp::OVERHEAD_BYTES)) {
+        throw std::runtime_error("Fail on obtain overhead size");
+    }
+}
+
 /*********************************************************
  * Shutdown
  */
@@ -175,6 +219,24 @@ void RTIDDSImpl<T>::Shutdown()
 template <typename T>
 bool RTIDDSImpl<T>::data_size_related_calculations()
 {
+    /*
+     * Check that the overhead is not bigger than the -dataLen, since we can not
+     * send a lower size that the overhead of the test_type.
+     */
+    if (_PM->get<unsigned long long>("dataLen")
+            < perftest_cpp::OVERHEAD_BYTES) {
+        fprintf(stderr,
+                "The minimum dataLen allowed for this configuration is %d "
+                "Bytes.\n",
+                perftest_cpp::OVERHEAD_BYTES);
+        /*
+         * T::TypeSupport::get_type_name() can not be used since we do need
+         * refractor RTIDDSImpl_FlatData class to properly inherit from a
+         * templated class instead from a final class.
+         */
+        return false;
+    }
+
     // If the user wants to use asynchronous we enable it
     if (_PM->get<bool>("asynchronous")) {
         _isLargeData = true;
@@ -297,7 +359,7 @@ bool RTIDDSImpl<T>::validate_input()
     // Manage parameter -peer
     if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
         fprintf(stderr,
-                "The maximun of 'initial_peers' is %d\n",
+                "The maximum of 'initial_peers' is %d\n",
                 RTIPERFTEST_MAX_PEERS);
         return false;
     }
@@ -2390,8 +2452,8 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
     _maxSynchronousSize = _transport.minimumMessageSizeMax - (MESSAGE_OVERHEAD_BYTES);
 
     /*
-     * TODO: This should not be needed after adding changes for #265
-     * Rework idls to handle better custom types and Flat Data
+     * We need to account for the different size of the headers when using
+     * flatData.
      */
     if (_isFlatData) {
         _maxSynchronousSize -= 17;
@@ -2618,6 +2680,71 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
 }
 
 #ifndef RTI_MICRO
+
+
+template <typename T>
+bool RTIDDSImpl<T>::get_serialized_overhead_size(unsigned int &overhead_size)
+{
+    /* Initialize the data elements */
+    T data;
+    data.entity_id = 0;
+    data.seq_num = 0;
+    data.timestamp_sec = 0;
+    data.timestamp_usec = 0;
+    data.latency_ping = 0;
+
+    /* Custom types does not have a bin_data sequence */
+    #ifndef RTI_CUSTOM_TYPE
+        /* Set the length of the sequence to zero */
+        data.bin_data.length(0);
+    #else
+        initialize_custom_type_data(data.custom_type);
+    #endif
+
+    /*
+     * Calling serialize_data_to_cdr_buffer witout a buffer will return the
+     * maximum serialized sample size
+     */
+    if (T::TypeSupport::serialize_data_to_cdr_buffer(
+                NULL,
+                overhead_size,
+                &data)
+                    != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "[Error] RTIDDSImpl<T>::get_serialized_overhead_size "
+                "Fail to serialize sample on get_serialized_overhead_size\n");
+        return false;
+    }
+
+    #ifdef RTI_CUSTOM_TYPE
+        /*
+         * If Custom type is used, then we need to substract the size of
+         * the custom type.
+         */
+        unsigned int custom_type_size;
+        if (DDS_RETCODE_OK
+                != RTI_CUSTOM_TYPE::TypeSupport::serialize_data_to_cdr_buffer(
+                        NULL,
+                        custom_type_size,
+                        &data.custom_type)) {
+            fprintf(stderr,
+                    "Fail to serialize sample on "
+                    "get_serialized_overhead_size\n");
+            return false;
+        }
+
+        overhead_size -= custom_type_size - RTI_CDR_ENCAPSULATION_HEADER_SIZE;
+
+    #endif
+
+    /*
+     * We want the overhead from the type so we substract the
+     * RTI_CDR_ENCAPSULATION_HEADER_SIZE
+     */
+    overhead_size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
+    return true;
+}
+
 template <typename T>
 double RTIDDSImpl<T>::obtain_dds_serialize_time_cost(
         unsigned int sampleSize,
@@ -3657,6 +3784,21 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 }
 
 #ifdef RTI_FLATDATA_AVAILABLE
+
+template <typename T>
+RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData(bool isZeroCopy /* = false */)
+{
+    this->_isZeroCopy = isZeroCopy;
+    this->_isFlatData = true;
+    this->_typename = T::TypeSupport::get_type_name();
+
+    if (!get_serialized_overhead_size(perftest_cpp::OVERHEAD_BYTES)) {
+        throw std::runtime_error(
+            "[Error]: RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData "
+            "Fail on obtain overhead size for FlatData");
+    }
+}
+
 template <typename T>
 IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const char *topic_name)
 {
@@ -4086,6 +4228,45 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_deserialize_time_cost_override(
 
     return (end-start) / (float) iters;
 }
+
+template <typename T>
+bool RTIDDSImpl_FlatData<T>::get_serialized_overhead_size(
+        unsigned int &overhead_size)
+{
+    typedef typename rti::flat::flat_type_traits<T>::builder Builder;
+    typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char>
+            BinDataBuilder;
+
+    unsigned long int serializedSize = 68 + RTI_FLATDATA_MAX_SIZE;
+    unsigned char *buffer = new unsigned char[serializedSize];
+
+    Builder builder(buffer, serializedSize);
+
+    // Leave uninitialized
+    builder.add_key();
+    builder.add_entity_id(0);
+    builder.add_seq_num(0);
+    builder.add_timestamp_sec(0);
+    builder.add_timestamp_usec(0);
+    builder.add_latency_ping(0);
+
+    /* Custom type does not have a bin_data field */
+    #ifndef RTI_CUSTOM_TYPE
+        // Add payload
+        BinDataBuilder bin_data = builder.build_bin_data();
+        bin_data.add_n(0);
+        bin_data.finish();
+    #endif
+
+    /*
+     * Sample size does not count RTI_XCDR_ENCAPSULATION_SIZE, we do not need to
+     * substract it.
+     */
+    overhead_size = builder.finish_sample()->sample_size();
+
+    return true;
+}
+
 #endif
 
 /*

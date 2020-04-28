@@ -120,6 +120,20 @@ class IMessaging
     virtual IMessagingReader *CreateReader(
             const std::string &topic_name,
             IMessagingCB *callback) = 0;
+
+    /*
+     * @brief This function calculates the overhead bytes added by all the
+     * members on the TestData_* type, excluding the content of the sequence.
+     *
+     * @param size \b InOut. The size of the overhead of the data type.
+     *
+     * @return true if the operation was successful, otherwise false.
+     */
+    virtual bool get_serialized_overhead_size(unsigned int &overhead_size)
+    {
+        /* If the function is not defined by the middleware just return true */
+        return true;
+    };
 };
 
 
