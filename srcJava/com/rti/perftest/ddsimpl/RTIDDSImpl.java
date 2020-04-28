@@ -164,6 +164,13 @@ public final class RTIDDSImpl<T> implements IMessaging {
         _myDataType = typeHelper;
         _transport = new PerftestTransport();
 
+        try {
+            PerfTest.OVERHEAD_BYTES = (int)typeHelper.getSerializedOverheadSize();
+        } catch (Exception e) {
+            System.err.print("Failed to get the Perftest overhead size.\n");
+            return;
+        }
+
         _qoSProfileNameMap.put(LATENCY_TOPIC_NAME.VALUE, "LatencyQos");
         _qoSProfileNameMap.put(ANNOUNCEMENT_TOPIC_NAME.VALUE, "AnnouncementQos");
         _qoSProfileNameMap.put(THROUGHPUT_TOPIC_NAME.VALUE, "ThroughputQos");
