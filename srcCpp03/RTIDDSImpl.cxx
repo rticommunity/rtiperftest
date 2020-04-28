@@ -145,6 +145,24 @@ void RTIDDSImpl<T>::Shutdown()
 template <typename T>
 bool RTIDDSImpl<T>::data_size_related_calculations()
 {
+    /*
+     * Check that the overhead is not bigger than the -dataLen, since we can not
+     * send a lower size that the overhead of the test_type.
+     */
+    if (_PM->get<unsigned long long>("dataLen")
+            < perftest_cpp::OVERHEAD_BYTES) {
+        fprintf(stderr,
+                "The minimum dataLen allowed for this configuration is %d "
+                "Bytes.\n",
+                perftest_cpp::OVERHEAD_BYTES);
+        /*
+         * T::TypeSupport::get_type_name() can not be used since we do need
+         * refractor RTIDDSImpl_FlatData class to properly inherit from a
+         * templated class instead from a final class.
+         */
+        return false;
+    }
+
     // If the user wants to use asynchronous we enable it
     if (_PM->get<bool>("asynchronous")) {
         _isLargeData = true;
@@ -271,7 +289,7 @@ bool RTIDDSImpl<T>::validate_input()
 
     // Manage parameter -peer
     if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
-        std::cerr << "The maximun of 'initial_peers' is " << RTIPERFTEST_MAX_PEERS
+        std::cerr << "The maximum of 'initial_peers' is " << RTIPERFTEST_MAX_PEERS
                   << std::endl;
         return false;
     }
@@ -1819,6 +1837,38 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
     return initializeSampleCount;
 }
 
+template <typename T>
+bool RTIDDSImpl<T>::get_serialized_overhead_size(unsigned int &overhead_size)
+{
+    /* Initialize the data elements */
+    T data;
+    data.entity_id(0);
+    data.seq_num(0);
+    data.timestamp_sec(0);
+    data.timestamp_usec(0);
+    data.latency_ping(0);
+    /*
+     * The bin_data sequence length is zero by default, it's not neccesary to
+     * resize or initialize the sequence
+     */
+
+    /*
+     * In C++ Modern we need to serialize the sample in order to get the size
+     * of the seriliazed sample
+     */
+    std::vector<char> cdr_buffer;
+    rti::topic::to_cdr_buffer(cdr_buffer, data);
+
+    overhead_size = cdr_buffer.size();
+
+    /*
+     * We want the overhead from the type so we substract the
+     * RTI_CDR_ENCAPSULATION_HEADER_SIZE
+     */
+    overhead_size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
+    return true;
+}
+
 /*********************************************************
  * CreateWriter
  */
@@ -2745,6 +2795,10 @@ template <typename T>
 RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData(bool isZeroCopy) {
     this->_isFlatData = true;
     this->_isZeroCopy = isZeroCopy;
+
+    if (!get_serialized_overhead_size(perftest_cpp::OVERHEAD_BYTES)) {
+        throw std::runtime_error("Fail on obtain overhead size for FlatData");
+    }
 }
 
 /*********************************************************
@@ -2847,6 +2901,42 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const std::string &topic_
             this->_PM->template get<long>("writeInstance"),
             this->_PM);
 }
+
+template <typename T>
+bool RTIDDSImpl_FlatData<T>::get_serialized_overhead_size(
+        unsigned int &overhead_size)
+{
+    typedef typename rti::flat::flat_type_traits<T>::builder Builder;
+    typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char>
+            BinDataBuilder;
+
+    unsigned long int serializedSize = 68 + RTI_FLATDATA_MAX_SIZE;
+    unsigned char *buffer = new unsigned char[serializedSize];
+
+    Builder builder(buffer, serializedSize);
+
+    // Leave uninitialized
+    builder.add_key();
+    builder.add_entity_id(0);
+    builder.add_seq_num(0);
+    builder.add_timestamp_sec(0);
+    builder.add_timestamp_usec(0);
+    builder.add_latency_ping(0);
+
+    // Add payload
+    BinDataBuilder bin_data = builder.build_bin_data();
+    bin_data.add_n(0);
+    bin_data.finish();
+
+    /*
+     * Sample size does not count RTI_XCDR_ENCAPSULATION_SIZE, we do not need to
+     * substract it.
+     */
+    overhead_size = builder.finish_sample()->sample_size();
+
+    return true;
+}
+
 #endif
 
 template class RTIDDSImpl<TestDataKeyed_t>;

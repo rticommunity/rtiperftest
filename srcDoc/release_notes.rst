@@ -123,6 +123,12 @@ The use of -threadPriorities command is now supported on QNX platforms.
 You can either specify three numeric values representing the priority of each
 of the threads or, instead, three characters representing the priorities: h,n,l.
 
+Overhead from *RTI Perftest*'s type is now programmatically calculated. (#265)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The overhead size resulting from the serialized sample of the Perftest type is
+now calculated programmatically. This makes accurate the exact number of bytes
+that are sent when CustomTypes or FlatData types are used.
 
 Added warning messages when no packets have been received at the end of the test (#303)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
