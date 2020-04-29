@@ -9,10 +9,8 @@
 #include "perftest.h"
 #include <fstream>
 
-#ifdef RTI_UNIX
-  #include <sys/types.h>
-  #include <sys/stat.h>
-#endif
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #ifndef RTI_PERFTEST_NANO_CLOCK
   #define PERFT_TIME_UNIT "us"
