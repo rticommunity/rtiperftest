@@ -1203,12 +1203,12 @@ public:
               this->_message.latency_ping = message.latency_ping();
               this->_message.size = message.bin_data().element_count();
 
-              ++(this->_data_idx);
-
               // Check that the sample was not modified on the publisher side when using Zero Copy.
               if (_isZeroCopy && _checkConsistency) {
                   if (!this->_reader->is_data_consistent(samples[this->_data_idx])) continue;
               }
+
+              ++(this->_data_idx);
 
               return &(this->_message);
           }
