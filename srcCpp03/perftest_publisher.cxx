@@ -1049,7 +1049,7 @@ int perftest_cpp::RunSubscriber()
     announcement_writer->send(announcement_msg);
 
     announcement_writer->flush();
-    std::cerr << "[Info] Waiting for data..." << std::endl;
+    std::cerr << "[Info] Waiting for data ..." << std::endl;
 
     // wait for data
     unsigned long long prev_time = 0, now = 0, delta = 0;
