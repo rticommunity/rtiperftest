@@ -459,12 +459,6 @@ In order to achieve better performance with dealing with Large Data, the
 What's Fixed in 3.0
 ~~~~~~~~~~~~~~~~~~~
 
-Migrate RTI Routing Service XML configuration to 6.0.0
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The *RTI Routing Service* configuration file has been updated and
-is now supported by *RTI Routing Service* 6.0.0.
-
 Remove duplicate code on RTIDDSImpl when the topic name is checked (#99)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -760,15 +754,6 @@ In previous versions, the semaphore Take() and Give() operations
 were not being checked for errors correctly in the Traditional C++ API implementation.
 This has been fixed.
 
-Update Security Certificates and Governance files (#49)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The Security Certificates and Governance files used when enabling security options
-in RTI Perftest have been regenerated and signed again, since they had expired.
-
-The script used for updating the files has been improved to generate certificates
-valid for a longer period of time (from one year to ten years).
-
 Release Notes 2.3.1
 --------------------
 
@@ -810,13 +795,6 @@ in RTI Perftest have been regenerated and signed again, since they had expired.
 
 The script used for updating the files has been improved to generate certificates
 valid for a longer period of time (from one year to ten years).
-
-
-Release Notes 2.3.1
---------------------
-
-What's Fixed in 2.3.1
-~~~~~~~~~~~~~~~~~~~~~~
 
 Segmentation fault when using multiple publishers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1023,8 +1001,8 @@ messages, so they are not filtered by the CFTs.
 Release Notes v2.2
 ------------------
 
-What's New
-~~~~~~~~~~
+What's New in 2.2
+~~~~~~~~~~~~~~~~~
 
 Added command-line parameters "-asynchronous" and "-flowController ``<``\ flow\ ``>``"
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1172,7 +1150,7 @@ members of the Dynamic Data object before repopulating it.
 Release Notes v2.1
 ------------------
 
-What's New
+What's New in 2.1
 ~~~~~~~~~~~~~~~~~
 
 Multicast Periodic Heartbeats when the ``-multicast`` command-line parameter is present
@@ -1292,7 +1270,7 @@ The default verbosity is Error.
 Release Notes v2.0
 ------------------
 
-What's New
+What's New in 2.0
 ~~~~~~~~~~~~~~~~~
 
 Platform support and build system
