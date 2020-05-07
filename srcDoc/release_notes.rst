@@ -237,6 +237,17 @@ caused a segmentation fault at the end of the test (when *RTI Perftest* deleted
 the entities). This would affect Traditional and Modern C++ Implementations.
 This issue has been fixed.
 
+Code generation failure on Windows when `FlatData` is disabled (#319)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On Windows, a failure will occur when trying to compile an architecture without
+support for `FlatData`. This may occur if the `RTI Connext DDS Professional`
+version is prior to the inclusion of the feature or if we intentionally disable
+it in the `build.bat` code. It might also happen for certain embeded windows
+architectures.
+
+This issue has been resolved.
+
 Release Notes 3.0
 -----------------
 
