@@ -78,21 +78,21 @@ function verify_precondition_variables()
 function build_perfest_clean()
 {
     cleaning_command="${rtiperftest_folder}build.sh --clean >&- 2>&-"
-    # Executing compailing command
+    # Executing compiling command
     eval $cleaning_command
 }
 
 function build_perftest()
 {
-    compailing_command="${rtiperftest_folder}build.sh --platform ${platform} --skip-java-build --skip-cpp03-build --customType ${custom_type} &> ${tmp_build_file}"
+    compiling_command="${rtiperftest_folder}build.sh --platform ${platform} --skip-java-build --skip-cpp03-build --customType ${custom_type} &> ${tmp_build_file}"
     echo ""
-    echo -e "${INFO_TAG} Compailing for test ${1}"
-    echo -e "${INFO_TAG} Command: $compailing_command"
+    echo -e "${INFO_TAG} Compiling for test ${1}"
+    echo -e "${INFO_TAG} Command: $compiling_command"
 
-    # Executing compailing command
-    eval $compailing_command
+    # Executing compiling command
+    eval $compiling_command
     if [ "$?" != 0 ]; then
-        echo -e "${ERROR_TAG} Failure compailing for ${1}, you can find the log in '${tmp_build_file}'"
+        echo -e "${ERROR_TAG} Failure compiling for ${1}, you can find the log in '${tmp_build_file}'"
         exit -1
     fi
 }

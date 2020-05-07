@@ -20,6 +20,7 @@
 #include "ThreadPriorities.h"
 #include "ParameterManager.h"
 #include "Infrastructure_common.h"
+#include "FileDataLoader.h"
 
 struct Perftest_ProductVersion_t
 {
@@ -54,6 +55,7 @@ class perftest_cpp
     unsigned long _SleepNanosec;
     IMessaging *_MessagingImpl;
     static const Perftest_ProductVersion_t _version;
+    FileDataLoader _fileDataLoader;
 
     // Priorities for the threads used by perftest and domain participant
     ThreadPriorities _threadPriorities;

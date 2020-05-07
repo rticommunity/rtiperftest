@@ -61,6 +61,14 @@ The main purpose of that section is to hold examples of how to properly use
 and latency. It will also help showing what is the impact of using *RTI
 Connext DDS* features.
 
+New command line option to send data loaded from a file (#210)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting in this release, a new command line option has been added to the
+*Traditional C++* API implementation that allows the customer loading a file
+into memory and send the data of the file instead using an empty buffer as the
+payload for the *RTI Perftest* messages.
+
 New command line option to show the *DataWriter* and *DataReader* queue stats (#251)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -307,6 +315,13 @@ The calculation of the seconds and nanoseconds to sleep between sending samples
 when using the `-sleep` command line option was not correct for both the Traditional
 and the Modern C++ implementations. This issue has been resolved.
 
+Error in Modern C++ when using FlatData (#306)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+An error was found when testing *FlatData* in the *Modern C++ API* Implementation
+where the `write()` call would fail to find the right instance handle. This issue
+would show up in any of the 3 topics and would cause an exception.
+
 `-sendQueueSize` not correctly applied to the subscriber side (#309)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -314,6 +329,20 @@ Even though the use of `-sendQueueSize` was modified to be allowed in the
 Subscriber side for the *Pong Datawriter*, the values for the maximum and
 minimum send Queue size where not correctly set in code. This issue has been
 fixed.
+
+Error using Zero-Copy and checking sample consistency with waitsets (#316 and #317)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed issue in the *Traditional and Modern* C++ API implemetation, where, when
+using `-zeroCopy` + `-useReadThread` + `-checkConsistency` the middleware would
+show:
+
+    DDS_SampleInfoSeq_get_reference:!assert index out of bounds
+    TestDataLarge_ZeroCopy_w_FlatData_tSeq_get_reference:!assert index out of bounds
+    DDS_DataReader_is_metp_data_consistent:ERROR: Bad parameter: sample
+
+In the case of the *Modern* C++ API implementation this would also cause a
+crash. This issue has been fixed.
 
 Release Notes 3.0
 -----------------
