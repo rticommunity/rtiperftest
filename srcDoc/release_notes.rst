@@ -279,6 +279,20 @@ An error was found when testing *FlatData* in the *Modern C++ API* Implementatio
 where the `write()` call would fail to find the right instance handle. This issue
 would show up in any of the 3 topics and would cause an exception.
 
+Error using Zero-Copy and checking sample consistency with waitsets (#316 and #317)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed issue in the *Traditional and Modern* C++ API implemetation, where, when
+using `-zeroCopy` + `-useReadThread` + `-checkConsistency` the middleware would
+show:
+
+    DDS_SampleInfoSeq_get_reference:!assert index out of bounds
+    TestDataLarge_ZeroCopy_w_FlatData_tSeq_get_reference:!assert index out of bounds
+    DDS_DataReader_is_metp_data_consistent:ERROR: Bad parameter: sample
+
+In the case of the *Modern* C++ API implementation this would also cause a
+crash. This issue has been fixed.
+
 Release Notes 3.0
 -----------------
 
