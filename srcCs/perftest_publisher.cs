@@ -1544,7 +1544,7 @@ namespace PerformanceTest {
                     _finished_publishers.Add(message.entity_id);
 
                     if (_finished_publishers.Count >= _num_publishers) {
-                        print_summary(message);
+                        print_summary_throughput(message, true);
                         end_test = true;
                     }
                     return;
@@ -1560,7 +1560,7 @@ namespace PerformanceTest {
                 // Always check if need to reset internals
                 if (message.size == LENGTH_CHANGED_SIZE)
                 {
-                    print_summary(message);
+                    print_summary_throughput(message);
                     change_size = true;
                     return;
                 }
@@ -1627,7 +1627,7 @@ namespace PerformanceTest {
                 }
             }
 
-            public void print_summary(TestMessage message)
+            public void print_summary_throughput(TestMessage message, bool endTest = false)
             {
                 // store the info for this interval
                 ulong now = perftest_cs.GetTimeUsec();
@@ -1676,9 +1676,17 @@ namespace PerformanceTest {
                                   missing_packets_percent,
                                   outputCpu
                     );
+                } else if (endTest) {
+                    Console.Write(
+                        "\nNo samples have been received by the Subscriber side,\n"
+                        + "however 1 or more Publishers sent the finalization message.\n\n"
+                        + "There are several reasons why this could happen:\n"
+                        + "- If you are using large data, make sure to correctly adjust your\n"
+                        + "  sendQueue, reliability protocol and flowController.\n"
+                        + "- Make sure your -executionTime or -numIter in the Publisher side\n"
+                        + "  are big enough.\n"
+                        + "- Try sending at a slower rate -pubRate in the Publisher side.\n\n");
                 }
-
-
 
                 packets_received = 0;
                 bytes_received = 0;
@@ -1748,7 +1756,8 @@ namespace PerformanceTest {
             // Synchronize with publishers
             Console.Error.Write("Waiting to discover {0} publishers ...\n", _NumPublishers);
             reader.WaitForWriters(_NumPublishers);
-            writer.WaitForReaders(_NumPublishers);
+            // In a multi publisher test, only the first publisher will have a reader.
+            writer.WaitForReaders(1);
             announcement_writer.WaitForReaders(_NumPublishers);
 
             // Send announcement message
@@ -1759,7 +1768,7 @@ namespace PerformanceTest {
             announcement_writer.Send(message, false);
             announcement_writer.Flush();
 
-            Console.Error.Write("Waiting for data...\n");
+            Console.Error.Write("Waiting for data ...\n");
 
             // wait for data
             ulong  now, prev_time, delta;
@@ -2078,19 +2087,30 @@ namespace PerformanceTest {
                 }
             }
 
-            public void print_summary_latency()
+            public void print_summary_latency(bool endTest = false)
             {
                 double latency_ave;
                 double latency_std;
                 if (count == 0)
                 {
+                    if (endTest) {
+                        Console.Error.Write(
+                            "\nNo Pong samples have been received in the Publisher side.\n"
+                            + "If you are interested in latency results, you might need to\n"
+                            + "increase the Pong frequency (using the -latencyCount option).\n"
+                            + "Alternatively you can increase the number of samples sent\n"
+                            + "(-numIter) or the time for the test (-executionTime). If you\n"
+                            + "are sending large data, make sure you set the data size (-datalen)\n"
+                            + "in the Subscriber side.\n\n");
+                    }
                     return;
                 }
 
                 if (clock_skew_count != 0)
                 {
-                    Console.Error.Write("The following latency result may not be accurate because clock skew happens {0} times\n",
-                    clock_skew_count);
+                    Console.Error.Write(
+                        "The following latency result may not be accurate because clock skew happens {0} times\n",
+                        clock_skew_count);
                 }
 
                 // sort the array (in ascending order)
@@ -2228,7 +2248,10 @@ namespace PerformanceTest {
 
             Console.Error.Write("Waiting to discover {0} subscribers ...\n", _NumSubscribers);
             writer.WaitForReaders(_NumSubscribers);
-            reader.WaitForWriters(_NumSubscribers);
+            // Only publisher with ID 0 will have a reader.
+            if (reader != null) {
+                reader.WaitForWriters(_NumSubscribers);
+            }
             announcement_reader.WaitForWriters(_NumSubscribers);
 
             // We have to wait until every Subscriber sends an announcement message
@@ -2490,7 +2513,7 @@ namespace PerformanceTest {
             }
 
             if (_PubID == 0) {
-                reader_listener.print_summary_latency();
+                reader_listener.print_summary_latency(true);
                 reader_listener.end_test = true;
             } else {
                 Console.Write("Latency results are only shown when -pidMultiPubTest = 0\n");

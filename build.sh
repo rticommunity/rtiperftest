@@ -624,7 +624,8 @@ function build_cpp()
         PerftestTransport.h \
         PerftestSecurity.h \
         Infrastructure_common.h \
-        Infrastructure_pro.h"
+        Infrastructure_pro.h \
+        FileDataLoader.h"
 
     additional_source_files="${additional_source_files_custom_type} \
         RTIRawTransportImpl.cxx \
@@ -637,7 +638,8 @@ function build_cpp()
         PerftestTransport.cxx \
         PerftestSecurity.cxx \
         Infrastructure_common.cxx \
-        Infrastructure_pro.cxx"
+        Infrastructure_pro.cxx \
+        FileDataLoader.cxx"
 
     if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
         additional_header_files="${additional_header_files} \
@@ -821,7 +823,8 @@ function build_micro_cpp()
         PerftestTransport.h \
         PerftestSecurity.h \
         Infrastructure_common.h \
-        Infrastructure_micro.h"
+        Infrastructure_micro.h \
+        FileDataLoader.h"
 
     additional_source_files=" \
         ThreadPriorities.cxx \
@@ -832,7 +835,8 @@ function build_micro_cpp()
         PerftestTransport.cxx \
         PerftestSecurity.cxx \
         Infrastructure_common.cxx \
-        Infrastructure_micro.cxx"
+        Infrastructure_micro.cxx \
+        FileDataLoader.cxx"
 
     rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} \
             -replace -create typefiles -create makefiles \

@@ -1506,7 +1506,9 @@ public:
                             isConsistent,
                             this->_data_seq[i],
                             this->_info_seq[i]) != DDS_RETCODE_OK) {
-                        fprintf(stderr, "Error checking sample consistency\n");
+                        fprintf(stderr,
+                                "FlatDataReceiverListener::on_data_available "
+                                "Error checking sample consistency\n");
                     }
 
                     if (!isConsistent) {
@@ -2002,20 +2004,21 @@ public:
              * send some specific Data.
              */
 
-            ++this->_data_idx;
-
             // Check that the sample was not modified on the publisher side when using Zero Copy.
             if (_isZeroCopy && _checkConsistency) {
                 if (this->_reader->is_data_consistent(
                         isConsistent,
                         this->_data_seq[this->_data_idx],
                         this->_info_seq[this->_data_idx]) != DDS_RETCODE_OK) {
-                    fprintf(stderr, "Error checking sample consistency\n");
+                    fprintf(stderr,
+                            "RTIFlatDataSubscriber::ReceiveMessage "
+                            "Error checking sample consistency\n");
                 }
 
                 if (!isConsistent) continue;
             }
 
+            ++(this->_data_idx);
 
             return &this->_message;
         }
