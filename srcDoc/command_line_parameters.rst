@@ -787,6 +787,37 @@ Test Parameters Only For Publishing Applications
    | **Default:** ``Round-Robin schedule``
    | **Range:** ``0 and instances``
 
+-  ``-showSerializationTime``
+
+   Show serialization/Deserialization times for the sample size(s) of the test.
+   This time will be shown after the test concludes.
+   This command line parameter is only present in the Traditional C++ API implementation.
+
+   **Default:** ``Not enabled``
+
+-  ``-loadDataFromFile <filePath>``
+
+   Use this option to send data from a file. By default *RTI Perftest* will use
+   an emptly (newly created) `char` array for the payload of each of the samples,
+   however.
+
+   If this option is in use, the content of the provided file will be loaded
+   into memory (up to a maximum size configurable, see `-maximumAllocableBufferSize`),
+   and divided into buffers of `-datalen` size. If the `-datalen` command-line
+   is not provided, *RTI Perftest* will set it to the file size.
+
+   **Default:** ``Not enabled``
+
+   This command-line option is just available in the *traditional C++ API
+   Implementation*.
+
+-  ``-maximumAllocableBufferSize <bytes>``
+
+   When ``-loadDataFromFile`` is in use, this option will control the maximum
+   amount of memory that can be used to load the file into memory.
+
+   **Default:** ``1GB``
+
 .. _Test Parameters Only For Subscribing Applications:
 
 Test Parameters Only For Subscribing Applications

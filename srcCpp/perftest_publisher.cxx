@@ -396,6 +396,21 @@ bool perftest_cpp::validate_input()
         }
     }
 
+    if (_PM.is_set("loadDataFromFile")){
+        /*
+         * Load a file in memory if realPayload is set.
+         * If dataLen is not defined, we will use the size of the file.
+         * This function may take some time to load
+         */
+        if(!_fileDataLoader.initialize(
+                _PM.get<std::string>("loadDataFromFile"),
+                &_PM)) {
+            fprintf(stderr, "Could not start the fileDataLoader.\n");
+            return false;
+        }
+
+    }
+
     // Manage the parameter: -unbounded
     if (_PM.is_set("unbounded")) {
         if (_PM.get<int>("unbounded") == 0) { // Is the default
@@ -795,7 +810,7 @@ class ThroughputListener : public IMessagingCB
             _finished_publishers.push_back(message.entity_id);
 
             if (_finished_publishers.size() >= (unsigned int)_num_publishers) {
-                print_summary(message);
+                print_summary_throughput(message, true);
                 end_test = true;
             }
             return;
@@ -811,7 +826,7 @@ class ThroughputListener : public IMessagingCB
         // Always check if need to reset internals
         if (message.size == perftest_cpp::LENGTH_CHANGED_SIZE)
         {
-            print_summary(message);
+            print_summary_throughput(message);
             change_size = true;
             return;
         }
@@ -857,7 +872,7 @@ class ThroughputListener : public IMessagingCB
         }
     }
 
-    void print_summary(TestMessage &message){
+    void print_summary_throughput(TestMessage &message, bool endTest = false){
 
         // store the info for this interval
         unsigned long long now = PerftestClock::getInstance().getTime();
@@ -912,6 +927,16 @@ class ThroughputListener : public IMessagingCB
             }
 
             fflush(stdout);
+        } else if (endTest) {
+            fprintf(stderr,
+                    "\nNo samples have been received by the Subscriber side,\n"
+                    "however 1 or more Publishers sent the finalization message.\n\n"
+                    "There are several reasons why this could happen:\n"
+                    "- If you are using large data, make sure to correctly adjust your\n"
+                    "  sendQueue, reliability protocol and flowController.\n"
+                    "- Make sure your -executionTime or -numIter in the Publisher side\n"
+                    "  are big enough.\n"
+                    "- Try sending at a slower rate -pubRate in the Publisher side.\n\n");
         }
 
         packets_received = 0;
@@ -1049,7 +1074,8 @@ int perftest_cpp::Subscriber()
             _PM.get<int>("numPublishers"));
     fflush(stderr);
     reader->WaitForWriters(_PM.get<int>("numPublishers"));
-    writer->WaitForReaders(_PM.get<int>("numPublishers"));
+    // In a multi publisher test, only the first publisher will have a reader.
+    writer->WaitForReaders(1);
     announcement_writer->WaitForReaders(_PM.get<int>("numPublishers"));
 
     /*
@@ -1083,7 +1109,7 @@ int perftest_cpp::Subscriber()
         /* Send announcement message until the publisher send us something*/
     } while (reader_listener->packets_received == 0);
 
-    fprintf(stderr,"Waiting for data...\n");
+    fprintf(stderr,"Waiting for data ...\n");
     fflush(stderr);
 
     // wait for data
@@ -1358,7 +1384,7 @@ public:
         _printer.set_output_format(_PM->get<std::string>("outputFormat"));
     }
 
-    void print_summary_latency(){
+    void print_summary_latency(bool endTest = false){
         unsigned short mask;
         double latency_ave;
         double latency_std;
@@ -1371,6 +1397,17 @@ public:
         std::string outputCpu = "";
         if (count == 0)
         {
+            if (endTest) {
+                fprintf(stderr,
+                        "\nNo Pong samples have been received in the Publisher side.\n"
+                        "If you are interested in latency results, you might need to\n"
+                        "increase the Pong frequency (using the -latencyCount option).\n"
+                        "Alternatively you can increase the number of samples sent\n"
+                        "(-numIter) or the time for the test (-executionTime). If you\n"
+                        "are sending large data, make sure you set the data size (-datalen)\n"
+                        "in the Subscriber side.\n\n");
+                fflush(stderr);
+            }
             return;
         }
 
@@ -1393,7 +1430,7 @@ public:
             cpu.initialize();
         }
         // Add option to print on csv
-        if(!(_PM->get<bool>("noPrintSummary") || noText))
+        if(!(_PM->get<bool>("noPrintSummary") || !noText))
         {
             printf("Length: %5d"
                 " Latency: Ave %6.0lf " PERFT_TIME_UNIT
@@ -1417,106 +1454,106 @@ public:
             fflush(stdout);
         }
       #ifndef RTI_MICRO
-        mask = (_PM->get<int>("unbounded") != 0) << 0;
-        mask += _PM->get<bool>("keyed") << 1;
-        mask += _PM->get<bool>("flatdata") << 2;
-        mask += _PM->get<bool>("zerocopy") << 3;
+        if (_PM->get<bool>("serializationTime") && !noText ) {
 
-        switch (mask)
-        {
-        case 0: // = 0000 (bounded)
-            serializeTime = RTIDDSImpl<TestData_t>::
-                    obtain_dds_serialize_time_cost(totalSampleSize);
-            deserializeTime = RTIDDSImpl<TestData_t>::
-                    obtain_dds_deserialize_time_cost(totalSampleSize);
-            break;
+            mask = (_PM->get<int>("unbounded") != 0) << 0;
+            mask += _PM->get<bool>("keyed") << 1;
+            mask += _PM->get<bool>("flatdata") << 2;
+            mask += _PM->get<bool>("zerocopy") << 3;
 
-        case 1: // unbounded = 0001
-            serializeTime = RTIDDSImpl<TestDataLarge_t>::
-                    obtain_dds_serialize_time_cost(totalSampleSize);
-            deserializeTime = RTIDDSImpl<TestDataLarge_t>::
-                    obtain_dds_deserialize_time_cost(totalSampleSize);
-            break;
+            switch (mask)
+            {
+            case 0: // = 0000 (bounded)
+                serializeTime = RTIDDSImpl<TestData_t>::
+                        obtain_dds_serialize_time_cost(totalSampleSize);
+                deserializeTime = RTIDDSImpl<TestData_t>::
+                        obtain_dds_deserialize_time_cost(totalSampleSize);
+                break;
 
-        case 2: // keyed = 0010
-            serializeTime = RTIDDSImpl<TestDataKeyed_t>::
-                    obtain_dds_serialize_time_cost(totalSampleSize);
-            deserializeTime = RTIDDSImpl<TestDataKeyed_t>::
-                    obtain_dds_deserialize_time_cost(totalSampleSize);
-            break;
+            case 1: // unbounded = 0001
+                serializeTime = RTIDDSImpl<TestDataLarge_t>::
+                        obtain_dds_serialize_time_cost(totalSampleSize);
+                deserializeTime = RTIDDSImpl<TestDataLarge_t>::
+                        obtain_dds_deserialize_time_cost(totalSampleSize);
+                break;
 
-        case 3: // unbounded + keyed = 0011
-            serializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
-                    obtain_dds_serialize_time_cost(totalSampleSize);
-            deserializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
-                    obtain_dds_deserialize_time_cost(totalSampleSize);
-            break;
+            case 2: // keyed = 0010
+                serializeTime = RTIDDSImpl<TestDataKeyed_t>::
+                        obtain_dds_serialize_time_cost(totalSampleSize);
+                deserializeTime = RTIDDSImpl<TestDataKeyed_t>::
+                        obtain_dds_deserialize_time_cost(totalSampleSize);
+                break;
 
-      #ifdef RTI_FLATDATA_AVAILABLE
-        #ifdef RTI_ZEROCOPY_AVAILABLE
-        case 15: // unbounded + keyed + flat + zero = 1111
-            serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>::
-                    obtain_dds_serialize_time_cost_override(totalSampleSize);
-            deserializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>::
-                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
-            break;
+            case 3: // unbounded + keyed = 0011
+                serializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
+                        obtain_dds_serialize_time_cost(totalSampleSize);
+                deserializeTime = RTIDDSImpl<TestDataKeyedLarge_t>::
+                        obtain_dds_deserialize_time_cost(totalSampleSize);
+                break;
 
-        case 14: // keyed + flat + zero = 1110
-            serializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
-                    obtain_dds_serialize_time_cost_override(totalSampleSize);
-            deserializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
-                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
-            break;
+        #ifdef RTI_FLATDATA_AVAILABLE
+          #ifdef RTI_ZEROCOPY_AVAILABLE
+            case 15: // unbounded + keyed + flat + zero = 1111
+                serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>::
+                        obtain_dds_serialize_time_cost_override(totalSampleSize);
+                deserializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>::
+                        obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                break;
 
-        case 13: // unbounded + flat + zero = 1101
-            serializeTime = RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>::
-                    obtain_dds_serialize_time_cost_override(totalSampleSize);
-            deserializeTime = RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>::
-                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
-            break;
+            case 14: // keyed + flat + zero = 1110
+                serializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
+                        obtain_dds_serialize_time_cost_override(totalSampleSize);
+                deserializeTime = RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>::
+                        obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                break;
 
-        case 12: // flat + Zero = 1100
-            serializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
-                    obtain_dds_serialize_time_cost_override(totalSampleSize);
-            deserializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
-                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
-            break;
+            case 13: // unbounded + flat + zero = 1101
+                serializeTime = RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>::
+                        obtain_dds_serialize_time_cost_override(totalSampleSize);
+                deserializeTime = RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>::
+                        obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                break;
+
+            case 12: // flat + Zero = 1100
+                serializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
+                        obtain_dds_serialize_time_cost_override(totalSampleSize);
+                deserializeTime = RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>::
+                        obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                break;
+          #endif
+            case 7: // unbounded + keyed + flat = 0111
+                serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
+                        obtain_dds_serialize_time_cost_override(totalSampleSize);
+                deserializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
+                        obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                break;
+
+            case 6: // Keyed + flat = 0110
+                serializeTime = RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>::
+                        obtain_dds_serialize_time_cost_override(totalSampleSize);
+                deserializeTime = RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>::
+                        obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                break;
+
+            case 5: // unbounded + flat = 0101
+                serializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
+                        obtain_dds_serialize_time_cost_override(totalSampleSize);
+                deserializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
+                        obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                break;
+
+            case 4: // flat = 0100
+                serializeTime = RTIDDSImpl_FlatData<TestData_FlatData_t>::
+                        obtain_dds_serialize_time_cost_override(totalSampleSize);
+                deserializeTime = RTIDDSImpl_FlatData<TestData_FlatData_t>::
+                        obtain_dds_deserialize_time_cost_override(totalSampleSize);
+                break;
         #endif
-        case 7: // unbounded + keyed + flat = 0111
-            serializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
-                    obtain_dds_serialize_time_cost_override(totalSampleSize);
-            deserializeTime = RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>::
-                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
-            break;
 
-        case 6: // Keyed + flat = 0110
-            serializeTime = RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>::
-                    obtain_dds_serialize_time_cost_override(totalSampleSize);
-            deserializeTime = RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>::
-                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
-            break;
+            default:
+                break;
+            }
 
-        case 5: // unbounded + flat = 0101
-            serializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
-                    obtain_dds_serialize_time_cost_override(totalSampleSize);
-            deserializeTime = RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>::
-                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
-            break;
-
-        case 4: // flat = 0100
-            serializeTime = RTIDDSImpl_FlatData<TestData_FlatData_t>::
-                    obtain_dds_serialize_time_cost_override(totalSampleSize);
-            deserializeTime = RTIDDSImpl_FlatData<TestData_FlatData_t>::
-                    obtain_dds_deserialize_time_cost_override(totalSampleSize);
-            break;
-             break;
-      #endif
-
-        default:
-            break;
-        }
-        if(!(_PM->get<bool>("noPrintSerialization") || noText))
-        {
             printf("Serialization/Deserialization: %0.3f us / %0.3f us / TOTAL: "
                     "%0.3f us\n",
                     serializeTime,
@@ -1839,7 +1876,10 @@ int perftest_cpp::Publisher()
             _PM.get<int>("numSubscribers"));
     fflush(stderr);
     writer->WaitForReaders(_PM.get<int>("numSubscribers"));
-    reader->WaitForWriters(_PM.get<int>("numSubscribers"));
+    // Only publisher with ID 0 will have a reader.
+    if (reader != NULL) {
+        reader->WaitForWriters(_PM.get<int>("numSubscribers"));
+    }
     announcement_reader->WaitForWriters(_PM.get<int>("numSubscribers"));
 
     // We have to wait until every Subscriber sends an announcement message
@@ -1854,9 +1894,14 @@ int perftest_cpp::Publisher()
     // Allocate data and set size
     TestMessage message;
     message.entity_id = _PM.get<int>("pidMultiPubTest");
-    message.data = new char[(std::max)
-            ((int)_PM.get<unsigned long long>("dataLen"),
-            (int)LENGTH_CHANGED_SIZE)];
+
+    if (_PM.is_set("loadDataFromFile")) {
+        message.data = _fileDataLoader.get_next_buffer();
+    } else {
+        message.data = new char[(std::max)
+                ((int)_PM.get<unsigned long long>("dataLen"),
+                (int)LENGTH_CHANGED_SIZE)];
+    }
 
     if (showCpu && _PM.get<int>("pidMultiPubTest") == 0) {
         reader_listener->cpu.initialize();
@@ -1983,6 +2028,7 @@ int perftest_cpp::Publisher()
             (unsigned int)_PM.get<unsigned long long>("executionTime"),
             Timeout_scan
     };
+    const bool useDatafromFile = _PM.is_set("loadDataFromFile");
 
 
     /*
@@ -2044,8 +2090,10 @@ int perftest_cpp::Publisher()
         }
 
         if (_SleepNanosec > 0) {
-            sleep_period.nanosec = (DDS_UnsignedLong)_SleepNanosec;
-            NDDSUtility::sleep(sleep_period);
+            sleep_period.sec = (DDS_Long) (_SleepNanosec / 1000000000u);
+            sleep_period.nanosec = (DDS_UnsignedLong) _SleepNanosec
+                                    - (DDS_UnsignedLong) (sleep_period.sec * 1000000000);
+            PerftestClock::sleep(sleep_period);
         }
 
         pingID = -1;
@@ -2149,6 +2197,9 @@ int perftest_cpp::Publisher()
 
         message.seq_num = (unsigned long) loop;
         message.latency_ping = pingID;
+        if (useDatafromFile) {
+            message.data = _fileDataLoader.get_next_buffer();
+        }
         writer->Send(message);
         if(latencyTest && sentPing) {
             if (!bestEffort) {
@@ -2200,7 +2251,7 @@ int perftest_cpp::Publisher()
     }
 
     if (_PM.get<int>("pidMultiPubTest") == 0) {
-        reader_listener->print_summary_latency();
+        reader_listener->print_summary_latency(true);
         reader_listener->end_test = true;
     } else {
         fprintf(
@@ -2244,7 +2295,10 @@ int perftest_cpp::Publisher()
         delete announcement_reader_listener;
     }
 
-    delete []message.data;
+    /* The FileDataLoader class will remove this data, if in use */
+    if (!useDatafromFile) {
+        delete []message.data;
+    }
 
     if (_testCompleted) {
         // Delete timeout thread
@@ -2266,10 +2320,13 @@ bool perftest_cpp::finalize_read_thread(
         PerftestThread *thread,
         ListenerType *listener)
 {
-    listener->end_test = true;
+    if (listener != NULL) {
+        listener->end_test = true;
+    }
 
     if (thread != NULL) {
-        if (listener->_reader->unblock()
+        if (listener != NULL
+                && listener->_reader->unblock()
                 && listener->syncSemaphore != NULL) {
             /*
              * If the thread is created but the creation of the semaphore fail,

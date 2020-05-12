@@ -771,6 +771,58 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("writeInstance", writeInstance);
 
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    Parameter<bool> *serializationTime = new Parameter<bool>(false);
+    serializationTime->set_command_line_argument("-showSerializationTime", "");
+    serializationTime->set_description(
+            "Show serialization/Deserialization times for the sample size(s)\n"
+            "of the test. This time will be shown after the test concludes\n"
+            "Default: Not set");
+    serializationTime->set_type(T_BOOL);
+    serializationTime->set_extra_argument(NO);
+    serializationTime->set_group(PUB);
+    serializationTime->set_supported_middleware(
+            Middleware::RTIDDSPRO);
+    create("serializationTime", serializationTime);
+  #endif
+
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    /* This feature is still just available for Traditional C++ */
+    Parameter<std::string> *loadDataFromFile =
+            new Parameter<std::string>;
+    loadDataFromFile->set_command_line_argument("-loadDataFromFile", "<path>");
+    loadDataFromFile->set_description(
+            "Set the file used to populate the payload\n"
+            "Default: Not set");
+    loadDataFromFile->set_type(T_STR);
+    loadDataFromFile->set_extra_argument(YES);
+    loadDataFromFile->set_group(PUB);
+    loadDataFromFile->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("loadDataFromFile", loadDataFromFile);
+
+    Parameter<unsigned long long> *maximumAllocableBufferSize
+            = new Parameter<unsigned long long>(1073741824); // 1GB
+    maximumAllocableBufferSize->set_command_line_argument(
+            "-maximumAllocableBufferSize",
+            "<s>");
+    maximumAllocableBufferSize->set_description(
+            "When loading data from a file, the maximum size of the buffer\n"
+            "where the data is going to be stored in memory.\n"
+            "Default: 1GB");
+    maximumAllocableBufferSize->set_type(T_NUMERIC_LLU);
+    maximumAllocableBufferSize->set_extra_argument(YES);
+    maximumAllocableBufferSize->set_range(1, MAX_ULLONG);
+    maximumAllocableBufferSize->set_group(PUB);
+    maximumAllocableBufferSize->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("maximumAllocableBufferSize", maximumAllocableBufferSize);
+  #endif
+
     ////////////////////////////////////////////////////////////////////////////
     //SUBSCRIBER PARAMETER
     Parameter<bool> *sub = new Parameter<bool>(false);

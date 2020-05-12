@@ -61,6 +61,14 @@ The main purpose of that section is to hold examples of how to properly use
 and latency. It will also help showing what is the impact of using *RTI
 Connext DDS* features.
 
+New command line option to send data loaded from a file (#210)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting in this release, a new command line option has been added to the
+*Traditional C++* API implementation that allows the customer loading a file
+into memory and send the data of the file instead using an empty buffer as the
+payload for the *RTI Perftest* messages.
+
 New command line option to show the *DataWriter* and *DataReader* queue stats (#251)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -96,6 +104,26 @@ Added support for -threadPriorities command line parameter in QNX platforms
 The use of -threadPriorities command is now supported on QNX platforms.
 You can either specify three numeric values representing the priority of each
 of the threads or, instead, three characters representing the priorities: h,n,l.
+
+
+Added warning messages when no packets have been received at the end of the test (#303)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When performing certain tests, especially with very few samples, or with very large
+ones, the probability of not receiving any samples in Publisher or Subscriber sides
+are higher. Starting in this release we will notify the user when the application receives the
+message that the test has ended, as well as some suggestions on how to fix this.
+
+New parameter to control showing the serialization/deserialization times  (#304)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When the feature to show the serialization/deserialization times was added, it was set
+to show the data at the end of the test, in the publisher side, as a new line after the
+latency results.
+
+This was not convenient, since it can conflict when parsing the latency lines. This has
+been resolved adding a new parameter "-showSerializationTime", which enables calculating
+and showing the serialization/deserialization times.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -236,6 +264,45 @@ The use of `-useReadThread` (which internally would imply using `waitsets`)
 caused a segmentation fault at the end of the test (when *RTI Perftest* deleted
 the entities). This would affect Traditional and Modern C++ Implementations.
 This issue has been fixed.
+
+`-sleep` option not working correctly with values larger than 1 second (#299)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The calculation of the seconds and nanoseconds to sleep between sending samples
+when using the `-sleep` command line option was not correct for both the Traditional
+and the Modern C++ implementations. This issue has been resolved.
+
+Error in Modern C++ when using FlatData (#306)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+An error was found when testing *FlatData* in the *Modern C++ API* Implementation
+where the `write()` call would fail to find the right instance handle. This issue
+would show up in any of the 3 topics and would cause an exception.
+
+Error using Zero-Copy and checking sample consistency with waitsets (#316 and #317)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed issue in the *Traditional and Modern* C++ API implemetation, where, when
+using `-zeroCopy` + `-useReadThread` + `-checkConsistency` the middleware would
+show:
+
+    DDS_SampleInfoSeq_get_reference:!assert index out of bounds
+    TestDataLarge_ZeroCopy_w_FlatData_tSeq_get_reference:!assert index out of bounds
+    DDS_DataReader_is_metp_data_consistent:ERROR: Bad parameter: sample
+
+In the case of the *Modern* C++ API implementation this would also cause a
+crash. This issue has been fixed.
+
+Code generation failure on Windows when `FlatData` is disabled (#319)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On Windows, a failure will occur when trying to compile an architecture without
+support for `FlatData`. This may occur if the `RTI Connext DDS Professional`
+version is prior to the inclusion of the feature or if we intentionally disable
+it in the `build.bat` code. It might also happen for certain embeded windows
+architectures.
+
+This issue has been resolved.
 
 Release Notes 3.0
 -----------------
@@ -447,12 +514,6 @@ In order to achieve better performance with dealing with Large Data, the
 
 What's Fixed in 3.0
 ~~~~~~~~~~~~~~~~~~~
-
-Migrate RTI Routing Service XML configuration to 6.0.0
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The *RTI Routing Service* configuration file has been updated and
-is now supported by *RTI Routing Service* 6.0.0.
 
 Remove duplicate code on RTIDDSImpl when the topic name is checked (#99)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -749,15 +810,6 @@ In previous versions, the semaphore Take() and Give() operations
 were not being checked for errors correctly in the Traditional C++ API implementation.
 This has been fixed.
 
-Update Security Certificates and Governance files (#49)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The Security Certificates and Governance files used when enabling security options
-in RTI Perftest have been regenerated and signed again, since they had expired.
-
-The script used for updating the files has been improved to generate certificates
-valid for a longer period of time (from one year to ten years).
-
 Release Notes 2.3.1
 --------------------
 
@@ -799,13 +851,6 @@ in RTI Perftest have been regenerated and signed again, since they had expired.
 
 The script used for updating the files has been improved to generate certificates
 valid for a longer period of time (from one year to ten years).
-
-
-Release Notes 2.3.1
---------------------
-
-What's Fixed in 2.3.1
-~~~~~~~~~~~~~~~~~~~~~~
 
 Segmentation fault when using multiple publishers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1012,8 +1057,8 @@ messages, so they are not filtered by the CFTs.
 Release Notes v2.2
 ------------------
 
-What's New
-~~~~~~~~~~
+What's New in 2.2
+~~~~~~~~~~~~~~~~~
 
 Added command-line parameters "-asynchronous" and "-flowController ``<``\ flow\ ``>``"
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1161,7 +1206,7 @@ members of the Dynamic Data object before repopulating it.
 Release Notes v2.1
 ------------------
 
-What's New
+What's New in 2.1
 ~~~~~~~~~~~~~~~~~
 
 Multicast Periodic Heartbeats when the ``-multicast`` command-line parameter is present
@@ -1281,7 +1326,7 @@ The default verbosity is Error.
 Release Notes v2.0
 ------------------
 
-What's New
+What's New in 2.0
 ~~~~~~~~~~~~~~~~~
 
 Platform support and build system

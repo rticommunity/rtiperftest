@@ -74,6 +74,7 @@ class PerftestClock {
     static PerftestClock &getInstance();
     unsigned long long getTime();
     static void milliSleep(unsigned int millisec);
+    static void sleep(const struct DDS_Duration_t& sleep_period);
 
 };
 

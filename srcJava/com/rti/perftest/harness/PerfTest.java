@@ -958,7 +958,8 @@ public final class PerfTest {
         // Synchronize with publishers
         System.err.printf("Waiting to discover %1$d publishers ...\n", _numPublishers);
         reader.waitForWriters(_numPublishers);
-        writer.waitForReaders(_numPublishers);
+        // In a multi publisher test, only the first publisher will have a reader.
+        writer.waitForReaders(1);
         announcement_writer.waitForReaders(_numPublishers);
 
         // Announcement message that will be used by the announcement_writer
@@ -978,7 +979,7 @@ public final class PerfTest {
             return;
         }
 
-        System.err.print("Waiting for data...\n");
+        System.err.print("Waiting for data ...\n");
 
         // wait for data
         long  now, prev_time, delta;
@@ -1176,7 +1177,10 @@ public final class PerfTest {
 
         System.err.printf("Waiting to discover %1$d subscribers ...\n", _numSubscribers);
         writer.waitForReaders(_numSubscribers);
-        reader.waitForWriters(_numSubscribers);
+        // Only publisher with ID 0 will have a reader.
+        if (reader != null) {
+            reader.waitForWriters(_numSubscribers);
+        }
         announcement_reader.waitForWriters(_numSubscribers);
 
         // We have to wait until every Subscriber sends an announcement message
@@ -1441,7 +1445,7 @@ public final class PerfTest {
         }
 
         if (pubID == 0) {
-            reader_listener.print_summary_latency();
+            reader_listener.print_summary_latency(true);
             reader_listener.end_test = true;
         } else {
             System.out.println("Latency results are only shown when -pidMultiPubTest = 0");

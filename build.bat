@@ -416,12 +416,17 @@ if !BUILD_CPP! == 1 (
 	)
 
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
-	set "additional_header_files=!additional_header_files_custom_type!!additional_header_files!RTIRawTransportImpl.h Parameter.h ParameterManager.h ThreadPriorities.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_pro.h"
-	set "additional_source_files=!additional_source_files_custom_type!!additional_source_files!RTIRawTransportImpl.cxx Parameter.cxx ParameterManager.cxx ThreadPriorities.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_pro.cxx"
+	set "additional_header_files=!additional_header_files_custom_type!!additional_header_files!RTIRawTransportImpl.h Parameter.h ParameterManager.h ThreadPriorities.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_pro.h FileDataLoader.h"
+	set "additional_source_files=!additional_source_files_custom_type!!additional_source_files!RTIRawTransportImpl.cxx Parameter.cxx ParameterManager.cxx ThreadPriorities.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_pro.cxx FileDataLoader.cxx"
 
 	if !FLATDATA_AVAILABLE! == 1 (
 		set "additional_header_files=!additional_header_files! perftest_ZeroCopy.h perftest_ZeroCopyPlugin.h perftest_ZeroCopySupport.h"
 		set "additional_source_files=!additional_source_files! perftest_ZeroCopy.cxx perftest_ZeroCopyPlugin.cxx perftest_ZeroCopySupport.cxx"
+	)
+
+    set additional_rti_libs_str=
+	if "!additional_rti_libs!" NEQ "" (
+		set additional_rti_libs_str=-additionalRtiLibraries "!additional_rti_libs!"
 	)
 
 	echo[
@@ -432,7 +437,7 @@ if !BUILD_CPP! == 1 (
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	-additionalRtiLibraries "!additional_rti_libs!"^
+	!additional_rti_libs_str!^
 	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 
@@ -445,7 +450,7 @@ if !BUILD_CPP! == 1 (
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	-additionalRtiLibraries "!additional_rti_libs!"^
+	!additional_rti_libs_str!^
 	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
@@ -559,6 +564,11 @@ if !BUILD_CPP03! == 1 (
 		set "additional_source_files=!additional_source_files! perftest_ZeroCopy.cxx perftest_ZeroCopyPlugin.cxx"
 	)
 
+    set additional_rti_libs_str=
+	if "!additional_rti_libs!" NEQ "" (
+		set additional_rti_libs_str=-additionalRtiLibraries "!additional_rti_libs!"
+	)
+
 	echo[
 	echo [INFO] "%rtiddsgen_executable%" -language %modern_cpp_lang_string% ^
 	-unboundedSupport -replace -create typefiles -create makefiles^
@@ -567,7 +577,7 @@ if !BUILD_CPP03! == 1 (
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	-additionalRtiLibraries "!additional_rti_libs!"^
+	!additional_rti_libs_str!^
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
 
@@ -581,7 +591,7 @@ if !BUILD_CPP03! == 1 (
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	-additionalRtiLibraries "!additional_rti_libs!"^
+	!additional_rti_libs_str!^
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
 
@@ -771,8 +781,8 @@ if !BUILD_MICRO! == 1 (
 	)
 
 	set "ADDITIONAL_DEFINES=RTI_WIN32 RTI_MICRO !ADDITIONAL_DEFINES!"
-	set "additional_header_files=ParameterManager.h Parameter.h ThreadPriorities.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h PerftestSecurity.h"
-	set "additional_source_files=ParameterManager.cxx Parameter.cxx ThreadPriorities.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx PerftestSecurity.cxx"
+	set "additional_header_files=ParameterManager.h Parameter.h ThreadPriorities.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h FileDataLoader.h PerftestSecurity.h"
+	set "additional_source_files=ParameterManager.cxx Parameter.cxx ThreadPriorities.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx FileDataLoader.cxx PerftestSecurity.cxx"
 
 	@REM # Generate files for srcCpp
 	echo[
