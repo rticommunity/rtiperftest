@@ -1380,7 +1380,7 @@ public:
         printIntervals = !_PM->get<bool>("noPrintIntervals");
         showCpu = _PM->get<bool>("cpu");
         noText = _PM->get<bool>("noPrintText");
-        _printer.set_header_printed(!(_PM->get<bool>("noPrintHeaders") || noText));
+        _printer.set_print_invertals(printIntervals);
         _printer.set_output_format(_PM->get<std::string>("outputFormat"));
     }
 
@@ -1430,27 +1430,10 @@ public:
             cpu.initialize();
         }
         // Add option to print on csv
-        if(!(_PM->get<bool>("noPrintSummary") || !noText))
+        if(!(_PM->get<bool>("noPrintSummary") || noText))
         {
-            printf("Length: %5d"
-                " Latency: Ave %6.0lf " PERFT_TIME_UNIT
-                " Std %6.1lf " PERFT_TIME_UNIT
-                " Min %6lu " PERFT_TIME_UNIT
-                " Max %6lu " PERFT_TIME_UNIT
-                " 50%% %6lu " PERFT_TIME_UNIT
-                " 90%% %6lu " PERFT_TIME_UNIT
-                " 99%% %6lu " PERFT_TIME_UNIT
-                " 99.99%% %6lu " PERFT_TIME_UNIT
-                " 99.9999%% %6lu " PERFT_TIME_UNIT
-                " %s\n",
-                    totalSampleSize,
-                    latency_ave, latency_std, latency_min, latency_max,
-                    _latency_history[count*50/100],
-                    _latency_history[count*90/100],
-                    _latency_history[count*99/100],
-                    _latency_history[(int)(count*(9999.0/10000))],
-                    _latency_history[(int)(count*(999999.0/1000000))],
-                    outputCpu.c_str());
+            _printer.print_pub_sum(totalSampleSize, latency_ave, latency_std,
+                    latency_min, latency_max, _latency_history, count, outputCpu);
             fflush(stdout);
         }
       #ifndef RTI_MICRO
@@ -1680,6 +1663,7 @@ public:
 
             if (printIntervals) {
                 _printer.set_data_length(last_data_length + perftest_cpp::OVERHEAD_BYTES);
+                _printer.set_header_printed(!(_PM->get<bool>("noPrintHeaders") || noText));
             }
         }
         else {

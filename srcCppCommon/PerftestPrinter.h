@@ -18,7 +18,7 @@
 #include <fstream>
 
 enum PerftestOuputFormat {
-    CSV,
+    LEGACY,
     JSON,
     REGULAR
 };
@@ -30,6 +30,8 @@ class PerftestPrinter {
         unsigned int _dataLength;
         bool _headerPrinted;
         bool  _showCPU; // Control -showcpu flag?
+        bool _printIntervals;       // Control header summary
+        bool _printSummaryHeaders;  //
         std::string _latencyIntervalHeader;
         PerftestOuputFormat _outputFormat;
 
@@ -41,10 +43,14 @@ class PerftestPrinter {
         void set_data_length(unsigned int dataLength);
         void set_header_printed(bool headerPrinted);
         void set_output_format(std::string outputFormat);
+        void set_print_invertals(bool printIntervals);
         // Methods
         void print_pub(unsigned long latency, double latency_ave, double latency_std,
                 unsigned long latency_min, unsigned long latency_max, std::string outputCpu);
 
+        void print_pub_sum(int total_sample_size, double latency_ave, double latency_std,
+                unsigned long latency_min, unsigned long latency_max,
+                unsigned long *_latency_history, unsigned long long count, std::string outputCpu);
 
 };
 
@@ -64,7 +70,7 @@ class PerftestPrinter {
  * - Add to headers type data (us)
  * - Types of Heades:
  *      Data Length, Packets, Packets/s, Packets/s(ave), Mbps, Mbps(ave), Lost, Lost(%) -> Sub
- *      
+ *
  */
 
 

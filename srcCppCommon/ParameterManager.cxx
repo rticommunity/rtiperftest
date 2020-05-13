@@ -342,11 +342,11 @@ void ParameterManager::initialize()
     outputFormat->set_description(
             "Set the output file format.\n"
             "There are several types supported:\n"
-            "\t{'csv', 'json', 'regular'}\n"
+            "\t{'regular', 'json', 'legacy'}\n"
             "Default: 'regular'");
     outputFormat->set_type(T_STR);
     outputFormat->set_extra_argument(YES);
-    outputFormat->add_valid_str_value("csv");
+    outputFormat->add_valid_str_value("legacy");
     outputFormat->add_valid_str_value("json");
     outputFormat->add_valid_str_value("regular");
     outputFormat->set_group(GENERAL);
