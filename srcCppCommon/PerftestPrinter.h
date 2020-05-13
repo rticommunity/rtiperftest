@@ -52,6 +52,15 @@ class PerftestPrinter {
                 unsigned long latency_min, unsigned long latency_max,
                 unsigned long *_latency_history, unsigned long long count, std::string outputCpu);
 
+        void print_sub(unsigned long long last_msgs, unsigned long long mps, double mps_ave,
+                unsigned long long bps, double bps_ave, unsigned long long missing_packets,
+                float missing_packets_percent, std::string outputCpu);
+
+        void print_sub_sum(int length, unsigned long long interval_packets_received,
+                unsigned long long interval_time, unsigned long long interval_bytes_received,
+                unsigned long long interval_missing_packets, float missing_packets_percent,
+                std::string outputCpu);
+
 };
 
 
