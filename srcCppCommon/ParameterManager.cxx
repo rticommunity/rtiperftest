@@ -373,17 +373,6 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("noPrintHeaders", noPrintHeaders);
 
-    Parameter<bool> *noPrintSerialization = new Parameter<bool>(false);
-    noPrintSerialization->set_command_line_argument("-noPrintSerialization", "");
-    noPrintSerialization->set_description(
-            "Not add serialization to the output\n"
-            "Default: False");
-    noPrintSerialization->set_type(T_BOOL);
-    noPrintSerialization->set_extra_argument(NO);
-    noPrintSerialization->set_group(GENERAL);
-    noPrintSerialization->set_supported_middleware(Middleware::RTIDDSPRO);
-    create("noPrintSerialization", noPrintSerialization);
-
   #ifdef RTI_FLATDATA_AVAILABLE
     Parameter<bool> *flatData = new Parameter<bool>(false);
     flatData->set_command_line_argument("-flatData", "");

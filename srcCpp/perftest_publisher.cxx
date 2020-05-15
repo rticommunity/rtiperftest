@@ -852,6 +852,8 @@ class ThroughputListener : public IMessagingCB
 
             begin_time = PerftestClock::getInstance().getTime();
             _printer->set_data_length(message.size + perftest_cpp::OVERHEAD_BYTES);
+            if(!_PM->get<bool>("noPrintHeaders"))
+                _printer->set_header_printed(!_PM->get<bool>("noPrintHeader"));
         }
 
         last_data_length = message.size;
@@ -1662,6 +1664,8 @@ public:
         {
             last_data_length = message.size;
             _printer->set_data_length(last_data_length + perftest_cpp::OVERHEAD_BYTES);
+            if(!_PM->get<bool>("noPrintHeaders"))
+                _printer->set_header_printed(!_PM->get<bool>("noPrintHeader"));
         }
         else {
             if (printIntervals) {

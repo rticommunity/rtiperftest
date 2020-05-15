@@ -49,6 +49,11 @@ void PerftestPrinter::set_data_length(unsigned int dataLength)
     }
 }
 
+void PerftestPrinter::set_header_printed(bool headerPrinted)
+{
+    _headerPrinted = headerPrinted;
+}
+
 void PerftestPrinter::print_latency_interval(unsigned long latency,
         double latency_ave,
         double latency_std,
