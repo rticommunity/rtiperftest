@@ -135,7 +135,7 @@ std::string CpuMonitor::get_cpu_instant()
     _counter++;
     std::ostringstream strs;
     strs <<  std::fixed << std::setprecision(2)  << percent;
-    return ("CPU: " + strs.str() + "%");
+    return strs.str();
 }
 
 std::string CpuMonitor::get_cpu_average()
@@ -148,6 +148,6 @@ std::string CpuMonitor::get_cpu_average()
     strs <<  std::fixed << std::setprecision(2)
          << (double)(_cpuUsageTotal/_counter);
 
-    return ("CPU: " + strs.str() + "%");
+    return strs.str();
 }
 

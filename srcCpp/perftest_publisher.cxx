@@ -151,7 +151,7 @@ int perftest_cpp::Run(int argc, char *argv[])
             !_PM.get<bool>("noPrintIntervals"),
             _PM.get<std::string>("outputFormat"),
             !_PM.get<bool>("noPrintHeaders"),
-            !_PM.get<bool>("noPrintSerialization"),
+            _PM.get<bool>("serializationTime"),
             _PM.get<bool>("cpu"));
 
     if (_PM.get<bool>("rawTransport")) {
@@ -1431,16 +1431,11 @@ public:
             cpu = CpuMonitor();
             cpu.initialize();
         }
-        // Add option to print on csv
-        if(!_PM->get<bool>("noPrintHeaders"))
-        {
-            _printer->print_latency_summary(totalSampleSize, latency_ave, latency_std,
-                    latency_min, latency_max, _latency_history, count, outputCpu);
-            fflush(stdout);
-        }
+
       #ifndef RTI_MICRO
         if (_PM->get<bool>("serializationTime") &&
-                !_PM->get<bool>("noPrintHeaders") ) {
+                !_PM->get<bool>("noPrintHeaders"))
+        {
 
             mask = (_PM->get<int>("unbounded") != 0) << 0;
             mask += _PM->get<bool>("keyed") << 1;
@@ -1539,14 +1534,25 @@ public:
             default:
                 break;
             }
-
-            printf("Serialization/Deserialization: %0.3f us / %0.3f us / TOTAL: "
-                    "%0.3f us\n",
-                    serializeTime,
-                    deserializeTime,
-                    serializeTime + deserializeTime);
+            // _printer->print_serialization(serializeTime, deserializeTime);
         }
       #endif
+
+        if(!_PM->get<bool>("noPrintHeaders"))
+        {
+            _printer->print_latency_summary(
+                    totalSampleSize,
+                    latency_ave,
+                    latency_std,
+                    latency_min,
+                    latency_max,
+                    _latency_history,
+                    count,
+                    serializeTime,
+                    deserializeTime,
+                    outputCpu);
+            fflush(stdout);
+        }
 
         latency_sum = 0;
         latency_sum_square = 0;

@@ -50,38 +50,48 @@ class PerftestPrinter {
         void set_data_length(unsigned int dataLength);
         void set_header_printed(bool headerPrinted);
         // Methods
-        void print_latency_interval(unsigned long latency,
+        void print_latency_interval(
+                unsigned long latency,
                 double latency_ave,
                 double latency_std,
                 unsigned long latency_min,
                 unsigned long latency_max,
-                std::string outputCpu);
+                std::string outputCpu
+        );
 
-        void print_latency_summary(int total_sample_size,
+        void print_latency_summary(
+                int total_sample_size,
                 double latency_ave,
                 double latency_std,
                 unsigned long latency_min,
                 unsigned long latency_max,
                 unsigned long *_latency_history,
                 unsigned long long count,
-                std::string outputCpu);
+                double serializeTime,
+                double deserializeTime,
+                std::string outputCpu
+        );
 
-        void print_throughput(unsigned long long last_msgs,
+        void print_throughput(
+                unsigned long long last_msgs,
                 unsigned long long mps,
                 double mps_ave,
                 unsigned long long bps,
                 double bps_ave,
                 unsigned long long missing_packets,
                 float missing_packets_percent,
-                std::string outputCpu);
+                std::string outputCpu
+        );
 
-        void print_throughput_summary(int length,
+        void print_throughput_summary(
+                int length,
                 unsigned long long interval_packets_received,
                 unsigned long long interval_time,
                 unsigned long long interval_bytes_received,
                 unsigned long long interval_missing_packets,
                 float missing_packets_percent,
-                std::string outputCpu);
+                std::string outputCpu
+        );
 
 };
 #endif // __PERFTESTPRINTER_H__
