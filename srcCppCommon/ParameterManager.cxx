@@ -337,18 +337,20 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("threadPriorities", threadPriorities);
 
-    Parameter<std::string> *outputFormat = new Parameter<std::string>("regular");
+    Parameter<std::string> *outputFormat = new Parameter<std::string>("csv");
     outputFormat->set_command_line_argument("-outputFormat", "<format>");
     outputFormat->set_description(
-            "Set the output file format.\n"
-            "There are several types supported:\n"
-            "\t{'regular', 'json', 'legacy'}\n"
-            "Default: 'regular'");
+            "Set the output format.\n"
+            "The following formats are available:\n"
+            " - 'csv'\n"
+            " - 'json'\n"
+            " - 'legacy'\n"
+            "Default: 'csv'");
     outputFormat->set_type(T_STR);
     outputFormat->set_extra_argument(YES);
     outputFormat->add_valid_str_value("legacy");
     outputFormat->add_valid_str_value("json");
-    outputFormat->add_valid_str_value("regular");
+    outputFormat->add_valid_str_value("csv");
     outputFormat->set_group(GENERAL);
     outputFormat->set_supported_middleware(
             Middleware::RTIDDSPRO
@@ -359,8 +361,9 @@ void ParameterManager::initialize()
     Parameter<bool> *noPrintHeaders = new Parameter<bool>(false);
     noPrintHeaders->set_command_line_argument("-noPrintHeaders", "");
     noPrintHeaders->set_description(
-            "Not add header row to the output\n"
-            "Default: False");
+            "Skip displaying the header row with \n"
+            "the titles of the tables and the summary.\n"
+            "Default: False (it will display titles)");
     noPrintHeaders->set_type(T_BOOL);
     noPrintHeaders->set_extra_argument(NO);
     noPrintHeaders->set_group(GENERAL);
@@ -369,17 +372,6 @@ void ParameterManager::initialize()
             | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO);
     create("noPrintHeaders", noPrintHeaders);
-
-    Parameter<bool> *noPrintSummary = new Parameter<bool>(false);
-    noPrintSummary->set_command_line_argument("-noPrintSummary", "");
-    noPrintSummary->set_description(
-            "Not add summary to the output\n"
-            "Default: False");
-    noPrintSummary->set_type(T_BOOL);
-    noPrintSummary->set_extra_argument(NO);
-    noPrintSummary->set_group(GENERAL);
-    noPrintSummary->set_supported_middleware(Middleware::RTIDDSPRO);
-    create("noPrintSummary", noPrintSummary);
 
     Parameter<bool> *noPrintSerialization = new Parameter<bool>(false);
     noPrintSerialization->set_command_line_argument("-noPrintSerialization", "");
@@ -391,17 +383,6 @@ void ParameterManager::initialize()
     noPrintSerialization->set_group(GENERAL);
     noPrintSerialization->set_supported_middleware(Middleware::RTIDDSPRO);
     create("noPrintSerialization", noPrintSerialization);
-
-    Parameter<bool> *noPrintText = new Parameter<bool>(false);
-    noPrintText->set_command_line_argument("-noPrintText", "");
-    noPrintText->set_description(
-            "Not add any text, just data\n"
-            "Default: False");
-    noPrintText->set_type(T_BOOL);
-    noPrintText->set_extra_argument(NO);
-    noPrintText->set_group(GENERAL);
-    noPrintText->set_supported_middleware(Middleware::RTIDDSPRO);
-    create("noPrintText", noPrintText);
 
   #ifdef RTI_FLATDATA_AVAILABLE
     Parameter<bool> *flatData = new Parameter<bool>(false);

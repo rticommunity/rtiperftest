@@ -14,8 +14,6 @@
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
 
-
-
 #if defined(RTI_ANDROID)
 
 #include <android/log.h>
@@ -148,6 +146,13 @@ int perftest_cpp::Run(int argc, char *argv[])
             && !_threadPriorities.set_main_thread_priority()) {
         return -1;
     }
+
+    _printer.initialize(
+            !_PM.get<bool>("noPrintIntervals"),
+            _PM.get<std::string>("outputFormat"),
+            !_PM.get<bool>("noPrintHeaders"),
+            !_PM.get<bool>("noPrintSerialization"),
+            _PM.get<bool>("cpu"));
 
     if (_PM.get<bool>("rawTransport")) {
       #ifndef RTI_MICRO
@@ -696,7 +701,6 @@ class ThroughputListener : public IMessagingCB
     bool printIntervals;
     bool cacheStats;
     bool showCpu;
-    bool noText;
 
   public:
 
@@ -765,9 +769,7 @@ class ThroughputListener : public IMessagingCB
         cacheStats = _PM->get<bool>("cacheStats");
         showCpu = _PM->get<bool>("cpu");
         subID = _PM->get<int>("sidMultiSubTest");
-        noText = _PM->get<bool>("noPrintText");
-        _printer->set_print_invertals(printIntervals);
-        _printer->set_output_format(_PM->get<std::string>("outputFormat"));
+
     }
 
     ~ThroughputListener() {
@@ -849,14 +851,7 @@ class ThroughputListener : public IMessagingCB
             }
 
             begin_time = PerftestClock::getInstance().getTime();
-
-            if (printIntervals) {
-                // printf("\n\n********** New data length is %d\n",
-                //        message.size + perftest_cpp::OVERHEAD_BYTES);
-                _printer->set_data_length(message.size + perftest_cpp::OVERHEAD_BYTES);
-                _printer->set_header_printed(!(_PM->get<bool>("noPrintHeaders") || noText));
-                fflush(stdout);
-            }
+            _printer->set_data_length(message.size + perftest_cpp::OVERHEAD_BYTES);
         }
 
         last_data_length = message.size;
@@ -920,17 +915,18 @@ class ThroughputListener : public IMessagingCB
                 cpu = CpuMonitor();
                 cpu.initialize();
             }
-
-            _printer->print_sub_sum(
-                    interval_data_length + perftest_cpp::OVERHEAD_BYTES,
-                    interval_packets_received,
-                    interval_time,
-                    interval_bytes_received,
-                    interval_missing_packets,
-                    missing_packets_percent,
-                    outputCpu.c_str()
-                    );
-
+            if(!_PM->get<bool>("noPrintHeaders"))
+            {
+                _printer->print_throughput_summary(
+                        interval_data_length + perftest_cpp::OVERHEAD_BYTES,
+                        interval_packets_received,
+                        interval_time,
+                        interval_bytes_received,
+                        interval_missing_packets,
+                        missing_packets_percent,
+                        outputCpu.c_str()
+                        );
+            }
             if (cacheStats) {
                 printf("Samples Reader Queue Peak: %4d\n", sample_count_peak);
             }
@@ -1204,7 +1200,7 @@ int perftest_cpp::Subscriber()
                 if (showCpu) {
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
-                _printer.print_sub(last_msgs, mps, mps_ave, bps, bps_ave,
+                _printer.print_throughput(last_msgs, mps, mps_ave, bps, bps_ave,
                         reader_listener->missing_packets, missing_packets_percent,
                         outputCpu.c_str());
                 fflush(stdout);
@@ -1328,7 +1324,6 @@ class LatencyListener : public IMessagingCB
     int  subID;
     bool printIntervals;
     bool showCpu;
-    bool noText;
 
 public:
     IMessagingReader *_reader;
@@ -1386,9 +1381,7 @@ public:
         subID = _PM->get<int>("sidMultiSubTest");
         printIntervals = !_PM->get<bool>("noPrintIntervals");
         showCpu = _PM->get<bool>("cpu");
-        noText = _PM->get<bool>("noPrintText");
-        _printer->set_print_invertals(printIntervals);
-        _printer->set_output_format(_PM->get<std::string>("outputFormat"));
+
     }
 
     void print_summary_latency(bool endTest = false){
@@ -1437,14 +1430,15 @@ public:
             cpu.initialize();
         }
         // Add option to print on csv
-        if(!(_PM->get<bool>("noPrintSummary") || noText))
+        if(!_PM->get<bool>("noPrintHeaders"))
         {
-            _printer->print_pub_sum(totalSampleSize, latency_ave, latency_std,
+            _printer->print_latency_summary(totalSampleSize, latency_ave, latency_std,
                     latency_min, latency_max, _latency_history, count, outputCpu);
             fflush(stdout);
         }
       #ifndef RTI_MICRO
-        if (_PM->get<bool>("serializationTime") && !noText ) {
+        if (_PM->get<bool>("serializationTime") &&
+                !_PM->get<bool>("noPrintHeaders") ) {
 
             mask = (_PM->get<int>("unbounded") != 0) << 0;
             mask += _PM->get<bool>("keyed") << 1;
@@ -1667,11 +1661,7 @@ public:
         if (last_data_length != message.size)
         {
             last_data_length = message.size;
-
-            if (printIntervals) {
-                _printer->set_data_length(last_data_length + perftest_cpp::OVERHEAD_BYTES);
-                _printer->set_header_printed(!(_PM->get<bool>("noPrintHeaders") || noText));
-            }
+            _printer->set_data_length(last_data_length + perftest_cpp::OVERHEAD_BYTES);
         }
         else {
             if (printIntervals) {
@@ -1682,7 +1672,7 @@ public:
                 if (showCpu) {
                     outputCpu = cpu.get_cpu_instant();
                 }
-                _printer->print_pub(latency, latency_ave, latency_std, latency_min, latency_max, outputCpu);
+                _printer->print_latency_interval(latency, latency_ave, latency_std, latency_min, latency_max, outputCpu);
             }
         }
 

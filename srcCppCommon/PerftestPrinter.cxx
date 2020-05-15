@@ -1,5 +1,3 @@
-
-
 /*
  * (c) 2005-2020  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
@@ -13,30 +11,32 @@ PerftestOuputFormat get_output_format(std::string outputFormat)
     if(outputFormat == "legacy"){
         return LEGACY;
     } else {
-        return REGULAR;
+        return CSV;
     }
 }
 
 PerftestPrinter::PerftestPrinter()
 {
     _dataLength = 100;
-    _outputFormat = REGULAR;
+    _outputFormat = CSV;
     _printSummaryHeaders = true;
 }
 
-void PerftestPrinter::set_header_printed(bool headerPrinted)
-{
-    _headerPrinted = headerPrinted;
-}
-
-void PerftestPrinter::set_print_invertals(bool printIntervals)
+void PerftestPrinter::initialize(bool printIntervals,
+        std::string outputFormat,
+        bool printHeaders,
+        bool printSerialization,
+        bool showCpu)
 {
     _printIntervals = printIntervals;
-}
-
-void PerftestPrinter::set_output_format(std::string outputFormat)
-{
-    _outputFormat = get_output_format(outputFormat);
+    _headerPrinted = printHeaders;
+    _printSerialization = printSerialization;
+    if(outputFormat == "csv")
+        _outputFormat = CSV;
+    else if(outputFormat == "json")
+        _outputFormat = JSON;
+    else if(outputFormat == "legacy")
+        _outputFormat = LEGACY;
 }
 
 void PerftestPrinter::set_data_length(unsigned int dataLength)
@@ -49,19 +49,23 @@ void PerftestPrinter::set_data_length(unsigned int dataLength)
     }
 }
 
-void PerftestPrinter::print_pub(unsigned long latency, double latency_ave,
-        double latency_std, unsigned long latency_min,
-        unsigned long latency_max, std::string outputCpu)
+void PerftestPrinter::print_latency_interval(unsigned long latency,
+        double latency_ave,
+        double latency_std,
+        unsigned long latency_min,
+        unsigned long latency_max,
+        std::string outputCpu)
 {
     switch (_outputFormat)
     {
-        case REGULAR :
+        case CSV :
             if (_headerPrinted)
             {
                 _headerPrinted = !_headerPrinted;
                 printf("\nIntervals One-way Latency for %d Bytes:\n",
                 _dataLength);
-                printf("Length (Bytes), Latency (" PERFT_TIME_UNIT
+                printf("Length (Bytes)"
+                        ", Latency (" PERFT_TIME_UNIT
                         "), Ave (" PERFT_TIME_UNIT
                         "), Std (" PERFT_TIME_UNIT
                         "), Min (" PERFT_TIME_UNIT
@@ -96,18 +100,24 @@ void PerftestPrinter::print_pub(unsigned long latency, double latency_ave,
     }
 }
 
-void PerftestPrinter::print_pub_sum(int total_sample_size, double latency_ave, double latency_std,
-        unsigned long latency_min, unsigned long latency_max,
-        unsigned long *_latency_history, unsigned long long count, std::string outputCpu)
+void PerftestPrinter::print_latency_summary(int total_sample_size,
+        double latency_ave,
+        double latency_std,
+        unsigned long latency_min,
+        unsigned long latency_max,
+        unsigned long *_latency_history,
+        unsigned long long count,
+        std::string outputCpu)
 {
     switch (_outputFormat)
     {
-        case REGULAR :
+        case CSV :
             if (_printSummaryHeaders) {
                 if(!_printIntervals && _printSummaryHeaders)
                     _printSummaryHeaders = _printIntervals;
                 printf ("\nOne-way Latency Summary:\n");
-                printf("Length (Bytes), Ave (" PERFT_TIME_UNIT
+                printf("Length (Bytes)"
+                        ", Ave (" PERFT_TIME_UNIT
                         "), Std (" PERFT_TIME_UNIT
                         "), Min (" PERFT_TIME_UNIT
                         "), Max (" PERFT_TIME_UNIT
@@ -158,21 +168,29 @@ void PerftestPrinter::print_pub_sum(int total_sample_size, double latency_ave, d
     }
 }
 
-void PerftestPrinter::print_sub(unsigned long long last_msgs, unsigned long long mps, double mps_ave,
-        unsigned long long bps, double bps_ave, unsigned long long missing_packets,
-        float missing_packets_percent, std::string outputCpu) {
+void PerftestPrinter::print_throughput(unsigned long long last_msgs,
+        unsigned long long mps,
+        double mps_ave,
+        unsigned long long bps,
+        double bps_ave,
+        unsigned long long missing_packets,
+        float missing_packets_percent,
+        std::string outputCpu)
+{
     switch (_outputFormat)
     {
-        case REGULAR :
+        case CSV :
             if (_headerPrinted)
             {
                 _headerPrinted = !_headerPrinted;
                 printf("\nInterval Throughput for %d Bytes:\n",
                 _dataLength);
                 printf("Length (Bytes), Total Samples,  Samples/s,"
-                        " Ave Samples/s,     Mbps,  Ave Mbps, Lost Samples, Lost Samples (%%)\n");
+                        " Ave Samples/s,     Mbps,  Ave Mbps"
+                        ", Lost Samples, Lost Samples (%%)\n");
             }
-            printf("%14d,%14llu,%11llu,%14.0lf,%9.1lf,%10.1lf, %12llu, %16.2lf\n", _dataLength,
+            printf("%14d,%14llu,%11llu,%14.0lf,%9.1lf,%10.1lf, %12llu, %16.2lf\n",
+                    _dataLength,
                     last_msgs, mps, mps_ave,
                     bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
                     missing_packets,
@@ -195,19 +213,23 @@ void PerftestPrinter::print_sub(unsigned long long last_msgs, unsigned long long
     }
 }
 
-void PerftestPrinter::print_sub_sum(int length, unsigned long long interval_packets_received,
-        unsigned long long interval_time, unsigned long long interval_bytes_received,
-        unsigned long long interval_missing_packets, float missing_packets_percent,
-        std::string outputCpu) {
-            switch (_outputFormat)
+void PerftestPrinter::print_throughput_summary(int length,
+        unsigned long long interval_packets_received,
+        unsigned long long interval_time,
+        unsigned long long interval_bytes_received,
+        unsigned long long interval_missing_packets,
+        float missing_packets_percent,
+        std::string outputCpu)
+{
+    switch (_outputFormat)
     {
-        case REGULAR :
+        case CSV :
             if (_printSummaryHeaders) {
                 if(!_printIntervals && _printSummaryHeaders)
                     _printSummaryHeaders = _printIntervals;
                 printf ("\nThroughput Summary:\n");
-                printf("Length (Bytes), Total Samples, Ave Samples/s,    Ave Mbps,"
-                        " Lost Samples, Lost Samples (%%)\n");
+                printf("Length (Bytes), Total Samples, Ave Samples/s,"
+                        "    Ave Mbps, Lost Samples, Lost Samples (%%)\n");
             }
             printf("%14d,%14llu,%14.0llu,%12.1lf, %12llu, %16.2lf\n",
                     length,
