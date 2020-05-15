@@ -33,7 +33,6 @@ class PerftestPrinter {
         bool _printIntervals;
         bool _printSummaryHeaders;
         bool _printSerialization;
-        // std::string _latencyIntervalHeader;
         PerftestOuputFormat _outputFormat;
 
     public:

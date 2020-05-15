@@ -3,7 +3,6 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-
 #include "PerftestPrinter.h"
 
 PerftestOuputFormat get_output_format(std::string outputFormat)
@@ -167,7 +166,7 @@ void PerftestPrinter::print_latency_summary(int total_sample_size,
                     _latency_history[(int)(count*(9999.0/10000))],
                     _latency_history[(int)(count*(999999.0/1000000))]);
             if(_printSerialization){
-                printf(",%18.3f,%21.3f,%11.3f",
+                printf(",%19.3f,%21.3f,%11.3f",
                     serializeTime,
                     deserializeTime,
                     serializeTime+deserializeTime);
