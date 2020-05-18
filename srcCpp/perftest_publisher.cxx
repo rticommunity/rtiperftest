@@ -852,8 +852,7 @@ class ThroughputListener : public IMessagingCB
 
             begin_time = PerftestClock::getInstance().getTime();
             _printer->set_data_length(message.size + perftest_cpp::OVERHEAD_BYTES);
-            if(!_PM->get<bool>("noPrintHeaders"))
-                _printer->set_header_printed(!_PM->get<bool>("noPrintHeader"));
+            _printer->print_throughput_header();
         }
 
         last_data_length = message.size;
@@ -917,18 +916,15 @@ class ThroughputListener : public IMessagingCB
                 cpu = CpuMonitor();
                 cpu.initialize();
             }
-            if(!_PM->get<bool>("noPrintHeaders"))
-            {
-                _printer->print_throughput_summary(
-                        interval_data_length + perftest_cpp::OVERHEAD_BYTES,
-                        interval_packets_received,
-                        interval_time,
-                        interval_bytes_received,
-                        interval_missing_packets,
-                        missing_packets_percent,
-                        outputCpu.c_str()
-                        );
-            }
+            _printer->print_throughput_summary(
+                    interval_data_length + perftest_cpp::OVERHEAD_BYTES,
+                    interval_packets_received,
+                    interval_time,
+                    interval_bytes_received,
+                    interval_missing_packets,
+                    missing_packets_percent,
+                    outputCpu.c_str()
+                    );
             if (cacheStats) {
                 printf("Samples Reader Queue Peak: %4d\n", sample_count_peak);
             }
@@ -1433,8 +1429,7 @@ public:
         }
 
       #ifndef RTI_MICRO
-        if (_PM->get<bool>("serializationTime") &&
-                !_PM->get<bool>("noPrintHeaders"))
+        if (_PM->get<bool>("serializationTime"))
         {
 
             mask = (_PM->get<int>("unbounded") != 0) << 0;
@@ -1538,21 +1533,19 @@ public:
         }
       #endif
 
-        if(!_PM->get<bool>("noPrintHeaders"))
-        {
-            _printer->print_latency_summary(
-                    totalSampleSize,
-                    latency_ave,
-                    latency_std,
-                    latency_min,
-                    latency_max,
-                    _latency_history,
-                    count,
-                    serializeTime,
-                    deserializeTime,
-                    outputCpu);
-            fflush(stdout);
-        }
+
+        _printer->print_latency_summary(
+                totalSampleSize,
+                latency_ave,
+                latency_std,
+                latency_min,
+                latency_max,
+                _latency_history,
+                count,
+                serializeTime,
+                deserializeTime,
+                outputCpu);
+        fflush(stdout);
 
         latency_sum = 0;
         latency_sum_square = 0;
@@ -1670,8 +1663,7 @@ public:
         {
             last_data_length = message.size;
             _printer->set_data_length(last_data_length + perftest_cpp::OVERHEAD_BYTES);
-            if(!_PM->get<bool>("noPrintHeaders"))
-                _printer->set_header_printed(!_PM->get<bool>("noPrintHeader"));
+            _printer->print_latency_interval_header();
         }
         else {
             if (printIntervals) {

@@ -49,6 +49,7 @@ class PerftestPrinter {
         void set_data_length(unsigned int dataLength);
         void set_header_printed(bool headerPrinted);
         // Methods
+        void print_latency_interval_header();
         void print_latency_interval(
                 unsigned long latency,
                 double latency_ave,
@@ -57,7 +58,6 @@ class PerftestPrinter {
                 unsigned long latency_max,
                 std::string outputCpu
         );
-
         void print_latency_summary(
                 int total_sample_size,
                 double latency_ave,
@@ -70,7 +70,7 @@ class PerftestPrinter {
                 double deserializeTime,
                 std::string outputCpu
         );
-
+        void print_throughput_header();
         void print_throughput(
                 unsigned long long last_msgs,
                 unsigned long long mps,

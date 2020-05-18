@@ -41,12 +41,7 @@ void PerftestPrinter::initialize(bool printIntervals,
 
 void PerftestPrinter::set_data_length(unsigned int dataLength)
 {
-    if (_outputFormat == LEGACY){
-        printf("\n\n********** New data length is %d\n",
-                dataLength);
-    } else {
     _dataLength = dataLength;
-    }
 }
 
 void PerftestPrinter::set_header_printed(bool headerPrinted)
@@ -54,19 +49,11 @@ void PerftestPrinter::set_header_printed(bool headerPrinted)
     _headerPrinted = headerPrinted;
 }
 
-void PerftestPrinter::print_latency_interval(unsigned long latency,
-        double latency_ave,
-        double latency_std,
-        unsigned long latency_min,
-        unsigned long latency_max,
-        std::string outputCpu)
+void PerftestPrinter::print_latency_interval_header()
 {
-    switch (_outputFormat)
-    {
-        case CSV :
-            if (_headerPrinted)
-            {
-                _headerPrinted = !_headerPrinted;
+    if(_headerPrinted && _printIntervals){
+        switch(_outputFormat){
+            case CSV:
                 printf("\nIntervals One-way Latency for %d Bytes:\n",
                 _dataLength);
                 printf("Length (Bytes)"
@@ -79,7 +66,52 @@ void PerftestPrinter::print_latency_interval(unsigned long latency,
                     printf(", CPU %%");
 
                 printf("\n");
-            }
+                break;
+            case JSON:
+                break;
+            case LEGACY:
+                printf("\n\n********** New data length is %d\n",
+                        _dataLength);
+                break;
+        }
+    }
+}
+
+void PerftestPrinter::print_throughput_header()
+{
+    if(_headerPrinted && _printIntervals){
+        switch(_outputFormat){
+            case CSV:
+                printf("\nInterval Throughput for %d Bytes:\n",
+                _dataLength);
+                printf("Length (Bytes), Total Samples,  Samples/s,"
+                        " Ave Samples/s,     Mbps,  Ave Mbps"
+                        ", Lost Samples, Lost Samples (%%)");
+                if(_showCPU)
+                    printf(", CPU %%");
+
+                printf("\n");
+                break;
+            case JSON:
+                break;
+            case LEGACY:
+                printf("\n\n********** New data length is %d\n",
+                        _dataLength);
+                break;
+        }
+    }
+}
+
+void PerftestPrinter::print_latency_interval(unsigned long latency,
+        double latency_ave,
+        double latency_std,
+        unsigned long latency_min,
+        unsigned long latency_max,
+        std::string outputCpu)
+{
+    switch (_outputFormat)
+    {
+        case CSV :
             printf("%14d,%13lu,%9.0lf,%9.1lf,%9lu,%9lu", _dataLength,
                     latency,
                     latency_ave,
@@ -129,7 +161,7 @@ void PerftestPrinter::print_latency_summary(int total_sample_size,
     switch (_outputFormat)
     {
         case CSV :
-            if (_printSummaryHeaders) {
+            if (_printSummaryHeaders && _headerPrinted) {
                 if(!_printIntervals && _printSummaryHeaders)
                     _printSummaryHeaders = _printIntervals;
                 printf ("\nOne-way Latency Summary:\n");
@@ -228,19 +260,6 @@ void PerftestPrinter::print_throughput(unsigned long long last_msgs,
     switch (_outputFormat)
     {
         case CSV :
-            if (_headerPrinted)
-            {
-                _headerPrinted = !_headerPrinted;
-                printf("\nInterval Throughput for %d Bytes:\n",
-                _dataLength);
-                printf("Length (Bytes), Total Samples,  Samples/s,"
-                        " Ave Samples/s,     Mbps,  Ave Mbps"
-                        ", Lost Samples, Lost Samples (%%)");
-                if(_showCPU)
-                    printf(", CPU %%");
-
-                printf("\n");
-            }
             printf("%14d,%14llu,%11llu,%14.0lf,%9.1lf,%10.1lf, %12llu, %16.2lf",
                     _dataLength,
                     last_msgs, mps, mps_ave,
@@ -283,7 +302,7 @@ void PerftestPrinter::print_throughput_summary(int length,
     switch (_outputFormat)
     {
         case CSV :
-            if (_printSummaryHeaders) {
+            if (_printSummaryHeaders && _headerPrinted) {
                 if(!_printIntervals && _printSummaryHeaders)
                     _printSummaryHeaders = _printIntervals;
                 printf ("\nThroughput Summary:\n");
