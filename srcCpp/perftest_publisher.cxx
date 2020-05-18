@@ -1214,7 +1214,7 @@ int perftest_cpp::Subscriber()
     }
 
     PerftestClock::milliSleep(2000);
-
+    _printer.print_finish_output();
     if (!finalize_read_thread(throughputThread, reader_listener)) {
         fprintf(stderr, "Error deleting throughputThread\n");
         return -1;
@@ -2284,7 +2284,7 @@ int perftest_cpp::Publisher()
     if (!useDatafromFile) {
         delete []message.data;
     }
-
+    _printer.print_finish_output();
     if (_testCompleted) {
         // Delete timeout thread
         if (executionTimeoutThread != NULL) {

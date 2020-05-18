@@ -33,6 +33,8 @@ class PerftestPrinter {
         bool _printIntervals;
         bool _printSummaryHeaders;
         bool _printSerialization;
+        bool _controlJsonInit;
+        bool _controlJsonIntervals;
         PerftestOuputFormat _outputFormat;
 
     public:
@@ -91,6 +93,8 @@ class PerftestPrinter {
                 float missing_packets_percent,
                 std::string outputCpu
         );
+
+        void print_finish_output();
 
 };
 #endif // __PERFTESTPRINTER_H__

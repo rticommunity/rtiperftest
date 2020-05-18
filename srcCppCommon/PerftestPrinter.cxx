@@ -33,9 +33,11 @@ void PerftestPrinter::initialize(bool printIntervals,
     _showCPU = showCpu;
     if(outputFormat == "csv")
         _outputFormat = CSV;
-    else if(outputFormat == "json")
+    else if(outputFormat == "json"){
         _outputFormat = JSON;
-    else if(outputFormat == "legacy")
+        printf("{\"perftest\":\n\t[\n\t\t{\n");
+        _controlJsonInit = true;
+    }else if(outputFormat == "legacy")
         _outputFormat = LEGACY;
 }
 
@@ -51,9 +53,9 @@ void PerftestPrinter::set_header_printed(bool headerPrinted)
 
 void PerftestPrinter::print_latency_interval_header()
 {
-    if(_headerPrinted && _printIntervals){
-        switch(_outputFormat){
-            case CSV:
+    switch(_outputFormat){
+        case CSV:
+            if(_headerPrinted && _printIntervals){
                 printf("\nIntervals One-way Latency for %d Bytes:\n",
                 _dataLength);
                 printf("Length (Bytes)"
@@ -66,22 +68,35 @@ void PerftestPrinter::print_latency_interval_header()
                     printf(", CPU %%");
 
                 printf("\n");
-                break;
-            case JSON:
-                break;
-            case LEGACY:
+            }
+            break;
+        case JSON:
+            if(_controlJsonInit){
+                _controlJsonInit = false;
+            } else {
+                printf(",\n\t\t{\n");
+            }
+            printf("\t\t\t\"length\":%d,\n",_dataLength);
+
+            if(_printIntervals && _outputFormat == JSON){
+                printf("\t\t\t\"intervals\":[\n");
+                _controlJsonIntervals = true;
+            }
+            break;
+        case LEGACY:
+            if(_headerPrinted && _printIntervals){
                 printf("\n\n********** New data length is %d\n",
                         _dataLength);
-                break;
-        }
+            }
+            break;
     }
 }
 
 void PerftestPrinter::print_throughput_header()
 {
-    if(_headerPrinted && _printIntervals){
-        switch(_outputFormat){
-            case CSV:
+    switch(_outputFormat){
+        case CSV:
+            if(_headerPrinted && _printIntervals){
                 printf("\nInterval Throughput for %d Bytes:\n",
                 _dataLength);
                 printf("Length (Bytes), Total Samples,  Samples/s,"
@@ -91,14 +106,27 @@ void PerftestPrinter::print_throughput_header()
                     printf(", CPU %%");
 
                 printf("\n");
-                break;
-            case JSON:
-                break;
-            case LEGACY:
+            }
+            break;
+        case JSON:
+            if(_controlJsonInit){
+                _controlJsonInit = false;
+            } else {
+                printf(",\n\t\t{\n");
+            }
+            printf("\t\t\t\"length\":%d,\n",_dataLength);
+
+            if(_printIntervals && _outputFormat == JSON){
+                printf("\t\t\t\"intervals\":[\n");
+                _controlJsonIntervals = true;
+            }
+            break;
+        case LEGACY:
+            if(_headerPrinted && _printIntervals){
                 printf("\n\n********** New data length is %d\n",
                         _dataLength);
-                break;
-        }
+            }
+            break;
     }
 }
 
@@ -125,6 +153,26 @@ void PerftestPrinter::print_latency_interval(unsigned long latency,
             break;
 
         case JSON :
+            if(_controlJsonIntervals)
+                _controlJsonIntervals = false;
+            else
+                printf(",");
+            printf("\n\t\t\t\t{\n"
+                    "\t\t\t\t\t\"latency\": %lu,\n"
+                    "\t\t\t\t\t\"latency_ave\": %1.2lf,\n"
+                    "\t\t\t\t\t\"latency_std\": %1.2lf,\n"
+                    "\t\t\t\t\t\"latency_min\": %lu,\n"
+                    "\t\t\t\t\t\"latency_max\": %lu",
+                    latency,
+                    latency_ave,
+                    latency_std,
+                    latency_min,
+                    latency_max
+                );
+            if(_showCPU){
+                printf(",\n\t\t\t\t\t\"cpu\": %s", outputCpu.c_str());
+            }
+            printf("\n\t\t\t\t}");
             break;
 
         case LEGACY :
@@ -210,6 +258,40 @@ void PerftestPrinter::print_latency_summary(int total_sample_size,
             break;
 
         case JSON :
+            if(_printIntervals)
+                printf("\n\t\t\t],\n");
+            printf("\t\t\t\"summary\":{\n"
+                    "\t\t\t\t\"latency_ave\": %1.2lf,\n"
+                    "\t\t\t\t\"latency_std\": %1.2lf,\n"
+                    "\t\t\t\t\"latency_min\": %lu,\n"
+                    "\t\t\t\t\"latency_max\": %lu,\n"
+                    "\t\t\t\t\"latency_50\": %lu,\n"
+                    "\t\t\t\t\"latency_90\": %lu,\n"
+                    "\t\t\t\t\"latency_99\": %lu,\n"
+                    "\t\t\t\t\"latency_99.99\": %lu,\n"
+                    "\t\t\t\t\"latency_99.9999\": %lu",
+                    latency_ave,
+                    latency_std,
+                    latency_min,
+                    latency_max,
+                    _latency_history[count*50/100],
+                    _latency_history[count*90/100],
+                    _latency_history[count*99/100],
+                    _latency_history[(int)(count*(9999.0/10000))],
+                    _latency_history[(int)(count*(999999.0/1000000))]
+            );
+            if(_printSerialization){
+                printf(",\n\t\t\t\t\"serialize\": %1.3f,\n"
+                        "\t\t\t\t\"deserialize\": %1.3f,\n"
+                        "\t\t\t\t\"total_s\": %1.3f",
+                        serializeTime,
+                        deserializeTime,
+                        serializeTime+deserializeTime);
+            }
+            if(_showCPU){
+                printf(",\n\t\t\t\t\"cpu\": %s", outputCpu.c_str());
+            }
+            printf("\n\t\t\t}\n\t\t}");
             break;
 
         case LEGACY :
@@ -273,6 +355,29 @@ void PerftestPrinter::print_throughput(unsigned long long last_msgs,
             break;
 
         case JSON :
+            if(_controlJsonIntervals)
+                    _controlJsonIntervals = false;
+            else
+                printf(",");
+            printf("\n\t\t\t\t{\n"
+                    "\t\t\t\t\t\"length\": %d,\n"
+                    "\t\t\t\t\t\"packets\": %llu,\n"
+                    "\t\t\t\t\t\"packets/s\": %llu,\n"
+                    "\t\t\t\t\t\"packets/s_ave\": %1.2lf,\n"
+                    "\t\t\t\t\t\"mbps\": %1.1lf,\n"
+                    "\t\t\t\t\t\"mbps_ave\": %1.1lf,\n"
+                    "\t\t\t\t\t\"lost\": %llu,\n"
+                    "\t\t\t\t\t\"lost_percent\": %1.2lf",
+                    _dataLength,
+                    last_msgs, mps, mps_ave,
+                    bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
+                    missing_packets,
+                    missing_packets_percent
+                );
+            if(_showCPU){
+                printf(",\n\t\t\t\t\t\"cpu\": %s", outputCpu.c_str());
+            }
+            printf("\n\t\t\t\t}");
             break;
 
         case LEGACY :
@@ -328,6 +433,24 @@ void PerftestPrinter::print_throughput_summary(int length,
             break;
 
         case JSON :
+            if(_printIntervals)
+                printf("\t\t\t],\n");
+            printf("\t\t\t\"summary\":{\n"
+                    "\t\t\t\t\"packets\": %llu,\n"
+                    "\t\t\t\t\"packets/s_ave\": %llu,\n"
+                    "\t\t\t\t\"mbps_ave\": %1.1lf,\n"
+                    "\t\t\t\t\"lost\": %llu,\n"
+                    "\t\t\t\t\"lost_percent\": %1.2lf",
+                    interval_packets_received,
+                    interval_packets_received*1000000/interval_time,
+                    interval_bytes_received*1000000.0/interval_time*8.0/1000.0/1000.0,
+                    interval_missing_packets,
+                    missing_packets_percent
+            );
+            if(_showCPU){
+                printf(",\n\t\t\t\t\"cpu\": %s", outputCpu.c_str());
+            }
+            printf("\n\t\t\t}\n\t\t}");
             break;
 
         case LEGACY :
@@ -346,4 +469,10 @@ void PerftestPrinter::print_throughput_summary(int length,
             printf("\n");
             break;
     }
+}
+
+void PerftestPrinter::print_finish_output()
+{
+    if(_outputFormat == JSON)
+        printf("\n\t]\n}");
 }
