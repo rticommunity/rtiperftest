@@ -35,7 +35,6 @@ void PerftestPrinter::initialize(bool printIntervals,
         _outputFormat = CSV;
     else if(outputFormat == "json"){
         _outputFormat = JSON;
-        printf("{\"perftest\":\n\t[\n\t\t{\n");
         _controlJsonInit = true;
     }else if(outputFormat == "legacy")
         _outputFormat = LEGACY;
@@ -471,8 +470,14 @@ void PerftestPrinter::print_throughput_summary(int length,
     }
 }
 
+void PerftestPrinter::print_init_output()
+{
+    if(_outputFormat == JSON)
+        printf("{\"perftest\":\n\t[\n\t\t{\n");
+}
+
 void PerftestPrinter::print_finish_output()
 {
     if(_outputFormat == JSON)
-        printf("\n\t]\n}");
+        printf("\n\t]\n}\n");
 }

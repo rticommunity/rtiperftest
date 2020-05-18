@@ -1117,6 +1117,8 @@ int perftest_cpp::Subscriber()
     fprintf(stderr,"Waiting for data ...\n");
     fflush(stderr);
 
+    _printer.print_init_output();
+
     // wait for data
     unsigned long long prev_time = 0, now = 0, delta = 0;
     unsigned long long prev_count = 0;
@@ -1930,6 +1932,8 @@ int perftest_cpp::Publisher()
 
     fprintf(stderr,"Publishing data ...\n");
     fflush(stderr);
+
+    _printer.print_init_output();
 
     // Set data size, account for other bytes in message
     message.size = (int)_PM.get<unsigned long long>("dataLen") - OVERHEAD_BYTES;

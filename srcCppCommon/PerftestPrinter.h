@@ -93,7 +93,7 @@ class PerftestPrinter {
                 float missing_packets_percent,
                 std::string outputCpu
         );
-
+        void print_init_output();
         void print_finish_output();
 
 };
