@@ -769,7 +769,6 @@ class ThroughputListener : public IMessagingCB
         cacheStats = _PM->get<bool>("cacheStats");
         showCpu = _PM->get<bool>("cpu");
         subID = _PM->get<int>("sidMultiSubTest");
-
     }
 
     ~ThroughputListener() {
@@ -910,7 +909,7 @@ class ThroughputListener : public IMessagingCB
                         + interval_missing_packets));
             }
 
-            std::string outputCpu = "";
+            double outputCpu = 0;
             if (showCpu) {
                 outputCpu = cpu.get_cpu_average();
                 cpu = CpuMonitor();
@@ -923,7 +922,7 @@ class ThroughputListener : public IMessagingCB
                     interval_bytes_received,
                     interval_missing_packets,
                     missing_packets_percent,
-                    outputCpu.c_str()
+                    outputCpu
                     );
             if (cacheStats) {
                 printf("Samples Reader Queue Peak: %4d\n", sample_count_peak);
@@ -1117,7 +1116,8 @@ int perftest_cpp::Subscriber()
     fprintf(stderr,"Waiting for data ...\n");
     fflush(stderr);
 
-    _printer.print_init_output();
+    // For Json format, print brackets at init
+    _printer.print_initial_output();
 
     // wait for data
     unsigned long long prev_time = 0, now = 0, delta = 0;
@@ -1196,13 +1196,13 @@ int perftest_cpp::Subscriber()
             }
 
             if (last_msgs > 0) {
-                std::string outputCpu = "";
+                double outputCpu = 0;
                 if (showCpu) {
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
-                _printer.print_throughput(last_msgs, mps, mps_ave, bps, bps_ave,
+                _printer.print_throughput_interval(last_msgs, mps, mps_ave, bps, bps_ave,
                         reader_listener->missing_packets, missing_packets_percent,
-                        outputCpu.c_str());
+                        outputCpu);
                 fflush(stdout);
 
                 if (cacheStats) {
@@ -1216,7 +1216,7 @@ int perftest_cpp::Subscriber()
     }
 
     PerftestClock::milliSleep(2000);
-    _printer.print_finish_output();
+    _printer.print_final_output();
     if (!finalize_read_thread(throughputThread, reader_listener)) {
         fprintf(stderr, "Error deleting throughputThread\n");
         return -1;
@@ -1381,7 +1381,6 @@ public:
         subID = _PM->get<int>("sidMultiSubTest");
         printIntervals = !_PM->get<bool>("noPrintIntervals");
         showCpu = _PM->get<bool>("cpu");
-
     }
 
     void print_summary_latency(bool endTest = false){
@@ -1394,7 +1393,7 @@ public:
       #endif
         int totalSampleSize = last_data_length + perftest_cpp::OVERHEAD_BYTES;
 
-        std::string outputCpu = "";
+        double outputCpu = 0;
         if (count == 0)
         {
             if (endTest) {
@@ -1431,8 +1430,7 @@ public:
         }
 
       #ifndef RTI_MICRO
-        if (_PM->get<bool>("serializationTime"))
-        {
+        if (_PM->get<bool>("serializationTime")) {
 
             mask = (_PM->get<int>("unbounded") != 0) << 0;
             mask += _PM->get<bool>("keyed") << 1;
@@ -1531,7 +1529,6 @@ public:
             default:
                 break;
             }
-            // _printer->print_serialization(serializeTime, deserializeTime);
         }
       #endif
 
@@ -1547,7 +1544,6 @@ public:
                 serializeTime,
                 deserializeTime,
                 outputCpu);
-        fflush(stdout);
 
         latency_sum = 0;
         latency_sum_square = 0;
@@ -1574,7 +1570,7 @@ public:
         unsigned int usec;
         double latency_ave;
         double latency_std;
-        std::string outputCpu = "";
+        double outputCpu = 0;
 
         now = PerftestClock::getInstance().getTime();
 
@@ -1665,7 +1661,7 @@ public:
         {
             last_data_length = message.size;
             _printer->set_data_length(last_data_length + perftest_cpp::OVERHEAD_BYTES);
-            _printer->print_latency_interval_header();
+            _printer->print_latency_header();
         }
         else {
             if (printIntervals) {
@@ -1933,7 +1929,7 @@ int perftest_cpp::Publisher()
     fprintf(stderr,"Publishing data ...\n");
     fflush(stderr);
 
-    _printer.print_init_output();
+    _printer.print_initial_output();
 
     // Set data size, account for other bytes in message
     message.size = (int)_PM.get<unsigned long long>("dataLen") - OVERHEAD_BYTES;
@@ -2288,7 +2284,8 @@ int perftest_cpp::Publisher()
     if (!useDatafromFile) {
         delete []message.data;
     }
-    _printer.print_finish_output();
+    // For Json format, print last brackets
+    _printer.print_final_output();
     if (_testCompleted) {
         // Delete timeout thread
         if (executionTimeoutThread != NULL) {

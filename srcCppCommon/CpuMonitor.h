@@ -37,9 +37,9 @@ public:
 
     void initialize();
 
-    std::string get_cpu_instant();
+    double get_cpu_instant();
 
-    std::string get_cpu_average();
+    double get_cpu_average();
 
 private:
     int _numProcessors;

@@ -88,7 +88,7 @@ void CpuMonitor::initialize()
 #endif
 }
 
-std::string CpuMonitor::get_cpu_instant()
+double CpuMonitor::get_cpu_instant()
 {
     double percent = 0.0;
 
@@ -133,21 +133,18 @@ std::string CpuMonitor::get_cpu_instant()
 
     _cpuUsageTotal += percent;
     _counter++;
-    std::ostringstream strs;
-    strs <<  std::fixed << std::setprecision(2)  << percent;
-    return strs.str();
+
+    return percent;
 }
 
-std::string CpuMonitor::get_cpu_average()
+double CpuMonitor::get_cpu_average()
 {
     std::ostringstream strs;
     if (_counter == 0) {
         // In the case where the CpuMonitor was just initialized, get_cpu_instant
         get_cpu_instant();
     }
-    strs <<  std::fixed << std::setprecision(2)
-         << (double)(_cpuUsageTotal/_counter);
 
-    return strs.str();
+    return (double)(_cpuUsageTotal/_counter);
 }
 
