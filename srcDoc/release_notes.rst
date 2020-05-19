@@ -304,6 +304,14 @@ architectures.
 
 This issue has been resolved.
 
+The `RTI_LANGUAGE_CPP_MODERN` flag is not correctly when using the build.sh script (#322)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+An issue has been resolved in the `build.sh` script that would cause the
+`RTI_LANGUAGE_CPP_MODERN` define flag not to be propagated correctly when compiling.
+This issue was not causing a bug or a wrong behavior in previous versions of
+*RTI Perftest*.
+
 Release Notes 3.0
 -----------------
 
