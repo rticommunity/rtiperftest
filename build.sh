@@ -416,7 +416,7 @@ function additional_defines_calculation()
         fi
     fi
 
-    if [ "${1}}" = "CPPmodern" ]; then
+    if [ "${1}" = "CPPmodern" ]; then
         additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_MODERN"
     fi
 
@@ -937,7 +937,8 @@ function build_cpp03()
         perftest_cpp.h \
         qos_string.h \
         CpuMonitor.h \
-        PerftestTransport.h"
+        PerftestTransport.h \
+        PerftestPrinter.h"
 
     additional_source_files=" \
         ThreadPriorities.cxx \
@@ -945,7 +946,8 @@ function build_cpp03()
         ParameterManager.cxx \
         RTIDDSImpl.cxx \
         CpuMonitor.cxx \
-        PerftestTransport.cxx"
+        PerftestTransport.cxx \
+        PerftestPrinter.cxx"
 
     if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
         additional_header_files="${additional_header_files} \
