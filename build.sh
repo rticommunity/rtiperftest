@@ -417,7 +417,6 @@ function additional_defines_calculation()
     fi
 
     if [ "${1}" = "CppModern" ]; then
-        echo PATATA
         additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_MODERN"
     fi
 
