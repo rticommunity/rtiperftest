@@ -556,8 +556,8 @@ if !BUILD_CPP03! == 1 (
 
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
 
-	set "additional_header_files=ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h"
-	set "additional_source_files=ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx"
+	set "additional_header_files=ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h PerftestPrinter.h"
+	set "additional_source_files=ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx PerftestPrinter.cxx"
 
 	if !FLATDATA_AVAILABLE! == 1 (
 		set "additional_header_files=!additional_header_files! perftest_ZeroCopy.hpp perftest_ZeroCopyPlugin.hpp"

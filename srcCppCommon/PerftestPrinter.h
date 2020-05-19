@@ -6,12 +6,14 @@
 #ifndef __PERFTESTPRINTER_H__
 #define __PERFTESTPRINTER_H__
 
-#include "Infrastructure_common.h"
-#include <fstream>
+#ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+  #include "Infrastructure_common.h"
+#elif defined(RTI_LANGUAGE_CPP_MODERN)
+  #define PERFT_TIME_UNIT "us"
+#endif
 #include <iostream>
 #include <stdio.h>
 #include <string>
-#include <vector>
 
 enum PerftestOuputFormat { LEGACY, JSON, CSV };
 
@@ -58,10 +60,18 @@ public:
             double latencyStd,
             unsigned long latencyMin,
             unsigned long latencyMax,
-            unsigned long *_latencyHistory,
+            unsigned long *latencyHistory,
             unsigned long long count,
             double serializeTime,
             double deserializeTime,
+            double outputCpu);
+    void print_latency_summary(
+            double latencyAve,
+            double latencyStd,
+            unsigned long latencyMin,
+            unsigned long latencyMax,
+            unsigned long *latencyHistory,
+            unsigned long long count,
             double outputCpu);
     void print_throughput_header();
     void print_throughput_interval(
