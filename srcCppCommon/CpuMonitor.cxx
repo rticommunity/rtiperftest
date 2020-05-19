@@ -145,6 +145,6 @@ double CpuMonitor::get_cpu_average()
         get_cpu_instant();
     }
 
-    return (double)(_cpuUsageTotal/_counter);
+    return (double) (_cpuUsageTotal / _counter);
 }
 

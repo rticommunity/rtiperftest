@@ -44,9 +44,12 @@ public:
 
     // Set and Get members
     void set_data_length(unsigned int dataLength);
+
     void set_header_printed(bool printHeaders);
+
     // Methods
     void print_latency_header();
+
     void print_latency_interval(
             unsigned long latency,
             double latencyAve,
@@ -54,6 +57,7 @@ public:
             unsigned long latencyMin,
             unsigned long latencyMax,
             double outputCpu);
+
     void print_latency_summary(
             int totalSampleSize,
             double latencyAve,
@@ -65,6 +69,7 @@ public:
             double serializeTime,
             double deserializeTime,
             double outputCpu);
+
     void print_latency_summary(
             double latencyAve,
             double latencyStd,
@@ -73,7 +78,9 @@ public:
             unsigned long *latencyHistory,
             unsigned long long count,
             double outputCpu);
+
     void print_throughput_header();
+
     void print_throughput_interval(
             unsigned long long lastMsgs,
             unsigned long long mps,
@@ -92,7 +99,9 @@ public:
             unsigned long long intervalMissingPackets,
             float missingPacketsPercent,
             double outputCpu);
+
     void print_initial_output();
+
     void print_final_output();
 };
 #endif  // __PERFTESTPRINTER_H__

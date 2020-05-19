@@ -846,7 +846,8 @@ public:
 
             begin_time = perftest_cpp::GetTimeUsec();
 
-            _printer->set_data_length(message.size + perftest_cpp::OVERHEAD_BYTES);
+            _printer->set_data_length(message.size
+                    + perftest_cpp::OVERHEAD_BYTES);
             _printer->print_throughput_header();
         }
 
@@ -917,8 +918,7 @@ public:
                     interval_bytes_received,
                     interval_missing_packets,
                     missing_packets_percent,
-                    outputCpu
-                    );
+                    outputCpu);
         } else if (endTest) {
             fprintf(stderr,
                     "\n[Info] No samples have been received by the Subscriber side,\n"
@@ -1138,8 +1138,14 @@ int perftest_cpp::RunSubscriber()
                 if (showCpu) {
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
-                _printer.print_throughput_interval(last_msgs, mps, mps_ave, bps, bps_ave,
-                        reader_listener->missing_packets, missing_packets_percent,
+                _printer.print_throughput_interval(
+                        last_msgs,
+                        mps,
+                        mps_ave,
+                        bps,
+                        bps_ave,
+                        reader_listener->missing_packets,
+                        missing_packets_percent,
                         outputCpu);
             }
 
@@ -1400,7 +1406,8 @@ class LatencyListener : public IMessagingCB
         if (last_data_length != message.size) {
             last_data_length = message.size;
 
-            _printer->set_data_length(last_data_length + perftest_cpp::OVERHEAD_BYTES);
+            _printer->set_data_length(last_data_length
+                    + perftest_cpp::OVERHEAD_BYTES);
             _printer->print_latency_header();
         } else {
             if (printIntervals) {
@@ -1411,7 +1418,8 @@ class LatencyListener : public IMessagingCB
                 if (showCpu) {
                     outputCpu = cpu.get_cpu_instant();
                 }
-                _printer->print_latency_interval(latency,
+                _printer->print_latency_interval(
+                        latency,
                         latency_ave,
                         latency_std,
                         latency_min,
