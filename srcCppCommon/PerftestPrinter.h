@@ -33,7 +33,7 @@ class PerftestPrinter {
 
     public:
         PerftestPrinter();
-        ~PerftestPrinter(){ }
+        ~PerftestPrinter(){}
 
         void initialize(
                 bool printIntervals,

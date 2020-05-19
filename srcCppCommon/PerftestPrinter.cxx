@@ -6,10 +6,8 @@
 #include "PerftestPrinter.h"
 
 PerftestPrinter::PerftestPrinter()
+        : _dataLength(100), _printSummaryHeaders(true), _outputFormat(CSV)
 {
-    _dataLength = 100;
-    _outputFormat = CSV;
-    _printSummaryHeaders = true;
 }
 
 void PerftestPrinter::initialize(
