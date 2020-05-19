@@ -11,6 +11,11 @@
 
 PerftestTransport::PerftestTransport()
 {
+    multicastAddrMap[LATENCY_TOPIC_NAME] = TRANSPORT_MULTICAST_ADDR_LATENCY;
+    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] =
+            TRANSPORT_MULTICAST_ADDR_ANNOUNCEMENT;
+    multicastAddrMap[THROUGHPUT_TOPIC_NAME] =
+            TRANSPORT_MULTICAST_ADDR_THROUGHPUT;
 
     transportConfigMap["Use XML"] = TransportConfig(
         TRANSPORT_NOT_SET,
@@ -55,6 +60,8 @@ void PerftestTransport::initialize(ParameterManager *PM)
     _PM = PM;
 
     if (_PM->is_set("topicName")) {
+
+        multicastAddrMap.clear();
 
         throughputTopicName = _PM->get<std::string>("topicName")
                 + "_" + std::string(LATENCY_TOPIC_NAME);;
