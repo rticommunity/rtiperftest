@@ -1257,7 +1257,7 @@ namespace PerformanceTest {
                             _outputFormat = "legacy";
                         } else {
                             Console.Error.Write("<format> for outputFormat '" +
-                                    st[1] + "' is not valid. It must be" +
+                                    argv[i] + "' is not valid. It must be" +
                                     "'csv', 'json' or 'legacy'.\n");
                             return false;
                         }
@@ -1711,7 +1711,7 @@ namespace PerformanceTest {
                         outputCpu = cpu.get_cpu_average();
                     }
                     _printer.print_throughput_summary(
-                            interval_data_length + perftest_cpp::OVERHEAD_BYTES,
+                            interval_data_length + OVERHEAD_BYTES,
                             interval_packets_received,
                             interval_time,
                             interval_bytes_received,
@@ -1903,7 +1903,7 @@ namespace PerformanceTest {
                             mps_ave,
                             bps,
                             bps_ave,
-                            reader_listener->missing_packets,
+                            reader_listener.missing_packets,
                             missing_packets_percent,
                             outputCpu);
                     }

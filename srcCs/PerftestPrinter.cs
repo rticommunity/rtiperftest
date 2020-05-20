@@ -45,7 +45,7 @@ namespace PerformanceTest {
                 _outputFormat = PerftestOutputFormat.LEGACY;
             }
         }
-        public void set_data_length(uint dataLength)
+        public void set_data_length(int dataLength)
         {
             _dataLength = dataLength;
         }
@@ -90,7 +90,7 @@ namespace PerformanceTest {
                 case PerftestOutputFormat.LEGACY:
                     if(_printHeaders && _printIntervals) {
                         Console.Write("\n\n********** New data length is {0}\n",
-                                      message.size + OVERHEAD_BYTES);
+                                      _dataLength);
                         Console.Out.Flush();
                     }
                     break;
@@ -130,7 +130,7 @@ namespace PerformanceTest {
                 case PerftestOutputFormat.LEGACY:
                     if(_printHeaders && _printIntervals) {
                         Console.Write("\n\n********** New data length is {0}\n",
-                                      message.size + OVERHEAD_BYTES);
+                                      _dataLength);
                         Console.Out.Flush();
                     }
                     break;
