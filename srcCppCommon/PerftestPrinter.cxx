@@ -67,7 +67,7 @@ void PerftestPrinter::print_latency_header()
         }
         printf("\t\t\t\"length\":%d,\n", _dataLength);
 
-        if (_printIntervals && _outputFormat == JSON) {
+        if (_printIntervals) {
             printf("\t\t\t\"intervals\":[\n");
             _controlJsonIntervals = true;
         }
