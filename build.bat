@@ -660,7 +660,7 @@ if %BUILD_CS% == 1 (
 	echo [INFO]: Generating types and makefiles for %cs_lang_string%
 	call "%rtiddsgen_executable%" -language %cs_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
-	-additionalSourceFiles "RTIDDSImpl.cs MessagingIF.cs CpuMonitor.cs PerftestTransport.cs"^
+	-additionalSourceFiles "RTIDDSImpl.cs MessagingIF.cs CpuMonitor.cs PerftestTransport.cs PerftestPrinter.cs"^
 	-additionalDefines "/0x" -d "%cs_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %cs_lang_string%.

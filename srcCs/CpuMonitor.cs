@@ -53,7 +53,7 @@ namespace PerformanceTest
             _prevSysUser = sysUser;
         }
 
-        public String get_cpu_instant()
+        public short get_cpu_instant()
         {
             short cpuCopy = _cpuUsage;
             if (EnoughTimePassed()) {
@@ -82,16 +82,16 @@ namespace PerformanceTest
             }
             _cpuUsageTotal += cpuCopy;
             _counter++;
-            return " CPU: " + cpuCopy + "%";
+            return cpuCopy;
         }
 
-        public string get_cpu_average()
+        public short get_cpu_average()
         {
             if (_counter == 0) {
                 //in the case that the CpuMonitor was just initialize, get_cpu_instant
                 get_cpu_instant();
             }
-            return " CPU: " + (double)(_cpuUsageTotal/_counter) + "%";
+            return (short) (_cpuUsageTotal / _counter);
         }
 
         private UInt64 SubtractTimes(ComTypes.FILETIME a, ComTypes.FILETIME b)
