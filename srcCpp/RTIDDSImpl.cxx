@@ -3179,12 +3179,14 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
 
         }
 
+      #ifndef RTI_MICRO
         if (_PM->is_set("sendQueueSize")) {
             dw_qos.protocol.rtps_reliable_writer.max_send_window_size =
                     _PM->get<int>("sendQueueSize");
             dw_qos.protocol.rtps_reliable_writer.min_send_window_size =
                     _PM->get<int>("sendQueueSize");
         }
+      #endif
     }
 
     dw_qos.resource_limits.max_instances =
