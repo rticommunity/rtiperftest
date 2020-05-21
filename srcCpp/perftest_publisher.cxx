@@ -1112,7 +1112,7 @@ int perftest_cpp::Subscriber()
         /* Send announcement message until the publisher send us something*/
     } while (reader_listener->packets_received == 0);
 
-    fprintf(stderr,"Waiting for data...\n");
+    fprintf(stderr,"Waiting for data ...\n");
     fflush(stderr);
 
     // wait for data

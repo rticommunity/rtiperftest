@@ -963,7 +963,7 @@ public final class PerfTest {
             return;
         }
 
-        System.err.print("Waiting for data...\n");
+        System.err.print("Waiting for data ...\n");
 
         // wait for data
         long  now, prev_time, delta;

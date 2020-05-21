@@ -408,7 +408,7 @@ function additional_defines_calculation()
         additional_defines=${additional_defines}" DRTI_CUSTOM_TYPE_FLATDATA="${custom_type_flat}" DRTI_CUSTOM_TYPE_FILE_NAME_SUPPORT="${custom_type_file_name_support}
     fi
 
-    if [ "${1}" = "CPPtraditional" ]; then
+    if [ "${1}" = "CppTraditional" ]; then
         additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_TRADITIONAL"
 
         if [ "${RTI_PERFTEST_NANO_CLOCK}" == "1" ]; then
@@ -416,7 +416,7 @@ function additional_defines_calculation()
         fi
     fi
 
-    if [ "${1}}" = "CPPmodern" ]; then
+    if [ "${1}" = "CppModern" ]; then
         additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_MODERN"
     fi
 
@@ -607,7 +607,7 @@ function build_cpp()
     fi
 
     check_flatData_zeroCopy_available
-    additional_defines_calculation "CPPtraditional"
+    additional_defines_calculation "CppTraditional"
 
     additional_header_files="${additional_header_files_custom_type} \
         RTIRawTransportImpl.h \
@@ -923,7 +923,7 @@ function build_cpp03()
 {
     copy_src_cpp_common
     check_flatData_zeroCopy_available
-    additional_defines_calculation "CPPModern"
+    additional_defines_calculation "CppModern"
 
     additional_header_files=" \
         ThreadPriorities.h \

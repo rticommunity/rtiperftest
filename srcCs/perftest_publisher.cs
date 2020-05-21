@@ -1873,7 +1873,7 @@ namespace PerformanceTest {
             announcement_writer.Send(message, false);
             announcement_writer.Flush();
 
-            Console.Error.Write("Waiting for data...\n");
+            Console.Error.Write("Waiting for data ...\n");
 
             // wait for data
             ulong  now, prev_time, delta;

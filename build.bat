@@ -424,6 +424,11 @@ if !BUILD_CPP! == 1 (
 		set "additional_source_files=!additional_source_files! perftest_ZeroCopy.cxx perftest_ZeroCopyPlugin.cxx perftest_ZeroCopySupport.cxx"
 	)
 
+    set additional_rti_libs_str=
+	if "!additional_rti_libs!" NEQ "" (
+		set additional_rti_libs_str=-additionalRtiLibraries "!additional_rti_libs!"
+	)
+
 	echo[
 	echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
 	-unboundedSupport -replace -create typefiles -create makefiles^
@@ -432,7 +437,7 @@ if !BUILD_CPP! == 1 (
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	-additionalRtiLibraries "!additional_rti_libs!"^
+	!additional_rti_libs_str!^
 	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 
@@ -445,7 +450,7 @@ if !BUILD_CPP! == 1 (
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	-additionalRtiLibraries "!additional_rti_libs!"^
+	!additional_rti_libs_str!^
 	!rtiddsgen_extra_options! !additional_defines_custom_type!^
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
@@ -559,6 +564,11 @@ if !BUILD_CPP03! == 1 (
 		set "additional_source_files=!additional_source_files! perftest_ZeroCopy.cxx perftest_ZeroCopyPlugin.cxx"
 	)
 
+    set additional_rti_libs_str=
+	if "!additional_rti_libs!" NEQ "" (
+		set additional_rti_libs_str=-additionalRtiLibraries "!additional_rti_libs!"
+	)
+
 	echo[
 	echo [INFO] "%rtiddsgen_executable%" -language %modern_cpp_lang_string% ^
 	-unboundedSupport -replace -create typefiles -create makefiles^
@@ -567,7 +577,7 @@ if !BUILD_CPP03! == 1 (
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	-additionalRtiLibraries "!additional_rti_libs!"^
+	!additional_rti_libs_str!^
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
 
@@ -581,7 +591,7 @@ if !BUILD_CPP03! == 1 (
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
-	-additionalRtiLibraries "!additional_rti_libs!"^
+	!additional_rti_libs_str!^
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
 
