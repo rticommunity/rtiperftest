@@ -1538,7 +1538,17 @@ public:
         }
       #endif
 
-
+      #ifdef RTI_MICRO
+        _printer->print_latency_summary(
+                totalSampleSize,
+                latency_ave,
+                latency_std,
+                latency_min,
+                latency_max,
+                _latency_history,
+                count,
+                outputCpu);
+      #else
         _printer->print_latency_summary(
                 totalSampleSize,
                 latency_ave,
@@ -1550,6 +1560,7 @@ public:
                 serializeTime,
                 deserializeTime,
                 outputCpu);
+      #endif
 
         latency_sum = 0;
         latency_sum_square = 0;
