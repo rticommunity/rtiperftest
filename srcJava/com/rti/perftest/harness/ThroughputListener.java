@@ -99,8 +99,7 @@ import com.rti.perftest.TestMessage;
             }
         }
     }
-    
-    
+
     // --- From IMessagingCB: ------------------------------------------------
 
     public void processMessage(TestMessage message) {
@@ -171,13 +170,9 @@ import com.rti.perftest.TestMessage;
             }
 
             _beginTime = PerfTest.getTimeUsec();
-
-            if (PerfTest.printIntervals) {
-                System.out.println(
-                    "\n\n********** New data length is " +
-                    (message.size + PerfTest.OVERHEAD_BYTES));
-                System.out.flush();
-            }
+            PerfTest._printer.set_data_length(message.size +
+                    PerfTest.OVERHEAD_BYTES);
+            PerfTest._printer.print_throughput_header();
         }
 
         lastDataLength = message.size;
@@ -237,19 +232,19 @@ import com.rti.perftest.TestMessage;
                         + intervalMissingPackets);
             }
 
-            String outputCpu = "";
+            double outputCpu = 0;
             if (PerfTest._showCpu) {
                 outputCpu = CpuMonitor.get_cpu_average();
             }
-            System.out.printf("Length: %1$5d  Packets: %2$8d  Packets/s(ave): %3$7.0f  " +
-                    "Mbps(ave): %4$7.1f  Lost: %5$5d (%6$1.2f%%)" + outputCpu + "\n",
+            PerfTest._printer.print_throughput_summary(
                     intervalDataLength + PerfTest.OVERHEAD_BYTES,
                     intervalPacketsReceived,
-                    intervalPacketsReceived * 1000000.0 / intervalTime,
-                    intervalBytesReceived * 1000000.0 / intervalTime *8.0/1000.0/1000.0,
+                    intervalTime,
+                    intervalBytesReceived,
                     intervalMissingPackets,
-                    missingPacketsPercent
-            );
+                    missingPacketsPercent,
+                    outputCpu);
+
 
             System.out.flush();
         } else if (endTest) {
