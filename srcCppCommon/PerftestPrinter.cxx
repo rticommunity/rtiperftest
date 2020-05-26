@@ -156,16 +156,12 @@ void RTIDDSMessageLogger::finalize() {
     }
 }
 
-bool RTIDDSMessageLogger::writeMessage(int datalen, int latency, float thr) {
+bool RTIDDSMessageLogger::writeMessage(int datalen, int kind, float value) {
 
     DDS_ReturnCode_t retcode;
     sample->datalen = datalen;
-    if (latency != -1) {
-        sample->latency = latency;
-    }
-    if (thr != -1) {
-        sample->throughput = thr;
-    }
+    sample->kind = kind;
+    sample->value = value;
     logWriter->write(*sample, DDS_HANDLE_NIL);
     if (retcode != DDS_RETCODE_OK) {
         fprintf(stderr, "write error %d\n", retcode);
@@ -302,7 +298,7 @@ void PerftestPrinter::print_latency_interval(
 {
     switch (_outputFormat) {
     case DDS:
-        ddslogger.writeMessage(_dataLength, latency, -1);
+        ddslogger.writeMessage(_dataLength, 0, (float) latency);
     case CSV:
         printf("%14d,%13lu,%9.0lf,%9.1lf,%9lu,%9lu",
                _dataLength,
@@ -614,7 +610,7 @@ void PerftestPrinter::print_throughput_interval(
 {
     switch (_outputFormat) {
     case DDS:
-        ddslogger.writeMessage(_dataLength, -1, bpsAve * 8.0 / 1000.0 / 1000.0);
+        ddslogger.writeMessage(_dataLength, 1, bpsAve * 8.0 / 1000.0 / 1000.0);
     case CSV:
         printf("%14d,%14llu,%11llu,%14.0lf,%9.1lf,%10.1lf, %12llu, %16.2lf",
                _dataLength,

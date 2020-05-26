@@ -33,7 +33,7 @@ public:
     RTIDDSMessageLogger(int domain);
     bool initialize();
     void finalize();
-    bool writeMessage(int datalen, int latency, float thr);
+    bool writeMessage(int datalen, int kind, float value);
 };
 
 class PerftestPrinter {

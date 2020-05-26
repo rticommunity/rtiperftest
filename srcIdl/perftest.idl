@@ -188,6 +188,7 @@ struct TestDataKeyedLarge_FlatData_t {
 // using output = dds
 struct perftestLogMessage {
     @key long datalen;
-    long latency;
-    double throughput;
+    @key long kind;
+    @key long app_id;
+    double value;
 };
