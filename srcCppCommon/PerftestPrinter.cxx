@@ -322,100 +322,18 @@ void PerftestPrinter::print_latency_summary(
         unsigned long long count,
         double outputCpu)
 {
-    switch (_outputFormat) {
-    case CSV:
-        if (_printSummaryHeaders && _printHeaders) {
-            if (!_printIntervals && _printSummaryHeaders) {
-                _printSummaryHeaders = _printIntervals;
-            }
-            printf("\nOne-way Latency Summary:\n");
-            printf("Length (Bytes)"
-                   ", Ave (" PERFT_TIME_UNIT
-                   "), Std (" PERFT_TIME_UNIT
-                   "), Min (" PERFT_TIME_UNIT
-                   "), Max (" PERFT_TIME_UNIT
-                   "), 50%% (" PERFT_TIME_UNIT
-                   "), 90%% (" PERFT_TIME_UNIT
-                   "), 99%% (" PERFT_TIME_UNIT
-                   "), 99.99%% (" PERFT_TIME_UNIT
-                   "), 99.9999%% (" PERFT_TIME_UNIT
-                   ")");
-            if (_showCPU) {
-                printf(", CPU (%%)");
-            }
-            printf("\n");
-        }
-        printf("%14d,%9.0lf,%9.1lf,%9lu,%9lu,%9lu,%9lu,%9lu,%12lu,%14lu",
-               _dataLength,
-               latencyAve,
-               latencyStd,
-               latencyMin,
-               latencyMax,
-               latencyHistory[count * 50 / 100],
-               latencyHistory[count * 90 / 100],
-               latencyHistory[count * 99 / 100],
-               latencyHistory[(int) (count * (9999.0 / 10000))],
-               latencyHistory[(int) (count * (999999.0 / 1000000))]);
-        if (_showCPU) {
-            printf(",%8.2f", outputCpu);
-        }
-        printf("\n");
-        break;
-    case JSON:
-        if (_printIntervals) {
-            printf("\n\t\t\t],\n");
-        }
-        printf("\t\t\t\"summary\":{\n"
-               "\t\t\t\t\"latency_ave\": %1.2lf,\n"
-               "\t\t\t\t\"latency_std\": %1.2lf,\n"
-               "\t\t\t\t\"latency_min\": %lu,\n"
-               "\t\t\t\t\"latency_max\": %lu,\n"
-               "\t\t\t\t\"latency_50\": %lu,\n"
-               "\t\t\t\t\"latency_90\": %lu,\n"
-               "\t\t\t\t\"latency_99\": %lu,\n"
-               "\t\t\t\t\"latency_99.99\": %lu,\n"
-               "\t\t\t\t\"latency_99.9999\": %lu",
-               latencyAve,
-               latencyStd,
-               latencyMin,
-               latencyMax,
-               latencyHistory[count * 50 / 100],
-               latencyHistory[count * 90 / 100],
-               latencyHistory[count * 99 / 100],
-               latencyHistory[(int) (count * (9999.0 / 10000))],
-               latencyHistory[(int) (count * (999999.0 / 1000000))]);
-        if (_showCPU) {
-            printf(",\n\t\t\t\t\"cpu\": %1.2f", outputCpu);
-        }
-        printf("\n\t\t\t}\n\t\t}");
-        break;
-    case LEGACY:
-        printf("Length: %5d"
-               " Latency: Ave %6.0lf " PERFT_TIME_UNIT
-               " Std %6.1lf " PERFT_TIME_UNIT
-               " Min %6lu " PERFT_TIME_UNIT
-               " Max %6lu " PERFT_TIME_UNIT
-               " 50%% %6lu " PERFT_TIME_UNIT
-               " 90%% %6lu " PERFT_TIME_UNIT
-               " 99%% %6lu " PERFT_TIME_UNIT
-               " 99.99%% %6lu " PERFT_TIME_UNIT
-               " 99.9999%% %6lu " PERFT_TIME_UNIT,
-               _dataLength,
-               latencyAve,
-               latencyStd,
-               latencyMin,
-               latencyMax,
-               latencyHistory[count * 50 / 100],
-               latencyHistory[count * 90 / 100],
-               latencyHistory[count * 99 / 100],
-               latencyHistory[(int) (count * (9999.0 / 10000))],
-               latencyHistory[(int) (count * (999999.0 / 1000000))]);
-        if (_showCPU) {
-            printf(" CPU %1.2f (%%)", outputCpu);
-        }
-        printf("\n");
-        break;
-    }
+    this->print_latency_summary(
+            _dataLength,
+            latencyAve,
+            latencyStd,
+            latencyMin,
+            latencyMax,
+            latencyHistory,
+            count,
+            -1,
+            -1,
+            outputCpu
+            );
 }
 
 void PerftestPrinter::print_throughput_interval(

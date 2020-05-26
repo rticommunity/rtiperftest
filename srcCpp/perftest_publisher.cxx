@@ -1540,7 +1540,6 @@ public:
 
       #ifdef RTI_MICRO
         _printer->print_latency_summary(
-                totalSampleSize,
                 latency_ave,
                 latency_std,
                 latency_min,
