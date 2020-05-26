@@ -165,7 +165,7 @@ namespace PerformanceTest {
                     } else {
                         Console.Write(",");
                     }
-                    Console.Write("\n\t\t\t\t{\n" +
+                    Console.Write("\n\t\t\t\t{{\n" +
                                   "\t\t\t\t\t\"latency\": {0},\n" +
                                   "\t\t\t\t\t\"latency_ave\": {1:F0},\n" +
                                   "\t\t\t\t\t\"latency_std\": {2:F1},\n" +
@@ -181,6 +181,7 @@ namespace PerformanceTest {
                                       outputCpu);
                     }
                     Console.Write("\n\t\t\t\t}");
+					Console.Out.Flush();
                     break;
                 case PerftestOutputFormat.LEGACY:
                     Console.Write("One way Latency: {1,6} {0}" +
@@ -258,7 +259,7 @@ namespace PerformanceTest {
                     if (_printIntervals) {
                         Console.Write("\n\t\t\t],\n");
                     }
-                    Console.Write("\t\t\t\"summary\":{\n" +
+                    Console.Write("\t\t\t\"summary\":{{\n" +
                                   "\t\t\t\t\"latency_ave\": {0:F1},\n" +
                                   "\t\t\t\t\"latency_std\": {1:F1},\n" +
                                   "\t\t\t\t\"latency_min\": {2},\n" +
@@ -329,7 +330,7 @@ namespace PerformanceTest {
             switch (_outputFormat) {
                 case PerftestOutputFormat.CSV:
                     Console.Write("{0,14},{1,14},{2,11:F0},{3,14:F0},{4,9:F1}" +
-                                  ",{5,10:F1},{6,12},{7,16:F2}",
+                                  ",{5,10:F1},{6,13},{7,17:F2}",
                                   _dataLength,
                                   lastMsgs,
                                   mps,
@@ -350,7 +351,7 @@ namespace PerformanceTest {
                     } else {
                         Console.Write(",");
                     }
-                    Console.Write("\n\t\t\t\t{\n" +
+                    Console.Write("\n\t\t\t\t{{\n" +
                                   "\t\t\t\t\t\"length\": {0},\n" +
                                   "\t\t\t\t\t\"packets\": {1},\n" +
                                   "\t\t\t\t\t\"packets/s\": {2},\n" +
@@ -416,7 +417,7 @@ namespace PerformanceTest {
                         }
                         Console.Write("\n");
                     }
-                    Console.Write("{0,14},%{1,14},{2,14:F0},{3,12:F1}," +
+                    Console.Write("{0,14},{1,14},{2,14:F0},{3,12:F1}," +
                                   "{4,13},{5,17:F2}",
                                   length,
                                   intervalPacketsReceived,
@@ -436,7 +437,7 @@ namespace PerformanceTest {
                     if (_printIntervals) {
                         Console.Write("\n\t\t\t],\n");
                     }
-                    Console.Write("\t\t\t\"summary\":{\n" +
+                    Console.Write("\t\t\t\"summary\":{{\n" +
                                   "\t\t\t\t\"packets\": {0},\n" +
                                   "\t\t\t\t\"packets/sAve\": {1},\n" +
                                   "\t\t\t\t\"mbpsAve\": {2:F1},\n" +
