@@ -345,12 +345,14 @@ void ParameterManager::initialize()
             " - 'csv'\n"
             " - 'json'\n"
             " - 'legacy'\n"
+            " - 'dds'\n"
             "Default: 'csv'");
     outputFormat->set_type(T_STR);
     outputFormat->set_extra_argument(YES);
     outputFormat->add_valid_str_value("legacy");
     outputFormat->add_valid_str_value("json");
     outputFormat->add_valid_str_value("csv");
+    outputFormat->add_valid_str_value("dds");
     outputFormat->set_group(GENERAL);
     outputFormat->set_supported_middleware(
             Middleware::RTIDDSPRO

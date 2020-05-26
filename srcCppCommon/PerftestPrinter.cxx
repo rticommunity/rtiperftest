@@ -4,9 +4,181 @@
  */
 
 #include "PerftestPrinter.h"
+#include "perftest.h"
+#include "perftestSupport.h"
+
+RTIDDSMessageLogger::RTIDDSMessageLogger(int domain)
+        : domain(domain),
+          topicName("PerftestLogging"),
+          logWriter(NULL),
+          sample(NULL)
+{
+}
+
+bool RTIDDSMessageLogger::initialize()
+{
+
+    DDS_ReturnCode_t retcode;
+
+    DDS_DomainParticipantQos dpQos;
+    DDS_PublisherQos publisherQos;
+    DDS_DataWriterQos dwQos;
+
+    DDS_DomainParticipantFactoryQos factory_qos;
+
+    // Setup the QOS profile file to be loaded
+    DDSTheParticipantFactory->get_qos(factory_qos);
+    factory_qos.profile.url_profile.ensure_length(1, 1);
+    factory_qos.profile.url_profile[0] = DDS_String_dup("perftest_qos_profiles.xml");
+    DDSTheParticipantFactory->set_qos(factory_qos);
+
+    if (DDSTheParticipantFactory->reload_profiles() != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "Problem opening QOS profiles file\n");
+        return false;
+    }
+
+
+
+    if (DDSTheParticipantFactory->get_participant_qos_from_profile(
+            dpQos,
+            "PerftestQosLibrary",
+            "AnnouncementQos")
+            != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "Problem setting QoS Library for .\n");
+    }
+
+    if (DDSTheParticipantFactory->get_publisher_qos_from_profile(
+        publisherQos,
+        "PerftestQosLibrary",
+        "LoggingQos")
+        != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "Problem setting QoS Library for publisherQos.\n");
+    }
+
+    if (DDSTheParticipantFactory->get_datawriter_qos_from_profile(
+        dwQos,
+        "PerftestQosLibrary",
+        "LoggingQos")
+        != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "Problem setting QoS Library for dwQos.\n");
+    }
+
+    participant = DDSTheParticipantFactory->create_participant(
+            (DDS_DomainId_t) domain,
+            dpQos,
+            NULL,
+            DDS_STATUS_MASK_NONE);
+    if (participant == NULL) {
+        fprintf(stderr, "RTIDDSMessageLogger Problem creating participant.\n");
+        finalize();
+        return false;
+    }
+
+    publisher = participant->create_publisher(
+        publisherQos,
+        NULL,
+        DDS_STATUS_MASK_NONE);
+    if (publisher == NULL) {
+        fprintf(stderr, "RTIDDSMessageLogger create_publisher error\n");
+        finalize();
+        return false;
+    }
+
+    retcode = perftestLogMessage::TypeSupport::register_type(
+        participant,
+        perftestLogMessage::TypeSupport::get_type_name());
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "RTIDDSMessageLogger register_type error %d\n", retcode);
+        finalize();
+        return false;
+    }
+
+    topic = participant->create_topic(
+        topicName.c_str(),
+        perftestLogMessage::TypeSupport::get_type_name(),
+        DDS_TOPIC_QOS_DEFAULT,
+        NULL,
+        DDS_STATUS_MASK_NONE);
+    if (topic == NULL) {
+        fprintf(stderr, "RTIDDSMessageLogger create_topic error\n");
+        finalize();
+        return false;
+    }
+
+    DDSDataWriter *writer = publisher->create_datawriter(
+        topic, dwQos, NULL,
+        DDS_STATUS_MASK_NONE);
+    if (writer == NULL) {
+        fprintf(stderr, "RTIDDSMessageLogger create_datawriter error\n");
+        finalize();
+        return false;
+    }
+
+    logWriter = perftestLogMessage::DataWriter::narrow(writer);
+    if (logWriter == NULL) {
+        fprintf(stderr, "DataWriter narrow error\n");
+        finalize();
+        return false;
+    }
+
+    sample = perftestLogMessage::TypeSupport::create_data();
+    if (sample == NULL) {
+        fprintf(stderr, "testTypeSupport::create_data error\n");
+        finalize();
+        return false;
+    }
+
+    return true;
+}
+
+void RTIDDSMessageLogger::finalize() {
+
+    DDS_ReturnCode_t retcode;
+    int status = 0;
+
+    if (perftestLogMessage::TypeSupport::delete_data(sample) != DDS_RETCODE_OK) {
+        fprintf(stderr, "testTypeSupport::delete_data error %d\n", retcode);
+    }
+    if (participant != NULL) {
+        retcode = participant->delete_contained_entities();
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "delete_contained_entities error %d\n", retcode);
+        }
+
+        retcode = DDSTheParticipantFactory->delete_participant(participant);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "delete_participant error %d\n", retcode);
+        }
+    }
+}
+
+bool RTIDDSMessageLogger::writeMessage(int datalen, int latency, float thr) {
+
+    DDS_ReturnCode_t retcode;
+    sample->datalen = datalen;
+    if (latency != -1) {
+        sample->latency = latency;
+    }
+    if (thr != -1) {
+        sample->throughput = thr;
+    }
+    logWriter->write(*sample, DDS_HANDLE_NIL);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "write error %d\n", retcode);
+    }
+    return false;
+}
+
 
 PerftestPrinter::PerftestPrinter()
-        : _dataLength(100), _printSummaryHeaders(true), _outputFormat(CSV)
+        : _dataLength(100),
+          _printSummaryHeaders(true),
+          ddslogger(10),
+          _outputFormat(CSV)
 {
 }
 
@@ -26,6 +198,9 @@ void PerftestPrinter::initialize(
     } else if (outputFormat == "json") {
         _outputFormat = JSON;
         _isJsonInitialized = false;
+    } else if (outputFormat == "dds") {
+        _outputFormat = DDS;
+        ddslogger.initialize();
     } else if (outputFormat == "legacy") {
         _outputFormat = LEGACY;
     }
@@ -44,6 +219,7 @@ void PerftestPrinter::set_header_printed(bool printHeaders)
 void PerftestPrinter::print_latency_header()
 {
     switch (_outputFormat) {
+    case DDS:
     case CSV:
         if (_printHeaders && _printIntervals) {
             printf("\nIntervals One-way Latency for %d Bytes:\n", _dataLength);
@@ -83,6 +259,7 @@ void PerftestPrinter::print_latency_header()
 void PerftestPrinter::print_throughput_header()
 {
     switch (_outputFormat) {
+    case DDS:
     case CSV:
         if (_printHeaders && _printIntervals) {
             printf("\nInterval Throughput for %d Bytes:\n", _dataLength);
@@ -124,6 +301,8 @@ void PerftestPrinter::print_latency_interval(
         double outputCpu)
 {
     switch (_outputFormat) {
+    case DDS:
+        ddslogger.writeMessage(_dataLength, latency, -1);
     case CSV:
         printf("%14d,%13lu,%9.0lf,%9.1lf,%9lu,%9lu",
                _dataLength,
@@ -191,6 +370,7 @@ void PerftestPrinter::print_latency_summary(
         double outputCpu)
 {
     switch (_outputFormat) {
+    case DDS:
     case CSV:
         if (_printSummaryHeaders && _printHeaders) {
             if (!_printIntervals && _printSummaryHeaders) {
@@ -323,6 +503,10 @@ void PerftestPrinter::print_latency_summary(
         double outputCpu)
 {
     switch (_outputFormat) {
+    case DDS:
+        // In other cases we set the latency to be printed every sample, that could
+        // be hard here.
+        break;
     case CSV:
         if (_printSummaryHeaders && _printHeaders) {
             if (!_printIntervals && _printSummaryHeaders) {
@@ -429,6 +613,8 @@ void PerftestPrinter::print_throughput_interval(
         double outputCpu)
 {
     switch (_outputFormat) {
+    case DDS:
+        ddslogger.writeMessage(_dataLength, -1, bpsAve * 8.0 / 1000.0 / 1000.0);
     case CSV:
         printf("%14d,%14llu,%11llu,%14.0lf,%9.1lf,%10.1lf, %12llu, %16.2lf",
                _dataLength,
@@ -501,6 +687,7 @@ void PerftestPrinter::print_throughput_summary(
         double outputCpu)
 {
     switch (_outputFormat) {
+    case DDS:
     case CSV:
         if (_printSummaryHeaders && _printHeaders) {
             if (!_printIntervals && _printSummaryHeaders) {
@@ -577,5 +764,8 @@ void PerftestPrinter::print_final_output()
 {
     if (_outputFormat == JSON) {
         printf("\n\t]\n}\n");
+    }
+    if (_outputFormat == DDS) {
+        ddslogger.finalize();
     }
 }

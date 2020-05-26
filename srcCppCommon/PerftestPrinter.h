@@ -15,7 +15,26 @@
 #include <stdio.h>
 #include <string>
 
-enum PerftestOuputFormat { LEGACY, JSON, CSV };
+/* TODO: This should be divided into 2 classes: Interface and Implementation */
+enum PerftestOuputFormat { LEGACY, JSON, CSV, DDS };
+
+class RTIDDSMessageLogger {
+
+    int domain;
+    std::string topicName;
+
+    DDSDomainParticipant *participant;
+    DDSPublisher *publisher;
+    DDSTopic *topic;
+    perftestLogMessageDataWriter *logWriter;
+    perftestLogMessage *sample;
+
+public:
+    RTIDDSMessageLogger(int domain);
+    bool initialize();
+    void finalize();
+    bool writeMessage(int datalen, int latency, float thr);
+};
 
 class PerftestPrinter {
 private:
@@ -27,6 +46,8 @@ private:
     bool _printSerialization;
     bool _isJsonInitialized;
     bool _controlJsonIntervals;
+    // This should be something called IMessageLogger
+    RTIDDSMessageLogger ddslogger;
     PerftestOuputFormat _outputFormat;
 
 public:

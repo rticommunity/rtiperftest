@@ -183,3 +183,11 @@ struct TestDataKeyedLarge_FlatData_t {
 };
 
 #endif // RTI_FLATDATA_AVAILABLE
+
+// Generate this type in order to propagate information about rti perftest when
+// using output = dds
+struct perftestLogMessage {
+    @key long datalen;
+    long latency;
+    double throughput;
+};
