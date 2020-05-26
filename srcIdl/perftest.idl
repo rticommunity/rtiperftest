@@ -189,6 +189,6 @@ struct TestDataKeyedLarge_FlatData_t {
 struct perftestLogMessage {
     @key long datalen;
     @key long kind;
-    @key long app_id;
+    @key long appId;
     double value;
 };

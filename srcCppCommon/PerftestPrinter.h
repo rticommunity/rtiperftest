@@ -22,6 +22,7 @@ class RTIDDSMessageLogger {
 
     int domain;
     std::string topicName;
+    int appId;
 
     DDSDomainParticipant *participant;
     DDSPublisher *publisher;

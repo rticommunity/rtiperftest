@@ -10,9 +10,12 @@
 RTIDDSMessageLogger::RTIDDSMessageLogger(int domain)
         : domain(domain),
           topicName("PerftestLogging"),
+          appId(rand()),
           logWriter(NULL),
           sample(NULL)
 {
+    // We should receive here the _PM as a parameter, and get from there things
+    // like the app_id for pub and sub, instead of generating a rand number.
 }
 
 bool RTIDDSMessageLogger::initialize()
@@ -131,6 +134,7 @@ bool RTIDDSMessageLogger::initialize()
         finalize();
         return false;
     }
+    sample->appId = appId;
 
     return true;
 }
