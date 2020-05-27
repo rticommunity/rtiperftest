@@ -840,7 +840,7 @@ function build_micro_cpp()
         Infrastructure_common.cxx \
         Infrastructure_micro.cxx \
         FileDataLoader.cxx \
-        PerftestPrinter"
+        PerftestPrinter.cxx"
 
     rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} \
             -replace -create typefiles -create makefiles \
