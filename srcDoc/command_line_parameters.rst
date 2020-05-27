@@ -439,6 +439,25 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** ``Not enabled``
 
+- ``-outputFormat <format>``
+
+   Specify the format of the printed data to facilitate display or export.
+
+   There are several formats supported:
+
+   ['csv','json','legacy'].
+
+   | **Default:** ``csv``
+   | **Values:** ``['csv','json','legacy']``
+
+- ``-noPrintHeaders``
+
+   Prevent printing header row of intervals and summaries.
+
+   By default, all headers rows are printed for each interval and summary.
+
+   | **Default:** ``Not enabled``
+
 Transport-Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

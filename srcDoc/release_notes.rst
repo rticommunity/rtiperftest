@@ -98,6 +98,15 @@ Added 2 new Governance profiles to the list of generated governance files in
 
 As well as their respective signed versions (`signed_`...).
 
+Added news print formats for data display (#280)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Now perftest supports different print formats, manage with `-outputFormat <format>`,
+ which can be: csv (default), json or legacy (the previous one).
+
+Another flag has been added, `-noPrintHeaders`, to not print the headers row of
+ intervals and summaries, and only show numbers.
+
 Added support for -threadPriorities command line parameter in QNX platforms
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
