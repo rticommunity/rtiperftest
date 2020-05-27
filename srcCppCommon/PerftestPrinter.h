@@ -14,6 +14,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <string>
+#include "ParameterManager.h"
 
 enum PerftestOuputFormat { LEGACY, JSON, CSV };
 
@@ -35,12 +36,8 @@ public:
     {
     }
 
-    void initialize(
-            bool printIntervals,
-            std::string outputFormat,
-            bool printHeaders,
-            bool printSerialization,
-            bool ShowCpu);
+    void initialize(ParameterManager *_PM);
+
 
     // Set and Get members
     void set_data_length(unsigned int dataLength);

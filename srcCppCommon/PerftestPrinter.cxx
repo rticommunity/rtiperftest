@@ -10,17 +10,13 @@ PerftestPrinter::PerftestPrinter()
 {
 }
 
-void PerftestPrinter::initialize(
-        bool printIntervals,
-        std::string outputFormat,
-        bool printHeaders,
-        bool printSerialization,
-        bool showCpu)
+void PerftestPrinter::initialize(ParameterManager *_PM)
 {
-    _printIntervals = printIntervals;
-    _printHeaders = printHeaders;
-    _printSerialization = printSerialization;
-    _showCPU = showCpu;
+    std::string outputFormat = _PM->get<std::string>("outputFormat");
+    _printIntervals = !_PM->get<bool>("noPrintIntervals");
+    _printHeaders = !_PM->get<bool>("noPrintHeaders");
+    _printSerialization = _PM->get<bool>("serializationTime");
+    _showCPU = _PM->get<bool>("cpu");
     if (outputFormat == "csv") {
         _outputFormat = CSV;
     } else if (outputFormat == "json") {
@@ -30,6 +26,7 @@ void PerftestPrinter::initialize(
         _outputFormat = LEGACY;
     }
 }
+
 
 void PerftestPrinter::set_data_length(unsigned int dataLength)
 {

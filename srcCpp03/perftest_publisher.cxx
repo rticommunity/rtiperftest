@@ -166,12 +166,7 @@ int perftest_cpp::Run(int argc, char *argv[]) {
         return -1;
     }
 
-    _printer.initialize(
-            !_PM.get<bool>("noPrintIntervals"),
-            _PM.get<std::string>("outputFormat"),
-            !_PM.get<bool>("noPrintHeaders"),
-            _PM.get<bool>("serializationTime"),
-            _PM.get<bool>("cpu"));
+    _printer.initialize(&_PM);
 
     mask = (_PM.get<int>("unbounded") != 0) << 0;
     mask += _PM.get<bool>("keyed") << 1;
