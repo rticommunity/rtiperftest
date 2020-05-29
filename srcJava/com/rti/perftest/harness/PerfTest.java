@@ -1058,7 +1058,7 @@ public final class PerfTest {
                 announcement_writer.flush();
                 break;
             }
-            double outputCpu = 0;
+            double outputCpu = 0.0;
             if (PerfTest._showCpu) {
                 outputCpu = reader_listener.CpuMonitor.get_cpu_instant();
             }

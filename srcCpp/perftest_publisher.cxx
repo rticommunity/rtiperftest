@@ -905,7 +905,7 @@ class ThroughputListener : public IMessagingCB
                         + interval_missing_packets));
             }
 
-            double outputCpu = 0;
+            double outputCpu = 0.0;
             if (showCpu) {
                 outputCpu = cpu.get_cpu_average();
                 cpu = CpuMonitor();
@@ -1191,7 +1191,7 @@ int perftest_cpp::Subscriber()
             }
 
             if (last_msgs > 0) {
-                double outputCpu = 0;
+                double outputCpu = 0.0;
                 if (showCpu) {
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
@@ -1394,7 +1394,7 @@ public:
       #endif
         int totalSampleSize = last_data_length + perftest_cpp::OVERHEAD_BYTES;
 
-        double outputCpu = 0;
+        double outputCpu = 0.0;
         if (count == 0)
         {
             if (endTest) {
@@ -1581,7 +1581,7 @@ public:
         unsigned int usec;
         double latency_ave;
         double latency_std;
-        double outputCpu = 0;
+        double outputCpu = 0.0;
 
         now = PerftestClock::getInstance().getTime();
 

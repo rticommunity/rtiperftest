@@ -33,9 +33,9 @@ namespace PerformanceTest
 
         public CpuMonitor()
         {
-            _cpuUsage = 0;
+            _cpuUsage = 0.0;
             _counter = 0;
-            _cpuUsageTotal = 0;
+            _cpuUsageTotal = 0.0;
             _lastRun = DateTime.MinValue;
             _prevSysUser.dwHighDateTime = _prevSysUser.dwLowDateTime = 0;
             _prevSysKernel.dwHighDateTime = _prevSysKernel.dwLowDateTime = 0;

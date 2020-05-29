@@ -900,7 +900,7 @@ public:
                         + interval_missing_packets));
             }
 
-            double outputCpu = 0;
+            double outputCpu = 0.0;
             if (showCpu) {
                 outputCpu = cpu.get_cpu_average();
                 cpu = CpuMonitor();
@@ -1129,7 +1129,7 @@ int perftest_cpp::RunSubscriber()
             }
 
             if (last_msgs > 0) {
-                double outputCpu = 0;
+                double outputCpu = 0.0;
                 if (showCpu) {
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
@@ -1318,7 +1318,7 @@ class LatencyListener : public IMessagingCB
         unsigned int usec;
         double latency_ave;
         double latency_std;
-        double outputCpu = 0;
+        double outputCpu = 0.0;
 
         now = perftest_cpp::GetTimeUsec();
 
@@ -1431,7 +1431,7 @@ class LatencyListener : public IMessagingCB
     void print_summary_latency(bool endTest = false) {
         double latency_ave;
         double latency_std;
-        double outputCpu = 0;
+        double outputCpu = 0.0;
 
         if (count == 0) {
             if (endTest) {
