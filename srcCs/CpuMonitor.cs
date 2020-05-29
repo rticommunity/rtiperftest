@@ -26,8 +26,8 @@ namespace PerformanceTest
         ComTypes.FILETIME _prevSysKernel;
         ComTypes.FILETIME _prevSysUser;
         TimeSpan _prevProcTotal;
-        Int16 _cpuUsage;
-        Int16 _cpuUsageTotal;
+        double _cpuUsage;
+        double _cpuUsageTotal;
         DateTime _lastRun;
         long _counter;
 
