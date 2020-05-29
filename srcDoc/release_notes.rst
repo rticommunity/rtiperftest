@@ -98,14 +98,22 @@ Added 2 new Governance profiles to the list of generated governance files in
 
 As well as their respective signed versions (`signed_`...).
 
-Added news print formats for data display (#280)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+New output formats available to display data (#280)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Now perftest supports different print formats, manage with `-outputFormat <format>`,
- which can be: csv (default), json or legacy (the previous one).
+*RTI Perftest* default output format has been improved. This format should now
+be compatible with the `CSV` format standard, therefore allowing the copy into
+spreadsheet editors or easier parsing via scripting. This change has been
+introduced in a way in which the output retains its readability, by correctly
+aligning rows and columns and by printing headers for each column.
 
-Another flag has been added, `-noPrintHeaders`, to not print the headers row of
- intervals and summaries, and only show numbers.
+With this change we also introduced the option of changing or customizing the
+output format by using the `-outputFormat <format>`. At this point the supported
+values are `csv` (default), `json` or `legacy` (Referring to the previous
+output used by *RTI Perftest*.
+
+Another flag has been added, `-noPrintHeaders`, in order to skip printing the
+headers rows (for the summaries and also for the interval information).
 
 Added support for -threadPriorities command line parameter in QNX platforms
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

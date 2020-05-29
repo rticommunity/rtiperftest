@@ -53,9 +53,9 @@ namespace PerformanceTest
             _prevSysUser = sysUser;
         }
 
-        public short get_cpu_instant()
+        public double get_cpu_instant()
         {
-            short cpuCopy = _cpuUsage;
+            double cpuCopy = _cpuUsage;
             if (EnoughTimePassed()) {
 
                 ComTypes.FILETIME sysIdle, sysKernel, sysUser;
@@ -71,7 +71,7 @@ namespace PerformanceTest
                     UInt64 sysTotal = sysKernelDiff + sysUserDiff;
                     Int64 procTotal = procTime.Ticks - _prevProcTotal.Ticks;
                     if (sysTotal > 0) {
-                        _cpuUsage = (short)((100.0 * procTotal) / sysTotal);
+                        _cpuUsage = (double)((100.0 * procTotal) / sysTotal);
                     }
                     _prevProcTotal = procTime;
                     _prevSysKernel = sysKernel;
@@ -85,13 +85,13 @@ namespace PerformanceTest
             return cpuCopy;
         }
 
-        public short get_cpu_average()
+        public double get_cpu_average()
         {
             if (_counter == 0) {
                 //in the case that the CpuMonitor was just initialize, get_cpu_instant
                 get_cpu_instant();
             }
-            return (short) (_cpuUsageTotal / _counter);
+            return (double) (_cpuUsageTotal / _counter);
         }
 
         private UInt64 SubtractTimes(ComTypes.FILETIME a, ComTypes.FILETIME b)

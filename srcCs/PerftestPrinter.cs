@@ -142,7 +142,7 @@ namespace PerformanceTest {
             double latencyStd,
             uint latencyMin,
             uint latencyMax,
-            short outputCpu)
+            double outputCpu)
         {
             switch (_outputFormat) {
                 case PerftestOutputFormat.CSV:
@@ -181,7 +181,7 @@ namespace PerformanceTest {
                                       outputCpu);
                     }
                     Console.Write("\n\t\t\t\t}");
-					Console.Out.Flush();
+                    Console.Out.Flush();
                     break;
                 case PerftestOutputFormat.LEGACY:
                     Console.Write("One way Latency: {1,6} {0}" +
@@ -210,7 +210,7 @@ namespace PerformanceTest {
             ulong latencyMax,
             uint[] latencyHistory,
             ulong count,
-            short outputCpu)
+            double outputCpu)
         {
             switch (_outputFormat) {
                 case PerftestOutputFormat.CSV:
@@ -325,7 +325,7 @@ namespace PerformanceTest {
             double bpsAve,
             ulong missingPackets,
             double missingPacketsPercent,
-            short outputCpu)
+            double outputCpu)
         {
             switch (_outputFormat) {
                 case PerftestOutputFormat.CSV:
@@ -400,7 +400,7 @@ namespace PerformanceTest {
             ulong intervalBytesReceived,
             ulong intervalMissingPackets,
             double missingPacketsPercent,
-            short outputCpu)
+            double outputCpu)
         {
             switch (_outputFormat) {
                 case PerftestOutputFormat.CSV:

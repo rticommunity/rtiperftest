@@ -1706,7 +1706,7 @@ namespace PerformanceTest {
                                 + interval_missing_packets);
                     }
 
-                    short outputCpu = 0;
+                    double outputCpu = 0.0;
                     if (_showCpu) {
                         outputCpu = cpu.get_cpu_average();
                     }
@@ -1893,7 +1893,7 @@ namespace PerformanceTest {
 
                     if (last_msgs > 0)
                     {
-                        short outputCpu = 0;
+                        double outputCpu = 0.0;
                         if (_showCpu) {
                             outputCpu = reader_listener.cpu.get_cpu_instant();
                         }
@@ -2103,7 +2103,7 @@ namespace PerformanceTest {
                         latency_std = System.Math.Sqrt(
                             (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-                        short outputCpu = 0;
+                        double outputCpu = 0.0;
                         if (_showCpu) {
                             outputCpu = cpu.get_cpu_instant();
                         }
@@ -2166,7 +2166,7 @@ namespace PerformanceTest {
                 System.Array.Sort(_latency_history, 0, (int)count);
                 latency_ave = latency_sum / count;
                 latency_std = System.Math.Sqrt(latency_sum_square / count - (latency_ave * latency_ave));
-                short outputCpu = 0;
+                double outputCpu = 0.0;
                 if (_showCpu) {
                     outputCpu = cpu.get_cpu_average();
                 }

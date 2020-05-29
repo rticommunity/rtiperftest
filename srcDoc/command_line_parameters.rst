@@ -441,9 +441,9 @@ Test Parameters for Publishing and Subscribing Applications
 
 - ``-outputFormat <format>``
 
-   Specify the format of the printed data to facilitate display or export.
+   Specify the format for the printed data to facilitate its display or to export it.
 
-   There are several formats supported:
+   The following formats are supported:
 
    ['csv','json','legacy'].
 
@@ -452,7 +452,7 @@ Test Parameters for Publishing and Subscribing Applications
 
 - ``-noPrintHeaders``
 
-   Prevent printing header row of intervals and summaries.
+   Skip the print of the header rows for the *RTI Perftest* output.
 
    By default, all headers rows are printed for each interval and summary.
 
