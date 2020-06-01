@@ -21,6 +21,7 @@
 #include "ParameterManager.h"
 #include "Infrastructure_common.h"
 #include "FileDataLoader.h"
+#include "PerftestPrinter.h"
 
 struct Perftest_ProductVersion_t
 {
@@ -51,6 +52,7 @@ class perftest_cpp
 
     // Private members
     ParameterManager _PM;
+    PerftestPrinter _printer;
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
     IMessaging *_MessagingImpl;

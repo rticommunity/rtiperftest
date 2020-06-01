@@ -337,6 +337,42 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("threadPriorities", threadPriorities);
 
+    Parameter<std::string> *outputFormat = new Parameter<std::string>("csv");
+    outputFormat->set_command_line_argument("-outputFormat", "<format>");
+    outputFormat->set_description(
+            "Set the output format.\n"
+            "The following formats are available:\n"
+            " - 'csv'\n"
+            " - 'json'\n"
+            " - 'legacy'\n"
+            "Default: 'csv'");
+    outputFormat->set_type(T_STR);
+    outputFormat->set_extra_argument(YES);
+    outputFormat->add_valid_str_value("legacy");
+    outputFormat->add_valid_str_value("json");
+    outputFormat->add_valid_str_value("csv");
+    outputFormat->set_group(GENERAL);
+    outputFormat->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("outputFormat", outputFormat);
+
+    Parameter<bool> *noPrintHeaders = new Parameter<bool>(false);
+    noPrintHeaders->set_command_line_argument("-noPrintHeaders", "");
+    noPrintHeaders->set_description(
+            "Skip displaying the header row with \n"
+            "the titles of the tables and the summary.\n"
+            "Default: False (it will display titles)");
+    noPrintHeaders->set_type(T_BOOL);
+    noPrintHeaders->set_extra_argument(NO);
+    noPrintHeaders->set_group(GENERAL);
+    noPrintHeaders->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("noPrintHeaders", noPrintHeaders);
+
   #ifdef RTI_FLATDATA_AVAILABLE
     Parameter<bool> *flatData = new Parameter<bool>(false);
     flatData->set_command_line_argument("-flatData", "");

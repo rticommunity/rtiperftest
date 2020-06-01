@@ -23,6 +23,8 @@
 #include "MessagingIF.h"
 #include "perftest.hpp"
 #include "ParameterManager.h"
+#include "PerftestPrinter.h"
+
 
 #ifdef RTI_WIN32
   #include <windows.h>
@@ -83,6 +85,7 @@ class perftest_cpp
 
     // Private members
     ParameterManager _PM;
+    PerftestPrinter _printer;
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
     IMessaging *_MessagingImpl;

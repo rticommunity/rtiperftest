@@ -14,7 +14,6 @@
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
 
-
 #if defined(RTI_ANDROID)
 
 #include <android/log.h>
@@ -147,6 +146,8 @@ int perftest_cpp::Run(int argc, char *argv[])
             && !_threadPriorities.set_main_thread_priority()) {
         return -1;
     }
+
+    _printer.initialize(&_PM);
 
     if (_PM.get<bool>("rawTransport")) {
       #ifndef RTI_MICRO
@@ -690,6 +691,7 @@ class ThroughputListener : public IMessagingCB
 {
   private:
     ParameterManager *_PM;
+    PerftestPrinter *_printer;
     int  subID;
     bool printIntervals;
     bool cacheStats;
@@ -724,6 +726,7 @@ class ThroughputListener : public IMessagingCB
 
     ThroughputListener(
             ParameterManager &PM,
+            PerftestPrinter &printer,
             IMessagingWriter *writer,
             IMessagingReader *reader = NULL,
             bool UseCft = false,
@@ -755,6 +758,7 @@ class ThroughputListener : public IMessagingCB
         _num_publishers = numPublishers;
 
         _PM = &PM;
+        _printer = &printer;
 
         printIntervals = !_PM->get<bool>("noPrintIntervals");
         cacheStats = _PM->get<bool>("cacheStats");
@@ -841,12 +845,9 @@ class ThroughputListener : public IMessagingCB
             }
 
             begin_time = PerftestClock::getInstance().getTime();
-
-            if (printIntervals) {
-                printf("\n\n********** New data length is %d\n",
-                       message.size + perftest_cpp::OVERHEAD_BYTES);
-                fflush(stdout);
-            }
+            _printer->set_data_length(message.size
+                    + perftest_cpp::OVERHEAD_BYTES);
+            _printer->print_throughput_header();
         }
 
         last_data_length = message.size;
@@ -904,23 +905,20 @@ class ThroughputListener : public IMessagingCB
                         + interval_missing_packets));
             }
 
-            std::string outputCpu = "";
+            double outputCpu = 0.0;
             if (showCpu) {
                 outputCpu = cpu.get_cpu_average();
                 cpu = CpuMonitor();
                 cpu.initialize();
             }
-            printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
-                   "Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%) %s\n",
-                   interval_data_length + perftest_cpp::OVERHEAD_BYTES,
-                   interval_packets_received,
-                   interval_packets_received*1000000/interval_time,
-                   interval_bytes_received*1000000.0/interval_time*8.0/1000.0/1000.0,
-                   interval_missing_packets,
-                   missing_packets_percent,
-                   outputCpu.c_str()
-            );
-
+            _printer->print_throughput_summary(
+                    interval_data_length + perftest_cpp::OVERHEAD_BYTES,
+                    interval_packets_received,
+                    interval_time,
+                    interval_bytes_received,
+                    interval_missing_packets,
+                    missing_packets_percent,
+                    outputCpu);
             if (cacheStats) {
                 printf("Samples Reader Queue Peak: %4d\n", sample_count_peak);
             }
@@ -1009,6 +1007,7 @@ int perftest_cpp::Subscriber()
         // create latency pong reader
         reader_listener = new ThroughputListener(
                 _PM,
+                _printer,
                 writer,
                 NULL,
                 _PM.is_set("cft"),
@@ -1032,6 +1031,7 @@ int perftest_cpp::Subscriber()
         }
         reader_listener = new ThroughputListener(
                 _PM,
+                _printer,
                 writer,
                 reader,
                 _PM.is_set("cft"),
@@ -1111,6 +1111,9 @@ int perftest_cpp::Subscriber()
     fprintf(stderr,"Waiting for data ...\n");
     fflush(stderr);
 
+    // For Json format, print brackets at init
+    _printer.print_initial_output();
+
     // wait for data
     unsigned long long prev_time = 0, now = 0, delta = 0;
     unsigned long long prev_count = 0;
@@ -1188,18 +1191,19 @@ int perftest_cpp::Subscriber()
             }
 
             if (last_msgs > 0) {
-                std::string outputCpu = "";
+                double outputCpu = 0.0;
                 if (showCpu) {
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
-                printf("Packets: %8llu  Packets/s: %7llu  Packets/s(ave): %7.0lf  "
-                       "Mbps: %7.1lf  Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%) %s\n",
-                        last_msgs, mps, mps_ave,
-                        bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
+                _printer.print_throughput_interval(
+                        last_msgs,
+                        mps,
+                        mps_ave,
+                        bps,
+                        bps_ave,
                         reader_listener->missing_packets,
                         missing_packets_percent,
-                        outputCpu.c_str()
-                );
+                        outputCpu);
                 fflush(stdout);
 
                 if (cacheStats) {
@@ -1213,7 +1217,7 @@ int perftest_cpp::Subscriber()
     }
 
     PerftestClock::milliSleep(2000);
-
+    _printer.print_final_output();
     if (!finalize_read_thread(throughputThread, reader_listener)) {
         fprintf(stderr, "Error deleting throughputThread\n");
         return -1;
@@ -1317,6 +1321,7 @@ class LatencyListener : public IMessagingCB
     unsigned int       _num_latency;
     IMessagingWriter *_writer;
     ParameterManager *_PM;
+    PerftestPrinter *_printer;
     int  subID;
     bool printIntervals;
     bool showCpu;
@@ -1330,7 +1335,8 @@ public:
     LatencyListener(unsigned int num_latency,
             IMessagingReader *reader,
             IMessagingWriter *writer,
-            ParameterManager &PM)
+            ParameterManager &PM,
+            PerftestPrinter &printer)
     {
         latency_sum = 0;
         latency_sum_square = 0;
@@ -1371,6 +1377,7 @@ public:
         _reader = reader;
         _writer = writer;
         _PM = &PM;
+        _printer = &printer;
 
         subID = _PM->get<int>("sidMultiSubTest");
         printIntervals = !_PM->get<bool>("noPrintIntervals");
@@ -1387,7 +1394,7 @@ public:
       #endif
         int totalSampleSize = last_data_length + perftest_cpp::OVERHEAD_BYTES;
 
-        std::string outputCpu = "";
+        double outputCpu = 0.0;
         if (count == 0)
         {
             if (endTest) {
@@ -1422,27 +1429,6 @@ public:
             cpu = CpuMonitor();
             cpu.initialize();
         }
-
-        printf("Length: %5d"
-               " Latency: Ave %6.0lf " PERFT_TIME_UNIT
-               " Std %6.1lf " PERFT_TIME_UNIT
-               " Min %6lu " PERFT_TIME_UNIT
-               " Max %6lu " PERFT_TIME_UNIT
-               " 50%% %6lu " PERFT_TIME_UNIT
-               " 90%% %6lu " PERFT_TIME_UNIT
-               " 99%% %6lu " PERFT_TIME_UNIT
-               " 99.99%% %6lu " PERFT_TIME_UNIT
-               " 99.9999%% %6lu " PERFT_TIME_UNIT
-               " %s\n",
-                totalSampleSize,
-                latency_ave, latency_std, latency_min, latency_max,
-                _latency_history[count*50/100],
-                _latency_history[count*90/100],
-                _latency_history[count*99/100],
-                _latency_history[(int)(count*(9999.0/10000))],
-                _latency_history[(int)(count*(999999.0/1000000))],
-                outputCpu.c_str());
-        fflush(stdout);
 
       #ifndef RTI_MICRO
         if (_PM->get<bool>("serializationTime")) {
@@ -1544,13 +1530,30 @@ public:
             default:
                 break;
             }
-
-            printf("Serialization/Deserialization: %0.3f us / %0.3f us / TOTAL: "
-                    "%0.3f us\n",
-                    serializeTime,
-                    deserializeTime,
-                    serializeTime + deserializeTime);
         }
+      #endif
+
+      #ifdef RTI_MICRO
+        _printer->print_latency_summary(
+                latency_ave,
+                latency_std,
+                latency_min,
+                latency_max,
+                _latency_history,
+                count,
+                outputCpu);
+      #else
+        _printer->print_latency_summary(
+                totalSampleSize,
+                latency_ave,
+                latency_std,
+                latency_min,
+                latency_max,
+                _latency_history,
+                count,
+                serializeTime,
+                deserializeTime,
+                outputCpu);
       #endif
 
         latency_sum = 0;
@@ -1578,7 +1581,7 @@ public:
         unsigned int usec;
         double latency_ave;
         double latency_std;
-        std::string outputCpu = "";
+        double outputCpu = 0.0;
 
         now = PerftestClock::getInstance().getTime();
 
@@ -1668,11 +1671,9 @@ public:
         if (last_data_length != message.size)
         {
             last_data_length = message.size;
-
-            if (printIntervals) {
-                printf("\n\n********** New data length is %d\n",
-                       last_data_length + perftest_cpp::OVERHEAD_BYTES);
-            }
+            _printer->set_data_length(last_data_length
+                    + perftest_cpp::OVERHEAD_BYTES);
+            _printer->print_latency_header();
         }
         else {
             if (printIntervals) {
@@ -1683,19 +1684,13 @@ public:
                 if (showCpu) {
                     outputCpu = cpu.get_cpu_instant();
                 }
-                printf("One way Latency: %6lu " PERFT_TIME_UNIT
-                       " Ave %6.0lf " PERFT_TIME_UNIT
-                       " Std %6.1lf " PERFT_TIME_UNIT
-                       " Min %6lu " PERFT_TIME_UNIT
-                       " Max %6lu " PERFT_TIME_UNIT
-                       " %s\n",
-                        latency,
-                        latency_ave,
-                        latency_std,
-                        latency_min,
-                        latency_max,
-                        outputCpu.c_str()
-                );
+                _printer->print_latency_interval(
+                    latency,
+                    latency_ave,
+                    latency_std,
+                    latency_min,
+                    latency_max,
+                    outputCpu);
             }
         }
 
@@ -1755,7 +1750,8 @@ int perftest_cpp::Publisher()
                     num_latency,
                     NULL,
                     _PM.get<bool>("latencyTest") ? writer : NULL,
-                    _PM);
+                    _PM,
+                    _printer);
             reader = _MessagingImpl->CreateReader(
                     LATENCY_TOPIC_NAME,
                     reader_listener);
@@ -1779,7 +1775,8 @@ int perftest_cpp::Publisher()
                     num_latency,
                     reader,
                     _PM.get<bool>("latencyTest") ? writer : NULL,
-                    _PM);
+                    _PM,
+                    _printer);
 
             int threadPriority = Perftest_THREAD_PRIORITY_DEFAULT;
             int threadOptions = Perftest_THREAD_OPTION_DEFAULT;
@@ -1949,6 +1946,8 @@ int perftest_cpp::Publisher()
 
     fprintf(stderr,"Publishing data ...\n");
     fflush(stderr);
+
+    _printer.print_initial_output();
 
     // Set data size, account for other bytes in message
     message.size = (int)_PM.get<unsigned long long>("dataLen") - OVERHEAD_BYTES;
@@ -2303,7 +2302,8 @@ int perftest_cpp::Publisher()
     if (!useDatafromFile) {
         delete []message.data;
     }
-
+    // For Json format, print last brackets
+    _printer.print_final_output();
     if (_testCompleted) {
         // Delete timeout thread
         if (executionTimeoutThread != NULL) {

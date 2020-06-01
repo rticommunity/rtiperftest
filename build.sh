@@ -625,6 +625,7 @@ function build_cpp()
         PerftestSecurity.h \
         Infrastructure_common.h \
         Infrastructure_pro.h \
+        PerftestPrinter.h \
         FileDataLoader.h"
 
     additional_source_files="${additional_source_files_custom_type} \
@@ -639,6 +640,7 @@ function build_cpp()
         PerftestSecurity.cxx \
         Infrastructure_common.cxx \
         Infrastructure_pro.cxx \
+        PerftestPrinter.cxx \
         FileDataLoader.cxx"
 
     if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
@@ -824,7 +826,8 @@ function build_micro_cpp()
         PerftestSecurity.h \
         Infrastructure_common.h \
         Infrastructure_micro.h \
-        FileDataLoader.h"
+        FileDataLoader.h \
+        PerftestPrinter.h"
 
     additional_source_files=" \
         ThreadPriorities.cxx \
@@ -836,7 +839,8 @@ function build_micro_cpp()
         PerftestSecurity.cxx \
         Infrastructure_common.cxx \
         Infrastructure_micro.cxx \
-        FileDataLoader.cxx"
+        FileDataLoader.cxx \
+        PerftestPrinter.cxx"
 
     rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} \
             -replace -create typefiles -create makefiles \
@@ -935,7 +939,8 @@ function build_cpp03()
         perftest_cpp.h \
         qos_string.h \
         CpuMonitor.h \
-        PerftestTransport.h"
+        PerftestTransport.h \
+        PerftestPrinter.h"
 
     additional_source_files=" \
         ThreadPriorities.cxx \
@@ -943,7 +948,8 @@ function build_cpp03()
         ParameterManager.cxx \
         RTIDDSImpl.cxx \
         CpuMonitor.cxx \
-        PerftestTransport.cxx"
+        PerftestTransport.cxx \
+        PerftestPrinter.cxx"
 
     if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
         additional_header_files="${additional_header_files} \
