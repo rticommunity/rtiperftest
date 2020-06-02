@@ -439,6 +439,25 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** ``Not enabled``
 
+- ``-outputFormat <format>``
+
+   Specify the format for the printed data to facilitate its display or to export it.
+
+   The following formats are supported:
+
+   ['csv','json','legacy'].
+
+   | **Default:** ``csv``
+   | **Values:** ``['csv','json','legacy']``
+
+- ``-noPrintHeaders``
+
+   Skip the print of the header rows for the *RTI Perftest* output.
+
+   By default, all headers rows are printed for each interval and summary.
+
+   | **Default:** ``Not enabled``
+
 Transport-Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
