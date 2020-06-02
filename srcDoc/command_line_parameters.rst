@@ -450,7 +450,7 @@ Test Parameters for Publishing and Subscribing Applications
    | **Default:** ``csv``
    | **Values:** ``['csv','json','legacy']``
 
-- ``-noPrintHeaders``
+- ``-noOutputHeaders``
 
    Skip the print of the header rows for the *RTI Perftest* output.
 
