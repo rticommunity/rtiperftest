@@ -8,7 +8,7 @@ The aim of this project is to change the view of all the data printed during the
 
 There are new flags for manage:
 - `-outputFormat {csv, json, legacy}`
-- `-noPrintHeaders`. Delete the row with headers of intervals and summaries.
+- `-noOutputHeaders`. Delete the row with headers of intervals and summaries.
 
 Examples:
 
@@ -367,7 +367,7 @@ Length (Bytes), Total Samples, Ave Samples/s,    Ave Mbps, Lost Samples, Lost Sa
            100,      10215733,       2043193,      1634.6,            0,             0.00, 20.52
 ```
 
-## Scan Test -- noPrintHeaders, just print intervals
+## Scan Test -- noOutputHeaders, just print intervals
 
 ### Publisher side
 

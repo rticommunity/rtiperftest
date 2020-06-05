@@ -112,7 +112,7 @@ output format by using the `-outputFormat <format>`. At this point the supported
 values are `csv` (default), `json` or `legacy` (Referring to the previous
 output used by *RTI Perftest*.
 
-Another flag has been added, `-noPrintHeaders`, in order to skip printing the
+Another flag has been added, `-noOutputHeaders`, in order to skip printing the
 headers rows (for the summaries and also for the interval information).
 
 Added support for -threadPriorities command line parameter in QNX platforms

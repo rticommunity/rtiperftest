@@ -797,7 +797,7 @@ namespace PerformanceTest {
                 "\t                          Specify 2 parameters: <start> and <end> to receive samples with a key in that range.\n" +
                 "\t                          Specify only 1 parameter to receive samples with that exact key.\n" +
                 "\t                          Default: Not set\n" +
-                "\t-noPrintHeaders         - Skip displaying the header row with\n" +
+                "\t-noOutputHeaders         - Skip displaying the header row with\n" +
                 "\t                          the titles of the tables and the summary.\n" +
                 "\t                          Default: false (it will display titles)\n" +
                 "\t-outputFormat <format>  - Set the output format.\n" +
@@ -1236,7 +1236,7 @@ namespace PerformanceTest {
 
                     _useCft = true;
                 }
-                else if ("-noPrintHeaders".StartsWith(argv[i], true, null))
+                else if ("-noOutputHeaders".StartsWith(argv[i], true, null))
                 {
                     _printHeaders = false;
                 }

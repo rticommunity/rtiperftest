@@ -360,20 +360,20 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("outputFormat", outputFormat);
 
-    Parameter<bool> *noPrintHeaders = new Parameter<bool>(false);
-    noPrintHeaders->set_command_line_argument("-noPrintHeaders", "");
-    noPrintHeaders->set_description(
+    Parameter<bool> *noOutputHeaders = new Parameter<bool>(false);
+    noOutputHeaders->set_command_line_argument("-noOutputHeaders", "");
+    noOutputHeaders->set_description(
             "Skip displaying the header row with \n"
             "the titles of the tables and the summary.\n"
             "Default: False (it will display titles)");
-    noPrintHeaders->set_type(T_BOOL);
-    noPrintHeaders->set_extra_argument(NO);
-    noPrintHeaders->set_group(GENERAL);
-    noPrintHeaders->set_supported_middleware(
+    noOutputHeaders->set_type(T_BOOL);
+    noOutputHeaders->set_extra_argument(NO);
+    noOutputHeaders->set_group(GENERAL);
+    noOutputHeaders->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO);
-    create("noPrintHeaders", noPrintHeaders);
+    create("noOutputHeaders", noOutputHeaders);
 
   #ifdef RTI_FLATDATA_AVAILABLE
     Parameter<bool> *flatData = new Parameter<bool>(false);
