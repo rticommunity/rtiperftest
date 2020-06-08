@@ -16,6 +16,70 @@
 #include <string>
 #include "ParameterManager.h"
 
+struct ThroughputInfo {
+    unsigned long dataLength;
+    long appId;
+    unsigned long long packets;
+    unsigned long long packetsS; // packets/s
+    double pAve;
+    double mbps;
+    double mbpsAve;
+    unsigned long long lost;
+    float lostPercent;
+    bool interval;
+    double outputCpu;
+
+    void set_interval(
+            unsigned long long packets,
+            unsigned long long packetsS,
+            double pAve,
+            unsigned long long bps,
+            double bpsAve,
+            unsigned long long lost);
+
+    void set_summary(
+            unsigned long long packets,
+            unsigned long long time,
+            unsigned long long bytes,
+            unsigned long long lost);
+};
+struct LatencyInfo {
+    unsigned long dataLength;
+    long appId;
+    unsigned long long latency;
+    double ave;
+    double std;
+    unsigned long long min;
+    unsigned long long max;
+    unsigned long long h50;
+    unsigned long long h90;
+    unsigned long long h99;
+    unsigned long long h9999;
+    unsigned long long h999999;
+    double serialize;
+    double deserialize;
+    double total;
+    bool interval;
+    double outputCpu;
+
+    void set_interval(
+            unsigned long latency,
+            double ave,
+            double std,
+            unsigned long min,
+            unsigned long max);
+
+    void set_summary(
+            double ave,
+            double std,
+            unsigned long min,
+            unsigned long max,
+            unsigned long *history,
+            unsigned long long count,
+            double serialize,
+            double deserialize);
+};
+
 class PerftestPrinter {
 
 protected:
@@ -31,72 +95,19 @@ public:
     PerftestPrinter() : _dataLength(100), _printSummaryHeaders(true) {};
     virtual ~PerftestPrinter() {};
 
-    void initialize(ParameterManager *_PM);
+    virtual void initialize(ParameterManager *_PM);
 
     virtual void print_latency_header() = 0;
 
-    virtual void print_latency_interval(
-            unsigned long latency,
-            double latencyAve,
-            double latencyStd,
-            unsigned long latencyMin,
-            unsigned long latencyMax,
-            double outputCpu) = 0;
+    virtual void print_latency_interval(LatencyInfo latInfo) = 0;
 
-    virtual void print_latency_summary(
-            int totalSampleSize,
-            double latencyAve,
-            double latencyStd,
-            unsigned long latencyMin,
-            unsigned long latencyMax,
-            unsigned long *latencyHistory,
-            unsigned long long count,
-            double serializeTime,
-            double deserializeTime,
-            double outputCpu) = 0;
-
-    void print_latency_summary(
-            double latencyAve,
-            double latencyStd,
-            unsigned long latencyMin,
-            unsigned long latencyMax,
-            unsigned long *latencyHistory,
-            unsigned long long count,
-            double outputCpu)
-    {
-        this->print_latency_summary(
-                this->_dataLength,
-                latencyAve,
-                latencyStd,
-                latencyMin,
-                latencyMax,
-                latencyHistory,
-                count,
-                -1,
-                -1,
-                outputCpu);
-    };
+    virtual void print_latency_summary(LatencyInfo latInfo) = 0;
 
     virtual void print_throughput_header() = 0;
 
-    virtual void print_throughput_interval(
-            unsigned long long lastMsgs,
-            unsigned long long mps,
-            double mpsAve,
-            unsigned long long bps,
-            double bpsAve,
-            unsigned long long missingPackets,
-            float missingPacketsPercent,
-            double outputCpu) = 0;
+    virtual void print_throughput_interval(ThroughputInfo thInfo) = 0;
 
-    virtual void print_throughput_summary(
-            int length,
-            unsigned long long intervalPacketsReceived,
-            unsigned long long intervalTime,
-            unsigned long long intervalBytesReceived,
-            unsigned long long intervalMissingPackets,
-            float missingPacketsPercent,
-            double outputCpu) = 0;
+    virtual void print_throughput_summary(ThroughputInfo thInfo) = 0;
 
     void print_initial_output() {};
 
@@ -107,45 +118,12 @@ class PerftestCSVPrinter : public  PerftestPrinter {
 public:
     ~PerftestCSVPrinter() {};
     void print_latency_header();
-    void print_latency_interval(
-            unsigned long latency,
-            double latencyAve,
-            double latencyStd,
-            unsigned long latencyMin,
-            unsigned long latencyMax,
-            double outputCpu);
-    void print_latency_summary(
-            int totalSampleSize,
-            double latencyAve,
-            double latencyStd,
-            unsigned long latencyMin,
-            unsigned long latencyMax,
-            unsigned long *latencyHistory,
-            unsigned long long count,
-            double serializeTime,
-            double deserializeTime,
-            double outputCpu);
+    void print_latency_interval(LatencyInfo latInfo);
+    void print_latency_summary(LatencyInfo latInfo);
 
     void print_throughput_header();
-
-    void print_throughput_interval(
-            unsigned long long lastMsgs,
-            unsigned long long mps,
-            double mpsAve,
-            unsigned long long bps,
-            double bpsAve,
-            unsigned long long missingPackets,
-            float missingPacketsPercent,
-            double outputCpu);
-
-    void print_throughput_summary(
-            int length,
-            unsigned long long intervalPacketsReceived,
-            unsigned long long intervalTime,
-            unsigned long long intervalBytesReceived,
-            unsigned long long intervalMissingPackets,
-            float missingPacketsPercent,
-            double outputCpu);
+    void print_throughput_interval(ThroughputInfo thInfo);
+    void print_throughput_summary(ThroughputInfo thInfo);
 };
 
 class PerftestJSONPrinter : public  PerftestPrinter {
@@ -156,7 +134,7 @@ private:
 
 public:
 
-    void initialize(ParameterManager *_PM)
+    void initialize(ParameterManager *_PM) override
     {
         PerftestPrinter::initialize(_PM);
         _isJsonInitialized = false;
@@ -164,42 +142,11 @@ public:
 
     ~PerftestJSONPrinter() {};
     void print_latency_header();
-    void print_latency_interval(
-            unsigned long latency,
-            double latencyAve,
-            double latencyStd,
-            unsigned long latencyMin,
-            unsigned long latencyMax,
-            double outputCpu);
-    void print_latency_summary(
-            int totalSampleSize,
-            double latencyAve,
-            double latencyStd,
-            unsigned long latencyMin,
-            unsigned long latencyMax,
-            unsigned long *latencyHistory,
-            unsigned long long count,
-            double serializeTime,
-            double deserializeTime,
-            double outputCpu);
+    void print_latency_interval(LatencyInfo latInfo);
+    void print_latency_summary(LatencyInfo latInfo);
     void print_throughput_header();
-    void print_throughput_interval(
-            unsigned long long lastMsgs,
-            unsigned long long mps,
-            double mpsAve,
-            unsigned long long bps,
-            double bpsAve,
-            unsigned long long missingPackets,
-            float missingPacketsPercent,
-            double outputCpu);
-    void print_throughput_summary(
-            int length,
-            unsigned long long intervalPacketsReceived,
-            unsigned long long intervalTime,
-            unsigned long long intervalBytesReceived,
-            unsigned long long intervalMissingPackets,
-            float missingPacketsPercent,
-            double outputCpu);
+    void print_throughput_interval(ThroughputInfo thInfo);
+    void print_throughput_summary(ThroughputInfo thInfo);
     void print_initial_output();
     void print_final_output();
 };
@@ -208,47 +155,12 @@ class PerftestLegacyPrinter: public PerftestPrinter {
 
     ~PerftestLegacyPrinter() {};
     void print_latency_header();
-
-    void print_latency_interval(
-            unsigned long latency,
-            double latencyAve,
-            double latencyStd,
-            unsigned long latencyMin,
-            unsigned long latencyMax,
-            double outputCpu);
-
-    void print_latency_summary(
-            int totalSampleSize,
-            double latencyAve,
-            double latencyStd,
-            unsigned long latencyMin,
-            unsigned long latencyMax,
-            unsigned long *latencyHistory,
-            unsigned long long count,
-            double serializeTime,
-            double deserializeTime,
-            double outputCpu);
+    void print_latency_interval(LatencyInfo latInfo);
+    void print_latency_summary(LatencyInfo latInfo);
 
     void print_throughput_header();
-
-    void print_throughput_interval(
-            unsigned long long lastMsgs,
-            unsigned long long mps,
-            double mpsAve,
-            unsigned long long bps,
-            double bpsAve,
-            unsigned long long missingPackets,
-            float missingPacketsPercent,
-            double outputCpu);
-
-    void print_throughput_summary(
-            int length,
-            unsigned long long intervalPacketsReceived,
-            unsigned long long intervalTime,
-            unsigned long long intervalBytesReceived,
-            unsigned long long intervalMissingPackets,
-            float missingPacketsPercent,
-            double outputCpu);
+    void print_throughput_interval(ThroughputInfo thInfo);
+    void print_throughput_summary(ThroughputInfo thInfo);
 
     void print_initial_output() {};
 

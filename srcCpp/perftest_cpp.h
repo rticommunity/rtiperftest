@@ -53,6 +53,8 @@ class perftest_cpp
     // Private members
     ParameterManager _PM;
     PerftestPrinter *_printer;
+    ThroughputInfo _thInfo;
+    LatencyInfo _latInfo;
     unsigned long long _SpinLoopCount;
     unsigned long _SleepNanosec;
     IMessaging *_MessagingImpl;

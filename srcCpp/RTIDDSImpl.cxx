@@ -3867,3 +3867,233 @@ template class RTIDDSImpl<TestDataLarge_t>;
 #if defined(RTI_WIN32) || defined(RTI_INTIME)
   #pragma warning(pop)
 #endif
+
+void PerftestDDSPrinter::initialize(ParameterManager *_PM)
+{
+    PerftestPrinter::initialize(_PM);
+    DDS_ReturnCode_t retcode;
+
+    DDS_DomainParticipantQos dpQos;
+    DDS_PublisherQos publisherQos;
+    DDS_DataWriterQos dwQos;
+
+    DDS_DomainParticipantFactoryQos factory_qos;
+
+    // Setup the QOS profile file to be loaded
+    DDSTheParticipantFactory->get_qos(factory_qos);
+    if (!_PM->get<bool>("noXmlQos")) {
+        factory_qos.profile.url_profile.ensure_length(1, 1);
+        factory_qos.profile.url_profile[0] =
+                DDS_String_dup(_PM->get<std::string>("qosFile").c_str());
+    } else {
+        factory_qos.profile.string_profile.from_array(
+                PERFTEST_QOS_STRING,
+                PERFTEST_QOS_STRING_SIZE);
+    }
+    DDSTheParticipantFactory->set_qos(factory_qos);
+
+    if (DDSTheParticipantFactory->reload_profiles() != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "Problem opening QOS profiles file %s.\n",
+                _PM->get<std::string>("qosFile").c_str());
+    }
+
+    if (DDSTheParticipantFactory->get_participant_qos_from_profile(
+            dpQos,
+            _PM->get<std::string>("qosLibrary").c_str(),
+            "AnnouncementQos")
+            != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "Problem setting QoS Library \"%s::AnnouncementQos\" "
+                "for participant_qos.\n",
+                _PM->get<std::string>("qosLibrary").c_str());
+    }
+
+    if (DDSTheParticipantFactory->get_publisher_qos_from_profile(
+            publisherQos,
+            _PM->get<std::string>("qosLibrary").c_str(),
+            "LoggingQos")
+            != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "Problem setting QoS Library for publisherQos.\n");
+    }
+
+    if (DDSTheParticipantFactory->get_datawriter_qos_from_profile(
+            dwQos,
+            _PM->get<std::string>("qosLibrary").c_str(),
+            "LoggingQos")
+            != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "Problem setting QoS Library for dwQos.\n");
+    }
+
+    participant = DDSTheParticipantFactory->create_participant(
+            (DDS_DomainId_t) _PM->get<int>("domain"),
+            dpQos,
+            NULL,
+            DDS_STATUS_MASK_NONE);
+    if (participant == NULL) {
+        fprintf(stderr, "PerftestDDSPrinter Problem creating participant.\n");
+        finalize();
+    }
+
+    publisher = participant->create_publisher(
+            publisherQos,
+            NULL,
+            DDS_STATUS_MASK_NONE);
+    if (publisher == NULL) {
+        fprintf(stderr, "PerftestDDSPrinter create_publisher error\n");
+        finalize();
+    }
+
+    retcode = perftestInfo::TypeSupport::register_type(
+            participant,
+            perftestInfo::TypeSupport::get_type_name());
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "PerftestDDSPrinter register_type error %d\n", retcode);
+        finalize();
+    }
+
+    topic = participant->create_topic(
+            topicName.c_str(),
+            perftestInfo::TypeSupport::get_type_name(),
+            DDS_TOPIC_QOS_DEFAULT,
+            NULL,
+            DDS_STATUS_MASK_NONE);
+    if (topic == NULL) {
+        fprintf(stderr, "PerftestDDSPrinter create_topic error\n");
+        finalize();
+    }
+
+    DDSDataWriter *writer = publisher->create_datawriter(
+            topic, dwQos, NULL,
+            DDS_STATUS_MASK_NONE);
+    if (writer == NULL) {
+        fprintf(stderr, "PerftestDDSPrinter create_datawriter error\n");
+        finalize();
+    }
+
+    ptInfoWriter = perftestInfo::DataWriter::narrow(writer);
+    if (ptInfoWriter == NULL) {
+        fprintf(stderr, "DataWriter narrow error\n");
+        finalize();
+    }
+
+    ptInfo = perftestInfo::TypeSupport::create_data();
+    if (ptInfo == NULL) {
+        fprintf(stderr, "testTypeSupport::create_data error\n");
+        finalize();
+    }
+
+    ptInfo->pLatencyInfo = perftestLatencyInfo::TypeSupport::create_data();
+    if (ptInfo->pLatencyInfo == NULL) {
+        fprintf(stderr, "testTypeSupport::create_data error\n");
+        finalize();
+    }
+    ptInfo->pThroughputInfo = perftestThroughputInfo::TypeSupport::create_data();
+    if (ptInfo->pThroughputInfo == NULL) {
+        fprintf(stderr, "testTypeSupport::create_data error\n");
+        finalize();
+    }
+
+}
+
+void PerftestDDSPrinter::finalize()
+{
+    DDS_ReturnCode_t retcode;
+
+    retcode = perftestThroughputInfo::TypeSupport::delete_data(ptInfo->pThroughputInfo);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "testTypeSupport::delete_data error %d\n", retcode);
+    }
+    retcode = perftestLatencyInfo::TypeSupport::delete_data(ptInfo->pLatencyInfo);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "testTypeSupport::delete_data error %d\n", retcode);
+    }
+    retcode = perftestInfo::TypeSupport::delete_data(ptInfo);
+
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "testTypeSupport::delete_data error %d\n", retcode);
+    }
+
+}
+
+void PerftestDDSPrinter::print_latency_interval(LatencyInfo latInfo)
+{
+    DDS_ReturnCode_t retcode;       // cuando se inicializa o se asigna?
+    this->dataWrapperLatency(latInfo);
+    retcode = ptInfoWriter->write(*ptInfo, DDS_HANDLE_NIL);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "write error %d\n", retcode);
+    }
+}
+
+void PerftestDDSPrinter::print_latency_summary(LatencyInfo latInfo)
+{
+    DDS_ReturnCode_t retcode;
+    this->dataWrapperLatency(latInfo);
+    retcode = ptInfoWriter->write(*ptInfo, DDS_HANDLE_NIL);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "write error %d\n", retcode);
+    }
+}
+
+void PerftestDDSPrinter::print_throughput_interval(ThroughputInfo thInfo)
+{
+    DDS_ReturnCode_t retcode;
+    dataWrapperThroughput(thInfo);
+    retcode = ptInfoWriter->write(*ptInfo, DDS_HANDLE_NIL);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "write error %d\n", retcode);
+    }
+}
+
+void PerftestDDSPrinter::print_throughput_summary(ThroughputInfo thInfo)
+{
+    DDS_ReturnCode_t retcode;
+    dataWrapperThroughput(thInfo);
+    retcode = ptInfoWriter->write(*ptInfo, DDS_HANDLE_NIL);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "write error %d\n", retcode);
+    }
+
+}
+
+void PerftestDDSPrinter::dataWrapperLatency(LatencyInfo latInfo)
+{
+    ptInfo->dataLength = latInfo.dataLength;
+    ptInfo->outputCpu = &latInfo.outputCpu;
+    ptInfo->appId = latInfo.appId;
+    ptInfo->pLatencyInfo->latency = &latInfo.latency;
+    ptInfo->pLatencyInfo->ave = &latInfo.ave;
+    ptInfo->pLatencyInfo->std = &latInfo.std;
+    ptInfo->pLatencyInfo->min = &latInfo.min;
+    ptInfo->pLatencyInfo->max = &latInfo.max;
+    // summary part
+    if (!latInfo.interval) {
+        ptInfo->pLatencyInfo->h50 = &latInfo.h50;
+        ptInfo->pLatencyInfo->h90 = &latInfo.h90;
+        ptInfo->pLatencyInfo->h99 = &latInfo.h99;
+        ptInfo->pLatencyInfo->h9999 = &latInfo.h9999;
+        ptInfo->pLatencyInfo->h999999 = &latInfo.h999999;
+        ptInfo->pLatencyInfo->serialize = &latInfo.serialize;
+        ptInfo->pLatencyInfo->deserialize = &latInfo.deserialize;
+        ptInfo->pLatencyInfo->total = &latInfo.total;
+    }
+}
+
+void PerftestDDSPrinter::dataWrapperThroughput(ThroughputInfo thInfo)
+{
+    ptInfo->dataLength = thInfo.dataLength;
+    ptInfo->outputCpu = &thInfo.outputCpu;
+    ptInfo->appId = thInfo.appId;
+    ptInfo->pThroughputInfo->packets = &thInfo.packets;
+    ptInfo->pThroughputInfo->packetsAve = &thInfo.pAve;
+    ptInfo->pThroughputInfo->mbps = &thInfo.mbps;
+    ptInfo->pThroughputInfo->mbpsAve = &thInfo.mbpsAve;
+    ptInfo->pThroughputInfo->lost = &thInfo.lost;
+    ptInfo->pThroughputInfo->lostPercent = &thInfo.lostPercent;
+    if (thInfo.interval) {
+        ptInfo->pThroughputInfo->packetsS = &thInfo.packetsS;
+    }
+}

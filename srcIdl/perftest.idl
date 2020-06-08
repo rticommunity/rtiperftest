@@ -186,9 +186,35 @@ struct TestDataKeyedLarge_FlatData_t {
 
 // Generate this type in order to propagate information about rti perftest when
 // using output = dds
-struct perftestLogMessage {
-    @key long datalen;
-    @key long kind;
+struct perftestThroughputInfo {
+    @optional unsigned long long packets;
+    @optional unsigned long long packetsS;
+    @optional double packetsAve;
+    @optional double mbps;
+    @optional double mbpsAve;
+    @optional unsigned long long lost;
+    @optional float lostPercent;
+};
+struct perftestLatencyInfo {
+    @optional unsigned long long latency;
+    @optional double ave;
+    @optional double std;
+    @optional unsigned long long min;
+    @optional unsigned long long max;
+    @optional unsigned long long h50;
+    @optional unsigned long long h90;
+    @optional unsigned long long h99;
+    @optional unsigned long long h9999;
+    @optional unsigned long long h999999;
+    @optional double serialize;
+    @optional double deserialize;
+    @optional double total;
+};
+
+struct perftestInfo {
+    @key unsigned long dataLength;
     @key long appId;
-    double value;
+    @optional perftestLatencyInfo pLatencyInfo;
+    @optional perftestThroughputInfo pThroughputInfo;
+    @optional double outputCpu;
 };
