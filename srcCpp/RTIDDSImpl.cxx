@@ -3845,8 +3845,12 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_deserialize_time_cost_override(
 void PerftestDDSPrinter::initialize(ParameterManager *_PM)
 {
     PerftestPrinter::initialize(_PM);
+    this->_PM = _PM;
     topicName = std::string("PerftestInfo");
+}
 
+void PerftestDDSPrinter::initialize_dds_entities()
+{
     DDS_ReturnCode_t retcode;
 
     DDS_DomainParticipantFactoryQos factory_qos;
@@ -3924,8 +3928,9 @@ void PerftestDDSPrinter::initialize(ParameterManager *_PM)
     }
   #endif
 
+    //TODO: Decide if we want to use the same domain or + 1 or what.
     participant = DDSTheParticipantFactory->create_participant(
-            (DDS_DomainId_t) _PM->get<int>("domain"),
+            (DDS_DomainId_t) (_PM->get<int>("domain") + 1),
             dpQos,
             NULL,
             DDS_STATUS_MASK_NONE);
@@ -4012,6 +4017,9 @@ void PerftestDDSPrinter::initialize(ParameterManager *_PM)
 
     ptInfo->appId = _PM->get<bool>("pub") ? _PM->get<int>("pidMultiPubTest")
                                           : _PM->get<int>("sidMultiSubTest");
+
+    fprintf(stderr,
+            "[Info] Publishing latency/throughput information via DDS\n");
 }
 
 void PerftestDDSPrinter::finalize()
