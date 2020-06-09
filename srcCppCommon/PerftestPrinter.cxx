@@ -4,8 +4,6 @@
  */
 
 #include "PerftestPrinter.h"
-#include "perftest.h"
-#include "perftestSupport.h"
 
 void ThroughputInfo::set_interval(
         unsigned long long packets,
@@ -93,7 +91,6 @@ void LatencyInfo::set_summary(
 
 void PerftestPrinter::initialize(ParameterManager *_PM)
 {
-    std::string outputFormat = _PM->get<std::string>("outputFormat");
     _printIntervals = !_PM->get<bool>("noPrintIntervals");
     _printHeaders = !_PM->get<bool>("noOutputHeaders");
     _printSerialization = _PM->get<bool>("serializationTime");

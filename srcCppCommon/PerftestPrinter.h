@@ -18,7 +18,6 @@
 
 struct ThroughputInfo {
     unsigned long dataLength;
-    long appId;
     unsigned long long packets;
     unsigned long long packetsS; // packets/s
     double pAve;
@@ -45,7 +44,6 @@ struct ThroughputInfo {
 };
 struct LatencyInfo {
     unsigned long dataLength;
-    long appId;
     unsigned long long latency;
     double ave;
     double std;
@@ -92,7 +90,8 @@ public:
     unsigned int _dataLength;
     bool _printHeaders;
 
-    PerftestPrinter() : _dataLength(100), _printSummaryHeaders(true) {};
+    PerftestPrinter() {_dataLength = 100; _printSummaryHeaders = true;}
+
     virtual ~PerftestPrinter() {};
 
     virtual void initialize(ParameterManager *_PM);
@@ -109,9 +108,9 @@ public:
 
     virtual void print_throughput_summary(ThroughputInfo thInfo) = 0;
 
-    void print_initial_output() {};
+    virtual void print_initial_output() {};
 
-    void print_final_output() {};
+    virtual void print_final_output() {};
 };
 
 class PerftestCSVPrinter : public  PerftestPrinter {
@@ -134,7 +133,7 @@ private:
 
 public:
 
-    void initialize(ParameterManager *_PM) override
+    void initialize(ParameterManager *_PM)
     {
         PerftestPrinter::initialize(_PM);
         _isJsonInitialized = false;

@@ -266,7 +266,7 @@ public:
 class PerftestDDSPrinter: public PerftestPrinter {
 
     int domain;
-    std::string topicName;
+    std::string topicName = std::string("PerftestInfo");
 
     DDSDomainParticipant *participant;
     DDSPublisher *publisher;
@@ -274,7 +274,7 @@ class PerftestDDSPrinter: public PerftestPrinter {
     perftestInfoDataWriter *ptInfoWriter;
     perftestInfo *ptInfo;
 
-    void initialize(ParameterManager *_PM) override;
+    void initialize(ParameterManager *_PM);
     void finalize();
 
     ~PerftestDDSPrinter() {};
@@ -288,7 +288,7 @@ class PerftestDDSPrinter: public PerftestPrinter {
 
     void print_initial_output() {};
 
-    void print_final_output() {};
+    void print_final_output() {finalize();};
 
     void dataWrapperLatency(LatencyInfo latInfo);
 

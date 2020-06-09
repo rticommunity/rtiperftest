@@ -3996,6 +3996,11 @@ void PerftestDDSPrinter::initialize(ParameterManager *_PM)
         finalize();
     }
 
+    if (_PM->get<bool>("pub")) {
+        ptInfo->appId = _PM->get<int>("pidMultiPubTest");
+    } else {
+        ptInfo->appId = _PM->get<int>("sidMultiSubTest");
+    }
 }
 
 void PerftestDDSPrinter::finalize()
@@ -4041,7 +4046,7 @@ void PerftestDDSPrinter::print_latency_summary(LatencyInfo latInfo)
 void PerftestDDSPrinter::print_throughput_interval(ThroughputInfo thInfo)
 {
     DDS_ReturnCode_t retcode;
-    dataWrapperThroughput(thInfo);
+    this->dataWrapperThroughput(thInfo);
     retcode = ptInfoWriter->write(*ptInfo, DDS_HANDLE_NIL);
     if (retcode != DDS_RETCODE_OK) {
         fprintf(stderr, "write error %d\n", retcode);
@@ -4051,7 +4056,7 @@ void PerftestDDSPrinter::print_throughput_interval(ThroughputInfo thInfo)
 void PerftestDDSPrinter::print_throughput_summary(ThroughputInfo thInfo)
 {
     DDS_ReturnCode_t retcode;
-    dataWrapperThroughput(thInfo);
+    this->dataWrapperThroughput(thInfo);
     retcode = ptInfoWriter->write(*ptInfo, DDS_HANDLE_NIL);
     if (retcode != DDS_RETCODE_OK) {
         fprintf(stderr, "write error %d\n", retcode);
@@ -4061,9 +4066,13 @@ void PerftestDDSPrinter::print_throughput_summary(ThroughputInfo thInfo)
 
 void PerftestDDSPrinter::dataWrapperLatency(LatencyInfo latInfo)
 {
-    ptInfo->dataLength = latInfo.dataLength;
-    ptInfo->outputCpu = &latInfo.outputCpu;
-    ptInfo->appId = latInfo.appId;
+    if (this->_dataLength != ptInfo->dataLength) {
+        ptInfo->dataLength = _dataLength;
+    }
+
+    if (this->_showCPU) {
+        ptInfo->outputCpu = &latInfo.outputCpu;
+    }
     ptInfo->pLatencyInfo->latency = &latInfo.latency;
     ptInfo->pLatencyInfo->ave = &latInfo.ave;
     ptInfo->pLatencyInfo->std = &latInfo.std;
@@ -4076,17 +4085,31 @@ void PerftestDDSPrinter::dataWrapperLatency(LatencyInfo latInfo)
         ptInfo->pLatencyInfo->h99 = &latInfo.h99;
         ptInfo->pLatencyInfo->h9999 = &latInfo.h9999;
         ptInfo->pLatencyInfo->h999999 = &latInfo.h999999;
-        ptInfo->pLatencyInfo->serialize = &latInfo.serialize;
-        ptInfo->pLatencyInfo->deserialize = &latInfo.deserialize;
-        ptInfo->pLatencyInfo->total = &latInfo.total;
+        if (_printSerialization) {
+            ptInfo->pLatencyInfo->serialize = &latInfo.serialize;
+            ptInfo->pLatencyInfo->deserialize = &latInfo.deserialize;
+            ptInfo->pLatencyInfo->total = &latInfo.total;
+        }
+    } else {
+        ptInfo->pLatencyInfo->h50 = NULL;
+        ptInfo->pLatencyInfo->h90 = NULL;
+        ptInfo->pLatencyInfo->h99 = NULL;
+        ptInfo->pLatencyInfo->h9999 = NULL;
+        ptInfo->pLatencyInfo->h999999 = NULL;
+        ptInfo->pLatencyInfo->serialize = NULL;
+        ptInfo->pLatencyInfo->deserialize = NULL;
+        ptInfo->pLatencyInfo->total = NULL;
     }
 }
 
 void PerftestDDSPrinter::dataWrapperThroughput(ThroughputInfo thInfo)
 {
-    ptInfo->dataLength = thInfo.dataLength;
-    ptInfo->outputCpu = &thInfo.outputCpu;
-    ptInfo->appId = thInfo.appId;
+    if (this->_dataLength != ptInfo->dataLength) {
+        ptInfo->dataLength = _dataLength;
+    }
+    if (this->_showCPU) {
+        ptInfo->outputCpu = &thInfo.outputCpu;
+    }
     ptInfo->pThroughputInfo->packets = &thInfo.packets;
     ptInfo->pThroughputInfo->packetsAve = &thInfo.pAve;
     ptInfo->pThroughputInfo->mbps = &thInfo.mbps;
@@ -4095,5 +4118,7 @@ void PerftestDDSPrinter::dataWrapperThroughput(ThroughputInfo thInfo)
     ptInfo->pThroughputInfo->lostPercent = &thInfo.lostPercent;
     if (thInfo.interval) {
         ptInfo->pThroughputInfo->packetsS = &thInfo.packetsS;
+    } else {
+        ptInfo->pThroughputInfo->packetsS = NULL;
     }
 }

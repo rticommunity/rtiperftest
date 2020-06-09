@@ -775,7 +775,7 @@ class ThroughputListener : public IMessagingCB
         _printer = printer;
 
         _thInfo.dataLength = _printer->_dataLength;
-        _thInfo.appId = _PM->get<int>("sidMultiSubTest");
+        _thInfo.outputCpu = 0.0;
 
         printIntervals = !_PM->get<bool>("noPrintIntervals");
         cacheStats = _PM->get<bool>("cacheStats");
@@ -864,9 +864,6 @@ class ThroughputListener : public IMessagingCB
             begin_time = PerftestClock::getInstance().getTime();
             _printer->_dataLength = message.size + perftest_cpp::OVERHEAD_BYTES;
             _printer->print_throughput_header();
-
-            _thInfo.dataLength = _printer->_dataLength;
-            _thInfo.appId = _PM->get<bool>("sidMultiSubTest");
         }
 
         last_data_length = message.size;
@@ -1379,8 +1376,8 @@ public:
         _PM = &PM;
         _printer = printer;
 
-        _latInfo.appId = _PM->get<int>("pidMultiPubTest");
         _latInfo.dataLength = _printer->_dataLength;
+        _latInfo.outputCpu = 0.0;
 
         subID = _PM->get<int>("sidMultiSubTest");
         printIntervals = !_PM->get<bool>("noPrintIntervals");
@@ -1545,7 +1542,7 @@ public:
                 serializeTime,
                 deserializeTime);
 
-        _printer->print_latency_interval(_latInfo);
+        _printer->print_latency_summary(_latInfo);
 
         latency_sum = 0;
         latency_sum_square = 0;
@@ -1665,8 +1662,6 @@ public:
                     last_data_length + perftest_cpp::OVERHEAD_BYTES;
             _printer->print_latency_header();
 
-            _latInfo.dataLength = _printer->_dataLength;
-            _latInfo.appId = _PM->get<int>("pidMultiPubTest");
         }
         else {
             if (printIntervals) {
