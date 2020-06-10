@@ -9,7 +9,10 @@ import static java.lang.Math.abs;
 import static java.lang.Math.sqrt;
 import java.util.Arrays;
 
-import com.rti.perftest.harness.PerfTest;
+import com.rti.perftest.harness.PerftestPrinter;
+import com.rti.perftest.harness.PerftestCSVPrinter;
+import com.rti.perftest.harness.PerftestJSONPrinter;
+import com.rti.perftest.harness.PerftestLegacyPrinter;
 import com.rti.perftest.IMessagingCB;
 import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.IMessagingWriter;
@@ -155,7 +158,7 @@ import com.rti.perftest.TestMessage;
         _latencySum += latency;
         _latencySumSquare += ((long)latency * (long)latency);
 
-        double outputCpu = 0;
+        double outputCpu = 0.0;
         if (PerfTest._showCpu) {
             outputCpu = CpuMonitor.get_cpu_instant();
         }
@@ -163,8 +166,8 @@ import com.rti.perftest.TestMessage;
         // if data sized changed
         if (_lastDataLength != message.size) {
             _lastDataLength = message.size;
-            PerfTest._printer.set_data_length(message.size +
-                    PerfTest.OVERHEAD_BYTES);
+            PerfTest._printer._dataLength = message.size +
+                    PerfTest.OVERHEAD_BYTES;
             PerfTest._printer.print_latency_header();
 
         } else if (PerfTest.printIntervals) {
@@ -217,7 +220,7 @@ import com.rti.perftest.TestMessage;
         double latency_std = sqrt(
                 abs(_latencySumSquare / (double)_count -
                         (latency_ave * latency_ave)));
-        double outputCpu = 0;
+        double outputCpu = 0.0;
         if (PerfTest._showCpu) {
             outputCpu = CpuMonitor.get_cpu_average();
         }

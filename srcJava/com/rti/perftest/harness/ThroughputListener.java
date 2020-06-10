@@ -170,8 +170,8 @@ import com.rti.perftest.TestMessage;
             }
 
             _beginTime = PerfTest.getTimeUsec();
-            PerfTest._printer.set_data_length(message.size +
-                    PerfTest.OVERHEAD_BYTES);
+            PerfTest._printer._dataLength = message.size +
+                    PerfTest.OVERHEAD_BYTES;
             PerfTest._printer.print_throughput_header();
         }
 
@@ -232,7 +232,7 @@ import com.rti.perftest.TestMessage;
                         + intervalMissingPackets);
             }
 
-            double outputCpu = 0;
+            double outputCpu = 0.0;
             if (PerfTest._showCpu) {
                 outputCpu = CpuMonitor.get_cpu_average();
             }

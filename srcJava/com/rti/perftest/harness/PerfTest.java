@@ -90,7 +90,7 @@ public final class PerfTest {
 
     static boolean _printHeaders = true;
     static String _outputFormat = "csv";
-    public static PerftestPrinter _printer = new PerftestPrinter();
+    public static PerftestPrinter _printer = null;
 
     // -----------------------------------------------------------------------
     // Private Fields
@@ -226,9 +226,16 @@ public final class PerfTest {
             return;
         }
 
+        if ("json".equals(_outputFormat)) {
+            _printer = new PerftestJSONPrinter();
+        } else if ("legacy".equals(_outputFormat)) {
+            _printer = new PerftestLegacyPrinter();
+        } else {
+            _printer = new PerftestCSVPrinter();
+        }
+
         _printer.initialize(
                     printIntervals,
-                    _outputFormat,
                     _printHeaders,
                     _showCpu);
 
