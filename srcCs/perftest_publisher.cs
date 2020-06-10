@@ -666,9 +666,16 @@ namespace PerformanceTest {
                 return;
             }
 
+            if ("csv".Equals(_outputFormat)) {
+                _printer = new PerftestCSVPrinter();
+            } else if ("json".Equals(_outputFormat)) {
+                _printer = new PerftestJSONPrinter();
+            } else if ("legacy".Equals(_outputFormat)) {
+                _printer = new PerftestLegacyPrinter();
+            }
+
             _printer.initialize(
                     _PrintIntervals,
-                    _outputFormat,
                     _printHeaders,
                     _showCpu);
 
@@ -1625,7 +1632,7 @@ namespace PerformanceTest {
                     }
 
                     begin_time = perftest_cs.GetTimeUsec();
-                    _printer.set_data_length(message.size + OVERHEAD_BYTES);
+                    _printer._dataLength = message.size + OVERHEAD_BYTES;
                     _printer.print_throughput_header();
 
                 }
@@ -2090,8 +2097,8 @@ namespace PerformanceTest {
 
                     if (last_data_length != 0)
                     {
-                        _printer.set_data_length(last_data_length
-                                 + OVERHEAD_BYTES);
+                        _printer._dataLength = last_data_length
+                                 + OVERHEAD_BYTES;
                         _printer.print_latency_header();
                     }
                 }
@@ -2729,7 +2736,7 @@ namespace PerformanceTest {
         private bool _displayWriterStats = false;
         private bool  _useCft = false;
         private System.Timers.Timer timer = null;
-        private static PerftestPrinter _printer = new PerftestPrinter();
+        private static PerftestPrinter _printer = null;
         private static int  _SubID = 0;
         private static int  _PubID = 0;
         private static bool _PrintIntervals = true;
