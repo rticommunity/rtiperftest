@@ -436,7 +436,7 @@ void ParameterManager::initialize()
 
     Parameter<long> *batchSize =
             new Parameter<long>(DEFAULT_THROUGHPUT_BATCH_SIZE);
-    batchSize->set_command_line_argument("-batchsize", "<bytes>");
+    batchSize->set_command_line_argument("-batchSize", "<bytes>");
     batchSize->set_description(
             "Size in bytes of batched message. Default: 8kB.\n"
             "(Disabled for LatencyTest mode or if dataLen > 4kB)");

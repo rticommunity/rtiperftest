@@ -329,6 +329,14 @@ An issue has been resolved in the `build.sh` script that would cause the
 This issue was not causing a bug or a wrong behavior in previous versions of
 *RTI Perftest*.
 
+`-batchSize` parameter not correctly written in the Traditional and Modern C++ API implementations (#324)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed an issue for the Traditional and Modern C++ API implementations where the
+parameter manager would expect `-batchsize` instead of `-batchSize`. This issue
+was only a problem for *VxWorks* systems, where the parsing of the parameters is
+case sensitive.
+
 Release Notes 3.0
 -----------------
 
