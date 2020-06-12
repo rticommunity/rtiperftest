@@ -482,8 +482,8 @@ by using the transport-spececific command-line parameters.
 
   Restrict *RTI Connext DDS* to sending output through this interface.
   The value should be the IP address assigned to any of the available network
-  interfaces on the machine. On UNIX systems, the name of the interface is also
-  valid. This command-line parameter is mapped to the **allow_interfaces_list**
+  interfaces on the machine. On Windows systems use instead the name of the
+  interface. This command-line parameter is mapped to the **allow_interfaces_list**
   property in *RTI Connext DDS*.
 
   By default, RTI Connext DDS will attempt to contact all possible

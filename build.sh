@@ -875,7 +875,7 @@ function build_micro_cpp()
 	echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
     eval $cmake_generate_command
     if [ "$?" != 0 ]; then
-        echo -e "${ERROR_TAG} Failure generating unix makefiles with cmake for ${classic_cpp_lang_string}."
+        echo -e "${ERROR_TAG} Failure generating makefiles with cmake for ${classic_cpp_lang_string}."
         cd ..
         exit -1
     fi

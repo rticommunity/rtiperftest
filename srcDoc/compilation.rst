@@ -3,15 +3,15 @@
 Compilation
 ===========
 
-Unix systems
-------------
+Linux, MacOS, QNX, VxWorks, Lynx, Android
+-----------------------------------------
 
-For Unix systems, *RTI Perftest* makes use of a script in the top level
+For these systems, *RTI Perftest* makes use of a script in the top level
 directory named ``build.sh``.
 
 The purpose of ``build.sh`` is to, first, invoke *RTI DDS
 Generator* (*rtiddsgen*) in order to generate the type-code files and
-makefiles needed to compile a target architecture; then, second, execute 
+makefiles needed to compile a target architecture; then, second, execute
 the makefile with the right arguments to generate the executables.
 
 This script supports the code generation and compilation for
