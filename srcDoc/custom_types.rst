@@ -4,31 +4,37 @@
 Custom Types
 ============
 
-*RTI Perftest* allows the user to add their own `idl` types, instead of using
-the one provided by default. The purpose of this feature is to get a closer
-approximation to the performance behavior of the user's final system. The main
-reason why using one type or another will result in different outputs for latency
-and throughput is the serialization and deserialization times.
+*RTI Perftest* allows the user to test the performance of their own datatypes
+defined via 'idl', instead of the one provided by default. The purpose of this
+feature is to get a closer approximation to the performance behavior of the
+user's final system. The main reason why using one type or another will result
+in different results for latency and throughput is that serialization and
+deserialization performance depends on the complexity of the datatype.
 
-This feature is designed to work for regular data, *DynamicData*
-and *FlatData* types.
+This feature is designed to work for regular data, DynamicData and FlatData type
+definitions (required to test Connext DDS FlatData and/or Shared Memory ZeroCopy
+features). This feature is only implemented for *Traditional C++*.
 
-**Note 1:** For *DynamicData*, the way this is implemented is by representing the data
-as a regular *idl* generated type, and then, internally use the *DynamicData*
-type support representation equivalent for that type as well as build the samples
-with the *DynamicData* API. Hence, providing the *idl* structure is required to the user.
+**Note 1:** *DynamicData* testing uses the Connext DDS *DynamicData* API to
+serialize/deserialize/copy and otherwise manipulate a data structure instead
+of compiled type support-generated functions from the user's type definition
+file.  However, for Perftest to do this with a user's datatype, the user must
+still provide their datatype definition in an *idl* file with which *DynamicData*
+will use a compiled/generated function to access the typecode for the datatype.
 
-**Note 2:** The use of *Flat Data* requires the generation of a regular type as
-well due to the current implementation. See especific notes in a dedicated section
-below.
+**Note 2:** To test *Flat Data* serialization/deserialization of user data types
+requires the user to define both a regular datatype and a *FlatData* variant.
+See specific notes in the section **Custom Types + `FlatData`** below.
 
-To simplify testing using this feature. Some working examples can be found and
-used under `resource/exaples_customType`.
+The simplest way to begin testing your own types is to begin with the working
+example found in 'resource/examples_customType'. You can copy the examples and
+modify the example `ìdl` with your own datatype definition for the various
+testing scenarios, regular, *DynamicData*, *FlatData* (needed for *ZeroCopy*).
 
 How does it work
 ~~~~~~~~~~~~~~~~
 
-*RTI Perftest* default type resembles the following (with some variations depending on
+*RTI Perftest* default datatype resembles the following (with some variations depending on
 the use of *Keyed data*, *Flat Data*, *Unbounded Types* or *Zero Copy*):
 
 .. code-block:: c
@@ -43,7 +49,7 @@ the use of *Keyed data*, *Flat Data*, *Unbounded Types* or *Zero Copy*):
         sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
     };
 
-However, in order to use a given type, the struct has been modified as follows:
+However, in order to use an user-specified datatype, the struct has been modified as follows:
 
 .. code-block:: c
 
@@ -64,7 +70,7 @@ However, in order to use a given type, the struct has been modified as follows:
     };
 
 Notice that a `RTI_CUSTOM_TYPE` member has been added to the struct (conditionally).
-This placeholder is replaced at generation time with the type specified by the
+This macro is replaced at generation time with the type specified by the
 user as the custom type.
 
 Therefore if the customer provides an `.idl` file with the following structure:
@@ -76,34 +82,46 @@ Therefore if the customer provides an `.idl` file with the following structure:
         long test_long; //@key
     };
 
-The type Name needed for `RTI_CUSTOM_TYPE` will be `Test` (independently
-on the name of the file where the struct is, or if it is preceeded or followed by
-other structures).
+Users must supply the name 'Test' to the perftest build process as the name of
+their customType so that 'RTI_CUSTOM_TYPE' will be replaced by 'Test'.
 
 Steps to use Custom Types
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The steps needed to use a custom type in *RTI Perftest* are:
 
-Copy the IDL files into `~/rtiperftest/srcIdl/customTypes/`
------------------------------------------------------------
+Copy the `idl` file(s) into ``~/rtiperftest/srcIdl/customTypes/``
+-----------------------------------------------------------------
+
+Copy the `idl` file(s) used to define the user's datatype to be tested into
+``~/rtiperftest/srcIdl/customTypes/``.
+
+Even though a datatype may require multiple `idl` files to fully define the type
+and all of its contained members, perftest can only be compiled to test a single
+user datatype at a time. You may build different images of perftest to test
+different user datatypes by supplying a different customType name at build
+invocation.
 
 There are some restrictions for this step:
 
 - You can include multiple `.idl` files, but all of them should be at the same
-  level (no folders are allowed inside the `customTypes` folder.
+  level (no folders are allowed inside the `customTypes` folder).
 - The `idl` files cannot be named `custom.idl`. A file with this name will be generated
   automatically by the `build` script, so this file would be overwritten.
-- The main type you will link should be declared as ``struct <NameOfTheType> {``.
-  The `struct` and `{` words should be spaced as shows. This way the build scripts
-  will be able to find the type accross a list of `.idl`.
+- The customType that you want to test must be declared in the `.idl` file as
+  ``struct <NameOfTheType> {``. In the declaration, there must be only a single
+  space character between ``struct`` and the name of the datatype as well as
+  between the name of the datatype and the ``{`` character. The build scripts
+  will complain that they can't find your datatype definition in the `.idl`
+  files if your datatype definition does not follow the required format.
 
 Implement the API custom type functions of `customType.cxx`
 -----------------------------------------------------------
 
-You should find a file in `${PERFTEST_HOME}/srcCpp` named `customType.cxx`. This
-file contains several functions that must be implemented in order to correctly
-initialize, finalize and populate the sample.
+You should find a file in ``${PERFTEST_HOME}/srcCpp/customType.cxx``. This file
+contains several functions that may need to be implemented in order to correctly
+initialize, finalize and populate the sample. Please see full discussion in the
+section Full example using Custom Types.
 
 **Note:** *RTI Perftest* will not initialize by default sequences, optional members
 or non-primitive structures. This means that those fields will need to be
