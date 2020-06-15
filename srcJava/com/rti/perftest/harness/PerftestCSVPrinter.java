@@ -74,7 +74,9 @@ public class PerftestCSVPrinter extends PerftestPrinter {
             if (!_printIntervals && _printSummaryHeaders) {
                 _printSummaryHeaders = _printIntervals;
             }
-            System.out.printf("\nOne-way Latency Summary:\n");
+            if (_printIntervals) {
+                System.out.printf("\nOne-way Latency Summary:\n");
+            }
             System.out.printf("Length (Bytes)" +
                               ", Ave (" + PERFT_TIME_UNIT +
                               "), Std (" + PERFT_TIME_UNIT +
@@ -152,7 +154,9 @@ public class PerftestCSVPrinter extends PerftestPrinter {
             if (!_printIntervals && _printSummaryHeaders) {
                 _printSummaryHeaders = _printIntervals;
             }
-            System.out.printf("\nThroughput Summary:\n");
+            if (_printIntervals) {
+                System.out.printf("\nThroughput Summary:\n");
+            }
             System.out.printf("Length (Bytes), Total Samples," +
                               " Ave Samples/s,    Ave Mbps, " +
                               "Lost Samples, Lost Samples (%%)");

@@ -137,6 +137,7 @@ public:
     {
         PerftestPrinter::initialize(_PM);
         _isJsonInitialized = false;
+        _controlJsonIntervals = false;
     };
 
     ~PerftestJSONPrinter() {};

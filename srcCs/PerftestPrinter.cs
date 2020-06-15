@@ -144,7 +144,9 @@ namespace PerformanceTest {
                 if (!_printIntervals && _printSummaryHeaders) {
                     _printSummaryHeaders = _printIntervals;
                 }
-                Console.Write("\nOne-way Latency Summary:\n");
+                if (_printIntervals) {
+                    Console.Write("\nOne-way Latency Summary:\n");
+                }
                 Console.Write("Length (Bytes)" +
                               ", Ave ({0}" +
                               "), Std ({0}" +
@@ -220,7 +222,9 @@ namespace PerformanceTest {
                 if (!_printIntervals && _printSummaryHeaders) {
                     _printSummaryHeaders = _printIntervals;
                 }
-                Console.Write("\nThroughput Summary:\n");
+                if (_printIntervals) {
+                    Console.Write("\nThroughput Summary:\n");
+                }
                 Console.Write("Length (Bytes), Total Samples," +
                               " Ave Samples/s,    Ave Mbps, " +
                               "Lost Samples, Lost Samples (%)");
