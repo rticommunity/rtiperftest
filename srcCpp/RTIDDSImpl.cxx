@@ -4015,8 +4015,11 @@ void PerftestDDSPrinter::initialize_dds_entities()
         finalize();
     }
 
-    ptInfo->appId = _PM->get<bool>("pub") ? _PM->get<int>("pidMultiPubTest")
-                                          : _PM->get<int>("sidMultiSubTest");
+    if (_PM->get<bool>("pub")) {
+        ptInfo->pLatencyInfo->pubId = _PM->get<int>("pidMultiPubTest");
+    } else {
+        ptInfo->pThroughputInfo->subId = _PM->get<int>("sidMultiSubTest");
+    }
 
     fprintf(stderr,
             "[Info] Publishing latency/throughput information via DDS\n");

@@ -11,6 +11,7 @@
 #include "perftest.hpp"
 #include "MessagingIF.h"
 #include <sstream>
+#include "PerftestPrinter.h"
 #ifdef RTI_SECURE_PERFTEST
 #include "security/security_default.h"
 #endif
@@ -171,5 +172,49 @@ class RTIDDSImpl : public IMessaging
               const std::string &topic_name, IMessagingCB *callback);
   };
 #endif // RTI_FLATDATA_AVAILABLE
+
+class PerftestDDSPrinter: public PerftestPrinter {
+
+    int domain;
+    std::string topicName = std::string("PerftestInfo");
+
+    ParameterManager *_PM;
+    dds::domain::DomainParticipant participant;
+    dds::pub::DataWriter<perftestInfo> ptInfoWriter;
+    perftestInfo ptInfo;
+
+    ~PerftestDDSPrinter() {};
+
+    void initialize(ParameterManager *_PM);
+    void initialize_dds_entities();
+    void finalize();
+
+    void print_initial_output()
+    {
+        initialize_dds_entities();
+    };
+    void print_final_output()
+    {
+        finalize();
+    };
+
+    void print_latency_header() {};
+    void print_latency_interval(LatencyInfo latInfo);
+    void print_latency_summary(LatencyInfo latInfo)
+    {
+        print_latency_interval(latInfo);
+    };
+
+    void print_throughput_header() {};
+    void print_throughput_interval(ThroughputInfo thInfo);
+    void print_throughput_summary(ThroughputInfo thInfo)
+    {
+        print_throughput_interval(thInfo);
+    };
+
+    void dataWrapperLatency(LatencyInfo latInfo);
+    void dataWrapperThroughput(ThroughputInfo thInfo);
+    void deleteDataSample();
+};
 
 #endif // __RTIDDSIMPL_H__
