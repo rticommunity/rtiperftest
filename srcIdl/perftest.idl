@@ -214,7 +214,7 @@ struct perftestLatencyInfo {
 struct perftestInfo {
     @key unsigned long dataLength;
     @key long appId;
-    @optional perftestLatencyInfo pLatencyInfo;
-    @optional perftestThroughputInfo pThroughputInfo;
+    @optional perftestLatencyInfo latencyInfo;
+    @optional perftestThroughputInfo throughputInfo;
     @optional double outputCpu;
 };
