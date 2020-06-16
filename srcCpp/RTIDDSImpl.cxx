@@ -3950,9 +3950,9 @@ void PerftestDDSPrinter::initialize_dds_entities()
         finalize();
     }
 
-    retcode = perftestInfo::TypeSupport::register_type(
+    retcode = PerftestInfo::TypeSupport::register_type(
             participant,
-            perftestInfo::TypeSupport::get_type_name());
+            PerftestInfo::TypeSupport::get_type_name());
     if (retcode != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "PerftestDDSPrinter::initialize: "
@@ -3963,7 +3963,7 @@ void PerftestDDSPrinter::initialize_dds_entities()
 
     topic = participant->create_topic(
             topicName.c_str(),
-            perftestInfo::TypeSupport::get_type_name(),
+            PerftestInfo::TypeSupport::get_type_name(),
             DDS_TOPIC_QOS_DEFAULT,
             NULL,
             DDS_STATUS_MASK_NONE);
@@ -3984,31 +3984,31 @@ void PerftestDDSPrinter::initialize_dds_entities()
         finalize();
     }
 
-    ptInfoWriter = perftestInfo::DataWriter::narrow(writer);
-    if (ptInfoWriter == NULL) {
+    infoDataWriter = PerftestInfo::DataWriter::narrow(writer);
+    if (infoDataWriter == NULL) {
         fprintf(stderr,
                 "PerftestDDSPrinter::initialize: "
                 "DataWriter narrow error\n");
         finalize();
     }
 
-    ptInfo = perftestInfo::TypeSupport::create_data();
-    if (ptInfo == NULL) {
+    perftestInfo = PerftestInfo::TypeSupport::create_data();
+    if (perftestInfo == NULL) {
         fprintf(stderr,
                 "PerftestDDSPrinter::initialize: "
                 "testTypeSupport::create_data error\n");
         finalize();
     }
 
-    ptInfo->pLatencyInfo = perftestLatencyInfo::TypeSupport::create_data();
-    if (ptInfo->pLatencyInfo == NULL) {
+    perftestInfo->latencyInfo = PerftestLatencyInfo::TypeSupport::create_data();
+    if (perftestInfo->latencyInfo == NULL) {
         fprintf(stderr,
                 "PerftestDDSPrinter::initialize: "
                 "testTypeSupport::create_data error\n");
         finalize();
     }
-    ptInfo->pThroughputInfo = perftestThroughputInfo::TypeSupport::create_data();
-    if (ptInfo->pThroughputInfo == NULL) {
+    perftestInfo->throughputInfo = PerftestThroughputInfo::TypeSupport::create_data();
+    if (perftestInfo->throughputInfo == NULL) {
         fprintf(stderr,
                 "PerftestDDSPrinter::initialize: "
                 "testTypeSupport::create_data error\n");
@@ -4016,9 +4016,9 @@ void PerftestDDSPrinter::initialize_dds_entities()
     }
 
     if (_PM->get<bool>("pub")) {
-        ptInfo->pLatencyInfo->pubId = _PM->get<int>("pidMultiPubTest");
+        perftestInfo->latencyInfo->pubId = _PM->get<int>("pidMultiPubTest");
     } else {
-        ptInfo->pThroughputInfo->subId = _PM->get<int>("sidMultiSubTest");
+        perftestInfo->throughputInfo->subId = _PM->get<int>("sidMultiSubTest");
     }
 
     fprintf(stderr,
@@ -4030,9 +4030,9 @@ void PerftestDDSPrinter::finalize()
     DDS_ReturnCode_t retcode;
 
     deleteDataSample();
-    retcode = perftestInfo::TypeSupport::delete_data(ptInfo);
+    retcode = PerftestInfo::TypeSupport::delete_data(perftestInfo);
     if (retcode != DDS_RETCODE_OK) {
-        fprintf(stderr, "perftestInfo::TypeSupport::delete_data error %d\n", retcode);
+        fprintf(stderr, "PerftestInfo::TypeSupport::delete_data error %d\n", retcode);
     }
 
     if (participant != NULL) {
@@ -4047,10 +4047,10 @@ void PerftestDDSPrinter::finalize()
     }
 }
 
-void PerftestDDSPrinter::print_latency_interval(LatencyInfo latInfo)
+void PerftestDDSPrinter::print_latency_interval(LatencyInfo latencyInfo)
 {
-    this->dataWrapperLatency(latInfo);
-    DDS_ReturnCode_t retcode = ptInfoWriter->write(*ptInfo, DDS_HANDLE_NIL);
+    this->dataWrapperLatency(latencyInfo);
+    DDS_ReturnCode_t retcode = infoDataWriter->write(*perftestInfo, DDS_HANDLE_NIL);
     if (retcode != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "PerftestDDSPrinter::print_latency_interval"
@@ -4063,7 +4063,7 @@ void PerftestDDSPrinter::print_throughput_interval(ThroughputInfo thInfo)
 {
     DDS_ReturnCode_t retcode;
     this->dataWrapperThroughput(thInfo);
-    retcode = ptInfoWriter->write(*ptInfo, DDS_HANDLE_NIL);
+    retcode = infoDataWriter->write(*perftestInfo, DDS_HANDLE_NIL);
     if (retcode != DDS_RETCODE_OK) {
         fprintf(stderr,
                 "PerftestDDSPrinter::print_latency_interval"
@@ -4074,85 +4074,85 @@ void PerftestDDSPrinter::print_throughput_interval(ThroughputInfo thInfo)
 
 void PerftestDDSPrinter::deleteDataSample()
 {
-    ptInfo->outputCpu = NULL;
-    ptInfo->pLatencyInfo->latency = NULL;
-    ptInfo->pLatencyInfo->ave = NULL;
-    ptInfo->pLatencyInfo->std = NULL;
-    ptInfo->pLatencyInfo->min = NULL;
-    ptInfo->pLatencyInfo->max = NULL;
-    ptInfo->pLatencyInfo->h50 = NULL;
-    ptInfo->pLatencyInfo->h90 = NULL;
-    ptInfo->pLatencyInfo->h99 = NULL;
-    ptInfo->pLatencyInfo->h9999 = NULL;
-    ptInfo->pLatencyInfo->h999999 = NULL;
-    ptInfo->pLatencyInfo->serialize = NULL;
-    ptInfo->pLatencyInfo->deserialize = NULL;
-    ptInfo->pLatencyInfo->total = NULL;
-    ptInfo->pThroughputInfo->packets = NULL;
-    ptInfo->pThroughputInfo->packetsAve = NULL;
-    ptInfo->pThroughputInfo->mbps = NULL;
-    ptInfo->pThroughputInfo->mbpsAve = NULL;
-    ptInfo->pThroughputInfo->lost = NULL;
-    ptInfo->pThroughputInfo->lostPercent = NULL;
-    ptInfo->pThroughputInfo->packetsS = NULL;
+    perftestInfo->outputCpu = NULL;
+    perftestInfo->latencyInfo->latency = NULL;
+    perftestInfo->latencyInfo->ave = NULL;
+    perftestInfo->latencyInfo->std = NULL;
+    perftestInfo->latencyInfo->min = NULL;
+    perftestInfo->latencyInfo->max = NULL;
+    perftestInfo->latencyInfo->h50 = NULL;
+    perftestInfo->latencyInfo->h90 = NULL;
+    perftestInfo->latencyInfo->h99 = NULL;
+    perftestInfo->latencyInfo->h9999 = NULL;
+    perftestInfo->latencyInfo->h999999 = NULL;
+    perftestInfo->latencyInfo->serialize = NULL;
+    perftestInfo->latencyInfo->deserialize = NULL;
+    perftestInfo->latencyInfo->total = NULL;
+    perftestInfo->throughputInfo->packets = NULL;
+    perftestInfo->throughputInfo->packetsAverage = NULL;
+    perftestInfo->throughputInfo->mbps = NULL;
+    perftestInfo->throughputInfo->mbpsAverage = NULL;
+    perftestInfo->throughputInfo->lostPackets = NULL;
+    perftestInfo->throughputInfo->lostPacketsPercent = NULL;
+    perftestInfo->throughputInfo->packetsPerSecond = NULL;
 }
 
-void PerftestDDSPrinter::dataWrapperLatency(LatencyInfo latInfo)
+void PerftestDDSPrinter::dataWrapperLatency(LatencyInfo latencyInfo)
 {
-    if (this->_dataLength != ptInfo->dataLength) {
-        ptInfo->dataLength = _dataLength;
+    if (this->_dataLength != perftestInfo->dataLength) {
+        perftestInfo->dataLength = _dataLength;
     }
 
     if (this->_showCPU) {
-        ptInfo->outputCpu = &latInfo.outputCpu;
+        perftestInfo->outputCpu = &latencyInfo.outputCpu;
     }
-    ptInfo->pLatencyInfo->latency = &latInfo.latency;
-    ptInfo->pLatencyInfo->ave = &latInfo.ave;
-    ptInfo->pLatencyInfo->std = &latInfo.std;
-    ptInfo->pLatencyInfo->min = &latInfo.min;
-    ptInfo->pLatencyInfo->max = &latInfo.max;
+    perftestInfo->latencyInfo->latency = &latencyInfo.latency;
+    perftestInfo->latencyInfo->ave = &latencyInfo.ave;
+    perftestInfo->latencyInfo->std = &latencyInfo.std;
+    perftestInfo->latencyInfo->min = &latencyInfo.min;
+    perftestInfo->latencyInfo->max = &latencyInfo.max;
     // summary part
-    if (!latInfo.interval) {
-        ptInfo->pLatencyInfo->h50 = &latInfo.h50;
-        ptInfo->pLatencyInfo->h90 = &latInfo.h90;
-        ptInfo->pLatencyInfo->h99 = &latInfo.h99;
-        ptInfo->pLatencyInfo->h9999 = &latInfo.h9999;
-        ptInfo->pLatencyInfo->h999999 = &latInfo.h999999;
+    if (!latencyInfo.interval) {
+        perftestInfo->latencyInfo->h50 = &latencyInfo.h50;
+        perftestInfo->latencyInfo->h90 = &latencyInfo.h90;
+        perftestInfo->latencyInfo->h99 = &latencyInfo.h99;
+        perftestInfo->latencyInfo->h9999 = &latencyInfo.h9999;
+        perftestInfo->latencyInfo->h999999 = &latencyInfo.h999999;
         if (_printSerialization) {
-            ptInfo->pLatencyInfo->serialize = &latInfo.serialize;
-            ptInfo->pLatencyInfo->deserialize = &latInfo.deserialize;
-            ptInfo->pLatencyInfo->total = &latInfo.total;
+            perftestInfo->latencyInfo->serialize = &latencyInfo.serialize;
+            perftestInfo->latencyInfo->deserialize = &latencyInfo.deserialize;
+            perftestInfo->latencyInfo->total = &latencyInfo.total;
         }
     } else {
-        ptInfo->pLatencyInfo->h50 = NULL;
-        ptInfo->pLatencyInfo->h90 = NULL;
-        ptInfo->pLatencyInfo->h99 = NULL;
-        ptInfo->pLatencyInfo->h9999 = NULL;
-        ptInfo->pLatencyInfo->h999999 = NULL;
-        ptInfo->pLatencyInfo->serialize = NULL;
-        ptInfo->pLatencyInfo->deserialize = NULL;
-        ptInfo->pLatencyInfo->total = NULL;
+        perftestInfo->latencyInfo->h50 = NULL;
+        perftestInfo->latencyInfo->h90 = NULL;
+        perftestInfo->latencyInfo->h99 = NULL;
+        perftestInfo->latencyInfo->h9999 = NULL;
+        perftestInfo->latencyInfo->h999999 = NULL;
+        perftestInfo->latencyInfo->serialize = NULL;
+        perftestInfo->latencyInfo->deserialize = NULL;
+        perftestInfo->latencyInfo->total = NULL;
     }
 }
 
 void PerftestDDSPrinter::dataWrapperThroughput(ThroughputInfo thInfo)
 {
-    if (this->_dataLength != ptInfo->dataLength) {
-        ptInfo->dataLength = _dataLength;
+    if (this->_dataLength != perftestInfo->dataLength) {
+        perftestInfo->dataLength = _dataLength;
     }
     if (this->_showCPU) {
-        ptInfo->outputCpu = &thInfo.outputCpu;
+        perftestInfo->outputCpu = &thInfo.outputCpu;
     }
-    ptInfo->pThroughputInfo->packets = &thInfo.packets;
-    ptInfo->pThroughputInfo->packetsAve = &thInfo.pAve;
-    ptInfo->pThroughputInfo->mbps = &thInfo.mbps;
-    ptInfo->pThroughputInfo->mbpsAve = &thInfo.mbpsAve;
-    ptInfo->pThroughputInfo->lost = &thInfo.lost;
-    ptInfo->pThroughputInfo->lostPercent = &thInfo.lostPercent;
+    perftestInfo->throughputInfo->packets = &thInfo.packets;
+    perftestInfo->throughputInfo->packetsAverage = &thInfo.pAve;
+    perftestInfo->throughputInfo->mbps = &thInfo.mbps;
+    perftestInfo->throughputInfo->mbpsAverage = &thInfo.mbpsAve;
+    perftestInfo->throughputInfo->lostPackets = &thInfo.lost;
+    perftestInfo->throughputInfo->lostPacketsPercent = &thInfo.lostPercent;
     if (thInfo.interval) {
-        ptInfo->pThroughputInfo->packetsS = &thInfo.packetsS;
+        perftestInfo->throughputInfo->packetsPerSecond = &thInfo.packetsS;
     } else {
-        ptInfo->pThroughputInfo->packetsS = NULL;
+        perftestInfo->throughputInfo->packetsPerSecond = NULL;
     }
 }
 

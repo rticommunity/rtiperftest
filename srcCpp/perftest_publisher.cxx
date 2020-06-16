@@ -711,7 +711,7 @@ class ThroughputListener : public IMessagingCB
     bool printIntervals;
     bool cacheStats;
     bool showCpu;
-    ThroughputInfo _thInfo;
+    ThroughputInfo _throughputInfo;
 
   public:
 
@@ -774,8 +774,8 @@ class ThroughputListener : public IMessagingCB
         _PM = &PM;
         _printer = printer;
 
-        _thInfo.dataLength = _printer->_dataLength;
-        _thInfo.outputCpu = 0.0;
+        _throughputInfo.dataLength = _printer->_dataLength;
+        _throughputInfo.outputCpu = 0.0;
 
         printIntervals = !_PM->get<bool>("noPrintIntervals");
         cacheStats = _PM->get<bool>("cacheStats");
@@ -915,18 +915,18 @@ class ThroughputListener : public IMessagingCB
 
 
             if (showCpu) {
-                _thInfo.outputCpu = cpu.get_cpu_average();
+                _throughputInfo.outputCpu = cpu.get_cpu_average();
                 cpu = CpuMonitor();
                 cpu.initialize();
             }
 
-            _thInfo.set_summary(
+            _throughputInfo.set_summary(
                     interval_packets_received,
                     interval_time,
                     interval_bytes_received,
                     interval_missing_packets);
 
-            _printer->print_throughput_summary(_thInfo);
+            _printer->print_throughput_summary(_throughputInfo);
 
             if (cacheStats) {
                 printf("Samples Reader Queue Peak: %4d\n", sample_count_peak);
@@ -1191,16 +1191,16 @@ int perftest_cpp::Subscriber()
 
             if (last_msgs > 0) {
                 if (showCpu) {
-                    _thInfo.outputCpu = reader_listener->cpu.get_cpu_instant();
+                    _throughputInfo.outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
-                _thInfo.set_interval(
+                _throughputInfo.set_interval(
                         last_msgs,
                         mps,
                         mps_ave,
                         bps,
                         bps_ave,
                         reader_listener->missing_packets);
-                _printer->print_throughput_interval(_thInfo);
+                _printer->print_throughput_interval(_throughputInfo);
 
                 if (cacheStats) {
                     printf("Samples Reader Queue: %4d (Peak: %4d)\n",
@@ -1318,7 +1318,7 @@ class LatencyListener : public IMessagingCB
     IMessagingWriter *_writer;
     ParameterManager *_PM;
     PerftestPrinter *_printer;
-    LatencyInfo _latInfo;
+    LatencyInfo _latencyInfo;
     int  subID;
     bool printIntervals;
     bool showCpu;
@@ -1376,8 +1376,8 @@ public:
         _PM = &PM;
         _printer = printer;
 
-        _latInfo.dataLength = _printer->_dataLength;
-        _latInfo.outputCpu = 0.0;
+        _latencyInfo.dataLength = last_data_length;
+        _latencyInfo.outputCpu = 0.0;
 
         subID = _PM->get<int>("sidMultiSubTest");
         printIntervals = !_PM->get<bool>("noPrintIntervals");
@@ -1424,7 +1424,7 @@ public:
         latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
         if (showCpu) {
-            _latInfo.outputCpu = cpu.get_cpu_average();
+            _latencyInfo.outputCpu = cpu.get_cpu_average();
             cpu = CpuMonitor();
             cpu.initialize();
         }
@@ -1532,7 +1532,7 @@ public:
         }
       #endif
 
-        _latInfo.set_summary(
+        _latencyInfo.set_summary(
                 latency_ave,
                 latency_std,
                 latency_min,
@@ -1542,7 +1542,7 @@ public:
                 serializeTime,
                 deserializeTime);
 
-        _printer->print_latency_summary(_latInfo);
+        _printer->print_latency_summary(_latencyInfo);
 
         latency_sum = 0;
         latency_sum_square = 0;
@@ -1670,17 +1670,17 @@ public:
                         (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
                 if (showCpu) {
-                    _latInfo.outputCpu = cpu.get_cpu_instant();
+                    _latencyInfo.outputCpu = cpu.get_cpu_instant();
                 }
 
-                _latInfo.set_interval(
+                _latencyInfo.set_interval(
                         latency,
                         latency_ave,
                         latency_std,
                         latency_min,
                         latency_max);
 
-                _printer->print_latency_interval(_latInfo);
+                _printer->print_latency_interval(_latencyInfo);
             }
         }
 

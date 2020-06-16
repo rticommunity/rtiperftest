@@ -272,8 +272,8 @@ class PerftestDDSPrinter: public PerftestPrinter {
     DDSDomainParticipant *participant;
     DDSPublisher *publisher;
     DDSTopic *topic;
-    perftestInfoDataWriter *ptInfoWriter;
-    perftestInfo *ptInfo;
+    PerftestInfoDataWriter *infoDataWriter;
+    PerftestInfo *perftestInfo;
 
     ~PerftestDDSPrinter() {};
 

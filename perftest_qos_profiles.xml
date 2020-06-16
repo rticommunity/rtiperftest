@@ -1099,7 +1099,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
           <kind>BEST_EFFORT_RELIABILITY_QOS</kind>
         </reliability>
 
-                <resource_limits>
+        <resource_limits>
             <max_samples>10</max_samples>
             <initial_samples>1</initial_samples>
             <max_samples_per_instance>1</max_samples_per_instance>
