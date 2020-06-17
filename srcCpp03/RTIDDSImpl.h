@@ -174,7 +174,7 @@ class RTIDDSImpl : public IMessaging
 #endif // RTI_FLATDATA_AVAILABLE
 
 class PerftestDDSPrinter: public PerftestPrinter {
-
+public:
     int domain;
     std::string topicName;
 
@@ -183,9 +183,7 @@ class PerftestDDSPrinter: public PerftestPrinter {
     dds::pub::DataWriter<PerftestInfo> perftestInfoWriter;
     PerftestInfo perftestInfo;
 
-    PerftestDDSPrinter() {
-        topicName = std::string("PerftestInfo");
-    }
+    PerftestDDSPrinter();
 
     ~PerftestDDSPrinter() {};
 
@@ -218,7 +216,6 @@ class PerftestDDSPrinter: public PerftestPrinter {
 
     void dataWrapperLatency(LatencyInfo latInfo);
     void dataWrapperThroughput(ThroughputInfo thInfo);
-    void deleteDataSample();
 };
 
 #endif // __RTIDDSIMPL_H__

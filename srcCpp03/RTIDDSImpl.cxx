@@ -2644,6 +2644,13 @@ template class RTIDDSImpl<TestDataLarge_t>;
   #endif
 #endif // RTI_FLATDATA_AVAILABLE
 
+PerftestDDSPrinter::PerftestDDSPrinter():
+        participant(dds::core::null),
+        perftestInfoWriter(dds::core::null)
+{
+    topicName = std::string("PerftestInfo");
+}
+
 void PerftestDDSPrinter::initialize(ParameterManager *_PM)
 {
     PerftestPrinter::initialize(_PM);
@@ -2709,31 +2716,6 @@ void PerftestDDSPrinter::print_throughput_interval(ThroughputInfo thInfo)
 {
     this->dataWrapperThroughput(thInfo);
     perftestInfoWriter->write(perftestInfo);
-}
-
-void PerftestDDSPrinter::deleteDataSample()
-{
-    perftestInfo.outputCpu(0.0);
-    perftestInfo.latencyInfo()->latency(0);
-    perftestInfo.latencyInfo()->ave(0);
-    perftestInfo.latencyInfo()->std(0);
-    perftestInfo.latencyInfo()->min(0);
-    perftestInfo.latencyInfo()->max(0);
-    perftestInfo.latencyInfo()->h50(0);
-    perftestInfo.latencyInfo()->h90(0);
-    perftestInfo.latencyInfo()->h99(0);
-    perftestInfo.latencyInfo()->h9999(0);
-    perftestInfo.latencyInfo()->h999999(0);
-    perftestInfo.latencyInfo()->serialize(0);
-    perftestInfo.latencyInfo()->deserialize(0);
-    perftestInfo.latencyInfo()->total(0);
-    perftestInfo.throughputInfo()->packets(0);
-    perftestInfo.throughputInfo()->packetsAverage(0);
-    perftestInfo.throughputInfo()->mbps(0);
-    perftestInfo.throughputInfo()->mbpsAverage(0);
-    perftestInfo.throughputInfo()->lostPackets(0);
-    perftestInfo.throughputInfo()->lostPacketsPercent(0);
-    perftestInfo.throughputInfo()->packetsPerSecond(0);
 }
 
 void PerftestDDSPrinter::dataWrapperLatency(LatencyInfo latInfo)

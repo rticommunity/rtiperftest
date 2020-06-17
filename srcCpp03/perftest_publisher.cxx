@@ -733,7 +733,6 @@ public:
     unsigned long long interval_bytes_received;
     unsigned long long interval_missing_packets;
     unsigned long long interval_time, begin_time;
-    float missing_packets_percent;
 
     IMessagingWriter *_writer;
     IMessagingReader *_reader;
@@ -763,7 +762,6 @@ public:
                 interval_missing_packets(0),
                 interval_time(0),
                 begin_time(0),
-                missing_packets_percent(0.0),
                 _writer(writer),
                 _reader(reader),
                 _last_seq_num(numPublishers),
@@ -910,14 +908,6 @@ public:
             interval_bytes_received = bytes_received;
             interval_missing_packets = missing_packets;
             interval_data_length = last_data_length;
-            missing_packets_percent = 0.0;
-
-            // Calculations of missing package percent
-            if (interval_packets_received + interval_missing_packets != 0) {
-                missing_packets_percent = (float) ((interval_missing_packets * 100.0)
-                        / (float) (interval_packets_received
-                        + interval_missing_packets));
-            }
 
             if (showCpu) {
                 _throughputInfo.outputCpu = cpu.get_cpu_average();
@@ -1082,7 +1072,6 @@ int perftest_cpp::RunSubscriber()
     unsigned long long mps = 0, bps = 0;
     double mps_ave = 0.0, bps_ave = 0.0;
     unsigned long long msgsent, bytes, last_msgs, last_bytes;
-    float missing_packets_percent = 0.0;
 
     if (showCpu) {
         reader_listener->cpu.initialize();
@@ -1137,15 +1126,6 @@ int perftest_cpp::RunSubscriber()
             ++ave_count;
             bps_ave = bps_ave + (double) (bps - bps_ave) / (double) ave_count;
             mps_ave = mps_ave + (double) (mps - mps_ave) / (double) ave_count;
-
-            // Calculations of missing package percent
-            if (last_msgs + reader_listener->missing_packets == 0) {
-                missing_packets_percent = 0.0;
-            } else {
-                missing_packets_percent = (float)
-                        ((reader_listener->missing_packets * 100.0)
-                        / (float) (last_msgs + reader_listener->missing_packets));
-            }
 
             if (last_msgs > 0) {
                 if (showCpu) {
