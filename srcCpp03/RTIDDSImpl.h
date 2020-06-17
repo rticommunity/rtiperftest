@@ -176,12 +176,16 @@ class RTIDDSImpl : public IMessaging
 class PerftestDDSPrinter: public PerftestPrinter {
 
     int domain;
-    std::string topicName = std::string("PerftestInfo");
+    std::string topicName;
 
     ParameterManager *_PM;
     dds::domain::DomainParticipant participant;
-    dds::pub::DataWriter<perftestInfo> ptInfoWriter;
-    perftestInfo ptInfo;
+    dds::pub::DataWriter<PerftestInfo> perftestInfoWriter;
+    PerftestInfo perftestInfo;
+
+    PerftestDDSPrinter() {
+        topicName = std::string("PerftestInfo");
+    }
 
     ~PerftestDDSPrinter() {};
 
