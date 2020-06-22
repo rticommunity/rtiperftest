@@ -87,6 +87,32 @@ which return the time in *microseconds*.
 This option can be enabled at compilation time by using the `--ns-resolution`.
 It is only implemented for Linux/MacOS/QNX Systems.
 
+Switching value for Bounded to Unbounded-Sequences
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Previously, the value to switch between Bounded and Unbounded-Sequences was set
+to 63000 Bytes (63000 items in the sequence). This value was defined that way to
+be close to the `message_size_max` value for the `UDPv4` transport and make the
+switch for Synchronous to Asynchronous Publishing coincide with the switch
+between Bounded and Unbounded-Sequences.
+
+These 2 changes in behavior have been decoupled. The new maximum value for a
+Bounded-Sequence is 1MB (1048576 items in the sequence).
+
+Behavior for `SHMEM` and Asynchronous publishing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The value to switch to Asynchronous Publishing is no longer a fixed value, but
+it is calculated given then minimum `message_size_max` accross all the enabled
+transports.
+
+In the case of using `SHMEM`, the value of `message_size_max` is not set, but
+instead is calculated to fit samples of the size specified by the user via the
+`-datalen` command-line parameter.
+
+Find more information about this in the **Large Samples (Use-Cases)** section of
+the documentation.
+
 Add Security Governance files for Sign And Encrypt with original auth for RTPS (#253)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -122,6 +148,12 @@ The use of -threadPriorities command is now supported on QNX platforms.
 You can either specify three numeric values representing the priority of each
 of the threads or, instead, three characters representing the priorities: h,n,l.
 
+Overhead from *RTI Perftest*'s type is now programmatically calculated. (#265)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The overhead size resulting from the serialized sample of the Perftest type is
+now calculated programmatically. This makes accurate the exact number of bytes
+that are sent when CustomTypes or FlatData types are used.
 
 Added warning messages when no packets have been received at the end of the test (#303)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -131,8 +163,8 @@ ones, the probability of not receiving any samples in Publisher or Subscriber si
 are higher. Starting in this release we will notify the user when the application receives the
 message that the test has ended, as well as some suggestions on how to fix this.
 
-New parameter to control showing the serialization/deserialization times  (#304)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+New parameter to control showing the serialization/deserialization times (#304)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When the feature to show the serialization/deserialization times was added, it was set
 to show the data at the end of the test, in the publisher side, as a new line after the
@@ -141,6 +173,17 @@ latency results.
 This was not convenient, since it can conflict when parsing the latency lines. This has
 been resolved adding a new parameter "-showSerializationTime", which enables calculating
 and showing the serialization/deserialization times.
+
+New parameter to control the size of the initial Burst (#310)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A new command-line parameter (`-initialBurstSize`) has been added to the
+*Traditional and Modern C++ API Implementations* in to control the number of
+samples sent in the initial burst of samples *RTI Perftest* uses to initialize
+the buffers in the sending and receiving paths.
+
+In most of the cases this number should not cause any trouble (as long as it is
+big enough), but in certain cases a low number is required due to OS restrictions.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -296,6 +339,14 @@ An error was found when testing *FlatData* in the *Modern C++ API* Implementatio
 where the `write()` call would fail to find the right instance handle. This issue
 would show up in any of the 3 topics and would cause an exception.
 
+`-sendQueueSize` not correctly applied to the subscriber side (#309)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Even though the use of `-sendQueueSize` was modified to be allowed in the
+Subscriber side for the *Pong Datawriter*, the values for the maximum and
+minimum send Queue size where not correctly set in code. This issue has been
+fixed.
+
 Error using Zero-Copy and checking sample consistency with waitsets (#316 and #317)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -357,12 +408,12 @@ RTI Perftest thread priorities can be configured via command-line parameter (#65
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For the Traditional and Modern C++ API Implementations, a new parameter,
-`-threadPriorities`, has been added to *RTI Perftest*. This parameter allows you 
+`-threadPriorities`, has been added to *RTI Perftest*. This parameter allows you
 to set the priorities on the different threads created by *RTI Connext DDS*
 and by the application itself.
 
-This parameter accepts either three numeric values (whichever numeric values you choose) 
-representing the priority of each of the threads or, instead, three characters representing 
+This parameter accepts either three numeric values (whichever numeric values you choose)
+representing the priority of each of the threads or, instead, three characters representing
 the priorities. These characters are h (high), n (normal) and l (low). These parameters
 can be used as follows:
 
@@ -372,10 +423,10 @@ can be used as follows:
 
 Where:
 
-- **X** is for the priority of the Main Thread that manages all the communication. 
+- **X** is for the priority of the Main Thread that manages all the communication.
   X is also used for the Asynchronous Thread when using large data.
 - **Y** is the priority for all the receive threads. This value will be used for
-  the Receive Thread created by *RTI Connext DDS*. If ``-useReadThread`` (use waitsets) 
+  the Receive Thread created by *RTI Connext DDS*. If ``-useReadThread`` (use waitsets)
   is used, Y is for the thread in charge of receiving the data.
 - **Z** is the priority for the Event and DataBase Threads created at the
   *RTI Connext DDS* level.

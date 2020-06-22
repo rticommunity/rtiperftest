@@ -167,6 +167,94 @@ namespace PerformanceTest
 
             Console.Error.Write(usage_string);
         }
+ 
+        public bool data_size_related_calculations()
+        {
+            // If the user wants to use asynchronous we enable it
+            if (_IsAsynchronous)
+            {
+                _isLargeData = true;
+            }
+            else
+            { //If the message size max is lower than the datalen
+                _isLargeData = _DataLen > _maxSynchronousSize;
+            }
+
+            // Manage parameter -batchSize
+            if (_BatchSize > 0)
+            {
+
+                /* Check if using asynchronous */
+                if (_IsAsynchronous)
+                {
+                    if (_isBatchSizeProvided)
+                    {
+                        Console.Error.Write(
+                                "Batching cannot be used with asynchronous writing.\n");
+                        return false;
+                    }
+                    else
+                    {
+                        _BatchSize = 0; // Disable Batching
+                    }
+                }
+
+                /*
+                 * Large Data + batching cannot be set. But batching is enabled by default,
+                 * so in that case, we just disabled batching, else, the customer set it up,
+                 * so we explitly fail
+                 */
+                if (_isLargeData)
+                {
+                    if (_isBatchSizeProvided)
+                    {
+                        Console.Error.WriteLine(
+                                "Batching cannot be used with Large Data.");
+                        return false;
+                    }
+                    else
+                    {
+                        _BatchSize = -2;
+                    }
+                }
+                else if (((ulong)_BatchSize < _DataLen * 2) && !_isScan)
+                {
+                    /*
+                     * We don't want to use batching if the batch size is not large
+                     * enough to contain at least two samples (in this case we avoid the
+                     * checking at the middleware level).
+                     */
+                    if (_isBatchSizeProvided)
+                    {
+                        /*
+                         * Batchsize disabled. A message will be print if _batchSize < 0 in
+                         * perftest_cpp::PrintConfiguration()
+                         */
+                        _BatchSize = -1;
+                    }
+                    else
+                    {
+                        _BatchSize = 0;
+                    }
+                }
+            }
+
+            if (_TurboMode)
+            {
+                if (_IsAsynchronous)
+                {
+                    Console.Error.WriteLine("Turbo Mode cannot be used with asynchronous writing.");
+                    return false;
+                }
+                if (_isLargeData)
+                {
+                    Console.Error.WriteLine("Turbo Mode disabled, using large data.");
+                    _TurboMode = false;
+                }
+            }
+
+            return true;
+        }
 
         /*********************************************************
          * PrintConfiguration
@@ -252,6 +340,32 @@ namespace PerformanceTest
                 sb.Append(PrintSecureArgs());
             }
 
+            // Large Data
+            if (_DataLen > _maxSynchronousSize)
+            {
+                sb.Append("\n[IMPORTANT]: Enabling Asynchronous publishing: -datalen (");
+                sb.Append(_DataLen);
+                sb.Append(") is \n");
+                sb.Append("             larger than the minimum message_size_max across\n");
+                sb.Append("             all enabled transports (");
+                sb.Append(_maxSynchronousSize);
+                sb.Append(")\n");
+            }
+
+            // We want to expose if we are using or not the unbounded type
+            if (_useUnbounded != 0)
+            {
+                sb.Append("\n[IMPORTANT]: Using the Unbounded Sequence Type.");
+                if (_DataLen > (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE)
+                {
+                    sb.Append(" -datalen (");
+                    sb.Append(_DataLen);
+                    sb.Append(") is \n             larger than MAX_BOUNDED_SEQ_SIZE (");
+                    sb.Append(MAX_BOUNDED_SEQ_SIZE.VALUE);
+                }
+                sb.Append(")\n");
+            }
+
             return sb.ToString();
         }
 
@@ -261,7 +375,6 @@ namespace PerformanceTest
         bool ParseConfig(int argc, string[] argv)
         {
             ulong minScanSize = (ulong) MAX_PERFTEST_SAMPLE_SIZE.VALUE;
-            bool isBatchSizeProvided = false;
 
             for (int i = 0; i < argc; ++i)
             {
@@ -373,6 +486,8 @@ namespace PerformanceTest
                     {
                         Console.Error.Write("Bad sendQueueSize\n");
                         return false;
+                    } else {
+                        _isSetSendQueueSize = true;
                     }
                 }
                 else if ("-heartbeatPeriod".StartsWith(argv[i],true,null))
@@ -518,15 +633,13 @@ namespace PerformanceTest
                         Console.Error.Write("Bad #bytes for batch\n");
                         return false;
                     }
-                    if (_BatchSize < 0 || _BatchSize > MAX_SYNCHRONOUS_SIZE.VALUE)
+                    if (_BatchSize < 0)
                     {
                         Console.Error.Write("Batch size '" + _BatchSize +
-                                "' should be between [0," +
-                                MAX_SYNCHRONOUS_SIZE.VALUE +
-                                "]\n");
+                                "' should be greater than 0\n");
                         return false;
                     }
-                    isBatchSizeProvided = true;
+                    _isBatchSizeProvided = true;
                 }
                 else if ("-keepDurationUsec".StartsWith(argv[i], true, null))
                 {
@@ -847,9 +960,7 @@ namespace PerformanceTest
             }
 
             /* Check if we need to enable Large Data. This works also for -scan */
-            if (_DataLen > (ulong) Math.Min(
-                        MAX_SYNCHRONOUS_SIZE.VALUE,
-                        MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+            if (_DataLen > (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE) {
                 _isLargeData = true;
                 if (_useUnbounded == 0) {
                     _useUnbounded = (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE;
@@ -863,65 +974,13 @@ namespace PerformanceTest
 
                 /* We will not use batching for a latency test */
                 if (_LatencyTest) {
-                    if (isBatchSizeProvided) {
+                    if (_isBatchSizeProvided) {
                         Console.Error.WriteLine(
                                 "Batching cannot be used in a Latency test.");
                         return false;
                     } else {
                         _BatchSize = 0; //Disable Batching
                     }
-                }
-
-                /* Check if using asynchronous */
-                if (_IsAsynchronous) {
-                    if (isBatchSizeProvided) {
-                        Console.Error.WriteLine(
-                                "Batching cannot be used with asynchronous writing.\n");
-                        return false;
-                    } else {
-                        _BatchSize = 0; //Disable Batching
-                    }
-                }
-
-                /*
-                 * Large Data + batching cannot be set. But batching is enabled by default,
-                 * so in that case, we just disabled batching, else, the customer set it up,
-                 * so we explitly fail
-                 */
-                if (_isLargeData) {
-                    if (isBatchSizeProvided) {
-                        Console.Error.WriteLine(
-                                "Batching cannot be used with Large Data.");
-                        return false;
-                    } else {
-                        _BatchSize = -2;
-                    }
-                } else if (((ulong) _BatchSize < _DataLen * 2) && !_isScan) {
-                    /*
-                     * We don't want to use batching if the batch size is not large
-                     * enough to contain at least two samples (in this case we avoid the
-                     * checking at the middleware level).
-                     */
-                    if (isBatchSizeProvided) {
-                        /*
-                        * Batchsize disabled. A message will be print if _batchsize < 0 in
-                        * perftest_cpp::PrintConfiguration()
-                        */
-                        _BatchSize = -1;
-                    } else {
-                        _BatchSize = 0;
-                    }
-                }
-            }
-
-            if (_TurboMode) {
-                if (_IsAsynchronous) {
-                    Console.Error.WriteLine("Turbo Mode cannot be used with asynchronous writing.");
-                    return false;
-                }
-                if (_isLargeData) {
-                    Console.Error.WriteLine("Turbo Mode disabled, using large data.");
-                    _TurboMode = false;
                 }
             }
 
@@ -1431,6 +1490,9 @@ namespace PerformanceTest
             _qoSProfileNameMap.Add(LATENCY_TOPIC_NAME.VALUE, "LatencyQos");
             _qoSProfileNameMap.Add(ANNOUNCEMENT_TOPIC_NAME.VALUE, "AnnouncementQos");
             _qoSProfileNameMap.Add(THROUGHPUT_TOPIC_NAME.VALUE, "ThroughputQos");
+
+            perftest_cs.OVERHEAD_BYTES
+                = (ulong) myDataTypeHelper.getSerializedOverheadSize();
         }
 
         /*********************************************************
@@ -1507,6 +1569,18 @@ namespace PerformanceTest
 
             if (!_transport.ConfigureTransport(qos))
             {
+                return false;
+            }
+
+            /*
+            * At this point, and not before is when we know the transport message size.
+            * Now we can decide if we need to use asynchronous or not.
+            */
+            _maxSynchronousSize = _transport.minimumMessageSizeMax - (PerftestTransport.MESSAGE_OVERHEAD_BYTES);
+
+            if (!data_size_related_calculations())
+            {
+                Console.Error.Write("[Error] Failed to configure the data size settings.\n");
                 return false;
             }
 
@@ -1989,6 +2063,13 @@ namespace PerformanceTest
 
                 dw_qos.durability.kind = (DDS.DurabilityQosPolicyKind)_Durability;
                 dw_qos.durability.direct_communication = _DirectCommunication;
+
+                if (_isSetSendQueueSize) {
+                    dw_qos.protocol.rtps_reliable_writer.max_send_window_size =
+                            _SendQueueSize;
+                    dw_qos.protocol.rtps_reliable_writer.min_send_window_size =
+                            _SendQueueSize;
+                }
             }
 
             dw_qos.resource_limits.max_instances = _InstanceCount + 1; // One extra for MAX_CFT_VALUE
@@ -2276,6 +2357,7 @@ namespace PerformanceTest
         static int RTIPERFTEST_MAX_PEERS = 1024;
 
         private int    _SendQueueSize = 50;
+        private bool   _isSetSendQueueSize = false;
         private ulong    _DataLen = 100;
         private ulong     _useUnbounded = 0;
         private int    _DomainID = 1;
@@ -2284,6 +2366,7 @@ namespace PerformanceTest
         private bool   _AutoThrottle = false;
         private bool   _TurboMode = false;
         private int    _BatchSize = (int)DEFAULT_THROUGHPUT_BATCH_SIZE.VALUE; // Default 8 kB
+        private bool   _isBatchSizeProvided = false;
         private int    _InstanceCount = 1;
         private int    _InstanceMaxCountReader = -1;
         private int     _InstanceHashBuckets = -1;
@@ -2293,6 +2376,7 @@ namespace PerformanceTest
         private bool   _UsePositiveAcks = true;
         private bool    _LatencyTest = false;
         private bool   _isLargeData = false;
+        private ulong  _maxSynchronousSize = PerftestTransport.MESSAGE_SIZE_MAX_NOT_SET;
         private bool   _isScan = false;
         private bool   _isPublisher = false;
         private bool _IsAsynchronous = false;

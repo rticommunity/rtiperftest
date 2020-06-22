@@ -15,7 +15,6 @@ import com.rti.perftest.gen.TestDataKeyedLarge_tTypeCode;
 import com.rti.perftest.gen.TestDataLarge_t;
 import com.rti.perftest.gen.TestDataLarge_tTypeCode;
 import com.rti.perftest.harness.PerfTest;
-import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 
 import java.util.StringTokenizer;
@@ -192,11 +191,11 @@ public final class PerfTestLauncher {
                         }
                     }
                     // Check if large data or small data
-                    if (_scan_max_size > Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                    if (_scan_max_size > MAX_BOUNDED_SEQ_SIZE.VALUE) {
                         if (_useUnbounded == 0) {
                             _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
                         }
-                    } else if (_scan_max_size <= Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                    } else if (_scan_max_size <= MAX_BOUNDED_SEQ_SIZE.VALUE) {
                         if (_useUnbounded != 0) {
                             System.err.printf("Unbounded will be ignored since -scan is present.");
                             _useUnbounded = 0;

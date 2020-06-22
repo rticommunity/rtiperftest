@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Pro Debug clang++",
+            "name": "C++ (Pro) x64Darwin17clang9.0",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/x64Darwin17clang9.0/debug/perftest_cpp",
@@ -16,6 +16,18 @@
                 "-useReadThread",
                 "-dataLen", "10000",
                 "-domain", "107"],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+        },
+        {
+            "name": "C++03 x64Darwin17clang9.0 SHMEM -- Pub",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/x64Darwin17clang9.0/debug/perftest_cpp03",
+            "args": ["-pub", "-datalen", "66000", "-transport", "SHMEM"],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
             "environment": [],

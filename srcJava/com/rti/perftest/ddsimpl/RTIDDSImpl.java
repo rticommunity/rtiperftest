@@ -40,7 +40,6 @@ import com.rti.perftest.IMessagingCB;
 import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.IMessagingWriter;
 import com.rti.perftest.TestMessage;
-import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 import com.rti.perftest.gen.MAX_CFT_VALUE;
 import com.rti.perftest.gen.THROUGHPUT_TOPIC_NAME;
@@ -87,6 +86,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private static final int RTIPERFTEST_MAX_PEERS = 1024;
 
     private int     _sendQueueSize = 50;
+    private boolean     _isSetsendQueueSize = false;
     private Duration_t _heartbeatPeriod = new Duration_t(0,0);
     private Duration_t _fastHeartbeatPeriod = new Duration_t (0,0);
     private long     _dataLen = 100;
@@ -102,11 +102,13 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private int     _durability = 0;
     private boolean _directCommunication = true;
     private int     _batchSize = DEFAULT_THROUGHPUT_BATCH_SIZE.VALUE;
+    private boolean _isBatchSizeProvided = false;
     private int     _keepDurationUsec = -1;
     private boolean _usePositiveAcks = true;
     private boolean _isDebug = false;
     private boolean _latencyTest = false;
     private boolean _isLargeData = false;
+    private long _maxSynchronousSize = PerftestTransport.MESSAGE_SIZE_MAX_NOT_SET;
     private boolean _isScan = false;
     private boolean _isPublisher = false;
     private boolean _IsAsynchronous = false;
@@ -161,6 +163,13 @@ public final class RTIDDSImpl<T> implements IMessaging {
     public RTIDDSImpl(TypeHelper<T> typeHelper) {
         _myDataType = typeHelper;
         _transport = new PerftestTransport();
+
+        try {
+            PerfTest.OVERHEAD_BYTES = (int)typeHelper.getSerializedOverheadSize();
+        } catch (Exception e) {
+            System.err.print("Failed to get the Perftest overhead size.\n");
+            return;
+        }
 
         _qoSProfileNameMap.put(LATENCY_TOPIC_NAME.VALUE, "LatencyQos");
         _qoSProfileNameMap.put(ANNOUNCEMENT_TOPIC_NAME.VALUE, "AnnouncementQos");
@@ -311,6 +320,74 @@ public final class RTIDDSImpl<T> implements IMessaging {
         System.err.print(usage_string);
     }
 
+    public boolean data_size_related_calculations() {
+        // If the user wants to use asynchronous we enable it
+        if (_IsAsynchronous) {
+            _isLargeData = true;
+        } else { //If the message size max is lower than the datalen
+            _isLargeData = _dataLen > _maxSynchronousSize;
+        }
+
+        // Manage parameter -batchSize
+        if (_batchSize > 0) {
+
+            /* Check if using asynchronous */
+            if (_IsAsynchronous) {
+                if (_isBatchSizeProvided) {
+                    System.err.println(
+                            "Batching cannot be used with asynchronous writing.\n");
+                    return false;
+                }
+                else {
+                    _batchSize = 0; // Disable Batching
+                }
+            }
+
+            /*
+             * Large Data + batching cannot be set. But batching is enabled by default,
+             * so in that case, we just disabled batching, else, the customer set it up,
+             * so we explitly fail
+             */
+            if (_isLargeData) {
+                if (_isBatchSizeProvided) {
+                    System.err.println(
+                            "Batching cannot be used with Large Data.");
+                    return false;
+                } else {
+                    _batchSize = -2;
+                }
+            } else if ((_batchSize < _dataLen * 2) && !_isScan) {
+                /*
+                 * We don't want to use batching if the batch size is not large
+                 * enough to contain at least two samples (in this case we avoid the
+                 * checking at the middleware level).
+                 */
+                if (_isBatchSizeProvided) {
+                    /*
+                     * Batchsize disabled. A message will be print if _batchSize < 0 in
+                     * perftest_cpp::PrintConfiguration()
+                     */
+                    _batchSize = -1;
+                } else {
+                    _batchSize = 0;
+                }
+            }
+        }
+
+        if (_TurboMode) {
+            if (_IsAsynchronous) {
+                System.err.println("Turbo Mode cannot be used with asynchronous writing.");
+                return false;
+            }
+            if (_isLargeData) {
+                System.err.println("Turbo Mode disabled, using large data.");
+                _TurboMode = false;
+            }
+        }
+
+        return true;
+    }
+
     public boolean initialize(int argc, String[] argv) {
 
         // Register _loggerDevice
@@ -382,6 +459,17 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         if(!_transport.configureTransport(qos)) {
+            return false;
+        }
+
+        /*
+        * At this point, and not before is when we know the transport message size.
+        * Now we can decide if we need to use asynchronous or not.
+        */
+        _maxSynchronousSize = _transport.minimumMessageSizeMax - (PerftestTransport.MESSAGE_OVERHEAD_BYTES);
+
+        if (!data_size_related_calculations()) {
+            System.err.print("[Error] Failed to configure the data size settings.\n");
             return false;
         }
 
@@ -986,6 +1074,13 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
 
             dwQos.durability.direct_communication = _directCommunication;
+
+            if (_isSetsendQueueSize) {
+                dwQos.protocol.rtps_reliable_writer.max_send_window_size =
+                        _sendQueueSize;
+                dwQos.protocol.rtps_reliable_writer.min_send_window_size =
+                        _sendQueueSize;
+            }
         }
 
         dwQos.resource_limits.max_instances = _instanceCount + 1; // One extra for MAX_CFT_VALUE
@@ -1168,12 +1263,34 @@ public final class RTIDDSImpl<T> implements IMessaging {
             sb.append(printSecureArgs());
         }
 
+        // Large Data
+        if (_dataLen > _maxSynchronousSize) {
+            sb.append("\n[IMPORTANT]: Enabling Asynchronous publishing: -datalen (");
+            sb.append(_dataLen);
+            sb.append(") is \n");
+            sb.append("             larger than the minimum message_size_max across\n");
+            sb.append("             all enabled transports (");
+            sb.append(_maxSynchronousSize);
+            sb.append(")\n");
+        }
+
+        // We want to expose if we are using or not the unbounded type
+        if (_useUnbounded != 0) {
+            sb.append("\n[IMPORTANT]: Using the Unbounded Sequence Type.");
+            if (_dataLen > MAX_BOUNDED_SEQ_SIZE.VALUE) {
+                sb.append(" -datalen (");
+                sb.append(_dataLen);
+                sb.append(") is \n             larger than MAX_BOUNDED_SEQ_SIZE (");
+                sb.append(MAX_BOUNDED_SEQ_SIZE.VALUE);
+            }
+            sb.append(")\n");
+        }
+
         return sb.toString();
     }
 
     private boolean parseConfig(int argc, String[] argv) {
         long minScanSize = MAX_PERFTEST_SAMPLE_SIZE.VALUE;
-        boolean isBatchSizeProvided = false;
 
         for (int i = 0; i < argc; ++i) {
 
@@ -1262,6 +1379,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 }
                 try {
                     _sendQueueSize = Integer.parseInt(argv[i]);
+                    _isSetsendQueueSize = true;
                 } catch (NumberFormatException nfx) {
                     System.err.print("Bad sendQueueSize\n");
                     return false;
@@ -1389,14 +1507,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     System.err.print("Bad #bytes for batch\n");
                     return false;
                 }
-                if (_batchSize < 0 || _batchSize > MAX_SYNCHRONOUS_SIZE.VALUE) {
+                if (_batchSize < 0) {
                     System.err.print("Batch size '" + _batchSize +
-                            "' should be between [0," +
-                            MAX_SYNCHRONOUS_SIZE.VALUE +
-                            "]\n");
+                            "' should be greater than 0\n");
                     return false;
                 }
-                isBatchSizeProvided = true;
+                _isBatchSizeProvided = true;
             }
             else if ("-keepDurationUsec".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
@@ -1641,9 +1757,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         /* Check if we need to enable Large Data. This works also for -scan */
-        if (_dataLen > Math.min(
-                MAX_SYNCHRONOUS_SIZE.VALUE,
-                MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+        if (_dataLen > MAX_BOUNDED_SEQ_SIZE.VALUE) {
             _isLargeData = true;
             if (_useUnbounded == 0) {
                 _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
@@ -1657,7 +1771,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
             /* We will not use batching for a latency test */
             if (_latencyTest) {
-                if (isBatchSizeProvided) {
+                if (_isBatchSizeProvided) {
                     System.err.println(
                             "Batching cannot be used in a Latency test.");
                     return false;
@@ -1665,59 +1779,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 else {
                     _batchSize = 0; // Disable Batching
                 }
-            }
-
-            /* Check if using asynchronous */
-            if (_IsAsynchronous) {
-                if (isBatchSizeProvided) {
-                    System.err.println(
-                            "Batching cannot be used with asynchronous writing.\n");
-                    return false;
-                }
-                else {
-                    _batchSize = 0; // Disable Batching
-                }
-            }
-
-            /*
-             * Large Data + batching cannot be set. But batching is enabled by default,
-             * so in that case, we just disabled batching, else, the customer set it up,
-             * so we explitly fail
-             */
-            if (_isLargeData) {
-                if (isBatchSizeProvided) {
-                    System.err.println(
-                            "Batching cannot be used with Large Data.");
-                    return false;
-                } else {
-                    _batchSize = -2;
-                }
-            } else if ((_batchSize < _dataLen * 2) && !_isScan) {
-                /*
-                 * We don't want to use batching if the batch size is not large
-                 * enough to contain at least two samples (in this case we avoid the
-                 * checking at the middleware level).
-                 */
-                if (isBatchSizeProvided) {
-                    /*
-                     * Batchsize disabled. A message will be print if _batchSize < 0 in
-                     * perftest_cpp::PrintConfiguration()
-                     */
-                    _batchSize = -1;
-                } else {
-                    _batchSize = 0;
-                }
-            }
-        }
-
-        if (_TurboMode) {
-            if (_IsAsynchronous) {
-                System.err.println("Turbo Mode cannot be used with asynchronous writing.");
-                return false;
-            }
-            if (_isLargeData) {
-                System.err.println("Turbo Mode disabled, using large data.");
-                _TurboMode = false;
             }
         }
 
