@@ -2693,8 +2693,12 @@ void PerftestDDSPrinter::initialize_dds_entities()
     perftestInfoWriter = dds::pub::DataWriter<PerftestInfo>(publisher, topic, dwQos);
 
     if (_PM->get<bool>("pub")) {
+        PerftestLatencyInfo myLatencyInfo;
+        perftestInfo.latencyInfo(myLatencyInfo);
         perftestInfo.latencyInfo()->pubId(_PM->get<int>("pidMultiPubTest"));
     } else {
+        PerftestThroughputInfo myThroughputInfo;
+        perftestInfo.throughputInfo(myThroughputInfo);
         perftestInfo.throughputInfo()->subId(_PM->get<int>("sidMultiSubTest"));
     }
 
@@ -2704,6 +2708,7 @@ void PerftestDDSPrinter::initialize_dds_entities()
 
 void PerftestDDSPrinter::finalize()
 {
+    participant.close();
 }
 
 void PerftestDDSPrinter::print_latency_interval(LatencyInfo latInfo)
