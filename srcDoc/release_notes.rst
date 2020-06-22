@@ -337,6 +337,13 @@ parameter manager would expect `-batchsize` instead of `-batchSize`. This issue
 was only a problem for *VxWorks* systems, where the parsing of the parameters is
 case sensitive.
 
+Fixed performance degradation in Modern C++ when using Dynamic Data (#332)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using Dynamic Data, the `Send()` path would always try to clear the content
+of the sample prior to start repopulating it. This should only be necesary if the
+sequence size changes. This issue has been fixed.
+
 Release Notes 3.0
 -----------------
 
