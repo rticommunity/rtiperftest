@@ -199,18 +199,17 @@ struct PerftestThroughputInfo {
 struct PerftestLatencyInfo {
     @key long pubId;
     @optional unsigned long long latency;
-    @optional double ave;
+    @optional double average;
     @optional double std;
-    @optional unsigned long long min;
-    @optional unsigned long long max;
-    @optional unsigned long long h50;
-    @optional unsigned long long h90;
-    @optional unsigned long long h99;
-    @optional unsigned long long h9999;
-    @optional unsigned long long h999999;
-    @optional double serialize;
-    @optional double deserialize;
-    @optional double total;
+    @optional unsigned long long minimum;
+    @optional unsigned long long maximum;
+    @optional unsigned long long percentile50;
+    @optional unsigned long long percentile90;
+    @optional unsigned long long percentile99;
+    @optional unsigned long long percentile9999;
+    @optional unsigned long long percentile999999;
+    @optional double serializeTime;
+    @optional double deserializeTime;
 };
 
 struct PerftestInfo {

@@ -201,21 +201,21 @@ public:
     };
 
     void print_latency_header() {};
-    void print_latency_interval(LatencyInfo latInfo);
-    void print_latency_summary(LatencyInfo latInfo)
+    void print_latency_interval(LatencyInfo latencyInfo);
+    void print_latency_summary(LatencyInfo latencyInfo)
     {
-        print_latency_interval(latInfo);
+        print_latency_interval(latencyInfo);
     };
 
     void print_throughput_header() {};
-    void print_throughput_interval(ThroughputInfo thInfo);
-    void print_throughput_summary(ThroughputInfo thInfo)
+    void print_throughput_interval(ThroughputInfo throughputInfo);
+    void print_throughput_summary(ThroughputInfo throughputInfo)
     {
-        print_throughput_interval(thInfo);
+        print_throughput_interval(throughputInfo);
     };
 
-    void dataWrapperLatency(LatencyInfo latInfo);
-    void dataWrapperThroughput(ThroughputInfo thInfo);
+    void dataWrapperLatency(LatencyInfo latencyInfo);
+    void dataWrapperThroughput(ThroughputInfo throughputInfo);
 };
 
 #endif // __RTIDDSIMPL_H__

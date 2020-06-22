@@ -7,24 +7,24 @@
 
 void ThroughputInfo::set_interval(
         unsigned long long packets,
-        unsigned long long packetsS,
-        double pAve,
+        unsigned long long packetsPerSecond,
+        double packetsAverage,
         unsigned long long bps,
         double bpsAve,
-        unsigned long long lost)
+        unsigned long long lostPackets)
 {
     this->packets      = packets;
-    this->packetsS     = packetsS;
-    this->pAve         = pAve;
+    this->packetsPerSecond     = packetsPerSecond;
+    this->packetsAverage         = packetsAverage;
     this->mbps         = bps * 8.0 / 1000.0 / 1000.0;
     this->mbpsAve      = bpsAve * 8.0 / 1000.0 / 1000.0;
-    this->lost         = lost;
+    this->lostPackets         = lostPackets;
     // Calculations of missing package percent
-    if (packets + lost != 0) {
-        this->lostPercent = (float) ((lost * 100.0)
-                / (float) (packets + lost));
+    if (packets + lostPackets != 0) {
+        this->lostPacketsPercent = (float) ((lostPackets * 100.0)
+                / (float) (packets + lostPackets));
     } else {
-        this->lostPercent = 0.0;
+        this->lostPacketsPercent = 0.0;
     }
     this->interval = true;
 }
@@ -33,59 +33,58 @@ void ThroughputInfo::set_summary(
         unsigned long long packets,
         unsigned long long time,
         unsigned long long bytes,
-        unsigned long long lost)
+        unsigned long long lostPackets)
 {
     this->packets  = packets;
-    this->packetsS     = packets * 1000000 / time;
+    this->packetsPerSecond     = packets * 1000000 / time;
     this->mbpsAve  = bytes * 1000000.0 / time * 8.0 / 1000.0
             / 1000.0;
-    this->lost     = lost;
-    if (packets + lost != 0) {
-        this->lostPercent = (float) ((lost * 100.0)
-                / (float) (packets + lost));
+    this->lostPackets     = lostPackets;
+    if (packets + lostPackets != 0) {
+        this->lostPacketsPercent = (float) ((lostPackets * 100.0)
+                / (float) (packets + lostPackets));
     } else {
-        this->lostPercent = 0.0;
+        this->lostPacketsPercent = 0.0;
     }
     this->interval = false;
 }
 
 void LatencyInfo::set_interval(
         unsigned long latency,
-        double ave,
+        double average,
         double std,
-        unsigned long min,
-        unsigned long max)
+        unsigned long minimum,
+        unsigned long maximum)
 {
     this->latency  = latency;
-    this->ave      = ave;
+    this->average      = average;
     this->std      = std;
-    this->min      = min;
-    this->max      = max;
+    this->minimum      = minimum;
+    this->maximum      = maximum;
     this->interval = true;
 }
 
 void LatencyInfo::set_summary(
-        double ave,
+        double average,
         double std,
-        unsigned long min,
-        unsigned long max,
+        unsigned long minimum,
+        unsigned long maximum,
         unsigned long *history,
         unsigned long long count,
-        double serialize,
-        double deserialize)
+        double serializeTime,
+        double deserializeTime)
 {
-    this->ave      = ave;
+    this->average      = average;
     this->std      = std;
-    this->min      = min;
-    this->max      = max;
-    this->h50      = history[count * 50 / 100];
-    this->h90      = history[count * 90 / 100];
-    this->h99      = history[count * 99 / 100];
-    this->h9999    = history[count * 9999 / 10000];
-    this->h999999  = history[count * 999999 / 1000000];
-    this->serialize = serialize;
-    this->deserialize = deserialize;
-    this->total    = serialize + deserialize;
+    this->minimum      = minimum;
+    this->maximum      = maximum;
+    this->percentile50      = history[count * 50 / 100];
+    this->percentile90      = history[count * 90 / 100];
+    this->percentile99      = history[count * 99 / 100];
+    this->percentile9999    = history[count * 9999 / 10000];
+    this->percentile999999  = history[count * 999999 / 1000000];
+    this->serializeTime = serializeTime;
+    this->deserializeTime = deserializeTime;
     this->interval = false;
 }
 
@@ -132,22 +131,22 @@ void PerftestCSVPrinter::print_throughput_header()
     }
 }
 
-void PerftestCSVPrinter::print_latency_interval(LatencyInfo latInfo)
+void PerftestCSVPrinter::print_latency_interval(LatencyInfo latencyInfo)
 {
     printf("%14d,%13llu,%9.0lf,%9.1lf,%9llu,%9llu",
             _dataLength,
-            latInfo.latency,
-            latInfo.ave,
-            latInfo.std,
-            latInfo.min,
-            latInfo.max);
+            latencyInfo.latency,
+            latencyInfo.average,
+            latencyInfo.std,
+            latencyInfo.minimum,
+            latencyInfo.maximum);
     if (_showCPU) {
-        printf(",%8.2f", latInfo.outputCpu);
+        printf(",%8.2f", latencyInfo.outputCpu);
     }
     printf("\n");
 }
 
-void PerftestCSVPrinter::print_latency_summary(LatencyInfo latInfo)
+void PerftestCSVPrinter::print_latency_summary(LatencyInfo latencyInfo)
 {
     if (_printSummaryHeaders && _printHeaders) {
         if (!_printIntervals && _printSummaryHeaders) {
@@ -179,45 +178,45 @@ void PerftestCSVPrinter::print_latency_summary(LatencyInfo latInfo)
     }
     printf("%14d,%9.0lf,%9.1lf,%9llu,%9llu,%9llu,%9llu,%9llu,%12llu,%14llu",
             _dataLength,
-            latInfo.ave,
-            latInfo.std,
-            latInfo.min,
-            latInfo.max,
-            latInfo.h50,
-            latInfo.h90,
-            latInfo.h99,
-            latInfo.h9999,
-            latInfo.h999999);
+            latencyInfo.average,
+            latencyInfo.std,
+            latencyInfo.minimum,
+            latencyInfo.maximum,
+            latencyInfo.percentile50,
+            latencyInfo.percentile90,
+            latencyInfo.percentile99,
+            latencyInfo.percentile9999,
+            latencyInfo.percentile999999);
     if (_printSerialization) {
         printf(",%19.3f,%21.3f,%11.3f",
-                latInfo.serialize,
-                latInfo.deserialize,
-                latInfo.total);
+                latencyInfo.serializeTime,
+                latencyInfo.deserializeTime,
+                latencyInfo.serializeTime + latencyInfo.deserializeTime);
     }
     if (_showCPU) {
-        printf(",%8.2f", latInfo.outputCpu);
+        printf(",%8.2f", latencyInfo.outputCpu);
     }
     printf("\n");
 }
 
-void PerftestCSVPrinter::print_throughput_interval(ThroughputInfo thInfo)
+void PerftestCSVPrinter::print_throughput_interval(ThroughputInfo throughputInfo)
 {
     printf("%14d,%14llu,%11llu,%14.0lf,%9.1lf,%10.1lf, %12llu, %16.2lf",
             _dataLength,
-            thInfo.packets,
-            thInfo.packetsS,
-            thInfo.pAve,
-            thInfo.mbps,
-            thInfo.mbpsAve,
-            thInfo.lost,
-            thInfo.lostPercent);
+            throughputInfo.packets,
+            throughputInfo.packetsPerSecond,
+            throughputInfo.packetsAverage,
+            throughputInfo.mbps,
+            throughputInfo.mbpsAve,
+            throughputInfo.lostPackets,
+            throughputInfo.lostPacketsPercent);
     if (_showCPU) {
-        printf(",%8.2f", thInfo.outputCpu);
+        printf(",%8.2f", throughputInfo.outputCpu);
     }
     printf("\n");
 }
 
-void PerftestCSVPrinter::print_throughput_summary(ThroughputInfo thInfo)
+void PerftestCSVPrinter::print_throughput_summary(ThroughputInfo throughputInfo)
 {
     if (_printSummaryHeaders && _printHeaders) {
         if (!_printIntervals && _printSummaryHeaders) {
@@ -235,13 +234,13 @@ void PerftestCSVPrinter::print_throughput_summary(ThroughputInfo thInfo)
     }
     printf("%14d,%14llu,%14.0llu,%12.1lf, %12llu, %16.2lf",
             _dataLength,
-            thInfo.packets,
-            thInfo.packetsS,
-            thInfo.mbpsAve,
-            thInfo.lost,
-            thInfo.lostPercent);
+            throughputInfo.packets,
+            throughputInfo.packetsPerSecond,
+            throughputInfo.mbpsAve,
+            throughputInfo.lostPackets,
+            throughputInfo.lostPacketsPercent);
     if (_showCPU) {
-        printf(",%8.2f", thInfo.outputCpu);
+        printf(",%8.2f", throughputInfo.outputCpu);
     }
     printf("\n");
 }
@@ -279,7 +278,7 @@ void PerftestJSONPrinter::print_throughput_header()
     }
 }
 
-void PerftestJSONPrinter::print_latency_interval(LatencyInfo latInfo)
+void PerftestJSONPrinter::print_latency_interval(LatencyInfo latencyInfo)
 {
     if (_controlJsonIntervals) {
         _controlJsonIntervals = false;
@@ -292,18 +291,18 @@ void PerftestJSONPrinter::print_latency_interval(LatencyInfo latInfo)
             "\t\t\t\t\t\"latency_std\": %1.2lf,\n"
             "\t\t\t\t\t\"latency_min\": %llu,\n"
             "\t\t\t\t\t\"latency_max\": %llu",
-            latInfo.latency,
-            latInfo.ave,
-            latInfo.std,
-            latInfo.min,
-            latInfo.max);
+            latencyInfo.latency,
+            latencyInfo.average,
+            latencyInfo.std,
+            latencyInfo.minimum,
+            latencyInfo.maximum);
     if (_showCPU) {
-        printf(",\n\t\t\t\t\t\"cpu\": %1.2f", latInfo.outputCpu);
+        printf(",\n\t\t\t\t\t\"cpu\": %1.2f", latencyInfo.outputCpu);
     }
     printf("\n\t\t\t\t}");
 }
 
-void PerftestJSONPrinter::print_latency_summary(LatencyInfo latInfo)
+void PerftestJSONPrinter::print_latency_summary(LatencyInfo latencyInfo)
 {
     if (_printIntervals) {
         printf("\n\t\t\t],\n");
@@ -318,30 +317,30 @@ void PerftestJSONPrinter::print_latency_summary(LatencyInfo latInfo)
             "\t\t\t\t\"latency_99\": %llu,\n"
             "\t\t\t\t\"latency_99.99\": %llu,\n"
             "\t\t\t\t\"latency_99.9999\": %llu",
-            latInfo.ave,
-            latInfo.std,
-            latInfo.min,
-            latInfo.max,
-            latInfo.h50,
-            latInfo.h90,
-            latInfo.h99,
-            latInfo.h9999,
-            latInfo.h999999);
+            latencyInfo.average,
+            latencyInfo.std,
+            latencyInfo.minimum,
+            latencyInfo.maximum,
+            latencyInfo.percentile50,
+            latencyInfo.percentile90,
+            latencyInfo.percentile99,
+            latencyInfo.percentile9999,
+            latencyInfo.percentile999999);
     if (_printSerialization) {
         printf(",\n\t\t\t\t\"serialize\": %1.3f,\n"
                 "\t\t\t\t\"deserialize\": %1.3f,\n"
                 "\t\t\t\t\"total_s\": %1.3f",
-                latInfo.serialize,
-                latInfo.deserialize,
-                latInfo.total);
+                latencyInfo.serializeTime,
+                latencyInfo.deserializeTime,
+                latencyInfo.serializeTime + latencyInfo.deserializeTime);
     }
     if (_showCPU) {
-        printf(",\n\t\t\t\t\"cpu\": %1.2f", latInfo.outputCpu);
+        printf(",\n\t\t\t\t\"cpu\": %1.2f", latencyInfo.outputCpu);
     }
     printf("\n\t\t\t}\n\t\t}");
 }
 
-void PerftestJSONPrinter::print_throughput_interval(ThroughputInfo thInfo)
+void PerftestJSONPrinter::print_throughput_interval(ThroughputInfo throughputInfo)
 {
     if (_controlJsonIntervals) {
         _controlJsonIntervals = false;
@@ -358,20 +357,20 @@ void PerftestJSONPrinter::print_throughput_interval(ThroughputInfo thInfo)
             "\t\t\t\t\t\"lost\": %llu,\n"
             "\t\t\t\t\t\"lost_percent\": %1.2lf",
             _dataLength,
-            thInfo.packets,
-            thInfo.packetsS,
-            thInfo.pAve,
-            thInfo.mbps,
-            thInfo.mbpsAve,
-            thInfo.lost,
-            thInfo.lostPercent);
+            throughputInfo.packets,
+            throughputInfo.packetsPerSecond,
+            throughputInfo.packetsAverage,
+            throughputInfo.mbps,
+            throughputInfo.mbpsAve,
+            throughputInfo.lostPackets,
+            throughputInfo.lostPacketsPercent);
     if (_showCPU) {
-        printf(",\n\t\t\t\t\t\"cpu\": %1.2f", thInfo.outputCpu);
+        printf(",\n\t\t\t\t\t\"cpu\": %1.2f", throughputInfo.outputCpu);
     }
     printf("\n\t\t\t\t}");
 }
 
-void PerftestJSONPrinter::print_throughput_summary(ThroughputInfo thInfo)
+void PerftestJSONPrinter::print_throughput_summary(ThroughputInfo throughputInfo)
 {
     if (_printIntervals) {
         printf("\t\t\t],\n");
@@ -382,13 +381,13 @@ void PerftestJSONPrinter::print_throughput_summary(ThroughputInfo thInfo)
             "\t\t\t\t\"mbpsAve\": %1.1lf,\n"
             "\t\t\t\t\"lost\": %llu,\n"
             "\t\t\t\t\"lostPercent\": %1.2lf",
-            thInfo.packets,
-            thInfo.packetsS,
-            thInfo.mbpsAve,
-            thInfo.lost,
-            thInfo.lostPercent);
+            throughputInfo.packets,
+            throughputInfo.packetsPerSecond,
+            throughputInfo.mbpsAve,
+            throughputInfo.lostPackets,
+            throughputInfo.lostPacketsPercent);
     if (_showCPU) {
-        printf(",\n\t\t\t\t\"cpu\": %1.2f", thInfo.outputCpu);
+        printf(",\n\t\t\t\t\"cpu\": %1.2f", throughputInfo.outputCpu);
     }
     printf("\n\t\t\t}\n\t\t}");
 }
@@ -422,25 +421,25 @@ void PerftestLegacyPrinter::print_throughput_header()
     }
 }
 
-void PerftestLegacyPrinter::print_latency_interval(LatencyInfo latInfo)
+void PerftestLegacyPrinter::print_latency_interval(LatencyInfo latencyInfo)
 {
     printf("One way Latency: %6llu " PERFT_TIME_UNIT
             " Ave %6.0lf " PERFT_TIME_UNIT
             " Std %6.1lf " PERFT_TIME_UNIT
             " Min %6llu " PERFT_TIME_UNIT
             " Max %6llu " PERFT_TIME_UNIT,
-            latInfo.latency,
-            latInfo.ave,
-            latInfo.std,
-            latInfo.min,
-            latInfo.max);
+            latencyInfo.latency,
+            latencyInfo.average,
+            latencyInfo.std,
+            latencyInfo.minimum,
+            latencyInfo.maximum);
     if (_showCPU) {
-        printf(" CPU %1.2f (%%)", latInfo.outputCpu);
+        printf(" CPU %1.2f (%%)", latencyInfo.outputCpu);
     }
     printf("\n");
 }
 
-void PerftestLegacyPrinter::print_latency_summary(LatencyInfo latInfo)
+void PerftestLegacyPrinter::print_latency_summary(LatencyInfo latencyInfo)
 {
     printf("Length: %5d"
             " Latency: Ave %6.0lf " PERFT_TIME_UNIT
@@ -453,58 +452,58 @@ void PerftestLegacyPrinter::print_latency_summary(LatencyInfo latInfo)
             " 99.99%% %6llu " PERFT_TIME_UNIT
             " 99.9999%% %6llu " PERFT_TIME_UNIT,
             _dataLength,
-            latInfo.ave,
-            latInfo.std,
-            latInfo.min,
-            latInfo.max,
-            latInfo.h50,
-            latInfo.h90,
-            latInfo.h99,
-            latInfo.h9999,
-            latInfo.h999999);
+            latencyInfo.average,
+            latencyInfo.std,
+            latencyInfo.minimum,
+            latencyInfo.maximum,
+            latencyInfo.percentile50,
+            latencyInfo.percentile90,
+            latencyInfo.percentile99,
+            latencyInfo.percentile9999,
+            latencyInfo.percentile999999);
     if (_showCPU) {
-        printf(" CPU %1.2f (%%)", latInfo.outputCpu);
+        printf(" CPU %1.2f (%%)", latencyInfo.outputCpu);
     }
     printf("\n");
     if (_printSerialization) {
         printf("Serialization/Deserialization: %0.3f us / %0.3f us / "
                 "TOTAL: "
                 "%0.3f us\n",
-                latInfo.serialize,
-                latInfo.deserialize,
-                latInfo.total);
+                latencyInfo.serializeTime,
+                latencyInfo.deserializeTime,
+                latencyInfo.serializeTime + latencyInfo.deserializeTime);
     }
 }
 
-void PerftestLegacyPrinter::print_throughput_interval(ThroughputInfo thInfo)
+void PerftestLegacyPrinter::print_throughput_interval(ThroughputInfo throughputInfo)
 {
     printf("Packets: %8llu  Packets/s: %7llu  Packets/s(ave): %7.0lf  "
             "Mbps: %7.1lf  Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%)",
-            thInfo.packets,
-            thInfo.packetsS,
-            thInfo.pAve,
-            thInfo.mbps,
-            thInfo.mbpsAve,
-            thInfo.lost,
-            thInfo.lostPercent);
+            throughputInfo.packets,
+            throughputInfo.packetsPerSecond,
+            throughputInfo.packetsAverage,
+            throughputInfo.mbps,
+            throughputInfo.mbpsAve,
+            throughputInfo.lostPackets,
+            throughputInfo.lostPacketsPercent);
     if (_showCPU) {
-        printf(" CPU %1.2f (%%)", thInfo.outputCpu);
+        printf(" CPU %1.2f (%%)", throughputInfo.outputCpu);
     }
     printf("\n");
 }
 
-void PerftestLegacyPrinter::print_throughput_summary(ThroughputInfo thInfo)
+void PerftestLegacyPrinter::print_throughput_summary(ThroughputInfo throughputInfo)
 {
     printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
             "Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%)",
             _dataLength,
-            thInfo.packets,
-            thInfo.packetsS,
-            thInfo.mbpsAve,
-            thInfo.lost,
-            thInfo.lostPercent);
+            throughputInfo.packets,
+            throughputInfo.packetsPerSecond,
+            throughputInfo.mbpsAve,
+            throughputInfo.lostPackets,
+            throughputInfo.lostPacketsPercent);
     if (_showCPU) {
-        printf(" CPU %1.2f (%%)", thInfo.outputCpu);
+        printf(" CPU %1.2f (%%)", throughputInfo.outputCpu);
     }
     printf("\n");
 }

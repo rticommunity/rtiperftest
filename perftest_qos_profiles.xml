@@ -1092,7 +1092,9 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
       </datawriter_qos>
     </qos_profile>
 
-  <qos_profile name="LoggingQos">
+    <qos_profile name="LoggingQos">
+
+      <!-- === DataWriter Configuration: ================================= -->
 
       <datawriter_qos>
         <reliability>
@@ -1100,9 +1102,9 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </reliability>
 
         <resource_limits>
-            <max_samples>10</max_samples>
-            <initial_samples>1</initial_samples>
-            <max_samples_per_instance>1</max_samples_per_instance>
+          <max_samples>10</max_samples>
+          <initial_samples>1</initial_samples>
+          <max_samples_per_instance>1</max_samples_per_instance>
         </resource_limits>
       </datawriter_qos>
     </qos_profile>

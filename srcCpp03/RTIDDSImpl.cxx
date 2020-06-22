@@ -2711,72 +2711,70 @@ void PerftestDDSPrinter::finalize()
     participant.close();
 }
 
-void PerftestDDSPrinter::print_latency_interval(LatencyInfo latInfo)
+void PerftestDDSPrinter::print_latency_interval(LatencyInfo latencyInfo)
 {
-    this->dataWrapperLatency(latInfo);
+    this->dataWrapperLatency(latencyInfo);
     perftestInfoWriter->write(perftestInfo);
 }
 
-void PerftestDDSPrinter::print_throughput_interval(ThroughputInfo thInfo)
+void PerftestDDSPrinter::print_throughput_interval(ThroughputInfo throughputInfo)
 {
-    this->dataWrapperThroughput(thInfo);
+    this->dataWrapperThroughput(throughputInfo);
     perftestInfoWriter->write(perftestInfo);
 }
 
-void PerftestDDSPrinter::dataWrapperLatency(LatencyInfo latInfo)
+void PerftestDDSPrinter::dataWrapperLatency(LatencyInfo latencyInfo)
 {
     if (this->_dataLength != perftestInfo.dataLength()) {
         perftestInfo.dataLength(_dataLength);
     }
 
     if (this->_showCPU) {
-        perftestInfo.outputCpu(latInfo.outputCpu);
+        perftestInfo.outputCpu(latencyInfo.outputCpu);
     }
-    perftestInfo.latencyInfo()->latency(latInfo.latency);
-    perftestInfo.latencyInfo()->ave(latInfo.ave);
-    perftestInfo.latencyInfo()->std(latInfo.std);
-    perftestInfo.latencyInfo()->min(latInfo.min);
-    perftestInfo.latencyInfo()->max(latInfo.max);
+    perftestInfo.latencyInfo()->latency(latencyInfo.latency);
+    perftestInfo.latencyInfo()->average(latencyInfo.average);
+    perftestInfo.latencyInfo()->std(latencyInfo.std);
+    perftestInfo.latencyInfo()->minimum(latencyInfo.minimum);
+    perftestInfo.latencyInfo()->maximum(latencyInfo.maximum);
     // summary part
-    if (!latInfo.interval) {
-        perftestInfo.latencyInfo()->h50(latInfo.h50);
-        perftestInfo.latencyInfo()->h90(latInfo.h90);
-        perftestInfo.latencyInfo()->h99(latInfo.h99);
-        perftestInfo.latencyInfo()->h9999(latInfo.h9999);
-        perftestInfo.latencyInfo()->h999999(latInfo.h999999);
+    if (!latencyInfo.interval) {
+        perftestInfo.latencyInfo()->percentile50(latencyInfo.percentile50);
+        perftestInfo.latencyInfo()->percentile90(latencyInfo.percentile90);
+        perftestInfo.latencyInfo()->percentile99(latencyInfo.percentile99);
+        perftestInfo.latencyInfo()->percentile9999(latencyInfo.percentile9999);
+        perftestInfo.latencyInfo()->percentile999999(latencyInfo.percentile999999);
         if (_printSerialization) {
-            perftestInfo.latencyInfo()->serialize(latInfo.serialize);
-            perftestInfo.latencyInfo()->deserialize(latInfo.deserialize);
-            perftestInfo.latencyInfo()->total(latInfo.total);
+            perftestInfo.latencyInfo()->serializeTime(latencyInfo.serializeTime);
+            perftestInfo.latencyInfo()->deserializeTime(latencyInfo.deserializeTime);
         }
     } else {
-        perftestInfo.latencyInfo()->h50(0);
-        perftestInfo.latencyInfo()->h90(0);
-        perftestInfo.latencyInfo()->h99(0);
-        perftestInfo.latencyInfo()->h9999(0);
-        perftestInfo.latencyInfo()->h999999(0);
-        perftestInfo.latencyInfo()->serialize(0);
-        perftestInfo.latencyInfo()->deserialize(0);
-        perftestInfo.latencyInfo()->total(0);
+        perftestInfo.latencyInfo()->percentile50(0);
+        perftestInfo.latencyInfo()->percentile90(0);
+        perftestInfo.latencyInfo()->percentile99(0);
+        perftestInfo.latencyInfo()->percentile9999(0);
+        perftestInfo.latencyInfo()->percentile999999(0);
+        perftestInfo.latencyInfo()->serializeTime(0);
+        perftestInfo.latencyInfo()->deserializeTime(0);
     }
 }
 
-void PerftestDDSPrinter::dataWrapperThroughput(ThroughputInfo thInfo)
+void PerftestDDSPrinter::dataWrapperThroughput(ThroughputInfo throughputInfo)
 {
     if (this->_dataLength != perftestInfo.dataLength()) {
         perftestInfo.dataLength(_dataLength);
     }
     if (this->_showCPU) {
-        perftestInfo.outputCpu(thInfo.outputCpu);
+        perftestInfo.outputCpu(throughputInfo.outputCpu);
     }
-    perftestInfo.throughputInfo()->packets(thInfo.packets);
-    perftestInfo.throughputInfo()->packetsAverage(thInfo.pAve);
-    perftestInfo.throughputInfo()->mbps(thInfo.mbps);
-    perftestInfo.throughputInfo()->mbpsAverage(thInfo.mbpsAve);
-    perftestInfo.throughputInfo()->lostPackets(thInfo.lost);
-    perftestInfo.throughputInfo()->lostPacketsPercent(thInfo.lostPercent);
-    if (thInfo.interval) {
-        perftestInfo.throughputInfo()->packetsPerSecond(thInfo.packetsS);
+    perftestInfo.throughputInfo()->packets(throughputInfo.packets);
+    perftestInfo.throughputInfo()->packetsAverage(throughputInfo.packetsAverage);
+    perftestInfo.throughputInfo()->mbps(throughputInfo.mbps);
+    perftestInfo.throughputInfo()->mbpsAverage(throughputInfo.mbpsAve);
+    perftestInfo.throughputInfo()->lostPackets(throughputInfo.lostPackets);
+    perftestInfo.throughputInfo()->lostPacketsPercent(throughputInfo.lostPacketsPercent);
+    if (throughputInfo.interval) {
+        perftestInfo.throughputInfo()->packetsPerSecond(throughputInfo.packetsPerSecond);
     } else {
         perftestInfo.throughputInfo()->packetsPerSecond(0);
     }

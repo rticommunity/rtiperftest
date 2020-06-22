@@ -1002,6 +1002,7 @@ int perftest_cpp::Subscriber()
     IMessagingWriter   *writer;
     IMessagingWriter   *announcement_writer;
     struct PerftestThread *throughputThread = NULL;
+    ThroughputInfo _throughputInfo;
 
     // create latency pong writer
     writer = _MessagingImpl->CreateWriter(LATENCY_TOPIC_NAME);

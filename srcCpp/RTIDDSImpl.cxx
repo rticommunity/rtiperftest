@@ -4059,10 +4059,10 @@ void PerftestDDSPrinter::print_latency_interval(LatencyInfo latencyInfo)
     }
 }
 
-void PerftestDDSPrinter::print_throughput_interval(ThroughputInfo thInfo)
+void PerftestDDSPrinter::print_throughput_interval(ThroughputInfo throughputInfo)
 {
     DDS_ReturnCode_t retcode;
-    this->dataWrapperThroughput(thInfo);
+    this->dataWrapperThroughput(throughputInfo);
     retcode = infoDataWriter->write(*perftestInfo, DDS_HANDLE_NIL);
     if (retcode != DDS_RETCODE_OK) {
         fprintf(stderr,
@@ -4076,18 +4076,17 @@ void PerftestDDSPrinter::deleteDataSample()
 {
     perftestInfo->outputCpu = NULL;
     perftestInfo->latencyInfo->latency = NULL;
-    perftestInfo->latencyInfo->ave = NULL;
+    perftestInfo->latencyInfo->average = NULL;
     perftestInfo->latencyInfo->std = NULL;
-    perftestInfo->latencyInfo->min = NULL;
-    perftestInfo->latencyInfo->max = NULL;
-    perftestInfo->latencyInfo->h50 = NULL;
-    perftestInfo->latencyInfo->h90 = NULL;
-    perftestInfo->latencyInfo->h99 = NULL;
-    perftestInfo->latencyInfo->h9999 = NULL;
-    perftestInfo->latencyInfo->h999999 = NULL;
-    perftestInfo->latencyInfo->serialize = NULL;
-    perftestInfo->latencyInfo->deserialize = NULL;
-    perftestInfo->latencyInfo->total = NULL;
+    perftestInfo->latencyInfo->minimum = NULL;
+    perftestInfo->latencyInfo->maximum = NULL;
+    perftestInfo->latencyInfo->percentile50 = NULL;
+    perftestInfo->latencyInfo->percentile90 = NULL;
+    perftestInfo->latencyInfo->percentile99 = NULL;
+    perftestInfo->latencyInfo->percentile9999 = NULL;
+    perftestInfo->latencyInfo->percentile999999 = NULL;
+    perftestInfo->latencyInfo->serializeTime = NULL;
+    perftestInfo->latencyInfo->deserializeTime = NULL;
     perftestInfo->throughputInfo->packets = NULL;
     perftestInfo->throughputInfo->packetsAverage = NULL;
     perftestInfo->throughputInfo->mbps = NULL;
@@ -4107,50 +4106,48 @@ void PerftestDDSPrinter::dataWrapperLatency(LatencyInfo latencyInfo)
         perftestInfo->outputCpu = &latencyInfo.outputCpu;
     }
     perftestInfo->latencyInfo->latency = &latencyInfo.latency;
-    perftestInfo->latencyInfo->ave = &latencyInfo.ave;
+    perftestInfo->latencyInfo->average = &latencyInfo.average;
     perftestInfo->latencyInfo->std = &latencyInfo.std;
-    perftestInfo->latencyInfo->min = &latencyInfo.min;
-    perftestInfo->latencyInfo->max = &latencyInfo.max;
+    perftestInfo->latencyInfo->minimum = &latencyInfo.minimum;
+    perftestInfo->latencyInfo->maximum = &latencyInfo.maximum;
     // summary part
     if (!latencyInfo.interval) {
-        perftestInfo->latencyInfo->h50 = &latencyInfo.h50;
-        perftestInfo->latencyInfo->h90 = &latencyInfo.h90;
-        perftestInfo->latencyInfo->h99 = &latencyInfo.h99;
-        perftestInfo->latencyInfo->h9999 = &latencyInfo.h9999;
-        perftestInfo->latencyInfo->h999999 = &latencyInfo.h999999;
+        perftestInfo->latencyInfo->percentile50 = &latencyInfo.percentile50;
+        perftestInfo->latencyInfo->percentile90 = &latencyInfo.percentile90;
+        perftestInfo->latencyInfo->percentile99 = &latencyInfo.percentile99;
+        perftestInfo->latencyInfo->percentile9999 = &latencyInfo.percentile9999;
+        perftestInfo->latencyInfo->percentile999999 = &latencyInfo.percentile999999;
         if (_printSerialization) {
-            perftestInfo->latencyInfo->serialize = &latencyInfo.serialize;
-            perftestInfo->latencyInfo->deserialize = &latencyInfo.deserialize;
-            perftestInfo->latencyInfo->total = &latencyInfo.total;
+            perftestInfo->latencyInfo->serializeTime = &latencyInfo.serializeTime;
+            perftestInfo->latencyInfo->deserializeTime = &latencyInfo.deserializeTime;
         }
     } else {
-        perftestInfo->latencyInfo->h50 = NULL;
-        perftestInfo->latencyInfo->h90 = NULL;
-        perftestInfo->latencyInfo->h99 = NULL;
-        perftestInfo->latencyInfo->h9999 = NULL;
-        perftestInfo->latencyInfo->h999999 = NULL;
-        perftestInfo->latencyInfo->serialize = NULL;
-        perftestInfo->latencyInfo->deserialize = NULL;
-        perftestInfo->latencyInfo->total = NULL;
+        perftestInfo->latencyInfo->percentile50 = NULL;
+        perftestInfo->latencyInfo->percentile90 = NULL;
+        perftestInfo->latencyInfo->percentile99 = NULL;
+        perftestInfo->latencyInfo->percentile9999 = NULL;
+        perftestInfo->latencyInfo->percentile999999 = NULL;
+        perftestInfo->latencyInfo->serializeTime = NULL;
+        perftestInfo->latencyInfo->deserializeTime = NULL;
     }
 }
 
-void PerftestDDSPrinter::dataWrapperThroughput(ThroughputInfo thInfo)
+void PerftestDDSPrinter::dataWrapperThroughput(ThroughputInfo throughputInfo)
 {
     if (this->_dataLength != perftestInfo->dataLength) {
         perftestInfo->dataLength = _dataLength;
     }
     if (this->_showCPU) {
-        perftestInfo->outputCpu = &thInfo.outputCpu;
+        perftestInfo->outputCpu = &throughputInfo.outputCpu;
     }
-    perftestInfo->throughputInfo->packets = &thInfo.packets;
-    perftestInfo->throughputInfo->packetsAverage = &thInfo.pAve;
-    perftestInfo->throughputInfo->mbps = &thInfo.mbps;
-    perftestInfo->throughputInfo->mbpsAverage = &thInfo.mbpsAve;
-    perftestInfo->throughputInfo->lostPackets = &thInfo.lost;
-    perftestInfo->throughputInfo->lostPacketsPercent = &thInfo.lostPercent;
-    if (thInfo.interval) {
-        perftestInfo->throughputInfo->packetsPerSecond = &thInfo.packetsS;
+    perftestInfo->throughputInfo->packets = &throughputInfo.packets;
+    perftestInfo->throughputInfo->packetsAverage = &throughputInfo.packetsAverage;
+    perftestInfo->throughputInfo->mbps = &throughputInfo.mbps;
+    perftestInfo->throughputInfo->mbpsAverage = &throughputInfo.mbpsAve;
+    perftestInfo->throughputInfo->lostPackets = &throughputInfo.lostPackets;
+    perftestInfo->throughputInfo->lostPacketsPercent = &throughputInfo.lostPacketsPercent;
+    if (throughputInfo.interval) {
+        perftestInfo->throughputInfo->packetsPerSecond = &throughputInfo.packetsPerSecond;
     } else {
         perftestInfo->throughputInfo->packetsPerSecond = NULL;
     }

@@ -19,63 +19,62 @@
 struct ThroughputInfo {
     unsigned long dataLength;
     unsigned long long packets;
-    unsigned long long packetsS; // packets/s
-    double pAve;
+    unsigned long long packetsPerSecond;
+    double packetsAverage;
     double mbps;
     double mbpsAve;
-    unsigned long long lost;
-    float lostPercent;
+    unsigned long long lostPackets;
+    float lostPacketsPercent;
     bool interval;
     double outputCpu;
 
     void set_interval(
             unsigned long long packets,
-            unsigned long long packetsS,
-            double pAve,
+            unsigned long long packetsPerSecond,
+            double packetsAverage,
             unsigned long long bps,
             double bpsAve,
-            unsigned long long lost);
+            unsigned long long lostPackets);
 
     void set_summary(
             unsigned long long packets,
             unsigned long long time,
             unsigned long long bytes,
-            unsigned long long lost);
+            unsigned long long lostPackets);
 };
 struct LatencyInfo {
     unsigned long dataLength;
     unsigned long long latency;
-    double ave;
+    double average;
     double std;
-    unsigned long long min;
-    unsigned long long max;
-    unsigned long long h50;
-    unsigned long long h90;
-    unsigned long long h99;
-    unsigned long long h9999;
-    unsigned long long h999999;
-    double serialize;
-    double deserialize;
-    double total;
+    unsigned long long minimum;
+    unsigned long long maximum;
+    unsigned long long percentile50;
+    unsigned long long percentile90;
+    unsigned long long percentile99;
+    unsigned long long percentile9999;
+    unsigned long long percentile999999;
+    double serializeTime;
+    double deserializeTime;
     bool interval;
     double outputCpu;
 
     void set_interval(
             unsigned long latency,
-            double ave,
+            double average,
             double std,
-            unsigned long min,
-            unsigned long max);
+            unsigned long minimum,
+            unsigned long maximum);
 
     void set_summary(
-            double ave,
+            double average,
             double std,
-            unsigned long min,
-            unsigned long max,
+            unsigned long minimum,
+            unsigned long maximum,
             unsigned long *history,
             unsigned long long count,
-            double serialize,
-            double deserialize);
+            double serializeTime,
+            double deserializeTime);
 };
 
 class PerftestPrinter {
@@ -98,15 +97,15 @@ public:
 
     virtual void print_latency_header() = 0;
 
-    virtual void print_latency_interval(LatencyInfo latInfo) = 0;
+    virtual void print_latency_interval(LatencyInfo latencyInfo) = 0;
 
-    virtual void print_latency_summary(LatencyInfo latInfo) = 0;
+    virtual void print_latency_summary(LatencyInfo latencyInfo) = 0;
 
     virtual void print_throughput_header() = 0;
 
-    virtual void print_throughput_interval(ThroughputInfo thInfo) = 0;
+    virtual void print_throughput_interval(ThroughputInfo throughputInfo) = 0;
 
-    virtual void print_throughput_summary(ThroughputInfo thInfo) = 0;
+    virtual void print_throughput_summary(ThroughputInfo throughputInfo) = 0;
 
     virtual void print_initial_output() {};
 
@@ -117,12 +116,12 @@ class PerftestCSVPrinter : public  PerftestPrinter {
 public:
     ~PerftestCSVPrinter() {};
     void print_latency_header();
-    void print_latency_interval(LatencyInfo latInfo);
-    void print_latency_summary(LatencyInfo latInfo);
+    void print_latency_interval(LatencyInfo latencyInfo);
+    void print_latency_summary(LatencyInfo latencyInfo);
 
     void print_throughput_header();
-    void print_throughput_interval(ThroughputInfo thInfo);
-    void print_throughput_summary(ThroughputInfo thInfo);
+    void print_throughput_interval(ThroughputInfo throughputInfo);
+    void print_throughput_summary(ThroughputInfo throughputInfo);
 };
 
 class PerftestJSONPrinter : public  PerftestPrinter {
@@ -142,11 +141,11 @@ public:
 
     ~PerftestJSONPrinter() {};
     void print_latency_header();
-    void print_latency_interval(LatencyInfo latInfo);
-    void print_latency_summary(LatencyInfo latInfo);
+    void print_latency_interval(LatencyInfo latencyInfo);
+    void print_latency_summary(LatencyInfo latencyInfo);
     void print_throughput_header();
-    void print_throughput_interval(ThroughputInfo thInfo);
-    void print_throughput_summary(ThroughputInfo thInfo);
+    void print_throughput_interval(ThroughputInfo throughputInfo);
+    void print_throughput_summary(ThroughputInfo throughputInfo);
     void print_initial_output();
     void print_final_output();
 };
@@ -155,12 +154,12 @@ class PerftestLegacyPrinter: public PerftestPrinter {
 
     ~PerftestLegacyPrinter() {};
     void print_latency_header();
-    void print_latency_interval(LatencyInfo latInfo);
-    void print_latency_summary(LatencyInfo latInfo);
+    void print_latency_interval(LatencyInfo latencyInfo);
+    void print_latency_summary(LatencyInfo latencyInfo);
 
     void print_throughput_header();
-    void print_throughput_interval(ThroughputInfo thInfo);
-    void print_throughput_summary(ThroughputInfo thInfo);
+    void print_throughput_interval(ThroughputInfo throughputInfo);
+    void print_throughput_summary(ThroughputInfo throughputInfo);
 
     void print_initial_output() {};
 
