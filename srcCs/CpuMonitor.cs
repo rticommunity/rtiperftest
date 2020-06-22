@@ -26,16 +26,16 @@ namespace PerformanceTest
         ComTypes.FILETIME _prevSysKernel;
         ComTypes.FILETIME _prevSysUser;
         TimeSpan _prevProcTotal;
-        Int16 _cpuUsage;
-        Int16 _cpuUsageTotal;
+        double _cpuUsage;
+        double _cpuUsageTotal;
         DateTime _lastRun;
         long _counter;
 
         public CpuMonitor()
         {
-            _cpuUsage = 0;
+            _cpuUsage = 0.0;
             _counter = 0;
-            _cpuUsageTotal = 0;
+            _cpuUsageTotal = 0.0;
             _lastRun = DateTime.MinValue;
             _prevSysUser.dwHighDateTime = _prevSysUser.dwLowDateTime = 0;
             _prevSysKernel.dwHighDateTime = _prevSysKernel.dwLowDateTime = 0;
@@ -53,9 +53,9 @@ namespace PerformanceTest
             _prevSysUser = sysUser;
         }
 
-        public String get_cpu_instant()
+        public double get_cpu_instant()
         {
-            short cpuCopy = _cpuUsage;
+            double cpuCopy = _cpuUsage;
             if (EnoughTimePassed()) {
 
                 ComTypes.FILETIME sysIdle, sysKernel, sysUser;
@@ -71,7 +71,7 @@ namespace PerformanceTest
                     UInt64 sysTotal = sysKernelDiff + sysUserDiff;
                     Int64 procTotal = procTime.Ticks - _prevProcTotal.Ticks;
                     if (sysTotal > 0) {
-                        _cpuUsage = (short)((100.0 * procTotal) / sysTotal);
+                        _cpuUsage = (double)((100.0 * procTotal) / sysTotal);
                     }
                     _prevProcTotal = procTime;
                     _prevSysKernel = sysKernel;
@@ -82,16 +82,16 @@ namespace PerformanceTest
             }
             _cpuUsageTotal += cpuCopy;
             _counter++;
-            return " CPU: " + cpuCopy + "%";
+            return cpuCopy;
         }
 
-        public string get_cpu_average()
+        public double get_cpu_average()
         {
             if (_counter == 0) {
                 //in the case that the CpuMonitor was just initialize, get_cpu_instant
                 get_cpu_instant();
             }
-            return " CPU: " + (double)(_cpuUsageTotal/_counter) + "%";
+            return (double) (_cpuUsageTotal / _counter);
         }
 
         private UInt64 SubtractTimes(ComTypes.FILETIME a, ComTypes.FILETIME b)

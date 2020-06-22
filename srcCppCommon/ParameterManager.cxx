@@ -337,6 +337,42 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("threadPriorities", threadPriorities);
 
+    Parameter<std::string> *outputFormat = new Parameter<std::string>("csv");
+    outputFormat->set_command_line_argument("-outputFormat", "<format>");
+    outputFormat->set_description(
+            "Set the output format.\n"
+            "The following formats are available:\n"
+            " - 'csv'\n"
+            " - 'json'\n"
+            " - 'legacy'\n"
+            "Default: 'csv'");
+    outputFormat->set_type(T_STR);
+    outputFormat->set_extra_argument(YES);
+    outputFormat->add_valid_str_value("legacy");
+    outputFormat->add_valid_str_value("json");
+    outputFormat->add_valid_str_value("csv");
+    outputFormat->set_group(GENERAL);
+    outputFormat->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("outputFormat", outputFormat);
+
+    Parameter<bool> *noOutputHeaders = new Parameter<bool>(false);
+    noOutputHeaders->set_command_line_argument("-noOutputHeaders", "");
+    noOutputHeaders->set_description(
+            "Skip displaying the header row with \n"
+            "the titles of the tables and the summary.\n"
+            "Default: False (it will display titles)");
+    noOutputHeaders->set_type(T_BOOL);
+    noOutputHeaders->set_extra_argument(NO);
+    noOutputHeaders->set_group(GENERAL);
+    noOutputHeaders->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("noOutputHeaders", noOutputHeaders);
+
   #ifdef RTI_FLATDATA_AVAILABLE
     Parameter<bool> *flatData = new Parameter<bool>(false);
     flatData->set_command_line_argument("-flatData", "");
@@ -456,7 +492,7 @@ void ParameterManager::initialize()
 
     Parameter<long> *batchSize =
             new Parameter<long>(DEFAULT_THROUGHPUT_BATCH_SIZE);
-    batchSize->set_command_line_argument("-batchsize", "<bytes>");
+    batchSize->set_command_line_argument("-batchSize", "<bytes>");
     batchSize->set_description(
             "Size in bytes of batched message. Default: 8kB.\n"
             "(Disabled for LatencyTest mode or if dataLen > 4kB)");

@@ -80,12 +80,12 @@ subscriber side, *RTI Perftest* displays the *Receive Queue* `sample_count` and
 Compilation option to measure latency time in nano-seconds (#253)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-*RTI Perftest* can now be compiled using the Unix calls to measure latency
+*RTI Perftest* can now be compiled using the POSIX calls to measure latency
 in *nanoseconds*, instead of using the *RTI Connext DDS Professional* calls
 which return the time in *microseconds*.
 
 This option can be enabled at compilation time by using the `--ns-resolution`.
-It is only implemented for Unix Systems.
+It is only implemented for Linux/MacOS/QNX Systems.
 
 Switching value for Bounded to Unbounded-Sequences
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -123,6 +123,23 @@ Added 2 new Governance profiles to the list of generated governance files in
 - `PerftestGovernance_RTPSSignWithOrigAuth.xml`
 
 As well as their respective signed versions (`signed_`...).
+
+New output formats available to display data (#280)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Perftest* default output format has been improved. This format should now
+be compatible with the `CSV` format standard, therefore allowing the copy into
+spreadsheet editors or easier parsing via scripting. This change has been
+introduced in a way in which the output retains its readability, by correctly
+aligning rows and columns and by printing headers for each column.
+
+With this change we also introduced the option of changing or customizing the
+output format by using the `-outputFormat <format>`. At this point the supported
+values are `csv` (default), `json` or `legacy` (Referring to the previous
+output used by *RTI Perftest*.
+
+Another flag has been added, `-noOutputHeaders`, in order to skip printing the
+headers rows (for the summaries and also for the interval information).
 
 Added support for -threadPriorities command line parameter in QNX platforms
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -363,6 +380,14 @@ An issue has been resolved in the `build.sh` script that would cause the
 This issue was not causing a bug or a wrong behavior in previous versions of
 *RTI Perftest*.
 
+`-batchSize` parameter not correctly written in the Traditional and Modern C++ API implementations (#324)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed an issue for the Traditional and Modern C++ API implementations where the
+parameter manager would expect `-batchsize` instead of `-batchSize`. This issue
+was only a problem for *VxWorks* systems, where the parsing of the parameters is
+case sensitive.
+
 Release Notes 3.0
 -----------------
 
@@ -517,7 +542,7 @@ that it is expecting the large data type.
 Added --compiler and --linker command-line parameters to build.sh (#152)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When building in Unix, you can now use the `--compiler` and/or `--linker`
+When building using makefiles, you can now use the `--compiler` and/or `--linker`
 command-line parameters to explicitly specify to the `build.sh` script the
 compiler/linker executables that will be used by *rtiddsgen*.
 
@@ -651,7 +676,7 @@ Stop using alarm function to schedule functions since it is deprecated (#164)
 When using `-executionTime <seconds>` parameter, internally, *RTI Perftest* was scheduling a
 function call by using it as a handler when an ALARM signal was received.
 This ALARM signal was set to be signaled in the amount of seconds specified by the *executionTime*
-parameter using the `alarm()` function available in Unix-like systems; however,
+parameter using the `alarm()` function available in POSIX systems; however,
 this alarm function has been deprecated or is even missing in some of RTI's supported platforms.
 
 This issue has been fixed by using a thread that sleeps for the amount of
@@ -1397,8 +1422,8 @@ files used to compile that code.
 
 Therefore, all the already generated makefiles and *Visual Studio*
 solutions have been removed and now the build system depends on 2
-scripts: ``build.sh`` for Unix-based systems and ``build.bat`` for
-Windows systems.
+scripts: ``build.sh`` for Linux/MacOS/QNX/VxWorks/Android systems and
+``build.bat`` for Windows systems.
 
 *RTI Perftest* scripts works for every platform for which *rtiddsgen*
 can generate an example, except for those in which *rtiddsgen* doesn't

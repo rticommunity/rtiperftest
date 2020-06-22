@@ -29,18 +29,18 @@ import com.sun.management.OperatingSystemMXBean;
     // -----------------------------------------------------------------------
     // package Methods
     // -----------------------------------------------------------------------
-    /*package*/ String get_cpu_instant() {
+    /*package*/ double get_cpu_instant() {
         double cpu = _monitor.getProcessCpuLoad() * 100;
         _counter++;
         _cpuUsageTotal += cpu;
-        return String.format(" CPU: %,.1f percent ",cpu);
+        return cpu;
     }
 
-    /*package*/ String  get_cpu_average() {
+    /*package*/ double  get_cpu_average() {
         double cpu_avg = 0.0;
         if (_counter > 0) {
             cpu_avg = (double)(_cpuUsageTotal / _counter);
         }
-        return String.format(" CPU: %,.1f percent ",cpu_avg);
+        return cpu_avg;
     }
 }

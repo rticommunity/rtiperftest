@@ -87,6 +87,10 @@ public final class PerfTest {
 
     /*package*/ static boolean _showCpu = false;
 
+    static boolean _printHeaders = true;
+    static String _outputFormat = "csv";
+    public static PerftestPrinter _printer = new PerftestPrinter();
+
     // -----------------------------------------------------------------------
     // Private Fields
     // -----------------------------------------------------------------------
@@ -221,6 +225,12 @@ public final class PerfTest {
             return;
         }
 
+        _printer.initialize(
+                    printIntervals,
+                    _outputFormat,
+                    _printHeaders,
+                    _showCpu);
+
         printConfiguration();
 
         if (_isPub) {
@@ -346,7 +356,16 @@ public final class PerfTest {
             "\t-cft <start>:<end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n" +
             "\t                          Specify 2 parameters: <start> and <end> to receive samples with a key in that range.\n" +
             "\t                          Specify only 1 parameter to receive samples with that exact key.\n" +
-            "\t                          Default: Not set\n";
+            "\t                          Default: Not set\n" +
+            "\t-noOutputHeaders         - Skip displaying the header row with\n" +
+            "\t                          the titles of the tables and the summary.\n" +
+            "\t                          Default: false (it will display titles)\n" +
+            "\t-outputFormat <format>  - Set the output format.\n" +
+            "\t                          The following formats are available:\n" +
+            "\t                           - 'csv'\n" +
+            "\t                           - 'json'\n" +
+            "\t                           - 'legacy'\n" +
+            "\t                          Default: 'csv'\n";
 
         int argc = argv.length;
         if (argc < 0) {
@@ -684,6 +703,31 @@ public final class PerfTest {
 
                 _useCft = true;
             }
+            else if ("-noOutputHeaders".toLowerCase().startsWith(argv[i].toLowerCase()))
+                {
+                    _printHeaders = false;
+                }
+                else if ("-outputFormat".toLowerCase().startsWith(argv[i].toLowerCase()))
+                {
+                    if ((i == (argc - 1)) || argv[++i].startsWith("-"))
+                    {
+                        System.err.print("Missing <format> after " +
+                                "-outputFormat\n");
+                        return false;
+                    }
+                        if ("csv".equals(argv[i])) {
+                            _outputFormat = "csv";
+                        } else if ("json".equals(argv[i])) {
+                            _outputFormat = "json";
+                        } else if ("legacy".equals(argv[i])) {
+                            _outputFormat = "legacy";
+                        } else {
+                            System.err.print("<format> for outputFormat '" +
+                                    argv[i] + "' is not valid. It must be" +
+                                    "'csv', 'json' or 'legacy'.\n");
+                            return false;
+                        }
+                }
             else {
                 _messagingArgv[_messagingArgc++] = argv[i];
             }
@@ -965,6 +1009,8 @@ public final class PerfTest {
 
         System.err.print("Waiting for data ...\n");
 
+        _printer.print_initial_output();
+
         // wait for data
         long  now, prev_time, delta;
         long  prev_count = 0;
@@ -974,7 +1020,6 @@ public final class PerfTest {
         long  mps, bps;
         double mps_ave = 0.0, bps_ave = 0.0;
         long  msgsent, bytes, last_msgs, last_bytes;
-        double missingPacketsPercent = 0.0;
 
 
         now = getTimeUsec();
@@ -997,7 +1042,7 @@ public final class PerfTest {
                 announcement_writer.flush();
                 break;
             }
-            String outputCpu = "";
+            double outputCpu = 0.0;
             if (PerfTest._showCpu) {
                 outputCpu = reader_listener.CpuMonitor.get_cpu_instant();
             }
@@ -1037,14 +1082,15 @@ public final class PerfTest {
                 }
 
                 if (last_msgs > 0) {
-                    System.out.printf(
-                            "Packets: %1$8d  Packets/s: %2$7d  Packets/s(ave): %3$7.0f  " +
-                            "Mbps: %4$7.1f  Mbps(ave): %5$7.1f  Lost: %6$5d (%7$1.2f%%)" + outputCpu + "\n",
-                            last_msgs, mps, mps_ave,
-                            bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
+                    _printer.print_throughput_interval(
+                            last_msgs,
+                            mps,
+                            mps_ave,
+                            bps,
+                            bps_ave,
                             reader_listener.missingPackets,
-                            reader_listener.missingPacketsPercent
-                    );
+                            reader_listener.missingPacketsPercent,
+                            outputCpu);
                 }
             }
         }
@@ -1052,7 +1098,7 @@ public final class PerfTest {
         if (_useReadThread) {
             reader.shutdown();
         }
-
+        _printer.print_final_output();
         sleep(1000);
         System.err.print("Finishing test...\n");
     }
@@ -1215,6 +1261,8 @@ public final class PerfTest {
         writer.flush();
 
         System.err.print("Publishing data ...\n");
+        
+        _printer.print_initial_output();
 
         // Set data size, account for other bytes in message
         message.size = (int)_dataLen - OVERHEAD_BYTES;
@@ -1445,7 +1493,7 @@ public final class PerfTest {
                     "Pulled samples: %1$7d\n",
                     writer.getPulledSampleCount());
         }
-
+        _printer.print_final_output();
         if (testCompleted) {
             System.err.println("Finishing test due to timer...");
         } else {

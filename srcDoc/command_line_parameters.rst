@@ -448,6 +448,25 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** ``Not enabled``
 
+- ``-outputFormat <format>``
+
+   Specify the format for the printed data to facilitate its display or to export it.
+
+   The following formats are supported:
+
+   ['csv','json','legacy'].
+
+   | **Default:** ``csv``
+   | **Values:** ``['csv','json','legacy']``
+
+- ``-noOutputHeaders``
+
+   Skip the print of the header rows for the *RTI Perftest* output.
+
+   By default, all headers rows are printed for each interval and summary.
+
+   | **Default:** ``Not enabled``
+
 Transport-Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -472,8 +491,8 @@ by using the transport-spececific command-line parameters.
 
   Restrict *RTI Connext DDS* to sending output through this interface.
   The value should be the IP address assigned to any of the available network
-  interfaces on the machine. On UNIX systems, the name of the interface is also
-  valid. This command-line parameter is mapped to the **allow_interfaces_list**
+  interfaces on the machine. On Windows systems use instead the name of the
+  interface. This command-line parameter is mapped to the **allow_interfaces_list**
   property in *RTI Connext DDS*.
 
   By default, RTI Connext DDS will attempt to contact all possible

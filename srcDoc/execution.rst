@@ -104,7 +104,7 @@ Java executable
 *RTI Perftest* provides a *.sh* script and a *.bat* script to run the
 Java ``jar`` file. Those scripts are located in:
 
--  ``bin/<debug or release>/perftest_java.sh`` for UNIX-based systems.
+-  ``bin/<debug or release>/perftest_java.sh`` for Linux/MacOS/QNX systems.
 -  ``bin/<debug or release>/perftest_java.bat`` for Windows systems.
 
 When using the *RTI Perftest* scripts, you will need to set the
@@ -142,8 +142,8 @@ In such a case, add the ``$NDDSHOME/lib/<architecture>`` and the
 -  The ``$DYLD_LIBRARY_PATH`` variable if you are on OSX.
 -  The ``%PATH%`` variable (if you are on Windows).
 
-When using Java on UNIX-based systems with *RTI Security Plugins*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When using Java on Linux/MacOS systems with *RTI Security Plugins*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In this case, add the *OpenSSL* libraries in
 ``$OPENSSLHOME/<debug or release>/lib`` to the ``$LD_LIBRARY_PATH`` or

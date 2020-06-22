@@ -775,6 +775,12 @@ namespace PerformanceTest {
                 return;
             }
 
+            _printer.initialize(
+                    _PrintIntervals,
+                    _outputFormat,
+                    _printHeaders,
+                    _showCpu);
+
             PrintConfiguration();
 
             if (_IsPub) {
@@ -894,12 +900,21 @@ namespace PerformanceTest {
                 "\t-writerStats            - Display the Pulled Sample count stats for\n" +
                 "\t                          reliable protocol debugging purposes.\n" +
                 "\t                          Default: Not set\n" +
-                "\t-cpu                   - Display the cpu percent use by the process\n" +
+                "\t-cpu                    - Display the cpu percent use by the process\n" +
                 "\t                          Default: Not set\n" +
                 "\t-cft <start>:<end>      - Use a Content Filtered Topic for the Throughput topic in the subscriber side.\n" +
                 "\t                          Specify 2 parameters: <start> and <end> to receive samples with a key in that range.\n" +
                 "\t                          Specify only 1 parameter to receive samples with that exact key.\n" +
-                "\t                          Default: Not set\n";
+                "\t                          Default: Not set\n" +
+                "\t-noOutputHeaders         - Skip displaying the header row with\n" +
+                "\t                          the titles of the tables and the summary.\n" +
+                "\t                          Default: false (it will display titles)\n" +
+                "\t-outputFormat <format>  - Set the output format.\n" +
+                "\t                          The following formats are available:\n" +
+                "\t                           - 'csv'\n" +
+                "\t                           - 'json'\n" +
+                "\t                           - 'legacy'\n" +
+                "\t                          Default: 'csv'\n";
 
 
             int argc = argv.Length;
@@ -1330,6 +1345,39 @@ namespace PerformanceTest {
 
                     _useCft = true;
                 }
+                else if ("-noOutputHeaders".StartsWith(argv[i], true, null))
+                {
+                    _printHeaders = false;
+                }
+                else if ("-outputFormat".StartsWith(argv[i], true, null))
+                {
+                    if ((i == (argc - 1)) || argv[++i].StartsWith("-"))
+                    {
+                        Console.Error.Write("Missing <format> after " +
+                                "-outputFormat\n");
+                        return false;
+                    }
+                    try {
+                        if ("csv".Equals(argv[i])) {
+                            _outputFormat = "csv";
+                        } else if ("json".Equals(argv[i])) {
+                            _outputFormat = "json";
+                        } else if ("legacy".Equals(argv[i])) {
+                            _outputFormat = "legacy";
+                        } else {
+                            Console.Error.Write("<format> for outputFormat '" +
+                                    argv[i] + "' is not valid. It must be" +
+                                    "'csv', 'json' or 'legacy'.\n");
+                            return false;
+                        }
+                    }
+                    catch (ArgumentNullException)
+                    {
+                        Console.Error.Write("Bad <format>. It must be 'csv'" +
+                                ", 'json' or 'legacy'\n");
+                        return false;
+                    }
+                }
                 else {
                     _MessagingArgv[_MessagingArgc++] = argv[i];
                 }
@@ -1682,13 +1730,9 @@ namespace PerformanceTest {
                     }
 
                     begin_time = perftest_cs.GetTimeUsec();
+                    _printer.set_data_length(message.size + OVERHEAD_BYTES);
+                    _printer.print_throughput_header();
 
-                    if (_PrintIntervals)
-                    {
-                        Console.Write("\n\n********** New data length is {0}\n",
-                                      message.size + (int)OVERHEAD_BYTES);
-                        Console.Out.Flush();
-                    }
                 }
 
                 last_data_length = message.size;
@@ -1767,20 +1811,18 @@ namespace PerformanceTest {
                                 + interval_missing_packets);
                     }
 
-                    String outputCpu = "";
+                    double outputCpu = 0.0;
                     if (_showCpu) {
                         outputCpu = cpu.get_cpu_average();
                     }
-                    Console.Write("Length: {0,5}  Packets: {1,8}  Packets/s(ave): {2,7:F0}  " +
-                                  "Mbps(ave): {3,7:F1}  Lost: {4,5} ({5,1:p1}){6}\n",
-                                  interval_data_length + (int)OVERHEAD_BYTES,
-                                  interval_packets_received,
-                                  interval_packets_received * 1000000 / interval_time,
-                                  interval_bytes_received * 1000000.0 / interval_time * 8.0 / 1000.0 / 1000.0,
-                                  interval_missing_packets,
-                                  missing_packets_percent,
-                                  outputCpu
-                    );
+                    _printer.print_throughput_summary(
+                            interval_data_length + OVERHEAD_BYTES,
+                            interval_packets_received,
+                            interval_time,
+                            interval_bytes_received,
+                            interval_missing_packets,
+                            missing_packets_percent,
+                            outputCpu);
                 } else if (endTest) {
                     Console.Write(
                         "\nNo samples have been received by the Subscriber side,\n"
@@ -1875,6 +1917,8 @@ namespace PerformanceTest {
 
             Console.Error.Write("Waiting for data ...\n");
 
+            _printer.print_initial_output();
+
             // wait for data
             ulong  now, prev_time, delta;
             ulong  prev_count = 0;
@@ -1954,17 +1998,19 @@ namespace PerformanceTest {
 
                     if (last_msgs > 0)
                     {
-                        String outputCpu = "";
+                        double outputCpu = 0.0;
                         if (_showCpu) {
                             outputCpu = reader_listener.cpu.get_cpu_instant();
                         }
-                        Console.Write("Packets: {0,8}  Packets/s: {1,7}  Packets/s(ave): {2,7:F0}  " +
-                                     "Mbps: {3,7:F1}  Mbps(ave): {4,7:F1}  Lost: {5,5} ({6,1:p1}){7}\n",
-                                     last_msgs, mps, mps_ave,
-                                     bps * 8.0 / 1000.0 / 1000.0, bps_ave * 8.0 / 1000.0 / 1000.0,
-                                     reader_listener.missing_packets,
-                                     missing_packets_percent,
-                                     outputCpu);
+                        _printer.print_throughput_interval(
+                            last_msgs,
+                            mps,
+                            mps_ave,
+                            bps,
+                            bps_ave,
+                            reader_listener.missing_packets,
+                            missing_packets_percent,
+                            outputCpu);
                     }
                 }
             }
@@ -1973,7 +2019,7 @@ namespace PerformanceTest {
             {
                 reader.Shutdown();
             }
-
+            _printer.print_final_output();
             System.Threading.Thread.Sleep(1000);
             Console.Error.Write("Finishing test...\n");
             Console.Out.Flush();
@@ -2149,11 +2195,9 @@ namespace PerformanceTest {
 
                     if (last_data_length != 0)
                     {
-                        if (_PrintIntervals)
-                        {
-                            Console.Write("\n\n********** New data length is {0}\n",
-                                          last_data_length + (int)OVERHEAD_BYTES);
-                        }
+                        _printer.set_data_length(last_data_length
+                                 + OVERHEAD_BYTES);
+                        _printer.print_latency_header();
                     }
                 }
                 else
@@ -2164,12 +2208,17 @@ namespace PerformanceTest {
                         latency_std = System.Math.Sqrt(
                             (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
-                        String outputCpu = "";
+                        double outputCpu = 0.0;
                         if (_showCpu) {
                             outputCpu = cpu.get_cpu_instant();
                         }
-                        Console.Write("One way Latency: {0,6} us  Ave {1,6:F0} us  Std {2,6:F1} us  Min {3,6} us  Max {4,6}{5}\n",
-                            latency, latency_ave, latency_std, latency_min, latency_max,outputCpu);
+                        _printer.print_latency_interval(
+                            latency,
+                            latency_ave,
+                            latency_std,
+                            latency_min,
+                            latency_max,
+                            outputCpu);
                     }
                 }
                 if (_writer != null)
@@ -2222,21 +2271,19 @@ namespace PerformanceTest {
                 System.Array.Sort(_latency_history, 0, (int)count);
                 latency_ave = latency_sum / count;
                 latency_std = System.Math.Sqrt(latency_sum_square / count - (latency_ave * latency_ave));
-                String outputCpu = "";
+                double outputCpu = 0.0;
                 if (_showCpu) {
                     outputCpu = cpu.get_cpu_average();
                 }
-                Console.Write("Length: {0,5}  Latency: Ave {1,6:F0} us  Std {2,6:F1} us  " +
-                              "Min {3,6} us  Max {4,6} us  50% {5,6} us  90% {6,6} us  99% {7,6} us  99.99% {8,6} us  99.9999% {9,6} us{10}\n",
-                              last_data_length + (int)OVERHEAD_BYTES, latency_ave, latency_std, latency_min, latency_max,
-                              _latency_history[count*50/100],
-                              _latency_history[count*90/100],
-                              _latency_history[count*99/100],
-                              _latency_history[(int)(count*(9999.0/10000))],
-                              _latency_history[(int)(count*(999999.0/1000000))],
-                              outputCpu
-                );
-                Console.Out.Flush();
+                _printer.print_latency_summary(
+                        latency_ave,
+                        latency_std,
+                        latency_min,
+                        latency_max,
+                        _latency_history,
+                        count,
+                        outputCpu);
+
                 latency_sum = 0;
                 latency_sum_square = 0;
                 latency_min = perftest_cs.LATENCY_RESET_VALUE;
@@ -2408,6 +2455,8 @@ namespace PerformanceTest {
             writer.Flush();
 
             Console.Error.Write("Publishing data ...\n");
+
+            _printer.print_initial_output();
 
             // Set data size, account for other bytes in message
             message.size = (int)(_DataLen - OVERHEAD_BYTES);
@@ -2633,7 +2682,7 @@ namespace PerformanceTest {
             {
                 Console.Write("Pulled samples: {0,7}\n", writer.getPulledSampleCount());
             }
-
+            _printer.print_final_output();
             if (_testCompleted)
             {
                 Console.Error.Write("Finishing test due to timer...\n");
@@ -2785,11 +2834,13 @@ namespace PerformanceTest {
         private bool _displayWriterStats = false;
         private bool  _useCft = false;
         private System.Timers.Timer timer = null;
-
+        private static PerftestPrinter _printer = new PerftestPrinter();
         private static int  _SubID = 0;
         private static int  _PubID = 0;
         private static bool _PrintIntervals = true;
         private static bool _showCpu  = false;
+        private static bool _printHeaders = true;
+        private static string _outputFormat = "csv";
         private static long _ClockFrequency = 0;
         private static bool _testCompleted = false;
         private static bool _testCompletedScan = true;
