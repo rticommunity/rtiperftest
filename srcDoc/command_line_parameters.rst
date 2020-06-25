@@ -447,6 +447,9 @@ Test Parameters for Publishing and Subscribing Applications
 
    ['csv','json','legacy'].
 
+   For *C++ Traditional* and *C++ Modern* API implementation there is another format,
+   'dds', using dds to send the data.
+
    | **Default:** ``csv``
    | **Values:** ``['csv','json','legacy']``
 

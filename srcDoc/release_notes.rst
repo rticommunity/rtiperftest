@@ -112,6 +112,9 @@ output format by using the `-outputFormat <format>`. At this point the supported
 values are `csv` (default), `json` or `legacy` (Referring to the previous
 output used by *RTI Perftest*.
 
+For *C++ Traditional* and *C++ Modern* there is one more type support, `dds`. It send
+all test data using dds instead of show in terminal.
+
 Another flag has been added, `-noOutputHeaders`, in order to skip printing the
 headers rows (for the summaries and also for the interval information).
 

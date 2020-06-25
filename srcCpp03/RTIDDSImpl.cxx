@@ -2695,11 +2695,11 @@ void PerftestDDSPrinter::initialize_dds_entities()
     if (_PM->get<bool>("pub")) {
         PerftestLatencyInfo myLatencyInfo;
         perftestInfo.latencyInfo(myLatencyInfo);
-        perftestInfo.latencyInfo()->pubId(_PM->get<int>("pidMultiPubTest"));
+        perftestInfo.latencyInfo().get().pubId(_PM->get<int>("pidMultiPubTest"));
     } else {
         PerftestThroughputInfo myThroughputInfo;
         perftestInfo.throughputInfo(myThroughputInfo);
-        perftestInfo.throughputInfo()->subId(_PM->get<int>("sidMultiSubTest"));
+        perftestInfo.throughputInfo().get().subId(_PM->get<int>("sidMultiSubTest"));
     }
 
     fprintf(stderr,
@@ -2732,30 +2732,30 @@ void PerftestDDSPrinter::dataWrapperLatency(LatencyInfo latencyInfo)
     if (this->_showCPU) {
         perftestInfo.outputCpu(latencyInfo.outputCpu);
     }
-    perftestInfo.latencyInfo()->latency(latencyInfo.latency);
-    perftestInfo.latencyInfo()->average(latencyInfo.average);
-    perftestInfo.latencyInfo()->std(latencyInfo.std);
-    perftestInfo.latencyInfo()->minimum(latencyInfo.minimum);
-    perftestInfo.latencyInfo()->maximum(latencyInfo.maximum);
+    perftestInfo.latencyInfo().get().latency(latencyInfo.latency);
+    perftestInfo.latencyInfo().get().average(latencyInfo.average);
+    perftestInfo.latencyInfo().get().std(latencyInfo.std);
+    perftestInfo.latencyInfo().get().minimum(latencyInfo.minimum);
+    perftestInfo.latencyInfo().get().maximum(latencyInfo.maximum);
     // summary part
     if (!latencyInfo.interval) {
-        perftestInfo.latencyInfo()->percentile50(latencyInfo.percentile50);
-        perftestInfo.latencyInfo()->percentile90(latencyInfo.percentile90);
-        perftestInfo.latencyInfo()->percentile99(latencyInfo.percentile99);
-        perftestInfo.latencyInfo()->percentile9999(latencyInfo.percentile9999);
-        perftestInfo.latencyInfo()->percentile999999(latencyInfo.percentile999999);
+        perftestInfo.latencyInfo().get().percentile50(latencyInfo.percentile50);
+        perftestInfo.latencyInfo().get().percentile90(latencyInfo.percentile90);
+        perftestInfo.latencyInfo().get().percentile99(latencyInfo.percentile99);
+        perftestInfo.latencyInfo().get().percentile9999(latencyInfo.percentile9999);
+        perftestInfo.latencyInfo().get().percentile999999(latencyInfo.percentile999999);
         if (_printSerialization) {
-            perftestInfo.latencyInfo()->serializeTime(latencyInfo.serializeTime);
-            perftestInfo.latencyInfo()->deserializeTime(latencyInfo.deserializeTime);
+            perftestInfo.latencyInfo().get().serializeTime(latencyInfo.serializeTime);
+            perftestInfo.latencyInfo().get().deserializeTime(latencyInfo.deserializeTime);
         }
     } else {
-        perftestInfo.latencyInfo()->percentile50(0);
-        perftestInfo.latencyInfo()->percentile90(0);
-        perftestInfo.latencyInfo()->percentile99(0);
-        perftestInfo.latencyInfo()->percentile9999(0);
-        perftestInfo.latencyInfo()->percentile999999(0);
-        perftestInfo.latencyInfo()->serializeTime(0);
-        perftestInfo.latencyInfo()->deserializeTime(0);
+        perftestInfo.latencyInfo().get().percentile50(0);
+        perftestInfo.latencyInfo().get().percentile90(0);
+        perftestInfo.latencyInfo().get().percentile99(0);
+        perftestInfo.latencyInfo().get().percentile9999(0);
+        perftestInfo.latencyInfo().get().percentile999999(0);
+        perftestInfo.latencyInfo().get().serializeTime(0);
+        perftestInfo.latencyInfo().get().deserializeTime(0);
     }
 }
 
@@ -2767,17 +2767,17 @@ void PerftestDDSPrinter::dataWrapperThroughput(ThroughputInfo throughputInfo)
     if (this->_showCPU) {
         perftestInfo.outputCpu(throughputInfo.outputCpu);
     }
-    perftestInfo.throughputInfo()->packets(throughputInfo.packets);
-    perftestInfo.throughputInfo()->packetsAverage(throughputInfo.packetsAverage);
-    perftestInfo.throughputInfo()->mbps(throughputInfo.mbps);
-    perftestInfo.throughputInfo()->mbpsAverage(throughputInfo.mbpsAve);
-    perftestInfo.throughputInfo()->lostPackets(throughputInfo.lostPackets);
-    perftestInfo.throughputInfo()->lostPacketsPercent(throughputInfo.lostPacketsPercent);
-    if (throughputInfo.interval) {
-        perftestInfo.throughputInfo()->packetsPerSecond(throughputInfo.packetsPerSecond);
-    } else {
-        perftestInfo.throughputInfo()->packetsPerSecond(0);
-    }
+      perftestInfo.throughputInfo().get().packets(throughputInfo.packets);
+      perftestInfo.throughputInfo().get().packetsAverage(throughputInfo.packetsAverage);
+      perftestInfo.throughputInfo().get().mbps(throughputInfo.mbps);
+      perftestInfo.throughputInfo().get().mbpsAverage(throughputInfo.mbpsAve);
+      perftestInfo.throughputInfo().get().lostPackets(throughputInfo.lostPackets);
+      perftestInfo.throughputInfo().get().lostPacketsPercent(throughputInfo.lostPacketsPercent);
+      if (throughputInfo.interval) {
+          perftestInfo.throughputInfo().get().packetsPerSecond(throughputInfo.packetsPerSecond);
+      } else {
+          perftestInfo.throughputInfo().get().packetsPerSecond(0);
+      }
 }
 
 #if defined RTI_WIN32 || defined(RTI_INTIME)

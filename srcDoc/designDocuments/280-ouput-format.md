@@ -9,6 +9,8 @@ The aim of this project is to change the view of all the data printed during the
 There are new flags for manage:
 - `-outputFormat {csv, json, legacy}`
 - `-noOutputHeaders`. Delete the row with headers of intervals and summaries.
+- For *C++ Traditional* and *C++ Modern* API implementation there is another format,
+'dds', using dds to send the data.
 
 Examples:
 
