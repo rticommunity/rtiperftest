@@ -287,8 +287,14 @@ perftest_cpp::~perftest_cpp()
  * Constructor
  */
 perftest_cpp::perftest_cpp()
-#ifdef RTI_PERF_MICRO
-    : _PM(true)
+#if defined(RTI_PERF_PRO)
+    : _PM(Middleware::RTIDDSPRO)
+#elif defined(RTI_PERF_MICRO)
+    : _PM(Middleware::RTIDDSPRO)
+#elif defined(EPROSIMA_FASTDDS)
+    : _PM(Middleware::EPROSIMAFASTDDS)
+#else
+    : _PM()
 #endif
 {
     subID = 0;

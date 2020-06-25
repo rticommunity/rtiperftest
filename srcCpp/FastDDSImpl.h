@@ -6,7 +6,7 @@
 #ifndef __FASTDDSIMPL_H__
 #define __FASTDDSIMPL_H__
 
-#ifdef EPROXIMA_FASTDDS
+#ifdef EPROSIMA_FASTDDS
 
 #include <stdexcept> // This header is part of the error handling library.
 #include <string>
@@ -69,5 +69,5 @@ protected:
     perftest_cpp                *_parent;
 };
 
-#endif // EPROXIMA_FASTDDS
+#endif // EPROSIMA_FASTDDS
 #endif // __FASTDDSIMPL_H__

@@ -3,7 +3,7 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-#ifdef EPROXIMA_FASTDDS
+#ifdef EPROSIMA_FASTDDS
 
 #include "Infrastructure_fastDDS.h"
 
@@ -401,4 +401,4 @@ bool PerftestConfigureTransport(
     return true;
 }
 
-#endif // EPROXIMA_FASTDDS
+#endif // EPROSIMA_FASTDDS
