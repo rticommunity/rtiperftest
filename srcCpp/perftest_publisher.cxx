@@ -85,6 +85,8 @@ const unsigned long long numIterDefaultLatencyTest = 10000000;
  */
 int main(int argc, char *argv[])
 {
+    std::cerr << "Main function called\n";
+
     try {
         perftest_cpp app;
         return app.Run(argc, argv);
@@ -152,6 +154,8 @@ int perftest_cpp::Run(int argc, char *argv[])
             && !_threadPriorities.set_main_thread_priority()) {
         return -1;
     }
+
+    return -1;
 
     _printer.initialize(&_PM);
 

@@ -14,7 +14,7 @@
 const MiddlewareMask Middleware::RTIDDSPRO = 1 << 0;
 const MiddlewareMask Middleware::RTIDDSMICRO = 1 << 1;
 const MiddlewareMask Middleware::RAWTRANSPORT = 1 << 2;
-const MiddlewareMask Middleware::EPROXIMAFASTDDS = 1 << 3;
+const MiddlewareMask Middleware::EPROSIMAFASTDDS = 1 << 3;
 
 ////////////////////////////////////////////////////////////////////////////
 /* Implementation Class CommandLineArgument*/

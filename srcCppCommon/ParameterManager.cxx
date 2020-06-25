@@ -31,7 +31,7 @@ void ParameterManager::initialize()
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO
-            | Middleware::EPROXIMAFASTDDS);
+            | Middleware::EPROSIMAFASTDDS);
     create("bestEffort",  bestEffort);
 
     Parameter<unsigned long long> *dataLen =
@@ -47,7 +47,7 @@ void ParameterManager::initialize()
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO
-            | Middleware::EPROXIMAFASTDDS);
+            | Middleware::EPROSIMAFASTDDS);
     create("dataLen", dataLen);
 
 
@@ -64,7 +64,7 @@ void ParameterManager::initialize()
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO
-            | Middleware::EPROXIMAFASTDDS);
+            | Middleware::EPROSIMAFASTDDS);
     create("verbosity", verbosity);
 
     Parameter<bool> *dynamicData = new Parameter<bool>(false);
@@ -105,7 +105,7 @@ void ParameterManager::initialize()
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO
-            | Middleware::EPROXIMAFASTDDS);
+            | Middleware::EPROSIMAFASTDDS);
     create("domain", domain);
 
     Parameter<long> *instances = new Parameter<long>(1);
