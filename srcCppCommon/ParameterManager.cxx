@@ -9,11 +9,11 @@
 #include "ParameterManager.h"
 #include "perftest_cpp.h"
 
-ParameterManager::ParameterManager() : perftestForMicro(false)
+ParameterManager::ParameterManager() : middleware(Middleware::RTIDDSPRO)
 {
 }
 
-ParameterManager::ParameterManager(bool perftestMicro) : perftestForMicro(perftestMicro)
+ParameterManager::ParameterManager(MiddlewareMask middleware) : middleware(middleware)
 {
 }
 
@@ -30,7 +30,8 @@ void ParameterManager::initialize()
     bestEffort->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROXIMAFASTDDS);
     create("bestEffort",  bestEffort);
 
     Parameter<unsigned long long> *dataLen =
@@ -45,7 +46,8 @@ void ParameterManager::initialize()
     dataLen->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROXIMAFASTDDS);
     create("dataLen", dataLen);
 
 
@@ -61,7 +63,8 @@ void ParameterManager::initialize()
     verbosity->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROXIMAFASTDDS);
     create("verbosity", verbosity);
 
     Parameter<bool> *dynamicData = new Parameter<bool>(false);
@@ -101,7 +104,8 @@ void ParameterManager::initialize()
     domain->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROXIMAFASTDDS);
     create("domain", domain);
 
     Parameter<long> *instances = new Parameter<long>(1);
@@ -907,7 +911,7 @@ void ParameterManager::initialize()
             "packets. This will be the only address announced\n"
             "at discovery time. If not specified, use all"
             "available interfaces"
-          #ifdef RTI_MICRO
+          #ifdef RTI_PERF_MICRO
             "\n"
             "When using RTI Connext DDS Micro, always specify the\n"
             "name, not the IP Address."
@@ -929,7 +933,7 @@ void ParameterManager::initialize()
             "packets. This will be the only address announced\n"
             "at discovery time. If not specified, use all"
             "available interfaces"
-          #ifdef RTI_MICRO
+          #ifdef RTI_PERF_MICRO
             "\n"
             "When using RTI Connext DDS Micro, always specify the\n"
             "name, not the IP Address."
@@ -1628,17 +1632,23 @@ bool ParameterManager::check_incompatible_parameters()
     bool success = true;
     std::map<std::string, AnyParameter>::iterator it;
 
-    // Check incompatibilities with Micro
-    if (perftestForMicro) {
-        for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
-            if (it->second.get()->get_isSet()
-                    && !(it->second.get()->get_supported_middleware()
-                            & Middleware::RTIDDSMICRO)) {
-                fprintf(stderr,
-                        "Cannot use '%s' when compiling with RTI Connext DDS Micro.\n",
-                        it->second.get()->get_option().c_str());
-                return false;
-            }
+    /*
+     * RAWTRANSPORT is not actually a middleware, and the desition is made at
+     * execution time (it has to be RTI Connext DDS Pro to support this feature)
+     */
+    if (get<bool>("rawTransport")) {
+            this->middleware = Middleware::RAWTRANSPORT;
+    }
+
+    // Check if the middleware accepts all the parameters we have in the list
+    for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
+        if (it->second.get()->get_isSet()
+                && !(it->second.get()->get_supported_middleware()
+                        & this->middleware)) {
+        fprintf(stderr,
+                "[Error] Parser: '%s' Not supported by the Middleware implementation.\n",
+                it->second.get()->get_option().c_str());
+        return false;
         }
     }
 
@@ -1650,20 +1660,6 @@ bool ParameterManager::check_incompatible_parameters()
                 success = false;
             } else if (it->second.get()->get_group() == SUB && get<bool>("pub")) {
                 fprintf(stderr, "Cannot use '%s' while setting '-pub'.\n",
-                        it->second.get()->get_option().c_str());
-                success = false;
-            }
-        }
-    }
-
-    // Check incompatibilities with rawTransport
-    if (get<bool>("rawTransport")) {
-        for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
-            if (it->second.get()->get_isSet()
-                    && !(it->second.get()->get_supported_middleware()
-                            & Middleware::RAWTRANSPORT)) {
-                fprintf(stderr,
-                        "Cannot use '%s' while setting '-rawTransport'.\n",
                         it->second.get()->get_option().c_str());
                 success = false;
             }

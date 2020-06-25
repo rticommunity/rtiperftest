@@ -7,7 +7,9 @@
 #define __PARAMETERMANAGER_H__
 
 #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
-  #include "perftest.h"
+  #if defined(RTI_PRO) || defined (RTI_PERF_MICRO)
+    #include "perftest.h"
+  #endif
 #elif defined(RTI_LANGUAGE_CPP_MODERN)
   #include "perftest.hpp"
 #endif
@@ -48,7 +50,7 @@ class ParameterManager
 
     public:
         ParameterManager();
-        ParameterManager(bool perftestForMicro);
+        ParameterManager(MiddlewareMask middleware);
         void initialize();
         ~ParameterManager();
 
@@ -129,7 +131,8 @@ class ParameterManager
 
 
     private:
-        bool perftestForMicro;
+        MiddlewareMask middleware;
+
         std::vector<std::string> split(std::string str, std::string delimiter = ":");
         std::string get_center_header_help_line(std::string name);
 
