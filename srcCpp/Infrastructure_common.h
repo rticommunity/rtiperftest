@@ -6,7 +6,9 @@
 #ifndef INFRASTRUCTURE_COMMON_H_
 #define INFRASTRUCTURE_COMMON_H_
 
-#include "perftest.h"
+#if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
+  #include "perftest.h"
+#endif
 #include <fstream>
 
 #include <sys/types.h>
@@ -18,10 +20,12 @@
   #define PERFT_TIME_UNIT "ns"
 #endif
 
-#ifdef RTI_MICRO
+#ifdef RTI_PERF_MICRO
   #include "Infrastructure_micro.h"
-#else
+#elif RTI_PERF_PRO
   #include "Infrastructure_pro.h"
+#elif EPROXIMA_FASTDDS
+  #include "Infrastructure_fastDDS.h"
 #endif
 
 #ifdef RTI_VXWORKS

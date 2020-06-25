@@ -242,7 +242,7 @@ bool PerftestTransport::validate_input()
         return false;
     }
 
-  #ifndef RTI_MICRO
+  #ifdef RTI_PERF_PRO
     // Manage parameter -multicastAddr
     if(_PM->is_set("multicastAddr")) {
         if (!parse_multicast_addresses(
@@ -272,7 +272,7 @@ bool PerftestTransport::allowsMulticast()
             && transportConfig.kind != TRANSPORT_SHMEM);
 }
 
-#ifndef RTI_MICRO
+#ifdef RTI_PERF_PRO
 
 const std::string PerftestTransport::getMulticastAddr(const char *topicName)
 {

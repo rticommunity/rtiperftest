@@ -7,7 +7,7 @@
 #define TO_STRING(x) STRINGIFY(x)
 
 #include "RTIDDSImpl.h"
-#ifndef RTI_MICRO
+#ifdef RTI_PERF_PRO
   #include "RTIRawTransportImpl.h"
 #endif
 #include "perftest_cpp.h"
@@ -63,7 +63,7 @@ extern "C" void RTIAndroid_registerOnPrintf(RTIAndroidOnPrintfMethod onPrintf) {
     publisher_onPrintf = onPrintf;
 }
 
-#endif
+#endif // RTI_ANDROID
 
 bool perftest_cpp::_testCompleted = false;
 bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
@@ -155,8 +155,9 @@ int perftest_cpp::Run(int argc, char *argv[])
 
     _printer.initialize(&_PM);
 
+  #if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
     if (_PM.get<bool>("rawTransport")) {
-      #ifndef RTI_MICRO
+      #ifdef RTI_PERF_PRO
         _MessagingImpl = new RTIRawTransportImpl();
       #endif
     } else {
@@ -222,6 +223,7 @@ int perftest_cpp::Run(int argc, char *argv[])
             break;
         }
     }
+  #endif // #if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
 
     if (!_MessagingImpl->Initialize(_PM, this)) {
         return -1;
@@ -285,7 +287,7 @@ perftest_cpp::~perftest_cpp()
  * Constructor
  */
 perftest_cpp::perftest_cpp()
-#ifdef RTI_MICRO
+#ifdef RTI_PERF_MICRO
     : _PM(true)
 #endif
 {
@@ -311,7 +313,7 @@ perftest_cpp::perftest_cpp()
 bool perftest_cpp::validate_input()
 {
     // Manage parameter -batchSize for micro
-  #ifdef RTI_MICRO
+  #ifndef RTI_PERF_PRO
     _PM.set("batchSize", 0);
   #endif
 
@@ -584,7 +586,7 @@ void perftest_cpp::PrintConfiguration()
             stringStream << _PM.get<unsigned long long>("dataLen") << "\n";
         }
 
-      #ifndef RTI_MICRO
+      #ifdef RTI_PERF_PRO
         // Batching
         stringStream << "\tBatching: ";
         if (_PM.get<long>("batchSize") > 0) {
@@ -1396,7 +1398,7 @@ public:
         unsigned short mask;
         double latency_ave;
         double latency_std;
-      #ifndef RTI_MICRO
+      #ifdef RTI_PERF_PRO
         double serializeTime = -1;
         double deserializeTime = -1;
       #endif
@@ -1438,7 +1440,7 @@ public:
             cpu.initialize();
         }
 
-      #ifndef RTI_MICRO
+      #ifdef RTI_PERF_PRO
         if (_PM->get<bool>("serializationTime")) {
 
             mask = (_PM->get<int>("unbounded") != 0) << 0;
@@ -1541,7 +1543,7 @@ public:
         }
       #endif
 
-      #ifdef RTI_MICRO
+      #ifndef RTI_PERF_PRO
         _printer->print_latency_summary(
                 latency_ave,
                 latency_std,

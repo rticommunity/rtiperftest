@@ -57,3 +57,5 @@ srcDoc/_build
 /srcCpp/testSupport.h
 /srcCpp/testSupport.cxx
 /srcIdl/test.idl
+srcCpp/build
+build

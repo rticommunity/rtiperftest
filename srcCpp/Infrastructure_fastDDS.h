@@ -3,10 +3,16 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-#ifndef INFRASTRUCTURE_MICRO_H_
-#define INFRASTRUCTURE_MICRO_H_
+#ifndef INFRASTRUCTURE_FASTDDS_H_
+#define INFRASTRUCTURE_FASTDDS_H_
 
-#ifdef RTI_PERF_MICRO
+/*
+ * For the time being, the implementation of FastDDS will rely on the 
+ * infrastructure for Micro, still, we will leave this file in place so we can
+ * replace it at some point.
+ */
+
+#ifdef EPROXIMA_FASTDDS
 
 #include "osapi/osapi_semaphore.h"
 #include "osapi/osapi_thread.h"
@@ -14,16 +20,34 @@
 #include "rti_me_cpp.hxx"
 #include "PerftestTransport.h"
 
-#ifdef RTI_SECURE_PERFTEST
-  #include "sec_core/sec_core_cpp.h"
-  #include "PerftestSecurity.h"
-#endif
-
 #ifdef RTI_WIN32
   #include "windows.h"
 #endif
 
 #include <sstream>
+
+
+static const DDS_Long MAX_SYNCHRONOUS_SIZE= 65535;
+
+static const DDS_Long MAX_BOUNDED_SEQ_SIZE= 1048576;
+
+static const DDS_Long RTI_FLATDATA_MAX_SIZE= 10485760;
+
+static const DDS_Long MAX_PERFTEST_SAMPLE_SIZE= 2147482620;
+
+static const DDS_Long MAX_CFT_VALUE= 65535;
+
+static const DDS_Long KEY_SIZE= 4;
+
+static const DDS_UnsignedLong DEFAULT_THROUGHPUT_BATCH_SIZE= 8192;
+
+static const DDS_Char * const THROUGHPUT_TOPIC_NAME= "Throughput";
+
+static const DDS_Char * const LATENCY_TOPIC_NAME= "Latency";
+
+static const DDS_Char * const ANNOUNCEMENT_TOPIC_NAME= "Announcement";
+
+
 
 /********************************************************************/
 /*
@@ -244,7 +268,7 @@ class NDDSUtility
             iterations++;
             /*
              * If the the clock have a low precision, increase spinCount
-             * until we measure some us or reach a maximum count loop
+             * until we measure some us or reach a maximun count loop
              */
         } while (usec < precision && iterations < clockCalculationLoopCountMax);
 
@@ -264,5 +288,5 @@ class NDDSUtility
     }
 };
 
-#endif // RTI_PERF_MICRO
-#endif /* INFRASTRUCTURE_MICRO_H_ */
+#endif // EPROXIMA_FASTDDS
+#endif /* INFRASTRUCTURE_FASTDDS_H_ */

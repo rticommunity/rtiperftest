@@ -1,6 +1,8 @@
 #ifndef __RTIDDSIMPL_H__
 #define __RTIDDSIMPL_H__
 
+#ifdef RTI_PERF_PRO
+
 /*
  * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
@@ -19,7 +21,7 @@
 #include "perftest_ZeroCopySupport.h"
 #endif
 
-#ifndef RTI_MICRO
+#ifndef RTI_PERF_MICRO
 #include "RTIDDSLoggerDevice.h"
 #endif
 
@@ -27,7 +29,7 @@
 #include "CustomType.h"
 #endif
 
-#if defined(RTI_DARWIN) && !defined(RTI_MICRO)
+#if defined(RTI_DARWIN) && !defined(RTI_PERF_MICRO)
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #endif
@@ -83,13 +85,13 @@ public:
      */
     IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
 
-  #ifndef RTI_MICRO
+  #ifndef RTI_PERF_MICRO
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
   #endif
 
     bool configureDomainParticipantQos(DDS_DomainParticipantQos &qos);
 
-  #ifndef RTI_MICRO
+  #ifndef RTI_PERF_MICRO
 
     /**
      * @brief This function calculates the overhead bytes that all the
@@ -147,14 +149,14 @@ protected:
     DDSDataReader               *_reader;
     const char                  *_typename;
     PerftestSemaphore           *_pongSemaphore;
-  #ifndef RTI_MICRO
+  #ifndef RTI_PERF_MICRO
     RTIDDSLoggerDevice           _loggerDevice;
   #endif
     ParameterManager            *_PM;
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
 
-  #ifndef RTI_MICRO
+  #ifndef RTI_PERF_MICRO
     unsigned long int getShmemSHMMAX();
   #endif
     bool setup_DR_QoS(
@@ -243,4 +245,5 @@ public:
 };
 #endif // RTI_FLATDATA_AVAILABLE
 
+#endif // RTI_PERF_PRO
 #endif // __RTIDDSIMPL_H__
