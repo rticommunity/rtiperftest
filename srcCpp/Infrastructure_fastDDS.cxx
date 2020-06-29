@@ -3,7 +3,7 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-#ifdef EPROSIMA_FASTDDS
+#ifdef EPROSIMA_PERF_FASTDDS
 
 #include "Infrastructure_fastDDS.h"
 
@@ -113,10 +113,7 @@ void PerftestClock::sleep(const struct DDS_Duration_t& sleep_period)
 
 const std::string GetDDSVersionString()
 {
-    return "RTI Connext DDS Micro "
-            + std::to_string((int) RTIME_DDS_VERSION_MAJOR) + "."
-            + std::to_string((int) RTIME_DDS_VERSION_MINOR) + "."
-            + std::to_string((int) RTIME_DDS_VERSION_RELEASE);
+    return "Eprosima FastDDS";
 }
 
 void PerftestConfigureVerbosity(int verbosityLevel)
@@ -401,4 +398,4 @@ bool PerftestConfigureTransport(
     return true;
 }
 
-#endif // EPROSIMA_FASTDDS
+#endif // EPROSIMA_PERF_FASTDDS

@@ -21,6 +21,23 @@
             "cppStandard": "c++11"
         },
         {
+            "name": "Linux C++ FASTDDS",
+            "includePath": [
+                "${workspaceFolder}/srcCpp/"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "RTI_UNIX",
+                "RTI_LINUX",
+                "EPROSIMA_PERF_FASTDDS"
+            ],
+            "intelliSenseMode": "${default}",
+            "cStandard": "c11",
+            "cppStandard": "c++11"
+        },
+        {
             "name": "Linux C++03",
             "includePath": [
                 "${workspaceFolder}/srcCpp/",

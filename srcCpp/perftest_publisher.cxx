@@ -20,7 +20,8 @@
  */
 unsigned int perftest_cpp::OVERHEAD_BYTES = 28;
 
-#if defined(RTI_ANDROID)
+#ifdef RTI_PERF_PRO
+#ifdef RTI_ANDROID
 
 #include <android/log.h>
 typedef int (*RTIAndroidOnPrintfMethod)(const char *format, va_list ap);
@@ -64,6 +65,7 @@ extern "C" void RTIAndroid_registerOnPrintf(RTIAndroidOnPrintfMethod onPrintf) {
 }
 
 #endif // RTI_ANDROID
+#endif // RTI_PRO
 
 bool perftest_cpp::_testCompleted = false;
 bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
@@ -85,8 +87,6 @@ const unsigned long long numIterDefaultLatencyTest = 10000000;
  */
 int main(int argc, char *argv[])
 {
-    std::cerr << "Main function called\n";
-
     try {
         perftest_cpp app;
         return app.Run(argc, argv);
@@ -97,6 +97,7 @@ int main(int argc, char *argv[])
     }
 }
 
+#if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
 #if defined(RTI_VXWORKS)
 int perftest_cpp_main(char *args)
 {
@@ -124,7 +125,8 @@ int perftest_cpp_main(char *args)
     // Call original main function with the splitted arguments
     return main(argc, argv);
 }
-#endif
+#endif // RTI_VXWORKS
+#endif // defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
 
 int perftest_cpp::Run(int argc, char *argv[])
 {
@@ -154,8 +156,6 @@ int perftest_cpp::Run(int argc, char *argv[])
             && !_threadPriorities.set_main_thread_priority()) {
         return -1;
     }
-
-    return -1;
 
     _printer.initialize(&_PM);
 
@@ -227,9 +227,15 @@ int perftest_cpp::Run(int argc, char *argv[])
             break;
         }
     }
+  #elif defined (EPROSIMA_PERF_FASTDDS)
+    printf("TODO: Here we should initialize the _MessagingImpl for FastDDS\n");
+    return -1;
+  #else
+    printf("[Error] There is no implementation for this middleware for the "
+           "_MessagingImpl object.\n");
   #endif // #if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
 
-    if (!_MessagingImpl->Initialize(_PM, this)) {
+    if (_MessagingImpl == NULL || !_MessagingImpl->Initialize(_PM, this)) {
         return -1;
     }
 
@@ -295,7 +301,7 @@ perftest_cpp::perftest_cpp()
     : _PM(Middleware::RTIDDSPRO)
 #elif defined(RTI_PERF_MICRO)
     : _PM(Middleware::RTIDDSPRO)
-#elif defined(EPROSIMA_FASTDDS)
+#elif defined(EPROSIMA_PERF_FASTDDS)
     : _PM(Middleware::EPROSIMAFASTDDS)
 #else
     : _PM()

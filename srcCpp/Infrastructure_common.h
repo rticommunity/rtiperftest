@@ -24,7 +24,7 @@
   #include "Infrastructure_micro.h"
 #elif RTI_PERF_PRO
   #include "Infrastructure_pro.h"
-#elif EPROSIMA_FASTDDS
+#elif EPROSIMA_PERF_FASTDDS
   #include "Infrastructure_fastDDS.h"
 #endif
 

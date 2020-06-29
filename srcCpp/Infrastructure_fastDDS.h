@@ -12,7 +12,7 @@
  * replace it at some point.
  */
 
-#ifdef EPROSIMA_FASTDDS
+#ifdef EPROSIMA_PERF_FASTDDS
 
 #include "osapi/osapi_semaphore.h"
 #include "osapi/osapi_thread.h"
@@ -288,5 +288,5 @@ class NDDSUtility
     }
 };
 
-#endif // EPROSIMA_FASTDDS
+#endif // EPROSIMA_PERF_FASTDDS
 #endif /* INFRASTRUCTURE_FASTDDS_H_ */
