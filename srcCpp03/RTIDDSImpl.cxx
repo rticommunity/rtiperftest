@@ -847,6 +847,7 @@ public:
             this->data.set_values(
                     DynamicDataMembersId::GetInstance().at("bin_data"),
                     octec_seq);
+            _last_message_size = message.size;
         }
         this->data.value(
                 DynamicDataMembersId::GetInstance().at("entity_id"),
