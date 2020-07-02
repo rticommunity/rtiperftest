@@ -6,11 +6,16 @@
 #define STRINGIFY(x) #x
 #define TO_STRING(x) STRINGIFY(x)
 
+#include "perftest_cpp.h"
+#if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
 #include "RTIDDSImpl.h"
+#endif
 #ifdef RTI_PERF_PRO
   #include "RTIRawTransportImpl.h"
+#elif defined(EPROSIMA_PERF_FASTDDS)
+  #include "perftestPubSubTypes.h"
+  #include "FastDDSImpl.h"
 #endif
-#include "perftest_cpp.h"
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
 
@@ -228,8 +233,31 @@ int perftest_cpp::Run(int argc, char *argv[])
         }
     }
   #elif defined (EPROSIMA_PERF_FASTDDS)
-    printf("TODO: Here we should initialize the _MessagingImpl for FastDDS\n");
-    return -1;
+
+    mask = (_PM.get<int>("unbounded") != 0) << 0;
+    mask += _PM.get<bool>("keyed") << 1;
+
+    switch (mask) {
+    case 0:  // = 0000 (bounded)
+        _MessagingImpl = new FastDDSImpl<TestData_tPubSubType>();
+        break;
+
+    case 1:  // unbounded = 0001
+        _MessagingImpl = new FastDDSImpl<TestDataLarge_tPubSubType>();
+        break;
+
+    case 2:  // keyed = 0010
+        _MessagingImpl = new FastDDSImpl<TestDataKeyed_tPubSubType>();
+        break;
+
+    case 3:  // unbounded + keyed = 0011
+        _MessagingImpl = new FastDDSImpl<TestDataKeyedLarge_tPubSubType>();
+        break;
+
+    default:
+        break;
+    }
+ 
   #else
     printf("[Error] There is no implementation for this middleware for the "
            "_MessagingImpl object.\n");

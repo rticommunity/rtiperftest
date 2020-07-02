@@ -58,12 +58,12 @@ RTIDDSImpl<T>::RTIDDSImpl()
         #ifdef RTI_SECURE_PERFTEST
           _security(),
         #endif
-        #ifndef RTI_PERF_MICRO
+        #ifdef RTI_PERF_PRO
           _loggerDevice(),
         #endif
           _parent(NULL)
 {
-  #ifndef RTI_PERF_MICRO
+  #ifdef RTI_PERF_PRO
     _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
     _sendQueueSize = 0;
   #else
@@ -2514,7 +2514,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     _parent = parent;
     ThreadPriorities threadPriorities = _parent->get_thread_priorities();
 
-  #ifndef RTI_PERF_MICRO
+  #ifdef RTI_PERF_PRO
     // Register _loggerDevice
     if (!NDDSConfigLogger::get_instance()->set_output_device(&_loggerDevice)) {
         fprintf(stderr,"Failed set_output_device for Logger.\n");
@@ -2547,7 +2547,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
             DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
             DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
 
-  #ifndef RTI_PERF_MICRO
+  #ifdef RTI_PERF_PRO
     if (_participant == NULL || _loggerDevice.checkShmemErrors()) {
         if (_loggerDevice.checkShmemErrors()) {
             fprintf(stderr,
@@ -2566,7 +2566,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     }
   #endif
 
-  #ifndef RTI_PERF_MICRO
+  #ifdef RTI_PERF_PRO
   #ifdef RTI_LEGACY_DD_IMPL
     // If we are using Dynamic Data, check if we want to use the new or old impl
     if (_PM->get<bool>("dynamicData") && _PM->get<bool>("useLegacyDynamicData")) {
@@ -2582,7 +2582,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
         if (!_PM->get<bool>("dynamicData")) {
             T::TypeSupport::register_type(_participant, _typename);
         } else {
-        #ifndef RTI_PERF_MICRO
+        #ifdef RTI_PERF_PRO
             DDSDynamicDataTypeSupport* dynamicDataTypeSupportObject =
                     new DDSDynamicDataTypeSupport(
                             T::TypeSupport::get_typecode(),
@@ -2596,7 +2596,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     }
 
 
-  #ifndef RTI_PERF_MICRO
+  #ifdef RTI_PERF_PRO
     _factory->get_publisher_qos_from_profile(
             publisherQoS,
             _PM->get<std::string>("qosLibrary").c_str(),
@@ -2631,7 +2631,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
         return false;
     }
 
-  #ifndef RTI_PERF_MICRO
+  #ifdef RTI_PERF_PRO
     _subscriber = _participant->create_subscriber_with_profile(
             _PM->get<std::string>("qosLibrary").c_str(),
             "BaseProfileQos",
@@ -2642,7 +2642,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
             DDS_SUBSCRIBER_QOS_DEFAULT,
             NULL,
             DDS_STATUS_MASK_NONE);
-   #endif
+  #endif
     if (_subscriber == NULL) {
         fprintf(stderr,"Problem creating subscriber.\n");
         return false;

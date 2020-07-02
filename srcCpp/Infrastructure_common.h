@@ -6,7 +6,7 @@
 #ifndef INFRASTRUCTURE_COMMON_H_
 #define INFRASTRUCTURE_COMMON_H_
 
-#if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
+#if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO) || defined(EPROSIMA_PERF_FASTDDS)
   #include "perftest.h"
 #endif
 #include <fstream>

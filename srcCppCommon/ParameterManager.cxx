@@ -606,7 +606,8 @@ void ParameterManager::initialize()
     latencyTest->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("latencyTest", latencyTest);
 
     Parameter<unsigned long long> *numIter =

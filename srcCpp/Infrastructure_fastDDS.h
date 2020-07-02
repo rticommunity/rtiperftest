@@ -26,28 +26,10 @@
 
 #include <sstream>
 
-
-static const DDS_Long MAX_SYNCHRONOUS_SIZE= 65535;
-
-static const DDS_Long MAX_BOUNDED_SEQ_SIZE= 1048576;
-
-static const DDS_Long RTI_FLATDATA_MAX_SIZE= 10485760;
-
-static const DDS_Long MAX_PERFTEST_SAMPLE_SIZE= 2147482620;
-
-static const DDS_Long MAX_CFT_VALUE= 65535;
-
-static const DDS_Long KEY_SIZE= 4;
-
-static const DDS_UnsignedLong DEFAULT_THROUGHPUT_BATCH_SIZE= 8192;
-
-static const DDS_Char * const THROUGHPUT_TOPIC_NAME= "Throughput";
-
-static const DDS_Char * const LATENCY_TOPIC_NAME= "Latency";
-
-static const DDS_Char * const ANNOUNCEMENT_TOPIC_NAME= "Announcement";
-
-
+// This should be temporal.
+static const char * const THROUGHPUT_TOPIC_NAME= "Throughput";
+static const char * const LATENCY_TOPIC_NAME= "Latency";
+static const char * const ANNOUNCEMENT_TOPIC_NAME= "Announcement";
 
 /********************************************************************/
 /*

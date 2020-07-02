@@ -5,12 +5,17 @@ ADD_DEFINITIONS( -DRTI_LANGUAGE_CPP_TRADITIONAL -DO3 -DRTI_LINUX -DRTI_UNIX -DFA
 LINK_DIRECTORIES()
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 PROJECT(perftest_FastDDS CXX C)
+set(CMAKE_CXX_STANDARD 11)
 SET(SOURCE_EXTENSION cxx)
 
 # SET(RTIDDSGEN $ENV{RTIMEHOME}/rtiddsgen/scripts/rtiddsgen)
 # SET(RTIDDSMAG $ENV{RTIMEHOME}/rtiddsmag/scripts/rtiddsmag)
 SET(RTIDDSGEN ~/rti_me.2.0/rtiddsgen/scripts/rtiddsgen)
 SET(RTIDDSMAG ~/rti_me.2.0/rtiddsmag/scripts/rtiddsmag)
+
+# Find requirements
+find_package(fastcdr REQUIRED)
+find_package(fastrtps REQUIRED)
 
 SET_PROPERTY(GLOBAL PROPERTY RULE_MESSAGES OFF)
 
@@ -19,9 +24,9 @@ SET(IDL_SOURCE_C perftest.idl)
 SET(IDL_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 SET(XML_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/objs/x64Linux4gcc7.3.0)
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/objs/x64Linux4gcc7.3.0)
-SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/objs/x64Linux4gcc7.3.0)
+# SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/objs/x64Linux4gcc7.3.0)
+# SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/objs/x64Linux4gcc7.3.0)
+# SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/objs/x64Linux4gcc7.3.0)
 # SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/objs/${RTIME_TARGET_NAME})
 # SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/objs/${RTIME_TARGET_NAME})
 # SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/objs/${RTIME_TARGET_NAME})
@@ -59,42 +64,43 @@ ELSE()
     ENDIF()
 ENDIF()
 
-IF (DEFINED RTIME_MAG_FILES)
-    SET(MICRO_APPGEN_LIB rti_me_appgen${RTI_LIB_SUFFIX})
-ENDIF()
 
-SET(MICRO_C_LIBS ${MICRO_APPGEN_LIB}
-                 rti_me_cpp${RTI_LIB_SUFFIX}
-                 rti_me_netioshmem${RTI_LIB_SUFFIX}
-                 rti_me_netiosdm${RTI_LIB_SUFFIX}
-                 rti_me_rhsm${RTI_LIB_SUFFIX}
-                 rti_me_whsm${RTI_LIB_SUFFIX}
-                 rti_me_discdpse${RTI_LIB_SUFFIX}
-                 rti_me_discdpde${RTI_LIB_SUFFIX}
-                 rti_me${RTI_LIB_SUFFIX}
+SET(MICRO_C_LIBS 
+    rti_me_cpp${RTI_LIB_SUFFIX}
+    rti_me_netioshmem${RTI_LIB_SUFFIX}
+    rti_me_netiosdm${RTI_LIB_SUFFIX}
+    rti_me_rhsm${RTI_LIB_SUFFIX}
+    rti_me_whsm${RTI_LIB_SUFFIX}
+    rti_me_discdpse${RTI_LIB_SUFFIX}
+    rti_me_discdpde${RTI_LIB_SUFFIX}
+    rti_me${RTI_LIB_SUFFIX}
                                   )
+
+SET(FASTDDS_LIBS fastcdr fastrtps)
 
 MESSAGE("RTIME_TARGET_NAME = x64Linux4gcc7.3.0")
 # INCLUDE_DIRECTORIES(gen/ $ENV{RTIMEHOME}/include $ENV{RTIMEHOME}/include/rti_me)
 # LINK_DIRECTORIES($ENV{RTIMEHOME}/lib/${RTIME_TARGET_NAME})
-INCLUDE_DIRECTORIES(gen/ ~/rti_me.2.0/include ~/rti_me.2.0/include/rti_me)
+INCLUDE_DIRECTORIES(~/rti_me.2.0/include ~/rti_me.2.0/include/rti_me)
 LINK_DIRECTORIES(~/rti_me.2.0/lib/x64Linux4gcc7.3.0)
 
 ADD_EXECUTABLE(perftest_cpp_FastDDS
-               ${CMAKE_CURRENT_SOURCE_DIR}/perftest_publisher.cxx
-               ${CMAKE_CURRENT_SOURCE_DIR}/ThreadPriorities.cxx
-               ${CMAKE_CURRENT_SOURCE_DIR}/Parameter.cxx
-               ${CMAKE_CURRENT_SOURCE_DIR}/ParameterManager.cxx
-               ${CMAKE_CURRENT_SOURCE_DIR}/FastDDSImpl.cxx
-               ${CMAKE_CURRENT_SOURCE_DIR}/CpuMonitor.cxx
-               ${CMAKE_CURRENT_SOURCE_DIR}/PerftestTransport.cxx
-               ${CMAKE_CURRENT_SOURCE_DIR}/Infrastructure_fastDDS.cxx
-               ${CMAKE_CURRENT_SOURCE_DIR}/Infrastructure_common.cxx
-               ${CMAKE_CURRENT_SOURCE_DIR}/FileDataLoader.cxx
-               ${CMAKE_CURRENT_SOURCE_DIR}/PerftestPrinter.cxx
-               ${IDL_GEN_C}
-               ${IDL_GEN_H}
-               ${APP_GEN_C}
-               ${APP_GEN_H})
+        ${CMAKE_CURRENT_SOURCE_DIR}/perftest.cxx
+        ${CMAKE_CURRENT_SOURCE_DIR}/perftestPubSubTypes.cxx
+        ${CMAKE_CURRENT_SOURCE_DIR}/perftest_publisher.cxx
+        ${CMAKE_CURRENT_SOURCE_DIR}/ThreadPriorities.cxx
+        ${CMAKE_CURRENT_SOURCE_DIR}/Parameter.cxx
+        ${CMAKE_CURRENT_SOURCE_DIR}/ParameterManager.cxx
+        ${CMAKE_CURRENT_SOURCE_DIR}/FastDDSImpl.cxx
+        ${CMAKE_CURRENT_SOURCE_DIR}/CpuMonitor.cxx
+        ${CMAKE_CURRENT_SOURCE_DIR}/PerftestTransport.cxx
+        ${CMAKE_CURRENT_SOURCE_DIR}/Infrastructure_fastDDS.cxx
+        ${CMAKE_CURRENT_SOURCE_DIR}/Infrastructure_common.cxx
+        ${CMAKE_CURRENT_SOURCE_DIR}/FileDataLoader.cxx
+        ${CMAKE_CURRENT_SOURCE_DIR}/PerftestPrinter.cxx
+        ${IDL_GEN_C}
+        ${IDL_GEN_H}
+        ${APP_GEN_C}
+        ${APP_GEN_H})
 
-TARGET_LINK_LIBRARIES(perftest_cpp_FastDDS  ${MICRO_C_LIBS} ${PLATFORM_LIBS})
+TARGET_LINK_LIBRARIES(perftest_cpp_FastDDS  ${MICRO_C_LIBS} ${FASTDDS_LIBS} ${PLATFORM_LIBS})
