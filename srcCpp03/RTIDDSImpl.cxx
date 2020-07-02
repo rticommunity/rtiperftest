@@ -2140,7 +2140,6 @@ const std::string RTIDDSImpl<T>::get_qos_profile_name(std::string topicName)
     return _qoSProfileNameMap[topicName];
 }
 
-#ifndef RTI_MICRO
 template <typename T>
 unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
     unsigned long int shmmax = 0;
@@ -2179,7 +2178,6 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
 
     return shmmax;
 }
-#endif // !RTI_MICRO
 
 /*
  * The purpose of this function is avoid displaying

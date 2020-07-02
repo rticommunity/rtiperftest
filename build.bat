@@ -758,7 +758,7 @@ if !BUILD_MICRO! == 1 (
 	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_TRADITIONAL"
 
 	if !BUILD_MICRO_24x_COMPATIBILITY! == 1 (
-		set "ADDITIONAL_DEFINES=RTI_MICRO_24x_COMPATIBILITY !ADDITIONAL_DEFINES!"
+		set "ADDITIONAL_DEFINES=RTI_PERF_MICRO_24x_COMPATIBILITY !ADDITIONAL_DEFINES!"
 	) else (
 
 		if !USE_SECURE_LIBS! == 1 (
@@ -780,7 +780,7 @@ if !BUILD_MICRO! == 1 (
 		set rtiddsgen_extra_options=!rtiddsgen_extra_options! -sequenceSize !MICRO_UNBOUNDED_SEQUENCE_SIZE! -additionalRtiLibraries "!additional_rti_libraries!"
 	)
 
-	set "ADDITIONAL_DEFINES=RTI_WIN32 RTI_MICRO !ADDITIONAL_DEFINES!"
+	set "ADDITIONAL_DEFINES=RTI_WIN32 RTI_PERF_MICRO !ADDITIONAL_DEFINES!"
 	set "additional_header_files=ParameterManager.h Parameter.h ThreadPriorities.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h FileDataLoader.h PerftestSecurity.h PerftestPrinter.h"
 	set "additional_source_files=ParameterManager.cxx Parameter.cxx ThreadPriorities.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx FileDataLoader.cxx PerftestSecurity.cxx PerftestPrinter.cxx"
 

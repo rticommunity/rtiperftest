@@ -33,11 +33,7 @@
  * TODO: that Encapsulation should be taken out from the sample instead of here.
  */
 
-#ifndef RTI_MICRO
   #define MESSAGE_OVERHEAD_BYTES (COMMEND_WRITER_MAX_RTPS_OVERHEAD + 48 + RTI_CDR_ENCAPSULATION_HEADER_SIZE + 3)
-#else
-  #define MESSAGE_OVERHEAD_BYTES 700
-#endif
 
 
 /******************************************************************************/

@@ -409,7 +409,7 @@ function additional_defines_calculation()
     fi
 
     if [ "${1}" = "CppTraditional" ]; then
-        additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_TRADITIONAL"
+        additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_TRADITIONAL DRTI_PERF_PRO"
 
         if [ "${RTI_PERFTEST_NANO_CLOCK}" == "1" ]; then
             additional_defines=${additional_defines}" DRTI_PERFTEST_NANO_CLOCK"
@@ -456,7 +456,7 @@ function additional_defines_calculation_micro()
             additional_included_libraries="nsl;rt;"
         fi
     fi
-    additional_defines="RTI_LANGUAGE_CPP_TRADITIONAL RTI_MICRO O3"${additional_defines}
+    additional_defines="RTI_LANGUAGE_CPP_TRADITIONAL RTI_PERF_MICRO O3"${additional_defines}
 
     if [ "${RTI_PERFTEST_NANO_CLOCK}" == "1" ]; then
         additional_defines=${additional_defines}" DRTI_PERFTEST_NANO_CLOCK"
@@ -802,7 +802,7 @@ function build_micro_cpp()
     ##############################################################################
     # Generate files for srcCpp
     if [ "${BUILD_MICRO_24x_COMPATIBILITY}" -eq "1" ]; then
-        additional_defines=${additional_defines}" RTI_MICRO_24x_COMPATIBILITY"
+        additional_defines=${additional_defines}" RTI_PERF_MICRO_24x_COMPATIBILITY"
     else
         rtiddsgen_extra_options="${rtiddsgen_extra_options} -sequenceSize ${MICRO_UNBOUNDED_SEQUENCE_SIZE}"
 

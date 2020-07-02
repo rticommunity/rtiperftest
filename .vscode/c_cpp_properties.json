@@ -107,7 +107,7 @@
                 "${env.RTIMEHOME}/include/rti_me/dds_cpp"
             ],
             "defines": [
-                "RTI_MICRO=1",
+                "RTI_PERF_MICRO=1",
                 "RTI_SECURE_PERFTEST=1",
                 "RTI_UNIX=1",
                 "RTI_LANGUAGE_CPP_TRADITIONAL=1"
