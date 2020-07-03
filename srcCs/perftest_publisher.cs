@@ -1737,7 +1737,7 @@ namespace PerformanceTest {
                     }
 
                     begin_time = perftest_cs.GetTimeUsec();
-                    _printer.set_data_length(message.size + (int) OVERHEAD_BYTES);
+                    _printer._dataLength = message.size + (int) OVERHEAD_BYTES;
                     _printer.print_throughput_header();
 
                 }
@@ -2202,8 +2202,8 @@ namespace PerformanceTest {
 
                     if (last_data_length != 0)
                     {
-                        _printer.set_data_length(last_data_length
-                                 + (int) OVERHEAD_BYTES);
+                        _printer._dataLength = last_data_length
+                                 + (int) OVERHEAD_BYTES;
                         _printer.print_latency_header();
                     }
                 }
