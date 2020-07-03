@@ -14,6 +14,12 @@
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
 
+/*
+ * We set 28 as the default value since this matches with the Micro use-case
+ * and the default Pro use-case.
+ */
+unsigned int perftest_cpp::OVERHEAD_BYTES = 28;
+
 #if defined(RTI_ANDROID)
 
 #include <android/log.h>
@@ -455,33 +461,24 @@ bool perftest_cpp::validate_input()
             _PM.set<unsigned long long>("executionTime", 60);
         }
         // Check if scan is large data or small data
-        if (scanList[0] < (unsigned long long)(std::min)
-                    (MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)
-                && scanList[scanList.size() - 1] > (unsigned long long)(std::min)
-                    (MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)) {
+        if (scanList[0] <= (unsigned long long) MAX_BOUNDED_SEQ_SIZE
+                && scanList[scanList.size() - 1]
+                    > (unsigned long long) MAX_BOUNDED_SEQ_SIZE) {
             fprintf(stderr, "The sizes of -scan [");
             for (unsigned int i = 0; i < scanList.size(); i++) {
                 fprintf(stderr, "%llu ", scanList[i]);
             }
             fprintf(stderr,
                     "] should be either all smaller or all bigger than %d.\n",
-                    (std::min)(MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE));
+                    MAX_BOUNDED_SEQ_SIZE);
             return false;
         }
     }
 
-    // Check if we need to enable Large Data. This works also for -scan
-    if (_PM.get<unsigned long long>("dataLen") > (unsigned long long) (std::min)(
-            MAX_SYNCHRONOUS_SIZE,
-            MAX_BOUNDED_SEQ_SIZE)) {
+    // Check if we need to enable the use of unbounded sequences. This works also for -scan
+    if (_PM.get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
         if (_PM.get<int>("unbounded") == 0) {
             _PM.set<int>("unbounded", MAX_BOUNDED_SEQ_SIZE);
-        }
-    } else { // No Large Data
-        if (_PM.get<int>("unbounded") != 0) {
-            fprintf(stderr,
-                    "Unbounded will be ignored since large data is not presented.\n");
-            _PM.set<int>("unbounded", 0);
         }
     }
 
@@ -595,7 +592,7 @@ void perftest_cpp::PrintConfiguration()
                 }
             }
 
-            stringStream << "\t(Set the data size on the subscriber"
+            stringStream << "\n\t(Set the data size on the subscriber"
                          << " to the maximum data size to achieve best performance)"
                          << std::endl;
         } else {
@@ -662,11 +659,6 @@ void perftest_cpp::PrintConfiguration()
 
     } else {
         stringStream << "\tData Size: " << _PM.get<unsigned long long>("dataLen");
-
-        if (_PM.get<unsigned long long>("dataLen") > MAX_SYNCHRONOUS_SIZE) {
-            stringStream << " (Expecting Large Data Type)";
-        }
-
         stringStream << std::endl;
     }
 
@@ -692,6 +684,19 @@ void perftest_cpp::PrintConfiguration()
     }
 
     stringStream << _MessagingImpl->PrintConfiguration();
+
+    // We want to expose if we are using or not the unbounded type
+    if (_PM.get<int>("unbounded")) {
+        stringStream << "\n[IMPORTANT]: Using the Unbounded Sequence Type.";
+        if (_PM.get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
+            stringStream << " -datalen ("
+                        << _PM.get<unsigned long long>("dataLen")
+                        << ") is \n             larger than MAX_BOUNDED_SEQ_SIZE ("
+                        << MAX_BOUNDED_SEQ_SIZE << ")";
+        }
+        stringStream << "\n";
+    }
+
     fprintf(stderr, "%s\n", stringStream.str().c_str());
 
 }
@@ -929,7 +934,7 @@ class ThroughputListener : public IMessagingCB
             _printer->print_throughput_summary(_throughputInfo);
 
             if (cacheStats) {
-                printf("Samples Reader Queue Peak: %4d\n", sample_count_peak);
+                printf("Samples Ping Reader Queue Peak: %4d\n", sample_count_peak);
             }
 
             fflush(stdout);
@@ -1204,9 +1209,12 @@ int perftest_cpp::Subscriber()
                 _printer->print_throughput_interval(_throughputInfo);
 
                 if (cacheStats) {
-                    printf("Samples Reader Queue: %4d (Peak: %4d)\n",
+                    printf("Samples Ping Reader Queue: %4d (Peak: %4d)",
                             reader->getSampleCount(),
                             reader->getSampleCountPeak());
+                    printf(" Samples Pong Writer Queue: %3d (Peak: %3d)\n",
+                            writer->getSampleCount(),
+                            writer->getSampleCountPeak());
                     reader_listener->sample_count_peak = reader->getSampleCountPeak();
                 }
             }
@@ -1921,6 +1929,10 @@ int perftest_cpp::Publisher()
     unsigned long initializeSampleCount = (std::max)(
             _MessagingImpl->GetInitializationSampleCount(),
             (unsigned long)_PM.get<long>("instances"));
+
+    if (_PM.is_set("initialBurstSize")) {
+        initializeSampleCount = _PM.get<long>("initialBurstSize");
+    }
 
     fprintf(stderr,
             "Sending %lu initialization pings ...\n",

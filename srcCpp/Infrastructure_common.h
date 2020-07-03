@@ -35,6 +35,19 @@
   #pragma warning(disable : 4996)
 #endif
 
+/*
+ * Since std::to_string is not defined until c++11
+ * we will define it here.
+ */
+namespace std {
+    template<typename T>
+    std::string to_string(const T &n) {
+        std::ostringstream s;
+        s << n;
+        return s.str();
+    }
+}
+
 /* Perftest Timer Class */
 class PerftestTimer
 {

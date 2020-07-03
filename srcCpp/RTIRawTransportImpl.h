@@ -71,6 +71,16 @@ class RTIRawTransportImpl : public IMessaging {
         return _PM->get<bool>("multicast") && _transport.allowsMulticast();
     }
 
+    /*
+     * @brief This function calculate the overhead bytes that all the
+     * members on TestData_* type add excluding the length of the sequence.
+     *
+     * @param size \b InOut. The size of the overhead of the data type.
+     *
+     * @return true if the operation was successful, otherwise false.
+     */
+    bool get_serialized_overhead_size(unsigned int &overhead_size);
+
   private:
 
     std::vector<std::pair<NDDS_Transport_Address_t, int> > _peersMap;

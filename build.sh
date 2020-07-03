@@ -435,9 +435,8 @@ function additional_defines_calculation()
         additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE"
         if [ "${RTI_FLATDATA_MAX_SIZE}" != "" ]; then
             additional_defines=${additional_defines}" DRTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
-            additional_defines_flatdata=${additional_defines}" -D RTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
+            additional_defines_flatdata=${additional_defines_flatdata}" -D RTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
         fi
-
 
         if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
             additional_rti_libs="nddsmetp ${additional_rti_libs}"
@@ -875,7 +874,7 @@ function build_micro_cpp()
 	echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
     eval $cmake_generate_command
     if [ "$?" != 0 ]; then
-        echo -e "${ERROR_TAG} Failure generating unix makefiles with cmake for ${classic_cpp_lang_string}."
+        echo -e "${ERROR_TAG} Failure generating makefiles with cmake for ${classic_cpp_lang_string}."
         cd ..
         exit -1
     fi

@@ -308,7 +308,7 @@ void ParameterManager::initialize()
     unbounded->set_command_line_argument("-unbounded", "<allocation_threshold>");
     unbounded->set_description(
             "Use unbounded Sequences\n"
-            "<allocation_threshold> is optional. Default: 63000 Bytes");
+            "<allocation_threshold> is optional. Default: MAX_BOUNDED_SEQ_SIZE Bytes");
     unbounded->set_type(T_NUMERIC_D);
     unbounded->set_extra_argument(POSSIBLE);
     unbounded->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_BOUNDED_SEQ_SIZE);
@@ -432,19 +432,75 @@ void ParameterManager::initialize()
     create("useLegacyDynamicData", useLegacyDynamicData);
   #endif
 
+    Parameter<int> *sendQueueSize = new Parameter<int>(50);
+    sendQueueSize->set_command_line_argument("-sendQueueSize", "<number>");
+    sendQueueSize->set_description(
+            "Sets number of samples (or batches) in send\n"
+            "queue. Default: 50");
+    sendQueueSize->set_type(T_NUMERIC_D);
+    sendQueueSize->set_extra_argument(YES);
+    sendQueueSize->set_group(GENERAL);
+    sendQueueSize->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    sendQueueSize->set_range(1, INT_MAX);
+    create("sendQueueSize", sendQueueSize);
+
+    Parameter<int> *receiveQueueSize = new Parameter<int>(128);
+    receiveQueueSize->set_command_line_argument("-receiveQueueSize", "<number>");
+    receiveQueueSize->set_description(
+            "Sets number of samples (or batches) in receive\nqueue. Default: 128");
+    receiveQueueSize->set_type(T_NUMERIC_D);
+    receiveQueueSize->set_extra_argument(YES);
+    receiveQueueSize->set_group(GENERAL);
+    receiveQueueSize->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    receiveQueueSize->set_range(1, INT_MAX);
+    create("receiveQueueSize", receiveQueueSize);
+
+    Parameter<bool> *showResourceLimits = new Parameter<bool>(false);
+    showResourceLimits->set_command_line_argument("-showResourceLimits", "");
+    showResourceLimits->set_description(
+            "Show the resource limits for all different\n"
+            "readers and writers. Default: Not Enabled");
+    showResourceLimits->set_type(T_BOOL);
+    showResourceLimits->set_extra_argument(NO);
+    showResourceLimits->set_group(GENERAL);
+    showResourceLimits->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
+    create("showResourceLimits", showResourceLimits);
+
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    Parameter<bool> *cacheStats = new Parameter<bool>(false);
+    cacheStats->set_command_line_argument("-cacheStats", "");
+    cacheStats->set_description(
+            "Display the reader/writer queue sample count and count_peak.\n"
+            "In the Writer side, also display the Pulled Sample count stats for\n"
+            "reliable protocol debugging purposes.\nDefault: Not set");
+    cacheStats->set_type(T_BOOL);
+    cacheStats->set_extra_argument(NO);
+    receiveQueueSize->set_group(GENERAL);
+    cacheStats->set_supported_middleware(
+            Middleware::RTIDDSPRO);
+    create("cacheStats", cacheStats);
+  #endif
 
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER
 
     Parameter<long> *batchSize =
             new Parameter<long>(DEFAULT_THROUGHPUT_BATCH_SIZE);
-    batchSize->set_command_line_argument("-batchsize", "<bytes>");
+    batchSize->set_command_line_argument("-batchSize", "<bytes>");
     batchSize->set_description(
             "Size in bytes of batched message. Default: 8kB.\n"
             "(Disabled for LatencyTest mode or if dataLen > 4kB)");
     batchSize->set_type(T_NUMERIC_LD);
     batchSize->set_extra_argument(YES);
-    batchSize->set_range(0, MAX_SYNCHRONOUS_SIZE - 1);
+    batchSize->set_range(0, MAX_PERFTEST_SAMPLE_SIZE - 1);
     batchSize->set_group(PUB);
     batchSize->set_supported_middleware(
             Middleware::RTIDDSPRO
@@ -520,6 +576,22 @@ void ParameterManager::initialize()
             | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO);
     create("executionTime", executionTime);
+
+    Parameter<long> *initialBurstSize =
+            new Parameter<long>(0);
+    initialBurstSize->set_command_line_argument("-initialBurstSize", "<samples>");
+    initialBurstSize->set_description(
+            "Set the initial burst size to initialize the queues.\n"
+            "Default Calculated by RTI Perftest");
+    initialBurstSize->set_type(T_NUMERIC_LLU);
+    initialBurstSize->set_extra_argument(YES);
+    initialBurstSize->set_range(0, LONG_MAX);
+    initialBurstSize->set_group(PUB);
+    initialBurstSize->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO);
+    create("initialBurstSize", initialBurstSize);
 
     Parameter<bool> *latencyTest = new Parameter<bool>(false);
     latencyTest->set_command_line_argument("-latencyTest", "");
@@ -613,18 +685,18 @@ void ParameterManager::initialize()
     scanList.push_back(8192);
     scanList.push_back(16384);
     scanList.push_back(32768);
-    scanList.push_back(63000);
+    scanList.push_back(64969);
     ParameterVector<unsigned long long> *scan =
             new ParameterVector<unsigned long long>(scanList);
     scan->set_command_line_argument("-scan", "<size1>:<size2>:...:<sizeN>");
     scan->set_description(
             "Run test in scan mode, traversing\n"
             "a range of sample data sizes from\n"
-            "[32,63000] or [63001,2147482620] bytes,\n"
+            "[32,64969] or [64970,2147482620] bytes,\n"
             "in the case that you are using large data or not.\n"
             "The list of sizes is optional.\n"
             "Default values are "
-            "'32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\n"
+            "'32:64:128:256:512:1024:2048:4096:8192:16384:32768:64969'\n"
             "Default: Not set");
     scan->set_type(T_VECTOR_NUMERIC);
     scan->set_extra_argument(POSSIBLE);
@@ -635,20 +707,6 @@ void ParameterManager::initialize()
             Middleware::RTIDDSPRO
             | Middleware::RTIDDSMICRO);
     create("scan", scan);
-
-    Parameter<int> *sendQueueSize = new Parameter<int>(50);
-    sendQueueSize->set_command_line_argument("-sendQueueSize", "<number>");
-    sendQueueSize->set_description(
-            "Sets number of samples (or batches) in send\nqueue. Default: 50");
-    sendQueueSize->set_type(T_NUMERIC_D);
-    sendQueueSize->set_extra_argument(YES);
-    sendQueueSize->set_group(PUB);
-    sendQueueSize->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
-    sendQueueSize->set_range(1, INT_MAX);
-    create("sendQueueSize", sendQueueSize);
 
     Parameter<unsigned long long> *sleep = new Parameter<unsigned long long>(0);
     sleep->set_command_line_argument("-sleep", "<millisec>");
@@ -677,20 +735,7 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("spin", spin);
 
-  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
-    Parameter<bool> *cacheStats = new Parameter<bool>(false);
-    cacheStats->set_command_line_argument("-cacheStats", "");
-    cacheStats->set_description(
-            "Display the reader/writer queue sample count and count_peak.\n"
-            "In the Writer side, also display the Pulled Sample count stats for\n"
-            "reliable protocol debugging purposes.\nDefault: Not set");
-    cacheStats->set_type(T_BOOL);
-    cacheStats->set_extra_argument(NO);
-    cacheStats->set_group(PUB);
-    cacheStats->set_supported_middleware(
-            Middleware::RTIDDSPRO);
-    create("cacheStats", cacheStats);
-  #else
+  #ifndef RTI_LANGUAGE_CPP_TRADITIONAL
     Parameter<bool> *writerStats = new Parameter<bool>(false);
     writerStats->set_command_line_argument("-writerStats", "");
     writerStats->set_description(

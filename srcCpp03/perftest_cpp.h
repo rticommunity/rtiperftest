@@ -110,8 +110,11 @@ class perftest_cpp
     static LARGE_INTEGER _ClockFrequency;
   #endif
 
-    // Number of bytes sent in messages besides user data
-    static const int OVERHEAD_BYTES = 28;
+    /*
+     * Number of bytes sent in messages besides user data. This value is
+     * calculated at run time.
+     */
+    static unsigned int OVERHEAD_BYTES;
 
     // Flag used to indicate message is used for initialization only
     static const int INITIALIZE_SIZE = 1234;

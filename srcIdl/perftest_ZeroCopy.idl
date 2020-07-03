@@ -14,10 +14,6 @@
 /* We need to use the definitions from the perftest.idl */
 #include "perftest.idl"
 
-#ifdef RTI_CUSTOM_TYPE_FLATDATA
-  #include "custom.idl"
-#endif
-
 /*
  * ZERO COPY WITH FLATDATA
  */
