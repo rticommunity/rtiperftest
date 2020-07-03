@@ -393,15 +393,20 @@ The size of data is configured by the command-line parameter
 ``-dataLen <bytes>``. Depending on this parameter, *RTI Perftest* will
 automatically configure certain *RTI Connext DDS* behaviors.
 
-When the sample size is smaller or equal to 63000 Bytes,
-*RTI Perftest* will, by default, use types with Bounded-Sequences (bound
-set to 63000 elements). If the sample size is bigger than 63000 Bytes,
+When the sample size is smaller or equal to 1MB (`MAX_BOUNDED_SEQ_SIZE` in the
+idl file) *RTI Perftest* will, by default, use types with Bounded-Sequences (bound
+set to 1048576 elements). If the sample size is bigger than 1 MB,
 *RTI Perftest* will automatically switch to types equivalent to the ones
-mentioned previously, but with Unbounded-Sequences. This is not the case when
-using *Flat Data*, since it require fixed size types. In that case the size
-of the sequence will change to `RTI_FLATDATA_MAX_SIZE`, which is configurable
-and by default is 10MB (See compilation section for more information about how
-to change this.
+mentioned previously, but with Unbounded-Sequences.
+
+This is not the case when using *Flat Data*, since that feature requires fixed
+size types. In that case the size of the sequence will change to
+`RTI_FLATDATA_MAX_SIZE`, which is configurable and by default is 10MB
+(See compilation section for more information about how to change this).
+
+The use of Unbounded-Sequences can always be achived by using the `-unbounded`
+command-line parameter, at execution time. See the **Test Parameters** sections
+for more details.
 
 The reason for this behavior is that, when *RTI Perftest*
 uses Unbounded-Sequences, *RTI Connext DDS* will not pre-allocate the
@@ -412,17 +417,25 @@ de-allocating memory to accommodate the actual size of the unbounded
 member. Unbounded-Sequences and strings are also supported with
 DynamicData (command-line parameter ``-DynamicData``).
 
-Apart from the use of Unbounded-Sequences, by setting samples bigger
-than 63000 Bytes, *RTI Perftest* will enable the use of *Asynchronous
-Publishing*, as set by the *RTI Connext DDS* default FlowController.
+Apart from the switch from Bounded to Unbounded-Sequences, there is another
+important behavior that occurs when setting a message size greater than the
+`message_size_max` (by default ~64KB except for `SHMEM`): By setting a sample
+size bigger than the `message_size_max`, *RTI Perftest* will enable the use of
+*Asynchronous Publishing*, and set *RTI Connext DDS*' default FlowController.
 
-You can also use Unbounded-Sequences, Asynchronous Publishing, or 
-a flow controller that is different than the default for sample sizes 
-smaller than 63000 bytes. These
-behaviors can be achieved by using the command-line parameters
-``-unbounded <managerMemory>``, ``-asynchronous``, and
-``-flowController``. See the **Test Parameters** sections for more
-details.
+As mentioned before, for `SHMEM` (Shared Memory) this is not the case. When
+explicitly specifying `-transport SHMEM`, *RTI Perftest* will try to set the
+`message_size_max` to a value big enough so it can fit samples of the size
+specified by the `-datalen <Size>` command-line option. This way, the
+application does not need to use "Asynchronous Publishing", which helps improving
+the performance. If this behavior is not the desired one, it can be modified by
+setting in the `perftest_qos_profiles.xml` a fixed value for the `SHMEM`
+`message_size_max`.
+
+You force the use of Asynchronous Publishing, or specify a flow controller that
+is different than the default for any sample size by using the command-line
+parameters ``-asynchronous``, and ``-flowController``.
+See the **Test Parameters** sections for more details.
 
 --------------
 

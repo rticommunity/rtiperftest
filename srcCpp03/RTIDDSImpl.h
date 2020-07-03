@@ -11,6 +11,7 @@
 #include "perftest.hpp"
 #include "MessagingIF.h"
 #include <sstream>
+#include "PerftestPrinter.h"
 #ifdef RTI_SECURE_PERFTEST
 #include "security/security_default.h"
 #endif
@@ -54,6 +55,8 @@ class RTIDDSImpl : public IMessaging
         Shutdown();
     }
 
+    bool data_size_related_calculations();
+
     bool validate_input();
 
     std::string PrintConfiguration();
@@ -68,6 +71,16 @@ class RTIDDSImpl : public IMessaging
     // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
     // to get data
     IMessagingReader *CreateReader(const std::string &topic_name, IMessagingCB *callback);
+
+    /**
+     * @brief This function calculates the overhead bytes that all the
+     * members on TestData_* type add excluding the content of the sequence.
+     *
+     * @param size \b InOut. The size of the overhead of the data type.
+     *
+     * @return true if the operation was successful, otherwise false.
+     */
+    virtual bool get_serialized_overhead_size(unsigned int &overhead_size);
 
     dds::core::QosProvider getQosProviderForProfile(
             const std::string &library_name,
@@ -98,6 +111,7 @@ class RTIDDSImpl : public IMessaging
     unsigned long _sendQueueSize;
     int _InstanceHashBuckets;
     bool _isLargeData;
+    unsigned long long _maxSynchronousSize;
     bool _isFlatData;
     bool _isZeroCopy;
     PerftestTransport _transport;
@@ -169,7 +183,62 @@ class RTIDDSImpl : public IMessaging
        */
       IMessagingReader *CreateReader(
               const std::string &topic_name, IMessagingCB *callback);
+
+      /**
+       * @brief This function calculates the overhead bytes added by all the
+       * members on the TestData_* type, excluding the content of the sequence.
+       *
+       * @param size \b InOut. The size of the overhead of the data type.
+       *
+       * @return true if the operation was successful, otherwise false.
+       */
+      bool get_serialized_overhead_size(unsigned int &overhead_size);
   };
 #endif // RTI_FLATDATA_AVAILABLE
+
+class PerftestDDSPrinter: public PerftestPrinter {
+public:
+    int domain;
+    std::string topicName;
+
+    ParameterManager *_PM;
+    dds::domain::DomainParticipant participant;
+    dds::pub::DataWriter<PerftestInfo> perftestInfoWriter;
+    PerftestInfo perftestInfo;
+
+    PerftestDDSPrinter();
+
+    ~PerftestDDSPrinter() {};
+
+    void initialize(ParameterManager *_PM);
+    void initialize_dds_entities();
+    void finalize();
+
+    void print_initial_output()
+    {
+        initialize_dds_entities();
+    };
+    void print_final_output()
+    {
+        finalize();
+    };
+
+    void print_latency_header() {};
+    void print_latency_interval(LatencyInfo latencyInfo);
+    void print_latency_summary(LatencyInfo latencyInfo)
+    {
+        print_latency_interval(latencyInfo);
+    };
+
+    void print_throughput_header() {};
+    void print_throughput_interval(ThroughputInfo throughputInfo);
+    void print_throughput_summary(ThroughputInfo throughputInfo)
+    {
+        print_throughput_interval(throughputInfo);
+    };
+
+    void dataWrapperLatency(LatencyInfo latencyInfo);
+    void dataWrapperThroughput(ThroughputInfo throughputInfo);
+};
 
 #endif // __RTIDDSIMPL_H__

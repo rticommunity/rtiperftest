@@ -7,8 +7,7 @@
 #include "custom.idl"
 #endif
 
-const long MAX_SYNCHRONOUS_SIZE = 63000;
-const long MAX_BOUNDED_SEQ_SIZE = 63000;
+const long MAX_BOUNDED_SEQ_SIZE = 1048576; // 1MB
 #ifndef RTI_FLATDATA_MAX_SIZE
   const long RTI_FLATDATA_MAX_SIZE = 10485760; // 10MB
 #endif
@@ -183,3 +182,38 @@ struct TestDataKeyedLarge_FlatData_t {
 };
 
 #endif // RTI_FLATDATA_AVAILABLE
+
+// Generate this type in order to propagate information about rti perftest when
+// using output = dds
+struct PerftestThroughputInfo {
+    @key long subId;
+    @optional unsigned long long packets;
+    @optional unsigned long long packetsPerSecond;
+    @optional double packetsAverage;
+    @optional double mbps;
+    @optional double mbpsAverage;
+    @optional unsigned long long lostPackets;
+    @optional float lostPacketsPercent;
+};
+struct PerftestLatencyInfo {
+    @key long pubId;
+    @optional unsigned long long latency;
+    @optional double average;
+    @optional double std;
+    @optional unsigned long long minimum;
+    @optional unsigned long long maximum;
+    @optional unsigned long long percentile50;
+    @optional unsigned long long percentile90;
+    @optional unsigned long long percentile99;
+    @optional unsigned long long percentile9999;
+    @optional unsigned long long percentile999999;
+    @optional double serializeTime;
+    @optional double deserializeTime;
+};
+
+struct PerftestInfo {
+    @key unsigned long dataLength;
+    @optional PerftestLatencyInfo latencyInfo;
+    @optional PerftestThroughputInfo throughputInfo;
+    @optional double outputCpu;
+};

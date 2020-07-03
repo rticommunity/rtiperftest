@@ -14,6 +14,7 @@
 #include "perftestSupport.h"
 #include "PerftestTransport.h"
 #include "Infrastructure_common.h"
+#include "PerftestPrinter.h"
 
 #ifdef RTI_ZEROCOPY_AVAILABLE
 #include "perftest_ZeroCopySupport.h"
@@ -55,50 +56,15 @@ class RTIDDSImpl : public IMessaging
 {
 public:
 
-    RTIDDSImpl() :
-        _transport(),
-      #ifdef RTI_SECURE_PERFTEST
-        _security(),
-      #endif
-      #ifndef RTI_MICRO
-        _loggerDevice(),
-      #endif
-        _parent(NULL)
-    {
-      #ifndef RTI_MICRO
-        _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
-        _sendQueueSize = 0;
-      #else
-        /*
-         * For micro we want to restrict the use of memory, and since we need
-         * to set a maximum (other than DDS_LENGTH_UNLIMITED), we decided to use
-         * a default of 1. This means that for Micro, we need to specify the
-         * number of instances that will be received in the reader side.
-         */
-        _instanceMaxCountReader = 1;
-      #endif
-        _isLargeData = false;
-        _isFlatData = false;
-        _isZeroCopy = false;
-        _factory = NULL;
-        _participant = NULL;
-        _subscriber = NULL;
-        _publisher = NULL;
-        _reader = NULL;
-        _typename = T::TypeSupport::get_type_name();
-        _pongSemaphore = NULL;
-        _PM = NULL;
-        _qoSProfileNameMap[LATENCY_TOPIC_NAME] = std::string("LatencyQos");
-        _qoSProfileNameMap[ANNOUNCEMENT_TOPIC_NAME]
-                = std::string("AnnouncementQos");
-        _qoSProfileNameMap[THROUGHPUT_TOPIC_NAME]
-                = std::string("ThroughputQos");
-    }
+    RTIDDSImpl();
 
     ~RTIDDSImpl()
     {
         Shutdown();
     }
+
+
+    bool data_size_related_calculations();
 
     bool validate_input();
 
@@ -125,11 +91,21 @@ public:
     bool configureDomainParticipantQos(DDS_DomainParticipantQos &qos);
 
   #ifndef RTI_MICRO
+
+    /**
+     * @brief This function calculates the overhead bytes that all the
+     * members on TestData_* type add excluding the content of the sequence.
+     *
+     * @param size \b InOut. The size of the overhead of the data type.
+     *
+     * @return true if the operation was successful, otherwise false.
+     */
+    virtual bool get_serialized_overhead_size(unsigned int &overhead_size);
+
     /*
      * These two functions calculate the serialization/deserialization time cost
      * with a precision of microseconds.
      */
-
     static double obtain_dds_serialize_time_cost(
             unsigned int sampleSize,
             unsigned int iters = 1000);
@@ -158,6 +134,7 @@ protected:
     long                         _instanceMaxCountReader;
     unsigned long                _sendQueueSize;
     bool                         _isLargeData;
+    unsigned long long           _maxSynchronousSize;
     bool                         _isFlatData;
     bool                         _isZeroCopy;
     PerftestTransport            _transport;
@@ -204,12 +181,7 @@ public:
      *
      * @param isZeroCopy states if the type is also ZeroCopy
      */
-    RTIDDSImpl_FlatData(bool isZeroCopy=false)
-    {
-    this->_isZeroCopy = isZeroCopy;
-    this->_isFlatData = true;
-    this->_typename = T::TypeSupport::get_type_name();
-    };
+    RTIDDSImpl_FlatData(bool isZeroCopy=false);
 
     /**
      * Creates a Publisher that uses the FlatData API
@@ -259,7 +231,63 @@ public:
     static double obtain_dds_deserialize_time_cost_override(
         unsigned int sampleSize,
         unsigned int iters = 1000);
-  };
+
+    /**
+     * @brief This function calculates the overhead bytes added by all the
+     * members on the TestData_* type, excluding the content of the sequence.
+     *
+     * @param size \b InOut. The size of the overhead of the data type.
+     *
+     * @return true if the operation was successful, otherwise false.
+     */
+    bool get_serialized_overhead_size(unsigned int &overhead_size);
+};
 #endif // RTI_FLATDATA_AVAILABLE
+
+class PerftestDDSPrinter: public PerftestPrinter {
+
+    int domain;
+    std::string topicName;
+
+    ParameterManager *_PM;
+    DDSDomainParticipant *participant;
+    DDSPublisher *publisher;
+    DDSTopic *topic;
+    PerftestInfoDataWriter *infoDataWriter;
+    PerftestInfo *perftestInfo;
+
+    ~PerftestDDSPrinter() {};
+
+    void initialize(ParameterManager *_PM);
+    void initialize_dds_entities();
+    void finalize();
+
+    void print_initial_output()
+    {
+        initialize_dds_entities();
+    };
+    void print_final_output()
+    {
+        finalize();
+    };
+
+    void print_latency_header() {};
+    void print_latency_interval(LatencyInfo latencyInfo);
+    void print_latency_summary(LatencyInfo latencyInfo)
+    {
+        print_latency_interval(latencyInfo);
+    };
+
+    void print_throughput_header() {};
+    void print_throughput_interval(ThroughputInfo throughputInfo);
+    void print_throughput_summary(ThroughputInfo throughputInfo)
+    {
+        print_throughput_interval(throughputInfo);
+    };
+
+    void dataWrapperLatency(LatencyInfo latencyInfo);
+    void dataWrapperThroughput(ThroughputInfo throughputInfo);
+    void deleteDataSample();
+};
 
 #endif // __RTIDDSIMPL_H__

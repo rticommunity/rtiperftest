@@ -14,6 +14,12 @@
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
 
+/*
+ * We set 28 as the default value since this matches with the Micro use-case
+ * and the default Pro use-case.
+ */
+unsigned int perftest_cpp::OVERHEAD_BYTES = 28;
+
 #if defined(RTI_ANDROID)
 
 #include <android/log.h>
@@ -226,6 +232,8 @@ int perftest_cpp::Run(int argc, char *argv[])
         _printer = new PerftestJSONPrinter();
     } else if (outputFormat == "legacy") {
         _printer = new PerftestLegacyPrinter();
+    } else if (outputFormat == "dds") {
+        _printer = new PerftestDDSPrinter();
     }
     _printer->initialize(&_PM);
 
@@ -453,33 +461,24 @@ bool perftest_cpp::validate_input()
             _PM.set<unsigned long long>("executionTime", 60);
         }
         // Check if scan is large data or small data
-        if (scanList[0] < (unsigned long long)(std::min)
-                    (MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)
-                && scanList[scanList.size() - 1] > (unsigned long long)(std::min)
-                    (MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE)) {
+        if (scanList[0] <= (unsigned long long) MAX_BOUNDED_SEQ_SIZE
+                && scanList[scanList.size() - 1]
+                    > (unsigned long long) MAX_BOUNDED_SEQ_SIZE) {
             fprintf(stderr, "The sizes of -scan [");
             for (unsigned int i = 0; i < scanList.size(); i++) {
                 fprintf(stderr, "%llu ", scanList[i]);
             }
             fprintf(stderr,
                     "] should be either all smaller or all bigger than %d.\n",
-                    (std::min)(MAX_SYNCHRONOUS_SIZE, MAX_BOUNDED_SEQ_SIZE));
+                    MAX_BOUNDED_SEQ_SIZE);
             return false;
         }
     }
 
-    // Check if we need to enable Large Data. This works also for -scan
-    if (_PM.get<unsigned long long>("dataLen") > (unsigned long long) (std::min)(
-            MAX_SYNCHRONOUS_SIZE,
-            MAX_BOUNDED_SEQ_SIZE)) {
+    // Check if we need to enable the use of unbounded sequences. This works also for -scan
+    if (_PM.get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
         if (_PM.get<int>("unbounded") == 0) {
             _PM.set<int>("unbounded", MAX_BOUNDED_SEQ_SIZE);
-        }
-    } else { // No Large Data
-        if (_PM.get<int>("unbounded") != 0) {
-            fprintf(stderr,
-                    "Unbounded will be ignored since large data is not presented.\n");
-            _PM.set<int>("unbounded", 0);
         }
     }
 
@@ -593,7 +592,7 @@ void perftest_cpp::PrintConfiguration()
                 }
             }
 
-            stringStream << "\t(Set the data size on the subscriber"
+            stringStream << "\n\t(Set the data size on the subscriber"
                          << " to the maximum data size to achieve best performance)"
                          << std::endl;
         } else {
@@ -660,11 +659,6 @@ void perftest_cpp::PrintConfiguration()
 
     } else {
         stringStream << "\tData Size: " << _PM.get<unsigned long long>("dataLen");
-
-        if (_PM.get<unsigned long long>("dataLen") > MAX_SYNCHRONOUS_SIZE) {
-            stringStream << " (Expecting Large Data Type)";
-        }
-
         stringStream << std::endl;
     }
 
@@ -690,6 +684,19 @@ void perftest_cpp::PrintConfiguration()
     }
 
     stringStream << _MessagingImpl->PrintConfiguration();
+
+    // We want to expose if we are using or not the unbounded type
+    if (_PM.get<int>("unbounded")) {
+        stringStream << "\n[IMPORTANT]: Using the Unbounded Sequence Type.";
+        if (_PM.get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
+            stringStream << " -datalen ("
+                        << _PM.get<unsigned long long>("dataLen")
+                        << ") is \n             larger than MAX_BOUNDED_SEQ_SIZE ("
+                        << MAX_BOUNDED_SEQ_SIZE << ")";
+        }
+        stringStream << "\n";
+    }
+
     fprintf(stderr, "%s\n", stringStream.str().c_str());
 
 }
@@ -709,6 +716,7 @@ class ThroughputListener : public IMessagingCB
     bool printIntervals;
     bool cacheStats;
     bool showCpu;
+    ThroughputInfo _throughputInfo;
 
   public:
 
@@ -723,7 +731,6 @@ class ThroughputListener : public IMessagingCB
     unsigned long long interval_bytes_received;
     unsigned long long interval_missing_packets;
     unsigned long long interval_time, begin_time;
-    float missing_packets_percent;
     unsigned int sample_count_peak;
 
     IMessagingWriter *_writer;
@@ -757,7 +764,6 @@ class ThroughputListener : public IMessagingCB
         interval_missing_packets = 0;
         sample_count_peak = 0;
         interval_time = 0;
-        missing_packets_percent = 0.0;
         begin_time = 0;
         _writer = writer;
         _reader = reader;
@@ -772,6 +778,9 @@ class ThroughputListener : public IMessagingCB
 
         _PM = &PM;
         _printer = printer;
+
+        _throughputInfo.dataLength = _printer->_dataLength;
+        _throughputInfo.outputCpu = 0.0;
 
         printIntervals = !_PM->get<bool>("noPrintIntervals");
         cacheStats = _PM->get<bool>("cacheStats");
@@ -908,31 +917,24 @@ class ThroughputListener : public IMessagingCB
             interval_bytes_received = bytes_received;
             interval_missing_packets = missing_packets;
             interval_data_length = last_data_length;
-            missing_packets_percent = 0;
 
-            // Calculations of missing package percent
-            if (interval_packets_received + interval_missing_packets != 0) {
-                missing_packets_percent = (float) ((interval_missing_packets * 100.0)
-                        / (float) (interval_packets_received
-                        + interval_missing_packets));
-            }
 
-            double outputCpu = 0.0;
             if (showCpu) {
-                outputCpu = cpu.get_cpu_average();
+                _throughputInfo.outputCpu = cpu.get_cpu_average();
                 cpu = CpuMonitor();
                 cpu.initialize();
             }
-            _printer->print_throughput_summary(
-                    interval_data_length + perftest_cpp::OVERHEAD_BYTES,
+
+            _throughputInfo.set_summary(
                     interval_packets_received,
                     interval_time,
                     interval_bytes_received,
-                    interval_missing_packets,
-                    missing_packets_percent,
-                    outputCpu);
+                    interval_missing_packets);
+
+            _printer->print_throughput_summary(_throughputInfo);
+
             if (cacheStats) {
-                printf("Samples Reader Queue Peak: %4d\n", sample_count_peak);
+                printf("Samples Ping Reader Queue Peak: %4d\n", sample_count_peak);
             }
 
             fflush(stdout);
@@ -1005,6 +1007,7 @@ int perftest_cpp::Subscriber()
     IMessagingWriter   *writer;
     IMessagingWriter   *announcement_writer;
     struct PerftestThread *throughputThread = NULL;
+    ThroughputInfo _throughputInfo;
 
     // create latency pong writer
     writer = _MessagingImpl->CreateWriter(LATENCY_TOPIC_NAME);
@@ -1135,7 +1138,6 @@ int perftest_cpp::Subscriber()
     unsigned long long mps = 0, bps = 0;
     double mps_ave = 0.0, bps_ave = 0.0;
     unsigned long long msgsent, bytes, last_msgs, last_bytes;
-    float missing_packets_percent = 0;
 
     const bool cacheStats = _PM.get<bool>("cacheStats");
 
@@ -1193,35 +1195,26 @@ int perftest_cpp::Subscriber()
             bps_ave = bps_ave + (double)(bps - bps_ave) / (double)ave_count;
             mps_ave = mps_ave + (double)(mps - mps_ave) / (double)ave_count;
 
-            // Calculations of missing package percent
-            if (last_msgs + reader_listener->missing_packets == 0) {
-                missing_packets_percent = 0.0;
-            } else {
-                missing_packets_percent = (float)
-                        ((reader_listener->missing_packets * 100.0)
-                        / (float) (last_msgs + reader_listener->missing_packets));
-            }
-
             if (last_msgs > 0) {
-                double outputCpu = 0.0;
                 if (showCpu) {
-                    outputCpu = reader_listener->cpu.get_cpu_instant();
+                    _throughputInfo.outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
-                _printer->print_throughput_interval(
+                _throughputInfo.set_interval(
                         last_msgs,
                         mps,
                         mps_ave,
                         bps,
                         bps_ave,
-                        reader_listener->missing_packets,
-                        missing_packets_percent,
-                        outputCpu);
-                fflush(stdout);
+                        reader_listener->missing_packets);
+                _printer->print_throughput_interval(_throughputInfo);
 
                 if (cacheStats) {
-                    printf("Samples Reader Queue: %4d (Peak: %4d)\n",
+                    printf("Samples Ping Reader Queue: %4d (Peak: %4d)",
                             reader->getSampleCount(),
                             reader->getSampleCountPeak());
+                    printf(" Samples Pong Writer Queue: %3d (Peak: %3d)\n",
+                            writer->getSampleCount(),
+                            writer->getSampleCountPeak());
                     reader_listener->sample_count_peak = reader->getSampleCountPeak();
                 }
             }
@@ -1334,6 +1327,7 @@ class LatencyListener : public IMessagingCB
     IMessagingWriter *_writer;
     ParameterManager *_PM;
     PerftestPrinter *_printer;
+    LatencyInfo _latencyInfo;
     int  subID;
     bool printIntervals;
     bool showCpu;
@@ -1391,6 +1385,9 @@ public:
         _PM = &PM;
         _printer = printer;
 
+        _latencyInfo.dataLength = last_data_length;
+        _latencyInfo.outputCpu = 0.0;
+
         subID = _PM->get<int>("sidMultiSubTest");
         printIntervals = !_PM->get<bool>("noPrintIntervals");
         showCpu = _PM->get<bool>("cpu");
@@ -1400,13 +1397,10 @@ public:
         unsigned short mask;
         double latency_ave;
         double latency_std;
-      #ifndef RTI_MICRO
         double serializeTime = -1;
         double deserializeTime = -1;
-      #endif
         int totalSampleSize = last_data_length + perftest_cpp::OVERHEAD_BYTES;
 
-        double outputCpu = 0.0;
         if (count == 0)
         {
             if (endTest) {
@@ -1437,7 +1431,7 @@ public:
         latency_std = sqrt((double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
         if (showCpu) {
-            outputCpu = cpu.get_cpu_average();
+            _latencyInfo.outputCpu = cpu.get_cpu_average();
             cpu = CpuMonitor();
             cpu.initialize();
         }
@@ -1545,18 +1539,7 @@ public:
         }
       #endif
 
-      #ifdef RTI_MICRO
-        _printer->print_latency_summary(
-                latency_ave,
-                latency_std,
-                latency_min,
-                latency_max,
-                _latency_history,
-                count,
-                outputCpu);
-      #else
-        _printer->print_latency_summary(
-                totalSampleSize,
+        _latencyInfo.set_summary(
                 latency_ave,
                 latency_std,
                 latency_min,
@@ -1564,9 +1547,9 @@ public:
                 _latency_history,
                 count,
                 serializeTime,
-                deserializeTime,
-                outputCpu);
-      #endif
+                deserializeTime);
+
+        _printer->print_latency_summary(_latencyInfo);
 
         latency_sum = 0;
         latency_sum_square = 0;
@@ -1593,7 +1576,6 @@ public:
         unsigned int usec;
         double latency_ave;
         double latency_std;
-        double outputCpu = 0.0;
 
         now = PerftestClock::getInstance().getTime();
 
@@ -1686,6 +1668,7 @@ public:
             _printer->_dataLength =
                     last_data_length + perftest_cpp::OVERHEAD_BYTES;
             _printer->print_latency_header();
+
         }
         else {
             if (printIntervals) {
@@ -1694,15 +1677,17 @@ public:
                         (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
 
                 if (showCpu) {
-                    outputCpu = cpu.get_cpu_instant();
+                    _latencyInfo.outputCpu = cpu.get_cpu_instant();
                 }
-                _printer->print_latency_interval(
-                    latency,
-                    latency_ave,
-                    latency_std,
-                    latency_min,
-                    latency_max,
-                    outputCpu);
+
+                _latencyInfo.set_interval(
+                        latency,
+                        latency_ave,
+                        latency_std,
+                        latency_min,
+                        latency_max);
+
+                _printer->print_latency_interval(_latencyInfo);
             }
         }
 
@@ -1944,6 +1929,10 @@ int perftest_cpp::Publisher()
     unsigned long initializeSampleCount = (std::max)(
             _MessagingImpl->GetInitializationSampleCount(),
             (unsigned long)_PM.get<long>("instances"));
+
+    if (_PM.is_set("initialBurstSize")) {
+        initializeSampleCount = _PM.get<long>("initialBurstSize");
+    }
 
     fprintf(stderr,
             "Sending %lu initialization pings ...\n",

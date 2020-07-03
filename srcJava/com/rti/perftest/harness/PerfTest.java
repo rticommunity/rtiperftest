@@ -13,7 +13,6 @@ import com.rti.perftest.IMessagingReader;
 import com.rti.perftest.IMessagingWriter;
 import com.rti.perftest.TestMessage;
 import com.rti.perftest.harness.PerftestTimerTask;
-import com.rti.perftest.gen.MAX_SYNCHRONOUS_SIZE;
 import com.rti.perftest.gen.MAX_BOUNDED_SEQ_SIZE;
 import com.rti.perftest.gen.MAX_PERFTEST_SAMPLE_SIZE;
 
@@ -47,7 +46,7 @@ public final class PerfTest {
     public static final int timeout_wait_for_ack_nsec = 10000000;
 
     // Number of bytes sent in messages besides user data
-    public static final int OVERHEAD_BYTES = 28;
+    public static int OVERHEAD_BYTES = 28;
 
     // MAX_PERFTEST_SAMPLE_SIZE for java (2GB-5B)
     public static final int MAX_PERFTEST_SAMPLE_SIZE_JAVA = 2147483642;
@@ -90,7 +89,7 @@ public final class PerfTest {
 
     static boolean _printHeaders = true;
     static String _outputFormat = "csv";
-    public static PerftestPrinter _printer = new PerftestPrinter();
+    public static PerftestPrinter _printer = null;
 
     // -----------------------------------------------------------------------
     // Private Fields
@@ -226,9 +225,16 @@ public final class PerfTest {
             return;
         }
 
+        if ("json".equals(_outputFormat)) {
+            _printer = new PerftestJSONPrinter();
+        } else if ("legacy".equals(_outputFormat)) {
+            _printer = new PerftestLegacyPrinter();
+        } else {
+            _printer = new PerftestCSVPrinter();
+        }
+
         _printer.initialize(
                     printIntervals,
-                    _outputFormat,
                     _printHeaders,
                     _showCpu);
 
@@ -471,17 +477,7 @@ public final class PerfTest {
                     System.err.println("dataLen must be <= " + getMaxPerftestSampleSizeJava());
                     return false;
                 }
-            }else if ("-unbounded".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                _messagingArgv[_messagingArgc++] = argv[i];
-
-                if ((i == (argc - 1)) || argv[i+1].startsWith("-")) {
-                    //It if not necessary on that class, just the validation and parse
-                } else {
-                    ++i;
-                    _messagingArgv[_messagingArgc++] = argv[i];
-                }
-            }
-            else if ( "-spin".toLowerCase().startsWith(argv[i].toLowerCase()))
+            } else if ( "-spin".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
                 System.err.println("-spin option is deprecated. It will be removed "
                         +"in upcoming releases.");
@@ -798,14 +794,14 @@ public final class PerfTest {
                 _executionTime = 60;
             }
             // Check if large data or small data
-            if (_scanDataLenSizes.get(0) < Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)
-                    && _scanDataLenSizes.get(_scanDataLenSizes.size() - 1) > Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+            if (_scanDataLenSizes.get(0) < MAX_BOUNDED_SEQ_SIZE.VALUE
+                    && _scanDataLenSizes.get(_scanDataLenSizes.size() - 1) > MAX_BOUNDED_SEQ_SIZE.VALUE) {
                 System.err.printf("The sizes of -scan [");
                 for (int i = 0; i < _scanDataLenSizes.size(); i++) {
                     System.err.printf(_scanDataLenSizes.get(i) + " ");
                 }
                 System.err.printf("] should be either all smaller or all bigger than " +
-                        Math.min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE) + "\n");
+                        MAX_BOUNDED_SEQ_SIZE.VALUE + "\n");
                 return false;
             }
         }
@@ -890,7 +886,7 @@ public final class PerfTest {
             } else if (batchSize == 0) {
                 sb.append("No (Use \"-batchSize\" to setup batching)\n");
             } else { // < 0 (Meaning, Disabled by RTI Perftest)
-                sb.append("\"Disabled by RTI Perftest.\"\n");
+                sb.append("Disabled by RTI Perftest.\n");
                 if (batchSize == -1) {
                     if (_latencyTest) {
                         sb.append("\t\t  BatchSize disabled for a Latency Test\n");
@@ -929,10 +925,6 @@ public final class PerfTest {
                 sb.append(_numIter);
                 sb.append("\n");
             }
-        } else {
-            if (_dataLen > MAX_SYNCHRONOUS_SIZE.VALUE) {
-                sb.append("\tExpecting Large Data Type\n");
-            }
         }
 
         // Listener/WaitSets
@@ -944,7 +936,6 @@ public final class PerfTest {
         }
 
         sb.append(_messagingImpl.printConfiguration());
-
         System.err.println(sb.toString());
     }
 

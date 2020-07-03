@@ -108,6 +108,26 @@ namespace PerformanceTest {
             return _maxPerftestSampleSize;
         }
 
+        public long getSerializedOverheadSize() {
+            UInt32 overhead = 0;
+            TestData_t  myType = new  TestData_t();
+            myType.entity_id = 0;
+            myType.seq_num = 0;
+            myType.timestamp_sec = 0;
+            myType.timestamp_usec = 0;
+            myType.latency_ping = 0;
+            myType.bin_data.ensure_length(0,0);
+
+            /*
+            * Setting the input buffer to null, this function will return the
+            * serialize sample size.
+            */
+
+            TestData_tTypeSupport.serialize_data_to_cdr_buffer(null, ref overhead, myType);
+            overhead -= perftest_cs.CDR_ENCAPSULATION_HEADER_SIZE;
+            return overhead;
+        }
+
     }
 
     /*********************************************************
@@ -203,6 +223,25 @@ namespace PerformanceTest {
 
         public ulong getMaxPerftestSampleSize() {
             return _maxPerftestSampleSize;
+        }
+
+        public long getSerializedOverheadSize() {
+            UInt32 overhead = 0;
+            TestDataLarge_t  myType = new  TestDataLarge_t();
+            myType.entity_id = 0;
+            myType.seq_num = 0;
+            myType.timestamp_sec = 0;
+            myType.timestamp_usec = 0;
+            myType.latency_ping = 0;
+            myType.bin_data.ensure_length(0,0);
+
+            /*
+            * Setting the input buffer to null, this function will return the
+            * serialize sample size.
+            */
+            TestDataLarge_tTypeSupport.serialize_data_to_cdr_buffer(null, ref overhead, myType);
+            overhead -= perftest_cs.CDR_ENCAPSULATION_HEADER_SIZE;
+            return overhead;
         }
 
     }
@@ -303,6 +342,24 @@ namespace PerformanceTest {
             return _maxPerftestSampleSize;
         }
 
+        public long getSerializedOverheadSize() {
+            UInt32 overhead = 0;
+            TestDataKeyed_t  myType = new  TestDataKeyed_t();
+            myType.entity_id = 0;
+            myType.seq_num = 0;
+            myType.timestamp_sec = 0;
+            myType.timestamp_usec = 0;
+            myType.latency_ping = 0;
+            myType.bin_data.ensure_length(0,0);
+
+            /*
+            * Setting the input buffer to null, this function will return the
+            * serialize sample size.
+            */
+            TestDataKeyed_tTypeSupport.serialize_data_to_cdr_buffer(null, ref overhead, myType);
+            overhead -= perftest_cs.CDR_ENCAPSULATION_HEADER_SIZE;
+            return overhead;
+        }
     }
 
     /*********************************************************
@@ -398,6 +455,25 @@ namespace PerformanceTest {
 
         public ulong getMaxPerftestSampleSize() {
             return _maxPerftestSampleSize;
+        }
+
+        public long getSerializedOverheadSize() {
+            UInt32 overhead = 0;
+            TestDataKeyedLarge_t  myType = new  TestDataKeyedLarge_t();
+            myType.entity_id = 0;
+            myType.seq_num = 0;
+            myType.timestamp_sec = 0;
+            myType.timestamp_usec = 0;
+            myType.latency_ping = 0;
+            myType.bin_data.ensure_length(0,0);
+
+            /*
+            * Setting the input buffer to null, this function will return the
+            * serialize sample size.
+            */
+            TestDataKeyedLarge_tTypeSupport.serialize_data_to_cdr_buffer(null, ref overhead, myType);
+            overhead -= perftest_cs.CDR_ENCAPSULATION_HEADER_SIZE;
+            return overhead;
         }
 
     }
@@ -585,6 +661,39 @@ namespace PerformanceTest {
         public ulong getMaxPerftestSampleSize() {
             return _maxPerftestSampleSize;
         }
+
+        public long getSerializedOverheadSize() {
+            UInt32 overhead = 0;
+            /* Create a copy of the dynamic data */
+            DynamicDataTypeHelper myType = new DynamicDataTypeHelper(
+                    _myData,
+                    _maxPerftestSampleSize);
+
+            /* Create a test message with a empty sequence */
+            TestMessage message = new TestMessage();
+            message.entity_id = 0;
+            message.seq_num = 0;
+            message.timestamp_sec = 0;
+            message.timestamp_usec = 0;
+            message.latency_ping = 0;
+            message.size = 0;
+
+            byte[] buffer = null;
+
+            /*
+            * Modify the dynamic data by copying from the Test Message, this is
+            * simple than modify the dynamic data fields.
+            */
+            myType.copyFromMessage(message);
+
+            /*
+            * Setting the input buffer to null, this function will return the serialize
+            * sample size.
+            */
+            overhead = (uint)myType.getData().to_cdr_buffer(buffer);
+            overhead -= perftest_cs.CDR_ENCAPSULATION_HEADER_SIZE;
+            return overhead;
+        }
     }
 
     /*********************************************************
@@ -666,9 +775,16 @@ namespace PerformanceTest {
                 return;
             }
 
+            if ("csv".Equals(_outputFormat)) {
+                _printer = new PerftestCSVPrinter();
+            } else if ("json".Equals(_outputFormat)) {
+                _printer = new PerftestJSONPrinter();
+            } else if ("legacy".Equals(_outputFormat)) {
+                _printer = new PerftestLegacyPrinter();
+            }
+
             _printer.initialize(
                     _PrintIntervals,
-                    _outputFormat,
                     _printHeaders,
                     _showCpu);
 
@@ -1334,13 +1450,13 @@ namespace PerformanceTest {
                     _executionTime = 60;
                 }
                 // Check if large data or small data
-                if (_scanDataLenSizes[0] > (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)
-                        && _scanDataLenSizes[_scanDataLenSizes.Count - 1] > (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                if (_scanDataLenSizes[0] > (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE
+                        && _scanDataLenSizes[_scanDataLenSizes.Count - 1] > (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE) {
                     if (_useUnbounded == 0) {
                         _useUnbounded = (ulong)MAX_BOUNDED_SEQ_SIZE.VALUE;
                     }
-                } else if (_scanDataLenSizes[0] <= (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)
-                        && _scanDataLenSizes[_scanDataLenSizes.Count - 1] <= (ulong)Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE)) {
+                } else if (_scanDataLenSizes[0] <= (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE
+                        && _scanDataLenSizes[_scanDataLenSizes.Count - 1] <= (ulong) MAX_BOUNDED_SEQ_SIZE.VALUE) {
                     if (_useUnbounded != 0) {
                         Console.Error.Write("Unbounded will be ignored since -scan is present.\n");
                         _useUnbounded = 0;
@@ -1351,9 +1467,9 @@ namespace PerformanceTest {
                         Console.Error.Write(_scanDataLenSizes[i] + " ");
                     }
                     Console.Error.Write(
-                            "] should be either all smaller or all bigger than " +
-                             Math.Min(MAX_SYNCHRONOUS_SIZE.VALUE,MAX_BOUNDED_SEQ_SIZE.VALUE) +
-                             "\n");
+                            "] should be either all smaller or all bigger than "
+                            + MAX_BOUNDED_SEQ_SIZE.VALUE
+                            + "\n");
                     return false;
                 }
             }
@@ -1437,7 +1553,7 @@ namespace PerformanceTest {
                 } else if (batchSize == 0) {
                     sb.Append("No (Use \"-batchSize\" to setup batching)\n");
                 } else { // < 0 (Meaning, Disabled by RTI Perftest)
-                    sb.Append("\"Disabled by RTI Perftest.\"\n");
+                    sb.Append("Disabled by RTI Perftest.\n");
                     if (batchSize == -1) {
                         if (_LatencyTest) {
                             sb.Append("\t\t  BatchSize disabled for a Latency Test\n");
@@ -1475,10 +1591,6 @@ namespace PerformanceTest {
                     sb.Append("\tNumber of samples: " );
                     sb.Append(_NumIter);
                     sb.Append("\n");
-                }
-            } else {
-                if (_DataLen > (ulong)MAX_SYNCHRONOUS_SIZE.VALUE) {
-                    sb.Append("\tExpecting Large Data Type\n");
                 }
             }
 
@@ -1625,14 +1737,14 @@ namespace PerformanceTest {
                     }
 
                     begin_time = perftest_cs.GetTimeUsec();
-                    _printer.set_data_length(message.size + OVERHEAD_BYTES);
+                    _printer._dataLength = message.size + (int) OVERHEAD_BYTES;
                     _printer.print_throughput_header();
 
                 }
 
                 last_data_length = message.size;
                 ++packets_received;
-                bytes_received += (ulong) (message.size + OVERHEAD_BYTES);
+                bytes_received += (ulong) (message.size + (int)OVERHEAD_BYTES);
 
                 // detect missing packets
                 if (!_useCft) {
@@ -1711,7 +1823,7 @@ namespace PerformanceTest {
                         outputCpu = cpu.get_cpu_average();
                     }
                     _printer.print_throughput_summary(
-                            interval_data_length + OVERHEAD_BYTES,
+                            interval_data_length + (int) OVERHEAD_BYTES,
                             interval_packets_received,
                             interval_time,
                             interval_bytes_received,
@@ -2090,8 +2202,8 @@ namespace PerformanceTest {
 
                     if (last_data_length != 0)
                     {
-                        _printer.set_data_length(last_data_length
-                                 + OVERHEAD_BYTES);
+                        _printer._dataLength = last_data_length
+                                 + (int) OVERHEAD_BYTES;
                         _printer.print_latency_header();
                     }
                 }
@@ -2354,7 +2466,7 @@ namespace PerformanceTest {
             _printer.print_initial_output();
 
             // Set data size, account for other bytes in message
-            message.size = (int)_DataLen - OVERHEAD_BYTES;
+            message.size = (int)(_DataLen - OVERHEAD_BYTES);
 
             // Sleep 1 second, then begin test
             System.Threading.Thread.Sleep(1000);
@@ -2729,7 +2841,7 @@ namespace PerformanceTest {
         private bool _displayWriterStats = false;
         private bool  _useCft = false;
         private System.Timers.Timer timer = null;
-        private static PerftestPrinter _printer = new PerftestPrinter();
+        private static PerftestPrinter _printer = null;
         private static int  _SubID = 0;
         private static int  _PubID = 0;
         private static bool _PrintIntervals = true;
@@ -2743,7 +2855,7 @@ namespace PerformanceTest {
         public const uint timeout_wait_for_ack_nsec = 10000000;
         public static readonly Perftest_ProductVersion_t _version =
                 new Perftest_ProductVersion_t(9, 9, 9, 9);
-
+        public static ulong OVERHEAD_BYTES = 28;
 
         /*
          * PERFTEST-108
@@ -2759,7 +2871,6 @@ namespace PerformanceTest {
         public int _MessagingArgc = 0;
 
         // Number of bytes sent in messages besides user data
-        public const int OVERHEAD_BYTES = 28;
 
         // Flag used to indicate message is used for initialization only
         private const int INITIALIZE_SIZE = 1234;
@@ -2774,6 +2885,7 @@ namespace PerformanceTest {
          */
         public const uint LATENCY_RESET_VALUE = uint.MaxValue;
 
+        public const uint CDR_ENCAPSULATION_HEADER_SIZE = 4;
         static public ulong getMaxPerftestSampleSizeCS(){
             if (MAX_PERFTEST_SAMPLE_SIZE.VALUE > 2147483591){
                 return 2147483591; //max value for a buffer in C#

@@ -67,7 +67,7 @@ Test Parameters for Publishing and Subscribing Applications
    wire protocol is added, it doesn't overflow the UDP maximum datagram
    size of 64KB.
 
-   If ``<bytes>`` is bigger than 63000, *RTI Perftest* will enable the
+   If ``<bytes>`` is bigger than 64969, *RTI Perftest* will enable the
    use of *Asynchronous Publishing* and *Unbounded Sequences*. When using
    *RTI Connext DDS Micro*, the type is not really unbounded; the size is
    given by the ``MICRO_UNBOUNDED_SEQUENCE_SIZE`` constant, which can be
@@ -343,8 +343,7 @@ Test Parameters for Publishing and Subscribing Applications
 
 -  ``-asynchronous``
 
-   Enable asynchronous publishing in the DataWriter QoS, even for data sizes
-   smaller than ``MAX_SYNCRONOUS_SIZE`` (63000 Bytes).
+   Enable asynchronous publishing in the DataWriter QoS.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
@@ -356,7 +355,8 @@ Test Parameters for Publishing and Subscribing Applications
    Specify the name of the flow controller that will be used by the
    DataWriters. This will only have effect if the DataWriter uses
    Asynchronous Publishing either because it is using samples greater
-   than 63000 Bytes or because the ``-asynchronous`` option is present.
+   than maximum synchronous size in Bytes or because the ``-asynchronous``
+   option is present.
 
    There are several flow controllers predefined:
 
@@ -381,7 +381,7 @@ Test Parameters for Publishing and Subscribing Applications
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
 
-   **Default:** ``2 * dataLen up to 63000 bytes.``\  **Range:** ``28 - 63000 bytes``
+   **Default:** ``2 * dataLen up to 1 MB.``\  **Range:** ``28 B - 1 MB``
 
 -  ``-peer <address>|<address>[:<id>]``
 
@@ -439,6 +439,15 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** ``Not enabled``
 
+- ``-showResourceLimits``
+
+   Show the resource limits for all different readers and writers.
+
+   This option is just available for the *Traditional and Modern C++*
+   API implementations.
+
+   **Default:** ``Not enabled``
+
 - ``-outputFormat <format>``
 
    Specify the format for the printed data to facilitate its display or to export it.
@@ -446,6 +455,9 @@ Test Parameters for Publishing and Subscribing Applications
    The following formats are supported:
 
    ['csv','json','legacy'].
+
+   For *C++ Traditional* and *C++ Modern* API implementation there is another format,
+   'dds', using dds to send the data.
 
    | **Default:** ``csv``
    | **Values:** ``['csv','json','legacy']``
@@ -482,8 +494,8 @@ by using the transport-spececific command-line parameters.
 
   Restrict *RTI Connext DDS* to sending output through this interface.
   The value should be the IP address assigned to any of the available network
-  interfaces on the machine. On UNIX systems, the name of the interface is also
-  valid. This command-line parameter is mapped to the **allow_interfaces_list**
+  interfaces on the machine. On Windows systems use instead the name of the
+  interface. This command-line parameter is mapped to the **allow_interfaces_list**
   property in *RTI Connext DDS*.
 
   By default, RTI Connext DDS will attempt to contact all possible
@@ -609,7 +621,7 @@ Test Parameters Only For Publishing Applications
    Disabled automatically if using large data.
 
    | **Default:** ``0`` (batching disabled)
-   | **Range:** ``1 to 63000``
+   | **Range:** ``1 to Maximum Synchronous Size``
 
    For more information on batching data for high throughput, see the
    **High Throughput for Streaming Data** design pattern in the *RTI Connext DDS Core
@@ -681,13 +693,13 @@ Test Parameters Only For Publishing Applications
    not accurate.
 
    If the machine where *RTI Perftest* is being executed has a low resolution
-   clock, the regular logic might not report accurate latency numbers. Therefore, 
+   clock, the regular logic might not report accurate latency numbers. Therefore,
    *RTI Perftest* implements a simple solution to get a rough estimate of the
    latency:
 
    Before sending the first sample, *RTI Perftest* records the time; right after
    receiving the last pong, the time is recorded again. Under the assumption that
-   the processing time is negligible, the average latency is calculated as half of 
+   the processing time is negligible, the average latency is calculated as half of
    the time taken divided by the number of samples sent.
 
    This calculation only makes sense if latencyCount = 1 (Latency Test), since
@@ -758,9 +770,9 @@ Test Parameters Only For Publishing Applications
 -  ``-scan <size1>:<size2>:...:<sizeN>``
 
    Run test in scan mode. The list of sizes is optional and can be either in the
-   [32,63000] range or the [63001,2147482620] range (Large Data cannot be tested
+   [32,64969] range or the [64970,2147482620] range (Large Data cannot be tested
    in the same scan test as small data sizes). Default values to test with are
-   '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'
+   '32:64:128:256:512:1024:2048:4096:8192:16384:32768:64969'
    The ``-executionTime`` parameter is applied for every size of the scan.
    If ``-executionTime`` is not set, a timeout of 60 seconds will be applied.
 
@@ -778,6 +790,21 @@ Test Parameters Only For Publishing Applications
    | **Default:** ``50``
    | **Range:** ``[1-100 million]`` or ``-1`` (indicating an unlimited
      length).
+
+-  ``-initialBurstSize <number>``
+
+   Set the size of the initial burst of samples sent from the Publisher side to
+   the Subscriber side. These samples are all marked as latency Samples, and
+   they are answered back by the Subscriber side.
+
+   The use of this initial burst is to ensure all the queues are initialized and
+   no time is lost in the initialization process when measuring the performance.
+
+   This parameter is only available for the *Traditional and Modern C++ API
+   Implementations*.
+
+   | **Default:** Calculated by the *RTI Perftest*.
+   | **Range:** ``[0 - Max Long Size]``
 
 -  ``-sleep <millisec>``
 

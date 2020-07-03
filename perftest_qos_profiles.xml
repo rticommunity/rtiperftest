@@ -56,9 +56,10 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
           The ReceiverPoolQosPolicy's buffer_size should be set to be the same value
           as the maximum ::NDDS_Transport_Property_t::message_size_max across all of
-          the transports being used.
+          the transports being used. This value is automatically picked based on that
+          parameter. So we will not set it here.
           -->
-          <buffer_size>65536</buffer_size>
+          <!-- <buffer_size>65536</buffer_size> -->
         </receiver_pool>
 
         <resource_limits>
@@ -150,24 +151,22 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
             <!--
             Specifies the configuration to be used with the SHMEM built-in transport.
 
-            Important: The commented setting is configured automatically within the
-            source code. The default value of _DataLen is 100.
+            Important: The following settings are configured automatically within the
+            source code. If you wish to set them yourself, uncomment the settings
 
-            Value set in the source code:
-
-            <element>
-              <name>dds.transport.shmem.builtin.received_message_count_max</name>
-              <value>2097152/_DataLen</value>
-            </element>
-            -->
             <element>
               <name>dds.transport.shmem.builtin.parent.message_size_max</name>
               <value>65536</value>
             </element>
             <element>
+              <name>dds.transport.shmem.builtin.received_message_count_max</name>
+              <value>128</value>
+            </element>
+            <element>
               <name>dds.transport.shmem.builtin.receive_buffer_size</name>
               <value>2097152</value>
             </element>
+            -->
 
             <!--
             Specifies the configuration to be used with the TCP transport.
@@ -177,7 +176,7 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
             Important: nddstransporttcp.dll is located in NDDSHOME/lib/<architecture>.
             That folder must be added to the PATH on Windows systems and LD_LIBRARY_PATH
-            on UNIX-based systems in order to load this library properly. If you are
+            on linux systems in order to load this library properly. If you are
             compiling PerfTest using CSHARP, you must also add the folder
             NDDSHOME/lib/i86Win32VS<version> or NDDSHOME/lib/x64Win64VS<version> depending
             on the machine.
@@ -1091,5 +1090,23 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
         </durability>
       </datawriter_qos>
     </qos_profile>
+
+    <qos_profile name="LoggingQos">
+
+      <!-- === DataWriter Configuration: ================================= -->
+
+      <datawriter_qos>
+        <reliability>
+          <kind>BEST_EFFORT_RELIABILITY_QOS</kind>
+        </reliability>
+
+        <resource_limits>
+          <max_samples>10</max_samples>
+          <initial_samples>1</initial_samples>
+          <max_samples_per_instance>1</max_samples_per_instance>
+        </resource_limits>
+      </datawriter_qos>
+    </qos_profile>
+
   </qos_library>
 </dds>

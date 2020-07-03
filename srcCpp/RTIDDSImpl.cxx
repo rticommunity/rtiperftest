@@ -52,6 +52,50 @@ int DynamicDataMembersId::at(std::string key)
    return membersId[key];
 }
 
+template <typename T>
+RTIDDSImpl<T>::RTIDDSImpl()
+        : _transport(),
+        #ifdef RTI_SECURE_PERFTEST
+          _security(),
+        #endif
+        #ifndef RTI_MICRO
+          _loggerDevice(),
+        #endif
+          _parent(NULL)
+{
+  #ifndef RTI_MICRO
+    _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
+    _sendQueueSize = 0;
+  #else
+    /*
+     * For micro we want to restrict the use of memory, and since we need
+     * to set a maximum (other than DDS_LENGTH_UNLIMITED), we decided to use
+     * a default of 1. This means that for Micro, we need to specify the
+     * number of instances that will be received in the reader side.
+     */
+    _instanceMaxCountReader = 1;
+  #endif
+    _isLargeData = false;
+    _maxSynchronousSize = MESSAGE_SIZE_MAX_NOT_SET;
+    _isFlatData = false;
+    _isZeroCopy = false;
+    _factory = NULL;
+    _participant = NULL;
+    _subscriber = NULL;
+    _publisher = NULL;
+    _reader = NULL;
+    _typename = T::TypeSupport::get_type_name();
+    _pongSemaphore = NULL;
+    _PM = NULL;
+    _qoSProfileNameMap[LATENCY_TOPIC_NAME] = std::string("LatencyQos");
+    _qoSProfileNameMap[ANNOUNCEMENT_TOPIC_NAME] = std::string("AnnouncementQos");
+    _qoSProfileNameMap[THROUGHPUT_TOPIC_NAME] = std::string("ThroughputQos");
+
+    if (!get_serialized_overhead_size(perftest_cpp::OVERHEAD_BYTES)) {
+        throw std::runtime_error("Fail on obtain overhead size");
+    }
+}
+
 /*********************************************************
  * Shutdown
  */
@@ -172,45 +216,36 @@ void RTIDDSImpl<T>::Shutdown()
     }
 }
 
-/*********************************************************
-
- * Validate and manage the parameters
- */
 template <typename T>
-bool RTIDDSImpl<T>::validate_input()
+bool RTIDDSImpl<T>::data_size_related_calculations()
 {
-    // Manage parameter -instance
-    if (_PM->is_set("instances")) {
-        _instanceMaxCountReader = _PM->get<long>("instances");
-    }
-    // Manage parameter -peer
-    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
+    /*
+     * Check that the overhead is not bigger than the -dataLen, since we can not
+     * send a lower size that the overhead of the test_type.
+     */
+    if (_PM->get<unsigned long long>("dataLen")
+            < perftest_cpp::OVERHEAD_BYTES) {
         fprintf(stderr,
-                "The maximun of 'initial_peers' is %d\n",
-                RTIPERFTEST_MAX_PEERS);
+                "The minimum dataLen allowed for this configuration is %d "
+                "Bytes.\n",
+                perftest_cpp::OVERHEAD_BYTES);
+        /*
+         * T::TypeSupport::get_type_name() can not be used since we do need
+         * refractor RTIDDSImpl_FlatData class to properly inherit from a
+         * templated class instead from a final class.
+         */
         return false;
     }
 
-    // Check if we need to enable Large Data. This works also for -scan
-    if (_PM->get<unsigned long long>("dataLen") > (unsigned long) (std::min)(
-            MAX_SYNCHRONOUS_SIZE,
-            MAX_BOUNDED_SEQ_SIZE)) {
+    // If the user wants to use asynchronous we enable it
+    if (_PM->get<bool>("asynchronous")) {
         _isLargeData = true;
-    } else { // No Large Data
-        _isLargeData = false;
+    } else { //If the message size max is lower than the datalen
+        _isLargeData = (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize);
     }
 
     // Manage parameter -batchSize
     if (_PM->get<long>("batchSize") > 0) {
-        // We will not use batching for a latency test
-        if (_PM->get<bool>("latencyTest")) {
-            if (_PM->is_set("batchSize")) {
-                fprintf(stderr, "Batching cannot be used in a Latency test.\n");
-                return false;
-            } else {
-                _PM->set<long>("batchSize", 0); // Disable Batching
-            }
-        }
 
         // Check if using asynchronous
         if (_PM->get<bool>("asynchronous")) {
@@ -267,13 +302,46 @@ bool RTIDDSImpl<T>::validate_input()
     // Manage parameter -enableTurboMode
     if (_PM->get<bool>("enableTurboMode")) {
         if (_PM->get<bool>("asynchronous")) {
-            fprintf(stderr,
-                    "Turbo Mode cannot be used with asynchronous writing.\n");
+            fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing.\n");
             return false;
         } if (_isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
             _PM->set<bool>("enableTurboMode", false);
         }
+    }
+
+    // Manage the parameter: -scan
+    if (_PM->is_set("scan")) {
+        const std::vector<unsigned long long> scanList =
+                _PM->get_vector<unsigned long long>("scan");
+
+        // Check if scan is large data or small data
+        if (scanList[0] <= (unsigned long long) _maxSynchronousSize
+                && scanList[scanList.size() - 1] > (unsigned long long)_maxSynchronousSize) {
+            fprintf(stderr, "The sizes of -scan [");
+            for (unsigned int i = 0; i < scanList.size(); i++) {
+                fprintf(stderr, "%llu ", scanList[i]);
+            }
+            fprintf(stderr,
+                    "] should be either all smaller or all bigger than %lld.\n",
+                    _maxSynchronousSize);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*********************************************************
+
+ * Validate and manage the parameters
+ */
+template <typename T>
+bool RTIDDSImpl<T>::validate_input()
+{
+    // Manage parameter -instance
+    if (_PM->is_set("instances")) {
+        _instanceMaxCountReader = _PM->get<long>("instances");
     }
 
     // Manage parameter -writeInstance
@@ -285,6 +353,27 @@ bool RTIDDSImpl<T>::validate_input()
                     _PM->get<long>("writeInstance"),
                     _PM->get<long>("instances"));
             return false;
+        }
+    }
+
+    // Manage parameter -peer
+    if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
+        fprintf(stderr,
+                "The maximum of 'initial_peers' is %d\n",
+                RTIPERFTEST_MAX_PEERS);
+        return false;
+    }
+
+    // Manage parameter -batchSize
+    if (_PM->get<long>("batchSize") > 0) {
+        // We will not use batching for a latency test
+        if (_PM->get<bool>("latencyTest")) {
+            if (_PM->is_set("batchSize")) {
+                fprintf(stderr, "Batching cannot be used in a Latency test.\n");
+                return false;
+            } else {
+                _PM->set<long>("batchSize", 0); // Disable Batching
+            }
         }
     }
 
@@ -404,6 +493,17 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "\n" << _security.printSecurityConfigurationSummary();
     }
    #endif
+
+    // Large Data
+    if (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize) {
+        stringStream << "\n[IMPORTANT]: Enabling Asynchronous publishing: -datalen ("
+                     << std::to_string(_PM->get<unsigned long long>("dataLen"))
+                     << ") is \n"
+                     << "             larger than the minimum message_size_max across\n"
+                     << "             all enabled transports ("
+                     << std::to_string(_maxSynchronousSize)
+                     << ")\n";
+    }
 
     return stringStream.str();
 }
@@ -2348,6 +2448,25 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
         return false;
     }
 
+    /*
+     * At this point, and not before is when we know the transport message size.
+     * Now we can decide if we need to use asynchronous or not.
+     */
+    _maxSynchronousSize = _transport.minimumMessageSizeMax - (MESSAGE_OVERHEAD_BYTES);
+
+    /*
+     * We need to account for the different size of the headers when using
+     * flatData.
+     */
+    if (_isFlatData) {
+        _maxSynchronousSize -= 17;
+    }
+
+    if (!data_size_related_calculations()) {
+        fprintf(stderr, "Failed to configure the data size settings\n");
+        return false;
+    }
+
   #ifdef RTI_SECURE_PERFTEST
     // Configure security
     if (_PM->group_is_used(SECURE)) {
@@ -2564,6 +2683,71 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
 }
 
 #ifndef RTI_MICRO
+
+
+template <typename T>
+bool RTIDDSImpl<T>::get_serialized_overhead_size(unsigned int &overhead_size)
+{
+    /* Initialize the data elements */
+    T data;
+    data.entity_id = 0;
+    data.seq_num = 0;
+    data.timestamp_sec = 0;
+    data.timestamp_usec = 0;
+    data.latency_ping = 0;
+
+    /* Custom types does not have a bin_data sequence */
+    #ifndef RTI_CUSTOM_TYPE
+        /* Set the length of the sequence to zero */
+        data.bin_data.length(0);
+    #else
+        initialize_custom_type_data(data.custom_type);
+    #endif
+
+    /*
+     * Calling serialize_data_to_cdr_buffer witout a buffer will return the
+     * maximum serialized sample size
+     */
+    if (T::TypeSupport::serialize_data_to_cdr_buffer(
+                NULL,
+                overhead_size,
+                &data)
+                    != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "[Error] RTIDDSImpl<T>::get_serialized_overhead_size "
+                "Fail to serialize sample on get_serialized_overhead_size\n");
+        return false;
+    }
+
+    #ifdef RTI_CUSTOM_TYPE
+        /*
+         * If Custom type is used, then we need to substract the size of
+         * the custom type.
+         */
+        unsigned int custom_type_size;
+        if (DDS_RETCODE_OK
+                != RTI_CUSTOM_TYPE::TypeSupport::serialize_data_to_cdr_buffer(
+                        NULL,
+                        custom_type_size,
+                        &data.custom_type)) {
+            fprintf(stderr,
+                    "Fail to serialize sample on "
+                    "get_serialized_overhead_size\n");
+            return false;
+        }
+
+        overhead_size -= custom_type_size - RTI_CDR_ENCAPSULATION_HEADER_SIZE;
+
+    #endif
+
+    /*
+     * We want the overhead from the type so we substract the
+     * RTI_CDR_ENCAPSULATION_HEADER_SIZE
+     */
+    overhead_size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
+    return true;
+}
+
 template <typename T>
 double RTIDDSImpl<T>::obtain_dds_serialize_time_cost(
         unsigned int sampleSize,
@@ -2794,6 +2978,22 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
 }
 #endif // !RTI_MICRO
 
+/*
+ * The purpose of this function is avoid displaying
+ * "-1" or "-2" values when a QoS is set to
+ * DDS_LENGTH_UNLIMITED or AUTO and display a more
+ * convenient value instead.
+ */
+std::string stringValueQoS(DDS_Long resourceLimitValue) {
+    if (resourceLimitValue == -1) {
+        return "Unlimited";
+    } else if (resourceLimitValue == -2) {
+        return "Auto";
+    } else {
+        return std::to_string(resourceLimitValue);
+    }
+}
+
 template <typename T>
 bool RTIDDSImpl<T>::setup_DW_QoS(
         DDS_DataWriterQos &dw_qos,
@@ -2833,6 +3033,9 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                     _PM->get<std::string>("flowController")).c_str());
         }
     }
+
+    dw_qos.resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
+
   #endif
 
     // Only force reliability on throughput/latency topics
@@ -2911,9 +3114,13 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                 !_PM->get<bool>("noDirectCommunication");
       #endif
 
-
-        dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+        if (_PM->get<unsigned long long>("dataLen") > DEFAULT_MESSAGE_SIZE_MAX) {
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+                _PM->get<int>("sendQueueSize");
+        } else {
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
                 _PM->get<int>("sendQueueSize") / 10;
+        }
       #ifndef RTI_MICRO
         dw_qos.protocol.rtps_reliable_writer.low_watermark =
                 _PM->get<int>("sendQueueSize") * 1 / 10;
@@ -2949,15 +3156,36 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
       #endif
     }
 
-    if (qos_profile == "LatencyQos"
-            && _PM->get<bool>("noDirectCommunication")
-            && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
-            || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
-        dw_qos.durability.kind =
-                (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
+    if (qos_profile == "LatencyQos") {
+
+        if (_PM->get<bool>("noDirectCommunication")
+                && (_PM->get<int>("durability") == DDS_TRANSIENT_DURABILITY_QOS
+                || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
+            dw_qos.durability.kind =
+                    (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
+          #ifndef RTI_MICRO
+            dw_qos.durability.direct_communication =
+                    !_PM->get<bool>("noDirectCommunication");
+          #endif
+        }
+
+
+        if (_PM->get<unsigned long long>("dataLen") > DEFAULT_MESSAGE_SIZE_MAX) {
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+                _PM->get<int>("sendQueueSize");
+        } else {
+            dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+                _PM->get<int>("sendQueueSize") / 10;
+
+        }
+
       #ifndef RTI_MICRO
-        dw_qos.durability.direct_communication =
-                !_PM->get<bool>("noDirectCommunication");
+        if (_PM->is_set("sendQueueSize")) {
+            dw_qos.protocol.rtps_reliable_writer.max_send_window_size =
+                    _PM->get<int>("sendQueueSize");
+            dw_qos.protocol.rtps_reliable_writer.min_send_window_size =
+                    _PM->get<int>("sendQueueSize");
+        }
       #endif
     }
 
@@ -3102,6 +3330,92 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
     }
   #endif
 
+    if (_PM->get<bool>("showResourceLimits")
+            && topic_name.c_str() != ANNOUNCEMENT_TOPIC_NAME) {
+        std::ostringstream stringStream;
+
+        stringStream << "Resource Limits DW (" 
+                    << topic_name
+                    << " topic):\n"
+        // Samples
+                    << "\tSamples ("
+                #ifndef RTI_MICRO
+                    << "Initial/"
+                #endif
+                    << "Max): "
+                #ifndef RTI_MICRO
+                    << stringValueQoS(dw_qos.resource_limits.initial_samples)
+                    << "/"
+                #endif
+                    << stringValueQoS(dw_qos.resource_limits.max_samples)
+                    << "\n";
+
+        if (_PM->get<bool>("keyed")) {
+            // Instances
+            stringStream << "\tInstances ("
+                    #ifndef RTI_MICRO
+                        << "Initial/"
+                    #endif
+                        << "Max): "
+                    #ifndef RTI_MICRO
+                        << stringValueQoS(dw_qos.resource_limits.initial_instances)
+                        << "/"
+                    #endif
+                        << stringValueQoS(dw_qos.resource_limits.max_instances)
+                        << "\n";
+
+            // Samples per Instance
+            stringStream << "\tMax Samples per Instance: "
+                        << stringValueQoS(dw_qos.resource_limits.max_samples_per_instance)
+                        << "\n";
+        }
+
+    #ifndef RTI_MICRO
+        // Batches
+        if (dw_qos.batch.enable) {
+            stringStream << "\tBatching Max Bytes: "
+                        << stringValueQoS(dw_qos.batch.max_data_bytes)
+                        << "\n"
+                        << "\tBatching Max Batches: "
+                        << stringValueQoS(dw_qos.writer_resource_limits.max_batches)
+                        << "\n";
+        }
+
+        // Send Queue
+        stringStream << "\tSend Queue (Min/Max): "
+                    << stringValueQoS(
+                        dw_qos.protocol.rtps_reliable_writer.min_send_window_size)
+                    << "/"
+                    << stringValueQoS(
+                        dw_qos.protocol.rtps_reliable_writer.max_send_window_size)
+                    << "\n";
+
+        // writer_loaned_sample_allocation
+        if (_isFlatData) {
+            stringStream << "\twriter_loaned_sample_allocation (initial_count/max_count): "
+                        << stringValueQoS(
+                            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.initial_count)
+                        << "/"
+                        << stringValueQoS(
+                            dw_qos.writer_resource_limits.writer_loaned_sample_allocation.max_count)
+                        << "\n";
+            // Property: pool_buffer_max_size
+            stringStream << "\tfast_pool.pool_buffer_max_size: "
+                        << stringValueQoS(
+                            _isFlatData ? DDS_LENGTH_UNLIMITED : _PM->get<int>("unbounded"))
+                        << "\n";
+        }
+
+        // Heartbeats per max samples
+        stringStream << "\tHeartbeats per max samples: "
+                    << stringValueQoS(
+                        dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples)
+                    << "\n";
+        
+
+    #endif
+        fprintf(stderr, "%s\n", stringStream.str().c_str());
+    }
     return true;
 }
 
@@ -3220,6 +3534,11 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
   #endif
 
   #ifndef RTI_MICRO
+
+    if (_PM->is_set("receiveQueueSize")) {
+        dr_qos.resource_limits.initial_samples = _PM->get<int>("receiveQueueSize");
+    }
+
     dr_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
     if (_instanceMaxCountReader != DDS_LENGTH_UNLIMITED) {
         _instanceMaxCountReader++;
@@ -3329,6 +3648,65 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
       #endif
     }
 
+    if (_PM->get<bool>("showResourceLimits")
+            && topic_name.c_str() != ANNOUNCEMENT_TOPIC_NAME) {
+        std::ostringstream stringStream;
+
+        stringStream << "Resource Limits DR (" 
+                    << topic_name
+                    << " topic):\n"
+        // Samples
+                    << "\tSamples ("
+                #ifndef RTI_MICRO
+                    << "Initial/"
+                #endif
+                    << "Max): "
+                #ifndef RTI_MICRO
+                    << stringValueQoS(dr_qos.resource_limits.initial_samples)
+                    << "/"
+                #endif
+                    << stringValueQoS(dr_qos.resource_limits.max_samples)
+                    << "\n";
+
+        if (_PM->get<bool>("keyed")){
+            // Instances
+            stringStream << "\tInstances ("
+                    #ifndef RTI_MICRO
+                        << "Initial/"
+                    #endif
+                        << "Max): "
+                    #ifndef RTI_MICRO
+                        << stringValueQoS(dr_qos.resource_limits.initial_instances)
+                        << "/"
+                    #endif
+                        << stringValueQoS(dr_qos.resource_limits.max_instances)
+                        << "\n";
+
+            // Samples per Instance
+            stringStream << "\tMax Samples per Instance: "
+                        << stringValueQoS(dr_qos.resource_limits.max_samples_per_instance)
+                        << "\n";
+        }
+
+    #ifndef RTI_MICRO
+      #ifdef RTI_FLATDATA_AVAILABLE
+        if (_isFlatData) {
+            //tdynamically_allocate_fragmented_samples
+            stringStream << "\tdynamically_allocate_fragmented_samples: "
+                        << stringValueQoS(
+                            dr_qos.reader_resource_limits.dynamically_allocate_fragmented_samples)
+                        << "\n";
+        }
+      #endif
+        stringStream << "\tfast_pool.pool_buffer_max_size: "
+                    << stringValueQoS(
+                        _isFlatData ? DDS_LENGTH_UNLIMITED : _PM->get<int>("unbounded"))
+                    << "\n";
+    #endif
+
+        fprintf(stderr, "%s\n", stringStream.str().c_str());
+    }
+
     return true;
 }
 
@@ -3411,6 +3789,21 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
 }
 
 #ifdef RTI_FLATDATA_AVAILABLE
+
+template <typename T>
+RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData(bool isZeroCopy /* = false */)
+{
+    this->_isZeroCopy = isZeroCopy;
+    this->_isFlatData = true;
+    this->_typename = T::TypeSupport::get_type_name();
+
+    if (!get_serialized_overhead_size(perftest_cpp::OVERHEAD_BYTES)) {
+        throw std::runtime_error(
+            "[Error]: RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData "
+            "Fail on obtain overhead size for FlatData");
+    }
+}
+
 template <typename T>
 IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const char *topic_name)
 {
@@ -3840,7 +4233,357 @@ double RTIDDSImpl_FlatData<T>::obtain_dds_deserialize_time_cost_override(
 
     return (end-start) / (float) iters;
 }
+
+template <typename T>
+bool RTIDDSImpl_FlatData<T>::get_serialized_overhead_size(
+        unsigned int &overhead_size)
+{
+    typedef typename rti::flat::flat_type_traits<T>::builder Builder;
+    typedef typename rti::flat::PrimitiveSequenceBuilder<unsigned char>
+            BinDataBuilder;
+
+    unsigned long int serializedSize = 68 + RTI_FLATDATA_MAX_SIZE;
+    unsigned char *buffer = new unsigned char[serializedSize];
+
+    Builder builder(buffer, serializedSize);
+
+    // Leave uninitialized
+    builder.add_key();
+    builder.add_entity_id(0);
+    builder.add_seq_num(0);
+    builder.add_timestamp_sec(0);
+    builder.add_timestamp_usec(0);
+    builder.add_latency_ping(0);
+
+    /* Custom type does not have a bin_data field */
+    #ifndef RTI_CUSTOM_TYPE
+        // Add payload
+        BinDataBuilder bin_data = builder.build_bin_data();
+        bin_data.add_n(0);
+        bin_data.finish();
+    #endif
+
+    /*
+     * Sample size does not count RTI_XCDR_ENCAPSULATION_SIZE, we do not need to
+     * substract it.
+     */
+    overhead_size = builder.finish_sample()->sample_size();
+
+    return true;
+}
+
 #endif
+
+void PerftestDDSPrinter::initialize(ParameterManager *_PM)
+{
+    PerftestPrinter::initialize(_PM);
+    this->_PM = _PM;
+    topicName = std::string("PerftestInfo");
+}
+
+void PerftestDDSPrinter::initialize_dds_entities()
+{
+    DDS_ReturnCode_t retcode;
+
+    DDS_DomainParticipantFactoryQos factory_qos;
+    DDS_DomainParticipantQos dpQos;
+    DDS_PublisherQos publisherQos;
+    DDS_DataWriterQos dwQos;
+
+  #ifndef RTI_MICRO
+    retcode =  DDSTheParticipantFactory->get_qos(factory_qos);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "DDSTheParticipantFactory->get_qos(factory_qos)\n");
+        return;
+    }
+
+    if (!_PM->get<bool>("noXmlQos")) {
+        factory_qos.profile.url_profile.ensure_length(1, 1);
+        factory_qos.profile.url_profile[0] =
+                DDS_String_dup(_PM->get<std::string>("qosFile").c_str());
+    } else {
+        factory_qos.profile.string_profile.from_array(
+                PERFTEST_QOS_STRING,
+                PERFTEST_QOS_STRING_SIZE);
+    }
+
+    retcode = DDSTheParticipantFactory->set_qos(factory_qos);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "DDSTheParticipantFactory->set_qos(factory_qos) failed\n");
+        return;
+    }
+
+    retcode = DDSTheParticipantFactory->reload_profiles();
+    if ( retcode != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "Problem opening QOS profiles file %s.\n",
+                _PM->get<std::string>("qosFile").c_str());
+        return;
+    }
+
+    retcode = DDSTheParticipantFactory->get_participant_qos_from_profile(
+                dpQos,
+                _PM->get<std::string>("qosLibrary").c_str(),
+                "LoggingQos");
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "Problem setting QoS Library \"%s::LoggingQos\" "
+                "for participant_qos.\n",
+                _PM->get<std::string>("qosLibrary").c_str());
+        return;
+    }
+
+    retcode = DDSTheParticipantFactory->get_publisher_qos_from_profile(
+            publisherQos,
+            _PM->get<std::string>("qosLibrary").c_str(),
+            "LoggingQos");
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "Problem setting QoS Library for publisherQos.\n");
+    }
+
+    retcode = DDSTheParticipantFactory->get_datawriter_qos_from_profile(
+            dwQos,
+            _PM->get<std::string>("qosLibrary").c_str(),
+            "LoggingQos");
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "Problem setting QoS Library for dwQos.\n");
+    }
+  #endif
+
+    //TODO: Decide if we want to use the same domain or + 1 or what.
+    participant = DDSTheParticipantFactory->create_participant(
+            (DDS_DomainId_t) (_PM->get<int>("domain") + 1),
+            dpQos,
+            NULL,
+            DDS_STATUS_MASK_NONE);
+    if (participant == NULL) {
+        fprintf(stderr, "PerftestDDSPrinter Problem creating participant.\n");
+        finalize();
+    }
+
+    publisher = participant->create_publisher(
+            publisherQos,
+            NULL,
+            DDS_STATUS_MASK_NONE);
+    if (publisher == NULL) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "PerftestDDSPrinter create_publisher error\n");
+        finalize();
+    }
+
+    retcode = PerftestInfo::TypeSupport::register_type(
+            participant,
+            PerftestInfo::TypeSupport::get_type_name());
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "PerftestDDSPrinter register_type error %d\n",
+                retcode);
+        finalize();
+    }
+
+    topic = participant->create_topic(
+            topicName.c_str(),
+            PerftestInfo::TypeSupport::get_type_name(),
+            DDS_TOPIC_QOS_DEFAULT,
+            NULL,
+            DDS_STATUS_MASK_NONE);
+    if (topic == NULL) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "PerftestDDSPrinter create_topic error\n");
+        finalize();
+    }
+
+    DDSDataWriter *writer = publisher->create_datawriter(
+            topic, dwQos, NULL,
+            DDS_STATUS_MASK_NONE);
+    if (writer == NULL) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "PerftestDDSPrinter create_datawriter error\n");
+        finalize();
+    }
+
+    infoDataWriter = PerftestInfo::DataWriter::narrow(writer);
+    if (infoDataWriter == NULL) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "DataWriter narrow error\n");
+        finalize();
+    }
+
+    perftestInfo = PerftestInfo::TypeSupport::create_data();
+    if (perftestInfo == NULL) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "testTypeSupport::create_data error\n");
+        finalize();
+    }
+
+    perftestInfo->latencyInfo = PerftestLatencyInfo::TypeSupport::create_data();
+    if (perftestInfo->latencyInfo == NULL) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "testTypeSupport::create_data error\n");
+        finalize();
+    }
+    perftestInfo->throughputInfo = PerftestThroughputInfo::TypeSupport::create_data();
+    if (perftestInfo->throughputInfo == NULL) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::initialize: "
+                "testTypeSupport::create_data error\n");
+        finalize();
+    }
+
+    if (_PM->get<bool>("pub")) {
+        perftestInfo->latencyInfo->pubId = _PM->get<int>("pidMultiPubTest");
+    } else {
+        perftestInfo->throughputInfo->subId = _PM->get<int>("sidMultiSubTest");
+    }
+
+    fprintf(stderr,
+            "[Info] Publishing latency/throughput information via DDS\n");
+}
+
+void PerftestDDSPrinter::finalize()
+{
+    DDS_ReturnCode_t retcode;
+
+    deleteDataSample();
+    retcode = PerftestInfo::TypeSupport::delete_data(perftestInfo);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr, "PerftestInfo::TypeSupport::delete_data error %d\n", retcode);
+    }
+
+    if (participant != NULL) {
+        retcode = participant->delete_contained_entities();
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "delete_contained_entities error %d\n", retcode);
+        }
+        retcode = DDSTheParticipantFactory->delete_participant(participant);
+        if (retcode != DDS_RETCODE_OK) {
+            fprintf(stderr, "delete_participant error %d\n", retcode);
+        }
+    }
+}
+
+void PerftestDDSPrinter::print_latency_interval(LatencyInfo latencyInfo)
+{
+    this->dataWrapperLatency(latencyInfo);
+    DDS_ReturnCode_t retcode = infoDataWriter->write(*perftestInfo, DDS_HANDLE_NIL);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::print_latency_interval"
+                "write error %d\n",
+                retcode);
+    }
+}
+
+void PerftestDDSPrinter::print_throughput_interval(ThroughputInfo throughputInfo)
+{
+    DDS_ReturnCode_t retcode;
+    this->dataWrapperThroughput(throughputInfo);
+    retcode = infoDataWriter->write(*perftestInfo, DDS_HANDLE_NIL);
+    if (retcode != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "PerftestDDSPrinter::print_latency_interval"
+                "write error %d\n",
+                retcode);
+    }
+}
+
+void PerftestDDSPrinter::deleteDataSample()
+{
+    perftestInfo->outputCpu = NULL;
+    perftestInfo->latencyInfo->latency = NULL;
+    perftestInfo->latencyInfo->average = NULL;
+    perftestInfo->latencyInfo->std = NULL;
+    perftestInfo->latencyInfo->minimum = NULL;
+    perftestInfo->latencyInfo->maximum = NULL;
+    perftestInfo->latencyInfo->percentile50 = NULL;
+    perftestInfo->latencyInfo->percentile90 = NULL;
+    perftestInfo->latencyInfo->percentile99 = NULL;
+    perftestInfo->latencyInfo->percentile9999 = NULL;
+    perftestInfo->latencyInfo->percentile999999 = NULL;
+    perftestInfo->latencyInfo->serializeTime = NULL;
+    perftestInfo->latencyInfo->deserializeTime = NULL;
+    perftestInfo->throughputInfo->packets = NULL;
+    perftestInfo->throughputInfo->packetsAverage = NULL;
+    perftestInfo->throughputInfo->mbps = NULL;
+    perftestInfo->throughputInfo->mbpsAverage = NULL;
+    perftestInfo->throughputInfo->lostPackets = NULL;
+    perftestInfo->throughputInfo->lostPacketsPercent = NULL;
+    perftestInfo->throughputInfo->packetsPerSecond = NULL;
+}
+
+void PerftestDDSPrinter::dataWrapperLatency(LatencyInfo latencyInfo)
+{
+    if (this->_dataLength != perftestInfo->dataLength) {
+        perftestInfo->dataLength = _dataLength;
+    }
+
+    if (this->_showCPU) {
+        perftestInfo->outputCpu = &latencyInfo.outputCpu;
+    }
+    perftestInfo->latencyInfo->latency = &latencyInfo.latency;
+    perftestInfo->latencyInfo->average = &latencyInfo.average;
+    perftestInfo->latencyInfo->std = &latencyInfo.std;
+    perftestInfo->latencyInfo->minimum = &latencyInfo.minimum;
+    perftestInfo->latencyInfo->maximum = &latencyInfo.maximum;
+    // summary part
+    if (!latencyInfo.interval) {
+        perftestInfo->latencyInfo->percentile50 = &latencyInfo.percentile50;
+        perftestInfo->latencyInfo->percentile90 = &latencyInfo.percentile90;
+        perftestInfo->latencyInfo->percentile99 = &latencyInfo.percentile99;
+        perftestInfo->latencyInfo->percentile9999 = &latencyInfo.percentile9999;
+        perftestInfo->latencyInfo->percentile999999 = &latencyInfo.percentile999999;
+        if (_printSerialization) {
+            perftestInfo->latencyInfo->serializeTime = &latencyInfo.serializeTime;
+            perftestInfo->latencyInfo->deserializeTime = &latencyInfo.deserializeTime;
+        }
+    } else {
+        perftestInfo->latencyInfo->percentile50 = NULL;
+        perftestInfo->latencyInfo->percentile90 = NULL;
+        perftestInfo->latencyInfo->percentile99 = NULL;
+        perftestInfo->latencyInfo->percentile9999 = NULL;
+        perftestInfo->latencyInfo->percentile999999 = NULL;
+        perftestInfo->latencyInfo->serializeTime = NULL;
+        perftestInfo->latencyInfo->deserializeTime = NULL;
+    }
+}
+
+void PerftestDDSPrinter::dataWrapperThroughput(ThroughputInfo throughputInfo)
+{
+    if (this->_dataLength != perftestInfo->dataLength) {
+        perftestInfo->dataLength = _dataLength;
+    }
+    if (this->_showCPU) {
+        perftestInfo->outputCpu = &throughputInfo.outputCpu;
+    }
+    perftestInfo->throughputInfo->packets = &throughputInfo.packets;
+    perftestInfo->throughputInfo->packetsAverage = &throughputInfo.packetsAverage;
+    perftestInfo->throughputInfo->mbps = &throughputInfo.mbps;
+    perftestInfo->throughputInfo->mbpsAverage = &throughputInfo.mbpsAve;
+    perftestInfo->throughputInfo->lostPackets = &throughputInfo.lostPackets;
+    perftestInfo->throughputInfo->lostPacketsPercent = &throughputInfo.lostPacketsPercent;
+    if (throughputInfo.interval) {
+        perftestInfo->throughputInfo->packetsPerSecond = &throughputInfo.packetsPerSecond;
+    } else {
+        perftestInfo->throughputInfo->packetsPerSecond = NULL;
+    }
+}
 
 /*
  * This instantiation is to avoid a undefined reference of a templated static

@@ -244,7 +244,7 @@ class NDDSUtility
             iterations++;
             /*
              * If the the clock have a low precision, increase spinCount
-             * until we measure some us or reach a maximun count loop
+             * until we measure some us or reach a maximum count loop
              */
         } while (usec < precision && iterations < clockCalculationLoopCountMax);
 

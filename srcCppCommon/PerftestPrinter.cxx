@@ -5,11 +5,91 @@
 
 #include "PerftestPrinter.h"
 
+void ThroughputInfo::set_interval(
+        unsigned long long packets,
+        unsigned long long packetsPerSecond,
+        double packetsAverage,
+        unsigned long long bps,
+        double bpsAve,
+        unsigned long long lostPackets)
+{
+    this->packets      = packets;
+    this->packetsPerSecond     = packetsPerSecond;
+    this->packetsAverage         = packetsAverage;
+    this->mbps         = bps * 8.0 / 1000.0 / 1000.0;
+    this->mbpsAve      = bpsAve * 8.0 / 1000.0 / 1000.0;
+    this->lostPackets         = lostPackets;
+    // Calculations of missing package percent
+    if (packets + lostPackets != 0) {
+        this->lostPacketsPercent = (float) ((lostPackets * 100.0)
+                / (float) (packets + lostPackets));
+    } else {
+        this->lostPacketsPercent = 0.0;
+    }
+    this->interval = true;
+}
 
+void ThroughputInfo::set_summary(
+        unsigned long long packets,
+        unsigned long long time,
+        unsigned long long bytes,
+        unsigned long long lostPackets)
+{
+    this->packets  = packets;
+    this->packetsPerSecond     = packets * 1000000 / time;
+    this->mbpsAve  = bytes * 1000000.0 / time * 8.0 / 1000.0
+            / 1000.0;
+    this->lostPackets     = lostPackets;
+    if (packets + lostPackets != 0) {
+        this->lostPacketsPercent = (float) ((lostPackets * 100.0)
+                / (float) (packets + lostPackets));
+    } else {
+        this->lostPacketsPercent = 0.0;
+    }
+    this->interval = false;
+}
+
+void LatencyInfo::set_interval(
+        unsigned long latency,
+        double average,
+        double std,
+        unsigned long minimum,
+        unsigned long maximum)
+{
+    this->latency  = latency;
+    this->average      = average;
+    this->std      = std;
+    this->minimum      = minimum;
+    this->maximum      = maximum;
+    this->interval = true;
+}
+
+void LatencyInfo::set_summary(
+        double average,
+        double std,
+        unsigned long minimum,
+        unsigned long maximum,
+        unsigned long *history,
+        unsigned long long count,
+        double serializeTime,
+        double deserializeTime)
+{
+    this->average      = average;
+    this->std      = std;
+    this->minimum      = minimum;
+    this->maximum      = maximum;
+    this->percentile50      = history[count * 50 / 100];
+    this->percentile90      = history[count * 90 / 100];
+    this->percentile99      = history[count * 99 / 100];
+    this->percentile9999    = history[count * 9999 / 10000];
+    this->percentile999999  = history[count * 999999 / 1000000];
+    this->serializeTime = serializeTime;
+    this->deserializeTime = deserializeTime;
+    this->interval = false;
+}
 
 void PerftestPrinter::initialize(ParameterManager *_PM)
 {
-    std::string outputFormat = _PM->get<std::string>("outputFormat");
     _printIntervals = !_PM->get<bool>("noPrintIntervals");
     _printHeaders = !_PM->get<bool>("noOutputHeaders");
     _printSerialization = _PM->get<bool>("serializationTime");
@@ -51,44 +131,30 @@ void PerftestCSVPrinter::print_throughput_header()
     }
 }
 
-void PerftestCSVPrinter::print_latency_interval(
-        unsigned long latency,
-        double latencyAve,
-        double latencyStd,
-        unsigned long latencyMin,
-        unsigned long latencyMax,
-        double outputCpu)
+void PerftestCSVPrinter::print_latency_interval(LatencyInfo latencyInfo)
 {
-    printf("%14d,%13lu,%9.0lf,%9.1lf,%9lu,%9lu",
+    printf("%14d,%13llu,%9.0lf,%9.1lf,%9llu,%9llu",
             _dataLength,
-            latency,
-            latencyAve,
-            latencyStd,
-            latencyMin,
-            latencyMax);
+            latencyInfo.latency,
+            latencyInfo.average,
+            latencyInfo.std,
+            latencyInfo.minimum,
+            latencyInfo.maximum);
     if (_showCPU) {
-        printf(",%8.2f", outputCpu);
+        printf(",%8.2f", latencyInfo.outputCpu);
     }
     printf("\n");
 }
 
-void PerftestCSVPrinter::print_latency_summary(
-        int totalSampleSize,
-        double latencyAve,
-        double latencyStd,
-        unsigned long latencyMin,
-        unsigned long latencyMax,
-        unsigned long *latencyHistory,
-        unsigned long long count,
-        double serializeTime,
-        double deserializeTime,
-        double outputCpu)
+void PerftestCSVPrinter::print_latency_summary(LatencyInfo latencyInfo)
 {
     if (_printSummaryHeaders && _printHeaders) {
         if (!_printIntervals && _printSummaryHeaders) {
             _printSummaryHeaders = _printIntervals;
         }
-        printf("\nOne-way Latency Summary:\n");
+        if (_printIntervals) {
+            printf("\nOne-way Latency Summary:\n");
+        }
         printf("Length (Bytes)"
                 ", Ave (" PERFT_TIME_UNIT
                 "), Std (" PERFT_TIME_UNIT
@@ -110,68 +176,55 @@ void PerftestCSVPrinter::print_latency_summary(
         }
         printf("\n");
     }
-    printf("%14d,%9.0lf,%9.1lf,%9lu,%9lu,%9lu,%9lu,%9lu,%12lu,%14lu",
-            totalSampleSize,
-            latencyAve,
-            latencyStd,
-            latencyMin,
-            latencyMax,
-            latencyHistory[count * 50 / 100],
-            latencyHistory[count * 90 / 100],
-            latencyHistory[count * 99 / 100],
-            latencyHistory[(int) (count * (9999.0 / 10000))],
-            latencyHistory[(int) (count * (999999.0 / 1000000))]);
+    printf("%14d,%9.0lf,%9.1lf,%9llu,%9llu,%9llu,%9llu,%9llu,%12llu,%14llu",
+            _dataLength,
+            latencyInfo.average,
+            latencyInfo.std,
+            latencyInfo.minimum,
+            latencyInfo.maximum,
+            latencyInfo.percentile50,
+            latencyInfo.percentile90,
+            latencyInfo.percentile99,
+            latencyInfo.percentile9999,
+            latencyInfo.percentile999999);
     if (_printSerialization) {
         printf(",%19.3f,%21.3f,%11.3f",
-                serializeTime,
-                deserializeTime,
-                serializeTime + deserializeTime);
+                latencyInfo.serializeTime,
+                latencyInfo.deserializeTime,
+                latencyInfo.serializeTime + latencyInfo.deserializeTime);
     }
     if (_showCPU) {
-        printf(",%8.2f", outputCpu);
+        printf(",%8.2f", latencyInfo.outputCpu);
     }
     printf("\n");
 }
 
-void PerftestCSVPrinter::print_throughput_interval(
-        unsigned long long lastMsgs,
-        unsigned long long mps,
-        double mpsAve,
-        unsigned long long bps,
-        double bpsAve,
-        unsigned long long missingPackets,
-        float missingPacketsPercent,
-        double outputCpu)
+void PerftestCSVPrinter::print_throughput_interval(ThroughputInfo throughputInfo)
 {
     printf("%14d,%14llu,%11llu,%14.0lf,%9.1lf,%10.1lf, %12llu, %16.2lf",
             _dataLength,
-            lastMsgs,
-            mps,
-            mpsAve,
-            bps * 8.0 / 1000.0 / 1000.0,
-            bpsAve * 8.0 / 1000.0 / 1000.0,
-            missingPackets,
-            missingPacketsPercent);
+            throughputInfo.packets,
+            throughputInfo.packetsPerSecond,
+            throughputInfo.packetsAverage,
+            throughputInfo.mbps,
+            throughputInfo.mbpsAve,
+            throughputInfo.lostPackets,
+            throughputInfo.lostPacketsPercent);
     if (_showCPU) {
-        printf(",%8.2f", outputCpu);
+        printf(",%8.2f", throughputInfo.outputCpu);
     }
     printf("\n");
 }
 
-void PerftestCSVPrinter::print_throughput_summary(
-        int length,
-        unsigned long long intervalPacketsReceived,
-        unsigned long long intervalTime,
-        unsigned long long intervalBytesReceived,
-        unsigned long long intervalMissingPackets,
-        float missingPacketsPercent,
-        double outputCpu)
+void PerftestCSVPrinter::print_throughput_summary(ThroughputInfo throughputInfo)
 {
     if (_printSummaryHeaders && _printHeaders) {
         if (!_printIntervals && _printSummaryHeaders) {
             _printSummaryHeaders = _printIntervals;
         }
-        printf("\nThroughput Summary:\n");
+        if (_printIntervals) {
+            printf("\nThroughput Summary:\n");
+        }
         printf("Length (Bytes), Total Samples, Ave Samples/s,"
                 "    Ave Mbps, Lost Samples, Lost Samples (%%)");
         if (_showCPU) {
@@ -180,15 +233,14 @@ void PerftestCSVPrinter::print_throughput_summary(
         printf("\n");
     }
     printf("%14d,%14llu,%14.0llu,%12.1lf, %12llu, %16.2lf",
-            length,
-            intervalPacketsReceived,
-            intervalPacketsReceived * 1000000 / intervalTime,
-            intervalBytesReceived * 1000000.0 / intervalTime * 8.0 / 1000.0
-                    / 1000.0,
-            intervalMissingPackets,
-            missingPacketsPercent);
+            _dataLength,
+            throughputInfo.packets,
+            throughputInfo.packetsPerSecond,
+            throughputInfo.mbpsAve,
+            throughputInfo.lostPackets,
+            throughputInfo.lostPacketsPercent);
     if (_showCPU) {
-        printf(",%8.2f", outputCpu);
+        printf(",%8.2f", throughputInfo.outputCpu);
     }
     printf("\n");
 }
@@ -226,13 +278,7 @@ void PerftestJSONPrinter::print_throughput_header()
     }
 }
 
-void PerftestJSONPrinter::print_latency_interval(
-        unsigned long latency,
-        double latencyAve,
-        double latencyStd,
-        unsigned long latencyMin,
-        unsigned long latencyMax,
-        double outputCpu)
+void PerftestJSONPrinter::print_latency_interval(LatencyInfo latencyInfo)
 {
     if (_controlJsonIntervals) {
         _controlJsonIntervals = false;
@@ -240,33 +286,23 @@ void PerftestJSONPrinter::print_latency_interval(
         printf(",");
     }
     printf("\n\t\t\t\t{\n"
-            "\t\t\t\t\t\"latency\": %lu,\n"
+            "\t\t\t\t\t\"latency\": %llu,\n"
             "\t\t\t\t\t\"latency_ave\": %1.2lf,\n"
             "\t\t\t\t\t\"latency_std\": %1.2lf,\n"
-            "\t\t\t\t\t\"latency_min\": %lu,\n"
-            "\t\t\t\t\t\"latency_max\": %lu",
-            latency,
-            latencyAve,
-            latencyStd,
-            latencyMin,
-            latencyMax);
+            "\t\t\t\t\t\"latency_min\": %llu,\n"
+            "\t\t\t\t\t\"latency_max\": %llu",
+            latencyInfo.latency,
+            latencyInfo.average,
+            latencyInfo.std,
+            latencyInfo.minimum,
+            latencyInfo.maximum);
     if (_showCPU) {
-        printf(",\n\t\t\t\t\t\"cpu\": %1.2f", outputCpu);
+        printf(",\n\t\t\t\t\t\"cpu\": %1.2f", latencyInfo.outputCpu);
     }
     printf("\n\t\t\t\t}");
 }
 
-void PerftestJSONPrinter::print_latency_summary(
-        int totalSampleSize,
-        double latencyAve,
-        double latencyStd,
-        unsigned long latencyMin,
-        unsigned long latencyMax,
-        unsigned long *latencyHistory,
-        unsigned long long count,
-        double serializeTime,
-        double deserializeTime,
-        double outputCpu)
+void PerftestJSONPrinter::print_latency_summary(LatencyInfo latencyInfo)
 {
     if (_printIntervals) {
         printf("\n\t\t\t],\n");
@@ -274,45 +310,37 @@ void PerftestJSONPrinter::print_latency_summary(
     printf("\t\t\t\"summary\":{\n"
             "\t\t\t\t\"latency_ave\": %1.2lf,\n"
             "\t\t\t\t\"latency_std\": %1.2lf,\n"
-            "\t\t\t\t\"latency_min\": %lu,\n"
-            "\t\t\t\t\"latency_max\": %lu,\n"
-            "\t\t\t\t\"latency_50\": %lu,\n"
-            "\t\t\t\t\"latency_90\": %lu,\n"
-            "\t\t\t\t\"latency_99\": %lu,\n"
-            "\t\t\t\t\"latency_99.99\": %lu,\n"
-            "\t\t\t\t\"latency_99.9999\": %lu",
-            latencyAve,
-            latencyStd,
-            latencyMin,
-            latencyMax,
-            latencyHistory[count * 50 / 100],
-            latencyHistory[count * 90 / 100],
-            latencyHistory[count * 99 / 100],
-            latencyHistory[(int) (count * (9999.0 / 10000))],
-            latencyHistory[(int) (count * (999999.0 / 1000000))]);
+            "\t\t\t\t\"latency_min\": %llu,\n"
+            "\t\t\t\t\"latency_max\": %llu,\n"
+            "\t\t\t\t\"latency_50\": %llu,\n"
+            "\t\t\t\t\"latency_90\": %llu,\n"
+            "\t\t\t\t\"latency_99\": %llu,\n"
+            "\t\t\t\t\"latency_99.99\": %llu,\n"
+            "\t\t\t\t\"latency_99.9999\": %llu",
+            latencyInfo.average,
+            latencyInfo.std,
+            latencyInfo.minimum,
+            latencyInfo.maximum,
+            latencyInfo.percentile50,
+            latencyInfo.percentile90,
+            latencyInfo.percentile99,
+            latencyInfo.percentile9999,
+            latencyInfo.percentile999999);
     if (_printSerialization) {
         printf(",\n\t\t\t\t\"serialize\": %1.3f,\n"
                 "\t\t\t\t\"deserialize\": %1.3f,\n"
                 "\t\t\t\t\"total_s\": %1.3f",
-                serializeTime,
-                deserializeTime,
-                serializeTime + deserializeTime);
+                latencyInfo.serializeTime,
+                latencyInfo.deserializeTime,
+                latencyInfo.serializeTime + latencyInfo.deserializeTime);
     }
     if (_showCPU) {
-        printf(",\n\t\t\t\t\"cpu\": %1.2f", outputCpu);
+        printf(",\n\t\t\t\t\"cpu\": %1.2f", latencyInfo.outputCpu);
     }
     printf("\n\t\t\t}\n\t\t}");
 }
 
-void PerftestJSONPrinter::print_throughput_interval(
-        unsigned long long lastMsgs,
-        unsigned long long mps,
-        double mpsAve,
-        unsigned long long bps,
-        double bpsAve,
-        unsigned long long missingPackets,
-        float missingPacketsPercent,
-        double outputCpu)
+void PerftestJSONPrinter::print_throughput_interval(ThroughputInfo throughputInfo)
 {
     if (_controlJsonIntervals) {
         _controlJsonIntervals = false;
@@ -329,27 +357,20 @@ void PerftestJSONPrinter::print_throughput_interval(
             "\t\t\t\t\t\"lost\": %llu,\n"
             "\t\t\t\t\t\"lost_percent\": %1.2lf",
             _dataLength,
-            lastMsgs,
-            mps,
-            mpsAve,
-            bps * 8.0 / 1000.0 / 1000.0,
-            bpsAve * 8.0 / 1000.0 / 1000.0,
-            missingPackets,
-            missingPacketsPercent);
+            throughputInfo.packets,
+            throughputInfo.packetsPerSecond,
+            throughputInfo.packetsAverage,
+            throughputInfo.mbps,
+            throughputInfo.mbpsAve,
+            throughputInfo.lostPackets,
+            throughputInfo.lostPacketsPercent);
     if (_showCPU) {
-        printf(",\n\t\t\t\t\t\"cpu\": %1.2f", outputCpu);
+        printf(",\n\t\t\t\t\t\"cpu\": %1.2f", throughputInfo.outputCpu);
     }
     printf("\n\t\t\t\t}");
 }
 
-void PerftestJSONPrinter::print_throughput_summary(
-        int length,
-        unsigned long long intervalPacketsReceived,
-        unsigned long long intervalTime,
-        unsigned long long intervalBytesReceived,
-        unsigned long long intervalMissingPackets,
-        float missingPacketsPercent,
-        double outputCpu)
+void PerftestJSONPrinter::print_throughput_summary(ThroughputInfo throughputInfo)
 {
     if (_printIntervals) {
         printf("\t\t\t],\n");
@@ -360,14 +381,13 @@ void PerftestJSONPrinter::print_throughput_summary(
             "\t\t\t\t\"mbpsAve\": %1.1lf,\n"
             "\t\t\t\t\"lost\": %llu,\n"
             "\t\t\t\t\"lostPercent\": %1.2lf",
-            intervalPacketsReceived,
-            intervalPacketsReceived * 1000000 / intervalTime,
-            intervalBytesReceived * 1000000.0 / intervalTime * 8.0 / 1000.0
-                    / 1000.0,
-            intervalMissingPackets,
-            missingPacketsPercent);
+            throughputInfo.packets,
+            throughputInfo.packetsPerSecond,
+            throughputInfo.mbpsAve,
+            throughputInfo.lostPackets,
+            throughputInfo.lostPacketsPercent);
     if (_showCPU) {
-        printf(",\n\t\t\t\t\"cpu\": %1.2f", outputCpu);
+        printf(",\n\t\t\t\t\"cpu\": %1.2f", throughputInfo.outputCpu);
     }
     printf("\n\t\t\t}\n\t\t}");
 }
@@ -401,121 +421,89 @@ void PerftestLegacyPrinter::print_throughput_header()
     }
 }
 
-void PerftestLegacyPrinter::print_latency_interval(
-        unsigned long latency,
-        double latencyAve,
-        double latencyStd,
-        unsigned long latencyMin,
-        unsigned long latencyMax,
-        double outputCpu)
+void PerftestLegacyPrinter::print_latency_interval(LatencyInfo latencyInfo)
 {
-    printf("One way Latency: %6lu " PERFT_TIME_UNIT
+    printf("One way Latency: %6llu " PERFT_TIME_UNIT
             " Ave %6.0lf " PERFT_TIME_UNIT
             " Std %6.1lf " PERFT_TIME_UNIT
-            " Min %6lu " PERFT_TIME_UNIT
-            " Max %6lu " PERFT_TIME_UNIT,
-            latency,
-            latencyAve,
-            latencyStd,
-            latencyMin,
-            latencyMax);
+            " Min %6llu " PERFT_TIME_UNIT
+            " Max %6llu " PERFT_TIME_UNIT,
+            latencyInfo.latency,
+            latencyInfo.average,
+            latencyInfo.std,
+            latencyInfo.minimum,
+            latencyInfo.maximum);
     if (_showCPU) {
-        printf(" CPU %1.2f (%%)", outputCpu);
+        printf(" CPU %1.2f (%%)", latencyInfo.outputCpu);
     }
     printf("\n");
 }
 
-void PerftestLegacyPrinter::print_latency_summary(
-        int totalSampleSize,
-        double latencyAve,
-        double latencyStd,
-        unsigned long latencyMin,
-        unsigned long latencyMax,
-        unsigned long *latencyHistory,
-        unsigned long long count,
-        double serializeTime,
-        double deserializeTime,
-        double outputCpu)
+void PerftestLegacyPrinter::print_latency_summary(LatencyInfo latencyInfo)
 {
     printf("Length: %5d"
             " Latency: Ave %6.0lf " PERFT_TIME_UNIT
             " Std %6.1lf " PERFT_TIME_UNIT
-            " Min %6lu " PERFT_TIME_UNIT
-            " Max %6lu " PERFT_TIME_UNIT
-            " 50%% %6lu " PERFT_TIME_UNIT
-            " 90%% %6lu " PERFT_TIME_UNIT
-            " 99%% %6lu " PERFT_TIME_UNIT
-            " 99.99%% %6lu " PERFT_TIME_UNIT
-            " 99.9999%% %6lu " PERFT_TIME_UNIT,
-            totalSampleSize,
-            latencyAve,
-            latencyStd,
-            latencyMin,
-            latencyMax,
-            latencyHistory[count * 50 / 100],
-            latencyHistory[count * 90 / 100],
-            latencyHistory[count * 99 / 100],
-            latencyHistory[(int) (count * (9999.0 / 10000))],
-            latencyHistory[(int) (count * (999999.0 / 1000000))]);
+            " Min %6llu " PERFT_TIME_UNIT
+            " Max %6llu " PERFT_TIME_UNIT
+            " 50%% %6llu " PERFT_TIME_UNIT
+            " 90%% %6llu " PERFT_TIME_UNIT
+            " 99%% %6llu " PERFT_TIME_UNIT
+            " 99.99%% %6llu " PERFT_TIME_UNIT
+            " 99.9999%% %6llu " PERFT_TIME_UNIT,
+            _dataLength,
+            latencyInfo.average,
+            latencyInfo.std,
+            latencyInfo.minimum,
+            latencyInfo.maximum,
+            latencyInfo.percentile50,
+            latencyInfo.percentile90,
+            latencyInfo.percentile99,
+            latencyInfo.percentile9999,
+            latencyInfo.percentile999999);
     if (_showCPU) {
-        printf(" CPU %1.2f (%%)", outputCpu);
+        printf(" CPU %1.2f (%%)", latencyInfo.outputCpu);
     }
     printf("\n");
     if (_printSerialization) {
         printf("Serialization/Deserialization: %0.3f us / %0.3f us / "
                 "TOTAL: "
                 "%0.3f us\n",
-                serializeTime,
-                deserializeTime,
-                serializeTime + deserializeTime);
+                latencyInfo.serializeTime,
+                latencyInfo.deserializeTime,
+                latencyInfo.serializeTime + latencyInfo.deserializeTime);
     }
 }
 
-void PerftestLegacyPrinter::print_throughput_interval(
-        unsigned long long lastMsgs,
-        unsigned long long mps,
-        double mpsAve,
-        unsigned long long bps,
-        double bpsAve,
-        unsigned long long missingPackets,
-        float missingPacketsPercent,
-        double outputCpu)
+void PerftestLegacyPrinter::print_throughput_interval(ThroughputInfo throughputInfo)
 {
     printf("Packets: %8llu  Packets/s: %7llu  Packets/s(ave): %7.0lf  "
             "Mbps: %7.1lf  Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%)",
-            lastMsgs,
-            mps,
-            mpsAve,
-            bps * 8.0 / 1000.0 / 1000.0,
-            bpsAve * 8.0 / 1000.0 / 1000.0,
-            missingPackets,
-            missingPacketsPercent);
+            throughputInfo.packets,
+            throughputInfo.packetsPerSecond,
+            throughputInfo.packetsAverage,
+            throughputInfo.mbps,
+            throughputInfo.mbpsAve,
+            throughputInfo.lostPackets,
+            throughputInfo.lostPacketsPercent);
     if (_showCPU) {
-        printf(" CPU %1.2f (%%)", outputCpu);
+        printf(" CPU %1.2f (%%)", throughputInfo.outputCpu);
     }
     printf("\n");
 }
 
-void PerftestLegacyPrinter::print_throughput_summary(
-        int length,
-        unsigned long long intervalPacketsReceived,
-        unsigned long long intervalTime,
-        unsigned long long intervalBytesReceived,
-        unsigned long long intervalMissingPackets,
-        float missingPacketsPercent,
-        double outputCpu)
+void PerftestLegacyPrinter::print_throughput_summary(ThroughputInfo throughputInfo)
 {
     printf("Length: %5d  Packets: %8llu  Packets/s(ave): %7llu  "
             "Mbps(ave): %7.1lf  Lost: %5llu (%1.2f%%)",
-            length,
-            intervalPacketsReceived,
-            intervalPacketsReceived * 1000000 / intervalTime,
-            intervalBytesReceived * 1000000.0 / intervalTime * 8.0 / 1000.0
-                    / 1000.0,
-            intervalMissingPackets,
-            missingPacketsPercent);
+            _dataLength,
+            throughputInfo.packets,
+            throughputInfo.packetsPerSecond,
+            throughputInfo.mbpsAve,
+            throughputInfo.lostPackets,
+            throughputInfo.lostPacketsPercent);
     if (_showCPU) {
-        printf(" CPU %1.2f (%%)", outputCpu);
+        printf(" CPU %1.2f (%%)", throughputInfo.outputCpu);
     }
     printf("\n");
 }

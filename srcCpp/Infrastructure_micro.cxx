@@ -290,6 +290,8 @@ bool configureUDPv4Transport(
     qos.resource_limits.remote_reader_allocation = 8;
     qos.resource_limits.remote_writer_allocation = 8;
 
+    transport.minimumMessageSizeMax = udp_property->max_message_size;
+
     return true;
 }
 
@@ -364,6 +366,8 @@ bool configureShmemTransport(
     qos.resource_limits.remote_participant_allocation = 8;
     qos.resource_limits.remote_reader_allocation = 8;
     qos.resource_limits.remote_writer_allocation = 8;
+
+    transport.minimumMessageSizeMax = shmem_property.message_size_max;
 
     return true;
 }

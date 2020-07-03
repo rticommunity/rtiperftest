@@ -26,6 +26,11 @@ RTIRawTransportImpl::RTIRawTransportImpl()
           _PM(NULL)
 {
     PeerData::resourcesList.reserve(RTIPERFTEST_MAX_PEERS);
+
+    if (!get_serialized_overhead_size(perftest_cpp::OVERHEAD_BYTES)) {
+        throw std::runtime_error("[Error] RTIRawTransportImpl: "
+                "get_serialized_overhead_size returned error");
+    }
 }
 
 /*********************************************************
@@ -98,14 +103,23 @@ bool RTIRawTransportImpl::validate_input() {
      * Manage parameter -dataLen
      */
     if (_PM->get<unsigned long long>("dataLen")
-            > (unsigned long) (std::min)(
-                    MAX_SYNCHRONOUS_SIZE,
-                    NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX)) {
+            > (unsigned long) NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX) {
         fprintf(stderr,
-                "The maximun dataLen for rawTransport is %d.\n",
-                (std::min)(
-                        MAX_SYNCHRONOUS_SIZE,
-                        NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX));
+                "The maximum dataLen for rawTransport is %d.\n",
+                NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX);
+        return false;
+    }
+
+    /*
+     * Check that the overhead is not bigger than the -dataLen, since we can not
+     * send a smaller size that the overhead of the test_type.
+     */
+    if (_PM->get<unsigned long long>("dataLen")
+            < perftest_cpp::OVERHEAD_BYTES) {
+        fprintf(stderr,
+                "The minimum dataLen allowed for %s is %d Bytes.\n",
+                TestData_t::TypeSupport::get_type_name(),
+                perftest_cpp::OVERHEAD_BYTES);
         return false;
     }
 
@@ -149,7 +163,8 @@ bool RTIRawTransportImpl::validate_input() {
     // Manage parameter -peer
     if (_PM->get_vector<std::string>("peer").size() >= RTIPERFTEST_MAX_PEERS) {
         fprintf(stderr,
-                "The maximun of 'initial_peers' is %d\n",
+                "[Error] RTIRawTransportImpl: "
+                "The maximum of 'initial_peers' is %d\n",
                 RTIPERFTEST_MAX_PEERS);
         return false;
     }
@@ -546,7 +561,7 @@ public:
         _transportMessage.buffer.length = 0;
         _transportMessage.loaned_buffer_param = NULL;
 
-        /* --- Maximun size of UDP package --- */
+        /* --- Maximum size of UDP package --- */
         RTIOsapiHeap_allocateBufferAligned(
                 &_recvBuffer.pointer,
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
@@ -1170,6 +1185,42 @@ bool RTIRawTransportImpl::configure_sockets_transport()
 
     delete interfaceAddr;
 
+    return true;
+}
+
+bool RTIRawTransportImpl::get_serialized_overhead_size(
+        unsigned int &overhead_size)
+{
+    /* Initialize the data elements */
+    TestData_t data;
+    data.entity_id = 0;
+    data.seq_num = 0;
+    data.timestamp_sec = 0;
+    data.timestamp_usec = 0;
+    data.latency_ping = 0;
+
+    /* Set the length of the sequence to zero */
+    data.bin_data.length(0);
+
+    /*
+     * Calling serialize_data_to_cdr_buffer witout a buffer will return the
+     * maximum serialized sample size
+     */
+    if (TestData_t::TypeSupport::serialize_data_to_cdr_buffer(
+                NULL,
+                overhead_size,
+                &data)
+            != DDS_RETCODE_OK) {
+        fprintf(stderr,
+                "[Error]: get_serialized_overhead_size Fail to serialize sample\n");
+        return false;
+    }
+
+    /*
+     * We want the overhead from the type so we substract the
+     * RTI_CDR_ENCAPSULATION_HEADER_SIZE
+     */
+    overhead_size -= RTI_CDR_ENCAPSULATION_HEADER_SIZE;
     return true;
 }
 

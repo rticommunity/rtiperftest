@@ -80,12 +80,38 @@ subscriber side, *RTI Perftest* displays the *Receive Queue* `sample_count` and
 Compilation option to measure latency time in nano-seconds (#253)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-*RTI Perftest* can now be compiled using the Unix calls to measure latency
+*RTI Perftest* can now be compiled using the POSIX calls to measure latency
 in *nanoseconds*, instead of using the *RTI Connext DDS Professional* calls
 which return the time in *microseconds*.
 
 This option can be enabled at compilation time by using the `--ns-resolution`.
-It is only implemented for Unix Systems.
+It is only implemented for Linux/MacOS/QNX Systems.
+
+Switching value for Bounded to Unbounded-Sequences
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Previously, the value to switch between Bounded and Unbounded-Sequences was set
+to 63000 Bytes (63000 items in the sequence). This value was defined that way to
+be close to the `message_size_max` value for the `UDPv4` transport and make the
+switch for Synchronous to Asynchronous Publishing coincide with the switch
+between Bounded and Unbounded-Sequences.
+
+These 2 changes in behavior have been decoupled. The new maximum value for a
+Bounded-Sequence is 1MB (1048576 items in the sequence).
+
+Behavior for `SHMEM` and Asynchronous publishing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The value to switch to Asynchronous Publishing is no longer a fixed value, but
+it is calculated given then minimum `message_size_max` accross all the enabled
+transports.
+
+In the case of using `SHMEM`, the value of `message_size_max` is not set, but
+instead is calculated to fit samples of the size specified by the user via the
+`-datalen` command-line parameter.
+
+Find more information about this in the **Large Samples (Use-Cases)** section of
+the documentation.
 
 Add Security Governance files for Sign And Encrypt with original auth for RTPS (#253)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -112,6 +138,9 @@ output format by using the `-outputFormat <format>`. At this point the supported
 values are `csv` (default), `json` or `legacy` (Referring to the previous
 output used by *RTI Perftest*.
 
+For *C++ Traditional* and *C++ Modern* there is one more type support, `dds`. It send
+all test data using dds instead of show in terminal.
+
 Another flag has been added, `-noOutputHeaders`, in order to skip printing the
 headers rows (for the summaries and also for the interval information).
 
@@ -122,6 +151,12 @@ The use of -threadPriorities command is now supported on QNX platforms.
 You can either specify three numeric values representing the priority of each
 of the threads or, instead, three characters representing the priorities: h,n,l.
 
+Overhead from *RTI Perftest*'s type is now programmatically calculated. (#265)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The overhead size resulting from the serialized sample of the Perftest type is
+now calculated programmatically. This makes accurate the exact number of bytes
+that are sent when CustomTypes or FlatData types are used.
 
 Added warning messages when no packets have been received at the end of the test (#303)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -131,8 +166,8 @@ ones, the probability of not receiving any samples in Publisher or Subscriber si
 are higher. Starting in this release we will notify the user when the application receives the
 message that the test has ended, as well as some suggestions on how to fix this.
 
-New parameter to control showing the serialization/deserialization times  (#304)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+New parameter to control showing the serialization/deserialization times (#304)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When the feature to show the serialization/deserialization times was added, it was set
 to show the data at the end of the test, in the publisher side, as a new line after the
@@ -141,6 +176,17 @@ latency results.
 This was not convenient, since it can conflict when parsing the latency lines. This has
 been resolved adding a new parameter "-showSerializationTime", which enables calculating
 and showing the serialization/deserialization times.
+
+New parameter to control the size of the initial Burst (#310)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A new command-line parameter (`-initialBurstSize`) has been added to the
+*Traditional and Modern C++ API Implementations* in to control the number of
+samples sent in the initial burst of samples *RTI Perftest* uses to initialize
+the buffers in the sending and receiving paths.
+
+In most of the cases this number should not cause any trouble (as long as it is
+big enough), but in certain cases a low number is required due to OS restrictions.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -296,6 +342,14 @@ An error was found when testing *FlatData* in the *Modern C++ API* Implementatio
 where the `write()` call would fail to find the right instance handle. This issue
 would show up in any of the 3 topics and would cause an exception.
 
+`-sendQueueSize` not correctly applied to the subscriber side (#309)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Even though the use of `-sendQueueSize` was modified to be allowed in the
+Subscriber side for the *Pong Datawriter*, the values for the maximum and
+minimum send Queue size where not correctly set in code. This issue has been
+fixed.
+
 Error using Zero-Copy and checking sample consistency with waitsets (#316 and #317)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -329,6 +383,21 @@ An issue has been resolved in the `build.sh` script that would cause the
 This issue was not causing a bug or a wrong behavior in previous versions of
 *RTI Perftest*.
 
+`-batchSize` parameter not correctly written in the Traditional and Modern C++ API implementations (#324)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed an issue for the Traditional and Modern C++ API implementations where the
+parameter manager would expect `-batchsize` instead of `-batchSize`. This issue
+was only a problem for *VxWorks* systems, where the parsing of the parameters is
+case sensitive.
+
+Fixed performance degradation in Modern C++ when using Dynamic Data (#332)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using Dynamic Data, the `Send()` path would always try to clear the content
+of the sample prior to start repopulating it. This should only be necesary if the
+sequence size changes. This issue has been fixed.
+
 Release Notes 3.0
 -----------------
 
@@ -349,12 +418,12 @@ RTI Perftest thread priorities can be configured via command-line parameter (#65
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For the Traditional and Modern C++ API Implementations, a new parameter,
-`-threadPriorities`, has been added to *RTI Perftest*. This parameter allows you 
+`-threadPriorities`, has been added to *RTI Perftest*. This parameter allows you
 to set the priorities on the different threads created by *RTI Connext DDS*
 and by the application itself.
 
-This parameter accepts either three numeric values (whichever numeric values you choose) 
-representing the priority of each of the threads or, instead, three characters representing 
+This parameter accepts either three numeric values (whichever numeric values you choose)
+representing the priority of each of the threads or, instead, three characters representing
 the priorities. These characters are h (high), n (normal) and l (low). These parameters
 can be used as follows:
 
@@ -364,10 +433,10 @@ can be used as follows:
 
 Where:
 
-- **X** is for the priority of the Main Thread that manages all the communication. 
+- **X** is for the priority of the Main Thread that manages all the communication.
   X is also used for the Asynchronous Thread when using large data.
 - **Y** is the priority for all the receive threads. This value will be used for
-  the Receive Thread created by *RTI Connext DDS*. If ``-useReadThread`` (use waitsets) 
+  the Receive Thread created by *RTI Connext DDS*. If ``-useReadThread`` (use waitsets)
   is used, Y is for the thread in charge of receiving the data.
 - **Z** is the priority for the Event and DataBase Threads created at the
   *RTI Connext DDS* level.
@@ -483,7 +552,7 @@ that it is expecting the large data type.
 Added --compiler and --linker command-line parameters to build.sh (#152)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When building in Unix, you can now use the `--compiler` and/or `--linker`
+When building using makefiles, you can now use the `--compiler` and/or `--linker`
 command-line parameters to explicitly specify to the `build.sh` script the
 compiler/linker executables that will be used by *rtiddsgen*.
 
@@ -617,7 +686,7 @@ Stop using alarm function to schedule functions since it is deprecated (#164)
 When using `-executionTime <seconds>` parameter, internally, *RTI Perftest* was scheduling a
 function call by using it as a handler when an ALARM signal was received.
 This ALARM signal was set to be signaled in the amount of seconds specified by the *executionTime*
-parameter using the `alarm()` function available in Unix-like systems; however,
+parameter using the `alarm()` function available in POSIX systems; however,
 this alarm function has been deprecated or is even missing in some of RTI's supported platforms.
 
 This issue has been fixed by using a thread that sleeps for the amount of
@@ -1363,8 +1432,8 @@ files used to compile that code.
 
 Therefore, all the already generated makefiles and *Visual Studio*
 solutions have been removed and now the build system depends on 2
-scripts: ``build.sh`` for Unix-based systems and ``build.bat`` for
-Windows systems.
+scripts: ``build.sh`` for Linux/MacOS/QNX/VxWorks/Android systems and
+``build.bat`` for Windows systems.
 
 *RTI Perftest* scripts works for every platform for which *rtiddsgen*
 can generate an example, except for those in which *rtiddsgen* doesn't
