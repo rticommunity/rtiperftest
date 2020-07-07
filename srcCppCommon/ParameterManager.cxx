@@ -189,7 +189,8 @@ void ParameterManager::initialize()
     noPrintIntervals->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("noPrintIntervals", noPrintIntervals);
 
     Parameter<std::string> *qosFile =
@@ -236,7 +237,8 @@ void ParameterManager::initialize()
     useReadThread->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("useReadThread", useReadThread);
 
     Parameter<unsigned long long> *waitsetDelayUsec =
@@ -305,7 +307,8 @@ void ParameterManager::initialize()
     cpu->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("cpu", cpu);
 
     Parameter<int> *unbounded = new Parameter<int>(0);
