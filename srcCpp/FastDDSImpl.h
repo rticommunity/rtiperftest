@@ -81,18 +81,22 @@ public:
         return true;
     };
 
+    const std::string get_qos_profile_name(const char *topicName);
+
 protected:
-    ParameterManager *_PM;
+
+    // Perftest related entities
     perftest_cpp *_parent;
+    ParameterManager *_PM;
     PerftestSemaphore *_pongSemaphore;
+    std::map<std::string, std::string> _qoSProfileNameMap;
 
     // DDS Entities
-
     eprosima::fastdds::dds::DomainParticipantFactory *_factory;
     eprosima::fastdds::dds::DomainParticipant *_participant;
     eprosima::fastdds::dds::Publisher *_publisher;
     eprosima::fastdds::dds::Subscriber *_subscriber;
-    eprosima::fastdds::dds::TypeSupport _type;
+    eprosima::fastdds::dds::TypeSupport _type; //This is a std::shared_ptr
 };
 
 #endif // EPROSIMA_PERF_FASTDDS
