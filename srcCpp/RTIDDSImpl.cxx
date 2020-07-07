@@ -406,7 +406,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     // Domain ID
     stringStream << "\tDomain: " << _PM->get<int>("domain") << "\n";
 
-  #ifndef RTI_PERF_MICRO
+  #ifdef RTI_PERF_PRO
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
     if (_PM->get<bool>("dynamicData")) {
@@ -439,7 +439,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     stringStream << std::endl;
   #endif
 
-  #ifndef RTI_PERF_MICRO
+  #ifdef RTI_PERF_PRO
     // Asynchronous Publishing
     if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
@@ -463,7 +463,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "\tAutoThrottle: Enabled\n";
     }
 
-  #ifndef RTI_PERF_MICRO
+  #ifdef RTI_PERF_PRO
     // XML File
     stringStream << "\tXML File: ";
     if (_PM->get<bool>("noXmlQos")) {
@@ -2316,7 +2316,7 @@ class RTIDynamicDataSubscriber : public RTISubscriberBase<DDS_DynamicData>
 template <typename T>
 bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
 {
-  #ifndef RTI_PERF_MICRO
+  #ifdef RTI_PERF_PRO
     DDS_DomainParticipantFactoryQos factory_qos;
 
     // Setup the QOS profile file to be loaded
@@ -2400,7 +2400,7 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
                 false);
     }
 
-  #else // RTI_PERF_MICRO
+  #else // if defined RTI_PERF_MICRO
 
     RTRegistry *registry = _factory->get_registry();
 
@@ -3998,7 +3998,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-  #ifndef RTI_PERF_MICRO
+  #ifdef RTI_PERF_PRO
     /* Create CFT Topic */
     if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && _PM->is_set("cft")) {
         topic_desc = CreateCft(topic_name, topic);
