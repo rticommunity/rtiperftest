@@ -1040,14 +1040,13 @@ static void *ReadThread(void *arg)
 int perftest_cpp::Subscriber()
 {
     ThroughputListener *reader_listener = NULL;
-    IMessagingReader   *reader;
-    IMessagingWriter   *writer;
-    IMessagingWriter   *announcement_writer;
+    IMessagingReader *reader;
+    IMessagingWriter *writer;
+    IMessagingWriter *announcement_writer;
     struct PerftestThread *throughputThread = NULL;
 
     // create latency pong writer
     writer = _MessagingImpl->CreateWriter(LATENCY_TOPIC_NAME);
-
     if (writer == NULL) {
         fprintf(stderr, "Problem creating latency writer.\n");
         return -1;
@@ -1364,7 +1363,7 @@ class LatencyListener : public IMessagingCB
 {
   private:
 
-    unsigned long long latency_sum ;
+    unsigned long long latency_sum;
     unsigned long long latency_sum_square;
     unsigned long long count;
     unsigned long      latency_min;
