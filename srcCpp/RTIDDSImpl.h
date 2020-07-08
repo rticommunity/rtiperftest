@@ -1,7 +1,7 @@
 #ifndef __RTIDDSIMPL_H__
 #define __RTIDDSIMPL_H__
 
-#ifdef RTI_PERF_PRO
+#if defined(RTI_PERF_PRO) || defined (RTI_PERF_MICRO)
 
 /*
  * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
