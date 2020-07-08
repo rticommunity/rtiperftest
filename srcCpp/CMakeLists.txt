@@ -8,10 +8,8 @@ PROJECT(perftest_FastDDS CXX C)
 set(CMAKE_CXX_STANDARD 11)
 SET(SOURCE_EXTENSION cxx)
 
-# SET(RTIDDSGEN $ENV{RTIMEHOME}/rtiddsgen/scripts/rtiddsgen)
-# SET(RTIDDSMAG $ENV{RTIMEHOME}/rtiddsmag/scripts/rtiddsmag)
-SET(RTIDDSGEN ~/rti_me.2.0/rtiddsgen/scripts/rtiddsgen)
-SET(RTIDDSMAG ~/rti_me.2.0/rtiddsmag/scripts/rtiddsmag)
+
+SET(FASDDSGEN fastrtpsgen)
 
 # Find requirements
 find_package(fastcdr REQUIRED)
@@ -19,9 +17,9 @@ find_package(fastrtps REQUIRED)
 
 SET_PROPERTY(GLOBAL PROPERTY RULE_MESSAGES OFF)
 
-SET(IDL_SOURCE_C perftest.idl)
+SET(IDL_SOURCE_C ${CMAKE_CURRENT_SOURCE_DIR}/../srcIdl/perftest.idl)
 
-SET(IDL_PATH ${CMAKE_CURRENT_SOURCE_DIR})
+SET(IDL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../srcIdl)
 SET(XML_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
 # SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/objs/x64Linux4gcc7.3.0)
@@ -50,7 +48,7 @@ IF (NOT (DEFINED RTI_SHARED_LIB))
         SET(RTI_DEBUG_BUILD FALSE)
         ADD_DEFINITIONS(-DNDEBUG)
     ELSE()
-        SET(RTI_LIB_SUFFIX "zd")
+        SET(RTI_LIB_SUFFIX "z")
         SET(RTI_DEBUG_BUILD TRUE)
     ENDIF()
 ELSE()
@@ -59,7 +57,7 @@ ELSE()
         SET(RTI_DEBUG_BUILD FALSE)
         ADD_DEFINITIONS(-DNDEBUG)
     ELSE()
-        SET(RTI_LIB_SUFFIX "d")
+        SET(RTI_LIB_SUFFIX "")
         SET(RTI_DEBUG_BUILD TRUE)
     ENDIF()
 ENDIF()
@@ -73,9 +71,9 @@ SET(MICRO_C_LIBS
     rti_me_whsm${RTI_LIB_SUFFIX}
     rti_me_discdpse${RTI_LIB_SUFFIX}
     rti_me_discdpde${RTI_LIB_SUFFIX}
-    rti_me${RTI_LIB_SUFFIX}
-                                  )
+    rti_me${RTI_LIB_SUFFIX})
 
+SET(PLATFORM_LIBS dl;m;pthread;nsl;rt;)
 SET(FASTDDS_LIBS fastcdr fastrtps)
 
 MESSAGE("RTIME_TARGET_NAME = x64Linux4gcc7.3.0")
@@ -84,7 +82,7 @@ MESSAGE("RTIME_TARGET_NAME = x64Linux4gcc7.3.0")
 INCLUDE_DIRECTORIES(~/rti_me.2.0/include ~/rti_me.2.0/include/rti_me)
 LINK_DIRECTORIES(~/rti_me.2.0/lib/x64Linux4gcc7.3.0)
 
-ADD_EXECUTABLE(perftest_cpp_FastDDS
+ADD_EXECUTABLE(FastDDSperftest_cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/perftest.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/perftestPubSubTypes.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/perftest_publisher.cxx
@@ -103,4 +101,4 @@ ADD_EXECUTABLE(perftest_cpp_FastDDS
         ${APP_GEN_C}
         ${APP_GEN_H})
 
-TARGET_LINK_LIBRARIES(perftest_cpp_FastDDS  ${MICRO_C_LIBS} ${FASTDDS_LIBS} ${PLATFORM_LIBS})
+TARGET_LINK_LIBRARIES(FastDDSperftest_cpp  ${MICRO_C_LIBS} ${FASTDDS_LIBS} ${PLATFORM_LIBS})

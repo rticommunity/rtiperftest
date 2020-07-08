@@ -50,6 +50,7 @@ inline RTI_BOOL PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
 
 #define PERFTEST_DISCOVERY_TIME_MSEC 1000 // 1 second
 #define ONE_BILLION  1000000000L // 1 billion (US) == 1 second in ns
+#define ONE_MILLION  1000000L // 1 million == 1 second in us
 
 #define PerftestMutex OSAPI_Mutex_T
 #define PerftestMutex_new OSAPI_Mutex_new
@@ -61,17 +62,7 @@ inline RTI_BOOL PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
 class PerftestClock {
 
   private:
-  #ifndef RTI_PERFTEST_NANO_CLOCK
-    #ifndef RTI_WIN32
-    OSAPI_NtpTime clockTimeAux;
-    RTI_INT32 clockSec;
-    RTI_UINT32 clockUsec;
-    #else
-    double _frequency;
-    #endif
-  #else
     struct timespec timeStruct;
-  #endif
 
   public:
     PerftestClock();

@@ -7,6 +7,7 @@
 #include "FastDDSImpl.h"
 
 using namespace eprosima::fastdds::dds;
+using namespace eprosima::fastrtps::rtps;
 
 
 // Listeners used by the DDS Entities
@@ -85,32 +86,51 @@ public:
     typename T::type _sample;
     SampleInfo _sampleInfo;
     TestMessage _message;
-    ReturnCode_t retCode;
     IMessagingCB *_callback;
+    unsigned int _matchedPublishers;
 
-    ReaderListener(IMessagingCB *callback) : _message(), _callback(callback)
+    ReaderListener(IMessagingCB *callback)
+            : _message(), _callback(callback), _matchedPublishers(0)
     {
     }
 
-    void on_data_available(DataReader *reader)
+    virtual void on_data_available(DataReader *reader)
     {
+        // printf("On data available called\n");
+        // if ((reader->get_status_mask() & StatusMask::data_available()) == 0) {
+        //     std::cerr << "Status mask does NOT contain data_available. Why is this called?" << std::endl;
+        //     std::cerr << "Reader mask is " << reader->get_status_mask() << std::endl;
+        //     std::cerr << "On_data_available mask is " << StatusMask::data_available() << std::endl;
+        //     return;
+        // } else {
+        //     std::cerr << "Status mask does contain data_available" << std::endl;
+        // }
+
+        /*
+         * This is a temporal fix, uncomment code above to show a weird behavior
+         * when using a listener that does NOT have the on_data_available call.
+         */
+        if (_callback == nullptr) {
+            return;
+        }
+        
         /*
          * FastDDS does not have "take()". This may impact in the overall
          * performance when the receive queue is full of unread samples.
          */
-        retCode = reader->take_next_sample((void *) &_sample, &_sampleInfo);
+        ReturnCode_t retCode = reader->take_next_sample((void *) &_sample, &_sampleInfo);
 
-        if (retcode == RETCODE_NO_DATA) {
+        if (retCode == ReturnCode_t::RETCODE_NO_DATA) {
             fprintf(stderr, "called back no data\n");
             return;
         }
 
-        else if (retcode != RETCODE_OK) {
-            fprintf(stderr, "Error during taking data %d\n", retcode);
+        else if (retCode != ReturnCode_t::RETCODE_OK) {
+            fprintf(stderr, "Error during taking data\n");
             return;
         }
 
-        if (_sampleInfo.instance_state == ALIVE) {
+        if (_sampleInfo.instance_state == eprosima::fastdds::dds::ALIVE) {
             _message.entity_id = _sample.entity_id();
             _message.seq_num = _sample.seq_num();
             _message.timestamp_sec = _sample.timestamp_sec();
@@ -119,8 +139,15 @@ public:
             _message.size = (int) _sample.bin_data().size();
             //_message.data = _sample.bin_data();
 
-            _callback->ProcessMessage(this->_message);
+            _callback->ProcessMessage(_message);
         }
+    }
+
+    virtual void on_subscription_matched(
+            DataReader *reader,
+            const SubscriptionMatchedStatus &info)
+    {
+        _matchedPublishers = info.current_count;
     }
 };
 
@@ -235,7 +262,6 @@ std::string FastDDSImpl<T>::PrintConfiguration()
 /*********************************************************
  * FastDDSPublisher
  */
-using namespace eprosima::fastrtps::rtps;
 
 template<typename T>
 class FastDDSPublisher : public IMessagingWriter
@@ -266,20 +292,22 @@ public:
               _instancesToBeWritten(instancesToBeWritten)
     {
         _isReliable = _writer->get_qos().reliability().kind
-                        == RELIABLE_RELIABILITY_QOS;
+                        == ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
 
-        for (unsigned long i = 0; i < _numInstances; ++i) {
+        if (_PM->get<bool>("keyed")) {
+            for (unsigned long i = 0; i < _numInstances; ++i) {
+                for (int c = 0; c < KEY_SIZE; c++) {
+                    _data.key()[c] = (unsigned char) (i >> c * 8);
+                }
+                _instanceHandles.push_back(_writer->register_instance(&_data));
+            }
+
+            // Register the key of MAX_CFT_VALUE
             for (int c = 0; c < KEY_SIZE; c++) {
-                _data.key()[c] = (unsigned char) (i >> c * 8);
+                _data.key()[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
             }
             _instanceHandles.push_back(_writer->register_instance(&_data));
         }
-
-        // Register the key of MAX_CFT_VALUE
-        for (int c = 0; c < KEY_SIZE; c++) {
-            _data.key()[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
-        }
-        _instanceHandles.push_back(_writer->register_instance(&_data));
     }
 
     ~FastDDSPublisher()
@@ -302,6 +330,10 @@ public:
     void WaitForReaders(int numSubscribers)
     {
         WriterListener *listener = (WriterListener *) _writer->get_listener();
+        if (listener == nullptr) {
+            fprintf(stderr,"Could not get listener from writer.\n");
+            return;
+        }
         while (listener->_matchedSubscribers < numSubscribers) {
             PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         }
@@ -398,11 +430,16 @@ public:
         }
 
         // Write call
-        if (!isCftWildCardKey) {
-            _writer->write((void *) &_data, _instanceHandles[key]);
+        if (_PM->get<bool>("keyed")) {
+            if (!isCftWildCardKey) {
+                _writer->write((void *) &_data, _instanceHandles[key]);
+            } else {
+                _writer->write((void *) &_data, _instanceHandles.back());
+            }
         } else {
-            _writer->write((void *) &_data, _instanceHandles.back());
+            _writer->write((void *) &_data);
         }
+
         return true;
     }
 };
@@ -414,25 +451,24 @@ public:
 template <typename T>
 class FastDDSSubscriber : public IMessagingReader
 {
-  protected:
-    ParameterManager       *_PM;
+public:
+    DataReader *_reader;
+    ParameterManager *_PM;
+    TestMessage _message;
+    bool _endTest;
+    bool _useReceiveThread;
+    typename T::type _sample;
+    SampleInfo _sampleInfo;
 
-    void Shutdown()
+    FastDDSSubscriber(DataReader *reader, ParameterManager *PM)
+            : _reader(reader),
+              _PM(PM),
+              _message(),
+              _endTest(false),
+              _useReceiveThread(_reader->get_listener() == nullptr)
     {
-    }
-
-    void WaitForWriters(int numPublishers)
-    {
-        while (true) {
-            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
-        }
-    }
-
-  public:
-
-    FastDDSSubscriber(ParameterManager *PM)
-    {
-        _PM = PM;
+        // // null listener means using receive thread
+        // _useReceiveThread = _reader->get_listener() == nullptr;
     }
 
     ~FastDDSSubscriber()
@@ -440,25 +476,82 @@ class FastDDSSubscriber : public IMessagingReader
         Shutdown();
     }
 
+    void Shutdown()
+    {
+    }
+
+    void WaitForWriters(int numPublishers)
+    {
+        ReaderListener<T> *listener = (ReaderListener<T> *) _reader->get_listener();
+        if (listener == nullptr) {
+            fprintf(stderr,"Could not get listener from reader.\n");
+            return;
+        }
+        while (listener->_matchedPublishers < numPublishers) {
+            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
+        }
+    }
 
     bool unblock()
     {
+        _endTest = true;
         return true;
     }
 
     unsigned int getSampleCount()
     {
+        // Not implemented
         return 0;
     }
 
     unsigned int getSampleCountPeak()
     {
+        // Not implemented
         return 0;
     }
 
     TestMessage *ReceiveMessage()
     {
-        return NULL;
+        Duration_t timeout(2,0);
+
+        while (!this->_endTest) {
+
+            /*
+             * If wait_for_unread_message returns true, it means that there is
+             * data there. If it returns false, it timed out.
+             */
+            if (_reader->wait_for_unread_message(timeout)) {
+
+                // In FastDDS we need to take samples one by one.
+                ReturnCode_t retCode = _reader->take_next_sample(
+                        (void *) &_sample,
+                        &_sampleInfo);
+
+                if (retCode == ReturnCode_t::RETCODE_NO_DATA) {
+                    fprintf(stderr, "called back no data\n");
+                    return nullptr;
+                } else if (retCode != ReturnCode_t::RETCODE_OK) {
+                    fprintf(stderr, "Error during taking data\n");
+                    return nullptr;
+                }
+
+                if (_sampleInfo.instance_state 
+                        == eprosima::fastdds::dds::ALIVE) {
+                    _message.entity_id = _sample.entity_id();
+                    _message.seq_num = _sample.seq_num();
+                    _message.timestamp_sec = _sample.timestamp_sec();
+                    _message.timestamp_usec = _sample.timestamp_usec();
+                    _message.latency_ping = _sample.latency_ping();
+                    _message.size = (int) _sample.bin_data().size();
+                    //_message.data = _sample.bin_data();
+
+                    return &_message;
+                }
+            } // wait_for_unread
+        } // while _endTest
+        
+        // If the while have not returned already data, we return nullptr;
+        return nullptr;
     }
 };
 
@@ -470,7 +563,6 @@ bool FastDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
 {
     // Assign ParameterManager
     _PM = &PM;
-    return true;
 
     if (!validate_input()) {
         return false;
@@ -553,6 +645,11 @@ IMessagingWriter *FastDDSImpl<T>::CreateWriter(const char *topic_name)
     DataWriter *writer = nullptr;
     std::string qos_profile = "";
 
+    if (_participant == nullptr) {
+        fprintf(stderr, "Participant is null\n");
+        return nullptr;
+    }
+
     Topic *topic = _participant->create_topic(
             std::string(topic_name),
             _type.get_type_name(),
@@ -574,6 +671,8 @@ IMessagingWriter *FastDDSImpl<T>::CreateWriter(const char *topic_name)
     //     return NULL;
     // }
 
+
+    std::cerr << "[Debug]: Creating writer (with Listener) for: " << topic_name << std::endl;
     WriterListener *dwListener = new WriterListener();
     writer = _publisher->create_datawriter(
             topic,
@@ -626,12 +725,20 @@ IMessagingReader *FastDDSImpl<T>::CreateReader(
     //     return NULL;
     // }
 
+    StatusMask mask = StatusMask::publication_matched();
+    if (callback != nullptr) {
+        mask << StatusMask::data_available();
+    }
+
+    std::cerr << "[Debug]: Creating reader for: " << topic_name << std::endl;
+    if (callback != nullptr) {
+        std::cerr << "\t with callback" << std::endl;
+    }
     reader = _subscriber->create_datareader(
             topic,
             drQos,
-            callback != nullptr ? new ReaderListener<T>(callback) : nullptr,
-            callback != nullptr ? StatusMask::data_available()
-                                : StatusMask::none());
+            new ReaderListener<T>(callback),
+            mask);
     if (reader == nullptr) {
         fprintf(stderr, "Problem creating reader.\n");
         return nullptr;
@@ -643,8 +750,7 @@ IMessagingReader *FastDDSImpl<T>::CreateReader(
     //     _reader = reader;
     // }
 
-    // return new FastDDSSubscriber<T>(reader, _PM);
-    return new FastDDSSubscriber<T>(_PM);
+    return new FastDDSSubscriber<T>(reader, _PM);
 }
 
 template <typename T>

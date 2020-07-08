@@ -119,7 +119,8 @@ void ParameterManager::initialize()
     instances->set_group(GENERAL);
     instances->set_supported_middleware(
             Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("instances", instances);
 
     Parameter<long> *instanceHashBuckets = new Parameter<long>(0);
@@ -141,7 +142,8 @@ void ParameterManager::initialize()
     keyed->set_group(GENERAL);
     keyed->set_supported_middleware(
             Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("keyed", keyed);
 
     Parameter<bool> *noDirectCommunication = new Parameter<bool>(false);
@@ -543,7 +545,8 @@ void ParameterManager::initialize()
     pub->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("pub", pub);
 
     Parameter<unsigned long long> *latencyCount =
@@ -627,7 +630,8 @@ void ParameterManager::initialize()
     numIter->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("numIter", numIter);
 
     Parameter<int> *numSubscribers = new Parameter<int>(1);
@@ -673,7 +677,8 @@ void ParameterManager::initialize()
     pubRate->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     pubRate->set_range(1, 10000000);
     pubRate->add_valid_str_value("sleep");
     pubRate->add_valid_str_value("spin");
@@ -711,7 +716,8 @@ void ParameterManager::initialize()
     scan->set_group(PUB);
     scan->set_supported_middleware(
             Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("scan", scan);
 
     Parameter<unsigned long long> *sleep = new Parameter<unsigned long long>(0);
