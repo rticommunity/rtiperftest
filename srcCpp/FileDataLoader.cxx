@@ -30,9 +30,9 @@ bool FileDataLoader::initialize(std::string path, ParameterManager *PM)
     _filePath = path;
     std::cerr << "\tFile name: " << path << std::endl;
 
-    int fileSize = PerftestFileHandler::get_file_size(_filePath);
+    long fileSize = PerftestFileHandler::get_file_size(_filePath);
     if (fileSize > 0) {
-        _fileSize = (unsigned int) fileSize;
+        _fileSize = (unsigned long) fileSize;
     } else {
         std::cerr << "[Error] FileDataLoader::initialize File size "
                   << fileSize
