@@ -1,5 +1,5 @@
 /*
- * (c) 2005-2019 Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2020 Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
@@ -14,11 +14,16 @@
 
 #ifdef EPROSIMA_PERF_FASTDDS
 
+//TODO: Remove dependencies with Micro
 #include "osapi/osapi_semaphore.h"
 #include "osapi/osapi_thread.h"
 #include "osapi/osapi_time.h"
 #include "rti_me_cpp.hxx"
 #include "PerftestTransport.h"
+
+#include <fastdds/dds/domain/DomainParticipant.hpp>
+#include <fastdds/rtps/transport/shared_mem/SharedMemTransportDescriptor.h>
+#include <fastdds/rtps/transport/UDPv4TransportDescriptor.h>
 
 #ifdef RTI_WIN32
   #include "windows.h"
@@ -106,15 +111,8 @@ void PerftestThread_delete(struct PerftestThread* thread);
 
 bool PerftestConfigureTransport(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos &qos,
+        eprosima::fastdds::dds::DomainParticipantQos &qos,
         ParameterManager *_PM);
-
-#ifdef RTI_SECURE_PERFTEST
-bool PerftestConfigureSecurity(
-        PerftestSecurity &security,
-        DDS_DomainParticipantQos &qos,
-        ParameterManager *_PM);
-#endif
 
 /********************************************************************/
 /* The following structures/classes are copied from RTI Connext DDS */

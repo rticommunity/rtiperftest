@@ -35,7 +35,8 @@
 #include <fastdds/dds/topic/TypeSupport.hpp>
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
 
-    #define RTIPERFTEST_MAX_PEERS 1024
+using namespace eprosima::fastdds::dds;
+using namespace eprosima::fastrtps::rtps;
 
 /* Forward declaration of perftest_cpp to avoid circular dependencies */
 class perftest_cpp;
@@ -81,6 +82,8 @@ public:
         return true;
     };
 
+    bool configure_participant_qos(DomainParticipantQos &qos);
+
     const std::string get_qos_profile_name(const char *topicName);
 
 protected:
@@ -88,6 +91,7 @@ protected:
     // Perftest related entities
     perftest_cpp *_parent;
     ParameterManager *_PM;
+    PerftestTransport _transport;
     PerftestSemaphore *_pongSemaphore;
     std::map<std::string, std::string> _qoSProfileNameMap;
 

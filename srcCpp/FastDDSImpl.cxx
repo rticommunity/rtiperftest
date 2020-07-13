@@ -218,6 +218,13 @@ void FastDDSImpl<T>::Shutdown()
 template <typename T>
 bool FastDDSImpl<T>::validate_input()
 {
+
+    // Manage transport parameter
+    if (!_transport.validate_input()) {
+        fprintf(stderr, "Failure validating the transport options.\n");
+        return false;
+    };
+
     return true;
 }
 
@@ -241,7 +248,7 @@ std::string FastDDSImpl<T>::PrintConfiguration()
         stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
 
-    // stringStream << "\n" << _transport.printTransportConfigurationSummary();
+    stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
     // const std::vector<std::string> peerList = _PM->get_vector<std::string>("peer");
     // if (!peerList.empty()) {
@@ -555,6 +562,66 @@ public:
     }
 };
 
+
+
+/*********************************************************
+ * configure_participant_qos
+ */
+template <typename T>
+bool FastDDSImpl<T>::configure_participant_qos(DomainParticipantQos &qos)
+{
+    qos = _factory->get_default_participant_qos();
+
+    // if (_factory->set_default_library(_PM->get<std::string>("qosLibrary").c_str())
+    //         != DDS_RETCODE_OK) {
+    //     fprintf(stderr,
+    //             "No QOS Library named \"%s\" found in %s.\n",
+    //             _PM->get<std::string>("qosLibrary").c_str(),
+    //             _PM->get<std::string>("qosFile").c_str());
+    //     return false;
+    // }
+
+    // // Configure DDSDomainParticipant QOS
+    // if (_factory->get_participant_qos_from_profile(
+    //         qos,
+    //         _PM->get<std::string>("qosLibrary").c_str(),
+    //         "BaseProfileQos")
+    //         != DDS_RETCODE_OK) {
+    //     fprintf(stderr,
+    //             "Problem setting QoS Library \"%s::BaseProfileQos\" "
+    //             "for participant_qos.\n",
+    //             _PM->get<std::string>("qosLibrary").c_str());
+    // }
+
+    // Set initial peers and not use multicast
+    const std::vector<std::string> peerList =
+            _PM->get_vector<std::string>("peer");
+    if (!peerList.empty()) {
+        Locator_t initial_peer;
+        for (unsigned int i = 0; i < peerList.size(); ++i) {
+            IPLocator::setIPv4(
+                    initial_peer,
+                    const_cast<char *>(peerList[i].c_str()));
+            // initial_peer.port = 7412; // TODO: Do we need to enable this?
+            // 7400 + 250 * domainID + 10 + 2 * participantID
+            qos.wire_protocol().builtin.initialPeersList.push_back(
+                    initial_peer);
+        }
+
+        // TODO: Do we need to disable the multicast receive addresses?
+        Locator_t default_unicast_locator;
+        qos.wire_protocol().builtin.metatrafficUnicastLocatorList.push_back(
+                default_unicast_locator);
+    }
+
+
+    if (!PerftestConfigureTransport(_transport, qos, _PM)) {
+        return false;
+    }
+
+    return true;
+}
+
 /*********************************************************
  * Initialize
  */
@@ -563,6 +630,8 @@ bool FastDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
 {
     // Assign ParameterManager
     _PM = &PM;
+    _transport.initialize(_PM);
+    ReturnCode_t retCode = ReturnCode_t::RETCODE_OK;
 
     if (!validate_input()) {
         return false;
@@ -576,18 +645,22 @@ bool FastDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
             ? PerftestSemaphore_new()
             : nullptr;
 
-
     _factory = DomainParticipantFactory::get_instance();
 
-    /*
-     * We create the domain Participant QoS first and assing the values if we
-     * need to.
-     */
+    if (!_PM->get<bool>("noXmlQos")) {
+        retCode = _factory->load_XML_profiles_file(
+                _PM->get<std::string>("qosFile"));
+        if (retCode != ReturnCode_t::RETCODE_OK) {
+            fprintf(stderr,
+                    "[Warning]: XML Profile not found, using default "
+                    "settings\n");
+        }
+    }
+
     DomainParticipantQos participantQos;
-    // Configure Domain Participant QoS
-    // TODO if (!configureDomainParticipantQos(participantQos)) {
-    //     return false;
-    // }
+    if (!configure_participant_qos(participantQos)) {
+        return false;
+    }
 
     StatusMask statusMask = StatusMask::inconsistent_topic();
     statusMask << StatusMask::offered_incompatible_qos();
@@ -605,7 +678,7 @@ bool FastDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     }
 
     // Register type
-    ReturnCode_t retCode = _type.register_type(_participant);
+    retCode = _type.register_type(_participant);
     if (retCode != ReturnCode_t::RETCODE_OK) {
         fprintf(stderr,"Problem registering type.\n");
         return false;
@@ -743,12 +816,6 @@ IMessagingReader *FastDDSImpl<T>::CreateReader(
         fprintf(stderr, "Problem creating reader.\n");
         return nullptr;
     }
-
-    // // Save the reference.
-    // if (!strcmp(topic_name, THROUGHPUT_TOPIC_NAME) ||
-    //     !strcmp(topic_name, LATENCY_TOPIC_NAME)) {
-    //     _reader = reader;
-    // }
 
     return new FastDDSSubscriber<T>(reader, _PM);
 }

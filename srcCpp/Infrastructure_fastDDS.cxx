@@ -7,18 +7,8 @@
 
 #include "Infrastructure_fastDDS.h"
 
-/*
- * Since std::to_string is not defined until c++11
- * we will define it here.
- */
-namespace std {
-    template<typename T>
-    std::string to_string(const T &n) {
-        std::ostringstream s;
-        s << n;
-        return s.str();
-    }
-}
+using namespace eprosima::fastdds::rtps;
+using namespace eprosima::fastdds::dds;
 
 /********************************************************************/
 /* Perftest Clock class */
@@ -146,200 +136,77 @@ void PerftestThread_delete(struct PerftestThread* thread)
 /********************************************************************/
 /* Transport related functions */
 
-bool configureUDPv4Transport(
+bool configure_udpv4_transport(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos &qos,
+        DomainParticipantQos &qos,
         ParameterManager *_PM)
 {
 
-    RTRegistry *registry = DDSDomainParticipantFactory::get_instance()->get_registry();
-    DPDE_DiscoveryPluginProperty dpde_properties;
-
+    std::shared_ptr<UDPv4TransportDescriptor> udpTransport = std::make_shared<UDPv4TransportDescriptor>();
     /*
-     * We will use the same values we use for Pro (XML) for the buffers
-     * these values can be reduced for a smaller memory footprint.
+     * maxMessageSize:
+     * When setting a value greater than 65500, the following error will show
+     * [RTPS_MSG_OUT Error] maxMessageSize cannot be greater than 65000
+     * So we will use the limit (which happens to be also its default value)
+     * udpTransport->maxMessageSize = 65500;
      */
-    UDP_InterfaceFactoryProperty *udp_property =  new UDP_InterfaceFactoryProperty();
-    udp_property->max_message_size = 65536;
-    udp_property->max_receive_buffer_size = 2097152;
-    udp_property->max_send_buffer_size = 524288;
+    udpTransport->sendBufferSize = 524288;
+    udpTransport->receiveBufferSize = 2097152;
 
-    /* Configure UDP transport's allowed interfaces */
-    if (!registry->unregister(NETIO_DEFAULT_UDP_NAME, NULL, NULL)) {
-        printf("Micro: Failed to unregister udp\n");
-        return false;
-    }
-
-    /* use only interface supplied by command line? */
+    /* Use only interface supplied by command line */
     if (!_PM->get<std::string>("allowInterfaces").empty()) {
-        udp_property->allow_interface.maximum(1);
-        udp_property->allow_interface.length(1);
-        *udp_property->allow_interface.get_reference(0) =
-            DDS_String_dup(
+        udpTransport->interfaceWhiteList.clear();
+        udpTransport->interfaceWhiteList.push_back(
                 _PM->get<std::string>("allowInterfaces").c_str());
     }
 
-    if (!registry->register_component(
-                NETIO_DEFAULT_UDP_NAME,
-                UDPInterfaceFactory::get_interface(),
-                &udp_property->_parent._parent,
-                NULL)) {
-        printf("Micro: Failed to register udp\n");
-        if (udp_property != NULL) {
-            delete udp_property;
-        }
-        return false;
-    }
-
-    /* In order to avoid MICRO-2191 */
-  #if RTIME_DDS_VERSION_MAJOR >= 3 && RTIME_DDS_VERSION_MINOR > 0
-    dpde_properties.max_samples_per_remote_builtin_endpoint_writer = 1;
-  #endif
-
-    if (!registry->register_component("dpde",
-                DPDEDiscoveryFactory::get_interface(),
-                &dpde_properties._parent,
-                NULL)) {
-        printf("Micro: Failed to register dpde\n");
-        if (udp_property != NULL) {
-            delete udp_property;
-        }
-        return false;
-    }
-
-    if (!qos.discovery.discovery.name.set_name("dpde")) {
-        printf("Micro: Failed to set discovery plugin name\n");
-        if (udp_property != NULL) {
-            delete udp_property;
-        }
-        return false;
-    }
-
-    if (_PM->get<bool>("multicast")) {
-        DDS_StringSeq_set_maximum(&qos.user_traffic.enabled_transports, 1);
-        DDS_StringSeq_set_length(&qos.user_traffic.enabled_transports, 1);
-        *DDS_StringSeq_get_reference(&qos.user_traffic.enabled_transports, 0) =
-                DDS_String_dup("_udp://239.255.0.1");
-    }
-
-    /* if there are more remote or local endpoints, you may need to increase these limits */
-    qos.resource_limits.max_destination_ports = 32;
-    qos.resource_limits.max_receive_ports = 32;
-    qos.resource_limits.local_topic_allocation = 3;
-    qos.resource_limits.local_type_allocation = 1;
-    qos.resource_limits.local_reader_allocation = 2;
-    qos.resource_limits.local_writer_allocation = 2;
-    qos.resource_limits.remote_participant_allocation = 8;
-    qos.resource_limits.remote_reader_allocation = 8;
-    qos.resource_limits.remote_writer_allocation = 8;
+    qos.transport().user_transports.push_back(udpTransport);
 
     return true;
 }
 
-#ifndef RTI_PERF_MICRO_24x_COMPATIBILITY
-bool configureShmemTransport(
+bool configure_shmem_transport(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos& qos,
+        DomainParticipantQos &qos,
         ParameterManager *_PM)
 {
-    RTRegistry *registry = DDSDomainParticipantFactory::get_instance()->get_registry();
+    std::shared_ptr<SharedMemTransportDescriptor> shmTransport =
+            std::make_shared<SharedMemTransportDescriptor>();
 
-    DPDE_DiscoveryPluginProperty dpde_properties;
-    NETIO_SHMEMInterfaceFactoryProperty shmem_property;
-
-    /* We don't need UDP transport. Unregister it */
-    if (!registry->unregister(NETIO_DEFAULT_UDP_NAME, NULL, NULL)) {
-        printf("Micro: Failed to unregister udp\n");
-        return false;
-    }
-
-    /* In order to avoid MICRO-2191 */
-  #if RTIME_DDS_VERSION_MAJOR >= 3 && RTIME_DDS_VERSION_MINOR > 0
-    dpde_properties.max_samples_per_remote_builtin_endpoint_writer = 1;
-  #endif
-
-    if (!registry->register_component("dpde",
-                DPDEDiscoveryFactory::get_interface(),
-                &dpde_properties._parent,
-                NULL)) {
-        printf("Micro: Failed to register dpde\n");
-        return false;
-    }
-
-    if (!qos.discovery.discovery.name.set_name("dpde")) {
-        printf("Micro: Failed to set discovery plugin name\n");
-        return false;
-    }
-
-    if (!registry->register_component(
-            NETIO_DEFAULT_SHMEM_NAME,
-            SHMEMInterfaceFactory::get_interface(),
-            (struct RT_ComponentFactoryProperty*) &shmem_property,
-            NULL))
-    {
-        printf("failed to register shmem\n");
-        return false;
-    }
-
-    qos.transports.enabled_transports.maximum(1);
-    qos.transports.enabled_transports.length(1);
-    qos.transports.enabled_transports[0] = DDS_String_dup("_shmem");
-
-    qos.discovery.enabled_transports.maximum(1);
-    qos.discovery.enabled_transports.length(1);
-    qos.discovery.enabled_transports[0] = DDS_String_dup("_shmem://");
-
-    qos.user_traffic.enabled_transports.maximum(1);
-    qos.user_traffic.enabled_transports.length(1);
-    qos.user_traffic.enabled_transports[0] = DDS_String_dup("_shmem://");
-
-    qos.discovery.initial_peers.maximum(1);
-    qos.discovery.initial_peers.length(1);
-    qos.discovery.initial_peers[0] = DDS_String_dup("_shmem://");
-
-    /* if there are more remote or local endpoints, you may need to increase these limits */
-    qos.resource_limits.max_destination_ports = 32;
-    qos.resource_limits.max_receive_ports = 32;
-    qos.resource_limits.local_topic_allocation = 3;
-    qos.resource_limits.local_type_allocation = 1;
-    qos.resource_limits.local_reader_allocation = 2;
-    qos.resource_limits.local_writer_allocation = 2;
-    qos.resource_limits.remote_participant_allocation = 8;
-    qos.resource_limits.remote_reader_allocation = 8;
-    qos.resource_limits.remote_writer_allocation = 8;
+    // TODO: We need to calculate the size of the segment, I guess it should be
+    // the size of the sample + X
+    // shmTransport->segment_size(2 * 1024 * 1024);
+    // shmTransport->maxMessageSize(2 * 1024 * 1024);
+    // port_queue_capacity 1024
+    // healthy_check_timeout_ms 250
+    // rtps_dump_file /rtps_dump_file
+    qos.transport().user_transports.push_back(shmTransport);
 
     return true;
 }
-#endif
 
 bool PerftestConfigureTransport(
         PerftestTransport &transport,
-        DDS_DomainParticipantQos &qos,
+        DomainParticipantQos &qos,
         ParameterManager *_PM)
 {
-
     if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
         transport.transportConfig.kind = TRANSPORT_UDPv4;
         transport.transportConfig.nameString = "UDPv4 (Default)";
     }
 
     switch (transport.transportConfig.kind) {
-
     case TRANSPORT_UDPv4:
-        return configureUDPv4Transport(transport, qos, _PM);
-
-  #if !RTI_PERF_MICRO_24x_COMPATIBILITY
+        return configure_udpv4_transport(transport, qos, _PM);
     case TRANSPORT_SHMEM:
-        return configureShmemTransport(transport, qos, _PM);
-  #endif
-
+        return configure_shmem_transport(transport, qos, _PM);
     default:
         fprintf(stderr,
-                "%s Transport is not supported in RTI Perftest for Micro\n",
+                "%s Transport is not yet supported in Perftest for FastDDS\n",
                 classLoggingString.c_str());
         return false;
 
-    } // Switch
+    }  // Switch
 
     return true;
 }

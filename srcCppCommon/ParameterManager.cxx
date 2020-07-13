@@ -196,7 +196,11 @@ void ParameterManager::initialize()
     create("noPrintIntervals", noPrintIntervals);
 
     Parameter<std::string> *qosFile =
+        #if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
             new Parameter<std::string>("perftest_qos_profiles.xml");
+        #elif defined(EPROSIMA_PERF_FASTDDS)
+            new Parameter<std::string>("perftest_fastDDS_qos_profiles.xml");
+        #endif
     qosFile->set_command_line_argument("-qosFile", "<filename>");
     qosFile->set_description(
             "Name of XML file for DDS Qos profiles.\n"
@@ -582,7 +586,8 @@ void ParameterManager::initialize()
     executionTime->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("executionTime", executionTime);
 
     Parameter<long> *initialBurstSize =
@@ -972,7 +977,8 @@ void ParameterManager::initialize()
     peer->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("peer", peer);
 
     Parameter<std::string> *transport = new Parameter<std::string>("Use XML");
@@ -980,22 +986,31 @@ void ParameterManager::initialize()
     transport->set_description(
             "Set transport to be used. The rest of\n"
             "the transports will be disabled."
+          #if defined(RTI_PERF_PRO)
             "\nValues:\nUDPv4\nUDPv6\nSHMEM\nTCP\nTLS\nDTLS\nWAN\nUse XML\n"
             "Default: Use XML (UDPv4|SHMEM)");
+          #elif defined(RTI_PERF_MICRO) || defined(EPROXIMA_PERF_FASTDDS)
+            "\nValues:\nUDPv4\nSHMEM\n"
+            "Default: UDPv4"
+          #endif
+          );
     transport->set_type(T_STR);
     transport->set_extra_argument(YES);
     transport->set_group(TRANSPORT);
     transport->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     transport->add_valid_str_value("UDPv4");
-    transport->add_valid_str_value("UDPv6");
     transport->add_valid_str_value("SHMEM");
+  #if defined(RTI_PERF_PRO)
+    transport->add_valid_str_value("UDPv6");
     transport->add_valid_str_value("TCP");
     transport->add_valid_str_value("TLS");
     transport->add_valid_str_value("DTLS");
     transport->add_valid_str_value("WAN");
+  #endif
     create("transport", transport);
 
     Parameter<bool> *multicast = new Parameter<bool>(false);
