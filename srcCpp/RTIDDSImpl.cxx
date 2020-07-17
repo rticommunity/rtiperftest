@@ -3413,6 +3413,14 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         
 
     #endif
+
+        // Heartbeats per max samples
+        stringStream << "\tHeartbeat period (s/ns): "
+                     << dw_qos.protocol.rtps_reliable_writer.heartbeat_period.sec 
+                     << ", "
+                     << dw_qos.protocol.rtps_reliable_writer.heartbeat_period.nanosec
+                     << "\n";
+
         fprintf(stderr, "%s\n", stringStream.str().c_str());
     }
     return true;
