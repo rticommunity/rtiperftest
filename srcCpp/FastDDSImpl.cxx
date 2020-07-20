@@ -75,11 +75,6 @@ public:
     }
 };
 
-
-/*********************************************************
- * ReaderListener
- */
-
 template <typename T>
 class ReaderListener : public DataReaderListener {
 public:
@@ -118,7 +113,8 @@ public:
          * FastDDS does not have "take()". This may impact in the overall
          * performance when the receive queue is full of unread samples.
          */
-        ReturnCode_t retCode = reader->take_next_sample((void *) &_sample, &_sampleInfo);
+        ReturnCode_t retCode =
+                reader->take_next_sample((void *) &_sample, &_sampleInfo);
 
         if (retCode == ReturnCode_t::RETCODE_NO_DATA) {
             fprintf(stderr, "called back no data\n");
@@ -177,31 +173,12 @@ void FastDDSImpl<T>::Shutdown()
 
     if (_participant != NULL) {
 
-        // if (_reader != NULL) {
-        //     DDSDataReaderListener* reader_listener = _reader->get_listener();
-        //     if (reader_listener != NULL) {
-        //         delete(reader_listener);
-        //     }
-        //     _subscriber->delete_datareader(_reader);
-        // }
-
-        // eprosima::fastdds::dds::DomainParticipantListener *listener = _participant->get_listener();
-        // if (listener != NULL) {
-        //     delete(listener);
-        // }
-
-    if (_publisher != nullptr) {
-        _participant->delete_publisher(_publisher);
-    }
-    if (_subscriber != nullptr) {
-        _participant->delete_subscriber(_subscriber);
-    }
-    // if (topic_ != nullptr)
-    // {
-    //     _participant->delete_topic(topic_);
-    // }
-
-
+        if (_publisher != nullptr) {
+            _participant->delete_publisher(_publisher);
+        }
+        if (_subscriber != nullptr) {
+            _participant->delete_subscriber(_subscriber);
+        }
         _factory->delete_participant(_participant);
     }
 
@@ -224,6 +201,14 @@ bool FastDDSImpl<T>::validate_input()
         fprintf(stderr, "Failure validating the transport options.\n");
         return false;
     };
+
+    /*
+     * Manage parameter -verbosity.
+     * Setting verbosity if the parameter is provided
+     */
+    if (_PM->is_set("verbosity")) {
+        PerftestConfigureVerbosity(_PM->get<int>("verbosity"));
+    }
 
     return true;
 }
@@ -250,18 +235,19 @@ std::string FastDDSImpl<T>::PrintConfiguration()
 
     stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
-    // const std::vector<std::string> peerList = _PM->get_vector<std::string>("peer");
-    // if (!peerList.empty()) {
-    //     stringStream << "\tInitial peers: ";
-    //     for (unsigned int i = 0; i < peerList.size(); ++i) {
-    //         stringStream << peerList[i];
-    //         if (i == peerList.size() - 1) {
-    //             stringStream << "\n";
-    //         } else {
-    //             stringStream << ", ";
-    //         }
-    //     }
-    // }
+    const std::vector<std::string> peerList =
+            _PM->get_vector<std::string>("peer");
+    if (!peerList.empty()) {
+        stringStream << "\tInitial peers: ";
+        for (unsigned int i = 0; i < peerList.size(); ++i) {
+            stringStream << peerList[i];
+            if (i == peerList.size() - 1) {
+                stringStream << "\n";
+            } else {
+                stringStream << ", ";
+            }
+        }
+    }
 
     return stringStream.str();
 }
@@ -276,6 +262,7 @@ class FastDDSPublisher : public IMessagingWriter
 protected:
     ParameterManager *_PM;
     DataWriter *_writer;
+    int failures;
     PerftestSemaphore *_pongSemaphore;
     unsigned long _numInstances;
     unsigned long _instanceCounter;
@@ -293,6 +280,7 @@ public:
             ParameterManager *PM)
             : _PM(PM),
               _writer(writer),
+              failures(0),
               _pongSemaphore(pongSemaphore),
               _numInstances(num_instances),
               _instanceCounter(0),
@@ -362,8 +350,11 @@ public:
     /* time out in milliseconds */
     bool waitForPingResponse(int timeout)
     {
+        // TODO RETURN THIS TO ORIGINAL!!!!
         if(_pongSemaphore != NULL) {
-            if (!PerftestSemaphore_take(_pongSemaphore, timeout)) {
+            if (!PerftestSemaphore_take(
+                    _pongSemaphore,
+                    PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
                 fprintf(stderr,"Unexpected error taking semaphore\n");
                 return false;
             }
@@ -444,7 +435,11 @@ public:
                 _writer->write((void *) &_data, _instanceHandles.back());
             }
         } else {
-            _writer->write((void *) &_data);
+            while(!_writer->write((void *) &_data)) {
+                //failures++;
+            }
+            //std::cerr << failures << std::endl;
+            //_writer->write((void *) &_data);
         }
 
         return true;
@@ -572,27 +567,6 @@ bool FastDDSImpl<T>::configure_participant_qos(DomainParticipantQos &qos)
 {
     qos = _factory->get_default_participant_qos();
 
-    // if (_factory->set_default_library(_PM->get<std::string>("qosLibrary").c_str())
-    //         != DDS_RETCODE_OK) {
-    //     fprintf(stderr,
-    //             "No QOS Library named \"%s\" found in %s.\n",
-    //             _PM->get<std::string>("qosLibrary").c_str(),
-    //             _PM->get<std::string>("qosFile").c_str());
-    //     return false;
-    // }
-
-    // // Configure DDSDomainParticipant QOS
-    // if (_factory->get_participant_qos_from_profile(
-    //         qos,
-    //         _PM->get<std::string>("qosLibrary").c_str(),
-    //         "BaseProfileQos")
-    //         != DDS_RETCODE_OK) {
-    //     fprintf(stderr,
-    //             "Problem setting QoS Library \"%s::BaseProfileQos\" "
-    //             "for participant_qos.\n",
-    //             _PM->get<std::string>("qosLibrary").c_str());
-    // }
-
     // Set initial peers and not use multicast
     const std::vector<std::string> peerList =
             _PM->get_vector<std::string>("peer");
@@ -623,6 +597,267 @@ bool FastDDSImpl<T>::configure_participant_qos(DomainParticipantQos &qos)
 }
 
 /*********************************************************
+ * configure_writer_qos
+ */
+template <typename T>
+bool FastDDSImpl<T>::configure_writer_qos(
+        DataWriterQos &qos,
+        std::string qosProfile)
+{
+
+    // RELIABILITY AND DURABILITY
+    if (qosProfile != "AnnouncementQos") {
+
+        if (_PM->get<bool>("bestEffort")) {
+            qos.reliability().kind = ReliabilityQosPolicyKind::BEST_EFFORT_RELIABILITY_QOS;
+        } else {
+            qos.reliability().kind = ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
+            qos.reliability().max_blocking_time.seconds = 1000;
+            qos.reliability().max_blocking_time.nanosec = 1000;
+        }
+
+        if (_PM->get<bool>("noPositiveAcks")){
+            qos.reliable_writer_qos().disable_positive_acks.enabled = true;
+            if (_PM->is_set("keepDurationUsec")) {
+                qos.reliable_writer_qos().disable_positive_acks.duration =
+                        eprosima::fastrtps::Duration_t(
+                                _PM->get<unsigned long long>("keepDurationUsec")
+                                * 1e-6);
+            }
+        }
+
+        if (_PM->is_set("durability")) {
+            qos.durability().kind =(DurabilityQosPolicyKind)_PM->get<int>("durability");
+        } else {
+            qos.durability().kind = DurabilityQosPolicyKind::VOLATILE_DURABILITY_QOS;
+        }
+
+    } else { // AnnouncementQoS
+        qos.reliability().kind = ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
+        qos.durability().kind = DurabilityQosPolicyKind::TRANSIENT_LOCAL_DURABILITY_QOS;
+    }
+
+    // HISTORY
+    qos.history().kind = HistoryQosPolicyKind::KEEP_ALL_HISTORY_QOS;
+
+    // // PUBLISH MODE
+    if (_PM->get<bool>("asynchronous")) {
+        qos.publish_mode().kind = PublishModeQosPolicyKind::ASYNCHRONOUS_PUBLISH_MODE;
+    }
+
+    // TIMES
+    if (qosProfile == "ThroughputQos") {
+        qos.reliable_writer_qos().times.heartbeatPeriod.seconds = 0;
+        qos.reliable_writer_qos().times.heartbeatPeriod.nanosec = 10000;
+        qos.reliable_writer_qos().times.initialHeartbeatDelay = c_TimeZero;
+        qos.reliable_writer_qos().times.nackResponseDelay = c_TimeZero;
+    } else if (qosProfile == "LatencyQos") {
+        qos.reliable_writer_qos().times.heartbeatPeriod.seconds = 0;
+        qos.reliable_writer_qos().times.heartbeatPeriod.nanosec = 1000000;
+        qos.reliable_writer_qos().times.initialHeartbeatDelay = c_TimeZero;
+        qos.reliable_writer_qos().times.nackResponseDelay = c_TimeZero;
+    } else if (qosProfile == "AnnouncementQos") {
+        qos.reliable_writer_qos().times.heartbeatPeriod.seconds = 0;
+        qos.reliable_writer_qos().times.heartbeatPeriod.nanosec = 10000000;
+        qos.reliable_writer_qos().times.initialHeartbeatDelay = c_TimeZero;
+        qos.reliable_writer_qos().times.nackResponseDelay = c_TimeZero;
+    } else {
+        fprintf(stderr,
+                "[Error]: Cannot find settings for qosProfile %s\n",
+                qosProfile.c_str());
+        return false;
+    }
+
+    // RESOURCE LIMITS
+    if (qosProfile == "ThroughputQos") {
+        qos.resource_limits().allocated_samples = _PM->get<int>("sendQueueSize");
+        qos.resource_limits().max_samples = _PM->get<int>("sendQueueSize"); //0 is Length unlimited.
+        // if (_PM->get<bool>("keyed")) {
+        //     qos.resource_limits().max_instances = _PM->get<long>("instances");
+        //     qos.resource_limits().max_samples_per_instance = _PM->get<int>("sendQueueSize");
+        // } else {
+        //     qos.resource_limits().max_instances = 1;
+        //     qos.resource_limits().max_samples_per_instance = 1; 
+        // }
+    } else if (qosProfile == "LatencyQos") {
+        qos.resource_limits().allocated_samples = _PM->get<int>("sendQueueSize");
+        qos.resource_limits().max_samples = _PM->get<int>("sendQueueSize");
+        // if (_PM->get<bool>("keyed")) {
+        //     qos.resource_limits().max_instances = _PM->get<long>("instances");
+        //     qos.resource_limits().max_samples_per_instance = _PM->get<int>("sendQueueSize");
+        // } else {
+        //     qos.resource_limits().max_instances = 1;
+        //     qos.resource_limits().max_samples_per_instance = 1; 
+        // }
+    } else if (qosProfile == "AnnouncementQos") {
+        qos.resource_limits().allocated_samples = _PM->get<int>("sendQueueSize");
+        qos.resource_limits().max_samples = _PM->get<int>("sendQueueSize");
+        // if (_PM->get<bool>("keyed")) {
+        //     qos.resource_limits().max_instances = _PM->get<long>("instances");
+        //     qos.resource_limits().max_samples_per_instance = _PM->get<int>("sendQueueSize");
+        // } else {
+        //     qos.resource_limits().max_instances = 1;
+        //     qos.resource_limits().max_samples_per_instance = 1; 
+        // }
+    } else {
+        fprintf(stderr,
+                "[Error]: Cannot find settings for qosProfile %s\n",
+                qosProfile.c_str());
+        return false;
+    }
+
+    // // SUMMARY FOR THE RESOURCE LIMITS
+    if (_PM->get<bool>("showResourceLimits")) {
+        std::ostringstream stringStream;
+
+        stringStream << "Resource Limits DW (" 
+                    << qosProfile
+                    << " topic):\n"
+                    << "\tSamples (Max): "
+                    << qos.resource_limits().max_samples
+                    << "\n";
+
+        if (_PM->get<bool>("keyed")) {
+            stringStream << "\tInstances (Max): "
+                        << qos.resource_limits().max_instances
+                        << "\n";
+            stringStream << "\tMax Samples per Instance: "
+                        << qos.resource_limits().max_samples_per_instance
+                        << "\n";
+
+        }
+            stringStream << "\tHeartbeat period (s/ns): "
+                        << qos.reliable_writer_qos().times.heartbeatPeriod.seconds
+                        << ","
+                        << qos.reliable_writer_qos().times.heartbeatPeriod.nanosec
+                        << "\n";
+            stringStream << "\tDurability is: "
+                        << qos.durability().kind
+                        << "\n";
+            stringStream << "\tReliability is: "
+                        << qos.reliability().kind
+                        << "\n";
+            stringStream << "\tMax blocking time is (s/ns): "
+                        << qos.reliability().max_blocking_time.seconds
+                        << ","
+                        << qos.reliability().max_blocking_time.nanosec
+                        << "\n";
+        fprintf(stderr, "%s\n", stringStream.str().c_str());
+    }
+    return true;
+}
+
+
+/*********************************************************
+ * configure_reader_qos
+ */
+template <typename T>
+bool FastDDSImpl<T>::configure_reader_qos(
+        DataReaderQos &qos,
+        std::string qosProfile)
+{
+    if (qosProfile != "AnnouncementQos") {
+
+        if (_PM->get<bool>("bestEffort")) {
+            qos.reliability().kind = ReliabilityQosPolicyKind::BEST_EFFORT_RELIABILITY_QOS;
+        } else {
+            qos.reliability().kind = ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
+            qos.reliability().max_blocking_time = c_TimeInfinite;
+        }
+
+        if (_PM->get<bool>("noPositiveAcks")){
+            qos.reliable_reader_qos().disable_positive_ACKs.enabled = true;
+            if (_PM->is_set("keepDurationUsec")) {
+                qos.reliable_reader_qos().disable_positive_ACKs.duration =
+                        eprosima::fastrtps::Duration_t(
+                                _PM->get<unsigned long long>("keepDurationUsec")
+                                * 1e-6);
+            }
+        }
+
+        if (_PM->is_set("durability")) {
+            qos.durability().kind =(DurabilityQosPolicyKind)_PM->get<int>("durability");
+        } else {
+            qos.durability().kind = DurabilityQosPolicyKind::VOLATILE_DURABILITY_QOS;
+        }
+    } else { // AnnouncementQoS
+        qos.reliability().kind = ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
+        qos.durability().kind = DurabilityQosPolicyKind::TRANSIENT_LOCAL_DURABILITY_QOS;
+    }
+
+    qos.history().kind = HistoryQosPolicyKind::KEEP_ALL_HISTORY_QOS;
+
+    // RESOURCE LIMITS
+    if (qosProfile == "ThroughputQos") {
+        qos.resource_limits().max_samples = 10000;
+        // if (_PM->get<bool>("keyed")) {
+        //     qos.resource_limits().max_instances = //get instances in the system;
+        //     qos.resource_limits().max_samples_per_instance = 10000;
+        // } else {
+        //     qos.resource_limits().max_instances = 1;
+        //     qos.resource_limits().max_samples_per_instance = 1; 
+        // }
+    } else if (qosProfile == "LatencyQos") {
+        qos.resource_limits().max_samples =100;
+        // if (_PM->get<bool>("keyed")) {
+        //     qos.resource_limits().max_instances = //get instances in the system;
+        //     qos.resource_limits().max_samples_per_instance = 100;
+        // } else {
+        //     qos.resource_limits().max_instances = 1;
+        //     qos.resource_limits().max_samples_per_instance = 1; 
+        // }
+    } else if (qosProfile == "AnnouncementQos") {
+        qos.resource_limits().max_samples = 100;
+        // if (_PM->get<bool>("keyed")) {
+        //     qos.resource_limits().max_instances = //get instances in the system;
+        //     qos.resource_limits().max_samples_per_instance = 100;
+        // } else {
+        //     qos.resource_limits().max_instances = 1;
+        //     qos.resource_limits().max_samples_per_instance = 1; 
+        // }
+    } else {
+        fprintf(stderr,
+                "[Error]: Cannot find settings for qosProfile %s\n",
+                qosProfile.c_str());
+        return false;
+    }
+
+    if (_PM->is_set("receiveQueueSize")) {
+        qos.resource_limits().max_samples = _PM->get<int>("receiveQueueSize");
+    }
+
+    if (_PM->get<bool>("showResourceLimits")) {
+        std::ostringstream stringStream;
+
+        stringStream << "Resource Limits DR (" 
+                    << qosProfile
+                    << " topic):\n"
+                    << "\tSamples (Max): "
+                    << qos.resource_limits().max_samples
+                    << "\n";
+
+        if (_PM->get<bool>("keyed")){
+            stringStream << "\tInstances (Max): "
+                        << qos.resource_limits().max_instances
+                        << "\n";
+            stringStream << "\tMax Samples per Instance: "
+                        << qos.resource_limits().max_samples_per_instance
+                        << "\n";
+
+        }
+            stringStream << "\tDurability is: "
+                        << qos.durability().kind
+                        << "\n";
+            stringStream << "\tReliability is: "
+                        << qos.reliability().kind
+                        << "\n";
+        fprintf(stderr, "%s\n", stringStream.str().c_str());
+    }
+
+    return true;
+}
+
+/*********************************************************
  * Initialize
  */
 template <typename T>
@@ -647,15 +882,16 @@ bool FastDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
 
     _factory = DomainParticipantFactory::get_instance();
 
-    if (!_PM->get<bool>("noXmlQos")) {
-        retCode = _factory->load_XML_profiles_file(
-                _PM->get<std::string>("qosFile"));
-        if (retCode != ReturnCode_t::RETCODE_OK) {
-            fprintf(stderr,
-                    "[Warning]: XML Profile not found, using default "
-                    "settings\n");
-        }
-    }
+    // For the time being we are not supporting XML profiles.
+    // if (!_PM->get<bool>("noXmlQos")) {
+    //     retCode = _factory->load_XML_profiles_file(
+    //             _PM->get<std::string>("qosFile"));
+    //     if (retCode != ReturnCode_t::RETCODE_OK) {
+    //         fprintf(stderr,
+    //                 "[Warning]: XML Profile not found, using default "
+    //                 "settings\n");
+    //     }
+    // }
 
     DomainParticipantQos participantQos;
     if (!configure_participant_qos(participantQos)) {
@@ -684,13 +920,21 @@ bool FastDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
         return false;
     }
 
-    _publisher = _participant->create_publisher(PUBLISHER_QOS_DEFAULT, nullptr);
+    PublisherQos publisherQos;
+    publisherQos.presentation().access_scope =
+            PresentationQosPolicyAccessScopeKind::TOPIC_PRESENTATION_QOS;
+    publisherQos.presentation().ordered_access = true;
+    _publisher = _participant->create_publisher(publisherQos, nullptr);
     if (_publisher == nullptr) {
         fprintf(stderr, "Problem creating publisher.\n");
         return false;
     }
 
-    _subscriber = _participant->create_subscriber(SUBSCRIBER_QOS_DEFAULT, nullptr);
+    SubscriberQos subscriberQos;
+    subscriberQos.presentation().access_scope =
+            PresentationQosPolicyAccessScopeKind::TOPIC_PRESENTATION_QOS;
+    publisherQos.presentation().ordered_access = true;
+    _subscriber = _participant->create_subscriber(subscriberQos, nullptr);
     if (_subscriber == nullptr) {
         fprintf(stderr, "Problem creating subscriber.\n");
         return false;
@@ -712,11 +956,9 @@ unsigned long FastDDSImpl<T>::GetInitializationSampleCount()
  * CreateWriter
  */
 template <typename T>
-IMessagingWriter *FastDDSImpl<T>::CreateWriter(const char *topic_name)
+IMessagingWriter *FastDDSImpl<T>::CreateWriter(const char *topicName)
 {
-    DataWriterQos dwQos;
     DataWriter *writer = nullptr;
-    std::string qos_profile = "";
 
     if (_participant == nullptr) {
         fprintf(stderr, "Participant is null\n");
@@ -724,37 +966,38 @@ IMessagingWriter *FastDDSImpl<T>::CreateWriter(const char *topic_name)
     }
 
     Topic *topic = _participant->create_topic(
-            std::string(topic_name),
+            std::string(topicName),
             _type.get_type_name(),
             TOPIC_QOS_DEFAULT);
 
     if (topic == nullptr) {
-        fprintf(stderr, "Problem creating topic %s.\n", topic_name);
+        fprintf(stderr, "Problem creating topic %s.\n", topicName);
         return nullptr;
     }
 
-    qos_profile = get_qos_profile_name(topic_name);
-    if (qos_profile.empty()) {
-        fprintf(stderr, "Problem getting qos profile (%s).\n", topic_name);
-        return NULL;
+    std::string qosProfile = get_qos_profile_name(topicName);
+    if (qosProfile.empty()) {
+        fprintf(stderr, "Problem getting qos profile (%s).\n", topicName);
+        return nullptr;
     }
 
-    // if (!setup_DW_QoS(dwQos, qos_profile, topic_name)) {
-    //     fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
-    //     return NULL;
-    // }
+    DataWriterQos dwQos;
+    if (!configure_writer_qos(dwQos, qosProfile)) {
+        fprintf(stderr,
+                "Problem creating additional QoS settings with %s profile.\n",
+                qosProfile.c_str());
+        return nullptr;
+    }
 
-
-    std::cerr << "[Debug]: Creating writer (with Listener) for: " << topic_name << std::endl;
     WriterListener *dwListener = new WriterListener();
     writer = _publisher->create_datawriter(
             topic,
             dwQos,
             dwListener,
             StatusMask::subscription_matched());
-    if (writer == NULL) {
+    if (writer == nullptr) {
         fprintf(stderr, "Problem creating writer.\n");
-        return NULL;
+        return nullptr;
     }
 
     return new FastDDSPublisher<T>(
@@ -770,43 +1013,37 @@ IMessagingWriter *FastDDSImpl<T>::CreateWriter(const char *topic_name)
  */
 template <typename T>
 IMessagingReader *FastDDSImpl<T>::CreateReader(
-        const char *topic_name,
+        const char *topicName,
         IMessagingCB *callback)
 {
-    DataReaderQos drQos;
     DataReader *reader = nullptr;
-    std::string qos_profile = "";
 
     Topic *topic = _participant->create_topic(
-            std::string(topic_name),
+            std::string(topicName),
             _type.get_type_name(),
             TOPIC_QOS_DEFAULT);
     if (topic == nullptr) {
-        fprintf(stderr, "Problem creating topic %s.\n", topic_name);
+        fprintf(stderr, "Problem creating topic %s.\n", topicName);
         return nullptr;
     }
 
-    qos_profile = get_qos_profile_name(topic_name);
-    if (qos_profile.empty()) {
+    std::string qosProfile = get_qos_profile_name(topicName);
+    if (qosProfile.empty()) {
         fprintf(stderr, "Problem getting qos profile.\n");
         return nullptr;
     }
 
-    // TODO
-    // if (!setup_DR_QoS(dr_qos, qos_profile, topic_name)) {
-    //     fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
-    //     return NULL;
-    // }
+    DataReaderQos drQos;
+    if (!configure_reader_qos(drQos, qosProfile)) {
+        fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qosProfile.c_str());
+        return NULL;
+    }
 
     StatusMask mask = StatusMask::publication_matched();
     if (callback != nullptr) {
         mask << StatusMask::data_available();
     }
 
-    std::cerr << "[Debug]: Creating reader for: " << topic_name << std::endl;
-    if (callback != nullptr) {
-        std::cerr << "\t with callback" << std::endl;
-    }
     reader = _subscriber->create_datareader(
             topic,
             drQos,

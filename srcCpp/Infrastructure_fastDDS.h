@@ -24,6 +24,7 @@
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/rtps/transport/shared_mem/SharedMemTransportDescriptor.h>
 #include <fastdds/rtps/transport/UDPv4TransportDescriptor.h>
+#include <fastrtps/log/Log.h>
 
 #ifdef RTI_WIN32
   #include "windows.h"

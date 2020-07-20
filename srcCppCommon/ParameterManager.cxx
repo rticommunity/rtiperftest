@@ -119,8 +119,7 @@ void ParameterManager::initialize()
     instances->set_group(GENERAL);
     instances->set_supported_middleware(
             Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+            | Middleware::RTIDDSMICRO);
     create("instances", instances);
 
     Parameter<long> *instanceHashBuckets = new Parameter<long>(0);
@@ -142,8 +141,7 @@ void ParameterManager::initialize()
     keyed->set_group(GENERAL);
     keyed->set_supported_middleware(
             Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+            | Middleware::RTIDDSMICRO);
     create("keyed", keyed);
 
     Parameter<bool> *noDirectCommunication = new Parameter<bool>(false);
@@ -165,7 +163,8 @@ void ParameterManager::initialize()
     noPositiveAcks->set_type(T_BOOL);
     noPositiveAcks->set_extra_argument(NO);
     noPositiveAcks->set_group(GENERAL);
-    noPositiveAcks->set_supported_middleware(Middleware::RTIDDSPRO);
+    noPositiveAcks->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::EPROSIMAFASTDDS);
     create("noPositiveAcks", noPositiveAcks);
 
     Parameter<unsigned long long> *keepDurationUsec =
@@ -175,7 +174,8 @@ void ParameterManager::initialize()
     keepDurationUsec->set_type(T_NUMERIC_LLU);
     keepDurationUsec->set_extra_argument(YES);
     keepDurationUsec->set_group(GENERAL);
-    keepDurationUsec->set_supported_middleware(Middleware::RTIDDSPRO);
+    keepDurationUsec->set_supported_middleware(
+            Middleware::RTIDDSPRO | Middleware::EPROSIMAFASTDDS);
     keepDurationUsec->set_range(1,
                 (unsigned long long)365 * 24 * 60 * 60 * 1000000);
                 // One year in usec
@@ -284,7 +284,7 @@ void ParameterManager::initialize()
     asynchronous->set_type(T_BOOL);
     asynchronous->set_extra_argument(NO);
     asynchronous->set_group(GENERAL);
-    asynchronous->set_supported_middleware(Middleware::RTIDDSPRO);
+    asynchronous->set_supported_middleware(Middleware::RTIDDSPRO | Middleware::EPROSIMAFASTDDS);
     create("asynchronous", asynchronous);
 
     Parameter<std::string> *flowController = new Parameter<std::string>("default");
@@ -368,7 +368,8 @@ void ParameterManager::initialize()
     outputFormat->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("outputFormat", outputFormat);
 
     Parameter<bool> *noOutputHeaders = new Parameter<bool>(false);
@@ -454,7 +455,8 @@ void ParameterManager::initialize()
     sendQueueSize->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     sendQueueSize->set_range(1, INT_MAX);
     create("sendQueueSize", sendQueueSize);
 
@@ -468,7 +470,8 @@ void ParameterManager::initialize()
     receiveQueueSize->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     receiveQueueSize->set_range(1, INT_MAX);
     create("receiveQueueSize", receiveQueueSize);
 
@@ -482,7 +485,8 @@ void ParameterManager::initialize()
     showResourceLimits->set_group(GENERAL);
     showResourceLimits->set_supported_middleware(
             Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("showResourceLimits", showResourceLimits);
 
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
@@ -603,7 +607,8 @@ void ParameterManager::initialize()
     initialBurstSize->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("initialBurstSize", initialBurstSize);
 
     Parameter<bool> *latencyTest = new Parameter<bool>(false);
@@ -749,7 +754,8 @@ void ParameterManager::initialize()
     spin->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("spin", spin);
 
   #ifndef RTI_LANGUAGE_CPP_TRADITIONAL
@@ -868,7 +874,8 @@ void ParameterManager::initialize()
     sub->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("sub", sub);
 
     Parameter<int> *sidMultiSubTest = new Parameter<int>(0);
@@ -938,7 +945,8 @@ void ParameterManager::initialize()
     nic->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     create("nic", nic);
 
     Parameter<std::string> *allowInterfaces = new Parameter<std::string>();
@@ -960,7 +968,8 @@ void ParameterManager::initialize()
     allowInterfaces->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
     allowInterfaces->set_internal(true);
     create("allowInterfaces", allowInterfaces);
 
@@ -987,10 +996,10 @@ void ParameterManager::initialize()
             "Set transport to be used. The rest of\n"
             "the transports will be disabled."
           #if defined(RTI_PERF_PRO)
-            "\nValues:\nUDPv4\nUDPv6\nSHMEM\nTCP\nTLS\nDTLS\nWAN\nUse XML\n"
+            "\nValues:\n\tUDPv4\n\tUDPv6\n\tSHMEM\n\tTCP\n\tTLS\n\tDTLS\n\tWAN\n\tUse XML\n"
             "Default: Use XML (UDPv4|SHMEM)");
-          #elif defined(RTI_PERF_MICRO) || defined(EPROXIMA_PERF_FASTDDS)
-            "\nValues:\nUDPv4\nSHMEM\n"
+          #elif defined(RTI_PERF_MICRO) || defined(EPROSIMA_PERF_FASTDDS)
+            "\nValues:\n\tUDPv4\n\tSHMEM\n"
             "Default: UDPv4"
           #endif
           );

@@ -57,23 +57,21 @@ void PerftestConfigureVerbosity(int verbosityLevel)
 
     OSAPI_LogVerbosity_T verbosity = OSAPI_LOG_VERBOSITY_ERROR;
     switch (verbosityLevel) {
-        case 0: verbosity = OSAPI_LOG_VERBOSITY_SILENT;
-                fprintf(stderr, "Setting verbosity to SILENT\n");
+        case 0: fprintf(stderr, "[Error]: Cannot set verbosity to SILENT\n");
                 break;
-        case 1: verbosity = OSAPI_LOG_VERBOSITY_ERROR;
+        case 1: Log::SetVerbosity(Log::Error);
                 fprintf(stderr, "Setting verbosity to ERROR\n");
                 break;
-        case 2: verbosity = OSAPI_LOG_VERBOSITY_WARNING;
+        case 2: Log::SetVerbosity(Log::Warning);
                 fprintf(stderr, "Setting verbosity to WARNING\n");
                 break;
-        case 3: verbosity = OSAPI_LOG_VERBOSITY_DEBUG;
-                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
+        case 3: Log::SetVerbosity(Log::Info);
+                fprintf(stderr, "Setting verbosity to INFO\n");
                 break;
         default: fprintf(stderr,
-                    "Invalid value for the verbosity parameter. Setting verbosity to ERROR (1)\n");
+                    "[Error]: Invalid value for the verbosity parameter. Using default\n");
                 break;
     }
-    OSAPI_Log_set_verbosity(verbosity);
 }
 
 /********************************************************************/
@@ -141,6 +139,7 @@ bool configure_udpv4_transport(
         DomainParticipantQos &qos,
         ParameterManager *_PM)
 {
+    qos.transport().use_builtin_transports = false;
 
     std::shared_ptr<UDPv4TransportDescriptor> udpTransport = std::make_shared<UDPv4TransportDescriptor>();
     /*
@@ -150,17 +149,22 @@ bool configure_udpv4_transport(
      * So we will use the limit (which happens to be also its default value)
      * udpTransport->maxMessageSize = 65500;
      */
-    udpTransport->sendBufferSize = 524288;
-    udpTransport->receiveBufferSize = 2097152;
+    udpTransport->sendBufferSize = 8912896; // 8.5Mb
+    udpTransport->receiveBufferSize = 8912896; // 8.5Mb
 
     /* Use only interface supplied by command line */
     if (!_PM->get<std::string>("allowInterfaces").empty()) {
         udpTransport->interfaceWhiteList.clear();
-        udpTransport->interfaceWhiteList.push_back(
-                _PM->get<std::string>("allowInterfaces").c_str());
+        udpTransport->interfaceWhiteList.emplace_back(
+                _PM->get<std::string>("allowInterfaces"));
     }
 
     qos.transport().user_transports.push_back(udpTransport);
+
+    // Increase the sending buffer size
+    qos.transport().send_socket_buffer_size = 8912896;
+    // Increase the receiving buffer size
+    qos.transport().listen_socket_buffer_size = 8912896;
 
     return true;
 }
@@ -170,6 +174,8 @@ bool configure_shmem_transport(
         DomainParticipantQos &qos,
         ParameterManager *_PM)
 {
+    qos.transport().use_builtin_transports = false;
+
     std::shared_ptr<SharedMemTransportDescriptor> shmTransport =
             std::make_shared<SharedMemTransportDescriptor>();
 
@@ -181,6 +187,11 @@ bool configure_shmem_transport(
     // healthy_check_timeout_ms 250
     // rtps_dump_file /rtps_dump_file
     qos.transport().user_transports.push_back(shmTransport);
+
+    // Increase the sending buffer size
+    qos.transport().send_socket_buffer_size = 1048576;
+    // Increase the receiving buffer size
+    qos.transport().listen_socket_buffer_size = 4194304;
 
     return true;
 }

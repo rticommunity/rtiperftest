@@ -3001,7 +3001,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         std::string topic_name)
 {
 
-    #ifndef RTI_PERF_MICRO
+    #ifdef RTI_PERF_PRO
     if (_factory->get_datawriter_qos_from_profile(
             dw_qos,
             _PM->get<std::string>("qosLibrary").c_str(),
@@ -3063,7 +3063,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
     // These QOS's are only set for the Throughput datawriter
     if (qos_profile == "ThroughputQos") {
 
-      #ifndef RTI_PERF_MICRO
+      #ifdef RTI_PERF_PRO
         if (_PM->get<bool>("multicast")) {
             dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
                     RTI_TRUE;
@@ -3083,7 +3083,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         this->_sendQueueSize = dw_qos.resource_limits.max_samples;
       #endif
 
-      #ifndef RTI_PERF_MICRO
+      #ifdef RTI_PERF_PRO
         if (_PM->get<bool>("enableAutoThrottle")) {
             DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.auto_throttle.enable", "true", false);
@@ -3553,7 +3553,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
   #endif
     dr_qos.resource_limits.max_instances = _instanceMaxCountReader;
 
-  #ifndef RTI_PERF_MICRO
+  #ifdef RTI_PERF_PRO
     if (_PM->get<long>("instances") > 1) {
         if (_PM->is_set("instanceHashBuckets")) {
             dr_qos.resource_limits.instance_hash_buckets =
@@ -3631,7 +3631,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
 
 
     if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {
-      #ifndef RTI_PERF_MICRO
+      #ifdef RTI_PERF_PRO
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
@@ -3657,11 +3657,11 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
                     << " topic):\n"
         // Samples
                     << "\tSamples ("
-                #ifndef RTI_PERF_MICRO
+                #ifdef RTI_PERF_PRO
                     << "Initial/"
                 #endif
                     << "Max): "
-                #ifndef RTI_PERF_MICRO
+                #ifdef RTI_PERF_PRO
                     << stringValueQoS(dr_qos.resource_limits.initial_samples)
                     << "/"
                 #endif
@@ -3671,11 +3671,11 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         if (_PM->get<bool>("keyed")){
             // Instances
             stringStream << "\tInstances ("
-                    #ifndef RTI_PERF_MICRO
+                    #ifdef RTI_PERF_PRO
                         << "Initial/"
                     #endif
                         << "Max): "
-                    #ifndef RTI_PERF_MICRO
+                    #ifdef RTI_PERF_PRO
                         << stringValueQoS(dr_qos.resource_limits.initial_instances)
                         << "/"
                     #endif
@@ -3688,7 +3688,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
                         << "\n";
         }
 
-    #ifndef RTI_PERF_MICRO
+    #ifdef RTI_PERF_PRO
       #ifdef RTI_FLATDATA_AVAILABLE
         if (_isFlatData) {
             //tdynamically_allocate_fragmented_samples

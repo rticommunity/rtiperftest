@@ -6,10 +6,8 @@
 #ifndef __PARAMETERMANAGER_H__
 #define __PARAMETERMANAGER_H__
 
-#ifdef RTI_LANGUAGE_CPP_TRADITIONAL
-  #if defined(RTI_PRO) || defined (RTI_PERF_MICRO)
-    #include "perftest.h"
-  #endif
+#if defined(RTI_LANGUAGE_CPP_TRADITIONAL) || defined(EPROSIMA_PERF_FASTDDS)
+  #include "perftest.h"
 #elif defined(RTI_LANGUAGE_CPP_MODERN)
   #include "perftest.hpp"
 #endif

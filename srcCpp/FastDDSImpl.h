@@ -23,6 +23,7 @@
 // Fast DDS related classes
 #include <fastrtps/attributes/ParticipantAttributes.h>
 #include <fastrtps/attributes/SubscriberAttributes.h>
+#include <fastrtps/attributes/PublisherAttributes.h>
 #include <fastdds/dds/domain/DomainParticipantListener.hpp>
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/subscriber/Subscriber.hpp>
@@ -34,9 +35,15 @@
 #include <fastdds/dds/publisher/DataWriterListener.hpp>
 #include <fastdds/dds/topic/TypeSupport.hpp>
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
+#include <fastrtps/xmlparser/XMLProfileManager.h>
+
 
 using namespace eprosima::fastdds::dds;
 using namespace eprosima::fastrtps::rtps;
+using namespace eprosima::fastrtps;
+using namespace eprosima::fastrtps::xmlparser;
+using eprosima::fastrtps::PublisherAttributes;
+using eprosima::fastrtps::SubscriberAttributes;
 
 /* Forward declaration of perftest_cpp to avoid circular dependencies */
 class perftest_cpp;
@@ -83,6 +90,8 @@ public:
     };
 
     bool configure_participant_qos(DomainParticipantQos &qos);
+    bool configure_writer_qos(DataWriterQos &qos, std::string qosProfile);
+    bool configure_reader_qos(DataReaderQos &qos, std::string qosProfile);
 
     const std::string get_qos_profile_name(const char *topicName);
 
