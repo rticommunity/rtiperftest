@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/FastDDSperftest_cpp",
-            "args": ["-pub", "-showRes"],
+            "args": ["-nic", "172.16.0.1", "-pub", "-noPrint", "-exec", "20", "-scan", "-latencyTest", "-best"],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
             "environment": [],

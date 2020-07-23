@@ -134,6 +134,9 @@ public:
             _message.latency_ping = _sample.latency_ping();
             _message.size = (int) _sample.bin_data().size();
             //_message.data = _sample.bin_data();
+          #ifdef DEBUG_PING_PONG
+            std::cout << "<< got sample " << _sample.seq_num() << std::endl;
+          #endif
 
             _callback->ProcessMessage(_message);
         }
@@ -350,7 +353,8 @@ public:
     /* time out in milliseconds */
     bool waitForPingResponse(int timeout)
     {
-        // TODO RETURN THIS TO ORIGINAL!!!!
+        // TODO RETURN THIS TO ORIGINAL!!!! FAILURE IN MICRO DUE TO CLOCK NOT
+        // INITIALIZED.
         if(_pongSemaphore != NULL) {
             if (!PerftestSemaphore_take(
                     _pongSemaphore,
@@ -435,11 +439,17 @@ public:
                 _writer->write((void *) &_data, _instanceHandles.back());
             }
         } else {
+          #ifdef DEBUG_PING_PONG
+            std::cerr << " -- -- before sending it in the write\n";
+          #endif
             while(!_writer->write((void *) &_data)) {
-                //failures++;
+              #ifdef DEBUG_PING_PONG
+                std::cerr << "-- -- -- Still trying to send\n";
+              #endif
             }
-            //std::cerr << failures << std::endl;
-            //_writer->write((void *) &_data);
+          #ifdef DEBUG_PING_PONG
+            std::cerr << ">> wrote sample " << _data.seq_num() << std::endl;
+          #endif
         }
 
         return true;
@@ -612,8 +622,7 @@ bool FastDDSImpl<T>::configure_writer_qos(
             qos.reliability().kind = ReliabilityQosPolicyKind::BEST_EFFORT_RELIABILITY_QOS;
         } else {
             qos.reliability().kind = ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
-            qos.reliability().max_blocking_time.seconds = 1000;
-            qos.reliability().max_blocking_time.nanosec = 1000;
+            qos.reliability().max_blocking_time = c_TimeInfinite;
         }
 
         if (_PM->get<bool>("noPositiveAcks")){
@@ -638,6 +647,8 @@ bool FastDDSImpl<T>::configure_writer_qos(
     }
 
     // HISTORY
+    // qos.history().kind = HistoryQosPolicyKind::KEEP_LAST_HISTORY_QOS;
+    // qos.history().depth = _PM->get<int>("sendQueueSize");
     qos.history().kind = HistoryQosPolicyKind::KEEP_ALL_HISTORY_QOS;
 
     // // PUBLISH MODE
@@ -648,12 +659,12 @@ bool FastDDSImpl<T>::configure_writer_qos(
     // TIMES
     if (qosProfile == "ThroughputQos") {
         qos.reliable_writer_qos().times.heartbeatPeriod.seconds = 0;
-        qos.reliable_writer_qos().times.heartbeatPeriod.nanosec = 10000;
+        qos.reliable_writer_qos().times.heartbeatPeriod.nanosec = 10000000;
         qos.reliable_writer_qos().times.initialHeartbeatDelay = c_TimeZero;
         qos.reliable_writer_qos().times.nackResponseDelay = c_TimeZero;
     } else if (qosProfile == "LatencyQos") {
         qos.reliable_writer_qos().times.heartbeatPeriod.seconds = 0;
-        qos.reliable_writer_qos().times.heartbeatPeriod.nanosec = 1000000;
+        qos.reliable_writer_qos().times.heartbeatPeriod.nanosec = 10000000;
         qos.reliable_writer_qos().times.initialHeartbeatDelay = c_TimeZero;
         qos.reliable_writer_qos().times.nackResponseDelay = c_TimeZero;
     } else if (qosProfile == "AnnouncementQos") {
@@ -672,33 +683,24 @@ bool FastDDSImpl<T>::configure_writer_qos(
     if (qosProfile == "ThroughputQos") {
         qos.resource_limits().allocated_samples = _PM->get<int>("sendQueueSize");
         qos.resource_limits().max_samples = _PM->get<int>("sendQueueSize"); //0 is Length unlimited.
-        // if (_PM->get<bool>("keyed")) {
-        //     qos.resource_limits().max_instances = _PM->get<long>("instances");
-        //     qos.resource_limits().max_samples_per_instance = _PM->get<int>("sendQueueSize");
-        // } else {
-        //     qos.resource_limits().max_instances = 1;
-        //     qos.resource_limits().max_samples_per_instance = 1; 
-        // }
+        if (_PM->get<bool>("keyed")) {
+            qos.resource_limits().max_instances = _PM->get<long>("instances");
+            qos.resource_limits().max_samples_per_instance = 0;
+        }
     } else if (qosProfile == "LatencyQos") {
-        qos.resource_limits().allocated_samples = _PM->get<int>("sendQueueSize");
-        qos.resource_limits().max_samples = _PM->get<int>("sendQueueSize");
-        // if (_PM->get<bool>("keyed")) {
-        //     qos.resource_limits().max_instances = _PM->get<long>("instances");
-        //     qos.resource_limits().max_samples_per_instance = _PM->get<int>("sendQueueSize");
-        // } else {
-        //     qos.resource_limits().max_instances = 1;
-        //     qos.resource_limits().max_samples_per_instance = 1; 
-        // }
+        qos.resource_limits().allocated_samples = 128;
+        qos.resource_limits().max_samples = 0;
+        if (_PM->get<bool>("keyed")) {
+            qos.resource_limits().max_instances = 0;
+            qos.resource_limits().max_samples_per_instance = 0;
+        }
     } else if (qosProfile == "AnnouncementQos") {
-        qos.resource_limits().allocated_samples = _PM->get<int>("sendQueueSize");
-        qos.resource_limits().max_samples = _PM->get<int>("sendQueueSize");
-        // if (_PM->get<bool>("keyed")) {
-        //     qos.resource_limits().max_instances = _PM->get<long>("instances");
-        //     qos.resource_limits().max_samples_per_instance = _PM->get<int>("sendQueueSize");
-        // } else {
-        //     qos.resource_limits().max_instances = 1;
-        //     qos.resource_limits().max_samples_per_instance = 1; 
-        // }
+        qos.resource_limits().allocated_samples = 50;
+        qos.resource_limits().max_samples = 0;
+        if (_PM->get<bool>("keyed")) {
+            qos.resource_limits().max_instances = 0;
+            qos.resource_limits().max_samples_per_instance = 0;
+        }
     } else {
         fprintf(stderr,
                 "[Error]: Cannot find settings for qosProfile %s\n",
@@ -713,7 +715,9 @@ bool FastDDSImpl<T>::configure_writer_qos(
         stringStream << "Resource Limits DW (" 
                     << qosProfile
                     << " topic):\n"
-                    << "\tSamples (Max): "
+                    << "\tSamples (Allocated/Max): "
+                    << qos.resource_limits().allocated_samples
+                    << "/"
                     << qos.resource_limits().max_samples
                     << "\n";
 
@@ -785,36 +789,36 @@ bool FastDDSImpl<T>::configure_reader_qos(
         qos.durability().kind = DurabilityQosPolicyKind::TRANSIENT_LOCAL_DURABILITY_QOS;
     }
 
+    // qos.history().kind = HistoryQosPolicyKind::KEEP_LAST_HISTORY_QOS;
+    // qos.history().depth = _PM->get<int>("sendQueueSize");
     qos.history().kind = HistoryQosPolicyKind::KEEP_ALL_HISTORY_QOS;
+
 
     // RESOURCE LIMITS
     if (qosProfile == "ThroughputQos") {
+        qos.resource_limits().allocated_samples = 128;
+        if (_PM->is_set("receiveQueueSize")) {
+            qos.resource_limits().allocated_samples = _PM->get<int>("receiveQueueSize");
+        }
         qos.resource_limits().max_samples = 10000;
-        // if (_PM->get<bool>("keyed")) {
-        //     qos.resource_limits().max_instances = //get instances in the system;
-        //     qos.resource_limits().max_samples_per_instance = 10000;
-        // } else {
-        //     qos.resource_limits().max_instances = 1;
-        //     qos.resource_limits().max_samples_per_instance = 1; 
-        // }
+        if (_PM->get<bool>("keyed")) {
+            qos.resource_limits().max_instances = 0;
+            qos.resource_limits().max_samples_per_instance = 0;
+        }
     } else if (qosProfile == "LatencyQos") {
-        qos.resource_limits().max_samples =100;
-        // if (_PM->get<bool>("keyed")) {
-        //     qos.resource_limits().max_instances = //get instances in the system;
-        //     qos.resource_limits().max_samples_per_instance = 100;
-        // } else {
-        //     qos.resource_limits().max_instances = 1;
-        //     qos.resource_limits().max_samples_per_instance = 1; 
-        // }
-    } else if (qosProfile == "AnnouncementQos") {
+        qos.resource_limits().allocated_samples = 100;
         qos.resource_limits().max_samples = 100;
-        // if (_PM->get<bool>("keyed")) {
-        //     qos.resource_limits().max_instances = //get instances in the system;
-        //     qos.resource_limits().max_samples_per_instance = 100;
-        // } else {
-        //     qos.resource_limits().max_instances = 1;
-        //     qos.resource_limits().max_samples_per_instance = 1; 
-        // }
+        if (_PM->get<bool>("keyed")) {
+            qos.resource_limits().max_instances = 0;
+            qos.resource_limits().max_samples_per_instance = 0;
+        }
+    } else if (qosProfile == "AnnouncementQos") {
+        qos.resource_limits().allocated_samples = 100;
+        qos.resource_limits().max_samples = 100;
+        if (_PM->get<bool>("keyed")) {
+            qos.resource_limits().max_instances = 0;
+            qos.resource_limits().max_samples_per_instance = 0;
+        }
     } else {
         fprintf(stderr,
                 "[Error]: Cannot find settings for qosProfile %s\n",
@@ -832,7 +836,9 @@ bool FastDDSImpl<T>::configure_reader_qos(
         stringStream << "Resource Limits DR (" 
                     << qosProfile
                     << " topic):\n"
-                    << "\tSamples (Max): "
+                    << "\tSamples (Allocated/Max): "
+                    << qos.resource_limits().allocated_samples
+                    << "/"
                     << qos.resource_limits().max_samples
                     << "\n";
 
@@ -845,12 +851,12 @@ bool FastDDSImpl<T>::configure_reader_qos(
                         << "\n";
 
         }
-            stringStream << "\tDurability is: "
-                        << qos.durability().kind
-                        << "\n";
-            stringStream << "\tReliability is: "
-                        << qos.reliability().kind
-                        << "\n";
+        stringStream << "\tDurability is: "
+                    << qos.durability().kind
+                    << "\n";
+        stringStream << "\tReliability is: "
+                    << qos.reliability().kind
+                    << "\n";
         fprintf(stderr, "%s\n", stringStream.str().c_str());
     }
 

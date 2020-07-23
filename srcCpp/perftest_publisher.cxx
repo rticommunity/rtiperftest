@@ -825,6 +825,10 @@ class ThroughputListener : public IMessagingCB
 
     void ProcessMessage(TestMessage &message)
     {
+
+      #ifdef DEBUG_PING_PONG
+        printf("-- ProcessMessage ...\n");
+      #endif
         if (message.entity_id >= _num_publishers ||
             message.entity_id < 0) {
             printf("ProcessMessage: message content no valid. message.entity_id out of bounds\n");
@@ -873,6 +877,9 @@ class ThroughputListener : public IMessagingCB
         // Send back a packet if this is a ping
         if ((message.latency_ping == subID)
                 || (_useCft && message.latency_ping != -1)) {
+          #ifdef DEBUG_PING_PONG
+            printf("-- Answering Ping ...\n");
+          #endif
             _writer->Send(message);
             _writer->Flush();
         }
@@ -2263,7 +2270,13 @@ int perftest_cpp::Publisher()
         writer->Send(message);
         if(latencyTest && sentPing) {
             if (!bestEffort) {
+              #ifdef DEBUG_PING_PONG
+                printf("-> Waiting for Ping Response\n");
+              #endif
                 writer->waitForPingResponse();
+              #ifdef DEBUG_PING_PONG
+                printf("<- Got Ping Response\n");
+              #endif
             } else {
                 /* time out in milliseconds */
                 writer->waitForPingResponse(200);

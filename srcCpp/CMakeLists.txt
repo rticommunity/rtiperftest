@@ -79,8 +79,8 @@ SET(FASTDDS_LIBS fastcdr fastrtps)
 MESSAGE("RTIME_TARGET_NAME = x64Linux4gcc7.3.0")
 # INCLUDE_DIRECTORIES(gen/ $ENV{RTIMEHOME}/include $ENV{RTIMEHOME}/include/rti_me)
 # LINK_DIRECTORIES($ENV{RTIMEHOME}/lib/${RTIME_TARGET_NAME})
-INCLUDE_DIRECTORIES(~/rti_me.2.0/include ~/rti_me.2.0/include/rti_me)
-LINK_DIRECTORIES(~/rti_me.2.0/lib/x64Linux4gcc7.3.0)
+INCLUDE_DIRECTORIES(/performance/rtimehome/rti_me.2.0/include /performance/rtimehome/rti_me.2.0/include/rti_me)
+LINK_DIRECTORIES(/performance/rtimehome/rti_me.2.0/lib/x64Linux4gcc7.3.0)
 
 ADD_EXECUTABLE(FastDDSperftest_cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/perftest.cxx
