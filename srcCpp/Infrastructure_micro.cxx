@@ -3,7 +3,7 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-#ifdef RTI_PERF_MICRO
+#ifdef PERTEST_RTI_MICRO
 
 #include "Infrastructure_micro.h"
 
@@ -295,7 +295,7 @@ bool configureUDPv4Transport(
     return true;
 }
 
-#ifndef RTI_PERF_MICRO_24x_COMPATIBILITY
+#ifndef PERTEST_RTI_MICRO_24x_COMPATIBILITY
 bool configureShmemTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos,
@@ -389,7 +389,7 @@ bool PerftestConfigureTransport(
     case TRANSPORT_UDPv4:
         return configureUDPv4Transport(transport, qos, _PM);
 
-  #if !RTI_PERF_MICRO_24x_COMPATIBILITY
+  #if !PERTEST_RTI_MICRO_24x_COMPATIBILITY
     case TRANSPORT_SHMEM:
         return configureShmemTransport(transport, qos, _PM);
   #endif
@@ -556,4 +556,4 @@ bool PerftestConfigureSecurity(
 
 
 
-#endif // RTI_PERF_MICRO
+#endif // PERTEST_RTI_MICRO

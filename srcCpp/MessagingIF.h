@@ -156,7 +156,7 @@ class IMessagingWriter
 
 class IMessaging
 {
-  public:
+public:
     virtual ~IMessaging() {}
 
     virtual bool Initialize(ParameterManager &PM, perftest_cpp *parent) = 0;

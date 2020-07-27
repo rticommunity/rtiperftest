@@ -9,7 +9,7 @@
 #include "MessagingIF.h"
 #include "perftest_cpp.h"
 #include "RTIDDSImpl.h"
-#ifndef RTI_PERF_MICRO
+#ifndef PERTEST_RTI_MICRO
   #include <algorithm> // std::max
   #include "ndds/ndds_cpp.h"
   #include "qos_string.h"
@@ -58,12 +58,12 @@ RTIDDSImpl<T>::RTIDDSImpl()
         #ifdef RTI_SECURE_PERFTEST
           _security(),
         #endif
-        #ifdef RTI_PERF_PRO
+        #ifdef PERTEST_RTI_PRO
           _loggerDevice(),
         #endif
           _parent(NULL)
 {
-  #ifdef RTI_PERF_PRO
+  #ifdef PERTEST_RTI_PRO
     _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
     _sendQueueSize = 0;
   #else
@@ -138,7 +138,7 @@ void RTIDDSImpl<T>::Shutdown()
         _pongSemaphore = NULL;
     }
 
-  #ifdef RTI_PERF_MICRO
+  #ifdef PERTEST_RTI_MICRO
     if (_factory != NULL) {
         RTRegistry *registry = _factory->get_registry();
 
@@ -406,7 +406,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     // Domain ID
     stringStream << "\tDomain: " << _PM->get<int>("domain") << "\n";
 
-  #ifdef RTI_PERF_PRO
+  #ifdef PERTEST_RTI_PRO
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
     if (_PM->get<bool>("dynamicData")) {
@@ -439,7 +439,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     stringStream << std::endl;
   #endif
 
-  #ifdef RTI_PERF_PRO
+  #ifdef PERTEST_RTI_PRO
     // Asynchronous Publishing
     if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
@@ -463,7 +463,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "\tAutoThrottle: Enabled\n";
     }
 
-  #ifdef RTI_PERF_PRO
+  #ifdef PERTEST_RTI_PRO
     // XML File
     stringStream << "\tXML File: ";
     if (_PM->get<bool>("noXmlQos")) {
@@ -607,7 +607,7 @@ class RTIPublisherBase : public IMessagingWriter
     void Shutdown() {
         if (_writer->get_listener() != NULL) {
             delete(_writer->get_listener());
-          #ifndef RTI_PERF_MICRO
+          #ifndef PERTEST_RTI_MICRO
             _writer->set_listener(NULL);
           #else
             _writer->set_listener(NULL, 0);
@@ -621,7 +621,7 @@ class RTIPublisherBase : public IMessagingWriter
 
     void Flush()
     {
-      #ifndef RTI_PERF_MICRO
+      #ifndef PERTEST_RTI_MICRO
         _writer->flush();
       #endif
     }
@@ -684,7 +684,7 @@ class RTIPublisherBase : public IMessagingWriter
 
     unsigned int getPulledSampleCount()
     {
-      #ifndef RTI_PERF_MICRO
+      #ifndef PERTEST_RTI_MICRO
         DDS_DataWriterProtocolStatus status;
         _writer->get_datawriter_protocol_status(status);
         return (unsigned int)status.pulled_sample_count;
@@ -696,7 +696,7 @@ class RTIPublisherBase : public IMessagingWriter
 
     unsigned int getSampleCount()
     {
-      #ifndef RTI_PERF_MICRO
+      #ifndef PERTEST_RTI_MICRO
         DDS_DataWriterCacheStatus status;
         DDS_ReturnCode_t retcode = _writer->get_datawriter_cache_status(status);
         if (retcode != DDS_RETCODE_OK) {
@@ -712,7 +712,7 @@ class RTIPublisherBase : public IMessagingWriter
 
     unsigned int getSampleCountPeak()
     {
-      #ifndef RTI_PERF_MICRO
+      #ifndef PERTEST_RTI_MICRO
         DDS_DataWriterCacheStatus status;
         DDS_ReturnCode_t retcode = _writer->get_datawriter_cache_status(status);
         if (retcode != DDS_RETCODE_OK) {
@@ -727,7 +727,7 @@ class RTIPublisherBase : public IMessagingWriter
     }
 
     void waitForAck(int sec, unsigned int nsec) {
-      #ifndef RTI_PERF_MICRO
+      #ifndef PERTEST_RTI_MICRO
         if (_isReliable) {
             DDS_Duration_t timeout = {sec, nsec};
             _writer->wait_for_acknowledgments(timeout);
@@ -926,7 +926,7 @@ class RTIPublisher : public RTIPublisherBase<T>
     }
 };
 
-#ifndef RTI_PERF_MICRO //Dynamic Data and FlatData are not supported for micro
+#ifndef PERTEST_RTI_MICRO //Dynamic Data and FlatData are not supported for micro
 
 #ifdef RTI_FLATDATA_AVAILABLE
 
@@ -1411,7 +1411,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
 
 };
 
-#endif //!RTI_PERF_MICRO: Dynamic Data not supported for micro
+#endif //!PERTEST_RTI_MICRO: Dynamic Data not supported for micro
 
 /*********************************************************
  * ReceiverListener
@@ -1504,7 +1504,7 @@ class ReceiverListener : public ReceiverListenerBase<T>
 };
 
 
-#ifndef RTI_PERF_MICRO //Dynamic Data and FlatData are not supported for micro
+#ifndef PERTEST_RTI_MICRO //Dynamic Data and FlatData are not supported for micro
 
 #ifdef RTI_FLATDATA_AVAILABLE
 /**
@@ -1757,7 +1757,7 @@ class DynamicDataReceiverListener : public ReceiverListenerBase<DDS_DynamicData>
         }
     }
 };
-#endif // !RTI_PERF_MICRO: Dynamic Data not supported for micro
+#endif // !PERTEST_RTI_MICRO: Dynamic Data not supported for micro
 
 /*********************************************************
  * RTISubscriber
@@ -1783,7 +1783,7 @@ class RTISubscriberBase : public IMessagingReader
     {
         if (_reader->get_listener() != NULL) {
             delete(_reader->get_listener());
-          #ifndef RTI_PERF_MICRO
+          #ifndef PERTEST_RTI_MICRO
             _reader->set_listener(NULL);
           #else
             _reader->set_listener(NULL, 0);
@@ -1825,7 +1825,7 @@ class RTISubscriberBase : public IMessagingReader
 
         // null listener means using receive thread
         if (_reader->get_listener() == NULL) {
-          #ifndef RTI_PERF_MICRO
+          #ifndef PERTEST_RTI_MICRO
             DDS_WaitSetProperty_t property;
             property.max_event_count =
                     _PM->get<long>("waitsetEventCount");
@@ -1867,7 +1867,7 @@ class RTISubscriberBase : public IMessagingReader
 
     unsigned int getSampleCount()
     {
-      #ifndef RTI_PERF_MICRO
+      #ifndef PERTEST_RTI_MICRO
         DDS_DataReaderCacheStatus status;
         DDS_ReturnCode_t retcode = _reader->get_datareader_cache_status(status);
         if (retcode != DDS_RETCODE_OK) {
@@ -1883,7 +1883,7 @@ class RTISubscriberBase : public IMessagingReader
 
     unsigned int getSampleCountPeak()
     {
-      #ifndef RTI_PERF_MICRO
+      #ifndef PERTEST_RTI_MICRO
         DDS_DataReaderCacheStatus status;
         DDS_ReturnCode_t retcode = _reader->get_datareader_cache_status(status);
         if (retcode != DDS_RETCODE_OK) {
@@ -1987,7 +1987,7 @@ class RTISubscriber : public RTISubscriberBase<T>
     }
 };
 
-#ifndef RTI_PERF_MICRO
+#ifndef PERTEST_RTI_MICRO
 
 #ifdef RTI_FLATDATA_AVAILABLE
 /**
@@ -2308,7 +2308,7 @@ class RTIDynamicDataSubscriber : public RTISubscriberBase<DDS_DynamicData>
     }
 };
 
-#endif //RTI_PERF_MICRO
+#endif //PERTEST_RTI_MICRO
 
 /*********************************************************
  * configureDomainParticipantQos
@@ -2316,7 +2316,7 @@ class RTIDynamicDataSubscriber : public RTISubscriberBase<DDS_DynamicData>
 template <typename T>
 bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
 {
-  #ifdef RTI_PERF_PRO
+  #ifdef PERTEST_RTI_PRO
     DDS_DomainParticipantFactoryQos factory_qos;
 
     // Setup the QOS profile file to be loaded
@@ -2400,7 +2400,7 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
                 false);
     }
 
-  #else // if defined RTI_PERF_MICRO
+  #else // if defined PERTEST_RTI_MICRO
 
     RTRegistry *registry = _factory->get_registry();
 
@@ -2442,7 +2442,7 @@ bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
     }
     qos.discovery.accept_unknown_peers = DDS_BOOLEAN_TRUE;
 
-  #endif // RTI_PERF_MICRO
+  #endif // PERTEST_RTI_MICRO
 
     if (!PerftestConfigureTransport(_transport, qos, _PM)) {
         return false;
@@ -2514,7 +2514,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     _parent = parent;
     ThreadPriorities threadPriorities = _parent->get_thread_priorities();
 
-  #ifdef RTI_PERF_PRO
+  #ifdef PERTEST_RTI_PRO
     // Register _loggerDevice
     if (!NDDSConfigLogger::get_instance()->set_output_device(&_loggerDevice)) {
         fprintf(stderr,"Failed set_output_device for Logger.\n");
@@ -2547,7 +2547,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
             DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
             DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
 
-  #ifdef RTI_PERF_PRO
+  #ifdef PERTEST_RTI_PRO
     if (_participant == NULL || _loggerDevice.checkShmemErrors()) {
         if (_loggerDevice.checkShmemErrors()) {
             fprintf(stderr,
@@ -2566,7 +2566,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     }
   #endif
 
-  #ifdef RTI_PERF_PRO
+  #ifdef PERTEST_RTI_PRO
   #ifdef RTI_LEGACY_DD_IMPL
     // If we are using Dynamic Data, check if we want to use the new or old impl
     if (_PM->get<bool>("dynamicData") && _PM->get<bool>("useLegacyDynamicData")) {
@@ -2582,7 +2582,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
         if (!_PM->get<bool>("dynamicData")) {
             T::TypeSupport::register_type(_participant, _typename);
         } else {
-        #ifdef RTI_PERF_PRO
+        #ifdef PERTEST_RTI_PRO
             DDSDynamicDataTypeSupport* dynamicDataTypeSupportObject =
                     new DDSDynamicDataTypeSupport(
                             T::TypeSupport::get_typecode(),
@@ -2596,7 +2596,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     }
 
 
-  #ifdef RTI_PERF_PRO
+  #ifdef PERTEST_RTI_PRO
     _factory->get_publisher_qos_from_profile(
             publisherQoS,
             _PM->get<std::string>("qosLibrary").c_str(),
@@ -2631,7 +2631,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
         return false;
     }
 
-  #ifdef RTI_PERF_PRO
+  #ifdef PERTEST_RTI_PRO
     _subscriber = _participant->create_subscriber_with_profile(
             _PM->get<std::string>("qosLibrary").c_str(),
             "BaseProfileQos",
@@ -2682,7 +2682,7 @@ unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
     return initializeSampleCount;
 }
 
-#ifndef RTI_PERF_MICRO
+#ifndef PERTEST_RTI_MICRO
 
 
 template <typename T>
@@ -2932,9 +2932,9 @@ double RTIDDSImpl<T>::obtain_dds_deserialize_time_cost(
 
     return deSerializeTime / (float) iters;
 }
-#endif //RTI_PERF_MICRO
+#endif //PERTEST_RTI_MICRO
 
-#ifndef RTI_PERF_MICRO
+#ifndef PERTEST_RTI_MICRO
 template <typename T>
 unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
     unsigned long int shmmax = 0;
@@ -2976,7 +2976,7 @@ unsigned long int RTIDDSImpl<T>::getShmemSHMMAX() {
 
     return shmmax;
 }
-#endif // !RTI_PERF_MICRO
+#endif // !PERTEST_RTI_MICRO
 
 /*
  * The purpose of this function is avoid displaying
@@ -3001,7 +3001,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         std::string topic_name)
 {
 
-    #ifdef RTI_PERF_PRO
+    #ifdef PERTEST_RTI_PRO
     if (_factory->get_datawriter_qos_from_profile(
             dw_qos,
             _PM->get<std::string>("qosLibrary").c_str(),
@@ -3043,7 +3043,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         if (!_PM->get<bool>("bestEffort")) {
             // default: use the setting specified in the qos profile
             // dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
-          #ifdef RTI_PERF_MICRO
+          #ifdef PERTEST_RTI_MICRO
             dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
           #endif
         }
@@ -3053,7 +3053,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         }
     }
 
-  #ifdef RTI_PERF_MICRO
+  #ifdef PERTEST_RTI_MICRO
     if (strcmp(topic_name.c_str(), ANNOUNCEMENT_TOPIC_NAME) == 0) {
         dw_qos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
         dw_qos.durability.kind = DDS_TRANSIENT_LOCAL_DURABILITY_QOS;
@@ -3063,7 +3063,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
     // These QOS's are only set for the Throughput datawriter
     if (qos_profile == "ThroughputQos") {
 
-      #ifdef RTI_PERF_PRO
+      #ifdef PERTEST_RTI_PRO
         if (_PM->get<bool>("multicast")) {
             dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
                     RTI_TRUE;
@@ -3083,7 +3083,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         this->_sendQueueSize = dw_qos.resource_limits.max_samples;
       #endif
 
-      #ifdef RTI_PERF_PRO
+      #ifdef PERTEST_RTI_PRO
         if (_PM->get<bool>("enableAutoThrottle")) {
             DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.auto_throttle.enable", "true", false);
@@ -3109,7 +3109,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         dw_qos.durability.kind =
                 (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
 
-      #ifndef RTI_PERF_MICRO
+      #ifndef PERTEST_RTI_MICRO
         dw_qos.durability.direct_communication =
                 !_PM->get<bool>("noDirectCommunication");
       #endif
@@ -3121,7 +3121,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
             dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
                 _PM->get<int>("sendQueueSize") / 10;
         }
-      #ifndef RTI_PERF_MICRO
+      #ifndef PERTEST_RTI_MICRO
         dw_qos.protocol.rtps_reliable_writer.low_watermark =
                 _PM->get<int>("sendQueueSize") * 1 / 10;
         dw_qos.protocol.rtps_reliable_writer.high_watermark =
@@ -3143,7 +3143,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         dw_qos.protocol.rtps_reliable_writer.min_send_window_size =
                 _PM->get<int>("sendQueueSize");
       #else
-        #if RTI_PERF_MICRO_24x_COMPATIBILITY
+        #if PERTEST_RTI_MICRO_24x_COMPATIBILITY
           // Keep all not supported in Micro 2.4.x
           dw_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
         #else
@@ -3163,7 +3163,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                 || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS)) {
             dw_qos.durability.kind =
                     (DDS_DurabilityQosPolicyKind)_PM->get<int>("durability");
-          #ifndef RTI_PERF_MICRO
+          #ifndef PERTEST_RTI_MICRO
             dw_qos.durability.direct_communication =
                     !_PM->get<bool>("noDirectCommunication");
           #endif
@@ -3179,7 +3179,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
 
         }
 
-      #ifndef RTI_PERF_MICRO
+      #ifndef PERTEST_RTI_MICRO
         if (_PM->is_set("sendQueueSize")) {
             dw_qos.protocol.rtps_reliable_writer.max_send_window_size =
                     _PM->get<int>("sendQueueSize");
@@ -3191,7 +3191,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
 
     dw_qos.resource_limits.max_instances =
             _PM->get<long>("instances") + 1; // One extra for MAX_CFT_VALUE
-  #ifndef RTI_PERF_MICRO
+  #ifndef PERTEST_RTI_MICRO
     dw_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
 
     // If is LargeData
@@ -3339,11 +3339,11 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                     << " topic):\n"
         // Samples
                     << "\tSamples ("
-                #ifndef RTI_PERF_MICRO
+                #ifndef PERTEST_RTI_MICRO
                     << "Initial/"
                 #endif
                     << "Max): "
-                #ifndef RTI_PERF_MICRO
+                #ifndef PERTEST_RTI_MICRO
                     << stringValueQoS(dw_qos.resource_limits.initial_samples)
                     << "/"
                 #endif
@@ -3353,11 +3353,11 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         if (_PM->get<bool>("keyed")) {
             // Instances
             stringStream << "\tInstances ("
-                    #ifndef RTI_PERF_MICRO
+                    #ifndef PERTEST_RTI_MICRO
                         << "Initial/"
                     #endif
                         << "Max): "
-                    #ifndef RTI_PERF_MICRO
+                    #ifndef PERTEST_RTI_MICRO
                         << stringValueQoS(dw_qos.resource_limits.initial_instances)
                         << "/"
                     #endif
@@ -3370,7 +3370,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
                         << "\n";
         }
 
-    #ifndef RTI_PERF_MICRO
+    #ifndef PERTEST_RTI_MICRO
         // Batches
         if (dw_qos.batch.enable) {
             stringStream << "\tBatching Max Bytes: "
@@ -3426,7 +3426,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         std::string topic_name)
 {
 
-    #ifndef RTI_PERF_MICRO
+    #ifndef PERTEST_RTI_MICRO
     if (_factory->get_datareader_qos_from_profile(
             dr_qos,
             _PM->get<std::string>("qosLibrary").c_str(),
@@ -3451,7 +3451,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         }
     }
 
-  #ifndef RTI_PERF_MICRO
+  #ifndef PERTEST_RTI_MICRO
     if (_PM->get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos"
             || qos_profile == "LatencyQos")) {
@@ -3467,14 +3467,14 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
             || _PM->get<int>("durability") == DDS_PERSISTENT_DURABILITY_QOS))) {
         dr_qos.durability.kind =
                 (DDS_DurabilityQosPolicyKind) _PM->get<int>("durability");
-      #ifndef RTI_PERF_MICRO
+      #ifndef PERTEST_RTI_MICRO
         dr_qos.durability.direct_communication =
                 !_PM->get<bool>("noDirectCommunication");
       #endif
 
     }
 
-  #ifdef RTI_PERF_MICRO
+  #ifdef PERTEST_RTI_MICRO
 
     if (qos_profile == "ThroughputQos") {
         /*
@@ -3502,7 +3502,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
          * history to keep last and chose a history depth. For the depth value
          * we can we same value as max_samples
          */
-        #if RTI_PERF_MICRO_24x_COMPATIBILITY
+        #if PERTEST_RTI_MICRO_24x_COMPATIBILITY
           // Keep all not supported in Micro 2.4.x
           dr_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
         #else
@@ -3533,7 +3533,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
     dr_qos.reader_resource_limits.max_remote_writers_per_instance = 50;
   #endif
 
-  #ifndef RTI_PERF_MICRO
+  #ifndef PERTEST_RTI_MICRO
 
     if (_PM->is_set("receiveQueueSize")) {
         dr_qos.resource_limits.initial_samples = _PM->get<int>("receiveQueueSize");
@@ -3553,7 +3553,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
   #endif
     dr_qos.resource_limits.max_instances = _instanceMaxCountReader;
 
-  #ifdef RTI_PERF_PRO
+  #ifdef PERTEST_RTI_PRO
     if (_PM->get<long>("instances") > 1) {
         if (_PM->is_set("instanceHashBuckets")) {
             dr_qos.resource_limits.instance_hash_buckets =
@@ -3631,7 +3631,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
 
 
     if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {
-      #ifdef RTI_PERF_PRO
+      #ifdef PERTEST_RTI_PRO
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
@@ -3640,7 +3640,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
       #else
         /* This is only needed for Micro 2.4.x. False unbounded sequences are
          * available in Micro 3.0 */
-        #if RTI_PERF_MICRO_24x_COMPATIBILITY
+        #if PERTEST_RTI_MICRO_24x_COMPATIBILITY
           fprintf(stderr,
                   "Unbounded sequences not supported on Micro.\n");
           return false;
@@ -3657,11 +3657,11 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
                     << " topic):\n"
         // Samples
                     << "\tSamples ("
-                #ifdef RTI_PERF_PRO
+                #ifdef PERTEST_RTI_PRO
                     << "Initial/"
                 #endif
                     << "Max): "
-                #ifdef RTI_PERF_PRO
+                #ifdef PERTEST_RTI_PRO
                     << stringValueQoS(dr_qos.resource_limits.initial_samples)
                     << "/"
                 #endif
@@ -3671,11 +3671,11 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         if (_PM->get<bool>("keyed")){
             // Instances
             stringStream << "\tInstances ("
-                    #ifdef RTI_PERF_PRO
+                    #ifdef PERTEST_RTI_PRO
                         << "Initial/"
                     #endif
                         << "Max): "
-                    #ifdef RTI_PERF_PRO
+                    #ifdef PERTEST_RTI_PRO
                         << stringValueQoS(dr_qos.resource_limits.initial_instances)
                         << "/"
                     #endif
@@ -3688,7 +3688,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
                         << "\n";
         }
 
-    #ifdef RTI_PERF_PRO
+    #ifdef PERTEST_RTI_PRO
       #ifdef RTI_FLATDATA_AVAILABLE
         if (_isFlatData) {
             //tdynamically_allocate_fragmented_samples
@@ -3767,7 +3767,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const char *topic_name)
             return NULL;
         }
     } else {
-      #ifndef RTI_PERF_MICRO
+      #ifndef PERTEST_RTI_MICRO
         try{
             return new RTIDynamicDataPublisher(
                     writer,
@@ -3863,7 +3863,7 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const char *topic_name)
 }
 #endif
 
-#ifndef RTI_PERF_MICRO
+#ifndef PERTEST_RTI_MICRO
 /*********************************************************
  * CreateCFT
  * The CFT allows to the subscriber to receive a specific instance or a range of them.
@@ -3961,7 +3961,7 @@ DDSTopicDescription *RTIDDSImpl<T>::CreateCft(
             condition.c_str(),
             parameters);
 }
-#endif //RTI_PERF_MICRO
+#endif //PERTEST_RTI_MICRO
 
 /*********************************************************
  * CreateReader
@@ -3998,7 +3998,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-  #ifdef RTI_PERF_PRO
+  #ifdef PERTEST_RTI_PRO
     /* Create CFT Topic */
     if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && _PM->is_set("cft")) {
         topic_desc = CreateCft(topic_name, topic);
@@ -4017,7 +4017,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
                     new ReceiverListener<T>(callback),
                     DDS_DATA_AVAILABLE_STATUS);
         } else {
-          #ifndef RTI_PERF_MICRO
+          #ifndef PERTEST_RTI_MICRO
             reader = _subscriber->create_datareader(
                     topic_desc,
                     dr_qos,
@@ -4050,7 +4050,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
     if (!_PM->get<bool>("dynamicData")) {
         return new RTISubscriber<T>(reader, _PM);
     } else {
-      #ifndef RTI_PERF_MICRO
+      #ifndef PERTEST_RTI_MICRO
         return new RTIDynamicDataSubscriber<T>(reader, _PM);
       #else
         fprintf(stderr,"Dynamic data not supported on Micro.\n");
@@ -4113,7 +4113,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         return NULL;
     }
 
-  #ifndef RTI_PERF_MICRO
+  #ifndef PERTEST_RTI_MICRO
     /* Create CFT Topic */
     if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && _PM->is_set("cft")) {
         topic_desc = CreateCft(topic_name, topic);

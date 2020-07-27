@@ -6,7 +6,7 @@
 #ifndef __FASTDDSIMPL_H__
 #define __FASTDDSIMPL_H__
 
-#ifdef EPROSIMA_PERF_FASTDDS
+#ifdef PERTEST_EPROSIMA_FASTDDS
 
 #include "Infrastructure_common.h"
 #include "MessagingIF.h"
@@ -112,5 +112,5 @@ protected:
     eprosima::fastdds::dds::TypeSupport _type; //This is a std::shared_ptr
 };
 
-#endif // EPROSIMA_PERF_FASTDDS
+#endif // PERTEST_EPROSIMA_FASTDDS
 #endif // __FASTDDSIMPL_H__

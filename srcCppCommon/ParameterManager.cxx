@@ -196,9 +196,9 @@ void ParameterManager::initialize()
     create("noPrintIntervals", noPrintIntervals);
 
     Parameter<std::string> *qosFile =
-        #if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
+        #if defined(PERTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO)
             new Parameter<std::string>("perftest_qos_profiles.xml");
-        #elif defined(EPROSIMA_PERF_FASTDDS)
+        #elif defined(PERTEST_EPROSIMA_FASTDDS)
             new Parameter<std::string>("perftest_fastDDS_qos_profiles.xml");
         #endif
     qosFile->set_command_line_argument("-qosFile", "<filename>");
@@ -933,7 +933,7 @@ void ParameterManager::initialize()
             "packets. This will be the only address announced\n"
             "at discovery time. If not specified, use all"
             "available interfaces"
-          #ifdef RTI_PERF_MICRO
+          #ifdef PERTEST_RTI_MICRO
             "\n"
             "When using RTI Connext DDS Micro, always specify the\n"
             "name, not the IP Address."
@@ -956,7 +956,7 @@ void ParameterManager::initialize()
             "packets. This will be the only address announced\n"
             "at discovery time. If not specified, use all"
             "available interfaces"
-          #ifdef RTI_PERF_MICRO
+          #ifdef PERTEST_RTI_MICRO
             "\n"
             "When using RTI Connext DDS Micro, always specify the\n"
             "name, not the IP Address."
@@ -995,10 +995,10 @@ void ParameterManager::initialize()
     transport->set_description(
             "Set transport to be used. The rest of\n"
             "the transports will be disabled."
-          #if defined(RTI_PERF_PRO)
+          #if defined(PERTEST_RTI_PRO)
             "\nValues:\n\tUDPv4\n\tUDPv6\n\tSHMEM\n\tTCP\n\tTLS\n\tDTLS\n\tWAN\n\tUse XML\n"
             "Default: Use XML (UDPv4|SHMEM)");
-          #elif defined(RTI_PERF_MICRO) || defined(EPROSIMA_PERF_FASTDDS)
+          #elif defined(PERTEST_RTI_MICRO) || defined(PERTEST_EPROSIMA_FASTDDS)
             "\nValues:\n\tUDPv4\n\tSHMEM\n"
             "Default: UDPv4"
           #endif
@@ -1013,7 +1013,7 @@ void ParameterManager::initialize()
             | Middleware::EPROSIMAFASTDDS);
     transport->add_valid_str_value("UDPv4");
     transport->add_valid_str_value("SHMEM");
-  #if defined(RTI_PERF_PRO)
+  #if defined(PERTEST_RTI_PRO)
     transport->add_valid_str_value("UDPv6");
     transport->add_valid_str_value("TCP");
     transport->add_valid_str_value("TLS");

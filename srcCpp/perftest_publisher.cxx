@@ -7,12 +7,12 @@
 #define TO_STRING(x) STRINGIFY(x)
 
 #include "perftest_cpp.h"
-#if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
+#if defined(PERTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO)
 #include "RTIDDSImpl.h"
 #endif
-#ifdef RTI_PERF_PRO
+#ifdef PERTEST_RTI_PRO
   #include "RTIRawTransportImpl.h"
-#elif defined(EPROSIMA_PERF_FASTDDS)
+#elif defined(PERTEST_EPROSIMA_FASTDDS)
   #include "perftestPubSubTypes.h"
   #include "FastDDSImpl.h"
 #endif
@@ -25,7 +25,7 @@
  */
 unsigned int perftest_cpp::OVERHEAD_BYTES = 28;
 
-#ifdef RTI_PERF_PRO
+#ifdef PERTEST_RTI_PRO
 #ifdef RTI_ANDROID
 
 #include <android/log.h>
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     }
 }
 
-#if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
+#if defined(PERTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO)
 #if defined(RTI_VXWORKS)
 int perftest_cpp_main(char *args)
 {
@@ -131,7 +131,7 @@ int perftest_cpp_main(char *args)
     return main(argc, argv);
 }
 #endif // RTI_VXWORKS
-#endif // defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
+#endif // defined(PERTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO)
 
 int perftest_cpp::Run(int argc, char *argv[])
 {
@@ -164,9 +164,9 @@ int perftest_cpp::Run(int argc, char *argv[])
 
     _printer.initialize(&_PM);
 
-  #if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
+  #if defined(PERTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO)
     if (_PM.get<bool>("rawTransport")) {
-      #ifdef RTI_PERF_PRO
+      #ifdef PERTEST_RTI_PRO
         _MessagingImpl = new RTIRawTransportImpl();
       #endif
     } else {
@@ -232,7 +232,7 @@ int perftest_cpp::Run(int argc, char *argv[])
             break;
         }
     }
-  #elif defined (EPROSIMA_PERF_FASTDDS)
+  #elif defined (PERTEST_EPROSIMA_FASTDDS)
 
     mask = (_PM.get<int>("unbounded") != 0) << 0;
     mask += _PM.get<bool>("keyed") << 1;
@@ -261,7 +261,7 @@ int perftest_cpp::Run(int argc, char *argv[])
   #else
     printf("[Error] There is no implementation for this middleware for the "
            "_MessagingImpl object.\n");
-  #endif // #if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO)
+  #endif // #if defined(PERTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO)
 
     if (_MessagingImpl == NULL || !_MessagingImpl->Initialize(_PM, this)) {
         return -1;
@@ -325,11 +325,11 @@ perftest_cpp::~perftest_cpp()
  * Constructor
  */
 perftest_cpp::perftest_cpp()
-#if defined(RTI_PERF_PRO)
+#if defined(PERTEST_RTI_PRO)
     : _PM(Middleware::RTIDDSPRO)
-#elif defined(RTI_PERF_MICRO)
+#elif defined(PERTEST_RTI_MICRO)
     : _PM(Middleware::RTIDDSPRO)
-#elif defined(EPROSIMA_PERF_FASTDDS)
+#elif defined(PERTEST_EPROSIMA_FASTDDS)
     : _PM(Middleware::EPROSIMAFASTDDS)
 #else
     : _PM()
@@ -357,7 +357,7 @@ perftest_cpp::perftest_cpp()
 bool perftest_cpp::validate_input()
 {
     // Manage parameter -batchSize for micro
-  #ifndef RTI_PERF_PRO
+  #ifndef PERTEST_RTI_PRO
     _PM.set("batchSize", 0);
   #endif
 
@@ -630,7 +630,7 @@ void perftest_cpp::PrintConfiguration()
             stringStream << _PM.get<unsigned long long>("dataLen") << "\n";
         }
 
-      #ifdef RTI_PERF_PRO
+      #ifdef PERTEST_RTI_PRO
         // Batching
         stringStream << "\tBatching: ";
         if (_PM.get<long>("batchSize") > 0) {
@@ -1448,7 +1448,7 @@ public:
         unsigned short mask;
         double latency_ave;
         double latency_std;
-      #ifdef RTI_PERF_PRO
+      #ifdef PERTEST_RTI_PRO
         double serializeTime = -1;
         double deserializeTime = -1;
       #endif
@@ -1490,7 +1490,7 @@ public:
             cpu.initialize();
         }
 
-      #ifdef RTI_PERF_PRO
+      #ifdef PERTEST_RTI_PRO
         if (_PM->get<bool>("serializationTime")) {
 
             mask = (_PM->get<int>("unbounded") != 0) << 0;
@@ -1593,7 +1593,7 @@ public:
         }
       #endif
 
-      #ifndef RTI_PERF_PRO
+      #ifndef PERTEST_RTI_PRO
         _printer->print_latency_summary(
                 latency_ave,
                 latency_std,

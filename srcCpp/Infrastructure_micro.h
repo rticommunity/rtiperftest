@@ -6,7 +6,7 @@
 #ifndef INFRASTRUCTURE_MICRO_H_
 #define INFRASTRUCTURE_MICRO_H_
 
-#ifdef RTI_PERF_MICRO
+#ifdef PERTEST_RTI_MICRO
 
 #include "osapi/osapi_semaphore.h"
 #include "osapi/osapi_thread.h"
@@ -264,5 +264,5 @@ class NDDSUtility
     }
 };
 
-#endif // RTI_PERF_MICRO
+#endif // PERTEST_RTI_MICRO
 #endif /* INFRASTRUCTURE_MICRO_H_ */

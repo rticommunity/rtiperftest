@@ -6,7 +6,7 @@
 #ifndef INFRASTRUCTURE_COMMON_H_
 #define INFRASTRUCTURE_COMMON_H_
 
-#if defined(RTI_PERF_PRO) || defined(RTI_PERF_MICRO) || defined(EPROSIMA_PERF_FASTDDS)
+#if defined(PERTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO) || defined(PERTEST_EPROSIMA_FASTDDS)
   #include "perftest.h"
 #endif
 #include <fstream>
@@ -20,11 +20,11 @@
   #define PERFT_TIME_UNIT "ns"
 #endif
 
-#ifdef RTI_PERF_MICRO
+#ifdef PERTEST_RTI_MICRO
   #include "Infrastructure_micro.h"
-#elif RTI_PERF_PRO
+#elif PERTEST_RTI_PRO
   #include "Infrastructure_pro.h"
-#elif EPROSIMA_PERF_FASTDDS
+#elif PERTEST_EPROSIMA_FASTDDS
   #include "Infrastructure_fastDDS.h"
 #endif
 

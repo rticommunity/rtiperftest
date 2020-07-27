@@ -1,7 +1,7 @@
 #ifndef __RTIDDSIMPL_H__
 #define __RTIDDSIMPL_H__
 
-#if defined(RTI_PERF_PRO) || defined (RTI_PERF_MICRO)
+#if defined(PERTEST_RTI_PRO) || defined (PERTEST_RTI_MICRO)
 
 /*
  * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
@@ -21,7 +21,7 @@
 #include "perftest_ZeroCopySupport.h"
 #endif
 
-#ifndef RTI_PERF_MICRO
+#ifndef PERTEST_RTI_MICRO
 #include "RTIDDSLoggerDevice.h"
 #endif
 
@@ -29,7 +29,7 @@
 #include "CustomType.h"
 #endif
 
-#if defined(RTI_DARWIN) && !defined(RTI_PERF_MICRO)
+#if defined(RTI_DARWIN) && !defined(PERTEST_RTI_MICRO)
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #endif
@@ -85,13 +85,13 @@ public:
      */
     IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
 
-  #ifndef RTI_PERF_MICRO
+  #ifndef PERTEST_RTI_MICRO
     DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
   #endif
 
     bool configureDomainParticipantQos(DDS_DomainParticipantQos &qos);
 
-  #ifndef RTI_PERF_MICRO
+  #ifndef PERTEST_RTI_MICRO
 
     /**
      * @brief This function calculates the overhead bytes that all the
@@ -149,14 +149,14 @@ protected:
     DDSDataReader               *_reader;
     const char                  *_typename;
     PerftestSemaphore           *_pongSemaphore;
-  #ifndef RTI_PERF_MICRO
+  #ifndef PERTEST_RTI_MICRO
     RTIDDSLoggerDevice           _loggerDevice;
   #endif
     ParameterManager            *_PM;
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
 
-  #ifndef RTI_PERF_MICRO
+  #ifndef PERTEST_RTI_MICRO
     unsigned long int getShmemSHMMAX();
   #endif
     bool setup_DR_QoS(
@@ -245,5 +245,5 @@ public:
 };
 #endif // RTI_FLATDATA_AVAILABLE
 
-#endif // RTI_PERF_PRO
+#endif // PERTEST_RTI_PRO
 #endif // __RTIDDSIMPL_H__
