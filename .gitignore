@@ -59,3 +59,6 @@ srcDoc/_build
 /srcIdl/test.idl
 srcCpp/build
 build
+
+# Fast DDS files
+/srcCpp/perftestPubSubTypes.*
