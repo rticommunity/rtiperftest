@@ -61,4 +61,7 @@ srcCpp/build
 build
 
 # Fast DDS files
-/srcCpp/perftestPubSubTypes.*
+/srcCpp/fastDDS/perftestPubSubTypes.*
+/srcCpp/fastDDS/perftest.*
+/fastDDS_build
+/CMakeLists.txt
