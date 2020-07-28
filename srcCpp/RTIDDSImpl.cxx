@@ -3169,6 +3169,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
           #endif
         }
 
+      #ifndef RTI_MICRO
 
         if (_PM->get<unsigned long long>("dataLen") > DEFAULT_MESSAGE_SIZE_MAX) {
             dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
@@ -3176,10 +3177,8 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         } else {
             dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
                 _PM->get<int>("sendQueueSize") / 10;
-
         }
 
-      #ifndef PERTEST_RTI_MICRO
         if (_PM->is_set("sendQueueSize")) {
             dw_qos.protocol.rtps_reliable_writer.max_send_window_size =
                     _PM->get<int>("sendQueueSize");
@@ -3414,6 +3413,14 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         
 
     #endif
+
+        // Heartbeats per max samples
+        stringStream << "\tHeartbeat period (s/ns): "
+                     << dw_qos.protocol.rtps_reliable_writer.heartbeat_period.sec 
+                     << ", "
+                     << dw_qos.protocol.rtps_reliable_writer.heartbeat_period.nanosec
+                     << "\n";
+
         fprintf(stderr, "%s\n", stringStream.str().c_str());
     }
     return true;
