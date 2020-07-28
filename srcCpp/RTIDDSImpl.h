@@ -1,7 +1,7 @@
 #ifndef __RTIDDSIMPL_H__
 #define __RTIDDSIMPL_H__
 
-#if defined(PERTEST_RTI_PRO) || defined (PERTEST_RTI_MICRO)
+#if defined(PERFTEST_RTI_PRO) || defined (PERTEST_RTI_MICRO)
 
 /*
  * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
@@ -245,5 +245,5 @@ public:
 };
 #endif // RTI_FLATDATA_AVAILABLE
 
-#endif // PERTEST_RTI_PRO
+#endif // PERFTEST_RTI_PRO
 #endif // __RTIDDSIMPL_H__

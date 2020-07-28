@@ -58,12 +58,12 @@ RTIDDSImpl<T>::RTIDDSImpl()
         #ifdef RTI_SECURE_PERFTEST
           _security(),
         #endif
-        #ifdef PERTEST_RTI_PRO
+        #ifdef PERFTEST_RTI_PRO
           _loggerDevice(),
         #endif
           _parent(NULL)
 {
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
     _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
     _sendQueueSize = 0;
   #else
@@ -406,7 +406,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     // Domain ID
     stringStream << "\tDomain: " << _PM->get<int>("domain") << "\n";
 
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
     if (_PM->get<bool>("dynamicData")) {
@@ -439,7 +439,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
     stringStream << std::endl;
   #endif
 
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
     // Asynchronous Publishing
     if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
@@ -463,7 +463,7 @@ std::string RTIDDSImpl<T>::PrintConfiguration()
         stringStream << "\tAutoThrottle: Enabled\n";
     }
 
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
     // XML File
     stringStream << "\tXML File: ";
     if (_PM->get<bool>("noXmlQos")) {
@@ -2316,7 +2316,7 @@ class RTIDynamicDataSubscriber : public RTISubscriberBase<DDS_DynamicData>
 template <typename T>
 bool RTIDDSImpl<T>::configureDomainParticipantQos(DDS_DomainParticipantQos &qos)
 {
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
     DDS_DomainParticipantFactoryQos factory_qos;
 
     // Setup the QOS profile file to be loaded
@@ -2514,7 +2514,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     _parent = parent;
     ThreadPriorities threadPriorities = _parent->get_thread_priorities();
 
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
     // Register _loggerDevice
     if (!NDDSConfigLogger::get_instance()->set_output_device(&_loggerDevice)) {
         fprintf(stderr,"Failed set_output_device for Logger.\n");
@@ -2547,7 +2547,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
             DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
             DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
 
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
     if (_participant == NULL || _loggerDevice.checkShmemErrors()) {
         if (_loggerDevice.checkShmemErrors()) {
             fprintf(stderr,
@@ -2566,7 +2566,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     }
   #endif
 
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
   #ifdef RTI_LEGACY_DD_IMPL
     // If we are using Dynamic Data, check if we want to use the new or old impl
     if (_PM->get<bool>("dynamicData") && _PM->get<bool>("useLegacyDynamicData")) {
@@ -2582,7 +2582,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
         if (!_PM->get<bool>("dynamicData")) {
             T::TypeSupport::register_type(_participant, _typename);
         } else {
-        #ifdef PERTEST_RTI_PRO
+        #ifdef PERFTEST_RTI_PRO
             DDSDynamicDataTypeSupport* dynamicDataTypeSupportObject =
                     new DDSDynamicDataTypeSupport(
                             T::TypeSupport::get_typecode(),
@@ -2596,7 +2596,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     }
 
 
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
     _factory->get_publisher_qos_from_profile(
             publisherQoS,
             _PM->get<std::string>("qosLibrary").c_str(),
@@ -2631,7 +2631,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
         return false;
     }
 
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
     _subscriber = _participant->create_subscriber_with_profile(
             _PM->get<std::string>("qosLibrary").c_str(),
             "BaseProfileQos",
@@ -3001,7 +3001,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         std::string topic_name)
 {
 
-    #ifdef PERTEST_RTI_PRO
+    #ifdef PERFTEST_RTI_PRO
     if (_factory->get_datawriter_qos_from_profile(
             dw_qos,
             _PM->get<std::string>("qosLibrary").c_str(),
@@ -3063,7 +3063,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
     // These QOS's are only set for the Throughput datawriter
     if (qos_profile == "ThroughputQos") {
 
-      #ifdef PERTEST_RTI_PRO
+      #ifdef PERFTEST_RTI_PRO
         if (_PM->get<bool>("multicast")) {
             dw_qos.protocol.rtps_reliable_writer.enable_multicast_periodic_heartbeat =
                     RTI_TRUE;
@@ -3083,7 +3083,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
         this->_sendQueueSize = dw_qos.resource_limits.max_samples;
       #endif
 
-      #ifdef PERTEST_RTI_PRO
+      #ifdef PERFTEST_RTI_PRO
         if (_PM->get<bool>("enableAutoThrottle")) {
             DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
                     "dds.data_writer.auto_throttle.enable", "true", false);
@@ -3553,7 +3553,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
   #endif
     dr_qos.resource_limits.max_instances = _instanceMaxCountReader;
 
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
     if (_PM->get<long>("instances") > 1) {
         if (_PM->is_set("instanceHashBuckets")) {
             dr_qos.resource_limits.instance_hash_buckets =
@@ -3631,7 +3631,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
 
 
     if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {
-      #ifdef PERTEST_RTI_PRO
+      #ifdef PERFTEST_RTI_PRO
         char buf[10];
         sprintf(buf, "%d", _PM->get<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
@@ -3657,11 +3657,11 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
                     << " topic):\n"
         // Samples
                     << "\tSamples ("
-                #ifdef PERTEST_RTI_PRO
+                #ifdef PERFTEST_RTI_PRO
                     << "Initial/"
                 #endif
                     << "Max): "
-                #ifdef PERTEST_RTI_PRO
+                #ifdef PERFTEST_RTI_PRO
                     << stringValueQoS(dr_qos.resource_limits.initial_samples)
                     << "/"
                 #endif
@@ -3671,11 +3671,11 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
         if (_PM->get<bool>("keyed")){
             // Instances
             stringStream << "\tInstances ("
-                    #ifdef PERTEST_RTI_PRO
+                    #ifdef PERFTEST_RTI_PRO
                         << "Initial/"
                     #endif
                         << "Max): "
-                    #ifdef PERTEST_RTI_PRO
+                    #ifdef PERFTEST_RTI_PRO
                         << stringValueQoS(dr_qos.resource_limits.initial_instances)
                         << "/"
                     #endif
@@ -3688,7 +3688,7 @@ bool RTIDDSImpl<T>::setup_DR_QoS(
                         << "\n";
         }
 
-    #ifdef PERTEST_RTI_PRO
+    #ifdef PERFTEST_RTI_PRO
       #ifdef RTI_FLATDATA_AVAILABLE
         if (_isFlatData) {
             //tdynamically_allocate_fragmented_samples
@@ -3998,7 +3998,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         return NULL;
     }
 
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
     /* Create CFT Topic */
     if (strcmp(topic_name, THROUGHPUT_TOPIC_NAME) == 0 && _PM->is_set("cft")) {
         topic_desc = CreateCft(topic_name, topic);

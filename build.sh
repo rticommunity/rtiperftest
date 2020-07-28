@@ -395,7 +395,8 @@ function library_sufix_calculation()
 
 function additional_defines_calculation()
 {
-    additional_defines=""
+    additional_rtiddsgen_defines="-D PERFTEST_RTI_PRO"
+    additional_defines="DPERFTEST_RTI_PRO "
     additional_rti_libs=""
 
     # Avoid optimized out variables when debugging
@@ -437,7 +438,7 @@ function additional_defines_calculation()
     fi
 
     if [ "${1}" = "CppTraditional" ]; then
-        additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_TRADITIONAL DPERTEST_RTI_PRO"
+        additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_TRADITIONAL"
 
         if [ "${RTI_PERFTEST_NANO_CLOCK}" == "1" ]; then
             additional_defines=${additional_defines}" DRTI_PERFTEST_NANO_CLOCK"
@@ -460,22 +461,27 @@ function additional_defines_calculation()
     # Adding RTI_ZEROCOPY_AVAILABLE, RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as defines
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
         additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE"
-        additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE"
+        additional_rtiddsgen_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE"
         if [ "${RTI_FLATDATA_MAX_SIZE}" != "" ]; then
             additional_defines=${additional_defines}" DRTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
-            additional_defines_flatdata=${additional_defines_flatdata}" -D RTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
+            additional_rtiddsgen_defines_flatdata=${additional_rtiddsgen_defines_flatdata}" -D RTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
         fi
 
         if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
             additional_rti_libs="nddsmetp ${additional_rti_libs}"
             additional_defines=${additional_defines}" DRTI_ZEROCOPY_AVAILABLE"
-            additional_defines_flatdata=$additional_defines_flatdata" -D RTI_ZEROCOPY_AVAILABLE"
+            additional_rtiddsgen_defines_flatdata=$additional_rtiddsgen_defines_flatdata" -D RTI_ZEROCOPY_AVAILABLE"
         fi
     fi
+
+    additional_rtiddsgen_defines="$additional_rtiddsgen_defines $additional_rtiddsgen_defines_flatdata"
+    echo $additional_rtiddsgen_defines
 }
 
 function additional_defines_calculation_micro()
 {
+    additional_rtiddsgen_defines="-D PERFTEST_RTI_MICRO"
+
     if [[ $platform == *"Darwin"* ]]; then
         additional_defines=" RTI_DARWIN"
     else
@@ -696,7 +702,7 @@ function build_cpp()
     # Therefore, we need to generate a makefile that contains
     # nddsmetp and nddssecurity libraries without compiling ZeroCopy code
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
-        ${additional_defines_flatdata} \
+        ${additional_rtiddsgen_defines} \
         -unboundedSupport -replace -create typefiles -create makefiles \
         -platform ${platform} \
         -additionalHeaderFiles \"${additional_header_files}\" \
@@ -722,7 +728,7 @@ function build_cpp()
     if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
         echo -e "${INFO_TAG} Generating Zero Copy code"
         rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
-        ${additional_defines_flatdata} \
+        ${additional_rtiddsgen_defines} \
         -replace -create typefiles \
         -platform ${platform} \
         ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
@@ -876,7 +882,8 @@ function build_micro_cpp()
         FileDataLoader.cxx \
         PerftestPrinter.cxx"
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} \
+    rtiddsgen_command="\"${rtiddsgen_executable}\" ${additional_rtiddsgen_defines} \
+            -micro -language ${classic_cpp_lang_string} \
             -replace -create typefiles -create makefiles \
             -additionalHeaderFiles \"$additional_header_files\" \
             -additionalSourceFiles \"$additional_source_files\" \
@@ -999,7 +1006,7 @@ function build_cpp03()
     ##############################################################################
     # Generate files for srcCpp03
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
-    ${additional_defines_flatdata} \
+    ${additional_rtiddsgen_defines} \
     -unboundedSupport -replace -create typefiles -create makefiles \
     -platform ${platform} \
     -additionalHeaderFiles \"$additional_header_files\" \
@@ -1025,7 +1032,7 @@ function build_cpp03()
     if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
         echo -e "${INFO_TAG} Generating Zero Copy code"
         rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
-        ${additional_defines_flatdata} \
+        ${additional_rtiddsgen_defines} \
         -replace -create typefiles -platform ${platform} \
         ${rtiddsgen_extra_options} \
         -d \"${modern_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\""
@@ -1144,7 +1151,7 @@ function build_java()
     ##############################################################################
     # Generate files for srcJava
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${java_lang_string} -unboundedSupport -replace -package com.rti.perftest.gen -d \"${java_folder}\" \"${idl_location}/perftest.idl\""
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -D PERFTEST_RTI_PRO -language ${java_lang_string} -unboundedSupport -replace -package com.rti.perftest.gen -d \"${java_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${java_lang_string}."

@@ -28,7 +28,7 @@
  * TODO: that Encapsulation should be taken out from the sample instead of here.
  */
 
-#ifdef PERTEST_RTI_PRO
+#ifdef PERFTEST_RTI_PRO
   #define MESSAGE_OVERHEAD_BYTES (COMMEND_WRITER_MAX_RTPS_OVERHEAD + 48 + RTI_CDR_ENCAPSULATION_HEADER_SIZE + 3)
 #else
   /*
@@ -120,7 +120,7 @@ public:
     // Check if the transport allows the use of multicast.
     bool allowsMulticast();
 
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
     /*
      * Given the name of a Perftest-defined topic, returns its multicast
      * address.
@@ -139,7 +139,7 @@ private:
 
     bool setTransport(std::string transportString);
     void populateSecurityFiles();
-  #ifdef PERTEST_RTI_PRO
+  #ifdef PERFTEST_RTI_PRO
     bool parse_multicast_addresses(const char *arg);
     bool increase_address_by_one(const std::string addr, std::string &nextAddr);
   #endif

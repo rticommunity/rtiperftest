@@ -6,7 +6,7 @@
 #ifndef INFRASTRUCTURE_COMMON_H_
 #define INFRASTRUCTURE_COMMON_H_
 
-#if defined(PERTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO) || defined(PERTEST_EPROSIMA_FASTDDS)
+#if defined(PERFTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO) || defined(PERTEST_EPROSIMA_FASTDDS)
   #include "perftest.h"
 #endif
 #include <fstream>
@@ -22,7 +22,7 @@
 
 #ifdef PERTEST_RTI_MICRO
   #include "Infrastructure_micro.h"
-#elif PERTEST_RTI_PRO
+#elif PERFTEST_RTI_PRO
   #include "Infrastructure_pro.h"
 #elif PERTEST_EPROSIMA_FASTDDS
   #include "Infrastructure_fastDDS.h"

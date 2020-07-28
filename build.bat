@@ -388,14 +388,16 @@ if !BUILD_CPP! == 1 (
 		set "additional_source_files=PerftestSecurity.cxx !additional_source_files!"
 	)
 
+	set "additional_defines_rtiddsgen=-D "PERFTEST_RTI_PRO""
+
 	if !FLATDATA_AVAILABLE! == 1 (
         @REM On Windows we always enable ZeroCopy if FlatData is available.
 		set additional_rti_libs=nddsmetp !additional_rti_libs!
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_AVAILABLE RTI_ZEROCOPY_AVAILABLE"
-		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE""
+		set "additional_defines_rtiddsgen_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE""
 		if NOT "!RTI_FLATDATA_MAX_SIZE!" == "" (
 			set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!"
-			set "additional_defines_flatdata=!additional_defines_flatdata! -D "RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!""
+			set "additional_defines_rtiddsgen_flatdata=!additional_defines_rtiddsgen_flatdata! -D "RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!""
 		)
 	)
 
@@ -433,7 +435,8 @@ if !BUILD_CPP! == 1 (
 	echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
 	-unboundedSupport -replace -create typefiles -create makefiles^
 	-platform %architecture%^
-	!additional_defines_flatdata!^
+	!additional_defines_rtiddsgen!^
+	!additional_defines_rtiddsgen_flatdata!^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
@@ -446,7 +449,8 @@ if !BUILD_CPP! == 1 (
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
 	-unboundedSupport -replace -create typefiles -create makefiles^
 	-platform %architecture%^
-	!additional_defines_flatdata!^
+	!additional_defines_rtiddsgen!^
+	!additional_defines_rtiddsgen_flatdata!^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
@@ -463,7 +467,8 @@ if !BUILD_CPP! == 1 (
 	if !FLATDATA_AVAILABLE! == 1 (
 		echo[
 		echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
-		!additional_defines_flatdata!^
+		!additional_defines_rtiddsgen!^
+		!additional_defines_rtiddsgen_flatdata!^
 		-replace -create typefiles^
 		-platform %architecture%^
 		!rtiddsgen_extra_options! !additional_defines_custom_type!^
@@ -472,7 +477,8 @@ if !BUILD_CPP! == 1 (
 		echo[
 		echo [INFO]: Generating Zero Copy code
 		call "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
-		!additional_defines_flatdata!^
+		!additional_defines_rtiddsgen!^
+		!additional_defines_rtiddsgen_flatdata!^
 		-replace -create typefiles^
 		-platform %architecture%^
 		!rtiddsgen_extra_options! !additional_defines_custom_type!^
@@ -544,13 +550,15 @@ if !BUILD_CPP03! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! PERFTEST_COMMIT_ID=\"!commit_id!\""
 	)
 
+	set "additional_defines_rtiddsgen=-D "PERFTEST_RTI_PRO""
+
 	if !FLATDATA_AVAILABLE! == 1 (
 		set "additional_rti_libs=nddsmetp !additional_rti_libs!"
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_AVAILABLE RTI_ZEROCOPY_AVAILABLE"
-		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE""
+		set "additional_defines_rtiddsgen_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE""
 		if NOT "!RTI_FLATDATA_MAX_SIZE!" == "" (
 			set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!"
-			set "additional_defines_flatdata=!additional_defines_flatdata! -D "RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!""
+			set "additional_defines_rtiddsgen_flatdata=!additional_defines_rtiddsgen_flatdata! -D "RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!""
 		)
 	)
 
@@ -573,7 +581,8 @@ if !BUILD_CPP03! == 1 (
 	echo [INFO] "%rtiddsgen_executable%" -language %modern_cpp_lang_string% ^
 	-unboundedSupport -replace -create typefiles -create makefiles^
 	-platform %architecture%^
-	!additional_defines_flatdata!^
+	!additional_defines_rtiddsgen!^
+	!additional_defines_rtiddsgen_flatdata!^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
@@ -587,7 +596,8 @@ if !BUILD_CPP03! == 1 (
 	call "%rtiddsgen_executable%" -language %modern_cpp_lang_string% ^
 	-unboundedSupport -replace -create typefiles -create makefiles^
 	-platform %architecture%^
-	!additional_defines_flatdata!^
+	!additional_defines_rtiddsgen!^
+	!additional_defines_rtiddsgen_flatdata!^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
@@ -604,7 +614,8 @@ if !BUILD_CPP03! == 1 (
 	if !FLATDATA_AVAILABLE! == 1 (
 		echo[
 		echo "%rtiddsgen_executable%" -language %modern_cpp_lang_string%^
-		!additional_defines_flatdata!^
+		!additional_defines_rtiddsgen!^
+		!additional_defines_rtiddsgen_flatdata!^
 		-replace -create typefiles -platform %architecture%^
 		!rtiddsgen_extra_options!^
 		-d "%modern_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
@@ -614,7 +625,8 @@ if !BUILD_CPP03! == 1 (
 		echo[
 		echo [INFO]: Generating Zero Copy code
 		call "%rtiddsgen_executable%" -language %modern_cpp_lang_string%^
-		!additional_defines_flatdata!^
+		!additional_defines_rtiddsgen!^
+		!additional_defines_rtiddsgen_flatdata!^
 		-replace -create typefiles -platform %architecture%^
 		!rtiddsgen_extra_options!^
 		-d "%modern_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
@@ -655,11 +667,14 @@ if !BUILD_CPP03! == 1 (
 
 if %BUILD_CS% == 1 (
 
+	set "additional_defines_rtiddsgen=-D "PERFTEST_RTI_PRO""
+
 	@REM Generate files for srcCs
 	echo[
 	echo [INFO]: Generating types and makefiles for %cs_lang_string%
 	call "%rtiddsgen_executable%" -language %cs_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
+	!additional_defines_rtiddsgen!^
 	-additionalSourceFiles "RTIDDSImpl.cs MessagingIF.cs CpuMonitor.cs PerftestTransport.cs PerftestPrinter.cs"^
 	-additionalDefines "/0x" -d "%cs_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
@@ -688,10 +703,14 @@ if %BUILD_CS% == 1 (
 
 if %BUILD_JAVA% == 1 (
 
+
+	set "additional_defines_rtiddsgen=-D "PERFTEST_RTI_PRO""
+
 	@REM Generate files for Java
 	echo[
 	echo [INFO]: Generating types and makefiles for %java_lang_string%
 	call "%rtiddsgen_executable%" -language %java_lang_string% -unboundedSupport -replace^
+	!additional_defines_rtiddsgen!^
 	-package com.rti.perftest.gen -d "%java_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %java_lang_string%.
@@ -784,10 +803,13 @@ if !BUILD_MICRO! == 1 (
 	set "additional_header_files=ParameterManager.h Parameter.h ThreadPriorities.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h FileDataLoader.h PerftestSecurity.h PerftestPrinter.h"
 	set "additional_source_files=ParameterManager.cxx Parameter.cxx ThreadPriorities.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx FileDataLoader.cxx PerftestSecurity.cxx PerftestPrinter.cxx"
 
+	set "additional_defines_rtiddsgen=-D "PERFTEST_RTI_MICRO""
+
 	@REM # Generate files for srcCpp
 	echo[
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
 	call "%rtiddsgen_executable%" -micro -language %classic_cpp_lang_string% -replace^
+	!additional_defines_rtiddsgen!^
 	-create typefiles -create makefiles^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!" -additionalDefines "!ADDITIONAL_DEFINES!"^
