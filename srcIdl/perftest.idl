@@ -35,6 +35,7 @@ const string ANNOUNCEMENT_TOPIC_NAME = "Announcement";
  *
  */
 
+#ifndef PERFTEST_CYCLONEDDS
 @final
 struct TestData_t {
     octet key[KEY_SIZE];
@@ -71,8 +72,11 @@ struct TestDataKeyed_t {
     long custom_type_size;
   #endif
 };
+#endif
 
+#ifndef PERFTEST_CYCLONEDDS
 @final
+#endif
 struct TestDataLarge_t {
     octet key[KEY_SIZE];
 
@@ -88,9 +92,13 @@ struct TestDataLarge_t {
   #endif
 };
 
+#ifndef PERFTEST_CYCLONEDDS
 @final
+#endif
 struct TestDataKeyedLarge_t {
+  #ifndef PERFTEST_CYCLONEDDS
     @key
+  #endif
     octet key[KEY_SIZE];
 
     long entity_id;
@@ -105,6 +113,9 @@ struct TestDataKeyedLarge_t {
     long custom_type_size;
   #endif
 };
+#ifdef PERFTEST_CYCLONEDDS
+#pragma keylist TestDataKeyedLarge_t key
+#endif
 
 /********************************** FLATDATA **********************************/
 #ifdef RTI_FLATDATA_AVAILABLE

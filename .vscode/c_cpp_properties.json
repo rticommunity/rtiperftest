@@ -40,6 +40,24 @@
             "configurationProvider": "go2sh.cmake-integration"
         },
         {
+            "name": "Linux C++ CycloneDDS",
+            "includePath": [
+                "${workspaceFolder}/srcCpp/"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "RTI_UNIX",
+                "RTI_LINUX",
+                "PERFTEST_CYCLONEDDS"
+            ],
+            "intelliSenseMode": "${default}",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "configurationProvider": "go2sh.cmake-integration"
+        },
+        {
             "name": "Linux C++03",
             "includePath": [
                 "${workspaceFolder}/srcCpp/",

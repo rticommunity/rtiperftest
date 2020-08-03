@@ -7,14 +7,16 @@
 #define TO_STRING(x) STRINGIFY(x)
 
 #include "perftest_cpp.h"
-#if defined(PERFTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO)
-#include "RTIDDSImpl.h"
-#endif
 #ifdef PERFTEST_RTI_PRO
   #include "RTIRawTransportImpl.h"
-#elif defined(PERTEST_EPROSIMA_FASTDDS)
+  #include "RTIDDSImpl.h"
+#elif defined(PERTEST_RTI_MICRO)
+  #include "RTIDDSImpl.h"
+#elif defined(PERFTEST_EPROSIMA_FASTDDS)
   #include "perftestPubSubTypes.h"
   #include "FastDDSImpl.h"
+#elif defined(PERFTEST_CYCLONEDDS)
+  #include "CycloneDDSImpl.h"
 #endif
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
@@ -232,7 +234,7 @@ int perftest_cpp::Run(int argc, char *argv[])
             break;
         }
     }
-  #elif defined (PERTEST_EPROSIMA_FASTDDS)
+  #elif defined(PERFTEST_EPROSIMA_FASTDDS)
 
     mask = (_PM.get<int>("unbounded") != 0) << 0;
     mask += _PM.get<bool>("keyed") << 1;
@@ -257,7 +259,10 @@ int perftest_cpp::Run(int argc, char *argv[])
     default:
         break;
     }
- 
+
+  #elif defined(PERFTEST_CYCLONEDDS)
+    printf("Working on it man!!!.\n");
+
   #else
     printf("[Error] There is no implementation for this middleware for the "
            "_MessagingImpl object.\n");
@@ -329,8 +334,10 @@ perftest_cpp::perftest_cpp()
     : _PM(Middleware::RTIDDSPRO)
 #elif defined(PERTEST_RTI_MICRO)
     : _PM(Middleware::RTIDDSPRO)
-#elif defined(PERTEST_EPROSIMA_FASTDDS)
+#elif defined(PERFTEST_EPROSIMA_FASTDDS)
     : _PM(Middleware::EPROSIMAFASTDDS)
+#elif defined(PERFTEST_CYCLONEDDS)
+    : _PM(Middleware::CYCLONEDDS)
 #else
     : _PM()
 #endif

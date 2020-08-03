@@ -6,7 +6,7 @@
 #ifndef INFRASTRUCTURE_COMMON_H_
 #define INFRASTRUCTURE_COMMON_H_
 
-#if defined(PERFTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO) || defined(PERTEST_EPROSIMA_FASTDDS)
+#if defined(PERFTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO) || defined(PERFTEST_EPROSIMA_FASTDDS)
   #include "perftest.h"
 #endif
 #include <fstream>
@@ -24,8 +24,10 @@
   #include "Infrastructure_micro.h"
 #elif PERFTEST_RTI_PRO
   #include "Infrastructure_pro.h"
-#elif PERTEST_EPROSIMA_FASTDDS
+#elif PERFTEST_EPROSIMA_FASTDDS
   #include "Infrastructure_fastDDS.h"
+#elif PERFTEST_CYCLONEDDS
+  #include "Infrastructure_cycloneDDS.h"
 #endif
 
 #ifdef RTI_VXWORKS

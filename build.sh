@@ -1267,6 +1267,11 @@ function build_fastDDS_cpp()
 }
 
 
+function build_cycloneDDS_cpp()
+{
+    java -classpath "/Users/jmorales/RTI/trees/cyclonedds_install/lib/cmake/CycloneDDS/idlc/idlc-jar-with-dependencies.jar" org.eclipse.cyclonedds.compilers.Idlc -d srcCpp/cycloneDDS -D PERFTEST_CYCLONEDDS srcIdl/perftest.idl
+}
+
 ################################################################################
 function clean_documentation()
 {

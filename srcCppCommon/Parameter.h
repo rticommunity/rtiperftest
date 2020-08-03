@@ -67,6 +67,7 @@ struct Middleware {
     static const MiddlewareMask RTIDDSMICRO;
     static const MiddlewareMask RAWTRANSPORT;
     static const MiddlewareMask EPROSIMAFASTDDS;
+    static const MiddlewareMask CYCLONEDDS;
 };
 
 class CommandLineArgument {

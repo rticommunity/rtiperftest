@@ -6,7 +6,7 @@
 #ifndef __PARAMETERMANAGER_H__
 #define __PARAMETERMANAGER_H__
 
-#if defined(RTI_LANGUAGE_CPP_TRADITIONAL) || defined(PERTEST_EPROSIMA_FASTDDS)
+#if defined(RTI_LANGUAGE_CPP_TRADITIONAL) || defined(PERFTEST_EPROSIMA_FASTDDS)
   #include "perftest.h"
 #elif defined(RTI_LANGUAGE_CPP_MODERN)
   #include "perftest.hpp"

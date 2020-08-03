@@ -60,8 +60,13 @@ srcDoc/_build
 srcCpp/build
 build
 
-# Fast DDS files
+# FastDDS files
 /srcCpp/fastDDS/perftestPubSubTypes.*
 /srcCpp/fastDDS/perftest.*
 /fastDDS_build
 /CMakeLists.txt
+
+# CycloneDDS files
+/srcCpp/cycloneDDS/perftest.c
+/srcCpp/cycloneDDS/perftest.h
+/cycloneDDS_build
