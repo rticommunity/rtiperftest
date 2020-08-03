@@ -888,17 +888,6 @@ bool FastDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
 
     _factory = DomainParticipantFactory::get_instance();
 
-    // For the time being we are not supporting XML profiles.
-    // if (!_PM->get<bool>("noXmlQos")) {
-    //     retCode = _factory->load_XML_profiles_file(
-    //             _PM->get<std::string>("qosFile"));
-    //     if (retCode != ReturnCode_t::RETCODE_OK) {
-    //         fprintf(stderr,
-    //                 "[Warning]: XML Profile not found, using default "
-    //                 "settings\n");
-    //     }
-    // }
-
     DomainParticipantQos participantQos;
     if (!configure_participant_qos(participantQos)) {
         return false;
@@ -939,7 +928,7 @@ bool FastDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     SubscriberQos subscriberQos;
     subscriberQos.presentation().access_scope =
             PresentationQosPolicyAccessScopeKind::TOPIC_PRESENTATION_QOS;
-    publisherQos.presentation().ordered_access = true;
+    subscriberQos.presentation().ordered_access = true;
     _subscriber = _participant->create_subscriber(subscriberQos, nullptr);
     if (_subscriber == nullptr) {
         fprintf(stderr, "Problem creating subscriber.\n");
