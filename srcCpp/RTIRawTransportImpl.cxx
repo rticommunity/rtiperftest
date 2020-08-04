@@ -69,14 +69,22 @@ void RTIRawTransportImpl::Shutdown()
 bool RTIRawTransportImpl::validate_input() {
 
     // Manage parameter -batchSize
+
+    /*
+     * If the parameter is not set by default, even for throughput we will set
+     * it to 0. We allow the use of batching, to be able to compare, but this is
+     * not a feature that "sockets" have, therefore we should not use them by
+     * default
+     */
+
     if (_PM->get<long>("batchSize") > 0) {
-        // We will not use batching for a latency test
-        if (_PM->get<bool>("latencyTest")) {
-            if (_PM->is_set("batchSize")) {
+        // If it was not explicit:
+        if (!_PM->is_set("batchSize")) {
+            _PM->set<long>("batchSize", 0); // Disable Batching
+        } else { // If it was explicit, it is ok as long as it is not a lat test
+            if (_PM->get<bool>("latencyTest")) {
                 fprintf(stderr, "Batching cannot be used in a Latency test.\n");
                 return false;
-            } else {
-                _PM->set<long>("batchSize", 0); // Disable Batching
             }
         }
     }
