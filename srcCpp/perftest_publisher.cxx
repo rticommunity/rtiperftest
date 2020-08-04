@@ -261,14 +261,39 @@ int perftest_cpp::Run(int argc, char *argv[])
     }
 
   #elif defined(PERFTEST_CYCLONEDDS)
-    printf("Working on it man!!!.\n");
 
-  #else
-    printf("[Error] There is no implementation for this middleware for the "
-           "_MessagingImpl object.\n");
-  #endif // #if defined(PERFTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO)
+    /*
+     * This middleware does only support unbounded sequences, not bounded.
+     * Therefore we can only choose between keyed and unkeyed. Still, we follow
+     * the same pattern as in the rest of middlewares.
+     */
+    mask = _PM.get<bool>("keyed") << 0;
+
+    switch (mask) {
+    case 0:  // unbounded = 0001
+        _MessagingImpl = new CycloneDDSImpl<TestDataLarge_t>();
+        break;
+
+    case 1:  // keyed = 0001
+        _MessagingImpl = new CycloneDDSImpl<TestDataKeyedLarge_t>();
+        break;
+
+    default:
+        break;
+    }
+
+  #else // No middleware is passed as -DPERTEST_...
+
+    fprintf(stderr,
+            "[Error] There is no implementation for this middleware for the "
+            "_MessagingImpl object.\n");
+
+  #endif
 
     if (_MessagingImpl == NULL || !_MessagingImpl->Initialize(_PM, this)) {
+        fprintf(stderr,
+                "[Error]: _MessagingImpl was null or it could not be "
+                "initialized\n");
         return -1;
     }
 
@@ -308,6 +333,7 @@ void perftest_cpp::PrintVersion()
     fprintf(stderr, " %s", PERFTEST_COMMIT_ID);
   #endif
 
+    //TODO: Change this so it uses a function from the MessagingImpl object
     fprintf(stderr, " (%s)\n", GetDDSVersionString().c_str());
 
     fflush(stdout);
@@ -2164,9 +2190,9 @@ int perftest_cpp::Publisher()
         }
 
         if (_SleepNanosec > 0) {
-            sleep_period.sec = (DDS_Long) (_SleepNanosec / 1000000000u);
-            sleep_period.nanosec = (DDS_UnsignedLong) _SleepNanosec
-                                    - (DDS_UnsignedLong) (sleep_period.sec * 1000000000);
+            sleep_period.sec = (long) (_SleepNanosec / 1000000000u);
+            sleep_period.nanosec = (unsigned long) _SleepNanosec
+                                    - (unsigned long) (sleep_period.sec * 1000000000);
             PerftestClock::sleep(sleep_period);
         }
 
