@@ -27,11 +27,7 @@ void ParameterManager::initialize()
     bestEffort->set_type(T_BOOL);
     bestEffort->set_extra_argument(NO);
     bestEffort->set_group(GENERAL);
-    bestEffort->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    bestEffort->set_supported_middleware(Middleware::ALLDDS);
     create("bestEffort",  bestEffort);
 
     Parameter<unsigned long long> *dataLen =
@@ -43,11 +39,7 @@ void ParameterManager::initialize()
     dataLen->set_extra_argument(YES);
     dataLen->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_PERFTEST_SAMPLE_SIZE);
     dataLen->set_group(GENERAL);
-    dataLen->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    dataLen->set_supported_middleware(Middleware::ALL);
     create("dataLen", dataLen);
 
 
@@ -60,11 +52,7 @@ void ParameterManager::initialize()
     verbosity->set_extra_argument(YES);
     verbosity->set_range(0, 3);
     verbosity->set_group(GENERAL);
-    verbosity->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    verbosity->set_supported_middleware(Middleware::ALL);
     create("verbosity", verbosity);
 
     Parameter<bool> *dynamicData = new Parameter<bool>(false);
@@ -79,7 +67,7 @@ void ParameterManager::initialize()
     create("dynamicData", dynamicData);
 
     Parameter<int> *durability =
-            new Parameter<int>(DDS_VOLATILE_DURABILITY_QOS);
+            new Parameter<int>(0);
     durability->set_command_line_argument("-durability", "<0|1|2|3>");
     durability->set_description(
             "Set durability QOS: 0 - volatile,\n"
@@ -88,9 +76,7 @@ void ParameterManager::initialize()
     durability->set_type(T_NUMERIC_D);
     durability->set_extra_argument(YES);
     durability->set_group(GENERAL);
-    durability->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
+    durability->set_supported_middleware(Middleware::RTIDDS);
     durability->set_range(0, 3);
     create("durability", durability);
 
@@ -101,11 +87,7 @@ void ParameterManager::initialize()
     domain->set_extra_argument(YES);
     domain->set_range(0, 250);
     domain->set_group(GENERAL);
-    domain->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    domain->set_supported_middleware(Middleware::ALL);
     create("domain", domain);
 
     Parameter<long> *instances = new Parameter<long>(1);
@@ -117,9 +99,7 @@ void ParameterManager::initialize()
     instances->set_extra_argument(YES);
     instances->set_range(1, LONG_MAX);
     instances->set_group(GENERAL);
-    instances->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
+    instances->set_supported_middleware(Middleware::ALLDDS);
     create("instances", instances);
 
     Parameter<long> *instanceHashBuckets = new Parameter<long>(0);
@@ -139,9 +119,7 @@ void ParameterManager::initialize()
     keyed->set_type(T_BOOL);
     keyed->set_extra_argument(NO);
     keyed->set_group(GENERAL);
-    keyed->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
+    keyed->set_supported_middleware(Middleware::ALLDDS);
     create("keyed", keyed);
 
     Parameter<bool> *noDirectCommunication = new Parameter<bool>(false);
@@ -163,8 +141,7 @@ void ParameterManager::initialize()
     noPositiveAcks->set_type(T_BOOL);
     noPositiveAcks->set_extra_argument(NO);
     noPositiveAcks->set_group(GENERAL);
-    noPositiveAcks->set_supported_middleware(
-            Middleware::RTIDDSPRO | Middleware::EPROSIMAFASTDDS);
+    noPositiveAcks->set_supported_middleware(Middleware::RTIDDSPRO);
     create("noPositiveAcks", noPositiveAcks);
 
     Parameter<unsigned long long> *keepDurationUsec =
@@ -174,8 +151,7 @@ void ParameterManager::initialize()
     keepDurationUsec->set_type(T_NUMERIC_LLU);
     keepDurationUsec->set_extra_argument(YES);
     keepDurationUsec->set_group(GENERAL);
-    keepDurationUsec->set_supported_middleware(
-            Middleware::RTIDDSPRO | Middleware::EPROSIMAFASTDDS);
+    keepDurationUsec->set_supported_middleware(Middleware::RTIDDSPRO);
     keepDurationUsec->set_range(1,
                 (unsigned long long)365 * 24 * 60 * 60 * 1000000);
                 // One year in usec
@@ -188,11 +164,7 @@ void ParameterManager::initialize()
     noPrintIntervals->set_type(T_BOOL);
     noPrintIntervals->set_extra_argument(NO);
     noPrintIntervals->set_group(GENERAL);
-    noPrintIntervals->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    noPrintIntervals->set_supported_middleware(Middleware::ALL);
     create("noPrintIntervals", noPrintIntervals);
 
     Parameter<std::string> *qosFile =
@@ -236,11 +208,7 @@ void ParameterManager::initialize()
     useReadThread->set_type(T_BOOL);
     useReadThread->set_extra_argument(NO);
     useReadThread->set_group(GENERAL);
-    useReadThread->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    useReadThread->set_supported_middleware(Middleware::ALLDDS);
     create("useReadThread", useReadThread);
 
     Parameter<unsigned long long> *waitsetDelayUsec =
@@ -255,9 +223,7 @@ void ParameterManager::initialize()
     waitsetDelayUsec->set_extra_argument(YES);
     waitsetDelayUsec->set_group(GENERAL);
     waitsetDelayUsec->set_supported_middleware(Middleware::RTIDDSPRO);
-    waitsetDelayUsec->set_range(0,
-                DDS_DURATION_INFINITE_SEC * 10000000 +
-                DDS_DURATION_INFINITE_NSEC / 1000);
+    waitsetDelayUsec->set_range(0, 10000000);
     create("waitsetDelayUsec", waitsetDelayUsec);
 
     Parameter<long> *waitsetEventCount = new Parameter<long>(5);
@@ -306,11 +272,7 @@ void ParameterManager::initialize()
     cpu->set_type(T_BOOL);
     cpu->set_extra_argument(NO);
     cpu->set_group(GENERAL);
-    cpu->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    cpu->set_supported_middleware(Middleware::ALL);
     create("cpu", cpu);
 
     Parameter<int> *unbounded = new Parameter<int>(0);
@@ -341,9 +303,8 @@ void ParameterManager::initialize()
     threadPriorities->set_extra_argument(YES);
     threadPriorities->set_group(GENERAL);
     threadPriorities->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            Middleware::RTIDDS
+            | Middleware::RAWTRANSPORT);
     create("threadPriorities", threadPriorities);
 
     Parameter<std::string> *outputFormat = new Parameter<std::string>("csv");
@@ -361,11 +322,7 @@ void ParameterManager::initialize()
     outputFormat->add_valid_str_value("json");
     outputFormat->add_valid_str_value("csv");
     outputFormat->set_group(GENERAL);
-    outputFormat->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    outputFormat->set_supported_middleware(Middleware::ALL);
     create("outputFormat", outputFormat);
 
     Parameter<bool> *noOutputHeaders = new Parameter<bool>(false);
@@ -377,10 +334,7 @@ void ParameterManager::initialize()
     noOutputHeaders->set_type(T_BOOL);
     noOutputHeaders->set_extra_argument(NO);
     noOutputHeaders->set_group(GENERAL);
-    noOutputHeaders->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+    noOutputHeaders->set_supported_middleware(Middleware::ALL);
     create("noOutputHeaders", noOutputHeaders);
 
   #ifdef RTI_FLATDATA_AVAILABLE
@@ -448,11 +402,7 @@ void ParameterManager::initialize()
     sendQueueSize->set_type(T_NUMERIC_D);
     sendQueueSize->set_extra_argument(YES);
     sendQueueSize->set_group(GENERAL);
-    sendQueueSize->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    sendQueueSize->set_supported_middleware(Middleware::ALL);
     sendQueueSize->set_range(1, INT_MAX);
     create("sendQueueSize", sendQueueSize);
 
@@ -463,11 +413,7 @@ void ParameterManager::initialize()
     receiveQueueSize->set_type(T_NUMERIC_D);
     receiveQueueSize->set_extra_argument(YES);
     receiveQueueSize->set_group(GENERAL);
-    receiveQueueSize->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    receiveQueueSize->set_supported_middleware(Middleware::ALL);
     receiveQueueSize->set_range(1, INT_MAX);
     create("receiveQueueSize", receiveQueueSize);
 
@@ -479,10 +425,7 @@ void ParameterManager::initialize()
     showResourceLimits->set_type(T_BOOL);
     showResourceLimits->set_extra_argument(NO);
     showResourceLimits->set_group(GENERAL);
-    showResourceLimits->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    showResourceLimits->set_supported_middleware(Middleware::ALL);
     create("showResourceLimits", showResourceLimits);
 
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
@@ -495,8 +438,7 @@ void ParameterManager::initialize()
     cacheStats->set_type(T_BOOL);
     cacheStats->set_extra_argument(NO);
     receiveQueueSize->set_group(GENERAL);
-    cacheStats->set_supported_middleware(
-            Middleware::RTIDDSPRO);
+    cacheStats->set_supported_middleware(Middleware::RTIDDSPRO);
     create("cacheStats", cacheStats);
   #endif
 
@@ -867,11 +809,7 @@ void ParameterManager::initialize()
     sub->set_type(T_BOOL);
     sub->set_extra_argument(NO);
     sub->set_group(SUB);
-    sub->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    sub->set_supported_middleware(Middleware::ALL);
     create("sub", sub);
 
     Parameter<int> *sidMultiSubTest = new Parameter<int>(0);
@@ -1667,18 +1605,19 @@ bool ParameterManager::check_incompatible_parameters()
      * execution time (it has to be RTI Connext DDS Pro to support this feature)
      */
     if (get<bool>("rawTransport")) {
-            this->middleware = Middleware::RAWTRANSPORT;
+        this->middleware = Middleware::RAWTRANSPORT;
     }
 
     // Check if the middleware accepts all the parameters we have in the list
     for (it = _parameterList.begin(); it != _parameterList.end(); it++) {
         if (it->second.get()->get_isSet()
-                && !(it->second.get()->get_supported_middleware()
-                        & this->middleware)) {
-        fprintf(stderr,
-                "[Error] Parser: '%s' Not supported by the Middleware implementation.\n",
-                it->second.get()->get_option().c_str());
-        return false;
+            && !(it->second.get()->get_supported_middleware()
+                 & this->middleware)) {
+            fprintf(stderr,
+                    "[Error] Parser: '%s' Not supported by the Middleware "
+                    "implementation.\n",
+                    it->second.get()->get_option().c_str());
+            return false;
         }
     }
 
