@@ -271,11 +271,13 @@ int perftest_cpp::Run(int argc, char *argv[])
 
     switch (mask) {
     case 0:  // unbounded = 0001
-        _MessagingImpl = new CycloneDDSImpl<TestDataLarge_t>();
+        _MessagingImpl = new CycloneDDSImpl<TestDataLarge_t>(
+                TestDataLarge_t_desc);
         break;
 
     case 1:  // keyed = 0001
-        _MessagingImpl = new CycloneDDSImpl<TestDataKeyedLarge_t>();
+        _MessagingImpl = new CycloneDDSImpl<TestDataKeyedLarge_t>(
+                TestDataKeyedLarge_t_desc);
         break;
 
     default:
