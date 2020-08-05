@@ -1308,7 +1308,7 @@ function build_cycloneDDS_cpp()
     rm -rf cycloneDDS_build
 
     # Generation Command
-    gen_command="${JAVA_EXE} -classpath \"${CYCLONEDDSHOME}/lib/cmake/CycloneDDS/idlc/idlc-jar-with-dependencies.jar\" org.eclipse.cyclonedds.compilers.Idlc -d ${classic_cpp_folder}/cycloneDDS -D PERFTEST_CYCLONEDDS ${idl_location}/perftest.idl"
+    gen_command="${JAVA_EXE} -classpath \"${CYCLONEDDSHOME}/lib/cmake/CycloneDDS/idlc/idlc-jar-with-dependencies.jar\" org.eclipse.cyclonedds.compilers.Idlc -d ${classic_cpp_folder}/cycloneDDS -D PERFTEST_CYCLONEDDS -allstructs ${idl_location}/perftest.idl"
 
     echo ""
     echo -e "${INFO_TAG} Generating types for C++ For CycloneDDS."
