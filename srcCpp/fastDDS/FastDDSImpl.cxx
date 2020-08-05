@@ -432,13 +432,13 @@ public:
         }
 
         // Write call
-        if (_PM->get<bool>("keyed")) {
-            if (!isCftWildCardKey) {
-                _writer->write((void *) &_data, _instanceHandles[key]);
-            } else {
-                _writer->write((void *) &_data, _instanceHandles.back());
-            }
-        } else {
+        // if (_PM->get<bool>("keyed")) {
+        //     if (!isCftWildCardKey) {
+        //         _writer->write((void *) &_data, _instanceHandles[key]);
+        //     } else {
+        //         _writer->write((void *) &_data, _instanceHandles.back());
+        //     }
+        // } else {
           #ifdef DEBUG_PING_PONG
             std::cerr << " -- -- before sending it in the write\n";
           #endif
@@ -450,7 +450,7 @@ public:
           #ifdef DEBUG_PING_PONG
             std::cerr << ">> wrote sample " << _data.seq_num() << std::endl;
           #endif
-        }
+        // }
 
         return true;
     }
