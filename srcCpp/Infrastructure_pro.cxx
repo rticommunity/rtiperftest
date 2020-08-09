@@ -516,7 +516,7 @@ bool configureUdpv4WanTransport(
 
         if (str == NULL) {
             fprintf(stderr,
-                    "%s Wan Public Address format invalid. Use <public_address>:<public_recv_port>:<public_send_port>\n",
+                    "%s Wan Public Address format invalid. Use <public_address>:<public_send_port>:<public_recv_port>\n",
                     classLoggingString.c_str());
             return false;
         }
@@ -525,7 +525,7 @@ bool configureUdpv4WanTransport(
 
         if (str == NULL) {
             fprintf(stderr,
-                    "%s Wan Public Address format invalid. Use <public_address>:<public_recv_port>:<public_send_port>\n",
+                    "%s Wan Public Address format invalid. Use <public_address>:<public_send_port>:<public_recv_port>\n",
                     classLoggingString.c_str());
             return false;
         }

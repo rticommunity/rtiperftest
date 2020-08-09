@@ -923,10 +923,14 @@ void ParameterManager::initialize()
     transportPublicAddress->set_command_line_argument(
             "-transportPublicAddress", "<ip>");
     transportPublicAddress->set_description(
-            "Public IP address and port (WAN address\n"
+            "For TCP: Public IP address and port (WAN address\n"
             "and port) (separated with ‘:’ ) related\n"
-            "to the transport instantiation. This is\n"
-            "required when using server mode.\nDefault: Not Set");
+            "to the TCP transport instantiation. This is\n"
+            "required when using server mode.\n"
+            "For UDPv4_WAN: Public address of the UDPv4_WAN\n"
+            "transport instantiation. Format:\n"
+            "<public_ip>:<public_send_port>:<public_receive_port>.\n"
+            "Default: Not Set\n");
     transportPublicAddress->set_type(T_STR);
     transportPublicAddress->set_extra_argument(YES);
     transportPublicAddress->set_group(TRANSPORT);
