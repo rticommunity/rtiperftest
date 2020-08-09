@@ -45,6 +45,10 @@ PerftestTransport::PerftestTransport()
             TRANSPORT_WANv4,
             "WAN",
             "dds.transport.WAN.wan1");
+    transportConfigMap["UDPv4_WAN"] = TransportConfig(
+            TRANSPORT_UDPv4_WAN,
+            "UDPv4_WAN",
+            "dds.transport.UDPv4.builtin");
     transportConfigMap["SHMEM"] = TransportConfig(
             TRANSPORT_SHMEM,
             "SHMEM",

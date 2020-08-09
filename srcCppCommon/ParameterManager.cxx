@@ -820,7 +820,7 @@ void ParameterManager::initialize()
     transport->set_description(
             "Set transport to be used. The rest of\n"
             "the transports will be disabled."
-            "\nValues:\nUDPv4\nUDPv6\nSHMEM\nTCP\nTLS\nDTLS\nWAN\nUse XML\n"
+            "\nValues:\nUDPv4\nUDPv6\nSHMEM\nTCP\nTLS\nDTLS\nWAN\nUDPv4_WAN\nUse XML\n"
             "Default: Use XML (UDPv4|SHMEM)");
     transport->set_type(T_STR);
     transport->set_extra_argument(YES);
@@ -836,6 +836,7 @@ void ParameterManager::initialize()
     transport->add_valid_str_value("TLS");
     transport->add_valid_str_value("DTLS");
     transport->add_valid_str_value("WAN");
+    transport->add_valid_str_value("UDPv4_WAN");
     create("transport", transport);
 
     Parameter<bool> *multicast = new Parameter<bool>(false);
