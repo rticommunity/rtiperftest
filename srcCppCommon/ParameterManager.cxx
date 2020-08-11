@@ -79,7 +79,7 @@ void ParameterManager::initialize()
     create("dynamicData", dynamicData);
 
     Parameter<int> *durability =
-            new Parameter<int>(DDS_VOLATILE_DURABILITY_QOS);
+            new Parameter<int>(0);
     durability->set_command_line_argument("-durability", "<0|1|2|3>");
     durability->set_description(
             "Set durability QOS: 0 - volatile,\n"
@@ -256,8 +256,7 @@ void ParameterManager::initialize()
     waitsetDelayUsec->set_group(GENERAL);
     waitsetDelayUsec->set_supported_middleware(Middleware::RTIDDSPRO);
     waitsetDelayUsec->set_range(0,
-                DDS_DURATION_INFINITE_SEC * 10000000 +
-                DDS_DURATION_INFINITE_NSEC / 1000);
+                10000000);
     create("waitsetDelayUsec", waitsetDelayUsec);
 
     Parameter<long> *waitsetEventCount = new Parameter<long>(5);

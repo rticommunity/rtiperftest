@@ -353,12 +353,10 @@ public:
     /* time out in milliseconds */
     bool waitForPingResponse(int timeout)
     {
-        // TODO RETURN THIS TO ORIGINAL!!!! FAILURE IN MICRO DUE TO CLOCK NOT
-        // INITIALIZED.
         if(_pongSemaphore != NULL) {
             if (!PerftestSemaphore_take(
                     _pongSemaphore,
-                    PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
+                    timeout)) {
                 fprintf(stderr,"Unexpected error taking semaphore\n");
                 return false;
             }

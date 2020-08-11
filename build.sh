@@ -1238,7 +1238,7 @@ function build_fastDDS_cpp()
     echo -e "${INFO_TAG} Copy CMakeListst.txt file from: $fastDDS_cmake_location"
     cp $fastDDS_cmake_location ${script_location}/
 
-    cmake_generate_command="${CMAKE_EXE} -DCMAKE_BUILD_TYPE=${RELEASE_DEBUG} -G \"Unix Makefiles\" -B./fastDDS_build -H. -DPLATFORM_LIBS=\"dl;m;pthread;${additional_included_libraries}\""
+    cmake_generate_command="${CMAKE_EXE} -DCMAKE_BUILD_TYPE=${RELEASE_DEBUG} -G \"Unix Makefiles\" -B./fastDDS_build -H."
 
     echo ""
     echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
