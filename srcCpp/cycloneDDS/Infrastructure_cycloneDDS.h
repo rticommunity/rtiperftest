@@ -7,18 +7,19 @@
 #define INFRASTRUCTURE_CYCLONEDDS_H_
 
 /*
- * For the time being, the implementation of CycloneDDS will rely on the 
+ * For the time being, the implementation of CycloneDDS will rely on the
  * infrastructure for Micro, still, we will leave this file in place so we can
  * replace it at some point.
  */
 
 #ifdef PERFTEST_CYCLONEDDS
 
+#include "dds/version.h"
+#include "dds/ddsrt/environ.h"
+
 //TODO: Remove dependencies with Micro
 #include "osapi/osapi_semaphore.h"
 #include "osapi/osapi_thread.h"
-#include "osapi/osapi_time.h"
-#include "rti_me_cpp.hxx"
 #include "PerftestTransport.h"
 
 #ifdef RTI_WIN32
@@ -76,10 +77,8 @@ class PerftestClock {
 
 };
 
+//TODO: Change all uses to the specific DDS Implementation.
 const std::string GetDDSVersionString();
-
-void PerftestConfigureVerbosity(int verbosityLevel);
-
 
 /********************************************************************/
 /* THREADS */
@@ -102,46 +101,6 @@ struct PerftestThread* PerftestThread_new(
 
 void PerftestThread_delete(struct PerftestThread* thread);
 
-/********************************************************************/
-/* Transport Related functions */
-
-// bool PerftestConfigureTransport(
-//         PerftestTransport &transport,
-//         eprosima::fastdds::dds::DomainParticipantQos &qos,
-//         ParameterManager *_PM);
-
-/********************************************************************/
-/* The following structures/classes are copied from RTI Connext DDS */
-
-typedef struct RTINtpTime
-{
-    /*e Seconds.**/
-    RTI_INT32  sec;
-    /*e fraction of a second in 1/2^32 form.*/
-    RTI_UINT32 frac;
-} RTINtpTime;
-
-#define RTI_NTP_TIME_ZERO {0,0}
-
-#define RTINtpTime_unpackToMicrosec(s, usec, time)     \
-{                                                      \
-    register RTI_UINT32 RTINtpTime_temp = (time).frac; \
-    s    = (time).sec;                                 \
-    usec = ((time).frac-                               \
-        (RTINtpTime_temp>>5)-                          \
-        (RTINtpTime_temp>>7)-                          \
-        (RTINtpTime_temp>>8)-                          \
-            (RTINtpTime_temp>>9)-                      \
-        (RTINtpTime_temp>>10)-                         \
-        (RTINtpTime_temp>>12)-                         \
-            (RTINtpTime_temp>>13)-                     \
-        (RTINtpTime_temp>>14) + (1<<11)) >> 12;        \
-    if( ((usec) >= 1000000) && ((s)!=0x7FFFFFFF) ) {   \
-        (usec) -= 1000000;                             \
-        (s)++;                                         \
-    }                                                  \
-}
-
 #define NDDS_Utility_spin(spinCount)                    \
 {                                                       \
     RTI_UINT64 spin;                                    \
@@ -157,66 +116,73 @@ typedef struct RTINtpTime
     }                                                   \
 }
 
+struct DDS_Duration_t
+{
+    long sec;
+    unsigned long nanosec;
+};
+
+
 class NDDSUtility
 {
   public:
-    /*e \dref_Utility_sleep */
+//     /*e \dref_Utility_sleep */
     static void sleep(const struct DDS_Duration_t& durationIn){
-        /* following is a copy of OSAPI_Thread_sleep() in POSIX.
-         * for other platforms we need to find out how to sleep
-         * with a nanosecond precession
-         */
-    #if defined(RTI_LINUX) || defined(RTI_DARWIN)
-        RTI_INT32 is;
-        struct timespec remain,next;
-        int rval;
+//         /* following is a copy of OSAPI_Thread_sleep() in POSIX.
+//          * for other platforms we need to find out how to sleep
+//          * with a nanosecond precession
+//          */
+//     #if defined(RTI_LINUX) || defined(RTI_DARWIN)
+//         RTI_INT32 is;
+//         struct timespec remain,next;
+//         int rval;
 
-        next.tv_sec = durationIn.sec;
-        next.tv_nsec = durationIn.nanosec;
+//         next.tv_sec = durationIn.sec;
+//         next.tv_nsec = durationIn.nanosec;
 
-        #if defined(__APPLE__)
-        do
-        {
-            rval = nanosleep(&next,&remain);
-            if ((rval == -1) && (errno == EINTR))
-            {
-                next = remain;
-            }
-        } while ((rval == -1) && (errno == EINTR));
-        #elif !defined(USE_TIMER_THREAD_SLEEP) && !defined(RTI_UCLINUX)
-        do
-        {
-            rval = clock_nanosleep(CLOCK_REALTIME,0,&next,&remain);
-            if (rval == EINTR)
-            {
-                next = remain;
-            }
-        } while (rval == EINTR);
-        #else
-        do
-        {
-            rval = nanosleep(&next,&remain);
-            if ((rval == -1) && (errno == EINTR))
-            {
-                next = remain;
-            }
-        } while ((rval == -1) && (errno == EINTR));
-        #endif
-    #else
-        /* for other platforms sleep only if time to sleep is greater than 0 ms */
-        RTI_UINT32 ms = durationIn.sec * 1000 + durationIn.nanosec / 1000000;
-        if (ms > 0)
-            OSAPI_Thread_sleep(ms);
-    #endif
+//         #if defined(__APPLE__)
+//         do
+//         {
+//             rval = nanosleep(&next,&remain);
+//             if ((rval == -1) && (errno == EINTR))
+//             {
+//                 next = remain;
+//             }
+//         } while ((rval == -1) && (errno == EINTR));
+//         #elif !defined(USE_TIMER_THREAD_SLEEP) && !defined(RTI_UCLINUX)
+//         do
+//         {
+//             rval = clock_nanosleep(CLOCK_REALTIME,0,&next,&remain);
+//             if (rval == EINTR)
+//             {
+//                 next = remain;
+//             }
+//         } while (rval == EINTR);
+//         #else
+//         do
+//         {
+//             rval = nanosleep(&next,&remain);
+//             if ((rval == -1) && (errno == EINTR))
+//             {
+//                 next = remain;
+//             }
+//         } while ((rval == -1) && (errno == EINTR));
+//         #endif
+//     #else
+//         /* for other platforms sleep only if time to sleep is greater than 0 ms */
+//         RTI_UINT32 ms = durationIn.sec * 1000 + durationIn.nanosec / 1000000;
+//         if (ms > 0)
+//             OSAPI_Thread_sleep(ms);
+//     #endif
     };
 
     /*e \dref_Utility_spin */
-    static void spin(DDS_UnsignedLongLong spinCount){
+    static void spin(unsigned long long spinCount){
         NDDS_Utility_spin(spinCount);
     };
 
 
-    static DDS_UnsignedLongLong
+    static unsigned long long
     get_spin_per_microsecond(unsigned int precision = 100)
     {
         /* Same default values used by DDS */

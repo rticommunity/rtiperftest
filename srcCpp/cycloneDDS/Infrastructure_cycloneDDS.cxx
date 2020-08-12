@@ -46,29 +46,7 @@ void PerftestClock::sleep(const struct DDS_Duration_t& sleep_period)
 
 const std::string GetDDSVersionString()
 {
-    return "Eprosima FastDDS";
-}
-
-void PerftestConfigureVerbosity(int verbosityLevel)
-{
-
-    // OSAPI_LogVerbosity_T verbosity = OSAPI_LOG_VERBOSITY_ERROR;
-    // switch (verbosityLevel) {
-    //     case 0: fprintf(stderr, "[Error]: Cannot set verbosity to SILENT\n");
-    //             break;
-    //     case 1: Log::SetVerbosity(Log::Error);
-    //             fprintf(stderr, "Setting verbosity to ERROR\n");
-    //             break;
-    //     case 2: Log::SetVerbosity(Log::Warning);
-    //             fprintf(stderr, "Setting verbosity to WARNING\n");
-    //             break;
-    //     case 3: Log::SetVerbosity(Log::Info);
-    //             fprintf(stderr, "Setting verbosity to INFO\n");
-    //             break;
-    //     default: fprintf(stderr,
-    //                 "[Error]: Invalid value for the verbosity parameter. Using default\n");
-    //             break;
-    // }
+    return std::string(DDS_PROJECT_NAME) + " " + std::string(DDS_VERSION);
 }
 
 /********************************************************************/

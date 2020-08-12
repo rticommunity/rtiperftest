@@ -6,156 +6,128 @@
 #include "perftest_cpp.h"
 #include "CycloneDDSImpl.h"
 
-// // Listeners used by the DDS Entities
+// Listeners used by the DDS Entities
 
-// class ParticipantListener : public DomainParticipantListener {
-// public:
-//     ParticipantListener() : DomainParticipantListener()
-//     {
-//     }
+static void participant_on_inconsistent_topic(
+        dds_entity_t topic,
+        const dds_inconsistent_topic_status_t status,
+        void *arg)
+{
+    (void) topic;
+    (void) status;
+    (void) arg;
+    fprintf(stderr, "Found inconsistent topic.\n");
+    fflush(stderr);
+}
 
-//     virtual ~ParticipantListener()
-//     {
-//     }
+static void participant_on_offered_incompatible_qos(
+        dds_entity_t writer,
+        const dds_offered_incompatible_qos_status_t status,
+        void *arg)
+{
+    (void) writer;
+    (void) status;
+    (void) arg;
+    fprintf(stderr, "Found incompatible reader for writer.\n");
+    fflush(stderr);
+}
 
-//     virtual void on_inconsistent_topic(Topic *topic, InconsistentTopicStatus status)
-//     {
-//         (void) status;
-//         fprintf(stderr,
-//                 "Found inconsistent topic. Expecting %s of type %s.\n",
-//                 topic->get_name().c_str(),
-//                 topic->get_type_name().c_str());
-//         fflush(stderr);
-//     }
+static void participant_on_requested_incompatible_qos(
+        dds_entity_t reader,
+        const dds_requested_incompatible_qos_status_t status,
+        void *arg)
+{
+    (void) reader;
+    (void) status;
+    (void) arg;
+    fprintf(stderr, "Found incompatible writer for reader.\n");
+    fflush(stderr);
+}
 
-//     virtual void on_offered_incompatible_qos(
-//             DataWriter *writer,
-//             const OfferedIncompatibleQosStatus &status)
-//     {
-//         fprintf(stderr,
-//                "Found incompatible reader for writer %s QoS is %d.\n",
-//                writer->get_topic()->get_name().c_str(),
-//                status.last_policy_id);
-//         fflush(stderr);
-//     }
+// Max samples per take
+#define MAX_SAMPLES 1000
 
-//     virtual void on_requested_incompatible_qos(
-//             DataReader *reader,
-//             const RequestedIncompatibleQosStatus &status)
-//     {
-//         fprintf(stderr,
-//                "Found incompatible writer for reader %s QoS is %d.\n",
-//                reader->get_topicdescription()->get_name().c_str(),
-//                status.last_policy_id);
-//         fflush(stderr);
-//     }
-// };
+class ReaderListener {
+public:
+    void *samples[MAX_SAMPLES];
+    dds_sample_info_t sampleInfo[MAX_SAMPLES];
+    TestMessage message;
+    IMessagingCB *callback;
 
-// class WriterListener : public DataWriterListener {
-// public:
-//     unsigned long _matchedSubscribers;
-
-//     WriterListener() : DataWriterListener(), _matchedSubscribers(0)
-//     {
-//     }
-
-//     virtual ~WriterListener()
-//     {
-//     }
-
-//     virtual void on_publication_matched(
-//             DataWriter *writer,
-//             const PublicationMatchedStatus &info)
-//     {
-//         _matchedSubscribers = info.current_count;
-//     }
-// };
-
-// template <typename T>
-// class ReaderListener : public DataReaderListener {
-// public:
-//     typename T::type _sample;
-//     SampleInfo _sampleInfo;
-//     TestMessage _message;
-//     IMessagingCB *_callback;
-//     unsigned int _matchedPublishers;
-
-//     ReaderListener(IMessagingCB *callback)
-//             : _message(), _callback(callback), _matchedPublishers(0)
-//     {
-//     }
-
-//     virtual void on_data_available(DataReader *reader)
-//     {
-//         // printf("On data available called\n");
-//         // if ((reader->get_status_mask() & StatusMask::data_available()) == 0) {
-//         //     std::cerr << "Status mask does NOT contain data_available. Why is this called?" << std::endl;
-//         //     std::cerr << "Reader mask is " << reader->get_status_mask() << std::endl;
-//         //     std::cerr << "On_data_available mask is " << StatusMask::data_available() << std::endl;
-//         //     return;
-//         // } else {
-//         //     std::cerr << "Status mask does contain data_available" << std::endl;
-//         // }
-
-//         /*
-//          * This is a temporal fix, uncomment code above to show a weird behavior
-//          * when using a listener that does NOT have the on_data_available call.
-//          */
-//         if (_callback == nullptr) {
-//             return;
-//         }
-        
-//         /*
-//          * FastDDS does not have "take()". This may impact in the overall
-//          * performance when the receive queue is full of unread samples.
-//          */
-//         ReturnCode_t retCode =
-//                 reader->take_next_sample((void *) &_sample, &_sampleInfo);
-
-//         if (retCode == ReturnCode_t::RETCODE_NO_DATA) {
-//             fprintf(stderr, "called back no data\n");
-//             return;
-//         }
-
-//         else if (retCode != ReturnCode_t::RETCODE_OK) {
-//             fprintf(stderr, "Error during taking data\n");
-//             return;
-//         }
-
-//         if (_sampleInfo.instance_state == eprosima::fastdds::dds::ALIVE) {
-//             _message.entity_id = _sample.entity_id();
-//             _message.seq_num = _sample.seq_num();
-//             _message.timestamp_sec = _sample.timestamp_sec();
-//             _message.timestamp_usec = _sample.timestamp_usec();
-//             _message.latency_ping = _sample.latency_ping();
-//             _message.size = (int) _sample.bin_data().size();
-//             //_message.data = _sample.bin_data();
-//           #ifdef DEBUG_PING_PONG
-//             std::cout << "<< got sample " << _sample.seq_num() << std::endl;
-//           #endif
-
-//             _callback->ProcessMessage(_message);
-//         }
-//     }
-
-//     virtual void on_subscription_matched(
-//             DataReader *reader,
-//             const SubscriptionMatchedStatus &info)
-//     {
-//         _matchedPublishers = info.current_count;
-//     }
-// };
+    ReaderListener(IMessagingCB *callback) : message(), callback(callback)
+    {
+    }
+};
 
 template <typename T>
-CycloneDDSImpl<T>::CycloneDDSImpl()
+static void reader_on_data_available(dds_entity_t reader, void *arg)
+{
+
+    ReaderListener *listenerInfo = (ReaderListener *) arg;
+
+    int samplecount = dds_take(
+            reader,
+            listenerInfo->samples,
+            listenerInfo->sampleInfo,
+            MAX_SAMPLES,
+            MAX_SAMPLES);
+    if (samplecount < 0) {
+        fprintf(stderr,
+                "[Error]: reader_on_data_available error %s\n",
+                dds_strretcode(-samplecount));
+        return;
+    }
+
+    for (int i = 0; i < samplecount; i++) {
+
+        if (listenerInfo->sampleInfo[i].valid_data) {
+            T *valid_sample = (T *)(&listenerInfo->samples[i]);
+
+            listenerInfo->message.entity_id = valid_sample->entity_id;
+            listenerInfo->message.seq_num = valid_sample->seq_num;
+            listenerInfo->message.timestamp_sec = valid_sample->timestamp_sec;
+            listenerInfo->message.timestamp_usec = valid_sample->timestamp_usec;
+            listenerInfo->message.latency_ping = valid_sample->latency_ping;
+            listenerInfo->message.size = valid_sample->bin_data._length;
+            listenerInfo->message.data = (char *) valid_sample->bin_data._buffer;
+
+            listenerInfo->callback->ProcessMessage(listenerInfo->message);
+        }
+
+    }
+}
+
+// Auxiliary functions for sequences (CycloneDDS seems that is lacking these)
+
+void octet_seq_ensure_length(dds_sequence &sequence, unsigned int length)
+{
+    if (sequence._maximum < length) {
+        free(sequence._buffer);
+        sequence._buffer = (uint8_t *) dds_alloc(length);
+        sequence._maximum = length;
+        sequence._length = length;
+    } else {
+        sequence._length = length;
+    }
+}
+
+void octet_seq_ensure_free(dds_sequence &sequence)
+{
+    if (sequence._length < 0) {
+        free(sequence._buffer);
+        sequence._length = 0;
+    }
+}
+
+/*********************************************************
+ * Constructor
+ */
+template <typename T>
+CycloneDDSImpl<T>::CycloneDDSImpl(dds_topic_descriptor_t topicDescriptor)
     : _parent(nullptr),
       _PM(nullptr),
-    //   _pongSemaphore(nullptr)
-    //   _factory(nullptr),
-    //   _participant(nullptr),
-    //   _publisher(nullptr),
-    //   _subscriber(nullptr),
-    //   _type(new T())
+      _pongSemaphore(nullptr),
+      _topicDescriptor(topicDescriptor)
     {
         _qoSProfileNameMap[LATENCY_TOPIC_NAME] = std::string("LatencyQos");
         _qoSProfileNameMap[ANNOUNCEMENT_TOPIC_NAME] = std::string("AnnouncementQos");
@@ -188,26 +160,72 @@ void CycloneDDSImpl<T>::Shutdown()
 }
 
 /*********************************************************
+ * get_middleware_version_string
+ */
+template <typename T>
+const std::string CycloneDDSImpl<T>::get_middleware_version_string()
+{
+    return std::string(DDS_PROJECT_NAME) + " " + std::string(DDS_VERSION);
+}
 
+/*********************************************************
+ * configure_middleware_verbosity
+ */
+template <typename T>
+void CycloneDDSImpl<T>::configure_middleware_verbosity(int verbosityLevel)
+{
+    std::string level = "severe";
+    switch (verbosityLevel) {
+    case 0:
+        fprintf(stderr, "Setting verbosity to NONE\n");
+        level = "none";
+        break;
+    case 1:
+        fprintf(stderr, "Setting verbosity to SEVERE\n");
+        level = "severe";
+        break;
+    case 2:
+        fprintf(stderr, "Setting verbosity to FINE\n");
+        level = "fine";
+        break;
+    case 3:
+        fprintf(stderr, "Setting verbosity to FINEST\n");
+        level = "finest";
+        break;
+    default:
+        fprintf(stderr,
+                "[Error]: Invalid value for the verbosity parameter. Using "
+                "default\n");
+        break;
+    }
+
+    ddsrt_setenv(
+            "CYCLONEDDS_URI",
+            std::string(
+                    "<Tracing><Verbosity>" + level
+                    + "</Verbosity><OutputFile>stdout</OutputFile></Tracing>")
+                    .c_str());
+}
+
+/*********************************************************
  * Validate and manage the parameters
  */
 template <typename T>
 bool CycloneDDSImpl<T>::validate_input()
 {
+    // Manage transport parameter
+    if (!_transport.validate_input()) {
+        fprintf(stderr, "Failure validating the transport options.\n");
+        return false;
+    };
 
-    // // Manage transport parameter
-    // if (!_transport.validate_input()) {
-    //     fprintf(stderr, "Failure validating the transport options.\n");
-    //     return false;
-    // };
-
-    // /*
-    //  * Manage parameter -verbosity.
-    //  * Setting verbosity if the parameter is provided
-    //  */
-    // if (_PM->is_set("verbosity")) {
-    //     PerftestConfigureVerbosity(_PM->get<int>("verbosity"));
-    // }
+    /*
+     * Manage parameter -verbosity.
+     * Setting verbosity if the parameter is provided
+     */
+    if (_PM->is_set("verbosity")) {
+        configure_middleware_verbosity(_PM->get<int>("verbosity"));
+    }
 
     return true;
 }
@@ -221,90 +239,74 @@ std::string CycloneDDSImpl<T>::PrintConfiguration()
 
     std::ostringstream stringStream;
 
-    // // Domain ID
-    // stringStream << "\tDomain: " << _PM->get<int>("domain") << "\n";
+    // Domain ID
+    stringStream << "\tDomain: " << _PM->get<int>("domain") << "\n";
 
-    // // XML File
-    // stringStream << "\tXML File: ";
-    // if (_PM->get<bool>("noXmlQos")) {
-    //     stringStream << "Disabled\n";
-    // } else {
-    //     stringStream << _PM->get<std::string>("qosFile") << "\n";
-    // }
+    // XML File
+    stringStream << "\tXML File: ";
+    if (_PM->get<bool>("noXmlQos")) {
+        stringStream << "Disabled\n";
+    } else {
+        stringStream << _PM->get<std::string>("qosFile") << "\n";
+    }
 
-    // stringStream << "\n" << _transport.printTransportConfigurationSummary();
+    stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
-    // const std::vector<std::string> peerList =
-    //         _PM->get_vector<std::string>("peer");
-    // if (!peerList.empty()) {
-    //     stringStream << "\tInitial peers: ";
-    //     for (unsigned int i = 0; i < peerList.size(); ++i) {
-    //         stringStream << peerList[i];
-    //         if (i == peerList.size() - 1) {
-    //             stringStream << "\n";
-    //         } else {
-    //             stringStream << ", ";
-    //         }
-    //     }
-    // }
+    const std::vector<std::string> peerList =
+            _PM->get_vector<std::string>("peer");
+    if (!peerList.empty()) {
+        stringStream << "\tInitial peers: ";
+        for (unsigned int i = 0; i < peerList.size(); ++i) {
+            stringStream << peerList[i];
+            if (i == peerList.size() - 1) {
+                stringStream << "\n";
+            } else {
+                stringStream << ", ";
+            }
+        }
+    }
 
     return stringStream.str();
 }
 
 /*********************************************************
- * FastDDSPublisher
+ * CycloneDDSPublisher
  */
-
 template<typename T>
-class FastDDSPublisher : public IMessagingWriter
+class CycloneDDSPublisher : public IMessagingWriter
 {
 protected:
     ParameterManager *_PM;
-    // DataWriter *_writer;
-    // int failures;
-    // PerftestSemaphore *_pongSemaphore;
-    // unsigned long _numInstances;
-    // unsigned long _instanceCounter;
-    // long _instancesToBeWritten;
-    // typename T::type _data;
-    // std::vector<InstanceHandle_t> _instanceHandles;
-    // bool _isReliable;
+    dds_entity_t _writer;
+    PerftestSemaphore *_pongSemaphore;
+    unsigned long _numInstances;
+    unsigned long _instanceCounter;
+    long _instancesToBeWritten;
+    T _data;
+    TestDataKeyedLarge_t _data_2;
+    std::vector<dds_instance_handle_t> _instanceHandles;
+    bool _isReliable;
+    dds_return_t retCode;
 
-// public:
-//     FastDDSPublisher(
-//             DataWriter *writer,
-//             unsigned long num_instances,
-//             PerftestSemaphore *pongSemaphore,
-//             int instancesToBeWritten,
-//             ParameterManager *PM)
-//             : _PM(PM),
-//               _writer(writer),
-//               failures(0),
-//               _pongSemaphore(pongSemaphore),
-//               _numInstances(num_instances),
-//               _instanceCounter(0),
-//               _instancesToBeWritten(instancesToBeWritten)
-//     {
-//         _isReliable = _writer->get_qos().reliability().kind
-//                         == ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
+public:
+    CycloneDDSPublisher(
+            dds_entity_t writer,
+            unsigned long num_instances,
+            PerftestSemaphore *pongSemaphore,
+            int instancesToBeWritten,
+            ParameterManager *PM)
+            : _PM(PM),
+              _writer(writer),
+              _pongSemaphore(pongSemaphore),
+              _numInstances(num_instances),
+              _instanceCounter(0),
+              _instancesToBeWritten(instancesToBeWritten),
+              _isReliable(!_PM->is_set("bestEffort"))
+    {
+        memset(&_data, 0, sizeof(_data));
+    }
 
-//         if (_PM->get<bool>("keyed")) {
-//             for (unsigned long i = 0; i < _numInstances; ++i) {
-//                 for (int c = 0; c < KEY_SIZE; c++) {
-//                     _data.key()[c] = (unsigned char) (i >> c * 8);
-//                 }
-//                 _instanceHandles.push_back(_writer->register_instance(&_data));
-//             }
-
-//             // Register the key of MAX_CFT_VALUE
-//             for (int c = 0; c < KEY_SIZE; c++) {
-//                 _data.key()[c] = (unsigned char)(MAX_CFT_VALUE >> c * 8);
-//             }
-//             _instanceHandles.push_back(_writer->register_instance(&_data));
-//         }
-//     }
-
-    ~FastDDSPublisher()
+    ~CycloneDDSPublisher()
     {
         Shutdown();
     }
@@ -322,28 +324,25 @@ protected:
     }
 
     void WaitForReaders(int numSubscribers)
-    // {
-    //     WriterListener *listener = (WriterListener *) _writer->get_listener();
-    //     if (listener == nullptr) {
-    //         fprintf(stderr,"Could not get listener from writer.\n");
-    //         return;
-    //     }
-    //     while (listener->_matchedSubscribers < numSubscribers) {
-    //         PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
-    //     }
+    {
+        dds_publication_matched_status_t status;
+        dds_get_publication_matched_status(_writer, &status);
+        while (status.total_count < numSubscribers) {
+            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
+        }
     }
 
     bool waitForPingResponse()
     {
-        // if(_pongSemaphore != NULL) {
-        //     if (!PerftestSemaphore_take(
-        //             _pongSemaphore,
-        //             PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
-        //         fprintf(stderr,"Unexpected error taking semaphore\n");
-        //         return false;
-        //     }
-        // }
-        // return true;
+        if(_pongSemaphore != NULL) {
+            if (!PerftestSemaphore_take(
+                    _pongSemaphore,
+                    PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
+                fprintf(stderr,"Unexpected error taking semaphore\n");
+                return false;
+            }
+        }
+        return true;
     }
 
     /* time out in milliseconds */
@@ -351,26 +350,26 @@ protected:
     {
         // TODO RETURN THIS TO ORIGINAL!!!! FAILURE IN MICRO DUE TO CLOCK NOT
         // INITIALIZED.
-        // if(_pongSemaphore != NULL) {
-        //     if (!PerftestSemaphore_take(
-        //             _pongSemaphore,
-        //             PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
-        //         fprintf(stderr,"Unexpected error taking semaphore\n");
-        //         return false;
-        //     }
-        // }
-        // return true;
+        if(_pongSemaphore != NULL) {
+            if (!PerftestSemaphore_take(
+                    _pongSemaphore,
+                    PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
+                fprintf(stderr,"Unexpected error taking semaphore\n");
+                return false;
+            }
+        }
+        return true;
     }
 
     bool notifyPingResponse()
     {
-        // if(_pongSemaphore != NULL) {
-        //     if (!PerftestSemaphore_give(_pongSemaphore)) {
-        //         fprintf(stderr,"Unexpected error giving semaphore\n");
-        //         return false;
-        //     }
-        // }
-        // return true;
+        if(_pongSemaphore != NULL) {
+            if (!PerftestSemaphore_give(_pongSemaphore)) {
+                fprintf(stderr,"Unexpected error giving semaphore\n");
+                return false;
+            }
+        }
+        return true;
     }
 
     unsigned int getPulledSampleCount()
@@ -387,122 +386,156 @@ protected:
 
     unsigned int getSampleCountPeak()
     {
-        // Not supported in Micro
+        // Not supported in Cyclone
         return 0;
     }
 
     void waitForAck(int sec, unsigned int nsec) {
-        // if (_isReliable) {
-        //     _writer->wait_for_acknowledgments(Duration_t(sec, nsec));
-        // } else {
-        //     PerftestClock::milliSleep(nsec / 1000000);
-        // }
+        if (_isReliable) {
+            retCode = dds_wait_for_acks(_writer, dds_duration_t (sec * DDS_NSECS_IN_SEC + nsec));
+            if (retCode != DDS_RETCODE_OK) {
+                fprintf(stderr,"WaitForAck issue (retCode %d)\n", retCode);
+            }
+        } else {
+            PerftestClock::milliSleep(nsec / DDS_NSECS_IN_MSEC);
+        }
     }
 
     bool Send(const TestMessage &message, bool isCftWildCardKey)
     {
-        // _data.entity_id(message.entity_id);
-        // _data.seq_num(message.seq_num);
-        // _data.timestamp_sec(message.timestamp_sec);
-        // _data.timestamp_usec(message.timestamp_usec);
-        // _data.latency_ping(message.latency_ping);
-        // _data.bin_data().resize(message.size);
-        // // _data.bin_data(message.data);
+        _data.entity_id = message.entity_id;
+        _data.seq_num = message.seq_num;
+        _data.timestamp_sec =message.timestamp_sec;
+        _data.timestamp_usec = message.timestamp_usec;
+        _data.latency_ping = message.latency_ping;
+        octet_seq_ensure_length(_data.bin_data, message.size);
 
-        // // Calculate the key
-        // long key = 0;
-        // if (!isCftWildCardKey) {
-        //     if (_numInstances > 1) {
-        //         if (_instancesToBeWritten == -1) {
-        //             key = _instanceCounter++ % _numInstances;
-        //         } else {  // send sample to a specific subscriber
-        //             key = _instancesToBeWritten;
-        //         }
-        //     }
-        // } else {
-        //     key = MAX_CFT_VALUE;
-        // }
+        // Calculate the key
+        long key = 0;
+        if (!isCftWildCardKey) {
+            if (_numInstances > 1) {
+                if (_instancesToBeWritten == -1) {
+                    key = _instanceCounter++ % _numInstances;
+                } else {  // send sample to a specific subscriber
+                    key = _instancesToBeWritten;
+                }
+            }
+        } else {
+            key = MAX_CFT_VALUE;
+        }
 
-        // for (int c = 0; c < KEY_SIZE; c++) {
-        //     _data.key()[c] = (unsigned char) (key >> c * 8);
-        // }
-
-        // // Write call
-        // if (_PM->get<bool>("keyed")) {
-        //     if (!isCftWildCardKey) {
-        //         _writer->write((void *) &_data, _instanceHandles[key]);
-        //     } else {
-        //         _writer->write((void *) &_data, _instanceHandles.back());
-        //     }
-        // } else {
-        //   #ifdef DEBUG_PING_PONG
-        //     std::cerr << " -- -- before sending it in the write\n";
-        //   #endif
-        //     while(!_writer->write((void *) &_data)) {
-        //       #ifdef DEBUG_PING_PONG
-        //         std::cerr << "-- -- -- Still trying to send\n";
-        //       #endif
-        //     }
-        //   #ifdef DEBUG_PING_PONG
-        //     std::cerr << ">> wrote sample " << _data.seq_num() << std::endl;
-        //   #endif
-        // }
+        for (int c = 0; c < KEY_SIZE; c++) {
+            _data.key[c] = (unsigned char) (key >> c * 8);
+        }
+      #ifdef DEBUG_PING_PONG
+        std::cerr << " -- -- before sending it in the write\n";
+      #endif
+        // I could not find a write() call that receives an instance handle.
+        retCode = dds_write(_writer, &_data);
+        if (retCode != DDS_RETCODE_OK) {
+            fprintf(stderr, "Could not write: %s\n", dds_strretcode(-retCode));
+            return false;
+        }
+      #ifdef DEBUG_PING_PONG
+        else std::cerr << ">> wrote sample " << _data.seq_num() << std::endl;
+      #endif
 
         return true;
     }
 };
 
 /*********************************************************
- * FastDDSSubscriber
+ * CycloneDDSSubscriber
  */
 
 template <typename T>
-class FastDDSSubscriber : public IMessagingReader
+class CycloneDDSSubscriber : public IMessagingReader
 {
 public:
-    // DataReader *_reader;
+    dds_entity_t _reader;
     ParameterManager *_PM;
-    // TestMessage _message;
-    // bool _endTest;
-    // bool _useReceiveThread;
-    // typename T::type _sample;
-    // SampleInfo _sampleInfo;
+    TestMessage _message;
+    int _dataIdx;
+    bool _noData;
+    bool _endTest;
+    bool _useReceiveThread;
+    dds_entity_t waitSet;
+    dds_attach_t waitSetResults[2];
+    void *samples[MAX_SAMPLES];
+    dds_sample_info_t sampleInfo[MAX_SAMPLES];
 
-    // FastDDSSubscriber(DataReader *reader, ParameterManager *PM)
-    //         : _reader(reader),
-    //           _PM(PM),
-    //           _message(),
-    //           _endTest(false),
-    //           _useReceiveThread(_reader->get_listener() == nullptr)
-    // {
-    //     // // null listener means using receive thread
-    //     // _useReceiveThread = _reader->get_listener() == nullptr;
-    // }
+    CycloneDDSSubscriber(dds_entity_t reader, dds_entity_t participant, ParameterManager *PM)
+            : _reader(reader),
+              _PM(PM),
+              _message(),
+              _dataIdx(0),
+              _noData(false),
+              _endTest(false)
+    {
+        dds_listener_t *listener = nullptr;
+        dds_return_t retCode = dds_get_listener(reader, listener);
 
-    ~FastDDSSubscriber()
+        if (retCode != DDS_RETCODE_OK) {
+            fprintf(stderr, "[ERROR] dds_get_listener (retCode %d)\n", retCode);
+        }
+
+        if (listener == nullptr) {
+            _useReceiveThread = true;
+
+            waitSet = dds_create_waitset(participant);
+            dds_entity_t rdcond =
+                    dds_create_readcondition(_reader, DDS_ANY_STATE);
+            retCode = dds_waitset_attach(waitSet, rdcond, _reader);
+            if (retCode < 0) {
+                fprintf(stderr,
+                        "[ERROR] dds_waitset_attach: %s\n",
+                        dds_strretcode(-retCode));
+            }
+
+            retCode = dds_waitset_attach(waitSet, waitSet, waitSet);
+            if (retCode < 0) {
+                fprintf(stderr,
+                        "[ERROR] dds_waitset_attach: %s\n",
+                        dds_strretcode(-retCode));
+            }
+        }
+    }
+
+    ~CycloneDDSSubscriber()
     {
         Shutdown();
     }
 
     void Shutdown()
     {
+        if (_useReceiveThread) {
+            dds_return_t retCode = dds_waitset_detach(waitSet, waitSet);
+            if (retCode < 0) {
+                fprintf(stderr,
+                        "[ERROR] dds_waitset_detach: %s\n",
+                        dds_strretcode(-retCode));
+            }
+            retCode = dds_delete(waitSet);
+            if (retCode < 0) {
+                fprintf(stderr,
+                        "[ERROR] dds_delete waitset: %s\n",
+                        dds_strretcode(-retCode));
+            }
+        }
     }
 
     void WaitForWriters(int numPublishers)
     {
-        // ReaderListener<T> *listener = (ReaderListener<T> *) _reader->get_listener();
-        // if (listener == nullptr) {
-        //     fprintf(stderr,"Could not get listener from reader.\n");
-        //     return;
-        // }
-        // while (listener->_matchedPublishers < numPublishers) {
-        //     PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
-        // }
+        dds_subscription_matched_status_t status;
+        dds_get_subscription_matched_status(_reader, &status);
+        while (status.total_count < numPublishers) {
+            PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
+        }
     }
 
     bool unblock()
     {
-        // _endTest = true;
+        _endTest = true;
         return true;
     }
 
@@ -520,96 +553,122 @@ public:
 
     TestMessage *ReceiveMessage()
     {
-        // Duration_t timeout(2,0);
+        dds_return_t retCode;
+        int seqLength;
 
-        // while (!this->_endTest) {
+        while (!this->_endTest) {
 
-        //     /*
-        //      * If wait_for_unread_message returns true, it means that there is
-        //      * data there. If it returns false, it timed out.
-        //      */
-        //     if (_reader->wait_for_unread_message(timeout)) {
+            // no outstanding reads
+            if (this->_noData) {
+                retCode = dds_waitset_wait(
+                        waitSet,
+                        waitSetResults,
+                        sizeof(waitSetResults) / sizeof(waitSetResults[0]),
+                        DDS_INFINITY);
 
-        //         // In FastDDS we need to take samples one by one.
-        //         ReturnCode_t retCode = _reader->take_next_sample(
-        //                 (void *) &_sample,
-        //                 &_sampleInfo);
+                if (retCode < 0) {
+                    printf("dds_waitset_wait RetCode: %s\n",
+                           dds_strretcode(-retCode));
+                    continue;
+                }
 
-        //         if (retCode == ReturnCode_t::RETCODE_NO_DATA) {
-        //             fprintf(stderr, "called back no data\n");
-        //             return nullptr;
-        //         } else if (retCode != ReturnCode_t::RETCODE_OK) {
-        //             fprintf(stderr, "Error during taking data\n");
-        //             return nullptr;
-        //         }
+                seqLength = dds_take(
+                        _reader,
+                        samples,
+                        sampleInfo,
+                        MAX_SAMPLES,
+                        MAX_SAMPLES);
+                if (seqLength < 0) {
+                    fprintf(stderr,
+                            "[Error]: dds_take error %s\n",
+                            dds_strretcode(-seqLength));
+                    return NULL;
+                }
 
-        //         if (_sampleInfo.instance_state 
-        //                 == eprosima::fastdds::dds::ALIVE) {
-        //             _message.entity_id = _sample.entity_id();
-        //             _message.seq_num = _sample.seq_num();
-        //             _message.timestamp_sec = _sample.timestamp_sec();
-        //             _message.timestamp_usec = _sample.timestamp_usec();
-        //             _message.latency_ping = _sample.latency_ping();
-        //             _message.size = (int) _sample.bin_data().size();
-        //             //_message.data = _sample.bin_data();
+                this->_dataIdx = 0;
+                this->_noData = false;
+            }
 
-        //             return &_message;
-        //         }
-        //     } // wait_for_unread
-        // } // while _endTest
-        
-        // If the while have not returned already data, we return nullptr;
+            // check to see if hit end condition
+            if (_dataIdx == seqLength) {
+                this->_noData = true;
+                continue;
+            }
+
+            // skip non-valid data
+            while ((sampleInfo[_dataIdx].valid_data == false)
+                   && (++_dataIdx < seqLength)) {
+                // No operation required
+            }
+
+            // may have hit end condition
+            if (_dataIdx == seqLength) {
+                continue;
+            }
+
+            T *valid_sample = (T *) (&samples[_dataIdx]);
+
+            _message.entity_id = valid_sample->entity_id;
+            _message.seq_num = valid_sample->seq_num;
+            _message.timestamp_sec = valid_sample->timestamp_sec;
+            _message.timestamp_usec = valid_sample->timestamp_usec;
+            _message.latency_ping = valid_sample->latency_ping;
+            _message.size = valid_sample->bin_data._length;
+            _message.data = (char *) valid_sample->bin_data._buffer;
+
+            ++_dataIdx;
+
+            return &_message;
+        }  // end while
         return nullptr;
     }
 };
 
+/*********************************************************
+ * configure_participant_qos
+ */
+template <typename T>
+bool CycloneDDSImpl<T>::configure_participant_qos(dds_qos_t *qos)
+{
+    // qos = _factory->get_default_participant_qos();
+
+    // // Set initial peers and not use multicast
+    // const std::vector<std::string> peerList =
+    //         _PM->get_vector<std::string>("peer");
+    // if (!peerList.empty()) {
+    //     Locator_t initial_peer;
+    //     for (unsigned int i = 0; i < peerList.size(); ++i) {
+    //         IPLocator::setIPv4(
+    //                 initial_peer,
+    //                 const_cast<char *>(peerList[i].c_str()));
+    //         // initial_peer.port = 7412; // TODO: Do we need to enable this?
+    //         // 7400 + 250 * domainID + 10 + 2 * participantID
+    //         qos.wire_protocol().builtin.initialPeersList.push_back(
+    //                 initial_peer);
+    //     }
+
+    //     // TODO: Do we need to disable the multicast receive addresses?
+    //     Locator_t default_unicast_locator;
+    //     qos.wire_protocol().builtin.metatrafficUnicastLocatorList.push_back(
+    //             default_unicast_locator);
+    // }
 
 
-// /*********************************************************
-//  * configure_participant_qos
-//  */
-// template <typename T>
-// bool CycloneDDSImpl<T>::configure_participant_qos(DomainParticipantQos &qos)
-// {
-//     qos = _factory->get_default_participant_qos();
+    // if (!PerftestConfigureTransport(_transport, qos, _PM)) {
+    //     return false;
+    // }
 
-//     // Set initial peers and not use multicast
-//     const std::vector<std::string> peerList =
-//             _PM->get_vector<std::string>("peer");
-//     if (!peerList.empty()) {
-//         Locator_t initial_peer;
-//         for (unsigned int i = 0; i < peerList.size(); ++i) {
-//             IPLocator::setIPv4(
-//                     initial_peer,
-//                     const_cast<char *>(peerList[i].c_str()));
-//             // initial_peer.port = 7412; // TODO: Do we need to enable this?
-//             // 7400 + 250 * domainID + 10 + 2 * participantID
-//             qos.wire_protocol().builtin.initialPeersList.push_back(
-//                     initial_peer);
-//         }
+    return true;
+}
 
-//         // TODO: Do we need to disable the multicast receive addresses?
-//         Locator_t default_unicast_locator;
-//         qos.wire_protocol().builtin.metatrafficUnicastLocatorList.push_back(
-//                 default_unicast_locator);
-//     }
-
-
-//     if (!PerftestConfigureTransport(_transport, qos, _PM)) {
-//         return false;
-//     }
-
-//     return true;
-// }
-
-// /*********************************************************
-//  * configure_writer_qos
-//  */
-// template <typename T>
-// bool CycloneDDSImpl<T>::configure_writer_qos(
-//         DataWriterQos &qos,
-//         std::string qosProfile)
-// {
+/*********************************************************
+ * configure_writer_qos
+ */
+template <typename T>
+bool CycloneDDSImpl<T>::configure_writer_qos(
+        dds_qos_t *qos,
+        std::string qosProfile)
+{
 
 //     // RELIABILITY AND DURABILITY
 //     if (qosProfile != "AnnouncementQos") {
@@ -744,18 +803,17 @@ public:
 //                         << "\n";
 //         fprintf(stderr, "%s\n", stringStream.str().c_str());
 //     }
-//     return true;
-// }
+    return true;
+}
 
-
-// /*********************************************************
-//  * configure_reader_qos
-//  */
-// template <typename T>
-// bool CycloneDDSImpl<T>::configure_reader_qos(
-//         DataReaderQos &qos,
-//         std::string qosProfile)
-// {
+/*********************************************************
+ * configure_reader_qos
+ */
+template <typename T>
+bool CycloneDDSImpl<T>::configure_reader_qos(
+        dds_qos_t *qos,
+        std::string qosProfile)
+{
 //     if (qosProfile != "AnnouncementQos") {
 
 //         if (_PM->get<bool>("bestEffort")) {
@@ -856,8 +914,8 @@ public:
 //         fprintf(stderr, "%s\n", stringStream.str().c_str());
 //     }
 
-//     return true;
-// }
+    return true;
+}
 
 /*********************************************************
  * Initialize
@@ -867,80 +925,80 @@ bool CycloneDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
 {
     // Assign ParameterManager
     _PM = &PM;
-    // _transport.initialize(_PM);
-    // ReturnCode_t retCode = ReturnCode_t::RETCODE_OK;
+    _transport.initialize(_PM);
+    dds_return_t retCode;
 
-    // if (!validate_input()) {
-    //     return false;
-    // }
+    if (!validate_input()) {
+        return false;
+    }
 
-    // /*
-    //  * Only if we run the latency test we need to wait
-    //  * for pongs after sending pings
-    //  */
-    // _pongSemaphore = _PM->get<bool>("latencyTest")
-    //         ? PerftestSemaphore_new()
-    //         : nullptr;
+    /*
+     * Only if we run the latency test we need to wait
+     * for pongs after sending pings
+     */
+    _pongSemaphore = _PM->get<bool>("latencyTest")
+            ? PerftestSemaphore_new()
+            : nullptr;
 
-    // _factory = DomainParticipantFactory::get_instance();
 
-    // // For the time being we are not supporting XML profiles.
-    // // if (!_PM->get<bool>("noXmlQos")) {
-    // //     retCode = _factory->load_XML_profiles_file(
-    // //             _PM->get<std::string>("qosFile"));
-    // //     if (retCode != ReturnCode_t::RETCODE_OK) {
-    // //         fprintf(stderr,
-    // //                 "[Warning]: XML Profile not found, using default "
-    // //                 "settings\n");
-    // //     }
-    // // }
+    dds_qos_t *participantQos;
+    participantQos = dds_create_qos();
+    if (!configure_participant_qos(participantQos)) {
+        return false;
+    }
 
-    // DomainParticipantQos participantQos;
-    // if (!configure_participant_qos(participantQos)) {
-    //     return false;
-    // }
 
-    // StatusMask statusMask = StatusMask::inconsistent_topic();
-    // statusMask << StatusMask::offered_incompatible_qos();
-    // statusMask << StatusMask::requested_incompatible_qos();
-    
-    // // Creates the participant
-    // _participant = _factory->create_participant(
-    //         _PM->get<int>("domain"),
-    //         participantQos,
-    //         new ParticipantListener(),
-    //         statusMask);
-    // if (_participant == nullptr) {
-    //     fprintf(stderr,"Problem creating participant.\n");
-    //     return false;
-    // }
+    dds_listener_t *participantlistener = nullptr;
+    participantlistener = dds_create_listener(nullptr);
+    dds_lset_inconsistent_topic(
+            participantlistener,
+            participant_on_inconsistent_topic);
+    dds_lset_offered_incompatible_qos(
+            participantlistener,
+            participant_on_offered_incompatible_qos);
+    dds_lset_requested_incompatible_qos(
+            participantlistener,
+            participant_on_requested_incompatible_qos);
+    // Creates the participant
+    _participant = dds_create_participant(
+            _PM->get<int>("domain"),
+            participantQos,
+            participantlistener);
+    dds_delete_qos(participantQos);
+    if (_participant < 0) {
+        fprintf(stderr,
+                "Problem creating participant: %s\n",
+                dds_strretcode(-_participant));
+        return false;
+    }
 
-    // // Register type
-    // retCode = _type.register_type(_participant);
-    // if (retCode != ReturnCode_t::RETCODE_OK) {
-    //     fprintf(stderr,"Problem registering type.\n");
-    //     return false;
-    // }
+    dds_qos_t *publisherQos;
+    publisherQos = dds_create_qos();
+    publisherQos->presentation.access_scope =
+            dds_presentation_access_scope_kind::DDS_PRESENTATION_TOPIC;
+    publisherQos->presentation.ordered_access = true;
+    _publisher = dds_create_publisher(_participant, publisherQos, nullptr);
+    dds_delete_qos(publisherQos);
+    if (_publisher < 0) {
+        fprintf(stderr,
+                "Problem creating publisher: %s\n",
+                dds_strretcode(-_publisher));
+        return false;
+    }
 
-    // PublisherQos publisherQos;
-    // publisherQos.presentation().access_scope =
-    //         PresentationQosPolicyAccessScopeKind::TOPIC_PRESENTATION_QOS;
-    // publisherQos.presentation().ordered_access = true;
-    // _publisher = _participant->create_publisher(publisherQos, nullptr);
-    // if (_publisher == nullptr) {
-    //     fprintf(stderr, "Problem creating publisher.\n");
-    //     return false;
-    // }
-
-    // SubscriberQos subscriberQos;
-    // subscriberQos.presentation().access_scope =
-    //         PresentationQosPolicyAccessScopeKind::TOPIC_PRESENTATION_QOS;
-    // publisherQos.presentation().ordered_access = true;
-    // _subscriber = _participant->create_subscriber(subscriberQos, nullptr);
-    // if (_subscriber == nullptr) {
-    //     fprintf(stderr, "Problem creating subscriber.\n");
-    //     return false;
-    // }
+    dds_qos_t *subscriberQos;
+    subscriberQos = dds_create_qos();
+    subscriberQos->presentation.access_scope =
+            dds_presentation_access_scope_kind::DDS_PRESENTATION_TOPIC;
+    subscriberQos->presentation.ordered_access = true;
+    _subscriber = dds_create_subscriber(_participant, subscriberQos, nullptr);
+    dds_delete_qos(subscriberQos);
+    if (_subscriber < 0) {
+        fprintf(stderr,
+                "Problem creating subscriber: %s\n",
+                dds_strretcode(-_subscriber));
+        return false;
+    }
 
     return true;
 }
@@ -960,56 +1018,55 @@ unsigned long CycloneDDSImpl<T>::GetInitializationSampleCount()
 template <typename T>
 IMessagingWriter *CycloneDDSImpl<T>::CreateWriter(const char *topicName)
 {
-    // DataWriter *writer = nullptr;
+    if (_participant < 0) {
+        fprintf(stderr, "Participant is not valid\n");
+        return nullptr;
+    }
 
-    // if (_participant == nullptr) {
-    //     fprintf(stderr, "Participant is null\n");
-    //     return nullptr;
-    // }
+    dds_entity_t topic = dds_create_topic(
+            _participant,
+            &_topicDescriptor,
+            topicName,
+            NULL,
+            NULL);
 
-    // Topic *topic = _participant->create_topic(
-    //         std::string(topicName),
-    //         _type.get_type_name(),
-    //         TOPIC_QOS_DEFAULT);
+    if (topic < 0) {
+        fprintf(stderr,
+                "Problem creating topic %s. %s\n",
+                topicName,
+                dds_strretcode(-topic));
+        return nullptr;
+    }
 
-    // if (topic == nullptr) {
-    //     fprintf(stderr, "Problem creating topic %s.\n", topicName);
-    //     return nullptr;
-    // }
+    std::string qosProfile = get_qos_profile_name(topicName);
+    if (qosProfile.empty()) {
+        fprintf(stderr, "Problem getting qos profile (%s).\n", topicName);
+        return nullptr;
+    }
 
-    // std::string qosProfile = get_qos_profile_name(topicName);
-    // if (qosProfile.empty()) {
-    //     fprintf(stderr, "Problem getting qos profile (%s).\n", topicName);
-    //     return nullptr;
-    // }
+    dds_qos_t *dwQos;
+    dwQos = dds_create_qos();
+    if (!configure_writer_qos(dwQos, qosProfile)) {
+        fprintf(stderr,
+                "Problem creating additional QoS settings with %s profile.\n",
+                qosProfile.c_str());
+        return nullptr;
+    }
 
-    // DataWriterQos dwQos;
-    // if (!configure_writer_qos(dwQos, qosProfile)) {
-    //     fprintf(stderr,
-    //             "Problem creating additional QoS settings with %s profile.\n",
-    //             qosProfile.c_str());
-    //     return nullptr;
-    // }
+    dds_entity_t writer = dds_create_writer(_publisher, topic, dwQos, NULL);
+    dds_delete_qos(dwQos);
+    if (writer < 0) {
+        fprintf(stderr,
+                "Problem creating writer: %s\n",
+                dds_strretcode(-writer));
+    }
 
-    // WriterListener *dwListener = new WriterListener();
-    // writer = _publisher->create_datawriter(
-    //         topic,
-    //         dwQos,
-    //         dwListener,
-    //         StatusMask::subscription_matched());
-    // if (writer == nullptr) {
-    //     fprintf(stderr, "Problem creating writer.\n");
-    //     return nullptr;
-    // }
-
-    // return new FastDDSPublisher<T>(
-    //         writer,
-    //         _PM->get<long>("instances"),
-    //         _pongSemaphore,
-    //         _PM->get<long>("writeInstance"),
-    //         _PM);
-
-    return nullptr;
+    return new CycloneDDSPublisher<T>(
+            writer,
+            _PM->get<long>("instances"),
+            _pongSemaphore,
+            _PM->get<long>("writeInstance"),
+            _PM);
 }
 
 /*********************************************************
@@ -1020,46 +1077,63 @@ IMessagingReader *CycloneDDSImpl<T>::CreateReader(
         const char *topicName,
         IMessagingCB *callback)
 {
-    // DataReader *reader = nullptr;
 
-    // Topic *topic = _participant->create_topic(
-    //         std::string(topicName),
-    //         _type.get_type_name(),
-    //         TOPIC_QOS_DEFAULT);
-    // if (topic == nullptr) {
-    //     fprintf(stderr, "Problem creating topic %s.\n", topicName);
-    //     return nullptr;
-    // }
+   if (_participant < 0) {
+        fprintf(stderr, "Participant is not valid\n");
+        return nullptr;
+    }
 
-    // std::string qosProfile = get_qos_profile_name(topicName);
-    // if (qosProfile.empty()) {
-    //     fprintf(stderr, "Problem getting qos profile.\n");
-    //     return nullptr;
-    // }
+    dds_entity_t topic = dds_create_topic(
+            _participant,
+            &_topicDescriptor,
+            topicName,
+            NULL,
+            NULL);
 
-    // DataReaderQos drQos;
-    // if (!configure_reader_qos(drQos, qosProfile)) {
-    //     fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qosProfile.c_str());
-    //     return NULL;
-    // }
+    if (topic < 0) {
+        fprintf(stderr,
+                "Problem creating topic %s. %s\n",
+                topicName,
+                dds_strretcode(-topic));
+        return nullptr;
+    }
 
-    // StatusMask mask = StatusMask::publication_matched();
-    // if (callback != nullptr) {
-    //     mask << StatusMask::data_available();
-    // }
+    std::string qosProfile = get_qos_profile_name(topicName);
+    if (qosProfile.empty()) {
+        fprintf(stderr, "Problem getting qos profile (%s).\n", topicName);
+        return nullptr;
+    }
 
-    // reader = _subscriber->create_datareader(
-    //         topic,
-    //         drQos,
-    //         new ReaderListener<T>(callback),
-    //         mask);
-    // if (reader == nullptr) {
-    //     fprintf(stderr, "Problem creating reader.\n");
-    //     return nullptr;
-    // }
+    dds_qos_t *drQos;
+    drQos = dds_create_qos();
+    if (!configure_reader_qos(drQos, qosProfile)) {
+        fprintf(stderr,
+                "Problem creating additional QoS settings with %s profile.\n",
+                qosProfile.c_str());
+        return nullptr;
+    }
 
-    // return new FastDDSSubscriber<T>(reader, _PM);
-    return nullptr;
+
+    dds_listener_t *dataReaderListener = nullptr;
+    if (callback != nullptr) {
+        ReaderListener *listenerInfo = new ReaderListener(callback);
+        dataReaderListener = dds_create_listener(listenerInfo);
+        dds_lset_data_available(dataReaderListener, reader_on_data_available<T>);
+    }
+
+    dds_entity_t reader = dds_create_reader(
+            _subscriber,
+            topic,
+            drQos,
+            dataReaderListener);
+    dds_delete_qos(drQos);
+    if (reader < 0) {
+        fprintf(stderr,
+                "Problem creating writer: %s\n",
+                dds_strretcode(-reader));
+    }
+
+    return new CycloneDDSSubscriber<T>(reader, _participant, _PM);
 }
 
 template <typename T>
@@ -1077,11 +1151,5 @@ const std::string CycloneDDSImpl<T>::get_qos_profile_name(const char *topicName)
     return _qoSProfileNameMap[std::string(topicName)];
 }
 
-// template class CycloneDDSImpl<TestDataKeyed_tPubSubType>;
-// template class CycloneDDSImpl<TestData_tPubSubType>;
-// template class CycloneDDSImpl<TestDataKeyedLarge_tPubSubType>;
-// template class CycloneDDSImpl<TestDataLarge_tPubSubType>;
-
-#if defined(RTI_WIN32) || defined(RTI_INTIME)
-  #pragma warning(pop)
-#endif
+template class CycloneDDSImpl<TestDataKeyedLarge_t>;
+template class CycloneDDSImpl<TestDataLarge_t>;

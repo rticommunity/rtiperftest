@@ -1414,10 +1414,10 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
 #endif //!PERTEST_RTI_MICRO: Dynamic Data not supported for micro
 
 /*********************************************************
- * ReceiverListener
+ * ReaderListener
  */
 template <typename T>
-class ReceiverListenerBase : public DDSDataReaderListener
+class ReaderListenerBase : public DDSDataReaderListener
 {
   protected:
     typename T::Seq     _data_seq;
@@ -1427,7 +1427,7 @@ class ReceiverListenerBase : public DDSDataReaderListener
 
   public:
 
-    ReceiverListenerBase(IMessagingCB *callback): _message()
+    ReaderListenerBase(IMessagingCB *callback): _message()
     {
         _callback = callback;
     }
@@ -1435,11 +1435,11 @@ class ReceiverListenerBase : public DDSDataReaderListener
 
 
 template <typename T>
-class ReceiverListener : public ReceiverListenerBase<T>
+class ReaderListener : public ReaderListenerBase<T>
 {
   public:
-    ReceiverListener(IMessagingCB *callback)
-            : ReceiverListenerBase<T>(callback) {
+    ReaderListener(IMessagingCB *callback)
+            : ReaderListenerBase<T>(callback) {
     }
 
     void on_data_available(DDSDataReader *reader)
@@ -1447,8 +1447,7 @@ class ReceiverListener : public ReceiverListenerBase<T>
         typename T::DataReader *datareader;
 
         datareader = T::DataReader::narrow(reader);
-        if (datareader == NULL)
-        {
+        if (datareader == NULL) {
             fprintf(stderr,"DataReader narrow error.\n");
             return;
         }
@@ -1508,13 +1507,13 @@ class ReceiverListener : public ReceiverListenerBase<T>
 
 #ifdef RTI_FLATDATA_AVAILABLE
 /**
- * Implements ReceiverListenerBase with FlatData API.
+ * Implements ReaderListenerBase with FlatData API.
  *
  * Since reading a FlatData sample differs from a classic type we need
  * to reimplement on_data_available method.
  */
 template <typename T>
-class FlatDataReceiverListener : public ReceiverListenerBase<T>
+class FlatDataReaderListener : public ReaderListenerBase<T>
 {
 protected:
     bool _isZeroCopy;
@@ -1524,14 +1523,14 @@ public:
     typedef typename rti::flat::flat_type_traits<T>::offset Offset;
 
     /**
-     * Contructor of FlatDataReceiverListener
+     * Contructor of FlatDataReaderListener
      *
      * @param callback callback that will process received messages
      *
      * @param isZeroCopy states if Zero Copy will be used
      */
-    FlatDataReceiverListener(IMessagingCB *callback, bool isZeroCopy, bool checkConsistency)
-            : ReceiverListenerBase<T>(callback),
+    FlatDataReaderListener(IMessagingCB *callback, bool isZeroCopy, bool checkConsistency)
+            : ReaderListenerBase<T>(callback),
             _isZeroCopy(isZeroCopy),
             _checkConsistency(checkConsistency) {
     }
@@ -1607,7 +1606,7 @@ public:
                             this->_data_seq[i],
                             this->_info_seq[i]) != DDS_RETCODE_OK) {
                         fprintf(stderr,
-                                "FlatDataReceiverListener::on_data_available "
+                                "FlatDataReaderListener::on_data_available "
                                 "Error checking sample consistency\n");
                     }
 
@@ -1633,15 +1632,15 @@ public:
 
 
 
-/* Dynamic Data equivalent function from ReceiverListener */
-class DynamicDataReceiverListener : public ReceiverListenerBase<DDS_DynamicData>
+/* Dynamic Data equivalent function from ReaderListener */
+class DynamicDataReaderListener : public ReaderListenerBase<DDS_DynamicData>
 {
   private:
     DDS_DynamicDataSeq _data_seq;
 
   public:
-    DynamicDataReceiverListener(IMessagingCB *callback)
-            : ReceiverListenerBase<DDS_DynamicData>(callback) {
+    DynamicDataReaderListener(IMessagingCB *callback)
+            : ReaderListenerBase<DDS_DynamicData>(callback) {
     }
 
     void on_data_available(DDSDataReader *reader)
@@ -2026,9 +2025,11 @@ public:
         while (!this->_endTest) {
 
             // no outstanding reads
-            if (this->_no_data)
-            {
-                this->_waitset->wait(this->_active_conditions, DDS_DURATION_INFINITE);
+            if (this->_no_data) {
+
+                this->_waitset->wait(
+                        this->_active_conditions,
+                        DDS_DURATION_INFINITE);
 
                 if (this->_active_conditions.length() == 0)
                 {
@@ -4021,14 +4022,14 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
             reader = _subscriber->create_datareader(
                     topic_desc,
                     dr_qos,
-                    new ReceiverListener<T>(callback),
+                    new ReaderListener<T>(callback),
                     DDS_DATA_AVAILABLE_STATUS);
         } else {
           #ifndef PERTEST_RTI_MICRO
             reader = _subscriber->create_datareader(
                     topic_desc,
                     dr_qos,
-                    new DynamicDataReceiverListener(callback),
+                    new DynamicDataReaderListener(callback),
                     DDS_DATA_AVAILABLE_STATUS);
           #else
             fprintf(stderr,"Dynamic data not supported on Micro.\n");
@@ -4135,7 +4136,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         reader = _subscriber->create_datareader(
                 topic_desc,
                 dr_qos,
-                new FlatDataReceiverListener<T>(
+                new FlatDataReaderListener<T>(
                         callback,
                         _PM->get<bool>("zerocopy"),
                         _PM->get<bool>("checkconsistency")),
