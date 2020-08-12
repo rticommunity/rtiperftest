@@ -17,11 +17,16 @@
 #include <string>
 
 #include "perftest.h"
+
+#include "dds/version.h"
+#include "dds/ddsrt/environ.h"
 #include "dds/dds.h"
 #include "dds/ddsc/dds_public_impl.h"
 #include "dds/ddsc/dds_public_qosdefs.h"
 #include "dds/ddsi/ddsi_xqos.h"
 #include "dds/ddsrt/time.h"
+
+const std::string GetDDSVersionString();
 
 /* Forward declaration of perftest_cpp to avoid circular dependencies */
 class perftest_cpp;

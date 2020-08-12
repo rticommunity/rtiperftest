@@ -6,6 +6,16 @@
 #include "perftest_cpp.h"
 #include "CycloneDDSImpl.h"
 
+/*
+ * TODO
+ * We should use the function inside CycloneDDSImpl instead of this one or
+ * alternatively remove the other one and use this.
+ */
+const std::string GetDDSVersionString()
+{
+    return std::string(DDS_PROJECT_NAME) + " " + std::string(DDS_VERSION);
+};
+
 // Listeners used by the DDS Entities
 
 static void participant_on_inconsistent_topic(

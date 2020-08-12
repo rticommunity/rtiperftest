@@ -48,6 +48,35 @@ using eprosima::fastrtps::SubscriberAttributes;
 /* Forward declaration of perftest_cpp to avoid circular dependencies */
 class perftest_cpp;
 
+
+const std::string GetDDSVersionString()
+{
+    return "Eprosima FastDDS";
+};
+
+void PerftestConfigureVerbosity(int verbosityLevel)
+{
+    #ifdef PERFTEST_EPROSIMA_FASTDDS
+        using namespace eprosima::fastdds::dds;
+        switch (verbosityLevel) {
+            case 0: fprintf(stderr, "[Error]: Cannot set verbosity to SILENT\n");
+                break;
+            case 1: Log::SetVerbosity(Log::Error);
+                fprintf(stderr, "Setting verbosity to ERROR\n");
+                break;
+            case 2: Log::SetVerbosity(Log::Warning);
+                fprintf(stderr, "Setting verbosity to WARNING\n");
+                break;
+            case 3: Log::SetVerbosity(Log::Info);
+                fprintf(stderr, "Setting verbosity to INFO\n");
+                break;
+            default: fprintf(stderr,
+                    "[Error]: Invalid value for the verbosity parameter. Using default\n");
+                break;
+        }
+    #endif
+}
+
 template <typename T>
 class FastDDSImpl : public IMessaging
 {
