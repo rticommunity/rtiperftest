@@ -1,1 +1,0 @@
-cmake -DCMAKE_BUILD_TYPE=release -G Unix Makefiles -B./perftest_build -H. -DPLATFORM_LIBS=dl;m;pthread;nsl;rt;
