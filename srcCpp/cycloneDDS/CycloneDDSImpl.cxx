@@ -57,27 +57,37 @@ static void participant_on_requested_incompatible_qos(
 // Max samples per take
 #define MAX_SAMPLES 1000
 
+template <typename T>
 class ReaderListener {
 public:
-    void *samples[MAX_SAMPLES];
+    void *samplePointers[MAX_SAMPLES];
+    T samples[MAX_SAMPLES];
     dds_sample_info_t sampleInfo[MAX_SAMPLES];
     TestMessage message;
     IMessagingCB *callback;
 
     ReaderListener(IMessagingCB *callback) : message(), callback(callback)
     {
+        memset(samples, 0, sizeof(samples));
+        for (unsigned int i = 0; i < MAX_SAMPLES; i++)
+        {
+            samplePointers[i] = &samples[i];
+        }
     }
 };
 
 template <typename T>
 static void reader_on_data_available(dds_entity_t reader, void *arg)
 {
+    //printf("Sample received!\n");
+    ReaderListener<T> *listenerInfo = (ReaderListener<T> *) arg;
 
-    ReaderListener *listenerInfo = (ReaderListener *) arg;
+    void * samples[MAX_SAMPLES];
+    dds_sample_info_t info[MAX_SAMPLES];
 
     int samplecount = dds_take(
             reader,
-            listenerInfo->samples,
+            listenerInfo->samplePointers,
             listenerInfo->sampleInfo,
             MAX_SAMPLES,
             MAX_SAMPLES);
@@ -335,10 +345,12 @@ public:
 
     void WaitForReaders(int numSubscribers)
     {
+        dds_set_status_mask(_writer, DDS_PUBLICATION_MATCHED_STATUS);
         dds_publication_matched_status_t status;
         dds_get_publication_matched_status(_writer, &status);
         while (status.total_count < numSubscribers) {
             PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
+            dds_get_publication_matched_status(_writer, &status);
         }
     }
 
@@ -358,12 +370,10 @@ public:
     /* time out in milliseconds */
     bool waitForPingResponse(int timeout)
     {
-        // TODO RETURN THIS TO ORIGINAL!!!! FAILURE IN MICRO DUE TO CLOCK NOT
-        // INITIALIZED.
         if(_pongSemaphore != NULL) {
             if (!PerftestSemaphore_take(
                     _pongSemaphore,
-                    PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
+                    timeout)) {
                 fprintf(stderr,"Unexpected error taking semaphore\n");
                 return false;
             }
@@ -447,7 +457,7 @@ public:
             return false;
         }
       #ifdef DEBUG_PING_PONG
-        else std::cerr << ">> wrote sample " << _data.seq_num() << std::endl;
+        else std::cerr << ">> wrote sample " << _data.seq_num << std::endl;
       #endif
 
         return true;
@@ -482,15 +492,26 @@ public:
               _noData(false),
               _endTest(false)
     {
-        dds_listener_t *listener = nullptr;
-        dds_return_t retCode = dds_get_listener(reader, listener);
+
+        /*
+         * This is the way used in the cycloneDDS to see if a Listener is set.
+         * You cannot check if the listener you get is null (that would return
+         * a "RETCODE_BAD_PARAMETER" errorCode), so you need to get it and
+         * check if there is a valid pointer to the specific callback you are
+         * looking for is not DDS_LUNSET
+         */
+        dds_listener_t *listener = dds_create_listener(NULL);
+        dds_return_t retCode = dds_get_listener(_reader, listener);
 
         if (retCode != DDS_RETCODE_OK) {
             fprintf(stderr, "[ERROR] dds_get_listener (retCode %d)\n", retCode);
         }
 
-        if (listener == nullptr) {
-            _useReceiveThread = true;
+        void *callback;
+        dds_lget_data_available (listener, (dds_on_data_available_fn*)&callback);
+        _useReceiveThread = (callback == DDS_LUNSET);
+
+        if (_useReceiveThread) {
 
             waitSet = dds_create_waitset(participant);
             dds_entity_t rdcond =
@@ -540,6 +561,7 @@ public:
         dds_get_subscription_matched_status(_reader, &status);
         while (status.total_count < numPublishers) {
             PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
+            dds_get_subscription_matched_status(_reader, &status);
         }
     }
 
@@ -969,7 +991,7 @@ bool CycloneDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
     dds_lset_requested_incompatible_qos(
             participantlistener,
             participant_on_requested_incompatible_qos);
-    // Creates the participant
+    // Create the participant
     _participant = dds_create_participant(
             _PM->get<int>("domain"),
             participantQos,
@@ -1063,13 +1085,20 @@ IMessagingWriter *CycloneDDSImpl<T>::CreateWriter(const char *topicName)
         return nullptr;
     }
 
-    dds_entity_t writer = dds_create_writer(_publisher, topic, dwQos, NULL);
+    dds_entity_t writer = dds_create_writer(_publisher, topic, dwQos, nullptr);
     dds_delete_qos(dwQos);
     if (writer < 0) {
         fprintf(stderr,
                 "Problem creating writer: %s\n",
                 dds_strretcode(-writer));
     }
+    dds_return_t retCode = dds_set_status_mask(
+            writer,
+            DDS_PUBLICATION_MATCHED_STATUS);
+    if (retCode != DDS_RETCODE_OK) {
+        fprintf(stderr,"dds_set_status_mask error (retCode %d)\n", retCode);
+    }
+
 
     return new CycloneDDSPublisher<T>(
             writer,
@@ -1123,10 +1152,9 @@ IMessagingReader *CycloneDDSImpl<T>::CreateReader(
         return nullptr;
     }
 
-
     dds_listener_t *dataReaderListener = nullptr;
     if (callback != nullptr) {
-        ReaderListener *listenerInfo = new ReaderListener(callback);
+        ReaderListener<T> *listenerInfo = new ReaderListener<T>(callback);
         dataReaderListener = dds_create_listener(listenerInfo);
         dds_lset_data_available(dataReaderListener, reader_on_data_available<T>);
     }
@@ -1141,6 +1169,12 @@ IMessagingReader *CycloneDDSImpl<T>::CreateReader(
         fprintf(stderr,
                 "Problem creating writer: %s\n",
                 dds_strretcode(-reader));
+    }
+    dds_return_t retCode = dds_set_status_mask(
+            reader,
+            DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_DATA_AVAILABLE_STATUS);
+    if (retCode != DDS_RETCODE_OK) {
+        fprintf(stderr,"dds_set_status_mask error (retCode %d)\n", retCode);
     }
 
     return new CycloneDDSSubscriber<T>(reader, _participant, _PM);

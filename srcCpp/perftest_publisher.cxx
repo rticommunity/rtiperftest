@@ -1197,7 +1197,9 @@ int perftest_cpp::Subscriber()
             break;
         }
         PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
-        /* Send announcement message until the publisher send us something*/
+        /*
+         * Send announcement message until the publisher replies us.
+         */
     } while (reader_listener->packets_received == 0);
 
     fprintf(stderr,"Waiting for data ...\n");
@@ -2043,7 +2045,6 @@ int perftest_cpp::Publisher()
     }
     writer->Flush();
 
-    fprintf(stderr,"Publishing data ...\n");
     fflush(stderr);
 
     _printer.print_initial_output();
