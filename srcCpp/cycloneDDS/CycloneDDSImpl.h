@@ -93,8 +93,6 @@ protected:
     PerftestTransport _transport;
     PerftestSemaphore *_pongSemaphore;
     std::string _verbosityString;
-    std::string _transportConfigurationString;
-    std::string _cycloneDdsUriString;
 
     // DDS Entities
     dds_entity_t _participant;
