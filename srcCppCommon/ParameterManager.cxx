@@ -66,8 +66,7 @@ void ParameterManager::initialize()
     dynamicData->set_supported_middleware(Middleware::RTIDDSPRO);
     create("dynamicData", dynamicData);
 
-    Parameter<int> *durability =
-            new Parameter<int>(0);
+    Parameter<int> *durability = new Parameter<int>(0);
     durability->set_command_line_argument("-durability", "<0|1|2|3>");
     durability->set_description(
             "Set durability QOS: 0 - volatile,\n"
@@ -79,6 +78,34 @@ void ParameterManager::initialize()
     durability->set_supported_middleware(Middleware::RTIDDS);
     durability->set_range(0, 3);
     create("durability", durability);
+
+    Parameter<bool> *keepLast = new Parameter<bool>(false);
+    keepLast->set_command_line_argument("-keepLast", "");
+    keepLast->set_description(
+            "Set the history to keep last. Depth will be set\n"
+            "to the receive queue value.\n"
+            "Default: Keep All, Not set.");
+    keepLast->set_type(T_BOOL);
+    keepLast->set_group(GENERAL);
+    keepLast->set_supported_middleware(
+            Middleware::CYCLONEDDS
+            | Middleware::EPROSIMAFASTDDS);
+    create("keepLast", keepLast);
+
+    Parameter<int> *keepLastDepth = new Parameter<int>(50);
+    keepLastDepth->set_command_line_argument("-keepLastDepth", "<depth>");
+    keepLastDepth->set_description(
+            "Set the history to Keep Last and the depth to the\n"
+            "provided value.\n"
+            "Default: Keep All, Not set.");
+    keepLastDepth->set_type(T_NUMERIC_D);
+    keepLastDepth->set_extra_argument(YES);
+    keepLastDepth->set_group(GENERAL);
+    keepLastDepth->set_supported_middleware(
+            Middleware::CYCLONEDDS
+            | Middleware::EPROSIMAFASTDDS);
+    keepLastDepth->set_range(0, INT_MAX);
+    create("keepLastDepth", keepLastDepth);
 
     Parameter<int> *domain = new Parameter<int>(1);
     domain->set_command_line_argument("-domain", "<id>");
@@ -246,8 +273,29 @@ void ParameterManager::initialize()
     asynchronous->set_type(T_BOOL);
     asynchronous->set_extra_argument(NO);
     asynchronous->set_group(GENERAL);
-    asynchronous->set_supported_middleware(Middleware::RTIDDSPRO | Middleware::EPROSIMAFASTDDS);
+    asynchronous->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::EPROSIMAFASTDDS
+            | Middleware::CYCLONEDDS);
     create("asynchronous", asynchronous);
+
+    Parameter<bool> *asynchronousReceive = new Parameter<bool>(false);
+    asynchronousReceive->set_command_line_argument("-asynchronousReceive", "");
+    asynchronousReceive->set_description("Use asynchronous receive settings.\nDefault: Not set");
+    asynchronousReceive->set_type(T_BOOL);
+    asynchronousReceive->set_extra_argument(NO);
+    asynchronousReceive->set_group(GENERAL);
+    asynchronousReceive->set_supported_middleware(Middleware::CYCLONEDDS);
+    create("asynchronousReceive", asynchronousReceive);
+
+    Parameter<bool> *printCycloneDdsUriXml = new Parameter<bool>(false);
+    printCycloneDdsUriXml->set_command_line_argument("-printCycloneDdsUriXml", "");
+    printCycloneDdsUriXml->set_description("Print the CYCLONEDDS_URI content.\nDefault: Not used");
+    printCycloneDdsUriXml->set_type(T_BOOL);
+    printCycloneDdsUriXml->set_extra_argument(NO);
+    printCycloneDdsUriXml->set_group(GENERAL);
+    printCycloneDdsUriXml->set_supported_middleware(Middleware::CYCLONEDDS);
+    create("printCycloneDdsUriXml", printCycloneDdsUriXml);
 
     Parameter<std::string> *flowController = new Parameter<std::string>("default");
     flowController->set_command_line_argument("-flowController", "<flow>");
@@ -459,6 +507,17 @@ void ParameterManager::initialize()
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT);
     create("batchSize", batchSize);
+
+
+    Parameter<bool> *enableBatching = new Parameter<bool>(false);
+    enableBatching->set_command_line_argument("-enableBatching", "");
+    enableBatching->set_description(
+            "Enables Batching in CycloneDDS.");
+    enableBatching->set_type(T_BOOL);
+    enableBatching->set_extra_argument(NO);
+    enableBatching->set_group(PUB);
+    enableBatching->set_supported_middleware(Middleware::CYCLONEDDS);
+    create("enableBatching", enableBatching);
 
     Parameter<bool> *enableAutoThrottle = new Parameter<bool>(false);
     enableAutoThrottle->set_command_line_argument("-enableAutoThrottle", "");
@@ -876,11 +935,7 @@ void ParameterManager::initialize()
     nic->set_type(T_STR);
     nic->set_extra_argument(YES);
     nic->set_group(TRANSPORT);
-    nic->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    nic->set_supported_middleware(Middleware::ALL);
     create("nic", nic);
 
     Parameter<std::string> *allowInterfaces = new Parameter<std::string>();
@@ -899,11 +954,7 @@ void ParameterManager::initialize()
     allowInterfaces->set_type(T_STR);
     allowInterfaces->set_extra_argument(YES);
     allowInterfaces->set_group(TRANSPORT);
-    allowInterfaces->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    allowInterfaces->set_supported_middleware(Middleware::ALL);
     allowInterfaces->set_internal(true);
     create("allowInterfaces", allowInterfaces);
 

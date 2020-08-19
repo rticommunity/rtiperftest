@@ -69,8 +69,7 @@ public:
     ReaderListener(IMessagingCB *callback) : message(), callback(callback)
     {
         memset(samples, 0, sizeof(samples));
-        for (unsigned int i = 0; i < MAX_SAMPLES; i++)
-        {
+        for (unsigned int i = 0; i < MAX_SAMPLES; i++) {
             samplePointers[i] = &samples[i];
         }
     }
@@ -81,9 +80,6 @@ static void reader_on_data_available(dds_entity_t reader, void *arg)
 {
     //printf("Sample received!\n");
     ReaderListener<T> *listenerInfo = (ReaderListener<T> *) arg;
-
-    void * samples[MAX_SAMPLES];
-    dds_sample_info_t info[MAX_SAMPLES];
 
     int samplecount = dds_take(
             reader,
@@ -161,8 +157,8 @@ CycloneDDSImpl<T>::CycloneDDSImpl(dds_topic_descriptor_t topicDescriptor)
 template <typename T>
 void CycloneDDSImpl<T>::Shutdown()
 {
-
-    // if (_participant != NULL) {
+    //TODO
+    // if (_participant != nullptr) {
 
     //     if (_publisher != nullptr) {
     //         _participant->delete_publisher(_publisher);
@@ -173,10 +169,10 @@ void CycloneDDSImpl<T>::Shutdown()
     //     _factory->delete_participant(_participant);
     // }
 
-    // if (_pongSemaphore != NULL) {
-    //     PerftestSemaphore_delete(_pongSemaphore);
-    //     _pongSemaphore = NULL;
-    // }
+    if (_pongSemaphore != nullptr) {
+        PerftestSemaphore_delete(_pongSemaphore);
+        _pongSemaphore = nullptr;
+    }
 }
 
 /*********************************************************
@@ -194,23 +190,23 @@ const std::string CycloneDDSImpl<T>::get_middleware_version_string()
 template <typename T>
 void CycloneDDSImpl<T>::configure_middleware_verbosity(int verbosityLevel)
 {
-    std::string level = "severe";
+    std::string verbosityString = "severe";
     switch (verbosityLevel) {
     case 0:
         fprintf(stderr, "Setting verbosity to NONE\n");
-        level = "none";
+        verbosityString = "none";
         break;
     case 1:
         fprintf(stderr, "Setting verbosity to SEVERE\n");
-        level = "severe";
+        verbosityString = "severe";
         break;
     case 2:
         fprintf(stderr, "Setting verbosity to FINE\n");
-        level = "fine";
+        verbosityString = "fine";
         break;
     case 3:
         fprintf(stderr, "Setting verbosity to FINEST\n");
-        level = "finest";
+        verbosityString = "finest";
         break;
     default:
         fprintf(stderr,
@@ -219,12 +215,14 @@ void CycloneDDSImpl<T>::configure_middleware_verbosity(int verbosityLevel)
         break;
     }
 
-    ddsrt_setenv(
-            "CYCLONEDDS_URI",
-            std::string(
-                    "<Tracing><Verbosity>" + level
-                    + "</Verbosity><OutputFile>stdout</OutputFile></Tracing>")
-                    .c_str());
+    std::ostringstream stringStream;
+    stringStream << "<Tracing>"
+                 << "<Verbosity>"
+                 << verbosityString
+                 << "</Verbosity>"
+                 << "<OutputFile>stdout</OutputFile>"
+                 << "</Tracing>";
+    _verbosityString = stringStream.str();
 }
 
 /*********************************************************
@@ -356,7 +354,7 @@ public:
 
     bool waitForPingResponse()
     {
-        if(_pongSemaphore != NULL) {
+        if(_pongSemaphore != nullptr) {
             if (!PerftestSemaphore_take(
                     _pongSemaphore,
                     PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
@@ -370,7 +368,7 @@ public:
     /* time out in milliseconds */
     bool waitForPingResponse(int timeout)
     {
-        if(_pongSemaphore != NULL) {
+        if(_pongSemaphore != nullptr) {
             if (!PerftestSemaphore_take(
                     _pongSemaphore,
                     timeout)) {
@@ -383,7 +381,7 @@ public:
 
     bool notifyPingResponse()
     {
-        if(_pongSemaphore != NULL) {
+        if(_pongSemaphore != nullptr) {
             if (!PerftestSemaphore_give(_pongSemaphore)) {
                 fprintf(stderr,"Unexpected error giving semaphore\n");
                 return false;
@@ -481,7 +479,8 @@ public:
     bool _useReceiveThread;
     dds_entity_t waitSet;
     dds_attach_t waitSetResults[2];
-    void *samples[MAX_SAMPLES];
+    void *samplePointers[MAX_SAMPLES];
+    T samples[MAX_SAMPLES];
     dds_sample_info_t sampleInfo[MAX_SAMPLES];
 
     CycloneDDSSubscriber(dds_entity_t reader, dds_entity_t participant, ParameterManager *PM)
@@ -489,10 +488,14 @@ public:
               _PM(PM),
               _message(),
               _dataIdx(0),
-              _noData(false),
+              _noData(true),
               _endTest(false)
     {
 
+        memset(samples, 0, sizeof(samples));
+        for (unsigned int i = 0; i < MAX_SAMPLES; i++) {
+            samplePointers[i] = &samples[i];
+        }
         /*
          * This is the way used in the cycloneDDS to see if a Listener is set.
          * You cannot check if the listener you get is null (that would return
@@ -500,7 +503,7 @@ public:
          * check if there is a valid pointer to the specific callback you are
          * looking for is not DDS_LUNSET
          */
-        dds_listener_t *listener = dds_create_listener(NULL);
+        dds_listener_t *listener = dds_create_listener(nullptr);
         dds_return_t retCode = dds_get_listener(_reader, listener);
 
         if (retCode != DDS_RETCODE_OK) {
@@ -588,16 +591,14 @@ public:
         dds_return_t retCode;
         int seqLength;
 
-        while (!this->_endTest) {
-
+        while (!_endTest) {
             // no outstanding reads
-            if (this->_noData) {
+            if (_noData) {
                 retCode = dds_waitset_wait(
                         waitSet,
                         waitSetResults,
                         sizeof(waitSetResults) / sizeof(waitSetResults[0]),
                         DDS_INFINITY);
-
                 if (retCode < 0) {
                     printf("dds_waitset_wait RetCode: %s\n",
                            dds_strretcode(-retCode));
@@ -606,7 +607,7 @@ public:
 
                 seqLength = dds_take(
                         _reader,
-                        samples,
+                        samplePointers,
                         sampleInfo,
                         MAX_SAMPLES,
                         MAX_SAMPLES);
@@ -614,16 +615,16 @@ public:
                     fprintf(stderr,
                             "[Error]: dds_take error %s\n",
                             dds_strretcode(-seqLength));
-                    return NULL;
+                    return nullptr;
                 }
 
-                this->_dataIdx = 0;
-                this->_noData = false;
+                _dataIdx = 0;
+                _noData = false;
             }
 
             // check to see if hit end condition
             if (_dataIdx == seqLength) {
-                this->_noData = true;
+                _noData = true;
                 continue;
             }
 
@@ -662,33 +663,95 @@ public:
 template <typename T>
 bool CycloneDDSImpl<T>::configure_participant_qos(dds_qos_t *qos)
 {
-    // qos = _factory->get_default_participant_qos();
-
-    // // Set initial peers and not use multicast
-    // const std::vector<std::string> peerList =
-    //         _PM->get_vector<std::string>("peer");
-    // if (!peerList.empty()) {
-    //     Locator_t initial_peer;
-    //     for (unsigned int i = 0; i < peerList.size(); ++i) {
-    //         IPLocator::setIPv4(
-    //                 initial_peer,
-    //                 const_cast<char *>(peerList[i].c_str()));
-    //         // initial_peer.port = 7412; // TODO: Do we need to enable this?
-    //         // 7400 + 250 * domainID + 10 + 2 * participantID
-    //         qos.wire_protocol().builtin.initialPeersList.push_back(
-    //                 initial_peer);
-    //     }
-
-    //     // TODO: Do we need to disable the multicast receive addresses?
-    //     Locator_t default_unicast_locator;
-    //     qos.wire_protocol().builtin.metatrafficUnicastLocatorList.push_back(
-    //             default_unicast_locator);
-    // }
+    /*
+     * Empty. We leave this function as a placeHolder in case we need to add
+     * Partipant QoS settings.
+     */
+    return true;
+}
 
 
-    // if (!PerftestConfigureTransport(_transport, qos, _PM)) {
-    //     return false;
-    // }
+/*********************************************************
+ * set_cycloneDDS_URI
+ */
+template <typename T>
+bool CycloneDDSImpl<T>::set_cycloneDDS_URI()
+{
+
+    std::ostringstream stringStream;
+
+    // Verbosity Information
+    stringStream << _verbosityString;
+
+    /*
+     * CycloneDDS/Domain/Discovery/Peers/Peer
+     *
+     * CycloneDDS/Domain/Internal/SendAsync
+     * This element controls whether the actual sending of packets occurs
+     * on the same thread that prepares them, or is done asynchronously by
+     * another thread.
+     */
+
+    //==========================================================================
+    // Everything that goes under "<Internal>"
+    stringStream << "<Internal>";
+
+    stringStream << "<HeartbeatInterval>10 ms</HeartbeatInterval>";
+
+    // MaxQueuedRexmitMessages By default is 200
+    stringStream << "<MaxQueuedRexmitMessages>1000</MaxQueuedRexmitMessages>";
+
+    //SynchronousDeliveryPriorityThreshold The default value is: "inf"
+    stringStream << "<SynchronousDeliveryPriorityThreshold>"
+                 << (_PM->is_set("asynchronousReceive")? "1":"0")
+                 << "</SynchronousDeliveryPriorityThreshold>";
+
+    stringStream << "</Internal>";
+
+    //==========================================================================
+    // Everything that goes under "<General>"
+    stringStream << "<General>";
+
+    // Transport Specific Configurations
+    if (_PM->is_set("allowInterfaces")) {
+        stringStream << "<NetworkInterfaceAddress>"
+                     << _PM->get<std::string>("allowInterfaces")
+                     << "</NetworkInterfaceAddress>";
+    }
+
+    if (_PM->is_set("multicast")) {
+        stringStream << "<AllowMulticast>true</AllowMulticast>"
+                     << "<EnableMulticastLoopback>true</EnableMulticastLoopback>"
+                     << "<PreferMulticast>true</PreferMulticast>";
+    }
+
+    // MaxMessageSize The default value is: "14720 B"
+    stringStream << "<MaxMessageSize>65500B</MaxMessageSize>";
+    // FragmentSize The default value is: "1344 B". They use 4000B in their test
+    stringStream << "<FragmentSize>65500B</FragmentSize>";
+
+    stringStream << "</General>";
+
+    //==========================================================================
+    // Everything that goes under "<Sizing>"
+    stringStream << "<Sizing>";
+    // ReceiveBufferSize The default value is: "1 MiB"
+    stringStream << "<ReceiveBufferSize>2097152B</ReceiveBufferSize>";
+    stringStream << "</Sizing>";
+
+    if (_PM->is_set("printCycloneDdsUriXml")) {
+        std::cerr << std::endl
+                  << "CYCLONEDDS_URI:" << std::endl
+                  << stringStream.str() << std::endl;
+    }
+
+    dds_return_t retCode = ddsrt_setenv(
+            "CYCLONEDDS_URI",
+            stringStream.str().c_str());
+    if (retCode != DDS_RETCODE_OK) {
+        fprintf(stderr,"dds_set_status_mask error (retCode %d)\n", retCode);
+        return false;
+    }
 
     return true;
 }
@@ -702,139 +765,95 @@ bool CycloneDDSImpl<T>::configure_writer_qos(
         std::string qosProfile)
 {
 
-//     // RELIABILITY AND DURABILITY
-//     if (qosProfile != "AnnouncementQos") {
+    // RELIABILITY AND DURABILITY
+    if (qosProfile != "AnnouncementQos") {
 
-//         if (_PM->get<bool>("bestEffort")) {
-//             qos.reliability().kind = ReliabilityQosPolicyKind::BEST_EFFORT_RELIABILITY_QOS;
-//         } else {
-//             qos.reliability().kind = ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
-//             qos.reliability().max_blocking_time = c_TimeInfinite;
-//         }
+        if (_PM->get<bool>("bestEffort")) {
+            qos->reliability.kind = DDS_RELIABILITY_BEST_EFFORT;
+        } else {
+            qos->reliability.kind = DDS_RELIABILITY_RELIABLE;
+            qos->reliability.max_blocking_time = DDS_INFINITY;
+        }
 
-//         if (_PM->get<bool>("noPositiveAcks")){
-//             qos.reliable_writer_qos().disable_positive_acks.enabled = true;
-//             if (_PM->is_set("keepDurationUsec")) {
-//                 qos.reliable_writer_qos().disable_positive_acks.duration =
-//                         eprosima::fastrtps::Duration_t(
-//                                 _PM->get<unsigned long long>("keepDurationUsec")
-//                                 * 1e-6);
-//             }
-//         }
+        if (_PM->is_set("durability")) {
+            qos->durability.kind = (dds_durability_kind) _PM->get<int>("durability");
+        } else {
+            qos->durability.kind = DDS_DURABILITY_VOLATILE;
+        }
 
-//         if (_PM->is_set("durability")) {
-//             qos.durability().kind =(DurabilityQosPolicyKind)_PM->get<int>("durability");
-//         } else {
-//             qos.durability().kind = DurabilityQosPolicyKind::VOLATILE_DURABILITY_QOS;
-//         }
+        // HISTORY
+        if (_PM->is_set("keepLast") || _PM->is_set("keepLastDepth")) {
+            qos->history.kind = DDS_HISTORY_KEEP_LAST;
+            if (_PM->is_set("keepLastDepth")) {
+                qos->history.depth = _PM->get<int>("keepLastDepth");
+            } else {
+                qos->history.depth = _PM->get<int>("sendQueueSize");
+            }
+        } else {
+            qos->history.kind = DDS_HISTORY_KEEP_ALL;
+        }
 
-//     } else { // AnnouncementQoS
-//         qos.reliability().kind = ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
-//         qos.durability().kind = DurabilityQosPolicyKind::TRANSIENT_LOCAL_DURABILITY_QOS;
-//     }
+    } else { // AnnouncementQoS
+        qos->reliability.kind = DDS_RELIABILITY_RELIABLE;
+        qos->durability.kind = DDS_DURABILITY_TRANSIENT_LOCAL;
+    }
 
-//     // HISTORY
-//     // qos.history().kind = HistoryQosPolicyKind::KEEP_LAST_HISTORY_QOS;
-//     // qos.history().depth = _PM->get<int>("sendQueueSize");
-//     qos.history().kind = HistoryQosPolicyKind::KEEP_ALL_HISTORY_QOS;
+    // RESOURCE LIMITS
+    if (qosProfile == "ThroughputQos") {
+        qos->resource_limits.max_samples = _PM->get<int>("sendQueueSize");
+        if (_PM->get<bool>("keyed")) {
+            qos->resource_limits.max_instances = _PM->get<long>("instances");
+        }
+    } else if (qosProfile == "LatencyQos") {
+        // qos->resource_limits.max_samples = 0;
+    } else if (qosProfile == "AnnouncementQos") {
+        // qos->resource_limits.max_samples = 0;
+    } else {
+        fprintf(stderr,
+                "[Error]: Cannot find settings for qosProfile %s\n",
+                qosProfile.c_str());
+        return false;
+    }
 
-//     // // PUBLISH MODE
-//     if (_PM->get<bool>("asynchronous")) {
-//         qos.publish_mode().kind = PublishModeQosPolicyKind::ASYNCHRONOUS_PUBLISH_MODE;
-//     }
+    /* Enable write batching, by default disabled */
+    if (_PM->is_set("enableBatching")) {
+        dds_write_set_batch (true);
+    }
 
-//     // TIMES
-//     if (qosProfile == "ThroughputQos") {
-//         qos.reliable_writer_qos().times.heartbeatPeriod.seconds = 0;
-//         qos.reliable_writer_qos().times.heartbeatPeriod.nanosec = 10000000;
-//         qos.reliable_writer_qos().times.initialHeartbeatDelay = c_TimeZero;
-//         qos.reliable_writer_qos().times.nackResponseDelay = c_TimeZero;
-//     } else if (qosProfile == "LatencyQos") {
-//         qos.reliable_writer_qos().times.heartbeatPeriod.seconds = 0;
-//         qos.reliable_writer_qos().times.heartbeatPeriod.nanosec = 10000000;
-//         qos.reliable_writer_qos().times.initialHeartbeatDelay = c_TimeZero;
-//         qos.reliable_writer_qos().times.nackResponseDelay = c_TimeZero;
-//     } else if (qosProfile == "AnnouncementQos") {
-//         qos.reliable_writer_qos().times.heartbeatPeriod.seconds = 0;
-//         qos.reliable_writer_qos().times.heartbeatPeriod.nanosec = 10000000;
-//         qos.reliable_writer_qos().times.initialHeartbeatDelay = c_TimeZero;
-//         qos.reliable_writer_qos().times.nackResponseDelay = c_TimeZero;
-//     } else {
-//         fprintf(stderr,
-//                 "[Error]: Cannot find settings for qosProfile %s\n",
-//                 qosProfile.c_str());
-//         return false;
-//     }
+    // SUMMARY FOR THE RESOURCE LIMITS
+    if (_PM->get<bool>("showResourceLimits")) {
+        std::ostringstream stringStream;
 
-//     // RESOURCE LIMITS
-//     if (qosProfile == "ThroughputQos") {
-//         qos.resource_limits().allocated_samples = _PM->get<int>("sendQueueSize");
-//         qos.resource_limits().max_samples = _PM->get<int>("sendQueueSize"); //0 is Length unlimited.
-//         if (_PM->get<bool>("keyed")) {
-//             qos.resource_limits().max_instances = _PM->get<long>("instances");
-//             qos.resource_limits().max_samples_per_instance = 0;
-//         }
-//     } else if (qosProfile == "LatencyQos") {
-//         qos.resource_limits().allocated_samples = 128;
-//         qos.resource_limits().max_samples = 0;
-//         if (_PM->get<bool>("keyed")) {
-//             qos.resource_limits().max_instances = 0;
-//             qos.resource_limits().max_samples_per_instance = 0;
-//         }
-//     } else if (qosProfile == "AnnouncementQos") {
-//         qos.resource_limits().allocated_samples = 50;
-//         qos.resource_limits().max_samples = 0;
-//         if (_PM->get<bool>("keyed")) {
-//             qos.resource_limits().max_instances = 0;
-//             qos.resource_limits().max_samples_per_instance = 0;
-//         }
-//     } else {
-//         fprintf(stderr,
-//                 "[Error]: Cannot find settings for qosProfile %s\n",
-//                 qosProfile.c_str());
-//         return false;
-//     }
+        stringStream << "Resource Limits DW ("
+                    << qosProfile
+                    << " topic):\n"
+                    << "\tSamples (Max): "
+                    << qos->resource_limits.max_samples
+                    << "\n";
 
-//     // // SUMMARY FOR THE RESOURCE LIMITS
-//     if (_PM->get<bool>("showResourceLimits")) {
-//         std::ostringstream stringStream;
+        if (_PM->get<bool>("keyed")) {
+            stringStream << "\tInstances (Max): "
+                        << qos->resource_limits.max_instances
+                        << "\n";
+            stringStream << "\tMax Samples per Instance: "
+                        << qos->resource_limits.max_samples_per_instance
+                        << "\n";
 
-//         stringStream << "Resource Limits DW (" 
-//                     << qosProfile
-//                     << " topic):\n"
-//                     << "\tSamples (Allocated/Max): "
-//                     << qos.resource_limits().allocated_samples
-//                     << "/"
-//                     << qos.resource_limits().max_samples
-//                     << "\n";
-
-//         if (_PM->get<bool>("keyed")) {
-//             stringStream << "\tInstances (Max): "
-//                         << qos.resource_limits().max_instances
-//                         << "\n";
-//             stringStream << "\tMax Samples per Instance: "
-//                         << qos.resource_limits().max_samples_per_instance
-//                         << "\n";
-
-//         }
-//             stringStream << "\tHeartbeat period (s/ns): "
-//                         << qos.reliable_writer_qos().times.heartbeatPeriod.seconds
-//                         << ","
-//                         << qos.reliable_writer_qos().times.heartbeatPeriod.nanosec
-//                         << "\n";
-//             stringStream << "\tDurability is: "
-//                         << qos.durability().kind
-//                         << "\n";
-//             stringStream << "\tReliability is: "
-//                         << qos.reliability().kind
-//                         << "\n";
-//             stringStream << "\tMax blocking time is (s/ns): "
-//                         << qos.reliability().max_blocking_time.seconds
-//                         << ","
-//                         << qos.reliability().max_blocking_time.nanosec
-//                         << "\n";
-//         fprintf(stderr, "%s\n", stringStream.str().c_str());
-//     }
+        }
+        stringStream << "\tDurability is: "
+                    << qos->durability.kind
+                    << "\n";
+        stringStream << "\tHistory is: "
+                    << qos->history.kind
+                    << "\n";
+        stringStream << "\tReliability is: "
+                    << qos->reliability.kind
+                    << "\n";
+        stringStream << "\tMax blocking time is (s/ns): "
+                    << qos->reliability.max_blocking_time
+                    << "\n";
+        fprintf(stderr, "%s\n", stringStream.str().c_str());
+    }
     return true;
 }
 
@@ -846,105 +865,91 @@ bool CycloneDDSImpl<T>::configure_reader_qos(
         dds_qos_t *qos,
         std::string qosProfile)
 {
-//     if (qosProfile != "AnnouncementQos") {
 
-//         if (_PM->get<bool>("bestEffort")) {
-//             qos.reliability().kind = ReliabilityQosPolicyKind::BEST_EFFORT_RELIABILITY_QOS;
-//         } else {
-//             qos.reliability().kind = ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
-//             qos.reliability().max_blocking_time = c_TimeInfinite;
-//         }
+    // RELIABILITY AND DURABILITY
+    if (qosProfile != "AnnouncementQos") {
 
-//         if (_PM->get<bool>("noPositiveAcks")){
-//             qos.reliable_reader_qos().disable_positive_ACKs.enabled = true;
-//             if (_PM->is_set("keepDurationUsec")) {
-//                 qos.reliable_reader_qos().disable_positive_ACKs.duration =
-//                         eprosima::fastrtps::Duration_t(
-//                                 _PM->get<unsigned long long>("keepDurationUsec")
-//                                 * 1e-6);
-//             }
-//         }
+        if (_PM->get<bool>("bestEffort")) {
+            qos->reliability.kind = DDS_RELIABILITY_BEST_EFFORT;
+        } else {
+            qos->reliability.kind = DDS_RELIABILITY_RELIABLE;
+            qos->reliability.max_blocking_time = DDS_INFINITY;
+        }
 
-//         if (_PM->is_set("durability")) {
-//             qos.durability().kind =(DurabilityQosPolicyKind)_PM->get<int>("durability");
-//         } else {
-//             qos.durability().kind = DurabilityQosPolicyKind::VOLATILE_DURABILITY_QOS;
-//         }
-//     } else { // AnnouncementQoS
-//         qos.reliability().kind = ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
-//         qos.durability().kind = DurabilityQosPolicyKind::TRANSIENT_LOCAL_DURABILITY_QOS;
-//     }
+        if (_PM->is_set("durability")) {
+            qos->durability.kind = (dds_durability_kind) _PM->get<int>("durability");
+        } else {
+            qos->durability.kind = DDS_DURABILITY_VOLATILE;
+        }
 
-//     // qos.history().kind = HistoryQosPolicyKind::KEEP_LAST_HISTORY_QOS;
-//     // qos.history().depth = _PM->get<int>("sendQueueSize");
-//     qos.history().kind = HistoryQosPolicyKind::KEEP_ALL_HISTORY_QOS;
+        // HISTORY
+        if (_PM->is_set("keepLast") || _PM->is_set("keepLastDepth")) {
+            qos->history.kind = DDS_HISTORY_KEEP_LAST;
+            if (_PM->is_set("keepLastDepth")) {
+                qos->history.depth = _PM->get<int>("keepLastDepth");
+            } else {
+                qos->history.depth = _PM->get<int>("sendQueueSize");
+            }
+        } else {
+            qos->history.kind = DDS_HISTORY_KEEP_ALL;
+        }
 
+    } else { // AnnouncementQoS
+        qos->reliability.kind = DDS_RELIABILITY_RELIABLE;
+        qos->durability.kind = DDS_DURABILITY_TRANSIENT_LOCAL;
+    }
 
-//     // RESOURCE LIMITS
-//     if (qosProfile == "ThroughputQos") {
-//         qos.resource_limits().allocated_samples = 128;
-//         if (_PM->is_set("receiveQueueSize")) {
-//             qos.resource_limits().allocated_samples = _PM->get<int>("receiveQueueSize");
-//         }
-//         qos.resource_limits().max_samples = 10000;
-//         if (_PM->get<bool>("keyed")) {
-//             qos.resource_limits().max_instances = 0;
-//             qos.resource_limits().max_samples_per_instance = 0;
-//         }
-//     } else if (qosProfile == "LatencyQos") {
-//         qos.resource_limits().allocated_samples = 100;
-//         qos.resource_limits().max_samples = 100;
-//         if (_PM->get<bool>("keyed")) {
-//             qos.resource_limits().max_instances = 0;
-//             qos.resource_limits().max_samples_per_instance = 0;
-//         }
-//     } else if (qosProfile == "AnnouncementQos") {
-//         qos.resource_limits().allocated_samples = 100;
-//         qos.resource_limits().max_samples = 100;
-//         if (_PM->get<bool>("keyed")) {
-//             qos.resource_limits().max_instances = 0;
-//             qos.resource_limits().max_samples_per_instance = 0;
-//         }
-//     } else {
-//         fprintf(stderr,
-//                 "[Error]: Cannot find settings for qosProfile %s\n",
-//                 qosProfile.c_str());
-//         return false;
-//     }
+    // RESOURCE LIMITS
+    if (qosProfile == "ThroughputQos") {
+        if (_PM->is_set("receiveQueueSize")) {
+            qos->resource_limits.max_samples = _PM->get<int>("receiveQueueSize");
+        }
+        qos->resource_limits.max_samples = 10000;
+    } else if (qosProfile == "LatencyQos") {
+        qos->resource_limits.max_samples = 100;
+    } else if (qosProfile == "AnnouncementQos") {
+        qos->resource_limits.max_samples = 100;
+    } else {
+        fprintf(stderr,
+                "[Error]: Cannot find settings for qosProfile %s\n",
+                qosProfile.c_str());
+        return false;
+    }
 
-//     if (_PM->is_set("receiveQueueSize")) {
-//         qos.resource_limits().max_samples = _PM->get<int>("receiveQueueSize");
-//     }
+    if (_PM->is_set("receiveQueueSize")) {
+        qos->resource_limits.max_samples = _PM->get<int>("receiveQueueSize");
+    }
 
-//     if (_PM->get<bool>("showResourceLimits")) {
-//         std::ostringstream stringStream;
+    if (_PM->get<bool>("showResourceLimits")) {
+        std::ostringstream stringStream;
 
-//         stringStream << "Resource Limits DR (" 
-//                     << qosProfile
-//                     << " topic):\n"
-//                     << "\tSamples (Allocated/Max): "
-//                     << qos.resource_limits().allocated_samples
-//                     << "/"
-//                     << qos.resource_limits().max_samples
-//                     << "\n";
+        stringStream << "Resource Limits DR ("
+                    << qosProfile
+                    << " topic):\n"
+                    << "\tSamples (Max): "
+                    << qos->resource_limits.max_samples
+                    << "\n";
 
-//         if (_PM->get<bool>("keyed")){
-//             stringStream << "\tInstances (Max): "
-//                         << qos.resource_limits().max_instances
-//                         << "\n";
-//             stringStream << "\tMax Samples per Instance: "
-//                         << qos.resource_limits().max_samples_per_instance
-//                         << "\n";
+        if (_PM->get<bool>("keyed")){
+            stringStream << "\tInstances (Max): "
+                        << qos->resource_limits.max_instances
+                        << "\n";
+            stringStream << "\tMax Samples per Instance: "
+                        << qos->resource_limits.max_samples_per_instance
+                        << "\n";
 
-//         }
-//         stringStream << "\tDurability is: "
-//                     << qos.durability().kind
-//                     << "\n";
-//         stringStream << "\tReliability is: "
-//                     << qos.reliability().kind
-//                     << "\n";
-//         fprintf(stderr, "%s\n", stringStream.str().c_str());
-//     }
+        }
+        stringStream << "\tDurability is: "
+                    << qos->durability.kind
+                    << "\n";
+        stringStream << "\tHistory is: "
+                    << qos->history.kind
+                    << "\n";
+        stringStream << "\tReliability is: "
+                    << qos->reliability.kind
+                    << "\n";
+        fprintf(stderr, "%s\n", stringStream.str().c_str());
+    }
 
     return true;
 }
@@ -972,13 +977,21 @@ bool CycloneDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
             ? PerftestSemaphore_new()
             : nullptr;
 
+    /*
+     * Prior to create any Cyclone DDS entity, we will set the CYCLONEDDS_URI
+     * which is used to pick certain QoS and settings, like the verbosity,
+     * the nic or the HB periods.
+     */
+    if (!set_cycloneDDS_URI()) {
+        return false;
+    }
+
 
     dds_qos_t *participantQos;
     participantQos = dds_create_qos();
     if (!configure_participant_qos(participantQos)) {
         return false;
     }
-
 
     dds_listener_t *participantlistener = nullptr;
     participantlistener = dds_create_listener(nullptr);
@@ -1059,8 +1072,8 @@ IMessagingWriter *CycloneDDSImpl<T>::CreateWriter(const char *topicName)
             _participant,
             &_topicDescriptor,
             topicName,
-            NULL,
-            NULL);
+            nullptr,
+            nullptr);
 
     if (topic < 0) {
         fprintf(stderr,
@@ -1091,6 +1104,7 @@ IMessagingWriter *CycloneDDSImpl<T>::CreateWriter(const char *topicName)
         fprintf(stderr,
                 "Problem creating writer: %s\n",
                 dds_strretcode(-writer));
+        return nullptr;
     }
     dds_return_t retCode = dds_set_status_mask(
             writer,
@@ -1126,8 +1140,8 @@ IMessagingReader *CycloneDDSImpl<T>::CreateReader(
             _participant,
             &_topicDescriptor,
             topicName,
-            NULL,
-            NULL);
+            nullptr,
+            nullptr);
 
     if (topic < 0) {
         fprintf(stderr,
@@ -1169,6 +1183,7 @@ IMessagingReader *CycloneDDSImpl<T>::CreateReader(
         fprintf(stderr,
                 "Problem creating writer: %s\n",
                 dds_strretcode(-reader));
+        return nullptr;
     }
     dds_return_t retCode = dds_set_status_mask(
             reader,

@@ -690,6 +690,10 @@ void perftest_cpp::PrintConfiguration()
                              << "\t\t  FlatData and/or Zero-Copy.\n";
             }
         }
+      #elif defined(PERFTEST_CYCLONEDDS)
+        stringStream << "\tBatching: "
+                     << (_PM.is_set("enableBatching") ? "Enabled" : "Disabled")
+                     << "\n";
       #endif
 
         // Publication Rate
@@ -2044,7 +2048,7 @@ int perftest_cpp::Publisher()
         writer->Send(message, true);
     }
     writer->Flush();
-
+    
     fflush(stderr);
 
     _printer.print_initial_output();

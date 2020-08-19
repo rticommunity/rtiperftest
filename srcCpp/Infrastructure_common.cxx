@@ -183,11 +183,7 @@ PerftestThread* PerftestThread_new(
     ThreadOnSpawnedMethod method,
     void *threadParam)
 {
-    PerftestThread *thread = new PerftestThread(method, threadParam);
-    if( thread->get_id() != std::this_thread::get_id()) {
-        return NULL;
-    }
-    return thread;
+    return new PerftestThread(method, threadParam);
 }
 
 void PerftestThread_delete(PerftestThread* thread)

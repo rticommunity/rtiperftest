@@ -645,9 +645,16 @@ bool FastDDSImpl<T>::configure_writer_qos(
     }
 
     // HISTORY
-    // qos.history().kind = HistoryQosPolicyKind::KEEP_LAST_HISTORY_QOS;
-    // qos.history().depth = _PM->get<int>("sendQueueSize");
-    qos.history().kind = HistoryQosPolicyKind::KEEP_ALL_HISTORY_QOS;
+    if (_PM->is_set("keepLast") || _PM->is_set("keepLastDepth")) {
+        qos.history().kind = HistoryQosPolicyKind::KEEP_LAST_HISTORY_QOS;
+        if (_PM->is_set("keepLastDepth")) {
+            qos.history().depth = _PM->get<int>("keepLastDepth");
+        } else {
+            qos.history().depth = _PM->get<int>("sendQueueSize");
+        }
+    } else {
+        qos.history().kind = HistoryQosPolicyKind::KEEP_ALL_HISTORY_QOS;
+    }
 
     // // PUBLISH MODE
     if (_PM->get<bool>("asynchronous")) {
@@ -787,9 +794,17 @@ bool FastDDSImpl<T>::configure_reader_qos(
         qos.durability().kind = DurabilityQosPolicyKind::TRANSIENT_LOCAL_DURABILITY_QOS;
     }
 
-    // qos.history().kind = HistoryQosPolicyKind::KEEP_LAST_HISTORY_QOS;
-    // qos.history().depth = _PM->get<int>("sendQueueSize");
-    qos.history().kind = HistoryQosPolicyKind::KEEP_ALL_HISTORY_QOS;
+    // HISTORY
+    if (_PM->is_set("keepLast") || _PM->is_set("keepLastDepth")) {
+        qos.history().kind = HistoryQosPolicyKind::KEEP_LAST_HISTORY_QOS;
+        if (_PM->is_set("keepLastDepth")) {
+            qos.history().depth = _PM->get<int>("keepLastDepth");
+        } else {
+            qos.history().depth = _PM->get<int>("sendQueueSize");
+        }
+    } else {
+        qos.history().kind = HistoryQosPolicyKind::KEEP_ALL_HISTORY_QOS;
+    }
 
 
     // RESOURCE LIMITS

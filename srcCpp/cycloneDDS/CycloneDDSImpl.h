@@ -76,6 +76,7 @@ public:
         return true;
     };
 
+    bool set_cycloneDDS_URI();
     bool configure_participant_qos(dds_qos_t *qos);
     bool configure_writer_qos(dds_qos_t *qos, std::string qosProfile);
     bool configure_reader_qos(dds_qos_t *qos, std::string qosProfile);
@@ -87,17 +88,19 @@ protected:
     // Perftest related entities
     perftest_cpp *_parent;
     ParameterManager *_PM;
-    dds_topic_descriptor_t _topicDescriptor;
-
     std::map<std::string, std::string> _qoSProfileNameMap;
 
     PerftestTransport _transport;
     PerftestSemaphore *_pongSemaphore;
+    std::string _verbosityString;
+    std::string _transportConfigurationString;
+    std::string _cycloneDdsUriString;
 
     // DDS Entities
     dds_entity_t _participant;
     dds_entity_t _publisher;
     dds_entity_t _subscriber;
+    dds_topic_descriptor_t _topicDescriptor;
 
 };
 
