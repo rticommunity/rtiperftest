@@ -10,6 +10,16 @@ using namespace eprosima::fastdds::dds;
 using namespace eprosima::fastrtps::rtps;
 
 
+/*
+ * TODO: Once we circle back and we have the get_middleware_version_string
+ * in all the architetures, we can make it a static MiddlewareImpl function
+ * and use it instead of this function.
+ */
+const std::string GetDDSVersionString()
+{
+    return "Eprosima FastDDS";
+};
+
 // Listeners used by the DDS Entities
 
 class ParticipantListener : public DomainParticipantListener {
@@ -191,8 +201,43 @@ void FastDDSImpl<T>::Shutdown()
     }
 }
 
-/*********************************************************
 
+/*********************************************************
+ * get_middleware_version_string
+ */
+template <typename T>
+const std::string FastDDSImpl<T>::get_middleware_version_string()
+{
+    return "Eprosima FastDDS";
+}
+
+/*********************************************************
+ * configure_middleware_verbosity
+ */
+template <typename T>
+void FastDDSImpl<T>::configure_middleware_verbosity(int verbosityLevel)
+{
+    switch (verbosityLevel) {
+        case 0: fprintf(stderr, "[Error]: Cannot set verbosity to SILENT\n");
+            break;
+        case 1: Log::SetVerbosity(Log::Error);
+            fprintf(stderr, "Setting verbosity to ERROR\n");
+            break;
+        case 2: Log::SetVerbosity(Log::Warning);
+            fprintf(stderr, "Setting verbosity to WARNING\n");
+            break;
+        case 3: Log::SetVerbosity(Log::Info);
+            fprintf(stderr, "Setting verbosity to INFO\n");
+            break;
+        default:
+            fprintf(stderr,
+                    "[Error]: Invalid value for the verbosity parameter. Using "
+                    "default\n");
+            break;
+    }
+}
+
+/*********************************************************
  * Validate and manage the parameters
  */
 template <typename T>
@@ -210,7 +255,7 @@ bool FastDDSImpl<T>::validate_input()
      * Setting verbosity if the parameter is provided
      */
     if (_PM->is_set("verbosity")) {
-        PerftestConfigureVerbosity(_PM->get<int>("verbosity"));
+        configure_middleware_verbosity(_PM->get<int>("verbosity"));
     }
 
     return true;

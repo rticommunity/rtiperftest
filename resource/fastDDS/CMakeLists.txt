@@ -27,7 +27,6 @@ ADD_EXECUTABLE(FastDDSperftest_cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/fastDDS/perftest.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/fastDDS/perftestPubSubTypes.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/fastDDS/FastDDSImpl.cxx
-        ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/fastDDS/Infrastructure_fastDDS.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCppCommon/ThreadPriorities.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCppCommon/Parameter.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCppCommon/ParameterManager.cxx

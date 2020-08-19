@@ -26,6 +26,11 @@
 #include "dds/ddsi/ddsi_xqos.h"
 #include "dds/ddsrt/time.h"
 
+/*
+ * TODO: Once we circle back and we have the get_middleware_version_string
+ * in all the architetures, we can make it a static MiddlewareImpl function
+ * and use it instead of this function.
+ */
 const std::string GetDDSVersionString();
 
 /* Forward declaration of perftest_cpp to avoid circular dependencies */

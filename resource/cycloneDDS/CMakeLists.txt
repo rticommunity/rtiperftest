@@ -15,7 +15,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/Linux)
 
 #idlc_generate(perftestType_lib "srcIdl/perftest.idl" "-d tmp -D PERFTEST_CYCLONEDDS")
 
-ADD_EXECUTABLE(CycloneDDSperftest_cpp
+add_executable(CycloneDDSperftest_cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/cycloneDDS/CycloneDDSImpl.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/cycloneDDS/perftest.c
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCppCommon/ThreadPriorities.cxx
@@ -28,4 +28,4 @@ ADD_EXECUTABLE(CycloneDDSperftest_cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/FileDataLoader.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/perftest_publisher.cxx)
 
-TARGET_LINK_LIBRARIES(CycloneDDSperftest_cpp CycloneDDS::ddsc)
+target_link_libraries(CycloneDDSperftest_cpp CycloneDDS::ddsc -lpthread)

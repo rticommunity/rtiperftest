@@ -7,9 +7,9 @@
 #include "CycloneDDSImpl.h"
 
 /*
- * TODO
- * We should use the function inside CycloneDDSImpl instead of this one or
- * alternatively remove the other one and use this.
+ * TODO: Once we circle back and we have the get_middleware_version_string
+ * in all the architetures, we can make it a static MiddlewareImpl function
+ * and use it instead of this function.
  */
 const std::string GetDDSVersionString()
 {

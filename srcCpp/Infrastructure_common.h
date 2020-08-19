@@ -53,11 +53,6 @@
   #include "Infrastructure_micro.h"
 #else // Other DDS Middleware
 
-  //This is temporal and we should not need it for the future.
-  #ifdef PERFTEST_EPROSIMA_FASTDDS
-      #include "Infrastructure_fastDDS.h"
-  #endif
-
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
