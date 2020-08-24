@@ -2048,7 +2048,8 @@ int perftest_cpp::Publisher()
         writer->Send(message, true);
     }
     writer->Flush();
-    
+
+    fprintf(stderr, "Sending data ...\n");
     fflush(stderr);
 
     _printer.print_initial_output();

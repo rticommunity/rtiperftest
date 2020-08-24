@@ -1311,7 +1311,7 @@ function build_cycloneDDS_cpp()
     echo -e "${INFO_TAG} Cmake Build Command: $cmake_build_command"
     eval $cmake_build_command
     if [ "$?" != 0 ]; then
-        echo -e "${ERROR_TAG} Failure compiling code for FastDDS."
+        echo -e "${ERROR_TAG} Failure compiling code for CycloneDDS."
         rm -rf ${script_location}/CMakeLists.txt
         exit -1
     fi

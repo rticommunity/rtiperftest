@@ -28,12 +28,12 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/Linux/CycloneDDSperftest_cpp",
-            "args": [],
+            "args": ["-pub", "-exec 3", "-latencyTest"],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "lldb",
+            "MIMode": "gdb",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

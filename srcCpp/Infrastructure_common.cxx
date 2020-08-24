@@ -189,6 +189,7 @@ PerftestThread* PerftestThread_new(
 void PerftestThread_delete(PerftestThread* thread)
 {
     if (thread != NULL) {
+        thread->join();
         delete thread;
     }
 }
