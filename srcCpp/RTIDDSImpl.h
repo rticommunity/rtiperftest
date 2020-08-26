@@ -121,11 +121,6 @@ public:
         return true;
     };
 
-    bool supports_discovery()
-    {
-        return true;
-    };
-
     const std::string get_qos_profile_name(const char *topicName);
 
 protected:

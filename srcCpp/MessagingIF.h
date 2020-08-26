@@ -182,7 +182,6 @@ public:
 
     /* Get information about witch features are supported by the medleware */
     virtual bool supports_listener() = 0;
-    virtual bool supports_discovery() = 0;
 
     /*
      * @brief This function calculates the overhead bytes added by all the

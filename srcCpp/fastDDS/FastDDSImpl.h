@@ -95,11 +95,6 @@ public:
         return true;
     };
 
-    bool supports_discovery()
-    {
-        return true;
-    };
-
     bool configure_participant_qos(DomainParticipantQos &qos);
     bool configure_writer_qos(DataWriterQos &qos, std::string qosProfile);
     bool configure_reader_qos(DataReaderQos &qos, std::string qosProfile);

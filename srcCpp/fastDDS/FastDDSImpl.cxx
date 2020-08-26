@@ -143,7 +143,7 @@ public:
             _message.timestamp_usec = _sample.timestamp_usec();
             _message.latency_ping = _sample.latency_ping();
             _message.size = (int) _sample.bin_data().size();
-            //_message.data = _sample.bin_data();
+            _message.data = _sample.bin_data();
           #ifdef DEBUG_PING_PONG
             std::cout << "<< got sample " << _sample.seq_num() << std::endl;
           #endif
@@ -598,7 +598,7 @@ public:
                     _message.timestamp_usec = _sample.timestamp_usec();
                     _message.latency_ping = _sample.latency_ping();
                     _message.size = (int) _sample.bin_data().size();
-                    //_message.data = _sample.bin_data();
+                    _message.data = _sample.bin_data();
 
                     return &_message;
                 }

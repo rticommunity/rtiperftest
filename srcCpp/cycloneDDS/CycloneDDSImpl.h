@@ -76,11 +76,6 @@ public:
         return true;
     };
 
-    bool supports_discovery()
-    {
-        return true;
-    };
-
     bool set_cycloneDDS_URI();
     bool configure_participant_qos(dds_qos_t *qos);
     bool configure_writer_qos(dds_qos_t *qos, std::string qosProfile);

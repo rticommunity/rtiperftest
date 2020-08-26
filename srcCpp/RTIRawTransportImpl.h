@@ -35,7 +35,6 @@ class RTIRawTransportImpl : public IMessaging {
     int GetBatchSize();
 
     bool supports_listener() {return false;}
-    bool supports_discovery() {return false;}
 
     IMessagingWriter *CreateWriter(const char *topic_name);
 

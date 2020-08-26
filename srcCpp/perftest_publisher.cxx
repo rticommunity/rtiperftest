@@ -1191,15 +1191,6 @@ int perftest_cpp::Subscriber()
     do {
         announcement_writer->Send(announcement_msg);
         announcement_writer->Flush();
-
-        if (_MessagingImpl->supports_discovery()) {
-            /*
-             * If the middleware support discovery there is no need to wait
-             * until the writer answer due to we already know the writer is
-             * active and available to receive the announcement message.
-             */
-            break;
-        }
         PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         /*
          * Send announcement message until the publisher replies us.
