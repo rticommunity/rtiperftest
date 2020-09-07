@@ -470,7 +470,7 @@ bool perftest_cpp::validate_input()
     }
 
     // Manage the parameter: -pubRate -sleep -spin
-    if (_PM.is_set("pubRate")) {
+    if (_PM.is_set("pubRate") || _PM.is_set("pubRatebps")) {
         if (_SpinLoopCount > 0) {
             fprintf(stderr, "'-spin' is not compatible with '-pubRate'. "
                     "Spin/Sleep value will be set by -pubRate.\n");
@@ -481,6 +481,13 @@ bool perftest_cpp::validate_input()
                     "Spin/Sleep value will be set by -pubRate.\n");
             _SleepNanosec = 0;
         }
+    }
+
+    if (_PM.is_set("scan") && _PM.is_set("pubRatebps")) {
+        fprintf(stderr,
+                "'-scan' cannot be used with '-pubRatebps', use '-pubRate' "
+                "instead\n");
+        return false;
     }
 
     if (_PM.is_set("loadDataFromFile")){
@@ -702,6 +709,15 @@ void perftest_cpp::PrintConfiguration()
             stringStream << _PM.get_pair<unsigned long long, std::string>("pubRate").first
                          << " Samples/s (";
             if (_PM.get_pair<unsigned long long, std::string>("pubRate").second
+                    == "spin") {
+                stringStream << "Spin)\n";
+            } else {
+                stringStream << "Sleep)\n";
+            }
+        } else if (_PM.is_set("pubRatebps")) {
+            stringStream << _PM.get_pair<unsigned long long, std::string>("pubRatebps").first
+                         << " bps (";
+            if (_PM.get_pair<unsigned long long, std::string>("pubRatebps").second
                     == "spin") {
                 stringStream << "Spin)\n";
             } else {
@@ -1792,6 +1808,23 @@ public:
     }
 };
 
+void perftest_cpp::calculate_publication_rate()
+{
+    unsigned long long pubRate =
+            (_PM.get_pair<unsigned long long, std::string>("pubRatebps").first
+                / (8 * _PM.get<unsigned long long>("dataLen")));
+    if (pubRate < 1) {
+        pubRate = 1;
+    }
+    fprintf(stderr, "Calculated Publication Rate is: %lld samples/s\n", pubRate);
+
+    _PM.set("pubRate", std::pair<unsigned long long, std::string>(
+        pubRate,
+        _PM.get_pair<unsigned long long, std::string>("pubRatebps").second
+    ));
+
+}
+
 /*********************************************************
  * Publisher
  */
@@ -1943,6 +1976,10 @@ int perftest_cpp::Publisher()
     unsigned long long spinPerUsec = 0;
     unsigned long sleepUsec = 1000;
     DDS_Duration_t sleep_period = {0,0};
+
+    if (_PM.is_set("pubRatebps")) {
+        calculate_publication_rate();
+    }
 
     if (_PM.is_set("pubRate")) {
         if (_PM.get_pair<unsigned long long, std::string>("pubRate").second

@@ -691,6 +691,29 @@ void ParameterManager::initialize()
     pubRate->add_valid_str_value("spin");
     create("pubRate", pubRate);
 
+#ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    ParameterPair<unsigned long long, std::string> *pubRatebps =
+            new ParameterPair<unsigned long long, std::string>(0, "spin");
+    pubRatebps->set_command_line_argument("-pubRatebps", "<bps>:<method>");
+    pubRatebps->set_description(
+            "Limit the throughput to the specified number\n"
+            "of samples/s. Default 0 (don't limit)\n"
+            "[OPTIONAL] Method to control the throughput can be:\n"
+            "'spin' or 'sleep'.\nDefault method: spin");
+    pubRatebps->set_type(T_PAIR_NUMERIC_STR);
+    pubRatebps->set_extra_argument(YES);
+    pubRatebps->set_group(PUB);
+    pubRatebps->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTIDDSMICRO
+            | Middleware::EPROSIMAFASTDDS);
+    pubRatebps->set_range(1, 10000000);
+    pubRatebps->add_valid_str_value("sleep");
+    pubRatebps->add_valid_str_value("spin");
+    create("pubRatebps", pubRatebps);
+#endif
+
      std::vector<unsigned long long> scanList;
     scanList.push_back(32);
     scanList.push_back(64);

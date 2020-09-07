@@ -41,6 +41,7 @@ class perftest_cpp
     void PrintConfiguration();
     unsigned int GetSamplesPerBatch();
     const ThreadPriorities get_thread_priorities();
+    void calculate_publication_rate();
     static const Perftest_ProductVersion_t GetPerftestVersion();
     static void PrintVersion();
 
