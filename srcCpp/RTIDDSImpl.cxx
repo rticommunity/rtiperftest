@@ -3170,7 +3170,7 @@ bool RTIDDSImpl<T>::setup_DW_QoS(
           #endif
         }
 
-      #ifndef RTI_MICRO
+      #ifndef PERTEST_RTI_MICRO
 
         if (_PM->get<unsigned long long>("dataLen") > DEFAULT_MESSAGE_SIZE_MAX) {
             dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples =
