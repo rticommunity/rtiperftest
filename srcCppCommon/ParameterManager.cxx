@@ -566,10 +566,7 @@ void ParameterManager::initialize()
     latencyCount->set_extra_argument(YES);
     latencyCount->set_range(1, MAX_ULLONG);
     latencyCount->set_group(PUB);
-    latencyCount->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+    latencyCount->set_supported_middleware(Middleware::ALL);
     create("latencyCount", latencyCount);
 
     Parameter<unsigned long long> *executionTime =
@@ -584,11 +581,7 @@ void ParameterManager::initialize()
     executionTime->set_extra_argument(YES);
     executionTime->set_range(1, MAX_ULLONG);
     executionTime->set_group(PUB);
-    executionTime->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    executionTime->set_supported_middleware(Middleware::ALL);
     create("executionTime", executionTime);
 
     Parameter<long> *initialBurstSize =
@@ -601,11 +594,7 @@ void ParameterManager::initialize()
     initialBurstSize->set_extra_argument(YES);
     initialBurstSize->set_range(0, LONG_MAX);
     initialBurstSize->set_group(PUB);
-    initialBurstSize->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    initialBurstSize->set_supported_middleware(Middleware::ALL);
     create("initialBurstSize", initialBurstSize);
 
     Parameter<bool> *latencyTest = new Parameter<bool>(false);
@@ -616,11 +605,7 @@ void ParameterManager::initialize()
     latencyTest->set_type(T_BOOL);
     latencyTest->set_extra_argument(NO);
     latencyTest->set_group(PUB);
-    latencyTest->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    latencyTest->set_supported_middleware(Middleware::ALL);
     create("latencyTest", latencyTest);
 
     Parameter<unsigned long long> *numIter =
@@ -634,11 +619,7 @@ void ParameterManager::initialize()
     numIter->set_extra_argument(YES);
     numIter->set_range(1, MAX_ULLONG);
     numIter->set_group(PUB);
-    numIter->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    numIter->set_supported_middleware(Middleware::ALL);
     create("numIter", numIter);
 
     Parameter<int> *numSubscribers = new Parameter<int>(1);
@@ -681,11 +662,7 @@ void ParameterManager::initialize()
     pubRate->set_type(T_PAIR_NUMERIC_STR);
     pubRate->set_extra_argument(YES);
     pubRate->set_group(PUB);
-    pubRate->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    pubRate->set_supported_middleware(Middleware::ALL);
     pubRate->set_range(1, 10000000);
     pubRate->add_valid_str_value("sleep");
     pubRate->add_valid_str_value("spin");
@@ -703,11 +680,7 @@ void ParameterManager::initialize()
     pubRatebps->set_type(T_PAIR_NUMERIC_STR);
     pubRatebps->set_extra_argument(YES);
     pubRatebps->set_group(PUB);
-    pubRatebps->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    pubRatebps->set_supported_middleware(Middleware::ALL);
     pubRatebps->set_range(1, 10000000);
     pubRatebps->add_valid_str_value("sleep");
     pubRatebps->add_valid_str_value("spin");
@@ -744,10 +717,7 @@ void ParameterManager::initialize()
     scan->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_PERFTEST_SAMPLE_SIZE);
     scan->set_parse_method(SPLIT);
     scan->set_group(PUB);
-    scan->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    scan->set_supported_middleware(Middleware::ALLDDS);
     create("scan", scan);
 
     Parameter<unsigned long long> *sleep = new Parameter<unsigned long long>(0);
@@ -758,10 +728,7 @@ void ParameterManager::initialize()
     sleep->set_extra_argument(YES);
     sleep->set_range(1, MAX_ULLONG);
     sleep->set_group(PUB);
-    sleep->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+    sleep->set_supported_middleware(Middleware::ALL);
     create("sleep", sleep);
 
     Parameter<unsigned long long> *spin = new Parameter<unsigned long long>(0);
@@ -771,11 +738,7 @@ void ParameterManager::initialize()
     spin->set_extra_argument(YES);
     spin->set_range(1, MAX_ULLONG);
     spin->set_group(PUB);
-    spin->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+    spin->set_supported_middleware(Middleware::ALL);
     create("spin", spin);
 
   #ifndef RTI_LANGUAGE_CPP_TRADITIONAL
