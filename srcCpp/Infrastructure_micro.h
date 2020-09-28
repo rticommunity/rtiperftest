@@ -12,6 +12,7 @@
 #include "osapi/osapi_thread.h"
 #include "osapi/osapi_time.h"
 #include "rti_me_cpp.hxx"
+#include "dds_cpp/dds_cpp_dpde.hxx"
 #include "PerftestTransport.h"
 
 #ifdef RTI_SECURE_PERFTEST
