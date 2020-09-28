@@ -10,13 +10,13 @@ class FileDataLoader {
 
   private:
     /* This is the maximum size we allow to store when creating all buffers */
-    unsigned int _maximumAllocableSpace;
+    unsigned long _maximumAllocableSpace;
     /* Path to file */
     std::string _filePath;
     /* Size of the file */
-    unsigned int _fileSize;
+    unsigned long _fileSize;
     /* Size of each of the buffers */
-    unsigned int _bufferSize;
+    unsigned long _bufferSize;
     /* Number of buffers */
     unsigned int _numberOfBuffers;
     /* Queue */
