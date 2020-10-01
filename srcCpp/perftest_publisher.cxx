@@ -1899,12 +1899,14 @@ int perftest_cpp::Publisher()
     if (_PM.is_set("loadDataFromFile")) {
         message.data = _fileDataLoader.get_next_buffer();
     } else {
-        message.data = new char[(std::max)
-                ((int)_PM.get<unsigned long long>("dataLen"),
-                (int)LENGTH_CHANGED_SIZE)];
-        memset (message.data,0,(std::max)
-                ((int)_PM.get<unsigned long long>("dataLen"),
-                (int)LENGTH_CHANGED_SIZE));
+        message.data = new char[(std::max)(
+                (int) _PM.get<unsigned long long>("dataLen"),
+                (int) LENGTH_CHANGED_SIZE)];
+        memset(message.data,
+               0,
+               (std::max)(
+                       (int) _PM.get<unsigned long long>("dataLen"),
+                       (int) LENGTH_CHANGED_SIZE));
     }
 
     if (showCpu && _PM.get<int>("pidMultiPubTest") == 0) {
