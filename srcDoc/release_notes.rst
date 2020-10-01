@@ -185,6 +185,14 @@ the buffers in the sending and receiving paths.
 In most of the cases this number should not cause any trouble (as long as it is
 big enough), but in certain cases a low number is required due to OS restrictions.
 
+`qos_string` file now generated only once and in srcCppCommon (#334)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In previous releases, the `qos_string.h` file containing the strings from the
+`perftest_qos_profiles.xml` was generated twice and copied to the `srcCpp` and
+`srcCpp03` folders. This process has been simplified, generating only once and
+into `srcCppCommon`.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
