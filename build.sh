@@ -201,6 +201,7 @@ function clean()
     rm -f  "${script_location}"/srcC*/perftest_ZeroCopy*
     rm -f  "${script_location}"/srcC*/perftestPlugin.*
     rm -f  "${script_location}"/srcC*/perftestSupport.*
+    rm -f  "${script_location}"/srcC*/perftest_publisher.*
     rm -f  "${script_location}"/srcC*/perftest_subscriber.*
     rm -f  "${script_location}"/srcC*/makefile_*
     rm -rf "${script_location}"/srcC*/objs
@@ -223,7 +224,7 @@ function clean()
     rm -rf "${script_location}"/srcCpp/fastDDS/perftestPubSubTypes.*
     clean_custom_type_files
     clean_documentation
-    clean_src_cpp_common
+    clean_copied_files
 
     echo ""
     echo "================================================================================"
@@ -601,7 +602,7 @@ function copy_src_cpp_common()
     done
 }
 
-function clean_src_cpp_common()
+function clean_copied_files()
 {
     for file in ${common_cpp_folder}/*
     do
@@ -611,6 +612,11 @@ function clean_src_cpp_common()
             rm -rf "${classic_cpp_folder}/${name_file}"
         fi
     done
+
+    rm -rf "${modern_cpp_folder}/perftest_publisher.cxx"
+    rm -rf "${modern_cpp_folder}/perftest_subscriber.cxx"
+    rm -rf "${classic_cpp_folder}/perftest_publisher.cxx"
+    rm -rf "${classic_cpp_folder}/perftest_subscriber.cxx"
 }
 
 function check_flatData_zeroCopy_available()
@@ -717,7 +723,7 @@ function build_cpp()
     eval $rtiddsgen_command
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     fi
 
@@ -735,14 +741,16 @@ function build_cpp()
         eval $rtiddsgen_command
         if [ "$?" != 0 ]; then
             echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
-            clean_src_cpp_common
+            clean_copied_files
             exit -1
         fi
 
         rm -rf ${classic_cpp_folder}/makefile_perftest_ZeroCopy_${platform}
     fi
 
-    cp "${classic_cpp_folder}/perftest_publisher.cxx" \
+    cp "${classic_cpp_folder}/perftest_cpp.cxx" \
+    "${classic_cpp_folder}/perftest_publisher.cxx"
+    cp "${classic_cpp_folder}/perftest_cpp.cxx" \
     "${classic_cpp_folder}/perftest_subscriber.cxx"
 
     ##############################################################################
@@ -761,7 +769,7 @@ function build_cpp()
     "${MAKE_EXE}" -C "${classic_cpp_folder}" -f makefile_perftest_${platform}
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure compiling code for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     fi
     echo -e "${INFO_TAG} Compilation successful"
@@ -774,7 +782,7 @@ function build_cpp()
         "${MAKE_EXE}" -C "${classic_cpp_folder}" -f makefile_perftest_${platform} perftest.so perftest.projects perftest.apks
         if [ "$?" != 0 ]; then
                 echo -e "${ERROR_TAG} Failure building apk in ${classic_cpp_lang_string} of ${platform}."
-                clean_src_cpp_common
+                clean_copied_files
                 exit -1
         fi
         echo -e "${INFO_TAG} Building apk successful"
@@ -812,11 +820,11 @@ function build_cpp()
 
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure copying code for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     else
         echo -e "${INFO_TAG} Copy successful for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
     fi
 
     if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
@@ -897,7 +905,8 @@ function build_micro_cpp()
         echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
         exit -1
     fi
-    cp "${classic_cpp_folder}/perftest_publisher.cxx" "${classic_cpp_folder}/perftest_subscriber.cxx"
+    cp "${classic_cpp_folder}/perftest_cpp.cxx" "${classic_cpp_folder}/perftest_publisher.cxx"
+    cp "${classic_cpp_folder}/perftest_cpp.cxx" "${classic_cpp_folder}/perftest_subscriber.cxx"
     cp "${idl_location}/perftest.idl" "${classic_cpp_folder}/perftest.idl"
     touch "${classic_cpp_folder}/perftestApplication.cxx"
     touch "${classic_cpp_folder}/perftestApplication.h"
@@ -954,11 +963,11 @@ function build_micro_cpp()
     "${destination_folder}/perftest_cpp_micro${executable_extension}"
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure copying code for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     else
         echo -e "${INFO_TAG} Copy successful for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
     fi
 }
 
@@ -1021,7 +1030,7 @@ function build_cpp03()
     eval $rtiddsgen_command
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     fi
 
@@ -1038,14 +1047,16 @@ function build_cpp03()
         eval $rtiddsgen_command
         if [ "$?" != 0 ]; then
             echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
-            clean_src_cpp_common
+            clean_copied_files
             exit -1
         fi
 
         rm -rf ${modern_cpp_folder}/makefile_perftest_ZeroCopy_${platform}
     fi
 
-    cp "${modern_cpp_folder}/perftest_publisher.cxx" \
+    cp "${modern_cpp_folder}/perftest_cpp.cxx" \
+    "${modern_cpp_folder}/perftest_publisher.cxx"
+    cp "${modern_cpp_folder}/perftest_cpp.cxx" \
     "${modern_cpp_folder}/perftest_subscriber.cxx"
 
     ##############################################################################
@@ -1064,7 +1075,7 @@ function build_cpp03()
     "${MAKE_EXE}" -C "${modern_cpp_folder}" -f makefile_perftest_${platform}
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure compiling code for ${modern_cpp_folder}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     fi
     echo -e "${INFO_TAG} Compilation successful"
@@ -1077,7 +1088,7 @@ function build_cpp03()
         "${MAKE_EXE}" -C "${modern_cpp_folder}" -f makefile_perftest_${platform} perftest.so perftest.projects perftest.apks
         if [ "$?" != 0 ]; then
                 echo -e "${ERROR_TAG} Failure building apk in ${modern_cpp_folder} of ${platform}."
-                clean_src_cpp_common
+                clean_copied_files
                 exit -1
         fi
         echo -e "${INFO_TAG} Building apk successful"
@@ -1114,11 +1125,11 @@ function build_cpp03()
     "${destination_folder}/perftest_cpp03${executable_extension}"
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure copying code for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     else
         echo -e "${INFO_TAG} Copy successful for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
     fi
 
     if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then

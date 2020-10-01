@@ -35,6 +35,6 @@ ADD_EXECUTABLE(FastDDSperftest_cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/PerftestTransport.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/Infrastructure_common.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/FileDataLoader.cxx
-        ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/perftest_publisher.cxx)
+        ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/perftest_cpp.cxx)
 
 TARGET_LINK_LIBRARIES(FastDDSperftest_cpp ${FASTDDS_LIBS})

@@ -309,7 +309,7 @@ if !BUILD_MICRO! == 1 (
 ::------------------------------------------------------------------------------
 if !BUILD_CPP! == 1 (
 
-	call::copy_src_cpp_common
+	call::clean_copied_files
 	call::solution_compilation_flag_calculation
 	call::get_flatdata_available
 
@@ -487,7 +487,8 @@ if !BUILD_CPP! == 1 (
 		)
 	)
 
-	call copy "%classic_cpp_folder%"\perftest_publisher.cxx "%classic_cpp_folder%"\perftest_subscriber.cxx
+	call copy "%classic_cpp_folder%"\perftest_cpp.cxx "%classic_cpp_folder%"\perftest_publisher.cxx
+	call copy "%classic_cpp_folder%"\perftest_cpp.cxx "%classic_cpp_folder%"\perftest_subscriber.cxx
 
 	echo[
 	echo [INFO]: Compiling %classic_cpp_lang_string%
@@ -516,7 +517,7 @@ if !BUILD_CPP! == 1 (
 ::------------------------------------------------------------------------------
 
 if !BUILD_CPP03! == 1 (
-	call::copy_src_cpp_common
+	call::clean_copied_files
 	call::solution_compilation_flag_calculation
 	call::get_flatdata_available
 
@@ -634,7 +635,8 @@ if !BUILD_CPP03! == 1 (
 		)
 	)
 
-	call copy "%modern_cpp_folder%"\perftest_publisher.cxx "%modern_cpp_folder%"\perftest_subscriber.cxx
+	call copy "%modern_cpp_folder%"\perftest_cpp.cxx "%modern_cpp_folder%"\perftest_publisher.cxx
+	call copy "%modern_cpp_folder%"\perftest_cpp.cxx "%modern_cpp_folder%"\perftest_subscriber.cxx
 
 	echo[
 	echo [INFO]: Compiling %modern_cpp_lang_string%
@@ -678,7 +680,8 @@ if %BUILD_CS% == 1 (
 		echo [ERROR]: Failure generating code for %cs_lang_string%.
 		exit /b 1
 	)
-	call copy "%cs_folder%"\perftest_publisher.cs "%cs_folder%"\perftest_subscriber.cs
+	call copy "%cs_folder%"\perftest_cs.cs "%cs_folder%"\perftest_publisher.cs
+	call copy "%cs_folder%"\perftest_cs.cs "%cs_folder%"\perftest_subscriber.cs
 
 	echo[
 	echo [INFO]: Compiling %cs_lang_string%
@@ -768,7 +771,7 @@ if %BUILD_JAVA% == 1 (
 
 if !BUILD_MICRO! == 1 (
 
-	call::copy_src_cpp_common
+	call::clean_copied_files
 	call::solution_compilation_flag_calculation
 
 	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_TRADITIONAL"
@@ -816,7 +819,8 @@ if !BUILD_MICRO! == 1 (
 		echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
 		exit /b 1
 	)
-	call copy "%classic_cpp_folder%"\perftest_publisher.cxx "%classic_cpp_folder%"\perftest_subscriber.cxx
+	call copy "%classic_cpp_folder%"\perftest_cpp.cxx "%classic_cpp_folder%"\perftest_publisher.cxx
+	call copy "%classic_cpp_folder%"\perftest_cpp.cxx "%classic_cpp_folder%"\perftest_subscriber.cxx
 	call copy "%idl_location%\perftest.idl" "%classic_cpp_folder%"\perftest.idl
 	call echo. > "%classic_cpp_folder%"\perftestApplication.h
 	call echo. > "%classic_cpp_folder%"\perftestApplication.cxx
@@ -1050,9 +1054,15 @@ GOTO:EOF
 		del %modern_cpp_folder%\%%~nxi > nul 2>nul
 		del %classic_cpp_folder%\%%~nxi > nul 2>nul
 	)
+
+	del %modern_cpp_folder%\perftest_publisher.cxx > nul 2>nul
+	del %modern_cpp_folder%\perftest_subscriber.cxx > nul 2>nul
+	del %classic_cpp_folder%\perftest_publisher.cxx > nul 2>nul
+	del %classic_cpp_folder%\perftest_subscriber.cxx > nul 2>nul
+
 GOTO:EOF
 
-:copy_src_cpp_common
+:clean_copied_files
 	@REM # Copy file from srcCommon to srcCpp and srcCpp03
 	for %%i in (%common_cpp_folder%\*) do (
 		call copy /Y %common_cpp_folder%\%%~nxi %modern_cpp_folder%\ > nul 2>nul
@@ -1088,6 +1098,7 @@ GOTO:EOF
 	del %script_location%srcCpp\perftest_ZeroCopy.* > nul 2>nul
 	del %script_location%srcCpp\perftest_ZeroCopyPlugin.* > nul 2>nul
 	del %script_location%srcCpp\perftest_ZeroCopySupport.* > nul 2>nul
+	del %script_location%srcCpp\perftest_publisher.cxx > nul 2>nul
 	del %script_location%srcCpp\perftest_subscriber.cxx > nul 2>nul
 	del %script_location%srcCpp\perftestApplication.h > nul 2>nul
 	del %script_location%srcCpp\perftestApplication.cxx > nul 2>nul
@@ -1104,6 +1115,7 @@ GOTO:EOF
 	del %script_location%srcCpp03\perftest.* > nul 2>nul
 	del %script_location%srcCpp03\perftestImplPlugin.* > nul 2>nul
 	del %script_location%srcCpp03\perftestImpl.* > nul 2>nul
+	del %script_location%srcCpp03\perftest_publisher.cxx > nul 2>nul
 	del %script_location%srcCpp03\perftest_subscriber.cxx > nul 2>nul
 	rmdir /s /q %script_location%srcCs\obj > nul 2>nul
 	rmdir /s /q %script_location%srcCs\bin > nul 2>nul
@@ -1112,6 +1124,7 @@ GOTO:EOF
 	del %script_location%srcCs\*.filters > nul 2>nul
 	del %script_location%srcCs\*.sln > nul 2>nul
 	del %script_location%srcCs\perftest.* > nul 2>nul
+	del %script_location%srcCs\perftest_publisher.cs > nul 2>nul
 	del %script_location%srcCs\perftest_subscriber.cs > nul 2>nul
 	rmdir /s /q %script_location%bin > nul 2>nul
 	rmdir /s /q %script_location%srcJava\class > nul 2>nul

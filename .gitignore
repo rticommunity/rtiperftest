@@ -2,6 +2,7 @@
 /srcC*/perftest_ZeroCopy*
 /srcC*/perftestPlugin.*
 /srcC*/perftestSupport.*
+/srcC*/perftest_publisher.*
 /srcC*/perftest_subscriber.*
 /srcC*/makefile_*
 /srcC*/objs
