@@ -1095,6 +1095,7 @@ int perftest_cpp::Subscriber()
     announcement_msg.entity_id = subID;
     announcement_msg.size = perftest_cpp::INITIALIZE_SIZE;
     announcement_msg.data = new char[LENGTH_CHANGED_SIZE];
+    memset(announcement_msg.data, 0, LENGTH_CHANGED_SIZE);
 
     // Send announcement message
     do {
@@ -1898,9 +1899,14 @@ int perftest_cpp::Publisher()
     if (_PM.is_set("loadDataFromFile")) {
         message.data = _fileDataLoader.get_next_buffer();
     } else {
-        message.data = new char[(std::max)
-                ((int)_PM.get<unsigned long long>("dataLen"),
-                (int)LENGTH_CHANGED_SIZE)];
+        message.data = new char[(std::max)(
+                (int) _PM.get<unsigned long long>("dataLen"),
+                (int) LENGTH_CHANGED_SIZE)];
+        memset(message.data,
+               0,
+               (std::max)(
+                       (int) _PM.get<unsigned long long>("dataLen"),
+                       (int) LENGTH_CHANGED_SIZE));
     }
 
     if (showCpu && _PM.get<int>("pidMultiPubTest") == 0) {

@@ -403,6 +403,13 @@ When using Dynamic Data, the `Send()` path would always try to clear the content
 of the sample prior to start repopulating it. This should only be necesary if the
 sequence size changes. This issue has been fixed.
 
+Modify Perftest Classic C++ API Implementation to Initialize sequence (#348)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the *RTI Perftest* implementation for the *Classic C++ API* the sequence sent
+by the middleware was not being initialized. This issue has been resolved and now
+it is initialized to zeros.
+
 Release Notes 3.0
 -----------------
 
