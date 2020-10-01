@@ -71,8 +71,8 @@ class PerftestFileHandler
 {
   public:
     static bool path_is_file(std::string const& path);
-    static int get_file_size(std::string const& fileName);
-    static int read_file(
+    static long get_file_size(std::string const& fileName);
+    static long read_file(
             std::string const& filename,
             char * fileData,
             unsigned int bytesToRead = 0,

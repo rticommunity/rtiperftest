@@ -30,9 +30,9 @@ bool FileDataLoader::initialize(std::string path, ParameterManager *PM)
     _filePath = path;
     std::cerr << "\tFile name: " << path << std::endl;
 
-    int fileSize = PerftestFileHandler::get_file_size(_filePath);
+    long fileSize = PerftestFileHandler::get_file_size(_filePath);
     if (fileSize > 0) {
-        _fileSize = (unsigned int) fileSize;
+        _fileSize = (unsigned long) fileSize;
     } else {
         std::cerr << "[Error] FileDataLoader::initialize File size "
                   << fileSize
@@ -120,7 +120,7 @@ bool FileDataLoader::initialize(std::string path, ParameterManager *PM)
 
 bool FileDataLoader::load_file_into_buffers()
 {
-    int totalBytesRead = 0;
+    long totalBytesRead = 0;
 
     /* Lets first resize the vector of buffers to the proper size */
     _dataBuffers.resize(_numberOfBuffers);
@@ -129,7 +129,7 @@ bool FileDataLoader::load_file_into_buffers()
     for (unsigned int i = 0; i < _dataBuffers.size(); i++) {
 
         _dataBuffers[i] = new char[_bufferSize];
-        int currentBytesRead = PerftestFileHandler::read_file(
+        long currentBytesRead = PerftestFileHandler::read_file(
                     _filePath,        // filename
                     _dataBuffers[i],  // where to store it
                     _bufferSize,      // size to read

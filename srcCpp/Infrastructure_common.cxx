@@ -63,7 +63,7 @@ bool PerftestFileHandler::path_is_file(std::string const& path)
   #endif
 }
 
-int PerftestFileHandler::get_file_size(std::string const& fileName)
+long PerftestFileHandler::get_file_size(std::string const& fileName)
 {
 
   #if defined(RTI_UNIX) || defined(RTI_WIN32)
@@ -86,7 +86,7 @@ int PerftestFileHandler::get_file_size(std::string const& fileName)
 }
 
 /* If the function can not read the file would return -1 */
-int PerftestFileHandler::read_file(
+long PerftestFileHandler::read_file(
         std::string const& fileName,
         char * outputData,
         unsigned int bytesToRead,

@@ -272,22 +272,19 @@ if !BUILD_MICRO! == 1 (
 ::------------------------------------------------------------------------------
 
 if !BUILD_CPP! == 1 (
-	call !PERL_EXEC! -version > nul 2>nul
-	if not !ERRORLEVEL! == 0 (
-		echo [WARNING]: PERL not found, !classic_cpp_folder!\qos_string.h will not be updated.
-	) else (
-		!PERL_EXEC! !cStringifyFile_script! !qos_file! PERFTEST_QOS_STRING > !classic_cpp_folder!\qos_string.h
-		echo [INFO]: QoS String !classic_cpp_folder!\qos_string.h updated successfully.
-	)
+	set GENERATE_QOS_STRING=1
+)
+if !BUILD_CPP03! == 1 (
+	set GENERATE_QOS_STRING=1
 )
 
-if !BUILD_CPP03! == 1 (
+if !GENERATE_QOS_STRING! == 1 (
 	call !PERL_EXEC! -version > nul 2>nul
 	if not !ERRORLEVEL! == 0 (
-		echo [WARNING]: PERL not found, !modern_cpp_folder!\qos_string.h will not be updated.
+		echo [WARNING]: PERL not found, !common_cpp_folder!\qos_string.h will not be updated.
 	) else (
-		!PERL_EXEC! !cStringifyFile_script! !qos_file! PERFTEST_QOS_STRING > !modern_cpp_folder!\qos_string.h
-		echo [INFO]: QoS String !modern_cpp_folder!\qos_string.h updated successfully.
+		!PERL_EXEC! !cStringifyFile_script! !qos_file! PERFTEST_QOS_STRING > !common_cpp_folder!\qos_string.h
+		echo [INFO]: QoS String !common_cpp_folder!\qos_string.h updated successfully.
 	)
 )
 
