@@ -274,7 +274,7 @@ if !BUILD_MICRO! == 1 (
 if !BUILD_CPP! == 1 (
 	set GENERATE_QOS_STRING=1
 )
-if !BUILD_CPP! == 1 (
+if !BUILD_CPP03! == 1 (
 	set GENERATE_QOS_STRING=1
 )
 
