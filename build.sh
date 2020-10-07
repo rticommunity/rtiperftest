@@ -488,7 +488,6 @@ function additional_defines_calculation()
     fi
 
     additional_rtiddsgen_defines="$additional_rtiddsgen_defines $additional_rtiddsgen_defines_flatdata"
-    echo $additional_rtiddsgen_defines
 }
 
 function additional_defines_calculation_micro()
@@ -602,6 +601,30 @@ function copy_src_cpp_common()
     done
 }
 
+function copy_src_cpp_connextDDS()
+{
+    # Copy files in the common folder for pro and micro
+    for file in ${classic_cpp_folder}/connextDDS/*
+    do
+        if [ -f $file ]; then
+            cp -rf "$file" "${classic_cpp_folder}"
+        fi
+    done
+
+    # Copy now files specific for pro/micro
+    src_specific_folder="pro"
+    if [ ${BUILD_MICRO} != 0 ]; then
+        src_specific_folder="micro"
+    fi
+
+    for file in ${classic_cpp_folder}/connextDDS/${src_specific_folder}/*
+    do
+        if [ -f $file ]; then
+            cp -rf "$file" "${classic_cpp_folder}"
+        fi
+    done
+}
+
 function clean_copied_files()
 {
     for file in ${common_cpp_folder}/*
@@ -617,6 +640,28 @@ function clean_copied_files()
     rm -rf "${modern_cpp_folder}/perftest_subscriber.cxx"
     rm -rf "${classic_cpp_folder}/perftest_publisher.cxx"
     rm -rf "${classic_cpp_folder}/perftest_subscriber.cxx"
+
+    # Delete now files copied from srcCpp/connextDDS/
+    for file in ${classic_cpp_folder}/connextDDS/*
+    do
+        if [ -f $file ]; then
+            name_file=$(basename $file)
+            rm -rf "${classic_cpp_folder}/${name_file}"
+        fi
+    done
+
+    src_specific_folder="pro"
+    if [ ${BUILD_MICRO} != 0 ]; then
+        src_specific_folder="micro"
+    fi
+
+    for file in ${classic_cpp_folder}/connextDDS/${src_specific_folder}/*
+    do
+        if [ -f $file ]; then
+            name_file=$(basename $file)
+            rm -rf "${classic_cpp_folder}/${name_file}"
+        fi
+    done
 }
 
 function check_flatData_zeroCopy_available()
@@ -638,7 +683,11 @@ function check_flatData_zeroCopy_available()
 
 function build_cpp()
 {
+    echo -e "${INFO_TAG} Copying files from srcCppCommon."
     copy_src_cpp_common
+
+    echo -e "${INFO_TAG} Copying files from srcCpp/connextDDS."
+    copy_src_cpp_connextDDS
 
     ##############################################################################
     # Generate files for the custom type files
@@ -843,6 +892,7 @@ function build_cpp()
 function build_micro_cpp()
 {
     copy_src_cpp_common
+    copy_src_cpp_connextDDS
     additional_defines_calculation_micro
 
     ##############################################################################
