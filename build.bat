@@ -309,7 +309,8 @@ if !BUILD_MICRO! == 1 (
 ::------------------------------------------------------------------------------
 if !BUILD_CPP! == 1 (
 
-	call::clean_copied_files
+	call::copy_src_cpp_common
+	call::copy_src_cpp_connextDDS
 	call::solution_compilation_flag_calculation
 	call::get_flatdata_available
 
@@ -456,7 +457,7 @@ if !BUILD_CPP! == 1 (
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
-		call::clean_src_cpp_common
+		call::clean_copied_files
 		exit /b 1
 	)
 
@@ -482,7 +483,7 @@ if !BUILD_CPP! == 1 (
 		-d "%classic_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
 		if not !ERRORLEVEL! == 0 (
 			echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
-			call::clean_src_cpp_common
+			call::clean_copied_files
 			exit /b 1
 		)
 	)
@@ -496,14 +497,14 @@ if !BUILD_CPP! == 1 (
 	call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!"  /p:Platform="!win_arch!"  "%classic_cpp_folder%"\%solution_name_cpp%
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %classic_cpp_lang_string%.
-		call::clean_src_cpp_common
+		call::clean_copied_files
 		exit /b 1
 	)
 
 	echo [INFO]: Copying perftest_cpp executable file:
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
 	copy /Y "%classic_cpp_folder%"\objs\%architecture%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp"%executable_extension%"
-	call::clean_src_cpp_common
+	call::clean_copied_files
 
 	if "x!STATIC_DYNAMIC!" == "xdynamic" (
 		echo [INFO]: Code compiled dynamically, Add "NDDSHOME/lib/%platform%"
@@ -517,7 +518,7 @@ if !BUILD_CPP! == 1 (
 ::------------------------------------------------------------------------------
 
 if !BUILD_CPP03! == 1 (
-	call::clean_copied_files
+	call::copy_src_cpp_common
 	call::solution_compilation_flag_calculation
 	call::get_flatdata_available
 
@@ -605,7 +606,7 @@ if !BUILD_CPP03! == 1 (
 
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %modern_cpp_lang_string%.
-		call::clean_src_cpp_common
+		call::clean_copied_files
 		exit /b 1
 	)
 
@@ -630,7 +631,7 @@ if !BUILD_CPP03! == 1 (
 		-d "%modern_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
 		if not !ERRORLEVEL! == 0 (
 			echo [ERROR]: Failure generating code for %modern_cpp_lang_string%.
-			call::clean_src_cpp_common
+			call::clean_copied_files
 			exit /b 1
 		)
 	)
@@ -644,14 +645,14 @@ if !BUILD_CPP03! == 1 (
 	call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!"  /p:Platform="!win_arch!"  "%modern_cpp_folder%"\%solution_name_cpp%
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %modern_cpp_lang_string%.
-		call::clean_src_cpp_common
+		call::clean_copied_files
 		exit /b 1
 	)
 
 	echo [INFO]: Copying perftest_cpp executable file:
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
 	copy /Y "%modern_cpp_folder%"\objs\%architecture%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp03"%executable_extension%"
-	call::clean_src_cpp_common
+	call::clean_copied_files
 
 	if "x!STATIC_DYNAMIC!" == "xdynamic" (
 		echo [INFO]: Code compiled dynamically, Add "NDDSHOME/lib/%platform%"
@@ -771,7 +772,8 @@ if %BUILD_JAVA% == 1 (
 
 if !BUILD_MICRO! == 1 (
 
-	call::clean_copied_files
+	call::copy_src_cpp_common
+	call::copy_src_cpp_connextDDS
 	call::solution_compilation_flag_calculation
 
 	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_TRADITIONAL"
@@ -1048,7 +1050,7 @@ GOTO:EOF
 	echo ================================================================================
 GOTO:EOF
 
-:clean_src_cpp_common
+:clean_copied_files
 	@REM # Remove copied file from srcCommon
 	for %%i in (%common_cpp_folder%\*) do (
 		del %modern_cpp_folder%\%%~nxi > nul 2>nul
@@ -1060,13 +1062,43 @@ GOTO:EOF
 	del %classic_cpp_folder%\perftest_publisher.cxx > nul 2>nul
 	del %classic_cpp_folder%\perftest_subscriber.cxx > nul 2>nul
 
+	for %%i in (%classic_cpp_folder%\connextDDS\*) do (
+		del %classic_cpp_folder%\%%~nxi > nul 2>nul
+	)
+
+	@REM # Copy now files specific for pro/micro
+	set src_specific_folder="pro"
+	if !BUILD_MICRO! == 1 (
+		set src_specific_folder="micro"
+	)
+	for %%i in (%classic_cpp_folder%\connextDDS\!src_specific_folder!\*) do (
+		del %classic_cpp_folder%\%%~nxi > nul 2>nul
+	)
+
 GOTO:EOF
 
-:clean_copied_files
+:copy_src_cpp_common
 	@REM # Copy file from srcCommon to srcCpp and srcCpp03
 	for %%i in (%common_cpp_folder%\*) do (
 		call copy /Y %common_cpp_folder%\%%~nxi %modern_cpp_folder%\ > nul 2>nul
 		call copy /Y %common_cpp_folder%\%%~nxi %classic_cpp_folder%\ > nul 2>nul
+	)
+
+GOTO:EOF
+
+:copy_src_cpp_connextDDS
+	@REM # Copy files in the common folder for pro and micro
+	for %%i in (%classic_cpp_folder%\connextDDS\*) do (
+		call copy /Y %classic_cpp_folder%\connextDDS\%%~nxi %classic_cpp_folder%\ > nul 2>nul
+	)
+
+	@REM # Copy now files specific for pro/micro
+	set src_specific_folder="pro"
+	if !BUILD_MICRO! == 1 (
+		set src_specific_folder="micro"
+	)
+	for %%i in (%classic_cpp_folder%\connextDDS\!src_specific_folder!\*) do (
+		call copy /Y %classic_cpp_folder%\connextDDS\!src_specific_folder!\%%~nxi %classic_cpp_folder%\ > nul 2>nul
 	)
 
 GOTO:EOF
@@ -1130,7 +1162,7 @@ GOTO:EOF
 	rmdir /s /q %script_location%srcJava\class > nul 2>nul
 	rmdir /s /q %script_location%srcJava\jar > nul 2>nul
 	call::clean_custom_type_files
-	call::clean_src_cpp_common
+	call::clean_copied_files
 
 	echo[
 	echo ================================================================================
