@@ -100,6 +100,8 @@
             "name": "Pro (OSX)",
             "includePath": [
                 "${workspaceFolder}/srcCpp",
+                "${workspaceFolder}/srcCpp/connextDDS",
+                "${workspaceFolder}/srcCpp/connextDDS/pro",
                 "${workspaceFolder}/srcCppCommon",
                 "${env.NDDSHOME}/include",
                 "${env.NDDSHOME}/include/ndds"
@@ -107,9 +109,10 @@
             "defines": [
                 "RTI_SECURE_PERFTEST=1",
                 "PERFTEST_RTI_PRO=1",
+                "PERFTEST_RTI_PRO",
                 "RTI_FLATDATA_AVAILABLE=1",
                 "RTI_PERFTEST_NANO_CLOCK=1",
-                "PERFTEST_RTI_PRO"
+                "RTI_LANGUAGE_CPP_TRADITIONAL=1"
             ],
             "macFrameworkPath": [
                 "/System/Library/Frameworks",
@@ -125,12 +128,15 @@
             "includePath": [
                 "${workspaceFolder}/srcCpp",
                 "${workspaceFolder}/srcCppCommon",
+                "${workspaceFolder}/srcCpp/connextDDS",
+                "${workspaceFolder}/srcCpp/connextDDS/micro",
                 "${env.RTIMEHOME}/include",
                 "${env.RTIMEHOME}/include/rti_me",
                 "${env.RTIMEHOME}/include/rti_me/dds_c",
                 "${env.RTIMEHOME}/include/rti_me/dds_cpp"
             ],
             "defines": [
+                "RTI_SECURE_PERFTEST=1",
                 "PERFTEST_RTI_MICRO=1",
                 "RTI_SECURE_PERFTEST=1",
                 "RTI_UNIX=1",
