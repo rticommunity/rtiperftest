@@ -34,7 +34,7 @@ RTIRawTransportImpl::RTIRawTransportImpl()
 }
 
 /*********************************************************
- * Shutdown
+ * shutdown
  */
 void RTIRawTransportImpl::shutdown()
 {

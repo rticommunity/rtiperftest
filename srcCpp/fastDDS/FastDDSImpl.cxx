@@ -10,12 +10,7 @@ using namespace eprosima::fastdds::dds;
 using namespace eprosima::fastrtps::rtps;
 
 
-/*
- * TODO: Once we circle back and we have the get_middleware_version_string
- * in all the architetures, we can make it a static MiddlewareImpl function
- * and use it instead of this function.
- */
-const std::string GetDDSVersionString()
+const std::string GetMiddlewareVersionString()
 {
     return "Eprosima FastDDS";
 };
@@ -178,7 +173,7 @@ FastDDSImpl<T>::FastDDSImpl()
     }
 
 /*********************************************************
- * Shutdown
+ * shutdown
  */
 template <typename T>
 void FastDDSImpl<T>::shutdown()
@@ -215,9 +210,9 @@ const std::string FastDDSImpl<T>::get_middleware_version_string()
  * configure_middleware_verbosity
  */
 template <typename T>
-void FastDDSImpl<T>::configure_middleware_verbosity(int verbosityLevel)
+void FastDDSImpl<T>::configure_middleware_verbosity(int verbosity_level)
 {
-    switch (verbosityLevel) {
+    switch (verbosity_level) {
         case 0: fprintf(stderr, "[Error]: Cannot set verbosity to SILENT\n");
             break;
         case 1: Log::SetVerbosity(Log::Error);

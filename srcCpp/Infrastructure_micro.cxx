@@ -109,41 +109,6 @@ void PerftestClock::sleep(const struct DDS_Duration_t& sleep_period)
 }
 
 /********************************************************************/
-/* Get Connext Micro functions */
-
-const std::string GetDDSVersionString()
-{
-    return "RTI Connext DDS Micro "
-            + std::to_string((int) RTIME_DDS_VERSION_MAJOR) + "."
-            + std::to_string((int) RTIME_DDS_VERSION_MINOR) + "."
-            + std::to_string((int) RTIME_DDS_VERSION_RELEASE);
-}
-
-void PerftestConfigureVerbosity(int verbosityLevel)
-{
-
-    OSAPI_LogVerbosity_T verbosity = OSAPI_LOG_VERBOSITY_ERROR;
-    switch (verbosityLevel) {
-        case 0: verbosity = OSAPI_LOG_VERBOSITY_SILENT;
-                fprintf(stderr, "Setting verbosity to SILENT\n");
-                break;
-        case 1: verbosity = OSAPI_LOG_VERBOSITY_ERROR;
-                fprintf(stderr, "Setting verbosity to ERROR\n");
-                break;
-        case 2: verbosity = OSAPI_LOG_VERBOSITY_WARNING;
-                fprintf(stderr, "Setting verbosity to WARNING\n");
-                break;
-        case 3: verbosity = OSAPI_LOG_VERBOSITY_DEBUG;
-                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
-                break;
-        default: fprintf(stderr,
-                    "Invalid value for the verbosity parameter. Setting verbosity to ERROR (1)\n");
-                break;
-    }
-    OSAPI_Log_set_verbosity(verbosity);
-}
-
-/********************************************************************/
 /* Micro OnSpawed Method */
 
 struct PerftestMicroThreadOnSpawnedMethod

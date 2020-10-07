@@ -93,11 +93,6 @@ class PerftestClock
 
 };
 
-const std::string GetDDSVersionString();
-
-void PerftestConfigureVerbosity(int verbosityLevel);
-
-
 /********************************************************************/
 /* THREADS */
 

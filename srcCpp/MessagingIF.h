@@ -82,6 +82,7 @@ class IMessagingCB
 class IMessagingReader
 {
   public:
+
     virtual ~IMessagingReader() {}
 
     virtual void wait_for_writers(int numPublishers) = 0;

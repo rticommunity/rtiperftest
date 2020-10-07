@@ -115,7 +115,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
     }
 
 /*********************************************************
- * Shutdown
+ * shutdown
  */
 template <typename T>
 void RTIDDSImpl<T>::shutdown()

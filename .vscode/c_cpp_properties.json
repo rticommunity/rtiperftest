@@ -106,9 +106,10 @@
             ],
             "defines": [
                 "RTI_SECURE_PERFTEST=1",
-                "PERFTEST_RTI_PRO",
+                "PERFTEST_RTI_PRO=1",
                 "RTI_FLATDATA_AVAILABLE=1",
-                "RTI_PERFTEST_NANO_CLOCK=1"
+                "RTI_PERFTEST_NANO_CLOCK=1",
+                "PERFTEST_RTI_PRO"
             ],
             "macFrameworkPath": [
                 "/System/Library/Frameworks",

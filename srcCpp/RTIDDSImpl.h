@@ -37,6 +37,8 @@
 /* Forward declaration of perftest_cpp to avoid circular dependencies */
 class perftest_cpp;
 
+const std::string GetMiddlewareVersionString();
+
 /* Class for the DDS_DynamicDataMemberId of the type of RTI Perftest*/
 class DynamicDataMembersId
 {
@@ -57,13 +59,15 @@ public:
 
     RTIDDSImpl();
 
+    void shutdown();
+
     ~RTIDDSImpl()
     {
         shutdown();
     }
 
     bool initialize(ParameterManager &PM, perftest_cpp *parent);
-    void shutdown();
+
     bool validate_input();
     unsigned long get_initial_burst_size();
     IMessagingWriter *create_writer(const char *topic_name);
@@ -105,6 +109,7 @@ public:
 
 protected:
 
+    void configure_middleware_verbosity(int verbosity_level);
     bool data_size_related_calculations();
 
   #ifdef PERFTEST_RTI_PRO

@@ -6,12 +6,7 @@
 #include "perftest_cpp.h"
 #include "CycloneDDSImpl.h"
 
-/*
- * TODO: Once we circle back and we have the get_middleware_version_string
- * in all the architetures, we can make it a static MiddlewareImpl function
- * and use it instead of this function.
- */
-const std::string GetDDSVersionString()
+const std::string GetMiddlewareVersionString()
 {
     return std::string(DDS_PROJECT_NAME) + " " + std::string(DDS_VERSION);
 };
@@ -152,7 +147,7 @@ CycloneDDSImpl<T>::CycloneDDSImpl(dds_topic_descriptor_t topicDescriptor)
     }
 
 /*********************************************************
- * Shutdown
+ * shutdown
  */
 template <typename T>
 void CycloneDDSImpl<T>::shutdown()
@@ -188,10 +183,10 @@ const std::string CycloneDDSImpl<T>::get_middleware_version_string()
  * configure_middleware_verbosity
  */
 template <typename T>
-void CycloneDDSImpl<T>::configure_middleware_verbosity(int verbosityLevel)
+void CycloneDDSImpl<T>::configure_middleware_verbosity(int verbosity_level)
 {
     std::string verbosityString = "severe";
-    switch (verbosityLevel) {
+    switch (verbosity_level) {
     case 0:
         fprintf(stderr, "Setting verbosity to NONE\n");
         verbosityString = "none";

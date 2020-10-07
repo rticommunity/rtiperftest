@@ -52,6 +52,23 @@ int DynamicDataMembersId::at(std::string key)
    return membersId[key];
 }
 
+const std::string GetMiddlewareVersionString()
+{
+  #ifdef PERFTEST_RTI_PRO
+    DDS_ProductVersion_t version =
+            NDDSConfigVersion::get_instance().get_product_version();
+    return "RTI Connext DDS "
+        + std::to_string((int) version.major) + "."
+        + std::to_string((int) version.minor) + "."
+        + std::to_string((int) version.release);
+  #else // defined(PERFTEST_RTI_MICRO)
+    return "RTI Connext DDS Micro "
+        + std::to_string((int) RTIME_DDS_VERSION_MAJOR) + "."
+        + std::to_string((int) RTIME_DDS_VERSION_MINOR) + "."
+        + std::to_string((int) RTIME_DDS_VERSION_RELEASE);
+  #endif
+}
+
 template <typename T>
 RTIDDSImpl<T>::RTIDDSImpl()
         : _transport(),
@@ -97,7 +114,7 @@ RTIDDSImpl<T>::RTIDDSImpl()
 }
 
 /*********************************************************
- * Shutdown
+ * shutdown
  */
 template <typename T>
 void RTIDDSImpl<T>::shutdown()
@@ -214,6 +231,59 @@ void RTIDDSImpl<T>::shutdown()
             fprintf(stderr, "Unexpected error giving semaphore\n");
             return;
     }
+}
+
+/*********************************************************
+ * configure_middleware_verbosity
+ */
+template <typename T>
+void RTIDDSImpl<T>::configure_middleware_verbosity(int verbosity_level)
+{
+  #ifdef PERFTEST_RTI_PRO
+
+    NDDS_Config_LogVerbosity verbosity = NDDS_CONFIG_LOG_VERBOSITY_ERROR;
+    switch (verbosity_level) {
+        case 0: verbosity = NDDS_CONFIG_LOG_VERBOSITY_SILENT;
+                fprintf(stderr, "Setting verbosity to SILENT\n");
+                break;
+        case 1: verbosity = NDDS_CONFIG_LOG_VERBOSITY_ERROR;
+                fprintf(stderr, "Setting verbosity to ERROR\n");
+                break;
+        case 2: verbosity = NDDS_CONFIG_LOG_VERBOSITY_WARNING;
+                fprintf(stderr, "Setting verbosity to WARNING\n");
+                break;
+        case 3: verbosity = NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL;
+                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
+                break;
+        default: fprintf(stderr,
+                    "Invalid value for the verbosity parameter. Setting verbosity to ERROR (1)\n");
+                break;
+    }
+    NDDSConfigLogger::get_instance()->set_verbosity(verbosity);
+
+  #else // defined(PERFTEST_RTI_MICRO)
+
+    OSAPI_LogVerbosity_T verbosity = OSAPI_LOG_VERBOSITY_ERROR;
+    switch (verbosity_level) {
+        case 0: verbosity = OSAPI_LOG_VERBOSITY_SILENT;
+                fprintf(stderr, "Setting verbosity to SILENT\n");
+                break;
+        case 1: verbosity = OSAPI_LOG_VERBOSITY_ERROR;
+                fprintf(stderr, "Setting verbosity to ERROR\n");
+                break;
+        case 2: verbosity = OSAPI_LOG_VERBOSITY_WARNING;
+                fprintf(stderr, "Setting verbosity to WARNING\n");
+                break;
+        case 3: verbosity = OSAPI_LOG_VERBOSITY_DEBUG;
+                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
+                break;
+        default: fprintf(stderr,
+                    "Invalid value for the verbosity parameter. Setting verbosity to ERROR (1)\n");
+                break;
+    }
+    OSAPI_Log_set_verbosity(verbosity);
+
+  #endif
 }
 
 template <typename T>
@@ -388,7 +458,7 @@ bool RTIDDSImpl<T>::validate_input()
      * Setting verbosity if the parameter is provided
      */
     if (_PM->is_set("verbosity")) {
-        PerftestConfigureVerbosity(_PM->get<int>("verbosity"));
+        configure_middleware_verbosity(_PM->get<int>("verbosity"));
     }
 
     return true;

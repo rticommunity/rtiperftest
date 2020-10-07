@@ -48,12 +48,7 @@ using eprosima::fastrtps::SubscriberAttributes;
 /* Forward declaration of perftest_cpp to avoid circular dependencies */
 class perftest_cpp;
 
-/*
- * TODO: Once we circle back and we have the get_middleware_version_string
- * in all the architetures, we can make it a static MiddlewareImpl function
- * and use it instead of this function.
- */
-const std::string GetDDSVersionString();
+const std::string GetMiddlewareVersionString();
 
 template <typename T>
 class FastDDSImpl : public IMessaging
@@ -68,9 +63,7 @@ public:
         shutdown();
     }
 
-    const std::string get_middleware_version_string();
-
-    void configure_middleware_verbosity(int verbosityLevel);
+    void configure_middleware_verbosity(int verbosity_level);
 
     bool validate_input();
 

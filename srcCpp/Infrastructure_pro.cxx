@@ -66,41 +66,6 @@ void PerftestClock::sleep(const struct DDS_Duration_t& sleep_period)
     NDDSUtility::sleep(sleep_period);
 }
 
-void PerftestConfigureVerbosity(int verbosityLevel)
-{
-
-    NDDS_Config_LogVerbosity verbosity = NDDS_CONFIG_LOG_VERBOSITY_ERROR;
-    switch (verbosityLevel) {
-        case 0: verbosity = NDDS_CONFIG_LOG_VERBOSITY_SILENT;
-                fprintf(stderr, "Setting verbosity to SILENT\n");
-                break;
-        case 1: verbosity = NDDS_CONFIG_LOG_VERBOSITY_ERROR;
-                fprintf(stderr, "Setting verbosity to ERROR\n");
-                break;
-        case 2: verbosity = NDDS_CONFIG_LOG_VERBOSITY_WARNING;
-                fprintf(stderr, "Setting verbosity to WARNING\n");
-                break;
-        case 3: verbosity = NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL;
-                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
-                break;
-        default: fprintf(stderr,
-                    "Invalid value for the verbosity parameter. Setting verbosity to ERROR (1)\n");
-                break;
-    }
-    NDDSConfigLogger::get_instance()->set_verbosity(verbosity);
-}
-
-const std::string GetDDSVersionString() {
-    DDS_ProductVersion_t productVersion =
-            NDDSConfigVersion::get_instance().get_product_version();
-
-    return "RTI Connext DDS "
-            + std::to_string((int) productVersion.major) + "."
-            + std::to_string((int) productVersion.minor) + "."
-            + std::to_string((int) productVersion.release);
-}
-
-
 /********************************************************************/
 /* THREADS */
 

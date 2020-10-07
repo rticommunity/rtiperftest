@@ -336,7 +336,7 @@ void perftest_cpp::print_version()
   #endif
 
     //TODO: Change this so it uses a function from the MessagingImpl object
-    fprintf(stderr, " (%s)\n", GetDDSVersionString().c_str());
+    fprintf(stderr, " (%s)\n", GetMiddlewareVersionString().c_str());
 
     fflush(stdout);
 }
