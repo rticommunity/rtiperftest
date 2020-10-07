@@ -17,7 +17,7 @@
  * which will make us compatible with less OSs. In other cases we do need a
  * implementation for these classes.
  */
-#if !defined(PERTEST_RTI_MICRO) && !defined(PERFTEST_RTI_PRO)
+#if !defined(PERFTEST_RTI_MICRO) && !defined(PERFTEST_RTI_PRO)
 
 /********************************************************************/
 /* Perftest Semaphore class */

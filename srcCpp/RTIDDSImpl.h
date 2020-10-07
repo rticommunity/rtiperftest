@@ -1,37 +1,35 @@
+/*
+ * (c) 2005-2020  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
+ */
+
 #ifndef __RTIDDSIMPL_H__
 #define __RTIDDSIMPL_H__
 
-#if defined(PERFTEST_RTI_PRO) || defined (PERTEST_RTI_MICRO)
-
-/*
- * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
- * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
- */
+#if defined(PERFTEST_RTI_PRO) || defined (PERFTEST_RTI_MICRO)
 
 #include <stdexcept> // This header is part of the error handling library.
 #include <string>
 #include <algorithm>
 #include <map>
+#if defined(RTI_DARWIN) && defined(PERFTEST_RTI_PRO)
+  #include <sys/types.h>
+  #include <sys/sysctl.h>
+#endif
+
+
 #include "MessagingIF.h"
 #include "perftestSupport.h"
+#ifdef RTI_ZEROCOPY_AVAILABLE
+  #include "perftest_ZeroCopySupport.h"
+#endif
 #include "PerftestTransport.h"
 #include "Infrastructure_common.h"
-
-#ifdef RTI_ZEROCOPY_AVAILABLE
-#include "perftest_ZeroCopySupport.h"
+#ifdef PERFTEST_RTI_PRO
+  #include "RTIDDSLoggerDevice.h"
 #endif
-
-#ifndef PERTEST_RTI_MICRO
-#include "RTIDDSLoggerDevice.h"
-#endif
-
 #ifdef RTI_CUSTOM_TYPE
-#include "CustomType.h"
-#endif
-
-#if defined(RTI_DARWIN) && !defined(PERTEST_RTI_MICRO)
-#include <sys/types.h>
-#include <sys/sysctl.h>
+  #include "CustomType.h"
 #endif
 
 #define RTIPERFTEST_MAX_PEERS 1024
@@ -61,37 +59,26 @@ public:
 
     ~RTIDDSImpl()
     {
-        Shutdown();
+        shutdown();
     }
 
-
-    bool data_size_related_calculations();
-
+    bool initialize(ParameterManager &PM, perftest_cpp *parent);
+    void shutdown();
     bool validate_input();
-
-    std::string PrintConfiguration();
-
-    bool Initialize(ParameterManager &PM, perftest_cpp *parent);
-
-    void Shutdown();
-
-    unsigned long GetInitializationSampleCount();
-
-    IMessagingWriter *CreateWriter(const char *topic_name);
-
+    unsigned long get_initial_burst_size();
+    IMessagingWriter *create_writer(const char *topic_name);
     /*
-     * Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
+     * Pass null for callback if using IMessagingSubscriber.receive_message()
      * to get data
      */
-    IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
+    IMessagingReader *create_reader(const char *topic_name, IMessagingCB *callback);
+    std::string print_configuration();
+    bool supports_listeners()
+    {
+        return true;
+    };
 
-  #ifndef PERTEST_RTI_MICRO
-    DDSTopicDescription *CreateCft(const char *topic_name, DDSTopic *topic);
-  #endif
-
-    bool configureDomainParticipantQos(DDS_DomainParticipantQos &qos);
-
-  #ifndef PERTEST_RTI_MICRO
+  #ifdef PERFTEST_RTI_PRO
 
     /**
      * @brief This function calculates the overhead bytes that all the
@@ -116,14 +103,29 @@ public:
             unsigned int iters = 1000);
   #endif
 
-    bool supports_listener()
-    {
-        return true;
-    };
+protected:
+
+    bool data_size_related_calculations();
+
+  #ifdef PERFTEST_RTI_PRO
+    DDSTopicDescription *create_cft(const char *topic_name, DDSTopic *topic);
+    unsigned long int getShmemSHMMAX();
+  #endif
+
+    bool configure_participant_qos(DDS_DomainParticipantQos &qos);
+    bool configure_writer_qos(
+            DDS_DataReaderQos &dr_qos,
+            std::string qos_profile,
+            std::string topic_name);
+    bool configure_reader_qos(
+            DDS_DataWriterQos &dw_qos,
+            std::string qos_profile,
+            std::string topic_name);
 
     const std::string get_qos_profile_name(const char *topicName);
 
 protected:
+
     // This Mutex is used in VxWorks to synchronize when finalizing the factory
     static PerftestMutex        *_finalizeFactoryMutex;
 
@@ -144,24 +146,16 @@ protected:
     DDSDataReader               *_reader;
     const char                  *_typename;
     PerftestSemaphore           *_pongSemaphore;
-  #ifndef PERTEST_RTI_MICRO
+  #ifdef PERFTEST_RTI_PRO
     RTIDDSLoggerDevice           _loggerDevice;
   #endif
     ParameterManager            *_PM;
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
 
-  #ifndef PERTEST_RTI_MICRO
-    unsigned long int getShmemSHMMAX();
-  #endif
-    bool setup_DR_QoS(
-            DDS_DataReaderQos &dr_qos,
-            std::string qos_profile,
-            std::string topic_name);
-    bool setup_DW_QoS(
-            DDS_DataWriterQos &dw_qos,
-            std::string qos_profile,
-            std::string topic_name);
+public:
+
+
 };
 
 #ifdef RTI_FLATDATA_AVAILABLE
@@ -187,7 +181,7 @@ public:
      *
      * @return a RTIFlatDataPublisher
      */
-    IMessagingWriter *CreateWriter(const char *topic_name);
+    IMessagingWriter *create_writer(const char *topic_name);
 
     /**
      * Creates a Subscriber that uses the FlatData API
@@ -197,12 +191,12 @@ public:
      *
      * @param callback is the callback that will process the receibed
      *      message once it has been taken by the reader. Pass null for
-     *      callback if using IMessagingSubscriber.ReceiveMessage() to get
+     *      callback if using IMessagingSubscriber.receive_message() to get
      *      data
      *
      * @return a RTIFlatDataSubscriber
      */
-    IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
+    IMessagingReader *create_reader(const char *topic_name, IMessagingCB *callback);
 
     /**
      * Obtain average serialization time
@@ -240,5 +234,5 @@ public:
 };
 #endif // RTI_FLATDATA_AVAILABLE
 
-#endif // PERFTEST_RTI_PRO
+#endif // PERFTEST_RTI_PRO || PERFTEST_RTI_MICRO
 #endif // __RTIDDSIMPL_H__

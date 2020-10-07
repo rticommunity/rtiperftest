@@ -118,7 +118,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
  * Shutdown
  */
 template <typename T>
-void RTIDDSImpl<T>::Shutdown()
+void RTIDDSImpl<T>::shutdown()
 {
     std::vector<dds::domain::DomainParticipant> participants;
 
@@ -208,7 +208,7 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
             if (_PM->is_set("batchSize")) {
                 /*
                 * Batchsize disabled. A message will be print if batchSize < 0
-                * in perftest_cpp::PrintConfiguration()
+                * in perftest_cpp::print_configuration()
                 */
                 _PM->set<long>("batchSize", -1);
             } else {
@@ -372,7 +372,7 @@ bool RTIDDSImpl<T>::validate_input()
  * PrintConfiguration
  */
 template <typename T>
-std::string RTIDDSImpl<T>::PrintConfiguration()
+std::string RTIDDSImpl<T>::print_configuration()
 {
 
     std::ostringstream stringStream;
@@ -560,14 +560,14 @@ public:
         }
     }
 
-    void waitForPingResponse() {
+    void wait_for_ping_response() {
         if (_useSemaphore) {
             _pongSemaphore.take();
         }
     }
 
     /* time out in milliseconds */
-    void waitForPingResponse(int timeout) {
+    void wait_for_ping_response(int timeout) {
         RTINtpTime blockDurationIn;
         blockDurationIn.sec = timeout;
         blockDurationIn.frac = 0;
@@ -577,17 +577,17 @@ public:
         }
     }
 
-    void notifyPingResponse() {
+    void notify_ping_response() {
         if (_useSemaphore) {
             _pongSemaphore.give();
         }
     }
 
-    unsigned int getPulledSampleCount() {
+    unsigned int get_pulled_sample_count() {
         return (unsigned int)_writer->datawriter_protocol_status().pulled_sample_count().total();
     }
 
-    void waitForAck(long sec, unsigned long nsec) {
+    void wait_for_ack(long sec, unsigned long nsec) {
 
         if (_isReliable) {
             try {
@@ -680,7 +680,7 @@ public:
    * Implementation of RTIPublisherBase for FlatData types.
    *
    * Since building a FlatData sample differs from
-   * a classic type, we need to reimplement the Send() method with the
+   * a classic type, we need to reimplement the send() method with the
    * FlatData API.
    */
   template<typename T>
@@ -938,7 +938,7 @@ public:
                 this->_message.latency_ping = sample.latency_ping();
                 this->_message.size = (int) sample.bin_data().size();
                 //this->_message.data = sample.bin_data();
-                this->_callback->ProcessMessage(this->_message);
+                this->_callback->process_message(this->_message);
             }
         }
     }
@@ -999,7 +999,7 @@ public:
                       if (!reader->is_data_consistent(samples[i])) continue;
                   }
 
-                  this->_callback->ProcessMessage(this->_message);
+                  this->_callback->process_message(this->_message);
               }
           }
       }
@@ -1034,7 +1034,7 @@ public:
                         DynamicDataMembersId::GetInstance().at("bin_data")).size());
 
                 //_message.data = sample.bin_data();
-                _callback->ProcessMessage(this->_message);
+                _callback->process_message(this->_message);
             }
         }
     }
@@ -1090,7 +1090,7 @@ public:
         _data_idx = 0;
     }
 
-    void Shutdown() {
+    void shutdown() {
         _reader.listener(NULL, dds::core::status::StatusMask::none());
         if (_readerListener != NULL) {
             delete(_readerListener);
@@ -1119,7 +1119,7 @@ public:
                     PM)
     {}
 
-    TestMessage *ReceiveMessage() {
+    TestMessage *receive_message() {
         int seq_length;
 
         while (true) {
@@ -1182,7 +1182,7 @@ public:
                     this->_message.size = (int) sample.bin_data().size();
                     //_message.data = sample.bin_data();
 
-                    listener->ProcessMessage(this->_message);
+                    listener->process_message(this->_message);
                 }
             }
         }
@@ -1194,7 +1194,7 @@ public:
    * Implements RTISubscriberBase with FlatData API.
    *
    * Since reading a FlatData sample differs from a classic type we need
-   * to reimplement ReceiveMessage method.
+   * to reimplement receive_message method.
    */
   template<typename T>
   class RTIFlatDataSubscriber: public RTISubscriberBase<T> {
@@ -1222,7 +1222,7 @@ public:
        *
        * @return a message with the information from the sample
        */
-      TestMessage *ReceiveMessage() {
+      TestMessage *receive_message() {
 
           int seq_length;
 
@@ -1305,7 +1305,7 @@ public:
                           if (!this->_reader->is_data_consistent(samples[i])) continue;
                       }
 
-                      listener->ProcessMessage(this->_message);
+                      listener->process_message(this->_message);
                   }
               }
           }
@@ -1326,7 +1326,7 @@ public:
                     PM)
     {}
 
-    TestMessage *ReceiveMessage() {
+    TestMessage *receive_message() {
 
         int seq_length;
 
@@ -1405,7 +1405,7 @@ public:
                     this->_message.size = (int)(sample.get_values<uint8_t>(
                             DynamicDataMembersId::GetInstance().at("bin_data")).size());
                     //_message.data = sample.bin_data();
-                    listener->ProcessMessage(this->_message);
+                    listener->process_message(this->_message);
                 }
             }
         }
@@ -1675,7 +1675,7 @@ dds::core::QosProvider RTIDDSImpl<T>::getQosProviderForProfile(
  * Initialize
  */
 template <typename T>
-bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
+bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
 {
     using namespace rti::core::policy;
     // Assigne the ParameterManager
@@ -1811,7 +1811,7 @@ bool RTIDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
  * GetInitializationSampleCount
  */
 template <typename T>
-unsigned long RTIDDSImpl<T>::GetInitializationSampleCount()
+unsigned long RTIDDSImpl<T>::get_initial_burst_size()
 {
     /*
      * If we are using reliable, the maximum burst of that we can send is limited
@@ -1874,7 +1874,7 @@ bool RTIDDSImpl<T>::get_serialized_overhead_size(unsigned int &overhead_size)
  * CreateWriter
  */
 template <typename T>
-IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
+IMessagingWriter *RTIDDSImpl<T>::create_writer(const std::string &topic_name)
 {
     using namespace dds::core::policy;
     using namespace rti::core::policy;
@@ -1885,7 +1885,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::pub::qos::DataWriterQos dw_qos = setup_DW_QoS(qos_profile, topic_name);
+    dds::pub::qos::DataWriterQos dw_qos = configure_reader_qos(qos_profile, topic_name);
 
     if (!_PM->get<bool>("dynamicData")) {
         dds::topic::Topic<T> topic(_participant, topic_name);
@@ -1952,7 +1952,7 @@ IMessagingWriter *RTIDDSImpl<T>::CreateWriter(const std::string &topic_name)
  */
 template <typename T>
 template <typename U>
-dds::topic::ContentFilteredTopic<U> RTIDDSImpl<T>::CreateCft(
+dds::topic::ContentFilteredTopic<U> RTIDDSImpl<T>::create_cft(
         const std::string &topic_name,
         const dds::topic::Topic<U> &topic) {
     std::string condition;
@@ -2020,7 +2020,7 @@ dds::topic::ContentFilteredTopic<U> RTIDDSImpl<T>::CreateCft(
  * CreateReader
  */
 template <typename T>
-IMessagingReader *RTIDDSImpl<T>::CreateReader(
+IMessagingReader *RTIDDSImpl<T>::create_reader(
         const std::string &topic_name,
         IMessagingCB *callback)
 {
@@ -2030,7 +2030,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::sub::qos::DataReaderQos dr_qos = setup_DR_QoS(qos_profile, topic_name);
+    dds::sub::qos::DataReaderQos dr_qos = configure_writer_qos(qos_profile, topic_name);
 
     if (!_PM->get<bool>("dynamicData")) {
         dds::topic::Topic<T> topic(_participant, topic_name);
@@ -2039,7 +2039,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
 
         if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _PM->is_set("cft")) {
             /* Create CFT Topic */
-            dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
+            dds::topic::ContentFilteredTopic<T> topicCft = create_cft(
                     topic_name,
                     topic);
             if (callback != NULL) {
@@ -2083,7 +2083,7 @@ IMessagingReader *RTIDDSImpl<T>::CreateReader(
         DynamicDataReceiverListener *dynamic_data_reader_listener = NULL;
         if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && _PM->is_set("cft")) {
             /* Create CFT Topic */
-            dds::topic::ContentFilteredTopic<DynamicData> topicCft = CreateCft(
+            dds::topic::ContentFilteredTopic<DynamicData> topicCft = create_cft(
                     topic_name,
                     topic);
             if (callback != NULL) {
@@ -2197,7 +2197,7 @@ std::string stringValueQoS(DDS_Long resourceLimitValue) {
 }
 
 template <typename T>
-dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
+dds::sub::qos::DataReaderQos RTIDDSImpl<T>::configure_writer_qos(
         std::string qos_profile, std::string topic_name) {
     using namespace dds::core::policy;
     using namespace rti::core::policy;
@@ -2409,7 +2409,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::setup_DR_QoS(
 }
 
 template <typename T>
-dds::pub::qos::DataWriterQos RTIDDSImpl<T>::setup_DW_QoS(
+dds::pub::qos::DataWriterQos RTIDDSImpl<T>::configure_reader_qos(
         std::string qos_profile, std::string topic_name) {
     using namespace dds::core::policy;
     using namespace rti::core::policy;
@@ -2804,7 +2804,7 @@ RTIDDSImpl_FlatData<T>::RTIDDSImpl_FlatData(bool isZeroCopy) {
  * CreateReader FlatData
  */
 template <typename T>
-IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
+IMessagingReader *RTIDDSImpl_FlatData<T>::create_reader(
         const std::string &topic_name,
         IMessagingCB *callback)
 {
@@ -2818,7 +2818,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::sub::qos::DataReaderQos dr_qos = setup_DR_QoS(qos_profile, topic_name);
+    dds::sub::qos::DataReaderQos dr_qos = configure_writer_qos(qos_profile, topic_name);
 
     dds::topic::Topic<T> topic(this->_participant, topic_name);
     dds::sub::DataReader<T> reader(dds::core::null);
@@ -2826,7 +2826,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
 
     if (topic_name == THROUGHPUT_TOPIC_NAME.c_str() && this->_PM->is_set("cft")) {
         /* Create CFT Topic */
-        dds::topic::ContentFilteredTopic<T> topicCft = CreateCft(
+        dds::topic::ContentFilteredTopic<T> topicCft = create_cft(
                 topic_name,
                 topic);
         if (callback != NULL) {
@@ -2875,7 +2875,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::CreateReader(
  * CreateWriter
  */
 template <typename T>
-IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const std::string &topic_name)
+IMessagingWriter *RTIDDSImpl_FlatData<T>::create_writer(const std::string &topic_name)
 {
     using namespace dds::core::policy;
     using namespace rti::core::policy;
@@ -2887,7 +2887,7 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::CreateWriter(const std::string &topic_
         throw std::logic_error("[Error] Topic name");
     }
 
-    dds::pub::qos::DataWriterQos dw_qos = this->setup_DW_QoS(qos_profile, topic_name);
+    dds::pub::qos::DataWriterQos dw_qos = this->configure_reader_qos(qos_profile, topic_name);
 
     dds::topic::Topic<T> topic(this->_participant, topic_name);
     dds::pub::DataWriter<T> writer(this->_publisher, topic, dw_qos);

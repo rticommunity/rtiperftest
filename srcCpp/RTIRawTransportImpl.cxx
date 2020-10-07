@@ -36,7 +36,7 @@ RTIRawTransportImpl::RTIRawTransportImpl()
 /*********************************************************
  * Shutdown
  */
-void RTIRawTransportImpl::Shutdown()
+void RTIRawTransportImpl::shutdown()
 {
 
     for (unsigned int i = 0; i < PeerData::resourcesList.size(); i++) {
@@ -100,7 +100,7 @@ bool RTIRawTransportImpl::validate_input() {
         if (_PM->is_set("batchSize")) {
             /*
              * Batchsize disabled. A message will be print if _batchSize < 0
-             * in perftest_cpp::PrintConfiguration()
+             * in perftest_cpp::print_configuration()
              */
             _PM->set<long>("batchSize", -1);
         } else {
@@ -199,7 +199,7 @@ bool RTIRawTransportImpl::validate_input() {
 /*********************************************************
  * PrintConfiguration
  */
-std::string RTIRawTransportImpl::PrintConfiguration()
+std::string RTIRawTransportImpl::print_configuration()
 {
     std::ostringstream stringStream;
 
@@ -287,7 +287,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
         struct REDAWorkerFactory *workerFactory = _parent->get_worker_factory();
         if (workerFactory == NULL) {
             /* Failed to get the worker factory */
-            Shutdown();
+            shutdown();
             throw std::runtime_error("The worker factory is not initialized\n");
         }
 
@@ -297,7 +297,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
                 workerName.c_str());
         if (_worker == NULL) {
             /* Failed to create worker */
-            Shutdown();
+            shutdown();
             throw std::runtime_error(
                     std::string("Fail to create Worker ")
                     + std::string(workerName)
@@ -310,7 +310,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
             RTI_OSAPI_ALIGNMENT_DEFAULT);
 
         if (_sendBuffer.pointer == NULL) {
-            Shutdown();
+            shutdown();
             throw std::runtime_error(
                     "Error allocating memory for the send buffer\n");
         }
@@ -319,10 +319,10 @@ class RTIRawTransportPublisher : public IMessagingWriter {
 
     ~RTIRawTransportPublisher()
     {
-        Shutdown();
+        shutdown();
     }
 
-    void Shutdown()
+    void shutdown()
     {
         if (_sendBuffer.pointer != NULL) {
             RTIOsapiHeap_freeBuffer(_sendBuffer.pointer);
@@ -368,7 +368,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
         return success;
     }
 
-    void Flush()
+    void flush()
     {
         /* If there is no data, no need to flush */
         if (_sendBuffer.length == 0) {
@@ -385,7 +385,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
         _sendBuffer.length = 0;
     }
 
-    bool Send(const TestMessage &message, bool isCftWildCardKey)
+    bool send(const TestMessage &message, bool isCftWildCardKey)
     {
         RTIBool success = false;
         int serializeSize =  message.size
@@ -410,7 +410,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
          */
         if ((unsigned int) (_sendBuffer.length + serializeSize)
                 > _batchBufferSize) {
-            Flush();
+            flush();
         }
 
         success = TestData_tPlugin_serialize_to_cdr_buffer(
@@ -437,17 +437,17 @@ class RTIRawTransportPublisher : public IMessagingWriter {
          * accumulate them until the buffer is full
          */
         if (!_useBatching) {
-            Flush();
+            flush();
         }
 
         return true;
     }
 
-    void WaitForReaders(int numSubscribers) {
+    void wait_for_readers(int numSubscribers) {
         /* --- Dummy Function --- */
     }
 
-    bool waitForPingResponse() {
+    bool wait_for_ping_response() {
         if (_pongSemaphore != NULL) {
             if (!RTIOsapiSemaphore_take(_pongSemaphore, NULL)) {
                 fprintf(stderr, "Unexpected error taking semaphore\n");
@@ -458,7 +458,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
     }
 
     /* time out in milliseconds */
-    bool waitForPingResponse(int timeout) {
+    bool wait_for_ping_response(int timeout) {
         struct RTINtpTime blockDurationIn;
         RTINtpTime_packFromMillisec(blockDurationIn, 0, timeout);
 
@@ -471,7 +471,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
         return true;
     }
 
-    bool notifyPingResponse() {
+    bool notify_ping_response() {
         if (_pongSemaphore != NULL) {
             if (!RTIOsapiSemaphore_give(_pongSemaphore)) {
                 fprintf(stderr, "Unexpected error giving semaphore\n");
@@ -481,12 +481,12 @@ class RTIRawTransportPublisher : public IMessagingWriter {
         return true;
     }
 
-    unsigned int getPulledSampleCount() {
+    unsigned int get_pulled_sample_count() {
         /* --- Dummy Function --- */
         return 0;
     };
 
-    void waitForAck(int sec, unsigned int nsec) {
+    void wait_for_ack(int sec, unsigned int nsec) {
         /* --- Dummy Function --- */
     }
 };
@@ -539,7 +539,7 @@ public:
         struct REDAWorkerFactory *workerFactory = _parent->get_worker_factory();
         if (workerFactory == NULL) {
             /* Failed to get the worker factory */
-            Shutdown();
+            shutdown();
             throw std::runtime_error("The worker factory is not initialized\n");
         }
 
@@ -549,7 +549,7 @@ public:
                 workerName.c_str());
         if (_worker == NULL) {
             /* Failed to create worker */
-            Shutdown();
+            shutdown();
             throw std::runtime_error(
                     std::string("Fail to create Worker ")
                     + std::string(workerName)
@@ -575,7 +575,7 @@ public:
                 NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX,
                 RTI_OSAPI_ALIGNMENT_DEFAULT);
         if (_recvBuffer.pointer == NULL) {
-            Shutdown(); // Delete everything created at this point.
+            shutdown(); // Delete everything created at this point.
             throw std::runtime_error("RTIOsapiHeap_allocateBuffer Error\n");
         }
 
@@ -583,17 +583,17 @@ public:
 
         if (!_data.bin_data.maximum(NDDS_TRANSPORT_UDPV4_PAYLOAD_SIZE_MAX
                 - perftest_cpp::OVERHEAD_BYTES)) {
-            Shutdown();  // Delete everything created at this point.
+            shutdown();  // Delete everything created at this point.
             throw std::runtime_error("bin_data.maximum Error\n");
         }
     }
 
     ~RTIRawTransportSubscriber()
     {
-        Shutdown();
+        shutdown();
     }
 
-    void Shutdown()
+    void shutdown()
     {
 
         if (_recvBuffer.pointer != NULL) {
@@ -616,7 +616,7 @@ public:
         }
     }
 
-    TestMessage *ReceiveMessage() {
+    TestMessage *receive_message() {
 
         int result = 0;
 
@@ -684,7 +684,7 @@ public:
 
     }
 
-    void WaitForWriters(int numPublishers) {
+    void wait_for_writers(int numPublishers) {
         /*Dummy Function*/
     }
 
@@ -712,7 +712,7 @@ public:
 /*********************************************************
  * Initialize
  */
-bool RTIRawTransportImpl::Initialize(ParameterManager &PM, perftest_cpp *parent)
+bool RTIRawTransportImpl::initialize(ParameterManager &PM, perftest_cpp *parent)
 {
     /* Set paramter manager */
     _PM = &PM;
@@ -853,7 +853,7 @@ bool RTIRawTransportImpl::get_multicast_transport_addr(
 /*********************************************************
  * CreateWriter
  */
-IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
+IMessagingWriter *RTIRawTransportImpl::create_writer(const char *topicName)
 {
 
     NDDS_Transport_Address_t multicastAddr;
@@ -925,7 +925,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
         return new RTIRawTransportPublisher(this);
     } catch (const std::exception &ex) {
         fprintf(stderr,
-                "Exception in RTIRawTransportImpl::CreateWriter(): %s.\n",
+                "Exception in RTIRawTransportImpl::create_writer(): %s.\n",
                 ex.what());
         return NULL;
     }
@@ -935,7 +935,7 @@ IMessagingWriter *RTIRawTransportImpl::CreateWriter(const char *topicName)
  * CreateReader
  */
 IMessagingReader *
-RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
+RTIRawTransportImpl::create_reader(const char *topicName, IMessagingCB *callback)
 {
     NDDS_Transport_RecvResource_t recvResource = NULL;
     NDDS_Transport_Port_t recvPort = 0;
@@ -974,7 +974,7 @@ RTIRawTransportImpl::CreateReader(const char *topicName, IMessagingCB *callback)
         return new RTIRawTransportSubscriber(this, recvResource, recvPort);
     } catch (const std::exception &ex) {
         fprintf(stderr,
-                "Exception in RTIRawTransportImpl::CreateReader(): %s.\n",
+                "Exception in RTIRawTransportImpl::create_reader(): %s.\n",
                 ex.what());
         return NULL;
     }

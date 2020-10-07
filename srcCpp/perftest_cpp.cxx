@@ -10,7 +10,7 @@
 #ifdef PERFTEST_RTI_PRO
   #include "RTIRawTransportImpl.h"
   #include "RTIDDSImpl.h"
-#elif defined(PERTEST_RTI_MICRO)
+#elif defined(PERFTEST_RTI_MICRO)
   #include "RTIDDSImpl.h"
 #elif defined(PERFTEST_EPROSIMA_FASTDDS)
   #include "perftestPubSubTypes.h"
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
     }
 }
 
-#if defined(PERFTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO)
+#if defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO)
 #if defined(RTI_VXWORKS)
 int perftest_cpp_main(char *args)
 {
@@ -133,12 +133,12 @@ int perftest_cpp_main(char *args)
     return main(argc, argv);
 }
 #endif // RTI_VXWORKS
-#endif // defined(PERFTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO)
+#endif // defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO)
 
 int perftest_cpp::Run(int argc, char *argv[])
 {
     unsigned short mask;
-    PrintVersion();
+    print_version();
 
     try {
         _PM.initialize();
@@ -166,7 +166,7 @@ int perftest_cpp::Run(int argc, char *argv[])
 
     _printer.initialize(&_PM);
 
-  #if defined(PERFTEST_RTI_PRO) || defined(PERTEST_RTI_MICRO)
+  #if defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO)
     if (_PM.get<bool>("rawTransport")) {
       #ifdef PERFTEST_RTI_PRO
         _MessagingImpl = new RTIRawTransportImpl();
@@ -284,7 +284,7 @@ int perftest_cpp::Run(int argc, char *argv[])
         break;
     }
 
-  #else // No middleware is passed as -DPERTEST_...
+  #else // No middleware is passed as -DPERFTEST_...
 
     fprintf(stderr,
             "[Error] There is no implementation for this middleware for the "
@@ -292,14 +292,14 @@ int perftest_cpp::Run(int argc, char *argv[])
 
   #endif
 
-    if (_MessagingImpl == NULL || !_MessagingImpl->Initialize(_PM, this)) {
+    if (_MessagingImpl == NULL || !_MessagingImpl->initialize(_PM, this)) {
         fprintf(stderr,
                 "[Error]: _MessagingImpl was null or it could not be "
                 "initialized\n");
         return -1;
     }
 
-    PrintConfiguration();
+    print_configuration();
 
     if (_PM.get<bool>("pub")) {
         return Publisher();
@@ -308,14 +308,14 @@ int perftest_cpp::Run(int argc, char *argv[])
     }
 }
 
-const Perftest_ProductVersion_t perftest_cpp::GetPerftestVersion()
+const Perftest_ProductVersion_t perftest_cpp::get_perftest_version()
 {
     return _version;
 }
 
-void perftest_cpp::PrintVersion()
+void perftest_cpp::print_version()
 {
-    Perftest_ProductVersion_t perftestV = perftest_cpp::GetPerftestVersion();
+    Perftest_ProductVersion_t perftestV = perftest_cpp::get_perftest_version();
 
     if (perftestV.major == 9
             && perftestV.minor == 9
@@ -360,7 +360,7 @@ perftest_cpp::~perftest_cpp()
 perftest_cpp::perftest_cpp()
 #if defined(PERFTEST_RTI_PRO)
     : _PM(Middleware::RTIDDSPRO)
-#elif defined(PERTEST_RTI_MICRO)
+#elif defined(PERFTEST_RTI_MICRO)
     : _PM(Middleware::RTIDDSPRO)
 #elif defined(PERFTEST_EPROSIMA_FASTDDS)
     : _PM(Middleware::EPROSIMAFASTDDS)
@@ -597,7 +597,7 @@ bool perftest_cpp::validate_input()
 /*********************************************************
  * PrintConfiguration
  */
-void perftest_cpp::PrintConfiguration()
+void perftest_cpp::print_configuration()
 {
     std::ostringstream stringStream;
 
@@ -769,7 +769,7 @@ void perftest_cpp::PrintConfiguration()
                 << _threadPriorities.dbAndEvent << std::endl;
     }
 
-    stringStream << _MessagingImpl->PrintConfiguration();
+    stringStream << _MessagingImpl->print_configuration();
 
     // We want to expose if we are using or not the unbounded type
     if (_PM.get<int>("unbounded")) {
@@ -878,7 +878,7 @@ class ThroughputListener : public IMessagingCB
         }
     }
 
-    void ProcessMessage(TestMessage &message)
+    void process_message(TestMessage &message)
     {
 
       #ifdef DEBUG_PING_PONG
@@ -892,8 +892,8 @@ class ThroughputListener : public IMessagingCB
         // Check for test initialization messages
         if (message.size == perftest_cpp::INITIALIZE_SIZE)
         {
-            _writer->Send(message);
-            _writer->Flush();
+            _writer->send(message);
+            _writer->flush();
             return;
         }
         else if (message.size == perftest_cpp::FINISHED_SIZE)
@@ -935,8 +935,8 @@ class ThroughputListener : public IMessagingCB
           #ifdef DEBUG_PING_PONG
             printf("-- Answering Ping ...\n");
           #endif
-            _writer->Send(message);
-            _writer->Flush();
+            _writer->send(message);
+            _writer->flush();
         }
 
         // Always check if need to reset internals
@@ -1079,10 +1079,10 @@ static void *ReadThread(void *arg)
 
     while (!listener->end_test) {
         // Receive message should block until a message is received
-        message = listener->_reader->ReceiveMessage();
+        message = listener->_reader->receive_message();
 
         if (message != NULL) {
-            listener->ProcessMessage(*message);
+            listener->process_message(*message);
         }
     }
 
@@ -1108,7 +1108,7 @@ int perftest_cpp::Subscriber()
     struct PerftestThread *throughputThread = NULL;
 
     // create latency pong writer
-    writer = _MessagingImpl->CreateWriter(LATENCY_TOPIC_NAME);
+    writer = _MessagingImpl->create_writer(LATENCY_TOPIC_NAME);
     if (writer == NULL) {
         fprintf(stderr, "Problem creating latency writer.\n");
         return -1;
@@ -1124,7 +1124,7 @@ int perftest_cpp::Subscriber()
                 NULL,
                 _PM.is_set("cft"),
                 _PM.get<int>("numPublishers"));
-        reader = _MessagingImpl->CreateReader(
+        reader = _MessagingImpl->create_reader(
                 THROUGHPUT_TOPIC_NAME,
                 reader_listener);
         if (reader == NULL)
@@ -1133,7 +1133,7 @@ int perftest_cpp::Subscriber()
             return -1;
         }
     } else {
-        reader = _MessagingImpl->CreateReader(
+        reader = _MessagingImpl->create_reader(
                 THROUGHPUT_TOPIC_NAME,
                 NULL);
         if (reader == NULL)
@@ -1171,7 +1171,7 @@ int perftest_cpp::Subscriber()
     }
 
     // Create announcement writer
-    announcement_writer = _MessagingImpl->CreateWriter(
+    announcement_writer = _MessagingImpl->create_writer(
             ANNOUNCEMENT_TOPIC_NAME);
 
     if (announcement_writer == NULL) {
@@ -1184,10 +1184,10 @@ int perftest_cpp::Subscriber()
             "Waiting to discover %d publishers ...\n",
             _PM.get<int>("numPublishers"));
     fflush(stderr);
-    reader->WaitForWriters(_PM.get<int>("numPublishers"));
+    reader->wait_for_writers(_PM.get<int>("numPublishers"));
     // In a multi publisher test, only the first publisher will have a reader.
-    writer->WaitForReaders(1);
-    announcement_writer->WaitForReaders(_PM.get<int>("numPublishers"));
+    writer->wait_for_readers(1);
+    announcement_writer->wait_for_readers(_PM.get<int>("numPublishers"));
 
     /*
      * Announcement message that will be used by the announcement_writer
@@ -1206,8 +1206,8 @@ int perftest_cpp::Subscriber()
 
     // Send announcement message
     do {
-        announcement_writer->Send(announcement_msg);
-        announcement_writer->Flush();
+        announcement_writer->send(announcement_msg);
+        announcement_writer->flush();
         PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         /*
          * Send announcement message until the publisher replies us.
@@ -1247,16 +1247,16 @@ int perftest_cpp::Subscriber()
         if (reader_listener->change_size) { // ACK change_size
             announcement_msg.entity_id = subID;
             announcement_msg.size =  LENGTH_CHANGED_SIZE;
-            announcement_writer->Send(announcement_msg);
-            announcement_writer->Flush();
+            announcement_writer->send(announcement_msg);
+            announcement_writer->flush();
             reader_listener->change_size = false;
         }
 
         if (reader_listener->end_test) { // ACK end_test
             announcement_msg.entity_id = subID;
             announcement_msg.size = FINISHED_SIZE;
-            announcement_writer->Send(announcement_msg);
-            announcement_writer->Flush();
+            announcement_writer->send(announcement_msg);
+            announcement_writer->flush();
             break;
         }
 
@@ -1314,12 +1314,12 @@ int perftest_cpp::Subscriber()
 
                 if (cacheStats) {
                     printf("Samples Ping Reader Queue: %4d (Peak: %4d)",
-                            reader->getSampleCount(),
-                            reader->getSampleCountPeak());
+                            reader->get_sample_count(),
+                            reader->get_sample_count_peak());
                     printf(" Samples Pong Writer Queue: %3d (Peak: %3d)\n",
-                            writer->getSampleCount(),
-                            writer->getSampleCountPeak());
-                    reader_listener->sample_count_peak = reader->getSampleCountPeak();
+                            writer->get_sample_count(),
+                            writer->get_sample_count_peak());
+                    reader_listener->sample_count_peak = reader->get_sample_count_peak();
                 }
             }
         }
@@ -1375,7 +1375,7 @@ class AnnouncementListener : public IMessagingCB
             : announced_subscribers(0), _reader(reader)
     {}
 
-    void ProcessMessage(TestMessage& message) {
+    void process_message(TestMessage& message) {
         /*
          * The subscriber_list vector contains the list of discovered subscribers.
          *
@@ -1682,7 +1682,7 @@ public:
         }
     }
 
-    void ProcessMessage(TestMessage &message)
+    void process_message(TestMessage &message)
     {
         unsigned long long now, sentTime;
         unsigned long latency;
@@ -1804,7 +1804,7 @@ public:
         }
 
         if(_writer != NULL) {
-            _writer->notifyPingResponse();
+            _writer->notify_ping_response();
         }
     }
 };
@@ -1839,10 +1839,10 @@ int perftest_cpp::Publisher()
     struct PerftestThread *executionTimeoutThread = NULL;
     unsigned long num_latency;
     unsigned long announcementSampleCount = 50;
-    unsigned int samplesPerBatch = GetSamplesPerBatch();
+    unsigned int samplesPerBatch = get_samples_per_batch();
 
     // create throughput/ping writer
-    IMessagingWriter *writer = _MessagingImpl->CreateWriter(
+    IMessagingWriter *writer = _MessagingImpl->create_writer(
             THROUGHPUT_TOPIC_NAME);
 
     if (writer == NULL)
@@ -1878,7 +1878,7 @@ int perftest_cpp::Publisher()
                     _PM.get<bool>("latencyTest") ? writer : NULL,
                     _PM,
                     _printer);
-            reader = _MessagingImpl->CreateReader(
+            reader = _MessagingImpl->create_reader(
                     LATENCY_TOPIC_NAME,
                     reader_listener);
             if (reader == NULL)
@@ -1889,7 +1889,7 @@ int perftest_cpp::Publisher()
         }
         else
         {
-            reader = _MessagingImpl->CreateReader(
+            reader = _MessagingImpl->create_reader(
                     LATENCY_TOPIC_NAME,
                     NULL);
             if (reader == NULL)
@@ -1935,11 +1935,11 @@ int perftest_cpp::Publisher()
      * A Subscriber will send a message on this channel once it discovers
      * every Publisher
      */
-    if (_MessagingImpl->supports_listener()) {
+    if (_MessagingImpl->supports_listeners()) {
         announcement_reader_listener = new AnnouncementListener();
     }
 
-    announcement_reader = _MessagingImpl->CreateReader(
+    announcement_reader = _MessagingImpl->create_reader(
             ANNOUNCEMENT_TOPIC_NAME,
             announcement_reader_listener);
     if (announcement_reader == NULL)
@@ -1949,7 +1949,7 @@ int perftest_cpp::Publisher()
     }
 
     struct PerftestThread *announcementReadThread = NULL;
-    if (!_MessagingImpl->supports_listener()) {
+    if (!_MessagingImpl->supports_listeners()) {
         announcement_reader_listener
                 = new AnnouncementListener(announcement_reader);
 
@@ -2006,12 +2006,12 @@ int perftest_cpp::Publisher()
             "Waiting to discover %d subscribers ...\n",
             _PM.get<int>("numSubscribers"));
     fflush(stderr);
-    writer->WaitForReaders(_PM.get<int>("numSubscribers"));
+    writer->wait_for_readers(_PM.get<int>("numSubscribers"));
     // Only publisher with ID 0 will have a reader.
     if (reader != NULL) {
-        reader->WaitForWriters(_PM.get<int>("numSubscribers"));
+        reader->wait_for_writers(_PM.get<int>("numSubscribers"));
     }
-    announcement_reader->WaitForWriters(_PM.get<int>("numSubscribers"));
+    announcement_reader->wait_for_writers(_PM.get<int>("numSubscribers"));
 
     // We have to wait until every Subscriber sends an announcement message
     // indicating that it has discovered every Publisher
@@ -2065,7 +2065,7 @@ int perftest_cpp::Publisher()
      * number and the number of instances to be sent.
      */
     unsigned long initializeSampleCount = (std::max)(
-            _MessagingImpl->GetInitializationSampleCount(),
+            _MessagingImpl->get_initial_burst_size(),
             (unsigned long)_PM.get<long>("instances"));
 
     if (_PM.is_set("initialBurstSize")) {
@@ -2079,9 +2079,9 @@ int perftest_cpp::Publisher()
 
     for (unsigned long i = 0; i < initializeSampleCount; i++) {
         // Send test initialization message
-        writer->Send(message, true);
+        writer->send(message, true);
     }
-    writer->Flush();
+    writer->flush();
 
     fprintf(stderr, "Sending data ...\n");
     fflush(stderr);
@@ -2263,8 +2263,8 @@ int perftest_cpp::Publisher()
                     _testCompleted_scan = false;
 
                     // flush anything that was previously sent
-                    writer->Flush();
-                    writer->waitForAck(
+                    writer->flush();
+                    writer->wait_for_ack(
                             timeout_wait_for_ack_sec,
                             timeout_wait_for_ack_nsec);
 
@@ -2294,7 +2294,7 @@ int perftest_cpp::Publisher()
                      * If the Throughput topic is reliable, we can send the packet and do
                      * a wait for acknowledgements. However, if the Throughput topic is
                      * Best Effort, wait_for_acknowledgments() will return inmediately.
-                     * This would cause that the Send() would be exercised too many times,
+                     * This would cause that the send() would be exercised too many times,
                      * in some cases causing the network to be flooded, a lot of packets being
                      * lost, and potentially CPU starbation for other processes.
                      * We can prevent this by adding a small sleep() if the test is best
@@ -2303,16 +2303,16 @@ int perftest_cpp::Publisher()
                     announcement_reader_listener->subscriber_list.clear();
                     while ((int)announcement_reader_listener->subscriber_list.size()
                             < numSubscribers) {
-                        writer->Send(message, true);
-                        writer->Flush();
-                        writer->waitForAck(
+                        writer->send(message, true);
+                        writer->flush();
+                        writer->wait_for_ack(
                             timeout_wait_for_ack_sec,
                             timeout_wait_for_ack_nsec);
                     }
 
                     message.size = (int)scanList[scan_count++] - OVERHEAD_BYTES;
                     /* Reset _SamplePerBatch */
-                    samplesPerBatch = GetSamplesPerBatch();
+                    samplesPerBatch = get_samples_per_batch();
 
                     ping_index_in_batch = 0;
                     current_index_in_batch = 0;
@@ -2329,9 +2329,9 @@ int perftest_cpp::Publisher()
 
                 if (cacheStats && printIntervals) {
                     printf("Pulled samples: %3d, Samples Writer Queue: %3d (Peak: %3d)\n",
-                            writer->getPulledSampleCount(),
-                            writer->getSampleCount(),
-                            writer->getSampleCountPeak());
+                            writer->get_pulled_sample_count(),
+                            writer->get_sample_count(),
+                            writer->get_sample_count_peak());
                 }
             }
         }
@@ -2342,19 +2342,19 @@ int perftest_cpp::Publisher()
         if (useDatafromFile) {
             message.data = _fileDataLoader.get_next_buffer();
         }
-        writer->Send(message);
+        writer->send(message);
         if(latencyTest && sentPing) {
             if (!bestEffort) {
               #ifdef DEBUG_PING_PONG
                 printf("-> Waiting for Ping Response\n");
               #endif
-                writer->waitForPingResponse();
+                writer->wait_for_ping_response();
               #ifdef DEBUG_PING_PONG
                 printf("<- Got Ping Response\n");
               #endif
             } else {
                 /* time out in milliseconds */
-                writer->waitForPingResponse(200);
+                writer->wait_for_ping_response(200);
             }
         }
 
@@ -2366,7 +2366,7 @@ int perftest_cpp::Publisher()
     }
 
     // In case of batching, flush
-    writer->Flush();
+    writer->flush();
 
     /*
      * This is where we report the time when using the low resolution clock
@@ -2390,9 +2390,9 @@ int perftest_cpp::Publisher()
     unsigned long i = 0;
     while (announcement_reader_listener->subscriber_list.size() > 0
             && i < announcementSampleCount) {
-        writer->Send(message, true);
-        writer->Flush();
-        writer->waitForAck(
+        writer->send(message, true);
+        writer->flush();
+        writer->wait_for_ack(
                 timeout_wait_for_ack_sec,
                 timeout_wait_for_ack_nsec);
         i++;
@@ -2409,8 +2409,8 @@ int perftest_cpp::Publisher()
 
     if (_PM.get<bool>("cacheStats")) {
         printf("Pulled samples: %3d, Samples Writer Queue Peak: %3d\n",
-                writer->getPulledSampleCount(),
-                writer->getSampleCountPeak());
+                writer->get_pulled_sample_count(),
+                writer->get_sample_count_peak());
     }
 
     if (!finalize_read_thread(latencyReadThread, reader_listener)) {
@@ -2476,13 +2476,13 @@ bool perftest_cpp::finalize_read_thread(
     if (thread != NULL) {
         if (listener != NULL
                 && listener->_reader->unblock()
-                && listener->syncSemaphore != NULL) {
+                && listener->sync_semaphore != NULL) {
             /*
              * If the thread is created but the creation of the semaphore fail,
-             * syncSemaphore could be null
+             * sync_semaphore could be null
              */
             if (!PerftestSemaphore_take(
-                    listener->syncSemaphore,
+                    listener->sync_semaphore,
                     PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)) {
                 fprintf(stderr,"Unexpected error taking semaphore\n");
                 return false;
@@ -2493,7 +2493,7 @@ bool perftest_cpp::finalize_read_thread(
     return true;
 }
 
-inline unsigned int perftest_cpp::GetSamplesPerBatch() {
+inline unsigned int perftest_cpp::get_samples_per_batch() {
     if (_PM.get<long>("batchSize")
             > (long)_PM.get<unsigned long long>("dataLen")) {
         return _PM.get<long>("batchSize") /

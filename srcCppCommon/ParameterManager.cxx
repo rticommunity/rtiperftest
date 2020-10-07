@@ -912,7 +912,7 @@ void ParameterManager::initialize()
             "packets. This will be the only address announced\n"
             "at discovery time. If not specified, use all"
             "available interfaces"
-          #ifdef PERTEST_RTI_MICRO
+          #ifdef PERFTEST_RTI_MICRO
             "\n"
             "When using RTI Connext DDS Micro, always specify the\n"
             "name, not the IP Address."
@@ -931,7 +931,7 @@ void ParameterManager::initialize()
             "packets. This will be the only address announced\n"
             "at discovery time. If not specified, use all"
             "available interfaces"
-          #ifdef PERTEST_RTI_MICRO
+          #ifdef PERFTEST_RTI_MICRO
             "\n"
             "When using RTI Connext DDS Micro, always specify the\n"
             "name, not the IP Address."
@@ -969,7 +969,7 @@ void ParameterManager::initialize()
           #if defined(PERFTEST_RTI_PRO)
             "\nValues:\n\tUDPv4\n\tUDPv6\n\tSHMEM\n\tTCP\n\tTLS\n\tDTLS\n\tWAN\n\tUse XML\n"
             "Default: Use XML (UDPv4|SHMEM)"
-          #elif defined(PERTEST_RTI_MICRO) || defined(PERFTEST_EPROSIMA_FASTDDS)
+          #elif defined(PERFTEST_RTI_MICRO) || defined(PERFTEST_EPROSIMA_FASTDDS)
             "\nValues:\n\tUDPv4\n\tSHMEM\n"
             "Default: UDPv4"
           #endif

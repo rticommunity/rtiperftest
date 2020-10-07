@@ -148,7 +148,7 @@ public:
             std::cout << "<< got sample " << _sample.seq_num() << std::endl;
           #endif
 
-            _callback->ProcessMessage(_message);
+            _callback->process_message(_message);
         }
     }
 
@@ -181,7 +181,7 @@ FastDDSImpl<T>::FastDDSImpl()
  * Shutdown
  */
 template <typename T>
-void FastDDSImpl<T>::Shutdown()
+void FastDDSImpl<T>::shutdown()
 {
 
     if (_participant != NULL) {
@@ -265,7 +265,7 @@ bool FastDDSImpl<T>::validate_input()
  * PrintConfiguration
  */
 template <typename T>
-std::string FastDDSImpl<T>::PrintConfiguration()
+std::string FastDDSImpl<T>::print_configuration()
 {
 
     std::ostringstream stringStream;
@@ -355,10 +355,10 @@ public:
 
     ~FastDDSPublisher()
     {
-        Shutdown();
+        shutdown();
     }
 
-    void Shutdown()
+    void shutdown()
     {
         if (_writer->get_listener() != nullptr) {
             delete(_writer->get_listener());
@@ -366,11 +366,11 @@ public:
         }
     }
 
-    void Flush()
+    void flush()
     {
     }
 
-    void WaitForReaders(int numSubscribers)
+    void wait_for_readers(int numSubscribers)
     {
         WriterListener *listener = (WriterListener *) _writer->get_listener();
         if (listener == nullptr) {
@@ -382,7 +382,7 @@ public:
         }
     }
 
-    bool waitForPingResponse()
+    bool wait_for_ping_response()
     {
         if(_pongSemaphore != NULL) {
             if (!PerftestSemaphore_take(
@@ -396,7 +396,7 @@ public:
     }
 
     /* time out in milliseconds */
-    bool waitForPingResponse(int timeout)
+    bool wait_for_ping_response(int timeout)
     {
         if(_pongSemaphore != NULL) {
             if (!PerftestSemaphore_take(
@@ -409,7 +409,7 @@ public:
         return true;
     }
 
-    bool notifyPingResponse()
+    bool notify_ping_response()
     {
         if(_pongSemaphore != NULL) {
             if (!PerftestSemaphore_give(_pongSemaphore)) {
@@ -420,25 +420,25 @@ public:
         return true;
     }
 
-    unsigned int getPulledSampleCount()
+    unsigned int get_pulled_sample_count()
     {
         // Not supported yet
         return 0;
     }
 
-    unsigned int getSampleCount()
+    unsigned int get_sample_count()
     {
         // Not supported yet
         return 0;
     }
 
-    unsigned int getSampleCountPeak()
+    unsigned int get_sample_count_peak()
     {
         // Not supported in Micro
         return 0;
     }
 
-    void waitForAck(int sec, unsigned int nsec) {
+    void wait_for_ack(int sec, unsigned int nsec) {
         if (_isReliable) {
             _writer->wait_for_acknowledgments(Duration_t(sec, nsec));
         } else {
@@ -446,7 +446,7 @@ public:
         }
     }
 
-    bool Send(const TestMessage &message, bool isCftWildCardKey)
+    bool send(const TestMessage &message, bool isCftWildCardKey)
     {
         _data.entity_id(message.entity_id);
         _data.seq_num(message.seq_num);
@@ -528,14 +528,14 @@ public:
 
     ~FastDDSSubscriber()
     {
-        Shutdown();
+        shutdown();
     }
 
-    void Shutdown()
+    void shutdown()
     {
     }
 
-    void WaitForWriters(int numPublishers)
+    void wait_for_writers(int numPublishers)
     {
         ReaderListener<T> *listener = (ReaderListener<T> *) _reader->get_listener();
         if (listener == nullptr) {
@@ -553,19 +553,19 @@ public:
         return true;
     }
 
-    unsigned int getSampleCount()
+    unsigned int get_sample_count()
     {
         // Not implemented
         return 0;
     }
 
-    unsigned int getSampleCountPeak()
+    unsigned int get_sample_count_peak()
     {
         // Not implemented
         return 0;
     }
 
-    TestMessage *ReceiveMessage()
+    TestMessage *receive_message()
     {
         Duration_t timeout(2,0);
 
@@ -925,7 +925,7 @@ bool FastDDSImpl<T>::configure_reader_qos(
  * Initialize
  */
 template <typename T>
-bool FastDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
+bool FastDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
 {
     // Assign ParameterManager
     _PM = &PM;
@@ -1000,7 +1000,7 @@ bool FastDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
  * GetInitializationSampleCount
  */
 template <typename T>
-unsigned long FastDDSImpl<T>::GetInitializationSampleCount()
+unsigned long FastDDSImpl<T>::get_initial_burst_size()
 {
     return 50;
 }
@@ -1009,7 +1009,7 @@ unsigned long FastDDSImpl<T>::GetInitializationSampleCount()
  * CreateWriter
  */
 template <typename T>
-IMessagingWriter *FastDDSImpl<T>::CreateWriter(const char *topicName)
+IMessagingWriter *FastDDSImpl<T>::create_writer(const char *topicName)
 {
     DataWriter *writer = nullptr;
 
@@ -1065,7 +1065,7 @@ IMessagingWriter *FastDDSImpl<T>::CreateWriter(const char *topicName)
  * CreateReader
  */
 template <typename T>
-IMessagingReader *FastDDSImpl<T>::CreateReader(
+IMessagingReader *FastDDSImpl<T>::create_reader(
         const char *topicName,
         IMessagingCB *callback)
 {

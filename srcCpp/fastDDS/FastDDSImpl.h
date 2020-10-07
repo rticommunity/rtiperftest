@@ -65,7 +65,7 @@ public:
 
     ~FastDDSImpl()
     {
-        Shutdown();
+        shutdown();
     }
 
     const std::string get_middleware_version_string();
@@ -74,23 +74,23 @@ public:
 
     bool validate_input();
 
-    std::string PrintConfiguration();
+    std::string print_configuration();
 
-    bool Initialize(ParameterManager &PM, perftest_cpp *parent);
+    bool initialize(ParameterManager &PM, perftest_cpp *parent);
 
-    void Shutdown();
+    void shutdown();
 
-    unsigned long GetInitializationSampleCount();
+    unsigned long get_initial_burst_size();
 
-    IMessagingWriter *CreateWriter(const char *topic_name);
+    IMessagingWriter *create_writer(const char *topic_name);
 
     /*
-     * Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
+     * Pass null for callback if using IMessagingSubscriber.receive_message()
      * to get data
      */
-    IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback);
+    IMessagingReader *create_reader(const char *topic_name, IMessagingCB *callback);
 
-    bool supports_listener()
+    bool supports_listeners()
     {
         return true;
     };

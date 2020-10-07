@@ -27,25 +27,25 @@ class PeerData;
 class RTIRawTransportImpl : public IMessaging {
   public:
     RTIRawTransportImpl();
-    ~RTIRawTransportImpl() { Shutdown(); }
+    ~RTIRawTransportImpl() { shutdown(); }
     bool validate_input();
-    std::string PrintConfiguration();
-    bool Initialize(ParameterManager &PM, perftest_cpp *parent);
-    void Shutdown();
+    std::string print_configuration();
+    bool initialize(ParameterManager &PM, perftest_cpp *parent);
+    void shutdown();
     int GetBatchSize();
 
-    bool supports_listener() {return false;}
+    bool supports_listeners() {return false;}
 
-    IMessagingWriter *CreateWriter(const char *topic_name);
+    IMessagingWriter *create_writer(const char *topic_name);
 
     /* This implementation does not support listener so callback is ignored. */
     IMessagingReader *
-    CreateReader(const char *topic_name, IMessagingCB *callback);
+    create_reader(const char *topic_name, IMessagingCB *callback);
 
     bool configure_sockets_transport();
 
     /*------------------------------- Getters --------------------------------*/
-    unsigned long GetInitializationSampleCount()    {return 0;}
+    unsigned long get_initial_burst_size()    {return 0;}
     NDDS_Transport_Plugin *get_plugin()             {return _plugin;}
     std::vector<PeerData> get_peers_data()          {return _peersDataList;}
     RTIOsapiSemaphore *get_pong_semaphore()         {return _pongSemaphore;}

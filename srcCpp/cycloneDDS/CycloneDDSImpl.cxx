@@ -107,7 +107,7 @@ static void reader_on_data_available(dds_entity_t reader, void *arg)
             listenerInfo->message.size = valid_sample->bin_data._length;
             listenerInfo->message.data = (char *) valid_sample->bin_data._buffer;
 
-            listenerInfo->callback->ProcessMessage(listenerInfo->message);
+            listenerInfo->callback->process_message(listenerInfo->message);
         }
 
     }
@@ -155,7 +155,7 @@ CycloneDDSImpl<T>::CycloneDDSImpl(dds_topic_descriptor_t topicDescriptor)
  * Shutdown
  */
 template <typename T>
-void CycloneDDSImpl<T>::Shutdown()
+void CycloneDDSImpl<T>::shutdown()
 {
     //TODO
     // if (_participant != nullptr) {
@@ -252,7 +252,7 @@ bool CycloneDDSImpl<T>::validate_input()
  * PrintConfiguration
  */
 template <typename T>
-std::string CycloneDDSImpl<T>::PrintConfiguration()
+std::string CycloneDDSImpl<T>::print_configuration()
 {
 
     std::ostringstream stringStream;
@@ -326,10 +326,10 @@ public:
 
     ~CycloneDDSPublisher()
     {
-        Shutdown();
+        shutdown();
     }
 
-    void Shutdown()
+    void shutdown()
     {
         // if (_writer->get_listener() != nullptr) {
         //     delete(_writer->get_listener());
@@ -337,11 +337,11 @@ public:
         // }
     }
 
-    void Flush()
+    void flush()
     {
     }
 
-    void WaitForReaders(int numSubscribers)
+    void wait_for_readers(int numSubscribers)
     {
         dds_set_status_mask(_writer, DDS_PUBLICATION_MATCHED_STATUS);
         dds_publication_matched_status_t status;
@@ -352,7 +352,7 @@ public:
         }
     }
 
-    bool waitForPingResponse()
+    bool wait_for_ping_response()
     {
         if(_pongSemaphore != nullptr) {
             if (!PerftestSemaphore_take(
@@ -366,7 +366,7 @@ public:
     }
 
     /* time out in milliseconds */
-    bool waitForPingResponse(int timeout)
+    bool wait_for_ping_response(int timeout)
     {
         if(_pongSemaphore != nullptr) {
             if (!PerftestSemaphore_take(
@@ -379,7 +379,7 @@ public:
         return true;
     }
 
-    bool notifyPingResponse()
+    bool notify_ping_response()
     {
         if(_pongSemaphore != nullptr) {
             if (!PerftestSemaphore_give(_pongSemaphore)) {
@@ -390,25 +390,25 @@ public:
         return true;
     }
 
-    unsigned int getPulledSampleCount()
+    unsigned int get_pulled_sample_count()
     {
         // Not supported yet
         return 0;
     }
 
-    unsigned int getSampleCount()
+    unsigned int get_sample_count()
     {
         // Not supported yet
         return 0;
     }
 
-    unsigned int getSampleCountPeak()
+    unsigned int get_sample_count_peak()
     {
         // Not supported in Cyclone
         return 0;
     }
 
-    void waitForAck(int sec, unsigned int nsec) {
+    void wait_for_ack(int sec, unsigned int nsec) {
         if (_isReliable) {
             retCode = dds_wait_for_acks(_writer, dds_duration_t (sec * DDS_NSECS_IN_SEC + nsec));
             if (retCode != DDS_RETCODE_OK) {
@@ -419,7 +419,7 @@ public:
         }
     }
 
-    bool Send(const TestMessage &message, bool isCftWildCardKey)
+    bool send(const TestMessage &message, bool isCftWildCardKey)
     {
         _data.entity_id = message.entity_id;
         _data.seq_num = message.seq_num;
@@ -537,10 +537,10 @@ public:
 
     ~CycloneDDSSubscriber()
     {
-        Shutdown();
+        shutdown();
     }
 
-    void Shutdown()
+    void shutdown()
     {
         if (_useReceiveThread) {
             dds_return_t retCode = dds_waitset_detach(waitSet, waitSet);
@@ -558,7 +558,7 @@ public:
         }
     }
 
-    void WaitForWriters(int numPublishers)
+    void wait_for_writers(int numPublishers)
     {
         dds_subscription_matched_status_t status;
         dds_get_subscription_matched_status(_reader, &status);
@@ -574,19 +574,19 @@ public:
         return true;
     }
 
-    unsigned int getSampleCount()
+    unsigned int get_sample_count()
     {
         // Not implemented
         return 0;
     }
 
-    unsigned int getSampleCountPeak()
+    unsigned int get_sample_count_peak()
     {
         // Not implemented
         return 0;
     }
 
-    TestMessage *ReceiveMessage()
+    TestMessage *receive_message()
     {
         dds_return_t retCode;
         int seqLength;
@@ -958,7 +958,7 @@ bool CycloneDDSImpl<T>::configure_reader_qos(
  * Initialize
  */
 template <typename T>
-bool CycloneDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
+bool CycloneDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
 {
     // Assign ParameterManager
     _PM = &PM;
@@ -1052,7 +1052,7 @@ bool CycloneDDSImpl<T>::Initialize(ParameterManager &PM, perftest_cpp *parent)
  * GetInitializationSampleCount
  */
 template <typename T>
-unsigned long CycloneDDSImpl<T>::GetInitializationSampleCount()
+unsigned long CycloneDDSImpl<T>::get_initial_burst_size()
 {
     return 50;
 }
@@ -1061,7 +1061,7 @@ unsigned long CycloneDDSImpl<T>::GetInitializationSampleCount()
  * CreateWriter
  */
 template <typename T>
-IMessagingWriter *CycloneDDSImpl<T>::CreateWriter(const char *topicName)
+IMessagingWriter *CycloneDDSImpl<T>::create_writer(const char *topicName)
 {
     if (_participant < 0) {
         fprintf(stderr, "Participant is not valid\n");
@@ -1126,7 +1126,7 @@ IMessagingWriter *CycloneDDSImpl<T>::CreateWriter(const char *topicName)
  * CreateReader
  */
 template <typename T>
-IMessagingReader *CycloneDDSImpl<T>::CreateReader(
+IMessagingReader *CycloneDDSImpl<T>::create_reader(
         const char *topicName,
         IMessagingCB *callback)
 {

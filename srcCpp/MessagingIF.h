@@ -46,34 +46,36 @@ class IMessagingCB
 {
   public:
     bool  end_test;
-    PerftestSemaphore *syncSemaphore;
+    PerftestSemaphore *sync_semaphore;
 
-  public:
-    IMessagingCB() : end_test(false), syncSemaphore(NULL){}
+    IMessagingCB() : end_test(false), sync_semaphore(NULL)
+    {
+    }
 
-    virtual ~IMessagingCB() {
-        if (syncSemaphore != NULL) {
-            PerftestSemaphore_delete(syncSemaphore);
-            syncSemaphore = NULL;
+    virtual ~IMessagingCB()
+    {
+        if (sync_semaphore != NULL) {
+            PerftestSemaphore_delete(sync_semaphore);
+            sync_semaphore = NULL;
         }
     }
 
     /* Create a semaphore if is not been created yet, and then return it */
     PerftestSemaphore *get_synchronization_semaphore()
     {
-        if (syncSemaphore == NULL) {
-            syncSemaphore = PerftestSemaphore_new();
+        if (sync_semaphore == NULL) {
+            sync_semaphore = PerftestSemaphore_new();
 
-            if (syncSemaphore == NULL) {
+            if (sync_semaphore == NULL) {
                 fprintf(stderr,
                         "Fail to create a Semaphore for IMessagingCB\n");
                 return NULL;
             }
         }
-        return syncSemaphore;
+        return sync_semaphore;
     }
 
-    virtual void ProcessMessage(TestMessage &message) = 0;
+    virtual void process_message(TestMessage &message) = 0;
 
 };
 
@@ -82,23 +84,23 @@ class IMessagingReader
   public:
     virtual ~IMessagingReader() {}
 
-    virtual void WaitForWriters(int numPublishers) = 0;
+    virtual void wait_for_writers(int numPublishers) = 0;
 
     // only used for non-callback test
-    virtual TestMessage *ReceiveMessage() = 0;
+    virtual TestMessage *receive_message() = 0;
 
     // Unblock a receive function. Needed whe a thread is blocked receiving data
     virtual bool unblock() {return true;}
 
     // only used for non-callback test to cleanup
     // the thread
-    virtual void Shutdown() {}
+    virtual void shutdown() {}
 
-    virtual unsigned int getSampleCount() {
+    virtual unsigned int get_sample_count() {
         return 0;
     }
 
-    virtual unsigned int getSampleCountPeak() {
+    virtual unsigned int get_sample_count_peak() {
         return 0;
     }
 
@@ -108,40 +110,40 @@ class IMessagingWriter
 {
   public:
     virtual ~IMessagingWriter() {}
-    virtual void WaitForReaders(int numSubscribers) = 0;
-    virtual bool Send(const TestMessage &message, bool isCftWildCardKey = false) = 0;
-    virtual void Flush() = 0;
-    virtual bool waitForPingResponse() {
+    virtual void wait_for_readers(int numSubscribers) = 0;
+    virtual bool send(const TestMessage &message, bool isCftWildCardKey = false) = 0;
+    virtual void flush() = 0;
+    virtual bool wait_for_ping_response() {
         // Implementation required only if
         // support for LatencyTest is desired.
         // The implementation may consist of just
         // a binary semaphore TAKE operation
         return true;
     };
-    virtual bool waitForPingResponse(int /*timeout*/) {
+    virtual bool wait_for_ping_response(int /*timeout*/) {
         // Implementation required only if
         // support for LatencyTest is desired.
         // The implementation may consist of just
         // a binary semaphore TAKE time out operation
         return true;
     };
-    virtual bool notifyPingResponse() {
+    virtual bool notify_ping_response() {
         // Implementation required only if
         // support for LatencyTest is desired.
         // The implementation may consist of just
         // a binary semaphore GIVE operation
         return true;
     };
-    virtual unsigned int getPulledSampleCount() {
+    virtual unsigned int get_pulled_sample_count() {
         return 0;
     };
-    virtual unsigned int getSampleCount() {
+    virtual unsigned int get_sample_count() {
         return 0;
     };
-    virtual unsigned int getSampleCountPeak() {
+    virtual unsigned int get_sample_count_peak() {
         return 0;
     };
-    virtual void waitForAck(int /*sec*/, unsigned int /*nsec*/) {
+    virtual void wait_for_ack(int /*sec*/, unsigned int /*nsec*/) {
     };
 #ifdef RTI_CUSTOM_TYPE
   private:
@@ -159,29 +161,29 @@ class IMessaging
 public:
     virtual ~IMessaging() {}
 
-    virtual bool Initialize(ParameterManager &PM, perftest_cpp *parent) = 0;
+    virtual bool initialize(ParameterManager &PM, perftest_cpp *parent) = 0;
 
-    virtual std::string PrintConfiguration() = 0;
+    virtual std::string print_configuration() = 0;
 
-    virtual void Shutdown() = 0;
+    virtual void shutdown() = 0;
 
     /*
      * Get an estimation of the minimum number of samples that need to be send
      * before starting the test to ensure that most memory allocations will be
      * done in the subscriber side (when sending a burst of that data).
      */
-    virtual unsigned long GetInitializationSampleCount() = 0;
+    virtual unsigned long get_initial_burst_size() = 0;
 
-    virtual IMessagingWriter *CreateWriter(const char *topic_name) = 0;
+    virtual IMessagingWriter *create_writer(const char *topic_name) = 0;
 
     /*
-     * Pass null for callback if using IMessagingReader.ReceiveMessage()
+     * Pass null for callback if using IMessagingReader.receive_message()
      * to get data
      */
-    virtual IMessagingReader *CreateReader(const char *topic_name, IMessagingCB *callback) = 0;
+    virtual IMessagingReader *create_reader(const char *topic_name, IMessagingCB *callback) = 0;
 
     /* Get information about witch features are supported by the medleware */
-    virtual bool supports_listener() = 0;
+    virtual bool supports_listeners() = 0;
 
     /*
      * @brief This function calculates the overhead bytes added by all the

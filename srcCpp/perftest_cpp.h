@@ -38,12 +38,12 @@ class perftest_cpp
     ~perftest_cpp();
     int Run(int argc, char *argv[]);
     bool validate_input();
-    void PrintConfiguration();
-    unsigned int GetSamplesPerBatch();
+    void print_configuration();
+    unsigned int get_samples_per_batch();
     const ThreadPriorities get_thread_priorities();
     void calculate_publication_rate();
-    static const Perftest_ProductVersion_t GetPerftestVersion();
-    static void PrintVersion();
+    static const Perftest_ProductVersion_t get_perftest_version();
+    static void print_version();
 
   private:
     int Publisher();

@@ -51,25 +51,25 @@ class RTIDDSImpl : public IMessaging
 
     ~RTIDDSImpl()
     {
-        Shutdown();
+        shutdown();
     }
 
     bool data_size_related_calculations();
 
     bool validate_input();
 
-    std::string PrintConfiguration();
+    std::string print_configuration();
 
-    bool Initialize(ParameterManager &PM, perftest_cpp *parent);
+    bool initialize(ParameterManager &PM, perftest_cpp *parent);
 
-    void Shutdown();
+    void shutdown();
 
-    unsigned long GetInitializationSampleCount();
+    unsigned long get_initial_burst_size();
 
-    IMessagingWriter *CreateWriter(const std::string &topic_name);
-    // Pass null for callback if using IMessagingSubscriber.ReceiveMessage()
+    IMessagingWriter *create_writer(const std::string &topic_name);
+    // Pass null for callback if using IMessagingSubscriber.receive_message()
     // to get data
-    IMessagingReader *CreateReader(const std::string &topic_name, IMessagingCB *callback);
+    IMessagingReader *create_reader(const std::string &topic_name, IMessagingCB *callback);
 
     /**
      * @brief This function calculates the overhead bytes that all the
@@ -86,7 +86,7 @@ class RTIDDSImpl : public IMessaging
             const std::string &profile_name);
 
     template <typename U>
-    dds::topic::ContentFilteredTopic<U> CreateCft(
+    dds::topic::ContentFilteredTopic<U> create_cft(
         const std::string &topic_name,
         const dds::topic::Topic<U> &topic);
 
@@ -135,10 +135,10 @@ class RTIDDSImpl : public IMessaging
   #endif
 
     unsigned long int getShmemSHMMAX();
-    dds::sub::qos::DataReaderQos setup_DR_QoS(
+    dds::sub::qos::DataReaderQos configure_writer_qos(
             std::string qos_profile,
             std::string topic_name);
-    dds::pub::qos::DataWriterQos setup_DW_QoS(
+    dds::pub::qos::DataWriterQos configure_reader_qos(
             std::string qos_profile,
             std::string topic_name);
 };
@@ -166,7 +166,7 @@ class RTIDDSImpl : public IMessaging
        *
        * @return a RTIFlatDataPublisher
        */
-      IMessagingWriter *CreateWriter(const std::string &topic_name);
+      IMessagingWriter *create_writer(const std::string &topic_name);
 
       /**
        * Creates a Subscriber that uses the FlatData API
@@ -176,11 +176,11 @@ class RTIDDSImpl : public IMessaging
        *
        * @param callback is the callback that will process the receibed message
        *      once it has been taken by the reader. Pass null for callback if
-       *      using IMessagingSubscriber.ReceiveMessage() to get data
+       *      using IMessagingSubscriber.receive_message() to get data
        *
        * @return a RTIFlatDataSubscriber
        */
-      IMessagingReader *CreateReader(
+      IMessagingReader *create_reader(
               const std::string &topic_name, IMessagingCB *callback);
 
       /**
