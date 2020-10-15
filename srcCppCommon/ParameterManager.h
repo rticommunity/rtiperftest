@@ -23,8 +23,11 @@
 #else
   #define STRNCASECMP strncasecmp
 #endif
-#define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
-
+#ifdef RTI_QNX
+  #define IS_OPTION(str, option) (strcasecmp(str, option) == 0)
+#elif
+ #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
+#endif
 
 
 /******************************************************************************/
