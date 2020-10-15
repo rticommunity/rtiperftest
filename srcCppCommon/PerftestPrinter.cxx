@@ -193,8 +193,7 @@ void PerftestPrinter::print_latency_summary(
             if (!_printIntervals && _printSummaryHeaders) {
                 _printSummaryHeaders = _printIntervals;
             }
-            printf("\nOne-way Latency Summary:\n");
-            printf("Length (Bytes)"
+            printf("\nLength (Bytes)"
                    ", Ave (" PERFT_TIME_UNIT
                    "), Std (" PERFT_TIME_UNIT
                    "), Min (" PERFT_TIME_UNIT
@@ -421,8 +420,7 @@ void PerftestPrinter::print_throughput_summary(
             if (!_printIntervals && _printSummaryHeaders) {
                 _printSummaryHeaders = _printIntervals;
             }
-            printf("\nThroughput Summary:\n");
-            printf("Length (Bytes), Total Samples, Ave Samples/s,"
+            printf("\nLength (Bytes), Total Samples, Ave Samples/s,"
                    "    Ave Mbps, Lost Samples, Lost Samples (%%)");
             if (_showCPU) {
                 printf(", CPU (%%)");

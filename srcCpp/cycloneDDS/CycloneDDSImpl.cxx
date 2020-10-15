@@ -721,9 +721,9 @@ bool CycloneDDSImpl<T>::set_cycloneDDS_URI()
     }
 
     // MaxMessageSize The default value is: "14720 B"
-    stringStream << "<MaxMessageSize>65500B</MaxMessageSize>";
+    stringStream << "<MaxMessageSize>65000B</MaxMessageSize>";
     // FragmentSize The default value is: "1344 B". They use 4000B in their test
-    stringStream << "<FragmentSize>65500B</FragmentSize>";
+    stringStream << "<FragmentSize>65000B</FragmentSize>";
 
     stringStream << "</General>";
 

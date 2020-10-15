@@ -276,6 +276,13 @@ std::string FastDDSImpl<T>::print_configuration()
         stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
 
+    stringStream << "\tAsynchronous Publishing: ";
+    if (_PM->get<bool>("asynchronous")) {
+        stringStream << "Yes\n";
+    } else {
+        stringStream << "No\n";
+    }
+
     stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
     const std::vector<std::string> peerList =
@@ -653,6 +660,10 @@ bool FastDDSImpl<T>::configure_writer_qos(
         std::string qosProfile)
 {
 
+    if (_PM->get<bool>("unbounded")) {
+        qos.endpoint().history_memory_policy = DYNAMIC_RESERVE_MEMORY_MODE;
+    }
+
     // RELIABILITY AND DURABILITY
     if (qosProfile != "AnnouncementQos") {
 
@@ -805,6 +816,11 @@ bool FastDDSImpl<T>::configure_reader_qos(
         DataReaderQos &qos,
         std::string qosProfile)
 {
+
+    if (_PM->get<bool>("unbounded")) {
+        qos.endpoint().history_memory_policy = DYNAMIC_RESERVE_MEMORY_MODE;
+    }
+
     if (qosProfile != "AnnouncementQos") {
 
         if (_PM->get<bool>("bestEffort")) {
