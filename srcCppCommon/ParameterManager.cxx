@@ -332,7 +332,9 @@ void ParameterManager::initialize()
     unbounded->set_extra_argument(POSSIBLE);
     unbounded->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_BOUNDED_SEQ_SIZE);
     unbounded->set_group(GENERAL);
-    unbounded->set_supported_middleware(Middleware::RTIDDSPRO);
+    unbounded->set_supported_middleware(
+        Middleware::RTIDDSPRO 
+        | Middleware::EPROSIMAFASTDDS);
     create("unbounded", unbounded);
 
     Parameter<std::string> *threadPriorities = new Parameter<std::string>("");
