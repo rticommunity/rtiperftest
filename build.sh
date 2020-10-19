@@ -460,7 +460,7 @@ function additional_defines_calculation_micro()
         additional_included_libraries="dl;m;pthread;nsl;rt;"
     elif [[ $platform == *"QNX"* ]]; then
         additional_defines=" RTI_QNX"
-        additional_included_libraries="m;socket;nsl;rt;"
+        additional_included_libraries="m;socket;"
     fi
     additional_defines="RTI_LANGUAGE_CPP_TRADITIONAL RTI_MICRO O3"${additional_defines}
 
@@ -868,8 +868,7 @@ function build_micro_cpp()
     cd "${classic_cpp_folder}"
 
     cmake_generate_command="${CMAKE_EXE} -DCMAKE_BUILD_TYPE=${RELEASE_DEBUG} -G \"Unix Makefiles\" -B./perftest_build -H. -DRTIME_TARGET_NAME=${platform} -DPLATFORM_LIBS=\"${additional_included_libraries}\" ${ADDITIONAL_CMAKE_ARGS}"
-
-	echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
+    echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
     eval $cmake_generate_command
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating makefiles with cmake for ${classic_cpp_lang_string}."
@@ -877,8 +876,8 @@ function build_micro_cpp()
         exit -1
     fi
 
-	cmake_build_command="${CMAKE_EXE} --build ./perftest_build --config ${RELEASE_DEBUG} --target perftest_publisher"
-    	echo -e "${INFO_TAG} Cmake Build Command: $cmake_build_command"
+    cmake_build_command="${CMAKE_EXE} --build ./perftest_build --config ${RELEASE_DEBUG} --target perftest_publisher"
+        echo -e "${INFO_TAG} Cmake Build Command: $cmake_build_command"
     eval $cmake_build_command
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure compiling code for ${classic_cpp_lang_string}."
