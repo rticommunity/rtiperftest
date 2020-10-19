@@ -193,6 +193,15 @@ In previous releases, the `qos_string.h` file containing the strings from the
 `srcCpp03` folders. This process has been simplified, generating only once and
 into `srcCppCommon`.
 
+Add command-line argument to the `cmake` executable (PERF-194)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Starting in this release *RTI Perftest* enables the customer to add specific
+command-line arguments to the `cmake` executable (which is used when compiling
+against *RTI Connext DDS Micro*. This feature allows the control of the compiler
+used, as well as the ability to add specific flags, without modifying the build
+script. This may be needed when crosscompiling.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -409,6 +418,12 @@ Modify Perftest Classic C++ API Implementation to Initialize sequence (#348)
 In the *RTI Perftest* implementation for the *Classic C++ API* the sequence sent
 by the middleware was not being initialized. This issue has been resolved and now
 it is initialized to zeros.
+
+Incorrect extenal libraries passed to ``cmake`` when compiling against *RTI Connext DDS Micro* in *QNX* (PERF-194)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fixed issue when building *RTI Perftest* for *RTI Connext DDS Micro* in *QNX*
+where the wrong external libraries would be passed to ``cmake``.
 
 Release Notes 3.0
 -----------------
