@@ -25,7 +25,7 @@
 #endif
 #ifdef RTI_QNX
   #define IS_OPTION(str, option) (strcasecmp(str, option) == 0)
-#elif
+#else
  #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
 #endif
 
