@@ -31,6 +31,7 @@ BUILD_CPP03=1
 BUILD_JAVA=1
 MAKE_EXE=make
 CMAKE_EXE=cmake
+ADDITIONAL_CMAKE_ARGS=""
 COMPILER_EXE="" # let rtiddsgen choose the default
 LINKER_EXE="" # let rtiddsgen choose the default
 PERL_EXEC=perl
@@ -114,6 +115,9 @@ function usage()
     echo "                                 parameter is not present, cmake executable     "
     echo "                                 should be available from your \$PATH variable. "
     echo "                                 will clean all the generated code and binaries "
+    echo "    --add-cmake-args <s>         Additional defines and arguments that will     "
+    echo "                                 be passed to the cmake executable when building"
+    echo "                                 Micro. Default: Not set.                       "
     echo "    --compiler <path>            Path to (or name of) the compiler executable.  "
     echo "                                 If this parameter is not a full path, the named"
     echo "                                 executable should be available from your       "
@@ -450,11 +454,13 @@ function additional_defines_calculation_micro()
 {
     if [[ $platform == *"Darwin"* ]]; then
         additional_defines=" RTI_DARWIN"
-    else
-        if [[ $platform == *"Linux"* ]]; then
-            additional_defines=" RTI_LINUX"
-            additional_included_libraries="nsl;rt;"
-        fi
+        additional_included_libraries="dl;m;pthread;"
+    elif [[ $platform == *"Linux"* ]]; then
+        additional_defines=" RTI_LINUX"
+        additional_included_libraries="dl;m;pthread;nsl;rt;"
+    elif [[ $platform == *"QNX"* ]]; then
+        additional_defines=" RTI_QNX"
+        additional_included_libraries="m;socket;"
     fi
     additional_defines="RTI_LANGUAGE_CPP_TRADITIONAL RTI_MICRO O3"${additional_defines}
 
@@ -861,9 +867,8 @@ function build_micro_cpp()
     echo -e "${INFO_TAG} Compiling perftest_cpp"
     cd "${classic_cpp_folder}"
 
-    cmake_generate_command="${CMAKE_EXE} -DCMAKE_BUILD_TYPE=${RELEASE_DEBUG} -G \"Unix Makefiles\" -B./perftest_build -H. -DRTIME_TARGET_NAME=${platform} -DPLATFORM_LIBS=\"dl;m;pthread;${additional_included_libraries}\""
-
-	echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
+    cmake_generate_command="${CMAKE_EXE} -DCMAKE_BUILD_TYPE=${RELEASE_DEBUG} -G \"Unix Makefiles\" -B./perftest_build -H. -DRTIME_TARGET_NAME=${platform} -DPLATFORM_LIBS=\"${additional_included_libraries}\" ${ADDITIONAL_CMAKE_ARGS}"
+    echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
     eval $cmake_generate_command
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating makefiles with cmake for ${classic_cpp_lang_string}."
@@ -871,8 +876,8 @@ function build_micro_cpp()
         exit -1
     fi
 
-	cmake_build_command="${CMAKE_EXE} --build ./perftest_build --config ${RELEASE_DEBUG} --target perftest_publisher"
-    	echo -e "${INFO_TAG} Cmake Build Command: $cmake_build_command"
+    cmake_build_command="${CMAKE_EXE} --build ./perftest_build --config ${RELEASE_DEBUG} --target perftest_publisher"
+        echo -e "${INFO_TAG} Cmake Build Command: $cmake_build_command"
     eval $cmake_build_command
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure compiling code for ${classic_cpp_lang_string}."
@@ -1269,6 +1274,10 @@ while [ "$1" != "" ]; do
             ;;
         --cmake)
             CMAKE_EXE=$2
+            shift
+            ;;
+        --add-cmake-args)
+            ADDITIONAL_CMAKE_ARGS=$2
             shift
             ;;
         --compiler)
