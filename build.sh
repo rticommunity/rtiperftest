@@ -115,7 +115,7 @@ function usage()
     echo "                                 parameter is not present, cmake executable     "
     echo "                                 should be available from your \$PATH variable. "
     echo "                                 will clean all the generated code and binaries "
-    echo "    --add-cmake-args <s>         Additional defines and arguments that need to  "
+    echo "    --add-cmake-args <s>         Additional defines and arguments that will     "
     echo "                                 be passed to the cmake executable when building"
     echo "                                 Micro. Default: Not set.                       "
     echo "    --compiler <path>            Path to (or name of) the compiler executable.  "

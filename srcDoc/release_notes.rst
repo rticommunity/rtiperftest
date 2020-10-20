@@ -198,7 +198,7 @@ Add command-line argument to the `cmake` executable (PERF-194)
 
 Starting in this release *RTI Perftest* enables the customer to add specific
 command-line arguments to the `cmake` executable (which is used when compiling
-against *RTI Connext DDS Micro*. This feature allows the control of the compiler
+against *RTI Connext DDS Micro*). This feature allows the control of the compiler
 used, as well as the ability to add specific flags, without modifying the build
 script. This may be needed when crosscompiling.
 

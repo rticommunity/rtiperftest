@@ -988,7 +988,7 @@ GOTO:EOF
 	echo.    --cmake  path                Path to the CMAKE executable. If this
 	echo.                                 parameter is not present, Cmake variable
 	echo.                                 should be available from your $PATH variable.
-	echo.    --add-cmake-args <s>         Additional defines and arguments that need to
+	echo.    --add-cmake-args <s>         Additional defines and arguments that will
     echo.                                 be passed to the cmake executable when building
     echo.                                 Micro. Default: Not set.
 	echo.    --cmake-generator g          CMake generator to use. By default, NMake
