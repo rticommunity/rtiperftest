@@ -137,7 +137,13 @@ long PerftestFileHandler::read_file(
 bool is_ip_address(std::string ip_string)
 {
     int octect1, octect2, octect3, octect4;
-    if (sscanf(ip_string.c_str(), "%d.%d.%d.%d", &octect1, &octect2, &octect3, &octect4) != 4) {
+    if (sscanf(ip_string.c_str(),
+               "%d.%d.%d.%d",
+               &octect1,
+               &octect2,
+               &octect3,
+               &octect4)
+        != 4) {
         return false;
     }
     return true;
