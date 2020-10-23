@@ -367,13 +367,13 @@ RTI Connext DDS Micro
 
 ::
 
-    bin/<arch>/release/perftest_cpp_micro -pub -noPrint -nic <ipaddr> -domain <ID> -latencyCount 1 -dataLen <length> -latencyTest -executionTime 100
+    bin/<arch>/release/perftest_cpp_micro -pub -noPrint -nic <name of the interface> -domain <ID> -latencyCount 1 -dataLen <length> -latencyTest -executionTime 100
 
 -  Subscriber:
 
 ::
 
-    bin/<arch>/release/perftest_cpp_micro -sub -noPrint -nic <ipaddr> -domain <ID>
+    bin/<arch>/release/perftest_cpp_micro -sub -noPrint -nic <name of the interface> -domain <ID>
 
 Modify ``-dataLen <bytes>`` to see latencies for different data sizes.
 Set ``-executionTime <seconds>`` to be >=100 for statistically better
