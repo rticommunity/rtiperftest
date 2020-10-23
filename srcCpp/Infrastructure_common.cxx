@@ -132,47 +132,13 @@ long PerftestFileHandler::read_file(
 }
 
 /*
- * Function used to check if a given string is a number
- */
-bool is_number(const std::string &str)
-{
-    return !str.empty()
-        && (str.find_first_not_of("[0123456789]") == std::string::npos);
-}
-
-/*
- * Function to divide a string into substrings given a delimiter char
- */
-std::vector<std::string> split(const std::string& str, char delim)
-{
-    std::vector<std::string> list;
-    int pos = str.find(delim);
-    int i = 0;
-    while (pos != std::string::npos) {
-        list.push_back(str.substr(i, pos - i));
-        i = ++pos;
-        pos = str.find(delim, pos);
-    }
-    list.push_back(str.substr(i, str.length()));
-    return list;
-}
-
-/*
  * Function to check if a given string is an ip (it does not check for ranges)
  */
 bool is_ip_address(std::string ip_string)
 {
-    std::vector<std::string> list = split(ip_string, '.');
-
-    if (list.size() != 4) {
+    int octect1, octect2, octect3, octect4;
+    if (sscanf(ip_string.c_str(), "%d.%d.%d.%d", &octect1, &octect2, &octect3, &octect4) != 4) {
         return false;
-    }
-
-    for (int i = 0; i < list.size(); i++) {
-        std::string part = list[i];
-        if (!is_number(part) || stoi(part) > 255 || stoi(part) < 0) {
-            return false;
-        }
     }
     return true;
 }
