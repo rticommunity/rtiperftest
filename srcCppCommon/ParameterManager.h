@@ -13,6 +13,9 @@
 #endif
 #include "Parameter.h"
 #include <map>
+#ifdef RTI_QNX
+  #include <strings.h>
+#endif
 
 #if defined(RTI_WIN32) || defined(RTI_INTIME)
   #pragma warning(push)
@@ -24,7 +27,6 @@
   #define STRNCASECMP strncasecmp
 #endif
 #define IS_OPTION(str, option) (STRNCASECMP(str, option, strlen(str)) == 0)
-
 
 
 /******************************************************************************/

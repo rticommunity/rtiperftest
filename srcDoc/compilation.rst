@@ -171,6 +171,10 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | variable should be available from |
 |                      |           | your ``$PATH`` variable.          |
 +----------------------+-----------+-----------------------------------+
+| --add-cmake-args     | Optional  | Additional arguments that will be |
+|                      |           | passed directly to the ``cmake``  |
+|                      |           | executable.                       |
++----------------------+-----------+-----------------------------------+
 | --compiler           | Optional  | Path to (or name of) the compiler |
 |                      |           | executable. If this parameter is  |
 |                      |           | not a full path, the named        |
@@ -470,6 +474,10 @@ The ``build.bat`` script accepts the following list of parameters:
 |                      |           | not present, the ``cmake``        |
 |                      |           | variable should be available from |
 |                      |           | your ``$PATH`` variable.          |
++----------------------+-----------+-----------------------------------+
+| --add-cmake-args     | Optional  | Additional arguments that will be |
+|                      |           | passed directly to the ``cmake``  |
+|                      |           | executable.                       |
 +----------------------+-----------+-----------------------------------+
 | --cmake-generator    | Optional  | ``cmake`` generator to be used    |
 |                      |           | By default, NMake makefiles will  |
