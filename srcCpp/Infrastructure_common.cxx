@@ -130,3 +130,21 @@ long PerftestFileHandler::read_file(
     return -1;
   #endif
 }
+
+/*
+ * Function to check if a given string is an ip (it does not check for ranges)
+ */
+bool is_ip_address(std::string ip_string)
+{
+    int octect1, octect2, octect3, octect4;
+    if (sscanf(ip_string.c_str(),
+               "%d.%d.%d.%d",
+               &octect1,
+               &octect2,
+               &octect3,
+               &octect4)
+        != 4) {
+        return false;
+    }
+    return true;
+}
