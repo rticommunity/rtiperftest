@@ -76,19 +76,19 @@ static const char *const ANNOUNCEMENT_TOPIC_NAME = "Announcement";
 #define PERFTEST_SEMAPHORE_COUNT 1
 #define PERFTEST_SEMAPHORE_TIMEOUT_INFINITE -1
 
-class PerftestSemaphore
-{
+class PerftestSemaphore {
+
 private:
     unsigned int count;
     std::mutex mutex;
     std::condition_variable condition;
 
 public:
-    inline PerftestSemaphore(unsigned int count) : count(count)
+    explicit PerftestSemaphore(unsigned int count) : count(count)
     {
     }
 
-    inline bool take()
+    bool take()
     {
         std::unique_lock<std::mutex> lock(mutex);
         // This is true if the managed mutex object was locked (or adopted)
@@ -99,7 +99,7 @@ public:
         return (bool) lock;
     }
 
-    inline bool give()
+    bool give()
     {
         std::unique_lock<std::mutex> lock(mutex);
         ++count;
@@ -133,15 +133,9 @@ bool PerftestMutex_take(std::mutex *mutex);
 
 class PerftestClock {
 private:
-    struct timespec timeStruct;
+    timespec timeStruct;
 
 public:
-    PerftestClock()
-    {};
-
-    ~PerftestClock()
-    {};
-
     static PerftestClock &getInstance();
     unsigned long long getTime();
     static void milliSleep(unsigned int millisec);

@@ -24,9 +24,7 @@
 
 PerftestSemaphore* PerftestSemaphore_new(unsigned int count)
 {
-    PerftestSemaphore *semaphore = NULL;
-    semaphore = new PerftestSemaphore(count);
-    return semaphore;
+    return new PerftestSemaphore(count);
 }
 
 PerftestSemaphore* PerftestSemaphore_new()
@@ -62,9 +60,7 @@ PerftestMutex* PerftestMutex_new()
 
 void PerftestMutex_delete(std::mutex* mutex)
 {
-    if (mutex != NULL ) {
-        delete mutex;
-    }
+    delete mutex;
 }
 
 void PerftestMutex_give(std::mutex* mutex)
@@ -80,7 +76,7 @@ bool PerftestMutex_take(std::mutex* mutex)
 /********************************************************************/
 /* Perftest Clock class */
 
-#define spin_function(spinCount)                 \
+#define SPIN_MACRO(spinCount)                 \
 {                                                \
     unsigned long long int spin;                 \
     unsigned long long int ad, bd, cd;           \
@@ -117,16 +113,17 @@ void PerftestClock::sleep(const struct DDS_Duration_t& sleep_period)
     NDDSUtility::sleep(sleep_period);
 }
 
-void NDDSUtility::sleep(const struct DDS_Duration_t& durationIn)
+void NDDSUtility::sleep(const struct DDS_Duration_t &durationIn)
 {
-    std::this_thread::sleep_for(std::chrono::seconds(durationIn.sec));
-    std::this_thread::sleep_for(std::chrono::nanoseconds(durationIn.nanosec));
-};
+    std::this_thread::sleep_for(
+            std::chrono::seconds(durationIn.sec)
+            + std::chrono::nanoseconds(durationIn.nanosec));
+}
 
 void NDDSUtility::spin(unsigned long long int spinCount)
 {
-    spin_function(spinCount);
-};
+    SPIN_MACRO(spinCount);
+}
 
 unsigned long long int
 NDDSUtility::get_spin_per_microsecond(unsigned int precision)
@@ -142,7 +139,7 @@ NDDSUtility::get_spin_per_microsecond(unsigned int precision)
 
     do{
         usec = clock.getTime(); // Initial time
-        spin_function(spinCount * iterations);
+        SPIN_MACRO(spinCount * iterations);
         usec = clock.getTime() - usec; // Final time
         iterations++;
         /*
@@ -174,12 +171,12 @@ struct PerftestThreadOnSpawnedMethod
     ThreadOnSpawnedMethod method;
     void *thread_param;
 
-};
+}
 
 PerftestThread* PerftestThread_new(
     const char *name,
-    int threadPriority,
-    int threadOptions,
+    int, // threadPriority (not used here)
+    int, // threadOptions (not used here)
     ThreadOnSpawnedMethod method,
     void *threadParam)
 {
