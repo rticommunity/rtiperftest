@@ -79,34 +79,6 @@ void ParameterManager::initialize()
     durability->set_range(0, 3);
     create("durability", durability);
 
-    Parameter<bool> *keepLast = new Parameter<bool>(false);
-    keepLast->set_command_line_argument("-keepLast", "");
-    keepLast->set_description(
-            "Set the history to keep last. Depth will be set\n"
-            "to the receive queue value.\n"
-            "Default: Keep All, Not set.");
-    keepLast->set_type(T_BOOL);
-    keepLast->set_group(GENERAL);
-    keepLast->set_supported_middleware(
-            Middleware::CYCLONEDDS
-            | Middleware::EPROSIMAFASTDDS);
-    create("keepLast", keepLast);
-
-    Parameter<int> *keepLastDepth = new Parameter<int>(50);
-    keepLastDepth->set_command_line_argument("-keepLastDepth", "<depth>");
-    keepLastDepth->set_description(
-            "Set the history to Keep Last and the depth to the\n"
-            "provided value.\n"
-            "Default: Keep All, Not set.");
-    keepLastDepth->set_type(T_NUMERIC_D);
-    keepLastDepth->set_extra_argument(YES);
-    keepLastDepth->set_group(GENERAL);
-    keepLastDepth->set_supported_middleware(
-            Middleware::CYCLONEDDS
-            | Middleware::EPROSIMAFASTDDS);
-    keepLastDepth->set_range(0, INT_MAX);
-    create("keepLastDepth", keepLastDepth);
-
     Parameter<int> *domain = new Parameter<int>(1);
     domain->set_command_line_argument("-domain", "<id>");
     domain->set_description("RTI DDS Domain. Default: 1");
@@ -273,29 +245,8 @@ void ParameterManager::initialize()
     asynchronous->set_type(T_BOOL);
     asynchronous->set_extra_argument(NO);
     asynchronous->set_group(GENERAL);
-    asynchronous->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::EPROSIMAFASTDDS
-            | Middleware::CYCLONEDDS);
+    asynchronous->set_supported_middleware(Middleware::RTIDDSPRO);
     create("asynchronous", asynchronous);
-
-    Parameter<bool> *asynchronousReceive = new Parameter<bool>(false);
-    asynchronousReceive->set_command_line_argument("-asynchronousReceive", "");
-    asynchronousReceive->set_description("Use asynchronous receive settings.\nDefault: Not set");
-    asynchronousReceive->set_type(T_BOOL);
-    asynchronousReceive->set_extra_argument(NO);
-    asynchronousReceive->set_group(GENERAL);
-    asynchronousReceive->set_supported_middleware(Middleware::CYCLONEDDS);
-    create("asynchronousReceive", asynchronousReceive);
-
-    Parameter<bool> *printCycloneDdsUriXml = new Parameter<bool>(false);
-    printCycloneDdsUriXml->set_command_line_argument("-printCycloneDdsUriXml", "");
-    printCycloneDdsUriXml->set_description("Print the CYCLONEDDS_URI content.\nDefault: Not used");
-    printCycloneDdsUriXml->set_type(T_BOOL);
-    printCycloneDdsUriXml->set_extra_argument(NO);
-    printCycloneDdsUriXml->set_group(GENERAL);
-    printCycloneDdsUriXml->set_supported_middleware(Middleware::CYCLONEDDS);
-    create("printCycloneDdsUriXml", printCycloneDdsUriXml);
 
     Parameter<std::string> *flowController = new Parameter<std::string>("default");
     flowController->set_command_line_argument("-flowController", "<flow>");
@@ -332,9 +283,7 @@ void ParameterManager::initialize()
     unbounded->set_extra_argument(POSSIBLE);
     unbounded->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_BOUNDED_SEQ_SIZE);
     unbounded->set_group(GENERAL);
-    unbounded->set_supported_middleware(
-        Middleware::RTIDDSPRO 
-        | Middleware::EPROSIMAFASTDDS);
+    unbounded->set_supported_middleware(Middleware::RTIDDSPRO);
     create("unbounded", unbounded);
 
     Parameter<std::string> *threadPriorities = new Parameter<std::string>("");
@@ -510,17 +459,6 @@ void ParameterManager::initialize()
             | Middleware::RAWTRANSPORT);
     create("batchSize", batchSize);
 
-
-    Parameter<bool> *enableBatching = new Parameter<bool>(false);
-    enableBatching->set_command_line_argument("-enableBatching", "");
-    enableBatching->set_description(
-            "Enables Batching in CycloneDDS.");
-    enableBatching->set_type(T_BOOL);
-    enableBatching->set_extra_argument(NO);
-    enableBatching->set_group(PUB);
-    enableBatching->set_supported_middleware(Middleware::CYCLONEDDS);
-    create("enableBatching", enableBatching);
-
     Parameter<bool> *enableAutoThrottle = new Parameter<bool>(false);
     enableAutoThrottle->set_command_line_argument("-enableAutoThrottle", "");
     enableAutoThrottle->set_description(
@@ -552,8 +490,7 @@ void ParameterManager::initialize()
     pub->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+            | Middleware::RTIDDSMICRO);
     create("pub", pub);
 
     Parameter<unsigned long long> *latencyCount =
@@ -959,8 +896,7 @@ void ParameterManager::initialize()
     peer->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+            | Middleware::RTIDDSMICRO);
     create("peer", peer);
 
     Parameter<std::string> *transport = new Parameter<std::string>("Use XML");
@@ -971,7 +907,7 @@ void ParameterManager::initialize()
           #if defined(PERFTEST_RTI_PRO)
             "\nValues:\n\tUDPv4\n\tUDPv6\n\tSHMEM\n\tTCP\n\tTLS\n\tDTLS\n\tWAN\n\tUse XML\n"
             "Default: Use XML (UDPv4|SHMEM)"
-          #elif defined(PERFTEST_RTI_MICRO) || defined(PERFTEST_EPROSIMA_FASTDDS)
+          #elif defined(PERFTEST_RTI_MICRO)
             "\nValues:\n\tUDPv4\n\tSHMEM\n"
             "Default: UDPv4"
           #endif
@@ -982,8 +918,7 @@ void ParameterManager::initialize()
     transport->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::EPROSIMAFASTDDS);
+            | Middleware::RTIDDSMICRO);
     transport->add_valid_str_value("UDPv4");
     transport->add_valid_str_value("SHMEM");
   #if defined(PERFTEST_RTI_PRO)

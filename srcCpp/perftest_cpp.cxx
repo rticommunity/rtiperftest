@@ -12,11 +12,6 @@
   #include "RTIDDSImpl.h"
 #elif defined(PERFTEST_RTI_MICRO)
   #include "RTIDDSImpl.h"
-#elif defined(PERFTEST_EPROSIMA_FASTDDS)
-  #include "perftestPubSubTypes.h"
-  #include "FastDDSImpl.h"
-#elif defined(PERFTEST_CYCLONEDDS)
-  #include "CycloneDDSImpl.h"
 #endif
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
@@ -234,56 +229,6 @@ int perftest_cpp::Run(int argc, char *argv[])
             break;
         }
     }
-  #elif defined(PERFTEST_EPROSIMA_FASTDDS)
-
-    mask = (_PM.get<int>("unbounded") != 0) << 0;
-    mask += _PM.get<bool>("keyed") << 1;
-
-    switch (mask) {
-    case 0:  // = 0000 (bounded)
-        _MessagingImpl = new FastDDSImpl<TestData_tPubSubType>();
-        break;
-
-    case 1:  // unbounded = 0001
-        _MessagingImpl = new FastDDSImpl<TestDataLarge_tPubSubType>();
-        break;
-
-    case 2:  // keyed = 0010
-        _MessagingImpl = new FastDDSImpl<TestDataKeyed_tPubSubType>();
-        break;
-
-    case 3:  // unbounded + keyed = 0011
-        _MessagingImpl = new FastDDSImpl<TestDataKeyedLarge_tPubSubType>();
-        break;
-
-    default:
-        break;
-    }
-
-  #elif defined(PERFTEST_CYCLONEDDS)
-
-    /*
-     * This middleware does only support unbounded sequences, not bounded.
-     * Therefore we can only choose between keyed and unkeyed. Still, we follow
-     * the same pattern as in the rest of middlewares.
-     */
-    mask = _PM.get<bool>("keyed") << 0;
-
-    switch (mask) {
-    case 0:  // unbounded = 0001
-        _MessagingImpl = new CycloneDDSImpl<TestDataLarge_t>(
-                TestDataLarge_t_desc);
-        break;
-
-    case 1:  // keyed = 0001
-        _MessagingImpl = new CycloneDDSImpl<TestDataKeyedLarge_t>(
-                TestDataKeyedLarge_t_desc);
-        break;
-
-    default:
-        break;
-    }
-
   #else // No middleware is passed as -DPERFTEST_...
 
     fprintf(stderr,
@@ -360,11 +305,7 @@ perftest_cpp::perftest_cpp()
 #if defined(PERFTEST_RTI_PRO)
     : _PM(Middleware::RTIDDSPRO)
 #elif defined(PERFTEST_RTI_MICRO)
-    : _PM(Middleware::RTIDDSPRO)
-#elif defined(PERFTEST_EPROSIMA_FASTDDS)
-    : _PM(Middleware::EPROSIMAFASTDDS)
-#elif defined(PERFTEST_CYCLONEDDS)
-    : _PM(Middleware::CYCLONEDDS)
+    : _PM(Middleware::RTIDDSMICRO)
 #else
     : _PM()
 #endif
@@ -696,10 +637,6 @@ void perftest_cpp::print_configuration()
                              << "\t\t  FlatData and/or Zero-Copy.\n";
             }
         }
-      #elif defined(PERFTEST_CYCLONEDDS)
-        stringStream << "\tBatching: "
-                     << (_PM.is_set("enableBatching") ? "Enabled" : "Disabled")
-                     << "\n";
       #endif
 
         // Publication Rate
