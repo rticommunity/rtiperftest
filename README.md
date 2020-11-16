@@ -20,5 +20,5 @@ Find all the information about RTI Perftest in the following documents:
         6.2.4 [Custom Types](srcDoc/examples.rst#using-custom-types)  
 8.  [Tutorials](srcDoc/tutorials/index.md)
 9.  [Optimizing Your OS For Network Performance](srcDoc/tuning_os.rst)
-10.  [Release Notes](srcDoc/extending_perftest.rst)
-11.  [Release Notes](srcDoc/release_notes.rst)
+10. [Extending RTI Perftest to other Middlewares](srcDoc/extending_perftest.rst)
+11. [Release Notes](srcDoc/release_notes.rst)
