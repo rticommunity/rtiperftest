@@ -90,21 +90,28 @@ public:
 
     bool take()
     {
-        std::unique_lock<std::mutex> lock(mutex);
-        // This is true if the managed mutex object was locked (or adopted)
-        // by the unique_lock object, and hasn't been unlocked or released
-        // since. In all other cases, it is false.
-        condition.wait(lock, [&]() -> bool { return count > 0; });
-        --count;
-        return (bool) lock;
+        try {
+            std::unique_lock<std::mutex> lock(mutex);
+            condition.wait(lock, [&]() -> bool { return count > 0; });
+            --count;
+            return true;
+        } catch (exception& e) {
+            std::cerr << "[Exception]: " e.what() << std::endl;
+            return false;
+        }
     }
 
     bool give()
     {
-        std::unique_lock<std::mutex> lock(mutex);
-        ++count;
-        condition.notify_one();
-        return (bool) lock;
+        try {
+            std::unique_lock<std::mutex> lock(mutex);
+            ++count;
+            condition.notify_one();
+            return true;
+        } catch (exception& e) {
+            std::cerr << "[Exception]: " e.what() << std::endl;
+            return false;
+        }
     }
 };
 
@@ -220,7 +227,7 @@ class PerftestFileHandler
  * Since std::to_string is not defined until c++11
  * we will define it here.
  */
-namespace std {
+namespace perftest {
     template<typename T>
     std::string to_string(const T &n) {
         std::ostringstream s;

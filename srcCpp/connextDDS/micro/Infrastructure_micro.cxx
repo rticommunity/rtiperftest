@@ -7,19 +7,6 @@
 
 #include "Infrastructure_micro.h"
 
-/*
- * Since std::to_string is not defined until c++11
- * we will define it here.
- */
-namespace std {
-    template<typename T>
-    std::string to_string(const T &n) {
-        std::ostringstream s;
-        s << n;
-        return s.str();
-    }
-}
-
 /********************************************************************/
 /* Perftest Clock class */
 
@@ -504,7 +491,7 @@ bool PerftestConfigureSecurity(
     if (_PM->is_set("secureDebug")) {
         if (!qos.property.value.assert_property(
                     "logging.log_level",
-                    std::to_string(_PM->get<int>("secureDebug")).c_str(),
+                    perftest::to_string(_PM->get<int>("secureDebug")).c_str(),
                     false))
         {
             printf("Failed to add property "

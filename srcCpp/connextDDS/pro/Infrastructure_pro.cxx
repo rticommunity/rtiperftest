@@ -7,8 +7,6 @@
 #include "perftest_cpp.h"
 #include "osapi/osapi_sharedMemorySegment.h"
 
-
-
 #include <time.h>
 using namespace std;
 
@@ -1117,7 +1115,7 @@ bool PerftestConfigureSecurity(
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.logging.log_level",
-                std::to_string(_PM->get<int>("secureDebug")))) {
+                perftest::to_string(_PM->get<int>("secureDebug")))) {
             return false;
         }
     }
