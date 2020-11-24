@@ -171,8 +171,6 @@ int perftest_cpp::Run(int argc, char *argv[]) {
         return -1;
     }
 
-    _printer.initialize(&_PM);
-
     mask = (_PM.get<int>("unbounded") != 0) << 0;
     mask += _PM.get<bool>("keyed") << 1;
     mask += _PM.get<bool>("flatdata") << 2;
@@ -239,6 +237,16 @@ int perftest_cpp::Run(int argc, char *argv[]) {
     if (!_MessagingImpl->Initialize(_PM, this)) {
         return -1;
     }
+
+    std::string outputFormat = _PM.get<std::string>("outputFormat");
+    if (outputFormat == "csv") {
+        _printer = new PerftestCSVPrinter();
+    } else if (outputFormat == "json") {
+        _printer = new PerftestJSONPrinter();
+    } else if (outputFormat == "legacy") {
+        _printer = new PerftestLegacyPrinter();
+    }
+    _printer->initialize(&_PM);
 
     PrintConfiguration();
 
@@ -309,7 +317,8 @@ void perftest_cpp::PrintVersion()
 perftest_cpp::perftest_cpp() :
         _SpinLoopCount(0),
         _SleepNanosec(0),
-        _MessagingImpl(NULL)
+        _MessagingImpl(NULL),
+        _printer(NULL)
 {
     /** We use rand to generate the key of a SHMEM segment when
      * we estimate the maximum buffer size for SHMEM
@@ -330,6 +339,10 @@ perftest_cpp::~perftest_cpp() {
 
         if (perftest_cpp::_Clock != NULL) {
             RTIHighResolutionClock_delete(perftest_cpp::_Clock);
+        }
+
+        if (_printer != NULL) {
+            delete _printer;
         }
 
     } catch (const std::exception& ex) {
@@ -743,7 +756,7 @@ public:
 
     ThroughputListener(
             ParameterManager &PM,
-            PerftestPrinter &printer,
+            PerftestPrinter *printer,
             IMessagingWriter *writer,
             IMessagingReader *reader = NULL,
             bool UseCft = false,
@@ -770,7 +783,7 @@ public:
         end_test = false;
 
         _PM = &PM;
-        _printer = &printer;
+        _printer = printer;
 
         printIntervals = !_PM->get<bool>("noPrintIntervals");
         showCpu = _PM->get<bool>("cpu");
@@ -853,8 +866,7 @@ public:
 
             begin_time = perftest_cpp::GetTimeUsec();
 
-            _printer->set_data_length(message.size
-                    + perftest_cpp::OVERHEAD_BYTES);
+            _printer->_dataLength = message.size + perftest_cpp::OVERHEAD_BYTES;
             _printer->print_throughput_header();
         }
 
@@ -1064,7 +1076,7 @@ int perftest_cpp::RunSubscriber()
     std::cerr << "[Info] Waiting for data ..." << std::endl;
 
     // For Json format, print brackets at init
-    _printer.print_initial_output();
+    _printer->print_initial_output();
 
     // wait for data
     unsigned long long prev_time = 0, now = 0, delta = 0;
@@ -1145,7 +1157,7 @@ int perftest_cpp::RunSubscriber()
                 if (showCpu) {
                     outputCpu = reader_listener->cpu.get_cpu_instant();
                 }
-                _printer.print_throughput_interval(
+                _printer->print_throughput_interval(
                         last_msgs,
                         mps,
                         mps_ave,
@@ -1160,7 +1172,7 @@ int perftest_cpp::RunSubscriber()
     }
 
     perftest_cpp::MilliSleep(1000);
-    _printer.print_final_output();
+    _printer->print_final_output();
     if (receiverThread != NULL) {
         RTIOsapiThread_delete(receiverThread);
     }
@@ -1269,7 +1281,7 @@ class LatencyListener : public IMessagingCB
             IMessagingReader *reader,
             IMessagingWriter *writer,
             ParameterManager &PM,
-            PerftestPrinter &printer)
+            PerftestPrinter *printer)
     {
         latency_sum = 0;
         latency_sum_square = 0;
@@ -1308,7 +1320,7 @@ class LatencyListener : public IMessagingCB
         _reader = reader;
         _writer = writer;
         _PM = &PM;
-        _printer = &printer;
+        _printer = printer;
 
         subID = _PM->get<int>("sidMultiSubTest");
         printIntervals = !_PM->get<bool>("noPrintIntervals");
@@ -1413,8 +1425,8 @@ class LatencyListener : public IMessagingCB
         if (last_data_length != message.size) {
             last_data_length = message.size;
 
-            _printer->set_data_length(last_data_length
-                    + perftest_cpp::OVERHEAD_BYTES);
+            _printer->_dataLength =
+                    last_data_length + perftest_cpp::OVERHEAD_BYTES;
             _printer->print_latency_header();
         } else {
             if (printIntervals) {
@@ -1723,7 +1735,7 @@ int perftest_cpp::RunPublisher()
 
     std::cerr << "[Info] Publishing data ..." << std::endl;
 
-    _printer.print_initial_output();
+    _printer->print_initial_output();
 
     // Set data size, account for other bytes in message
     message.size = (int)_PM.get<unsigned long long>("dataLen") - OVERHEAD_BYTES;
@@ -2034,7 +2046,7 @@ int perftest_cpp::RunPublisher()
     }
 
     // For Json format, print last brackets
-    _printer.print_final_output();
+    _printer->print_final_output();
     if (_testCompleted) {
         // Delete timeout thread
         if (executionTimeoutThread != NULL) {
