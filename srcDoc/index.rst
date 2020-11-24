@@ -14,6 +14,7 @@ Table of Contents
     compilation
     execution
     command_line_parameters
+    custom_types
     examples
     tutorials
     tuning_os
