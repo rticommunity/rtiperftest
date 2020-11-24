@@ -315,10 +315,10 @@ void perftest_cpp::PrintVersion()
  * Constructor
  */
 perftest_cpp::perftest_cpp() :
+        _printer(NULL),
         _SpinLoopCount(0),
         _SleepNanosec(0),
-        _MessagingImpl(NULL),
-        _printer(NULL)
+        _MessagingImpl(NULL)
 {
     /** We use rand to generate the key of a SHMEM segment when
      * we estimate the maximum buffer size for SHMEM
