@@ -28,7 +28,7 @@ public:
     unsigned int _dataLength;
     bool _printHeaders;
 
-    PerftestPrinter() : _dataLength(100), _printSummaryHeaders(true) {};
+    PerftestPrinter() : _printSummaryHeaders(true), _dataLength(100) {};
     virtual ~PerftestPrinter() {};
 
     void initialize(ParameterManager *_PM);
