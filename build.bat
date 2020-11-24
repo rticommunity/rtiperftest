@@ -305,6 +305,7 @@ if !BUILD_MICRO! == 1 (
 ) else (
 	@REM # This calls the function in charge of getting the name of the solution for C++
 	@REM # given the architecture.
+	echo .
 	call::get_solution_name
 
 	set "rtiddsgen_executable=!NDDSHOME!/bin/rtiddsgen.bat"

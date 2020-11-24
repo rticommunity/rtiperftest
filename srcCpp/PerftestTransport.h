@@ -148,25 +148,4 @@ private:
 // Tag used when adding logging output.
 const std::string classLoggingString = "PerftestTransport:";
 
-
-#ifdef PERFTEST_EPROSIMA_FASTDDS
-
-/*
- * In this case, we only need one function and in the .cxx a couple more, so
- * we can keep it in this file, but potentially, every implementation could have
- * its own PerftestTransport_<implementation name>. Like what we have for
- * Infrastructure_common and Infrastructure_pro/Infrastructure_micro.
- */
-
-#include <fastdds/dds/domain/DomainParticipant.hpp>
-#include <fastdds/rtps/transport/shared_mem/SharedMemTransportDescriptor.h>
-#include <fastdds/rtps/transport/UDPv4TransportDescriptor.h>
-
-bool PerftestConfigureTransport(
-        PerftestTransport &transport,
-        eprosima::fastdds::dds::DomainParticipantQos &qos,
-        ParameterManager *_PM);
-
-#endif // PERFTEST_EPROSIMA_FASTDDS
-
 #endif /* PERFTEST_2_0_SRCCPP_PERFTESTTRANSPORT_H_ */

@@ -67,8 +67,6 @@ struct Middleware {
     static const MiddlewareMask RTIDDSMICRO;
     static const MiddlewareMask RTIDDS;
     static const MiddlewareMask RAWTRANSPORT;
-    static const MiddlewareMask EPROSIMAFASTDDS;
-    static const MiddlewareMask CYCLONEDDS;
     static const MiddlewareMask ALLDDS;
     static const MiddlewareMask ALL;
 };

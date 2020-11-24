@@ -60,14 +60,3 @@ srcDoc/_build
 /srcIdl/test.idl
 srcCpp/build
 build
-
-# FastDDS files
-/srcCpp/fastDDS/perftestPubSubTypes.*
-/srcCpp/fastDDS/perftest.*
-/fastDDS_build
-/CMakeLists.txt
-
-# CycloneDDS files
-/srcCpp/cycloneDDS/perftest.c
-/srcCpp/cycloneDDS/perftest.h
-/cycloneDDS_build
