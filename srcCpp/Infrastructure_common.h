@@ -236,4 +236,6 @@ namespace perftest {
     }
 }
 
+bool is_ip_address(std::string ip_string);
+
 #endif /* INFRASTRUCTURE_COMMON_H_ */

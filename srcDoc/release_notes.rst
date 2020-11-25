@@ -202,6 +202,23 @@ against *RTI Connext DDS Micro*). This feature allows the control of the compile
 used, as well as the ability to add specific flags, without modifying the build
 script. This may be needed when crosscompiling.
 
+Display error if the `-allowInterface` parameter is an ip when using *RTI Connext DDS Micro* (PERF-212)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*RTI Connext DDS Pro* supports for the Allow Interfaces List the use of the
+interface name or the ip, however *RTI Connext DDS Micro* does not support the
+use of an ip address, and it would consider the ip as the name of the interface,
+therefore failing to find an interface and not being able to communicate.
+
+Although this is an expected behavior, customers switching in *RTI Perftest*
+between *RTI Connext DDS Pro* and *Micro* may encounter this behavior frequently,
+if they use the `-allowInterfaces` (formerly `-nic`) command line option. This
+error is silent and cannot be catched by *RTI Perftest*.
+
+To avoid this confusion, *RTI Perftest* compiled against *RTI Connext DDS Micro*
+will report an error if an ip is provided when setting the `-allowInterfaces`/`-nic`
+parameter.
+
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~
 
