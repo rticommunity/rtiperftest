@@ -95,8 +95,8 @@ public:
             condition.wait(lock, [&]() -> bool { return count > 0; });
             --count;
             return true;
-        } catch (exception& e) {
-            std::cerr << "[Exception]: " e.what() << std::endl;
+        } catch (std::exception& e) {
+            std::cerr << "[Exception]: "<<  e.what() << std::endl;
             return false;
         }
     }
@@ -108,8 +108,8 @@ public:
             ++count;
             condition.notify_one();
             return true;
-        } catch (exception& e) {
-            std::cerr << "[Exception]: " e.what() << std::endl;
+        } catch (std::exception& e) {
+            std::cerr << "[Exception]: " << e.what() << std::endl;
             return false;
         }
     }
