@@ -3,7 +3,7 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-#ifdef RTI_MICRO
+#ifdef PERFTEST_RTI_MICRO
 
 #include "Infrastructure_common.h"
 
@@ -93,41 +93,6 @@ void PerftestClock::milliSleep(unsigned int millisec)
 void PerftestClock::sleep(const struct DDS_Duration_t& sleep_period)
 {
     NDDSUtility::sleep(sleep_period);
-}
-
-/********************************************************************/
-/* Get Connext Micro functions */
-
-const std::string GetDDSVersionString()
-{
-    return "RTI Connext DDS Micro "
-            + std::to_string((int) RTIME_DDS_VERSION_MAJOR) + "."
-            + std::to_string((int) RTIME_DDS_VERSION_MINOR) + "."
-            + std::to_string((int) RTIME_DDS_VERSION_RELEASE);
-}
-
-void PerftestConfigureVerbosity(int verbosityLevel)
-{
-
-    OSAPI_LogVerbosity_T verbosity = OSAPI_LOG_VERBOSITY_ERROR;
-    switch (verbosityLevel) {
-        case 0: verbosity = OSAPI_LOG_VERBOSITY_SILENT;
-                fprintf(stderr, "Setting verbosity to SILENT\n");
-                break;
-        case 1: verbosity = OSAPI_LOG_VERBOSITY_ERROR;
-                fprintf(stderr, "Setting verbosity to ERROR\n");
-                break;
-        case 2: verbosity = OSAPI_LOG_VERBOSITY_WARNING;
-                fprintf(stderr, "Setting verbosity to WARNING\n");
-                break;
-        case 3: verbosity = OSAPI_LOG_VERBOSITY_DEBUG;
-                fprintf(stderr, "Setting verbosity to STATUS_ALL\n");
-                break;
-        default: fprintf(stderr,
-                    "Invalid value for the verbosity parameter. Setting verbosity to ERROR (1)\n");
-                break;
-    }
-    OSAPI_Log_set_verbosity(verbosity);
 }
 
 /********************************************************************/
@@ -291,7 +256,7 @@ bool configureUDPv4Transport(
     return true;
 }
 
-#ifndef RTI_MICRO_24x_COMPATIBILITY
+#ifndef PERFTEST_RTI_MICRO_24x_COMPATIBILITY
 bool configureShmemTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos,
@@ -385,7 +350,7 @@ bool PerftestConfigureTransport(
     case TRANSPORT_UDPv4:
         return configureUDPv4Transport(transport, qos, _PM);
 
-  #if !RTI_MICRO_24x_COMPATIBILITY
+  #if !PERFTEST_RTI_MICRO_24x_COMPATIBILITY
     case TRANSPORT_SHMEM:
         return configureShmemTransport(transport, qos, _PM);
   #endif
@@ -535,7 +500,7 @@ bool PerftestConfigureSecurity(
     if (_PM->is_set("secureDebug")) {
         if (!qos.property.value.assert_property(
                     "logging.log_level",
-                    std::to_string(_PM->get<int>("secureDebug")).c_str(),
+                    perftest::to_string(_PM->get<int>("secureDebug")).c_str(),
                     false))
         {
             printf("Failed to add property "
@@ -552,4 +517,4 @@ bool PerftestConfigureSecurity(
 
 
 
-#endif // RTI_MICRO
+#endif // PERFTEST_RTI_MICRO

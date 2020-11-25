@@ -13,6 +13,7 @@ java_folder="${script_location}/srcJava"
 java_scripts_folder="${script_location}/resource/scripts/java_execution_scripts"
 bin_folder="${script_location}/bin"
 cStringifyFile_script="${script_location}/resource/scripts/cStringifyFile.pl"
+
 qos_file="${script_location}/perftest_qos_profiles.xml"
 doc_folder="${script_location}/srcDoc"
 generate_doc_folder="${script_location}/doc"
@@ -195,6 +196,7 @@ function clean()
     rm -f  "${script_location}"/srcC*/perftest_ZeroCopy*
     rm -f  "${script_location}"/srcC*/perftestPlugin.*
     rm -f  "${script_location}"/srcC*/perftestSupport.*
+    rm -f  "${script_location}"/srcC*/perftest_publisher.*
     rm -f  "${script_location}"/srcC*/perftest_subscriber.*
     rm -f  "${script_location}"/srcC*/makefile_*
     rm -rf "${script_location}"/srcC*/objs
@@ -215,7 +217,7 @@ function clean()
     rm -rf "${script_location}"/srcCpp/perftestApplication.*
     clean_custom_type_files
     clean_documentation
-    clean_src_cpp_common
+    clean_copied_files
 
     echo ""
     echo "================================================================================"
@@ -225,7 +227,6 @@ function clean()
 
 function executable_checking()
 {
-
     # Is platform specified?
     if [ -z "${platform}" ]; then
         echo -e "${ERROR_TAG} The platform argument is missing"
@@ -371,7 +372,8 @@ function library_sufix_calculation()
 
 function additional_defines_calculation()
 {
-    additional_defines=""
+    additional_rtiddsgen_defines="-D PERFTEST_RTI_PRO"
+    additional_defines="DPERFTEST_RTI_PRO "
     additional_rti_libs=""
 
     # Avoid optimized out variables when debugging
@@ -436,22 +438,26 @@ function additional_defines_calculation()
     # Adding RTI_ZEROCOPY_AVAILABLE, RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as defines
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
         additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE"
-        additional_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE"
+        additional_rtiddsgen_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE"
         if [ "${RTI_FLATDATA_MAX_SIZE}" != "" ]; then
             additional_defines=${additional_defines}" DRTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
-            additional_defines_flatdata=${additional_defines_flatdata}" -D RTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
+            additional_rtiddsgen_defines_flatdata=${additional_rtiddsgen_defines_flatdata}" -D RTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
         fi
 
         if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
             additional_rti_libs="nddsmetp ${additional_rti_libs}"
             additional_defines=${additional_defines}" DRTI_ZEROCOPY_AVAILABLE"
-            additional_defines_flatdata=$additional_defines_flatdata" -D RTI_ZEROCOPY_AVAILABLE"
+            additional_rtiddsgen_defines_flatdata=$additional_rtiddsgen_defines_flatdata" -D RTI_ZEROCOPY_AVAILABLE"
         fi
     fi
+
+    additional_rtiddsgen_defines="$additional_rtiddsgen_defines $additional_rtiddsgen_defines_flatdata"
 }
 
 function additional_defines_calculation_micro()
 {
+    additional_rtiddsgen_defines="-D PERFTEST_RTI_MICRO"
+
     if [[ $platform == *"Darwin"* ]]; then
         additional_defines=" RTI_DARWIN"
         additional_included_libraries="dl;m;pthread;"
@@ -462,7 +468,7 @@ function additional_defines_calculation_micro()
         additional_defines=" RTI_QNX"
         additional_included_libraries="m;socket;"
     fi
-    additional_defines="RTI_LANGUAGE_CPP_TRADITIONAL RTI_MICRO O3"${additional_defines}
+    additional_defines="RTI_LANGUAGE_CPP_TRADITIONAL PERFTEST_RTI_MICRO O3"${additional_defines}
 
     if [ "${RTI_PERFTEST_NANO_CLOCK}" == "1" ]; then
         additional_defines=${additional_defines}" DRTI_PERFTEST_NANO_CLOCK"
@@ -561,13 +567,64 @@ function copy_src_cpp_common()
     done
 }
 
-function clean_src_cpp_common()
+function copy_src_cpp_connextDDS()
+{
+    # Copy files in the common folder for pro and micro
+    for file in ${classic_cpp_folder}/connextDDS/*
+    do
+        if [ -f $file ]; then
+            cp -rf "$file" "${classic_cpp_folder}"
+        fi
+    done
+
+    # Copy now files specific for pro/micro
+    src_specific_folder="pro"
+    if [ ${BUILD_MICRO} != 0 ]; then
+        src_specific_folder="micro"
+    fi
+
+    for file in ${classic_cpp_folder}/connextDDS/${src_specific_folder}/*
+    do
+        if [ -f $file ]; then
+            cp -rf "$file" "${classic_cpp_folder}"
+        fi
+    done
+}
+
+function clean_copied_files()
 {
     for file in ${common_cpp_folder}/*
     do
         if [ -f $file ]; then
             name_file=$(basename $file)
             rm -rf "${modern_cpp_folder}/${name_file}"
+            rm -rf "${classic_cpp_folder}/${name_file}"
+        fi
+    done
+
+    rm -rf "${modern_cpp_folder}/perftest_publisher.cxx"
+    rm -rf "${modern_cpp_folder}/perftest_subscriber.cxx"
+    rm -rf "${classic_cpp_folder}/perftest_publisher.cxx"
+    rm -rf "${classic_cpp_folder}/perftest_subscriber.cxx"
+
+    # Delete now files copied from srcCpp/connextDDS/
+    for file in ${classic_cpp_folder}/connextDDS/*
+    do
+        if [ -f $file ]; then
+            name_file=$(basename $file)
+            rm -rf "${classic_cpp_folder}/${name_file}"
+        fi
+    done
+
+    src_specific_folder="pro"
+    if [ ${BUILD_MICRO} != 0 ]; then
+        src_specific_folder="micro"
+    fi
+
+    for file in ${classic_cpp_folder}/connextDDS/${src_specific_folder}/*
+    do
+        if [ -f $file ]; then
+            name_file=$(basename $file)
             rm -rf "${classic_cpp_folder}/${name_file}"
         fi
     done
@@ -592,7 +649,11 @@ function check_flatData_zeroCopy_available()
 
 function build_cpp()
 {
+    echo -e "${INFO_TAG} Copying files from srcCppCommon."
     copy_src_cpp_common
+
+    echo -e "${INFO_TAG} Copying files from srcCpp/connextDDS."
+    copy_src_cpp_connextDDS
 
     ##############################################################################
     # Generate files for the custom type files
@@ -659,7 +720,7 @@ function build_cpp()
     # Therefore, we need to generate a makefile that contains
     # nddsmetp and nddssecurity libraries without compiling ZeroCopy code
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
-        ${additional_defines_flatdata} \
+        ${additional_rtiddsgen_defines} \
         -unboundedSupport -replace -create typefiles -create makefiles \
         -platform ${platform} \
         -additionalHeaderFiles \"${additional_header_files}\" \
@@ -677,7 +738,7 @@ function build_cpp()
     eval $rtiddsgen_command
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     fi
 
@@ -685,7 +746,7 @@ function build_cpp()
     if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
         echo -e "${INFO_TAG} Generating Zero Copy code"
         rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
-        ${additional_defines_flatdata} \
+        ${additional_rtiddsgen_defines} \
         -replace -create typefiles \
         -platform ${platform} \
         ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
@@ -695,14 +756,16 @@ function build_cpp()
         eval $rtiddsgen_command
         if [ "$?" != 0 ]; then
             echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
-            clean_src_cpp_common
+            clean_copied_files
             exit -1
         fi
 
         rm -rf ${classic_cpp_folder}/makefile_perftest_ZeroCopy_${platform}
     fi
 
-    cp "${classic_cpp_folder}/perftest_publisher.cxx" \
+    cp "${classic_cpp_folder}/perftest_cpp.cxx" \
+    "${classic_cpp_folder}/perftest_publisher.cxx"
+    cp "${classic_cpp_folder}/perftest_cpp.cxx" \
     "${classic_cpp_folder}/perftest_subscriber.cxx"
 
     ##############################################################################
@@ -721,7 +784,7 @@ function build_cpp()
     "${MAKE_EXE}" -C "${classic_cpp_folder}" -f makefile_perftest_${platform}
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure compiling code for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     fi
     echo -e "${INFO_TAG} Compilation successful"
@@ -734,7 +797,7 @@ function build_cpp()
         "${MAKE_EXE}" -C "${classic_cpp_folder}" -f makefile_perftest_${platform} perftest.so perftest.projects perftest.apks
         if [ "$?" != 0 ]; then
                 echo -e "${ERROR_TAG} Failure building apk in ${classic_cpp_lang_string} of ${platform}."
-                clean_src_cpp_common
+                clean_copied_files
                 exit -1
         fi
         echo -e "${INFO_TAG} Building apk successful"
@@ -772,11 +835,11 @@ function build_cpp()
 
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure copying code for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     else
         echo -e "${INFO_TAG} Copy successful for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
     fi
 
     if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
@@ -795,12 +858,13 @@ function build_cpp()
 function build_micro_cpp()
 {
     copy_src_cpp_common
+    copy_src_cpp_connextDDS
     additional_defines_calculation_micro
 
     ##############################################################################
     # Generate files for srcCpp
     if [ "${BUILD_MICRO_24x_COMPATIBILITY}" -eq "1" ]; then
-        additional_defines=${additional_defines}" RTI_MICRO_24x_COMPATIBILITY"
+        additional_defines=${additional_defines}" PERFTEST_RTI_MICRO_24x_COMPATIBILITY"
     else
         rtiddsgen_extra_options="${rtiddsgen_extra_options} -sequenceSize ${MICRO_UNBOUNDED_SEQUENCE_SIZE}"
 
@@ -839,7 +903,8 @@ function build_micro_cpp()
         FileDataLoader.cxx \
         PerftestPrinter.cxx"
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -micro -language ${classic_cpp_lang_string} \
+    rtiddsgen_command="\"${rtiddsgen_executable}\" ${additional_rtiddsgen_defines} \
+            -micro -language ${classic_cpp_lang_string} \
             -replace -create typefiles -create makefiles \
             -additionalHeaderFiles \"$additional_header_files\" \
             -additionalSourceFiles \"$additional_source_files\" \
@@ -856,7 +921,8 @@ function build_micro_cpp()
         echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
         exit -1
     fi
-    cp "${classic_cpp_folder}/perftest_publisher.cxx" "${classic_cpp_folder}/perftest_subscriber.cxx"
+    cp "${classic_cpp_folder}/perftest_cpp.cxx" "${classic_cpp_folder}/perftest_publisher.cxx"
+    cp "${classic_cpp_folder}/perftest_cpp.cxx" "${classic_cpp_folder}/perftest_subscriber.cxx"
     cp "${idl_location}/perftest.idl" "${classic_cpp_folder}/perftest.idl"
     touch "${classic_cpp_folder}/perftestApplication.cxx"
     touch "${classic_cpp_folder}/perftestApplication.h"
@@ -912,11 +978,11 @@ function build_micro_cpp()
     "${destination_folder}/perftest_cpp_micro${executable_extension}"
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure copying code for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     else
         echo -e "${INFO_TAG} Copy successful for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
     fi
 }
 
@@ -961,7 +1027,7 @@ function build_cpp03()
     ##############################################################################
     # Generate files for srcCpp03
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
-    ${additional_defines_flatdata} \
+    ${additional_rtiddsgen_defines} \
     -unboundedSupport -replace -create typefiles -create makefiles \
     -platform ${platform} \
     -additionalHeaderFiles \"$additional_header_files\" \
@@ -979,7 +1045,7 @@ function build_cpp03()
     eval $rtiddsgen_command
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     fi
 
@@ -987,7 +1053,7 @@ function build_cpp03()
     if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
         echo -e "${INFO_TAG} Generating Zero Copy code"
         rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
-        ${additional_defines_flatdata} \
+        ${additional_rtiddsgen_defines} \
         -replace -create typefiles -platform ${platform} \
         ${rtiddsgen_extra_options} \
         -d \"${modern_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\""
@@ -996,14 +1062,16 @@ function build_cpp03()
         eval $rtiddsgen_command
         if [ "$?" != 0 ]; then
             echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
-            clean_src_cpp_common
+            clean_copied_files
             exit -1
         fi
 
         rm -rf ${modern_cpp_folder}/makefile_perftest_ZeroCopy_${platform}
     fi
 
-    cp "${modern_cpp_folder}/perftest_publisher.cxx" \
+    cp "${modern_cpp_folder}/perftest_cpp.cxx" \
+    "${modern_cpp_folder}/perftest_publisher.cxx"
+    cp "${modern_cpp_folder}/perftest_cpp.cxx" \
     "${modern_cpp_folder}/perftest_subscriber.cxx"
 
     ##############################################################################
@@ -1022,7 +1090,7 @@ function build_cpp03()
     "${MAKE_EXE}" -C "${modern_cpp_folder}" -f makefile_perftest_${platform}
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure compiling code for ${modern_cpp_folder}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     fi
     echo -e "${INFO_TAG} Compilation successful"
@@ -1035,7 +1103,7 @@ function build_cpp03()
         "${MAKE_EXE}" -C "${modern_cpp_folder}" -f makefile_perftest_${platform} perftest.so perftest.projects perftest.apks
         if [ "$?" != 0 ]; then
                 echo -e "${ERROR_TAG} Failure building apk in ${modern_cpp_folder} of ${platform}."
-                clean_src_cpp_common
+                clean_copied_files
                 exit -1
         fi
         echo -e "${INFO_TAG} Building apk successful"
@@ -1072,11 +1140,11 @@ function build_cpp03()
     "${destination_folder}/perftest_cpp03${executable_extension}"
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure copying code for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
         exit -1
     else
         echo -e "${INFO_TAG} Copy successful for ${classic_cpp_lang_string}."
-        clean_src_cpp_common
+        clean_copied_files
     fi
 
     if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
@@ -1106,7 +1174,7 @@ function build_java()
     ##############################################################################
     # Generate files for srcJava
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${java_lang_string} -unboundedSupport -replace -package com.rti.perftest.gen -d \"${java_folder}\" \"${idl_location}/perftest.idl\""
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -D PERFTEST_RTI_PRO -language ${java_lang_string} -unboundedSupport -replace -package com.rti.perftest.gen -d \"${java_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
     echo -e "${INFO_TAG} Generating types and makefiles for ${java_lang_string}."
@@ -1388,8 +1456,7 @@ if [ "${BUILD_MICRO}" -eq "1" ]; then
         build_micro_cpp
     fi
 
-else
-
+else # Build for ConnextDDS Pro
     rtiddsgen_executable="$NDDSHOME/bin/rtiddsgen"
 
     classic_cpp_lang_string=C++

@@ -5,6 +5,44 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "C++ (FastDDS) testing",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/FastDDSperftest_cpp",
+            "args": ["-nic", "172.16.0.1", "-pub", "-noPrint", "-exec", "20", "-scan", "-latencyTest", "-best"],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "C++ (CycloneDDS) testing",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Linux/CycloneDDSperftest_cpp",
+            "args": ["-pub", "-exec 3", "-latencyTest"],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
             "name": "C++ (Pro) x64Darwin17clang9.0",
             "type": "cppdbg",
             "request": "launch",

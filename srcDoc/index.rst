@@ -17,6 +17,7 @@ Table of Contents
     examples
     tutorials
     tuning_os
+    extending_perftest
     release_notes
 
 

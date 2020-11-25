@@ -305,6 +305,7 @@ if !BUILD_MICRO! == 1 (
 ) else (
 	@REM # This calls the function in charge of getting the name of the solution for C++
 	@REM # given the architecture.
+	echo .
 	call::get_solution_name
 
 	set "rtiddsgen_executable=!NDDSHOME!/bin/rtiddsgen.bat"
@@ -314,6 +315,7 @@ if !BUILD_MICRO! == 1 (
 if !BUILD_CPP! == 1 (
 
 	call::copy_src_cpp_common
+	call::copy_src_cpp_connextDDS
 	call::solution_compilation_flag_calculation
 	call::get_flatdata_available
 
@@ -369,7 +371,7 @@ if !BUILD_CPP! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_LEGACY_DD_IMPL"
 	)
 
-	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_TRADITIONAL"
+	set "ADDITIONAL_DEFINES=PERFTEST_RTI_PRO RTI_LANGUAGE_CPP_TRADITIONAL"
 
 	if !USE_SECURE_LIBS! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_SECURE_PERFTEST"
@@ -389,14 +391,16 @@ if !BUILD_CPP! == 1 (
 		set "additional_source_files=PerftestSecurity.cxx !additional_source_files!"
 	)
 
+	set "additional_defines_rtiddsgen=-D "PERFTEST_RTI_PRO""
+
 	if !FLATDATA_AVAILABLE! == 1 (
         @REM On Windows we always enable ZeroCopy if FlatData is available.
 		set additional_rti_libs=nddsmetp !additional_rti_libs!
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_AVAILABLE RTI_ZEROCOPY_AVAILABLE"
-		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE""
+		set "additional_defines_rtiddsgen_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE""
 		if NOT "!RTI_FLATDATA_MAX_SIZE!" == "" (
 			set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!"
-			set "additional_defines_flatdata=!additional_defines_flatdata! -D "RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!""
+			set "additional_defines_rtiddsgen_flatdata=!additional_defines_rtiddsgen_flatdata! -D "RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!""
 		)
 	)
 
@@ -434,7 +438,8 @@ if !BUILD_CPP! == 1 (
 	echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
 	-unboundedSupport -replace -create typefiles -create makefiles^
 	-platform %architecture%^
-	!additional_defines_flatdata!^
+	!additional_defines_rtiddsgen!^
+	!additional_defines_rtiddsgen_flatdata!^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
@@ -447,7 +452,8 @@ if !BUILD_CPP! == 1 (
 	call "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
 	-unboundedSupport -replace -create typefiles -create makefiles^
 	-platform %architecture%^
-	!additional_defines_flatdata!^
+	!additional_defines_rtiddsgen!^
+	!additional_defines_rtiddsgen_flatdata!^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
@@ -456,7 +462,7 @@ if !BUILD_CPP! == 1 (
 	-d "%classic_cpp_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
-		call::clean_src_cpp_common
+		call::clean_copied_files
 		exit /b 1
 	)
 
@@ -464,7 +470,8 @@ if !BUILD_CPP! == 1 (
 	if !FLATDATA_AVAILABLE! == 1 (
 		echo[
 		echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
-		!additional_defines_flatdata!^
+		!additional_defines_rtiddsgen!^
+		!additional_defines_rtiddsgen_flatdata!^
 		-replace -create typefiles^
 		-platform %architecture%^
 		!rtiddsgen_extra_options! !additional_defines_custom_type!^
@@ -473,19 +480,21 @@ if !BUILD_CPP! == 1 (
 		echo[
 		echo [INFO]: Generating Zero Copy code
 		call "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
-		!additional_defines_flatdata!^
+		!additional_defines_rtiddsgen!^
+		!additional_defines_rtiddsgen_flatdata!^
 		-replace -create typefiles^
 		-platform %architecture%^
 		!rtiddsgen_extra_options! !additional_defines_custom_type!^
 		-d "%classic_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
 		if not !ERRORLEVEL! == 0 (
 			echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
-			call::clean_src_cpp_common
+			call::clean_copied_files
 			exit /b 1
 		)
 	)
 
-	call copy "%classic_cpp_folder%"\perftest_publisher.cxx "%classic_cpp_folder%"\perftest_subscriber.cxx
+	call copy "%classic_cpp_folder%"\perftest_cpp.cxx "%classic_cpp_folder%"\perftest_publisher.cxx
+	call copy "%classic_cpp_folder%"\perftest_cpp.cxx "%classic_cpp_folder%"\perftest_subscriber.cxx
 
 	echo[
 	echo [INFO]: Compiling %classic_cpp_lang_string%
@@ -493,14 +502,14 @@ if !BUILD_CPP! == 1 (
 	call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!"  /p:Platform="!win_arch!"  "%classic_cpp_folder%"\%solution_name_cpp%
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %classic_cpp_lang_string%.
-		call::clean_src_cpp_common
+		call::clean_copied_files
 		exit /b 1
 	)
 
 	echo [INFO]: Copying perftest_cpp executable file:
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
 	copy /Y "%classic_cpp_folder%"\objs\%architecture%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp"%executable_extension%"
-	call::clean_src_cpp_common
+	call::clean_copied_files
 
 	if "x!STATIC_DYNAMIC!" == "xdynamic" (
 		echo [INFO]: Code compiled dynamically, Add "NDDSHOME/lib/%platform%"
@@ -545,13 +554,15 @@ if !BUILD_CPP03! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! PERFTEST_COMMIT_ID=\"!commit_id!\""
 	)
 
+	set "additional_defines_rtiddsgen=-D "PERFTEST_RTI_PRO""
+
 	if !FLATDATA_AVAILABLE! == 1 (
 		set "additional_rti_libs=nddsmetp !additional_rti_libs!"
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_AVAILABLE RTI_ZEROCOPY_AVAILABLE"
-		set "additional_defines_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE""
+		set "additional_defines_rtiddsgen_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE""
 		if NOT "!RTI_FLATDATA_MAX_SIZE!" == "" (
 			set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!"
-			set "additional_defines_flatdata=!additional_defines_flatdata! -D "RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!""
+			set "additional_defines_rtiddsgen_flatdata=!additional_defines_rtiddsgen_flatdata! -D "RTI_FLATDATA_MAX_SIZE=!RTI_FLATDATA_MAX_SIZE!""
 		)
 	)
 
@@ -574,7 +585,8 @@ if !BUILD_CPP03! == 1 (
 	echo [INFO] "%rtiddsgen_executable%" -language %modern_cpp_lang_string% ^
 	-unboundedSupport -replace -create typefiles -create makefiles^
 	-platform %architecture%^
-	!additional_defines_flatdata!^
+	!additional_defines_rtiddsgen!^
+	!additional_defines_rtiddsgen_flatdata!^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
@@ -588,7 +600,8 @@ if !BUILD_CPP03! == 1 (
 	call "%rtiddsgen_executable%" -language %modern_cpp_lang_string% ^
 	-unboundedSupport -replace -create typefiles -create makefiles^
 	-platform %architecture%^
-	!additional_defines_flatdata!^
+	!additional_defines_rtiddsgen!^
+	!additional_defines_rtiddsgen_flatdata!^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!"^
 	-additionalDefines "!ADDITIONAL_DEFINES!"^
@@ -598,14 +611,15 @@ if !BUILD_CPP03! == 1 (
 
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %modern_cpp_lang_string%.
-		call::clean_src_cpp_common
+		call::clean_copied_files
 		exit /b 1
 	)
 
 	if !FLATDATA_AVAILABLE! == 1 (
 		echo[
 		echo "%rtiddsgen_executable%" -language %modern_cpp_lang_string%^
-		!additional_defines_flatdata!^
+		!additional_defines_rtiddsgen!^
+		!additional_defines_rtiddsgen_flatdata!^
 		-replace -create typefiles -platform %architecture%^
 		!rtiddsgen_extra_options!^
 		-d "%modern_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
@@ -615,18 +629,20 @@ if !BUILD_CPP03! == 1 (
 		echo[
 		echo [INFO]: Generating Zero Copy code
 		call "%rtiddsgen_executable%" -language %modern_cpp_lang_string%^
-		!additional_defines_flatdata!^
+		!additional_defines_rtiddsgen!^
+		!additional_defines_rtiddsgen_flatdata!^
 		-replace -create typefiles -platform %architecture%^
 		!rtiddsgen_extra_options!^
 		-d "%modern_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
 		if not !ERRORLEVEL! == 0 (
 			echo [ERROR]: Failure generating code for %modern_cpp_lang_string%.
-			call::clean_src_cpp_common
+			call::clean_copied_files
 			exit /b 1
 		)
 	)
 
-	call copy "%modern_cpp_folder%"\perftest_publisher.cxx "%modern_cpp_folder%"\perftest_subscriber.cxx
+	call copy "%modern_cpp_folder%"\perftest_cpp.cxx "%modern_cpp_folder%"\perftest_publisher.cxx
+	call copy "%modern_cpp_folder%"\perftest_cpp.cxx "%modern_cpp_folder%"\perftest_subscriber.cxx
 
 	echo[
 	echo [INFO]: Compiling %modern_cpp_lang_string%
@@ -634,14 +650,14 @@ if !BUILD_CPP03! == 1 (
 	call !MSBUILD_EXE! /p:Configuration="!solution_compilation_mode_flag!"  /p:Platform="!win_arch!"  "%modern_cpp_folder%"\%solution_name_cpp%
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %modern_cpp_lang_string%.
-		call::clean_src_cpp_common
+		call::clean_copied_files
 		exit /b 1
 	)
 
 	echo [INFO]: Copying perftest_cpp executable file:
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
 	copy /Y "%modern_cpp_folder%"\objs\%architecture%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp03"%executable_extension%"
-	call::clean_src_cpp_common
+	call::clean_copied_files
 
 	if "x!STATIC_DYNAMIC!" == "xdynamic" (
 		echo [INFO]: Code compiled dynamically, Add "NDDSHOME/lib/%platform%"
@@ -652,24 +668,28 @@ if !BUILD_CPP03! == 1 (
 	)
 )
 
-echo finished C++
+echo[
 
 ::------------------------------------------------------------------------------
 
 if %BUILD_CS% == 1 (
+
+	set "additional_defines_rtiddsgen=-D "PERFTEST_RTI_PRO""
 
 	@REM Generate files for srcCs
 	echo[
 	echo [INFO]: Generating types and makefiles for %cs_lang_string%
 	call "%rtiddsgen_executable%" -language %cs_lang_string% -unboundedSupport -replace^
 	-create typefiles -create makefiles -platform %architecture%^
+	!additional_defines_rtiddsgen!^
 	-additionalSourceFiles "RTIDDSImpl.cs MessagingIF.cs CpuMonitor.cs PerftestTransport.cs PerftestPrinter.cs"^
 	-additionalDefines "/0x" -d "%cs_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %cs_lang_string%.
 		exit /b 1
 	)
-	call copy "%cs_folder%"\perftest_publisher.cs "%cs_folder%"\perftest_subscriber.cs
+	call copy "%cs_folder%"\perftest_cs.cs "%cs_folder%"\perftest_publisher.cs
+	call copy "%cs_folder%"\perftest_cs.cs "%cs_folder%"\perftest_subscriber.cs
 
 	echo[
 	echo [INFO]: Compiling %cs_lang_string%
@@ -691,10 +711,14 @@ if %BUILD_CS% == 1 (
 
 if %BUILD_JAVA% == 1 (
 
+
+	set "additional_defines_rtiddsgen=-D "PERFTEST_RTI_PRO""
+
 	@REM Generate files for Java
 	echo[
 	echo [INFO]: Generating types and makefiles for %java_lang_string%
 	call "%rtiddsgen_executable%" -language %java_lang_string% -unboundedSupport -replace^
+	!additional_defines_rtiddsgen!^
 	-package com.rti.perftest.gen -d "%java_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %java_lang_string%.
@@ -756,12 +780,13 @@ if %BUILD_JAVA% == 1 (
 if !BUILD_MICRO! == 1 (
 
 	call::copy_src_cpp_common
+	call::copy_src_cpp_connextDDS
 	call::solution_compilation_flag_calculation
 
 	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_TRADITIONAL"
 
 	if !BUILD_MICRO_24x_COMPATIBILITY! == 1 (
-		set "ADDITIONAL_DEFINES=RTI_MICRO_24x_COMPATIBILITY !ADDITIONAL_DEFINES!"
+		set "ADDITIONAL_DEFINES=PERFTEST_RTI_MICRO_24x_COMPATIBILITY !ADDITIONAL_DEFINES!"
 	) else (
 
 		if !USE_SECURE_LIBS! == 1 (
@@ -783,14 +808,17 @@ if !BUILD_MICRO! == 1 (
 		set rtiddsgen_extra_options=!rtiddsgen_extra_options! -sequenceSize !MICRO_UNBOUNDED_SEQUENCE_SIZE! -additionalRtiLibraries "!additional_rti_libraries!"
 	)
 
-	set "ADDITIONAL_DEFINES=RTI_WIN32 RTI_MICRO !ADDITIONAL_DEFINES!"
+	set "ADDITIONAL_DEFINES=RTI_WIN32 PERFTEST_RTI_MICRO !ADDITIONAL_DEFINES!"
 	set "additional_header_files=ParameterManager.h Parameter.h ThreadPriorities.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_micro.h FileDataLoader.h PerftestSecurity.h PerftestPrinter.h"
 	set "additional_source_files=ParameterManager.cxx Parameter.cxx ThreadPriorities.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_micro.cxx FileDataLoader.cxx PerftestSecurity.cxx PerftestPrinter.cxx"
+
+	set "additional_defines_rtiddsgen=-D "PERFTEST_RTI_MICRO""
 
 	@REM # Generate files for srcCpp
 	echo[
 	echo [INFO]: Generating types and makefiles for %classic_cpp_lang_string%
 	call "%rtiddsgen_executable%" -micro -language %classic_cpp_lang_string% -replace^
+	!additional_defines_rtiddsgen!^
 	-create typefiles -create makefiles^
 	-additionalHeaderFiles "!additional_header_files!"^
 	-additionalSourceFiles "!additional_source_files!" -additionalDefines "!ADDITIONAL_DEFINES!"^
@@ -800,7 +828,8 @@ if !BUILD_MICRO! == 1 (
 		echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
 		exit /b 1
 	)
-	call copy "%classic_cpp_folder%"\perftest_publisher.cxx "%classic_cpp_folder%"\perftest_subscriber.cxx
+	call copy "%classic_cpp_folder%"\perftest_cpp.cxx "%classic_cpp_folder%"\perftest_publisher.cxx
+	call copy "%classic_cpp_folder%"\perftest_cpp.cxx "%classic_cpp_folder%"\perftest_subscriber.cxx
 	call copy "%idl_location%\perftest.idl" "%classic_cpp_folder%"\perftest.idl
 	call echo. > "%classic_cpp_folder%"\perftestApplication.h
 	call echo. > "%classic_cpp_folder%"\perftestApplication.cxx
@@ -1031,12 +1060,31 @@ GOTO:EOF
 	echo ================================================================================
 GOTO:EOF
 
-:clean_src_cpp_common
+:clean_copied_files
 	@REM # Remove copied file from srcCommon
 	for %%i in (%common_cpp_folder%\*) do (
 		del %modern_cpp_folder%\%%~nxi > nul 2>nul
 		del %classic_cpp_folder%\%%~nxi > nul 2>nul
 	)
+
+	del %modern_cpp_folder%\perftest_publisher.cxx > nul 2>nul
+	del %modern_cpp_folder%\perftest_subscriber.cxx > nul 2>nul
+	del %classic_cpp_folder%\perftest_publisher.cxx > nul 2>nul
+	del %classic_cpp_folder%\perftest_subscriber.cxx > nul 2>nul
+
+	for %%i in (%classic_cpp_folder%\connextDDS\*) do (
+		del %classic_cpp_folder%\%%~nxi > nul 2>nul
+	)
+
+	@REM # Copy now files specific for pro/micro
+	set src_specific_folder="pro"
+	if !BUILD_MICRO! == 1 (
+		set src_specific_folder="micro"
+	)
+	for %%i in (%classic_cpp_folder%\connextDDS\!src_specific_folder!\*) do (
+		del %classic_cpp_folder%\%%~nxi > nul 2>nul
+	)
+
 GOTO:EOF
 
 :copy_src_cpp_common
@@ -1044,6 +1092,23 @@ GOTO:EOF
 	for %%i in (%common_cpp_folder%\*) do (
 		call copy /Y %common_cpp_folder%\%%~nxi %modern_cpp_folder%\ > nul 2>nul
 		call copy /Y %common_cpp_folder%\%%~nxi %classic_cpp_folder%\ > nul 2>nul
+	)
+
+GOTO:EOF
+
+:copy_src_cpp_connextDDS
+	@REM # Copy files in the common folder for pro and micro
+	for %%i in (%classic_cpp_folder%\connextDDS\*) do (
+		call copy /Y %classic_cpp_folder%\connextDDS\%%~nxi %classic_cpp_folder%\ > nul 2>nul
+	)
+
+	@REM # Copy now files specific for pro/micro
+	set src_specific_folder="pro"
+	if !BUILD_MICRO! == 1 (
+		set src_specific_folder="micro"
+	)
+	for %%i in (%classic_cpp_folder%\connextDDS\!src_specific_folder!\*) do (
+		call copy /Y %classic_cpp_folder%\connextDDS\!src_specific_folder!\%%~nxi %classic_cpp_folder%\ > nul 2>nul
 	)
 
 GOTO:EOF
@@ -1075,6 +1140,7 @@ GOTO:EOF
 	del %script_location%srcCpp\perftest_ZeroCopy.* > nul 2>nul
 	del %script_location%srcCpp\perftest_ZeroCopyPlugin.* > nul 2>nul
 	del %script_location%srcCpp\perftest_ZeroCopySupport.* > nul 2>nul
+	del %script_location%srcCpp\perftest_publisher.cxx > nul 2>nul
 	del %script_location%srcCpp\perftest_subscriber.cxx > nul 2>nul
 	del %script_location%srcCpp\perftestApplication.h > nul 2>nul
 	del %script_location%srcCpp\perftestApplication.cxx > nul 2>nul
@@ -1091,6 +1157,7 @@ GOTO:EOF
 	del %script_location%srcCpp03\perftest.* > nul 2>nul
 	del %script_location%srcCpp03\perftestImplPlugin.* > nul 2>nul
 	del %script_location%srcCpp03\perftestImpl.* > nul 2>nul
+	del %script_location%srcCpp03\perftest_publisher.cxx > nul 2>nul
 	del %script_location%srcCpp03\perftest_subscriber.cxx > nul 2>nul
 	rmdir /s /q %script_location%srcCs\obj > nul 2>nul
 	rmdir /s /q %script_location%srcCs\bin > nul 2>nul
@@ -1099,12 +1166,13 @@ GOTO:EOF
 	del %script_location%srcCs\*.filters > nul 2>nul
 	del %script_location%srcCs\*.sln > nul 2>nul
 	del %script_location%srcCs\perftest.* > nul 2>nul
+	del %script_location%srcCs\perftest_publisher.cs > nul 2>nul
 	del %script_location%srcCs\perftest_subscriber.cs > nul 2>nul
 	rmdir /s /q %script_location%bin > nul 2>nul
 	rmdir /s /q %script_location%srcJava\class > nul 2>nul
 	rmdir /s /q %script_location%srcJava\jar > nul 2>nul
 	call::clean_custom_type_files
-	call::clean_src_cpp_common
+	call::clean_copied_files
 
 	echo[
 	echo ================================================================================

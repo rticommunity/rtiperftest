@@ -13,8 +13,46 @@
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE",
+                "PERFTEST_RTI_PRO",
                 "RTI_FLATDATA_AVAILABLE",
                 "RTI_SECURE_PERFTEST"
+            ],
+            "intelliSenseMode": "${default}",
+            "cStandard": "c11",
+            "cppStandard": "c++11"
+        },
+        {
+            "name": "Linux C++ FASTDDS",
+            "includePath": [
+                "${workspaceFolder}/srcCpp/"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "RTI_UNIX",
+                "RTI_LINUX",
+                "PERFTEST_EPROSIMA_FASTDDS"
+            ],
+            "intelliSenseMode": "${default}",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "configurationProvider": "go2sh.cmake-integration"
+        },
+        {
+            "name": "Linux C++ CycloneDDS",
+            "includePath": [
+                "${workspaceFolder}/srcCpp/",
+                "${workspaceFolder}/srcCpp/cycloneDDS",
+                "${workspaceFolder}/srcCppCommon"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "RTI_UNIX",
+                "RTI_LINUX",
+                "PERFTEST_CYCLONEDDS"
             ],
             "intelliSenseMode": "${default}",
             "cStandard": "c11",
@@ -32,6 +70,7 @@
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE",
+                "PERFTEST_RTI_PRO",
                 "RTI_FLATDATA_AVAILABLE"
             ],
             "intelliSenseMode": "${default}",
@@ -50,6 +89,7 @@
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE",
+                "PERFTEST_RTI_PRO",
                 "RTI_WIN32"
             ],
             "intelliSenseMode": "${default}",
@@ -60,14 +100,19 @@
             "name": "Pro (OSX)",
             "includePath": [
                 "${workspaceFolder}/srcCpp",
+                "${workspaceFolder}/srcCpp/connextDDS",
+                "${workspaceFolder}/srcCpp/connextDDS/pro",
                 "${workspaceFolder}/srcCppCommon",
                 "${env.NDDSHOME}/include",
                 "${env.NDDSHOME}/include/ndds"
             ],
             "defines": [
                 "RTI_SECURE_PERFTEST=1",
+                "PERFTEST_RTI_PRO=1",
+                "PERFTEST_RTI_PRO",
                 "RTI_FLATDATA_AVAILABLE=1",
-                "RTI_PERFTEST_NANO_CLOCK=1"
+                "RTI_PERFTEST_NANO_CLOCK=1",
+                "RTI_LANGUAGE_CPP_TRADITIONAL=1"
             ],
             "macFrameworkPath": [
                 "/System/Library/Frameworks",
@@ -83,13 +128,16 @@
             "includePath": [
                 "${workspaceFolder}/srcCpp",
                 "${workspaceFolder}/srcCppCommon",
+                "${workspaceFolder}/srcCpp/connextDDS",
+                "${workspaceFolder}/srcCpp/connextDDS/micro",
                 "${env.RTIMEHOME}/include",
                 "${env.RTIMEHOME}/include/rti_me",
                 "${env.RTIMEHOME}/include/rti_me/dds_c",
                 "${env.RTIMEHOME}/include/rti_me/dds_cpp"
             ],
             "defines": [
-                "RTI_MICRO=1",
+                "RTI_SECURE_PERFTEST=1",
+                "PERFTEST_RTI_MICRO=1",
                 "RTI_SECURE_PERFTEST=1",
                 "RTI_UNIX=1",
                 "RTI_LANGUAGE_CPP_TRADITIONAL=1"

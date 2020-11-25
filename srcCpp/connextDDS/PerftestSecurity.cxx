@@ -11,7 +11,7 @@
 /******************************************************************************/
 
 // Default location of the security related files
-#ifdef RTI_MICRO
+#ifdef PERFTEST_RTI_MICRO
     const std::string prefix = "file:";
 #else
     const std::string prefix = "";

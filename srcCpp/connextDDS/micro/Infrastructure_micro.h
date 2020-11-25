@@ -6,7 +6,7 @@
 #ifndef INFRASTRUCTURE_MICRO_H_
 #define INFRASTRUCTURE_MICRO_H_
 
-#ifdef RTI_MICRO
+#ifdef PERFTEST_RTI_MICRO
 
 #include "osapi/osapi_semaphore.h"
 #include "osapi/osapi_thread.h"
@@ -78,11 +78,6 @@ class PerftestClock {
     static void sleep(const struct DDS_Duration_t& sleep_period);
 
 };
-
-const std::string GetDDSVersionString();
-
-void PerftestConfigureVerbosity(int verbosityLevel);
-
 
 /********************************************************************/
 /* THREADS */
@@ -265,5 +260,5 @@ class NDDSUtility
     }
 };
 
-#endif // RTI_MICRO
+#endif // PERFTEST_RTI_MICRO
 #endif /* INFRASTRUCTURE_MICRO_H_ */

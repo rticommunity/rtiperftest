@@ -11,9 +11,21 @@
 
 ////////////////////////////////////////////////////////////////////////////
 /* Implementation of middleware bit mask */
+
 const MiddlewareMask Middleware::RTIDDSPRO = 1 << 0;
 const MiddlewareMask Middleware::RTIDDSMICRO = 1 << 1;
 const MiddlewareMask Middleware::RAWTRANSPORT = 1 << 2;
+
+const MiddlewareMask Middleware::RTIDDS =
+        Middleware::RTIDDSPRO
+        | Middleware::RTIDDSMICRO;
+
+const MiddlewareMask Middleware::ALLDDS =
+        Middleware::RTIDDS;
+
+const MiddlewareMask Middleware::ALL =
+        Middleware::ALLDDS
+        | Middleware::RAWTRANSPORT;
 
 ////////////////////////////////////////////////////////////////////////////
 /* Implementation Class CommandLineArgument*/
