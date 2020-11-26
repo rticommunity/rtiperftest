@@ -6,7 +6,7 @@ Compilation
 Linux, MacOS, QNX, VxWorks, Lynx, Android
 -----------------------------------------
 
-For these systems, *RTI Perftest* makes use of a script in the top level
+For these systems, *RTI Perftest* makes use of a script in the top-level
 directory named ``build.sh``.
 
 The purpose of ``build.sh`` is to, first, invoke *RTI DDS
@@ -142,7 +142,7 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | details and examples of use in    |
 |                      |           | the documentation                 |
 +----------------------+-----------+-----------------------------------+
-| --flatData-max-size  | Optional  | Specify the maximum size in Bytes |
+| --flatData-max-size  | Optional  | Specify the maximum size in bytes |
 | <size>               |           | of the sample to be sent when     |
 |                      |           | using FlatData language binding.  |
 |                      |           | Default: 10485760                 |
@@ -203,12 +203,12 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | variable.                         |
 +----------------------+-----------+-----------------------------------+
 | --ns-resolution      | Optional  | Try to use the system real-time   |
-|                      |           | clock to get nano-second          |
-|                      |           | resolution. Availability will     |
-|                      |           | depend on the OS.                 |
-|                      |           | For the Classic C++ Implementation|
-|                      |           | only.                             |
-|                      |           | Default is not enabled.           |
+|                      |           | clock to get nanosecond           |
+|                      |           | resolution. Availability          |
+|                      |           | depends on the OS.                |
+|                      |           | For the Traditional C++           |
+|                      |           | Implementation only.              |
+|                      |           | Default: not enabled              |
 +----------------------+-----------+-----------------------------------+
 | --osx-shmem-shmmax   | Optional  | Specify the maximum segment size  |
 |                      |           | for shared memory in OSX.         |
@@ -448,7 +448,7 @@ The ``build.bat`` script accepts the following list of parameters:
 |                      |           | details and examples of use in    |
 |                      |           | the documentation                 |
 +----------------------+-----------+-----------------------------------+
-| --flatData-max-size  | Optional  | Specify the maximum size in Bytes |
+| --flatData-max-size  | Optional  | Specify the maximum size in bytes |
 | <size>               |           | of the sample to be sent when     |
 |                      |           | using FlatData language binding.  |
 |                      |           | Default: 10485760                 |
