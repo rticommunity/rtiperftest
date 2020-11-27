@@ -138,7 +138,7 @@ public final class PerfTest {
         _scanDataLenSizes.add((long)8192);
         _scanDataLenSizes.add((long)16384);
         _scanDataLenSizes.add((long)32768);
-        _scanDataLenSizes.add((long)63000);
+        _scanDataLenSizes.add((long)64900);
 
     }
     // -----------------------------------------------------------------------
@@ -327,7 +327,7 @@ public final class PerfTest {
             "\t                                    [32,63000] or [63001,2147482620] bytes,\n" +
             "\t                                    in the case that you are using large data or not.\n" +
             "\t                                    The list of sizes is optional.\n" +
-            "\t                                    Default values are '32:64:128:256:512:1024:2048:4096:8192:16384:32768:63000'\n" +
+            "\t                                    Default values are '32:64:128:256:512:1024:2048:4096:8192:16384:32768:64900'\n" +
             "\t                                    Default: Not set\n" +
             "\t-noPrintIntervals       - Don't print statistics at intervals during\n" +
             "\t                          test\n" +

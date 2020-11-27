@@ -52,17 +52,26 @@ which return the time in *microseconds*.
 This option can be enabled at compilation time by using `--ns-resolution`.
 This option is only implemented for Linux/macOS/QNX Systems.
 
-Switching value for bounded to unbounded sequences |enhancedTag|
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Decloupled Asynchronous Publishing and switching to unbounded sequences |enhancedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Previously, the value to switch between bounded and unbounded sequences was set
-to 63000 Bytes (63000 items in the sequence). This value was defined that way to
-be close to the `message_size_max` value for the `UDPv4` transport and to make the
-switch for synchronous to asynchronous publishing coincide with the switch
-between bounded and unbounded sequences.
+*RTI Perftest* uses by default bounded sequences, this is in certain cases more
+efficient, but it involves allocating more memory. In order to avoid reserving
+too much memory, in previous releases *RTI Perftest* would switch to unbounded
+sequences when the packet size was close to the maximum size of an UDPv4 packet.
+That was a hardcoded value (63000 Bytes). At that same point *RTI Perftest* would
+also enable asynchronous publishing (needed when using *Reliable* reliability and
+setting a packet size larger than the UDPv4 maximum size).
 
-These two changes in behavior are now decoupled. The new maximum value for a
-bounded sequence is 1MB (1048576 items in the sequence).
+Starting in this release the use of unbounded sequences has been decoupled from
+the switch between synchronous to asynchronous publishing: While the max bounded
+size has been set to a fixed value (that can be found and
+modified in the `IDL` file). Enabling asynchronous publishing is now done based
+on the maximum packet size for all the enabled transports. This means that if
+only Shared Memory is enabled, asynchronous publishing will not be enabled when
+crossing the maximum message size for UDPv4.
+
+See :ref:`section-large_samples_use` section for more information.
 
 Behavior for `SHMEM` and asynchronous publishing dynamically determined |enhancedTag|
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -417,7 +426,7 @@ Custom Types implementation was incomplete for FlatData types causing compilatio
 errors when trying to use the feature.
 
 This issue has been fixed and FlatData custom types can be used along with
-regular custom types by using the new ``--customTypeFlatdata`` build option.
+regular custom types by using the new ``--customTypeFlatData`` build option.
 
 The only known limitation is that these FlatData types must be declared as mutable.
 
@@ -753,17 +762,6 @@ was being limited.
 The `dds.transport.shmem.builtin.received_message_count_max` and
 `dds.transport.shmem.builtin.receive_buffer_size` QoS settings have been
 increased to avoid this bottleneck.
-
-Fix Custom Types failure due to the use of Flat Data (#221)
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-FlatData support for Custom Types was not complete thus errors arise when using
-``--customType`` build option.
-
-Now this issue has been fixed and FlatData custom types can be used along with
-regular custom types by using the new ``--customTypeFlatData`` build option.
-
-The only known limitation is that these FlatData types must be declared as mutable.
 
 Release Notes 2.4
 ~~~~~~~~~~~~~~~~~

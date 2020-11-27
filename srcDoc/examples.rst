@@ -395,9 +395,9 @@ The size of data is configured by the command-line parameter
 ``-dataLen <bytes>``. Depending on this parameter, *RTI Perftest* will
 automatically configure certain *RTI Connext DDS* behaviors.
 
-When the sample size is smaller than or equal to 1MB (`MAX_BOUNDED_SEQ_SIZE` in the
+When the sample size is smaller than or equal to the `MAX_BOUNDED_SEQ_SIZE` (set to 65470 Bytes in the
 IDL file) *RTI Perftest* will, by default, use types with bounded sequences (bound
-set to 1048576 elements). If the sample size is bigger than 1 MB,
+set to MAX_BOUNDED_SEQ_SIZE elements). If the sample size is bigger than 65470 Bytes,
 *RTI Perftest* will automatically switch to types equivalent to the ones
 mentioned previously, but with unbounded sequences.
 

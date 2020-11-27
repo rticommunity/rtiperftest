@@ -67,7 +67,7 @@ Test Parameters for Publishing and Subscribing Applications
    wire protocol is added, it doesn't overflow the UDP maximum datagram
    size of 64KB.
 
-   If ``<bytes>`` is bigger than 64969, *RTI Perftest* will enable the
+   If ``<bytes>`` is bigger than 64900, *RTI Perftest* will enable the
    use of *Asynchronous Publishing* and *Unbounded Sequences*. When using
    *RTI Connext DDS Micro*, the type is not really unbounded; the size is
    given by the ``MICRO_UNBOUNDED_SEQUENCE_SIZE`` constant, which can be
@@ -767,9 +767,9 @@ Test Parameters Only For Publishing Applications
 -  ``-scan <size1>:<size2>:...:<sizeN>``
 
    Run test in scan mode. The list of sizes is optional and can be either in the
-   [32,64969] range or the [64970,2147482620] range (Large Data cannot be tested
+   [32,64900] range or the [64970,2147482620] range (Large Data cannot be tested
    in the same scan test as small data sizes). Default values to test with are
-   '32:64:128:256:512:1024:2048:4096:8192:16384:32768:64969'
+   '32:64:128:256:512:1024:2048:4096:8192:16384:32768:64900'
    The ``-executionTime`` parameter is applied for every size of the scan.
    If ``-executionTime`` is not set, a timeout of 60 seconds will be applied.
 
