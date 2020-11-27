@@ -5,37 +5,45 @@ Release Notes
 
 |latestReleaseHeader|
 
+.. raw:: html
+
+    <p style="color:#004C97"; align="center"><strong>
+    Now you can extend RTI Perftest to work with other ecosystems, use more
+    friendly output formats for visualization or comparison and perform tests
+    using your own data as payload!
+    </strong></p>
+
 Release Notes Master
 --------------------
 
-What's New in Master   |newTag|
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+What's New in Master
+~~~~~~~~~~~~~~~~~~~~
 
-New tutorial section in the documentation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+New tutorial section in the documentation |newTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A new tutorial section in the documentation shows how to properly use
 *RTI Perftest* in real-life scenarios to gather the limits for throughput
 and latency. It also shows the impact of using *RTI Connext DDS* features.
 
-Send data from a file as payload for Perftest messages (#210)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Send data from a file as payload for Perftest messages (#210) |newTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A new command-line option has been added to the
 *Traditional C++* API implementation that allows you to load a file
 into memory and send the data of the file instead of using an empty buffer as the
 payload for the *RTI Perftest* messages.
 
-Easily view *DataWriter* and *DataReader* queue stats (#251)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Easily view *DataWriter* and *DataReader* queue stats (#251) |enhancedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By using the `-cacheStats` command-line parameter, *RTI Perftest* now displays the
 *Send Queue* `sample_count` and `sample_count_peak` on the publisher side. For the
 Subscriber side, *RTI Perftest* displays the *Receive Queue* `sample_count` and
 `sample_count_peak`.
 
-Measure latency in nanoseconds (#253)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Measure latency in nanoseconds (#253) |newTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* can now be compiled using POSIX calls to measure latency
 in nanoseconds, instead of using the *Connext DDS Professional* calls,
@@ -44,8 +52,8 @@ which return the time in *microseconds*.
 This option can be enabled at compilation time by using `--ns-resolution`.
 This option is only implemented for Linux/macOS/QNX Systems.
 
-Switching value for bounded to unbounded sequences
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Switching value for bounded to unbounded sequences |enhancedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Previously, the value to switch between bounded and unbounded sequences was set
 to 63000 Bytes (63000 items in the sequence). This value was defined that way to
@@ -56,8 +64,8 @@ between bounded and unbounded sequences.
 These two changes in behavior are now decoupled. The new maximum value for a
 bounded sequence is 1MB (1048576 items in the sequence).
 
-Behavior for `SHMEM` and asynchronous publishing
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Behavior for `SHMEM` and asynchronous publishing dynamically determined |enhancedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The value to switch to asynchronous publishing is no longer a fixed value, but
 calculated according to the minimum `message_size_max` accross all the enabled
@@ -69,8 +77,8 @@ calculated to fit samples of the size specified by the
 
 Find more information about this in :ref:`section-large_samples_use`.
 
-New Security governance files added for Sign and Encrypt with original auth for RTPS (#253)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+New Security governance files added for Sign and Encrypt with original auth for RTPS (#253) |newTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This release adds two new governance profiles to the list of generated governance files in
 `resource/secure/input/governances/`:
@@ -80,12 +88,12 @@ This release adds two new governance profiles to the list of generated governanc
 
 It also adds their respective signed versions (`signed_`...).
 
-CSV and JSON added to the list of output formats available to display data (#280)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+CSV and JSON added to the list of output formats available to display data (#280) |newTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The *RTI Perftest* default output format has been improved. This format should now
-be compatible with the `CSV` format standard, simplifying opening the results with 
-spreadsheet editors and parsing them via scripting. The output retains its readability, 
+be compatible with the `CSV` format standard, simplifying opening the results with
+spreadsheet editors and parsing them via scripting. The output retains its readability,
 by correctly aligning rows and columns and by printing headers for each column.
 
 *RTI Perftest* also provides the option of changing or customizing the
@@ -96,41 +104,41 @@ output used by *RTI Perftest*).
 Another flag has been added, `-noOutputHeaders`, to skip printing the
 header rows (for the summaries and interval information).
 
-Use of Thread Priorities now supported in QNX platforms
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use of Thread Priorities now supported in QNX platforms |enhancedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The use of the `-threadPriorities` command is now supported on QNX platforms.
 You can specify either three numeric values representing the priority of each
 of the threads or three characters representing the priorities: h,n,l.
 
-Know the exact size of *RTI Perftest*'s type being used (#265)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Know the exact size of *RTI Perftest*'s type being used (#265) |enhancedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The overhead size resulting from the serialized sample of the *Perftest* type is
 now calculated programmatically. This change accurately gives the exact number of bytes
 that are sent when CustomTypes or FlatData types are used.
 
-Notification when a test ends without any packets received (#303)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Notification when a test ends without any packets received (#303) |newTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When performing certain tests, especially with very few samples, or with very large
 ones, the probability of not receiving any samples on the Publisher or Subscriber side
 is higher. In this release, we now notify you when the application receives the
 message that the test has ended, as well as some suggestions on how to fix the problem.
 
-Easily see the serialization/deserialization times (#304)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Easily see the serialization/deserialization times (#304) |newTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When the feature to show the serialization/deserialization times was added, it was set
 to show the data at the end of the test, on the Publisher side, as a new line after the
 latency results.
 
-This was not convenient, since this line could conflict when parsing the latency lines. 
-This problem has been resolved by adding a new parameter `-showSerializationTime`, which 
+This was not convenient, since this line could conflict when parsing the latency lines.
+This problem has been resolved by adding a new parameter `-showSerializationTime`, which
 enables calculating and showing the serialization/deserialization times.
 
-Control the size of the initial burst of intialization samples (#310)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Control the size of the initial burst of intialization samples (#310) |newTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A new command-line parameter, `-initialBurstSize`, has been added to the
 Traditional and Modern C++ API implementations to control the number of
@@ -140,16 +148,16 @@ the buffers in the sending and receiving paths.
 In most cases, this number should not cause trouble (as long as it is
 big enough), but in certain cases a low number is required due to OS restrictions.
 
-Perftest internal effiency improved by generating the `qos_string` file only once and in srcCppCommon (#334)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Perftest internal effiency improved by generating the `qos_string` file only once and in srcCppCommon (#334) |enhancedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Previously, the `qos_string.h` file containing the strings from 
+Previously, the `qos_string.h` file containing the strings from
 `perftest_qos_profiles.xml` was generated twice and copied to the `srcCpp` and
-`srcCpp03` folders. This process has been simplified, generating `qos_string.h` only 
+`srcCpp03` folders. This process has been simplified, generating `qos_string.h` only
 once and into `srcCppCommon`.
 
-Control the compiler used, and add flags without modifying the build script (PERF-194)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Control the compiler used, and add flags without modifying the build script (PERF-194) |enhancedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* now enables you to add specific
 command-line arguments to the `cmake` executable (which is used when compiling
@@ -158,12 +166,12 @@ used, as well as the ability to add specific flags, without modifying the build
 script. This feature may be needed when crosscompiling.
 
 
-Display error if the `-allowInterface` parameter is an IP when using *RTI Connext DDS Micro* (PERF-212)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Display error if the `-allowInterface` parameter is an IP when using *RTI Connext DDS Micro* (PERF-212) |enhancedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Connext DDS Pro* supports for the Allow Interfaces List the use of the
-interface name or the ip, however *RTI Connext DDS Micro* does not support the
-use of an ip address, and it would consider the ip as the name of the interface,
+interface name or the IP, however *RTI Connext DDS Micro* does not support the
+use of an IP address, and it would consider the IP as the name of the interface,
 therefore failing to find an interface and not being able to communicate.
 
 Although this is an expected behavior, customers switching in *RTI Perftest*
@@ -172,117 +180,117 @@ if they use the `-allowInterfaces` (formerly `-nic`) command line option. This
 error is silent and cannot be catched by *RTI Perftest*.
 
 To avoid this confusion, *RTI Perftest* compiled against *RTI Connext DDS Micro*
-will report an error if an ip is provided when setting the `-allowInterfaces`/`-nic`
+will report an error if an IP is provided when setting the `-allowInterfaces`/`-nic`
 parameter.
 
-What's Fixed in Master   |fixedTag|
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+What's Fixed in Master
+~~~~~~~~~~~~~~~~~~~~~~
 
-Improved message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Improved message when NDDSHOME/RTIMEHOME paths are not reachable (#222) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* has improved the error message when the path provided to
-`NDDSHOME` or `RTIMEHOME` is incorrect. Previously, the message was 
+`NDDSHOME` or `RTIMEHOME` is incorrect. Previously, the message was
 misleading because it claimed that the path was not provided.
 
-Wrong version in Dockerfile for Perftest 3.0.1 (#227)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Wrong version in Dockerfile for Perftest 3.1.0 (#227) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest*'s Dockerfile was outdated. It has now been updated to use the
 latest release.
 
-Participant properties always propagated in C++03 (#228)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Participant properties always propagated in C++03 (#228) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 QoS properties for *DataReaders* and *DataWriters* were being propagated in C++03
-implementations. This behaviour is not needed, so it has been removed. Now the  
+implementations. This behaviour is not needed, so it has been removed. Now the
 behavior is the same as the Traditional C++ implementation.
 
-Wrong capitalization for command-line option `--customTypeFlatData` (#232)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Wrong capitalization for command-line option `--customTypeFlatData` (#232) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In `build.sh` and `build.bat`, the command-line parameter
 used to specify that a custom type for FlatData was provided was misspelled.
 
-Error finalizing the application when using `SHMEM` for *RTI Connext DDS Micro* (#234)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Error finalizing the application when using `SHMEM` for *RTI Connext DDS Micro* (#234) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When using *RTI Connext DDS Micro* and setting the transport to `SHMEM`, an error
 appeared at the end of the test for both Publisher and Subscriber by the time
 the `finalize_instance()` function was called. This error has been resolved.
 
-*rtiddsgen* version not properly compared to identify support of certain features (#237)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+*rtiddsgen* version not properly compared to identify support of certain features (#237) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Previously, the *rtiddsgen* version number was not correctly obtained
 by *RTI Perftest* compilation scripts. This problem caused the inclusion of the
 wrong compilation flags in some cases.
 
-Incorrect governance file values for RTI Security Plugins (#239)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Incorrect governance file values for RTI Security Plugins (#239) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The `PerftestGovernance_RTPSEncryptWithOrigAuthEncryptData.xml` and
 `PerftestGovernance_RTPSSignWithOrigAuthEncryptData.xml` governance files were not
-correctly writen. They would not set the right flags to encrypt the data. This issue 
+correctly writen. They would not set the right flags to encrypt the data. This issue
 has been fixed.
 
-ContentFilteredTopics (`-cft`) range option not working properly (#240)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ContentFilteredTopics (`-cft`) range option not working properly (#240) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The `-cft` option for the *Perftest* Subscriber side was not working correctly
 when specifying a range of values to filter (e.g., `-cft 3:5`). This behavior has
 been corrected.
 
-Issue displaying Connext DDS Micro release number (#243)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Issue displaying Connext DDS Micro release number (#243) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* would display the `RTIME_DDS_VERSION_REVISION`
 instead of the `RTIME_DDS_VERSION_RELEASE` when compiling against *RTI
 Connext DDS Micro*. This problem has been fixed.
 
-Incorrect number of max_instances in DataReader when using Connext DDS Micro (#244)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Incorrect number of max_instances in DataReader when using Connext DDS Micro (#244) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The `max_instances` value assigned to the resouce limits on the *DataReader*
 side in *RTI Perftest* when compiling against *Connext DDS Micro* was not
 set correctly. It would not account for the extra sample used to skip the
 *ContentFilteredTopics*.
 
-Asynchronous publishing incorrectly set to true when using Zero Copy and Large Data (#246)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-*RTI Perftest* presented in the summary on the Publisher side that asynchronous 
+Asynchronous publishing incorrectly set to true when using Zero Copy and Large Data (#246) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+*RTI Perftest* presented in the summary on the Publisher side that asynchronous
 publishing was set to *true* regardless of whether the test was
 using *Zero Copy transfer over shared memory*.
 
-When using Zero Copy transfer over shared memory, the size of the message being sent 
-will always be constant, independent of the size of the sample being sent, since it is 
-just a reference to where the sample is stored in memory. This means that aynchronous 
+When using Zero Copy transfer over shared memory, the size of the message being sent
+will always be constant, independent of the size of the sample being sent, since it is
+just a reference to where the sample is stored in memory. This means that aynchronous
 publishing is not needed in any case.
 
-Incorrect documentation examples for FlatData and Zero-Copy (#249)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In the documentation examples for FlatData and Zero Copy transfer over shared memory, 
-the data sizes used for the Publisher and Subscriber did not match. Also, in the 
-Best Effort case, the command lines did not include the `-bestEffort` option. These 
+Incorrect documentation examples for FlatData and Zero-Copy (#249) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In the documentation examples for FlatData and Zero Copy transfer over shared memory,
+the data sizes used for the Publisher and Subscriber did not match. Also, in the
+Best Effort case, the command lines did not include the `-bestEffort` option. These
 issues have been fixed.
 
-Discovery process not robust enough (#261)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Discovery process not robust enough (#261) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* was not checking that all the entities of
 the three *Topics* (AnnouncementTopic, ThroughputTopic, and LatencyTopic) were
-discovering each other, only the ones for the ThroughputTopic. In corner cases, this 
+discovering each other, only the ones for the ThroughputTopic. In corner cases, this
 led to the test not working correctly. This problem has been corrected.
 
-LatencyTopic endpoints not discovered in some cases (#261)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+LatencyTopic endpoints not discovered in some cases (#261) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The combination of the previous issue and a bug in *Connext DDS Micro*
 (MICRO-2191) caused the LatencyTopic endpoints to not be correctly
 discovered in certain cases, making it impossible to gather latency numbers.
 
-IDL used both old and new prefix annotations (#270)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+IDL used both old and new prefix annotations (#270) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *RTI Perftest* IDL files used a combination of the new
 prefix annotations and the old ones. This inconsistency has been fixed.
@@ -290,49 +298,49 @@ prefix annotations and the old ones. This inconsistency has been fixed.
 This fix imposes a restriction (already existing) on the minimum version for which
 *RTI Perftest* can be compiled (*Connext DDS Professional* 5.3.1).
 
-`DTLS` transport did not work in Traditional/Modern C++ by default (#281)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`DTLS` transport did not work in Traditional/Modern C++ by default (#281) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, the *RTI Perftest* Subscriber would fail when the transport was set to
 `DTLS` due to an incorrect private key on the Subscriber side. This issue has been
 resolved.
 
-Incorrect port calculation in RawTransport with multiples Subscribers (#283)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Incorrect port calculation in RawTransport with multiples Subscribers (#283) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The RawTransport port calculation has been fixed when there are multiples Subscribers.
 
-Segmentation fault when finishing tests in Traditional/Modern C++ (#288)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Segmentation fault when finishing tests in Traditional/Modern C++ (#288) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The use of `-useReadThread` (which internally would imply using `waitsets`)
 caused a segmentation fault at the end of the test (when *RTI Perftest* deleted
 the entities). This problem affected Traditional and Modern C++ implementations.
 This problem has been fixed.
 
-`-sleep` option not working correctly with values larger than 1 second (#299)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`-sleep` option not working correctly with values larger than 1 second (#299) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The calculation of the seconds and nanoseconds to sleep between sending samples
 when using the `-sleep` command-line option was not correct for both the Traditional
 and the Modern C++ implementations. This issue has been resolved.
 
-Error in Modern C++ when using FlatData (#306)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Error in Modern C++ when using FlatData (#306) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-An error was found when testing FlatData in the Modern C++ API implementation. 
+An error was found when testing FlatData in the Modern C++ API implementation.
 The `write()` call would fail to find the right instance handle. This issue
-would show up in any of the three topics and would cause an exception. This 
+would show up in any of the three topics and would cause an exception. This
 problem has been fixed.
 
-`-sendQueueSize` not correctly applied to Subscriber side (#309)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`-sendQueueSize` not correctly applied to Subscriber side (#309) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Even though the use of `-sendQueueSize` was modified to be allowed on the
 Subscriber side for the pong *Datawriter*, the values for the maximum and
 minimum send queue size where not correctly set in the code. This issue has been
 fixed.
 
-Error using Zero-Copy and checking sample consistency with waitsets (#316 and #317)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Error using Zero-Copy and checking sample consistency with waitsets (#316 and #317) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the Traditional and Modern C++ API implemetations, when
 using `-zeroCopy` + `-useReadThread` + `-checkConsistency`, *Connext DDS* would
@@ -345,46 +353,50 @@ show:
 In the case of the Modern C++ API implementation, this problem also caused a
 crash. This issue has been fixed.
 
-Code generation failure on Windows when `FlatData` is disabled (#319)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Code generation failure on Windows when `FlatData` is disabled (#319) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 On Windows®, a failure occurred when trying to compile an architecture without
 support for `FlatData`. This may have occurred if the *RTI Connext DDS Professional*
 version was before the inclusion of the feature or if *RTI Perftest* intentionally disabled
-FlatData in the `build.bat` code. The problem might also have occurred for certain 
+FlatData in the `build.bat` code. The problem might also have occurred for certain
 embedded Windows architectures.
 
 This issue has been resolved.
 
-`RTI_LANGUAGE_CPP_MODERN` flag not propagated correctly when using build.sh script (#322)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`RTI_LANGUAGE_CPP_MODERN` flag not propagated correctly when using build.sh script (#322) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 An issue has been resolved in the `build.sh` script that caused the
 `RTI_LANGUAGE_CPP_MODERN` define flag to not be propagated correctly when compiling.
 This issue did not cause a bug or wrong behavior.
 
-`-batchSize` parameter not correctly written in Traditional and Modern C++ API implementations (#324)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-This release fixes an issue for the Traditional and Modern C++ API implementations 
+
+`-batchSize` parameter not correctly written in Traditional and Modern C++ API implementations (#324) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This release fixes an issue for the Traditional and Modern C++ API implementations
 where the parameter manager would expect `-batchsize` instead of `-batchSize`. This issue
 was only a problem for VxWorks® systems, where the parsing of the parameters is
 case-sensitive.
 
-Performance degradation in Modern C++ when using Dynamic Data (#332)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Performance degradation in Modern C++ when using Dynamic Data (#332) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When using Dynamic Data, the `Send()` path always tried to clear the content
 of the sample prior to starting repopulating it. This should only be necesary if the
 sequence size changes. This issue has been fixed.
 
-Perftest Traditional C++ API implementation did not initialize sequence (#348)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Perftest Traditional C++ API implementation did not initialize sequence (#348) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the *RTI Perftest* implementation of the Traditional C++ API, the sequence sent
 by the middleware was not being initialized. This issue has been resolved. Now
 the sequence is initialized to zeros.
 
-Incorrect extenal libraries passed to cmake when compiling against Connext DDS Micro in QNX (PERF-194)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-When building *RTI Perftest* for *Connext DDS Micro* in QNX, the wrong external libraries 
+Incorrect extenal libraries passed to cmake when compiling against Connext DDS Micro in QNX (PERF-194) |fixedTag|
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+When building *RTI Perftest* for *Connext DDS Micro* in QNX, the wrong external libraries
 were passed to ``cmake``. This problem has been fixed.
 
 |previousReleasesHeader|
@@ -392,218 +404,29 @@ were passed to ``cmake``. This problem has been fixed.
 Previous Release Notes
 ----------------------
 
-Wrong version in dockerfile for perftest 3.0.1 (#227)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Release Notes 3.0.1
+~~~~~~~~~~~~~~~~~~~
 
-*RTI Perftest*'s Dockerfile was outdated. It has now been updated to use the
-latest release.
+What's Fixed in 3.0.1
+^^^^^^^^^^^^^^^^^^^^^
 
-Participant properties always propagate in C++03 (#228)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Fix Custom Types failure due to the use of Flat Data (#221)
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-QoS properties for Data Readers and Data Writers were being propagated on C++03
-implementation.
+Custom Types implementation was incomplete for FlatData types causing compilation
+errors when trying to use the feature.
 
-This behaviour is not needed so has been removed to behave as on Traditional C++.
+This issue has been fixed and FlatData custom types can be used along with
+regular custom types by using the new ``--customTypeFlatdata`` build option.
 
-Wrong capitalization for command line option `--customTypeFlatData` (#232)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The only known limitation is that these FlatData types must be declared as mutable.
 
-Fixed issue in the `build.sh` and `build.bat` where the command line parameter
-used to specify that a custom type for Flat Data was provided was wrongly
-spelled.
+Improve message when NDDSHOME/RTIMEHOME paths are not reachable (#222)
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Error finalizing the application when using `SHMEM` for *RTI Connext DDS Micro* (#234)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-When using *RTI Connext DDS Micro* and setting the transport to `SHMEM` an error
-would appear at the end of the test in both publisher and subscriber by the time
-he `finalize_instance()` function is called. This errors has been resolved.
-
-The version of *rtiddsgen* is now properly compared to identify the support of certain features (#237)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In previous releases, the *rtiddsgen* version number was not correctly obtained
-by the *RTI Perftest* compilation scripts. This would cause the inclusion of the
-wrong compilation flags in certain cases.
-
-Fix incorrect incorrect governance file values for Security (#239)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The `PerftestGovernance_RTPSEncryptWithOrigAuthEncryptData.xml` and
-`PerftestGovernance_RTPSSignWithOrigAuthEncryptData.xml` governance files were not
-correctly writen and they would not set the right flags to encrypt the data.
-
-This issue has been fixed.
-
-Content-Filtered Topics (`-cft`) range option not working properly (#240)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The `-cft` option for the *Perftest subscriber* side was not working correctly
-when specifying a range of values to filter (e.g. `-cft 3:5`). This behavior has
-been corrected.
-
-Fix issue displaying the *RTI Connext DDS Micro* release number (#243)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Fixed issue where *RTI Perftest* would display the `RTIME_DDS_VERSION_REVISION`
-instead of the `RTIME_DDS_VERSION_RELEASE` when compiling against *RTI
-Connext DDS Micro*.
-
-Fix incorrect number of `max_instances` in the *DataReader* when using *Micro* (#244)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The value to `max_instances` assigned to the resouce limits in the *DataReader*
-side in *RTI Perftest* when compiling against *RTI Connext DDS Micro* was not
-set correctly, and it would not account for the extra sample used to skip the
-*CFTs*.
-
-Summary displays *Asynchronous publishing* active when using *Zero-Copy* and *Large Data* (#246)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Fixed issue where *RTI Perftest* would present in the summary of the *Publisher*
-side the *Asynchronous Publishing* set to *true* regardless on if the test was
-using *Zero-Copy* or not.
-
-When using *Zero-Copy*, the size of the message being sent will always be
-constant, independent on the size of the sample being sent, as it is just a
-reference to where the sample is stored in memory.
-This means that *Asynchronous Publishing* is not needed in any case.
-
-Fix documentation examples for *FlatData* and *Zero-Copy* (#249)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In the documentation examples for *FlatData* and *Zero-Copy* the data sizes used
-for publisher and subscriber were not matching. Also, in the *Best Effort* case,
-the command lines were not including the `-bestEffort` option.
-
-Make discovery process more robust (#261)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In previous versions, *RTI Perftest* was not checking that all the entities of
-the three topics (AnnouncementTopic, ThroughputTopic and LatencyTopic) were
-discovering each other, only the ones for the Throughput topic. This could lead
-to some corner cases where the performance test would not work correctly. This
-behavior has been corrected.
-
-Workaround for MICRO-2191 (#261)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The combination of the previous issue and a bug in *RTI Connext DDS Micro*
-(MICRO-2191), would cause that the LatencyTopic endpoints were not correctly
-discovered in certain cases, making impossible to gather Latency Numbers.
-
-Update the idl to use prefix annotations (#270)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In previous versions, *RTI Perftest* idls used a combination of the new
-prefix annotations and the old ones. This inconsistency has been fixed.
-
-This imposes a restriction (already existing) in the minimum version for which
-*RTI Perftest* can be compiled to *RTI Connext DDS Professional* 5.3.1.
-
-`DTLS` transport does not work in Traditional/Modern C++ by default (#281)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-By default *RTI Perftest* subscriber would fail when the transport was set to
-`DTLS` due to an incorrect private key in the subscriber side. This issue has been
-resolved.
-
-Fixed port calculation in RawTransport with multiples subscribers (#283)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-RawTransport port calculation has been fixed when we have multiples subscribers.
-
-Fixed segmentation fault when finishing tests in Traditional/Modern C++ (#288)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The use of `-useReadThread` (which internally would imply using `waitsets`)
-caused a segmentation fault at the end of the test (when *RTI Perftest* deleted
-the entities). This would affect Traditional and Modern C++ Implementations.
-This issue has been fixed.
-
-`-sleep` option not working correctly with values larger than 1 second (#299)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The calculation of the seconds and nanoseconds to sleep between sending samples
-when using the `-sleep` command line option was not correct for both the Traditional
-and the Modern C++ implementations. This issue has been resolved.
-
-Error in Modern C++ when using FlatData (#306)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-An error was found when testing *FlatData* in the *Modern C++ API* Implementation
-where the `write()` call would fail to find the right instance handle. This issue
-would show up in any of the 3 topics and would cause an exception.
-
-`-sendQueueSize` not correctly applied to the subscriber side (#309)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Even though the use of `-sendQueueSize` was modified to be allowed in the
-Subscriber side for the *Pong Datawriter*, the values for the maximum and
-minimum send Queue size where not correctly set in code. This issue has been
-fixed.
-
-Error using Zero-Copy and checking sample consistency with waitsets (#316 and #317)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Fixed issue in the *Traditional and Modern* C++ API implemetation, where, when
-using `-zeroCopy` + `-useReadThread` + `-checkConsistency` the middleware would
-show:
-
-    DDS_SampleInfoSeq_get_reference:!assert index out of bounds
-    TestDataLarge_ZeroCopy_w_FlatData_tSeq_get_reference:!assert index out of bounds
-    DDS_DataReader_is_metp_data_consistent:ERROR: Bad parameter: sample
-
-In the case of the *Modern* C++ API implementation this would also cause a
-crash. This issue has been fixed.
-
-Code generation failure on Windows when `FlatData` is disabled (#319)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-On Windows, a failure will occur when trying to compile an architecture without
-support for `FlatData`. This may occur if the `RTI Connext DDS Professional`
-version is prior to the inclusion of the feature or if we intentionally disable
-it in the `build.bat` code. It might also happen for certain embeded windows
-architectures.
-
-This issue has been resolved.
-
-The `RTI_LANGUAGE_CPP_MODERN` flag is not correctly when using the build.sh script (#322)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-An issue has been resolved in the `build.sh` script that would cause the
-`RTI_LANGUAGE_CPP_MODERN` define flag not to be propagated correctly when compiling.
-This issue was not causing a bug or a wrong behavior in previous versions of
-*RTI Perftest*.
-
-`-batchSize` parameter not correctly written in the Traditional and Modern C++ API implementations (#324)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Fixed an issue for the Traditional and Modern C++ API implementations where the
-parameter manager would expect `-batchsize` instead of `-batchSize`. This issue
-was only a problem for *VxWorks* systems, where the parsing of the parameters is
-case sensitive.
-
-Fixed performance degradation in Modern C++ when using Dynamic Data (#332)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-When using Dynamic Data, the `Send()` path would always try to clear the content
-of the sample prior to start repopulating it. This should only be necesary if the
-sequence size changes. This issue has been fixed.
-
-Modify Perftest Classic C++ API Implementation to Initialize sequence (#348)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In the *RTI Perftest* implementation for the *Classic C++ API* the sequence sent
-by the middleware was not being initialized. This issue has been resolved and now
-it is initialized to zeros.
-
-Incorrect extenal libraries passed to ``cmake`` when compiling against *RTI Connext DDS Micro* in *QNX* (PERF-194)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Fixed issue when building *RTI Perftest* for *RTI Connext DDS Micro* in *QNX*
-where the wrong external libraries would be passed to ``cmake``.
+*RTI Perftest* has improved the error message when the path provided to the
+`NDDSHOME` or `RTIMEHOME` are incorrect. In previous releases this could be
+misleading since it would claim that the path was not provided.
 
 Release Notes 3.0
 ~~~~~~~~~~~~~~~~~
@@ -1776,3 +1599,4 @@ we could get into the following error:
 .. |previousReleasesHeader| image:: _static/Perftest_previous_releases_header.png
 .. |newTag| image:: _static/new.png
 .. |fixedTag| image:: _static/fixed.png
+.. |enhancedTag| image:: _static/enhanced.png
