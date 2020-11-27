@@ -7,7 +7,7 @@ Release Notes
 
 .. raw:: html
 
-    <p style="color:#004C97"; align="center"><strong>
+    <p style="color:#004C97"; align="centerw"><strong>
     Now you can extend RTI Perftest to work with other ecosystems, use more
     friendly output formats for visualization or comparison and perform tests
     using your own data as payload!
