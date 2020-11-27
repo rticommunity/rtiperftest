@@ -3,8 +3,6 @@
 Release Notes
 =============
 
-|latestReleaseHeader|
-
 .. raw:: html
 
     <p style="color:#004C97"; align="centerw"><strong>
@@ -407,8 +405,6 @@ Incorrect extenal libraries passed to cmake when compiling against Connext DDS M
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 When building *RTI Perftest* for *Connext DDS Micro* in QNX, the wrong external libraries
 were passed to ``cmake``. This problem has been fixed.
-
-|previousReleasesHeader|
 
 Previous Release Notes
 ----------------------
