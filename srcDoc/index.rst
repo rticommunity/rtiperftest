@@ -1,5 +1,6 @@
-.. figure:: _static/Perftest_name.png
-   :alt: PerfTest Overview Diagram
+.. raw:: html
+
+    <p style="color:#004C97"; align="center"><font size="+12">RTI Perftest</font></p>
 
 Overview
 ========
