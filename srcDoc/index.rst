@@ -16,7 +16,10 @@ It can help you answer questions such as:
 How does it work
 ----------------
 
-The publishing side of the test writes data as fast as it can. Every few samples (configured through the command line), it sends a special sample requesting an echo from the subscribing side. It uses this ping -> pong exchange to measure the round-trip time latency (RTT) and then the one-way latency.
+The publishing side of the test writes data as fast as it can. Every few samples
+(configured through the command line), it sends a special sample requesting an echo
+from the subscribing side. It uses this ping -> pong exchange to measure the
+round-trip time latency (RTT) and then the one-way latency (RTT/2).
 
 The publisher prints the latency test results while the subscriber prints the throughput results.
 
