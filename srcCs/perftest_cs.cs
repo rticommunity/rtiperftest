@@ -2847,7 +2847,7 @@ namespace PerformanceTest {
         public const int timeout_wait_for_ack_sec = 0;
         public const uint timeout_wait_for_ack_nsec = 10000000;
         public static readonly Perftest_ProductVersion_t _version =
-                new Perftest_ProductVersion_t(9, 9, 9, 9);
+                new Perftest_ProductVersion_t(3, 1, 0, 0);
         public static ulong OVERHEAD_BYTES = 28;
 
         /*

@@ -14,7 +14,7 @@ public final class PerftestVersion {
     private final ProductVersion_t _productVersion;
 
     private PerftestVersion() {
-        _productVersion = new ProductVersion_t(new int[] { 9, 9, 9, 9 });
+        _productVersion = new ProductVersion_t(new int[] { 3, 1, 0, 0 });
     }
 
     public static PerftestVersion getInstance() {
