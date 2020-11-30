@@ -11,11 +11,11 @@ Release Notes
     using your own data as payload!
     </strong></p>
 
-Release Notes Master
---------------------
+Release Notes 3.1
+-----------------
 
-What's New in Master
-~~~~~~~~~~~~~~~~~~~~
+What's New in 3.1
+~~~~~~~~~~~~~~~~~
 
 New tutorial section in the documentation |newTag|
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -190,8 +190,8 @@ To avoid this confusion, *RTI Perftest* compiled against *RTI Connext DDS Micro*
 will report an error if an IP is provided when setting the `-allowInterfaces`/`-nic`
 parameter.
 
-What's Fixed in Master
-~~~~~~~~~~~~~~~~~~~~~~
+What's Fixed in 3.1
+~~~~~~~~~~~~~~~~~~~
 
 Improved message when NDDSHOME/RTIMEHOME paths are not reachable (#222) |fixedTag|
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
