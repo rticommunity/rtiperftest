@@ -43,7 +43,7 @@ This breaks compatibility against previous versions of *RTI Connext DDS*. In ord
 to compile against previous versions a manual change has to be made in the `build.bat`
 script:
 
-Search and replace all references for ``libsslz libcryptoz`` with ``libeay32z ssleay32z``.
+Search and replace all references for ``crypt32 libcryptoz libsslz`` with ``libeay32z ssleay32z``.
 
 Compilation Restrictions
 ~~~~~~~~~~~~~~~~~~~~~~~~
