@@ -383,7 +383,7 @@ if !BUILD_CPP! == 1 (
 				exit /b 1
 			)
 			set additional_rti_libs=nddssecurity !additional_rti_libs!
-			set rtiddsgen_extra_options=-additionalLibraries "libeay32z ssleay32z"
+			set rtiddsgen_extra_options=-additionalLibraries "crypt32 libcryptoz libsslz"
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
 		)
@@ -540,7 +540,7 @@ if !BUILD_CPP03! == 1 (
 				exit /b 1
 			)
 			set additional_rti_libs=nddssecurity !additional_rti_libs!
-			set rtiddsgen_extra_options=-additionalLibraries "libeay32z ssleay32z"
+			set rtiddsgen_extra_options=-additionalLibraries "crypt32 libcryptoz libsslz"
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
 		)
@@ -894,22 +894,8 @@ GOTO:EOF
 ::------------------------------------------------------------------------------
 @REM #FUNCTIONS:
 
-:get_ddsgen_version
-	for /F "delims=" %%i in ('"%NDDSHOME%\bin\rtiddsgen.bat" -version ^| findstr /R /C:rtiddsgen') do (
-		set version_line=%%i
-	)
-	set version_string=%version_line:~49,6%
-
-	for /F "tokens=1,2,3 delims=." %%a in ("%version_string%") do (
-		set Major=%%a
-		set Minor=%%b
-		set Revision=%%c
-	)
-
-	set /a version_number=%Major%%Minor%%Revision%
-GOTO:EOF
-
 :get_flatdata_available
+
 	call::get_ddsgen_version
 
 	if %Major% GEQ %flatdata_ddsgen_version% (
@@ -919,6 +905,7 @@ GOTO:EOF
 goto:EOF
 
 :get_solution_name
+
 	call::get_ddsgen_version
 
 	if not x%architecture:INtime=%==x%architecture% (
@@ -981,6 +968,21 @@ goto:EOF
 		set solution_name_cs=%begin_sol_cs%csharp.sln
 	)
 	set cs_bin_path=bin\%cs_64%!RELEASE_DEBUG!-%end_sol%
+GOTO:EOF
+
+:get_ddsgen_version
+	for /F "delims=" %%i in ('"%NDDSHOME%\bin\rtiddsgen.bat" -version ^| findstr /R /C:rtiddsgen') do (
+		set version_line=%%i
+	)
+	set version_string=%version_line:~49,6%
+
+	for /F "tokens=1,2,3 delims=." %%a in ("%version_string%") do (
+		set Major=%%a
+		set Minor=%%b
+		set Revision=%%c
+	)
+
+	set /a version_number=%Major%%Minor%%Revision%
 GOTO:EOF
 
 :help
