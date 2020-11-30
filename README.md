@@ -11,6 +11,8 @@
     <br />
     <a href="https://community.rti.com/static/documentation/perftest/current/index.html"><strong>Explore the documentation »</strong></a>
     <br />
+    <a href="https://github.com/rticommunity/rtiperftest/releases">Binaries</a>
+    ·
     <a href="https://community.rti.com/static/documentation/perftest/current/download.html#download-instructions">Download</a>
     ·
     <a href="https://community.rti.com/static/documentation/perftest/current/compilation.html">Compile</a>
