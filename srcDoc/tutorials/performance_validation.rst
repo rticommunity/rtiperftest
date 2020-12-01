@@ -21,7 +21,7 @@ information about the environment:
 Prepare the tools
 ~~~~~~~~~~~~~~~~~
 
-To run this test, we will need *RTI Perftest 3.0* (Perftest). We will compile it against
+To run this test, we will need *RTI Perftest 3.1* (Perftest). We will compile it against
 *RTI Connext DDS Professional 6.0.0* and *RTI Connext DDS Micro 3.0.0*.
 
 Get Perftest
