@@ -3,7 +3,7 @@
 Compatibility
 =============
 
-*RTI Perftest Master* is designed to be compatible with the *RTI Connext DDS*
+*RTI Perftest 3.1* is designed to be compatible with the *RTI Connext DDS*
 middleware. It has been compiled and tested against:
 
 - *RTI Connext DDS Professional* 6.0.0 and above. Nonetheless previous versions
@@ -28,6 +28,22 @@ repository:
 ::
 
     git checkout release/2.0 -- resource/secure
+
+*RTI Connext DDS 6.0.1 Security Plugins* changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to add compatibility for *RTI Connext DDS 6.0.1* including the
+*Security Plugins* on Windows, a change that breaks compatibility was made:
+
+When building a Windows application, *RTI Perftest* must now link against
+``libssl`` and ``libcrypto`` instead of ``ssleay32`` and ``libeay32``, as documented
+`here <https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/migration_guide/601/product601/security601.html>`__.
+
+This breaks compatibility against previous versions of *RTI Connext DDS*. In order
+to compile against previous versions a manual change has to be made in the `build.bat`
+script:
+
+Search and replace all references for ``crypt32 libcryptoz libsslz`` with ``libeay32z ssleay32z``.
 
 Compilation Restrictions
 ~~~~~~~~~~~~~~~~~~~~~~~~

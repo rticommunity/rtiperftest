@@ -21,7 +21,7 @@ information about the environment:
 Prepare the tools
 ~~~~~~~~~~~~~~~~~
 
-To run this test, we will need *RTI Perftest 3.0* (Perftest). We will compile it against
+To run this test, we will need *RTI Perftest 3.1* (Perftest). We will compile it against
 *RTI Connext DDS Professional 6.0.0* and *RTI Connext DDS Micro 3.0.0*.
 
 Get Perftest
@@ -36,11 +36,11 @@ There are three ways you can access *RTI Perftest*:
 
     .. code::
 
-        git clone -b release/3.0 https://github.com/rticommunity/rtiperftest.git
+        git clone -b release/3.1 https://github.com/rticommunity/rtiperftest.git
 
    This command will download the Github repository in a folder named
    ``rtiperftest`` and move to the ``release/3.0`` branch.
-   If you don't include the ``-b release/3.0``, you will clone the ``master`` branch
+   If you don't include the ``-b release/3.1``, you will clone the ``master`` branch
    of the product.
 
 -  You can download a `zip` file containing the *RTI Perftest* source files for the 3.0 release from
