@@ -139,6 +139,7 @@ protected:
     bool                         _isLargeData;
     unsigned long long           _maxSynchronousSize;
     bool                         _isFlatData;
+    bool                         _isNetworkCapture;
     bool                         _isZeroCopy;
     PerftestTransport            _transport;
   #ifdef RTI_SECURE_PERFTEST

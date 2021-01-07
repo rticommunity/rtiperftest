@@ -370,6 +370,16 @@ void ParameterManager::initialize()
     #endif
   #endif
 
+    Parameter<bool> *networkCapture = new Parameter<bool>(false);
+    networkCapture->set_command_line_argument("-networkCapture", "");
+    networkCapture->set_description(
+            "Enable network capture during the test");
+    networkCapture->set_type(T_BOOL);
+    networkCapture->set_extra_argument(NO);
+    networkCapture->set_group(GENERAL);
+    networkCapture->set_supported_middleware(Middleware::ALL);
+    create("networkCapture", networkCapture);
+
   Parameter<bool> *preallocateFragmentation = new Parameter<bool>(false);
     preallocateFragmentation->set_command_line_argument("-preallocateFragmentedSamples", "");
     preallocateFragmentation->set_description(

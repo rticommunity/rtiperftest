@@ -96,6 +96,7 @@ RTIDDSImpl<T>::RTIDDSImpl()
     _maxSynchronousSize = MESSAGE_SIZE_MAX_NOT_SET;
     _isFlatData = false;
     _isZeroCopy = false;
+    _isNetworkCapture = false;
     _factory = NULL;
     _participant = NULL;
     _subscriber = NULL;
@@ -131,6 +132,11 @@ void RTIDDSImpl<T>::shutdown()
 
     if (_participant != NULL) {
         PerftestClock::milliSleep(2000);
+
+        if (_isNetworkCapture
+                && !NDDSUtilityNetworkCapture::stop(_participant)) {
+            fprintf(stderr, "Unexpected error stopping network capture");
+        }
 
         if (_reader != NULL) {
             DDSDataReaderListener* reader_listener = _reader->get_listener();
@@ -220,6 +226,11 @@ void RTIDDSImpl<T>::shutdown()
             // Delete semaphore since no one else is going to need it
             PerftestMutex_delete(_finalizeFactoryMutex);
             _finalizeFactoryMutex = NULL;
+
+            // Disable network capture if it was enabled at the beginning
+            if (_isNetworkCapture && !NDDSUtilityNetworkCapture::disable()) {
+                fprintf(stderr, "Unexpected error disabling network capture");
+            }
             return;
         }
     } else {
@@ -2574,6 +2585,16 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     DDS_DomainParticipantFactoryQos factory_qos;
     DDS_PublisherQos publisherQoS;
 
+    // Enable network capture if flag is set by the cli (so far, only pro)
+  #ifdef PERFTEST_RTI_PRO
+    _isNetworkCapture = _PM->get<bool>("networkCapture");
+  #endif
+
+    if (_isNetworkCapture && !NDDSUtilityNetworkCapture::enable()) {
+        fprintf(stderr, "Unexpected error enabling network capture");
+        return;
+    }
+
     DomainListener *listener = new DomainListener();
 
     /* Mask for _threadPriorities when it's used */
@@ -2617,6 +2638,12 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
             DDS_INCONSISTENT_TOPIC_STATUS |
             DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
             DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
+
+    if (_isNetworkCapture
+            && !NDDSUtilityNetworkCapture::start(_participant, "rtiperftest")) {
+        fprintf(stderr, "Unexpected error starting network capture");
+        return -1;
+    }
 
   #ifdef PERFTEST_RTI_PRO
     if (_participant == NULL || _loggerDevice.checkShmemErrors()) {
