@@ -130,13 +130,13 @@ void RTIDDSImpl<T>::shutdown()
         return;
     }
 
+    if (_isNetworkCapture
+            && !NDDSUtilityNetworkCapture::stop(_participant)) {
+        fprintf(stderr, "Unexpected error stopping network capture");
+    }
+
     if (_participant != NULL) {
         PerftestClock::milliSleep(2000);
-
-        if (_isNetworkCapture
-                && !NDDSUtilityNetworkCapture::stop(_participant)) {
-            fprintf(stderr, "Unexpected error stopping network capture");
-        }
 
         if (_reader != NULL) {
             DDSDataReaderListener* reader_listener = _reader->get_listener();
@@ -2590,9 +2590,15 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     _isNetworkCapture = _PM->get<bool>("networkCapture");
   #endif
 
-    if (_isNetworkCapture && !NDDSUtilityNetworkCapture::enable()) {
-        fprintf(stderr, "Unexpected error enabling network capture");
-        return false;
+    if (_isNetworkCapture) {
+        if (!NDDSUtilityNetworkCapture::enable()) {
+            fprintf(stderr, "Unexpected error enabling network capture");
+            return false;
+        }
+        if (!NDDSUtilityNetworkCapture::start("rtiperftest")) {
+            fprintf(stderr, "Unexpected error starting network capture");
+            return false;
+        }
     }
 
     DomainListener *listener = new DomainListener();
@@ -2638,12 +2644,6 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
             DDS_INCONSISTENT_TOPIC_STATUS |
             DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
             DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
-
-    if (_isNetworkCapture
-            && !NDDSUtilityNetworkCapture::start(_participant, "rtiperftest")) {
-        fprintf(stderr, "Unexpected error starting network capture");
-        return false;
-    }
 
   #ifdef PERFTEST_RTI_PRO
     if (_participant == NULL || _loggerDevice.checkShmemErrors()) {
