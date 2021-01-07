@@ -98,6 +98,7 @@ function usage()
     echo "    --micro-24x-compatibility    Similar to --micro but ensuring compatibility  "
     echo "                                 with RTI Connext Micro 2.4.11 and above.       "
     echo "    --fastDDS                    Build for FastDDS (experimental)               "
+    echo "    --cycloneDDS                 Build for cycloneDDS (experimental)               "
     echo "    --platform <your_arch>       Platform for which build.sh is going to compile"
     echo "                                 RTI Perftest.                                  "
     echo "    --nddshome <path>            Path to the *RTI Connext DDS Professional      "

@@ -50,7 +50,7 @@ const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME = "nddssecurity";
  * Since std::to_string is not defined until c++11
  * we will define it here.
  */
-namespace std {
+namespace perftest {
     template<typename T>
     std::string to_string(const T &n) {
         std::ostringstream s;
@@ -460,11 +460,11 @@ std::string RTIDDSImpl<T>::print_configuration()
     // Large Data
     if (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize) {
         stringStream << "\n[IMPORTANT]: Enabling Asynchronous publishing: -datalen ("
-                     << std::to_string(_PM->get<unsigned long long>("dataLen"))
+                     << perftest::to_string(_PM->get<unsigned long long>("dataLen"))
                      << ") is \n"
                      << "             larger than the minimum message_size_max across\n"
                      << "             all enabled transports ("
-                     << std::to_string(_maxSynchronousSize)
+                     << perftest::to_string(_maxSynchronousSize)
                      << ")\n";
     }
 
@@ -2192,7 +2192,7 @@ std::string stringValueQoS(DDS_Long resourceLimitValue) {
     } else if (resourceLimitValue == -2) {
         return "Auto";
     } else {
-        return std::to_string(resourceLimitValue);
+        return perftest::to_string(resourceLimitValue);
     }
 }
 
@@ -2315,7 +2315,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::configure_writer_qos(
     #ifdef RTI_FLATDATA_AVAILABLE
     if (_isFlatData) {
         properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] =
-                std::to_string(dds::core::LENGTH_UNLIMITED);
+                perftest::to_string(dds::core::LENGTH_UNLIMITED);
 
         if (_isLargeData) {
             int max_allocable_space = MAX_PERFTEST_SAMPLE_SIZE;

@@ -58,14 +58,14 @@ const std::string GetMiddlewareVersionString()
     DDS_ProductVersion_t version =
             NDDSConfigVersion::get_instance().get_product_version();
     return "RTI Connext DDS "
-        + std::to_string((int) version.major) + "."
-        + std::to_string((int) version.minor) + "."
-        + std::to_string((int) version.release);
+        + perftest::to_string((int) version.major) + "."
+        + perftest::to_string((int) version.minor) + "."
+        + perftest::to_string((int) version.release);
   #else // defined(PERFTEST_RTI_MICRO)
     return "RTI Connext DDS Micro "
-        + std::to_string((int) RTIME_DDS_VERSION_MAJOR) + "."
-        + std::to_string((int) RTIME_DDS_VERSION_MINOR) + "."
-        + std::to_string((int) RTIME_DDS_VERSION_RELEASE);
+        + perftest::to_string((int) RTIME_DDS_VERSION_MAJOR) + "."
+        + perftest::to_string((int) RTIME_DDS_VERSION_MINOR) + "."
+        + perftest::to_string((int) RTIME_DDS_VERSION_RELEASE);
   #endif
 }
 
@@ -567,11 +567,11 @@ std::string RTIDDSImpl<T>::print_configuration()
     // Large Data
     if (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize) {
         stringStream << "\n[IMPORTANT]: Enabling Asynchronous publishing: -datalen ("
-                     << std::to_string(_PM->get<unsigned long long>("dataLen"))
+                     << perftest::to_string(_PM->get<unsigned long long>("dataLen"))
                      << ") is \n"
                      << "             larger than the minimum message_size_max across\n"
                      << "             all enabled transports ("
-                     << std::to_string(_maxSynchronousSize)
+                     << perftest::to_string(_maxSynchronousSize)
                      << ")\n";
     }
 
@@ -3061,7 +3061,7 @@ std::string stringValueQoS(DDS_Long resourceLimitValue) {
     } else if (resourceLimitValue == -2) {
         return "Auto";
     } else {
-        return std::to_string(resourceLimitValue);
+        return perftest::to_string(resourceLimitValue);
     }
 }
 
@@ -3460,6 +3460,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
                         dw_qos.protocol.rtps_reliable_writer.max_send_window_size)
                     << "\n";
 
+      #ifdef RTI_FLATDATA_AVAILABLE
         // writer_loaned_sample_allocation
         if (_isFlatData) {
             stringStream << "\twriter_loaned_sample_allocation (initial_count/max_count): "
@@ -3475,6 +3476,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
                             _isFlatData ? DDS_LENGTH_UNLIMITED : _PM->get<int>("unbounded"))
                         << "\n";
         }
+      #endif
 
         // Heartbeats per max samples
         stringStream << "\tHeartbeats per max samples: "

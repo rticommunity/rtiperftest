@@ -83,17 +83,17 @@ In this case, add the *OpenSSL* libraries in
    ``$DYLD_LIBRARY_PATH``
 -  On Windows systems, add ``%OPENSSLHOME$/<debug or release>/bin`` to
    ``%PATH%``
-   
+
 When using *RTI Perftest* in *VxWorks* kernel mode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After compiling for *VxWorks* (see `Compilation <https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/compilation.rst>`__), 
+After compiling for *VxWorks* (see Compilation :ref:`section-compilation`),
 the shared object needs to be loaded in the kernel, by doing:
 
 ``ld 1 < bin/<architecture>/release/perftest_cpp.so``
 
-Now, the code can be executed by calling the ``perftest_main_cpp`` function 
-with a string as an argument containing all the `command-line parameters <https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/command_line_parameters.rst>`__.
+Now, the code can be executed by calling the ``perftest_main_cpp`` function
+with a string as an argument containing all the command-line parameters :ref:`section-command_line_parameters`.
 For example
 
 ``perftest_cpp_main "-pub -domain 0 -latencyCount 1 -dataLen 1000 -latencyTest -multicast"``

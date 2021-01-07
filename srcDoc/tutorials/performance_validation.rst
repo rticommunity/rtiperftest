@@ -1,13 +1,13 @@
 Characterize the performance of Connext DDS in a given environment using RTI Perftest
 =====================================================================================
 
-This tutorial is meant to be a quick guide about the initial steps we recommend to follow to profile and
-characterize the performance between 2 machines in a given environment. This means understanding the maximum
-throughput that **RTI Connext DDS** can maintain in a 1 to 1 communication, as well as the average latency we
+This tutorial is meant to be a quick guide about the initial steps we recommend to profile and
+characterize the performance between two machines in a given environment. This means understanding the maximum
+throughput that *RTI Connext DDS* can maintain in a 1-to-1 communication, as well as the average latency we
 can expect when sending samples.
 
-For this guide we will use a couple Raspberry Pi boards, connected to a switch. See below the
-information about the environment
+For this guide we will use two Raspberry Pi boards, connected to a switch. See below the
+information about the environment:
 
    | Target machines: 2 x **Raspberry Pi 2 Model B**
    |                  OS: Raspbian GNU/Linux
@@ -21,56 +21,56 @@ information about the environment
 Prepare the tools
 ~~~~~~~~~~~~~~~~~
 
-To run this test we will need **RTI Perftest 3.0** (Perftest). We will compile it against **RTI Connext DDS
-Professional 6.0.0** and **RTI Connext DDS Micro 3.0.0**.
+To run this test, we will need *RTI Perftest 3.1* (Perftest). We will compile it against
+*RTI Connext DDS Professional 6.0.0* and *RTI Connext DDS Micro 3.0.0*.
 
 Get Perftest
 ^^^^^^^^^^^^
 
-Getting the tool is fairly easy, in fact, you have 3 different ways in which you can access to it:
+There are three ways you can access *RTI Perftest*:
 
 -  You can clone it from the official *Github* repository:
 
-   Go to the `release page <https://github.com/rticommunity/rtiperftest/releases>`_ for **Perftest** and
-   check what is the latest release, then clone that release using `git`. At this point the latest release is 3.0:
+   Go to the `release page <https://github.com/rticommunity/rtiperftest/releases>`_ for *RTI Perftest* and
+   check what is the latest release, then clone that release using `git`. Currently, the latest release is 3.0:
 
     .. code::
 
-        git clone -b release/3.0 https://github.com/rticommunity/rtiperftest.git
+        git clone -b release/3.1 https://github.com/rticommunity/rtiperftest.git
 
-   This command will download the *Github* repository in a folder named
+   This command will download the Github repository in a folder named
    ``rtiperftest`` and move to the ``release/3.0`` branch.
-   If you don't include the ``-b release/3.0``, you will clone the ``master`` branch
+   If you don't include the ``-b release/3.1``, you will clone the ``master`` branch
    of the product.
 
--  You can download a `zip` file containing the **Perftest** source files for the 3.0 release from
-   the **Github** page:
+-  You can download a `zip` file containing the *RTI Perftest* source files for the 3.0 release from
+   the Github page:
    `github.com/rticommunity/rtiperftest <https://github.com/rticommunity/rtiperftest>`__.
-   Once the zip file is downloaded you will need to extract its content,
+   Once the zip file is downloaded, you will need to extract its content;
    this will create a folder named ``rtiperftest``.
 
--  You can download a `zip/tar.gz` file containing the **Perftest** executable statically
-   compiled for some of the most common platforms from the **Github** release page:
-   `https://github.com/rticommunity/rtiperftest/releases <https://github.com/rticommunity/rtiperftest/releases>`__
+-  You can download a `zip/tar.gz` file containing the *Perftest* executable statically
+   compiled for some of the most common platforms from the Github release page:
+   `https://github.com/rticommunity/rtiperftest/releases <https://github.com/rticommunity/rtiperftest/releases>`__,
    in the "Binaries" section. Once the zip file is downloaded you will need to extract its content, this will
    create a folder with the binaries for your architecture.
 
 All this information is covered in the `download <https://github.com/rticommunity/rtiperftest/blob/release/3.0/srcDoc/download.rst>`__
-section of the **Perftest** documentation.
+section.
 
-Compile against RTI Connext DDS Professional 6.0.0
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Compile against Connext DDS Professional 6.0.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you already got the compiled binaries, you can skip this step. Else, you will need to compile the
+If you already downloaded the compiled binaries, you can skip this step. Otherwise, you will need to compile the
 binaries. This process is covered in the `compilation <https://github.com/rticommunity/rtiperftest/blob/release/3.0/srcDoc/compilation.rst>`__
-section of the **Perftest** documentation, so we will just summarize.
+section. In summary:
 
-We want to build **Perftest** for the *Raspberry Pi* target libraries, this architecture is `armv6vfphLinux3.xgcc4.7.2`, even
-though you should be able to compile everything in a raspberry pi, we are going to cross-compile this architecture.
-This process should be really simple with *Perftest*, since we will just need
-to have in the `$PATH` environment variable the path to the compiler and linker for the given architecture.
+For the Raspberry Pi target libraries, the architecture for which we want to build *RTI Perftest* is `armv6vfphLinux3.xgcc4.7.2`. 
+Although you should be able to compile everything in a Raspberry Pi, we are going to cross-compile this architecture.
+This process should be simple with *RTI Perftest*, since we just need
+to set in the `$PATH` environment variable the path to the compiler and linker for the given architecture. 
 
-Therefore the command we will need to execute should look like this:
+The command we will need to execute should look like this:
 
     .. code::
 
@@ -78,50 +78,50 @@ Therefore the command we will need to execute should look like this:
         ./build.sh --platform armv6vfphLinux3.xgcc4.7.2 --nddshome <Path to your nddshome> --cpp-build
 
 Alternatively, you can just point to the compiler and linker using the ``--compiler`` and ``--linker``
-command line options. As you can see we also specified the ``--cpp-build`` option,
-this is because we are going to use only the C++ executable to test with.
+command-line options. As you can see, we also specified the ``--cpp-build`` option,
+because we are going to use only the C++ executable to test with.
 
-After executing this, you should have a statically linked binary in `./bin/armv6vfphLinux3.xgcc4.7.2/release`,
-this is all you should need for your testing.
+After executing this command, you should have a statically linked binary in `./bin/armv6vfphLinux3.xgcc4.7.2/release`.
+This is all you should need for your testing.
 
-Compile against RTI Connext DDS Micro 3.0.0
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Compile against Connext DDS Micro 3.0.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This process should be equivalent to the one described in the previous step, and it is also covered
 in the `compilation <https://github.com/rticommunity/rtiperftest/blob/release/3.0/srcDoc/compilation.rst>`__
-section of the **Perftest** documentation.
+section of the *RTI Perftest* documentation.
 
-**Note:** Although you will need to call the build script two times for compiling for **RTI Connext DDS Proffesional**
-and **Micro**, you don't need to use two different directories, since the executables will be stored
-with different names. It is also worth mentioning that cross-testing (Using a **Perftest** Publisher from **Professional**
-and a Subscriber from **Micro** or viceversa) is supported.
+**Note:** Although you will need to call the build script two times for compiling for *Connext DDS Professional*
+and *Connext DDS Micro*, you don't need to use two different directories, since the executables will be stored
+with different names. It is also worth mentioning that cross-testing (using a *RTI Perftest* Publisher from *Connext DDS Professional*
+and a Subscriber from *Connext DDS Micro* or vice-versa) is supported.
 
-Therefore the command we will need to execute should look like this:
+Therefore, the command we will need to execute should look like this:
 
     .. code::
 
         export PATH=<Path to the compiler and linker for armv6vfphLinux3.xgcc4.7.2>:$PATH
         ./build.sh --micro --platform armv6vfphLinux3.xgcc4.7.2 --rtimehome <Path to your rtimehome>
 
-After executing this, you should have a statically linked binary in ``./bin/armv6vfphLinux3.xgcc4.7.2/release``,
-this is all you should need for your testing.
+After executing this command, you should have a statically linked binary in ``./bin/armv6vfphLinux3.xgcc4.7.2/release``.
+This is all you should need for your testing.
 
 Tests
 ~~~~~
 
-Our goal is to characterize how *Connext DDS* behaves in the communication between 2 *Raspberry Pi* nodes connected
+Our goal is to characterize how *Connext DDS* behaves in the communication between two Raspberry Pi nodes connected
 to one switch and compare it with the performance of sending samples with UDPv4 sockets.
 The first thing we will need to know is what is the *minimum latency* and *maximum throughput*
-achievable in that environment with UDPv4 sockets. Luckily this is something that we can get with **Perftest**:
-By using the ``-rawTransport`` option, we skip the use of *RTPS** and **DDS** and we just send using UDPv4 sockets.
+achievable in that environment with UDPv4 sockets. Luckily this is something that we can get with *RTI Perftest*:
+By using the ``-rawTransport`` option, we skip the use of RTPS and DDS and we just send using UDPv4 sockets.
 
 We will be doing a *Latency Test* and a *Throughput Test* (See
 `this <https://github.com/rticommunity/rtiperftest/blob/release/3.0/srcDoc/introduction.rst#latency-test-vs-throughput-test>`__ section to understand the
 differences).
 
-Once that is done, we will have a baseline which is going to tell us the minimum latency we can expect
+Once that is done, we will have a baseline, which is going to tell us the minimum latency we can expect
 and the maximum throughput achievable in the system when not using *RTPS* and *DDS*. The next step
-is then to execute **Perftest** using *DDS* with **Professional** and **Micro** and see the equivalents results.
+is to execute *RTI Perftest* using DDS with *Connext DDS Professional* and *Connext DDS Micro* and see the equivalent results.
 
 UDPv4 Communication (Raw Transport)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -132,10 +132,10 @@ Throughput Test
 The maximum throughput of this scenario will be limited by several factors: If the size of the samples we
 are sending is small, the CPU consumption will be high, since it will need to iterate through the process
 of sending the samples to the NIC quite often. If the size of the sample is big enough, then the problem
-is the physical limitations of the network itself, how fast the nics and the switch are.
+is the physical limitations of the network itself, how fast the NICs and the switch are.
 
-In our specific case, the switch is a 1Gbps switch which should not be the cap, since the *Raspberry Pi* nics
-we are using have 100Mbps NICs. Then, 100Mbps is our maximum theoretical throughput.
+In our case, the switch is a 1Gbps switch, which should not be the cap, since the Raspberry Pi 
+we are using has 100Mbps NICs. Therefore, 100Mbps is our maximum theoretical throughput.
 
 Given all this information, the right way to perform the test is by iterating through different data sizes. We
 will use the following commands:
@@ -158,19 +158,19 @@ will use the following commands:
 
 Some comments about the parameters we used:
 
-* In `Raw Transport Mode` the `-scan` option is not available, that is why we need to iterate through
+* In `Raw Transport Mode` the `-scan` option is not available. That is why we need to iterate through
   the different data sizes using a for loop (in `bash`).
 
-* In `Raw Transport Mode` we do not have a discovery mechanism, as we do have when
-  Using **RTI Connext DDS**, therefore, it is required to use the `-peer` parameter.
+* In `Raw Transport Mode` we do not have a discovery mechanism, as we have when
+  using *Connext DDS*. Therefore, it is required to use the `-peer` parameter.
 
-* In throughput mode, by default, **Perftest** uses "batching", as this feature is not
+* In throughput mode, by default, *RTI Perftest* uses "batching." Since batching is not
   native to sending using sockets, we have implemented it at the application level
-  in the **Perftest** application. Therefore, in order to compare the raw transport behavior,
-  we want to disable it for this test, that can be done simply by using `-batchSize 0`.
+  in the *RTI Perftest* application. Therefore, in order to compare the raw transport behavior,
+  we want to disable it for this test, which can be done simply by using `-batchSize 0`.
 
 See below the output results of executing this test. The information displayed here is
-only what the subscriber side showed, since all the information displayed in the publisher
+only what the Subscriber side showed, since all the information displayed on the Publisher
 side is related to latency, not throughput.
 
 Throughput Results-- RAW Transport (UDPv4)
@@ -198,9 +198,9 @@ Latency Test
 ------------
 
 Now we want to measure the minimum latency we can expect in the system when the network
-is not saturated, this can be done again with **Perftest**, doing a "Latency Test". In order
-to do that, you only need to add `-latencyTest` to the previous command line parameters of the
-publisher side.
+is not saturated. This can be done again with *RTI Perftest*, using a "Latency Test". In order
+to do that, you only need to add `-latencyTest` to the previous command-line parameters on the
+Publisher side.
 
 * **Publisher side**
 
@@ -219,8 +219,8 @@ publisher side.
         done
 
 Remember that in this case we are interested in the latency results, not in the
-throughput results (we are doing a ping-pong test, so we cannot expect high throguhput),
-therefore we need to look to the results displayed in the publisher side.
+throughput results (we are doing a ping-pong test, so we cannot expect high throughput).
+Therefore, we need to look at the results displayed on the Publisher side.
 
 Latency Results -- RAW Transport (UDPv4)
 ::::::::::::::::::::::::::::::::::::::::
@@ -243,16 +243,16 @@ Latency Results -- RAW Transport (UDPv4)
         32768,3693,223.2,3477,8656,3696,3768,4046,8656,8656
         63000,6601,212.9,6424,10706,6595,6752,7002,10706,10706
 
-RTI Connext DDS Professional (UDPv4)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Connext DDS Professional (UDPv4)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Throughput Test
 ---------------
 
-The idea is the same as we did in the previous test, get the maximum throughput we can
-achieve, but this time we will use our middleware to test with (**RTI Connext DDS Professional 6.0.0**)
+The idea is the same as we did in the Latency Test: get the maximum throughput we can
+achieve, but this time we will use our middleware to test with (*Connext DDS Professional* 6.0.0)
 
-Then, the command line parameters are going to be quite similar:
+The command-line parameters are going to be quite similar:
 
 * **Publisher side**
 
@@ -267,13 +267,13 @@ Then, the command line parameters are going to be quite similar:
         bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -nic eth0 -noPrint;
 
 Notice that now we removed the `-raw` parameter, and that we do not need the *for loop* anymore, since
-**Perftest** for **Connext DDS** support the use of the `-scan` parameter. Also notice that we are using
-`-batchSize 0`. We will also test later using batching. Lastly, we also removed the `-peer` parameter, the reason
-being that **Connext DDS** uses by default multicast for the discovery phase, so there is no need to specify
+*RTI Perftest* for *Connext DDS* supports the use of the `-scan` parameter. Also notice that we are using
+`-batchSize 0`. We will also test later using batching. Lastly, we also removed the `-peer` parameter, 
+because *Connext DDS* uses multicast by default for the discovery phase, so there is no need to specify
 where the counterpart application is.
 
-Since we are using **RTI Connext DDS**, **Perftest** will be choose some *QoS* settings. The best way
-to understand what is being used, is by looking at the initial summary **Perftest** shows:
+Since we are using *Connext DDS*, *RTI Perftest* will choose some *QoS* settings. The best way
+to understand what is being used is by looking at the initial summary that *RTI Perftest* shows:
 
     .. code::
 
@@ -308,8 +308,8 @@ to understand what is being used, is by looking at the initial summary **Perftes
 See below the output results of executing this test. Again, the information displayed here is
 only what the subscriber side showed.
 
-Throughput Results -- RTI Connext DDS Professional (UDPv4) -- No batching
-:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+Throughput Results -- Connext DDS Professional (UDPv4) -- No batching
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
     .. csv-table::
         :align: center
@@ -329,17 +329,16 @@ Throughput Results -- RTI Connext DDS Professional (UDPv4) -- No batching
         32768,10000,364,95.6,0,0.00
         63000,10000,190,96.0,0,0.00
 
-We will discuss the results later, but in **RTI Connext DDS Professional** we have a very
-interesting feature worth mentioning:
-`batching <https://community.rti.com/static/documentation/connext-dds/6.0.0/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/BATCH_Qos.htm#sending_2410472787_2558262>`__.
+We will discuss the results later, but in *Connext DDS Professional* we have a very
+interesting feature worth mentioning: *batching*.
 By using this feature we will be able to send more efficiently by sending several
-data samples as part of the same packet therefore improving our
-maximum throughput. The cost however will be the latency of the packets.
+data samples as part of the same packet, thereby improving our
+maximum throughput. The cost, however, will be the latency of the packets.
 
-The following results were taken by using **Perftest**'s default batching size: `8192` bytes:
+The following results were taken by using *RTI Perftest*'s default batching size: `8192` bytes:
 
-Throughput Results -- RTI Connext DDS Professional (UDPv4) -- Batching (8192 Bytes)
-:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+Throughput Results -- Connext DDS Professional (UDPv4) -- Batching (8192 Bytes)
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
     .. csv-table::
         :align: center
@@ -359,8 +358,8 @@ Throughput Results -- RTI Connext DDS Professional (UDPv4) -- Batching (8192 Byt
         32768,10000,364,95.6,0,0.00
         63000,10000,190,95.9,0,0.00
 
-You might see already how by using this feature, we can highly improve the thoughput
-achieved for small data samples. See the *Results* section for a deeper analysis.
+You might see already how by using batching, we can highly improve the throughput
+achieved for small data samples. See :ref:`section-perf_valid_results` for a deeper analysis.
 
 Latency Test
 ------------
@@ -380,7 +379,7 @@ the `-rawTransport` option:
 
         bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp -sub -nic eth0 -noPrint;
 
-The *QoS* picked by **Perftest** are the following ones:
+The *QoS* settings picked by *RTI Perftest* are the following:
 
     .. code::
 
@@ -413,8 +412,8 @@ The *QoS* picked by **Perftest** are the following ones:
 
 And these are the results (taken from the publisher side):
 
-Latency Results -- RTI Connext DDS Professional (UDPv4)
-:::::::::::::::::::::::::::::::::::::::::::::::::::::::
+Latency Results -- Connext DDS Professional (UDPv4)
+:::::::::::::::::::::::::::::::::::::::::::::::::::
 
     .. csv-table::
         :align: center
@@ -435,11 +434,11 @@ Latency Results -- RTI Connext DDS Professional (UDPv4)
         63000,7073,214.1,6772,9722,7041,7260,7694,9722,9722
 
 
-RTI Connext DDS Micro 3.0.0 (UDPv4)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Connext DDS Micro 3.0.0 (UDPv4)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We will now repeat the same tests we did for **RTI Connext DDS Professional** but for
-**Micro**.
+We will now repeat the same tests we did for *Connext DDS Professional* but for
+*Connext DDS Micro*.
 
 Throughput Test
 ---------------
@@ -456,10 +455,10 @@ Throughput Test
 
         bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -sub -nic eth0 -noPrint;
 
-Note that we don't use the `-batchSize` option, this is because this option is not yet available
-in **RTI Connext DDS Micro 3.0.0**.
+Note that we don't use the `-batchSize` option, because this option is not yet available
+in *Connext DDS Micro* 3.0.0.
 
-The initial summary **Perftest** shows is the following:
+The initial summary *RTI Perftest* shows is the following:
 
     .. code::
 
@@ -488,8 +487,8 @@ The initial summary **Perftest** shows is the following:
 See below the output results of executing this test. Again, the information displayed here is
 only what the subscriber side showed.
 
-Throughput Results -- RTI Connext DDS Micro (UDPv4)
-:::::::::::::::::::::::::::::::::::::::::::::::::::
+Throughput Results -- Connext DDS Micro (UDPv4)
+:::::::::::::::::::::::::::::::::::::::::::::::
 
     .. csv-table::
         :align: center
@@ -524,7 +523,7 @@ Latency Test
 
         bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -sub -nic eth0 -noPrint;
 
-The initial summary **Perftest** shows is the following:
+The initial summary *RTI Perftest* shows is the following:
 
     .. code::
 
@@ -549,10 +548,10 @@ The initial summary **Perftest** shows is the following:
             Nic: eth0
             Use Multicast: False
 
-And these are the results (taken from the publisher side):
+And these are the results (taken from the Publisher side):
 
-Latency Results -- RTI Connext DDS Micro (UDPv4)
-::::::::::::::::::::::::::::::::::::::::::::::::
+Latency Results -- Connext DDS Micro (UDPv4)
+::::::::::::::::::::::::::::::::::::::::::::
 
     .. csv-table::
         :align: center
@@ -573,6 +572,8 @@ Latency Results -- RTI Connext DDS Micro (UDPv4)
         63000,6909,176.8,6564,9529,6896,7102,7368,9529,9529
 
 
+.. _section-perf_valid_results:
+
 Understanding the Results
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -580,9 +581,9 @@ Lets go first with the throughput results and plot all the different tests toget
 
 .. image:: performance_validation_files/Throughput_lineal.svg
 
-The first thing we see is that at 5KB we are already close to saturate the
-network in all cases, which is something really good to see, but lets focus
-in the behavior for smaller samples. Lets plot the same results with a
+The first thing we see is that at 5KB we are already close to saturating the
+network in all cases, which is something really good to see, but let's focus
+on the behavior for smaller samples. Let's plot the same results with a
 logarithmic scale:
 
 .. image:: performance_validation_files/Throughput_log.svg
@@ -592,52 +593,51 @@ Now we can extract more information about the graphs:
 1. If we take out the test where we make use of *batching* we can see that using
    Raw Transport (plain sockets) gives us the best performance.
 
-2. **Connext DDS Pro** and **Connext DDS Micro** behave in a really similar way,
-   being the latter slighly better.
+2. *Connext DDS Professional* and *Connext DDS Micro* behave similarly,
+   with *Connext DDS Micro* performing slightly faster.
 
 3. The use of *batching* really makes a difference for small samples sizes.
 
-4. After 5kB we can consider that all the tests are able to reach more than a 95%
-   of the network utilization, which is the maximum bandwidth supported by the NICs.
+4. After 5KB, we see that all the tests are able to reach more than 95%
+   network utilization, which is the maximum bandwidth supported by the NICs.
 
-By what we state in 1, one might wonder why not using plain sockets for our communications,
-why having use a middleware for this. However, at this point is when we have to remember
+Given what we state in 1, you might wonder why aren't we using plain sockets for our communications,
+why do we use a middleware for this? Remember
 that when testing with *Plain Sockets*, we had nothing: We didn't have a discovery
-mechanism (we had to specify the peers by hand), we didn't have any reliability and samples
-would not get repaired when lost. In fact we didn't have any *QoS* setting at all.
+mechanism (we had to specify the peers by hand), we didn't have reliability, and samples
+would not get repaired when lost. In fact, we didn't have any QoS setting at all.
 
-by using **RTI Connext DDS** you are adding a discovery mechanism, a reliability mechanism,
-the option of tuning the *QoS* of the system, etc. Lastly, you have to remember what we
-stated in 4 and 3: The advantage of *Plain Sockets* is only noticeable when the data length
-is quite small, and even in those cases, by using certain features, **RTI Connext DDS** can
-keep up, or even improve the performance provided by *Raw Sockets*.
+By using *Connext DDS*, you are adding a discovery mechanism, a reliability mechanism,
+the option of tuning the QoS settings of the system, etc. Lastly, remember what we
+stated in 3 and 4: The advantage of *Plain Sockets* is only noticeable when the data length
+is quite small, and even in those cases, by using certain features, *Connext DDS* can
+keep up, or even improve, the performance provided by Raw Sockets.
 
-Another important topic is if we should choose **RTI Connext DDS Micro** instead of
-**Professional** based on the performance you want to achieve. Although it is correct that
-the former will achieve better performance for simple scenarios like this
-one, **Professional** offers more features than **Micro** (like *batching* or
-*Content-Filtered Topics*). On the other side, Micro is ideal to run in resource
-constrained devices where **Professional** may not fit.
+Another important point is if we choose *Connext DDS Micro* instead of
+*Connext DDS Professional* based on the performance you want to achieve. Although *Connext DDS Micro*  
+will achieve better performance for simple scenarios like the
+one given in this tutorial, *Connext DDS Professional* offers more features than *Connext DDS Micro* (like batching or
+*ContentFilteredTopics*). On the other hand, *Connext DDS Micro* is ideal for running in resource-constrained devices where *Connext DDS Professional* may not fit.
 
-Let's continue now by plotting the latency results (we will plot the lineal and logarithmic
+Let's continue now by plotting the latency results (we will plot the linear and logarithmic
 scale graphs):
 
 .. image:: performance_validation_files/Latency_lineal.svg
 
 .. image:: performance_validation_files/Latency_log.svg
 
-As we saw with the throughput test, **RTI Connext DDS Professional** and **Micro**
-have pretty similar performance results, being the latter slightly better (mainly
+As we saw with the throughput test, *Connext DDS Professional* and *Connext DDS Micro*
+have pretty similar performance results, the latter being slightly better (mainly
 because the code complexity is smaller).
 
-It is also interesting to notice that the difference in terms of microseconds
-between *Raw Sockets* and **RTI Connext DDS Professional** and **Micro** remains
-constant across the different data sizes. The reason behind that is that the
+It is also interesting to note that the difference in terms of microseconds
+between Raw Sockets, *Connext DDS Professional*, and *Connext DDS Micro* remains
+constant across the different data sizes. The reason is that the
 difference in time is due to the extra logic we use to send and receive (send and
-receive queues, etc), however, that extra logic is independent on the data size.
+receive queues, etc.); however, that extra logic is independent of the data size.
 
-Based on these test we learned useful information about the use of **RTI Connext DDS**
+Based on these tests, we learned useful information about the use of *Connext DDS*
 in this environment: We know now the maximum throughput that the system can accept,
 so we can design our system to never cross that line. We also got the minimum latency
 we can expect to have, which is going to help us determine if the system will be able
-to meet the deadlines of the different data-flows.
+to meet the deadlines of the different data flows.

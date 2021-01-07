@@ -5,20 +5,7 @@
 
 #ifdef PERFTEST_RTI_MICRO
 
-#include "Infrastructure_micro.h"
-
-/*
- * Since std::to_string is not defined until c++11
- * we will define it here.
- */
-namespace std {
-    template<typename T>
-    std::string to_string(const T &n) {
-        std::ostringstream s;
-        s << n;
-        return s.str();
-    }
-}
+#include "Infrastructure_common.h"
 
 /********************************************************************/
 /* Perftest Clock class */
@@ -188,12 +175,21 @@ bool configureUDPv4Transport(
 
     /* Configure UDP transport's allowed interfaces */
     if (!registry->unregister(NETIO_DEFAULT_UDP_NAME, NULL, NULL)) {
-        printf("Micro: Failed to unregister udp\n");
+        fprintf(stderr, "[Error] Micro failed to unregister udp\n");
         return false;
     }
 
     /* use only interface supplied by command line? */
     if (!_PM->get<std::string>("allowInterfaces").empty()) {
+
+        if (is_ip_address(_PM->get<std::string>("allowInterfaces"))) {
+            fprintf(stderr,
+                    "[Error]: Micro does not support providing the allowed interfaces\n"
+                    "(-nic/-allowInterfaces) as an ip, provide the nic name instead\n"
+                    "(value provided: %s)\n",
+                    _PM->get<std::string>("allowInterfaces").c_str());
+            return false;
+        }
         udp_property->allow_interface.maximum(1);
         udp_property->allow_interface.length(1);
         *udp_property->allow_interface.get_reference(0) =
@@ -504,7 +500,7 @@ bool PerftestConfigureSecurity(
     if (_PM->is_set("secureDebug")) {
         if (!qos.property.value.assert_property(
                     "logging.log_level",
-                    std::to_string(_PM->get<int>("secureDebug")).c_str(),
+                    perftest::to_string(_PM->get<int>("secureDebug")).c_str(),
                     false))
         {
             printf("Failed to add property "

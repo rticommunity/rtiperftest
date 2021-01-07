@@ -76,35 +76,42 @@ static const char *const ANNOUNCEMENT_TOPIC_NAME = "Announcement";
 #define PERFTEST_SEMAPHORE_COUNT 1
 #define PERFTEST_SEMAPHORE_TIMEOUT_INFINITE -1
 
-class PerftestSemaphore
-{
+class PerftestSemaphore {
+
 private:
     unsigned int count;
     std::mutex mutex;
     std::condition_variable condition;
 
 public:
-    inline PerftestSemaphore(unsigned int count) : count(count)
+    explicit PerftestSemaphore(unsigned int count) : count(count)
     {
     }
 
-    inline bool take()
+    bool take()
     {
-        std::unique_lock<std::mutex> lock(mutex);
-        // This is true if the managed mutex object was locked (or adopted)
-        // by the unique_lock object, and hasn't been unlocked or released
-        // since. In all other cases, it is false.
-        condition.wait(lock, [&]() -> bool { return count > 0; });
-        --count;
-        return (bool) lock;
+        try {
+            std::unique_lock<std::mutex> lock(mutex);
+            condition.wait(lock, [&]() -> bool { return count > 0; });
+            --count;
+            return true;
+        } catch (std::exception& e) {
+            std::cerr << "[Exception]: "<<  e.what() << std::endl;
+            return false;
+        }
     }
 
-    inline bool give()
+    bool give()
     {
-        std::unique_lock<std::mutex> lock(mutex);
-        ++count;
-        condition.notify_one();
-        return (bool) lock;
+        try {
+            std::unique_lock<std::mutex> lock(mutex);
+            ++count;
+            condition.notify_one();
+            return true;
+        } catch (std::exception& e) {
+            std::cerr << "[Exception]: " << e.what() << std::endl;
+            return false;
+        }
     }
 };
 
@@ -133,15 +140,9 @@ bool PerftestMutex_take(std::mutex *mutex);
 
 class PerftestClock {
 private:
-    struct timespec timeStruct;
+    timespec timeStruct;
 
 public:
-    PerftestClock()
-    {};
-
-    ~PerftestClock()
-    {};
-
     static PerftestClock &getInstance();
     unsigned long long getTime();
     static void milliSleep(unsigned int millisec);
@@ -226,7 +227,7 @@ class PerftestFileHandler
  * Since std::to_string is not defined until c++11
  * we will define it here.
  */
-namespace std {
+namespace perftest {
     template<typename T>
     std::string to_string(const T &n) {
         std::ostringstream s;
@@ -234,5 +235,7 @@ namespace std {
         return s.str();
     }
 }
+
+bool is_ip_address(std::string ip_string);
 
 #endif /* INFRASTRUCTURE_COMMON_H_ */

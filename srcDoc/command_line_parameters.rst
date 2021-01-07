@@ -67,7 +67,7 @@ Test Parameters for Publishing and Subscribing Applications
    wire protocol is added, it doesn't overflow the UDP maximum datagram
    size of 64KB.
 
-   If ``<bytes>`` is bigger than 64969, *RTI Perftest* will enable the
+   If ``<bytes>`` is bigger than 64900, *RTI Perftest* will enable the
    use of *Asynchronous Publishing* and *Unbounded Sequences*. When using
    *RTI Connext DDS Micro*, the type is not really unbounded; the size is
    given by the ``MICRO_UNBOUNDED_SEQUENCE_SIZE`` constant, which can be
@@ -355,7 +355,7 @@ Test Parameters for Publishing and Subscribing Applications
    Specify the name of the flow controller that will be used by the
    DataWriters. This will only have effect if the DataWriter uses
    Asynchronous Publishing either because it is using samples greater
-   than maximum synchronous size in Bytes or because the ``-asynchronous``
+   than the maximum synchronous size in bytes or because the ``-asynchronous``
    option is present.
 
    There are several flow controllers predefined:
@@ -428,14 +428,14 @@ Test Parameters for Publishing and Subscribing Applications
    Enable extra messages showing the reader/writer queue sample count and
    sample count peak.
 
-   In the publisher side also shows the *Pulled Sample Count* of the Writer.
+   The Publisher side also shows the writer's *Pulled Sample Count*.
 
    The frequency of these log messages will be determined by the
-   ``-latencyCount`` in the Publisher side, since the message is only shown
-   after a *latency ping*. In the subscriber side it will be shown after once
+   ``-latencyCount`` on the Publisher side, since the message is only shown
+   after a *latency ping*. On the Subscriber side, the message will be shown once
    every second.
 
-   This option is just available for the *C++ Traditional* API implementation.
+   This option is available only for the Traditional C++ API implementation.
 
    **Default:** ``Not enabled``
 
@@ -443,7 +443,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    Show the resource limits for all different readers and writers.
 
-   This option is just available for the *Traditional and Modern C++*
+   This option is available only for the Traditional and Modern C++
    API implementations.
 
    **Default:** ``Not enabled``
@@ -491,7 +491,7 @@ by using the transport-spececific command-line parameters.
 
   Restrict *RTI Connext DDS* to sending output through this interface.
   The value should be the IP address assigned to any of the available network
-  interfaces on the machine. On Windows systems use instead the name of the
+  interfaces on the machine. On Windows systems, use instead the name of the
   interface. This command-line parameter is mapped to the **allow_interfaces_list**
   property in *RTI Connext DDS*.
 
@@ -767,9 +767,9 @@ Test Parameters Only For Publishing Applications
 -  ``-scan <size1>:<size2>:...:<sizeN>``
 
    Run test in scan mode. The list of sizes is optional and can be either in the
-   [32,64969] range or the [64970,2147482620] range (Large Data cannot be tested
+   [32,64900] range or the [64970,2147482620] range (Large Data cannot be tested
    in the same scan test as small data sizes). Default values to test with are
-   '32:64:128:256:512:1024:2048:4096:8192:16384:32768:64969'
+   '32:64:128:256:512:1024:2048:4096:8192:16384:32768:64900'
    The ``-executionTime`` parameter is applied for every size of the scan.
    If ``-executionTime`` is not set, a timeout of 60 seconds will be applied.
 
@@ -791,14 +791,14 @@ Test Parameters Only For Publishing Applications
 -  ``-initialBurstSize <number>``
 
    Set the size of the initial burst of samples sent from the Publisher side to
-   the Subscriber side. These samples are all marked as latency Samples, and
+   the Subscriber side. These samples are all marked as latency samples, and
    they are answered back by the Subscriber side.
 
    The use of this initial burst is to ensure all the queues are initialized and
    no time is lost in the initialization process when measuring the performance.
 
-   This parameter is only available for the *Traditional and Modern C++ API
-   Implementations*.
+   This parameter is only available for the Traditional and Modern C++ API
+   implementations.
 
    | **Default:** Calculated by the *RTI Perftest*.
    | **Range:** ``[0 - Max Long Size]``
@@ -832,27 +832,25 @@ Test Parameters Only For Publishing Applications
 
 -  ``-showSerializationTime``
 
-   Show serialization/Deserialization times for the sample size(s) of the test.
+   Show serialization/deserialization times for the sample size(s) of the test.
    This time will be shown after the test concludes.
-   This command line parameter is only present in the Traditional C++ API implementation.
+   This command-line parameter is only present in the Traditional C++ API implementation.
 
    **Default:** ``Not enabled``
 
 -  ``-loadDataFromFile <filePath>``
 
-   Use this option to send data from a file. By default *RTI Perftest* will use
-   an emptly (newly created) `char` array for the payload of each of the samples,
-   however.
+   Use this option to send data from a file. By default, *RTI Perftest* will use
+   an empty (newly created) `char` array for the payload of each of the samples.
 
    If this option is in use, the content of the provided file will be loaded
-   into memory (up to a maximum size configurable, see `-maximumAllocableBufferSize`),
-   and divided into buffers of `-datalen` size. If the `-datalen` command-line
-   is not provided, *RTI Perftest* will set it to the file size.
+   into memory (up to a configurable maximum size, see `-maximumAllocableBufferSize`),
+   and divided into buffers of `-datalen` size. If the `-datalen` command line
+   is not provided, *RTI Perftest* will set this option to the file size.
 
    **Default:** ``Not enabled``
 
-   This command-line option is just available in the *traditional C++ API
-   Implementation*.
+This command-line option is available only in the Traditional C++ API implementation.
 
 -  ``-maximumAllocableBufferSize <bytes>``
 
