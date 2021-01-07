@@ -2592,7 +2592,7 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
 
     if (_isNetworkCapture && !NDDSUtilityNetworkCapture::enable()) {
         fprintf(stderr, "Unexpected error enabling network capture");
-        return;
+        return false;
     }
 
     DomainListener *listener = new DomainListener();
@@ -2642,7 +2642,7 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     if (_isNetworkCapture
             && !NDDSUtilityNetworkCapture::start(_participant, "rtiperftest")) {
         fprintf(stderr, "Unexpected error starting network capture");
-        return -1;
+        return false;
     }
 
   #ifdef PERFTEST_RTI_PRO
