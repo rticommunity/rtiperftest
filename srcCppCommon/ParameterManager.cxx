@@ -377,7 +377,7 @@ void ParameterManager::initialize()
     networkCapture->set_type(T_BOOL);
     networkCapture->set_extra_argument(NO);
     networkCapture->set_group(GENERAL);
-    networkCapture->set_supported_middleware(Middleware::ALL);
+    networkCapture->set_supported_middleware(Middleware::RTIDDSPRO);
     create("networkCapture", networkCapture);
 
   Parameter<bool> *preallocateFragmentation = new Parameter<bool>(false);

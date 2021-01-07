@@ -213,6 +213,9 @@ void RTIDDSImpl<T>::shutdown()
         printf("Error getting participants. Retcode: %d", retcode);
     }
 
+    //
+    NDDS_Utility_NetworkCaptureParams_t_finalize(&_networkCaptureParams);
+
     if (participants.length() == 0) {
         DDSDomainParticipantFactory::finalize_instance();
 
@@ -553,6 +556,10 @@ std::string RTIDDSImpl<T>::print_configuration()
         stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
   #endif
+
+    // Network capture
+    stringStream << "\tNetwork capture: "
+                 << (_PM->get<bool>("networkCapture") ? "Yes" : "No");
 
     stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
@@ -2585,17 +2592,25 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     DDS_DomainParticipantFactoryQos factory_qos;
     DDS_PublisherQos publisherQoS;
 
-    // Enable network capture if flag is set by the cli (so far, only pro)
-  #ifdef PERFTEST_RTI_PRO
     _isNetworkCapture = _PM->get<bool>("networkCapture");
-  #endif
-
     if (_isNetworkCapture) {
         if (!NDDSUtilityNetworkCapture::enable()) {
             fprintf(stderr, "Unexpected error enabling network capture");
             return false;
         }
-        if (!NDDSUtilityNetworkCapture::start("rtiperftest")) {
+
+        NDDS_Utility_NetworkCaptureParams_t_initialize(&_networkCaptureParams);
+
+        // If running with security, we will parse its contents and remove the
+        // encrypted data.
+        // This requires additional processing, so it is a more realistic test.
+        _networkCaptureParams.parse_encrypted_content = DDS_BOOLEAN_TRUE;
+        _networkCaptureParams.dropped_content =
+                NDDS_UTILITY_NETWORK_CAPTURE_CONTENT_ENCRYPTED_DATA;
+
+        if (!NDDSUtilityNetworkCapture::start(
+                "rtiperftest",
+                _networkCaptureParams)) {
             fprintf(stderr, "Unexpected error starting network capture");
             return false;
         }

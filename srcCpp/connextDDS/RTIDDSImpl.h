@@ -159,6 +159,9 @@ protected:
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
 
+    // Parameters that configure the network capture
+    struct NDDS_Utility_NetworkCaptureParams_t _networkCaptureParams;
+
 public:
 
 
