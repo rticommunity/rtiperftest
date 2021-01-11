@@ -213,7 +213,6 @@ void RTIDDSImpl<T>::shutdown()
         printf("Error getting participants. Retcode: %d", retcode);
     }
 
-    //
     NDDS_Utility_NetworkCaptureParams_t_finalize(&_networkCaptureParams);
 
     if (participants.length() == 0) {
@@ -2603,7 +2602,7 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
 
         // If running with security, we will parse its contents and remove the
         // encrypted data.
-        // This requires additional processing, so it is a more realistic test.
+        // This requires additional processing, so it is a more demanding test.
         _networkCaptureParams.parse_encrypted_content = DDS_BOOLEAN_TRUE;
         _networkCaptureParams.dropped_content =
                 NDDS_UTILITY_NETWORK_CAPTURE_CONTENT_ENCRYPTED_DATA;
