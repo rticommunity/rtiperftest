@@ -35,7 +35,7 @@ Where ``<architecture>`` depends on your architecture, such as
 You can differentiate the executables for the two C++ implementations
 (Traditional and Modern) by the name: the Traditional C++ API
 implementation uses ``perftest_cpp`` and the Modern C++ API
-implementation is named ``perftest_cpp03``.
+implementation is named ``perftest_cpp11``.
 
 The test uses an XML configuration file and locates this file based on
 paths relative to the directory from which the test is run. Therefore,
@@ -52,7 +52,7 @@ Modern C++:
 
 ::
 
-    bin/<architecture>/<release or debug>/perftest_cpp03 <-pub|-sub(default)> [parameters]
+    bin/<architecture>/<release or debug>/perftest_cpp11 <-pub|-sub(default)> [parameters]
 
 C#:
 
@@ -183,7 +183,7 @@ C++ Modern API
 
 ::
 
-    bin/<architecture>/<release or debug>/perftest_cpp03 <-pub|-sub(default)> [parameters]
+    bin/<architecture>/<release or debug>/perftest_cpp11 <-pub|-sub(default)> [parameters]
 
 C# API
 ~~~~~~

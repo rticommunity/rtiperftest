@@ -28,7 +28,7 @@ MICRO_UNBOUNDED_SEQUENCE_SIZE=1048576
 
 # Default values:
 BUILD_CPP=1
-BUILD_CPP03=1
+BUILD_CPP11=1
 BUILD_JAVA=1
 MAKE_EXE=make
 CMAKE_EXE=cmake
@@ -102,12 +102,12 @@ function usage()
     echo "    --skip-java-build            Avoid Java ByteCode generation creation.       "
     echo "                                 (No effect when building for Micro)            "
     echo "    --skip-cpp-build             Avoid C++ code generation and compilation.     "
-    echo "    --skip-cpp03-build           Avoid C++ New PSM code generation and          "
+    echo "    --skip-cpp11-build           Avoid C++ New PSM code generation and          "
     echo "                                 compilation.                                   "
     echo "                                 (No effect when building for Micro)            "
     echo "    --java-build                 Only Java ByteCode generation creation.        "
     echo "    --cpp-build                  Only C++ code generation and compilation.      "
-    echo "    --cpp03-build                Only C++ New PSM code generation and           "
+    echo "    --cpp11-build                Only C++ New PSM code generation and           "
     echo "                                 compilation.                                   "
     echo "    --make <path>                Path to the GNU make executable. If this       "
     echo "                                 parameter is not present, the GNU make variable"
@@ -122,11 +122,11 @@ function usage()
     echo "    --compiler <path>            Path to (or name of) the compiler executable.  "
     echo "                                 If this parameter is not a full path, the named"
     echo "                                 executable should be available from your       "
-    echo "                                 \$PATH variable. (NOTE: c++/c++03 builds only) "
+    echo "                                 \$PATH variable. (NOTE: c++/c++11 builds only) "
     echo "    --linker <path>              Path to (or name of) the linker executable.    "
     echo "                                 If this parameter is not a full path, the named"
     echo "                                 executable should be available from your       "
-    echo "                                 \$PATH variable. (NOTE: c++/c++03 builds only) "
+    echo "                                 \$PATH variable. (NOTE: c++/c++11 builds only) "
     echo "    --perl <path>                Path to PERL executable. If this parameter is  "
     echo "                                 not present, the path to PERL should be        "
     echo "                                 available from your \$PATH variable.           "
@@ -280,10 +280,10 @@ function executable_checking()
                 echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp will not be built."
             fi
         fi
-        if [ "${BUILD_CPP03}" -eq "1" ]; then
+        if [ "${BUILD_CPP11}" -eq "1" ]; then
             if [ -z `which "${MAKE_EXE}"` ]
             then
-                echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp03 will not be built."
+                echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp11 will not be built."
             fi
         fi
 
@@ -295,11 +295,11 @@ function executable_checking()
                 BUILD_CPP=0
             fi
         fi
-        if [[ "${BUILD_CPP03}" -eq "1" ]] && [[ ! -z ${COMPILER_EXE} ]]; then
+        if [[ "${BUILD_CPP11}" -eq "1" ]] && [[ ! -z ${COMPILER_EXE} ]]; then
             if [ -z `which "${COMPILER_EXE}"` ]
             then
-                echo -e "${YELLOW}[WARNING]:${NC} ${COMPILER_EXE} executable not found, perftest_cpp03 will not be built."
-                BUILD_CPP03=0
+                echo -e "${YELLOW}[WARNING]:${NC} ${COMPILER_EXE} executable not found, perftest_cpp11 will not be built."
+                BUILD_CPP11=0
             fi
         fi
 
@@ -311,11 +311,11 @@ function executable_checking()
                 BUILD_CPP=0
             fi
         fi
-        if [[ "${BUILD_CPP03}" -eq "1" ]] && [[ ! -z ${LINKER_EXE} ]]; then
+        if [[ "${BUILD_CPP11}" -eq "1" ]] && [[ ! -z ${LINKER_EXE} ]]; then
             if [ -z `which "${LINKER_EXE}"` ]
             then
-                echo -e "${YELLOW}[WARNING]:${NC} ${LINKER_EXE} executable not found, perftest_cpp03 will not be built."
-                BUILD_CPP03=0
+                echo -e "${YELLOW}[WARNING]:${NC} ${LINKER_EXE} executable not found, perftest_cpp11 will not be built."
+                BUILD_CPP11=0
             fi
         fi
 
@@ -337,7 +337,7 @@ function executable_checking()
 
         # If the platform is android, we will just build C++ Classic by default.
         if [[ ${platform} == *"Android"* ]]; then
-            BUILD_CPP03=0
+            BUILD_CPP11=0
             BUILD_JAVA=0
         fi
 
@@ -546,7 +546,7 @@ function build_cpp_custom_type()
 function generate_qos_string()
 {
     # If PERL_EXEC is in the path, generate the qos_string.h file.
-    if [ "${BUILD_CPP}" -eq "1" ] || [ "${BUILD_CPP03}" -eq "1" ]; then
+    if [ "${BUILD_CPP}" -eq "1" ] || [ "${BUILD_CPP11}" -eq "1" ]; then
         if [ -z `which "${PERL_EXEC}"` ]; then
             echo -e "${YELLOW}[WARNING]:${NC} PERL not found, ${common_cpp_folder}/qos_string.h will not be updated."
         else
@@ -986,7 +986,7 @@ function build_micro_cpp()
     fi
 }
 
-function build_cpp03()
+function build_cpp11()
 {
     copy_src_cpp_common
     check_flatData_zeroCopy_available
@@ -1028,7 +1028,7 @@ function build_cpp03()
     # Generate files for srcCpp03
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
     ${additional_rtiddsgen_defines} \
-    -unboundedSupport -replace -create typefiles -create makefiles \
+    -unboundedSupport -replace -create typefiles -create makefiles -alwaysUseStdVector \
     -platform ${platform} \
     -additionalHeaderFiles \"$additional_header_files\" \
     -additionalSourceFiles \"$additional_source_files\" \
@@ -1086,7 +1086,7 @@ function build_cpp03()
         export LINKER=$LINKER_EXE
     fi
     echo ""
-    echo -e "${INFO_TAG} Compiling perftest_cpp03."
+    echo -e "${INFO_TAG} Compiling perftest_cpp11."
     "${MAKE_EXE}" -C "${modern_cpp_folder}" -f makefile_perftest_${platform}
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure compiling code for ${modern_cpp_folder}."
@@ -1115,29 +1115,29 @@ function build_cpp03()
     # Create bin folder if not exists and copy executables, since this command
     # has to work for several different architectures, we will try to find the
     # executable name with different line endings.
-    perftest_cpp03_name_beginning="${modern_cpp_folder}/objs/${platform}/perftest_publisher"
+    perftest_cpp11_name_beginning="${modern_cpp_folder}/objs/${platform}/perftest_publisher"
     executable_extension=""
     destination_folder="${bin_folder}/${platform}/${RELEASE_DEBUG}"
     mkdir -p "${bin_folder}/${platform}/${RELEASE_DEBUG}"
 
     # In Android the path of the built apk slightly differs from other built binaries.
     if [[ ${platform} == *"Android"* ]]; then
-        perftest_cpp03_name_beginning="${modern_cpp_folder}/objs/${platform}/publisher/bin/perftest_publisher-debug"
+        perftest_cpp11_name_beginning="${modern_cpp_folder}/objs/${platform}/publisher/bin/perftest_publisher-debug"
     fi
 
-    if [ -e "$perftest_cpp03_name_beginning" ]; then
+    if [ -e "$perftest_cpp11_name_beginning" ]; then
         executable_extension=""
-    elif [ -e "${perftest_cpp03_name_beginning}.so" ]; then
+    elif [ -e "${perftest_cpp11_name_beginning}.so" ]; then
         executable_extension=".so"
-    elif [ -e "${perftest_cpp03_name_beginning}.lo" ]; then
+    elif [ -e "${perftest_cpp11_name_beginning}.lo" ]; then
         executable_extension=".lo"
-    elif [ -e "${perftest_cpp03_name_beginning}.vxe" ]; then
+    elif [ -e "${perftest_cpp11_name_beginning}.vxe" ]; then
         executable_extension=".vxe"
-    elif [ -e "${perftest_cpp03_name_beginning}.apk" ]; then
+    elif [ -e "${perftest_cpp11_name_beginning}.apk" ]; then
         executable_extension=".apk"
     fi
-    cp -f "${perftest_cpp03_name_beginning}${executable_extension}" \
-    "${destination_folder}/perftest_cpp03${executable_extension}"
+    cp -f "${perftest_cpp11_name_beginning}${executable_extension}" \
+    "${destination_folder}/perftest_cpp11${executable_extension}"
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure copying code for ${classic_cpp_lang_string}."
         clean_copied_files
@@ -1318,23 +1318,23 @@ while [ "$1" != "" ]; do
         --skip-cpp-build)
             BUILD_CPP=0
             ;;
-        --skip-cpp03-build)
-            BUILD_CPP03=0
+        --skip-cpp11-build)
+            BUILD_CPP11=0
             ;;
         --java-build)
             BUILD_JAVA=1
             BUILD_CPP=0
-            BUILD_CPP03=0
+            BUILD_CPP11=0
             ;;
         --cpp-build)
             BUILD_JAVA=0
             BUILD_CPP=1
-            BUILD_CPP03=0
+            BUILD_CPP11=0
             ;;
-        --cpp03-build)
+        --cpp11-build)
             BUILD_JAVA=0
             BUILD_CPP=0
-            BUILD_CPP03=1
+            BUILD_CPP11=1
             ;;
         --make)
             MAKE_EXE=$2
@@ -1460,7 +1460,7 @@ else # Build for ConnextDDS Pro
     rtiddsgen_executable="$NDDSHOME/bin/rtiddsgen"
 
     classic_cpp_lang_string=C++
-    modern_cpp_lang_string=C++03
+    modern_cpp_lang_string=C++11
     java_lang_string=java
 
     # Generate qos_string.h
@@ -1471,9 +1471,9 @@ else # Build for ConnextDDS Pro
         build_cpp
     fi
 
-    if [ "${BUILD_CPP03}" -eq "1" ]; then
+    if [ "${BUILD_CPP11}" -eq "1" ]; then
         library_sufix_calculation
-        build_cpp03
+        build_cpp11
     fi
 
     if [ "${BUILD_JAVA}" -eq "1" ]; then

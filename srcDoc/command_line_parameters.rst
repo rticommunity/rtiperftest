@@ -394,7 +394,7 @@ Test Parameters for Publishing and Subscribing Applications
 
 -  ``-threadPriorities X:Y:Z``
 
-    This command-line parameter is supported only for the C++ and C++03 API
+    This command-line parameter is supported only for the C++ and C++11 API
     implementations.
 
     Set the priorities for the application threads:
