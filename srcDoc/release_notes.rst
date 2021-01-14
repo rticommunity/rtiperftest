@@ -20,7 +20,7 @@ What's New in Master
 RTI Perftest Modern C++ API now compiles with C++11 |enhancedTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-The RTI Perftest Modern C++ API has been updated to be C++11 compatible. The
+The RTI Perftest Modern C++ API has been updated to require a C++11 compiler. The
 command-line option for the language passed to the ``rtiddsgen`` script is now
 ``C++11`` instead of ``C++03``. The name of the folder with the code for this API
 has been updated to ``srcCpp11`` and the generated executable is now named as
