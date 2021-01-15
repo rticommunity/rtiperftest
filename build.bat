@@ -594,7 +594,7 @@ if !BUILD_CPP11! == 1 (
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
 
-	@REM #Generate files for srcCpp03
+	@REM #Generate files for srcCpp11
 	echo[
 	echo [INFO]: Generating types and makefiles for %modern_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %modern_cpp_lang_string% ^
@@ -1090,7 +1090,7 @@ GOTO:EOF
 GOTO:EOF
 
 :copy_src_cpp_common
-	@REM # Copy file from srcCommon to srcCpp and srcCpp03
+	@REM # Copy file from srcCommon to srcCpp and srcCpp11
 	for %%i in (%common_cpp_folder%\*) do (
 		call copy /Y %common_cpp_folder%\%%~nxi %modern_cpp_folder%\ > nul 2>nul
 		call copy /Y %common_cpp_folder%\%%~nxi %classic_cpp_folder%\ > nul 2>nul
@@ -1151,16 +1151,16 @@ GOTO:EOF
 	del %script_location%srcCpp\README.txt > nul 2>nul
 	rmdir /s /q "%script_location%srcCpp\gen" > nul 2>nul
 	rmdir /s /q "%script_location%srcCpp\perftest_build" > nul 2>nul
-	rmdir /s /q %script_location%srcCpp03\objs > nul 2>nul
-	del %script_location%srcCpp03\*.vcxproj > nul 2>nul
-	del %script_location%srcCpp03\*.vcproj > nul 2>nul
-	del %script_location%srcCpp03\*.filters > nul 2>nul
-	del %script_location%srcCpp03\*.sln > nul 2>nul
-	del %script_location%srcCpp03\perftest.* > nul 2>nul
-	del %script_location%srcCpp03\perftestImplPlugin.* > nul 2>nul
-	del %script_location%srcCpp03\perftestImpl.* > nul 2>nul
-	del %script_location%srcCpp03\perftest_publisher.cxx > nul 2>nul
-	del %script_location%srcCpp03\perftest_subscriber.cxx > nul 2>nul
+	rmdir /s /q %script_location%srcCpp11\objs > nul 2>nul
+	del %script_location%srcCpp11\*.vcxproj > nul 2>nul
+	del %script_location%srcCpp11\*.vcproj > nul 2>nul
+	del %script_location%srcCpp11\*.filters > nul 2>nul
+	del %script_location%srcCpp11\*.sln > nul 2>nul
+	del %script_location%srcCpp11\perftest.* > nul 2>nul
+	del %script_location%srcCpp11\perftestImplPlugin.* > nul 2>nul
+	del %script_location%srcCpp11\perftestImpl.* > nul 2>nul
+	del %script_location%srcCpp11\perftest_publisher.cxx > nul 2>nul
+	del %script_location%srcCpp11\perftest_subscriber.cxx > nul 2>nul
 	rmdir /s /q %script_location%srcCs\obj > nul 2>nul
 	rmdir /s /q %script_location%srcCs\bin > nul 2>nul
 	del %script_location%srcCs\*.vcxproj > nul 2>nul

@@ -8,7 +8,7 @@ script_location=`cd "\`dirname "$filename"\`"; pwd`
 idl_location="${script_location}/srcIdl"
 classic_cpp_folder="${script_location}/srcCpp"
 common_cpp_folder="${script_location}/srcCppCommon"
-modern_cpp_folder="${script_location}/srcCpp03"
+modern_cpp_folder="${script_location}/srcCpp11"
 java_folder="${script_location}/srcJava"
 java_scripts_folder="${script_location}/resource/scripts/java_execution_scripts"
 bin_folder="${script_location}/bin"
@@ -1025,10 +1025,10 @@ function build_cpp11()
 
 
     ##############################################################################
-    # Generate files for srcCpp03
+    # Generate files for srcCpp11
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
     ${additional_rtiddsgen_defines} \
-    -unboundedSupport -replace -create typefiles -create makefiles -alwaysUseStdVector \
+    -unboundedSupport -replace -create typefiles -create makefiles \
     -platform ${platform} \
     -additionalHeaderFiles \"$additional_header_files\" \
     -additionalSourceFiles \"$additional_source_files\" \
@@ -1075,7 +1075,7 @@ function build_cpp11()
     "${modern_cpp_folder}/perftest_subscriber.cxx"
 
     ##############################################################################
-    # Compile srcCpp03 code
+    # Compile srcCpp11 code
     #
     # If the user requested a specific compiler or linker, set up those variables
     # now and feed them to the command we run against the makefile.
