@@ -32,11 +32,11 @@ srcDoc/_build
 
 # Files copied by the build Script.
 /srcCpp/Parameter*
-/srcCpp03/Parameter*
-/srcCpp03/CpuMonitor*
+/srcCpp11/Parameter*
+/srcCpp11/CpuMonitor*
 /srcCpp/CpuMonitor*
 /srcCpp/ThreadPriorities.*
-/srcCpp03/ThreadPriorities.*
+/srcCpp11/ThreadPriorities.*
 
 # Micro specific files related to code Generation
 /srcCpp/README.txt
