@@ -83,6 +83,7 @@ RTIDDSImpl<T>::RTIDDSImpl()
   #ifdef PERFTEST_RTI_PRO
     _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
     _sendQueueSize = 0;
+    _isNetworkCapture = false;
   #else
     /*
      * For micro we want to restrict the use of memory, and since we need
@@ -96,7 +97,6 @@ RTIDDSImpl<T>::RTIDDSImpl()
     _maxSynchronousSize = MESSAGE_SIZE_MAX_NOT_SET;
     _isFlatData = false;
     _isZeroCopy = false;
-    _isNetworkCapture = false;
     _factory = NULL;
     _participant = NULL;
     _subscriber = NULL;
@@ -130,10 +130,12 @@ void RTIDDSImpl<T>::shutdown()
         return;
     }
 
+  #ifdef PERFTEST_RTI_PRO
     if (_isNetworkCapture
             && !NDDSUtilityNetworkCapture::stop(_participant)) {
         fprintf(stderr, "Unexpected error stopping network capture");
     }
+  #endif
 
     if (_participant != NULL) {
         PerftestClock::milliSleep(2000);
@@ -213,7 +215,9 @@ void RTIDDSImpl<T>::shutdown()
         printf("Error getting participants. Retcode: %d", retcode);
     }
 
+  #ifdef PERFTEST_RTI_PRO
     NDDS_Utility_NetworkCaptureParams_t_finalize(&_networkCaptureParams);
+  #endif
 
     if (participants.length() == 0) {
         DDSDomainParticipantFactory::finalize_instance();
@@ -229,10 +233,13 @@ void RTIDDSImpl<T>::shutdown()
             PerftestMutex_delete(_finalizeFactoryMutex);
             _finalizeFactoryMutex = NULL;
 
+          #ifdef PERFTEST_RTI_PRO
             // Disable network capture if it was enabled at the beginning
             if (_isNetworkCapture && !NDDSUtilityNetworkCapture::disable()) {
                 fprintf(stderr, "Unexpected error disabling network capture");
             }
+          #endif
+
             return;
         }
     } else {
@@ -554,11 +561,11 @@ std::string RTIDDSImpl<T>::print_configuration()
     } else {
         stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
-  #endif
 
     // Network capture
     stringStream << "\tNetwork capture: "
                  << (_PM->get<bool>("networkCapture") ? "Yes" : "No");
+  #endif
 
     stringStream << "\n" << _transport.printTransportConfigurationSummary();
 
@@ -2591,6 +2598,8 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     DDS_DomainParticipantFactoryQos factory_qos;
     DDS_PublisherQos publisherQoS;
 
+
+  #ifdef PERFTEST_RTI_PRO
     _isNetworkCapture = _PM->get<bool>("networkCapture");
     if (_isNetworkCapture) {
         if (!NDDSUtilityNetworkCapture::enable()) {
@@ -2614,6 +2623,7 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
             return false;
         }
     }
+  #endif
 
     DomainListener *listener = new DomainListener();
 

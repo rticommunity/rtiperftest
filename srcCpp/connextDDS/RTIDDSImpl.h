@@ -139,7 +139,6 @@ protected:
     bool                         _isLargeData;
     unsigned long long           _maxSynchronousSize;
     bool                         _isFlatData;
-    bool                         _isNetworkCapture;
     bool                         _isZeroCopy;
     PerftestTransport            _transport;
   #ifdef RTI_SECURE_PERFTEST
@@ -154,13 +153,16 @@ protected:
     PerftestSemaphore           *_pongSemaphore;
   #ifdef PERFTEST_RTI_PRO
     RTIDDSLoggerDevice           _loggerDevice;
+    bool                         _isNetworkCapture;
   #endif
     ParameterManager            *_PM;
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
 
+  #ifdef PERFTEST_RTI_PRO
     // Parameters that configure the network capture
     struct NDDS_Utility_NetworkCaptureParams_t _networkCaptureParams;
+  #endif
 
 public:
 

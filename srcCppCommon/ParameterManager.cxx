@@ -370,15 +370,18 @@ void ParameterManager::initialize()
     #endif
   #endif
 
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
     Parameter<bool> *networkCapture = new Parameter<bool>(false);
     networkCapture->set_command_line_argument("-networkCapture", "");
     networkCapture->set_description(
-            "Enable network capture during the test");
+            "Enable network capture during the test.\n"
+            "Default: Disabled");
     networkCapture->set_type(T_BOOL);
     networkCapture->set_extra_argument(NO);
     networkCapture->set_group(GENERAL);
     networkCapture->set_supported_middleware(Middleware::RTIDDSPRO);
     create("networkCapture", networkCapture);
+  #endif
 
   Parameter<bool> *preallocateFragmentation = new Parameter<bool>(false);
     preallocateFragmentation->set_command_line_argument("-preallocateFragmentedSamples", "");
