@@ -201,8 +201,8 @@ similar to this one:
 ::
 
     libeay32z.lib(wp_block.obj) : warning LNK4099: PDB 'lib.pdb' was not found with
-    'libeay32z.lib(wp_block.obj)' or at 'rtiperftest\srcCpp03\objs\i86Win32VS2015\lib.pdb';
-    linking object as if no debug info [srcCpp03\perftest_publisher-i86Win32VS2015.vcxproj]
+    'libeay32z.lib(wp_block.obj)' or at 'rtiperftest\srcCpp11\objs\i86Win32VS2015\lib.pdb';
+    linking object as if no debug info [srcCpp11\perftest_publisher-i86Win32VS2015.vcxproj]
 
     403 Warning(s)
     0 Error(s)
