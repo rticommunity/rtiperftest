@@ -154,6 +154,7 @@ protected:
   #ifdef PERFTEST_RTI_PRO
     RTIDDSLoggerDevice           _loggerDevice;
     bool                         _isNetworkCapture;
+    std::string                  _networkCaptureOutputFile;
   #endif
     ParameterManager            *_PM;
     perftest_cpp                *_parent;
