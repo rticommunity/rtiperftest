@@ -34,6 +34,14 @@
 
 #define RTIPERFTEST_MAX_PEERS 1024
 
+/*
+ * These defines are used around the network capture code so that we can compile
+ * perftest in older releases. Network capture was introduced in Hercules
+ * (6.1.0), so we compare with this version number.
+ */
+#define HERCULES_VERSION_MAJOR 6
+#define HERCULES_VERSION_MINOR 1
+
 /* Forward declaration of perftest_cpp to avoid circular dependencies */
 class perftest_cpp;
 
@@ -160,7 +168,9 @@ protected:
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
 
-  #ifdef PERFTEST_RTI_PRO
+  #if defined PERFTEST_RTI_PRO and \
+      RTI_DDS_VERSION_MAJOR >= HERCULES_VERSION_MAJOR and \
+      RTI_DDS_VERSION_MINOR >= HERCULES_VERSION_MINOR
     // Parameters that configure the network capture
     struct NDDS_Utility_NetworkCaptureParams_t _networkCaptureParams;
   #endif

@@ -131,7 +131,9 @@ void RTIDDSImpl<T>::shutdown()
         return;
     }
 
-  #ifdef PERFTEST_RTI_PRO
+  #if defined PERFTEST_RTI_PRO and \
+      RTI_DDS_VERSION_MAJOR >= HERCULES_VERSION_MAJOR and \
+      RTI_DDS_VERSION_MINOR >= HERCULES_VERSION_MINOR
     if (_isNetworkCapture
             && !NDDSUtilityNetworkCapture::stop(_participant)) {
         fprintf(stderr, "Unexpected error stopping network capture\n");
@@ -230,7 +232,10 @@ void RTIDDSImpl<T>::shutdown()
             PerftestMutex_delete(_finalizeFactoryMutex);
             _finalizeFactoryMutex = NULL;
 
-          #ifdef PERFTEST_RTI_PRO
+          #if defined PERFTEST_RTI_PRO and \
+              RTI_DDS_VERSION_MAJOR >= HERCULES_VERSION_MAJOR and \
+              RTI_DDS_VERSION_MINOR >= HERCULES_VERSION_MINOR
+
             // Disable network capture if it was enabled at the beginning
             if (_isNetworkCapture && !NDDSUtilityNetworkCapture::disable()) {
                 fprintf(stderr, "Unexpected error disabling network capture\n");
@@ -2607,9 +2612,12 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     DDS_PublisherQos publisherQoS;
 
 
-  #ifdef PERFTEST_RTI_PRO
+  #if defined PERFTEST_RTI_PRO and \
+      RTI_DDS_VERSION_MAJOR >= HERCULES_VERSION_MAJOR and \
+      RTI_DDS_VERSION_MINOR >= HERCULES_VERSION_MINOR
+
     // Enable network capture if the test activates the feature.
-    // Start it later, once the participant is created.
+    // Start capturing once the participant is created.
     // We start it per participant. That way we know the filename (no GUID
     // suffix) and we can remove it later.
     _isNetworkCapture = _PM->get<bool>("networkCapture");
@@ -2619,6 +2627,7 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
             return false;
         }
     }
+
   #endif
 
     DomainListener *listener = new DomainListener();
@@ -2678,6 +2687,8 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
         return false;
     }
 
+    #if RTI_DDS_VERSION_MAJOR >= HERCULES_VERSION_MAJOR and \
+        RTI_DDS_VERSION_MINOR >= HERCULES_VERSION_MINOR
     // Start capturing traffic for the participant, if network capture enabled.
     if (_isNetworkCapture) {
 
@@ -2708,6 +2719,7 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
 
         NDDS_Utility_NetworkCaptureParams_t_finalize(&_networkCaptureParams);
     }
+    #endif
 
   #else
     if (_participant == NULL) {
