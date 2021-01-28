@@ -2694,7 +2694,13 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
         // several participants will write to the same file (this is not
         // supported by network capture).
         if (_PM->get<bool>("pub")) {
-            _networkCaptureOutputFile += "_pub";
+            _networkCaptureOutputFile += "_pub_";
+            _networkCaptureOutputFile
+                += perftest::to_string(_PM.get<int>("pidMultiPubTest"));
+        } else {
+            _networkCaptureOutputFile += "_sub_";
+            _networkCaptureOutputFile
+                += perftest::to_string(_PM.get<int>("sidMultiSubTest"));
         }
 
         // If running with security, we will parse its contents and remove the
