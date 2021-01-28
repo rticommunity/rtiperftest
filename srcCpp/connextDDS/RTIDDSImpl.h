@@ -153,8 +153,10 @@ protected:
     PerftestSemaphore           *_pongSemaphore;
   #ifdef PERFTEST_RTI_PRO
     RTIDDSLoggerDevice           _loggerDevice;
+    #ifdef PERFTEST_CONNEXT_POST_HERCULES
     bool                         _isNetworkCapture;
     std::string                  _networkCaptureOutputFile;
+    #endif
   #endif
     ParameterManager            *_PM;
     perftest_cpp                *_parent;

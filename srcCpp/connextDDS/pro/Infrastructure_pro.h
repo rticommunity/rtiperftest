@@ -26,7 +26,7 @@
  * Version list:
  * Hercules -- 6.1.0
  */
-#if RTI_DDS_VERSION_MAJOR >= 6 and RTI_DDS_VERSION_MINOR >= 1
+#if RTI_DDS_VERSION_MAJOR >= 6 && RTI_DDS_VERSION_MINOR >= 1
     #define PERFTEST_CONNEXT_POST_HERCULES
 #endif
 

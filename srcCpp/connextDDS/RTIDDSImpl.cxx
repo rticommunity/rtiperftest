@@ -83,8 +83,10 @@ RTIDDSImpl<T>::RTIDDSImpl()
   #ifdef PERFTEST_RTI_PRO
     _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
     _sendQueueSize = 0;
+    #ifdef PERFTEST_CONNEXT_POST_HERCULES
     _isNetworkCapture = false;
     _networkCaptureOutputFile = "rtiperftest";
+    #endif
   #else
     /*
      * For micro we want to restrict the use of memory, and since we need
@@ -571,9 +573,10 @@ std::string RTIDDSImpl<T>::print_configuration()
         stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
 
-    // Network capture
+    #ifdef PERFTEST_CONNEXT_POST_HERCULES
     stringStream << "\tNetwork capture: "
                  << (_PM->get<bool>("networkCapture") ? "Yes" : "No");
+    #endif
   #endif
 
     stringStream << "\n" << _transport.printTransportConfigurationSummary();
