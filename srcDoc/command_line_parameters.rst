@@ -467,6 +467,26 @@ Test Parameters for Publishing and Subscribing Applications
 
    | **Default:** ``Not enabled``
 
+- ``-networkCapture``
+
+   Enable the *RTI Connext DDS Professional* "Network Capture" feature
+   during the test.
+
+   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
+   versions above.
+
+   | **Default:** ``Not enabled``
+
+- ``-doNotDropNetworkCapture``
+
+   If the ``-networkCapture`` feature is in use. Do not drop the capture file
+   generated at the end of the test.
+
+   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
+   versions above.
+
+   | **Default:** ``Not set: RTI Perftest will delete the file``
+
 Transport-Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
