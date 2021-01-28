@@ -370,7 +370,7 @@ void ParameterManager::initialize()
     #endif
   #endif
 
-  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_POST_HERCULES)
+  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_FEATURE_610)
     Parameter<bool> *networkCapture = new Parameter<bool>(false);
     networkCapture->set_command_line_argument("-networkCapture", "");
     networkCapture->set_description(

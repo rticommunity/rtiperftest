@@ -83,9 +83,9 @@ RTIDDSImpl<T>::RTIDDSImpl()
   #ifdef PERFTEST_RTI_PRO
     _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
     _sendQueueSize = 0;
-    #ifdef PERFTEST_CONNEXT_POST_HERCULES
+    #ifdef PERFTEST_CONNEXT_FEATURE_610
     _isNetworkCapture = false;
-    _networkCaptureOutputFile = "rtiperftest";
+    _networkCaptureOutputFile = "rtiperftest_network_capture";
     #endif
   #else
     /*
@@ -133,7 +133,7 @@ void RTIDDSImpl<T>::shutdown()
         return;
     }
 
-  #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_POST_HERCULES)
+  #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_FEATURE_610)
     if (_isNetworkCapture
             && !NDDSUtilityNetworkCapture::stop(_participant)) {
         fprintf(stderr, "Unexpected error stopping network capture\n");
@@ -232,7 +232,7 @@ void RTIDDSImpl<T>::shutdown()
             PerftestMutex_delete(_finalizeFactoryMutex);
             _finalizeFactoryMutex = NULL;
 
-          #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_POST_HERCULES)
+          #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_FEATURE_610)
 
             // Disable network capture if it was enabled at the beginning
             if (_isNetworkCapture && !NDDSUtilityNetworkCapture::disable()) {
@@ -573,7 +573,7 @@ std::string RTIDDSImpl<T>::print_configuration()
         stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
 
-    #ifdef PERFTEST_CONNEXT_POST_HERCULES
+    #ifdef PERFTEST_CONNEXT_FEATURE_610
     stringStream << "\tNetwork capture: "
                  << (_PM->get<bool>("networkCapture") ? "Yes" : "No");
     #endif
@@ -2611,7 +2611,7 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     DDS_PublisherQos publisherQoS;
 
 
-  #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_POST_HERCULES)
+  #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_FEATURE_610)
 
     // Enable network capture if the test activates the feature.
     // Start capturing once the participant is created.
@@ -2684,7 +2684,7 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
         return false;
     }
 
-    #ifdef PERFTEST_CONNEXT_POST_HERCULES
+    #ifdef PERFTEST_CONNEXT_FEATURE_610
     // Start capturing traffic for the participant, if network capture enabled.
     if (_isNetworkCapture) {
 
