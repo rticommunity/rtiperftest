@@ -131,9 +131,7 @@ void RTIDDSImpl<T>::shutdown()
         return;
     }
 
-  #if defined PERFTEST_RTI_PRO and \
-      RTI_DDS_VERSION_MAJOR >= HERCULES_VERSION_MAJOR and \
-      RTI_DDS_VERSION_MINOR >= HERCULES_VERSION_MINOR
+  #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_POST_HERCULES)
     if (_isNetworkCapture
             && !NDDSUtilityNetworkCapture::stop(_participant)) {
         fprintf(stderr, "Unexpected error stopping network capture\n");
@@ -232,9 +230,7 @@ void RTIDDSImpl<T>::shutdown()
             PerftestMutex_delete(_finalizeFactoryMutex);
             _finalizeFactoryMutex = NULL;
 
-          #if defined PERFTEST_RTI_PRO and \
-              RTI_DDS_VERSION_MAJOR >= HERCULES_VERSION_MAJOR and \
-              RTI_DDS_VERSION_MINOR >= HERCULES_VERSION_MINOR
+          #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_POST_HERCULES)
 
             // Disable network capture if it was enabled at the beginning
             if (_isNetworkCapture && !NDDSUtilityNetworkCapture::disable()) {
@@ -2612,9 +2608,7 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     DDS_PublisherQos publisherQoS;
 
 
-  #if defined PERFTEST_RTI_PRO and \
-      RTI_DDS_VERSION_MAJOR >= HERCULES_VERSION_MAJOR and \
-      RTI_DDS_VERSION_MINOR >= HERCULES_VERSION_MINOR
+  #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_POST_HERCULES)
 
     // Enable network capture if the test activates the feature.
     // Start capturing once the participant is created.
@@ -2687,8 +2681,7 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
         return false;
     }
 
-    #if RTI_DDS_VERSION_MAJOR >= HERCULES_VERSION_MAJOR and \
-        RTI_DDS_VERSION_MINOR >= HERCULES_VERSION_MINOR
+    #ifdef PERFTEST_CONNEXT_POST_HERCULES
     // Start capturing traffic for the participant, if network capture enabled.
     if (_isNetworkCapture) {
 
