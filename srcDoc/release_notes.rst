@@ -34,9 +34,9 @@ feature, introduced in *RTI Connext DDS Professional 6.1.0*. This support is
 exclusive to the Traditional C++ API implementation.
 
 In order to control the use of this new option, two new command-line parameters
-were added: ``-networkCapture`` (to enable the use of the feature and
-``-doNotDropNetworkCapture``, to control if the output file produced by
-network capture is retained or deleted after the run (due to the nature of *RTI
+were added: ``-networkCapture``, to enable the use of the feature and
+``-doNotDropNetworkCapture``, to control if the output file produced by the
+Network Capture feature is retained or deleted after the run (due to the nature of *RTI
 Perftest*, the size of the file might be huge) See :ref:`section-command_line_parameters` for
 more information about the parameters.
 
