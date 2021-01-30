@@ -2688,11 +2688,7 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     // Start capturing traffic for the participant, if network capture enabled.
     if (_isNetworkCapture) {
 
-        // We want the publisher and subscriber to write to different files.
-        // The publisher will have the "_pub" suffix appended.
-        // Note: We can only have one publisher and subscriber. Otherwise,
-        // several participants will write to the same file (this is not
-        // supported by network capture).
+        // We want the different applications to write in different files.
         if (_PM->get<bool>("pub")) {
             _networkCaptureOutputFile += "_pub_";
             _networkCaptureOutputFile
