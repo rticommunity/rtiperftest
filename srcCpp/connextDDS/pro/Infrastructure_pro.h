@@ -20,6 +20,18 @@
 #include <sstream>
 
 /*
+ * In order to enable/disable certain features depending on the version of
+ * ConnextDDS Pro, we will use the version number of the middleware:
+ *
+ * Version list:
+ * Hercules -- 6.1.0
+ */
+#if RTI_DDS_VERSION_MAJOR >= 6 && RTI_DDS_VERSION_MINOR >= 1
+    #define PERFTEST_CONNEXT_FEATURE_610
+#endif
+
+
+/*
  * In order to unify the implementations for Micro and Pro, we wrap the
  * semaphores to a common PerftestSemaphore implementation.
  */

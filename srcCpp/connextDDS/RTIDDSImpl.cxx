@@ -83,6 +83,10 @@ RTIDDSImpl<T>::RTIDDSImpl()
   #ifdef PERFTEST_RTI_PRO
     _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
     _sendQueueSize = 0;
+    #ifdef PERFTEST_CONNEXT_FEATURE_610
+    _isNetworkCapture = false;
+    _networkCaptureOutputFile = "rtiperftest_network_capture";
+    #endif
   #else
     /*
      * For micro we want to restrict the use of memory, and since we need
@@ -128,6 +132,13 @@ void RTIDDSImpl<T>::shutdown()
         fprintf(stderr,"Unexpected error taking semaphore\n");
         return;
     }
+
+  #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_FEATURE_610)
+    if (_isNetworkCapture
+            && !NDDSUtilityNetworkCapture::stop(_participant)) {
+        fprintf(stderr, "Unexpected error stopping network capture\n");
+    }
+  #endif
 
     if (_participant != NULL) {
         PerftestClock::milliSleep(2000);
@@ -220,6 +231,26 @@ void RTIDDSImpl<T>::shutdown()
             // Delete semaphore since no one else is going to need it
             PerftestMutex_delete(_finalizeFactoryMutex);
             _finalizeFactoryMutex = NULL;
+
+          #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_FEATURE_610)
+
+            // Disable network capture if it was enabled at the beginning
+            if (_isNetworkCapture && !NDDSUtilityNetworkCapture::disable()) {
+                fprintf(stderr, "Unexpected error disabling network capture\n");
+            }
+
+            // Remove the generated pcap file, unless otherwise specified.
+            if (_isNetworkCapture && !_PM->get<bool>("doNotDropNetworkCapture")) {
+                std::string outputFile =
+                        std::string(_networkCaptureOutputFile) + ".pcap";
+                if (RTIOsapiUtility_fileExists(outputFile.c_str())
+                        && !RTIOsapi_removeFile(outputFile.c_str())) {
+                    fprintf(stderr, "Unexpected error removing network capture's pcap output\n");
+                }
+            }
+
+          #endif
+
             return;
         }
     } else {
@@ -541,6 +572,11 @@ std::string RTIDDSImpl<T>::print_configuration()
     } else {
         stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
+
+    #ifdef PERFTEST_CONNEXT_FEATURE_610
+    stringStream << "\tNetwork capture: "
+                 << (_PM->get<bool>("networkCapture") ? "Yes" : "No");
+    #endif
   #endif
 
     stringStream << "\n" << _transport.printTransportConfigurationSummary();
@@ -2574,6 +2610,23 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     DDS_DomainParticipantFactoryQos factory_qos;
     DDS_PublisherQos publisherQoS;
 
+
+  #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_FEATURE_610)
+
+    // Enable network capture if the test activates the feature.
+    // Start capturing once the participant is created.
+    // We start it per participant. That way we know the filename (no GUID
+    // suffix) and we can remove it later.
+    _isNetworkCapture = _PM->get<bool>("networkCapture");
+    if (_isNetworkCapture) {
+        if (!NDDSUtilityNetworkCapture::enable()) {
+            fprintf(stderr, "Unexpected error enabling network capture\n");
+            return false;
+        }
+    }
+
+  #endif
+
     DomainListener *listener = new DomainListener();
 
     /* Mask for _threadPriorities when it's used */
@@ -2630,6 +2683,42 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
         fprintf(stderr,"Problem creating participant.\n");
         return false;
     }
+
+    #ifdef PERFTEST_CONNEXT_FEATURE_610
+    // Start capturing traffic for the participant, if network capture enabled.
+    if (_isNetworkCapture) {
+
+        // We want the different applications to write in different files.
+        if (_PM->get<bool>("pub")) {
+            _networkCaptureOutputFile += "_pub_";
+            _networkCaptureOutputFile
+                += perftest::to_string(_PM.get<int>("pidMultiPubTest"));
+        } else {
+            _networkCaptureOutputFile += "_sub_";
+            _networkCaptureOutputFile
+                += perftest::to_string(_PM.get<int>("sidMultiSubTest"));
+        }
+
+        // If running with security, we will parse its contents and remove the
+        // encrypted data.
+        // This requires additional processing, so it is a more demanding test.
+        NDDS_Utility_NetworkCaptureParams_t_initialize(&_networkCaptureParams);
+        _networkCaptureParams.parse_encrypted_content = DDS_BOOLEAN_TRUE;
+        _networkCaptureParams.dropped_content =
+                NDDS_UTILITY_NETWORK_CAPTURE_CONTENT_ENCRYPTED_DATA;
+
+        if (!NDDSUtilityNetworkCapture::start(
+                _participant,
+                _networkCaptureOutputFile.c_str(),
+                _networkCaptureParams)) {
+            fprintf(stderr, "Unexpected error starting network capture\n");
+            return false;
+        }
+
+        NDDS_Utility_NetworkCaptureParams_t_finalize(&_networkCaptureParams);
+    }
+    #endif
+
   #else
     if (_participant == NULL) {
         fprintf(stderr,"Problem creating participant.\n");

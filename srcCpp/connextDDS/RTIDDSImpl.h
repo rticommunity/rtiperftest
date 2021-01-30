@@ -153,10 +153,19 @@ protected:
     PerftestSemaphore           *_pongSemaphore;
   #ifdef PERFTEST_RTI_PRO
     RTIDDSLoggerDevice           _loggerDevice;
+    #ifdef PERFTEST_CONNEXT_FEATURE_610
+    bool                         _isNetworkCapture;
+    std::string                  _networkCaptureOutputFile;
+    #endif
   #endif
     ParameterManager            *_PM;
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
+
+  #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_FEATURE_610)
+    // Parameters that configure the network capture
+    struct NDDS_Utility_NetworkCaptureParams_t _networkCaptureParams;
+  #endif
 
 public:
 
