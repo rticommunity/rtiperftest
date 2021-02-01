@@ -40,6 +40,16 @@ Network Capture feature is retained or deleted after the run (due to the nature 
 Perftest*, the size of the file might be huge) See :ref:`section-command_line_parameters` for
 more information about the parameters.
 
+Support for the new WAN transport |newTag|
+++++++++++++++++++++++++++++++++++++++++++
+
+RTI Perftest now supports testing the new WAN transport in the *Tradditional C++
+API Implementation*. It can be accessed as a new `-transport` command-line option
+argument. See :ref:`section-command_examples` section for an example of its
+usage. In order to use this option, the ``-transportPublicAddress`` command-line option
+is required in one of the sides, see :ref:`section-command_line_parameters` for
+more information.
+
 What's Fixed in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 

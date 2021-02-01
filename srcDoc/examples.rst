@@ -356,6 +356,22 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 100000 -flatData -zeroCopy -checkConsistency -bestEffort
 
 
+1-to-1, Over UDPv4 WAN, Unicast, Reliable, Throughput test
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -transport UDPv4_WAN -dataLen 1024 -executionTime 100 -peer udpv4_wan://<publi_ip>:<public_port>
+
+-  Subscriber
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4_WAN -transportPublicAddress <public_ip>:<public_port>
+
+
 
 RTI Connext DDS Micro
 ---------------------

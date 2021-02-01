@@ -498,7 +498,7 @@ by using the transport-spececific command-line parameters.
 
    Set the transport to be used. The rest of the transports will be disabled.
 
-   | **Options Pro:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS`` and ``WAN``
+   | **Options Pro:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS``, ``WAN`` and ``UDPv4_WAN``
    | **Default Pro:** Transport defined in the XML profile (``UDPv4`` and ``SHMEM`` if the XML profile is not changed)
 
    | **Options Micro:** ``UDPv4``, ``SHMEM``
@@ -556,6 +556,9 @@ by using the transport-spececific command-line parameters.
 
    For TCP and TLS. Public IP address and port (WAN address and port) (separated by ‘:’)
    associated with the transport instantiation.
+
+   For WAN_UDPv4. Public address of the UDPv4_WAN transport instantiation. Format is
+   ``<public_ip>:<public_port>``.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.

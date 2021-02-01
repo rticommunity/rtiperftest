@@ -370,7 +370,7 @@ void ParameterManager::initialize()
     #endif
   #endif
 
-  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_FEATURE_610)
+  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_610)
     Parameter<bool> *networkCapture = new Parameter<bool>(false);
     networkCapture->set_command_line_argument("-networkCapture", "");
     networkCapture->set_description(
@@ -929,7 +929,18 @@ void ParameterManager::initialize()
             "Set transport to be used. The rest of\n"
             "the transports will be disabled."
           #if defined(PERFTEST_RTI_PRO)
-            "\nValues:\n\tUDPv4\n\tUDPv6\n\tSHMEM\n\tTCP\n\tTLS\n\tDTLS\n\tWAN\n\tUse XML\n"
+            "\nValues:\n"
+            "\tUDPv4\n"
+            "\tUDPv6\n"
+            "\tSHMEM\n"
+            "\tTCP\n"
+            "\tTLS\n"
+            "\tDTLS\n"
+            "\tWAN\n"
+          #ifdef PERFTEST_CONNEXT_PRO_610
+            "\tUDPv4_WAN\n"
+          #endif // PERFTEST_CONNEXT_PRO_610
+            "\tUse XML\n"
             "Default: Use XML (UDPv4|SHMEM)"
           #elif defined(PERFTEST_RTI_MICRO)
             "\nValues:\n\tUDPv4\n\tSHMEM\n"
@@ -951,6 +962,9 @@ void ParameterManager::initialize()
     transport->add_valid_str_value("TLS");
     transport->add_valid_str_value("DTLS");
     transport->add_valid_str_value("WAN");
+    #ifdef PERFTEST_CONNEXT_PRO_610
+    transport->add_valid_str_value("UDPv4_WAN");
+    #endif // PERFTEST_CONNEXT_PRO_610
   #endif
     create("transport", transport);
 
@@ -1038,10 +1052,17 @@ void ParameterManager::initialize()
     transportPublicAddress->set_command_line_argument(
             "-transportPublicAddress", "<ip>");
     transportPublicAddress->set_description(
-            "Public IP address and port (WAN address\n"
+            "For TCP: Public IP address and port (WAN address\n"
             "and port) (separated with ‘:’ ) related\n"
-            "to the transport instantiation. This is\n"
-            "required when using server mode.\nDefault: Not Set");
+            "to the TCP transport instantiation. This is\n"
+            "required when using server mode.\n"
+            #ifdef PERFTEST_CONNEXT_PRO_610
+            "For UDPv4_WAN: Public address of the UDPv4_WAN\n"
+            "transport instantiation. Format:\n"
+            "<public_ip>:<public_send_port>.\n"
+            "Default: Not Set\n"
+            #endif //PERFTEST_CONNEXT_PRO_610
+            );
     transportPublicAddress->set_type(T_STR);
     transportPublicAddress->set_extra_argument(YES);
     transportPublicAddress->set_group(TRANSPORT);
