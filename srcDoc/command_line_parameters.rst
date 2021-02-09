@@ -467,6 +467,36 @@ Test Parameters for Publishing and Subscribing Applications
 
    | **Default:** ``Not enabled``
 
+- ``-compressionId``
+
+   Set the compression algorithm to be used.
+   By default compression is disabled.
+   If batching is enabled, only `ZLIB` it's supported.
+   For both latency and throughput tests, the compression setting must be
+   provided to both publisher and subscriber to have the most possible accurate
+   results.
+
+   | **Default:** ``MASK_NONE``
+   | **Values:** ``['ZLIB','LZ4','BZIP2']``
+
+- ``-compressionLevel``
+
+    Set the compression level. The value 1 represents the fastest compression
+    time and the lowest compression ratio. The value 10 represents the slowest
+    compression time but the highest compression ratio. A value of 0 disables
+    compression.
+
+   | **Default:** ``10``
+
+- ``-compressionThreshold``
+
+    Set the compression threshold. The threshold, in bytes, above which a
+    serialized sample will be eligible to be compressed.
+    The default value is 0 so if compression has been enabled all the samples
+    will be compressed.
+
+   | **Default:** ``0``
+
 - ``-networkCapture``
 
    Enable the *RTI Connext DDS Professional* "Network Capture" feature

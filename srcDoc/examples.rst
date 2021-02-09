@@ -347,7 +347,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -pub -noPrint -transport SHMEM -dataLen 100000 -executionTime 100 -latencyTest -flatData -zeroCopy -bestEffort
+    bin/<arch>/release/perftest_cpp -pub -noPrint -transport SHMEM -dataLen 100000 -executionTime 100 -flatData -zeroCopy -bestEffort
 
 -  Subscriber
 
@@ -355,6 +355,50 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
     bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 100000 -flatData -zeroCopy -checkConsistency -bestEffort
 
+1-to-1, Compression, UDPv4, Unicast, BestEffort, Throughput test, Large Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -compressionId LZ4 -compressionThreshold 0 -compressionLevel 5 -batchSize 0 -transport UDPv4 -dataLen 100000 -executionTime 100 -bestEffort
+
+-  Subscriber
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -dataLen 100000 -checkConsistency -bestEffort
+
+1-to-1, Compression, UDPv4, Unicast, BestEffort, Latency test, Large Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -compressionId LZ4 -compressionThreshold 0 -compressionLevel 5 -transport UDPv4 -dataLen 100000 -executionTime 100 -bestEffort -latencyTest
+
+-  Subscriber
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -compressionId LZ4 -compressionThreshold 0 -compressionLevel 5 -transport UDPv4 -dataLen 100000 -bestEffort
+
+1-to-1, Compression, UDPv4, Unicast, BestEffort, Throughput test, Large Data, Load data from file.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp -pub -noPrint -compressionId LZ4 -compressionThreshold 0 -compressionLevel 5 -loadDataFromFile resource/uncompressed_files/messages -batchSize 0 -transport UDPv4 -dataLen 100000 -executionTime 100 -bestEffort
+
+-  Subscriber
+
+::
+
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -dataLen 100000 -checkConsistency -bestEffort
 
 1-to-1, Over UDPv4 WAN, Unicast, Reliable, Throughput test
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -732,6 +732,25 @@ void perftest_cpp::print_configuration()
         stringStream << "\n";
     }
 
+  #ifdef PERFTEST_CONNEXT_FEATURE_610
+    if (_PM.get<std::string>("compressionId").find("NONE") == std::string::npos) {
+        if (_PM.get<int>("compressionLevel") == 0) {
+            stringStream << "\n[IMPORTANT]: This compression Level disabled "
+                            "all compression.";
+        } else if (
+                _PM.get<int>("compressionThreshold") == DDS_LENGTH_UNLIMITED) {
+            stringStream << "\n[IMPORTANT]: This compression Threshold "
+                            "disabled all compression.";
+        } else {
+            stringStream << "\n[IMPORTANT]: Compression Enabled.";
+            stringStream << "\n\t Compression Algorithm: " << _PM.get<std::string>("compressionId");
+            stringStream << "\n\t Compression Level: " << _PM.get<int>("compressionLevel");
+            stringStream << "\n\t Compression Threshold: " << _PM.get<int>("compressionThreshold");
+        }
+        stringStream << "\n";
+    }
+  #endif
+
     fprintf(stderr, "%s\n", stringStream.str().c_str());
 
 }

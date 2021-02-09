@@ -3350,7 +3350,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
 
     dw_qos.resource_limits.max_instances =
             _PM->get<long>("instances") + 1; // One extra for MAX_CFT_VALUE
-  #ifndef PERFTEST_RTI_MICRO
+  #ifdef PERFTEST_RTI_PRO
     dw_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
 
     // If is LargeData
@@ -3374,7 +3374,32 @@ bool RTIDDSImpl<T>::configure_reader_qos(
                     _PM->get<long>("instances");
         }
     }
-  #endif
+
+  #ifdef PERFTEST_CONNEXT_FEATURE_610
+    std::string compression_id = _PM->get<std::string>("compressionId");
+
+    if (compression_id.find("NONE") == std::string::npos) {
+        if (compression_id.find("ZLIB") != std::string::npos) {
+            dw_qos.representation.compression_settings.compression_ids =
+                    DDS_COMPRESSION_ID_ZLIB_BIT;
+        }
+        if (compression_id.find("BZIP2") != std::string::npos) {
+            dw_qos.representation.compression_settings.compression_ids =
+                    DDS_COMPRESSION_ID_BZIP2_BIT;
+        }
+        if (compression_id.find("LZ4") != std::string::npos) {
+            dw_qos.representation.compression_settings.compression_ids =
+                    DDS_COMPRESSION_ID_LZ4_BIT;
+        }
+
+        dw_qos.representation.compression_settings.writer_compression_level =
+                _PM->get<int>("compressionLevel");
+        dw_qos.representation.compression_settings.writer_compression_threshold =
+                _PM->get<int>("compressionThreshold");
+    }
+
+  #endif // PERFTEST_CONNEXT_FEATURE_610
+  #endif // PERFTEST_RTI_PRO
 
   #ifdef RTI_FLATDATA_AVAILABLE
     if (_isFlatData) {
