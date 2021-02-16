@@ -807,9 +807,10 @@ void ParameterManager::initialize()
             | Middleware::RAWTRANSPORT
             | Middleware::RTIDDSMICRO);
     create("maximumAllocableBufferSize", maximumAllocableBufferSize);
+  #endif //RTI_LANGUAGE_CPP_TRADITIONAL
 
 
-  #ifdef PERFTEST_CONNEXT_FEATURE_610
+  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_610)
     Parameter<std::string> *compressionId =
             new Parameter<std::string>("MASK_NONE");
     compressionId->set_command_line_argument("-compressionId", "<kind>");
@@ -859,9 +860,8 @@ void ParameterManager::initialize()
     compressionThreshold->set_group(PUB);
     compressionThreshold->set_supported_middleware(Middleware::RTIDDSPRO);
     create("compressionThreshold", compressionThreshold);
-  #endif // PERFTEST_CONNEXT_FEATURE_610
+  #endif //defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_610)
 
-  #endif //RTI_LANGUAGE_CPP_TRADITIONAL
 
     ////////////////////////////////////////////////////////////////////////////
     //SUBSCRIBER PARAMETER
