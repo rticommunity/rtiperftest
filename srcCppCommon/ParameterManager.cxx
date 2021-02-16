@@ -465,6 +465,58 @@ void ParameterManager::initialize()
     create("cacheStats", cacheStats);
   #endif
 
+  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_610)
+    Parameter<std::string> *compressionId =
+            new Parameter<std::string>("MASK_NONE");
+    compressionId->set_command_line_argument("-compressionId", "<kind>");
+    compressionId->set_description(
+            "Set the compression algorithm to be used.\n"
+            "NOTE: Only ZLIB is compatible with batching"
+            "\nValues:\nZLIB\nLZ4\nBZIP2\n"
+            "Default: Disabled (MASK_NONE)");
+    compressionId->set_type(T_STR);
+    compressionId->set_extra_argument(YES);
+    compressionId->set_group(GENERAL);
+    compressionId->set_supported_middleware(Middleware::RTIDDSPRO);
+    compressionId->add_valid_str_value("ZLIB");
+    compressionId->add_valid_str_value("LZ4");
+    compressionId->add_valid_str_value("BZIP2");
+    compressionId->add_valid_str_value("MASK_NONE");
+    create("compressionId", compressionId);
+
+    Parameter<long> *compressionLevel = new Parameter<long>(10);
+    compressionLevel->set_command_line_argument("-compressionLevel", "<level>");
+    compressionLevel->set_description(
+            "Set the compression level.\n"
+            "The value 1 represents the fastest compression time and the\n"
+            "lowest compression ratio. The value 10 represents the slowest\n"
+            "compression time but the highest compression ratio. A value of 0\n"
+            "disables compression.\n"
+            "Default: 10 (BEST_COMPRESSION)");
+    compressionLevel->set_type(T_NUMERIC_LD);
+    compressionLevel->set_extra_argument(YES);
+    compressionLevel->set_range(0, 10);
+    compressionLevel->set_group(GENERAL);
+    compressionLevel->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("compressionLevel", compressionLevel);
+
+    Parameter<long> *compressionThreshold = new Parameter<long>(0);
+    compressionThreshold->set_command_line_argument(
+            "-compressionThreshold",
+            "<threshold>");
+    compressionThreshold->set_description(
+            "Set the compression threshold.\n"
+            "The threshold, in bytes, above which a serialized sample will be\n"
+            "eligible to be compressed.\n"
+            "Default: 0 (Compress all the samples)");
+    compressionThreshold->set_type(T_NUMERIC_LD);
+    compressionThreshold->set_extra_argument(YES);
+    compressionThreshold->set_range(0, LONG_MAX);
+    compressionThreshold->set_group(GENERAL);
+    compressionThreshold->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("compressionThreshold", compressionThreshold);
+  #endif //defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_610)
+
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER
 
@@ -808,60 +860,6 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("maximumAllocableBufferSize", maximumAllocableBufferSize);
   #endif //RTI_LANGUAGE_CPP_TRADITIONAL
-
-
-  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_610)
-    Parameter<std::string> *compressionId =
-            new Parameter<std::string>("MASK_NONE");
-    compressionId->set_command_line_argument("-compressionId", "<kind>");
-    compressionId->set_description(
-            "Set the compression algorithm to be used.\n"
-            "NOTE: Only ZLIB is compatible with batching"
-            "\nValues:\nZLIB\nLZ4\nBZIP2\n"
-            "Default: Disabled (MASK_NONE)");
-    compressionId->set_type(T_STR);
-    compressionId->set_extra_argument(YES);
-    compressionId->set_group(PUB);
-    compressionId->set_supported_middleware(Middleware::RTIDDSPRO);
-    compressionId->add_valid_str_value("ZLIB");
-    compressionId->add_valid_str_value("LZ4");
-    compressionId->add_valid_str_value("BZIP2");
-    compressionId->add_valid_str_value("MASK_NONE");
-    create("compressionId", compressionId);
-
-    Parameter<long> *compressionLevel = new Parameter<long>(10);
-    compressionLevel->set_command_line_argument("-compressionLevel", "<level>");
-    compressionLevel->set_description(
-            "Set the compression level.\n"
-            "The value 1 represents the fastest compression time and the\n"
-            "lowest compression ratio. The value 10 represents the slowest\n"
-            "compression time but the highest compression ratio. A value of 0\n"
-            "disables compression.\n"
-            "Default: 10 (BEST_COMPRESSION)");
-    compressionLevel->set_type(T_NUMERIC_LD);
-    compressionLevel->set_extra_argument(YES);
-    compressionLevel->set_range(0, 10);
-    compressionLevel->set_group(PUB);
-    compressionLevel->set_supported_middleware(Middleware::RTIDDSPRO);
-    create("compressionLevel", compressionLevel);
-
-    Parameter<long> *compressionThreshold = new Parameter<long>(0);
-    compressionThreshold->set_command_line_argument(
-            "-compressionThreshold",
-            "<threshold>");
-    compressionThreshold->set_description(
-            "Set the compression threshold.\n"
-            "The threshold, in bytes, above which a serialized sample will be\n"
-            "eligible to be compressed.\n"
-            "Default: 0 (Compress all the samples)");
-    compressionThreshold->set_type(T_NUMERIC_LD);
-    compressionThreshold->set_extra_argument(YES);
-    compressionThreshold->set_range(0, LONG_MAX);
-    compressionThreshold->set_group(PUB);
-    compressionThreshold->set_supported_middleware(Middleware::RTIDDSPRO);
-    create("compressionThreshold", compressionThreshold);
-  #endif //defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_610)
-
 
     ////////////////////////////////////////////////////////////////////////////
     //SUBSCRIBER PARAMETER
