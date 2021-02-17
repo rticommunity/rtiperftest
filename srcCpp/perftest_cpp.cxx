@@ -732,7 +732,7 @@ void perftest_cpp::print_configuration()
         stringStream << "\n";
     }
 
-  #ifdef PERFTEST_CONNEXT_FEATURE_610
+  #ifdef PERFTEST_CONNEXT_PRO_610
     if (_PM.get<std::string>("compressionId").find("NONE") == std::string::npos) {
         if (_PM.get<int>("compressionLevel") == 0) {
             stringStream << "\n[IMPORTANT]: This compression Level disabled "
