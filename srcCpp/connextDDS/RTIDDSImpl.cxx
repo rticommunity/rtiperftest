@@ -3375,7 +3375,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
         }
     }
 
-  #ifdef PERFTEST_CONNEXT_FEATURE_610
+  #ifdef PERFTEST_CONNEXT_PRO_610
     std::string compression_id = _PM->get<std::string>("compressionId");
 
     if (compression_id.find("NONE") == std::string::npos) {
@@ -3398,7 +3398,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
                 _PM->get<int>("compressionThreshold");
     }
 
-  #endif // PERFTEST_CONNEXT_FEATURE_610
+  #endif // PERFTEST_CONNEXT_PRO_610
   #endif // PERFTEST_RTI_PRO
 
   #ifdef RTI_FLATDATA_AVAILABLE
