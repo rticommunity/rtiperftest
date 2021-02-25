@@ -70,6 +70,18 @@ more information.
 What's Fixed in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+Warning message when using security and a custom governance file was sent to ``stdout`` |fixedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+When using `RTI Connext DDS Professional Secure` and providing a custom governance
+file (using the ``-secureGovernanceFile`` command-line option) a warning message
+would appear to make explicit that every security configuration option would be
+overriden by the content of the governance file. That message was sent in previous
+releases to the ``stdout`` instead of the ``stderr``. That is wrong, as only the
+data is written to the ``stdout``, hence allowing the option of doing a pipe of
+the output of perftest to a file and obtaining a pure ``.csv`` file. This issue
+has been corrected.
+
 :doc:`Previous Release Notes<./old_release_notes>`
 --------------------------------------------------
 
