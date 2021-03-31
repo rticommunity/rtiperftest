@@ -25,9 +25,20 @@ Edit the file ``/etc/sysctl.conf`` and add the following:
     net.ipv4.tcp_mem = 4096 131072 16777216
 
     net.core.netdev_max_backlog = 30000
-    net.ipv4.ipfrag_high_threshold = 8388608
+    net.ipv4.ipfrag_high_thresh = 8388608
 
-    run /sbin/sysctl -p
+Run the sysctl command to reload the changed values:
+
+
+::
+
+   sysctl -p
+
+Confirm the new settings by checking the output of:
+
+::
+
+   sysctl -a
 
 More information about Linux OS tuning can be found in `RTI's Community Portal
 <https://community.rti.com/howto/improve-rti-connext-dds-network-performance-linux>`__.
