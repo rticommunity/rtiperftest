@@ -1,9 +1,9 @@
 MIME-Version: 1.0
-Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg="sha-256"; boundary="----835B8BFAED2A1883EA970986FB372055"
+Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg="sha-256"; boundary="----A6121854DBBAD39B444E252E50559AA4"
 
 This is an S/MIME signed message
 
-------835B8BFAED2A1883EA970986FB372055
+------A6121854DBBAD39B444E252E50559AA4
 Content-Type: text/plain
 
 <?xml version="1.0" encoding="UTF-8"?>
@@ -15,7 +15,7 @@ Content-Type: text/plain
 -->
 
 <dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="dds_security_governance.xsd">
+    xsi:noNamespaceSchemaLocation="http://community.rti.com/schema/6.1.0/dds_security_governance.xsd">
 
     <!-- Differences from DDS Security specification 
      * in domain_id means all domains.
@@ -56,7 +56,7 @@ Content-Type: text/plain
     </domain_access_rules>
 </dds>
 
-------835B8BFAED2A1883EA970986FB372055
+------A6121854DBBAD39B444E252E50559AA4
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -85,16 +85,16 @@ AgEBMIGLMH4xCzAJBgNVBAYTAlVTMQswCQYDVQQIDAJDQTESMBAGA1UEBwwJU3Vu
 bnl2YWxlMR4wHAYDVQQKDBVSZWFsIFRpbWUgSW5ub3ZhdGlvbnMxDzANBgNVBAMM
 BlJUSSBDQTEdMBsGCSqGSIb3DQEJARYOc2VjdXJlQHJ0aS5jb20CCQDd39R7FGNy
 0zANBglghkgBZQMEAgEFAKCB5DAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
-CSqGSIb3DQEJBTEPFw0xOTEwMjQxNDA0MjRaMC8GCSqGSIb3DQEJBDEiBCDhO3FW
-C+3iDUq+1UjobHt72sImstBuRO9Y5WWCs4MPwTB5BgkqhkiG9w0BCQ8xbDBqMAsG
+CSqGSIb3DQEJBTEPFw0yMTAzMzEwOTA4NTBaMC8GCSqGSIb3DQEJBDEiBCCWMd3E
+bwr2kUSccwdHwMBExSZ2xDmxxe4vpeYZgqqKvjB5BgkqhkiG9w0BCQ8xbDBqMAsG
 CWCGSAFlAwQBKjALBglghkgBZQMEARYwCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMH
 MA4GCCqGSIb3DQMCAgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG
-9w0DAgIBKDANBgkqhkiG9w0BAQEFAASCAQC+exkVFzLWCNSzW6w7bIni/InGAVjX
-K6lu2KiBD7+uwG74RBqZ3N1gLqzyLBpzgrZuE1SRr4OkKaqmtmaNABc+uXlzfGSu
-zP59yKDW4bgULg+M1kEtcJzv3ytxutOFJkRJSVVeg7RN51YfJbhQ72bIIOJ+fnJu
-HarNOSC5h83boFBKKp+1p/19CUZyubruTsBvR97xoBSHbOuSSP03XKkeQqKyN9xC
-riwR+GrKZ5YnR/X9VFoJjcuKT9BSMZmS7P6z1hDye7t0sp/EgjW5FAWuRo5oaG7H
-oosZzT0M7Pi2dYbWwiRvD2+DikN41NKFuVDIUEnMjdx/ph4W+ReKm6Eh
+9w0DAgIBKDANBgkqhkiG9w0BAQEFAASCAQCf1Eq6AySJTw9Ac5sHrJxe3qe44pqC
+al7+DSbBJQ2ZmQuu8s/lD0DMsjpdYtXrkkzfrDJG027iMko1ihFhAIZ3m2y/Irpn
+JIs5fbcb384Sv5qcejWS/jh0O3D8CSUIdt8Vk0CFmc+qo9Pa3KvAkpmnQXUpRF+K
+Z2rRCCoV3f7hVR6LvZ5O3u8nCezzxg7fddi+2NJ4/5RaXZ+fgMtx6Vh8BqEFO79g
+68Q2n+k+3a4DGX3uIuVeT/wayTC4vrk0Dkz2wqEP+fIxOSb4EdO3hmGBEgeoBFq8
+UX54w41ECwg+FsDn9E1Rnob3SrUBzCpf0bFkUVd3i53Dbct85uBkxTvX
 
-------835B8BFAED2A1883EA970986FB372055--
+------A6121854DBBAD39B444E252E50559AA4--
 

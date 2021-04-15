@@ -82,6 +82,12 @@ data is written to the ``stdout``, hence allowing the option of doing a pipe of
 the output of perftest to a file and obtaining a pure ``.csv`` file. This issue
 has been corrected.
 
+Fix incorrect schema location in the Governance files used by security |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+All the `Governance files` pointed to a non-existent location for the xsd file.
+The reference has been updated and it now points to the right url.
+
 :doc:`Previous Release Notes<./old_release_notes>`
 --------------------------------------------------
 
