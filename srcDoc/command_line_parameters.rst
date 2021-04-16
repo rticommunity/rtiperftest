@@ -463,7 +463,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    Skip the print of the header rows for the *RTI Perftest* output.
 
-   By default, all headers rows are printed for each interval and summary.
+   By default, all header rows are printed for each interval and summary.
 
    | **Default:** ``Not enabled``
 
@@ -471,29 +471,38 @@ Test Parameters for Publishing and Subscribing Applications
 
    Set the compression algorithm to be used.
    By default compression is disabled.
-   If batching is enabled, only `ZLIB` it's supported.
+   If batching is enabled, only `ZLIB` is supported.
    For both latency and throughput tests, the compression setting must be
    provided to both publisher and subscriber to have the most possible accurate
    results.
+
+   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
+   above.
 
    | **Default:** ``MASK_NONE``
    | **Values:** ``['ZLIB','LZ4','BZIP2']``
 
 - ``-compressionLevel``
 
-    Set the compression level. The value 1 represents the fastest compression
-    time and the lowest compression ratio. The value 10 represents the slowest
-    compression time but the highest compression ratio. A value of 0 disables
-    compression.
+   Set the compression level. The value 1 represents the fastest compression
+   time and the lowest compression ratio. The value 10 represents the slowest
+   compression time but the highest compression ratio. A value of 0 disables
+   compression.
+
+   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
+   above.
 
    | **Default:** ``10``
 
 - ``-compressionThreshold``
 
-    Set the compression threshold. The threshold, in bytes, above which a
-    serialized sample will be eligible to be compressed.
-    The default value is 0 so if compression has been enabled all the samples
-    will be compressed.
+   Set the compression threshold. The threshold, in bytes, above which a
+   serialized sample will be eligible to be compressed.
+   The default value is 0, so if compression has been enabled all the samples
+   will be compressed.
+
+   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
+   above.
 
    | **Default:** ``0``
 
@@ -503,19 +512,19 @@ Test Parameters for Publishing and Subscribing Applications
    during the test.
 
    This feature is only available for *RTI Connext DDS Professional 6.1.0* and
-   versions above.
+   above.
 
    | **Default:** ``Not enabled``
 
 - ``-doNotDropNetworkCapture``
 
-   If the ``-networkCapture`` feature is in use. Do not drop the capture file
-   generated at the end of the test.
+   Do not drop the capture file generated at the end of the test, if the
+   ``-networkCapture`` feature is in use.
 
    This feature is only available for *RTI Connext DDS Professional 6.1.0* and
-   versions above.
+   above.
 
-   | **Default:** ``Not set: RTI Perftest will delete the file``
+   | **Default:** Not set: *RTI Perftest* will delete the file
 
 Transport-Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
