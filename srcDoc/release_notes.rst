@@ -83,6 +83,12 @@ of doing a pipe of the *RTI Perftest* output to a file, obtaining a pure ``.csv`
 
 This issue has been corrected; the message is now sent to ``stderr``.
 
+Fix incorrect schema location in the Governance files used by security |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+All the `Governance files` pointed to a non-existent location for the xsd file.
+The reference has been updated and it now points to the right url.
+
 :doc:`Previous Release Notes<./old_release_notes>`
 --------------------------------------------------
 
