@@ -3155,7 +3155,7 @@ std::string stringValueQoS(DDS_Long resourceLimitValue) {
 }
 
 template <typename T>
-bool RTIDDSImpl<T>::configure_reader_qos(
+bool RTIDDSImpl<T>::configure_writer_qos(
         DDS_DataWriterQos &dw_qos,
         std::string qos_profile,
         std::string topic_name)
@@ -3597,7 +3597,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
                     << stringValueQoS(
                         dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples)
                     << "\n";
-        
+
 
     #endif
 
@@ -3614,7 +3614,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
 }
 
 template <typename T>
-bool RTIDDSImpl<T>::configure_writer_qos(
+bool RTIDDSImpl<T>::configure_reader_qos(
         DDS_DataReaderQos &dr_qos,
         std::string qos_profile,
         std::string topic_name)
@@ -3932,7 +3932,7 @@ IMessagingWriter *RTIDDSImpl<T>::create_writer(const char *topic_name)
         return NULL;
     }
 
-    if (!configure_reader_qos(dw_qos, qos_profile, topic_name)) {
+    if (!configure_writer_qos(dw_qos, qos_profile, topic_name)) {
         fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
@@ -4029,7 +4029,7 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::create_writer(const char *topic_name)
         return NULL;
     }
 
-    if (!configure_reader_qos(dw_qos, qos_profile, topic_name)) {
+    if (!configure_writer_qos(dw_qos, qos_profile, topic_name)) {
         fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
@@ -4187,7 +4187,7 @@ IMessagingReader *RTIDDSImpl<T>::create_reader(
         return NULL;
     }
 
-    if (!configure_writer_qos(dr_qos, qos_profile, topic_name)) {
+    if (!configure_reader_qos(dr_qos, qos_profile, topic_name)) {
         fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
@@ -4302,7 +4302,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::create_reader(
         return NULL;
     }
 
-    if (!configure_writer_qos(dr_qos, qos_profile, topic_name)) {
+    if (!configure_reader_qos(dr_qos, qos_profile, topic_name)) {
         fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
