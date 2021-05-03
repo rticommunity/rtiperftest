@@ -254,7 +254,11 @@ public final class PerfTest {
 
         StringBuffer perftestVString = new StringBuffer(128);
 
-        if ((int)perftestV.major == 9
+        if ((int)perftestV.major == 0
+                && (int)perftestV.minor == 0
+                && (int)perftestV.release == 0) {
+            perftestVString.append("Develop");
+        } else if ((int)perftestV.major == 9
                 && (int)perftestV.minor == 9
                 && (int)perftestV.release == 9) {
             perftestVString.append("Master");

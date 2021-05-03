@@ -17,17 +17,18 @@ Release Notes Develop
 What's New in Develop
 ~~~~~~~~~~~~~~~~~~~~~
 
-Support for *RTI Connext DDS Professional* user data compression feature |newTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Support for *Connext DDS Professional* user data compression |newTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 *RTI Perftest* now supports (in the *Traditional C++ API implementation*) testing
 performance scenarios that enable the new compression feature introduced
 in *Connext DDS Professional 6.1.0*.
 
 The configuration can be done by using three new command-line options:
-``-compressionLevel``, ``-compressionId`` and ``-compressionThreshold``. See the
-:ref:`section-command_line_parameters` section for details about the parameters
-and the :ref:`section-large_sample` section for some examples of the usage of
+``-compressionLevel``, ``-compressionId`` and ``-compressionThreshold``.
+
+See the :ref:`section-command_line_parameters` section for details about the parameters
+and the :ref:`section-examples_compression` section for some examples of the usage of
 this feature.
 
 This feature is intended to be used in conjunction with the

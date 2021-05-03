@@ -355,8 +355,12 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
     bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 100000 -flatData -zeroCopy -checkConsistency -bestEffort
 
+
+
+.. _section-examples_compression:
+
 1-to-1, Compression, UDPv4, Unicast, BestEffort, Throughput test, Large Data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -371,7 +375,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -dataLen 100000 -checkConsistency -bestEffort
 
 1-to-1, Compression, UDPv4, Unicast, BestEffort, Latency test, Large Data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
@@ -386,7 +390,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
     bin/<arch>/release/perftest_cpp -sub -noPrint -compressionId LZ4 -compressionThreshold 0 -compressionLevel 5 -transport UDPv4 -dataLen 100000 -bestEffort
 
 1-to-1, Compression, UDPv4, Unicast, BestEffort, Throughput test, Large Data, Load data from file.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Publisher:
 
