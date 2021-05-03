@@ -193,7 +193,7 @@ use the ``-debug`` and ``-dynamic`` flags.
 Warnings Compiling on Windows systems when using the *RTI Security* plugin
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-We have found that in certain instalations of *Openssl* a missing `pdb` file
+We have found that in certain installations of *Openssl* a missing `pdb` file
 causes several warnings when compiling statically *RTI Perftest* for C++
 (Traditional and Modern implementations). The warning that will show should be
 similar to this one:
