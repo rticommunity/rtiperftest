@@ -2768,25 +2768,36 @@ namespace PerformanceTest {
             Perftest_ProductVersion_t perftestV = GetPerftestVersion();
             ProductVersion_t ddsV = GetDDSVersion();
 
-            if (perftestV.major == 9
+            if (perftestV.major == 0
+                    && perftestV.minor == 0
+                    && perftestV.release == 0)
+            {
+                Console.Write("RTI Perftest Develop");
+            }
+            else if (perftestV.major == 9
                     && perftestV.minor == 9
-                    && perftestV.release == 9) {
+                    && perftestV.release == 9)
+            {
                 Console.Write("RTI Perftest Master");
-            } else {
+            }
+            else
+            {
                 Console.Write(
                         "RTI Perftest "
                         + perftestV.major + "."
                         + perftestV.minor + "."
                         + perftestV.release);
-                if (perftestV.revision != 0) {
+                if (perftestV.revision != 0)
+                {
                     Console.Write("." + perftestV.revision);
                 }
-                Console.Write(
-                        " (RTI Connext DDS: "
-                        + ddsV.major + "."
-                        + ddsV.minor + "."
-                        + ddsV.release + ")\n");
             }
+
+            Console.Write(
+                    " (RTI Connext DDS: "
+                    + ddsV.major + "."
+                    + ddsV.minor + "."
+                    + ddsV.release + ")\n");
         }
 
         public struct Perftest_ProductVersion_t
@@ -2847,7 +2858,7 @@ namespace PerformanceTest {
         public const int timeout_wait_for_ack_sec = 0;
         public const uint timeout_wait_for_ack_nsec = 10000000;
         public static readonly Perftest_ProductVersion_t _version =
-                new Perftest_ProductVersion_t(9, 9, 9, 9);
+                new Perftest_ProductVersion_t(0, 0, 0, 0);
         public static ulong OVERHEAD_BYTES = 28;
 
         /*
