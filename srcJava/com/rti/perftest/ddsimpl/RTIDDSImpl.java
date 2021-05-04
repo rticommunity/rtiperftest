@@ -762,17 +762,18 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private String printSecureArgs() {
 
         String secure_arguments_string =
-                "Secure Arguments:\n" +
+                "Secure Arguments:\n";
+
+        if (_governanceFile == null) {
+            secure_arguments_string +=
                 "\t encrypt discovery: " + _secureIsDiscoveryEncrypted + "\n" +
                 "\t encrypt topic (user) data: " + _secureIsDataEncrypted + "\n" +
                 "\t encrypt submessage: " + _secureIsSMEncrypted + "\n" +
-                "\t sign data: " +_secureIsSigned + "\n";
-
-        if (_governanceFile != null) {
+                "\t sign data: " +_secureIsSigned + "\n" +
+                "\t governance file: Not specified\n";
+        } else {
             secure_arguments_string += "\t governance file: " + _governanceFile
                     + "\n";
-        } else {
-            secure_arguments_string += "\t governance file: Not specified\n";
         }
 
         if (_securePermissionsFile != null) {
@@ -1617,7 +1618,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     return false;
                 }
                 _governanceFile  = argv[i];
-                System.out.println("Warning -- authentication, encryption, signing arguments " +
+                System.err.println("Warning -- authentication, encryption, signing arguments " +
                          "will be ignored, and the values specified by the Governance file will " +
                          "be used instead");
                  _secureUseSecure = true;

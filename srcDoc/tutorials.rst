@@ -3,4 +3,8 @@
 Tutorials
 =========
 
-- :doc:`./tutorials/performance_validation`
+.. toctree::
+    :maxdepth: 1
+    :glob:
+
+    ./tutorials/*

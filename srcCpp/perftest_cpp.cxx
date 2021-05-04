@@ -73,7 +73,7 @@ bool perftest_cpp::_testCompleted = false;
 bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
 const int timeout_wait_for_ack_sec = 0;
 const unsigned int timeout_wait_for_ack_nsec = 100000000;
-const Perftest_ProductVersion_t perftest_cpp::_version = {9, 9, 9, 9};
+const Perftest_ProductVersion_t perftest_cpp::_version = {0, 0, 0, 0};
 
 /*
  * PERFTEST-108
@@ -270,7 +270,11 @@ void perftest_cpp::print_version()
 {
     Perftest_ProductVersion_t perftestV = perftest_cpp::get_perftest_version();
 
-    if (perftestV.major == 9
+    if (perftestV.major == 0
+            && perftestV.minor == 0
+            && perftestV.release == 0) {
+        fprintf(stderr, "RTI Perftest Develop");
+    } else if (perftestV.major == 9
             && perftestV.minor == 9
             && perftestV.release == 9) {
         fprintf(stderr, "RTI Perftest Master");
@@ -279,9 +283,10 @@ void perftest_cpp::print_version()
                 perftestV.major,
                 perftestV.minor,
                 perftestV.release);
-        if (perftestV.revision != 0) {
-            fprintf(stderr, ".%d", perftestV.revision);
-        }
+    }
+
+    if (perftestV.revision != 0) {
+        fprintf(stderr, ".%d", perftestV.revision);
     }
 
   #ifdef PERFTEST_COMMIT_ID
@@ -731,6 +736,25 @@ void perftest_cpp::print_configuration()
         }
         stringStream << "\n";
     }
+
+  #ifdef PERFTEST_CONNEXT_PRO_610
+    if (_PM.get<std::string>("compressionId").find("NONE") == std::string::npos) {
+        if (_PM.get<int>("compressionLevel") == 0) {
+            stringStream << "\n[IMPORTANT]: This compression Level disabled "
+                            "all compression.";
+        } else if (
+                _PM.get<int>("compressionThreshold") == DDS_LENGTH_UNLIMITED) {
+            stringStream << "\n[IMPORTANT]: This compression Threshold "
+                            "disabled all compression.";
+        } else {
+            stringStream << "\n[IMPORTANT]: Compression Enabled.";
+            stringStream << "\n\t Compression Algorithm: " << _PM.get<std::string>("compressionId");
+            stringStream << "\n\t Compression Level: " << _PM.get<int>("compressionLevel");
+            stringStream << "\n\t Compression Threshold: " << _PM.get<int>("compressionThreshold");
+        }
+        stringStream << "\n";
+    }
+  #endif
 
     fprintf(stderr, "%s\n", stringStream.str().c_str());
 

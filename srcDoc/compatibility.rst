@@ -193,7 +193,7 @@ use the ``-debug`` and ``-dynamic`` flags.
 Warnings Compiling on Windows systems when using the *RTI Security* plugin
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-We have found that in certain instalations of *Openssl* a missing `pdb` file
+We have found that in certain installations of *Openssl* a missing `pdb` file
 causes several warnings when compiling statically *RTI Perftest* for C++
 (Traditional and Modern implementations). The warning that will show should be
 similar to this one:
@@ -201,8 +201,8 @@ similar to this one:
 ::
 
     libeay32z.lib(wp_block.obj) : warning LNK4099: PDB 'lib.pdb' was not found with
-    'libeay32z.lib(wp_block.obj)' or at 'rtiperftest\srcCpp03\objs\i86Win32VS2015\lib.pdb';
-    linking object as if no debug info [srcCpp03\perftest_publisher-i86Win32VS2015.vcxproj]
+    'libeay32z.lib(wp_block.obj)' or at 'rtiperftest\srcCpp11\objs\i86Win32VS2015\lib.pdb';
+    linking object as if no debug info [srcCpp11\perftest_publisher-i86Win32VS2015.vcxproj]
 
     403 Warning(s)
     0 Error(s)

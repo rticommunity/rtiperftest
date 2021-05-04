@@ -6,7 +6,7 @@ set script_location=%~dp0
 set "idl_location=%script_location%srcIdl"
 set "common_cpp_folder=%script_location%srcCppCommon"
 set "classic_cpp_folder=%script_location%srcCpp"
-set "modern_cpp_folder=%script_location%srcCpp03"
+set "modern_cpp_folder=%script_location%srcCpp11"
 set "cs_folder=%script_location%srcCs"
 set "java_folder=%script_location%srcJava"
 set "java_scripts_folder=%script_location%resource\scripts\java_execution_scripts"
@@ -25,7 +25,7 @@ set MICRO_UNBOUNDED_SEQUENCE_SIZE=1048576
 
 @REM # Default values:
 set BUILD_CPP=1
-set BUILD_CPP03=1
+set BUILD_CPP11=1
 set BUILD_CS=1
 set BUILD_JAVA=1
 set CMAKE_EXE=cmake
@@ -47,7 +47,7 @@ set rtiddsgen_version_number_new_solution_name=2.3.6
 set RTI_OPENSSLHOME=""
 
 set "classic_cpp_lang_string=C++"
-set "modern_cpp_lang_string=C++03"
+set "modern_cpp_lang_string=C++11"
 set "cs_lang_string=C#"
 set "java_lang_string=java"
 
@@ -99,29 +99,29 @@ if NOT "%1"=="" (
 				SET BUILD_JAVA=0
 		) ELSE if "%1"=="--skip-cpp-build" (
 				SET BUILD_CPP=0
-		) ELSE if "%1"=="--skip-cpp03-build" (
-				SET BUILD_CPP03=0
+		) ELSE if "%1"=="--skip-cpp11-build" (
+				SET BUILD_CPP11=0
 		) ELSE if "%1"=="--skip-cs-build" (
 				SET BUILD_CS=0
 		) ELSE if "%1"=="--java-build" (
 				SET BUILD_JAVA=1
 				SET BUILD_CPP=0
-				SET BUILD_CPP03=0
+				SET BUILD_CPP11=0
 				SET BUILD_CS=0
 		) ELSE if "%1"=="--cpp-build" (
 				SET BUILD_JAVA=0
 				SET BUILD_CPP=1
-				SET BUILD_CPP03=0
+				SET BUILD_CPP11=0
 				SET BUILD_CS=0
-		) ELSE if "%1"=="--cpp03-build" (
+		) ELSE if "%1"=="--cpp11-build" (
 				SET BUILD_JAVA=0
 				SET BUILD_CPP=0
-				SET BUILD_CPP03=1
+				SET BUILD_CPP11=1
 				SET BUILD_CS=0
 		) ELSE if "%1"=="--cs-build" (
 				SET BUILD_JAVA=0
 				SET BUILD_CPP=0
-				SET BUILD_CPP03=0
+				SET BUILD_CPP11=0
 				SET BUILD_CS=1
 		) ELSE if "%1"=="--debug" (
 				SET RELEASE_DEBUG=debug
@@ -249,11 +249,11 @@ if !BUILD_MICRO! == 1 (
 			set BUILD_CPP=0
 		)
 	)
-	if !BUILD_CPP03! == 1 (
+	if !BUILD_CPP11! == 1 (
 		call !MSBUILD_EXE! /version > nul
 		if not !ERRORLEVEL! == 0 (
-			echo [WARNING]: !MSBUILD_EXE! executable not found, perftest_cpp03 will not be built.
-			set BUILD_CPP03=0
+			echo [WARNING]: !MSBUILD_EXE! executable not found, perftest_cpp11 will not be built.
+			set BUILD_CPP11=0
 		)
 	)
 	if !BUILD_CS! == 1 (
@@ -278,7 +278,7 @@ if !BUILD_MICRO! == 1 (
 if !BUILD_CPP! == 1 (
 	set GENERATE_QOS_STRING=1
 )
-if !BUILD_CPP03! == 1 (
+if !BUILD_CPP11! == 1 (
 	set GENERATE_QOS_STRING=1
 )
 
@@ -297,7 +297,7 @@ if !GENERATE_QOS_STRING! == 1 (
 if !BUILD_MICRO! == 1 (
 
 	set BUILD_CPP=0
-	set BUILD_CPP03=0
+	set BUILD_CPP11=0
 	set BUILD_JAVA=0
 	set BUILD_CS=0
 
@@ -522,7 +522,7 @@ if !BUILD_CPP! == 1 (
 
 ::------------------------------------------------------------------------------
 
-if !BUILD_CPP03! == 1 (
+if !BUILD_CPP11! == 1 (
 	call::copy_src_cpp_common
 	call::solution_compilation_flag_calculation
 	call::get_flatdata_available
@@ -594,7 +594,7 @@ if !BUILD_CPP03! == 1 (
 	!rtiddsgen_extra_options!^
 	-d "%modern_cpp_folder%" "%idl_location%\perftest.idl"
 
-	@REM #Generate files for srcCpp03
+	@REM #Generate files for srcCpp11
 	echo[
 	echo [INFO]: Generating types and makefiles for %modern_cpp_lang_string%
 	call "%rtiddsgen_executable%" -language %modern_cpp_lang_string% ^
@@ -656,7 +656,7 @@ if !BUILD_CPP03! == 1 (
 
 	echo [INFO]: Copying perftest_cpp executable file:
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
-	copy /Y "%modern_cpp_folder%"\objs\%architecture%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp03"%executable_extension%"
+	copy /Y "%modern_cpp_folder%"\objs\%architecture%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp11"%executable_extension%"
 	call::clean_copied_files
 
 	if "x!STATIC_DYNAMIC!" == "xdynamic" (
@@ -1005,7 +1005,7 @@ GOTO:EOF
 	echo.    --skip-java-build            Avoid Java ByteCode generation creation.
 	echo.                                 (No effect when building for Micro)
 	echo.    --skip-cpp-build             Avoid C++ code generation and compilation.
-	echo.    --skip-cpp03-build           Avoid C++ New PSM code generation and
+	echo.    --skip-cpp11-build           Avoid C++ New PSM code generation and
 	echo.                                 compilation.
 	echo.                                 (No effect when building for Micro)
 	echo.    --skip-cs-build              Avoid C Sharp code generation and compilation.
@@ -1013,7 +1013,7 @@ GOTO:EOF
 	echo.    --java-build                 Only Java ByteCode generation creation.
 	echo.                                 (No effect when building for Micro)
 	echo.    --cpp-build                  Only C++ code generation and compilation.
-	echo.    --cpp03-build                Only C++ New PSM code generation and
+	echo.    --cpp11-build                Only C++ New PSM code generation and
 	echo.                                 compilation.
 	echo.                                 (No effect when building for Micro)
 	echo.    --cs-build                   Only C Sharp code generation and compilation.
@@ -1090,7 +1090,7 @@ GOTO:EOF
 GOTO:EOF
 
 :copy_src_cpp_common
-	@REM # Copy file from srcCommon to srcCpp and srcCpp03
+	@REM # Copy file from srcCommon to srcCpp and srcCpp11
 	for %%i in (%common_cpp_folder%\*) do (
 		call copy /Y %common_cpp_folder%\%%~nxi %modern_cpp_folder%\ > nul 2>nul
 		call copy /Y %common_cpp_folder%\%%~nxi %classic_cpp_folder%\ > nul 2>nul
@@ -1151,16 +1151,16 @@ GOTO:EOF
 	del %script_location%srcCpp\README.txt > nul 2>nul
 	rmdir /s /q "%script_location%srcCpp\gen" > nul 2>nul
 	rmdir /s /q "%script_location%srcCpp\perftest_build" > nul 2>nul
-	rmdir /s /q %script_location%srcCpp03\objs > nul 2>nul
-	del %script_location%srcCpp03\*.vcxproj > nul 2>nul
-	del %script_location%srcCpp03\*.vcproj > nul 2>nul
-	del %script_location%srcCpp03\*.filters > nul 2>nul
-	del %script_location%srcCpp03\*.sln > nul 2>nul
-	del %script_location%srcCpp03\perftest.* > nul 2>nul
-	del %script_location%srcCpp03\perftestImplPlugin.* > nul 2>nul
-	del %script_location%srcCpp03\perftestImpl.* > nul 2>nul
-	del %script_location%srcCpp03\perftest_publisher.cxx > nul 2>nul
-	del %script_location%srcCpp03\perftest_subscriber.cxx > nul 2>nul
+	rmdir /s /q %script_location%srcCpp11\objs > nul 2>nul
+	del %script_location%srcCpp11\*.vcxproj > nul 2>nul
+	del %script_location%srcCpp11\*.vcproj > nul 2>nul
+	del %script_location%srcCpp11\*.filters > nul 2>nul
+	del %script_location%srcCpp11\*.sln > nul 2>nul
+	del %script_location%srcCpp11\perftest.* > nul 2>nul
+	del %script_location%srcCpp11\perftestImplPlugin.* > nul 2>nul
+	del %script_location%srcCpp11\perftestImpl.* > nul 2>nul
+	del %script_location%srcCpp11\perftest_publisher.cxx > nul 2>nul
+	del %script_location%srcCpp11\perftest_subscriber.cxx > nul 2>nul
 	rmdir /s /q %script_location%srcCs\obj > nul 2>nul
 	rmdir /s /q %script_location%srcCs\bin > nul 2>nul
 	del %script_location%srcCs\*.vcxproj > nul 2>nul

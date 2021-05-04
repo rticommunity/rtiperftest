@@ -394,7 +394,7 @@ Test Parameters for Publishing and Subscribing Applications
 
 -  ``-threadPriorities X:Y:Z``
 
-    This command-line parameter is supported only for the C++ and C++03 API
+    This command-line parameter is supported only for the C++ and C++11 API
     implementations.
 
     Set the priorities for the application threads:
@@ -463,9 +463,68 @@ Test Parameters for Publishing and Subscribing Applications
 
    Skip the print of the header rows for the *RTI Perftest* output.
 
-   By default, all headers rows are printed for each interval and summary.
+   By default, all header rows are printed for each interval and summary.
 
    | **Default:** ``Not enabled``
+
+- ``-compressionId``
+
+   Set the compression algorithm to be used.
+   By default compression is disabled.
+   If batching is enabled, only `ZLIB` is supported.
+   For both latency and throughput tests, the compression setting must be
+   provided to both publisher and subscriber to have the most possible accurate
+   results.
+
+   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
+   above.
+
+   | **Default:** ``MASK_NONE``
+   | **Values:** ``['ZLIB','LZ4','BZIP2']``
+
+- ``-compressionLevel``
+
+   Set the compression level. The value 1 represents the fastest compression
+   time and the lowest compression ratio. The value 10 represents the slowest
+   compression time but the highest compression ratio. A value of 0 disables
+   compression.
+
+   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
+   above.
+
+   | **Default:** ``10``
+
+- ``-compressionThreshold``
+
+   Set the compression threshold. The threshold, in bytes, above which a
+   serialized sample will be eligible to be compressed.
+   The default value is 0, so if compression has been enabled all the samples
+   will be compressed.
+
+   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
+   above.
+
+   | **Default:** ``0``
+
+- ``-networkCapture``
+
+   Enable the *RTI Connext DDS Professional* "Network Capture" feature
+   during the test.
+
+   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
+   above.
+
+   | **Default:** ``Not enabled``
+
+- ``-doNotDropNetworkCapture``
+
+   Do not drop the capture file generated at the end of the test, if the
+   ``-networkCapture`` feature is in use.
+
+   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
+   above.
+
+   | **Default:** Not set: *RTI Perftest* will delete the file
 
 Transport-Specific Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -478,7 +537,7 @@ by using the transport-spececific command-line parameters.
 
    Set the transport to be used. The rest of the transports will be disabled.
 
-   | **Options Pro:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS`` and ``WAN``
+   | **Options Pro:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS``, ``WAN`` and ``UDPv4_WAN``
    | **Default Pro:** Transport defined in the XML profile (``UDPv4`` and ``SHMEM`` if the XML profile is not changed)
 
    | **Options Micro:** ``UDPv4``, ``SHMEM``
@@ -536,6 +595,9 @@ by using the transport-spececific command-line parameters.
 
    For TCP and TLS. Public IP address and port (WAN address and port) (separated by ‘:’)
    associated with the transport instantiation.
+
+   For WAN_UDPv4. Public address of the UDPv4_WAN transport instantiation. Format is
+   ``<public_ip>:<public_port>``.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.

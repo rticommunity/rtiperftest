@@ -84,7 +84,7 @@ function build_perfest_clean()
 
 function build_perftest()
 {
-    compiling_command="${rtiperftest_folder}build.sh --platform ${platform} --skip-java-build --skip-cpp03-build --customType ${custom_type} &> ${tmp_build_file}"
+    compiling_command="${rtiperftest_folder}build.sh --platform ${platform} --skip-java-build --skip-cpp11-build --customType ${custom_type} &> ${tmp_build_file}"
     echo ""
     echo -e "${INFO_TAG} Compiling for test ${1}"
     echo -e "${INFO_TAG} Command: $compiling_command"
