@@ -41,7 +41,7 @@ The publishing side of the test writes data as fast as it can. Every few samples
 
 The publisher prints the latency test results while the subscriber prints the throughput results.
 
-<img src="srcDoc/_static/PerfTest_Overview_Diagram.png" alt="**RTI Perftest** Overview Diagram" >
+<img src="srcDoc/_static/PerfTest_Overview_Diagram_white.png" alt="**RTI Perftest** Overview Diagram" >
 
 **RTI Perftest** allows 2 operational modes: _Throughput Test_ and _Latency Test_
 
