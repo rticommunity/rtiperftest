@@ -11,11 +11,11 @@ Release Notes
     using your own data as payload!
     </strong></p>
 
-Release Notes Master
---------------------
+Release Notes 3.2
+-----------------
 
-What's New in Master
-~~~~~~~~~~~~~~~~~~~~
+What's New in 3.2
+~~~~~~~~~~~~~~~~~
 
 Support for *Connext DDS Professional* user data compression |newTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -68,8 +68,8 @@ usage. To use this option, the ``-transportPublicAddress`` command-line option
 is required on one side, either the *Publisher* or *Subscriber* side.
 See :ref:`section-command_line_parameters` for more information.
 
-What's Fixed in Master
-~~~~~~~~~~~~~~~~~~~~~~
+What's Fixed in 3.2
+~~~~~~~~~~~~~~~~~~~
 
 Warning message when using security and a custom governance file was sent to ``stdout`` |fixedTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
