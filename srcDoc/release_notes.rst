@@ -6,9 +6,10 @@ Release Notes
 .. raw:: html
 
     <p style="color:#004C97"; align="centerw"><strong>
-    Now you can extend RTI Perftest to work with other ecosystems, use more
-    friendly output formats for visualization or comparison, and perform tests
-    using your own data as payload!
+    *RTI Perftest* is updated to be compatible with *Connext DDS Professional*
+    6.1.0. You can now test the huge performance improvements of using *Data Compression*,
+    test your scenarios using the new *UDPv4_WAN* transport or understand the performance
+    impact when using the *Network Capture* feature.
     </strong></p>
 
 Release Notes 3.2
