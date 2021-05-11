@@ -137,7 +137,7 @@ This problem has been resolved by adding a new parameter `-showSerializationTime
 enables calculating and showing the serialization/deserialization times.
 
 Control the size of the initial burst of intialization samples (#310) |newTag|
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++^^^^^^
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 A new command-line parameter, `-initialBurstSize`, has been added to the
 Traditional and Modern C++ API implementations to control the number of
