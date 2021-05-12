@@ -83,6 +83,10 @@ RTIDDSImpl<T>::RTIDDSImpl()
   #ifdef PERFTEST_RTI_PRO
     _instanceMaxCountReader = DDS_LENGTH_UNLIMITED;
     _sendQueueSize = 0;
+    #ifdef PERFTEST_CONNEXT_PRO_610
+    _isNetworkCapture = false;
+    _networkCaptureOutputFile = "rtiperftest_network_capture";
+    #endif
   #else
     /*
      * For micro we want to restrict the use of memory, and since we need
@@ -128,6 +132,13 @@ void RTIDDSImpl<T>::shutdown()
         fprintf(stderr,"Unexpected error taking semaphore\n");
         return;
     }
+
+  #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_PRO_610)
+    if (_isNetworkCapture
+            && !NDDSUtilityNetworkCapture::stop(_participant)) {
+        fprintf(stderr, "Unexpected error stopping network capture\n");
+    }
+  #endif
 
     if (_participant != NULL) {
         PerftestClock::milliSleep(2000);
@@ -220,6 +231,26 @@ void RTIDDSImpl<T>::shutdown()
             // Delete semaphore since no one else is going to need it
             PerftestMutex_delete(_finalizeFactoryMutex);
             _finalizeFactoryMutex = NULL;
+
+          #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_PRO_610)
+
+            // Disable network capture if it was enabled at the beginning
+            if (_isNetworkCapture && !NDDSUtilityNetworkCapture::disable()) {
+                fprintf(stderr, "Unexpected error disabling network capture\n");
+            }
+
+            // Remove the generated pcap file, unless otherwise specified.
+            if (_isNetworkCapture && !_PM->get<bool>("doNotDropNetworkCapture")) {
+                std::string outputFile =
+                        std::string(_networkCaptureOutputFile) + ".pcap";
+                if (RTIOsapiUtility_fileExists(outputFile.c_str())
+                        && !RTIOsapi_removeFile(outputFile.c_str())) {
+                    fprintf(stderr, "Unexpected error removing network capture's pcap output\n");
+                }
+            }
+
+          #endif
+
             return;
         }
     } else {
@@ -541,6 +572,11 @@ std::string RTIDDSImpl<T>::print_configuration()
     } else {
         stringStream << _PM->get<std::string>("qosFile") << "\n";
     }
+
+    #ifdef PERFTEST_CONNEXT_PRO_610
+    stringStream << "\tNetwork capture: "
+                 << (_PM->get<bool>("networkCapture") ? "Yes" : "No");
+    #endif
   #endif
 
     stringStream << "\n" << _transport.printTransportConfigurationSummary();
@@ -2574,6 +2610,23 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     DDS_DomainParticipantFactoryQos factory_qos;
     DDS_PublisherQos publisherQoS;
 
+
+  #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_PRO_610)
+
+    // Enable network capture if the test activates the feature.
+    // Start capturing once the participant is created.
+    // We start it per participant. That way we know the filename (no GUID
+    // suffix) and we can remove it later.
+    _isNetworkCapture = _PM->get<bool>("networkCapture");
+    if (_isNetworkCapture) {
+        if (!NDDSUtilityNetworkCapture::enable()) {
+            fprintf(stderr, "Unexpected error enabling network capture\n");
+            return false;
+        }
+    }
+
+  #endif
+
     DomainListener *listener = new DomainListener();
 
     /* Mask for _threadPriorities when it's used */
@@ -2630,6 +2683,42 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
         fprintf(stderr,"Problem creating participant.\n");
         return false;
     }
+
+    #ifdef PERFTEST_CONNEXT_PRO_610
+    // Start capturing traffic for the participant, if network capture enabled.
+    if (_isNetworkCapture) {
+
+        // We want the different applications to write in different files.
+        if (_PM->get<bool>("pub")) {
+            _networkCaptureOutputFile += "_pub_";
+            _networkCaptureOutputFile
+                += perftest::to_string(_PM->get<int>("pidMultiPubTest"));
+        } else {
+            _networkCaptureOutputFile += "_sub_";
+            _networkCaptureOutputFile
+                += perftest::to_string(_PM->get<int>("sidMultiSubTest"));
+        }
+
+        // If running with security, we will parse its contents and remove the
+        // encrypted data.
+        // This requires additional processing, so it is a more demanding test.
+        NDDS_Utility_NetworkCaptureParams_t_initialize(&_networkCaptureParams);
+        _networkCaptureParams.parse_encrypted_content = DDS_BOOLEAN_TRUE;
+        _networkCaptureParams.dropped_content =
+                NDDS_UTILITY_NETWORK_CAPTURE_CONTENT_ENCRYPTED_DATA;
+
+        if (!NDDSUtilityNetworkCapture::start(
+                _participant,
+                _networkCaptureOutputFile.c_str(),
+                _networkCaptureParams)) {
+            fprintf(stderr, "Unexpected error starting network capture\n");
+            return false;
+        }
+
+        NDDS_Utility_NetworkCaptureParams_t_finalize(&_networkCaptureParams);
+    }
+    #endif
+
   #else
     if (_participant == NULL) {
         fprintf(stderr,"Problem creating participant.\n");
@@ -3066,7 +3155,7 @@ std::string stringValueQoS(DDS_Long resourceLimitValue) {
 }
 
 template <typename T>
-bool RTIDDSImpl<T>::configure_reader_qos(
+bool RTIDDSImpl<T>::configure_writer_qos(
         DDS_DataWriterQos &dw_qos,
         std::string qos_profile,
         std::string topic_name)
@@ -3261,7 +3350,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
 
     dw_qos.resource_limits.max_instances =
             _PM->get<long>("instances") + 1; // One extra for MAX_CFT_VALUE
-  #ifndef PERFTEST_RTI_MICRO
+  #ifdef PERFTEST_RTI_PRO
     dw_qos.resource_limits.initial_instances = _PM->get<long>("instances") + 1;
 
     // If is LargeData
@@ -3285,7 +3374,32 @@ bool RTIDDSImpl<T>::configure_reader_qos(
                     _PM->get<long>("instances");
         }
     }
-  #endif
+
+  #ifdef PERFTEST_CONNEXT_PRO_610
+    std::string compression_id = _PM->get<std::string>("compressionId");
+
+    if (compression_id.find("NONE") == std::string::npos) {
+        if (compression_id.find("ZLIB") != std::string::npos) {
+            dw_qos.representation.compression_settings.compression_ids =
+                    DDS_COMPRESSION_ID_ZLIB_BIT;
+        }
+        if (compression_id.find("BZIP2") != std::string::npos) {
+            dw_qos.representation.compression_settings.compression_ids =
+                    DDS_COMPRESSION_ID_BZIP2_BIT;
+        }
+        if (compression_id.find("LZ4") != std::string::npos) {
+            dw_qos.representation.compression_settings.compression_ids =
+                    DDS_COMPRESSION_ID_LZ4_BIT;
+        }
+
+        dw_qos.representation.compression_settings.writer_compression_level =
+                _PM->get<int>("compressionLevel");
+        dw_qos.representation.compression_settings.writer_compression_threshold =
+                _PM->get<int>("compressionThreshold");
+    }
+
+  #endif // PERFTEST_CONNEXT_PRO_610
+  #endif // PERFTEST_RTI_PRO
 
   #ifdef RTI_FLATDATA_AVAILABLE
     if (_isFlatData) {
@@ -3483,7 +3597,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
                     << stringValueQoS(
                         dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples)
                     << "\n";
-        
+
 
     #endif
 
@@ -3500,7 +3614,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
 }
 
 template <typename T>
-bool RTIDDSImpl<T>::configure_writer_qos(
+bool RTIDDSImpl<T>::configure_reader_qos(
         DDS_DataReaderQos &dr_qos,
         std::string qos_profile,
         std::string topic_name)
@@ -3818,7 +3932,7 @@ IMessagingWriter *RTIDDSImpl<T>::create_writer(const char *topic_name)
         return NULL;
     }
 
-    if (!configure_reader_qos(dw_qos, qos_profile, topic_name)) {
+    if (!configure_writer_qos(dw_qos, qos_profile, topic_name)) {
         fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
@@ -3915,7 +4029,7 @@ IMessagingWriter *RTIDDSImpl_FlatData<T>::create_writer(const char *topic_name)
         return NULL;
     }
 
-    if (!configure_reader_qos(dw_qos, qos_profile, topic_name)) {
+    if (!configure_writer_qos(dw_qos, qos_profile, topic_name)) {
         fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
@@ -4073,7 +4187,7 @@ IMessagingReader *RTIDDSImpl<T>::create_reader(
         return NULL;
     }
 
-    if (!configure_writer_qos(dr_qos, qos_profile, topic_name)) {
+    if (!configure_reader_qos(dr_qos, qos_profile, topic_name)) {
         fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }
@@ -4188,7 +4302,7 @@ IMessagingReader *RTIDDSImpl_FlatData<T>::create_reader(
         return NULL;
     }
 
-    if (!configure_writer_qos(dr_qos, qos_profile, topic_name)) {
+    if (!configure_reader_qos(dr_qos, qos_profile, topic_name)) {
         fprintf(stderr, "Problem creating additional QoS settings with %s profile.\n", qos_profile.c_str());
         return NULL;
     }

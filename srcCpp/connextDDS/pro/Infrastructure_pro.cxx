@@ -468,6 +468,62 @@ bool configureWanTransport(
 
     return true;
 }
+#ifdef PERFTEST_CONNEXT_PRO_610
+bool configureUdpv4WanTransport(
+        PerftestTransport &transport,
+        DDS_DomainParticipantQos& qos,
+        ParameterManager *_PM)
+{
+
+    qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4_WAN;
+
+    if (!_PM->get<std::string>("transportPublicAddress").empty()) {
+
+
+        std::string publicAddress
+                = _PM->get<std::string>("transportPublicAddress");
+        std::string delimiter = ":";
+
+        size_t pos = publicAddress.find(delimiter);
+        if (pos == std::string::npos) {
+            fprintf(stderr,
+                    "%s Wan Public Address format invalid. Use "
+                    "<public_address>:<public_port>\n",
+                    classLoggingString.c_str());
+            return false;
+        }
+
+        std::string publicAddressIp
+                = publicAddress.substr(0, pos);
+        std::string publicAddressPort
+                = publicAddress.substr(pos+1, std::string::npos);
+
+        if (!addPropertyToParticipantQos(
+                qos,
+                transport.transportConfig.prefixString + ".public_address",
+                publicAddressIp)) {
+            return false;
+        }
+
+        std::string json_string_comm_ports(
+                "{ \"default\": { \"host\": "
+                + publicAddressPort
+                + ",  \"public\": "
+                + publicAddressPort
+                + " } }");
+
+        if (!addPropertyToParticipantQos(
+                qos,
+                transport.transportConfig.prefixString + ".comm_ports",
+                json_string_comm_ports)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+#endif // PERFTEST_CONNEXT_PRO_610
+
 
 bool configureShmemTransport(
         PerftestTransport &transport,
@@ -928,6 +984,16 @@ bool PerftestConfigureTransport(
                 return false;
             }
             break;
+      #ifdef PERFTEST_CONNEXT_PRO_610
+        case TRANSPORT_UDPv4_WAN:
+            if (!configureUdpv4WanTransport(transport, qos, _PM)) {
+                fprintf(stderr,
+                        "%s Failed to configure UDPv4_WAN plugin\n",
+                        classLoggingString.c_str());
+                return false;
+            }
+            break;
+      #endif // PERFTEST_CONNEXT_PRO_610
         default:
 
             /*

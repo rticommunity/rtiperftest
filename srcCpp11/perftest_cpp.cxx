@@ -84,7 +84,7 @@ RTI_UINT64 perftest_cpp::_Clock_usec = 0;
 
 const long timeout_wait_for_ack_sec = 0;
 const unsigned long timeout_wait_for_ack_nsec = 100000000;
-const Perftest_ProductVersion_t perftest_cpp::_version = {9, 9, 9, 9};
+const Perftest_ProductVersion_t perftest_cpp::_version = {0, 0, 0, 0};
 ThreadPriorities _threadPriorities;
 
 /*
@@ -285,7 +285,11 @@ void perftest_cpp::print_version()
     Perftest_ProductVersion_t perftestV = perftest_cpp::get_perftest_version();
     rti::core::ProductVersion ddsV = perftest_cpp::GetDDSVersion();
 
-    if (perftestV.major == 9
+    if (perftestV.major == 0
+            && perftestV.minor == 0
+            && perftestV.release == 0) {
+        fprintf(stderr, "RTI Perftest Develop");
+    } else if (perftestV.major == 9
             && perftestV.minor == 9
             && perftestV.release == 9) {
         fprintf(stderr, "RTI Perftest Master");
@@ -294,10 +298,10 @@ void perftest_cpp::print_version()
                 perftestV.major,
                 perftestV.minor,
                 perftestV.release);
+    }
 
-        if (perftestV.revision != 0) {
-            fprintf(stderr, ".%d", perftestV.revision);
-        }
+    if (perftestV.revision != 0) {
+        fprintf(stderr, ".%d", perftestV.revision);
     }
 
   #ifdef PERFTEST_COMMIT_ID

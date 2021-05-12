@@ -10,6 +10,18 @@
 #include "osapi/osapi_ntptime.h"
 #include "osapi/osapi_process.h"
 #include "ndds/ndds_cpp.h"
+
+/*
+ * In order to enable/disable certain features depending on the version of
+ * ConnextDDS Pro, we will use the version number of the middleware:
+ *
+ * Version list:
+ * Hercules -- 6.1.0 -- PERFTEST_CONNEXT_PRO_610
+ */
+#if RTI_DDS_VERSION_MAJOR >= 6 && RTI_DDS_VERSION_MINOR >= 1
+    #define PERFTEST_CONNEXT_PRO_610
+#endif
+
 #include "PerftestTransport.h"
 
 #ifdef RTI_SECURE_PERFTEST

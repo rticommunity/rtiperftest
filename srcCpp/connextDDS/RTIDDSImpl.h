@@ -118,11 +118,11 @@ protected:
   #endif
 
     bool configure_participant_qos(DDS_DomainParticipantQos &qos);
-    bool configure_writer_qos(
+    bool configure_reader_qos(
             DDS_DataReaderQos &dr_qos,
             std::string qos_profile,
             std::string topic_name);
-    bool configure_reader_qos(
+    bool configure_writer_qos(
             DDS_DataWriterQos &dw_qos,
             std::string qos_profile,
             std::string topic_name);
@@ -153,10 +153,19 @@ protected:
     PerftestSemaphore           *_pongSemaphore;
   #ifdef PERFTEST_RTI_PRO
     RTIDDSLoggerDevice           _loggerDevice;
+    #ifdef PERFTEST_CONNEXT_PRO_610
+    bool                         _isNetworkCapture;
+    std::string                  _networkCaptureOutputFile;
+    #endif
   #endif
     ParameterManager            *_PM;
     perftest_cpp                *_parent;
     std::map<std::string, std::string> _qoSProfileNameMap;
+
+  #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_PRO_610)
+    // Parameters that configure the network capture
+    struct NDDS_Utility_NetworkCaptureParams_t _networkCaptureParams;
+  #endif
 
 public:
 

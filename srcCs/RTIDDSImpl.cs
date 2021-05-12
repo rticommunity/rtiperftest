@@ -1689,21 +1689,20 @@ namespace PerformanceTest
         private string PrintSecureArgs()
         {
 
-            string secure_arguments_string =
-                    "Secure Arguments:\n" +
-                    "\t encrypt discovery: " + _secureIsDiscoveryEncrypted + "\n" +
-                    "\t encrypt topic (user) data: " + _secureIsDataEncrypted + "\n" +
-                    "\t encrypt submessage: " + _secureIsSMEncrypted + "\n" +
-                    "\t sign data: " + _secureIsSigned + "\n";
+            string secure_arguments_string = "Secure Arguments:\n";
 
-            if (_secureGovernanceFile != null)
-            {
+            if (_secureGovernanceFile == null) {
+                secure_arguments_string +=
+                        "\t encrypt discovery: " + _secureIsDiscoveryEncrypted + "\n" +
+                        "\t encrypt topic (user) data: " + _secureIsDataEncrypted + "\n" +
+                        "\t encrypt submessage: " + _secureIsSMEncrypted + "\n" +
+                        "\t sign data: " + _secureIsSigned + "\n" +
+                        "\t governance file: Not specified\n";
+
+
+            } else {
                 secure_arguments_string += "\t governance file: " + _secureGovernanceFile
                         + "\n";
-            }
-            else
-            {
-                secure_arguments_string += "\t governance file: Not specified\n";
             }
 
             if (_securePermissionsFile != null)
