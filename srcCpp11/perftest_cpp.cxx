@@ -298,11 +298,12 @@ void perftest_cpp::print_version()
                 perftestV.major,
                 perftestV.minor,
                 perftestV.release);
+
+        if (perftestV.revision != 0) {
+            fprintf(stderr, ".%d", perftestV.revision);
+        }
     }
 
-    if (perftestV.revision != 0) {
-        fprintf(stderr, ".%d", perftestV.revision);
-    }
 
   #ifdef PERFTEST_COMMIT_ID
     fprintf(stderr, " %s", PERFTEST_COMMIT_ID);
