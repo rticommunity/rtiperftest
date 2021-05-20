@@ -63,6 +63,8 @@ public:
         shutdown();
     }
 
+    const std::string get_middleware_version_string();
+
     void configure_middleware_verbosity(int verbosity_level);
 
     bool validate_input();
