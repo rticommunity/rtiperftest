@@ -24,9 +24,9 @@ add_executable(CycloneDDSperftest_cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCppCommon/ParameterManager.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCppCommon/CpuMonitor.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCppCommon/PerftestPrinter.cxx
+        ${CMAKE_CURRENT_SOURCE_DIR}/srcCppCommon/FileDataLoader.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/PerftestTransport.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/Infrastructure_common.cxx
-        ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/FileDataLoader.cxx
         ${CMAKE_CURRENT_SOURCE_DIR}/srcCpp/perftest_cpp.cxx)
 
 target_link_libraries(CycloneDDSperftest_cpp CycloneDDS::ddsc ${PLATFORM_SPECIFIC_LIBS})
