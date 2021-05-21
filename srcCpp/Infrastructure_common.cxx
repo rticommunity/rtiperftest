@@ -171,7 +171,7 @@ struct PerftestThreadOnSpawnedMethod
     ThreadOnSpawnedMethod method;
     void *thread_param;
 
-}
+};
 
 PerftestThread* PerftestThread_new(
     const char *name,
