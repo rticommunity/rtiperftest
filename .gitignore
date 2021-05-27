@@ -60,3 +60,4 @@ srcDoc/_build
 /srcIdl/test.idl
 srcCpp/build
 build
+srcDoc/output

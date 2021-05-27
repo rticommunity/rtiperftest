@@ -1580,9 +1580,6 @@ we could get into the following error:
     [D0001|ENABLE]NDDS_Transport_Shmem_Property_verify:received_message_count_max < 1
     [D0001|ENABLE]NDDS_Transport_Shmem_newI:Invalid transport properties.
 
-
-.. |latestReleaseHeader| image:: _static/Perftest_latest_release_header.png
-.. |previousReleasesHeader| image:: _static/Perftest_previous_releases_header.png
 .. |newTag| image:: _static/new.png
 .. |fixedTag| image:: _static/fixed.png
 .. |enhancedTag| image:: _static/enhanced.png

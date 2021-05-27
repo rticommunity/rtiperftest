@@ -93,8 +93,6 @@ The reference has been updated and it now points to the right url.
 :doc:`Previous Release Notes<./old_release_notes>`
 --------------------------------------------------
 
-.. |latestReleaseHeader| image:: _static/Perftest_latest_release_header.png
-.. |previousReleasesHeader| image:: _static/Perftest_previous_releases_header.png
 .. |newTag| image:: _static/new.png
 .. |fixedTag| image:: _static/fixed.png
 .. |enhancedTag| image:: _static/enhanced.png
