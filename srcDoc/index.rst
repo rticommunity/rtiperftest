@@ -58,7 +58,7 @@ Download
 
    git clone https://github.com/rticommunity/rtiperftest.git
 
-2. Download and compile from: `github.com/rticommunity/rtiperftest
+2. Download and compile from: `https://github.com/rticommunity/rtiperftest
 <https://github.com/rticommunity/rtiperftest>`_.
 
 3. Download the executables for popular platforms from the binaries section in the
