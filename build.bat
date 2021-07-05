@@ -992,6 +992,8 @@ GOTO:EOF
 	echo.    --micro                      Build RTI Perftest for RTI Connext Micro
 	echo.                                 By default RTI Perftest will assume it will be
 	echo.                                 built against RTI Connext DDS Professional.
+	echo.    --micro-24x-compatibility    Similar to --micro but ensuring compatibility
+    echo.                                 with RTI Connext Micro 2.4.11 and above.
 	echo.    --platform your_arch         Platform for which build.sh is going to compile
 	echo.                                 RTI Perftest.
 	echo.    --nddshome path              Path to the *RTI Connext DDS Professional
