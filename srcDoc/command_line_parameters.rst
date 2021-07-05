@@ -828,6 +828,11 @@ Test Parameters Only For Publishing Applications
 
 -  ``-scan <size1>:<size2>:...:<sizeN>``
 
+   .. note::
+
+      This command-line is deprecated and it will not be available in future versions
+      of *RTI Perftest*.
+
    Run test in scan mode. The list of sizes is optional and can be either in the
    [32,64900] range or the [64970,2147482620] range (Large Data cannot be tested
    in the same scan test as small data sizes). Default values to test with are

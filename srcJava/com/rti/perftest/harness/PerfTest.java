@@ -326,7 +326,7 @@ public final class PerfTest {
             "\t                          default 1\n" +
             "\t-numPublishers <count>  - Number of publishers running in test,\n"+
             "\t                          default 1\n" +
-            "\t-scan <size1>:<size2>:...:<sizeN> - Run test in scan mode, traversing\n" +
+            "\t-scan <size1>:<size2>:...:<sizeN> - (Deprecated). Run test in scan mode, traversing\n" +
             "\t                                    a range of sample data sizes from\n" +
             "\t                                    [32,63000] or [63001,2147482620] bytes,\n" +
             "\t                                    in the case that you are using large data or not.\n" +

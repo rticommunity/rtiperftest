@@ -441,11 +441,16 @@ bool perftest_cpp::validate_input()
         }
     }
 
-    if (_PM.is_set("scan") && _PM.is_set("pubRatebps")) {
-        fprintf(stderr,
-                "'-scan' cannot be used with '-pubRatebps', use '-pubRate' "
-                "instead\n");
-        return false;
+    if (_PM.is_set("scan") {
+
+        fprintf(stderr, "'-scan' is deprecated and will not be supported in future versions\n");
+
+        if (_PM.is_set("pubRatebps")) {
+            fprintf(stderr,
+                    "'-scan' cannot be used with '-pubRatebps', use '-pubRate' "
+                    "instead\n");
+            return false;
+        }
     }
 
     if (_PM.is_set("loadDataFromFile")){

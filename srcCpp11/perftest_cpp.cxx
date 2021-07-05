@@ -475,6 +475,11 @@ bool perftest_cpp::validate_input()
 
     // Manage the parameter: -scan
     if (_PM.is_set("scan")) {
+
+        std::cerr << "[Warning] '-scan' is deprecated and will not "
+                  << "be supported in future versions"
+                  << std::endl;
+
         const std::vector<unsigned long long> scanList =
                 _PM.get_vector<unsigned long long>("scan");
         // Max size of scan

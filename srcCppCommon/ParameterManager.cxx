@@ -719,7 +719,7 @@ void ParameterManager::initialize()
             new ParameterVector<unsigned long long>(scanList);
     scan->set_command_line_argument("-scan", "<size1>:<size2>:...:<sizeN>");
     scan->set_description(
-            "Run test in scan mode, traversing\n"
+            "(Deprecated). Run test in scan mode, traversing\n"
             "a range of sample data sizes from\n"
             "[32,64900] or [64970,2147482620] bytes,\n"
             "in the case that you are using large data or not.\n"

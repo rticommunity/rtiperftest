@@ -176,6 +176,9 @@ public final class PerfTestLauncher {
                 }
             }else if ("-scan".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isScan = true;
+
+                System.err.println("'-scan' is deprecated and will not be supported in future versions");
+
                 if ((i != (argc - 1)) && !argv[1+i].startsWith("-")) {
                     ++i;
                     long _scan_max_size = 0;

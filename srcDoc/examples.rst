@@ -89,21 +89,6 @@ does not improve throughput, at least for 1-Gig networks.
 
 To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
-1-to-1, Multicast, Reliable UDPv4, All Sizes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
--  Publisher:
-
-::
-
-    bin/<arch>/release/perftest_cpp -pub -noPrint -sendQueueSize 32 -latencyCount 10000 -scan -transport UDPv4 -multicast
-
--  Subscriber:
-
-::
-
-    bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -multicast
-
 1-to-1, Unicast, Best-Effort, UDPv4|SHMEM, 1 Size
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

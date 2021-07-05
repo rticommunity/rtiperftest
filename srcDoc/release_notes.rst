@@ -90,6 +90,17 @@ Fix incorrect schema location in the Governance files used by security |fixedTag
 All the `Governance files` pointed to a non-existent location for the xsd file.
 The reference has been updated and it now points to the right url.
 
+Deprecations in Develop
+~~~~~~~~~~~~~~~~~~~~~~~
+
+``-scan`` option will be deprecated in future versions of *RTI Perftest*
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The ``-scan``command-line option is currently available in the *Traditional C++*,
+*Modern C++* and *Java API implementations* for *RTI Perftest* (not available in The
+*Modern C# API implementation*). In future versions this command-line option will
+be completely deprecated.
+
 :doc:`Previous Release Notes<./old_release_notes>`
 --------------------------------------------------
 
