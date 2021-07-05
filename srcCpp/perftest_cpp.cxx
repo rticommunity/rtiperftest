@@ -441,16 +441,11 @@ bool perftest_cpp::validate_input()
         }
     }
 
-    if (_PM.is_set("scan") {
-
-        fprintf(stderr, "'-scan' is deprecated and will not be supported in future versions\n");
-
-        if (_PM.is_set("pubRatebps")) {
-            fprintf(stderr,
-                    "'-scan' cannot be used with '-pubRatebps', use '-pubRate' "
-                    "instead\n");
-            return false;
-        }
+    if (_PM.is_set("scan") && _PM.is_set("pubRatebps")) {
+        fprintf(stderr,
+                "'-scan' cannot be used with '-pubRatebps', use '-pubRate' "
+                "instead\n");
+        return false;
     }
 
     if (_PM.is_set("loadDataFromFile")){
@@ -729,6 +724,10 @@ void perftest_cpp::print_configuration()
     }
 
     stringStream << _MessagingImpl->print_configuration();
+
+    if (_PM.is_set("scan")) {
+        fprintf(stderr, "'-scan' is deprecated and will not be supported in future versions.\n");
+    }
 
     // We want to expose if we are using or not the unbounded type
     if (_PM.get<int>("unbounded")) {

@@ -476,10 +476,6 @@ bool perftest_cpp::validate_input()
     // Manage the parameter: -scan
     if (_PM.is_set("scan")) {
 
-        std::cerr << "[Warning] '-scan' is deprecated and will not "
-                  << "be supported in future versions"
-                  << std::endl;
-
         const std::vector<unsigned long long> scanList =
                 _PM.get_vector<unsigned long long>("scan");
         // Max size of scan
@@ -705,6 +701,11 @@ void perftest_cpp::print_configuration()
 
     stringStream << _MessagingImpl->print_configuration();
 
+    if (_PM.is_set("scan")) {
+        std::cerr << "[Warning] '-scan' is deprecated and will not "
+                  << "be supported in future versions."
+                  << std::endl;
+    }
 
     // We want to expose if we are using or not the unbounded type
     if (_PM.get<int>("unbounded")) {
