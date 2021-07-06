@@ -55,6 +55,7 @@ bool PerftestSemaphore_take(PerftestSemaphore* semaphore, int timeout)
 PerftestMutex* PerftestMutex_new()
 {
     PerftestMutex* mutex;
+    mutex = new PerftestMutex();
     return mutex;
 }
 
@@ -70,7 +71,15 @@ void PerftestMutex_give(std::mutex* mutex)
 
 bool PerftestMutex_take(std::mutex* mutex)
 {
-    return mutex->try_lock();
+    try
+    {
+        return mutex->try_lock();
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << "[Exception]: " << e.what() << '\n';
+        return false;
+    }
 }
 
 /********************************************************************/
