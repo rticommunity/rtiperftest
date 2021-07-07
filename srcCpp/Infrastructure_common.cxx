@@ -71,15 +71,7 @@ void PerftestMutex_give(std::mutex* mutex)
 
 bool PerftestMutex_take(std::mutex* mutex)
 {
-    try
-    {
-        return mutex->try_lock();
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << "[Exception]: " << e.what() << '\n';
-        return false;
-    }
+    return mutex->try_lock();
 }
 
 /********************************************************************/
