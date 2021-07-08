@@ -68,6 +68,13 @@ usage. To use this option, the ``-transportPublicAddress`` command-line option
 is required on one side, either the *Publisher* or *Subscriber* side.
 See :ref:`section-command_line_parameters` for more information.
 
+Switched to C++11 clock implementation in Modern C++ API |enhancedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+*RTI Perftest* for *Modern C++* compilation now requires *C++11* compatibility.
+To simplify the *Modern C++* implementation, *RTI Perftest* now uses the *C++11* clocks, instead
+of the ones provided by *RTI Connext DDS*.
+
 What's Fixed in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 
