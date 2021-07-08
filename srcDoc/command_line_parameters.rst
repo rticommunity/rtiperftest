@@ -314,6 +314,12 @@ Test Parameters for Publishing and Subscribing Applications
    Process incoming data in groups, based on time, rather than
    individually.
 
+   Increasing this value may result in better throughput results. Decreasing
+   this value to its minimum, 0, means that there is no delay: the waitset
+   wakes up as soon as you receive the event. In practice, a 0 value typically
+   means that the receive thread processes samples individually,
+   improving latency results (decreasing latency).
+
    Only used if the ``-useReadThread`` is specified on the
    subscriber side.
 
@@ -329,6 +335,11 @@ Test Parameters for Publishing and Subscribing Applications
 
    Process incoming data in groups, based on the number of samples,
    rather than individually.
+
+   Increasing this value may result in better throughput results. Decreasing
+   this value to 1 means that events (new samples arrived in this case) are processed
+   individually rather than in batches, improving the latency results
+   (decreasing latency).
 
    Only used if ``-useReadThread`` is specified on the
    subscriber side.
@@ -1232,8 +1243,8 @@ WaitSet Event Count and Delay
 
 *RTI Connext DDS*, and by extension, this performance test, gives you
 the option to either process received data in the middleware's receive
-thread, via a listener callback, or in a separate thread (See
-``-useReadThread``) via an object called a WaitSet. The latter approach
+thread, via a listener callback, or to process the data in a separate thread 
+(see ``-useReadThread``) via an object called `Waitset`. The latter approach
 can be beneficial in that it decouples the operation of your application
 from the middleware, so that your processing will not interfere with
 *Connext DDS*'s internal activities. However, it does introduce
@@ -1246,7 +1257,11 @@ To improve efficiency, the command-line parameters
 you to process incoming data in groups, based on the number of samples
 and/or time, rather than individually, reducing the number of context
 switches. Experiment with these values to optimize performance for your
-system.
+system. Increasing these values may result then in greater throughput.
+
+Nonetheless, as explained in the documentation for each of these parameters,
+in order to achieve better (smaller) latency results, an approach where we set
+``-waitsetDelayUsec 0`` and ``-waitsetEventCount 1`` is recommended.
 
 For more information, see these sections in the *RTI Connext DDS Core
 Libraries User’s Manual*: **Receive Threads (Section 19.3)** and

@@ -68,6 +68,13 @@ usage. To use this option, the ``-transportPublicAddress`` command-line option
 is required on one side, either the *Publisher* or *Subscriber* side.
 See :ref:`section-command_line_parameters` for more information.
 
+Improved documentation about configuration settings for *Waitsets* |enhancedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The documentation about ``-waitsetDelayUsec`` and ``-waitsetEventCount`` has been
+improved, clarifying the effect in both latency and throughput as well as the
+recommended values when performing a latency test.
+
 Switched to C++11 clock implementation in Modern C++ API |enhancedTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
