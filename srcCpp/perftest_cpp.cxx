@@ -725,8 +725,14 @@ void perftest_cpp::print_configuration()
 
     stringStream << _MessagingImpl->print_configuration();
 
+    if (_PM.get<bool>("cpu") && !CpuMonitor::available_in_os()) {
+        fprintf(stderr,
+                "\n[Warning] CPU consumption feature is not available in this OS.\n");
+    }
+
     if (_PM.is_set("scan")) {
-        fprintf(stderr, "'-scan' is deprecated and will not be supported in future versions.\n");
+        fprintf(stderr,
+                "'-scan' is deprecated and will not be supported in future versions.\n");
     }
 
     // We want to expose if we are using or not the unbounded type

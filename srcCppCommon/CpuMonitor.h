@@ -12,21 +12,21 @@
 #include <iomanip> // set precision
 
 #if defined(RTI_LINUX)
-    #include "stdlib.h"
-    #include "stdio.h"
-    #include "string.h"
-    #include "sys/times.h"
+  #include "stdlib.h"
+  #include "stdio.h"
+  #include "string.h"
+  #include "sys/times.h"
 #elif defined(RTI_DARWIN)
-    #include "stdlib.h"
-    #include "stdio.h"
-    #include "string.h"
-    #include "sys/times.h"
-    #include <sys/sysctl.h>
-    #include <cstddef>
+  #include "stdlib.h"
+  #include "stdio.h"
+  #include "string.h"
+  #include "sys/times.h"
+  #include <sys/sysctl.h>
+  #include <cstddef>
 #elif defined(RTI_WIN32)
-    #include "windows.h"
+  #include "windows.h"
 #elif defined(RTI_QNX)
-    #include "stdio.h"
+  #include "stdio.h"
 #elif defined(RTI_INTIME)
 #endif
 
@@ -41,16 +41,21 @@ public:
 
     double get_cpu_average();
 
+    static bool available_in_os();
+
 private:
     int _numProcessors;
     unsigned long long _counter;
-    long double _cpuUsageTotal;
-#if defined(RTI_LINUX) || defined(RTI_DARWIN)
+  #if defined(RTI_LINUX) || defined(RTI_DARWIN)
     clock_t _lastCPU, _lastSysCPU, _lastUserCPU;
-#elif defined(RTI_WIN32)
+    long double _cpuUsageTotal;
+  #elif defined(RTI_WIN32)
     ULARGE_INTEGER _lastCPU, _lastSysCPU, _lastUserCPU;
     HANDLE self;
-#endif
+    long double _cpuUsageTotal;
+  #else
+    double _cpuUsageTotal;
+  #endif
 
 };
 

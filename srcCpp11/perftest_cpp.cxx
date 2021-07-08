@@ -704,6 +704,12 @@ void perftest_cpp::print_configuration()
 
     stringStream << _MessagingImpl->print_configuration();
 
+    if (_PM.get<bool>("cpu") && !CpuMonitor::available_in_os()) {
+        std::cerr << "\n[Warning] CPU consumption feature is "
+                  << "not available in this OS."
+                  << std::endl;;
+    }
+
     if (_PM.is_set("scan")) {
         std::cerr << "[Warning] '-scan' is deprecated and will not "
                   << "be supported in future versions."

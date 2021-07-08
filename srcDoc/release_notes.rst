@@ -103,10 +103,38 @@ Deprecations in Develop
 ``-scan`` option will be deprecated in future versions of *RTI Perftest*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-The ``-scan``command-line option is currently available in the *Traditional C++*,
+The ``-scan`` command-line option is currently available in the *Traditional C++*,
 *Modern C++* and *Java API implementations* for *RTI Perftest* (not available in The
 *Modern C# API implementation*). In future versions this command-line option will
 be completely deprecated.
+
+``CPUMonitor`` class not correctly protected in *VxWorks*
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Compiling *RTI Perftest* for some *VxWorks* platforms could cause missing symbols when
+loading the modules into the kernel. For example:
+
+.. code-block:: console
+
+    -> ld 1 < bin/armv8Vx7SR0660llvm10.0.1/release/perftest_cpp11.so
+    Warning: module 0xffff8000008722d0 holds reference to undefined symbol __floatunditf.
+    ld(): module contains undefined symbol(s) and may be unusable.
+
+This issue was caused by the ``CPUMonitor`` class, which is not supported in *VxWorks* but
+was only partially protected. This issue has been resolved.
+
+``CPUMonitor`` warning not displayed if feature is not requested
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In previous *RTI Perftest* versions, a message was displayed on all platforms
+where the ``-cpu`` command-line option was not supported. This message unnecessarily
+added to the verbosity for customers testing in these OSes:
+
+.. code-block:: console
+
+    [WARNING] get CPU consumption feature is not available in this OS
+
+Now this warning is displayed only if ``-cpu`` is entered as a command-line option.
 
 :doc:`Previous Release Notes<./old_release_notes>`
 --------------------------------------------------
