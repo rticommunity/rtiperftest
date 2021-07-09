@@ -841,7 +841,7 @@ Test Parameters Only For Publishing Applications
 
    .. note::
 
-      This command-line is deprecated and it will not be available in future versions
+      This command-line option is deprecated and will not be available in future versions
       of *RTI Perftest*.
 
    Run test in scan mode. The list of sizes is optional and can be either in the

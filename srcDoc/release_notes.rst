@@ -104,16 +104,26 @@ Fix incorrect schema location in the Governance files used by security |fixedTag
 All the `Governance files` pointed to a non-existent location for the xsd file.
 The reference has been updated and it now points to the right url.
 
+Compiler build option not passed correctly to ``cmake`` when compiling *Connest DDS Micro* |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The compiler build option is used to specify a compiler different than the system
+default. This option is useful when you need to cross-compile for an architecture
+that is not your build machine's architecture.
+
+This command-line option was passed correctly when using *Connext DDS Professional*
+but not when using *Connext DDS Micro*.
+
+
 Deprecations in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-``-scan`` option will be deprecated in future versions of *RTI Perftest*
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+``-scan`` option will be removed in future versions of *RTI Perftest*
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 The ``-scan`` command-line option is currently available in the *Traditional C++*,
-*Modern C++* and *Java API implementations* for *RTI Perftest* (not available in The
-*Modern C# API implementation*). In future versions this command-line option will
-be completely deprecated.
+*Modern C++*, and *Java API* implementations of *RTI Perftest* (not available in the
+*Modern C# API implementation*), but in future versions it will be removed.
 
 ``CPUMonitor`` class not correctly protected in *VxWorks*
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++

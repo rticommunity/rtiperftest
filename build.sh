@@ -933,7 +933,7 @@ function build_micro_cpp()
     echo -e "${INFO_TAG} Compiling perftest_cpp"
     cd "${classic_cpp_folder}"
 
-    cmake_generate_command="${CMAKE_EXE} -DCMAKE_BUILD_TYPE=${RELEASE_DEBUG} -G \"Unix Makefiles\" -B./perftest_build -H. -DRTIME_TARGET_NAME=${platform} -DPLATFORM_LIBS=\"${additional_included_libraries}\" ${ADDITIONAL_CMAKE_ARGS}"
+    cmake_generate_command="${CMAKE_EXE} -DCMAKE_BUILD_TYPE=${RELEASE_DEBUG} -DCMAKE_C_COMPILER=${COMPILER_EXE} -DCMAKE_CXX_COMPILER=${COMPILER_EXE} -G \"Unix Makefiles\" -B./perftest_build -H. -DRTIME_TARGET_NAME=${platform} -DPLATFORM_LIBS=\"${additional_included_libraries}\" ${ADDITIONAL_CMAKE_ARGS}"
     echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
     eval $cmake_generate_command
     if [ "$?" != 0 ]; then
