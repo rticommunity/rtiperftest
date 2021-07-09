@@ -11,6 +11,8 @@ common_cpp_folder="${script_location}/srcCppCommon"
 modern_cpp_folder="${script_location}/srcCpp11"
 java_folder="${script_location}/srcJava"
 java_scripts_folder="${script_location}/resource/scripts/java_execution_scripts"
+cs_folder="${script_location}/srcCs"
+cs_scripts_folder="${script_location}/resource/scripts/cs_execution_scripts"
 bin_folder="${script_location}/bin"
 cStringifyFile_script="${script_location}/resource/scripts/cStringifyFile.pl"
 
@@ -30,6 +32,7 @@ MICRO_UNBOUNDED_SEQUENCE_SIZE=1048576
 BUILD_CPP=1
 BUILD_CPP11=1
 BUILD_JAVA=1
+BUILD_CS=0
 MAKE_EXE=make
 CMAKE_EXE=cmake
 ADDITIONAL_CMAKE_ARGS=""
@@ -319,6 +322,14 @@ function executable_checking()
             fi
         fi
 
+
+        if [ "${BUILD_CS}" -eq "1" ]; then
+            if [ -z `which dotnet` ]; then
+                echo -e "${RED}[WARNING]:${NC} javac executable not found, perftest_java will not be built."
+                BUILD_CS=0
+            fi
+        fi
+
         # Is JAVA in the path?
         if [ "${BUILD_JAVA}" -eq "1" ]; then
             if [ -z `which "${JAVAC_EXE}"` ]; then
@@ -339,6 +350,7 @@ function executable_checking()
         if [[ ${platform} == *"Android"* ]]; then
             BUILD_CPP11=0
             BUILD_JAVA=0
+            BUILD_CS=0
         fi
 
     fi #Micro/Pro
@@ -1237,6 +1249,79 @@ function build_java()
 
 }
 
+function build_cs()
+{
+    echo ""
+    if [ "${RELEASE_DEBUG}" == debug ]; then
+        echo -e "${INFO_TAG} Compiling in debug mode."
+    else
+        echo -e "${INFO_TAG} Compiling in release mode."
+    fi
+
+    ##############################################################################
+    # Generate files for srcJava
+    mkdir -p "${cs_folder}/ConnextDDS/GeneratedCode"
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -D PERFTEST_RTI_PRO -replace -language ${cs_lang_string} -unboundedSupport -d \"${cs_folder}/ConnextDDS/GeneratedCode\" \"${idl_location}/perftest.idl\""
+
+    echo ""
+    echo -e "${INFO_TAG} Generating types for ${cs_lang_string}."
+    echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+
+    # Executing RTIDDSGEN command here.
+    eval $rtiddsgen_command
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating code for ${cs_lang_string}."
+        exit -1
+    fi
+
+    ##############################################################################
+    # Generate Files to compile
+
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -D PERFTEST_RTI_PRO -replace -language ${cs_lang_string} -platform ${platform} -update makefiles -unboundedSupport -d \"${cs_folder}\" \"${idl_location}/perftest.idl\""
+
+    echo ""
+    echo -e "${INFO_TAG} Generating .net solution for ${cs_lang_string}."
+    echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+
+    # Executing RTIDDSGEN command here.
+    eval $rtiddsgen_command
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating .net solution for ${cs_lang_string}."
+        exit -1
+    fi
+    rm ${cs_folder}/README_${platform}.txt
+
+    export dotnet_command="dotnet build --configuration ${RELEASE_DEBUG} \"${cs_folder}\""
+
+    echo ""
+    echo -e "${INFO_TAG} Compiling for dotnet"
+    echo -e "${INFO_TAG} Command: $dotnet_command"
+
+    eval ${dotnet_command}
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating .net solution for ${cs_lang_string}."
+        exit -1
+    fi
+
+    echo ""
+    echo -e "${INFO_TAG} Creating script"
+    mkdir -p "${bin_folder}/${RELEASE_DEBUG}"
+    echo "dotnet run -p ${cs_folder} --configuration ${RELEASE_DEBUG} -- \$@" > "${bin_folder}/${RELEASE_DEBUG}/perftest_cs"
+    chmod +x "${bin_folder}/${RELEASE_DEBUG}/perftest_cs"
+
+    echo ""
+    echo -e "${INFO_TAG} You can run the dotnet project by executing the following command:"
+    echo ""
+    echo "\"dotnet run -p ${cs_folder} --configuration ${RELEASE_DEBUG} -- <arguments>\""
+    echo ""
+    echo -e "${INFO_TAG} Alternatively, the following script can be executed:"
+    echo ""
+    echo "\"${bin_folder}/${RELEASE_DEBUG}/perftest_cs\""
+    echo ""
+    echo -e "${INFO_TAG} Compilation successful"
+
+}
+
 ################################################################################
 function clean_documentation()
 {
@@ -1335,6 +1420,13 @@ while [ "$1" != "" ]; do
             BUILD_JAVA=0
             BUILD_CPP=0
             BUILD_CPP11=1
+            ;;
+        --cs-build)
+            BUILD_CS=1
+            platform="net5"
+            BUILD_JAVA=0
+            BUILD_CPP=0
+            BUILD_CPP11=0
             ;;
         --make)
             MAKE_EXE=$2
@@ -1462,6 +1554,7 @@ else # Build for ConnextDDS Pro
     classic_cpp_lang_string=C++
     modern_cpp_lang_string=C++11
     java_lang_string=java
+    cs_lang_string=C#
 
     # Generate qos_string.h
     generate_qos_string
@@ -1478,6 +1571,10 @@ else # Build for ConnextDDS Pro
 
     if [ "${BUILD_JAVA}" -eq "1" ]; then
         build_java
+    fi
+
+    if [ "${BUILD_CS}" -eq "1" ]; then
+        build_cs
     fi
 
 fi

@@ -10,6 +10,7 @@ set "modern_cpp_folder=%script_location%srcCpp11"
 set "cs_folder=%script_location%srcCs"
 set "java_folder=%script_location%srcJava"
 set "java_scripts_folder=%script_location%resource\scripts\java_execution_scripts"
+set "cs_scripts_folder=%script_location%resource\scripts\cs_execution_scripts"
 set "bin_folder=%script_location%bin"
 set "cStringifyFile_script=%script_location%resource\scripts\cStringifyFile.pl"
 set "qos_file=%script_location%perftest_qos_profiles.xml"
@@ -26,7 +27,7 @@ set MICRO_UNBOUNDED_SEQUENCE_SIZE=1048576
 @REM # Default values:
 set BUILD_CPP=1
 set BUILD_CPP11=1
-set BUILD_CS=1
+set BUILD_CS=0
 set BUILD_JAVA=1
 set CMAKE_EXE=cmake
 set MSBUILD_EXE=msbuild
@@ -102,7 +103,7 @@ if NOT "%1"=="" (
 		) ELSE if "%1"=="--skip-cpp11-build" (
 				SET BUILD_CPP11=0
 		) ELSE if "%1"=="--skip-cs-build" (
-				SET BUILD_CS=0
+				set BUILD_CS=0
 		) ELSE if "%1"=="--java-build" (
 				SET BUILD_JAVA=1
 				SET BUILD_CPP=0
@@ -123,6 +124,7 @@ if NOT "%1"=="" (
 				SET BUILD_CPP=0
 				SET BUILD_CPP11=0
 				SET BUILD_CS=1
+				set architecture=net5
 		) ELSE if "%1"=="--debug" (
 				SET RELEASE_DEBUG=debug
 		) ELSE if "%1"=="--dynamic" (
@@ -198,7 +200,6 @@ if NOT "%1"=="" (
 )
 
 ::------------------------------------------------------------------------------
-
 if "x!architecture!" == "x" (
 	echo [ERROR]: The platform argument is missing.
 	exit /b 1
@@ -257,9 +258,9 @@ if !BUILD_MICRO! == 1 (
 		)
 	)
 	if !BUILD_CS! == 1 (
-		call !MSBUILD_EXE! /version > nul
+		call dotnet --version > nul
 		if not !ERRORLEVEL! == 0 (
-			echo [WARNING]: !MSBUILD_EXE! executable not found, perftest_cs will not be built.
+			echo [WARNING]: dotnet executable not found, perftest_cs will not be built.
 			set BUILD_CS=0
 		)
 	)
@@ -678,33 +679,51 @@ if %BUILD_CS% == 1 (
 
 	@REM Generate files for srcCs
 	echo[
-	echo [INFO]: Generating types and makefiles for %cs_lang_string%
+	echo [INFO]: Generating types for %cs_lang_string%
+	md "%cs_folder%\ConnextDDS\GeneratedCode"
 	call "%rtiddsgen_executable%" -language %cs_lang_string% -unboundedSupport -replace^
-	-create typefiles -create makefiles -platform %architecture%^
-	!additional_defines_rtiddsgen!^
-	-additionalSourceFiles "RTIDDSImpl.cs MessagingIF.cs CpuMonitor.cs PerftestTransport.cs PerftestPrinter.cs"^
-	-additionalDefines "/0x" -d "%cs_folder%" "%idl_location%\perftest.idl"
+	!additional_defines_rtiddsgen! -d "%cs_folder%\ConnextDDS\GeneratedCode" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %cs_lang_string%.
 		exit /b 1
 	)
-	call copy "%cs_folder%"\perftest_cs.cs "%cs_folder%"\perftest_publisher.cs
-	call copy "%cs_folder%"\perftest_cs.cs "%cs_folder%"\perftest_subscriber.cs
 
+	@REM Generate files for srcCs
 	echo[
-	echo [INFO]: Compiling %cs_lang_string%
-	echo call !MSBUILD_EXE! /p:Configuration=!RELEASE_DEBUG! /p:Platform="!cs_win_arch!" "%cs_folder%"\%solution_name_cs%
-	call !MSBUILD_EXE! /p:Configuration=!RELEASE_DEBUG! /p:Platform="!cs_win_arch!" "%cs_folder%"\%solution_name_cs%
+	echo [INFO]: Generating projects for %cs_lang_string%
+	call "%rtiddsgen_executable%" -language %cs_lang_string% -unboundedSupport -replace -platform !architecture!^
+	-update makefiles !additional_defines_rtiddsgen! -d "%cs_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
-		echo [ERROR]: Failure compiling code for %cs_lang_string%.
+		echo [ERROR]: Failure generating code for %cs_lang_string%.
+		exit /b 1
+	)
+	del "%cs_folder%\README*"
+
+	@REM Generate files for srcCs
+	echo[
+	echo [INFO]: Compiling dotnet projects for %cs_lang_string%
+	call dotnet build --configuration %RELEASE_DEBUG% %cs_folder%
+	if not !ERRORLEVEL! == 0 (
+		echo [ERROR]: Failure executing dotnet build %cs_lang_string%.
 		exit /b 1
 	)
 
 	echo [INFO]: Copying files
-	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
-	copy /Y "%cs_folder%"\%cs_bin_path%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cs"%executable_extension%"
-	copy /Y "%cs_folder%"\%cs_bin_path%\perftest_*.dll "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
-	copy /Y "%cs_folder%"\%cs_bin_path%\nddsdotnet*.dll "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
+	md "%bin_folder%"\!RELEASE_DEBUG!
+	copy "%cs_scripts_folder%"\perftest_cs.bat "%bin_folder%"\!RELEASE_DEBUG!\perftest_cs.bat
+	echo dotnet run -p %cs_folder% --configuration %RELEASE_DEBUG% -- %%args%% >> "%bin_folder%"\!RELEASE_DEBUG!\perftest_cs.bat
+	echo :endscript >> "%bin_folder%"\!RELEASE_DEBUG!\perftest_cs.bat
+
+	echo[
+	echo [INFO]: You can run the dotnet project by executing the following command:
+	echo[
+	echo "dotnet run -p %cs_folder% --configuration %RELEASE_DEBUG% -- <arguments>"
+	echo[
+	echo [INFO]: Alternatively, the following script can be executed:
+	echo[
+	echo "%bin_folder%"\!RELEASE_DEBUG!\perftest_cs.bat
+	echo[
+	echo [INFO]: Compilation successful
 )
 
 ::------------------------------------------------------------------------------

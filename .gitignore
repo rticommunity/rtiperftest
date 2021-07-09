@@ -1,4 +1,4 @@
-/srcC*/perftest.*
+/srcCpp*/perftest.*
 /srcC*/perftest_ZeroCopy*
 /srcC*/perftestPlugin.*
 /srcC*/perftestSupport.*
@@ -60,4 +60,8 @@ srcDoc/_build
 /srcIdl/test.idl
 srcCpp/build
 build
+srcCs/.vs/*
+srcCs/NuGet.Config
+srcCs/README*
+srcCs/ConnextDDS/GeneratedCode/*
 srcDoc/output

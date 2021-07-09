@@ -5,7 +5,8 @@ Command-Line Parameters
 
 Several parameters are available; you can enter them on the command
 line. All parameters are optional and case-insensitive; partial matches
-are allowed (such as ``-h`` instead of ``-help``).
+are allowed (such as ``-h`` instead of ``-help``), except in the C# API
+implementation, where the full name has to be provided.
 
 Some parameters only make sense in the publishing or subscribing
 application. The parameters are presented in the following tables, based
@@ -94,6 +95,8 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** false
 
+   **Note:** Not supported yet in the C# API implementation.
+
 .. _FlatData:
 
 -  ``-flatData``
@@ -105,6 +108,8 @@ Test Parameters for Publishing and Subscribing Applications
    Micro* or a *RTI Connext DDS* version previous to 6.0.0.
 
    **Default:** false
+
+   **Note:** Not available in the C# API implementation.
 
 -  ``-zeroCopy``
 
@@ -120,6 +125,8 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** false
 
+   **Note:** Not available in the C# API implementation.
+
 -  ``-checkConsistency``
 
    This option is only valid when using ``-zeroCopy``. When using it, the code
@@ -128,12 +135,16 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** false
 
+   **Note:** Not available in the C# API implementation.
+
 -  ``-preallocateFragmentedSamples``
 
    Prevent dynamic allocation of buffer used for storing received fragments.
    Useful for data bigger than 5MB to reduce latency.
 
    **Default:** false
+
+   **Note:** Not available in the C# API implementation.
 
 -  ``-durability <0|1|2|3>``
 
@@ -488,7 +499,7 @@ Test Parameters for Publishing and Subscribing Applications
    results.
 
    This feature is only available for *RTI Connext DDS Professional 6.1.0* and
-   above.
+   above, in the Traditional C++ API implementation.
 
    | **Default:** ``MASK_NONE``
    | **Values:** ``['ZLIB','LZ4','BZIP2']``
@@ -501,7 +512,7 @@ Test Parameters for Publishing and Subscribing Applications
    compression.
 
    This feature is only available for *RTI Connext DDS Professional 6.1.0* and
-   above.
+   above, in the Traditional C++ API implementation.
 
    | **Default:** ``10``
 
@@ -513,7 +524,7 @@ Test Parameters for Publishing and Subscribing Applications
    will be compressed.
 
    This feature is only available for *RTI Connext DDS Professional 6.1.0* and
-   above.
+   above, excluding C#.
 
    | **Default:** ``0``
 
@@ -522,8 +533,8 @@ Test Parameters for Publishing and Subscribing Applications
    Enable the *RTI Connext DDS Professional* "Network Capture" feature
    during the test.
 
-   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
-   above.
+   This feature is only available for *RTI Connext DDS Professional 6.1.0*
+   and above, in the Traditional C++ API implementation.
 
    | **Default:** ``Not enabled``
 
@@ -532,8 +543,8 @@ Test Parameters for Publishing and Subscribing Applications
    Do not drop the capture file generated at the end of the test, if the
    ``-networkCapture`` feature is in use.
 
-   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
-   above.
+   This feature is only available for *RTI Connext DDS Professional 6.1.0*
+   and above, in the Traditional C++ API implementation.
 
    | **Default:** Not set: *RTI Perftest* will delete the file
 
@@ -574,6 +585,8 @@ by using the transport-spececific command-line parameters.
   When compiling against *RTI Connext DDS Micro*, this option should always use
   the name of the interface, not the IP address (which is valid when compiling
   against *RTI Connext DDS Professional*).
+
+  **Note:** Only one NIC can be specified in the C# API implementation.
 
 -  ``-transportVerbosity <level>``
 
@@ -777,6 +790,8 @@ Test Parameters Only For Publishing Applications
 
    **Default:** ``not set``
 
+   **Note:** Not available in the C# API implementation.
+
 -  ``-numIter <count>``
 
    Number of samples to send.
@@ -853,6 +868,8 @@ Test Parameters Only For Publishing Applications
 
    **Default:** ``false`` (no scan)
 
+   **Note:** Not available in the C# implementation.
+
 -  ``-sendQueueSize <number>``
 
    Size of the send queue.
@@ -912,7 +929,7 @@ Test Parameters Only For Publishing Applications
 
    Show serialization/deserialization times for the sample size(s) of the test.
    This time will be shown after the test concludes.
-   This command-line parameter is only present in the Traditional C++ API implementation.
+   This command-line parameter is only present in the traditional C++ API implementation.
 
    **Default:** ``Not enabled``
 
@@ -928,7 +945,7 @@ Test Parameters Only For Publishing Applications
 
    **Default:** ``Not enabled``
 
-This command-line option is available only in the Traditional C++ API implementation.
+   **Note:** Only available in the Tradditional C++ API implementation.
 
 -  ``-maximumAllocableBufferSize <bytes>``
 
@@ -936,6 +953,8 @@ This command-line option is available only in the Traditional C++ API implementa
    amount of memory that can be used to load the file into memory.
 
    **Default:** ``1GB``
+
+   **Note:** Not available in the C# API implementation.
 
 .. _Test Parameters Only For Subscribing Applications:
 
@@ -980,22 +999,24 @@ Test Parameters Only For Subscribing Applications
 
 -  ``-checkConsistency``
 
-   Check the consistency of samples sent with Zero Copy transfer over shared 
+   Check the consistency of samples sent with Zero Copy transfer over shared
    memory.
 
    The Publisher may be reusing memory to send different samples before the
    original samples are processed by the subscriber, leading to inconsistent samples.
-   Unconsistent samples will be reported as lost.
+   Inconsistent samples will be reported as lost.
 
-   See more on the User manual page 870: 22.5.1.3 Checking data consistency with 
+   See more information in the User's Manual: 22.5.1.3 Checking data consistency with
    Zero Copy transfer over shared memory
 
    This parameter can only be used along with ``-zeroCopy``.
 
-   This parameter is not available when compiling against *RTI Connext DDS 
+   This parameter is not available when compiling against *RTI Connext DDS
    Micro* or a *RTI Connext DDS* version previous to 6.0.0.
 
    **Default:** ``Not set``
+
+   **Note:** Not available in the C# API implementation.
 
 .. _Test Parameters to Control RTI Connext DDS Secure Options:
 
@@ -1066,9 +1087,12 @@ Test Parameters to Control RTI Connext DDS Secure Options
 
 Raw Transport Options
 ~~~~~~~~~~~~~~~~~~~~~
+**Note:** These options are only available in the Tradditional C++ API
+implementation.
+
 -  ``-rawTransport``
 
-   Use sockets as a transport instead of DDS protocol. This option supports 
+   Use sockets as a transport instead of a DDS protocol. This option supports
    ``UDPv4`` and Shared Memory (``SHMEM``).
    Some of the *RTI Connext DDS* parameters are not supported when using
    sockets.

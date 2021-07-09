@@ -6,9 +6,7 @@ Release Notes
 .. raw:: html
 
     <p style="color:#004C97"; align="centerw"><strong>
-    Now you can extend RTI Perftest to work with other ecosystems, use more
-    friendly output formats for visualization or comparison, and perform tests
-    using your own data as payload!
+    Here is what is new in this release.
     </strong></p>
 
 Release Notes Develop
@@ -17,56 +15,18 @@ Release Notes Develop
 What's New in Develop
 ~~~~~~~~~~~~~~~~~~~~~
 
-Support for *Connext DDS Professional* user data compression |newTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Support for the new C# API |newTag|
++++++++++++++++++++++++++++++++++++
 
-*RTI Perftest* now supports (in the *Traditional C++ API implementation*) testing
-performance scenarios that enable the new compression feature introduced
-in *Connext DDS Professional 6.1.0*.
+*RTI Perftest*'s C# API implementation has been fully rewritten
+to support the *RTI Connext DDS* new C# implementation.
 
-The configuration can be done by using three new command-line options:
-``-compressionLevel``, ``-compressionId`` and ``-compressionThreshold``.
+The build system now allows building for all supported platform and not only for Windows. The code
+has been improved, not only to support the new API, but also to follow the C# coding standards.
 
-See the :ref:`section-command_line_parameters` section for details about the parameters
-and the :ref:`section-examples_compression` section for some examples of the usage of
-this feature.
-
-This feature is intended to be used in conjunction with the
-``-loadDataFromFile`` option to simulate accurate scenarios where the
-compression rate can be similar to a real case.
-
-RTI Perftest Modern C++ API now compiles with C++11 |enhancedTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-The *RTI Perftest* Modern C++ API has been updated to require a C++11 compiler. The
-command-line option for the language passed to the ``rtiddsgen`` script is now
-``C++11`` instead of ``C++03``. The name of the folder with the code for this API
-has been updated to ``srcCpp11`` and the generated executable is now named
-``perftest_cpp11`` instead of ``perftest_cpp03``.
-
-Support for Connext DDS Professional's network capture feature |newTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-*RTI Perftest* added support in this version for the network capture capability,
-introduced in *Connext DDS Professional 6.1.0*. This support is
-exclusive to the *Traditional C++ API implementation*.
-
-In order to control the use of this new option, two new command-line parameters
-were added: ``-networkCapture``, to enable the use of the feature and
-``-doNotDropNetworkCapture``, to control if the output file produced by the
-network capture feature is retained or deleted after the run (due to the nature of *RTI
-Perftest*, the size of the file might be huge). See :ref:`section-command_line_parameters` for
-more information about the parameters.
-
-Support for new WAN transport |newTag|
-++++++++++++++++++++++++++++++++++++++
-
-*RTI Perftest* now supports testing the new WAN transport in the *Tradditional C++
-API Implementation*. It can be accessed as a new `-transport` command-line option
-argument. See :ref:`section-command_examples` for an example of its
-usage. To use this option, the ``-transportPublicAddress`` command-line option
-is required on one side, either the *Publisher* or *Subscriber* side.
-See :ref:`section-command_line_parameters` for more information.
+The old *Perftest C# API implementation* has been replaced with the new one. In order to test with
+that implementation, some changes are required. See the **Using the Old C# Implementation**
+section in :ref:`section-compatibility` for more details.
 
 Improved documentation about configuration settings for *Waitsets* |enhancedTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -79,32 +39,13 @@ Switched to C++11 clock implementation in Modern C++ API |enhancedTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 *RTI Perftest* for *Modern C++* compilation now requires *C++11* compatibility.
-To simplify the *Modern C++* implementation, *RTI Perftest* now uses the *C++11* clocks, instead
+To simplify the *Modern C++* API implementation, *RTI Perftest* now uses the *C++11* clocks, instead
 of the ones provided by *RTI Connext DDS*.
 
 What's Fixed in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Warning message when using security and a custom governance file was sent to ``stdout`` |fixedTag|
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-When using *RTI Security Plugins* and providing a custom governance
-file (using the ``-secureGovernanceFile`` command-line option), a warning message
-would appear to make explicit that every security configuration option would be
-overridden by the content of the governance file. That message was sent in previous
-releases to ``stdout`` instead of ``stderr``. Only data should be sent to
-``stdout``, not messages. Sending only data to stdout allows the option
-of doing a pipe of the *RTI Perftest* output to a file, obtaining a pure ``.csv`` file.
-
-This issue has been corrected; the message is now sent to ``stderr``.
-
-Fix incorrect schema location in the Governance files used by security |fixedTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-All the `Governance files` pointed to a non-existent location for the xsd file.
-The reference has been updated and it now points to the right url.
-
-Compiler build option not passed correctly to ``cmake`` when compiling *Connest DDS Micro* |fixedTag|
+Compiler build option not passed correctly to ``cmake`` when compiling *Connext DDS Micro* |fixedTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 The compiler build option is used to specify a compiler different than the system
@@ -114,19 +55,8 @@ that is not your build machine's architecture.
 This command-line option was passed correctly when using *Connext DDS Professional*
 but not when using *Connext DDS Micro*.
 
-
-Deprecations in Develop
-~~~~~~~~~~~~~~~~~~~~~~~
-
-``-scan`` option will be removed in future versions of *RTI Perftest*
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-The ``-scan`` command-line option is currently available in the *Traditional C++*,
-*Modern C++*, and *Java API* implementations of *RTI Perftest* (not available in the
-*Modern C# API implementation*), but in future versions it will be removed.
-
-``CPUMonitor`` class not correctly protected in *VxWorks*
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+``CPUMonitor`` class not correctly protected in *VxWorks* |fixedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Compiling *RTI Perftest* for some *VxWorks* platforms could cause missing symbols when
 loading the modules into the kernel. For example:
@@ -140,8 +70,8 @@ loading the modules into the kernel. For example:
 This issue was caused by the ``CPUMonitor`` class, which is not supported in *VxWorks* but
 was only partially protected. This issue has been resolved.
 
-``CPUMonitor`` warning not displayed if feature is not requested
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+``CPUMonitor`` warning not displayed if feature is not requested |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 In previous *RTI Perftest* versions, a message was displayed on all platforms
 where the ``-cpu`` command-line option was not supported. This message unnecessarily
@@ -152,6 +82,16 @@ added to the verbosity for customers testing in these OSes:
     [WARNING] get CPU consumption feature is not available in this OS
 
 Now this warning is displayed only if ``-cpu`` is entered as a command-line option.
+
+Deprecations in Develop
+~~~~~~~~~~~~~~~~~~~~~~~
+
+``-scan`` option will be removed in future versions of *RTI Perftest*
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The ``-scan`` command-line option is currently available in the *Traditional C++*,
+*Modern C++*, and *Java API* implementations of *RTI Perftest* (not available in the
+*Modern C# API implementation*), but in future versions it will be removed.
 
 :doc:`Previous Release Notes<./old_release_notes>`
 --------------------------------------------------

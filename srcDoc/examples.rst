@@ -20,7 +20,7 @@ different use cases:
    (has better processors) than another---you will see better performance
    by running the Publisher on the slower machine.
 
--  To measure CPU usage while running these tests, use ``-cpu`` 
+-  To measure CPU usage while running these tests, use ``-cpu``
    or the TOP utility.
 
 RTI Connext DDS Professional
@@ -404,7 +404,20 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
     bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4_WAN -transportPublicAddress <public_ip>:<public_port>
 
+1-to-1, Unicast, Best-Effort, UDPv4, 1 Size, Using C#
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+-  Publisher:
+
+::
+
+    bin/release/perftest_cs -pub -noPrintIntervals -sendQueueSize 32 -transport UDPv4 -latencyCount 1000 -dataLen 1024 -bestEffort -executionTime 100
+
+-  Subscriber
+
+::
+
+    bin/release/perftest_cs -sub -noPrintIntervals -transport UDPv4 -dataLen 1024 -bestEffort
 
 RTI Connext DDS Micro
 ---------------------
@@ -532,10 +545,10 @@ By using a flow controller ``-flowController <default,1Gbps,10Gbps>``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Since the sample size is bigger than 63000 Bytes, *RTI Perftest* will
-enable Asynchronous Publishing. By enabling Asynchronous Publishing, you also 
-make use of the default FlowController, which might not be optimal. 
-Therefore, it is a good practice to also specify a FlowController that fits 
-with the characteristics (bandwidth, latency, etc.) of the network where the 
+enable Asynchronous Publishing. By enabling Asynchronous Publishing, you also
+make use of the default FlowController, which might not be optimal.
+Therefore, it is a good practice to also specify a FlowController that fits
+with the characteristics (bandwidth, latency, etc.) of the network where the
 *RTI Perftest* applications are going to run.
 
 *RTI Perftest* provides options to use a flow controller designed for a

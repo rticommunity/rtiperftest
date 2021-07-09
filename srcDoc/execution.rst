@@ -6,9 +6,9 @@ Execution
 The test is provided in C++ (Modern and Traditional APIs), C#, and Java.
 The list below identifies how to run the executables, once you have
 built them, and how to pass configuration parameters to them. For
-detailed descriptions of the test parameters, see See *Test Parameters
-Section*. For example test configurations, see the *Example Command
-Lines* section.
+detailed descriptions of the test parameters, see :ref:`Test Parameters
+for Publishing and Subscribing Applications`. For example test
+configurations, see the *Example Command Lines* section.
 
 When running the test, keep in mind that a throughput test will
 necessarily place a heavy load on your network and potentially on your

@@ -1,142 +1,161 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
+/*
+ * (c) 2005-2021 Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
+ */
 
-namespace PerformanceTest {
-    enum PerftestOutputFormat
+using System;
+
+namespace PerformanceTest
+{
+    internal enum PerftestOutputFormat
     {
         LEGACY,
         JSON,
         CSV
     }
+
     public class PerftestPrinter
     {
-        private int _dataLength;
-        private bool _printHeaders;
-        private bool _showCPU;
-        private bool _printIntervals;
-        private bool _printSummaryHeaders;
-        private bool _isJsonInitialized;
-        private bool _controlJsonIntervals;
-        private PerftestOutputFormat _outputFormat;
-        public const string PERFT_TIME_UNIT = "us";
+        public const string TimeUnit = "us";
+        private readonly Parameters arguments;
+        private int dataLength = 100;
+        private readonly bool printHeaders;
+        private readonly bool showCPU;
+        private readonly bool printIntervals;
+        private bool printSummaryHeaders = true;
+        private bool isJsonInitialized;
+        private bool controlJsonIntervals;
+        private readonly PerftestOutputFormat outputFormat;
 
-        public PerftestPrinter()
+        public PerftestPrinter(Parameters arguments)
         {
-            _dataLength = 100;
-            _printSummaryHeaders = true;
-            _outputFormat = PerftestOutputFormat.CSV;
-        }
-        public void initialize(
-                bool printIntervals,
-                string outputFormat,
-                bool printHeaders,
-                bool showCpu)
-        {
-            _printIntervals = printIntervals;
-            _printHeaders = printHeaders;
-            _showCPU = showCpu;
-            if (outputFormat.Equals("csv")) {
-                _outputFormat = PerftestOutputFormat.CSV;
-            } else if (outputFormat.Equals("json")) {
-                _outputFormat = PerftestOutputFormat.JSON;
-                _isJsonInitialized = false;
-            } else if (outputFormat.Equals("legacy")) {
-                _outputFormat = PerftestOutputFormat.LEGACY;
+            this.arguments = arguments;
+            dataLength = (int)this.arguments.DataLen;
+            printIntervals = !arguments.NoPrintIntervals;
+            printHeaders = !arguments.NoOutputHeaders;
+            showCPU = arguments.Cpu;
+
+            if (arguments.OutputFormat.Contains("csv", StringComparison.OrdinalIgnoreCase))
+            {
+                outputFormat = PerftestOutputFormat.CSV;
+            }
+            else if (arguments.OutputFormat.Contains("json", StringComparison.OrdinalIgnoreCase))
+            {
+                outputFormat = PerftestOutputFormat.JSON;
+                isJsonInitialized = false;
+            }
+            else if (arguments.OutputFormat.Contains("legacy", StringComparison.OrdinalIgnoreCase))
+            {
+                outputFormat = PerftestOutputFormat.LEGACY;
             }
         }
-        public void set_data_length(int dataLength)
+        public void SetDataSize(int dataLength)
         {
-            _dataLength = dataLength;
+            this.dataLength = dataLength;
         }
-        public void set_header_printed(bool printHeaders)
+
+        public void PrintLatencyHeader()
         {
-            _printHeaders = printHeaders;
-        }
-        public void print_latency_header()
-        {
-            switch (_outputFormat) {
+            switch (outputFormat)
+            {
                 case PerftestOutputFormat.CSV:
-                    if(_printHeaders && _printIntervals) {
+                    if (printHeaders && printIntervals)
+                    {
                         Console.Write("\nIntervals One-way Latency for {0} " +
-                                      "Bytes:\n", _dataLength);
+                                      "Bytes:\n", dataLength);
                         Console.Write("Length (Bytes)" +
                                       ", Latency ({0}" +
                                       "), Ave ({0}" +
                                       "), Std ({0}" +
                                       "), Min ({0}" +
                                       "), Max ({0})",
-                                      PERFT_TIME_UNIT);
+                                      TimeUnit);
+                        if (showCPU)
+                        {
+                            Console.Write(", CPU (%)");
+                        }
+                        Console.Write("\n");
                     }
-                    if (_showCPU) {
-                        Console.Write(", CPU (%)");
-                    }
-                    Console.Write("\n");
+
                     Console.Out.Flush();
                     break;
                 case PerftestOutputFormat.JSON:
-                    if (_isJsonInitialized) {
+                    if (isJsonInitialized)
+                    {
                         Console.Write(",\n\t\t{\n");
-                    } else {
-                        _isJsonInitialized = true;
                     }
-                    Console.Write("\t\t\t\"length\":{0},\n", _dataLength);
-                    if (_printIntervals) {
+                    else
+                    {
+                        isJsonInitialized = true;
+                    }
+                    Console.Write("\t\t\t\"length\":{0},\n", dataLength);
+                    if (printIntervals)
+                    {
                         Console.Write("\t\t\t\"intervals\":[\n");
-                        _controlJsonIntervals = true;
+                        controlJsonIntervals = true;
                     }
                     Console.Out.Flush();
                     break;
                 case PerftestOutputFormat.LEGACY:
-                    if(_printHeaders && _printIntervals) {
+                    if (printHeaders && printIntervals)
+                    {
                         Console.Write("\n\n********** New data length is {0}\n",
-                                      _dataLength);
+                                      dataLength);
                         Console.Out.Flush();
                     }
                     break;
             }
         }
-        public void print_throughput_header()
+        public void PrintThroughputHeader()
         {
-            switch (_outputFormat) {
+            switch (outputFormat)
+            {
                 case PerftestOutputFormat.CSV:
-                    if(_printHeaders && _printIntervals) {
+                    if (printHeaders && printIntervals)
+                    {
                         Console.Write("\nIntervals Throughput for {0} " +
-                                      "Bytes:\n", _dataLength);
+                                      "Bytes:\n", dataLength);
                         Console.Write("Length (Bytes), Total Samples,  " +
                                       "Samples/s, Ave Samples/s,     " +
                                       "Mbps,  Ave Mbps" +
                                       ", Lost Samples, Lost Samples (%)");
+                        if (showCPU)
+                        {
+                            Console.Write(", CPU (%)");
+                        }
+                        Console.Write("\n");
                     }
-                    if (_showCPU) {
-                        Console.Write(", CPU (%)");
-                    }
-                    Console.Write("\n");
+
                     Console.Out.Flush();
                     break;
                 case PerftestOutputFormat.JSON:
-                    if (_isJsonInitialized) {
+                    if (isJsonInitialized)
+                    {
                         Console.Write(",\n\t\t{\n");
-                    } else {
-                        _isJsonInitialized = true;
                     }
-                    Console.Write("\t\t\t\"length\":{0},\n", _dataLength);
-                    if (_printIntervals) {
+                    else
+                    {
+                        isJsonInitialized = true;
+                    }
+                    Console.Write("\t\t\t\"length\":{0},\n", dataLength);
+                    if (printIntervals)
+                    {
                         Console.Write("\t\t\t\"intervals\":[\n");
-                        _controlJsonIntervals = true;
+                        controlJsonIntervals = true;
                     }
                     Console.Out.Flush();
                     break;
                 case PerftestOutputFormat.LEGACY:
-                    if(_printHeaders && _printIntervals) {
+                    if (printHeaders && printIntervals)
+                    {
                         Console.Write("\n\n********** New data length is {0}\n",
-                                      _dataLength);
+                                      dataLength);
                         Console.Out.Flush();
                     }
                     break;
             }
         }
-        public void print_latency_interval(
+        public void PrintLatencyInterval(
             uint latency,
             double latencyAve,
             double latencyStd,
@@ -144,25 +163,30 @@ namespace PerformanceTest {
             uint latencyMax,
             double outputCpu)
         {
-            switch (_outputFormat) {
+            switch (outputFormat)
+            {
                 case PerftestOutputFormat.CSV:
                     Console.Write("{0,14},{1,13},{2,9:F0},{3,9:F1},{4,9},{5,9}",
-                           _dataLength,
+                           dataLength,
                            latency,
                            latencyAve,
                            latencyStd,
                            latencyMin,
                            latencyMax);
-                    if (_showCPU) {
+                    if (showCPU)
+                    {
                         Console.Write(",{0,8:F2}", outputCpu);
                     }
                     Console.Write("\n");
                     Console.Out.Flush();
                     break;
                 case PerftestOutputFormat.JSON:
-                    if (_controlJsonIntervals) {
-                        _controlJsonIntervals = false;
-                    } else {
+                    if (controlJsonIntervals)
+                    {
+                        controlJsonIntervals = false;
+                    }
+                    else
+                    {
                         Console.Write(",");
                     }
                     Console.Write("\n\t\t\t\t{{\n" +
@@ -176,7 +200,8 @@ namespace PerformanceTest {
                                   latencyStd,
                                   latencyMin,
                                   latencyMax);
-                    if (_showCPU) {
+                    if (showCPU)
+                    {
                         Console.Write(",\n\t\t\t\t\t\"cpu\": {0:F1}",
                                       outputCpu);
                     }
@@ -189,13 +214,14 @@ namespace PerformanceTest {
                                   " Std {3,6:F1} {0}" +
                                   " Min {4,6} {0}" +
                                   " Max {5,6} {0}",
-                                  PERFT_TIME_UNIT,
+                                  TimeUnit,
                                   latency,
                                   latencyAve,
                                   latencyStd,
                                   latencyMin,
                                   latencyMax);
-                    if (_showCPU) {
+                    if (showCPU)
+                    {
                         Console.Write(" CPU {0:P}", outputCpu);
                     }
                     Console.Write("\n");
@@ -203,7 +229,7 @@ namespace PerformanceTest {
                     break;
             }
         }
-        public void print_latency_summary(
+        public void PrintLatencySummary(
             double latencyAve,
             double latencyStd,
             ulong latencyMin,
@@ -212,11 +238,14 @@ namespace PerformanceTest {
             ulong count,
             double outputCpu)
         {
-            switch (_outputFormat) {
+            switch (outputFormat)
+            {
                 case PerftestOutputFormat.CSV:
-                    if (_printSummaryHeaders && _printHeaders) {
-                        if (!_printIntervals && _printSummaryHeaders) {
-                            _printSummaryHeaders = _printIntervals;
+                    if (printSummaryHeaders && printHeaders)
+                    {
+                        if (!printIntervals && printSummaryHeaders)
+                        {
+                            printSummaryHeaders = printIntervals;
                         }
                         Console.Write("\nOne-way Latency Summary:\n");
                         Console.Write("Length (Bytes)" +
@@ -224,20 +253,21 @@ namespace PerformanceTest {
                                       "), Std ({0}" +
                                       "), Min ({0}" +
                                       "), Max ({0}" +
-                                      "), 50%% ({0}" +
-                                      "), 90%% ({0}" +
-                                      "), 99%% ({0}" +
-                                      "), 99.99%% ({0}" +
-                                      "), 99.9999%% ({0})",
-                                      PERFT_TIME_UNIT);
-                        if (_showCPU) {
+                                      "), 50% ({0}" +
+                                      "), 90% ({0}" +
+                                      "), 99% ({0}" +
+                                      "), 99.99% ({0}" +
+                                      "), 99.9999% ({0})",
+                                      TimeUnit);
+                        if (showCPU)
+                        {
                             Console.Write(", CPU (%)");
                         }
                         Console.Write("\n");
                     }
-                    Console.Write("{0,14},{1,9:F0},{2,9:F1},{3,9},{4,9}" +
+                    Console.Write("{0,14},{1,9:F0},{2,9:F1},{3,9},{4,9}," +
                                   "{5,9},{6,9},{7,9},{8,12},{9,14}",
-                                  _dataLength,
+                                  dataLength,
                                   latencyAve,
                                   latencyStd,
                                   latencyMin,
@@ -245,18 +275,19 @@ namespace PerformanceTest {
                                   latencyHistory[count * 50 / 100],
                                   latencyHistory[count * 90 / 100],
                                   latencyHistory[count * 99 / 100],
-                                  latencyHistory[(int) (count *
+                                  latencyHistory[(int)(count *
                                         (9999.0 / 10000))],
-                                  latencyHistory[(int) (count *
+                                  latencyHistory[(int)(count *
                                         (999999.0 / 1000000))]);
-                    if (_showCPU) {
+                    if (showCPU)
+                    {
                         Console.Write(",{0,8:F2}", outputCpu);
                     }
                     Console.Write("\n");
-                    Console.Out.Flush();
                     break;
                 case PerftestOutputFormat.JSON:
-                    if (_printIntervals) {
+                    if (printIntervals)
+                    {
                         Console.Write("\n\t\t\t],\n");
                     }
                     Console.Write("\t\t\t\"summary\":{{\n" +
@@ -276,11 +307,12 @@ namespace PerformanceTest {
                                   latencyHistory[count * 50 / 100],
                                   latencyHistory[count * 90 / 100],
                                   latencyHistory[count * 99 / 100],
-                                  latencyHistory[(int) (count *
+                                  latencyHistory[(int)(count *
                                         (9999.0 / 10000))],
-                                  latencyHistory[(int) (count *
+                                  latencyHistory[(int)(count *
                                         (999999.0 / 1000000))]);
-                    if (_showCPU) {
+                    if (showCPU)
+                    {
                         Console.Write(",\n\t\t\t\t\"cpu\": {0:F1}", outputCpu);
                     }
                     Console.Write("\n\t\t\t}\n\t\t}");
@@ -296,8 +328,8 @@ namespace PerformanceTest {
                                   " 99% {8,6} {0}" +
                                   " 99.99% {9,6} {0}" +
                                   " 99.9999% {10,6} {0}",
-                                  PERFT_TIME_UNIT,
-                                  _dataLength,
+                                  TimeUnit,
+                                  dataLength,
                                   latencyAve,
                                   latencyStd,
                                   latencyMin,
@@ -305,11 +337,12 @@ namespace PerformanceTest {
                                   latencyHistory[count * 50 / 100],
                                   latencyHistory[count * 90 / 100],
                                   latencyHistory[count * 99 / 100],
-                                  latencyHistory[(int) (count
+                                  latencyHistory[(int)(count
                                          * (9999.0 / 10000))],
-                                  latencyHistory[(int) (count
+                                  latencyHistory[(int)(count
                                          * (999999.0 / 1000000))]);
-                    if (_showCPU) {
+                    if (showCPU)
+                    {
                         Console.Write(" CPU {0:P}", outputCpu);
                     }
                     Console.Write("\n");
@@ -317,7 +350,7 @@ namespace PerformanceTest {
                     break;
             }
         }
-        public void print_throughput_interval(
+        public void PrintThroughputInterval(
             ulong lastMsgs,
             ulong mps,
             double mpsAve,
@@ -327,11 +360,12 @@ namespace PerformanceTest {
             double missingPacketsPercent,
             double outputCpu)
         {
-            switch (_outputFormat) {
+            switch (outputFormat)
+            {
                 case PerftestOutputFormat.CSV:
                     Console.Write("{0,14},{1,14},{2,11:F0},{3,14:F0},{4,9:F1}" +
                                   ",{5,10:F1},{6,13},{7,17:F2}",
-                                  _dataLength,
+                                  dataLength,
                                   lastMsgs,
                                   mps,
                                   mpsAve,
@@ -339,16 +373,20 @@ namespace PerformanceTest {
                                   bpsAve * 8.0 / 1000.0 / 1000.0,
                                   missingPackets,
                                   missingPacketsPercent);
-                    if (_showCPU) {
+                    if (showCPU)
+                    {
                         Console.Write(",{0,8:F2}", outputCpu);
                     }
                     Console.Write("\n");
                     Console.Out.Flush();
                     break;
                 case PerftestOutputFormat.JSON:
-                    if (_controlJsonIntervals) {
-                        _controlJsonIntervals = false;
-                    } else {
+                    if (controlJsonIntervals)
+                    {
+                        controlJsonIntervals = false;
+                    }
+                    else
+                    {
                         Console.Write(",");
                     }
                     Console.Write("\n\t\t\t\t{{\n" +
@@ -360,7 +398,7 @@ namespace PerformanceTest {
                                   "\t\t\t\t\t\"mbps_ave\": {5:F1},\n" +
                                   "\t\t\t\t\t\"lost\": {6},\n" +
                                   "\t\t\t\t\t\"lost_percent\": {7:F2}",
-                                  _dataLength,
+                                  dataLength,
                                   lastMsgs,
                                   mps,
                                   mpsAve,
@@ -368,7 +406,8 @@ namespace PerformanceTest {
                                   bpsAve * 8.0 / 1000.0 / 1000.0,
                                   missingPackets,
                                   missingPacketsPercent);
-                    if (_showCPU) {
+                    if (showCPU)
+                    {
                         Console.Write(",\n\t\t\t\t\t\"cpu\": {0:F1}",
                                       outputCpu);
                     }
@@ -385,7 +424,8 @@ namespace PerformanceTest {
                                   bpsAve * 8.0 / 1000.0 / 1000.0,
                                   missingPackets,
                                   missingPacketsPercent);
-                    if (_showCPU) {
+                    if (showCPU)
+                    {
                         Console.Write(" CPU {0:P}", outputCpu);
                     }
                     Console.Write("\n");
@@ -393,7 +433,7 @@ namespace PerformanceTest {
                     break;
             }
         }
-        public void print_throughput_summary(
+        public void PrintThroughputSummary(
             int length,
             ulong intervalPacketsReceived,
             ulong intervalTime,
@@ -402,17 +442,21 @@ namespace PerformanceTest {
             double missingPacketsPercent,
             double outputCpu)
         {
-            switch (_outputFormat) {
+            switch (outputFormat)
+            {
                 case PerftestOutputFormat.CSV:
-                    if (_printSummaryHeaders && _printHeaders) {
-                        if (!_printIntervals && _printSummaryHeaders) {
-                            _printSummaryHeaders = _printIntervals;
+                    if (printSummaryHeaders && printHeaders)
+                    {
+                        if (!printIntervals && printSummaryHeaders)
+                        {
+                            printSummaryHeaders = printIntervals;
                         }
                         Console.Write("\nThroughput Summary:\n");
                         Console.Write("Length (Bytes), Total Samples," +
                                       " Ave Samples/s,    Ave Mbps, " +
                                       "Lost Samples, Lost Samples (%)");
-                        if (_showCPU) {
+                        if (showCPU)
+                        {
                             Console.Write(", CPU (%)");
                         }
                         Console.Write("\n");
@@ -427,14 +471,16 @@ namespace PerformanceTest {
                                          / intervalTime * 8.0 / 1000.0 / 1000.0,
                                   intervalMissingPackets,
                                   missingPacketsPercent);
-                    if (_showCPU) {
+                    if (showCPU)
+                    {
                         Console.Write(",{0,8:F2}", outputCpu);
                     }
                     Console.Write("\n");
                     Console.Out.Flush();
                     break;
                 case PerftestOutputFormat.JSON:
-                    if (_printIntervals) {
+                    if (printIntervals)
+                    {
                         Console.Write("\n\t\t\t],\n");
                     }
                     Console.Write("\t\t\t\"summary\":{{\n" +
@@ -450,7 +496,8 @@ namespace PerformanceTest {
                                          / intervalTime * 8.0 / 1000.0 / 1000.0,
                                   intervalMissingPackets,
                                   missingPacketsPercent);
-                    if (_showCPU) {
+                    if (showCPU)
+                    {
                         Console.Write(",\n\t\t\t\t\"cpu\": {0:F1}", outputCpu);
                     }
                     Console.Write("\n\t\t\t}\n\t\t}");
@@ -467,7 +514,8 @@ namespace PerformanceTest {
                                          / intervalTime * 8.0 / 1000.0 / 1000.0,
                                   intervalMissingPackets,
                                   missingPacketsPercent);
-                    if (_showCPU) {
+                    if (showCPU)
+                    {
                         Console.Write(" CPU {0:P}", outputCpu);
                     }
                     Console.Write("\n");
@@ -475,15 +523,17 @@ namespace PerformanceTest {
                     break;
             }
         }
-        public void print_initial_output()
+        public void PrintInitialOutput()
         {
-            if (_outputFormat.Equals(PerftestOutputFormat.JSON)) {
+            if (outputFormat.Equals(PerftestOutputFormat.JSON))
+            {
                 Console.Write("{\"perftest\":\n\t[\n\t\t{\n");
             }
         }
-        public void print_final_output()
+        public void PrintFinalOutput()
         {
-            if (_outputFormat.Equals(PerftestOutputFormat.JSON)) {
+            if (outputFormat.Equals(PerftestOutputFormat.JSON))
+            {
                 Console.Write("\n\t]\n}\n");
             }
         }
