@@ -108,6 +108,10 @@ const unsigned long long numIterDefaultLatencyTest = 10000000;
  */
 int main(int argc, char *argv[])
 {
+
+    perftest_cpp::_testCompleted = false;
+    perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
+
     try {
         perftest_cpp app;
         return app.Run(argc, argv);

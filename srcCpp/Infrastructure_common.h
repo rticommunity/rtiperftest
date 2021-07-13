@@ -47,11 +47,14 @@
  * which will make us compatible with less OSs. In other cases we do need a
  * implementation for these classes.
  */
+
 #ifdef PERFTEST_RTI_PRO
   #include "Infrastructure_pro.h"
 #elif PERFTEST_RTI_MICRO
   #include "Infrastructure_micro.h"
-#else // Other DDS Middleware
+#endif
+
+#if defined(RTI_USE_CPP_11_INFRASTRUCTURE) || (!defined(PERFTEST_RTI_MICRO) && !defined(PERFTEST_RTI_PRO))
 
 #include <chrono>
 #include <condition_variable>
@@ -64,10 +67,11 @@
  * generated variable for a string is different. We need to move it to a generic
  * place and remove it from here in the future.
  */
-
+#if !defined(PERFTEST_RTI_PRO) && !defined(PERFTEST_RTI_MICRO)
 static const char *const THROUGHPUT_TOPIC_NAME = "Throughput";
 static const char *const LATENCY_TOPIC_NAME = "Latency";
 static const char *const ANNOUNCEMENT_TOPIC_NAME = "Announcement";
+#endif
 
 
 /********************************************************************/
@@ -128,7 +132,7 @@ bool PerftestSemaphore_take(PerftestSemaphore *semaphore, int timeout);
 #define PerftestMutex std::mutex
 PerftestMutex *PerftestMutex_new();
 void PerftestMutex_delete(std::mutex *mutex);
-void PerftestMutex_give(std::mutex *mutex);
+bool PerftestMutex_give(std::mutex *mutex);
 bool PerftestMutex_take(std::mutex *mutex);
 
 /********************************************************************/
@@ -169,6 +173,7 @@ PerftestThread *PerftestThread_new(
 
 void PerftestThread_delete(PerftestThread *thread);
 
+#if !defined(PERFTEST_RTI_PRO) && !defined(PERFTEST_RTI_MICRO)
 struct DDS_Duration_t {
     int sec;
     unsigned int nanosec;
@@ -185,6 +190,7 @@ public:
     static unsigned long long int
             get_spin_per_microsecond(unsigned int precision = 100);
 };
+#endif
 
 #endif
 
