@@ -620,13 +620,24 @@ by using the transport-spececific command-line parameters.
    For TCP and TLS. Public IP address and port (WAN address and port) (separated by ‘:’)
    associated with the transport instantiation.
 
-   For WAN_UDPv4. Public address of the UDPv4_WAN transport instantiation. Format is
+   For UDPv4_WAN. Public address of the UDPv4_WAN transport instantiation. Format is
    ``<public_ip>:<public_port>``.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
 
    | **Default:** ``Not set``
+
+-  ``-transportHostPort <port>``
+
+   For UDPv4_WAN. Internal host port
+   associated with the transport instantiation.
+
+   This parameter is not available when compiling against *RTI Connext DDS
+   Micro*.
+
+   | **Default:** ``set to public port specified as part of -transportPublicAddress``
+  
 
 -  ``-transportWanServerAddress <ipaddr>``
 

@@ -15,6 +15,17 @@ Release Notes Develop
 What's New in Develop
 ~~~~~~~~~~~~~~~~~~~~~
 
+New command-line option for Real-Time WAN Transport to specify host Port |enhancedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+*RTI Perftest* now supports configuring the host port when using Real-Time WAN Transport.
+
+The configuration can be done using the new command-line option:
+``-transportHostPort <port>``
+
+This feature is intended to be used in conjuction with the 
+``-transportPublicAddress`` option for Real-Time WAN Transport.
+
 Support for the new C# API |newTag|
 +++++++++++++++++++++++++++++++++++
 

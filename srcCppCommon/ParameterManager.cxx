@@ -1109,7 +1109,7 @@ void ParameterManager::initialize()
             "to the TCP transport instantiation. This is\n"
             "required when using server mode.\n"
             #ifdef PERFTEST_CONNEXT_PRO_610
-            "For UDPv4_WAN: Public address of the UDPv4_WAN\n"
+            "For UDPv4_WAN (Real-Time WAN Transport): Public address of the UDPv4_WAN\n"
             "transport instantiation. Format:\n"
             "<public_ip>:<public_send_port>.\n"
             "Default: Not Set\n"
@@ -1121,6 +1121,23 @@ void ParameterManager::initialize()
     transportPublicAddress->set_supported_middleware(
             Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
     create("transportPublicAddress", transportPublicAddress);
+
+  #ifdef PERFTEST_CONNEXT_PRO_610
+    Parameter<std::string> *transportHostPort =
+            new Parameter<std::string>();
+    transportHostPort->set_command_line_argument(
+            "-transportHostPort", "<port>");
+    transportHostPort->set_description(
+            "Configure host port when using Real-Time WAN Transport\n"
+            "Default: set to public port specified as part of -transportPublicAddress\n"
+            );
+    transportHostPort->set_type(T_STR);
+    transportHostPort->set_extra_argument(YES);
+    transportHostPort->set_group(TRANSPORT);
+    transportHostPort->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("transportHostPort", transportHostPort);
+  #endif //PERFTEST_CONNEXT_PRO_610
+
 
     Parameter<std::string> *transportWanServerAddress =
             new Parameter<std::string>();

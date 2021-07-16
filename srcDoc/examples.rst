@@ -396,9 +396,12 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -pub -noPrint -transport UDPv4_WAN -dataLen 1024 -executionTime 100 -peer udpv4_wan://<publi_ip>:<public_port>
+    bin/<arch>/release/perftest_cpp -pub -noPrint -transport UDPv4_WAN -dataLen 1024 -executionTime 100 -peer udpv4_wan://<public_ip>:<public_port>
 
 -  Subscriber
+
+**Note:** 
+    Use -transportHostPort to explicitly configure the host port. Otherwise, the host port will be equal to the public port.
 
 ::
 
