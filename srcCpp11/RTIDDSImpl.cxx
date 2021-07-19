@@ -907,7 +907,6 @@ class ReceiverListenerBase: public dds::sub::NoOpDataReaderListener<T> {
 protected:
     TestMessage _message;
     IMessagingCB *_callback;
-    dds::sub::LoanedSamples<T> samples;
 
 public:
     ReceiverListenerBase(IMessagingCB *callback) :
@@ -926,11 +925,11 @@ public:
 
     void on_data_available(dds::sub::DataReader<T> &reader) {
 
-        this->samples = reader.take();
+        dds::sub::LoanedSamples<T> samples = reader.take();
 
-        for (unsigned int i = 0; i < this->samples.length(); ++i) {
-            if (this->samples[i].info().valid()) {
-                const T & sample = this->samples[i].data();
+        for (unsigned int i = 0; i < samples.length(); ++i) {
+            if (samples[i].info().valid()) {
+                const T & sample = samples[i].data();
                 this->_message.entity_id = sample.entity_id();
                 this->_message.seq_num = sample.seq_num();
                 this->_message.timestamp_sec = sample.timestamp_sec();
@@ -1014,12 +1013,12 @@ public:
 
     void on_data_available(dds::sub::DataReader<DynamicData> &reader) {
 
-        this->samples = reader.take();
+        dds::sub::LoanedSamples<DynamicData> samples = reader.take();
 
-        for (unsigned int i = 0; i < this->samples.length(); ++i) {
-            if (this->samples[i].info().valid()) {
+        for (unsigned int i = 0; i < samples.length(); ++i) {
+            if (samples[i].info().valid()) {
                 DynamicData& sample =
-                        const_cast<DynamicData&>(this->samples[i].data());
+                        const_cast<DynamicData&>(samples[i].data());
                 this->_message.entity_id = sample.value<int32_t>(
                         DynamicDataMembersId::GetInstance().at("entity_id"));
                 this->_message.seq_num = sample.value<uint32_t>(
@@ -1091,7 +1090,7 @@ public:
     }
 
     void shutdown() {
-        _reader.listener(NULL, dds::core::status::StatusMask::none());
+        _reader.close();
         if (_readerListener != NULL) {
             delete(_readerListener);
         }
