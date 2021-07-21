@@ -107,14 +107,14 @@ Therefore, the second run's last value came from the previous run.
 
 This fix resolves the issue ``PERF-301``.
 
-Fix issue in the *Modern C++* API Implementation not returning loaned memory for samples fast enough |fixedTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*Modern C++* API implementation not returning loaned memory for samples fast enough |fixedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-In previous versions of the *Modern C++* API Implementation for *RTI Perftest*,
-we found that we were retaining loaned samples after reading them from the reader
-for too long. In certain scenarios (where other errors should be also involved)
-this could lead to issues deleting the readers at the end of the test, showing errors
-similar to the following ones:
+The *Modern C++* API Implementation for *RTI Perftest* retained loaned samples
+for too long after reading them from the *DataReader*. In some scenarios (where
+other errors would also be involved), retaining the loaned samples for too long
+led to issues deleting the *DataReaders* at the end of the test, showing
+errors similar to the following:
 
 .. code-block:: console
 
