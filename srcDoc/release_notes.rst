@@ -15,6 +15,17 @@ Release Notes Develop
 What's New in Develop
 ~~~~~~~~~~~~~~~~~~~~~
 
+New command-line option for Real-Time WAN Transport to specify host Port |enhancedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+*RTI Perftest* now supports configuring the host port when using Real-Time WAN Transport.
+
+The configuration can be done using the new command-line option:
+``-transportHostPort <port>``
+
+This feature is intended to be used in conjuction with the 
+``-transportPublicAddress`` option for Real-Time WAN Transport.
+
 Support for the new C# API |newTag|
 +++++++++++++++++++++++++++++++++++
 
@@ -42,7 +53,7 @@ Switched to C++11 clock implementation in Modern C++ API |enhancedTag|
 To simplify the *Modern C++* API implementation, *RTI Perftest* now uses the *C++11* clocks, instead
 of the ones provided by *RTI Connext DDS*.
 
-This resolves the issue ``PERF-300``.
+This enhancement resolves the issue ``PERF-300``.
 
 What's Fixed in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,16 +96,16 @@ added to the verbosity for customers testing in these OSes:
 
 Now this warning is displayed only if ``-cpu`` is entered as a command-line option.
 
-Crash in *VxWorks kernel Mode* and incorrect behavior when running Perftest multiple times |fixedTag|
+Crash in *VxWorks kernel mode* and incorrect behavior when running Perftest multiple times |fixedTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 In previous versions of *RTI Perftest*, the Traditional and Modern C++ API implementations
-would fail to run multiple times on *VxWorks* in *kernel Mode* if the ``-executionTime``
+failed to run multiple times on *VxWorks* in *kernel mode* if the ``-executionTime``
 command-line option was provided. This was due to an issue where some static variables
 were initialized when loading the libraries, but not reset when calling the initialization
-functions. Hence, in the second run having the last value from the previous run.
+Therefore, the second run's last value came from the previous run.
 
-This resolves the issue ``PERF-301``.
+This fix resolves the issue ``PERF-301``.
 
 Deprecations in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
