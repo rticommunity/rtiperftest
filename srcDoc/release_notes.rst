@@ -107,6 +107,24 @@ Therefore, the second run's last value came from the previous run.
 
 This fix resolves the issue ``PERF-301``.
 
+Fix issue in the *Modern C++* API Implementation not returning loaned memory for samples fast enough |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In previous versions of the *Modern C++* API Implementation for *RTI Perftest*,
+we found that we were retaining loaned samples after reading them from the reader
+for too long. In certain scenarios (where other errors should be also involved)
+this could lead to issues deleting the readers at the end of the test, showing errors
+similar to the following ones:
+
+.. code-block:: console
+
+    [D0047|Sub(80000009)|T=Latency|DELETE Reader] PRESPsService_destroyLocalEndpointWithCursor:outstanding loans <<<
+    [D0047|Sub(80000009)|T=Latency|DELETE Reader] PRESPsService_destroyLocalEndpoint:!delete local reader
+    [D0047|Sub(80000009)|T=Latency|DELETE Reader] DDS_DataReader_deleteI:!delete PRESLocalEndpoint
+    [D0047|Sub(80000009)|T=Latency|DELETE Reader] DDS_Subscriber_delete_datareader:!delete reader
+
+This fix resolves the issue ``PERF-312``.
+
 Deprecations in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 
