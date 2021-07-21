@@ -53,6 +53,8 @@ Switched to C++11 clock implementation in Modern C++ API |enhancedTag|
 To simplify the *Modern C++* API implementation, *RTI Perftest* now uses the *C++11* clocks, instead
 of the ones provided by *RTI Connext DDS*.
 
+This enhancement resolves the issue ``PERF-300``.
+
 What's Fixed in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -93,6 +95,17 @@ added to the verbosity for customers testing in these OSes:
     [WARNING] get CPU consumption feature is not available in this OS
 
 Now this warning is displayed only if ``-cpu`` is entered as a command-line option.
+
+Crash in *VxWorks kernel mode* and incorrect behavior when running Perftest multiple times |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In previous versions of *RTI Perftest*, the Traditional and Modern C++ API implementations
+failed to run multiple times on *VxWorks* in *kernel mode* if the ``-executionTime``
+command-line option was provided. This was due to an issue where some static variables
+were initialized when loading the libraries, but not reset when calling the initialization
+Therefore, the second run's last value came from the previous run.
+
+This fix resolves the issue ``PERF-301``.
 
 Deprecations in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~

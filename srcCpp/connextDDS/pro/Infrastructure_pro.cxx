@@ -10,6 +10,8 @@
 #include <time.h>
 using namespace std;
 
+#ifndef RTI_USE_CPP_11_INFRASTRUCTURE
+
 /* Perftest Clock class */
 
 PerftestClock::PerftestClock()
@@ -86,6 +88,7 @@ struct PerftestThread* PerftestThread_new(
     return thread;
 }
 
+#endif //#ifndef RTI_USE_CPP_11_INFRASTRUCTURE
 
 /********************************************************************/
 /* Transport Related functions */

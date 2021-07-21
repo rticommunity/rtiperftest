@@ -31,6 +31,8 @@
 
 #include <sstream>
 
+#ifndef RTI_USE_CPP_11_INFRASTRUCTURE
+
 /*
  * In order to unify the implementations for Micro and Pro, we wrap the
  * semaphores to a common PerftestSemaphore implementation.
@@ -123,6 +125,7 @@ struct PerftestThread* PerftestThread_new(
         RTIOsapiThreadOnSpawnedMethod method,
         void *threadParam);
 
+#endif //#ifndef RTI_USE_CPP_11_INFRASTRUCTURE
 
 /********************************************************************/
 /* Transport Related functions */

@@ -103,12 +103,13 @@ class perftest_cpp
 
     ThreadPriorities _threadPriorities;
 
+  public:
+
     /* The following three members are used in a static callback
        and so they have to be static */
     static bool _testCompleted;
     static bool _testCompleted_scan;
 
-  public:
     /*
      * Number of bytes sent in messages besides user data. This value is
      * calculated at run time.

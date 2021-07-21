@@ -72,6 +72,10 @@ darwin_shmem_size=419430400
 # the native implementation
 RTI_PERFTEST_NANO_CLOCK=0
 
+# For C++ Classic, variable to control if we want to force the use
+# of the C++11 infrastructure
+RTI_USE_CPP_11_INFRASTRUCTURE=0
+
 # We will use some colors to improve visibility of errors and information
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -429,6 +433,11 @@ function additional_defines_calculation()
     if [ "${1}" = "CppTraditional" ]; then
         additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_TRADITIONAL"
 
+        if [ "${RTI_USE_CPP_11_INFRASTRUCTURE}" == "1" ]; then
+            echo -e "${INFO_TAG} Force using C++11 and C++11 Infrastructure."
+            additional_defines=${additional_defines}" DRTI_USE_CPP_11_INFRASTRUCTURE"
+        fi
+
         if [ "${RTI_PERFTEST_NANO_CLOCK}" == "1" ]; then
             additional_defines=${additional_defines}" DRTI_PERFTEST_NANO_CLOCK"
         fi
@@ -484,6 +493,11 @@ function additional_defines_calculation_micro()
 
     if [ "${RTI_PERFTEST_NANO_CLOCK}" == "1" ]; then
         additional_defines=${additional_defines}" DRTI_PERFTEST_NANO_CLOCK"
+    fi
+
+    if [ "${RTI_USE_CPP_11_INFRASTRUCTURE}" == "1" ]; then
+        echo -e "${INFO_TAG} Force using C++11 and C++11 Infrastructure."
+        additional_defines=${additional_defines}" DRTI_USE_CPP_11_INFRASTRUCTURE"
     fi
 
     if [ "${USE_SECURE_LIBS}" == "1" ]; then
@@ -1480,6 +1494,9 @@ while [ "$1" != "" ]; do
             ;;
         --ns-resolution)
             RTI_PERFTEST_NANO_CLOCK=1
+            ;;
+        --force-c++11-infrastructure)
+            RTI_USE_CPP_11_INFRASTRUCTURE=1
             ;;
         --dynamic)
             STATIC_DYNAMIC=dynamic

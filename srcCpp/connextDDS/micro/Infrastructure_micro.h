@@ -26,6 +26,9 @@
 
 #include <sstream>
 
+
+#ifndef RTI_USE_CPP_11_INFRASTRUCTURE
+
 /********************************************************************/
 /*
  * In order to unify the implementations for Micro and Pro, we wrap the
@@ -99,6 +102,9 @@ struct PerftestThread* PerftestThread_new(
         void *threadParam);
 
 void PerftestThread_delete(struct PerftestThread* thread);
+
+
+#endif // #ifndef RTI_USE_CPP_11_INFRASTRUCTURE
 
 /********************************************************************/
 /* Transport Related functions */
