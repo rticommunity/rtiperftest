@@ -6,7 +6,9 @@ Release Notes
 .. raw:: html
 
     <p style="color:#004C97"; align="centerw"><strong>
-    Here is what is new in this release.
+    The New C# API is now supported in RTI Perftest! Check the performance improvements
+    with respect to the old one! Also, a lot of new improvements and fixes to make
+    Perftest even more stable, reliable and configurable.
     </strong></p>
 
 Release Notes Develop
@@ -14,17 +16,6 @@ Release Notes Develop
 
 What's New in Develop
 ~~~~~~~~~~~~~~~~~~~~~
-
-New command-line option for Real-Time WAN Transport to specify host Port |enhancedTag|
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-*RTI Perftest* now supports configuring the host port when using Real-Time WAN Transport.
-
-The configuration can be done using the new command-line option:
-``-transportHostPort <port>``
-
-This feature is intended to be used in conjuction with the 
-``-transportPublicAddress`` option for Real-Time WAN Transport.
 
 Support for the new C# API |newTag|
 +++++++++++++++++++++++++++++++++++
@@ -38,6 +29,17 @@ has been improved, not only to support the new API, but also to follow the C# co
 The old *Perftest C# API implementation* has been replaced with the new one. In order to test with
 that implementation, some changes are required. See the **Using the Old C# Implementation**
 section in :ref:`section-compatibility` for more details.
+
+New command-line option for Real-Time WAN Transport to specify host Port |enhancedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+*RTI Perftest* now supports configuring the host port when using Real-Time WAN Transport.
+
+The configuration can be done using the new command-line option:
+``-transportHostPort <port>``
+
+This feature is intended to be used in conjuction with the
+``-transportPublicAddress`` option for Real-Time WAN Transport.
 
 Improved documentation about configuration settings for *Waitsets* |enhancedTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
