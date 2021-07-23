@@ -1354,8 +1354,9 @@ function build_documentation()
     # Generate HTML
     echo ""
     echo -e "${INFO_TAG} Generating HTML documentation"
-    cd ${doc_folder}
-    ${MAKE_EXE} -f Makefile html > /dev/null 2>&1
+    rm -rf ${generate_doc_folder}/html
+    mkdir -p ${generate_doc_folder}/html
+    sphinx-build ${doc_folder} ${generate_doc_folder}/html
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating HTML documentation"
         echo -e "${ERROR_TAG} You will need to install:
@@ -1363,9 +1364,7 @@ function build_documentation()
             sudo pip install sphinx_rtd_theme"
         exit -1
     fi
-    rm -rf ${generate_doc_folder}/html
-    mkdir -p ${generate_doc_folder}/html
-    cp -rf ${doc_folder}/_build/html ${generate_doc_folder}/
+
     echo -e "${INFO_TAG} HTML Generation successful. You will find it under:
         ${generate_doc_folder}/html/index.html"
 
@@ -1373,18 +1372,16 @@ function build_documentation()
     # Generate PDF
     echo ""
     echo -e "${INFO_TAG} Generating PDF documentation"
-    cd ${doc_folder}
-    ${MAKE_EXE} -f Makefile latexpdf > /dev/null 2>&1
-    if [ "$?" != 0 ]; then
-        echo -e "${ERROR_TAG} Failure generating PDF documentation"
-        echo -e "${ERROR_TAG} On Linux systems you might need to install 'texlive-full'."
-        exit -1
-    fi
     rm -rf ${generate_doc_folder}/pdf
     mkdir -p ${generate_doc_folder}/pdf
-    cp -rf ${doc_folder}/_build/latex/RTI_Perftest.pdf ${generate_doc_folder}/pdf/RTI_Perftest_UsersManual.pdf
+    sphinx-build -b pdf ${doc_folder} ${generate_doc_folder}/pdf
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating PDF documentation"
+        exit -1
+    fi
+
     echo -e "${INFO_TAG} PDF Generation successful. You will find it under:
-        ${generate_doc_folder}/pdf/RTI_Perftest.pdf"
+        ${generate_doc_folder}/pdf"
 
 }
 
