@@ -44,7 +44,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'RTI Perftest'
-copyright = u'2020, Real-Time Innovations, Inc'
+copyright = u'2021, Real-Time Innovations, Inc'
 author = u'Real-Time Innovations, Inc.'
 
 # The version info for the project you're documenting, acts as replacement for

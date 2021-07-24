@@ -32,18 +32,18 @@ There are three ways you can access *RTI Perftest*:
 -  You can clone it from the official *Github* repository:
 
    Go to the `release page <https://github.com/rticommunity/rtiperftest/releases>`_ for *RTI Perftest* and
-   check what is the latest release, then clone that release using `git`. Currently, the latest release is 3.0:
+   check what is the latest release, then clone that release using `git`. Currently, the latest release is 3.3:
 
     .. code::
 
         git clone -b release/3.0 https://github.com/rticommunity/rtiperftest.git
 
    This command will download the Github repository in a folder named
-   ``rtiperftest`` and move to the ``release/3.0`` branch.
-   If you don't include the ``-b release/3.0``, you will clone the ``master`` branch
+   ``rtiperftest`` and move to the ``release/3.3`` branch.
+   If you don't include the ``-b release/3.3``, you will clone the ``master`` branch
    of the product.
 
--  You can download a `zip` file containing the *RTI Perftest* source files for the 3.0 release from
+-  You can download a `zip` file containing the *RTI Perftest* source files for the 3.3 release from
    the Github page:
    `github.com/rticommunity/rtiperftest <https://github.com/rticommunity/rtiperftest>`__.
    Once the zip file is downloaded, you will need to extract its content;

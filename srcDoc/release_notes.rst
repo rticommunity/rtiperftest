@@ -11,10 +11,10 @@ Release Notes
     Perftest even more stable, reliable and configurable.
     </strong></p>
 
-Release Notes Master
+Release Notes 3.3
 --------------------
 
-What's New in Master
+What's New in 3.3
 ~~~~~~~~~~~~~~~~~~~~
 
 Support for the new C# API |newTag|
@@ -57,7 +57,7 @@ of the ones provided by *RTI Connext DDS*.
 
 This enhancement resolves the issue ``PERF-300``.
 
-What's Fixed in Master
+What's Fixed in 3.3
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Compiler build option not passed correctly to ``cmake`` when compiling *Connext DDS Micro* |fixedTag|

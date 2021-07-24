@@ -3,7 +3,7 @@
 Compatibility
 =============
 
-*RTI Perftest Master* is designed to be compatible with the *RTI Connext DDS*
+*RTI Perftest 3.3* is designed to be compatible with the *RTI Connext DDS*
 middleware. It has been compiled and tested against:
 
 - *RTI Connext DDS Professional* 6.0.0 and above. Nonetheless previous versions

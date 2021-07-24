@@ -33,7 +33,7 @@ Download instructions
 
 -  You can clone it from the official *Github* repository:
 
-   ``git clone -b master https://github.com/rticommunity/rtiperftest.git``
+   ``git clone -b 3.3 https://github.com/rticommunity/rtiperftest.git``
 
    This command will download the *Github* repository in a folder named
    ``rtiperftest`` and move to the ``master`` tag.
