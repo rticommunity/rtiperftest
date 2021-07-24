@@ -15,7 +15,7 @@ makefiles needed to compile a target architecture; then, second, execute
 the makefile with the right arguments to generate the executables.
 
 This script supports the code generation and compilation for
-*Traditional C++*, *Modern C++* and *Java*.
+*Traditional C++*, *Modern C++*, *C#*, and *Java*.
 
 Potentially, ``build.sh`` can generate and compile code for every
 architecture supported by *rtiddsgen* where a makefile is generated as
@@ -27,6 +27,9 @@ Prerequisites
 -  *RTI Connext DDS Professional* or *RTI Connext DDS Micro* should be installed in the system where the
    ``build.sh`` script is going to run. The *Target* libraries for the
    platform to be generated should also be installed.
+
+-  If you are building for the C# API implementation, the *RTI Connext DDS* dotnet
+   package should be installed.
 
 -  The ``$NDDSHOME`` environment variable should be set correctly.
    Alternatively, ``$NDDSHOME`` can be passed directly to the
@@ -118,6 +121,11 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | compilation.                      |
 +----------------------+-----------+-----------------------------------+
 | --cpp11-build        | Optional  | Only C++ New PSM code generation  |
+|                      |           | and compilation.                  |
+|                      |           | Not available when compiling for  |
+|                      |           | *RTI Connext DDS Micro*.          |
++----------------------+-----------+-----------------------------------+
+| --cs-build           | Optional  | Only C# code generation           |
 |                      |           | and compilation.                  |
 |                      |           | Not available when compiling for  |
 |                      |           | *RTI Connext DDS Micro*.          |
@@ -258,6 +266,12 @@ examples:
 
        ./build.sh --platform x64Darwin15clang7.0 --java-build
 
+-  Generation and compilation just for C# (no architecture required).
+
+   ::
+
+       ./build.sh --cs-build
+
 -  Generation and compilation for a given architecture
    (``x64Darwin15clang7.0``) for all supported languages and linking
    against the Dynamic + Debug libraries.
@@ -347,6 +361,9 @@ Prerequisites
 -  *RTI Connext DDS* should be installed in the system where the
    ``build.bat`` script is going to run. The *Target* libraries for the
    platform to be generated should also be installed.
+
+-  If you are building for the C# API implementation, the *RTI Connext DDS* dotnet
+   package should be installed.
 
 -  The ``%NDDSHOME%`` environment variable should be set correctly.
    Alternatively, ``%NDDSHOME%`` can be passed directly to the

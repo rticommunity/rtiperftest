@@ -44,6 +44,7 @@
 #include "ThreadPriorities.h"
 
 #define PERFTEST_DISCOVERY_TIME_MSEC 1000   // 1 second
+#define ONE_MILLION 1000000L     // 1 million == 1 second in us
 
 struct Perftest_ProductVersion_t
 {
@@ -51,6 +52,15 @@ struct Perftest_ProductVersion_t
     char minor;
     char release;
     char revision;
+};
+
+class PerftestClock {
+private:
+    timespec timeStruct;
+
+public:
+    static PerftestClock &getInstance();
+    unsigned long long getTime();
 };
 
 class perftest_cpp
@@ -93,20 +103,12 @@ class perftest_cpp
 
     ThreadPriorities _threadPriorities;
 
+  public:
+
     /* The following three members are used in a static callback
        and so they have to be static */
     static bool _testCompleted;
     static bool _testCompleted_scan;
-
-  public:
-    static struct RTIClock *_Clock;
-    static struct RTINtpTime _ClockTime_aux;
-    static RTI_UINT64 _Clock_sec;
-    static RTI_UINT64 _Clock_usec;
-
-  #if defined(RTI_WIN32) || defined(RTI_INTIME)
-    static LARGE_INTEGER _ClockFrequency;
-  #endif
 
     /*
      * Number of bytes sent in messages besides user data. This value is

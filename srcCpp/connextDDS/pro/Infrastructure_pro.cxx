@@ -10,6 +10,8 @@
 #include <time.h>
 using namespace std;
 
+#ifndef RTI_USE_CPP_11_INFRASTRUCTURE
+
 /* Perftest Clock class */
 
 PerftestClock::PerftestClock()
@@ -86,6 +88,7 @@ struct PerftestThread* PerftestThread_new(
     return thread;
 }
 
+#endif //#ifndef RTI_USE_CPP_11_INFRASTRUCTURE
 
 /********************************************************************/
 /* Transport Related functions */
@@ -496,6 +499,15 @@ bool configureUdpv4WanTransport(
         std::string publicAddressPort
                 = publicAddress.substr(pos+1, std::string::npos);
 
+        // If transportRWTHostPort is defined use transportPort
+        std::string publicAddressHostPort;
+        if (!_PM->get<std::string>("transportHostPort").empty()) {
+            std::string transportHostPort = _PM->get<std::string>("transportHostPort");
+            publicAddressHostPort = transportHostPort;
+        } else {  // Use Internal Port as external port
+            publicAddressHostPort = publicAddressPort;
+        }
+
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".public_address",
@@ -505,7 +517,7 @@ bool configureUdpv4WanTransport(
 
         std::string json_string_comm_ports(
                 "{ \"default\": { \"host\": "
-                + publicAddressPort
+                + publicAddressHostPort
                 + ",  \"public\": "
                 + publicAddressPort
                 + " } }");

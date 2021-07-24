@@ -63,16 +63,18 @@ class perftest_cpp
     // Priorities for the threads used by perftest and domain participant
     ThreadPriorities _threadPriorities;
 
+
+    static void Timeout();
+    static void Timeout_scan();
+
+  public:
     /*
      * The following members are used in a static callback
      * and so they have to be static
      */
     static bool _testCompleted;
     static bool _testCompleted_scan;
-    static void Timeout();
-    static void Timeout_scan();
 
-  public:
     int  subID;
     bool printIntervals;
     bool showCpu;

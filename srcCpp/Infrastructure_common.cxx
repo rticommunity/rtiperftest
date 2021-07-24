@@ -17,7 +17,7 @@
  * which will make us compatible with less OSs. In other cases we do need a
  * implementation for these classes.
  */
-#if !defined(PERFTEST_RTI_MICRO) && !defined(PERFTEST_RTI_PRO)
+#if defined(RTI_USE_CPP_11_INFRASTRUCTURE) || (!defined(PERFTEST_RTI_MICRO) && !defined(PERFTEST_RTI_PRO))
 
 /********************************************************************/
 /* Perftest Semaphore class */
@@ -55,6 +55,7 @@ bool PerftestSemaphore_take(PerftestSemaphore* semaphore, int timeout)
 PerftestMutex* PerftestMutex_new()
 {
     PerftestMutex* mutex;
+    mutex = new PerftestMutex();
     return mutex;
 }
 
@@ -63,9 +64,10 @@ void PerftestMutex_delete(std::mutex* mutex)
     delete mutex;
 }
 
-void PerftestMutex_give(std::mutex* mutex)
+bool PerftestMutex_give(std::mutex* mutex)
 {
     mutex->unlock();
+    return true;
 }
 
 bool PerftestMutex_take(std::mutex* mutex)
@@ -113,6 +115,7 @@ void PerftestClock::sleep(const struct DDS_Duration_t& sleep_period)
     NDDSUtility::sleep(sleep_period);
 }
 
+#if !defined(PERFTEST_RTI_MICRO) && !defined(PERFTEST_RTI_PRO)
 void NDDSUtility::sleep(const struct DDS_Duration_t &durationIn)
 {
     std::this_thread::sleep_for(
@@ -163,6 +166,8 @@ NDDSUtility::get_spin_per_microsecond(unsigned int precision)
     return (unsigned long long) (iterations * spinCount) / usec;
 }
 
+#endif //#if !defined(PERFTEST_RTI_MICRO) && !defined(PERFTEST_RTI_PRO)
+
 /********************************************************************/
 /* Perftest Thread class */
 
@@ -171,7 +176,7 @@ struct PerftestThreadOnSpawnedMethod
     ThreadOnSpawnedMethod method;
     void *thread_param;
 
-}
+};
 
 PerftestThread* PerftestThread_new(
     const char *name,

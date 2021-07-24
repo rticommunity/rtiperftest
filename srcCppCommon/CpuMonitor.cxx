@@ -137,8 +137,17 @@ double CpuMonitor::get_cpu_instant()
     return percent;
 }
 
+bool CpuMonitor::available_in_os()
+{
+  #if defined(RTI_LINUX) || defined(RTI_DARWIN) || defined(RTI_WIN32)
+    return true;
+  #endif
+    return false;
+}
+
 double CpuMonitor::get_cpu_average()
 {
+  #if defined(RTI_LINUX) || defined(RTI_DARWIN) || defined(RTI_WIN32)
     std::ostringstream strs;
     if (_counter == 0) {
         // In the case where the CpuMonitor was just initialized, get_cpu_instant
@@ -146,5 +155,8 @@ double CpuMonitor::get_cpu_average()
     }
 
     return (double) (_cpuUsageTotal / _counter);
+  #else
+    return 0.0;
+  #endif
 }
 

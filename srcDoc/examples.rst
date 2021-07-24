@@ -20,7 +20,7 @@ different use cases:
    (has better processors) than another---you will see better performance
    by running the Publisher on the slower machine.
 
--  To measure CPU usage while running these tests, use ``-cpu`` 
+-  To measure CPU usage while running these tests, use ``-cpu``
    or the TOP utility.
 
 RTI Connext DDS Professional
@@ -88,21 +88,6 @@ does not improve throughput, at least for 1-Gig networks.
     bin/<arch>/release/perftest_cpp -sub -noPrint -nic <ipaddr> -transport UDPv4 -multicast
 
 To adjust throughput, experiment with the value of ``-pubRate <count>``.
-
-1-to-1, Multicast, Reliable UDPv4, All Sizes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
--  Publisher:
-
-::
-
-    bin/<arch>/release/perftest_cpp -pub -noPrint -sendQueueSize 32 -latencyCount 10000 -scan -transport UDPv4 -multicast
-
--  Subscriber:
-
-::
-
-    bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -multicast
 
 1-to-1, Unicast, Best-Effort, UDPv4|SHMEM, 1 Size
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -411,15 +396,31 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -pub -noPrint -transport UDPv4_WAN -dataLen 1024 -executionTime 100 -peer udpv4_wan://<publi_ip>:<public_port>
+    bin/<arch>/release/perftest_cpp -pub -noPrint -transport UDPv4_WAN -dataLen 1024 -executionTime 100 -peer udpv4_wan://<public_ip>:<public_port>
 
 -  Subscriber
+
+**Note:** 
+    Use -transportHostPort to explicitly configure the host port. Otherwise, the host port will be equal to the public port.
 
 ::
 
     bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4_WAN -transportPublicAddress <public_ip>:<public_port>
 
+1-to-1, Unicast, Best-Effort, UDPv4, 1 Size, Using C#
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+-  Publisher:
+
+::
+
+    bin/release/perftest_cs -pub -noPrintIntervals -sendQueueSize 32 -transport UDPv4 -latencyCount 1000 -dataLen 1024 -bestEffort -executionTime 100
+
+-  Subscriber
+
+::
+
+    bin/release/perftest_cs -sub -noPrintIntervals -transport UDPv4 -dataLen 1024 -bestEffort
 
 RTI Connext DDS Micro
 ---------------------
@@ -547,10 +548,10 @@ By using a flow controller ``-flowController <default,1Gbps,10Gbps>``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Since the sample size is bigger than 63000 Bytes, *RTI Perftest* will
-enable Asynchronous Publishing. By enabling Asynchronous Publishing, you also 
-make use of the default FlowController, which might not be optimal. 
-Therefore, it is a good practice to also specify a FlowController that fits 
-with the characteristics (bandwidth, latency, etc.) of the network where the 
+enable Asynchronous Publishing. By enabling Asynchronous Publishing, you also
+make use of the default FlowController, which might not be optimal.
+Therefore, it is a good practice to also specify a FlowController that fits
+with the characteristics (bandwidth, latency, etc.) of the network where the
 *RTI Perftest* applications are going to run.
 
 *RTI Perftest* provides options to use a flow controller designed for a

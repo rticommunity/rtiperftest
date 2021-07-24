@@ -73,14 +73,21 @@ class RTIAndroidBuffer : public std::streambuf {
 
 #endif
 
+PerftestClock &PerftestClock::getInstance()
+{
+    static PerftestClock instance;
+    return instance;
+}
+
+unsigned long long PerftestClock::getTime()
+{
+    clock_gettime(CLOCK_MONOTONIC, &timeStruct);
+    return (timeStruct.tv_sec * ONE_MILLION) + timeStruct.tv_nsec/1000;
+}
+
+
 bool perftest_cpp::_testCompleted = false;
 bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
-
-/* Clock related variables */
-struct RTIClock* perftest_cpp::_Clock = RTIHighResolutionClock_new();
-struct RTINtpTime perftest_cpp::_ClockTime_aux = RTI_NTP_TIME_ZERO;
-RTI_UINT64 perftest_cpp::_Clock_sec = 0;
-RTI_UINT64 perftest_cpp::_Clock_usec = 0;
 
 const long timeout_wait_for_ack_sec = 0;
 const unsigned long timeout_wait_for_ack_nsec = 100000000;
@@ -101,6 +108,10 @@ const unsigned long long numIterDefaultLatencyTest = 10000000;
  */
 int main(int argc, char *argv[])
 {
+
+    perftest_cpp::_testCompleted = false;
+    perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
+
     try {
         perftest_cpp app;
         return app.Run(argc, argv);
@@ -342,10 +353,6 @@ perftest_cpp::~perftest_cpp() {
             delete _MessagingImpl;
         }
 
-        if (perftest_cpp::_Clock != NULL) {
-            RTIHighResolutionClock_delete(perftest_cpp::_Clock);
-        }
-
         if (_printer != NULL) {
             delete _printer;
         }
@@ -476,6 +483,7 @@ bool perftest_cpp::validate_input()
 
     // Manage the parameter: -scan
     if (_PM.is_set("scan")) {
+
         const std::vector<unsigned long long> scanList =
                 _PM.get_vector<unsigned long long>("scan");
         // Max size of scan
@@ -701,6 +709,17 @@ void perftest_cpp::print_configuration()
 
     stringStream << _MessagingImpl->print_configuration();
 
+    if (_PM.get<bool>("cpu") && !CpuMonitor::available_in_os()) {
+        std::cerr << "\n[Warning] CPU consumption feature is "
+                  << "not available in this OS."
+                  << std::endl;;
+    }
+
+    if (_PM.is_set("scan")) {
+        std::cerr << "[Warning] '-scan' is deprecated and will not "
+                  << "be supported in future versions."
+                  << std::endl;
+    }
 
     // We want to expose if we are using or not the unbounded type
     if (_PM.get<int>("unbounded")) {
@@ -869,7 +888,7 @@ public:
                 _last_seq_num[i] = 0;
             }
 
-            begin_time = perftest_cpp::GetTimeUsec();
+            begin_time = PerftestClock::getInstance().getTime();
 
             _printer->_dataLength = message.size + perftest_cpp::OVERHEAD_BYTES;
             _printer->print_throughput_header();
@@ -900,7 +919,7 @@ public:
     void print_summary_throughput(TestMessage &message, bool endTest = false) {
 
         // store the info for this interval
-        unsigned long long now = perftest_cpp::GetTimeUsec();
+        unsigned long long now = PerftestClock::getInstance().getTime();
 
         if (interval_data_length != last_data_length) {
 
@@ -1098,12 +1117,12 @@ int perftest_cpp::RunSubscriber()
         reader_listener->cpu.initialize();
     }
 
-    now = GetTimeUsec();
+    now = PerftestClock::getInstance().getTime();
 
     while (true) {
         prev_time = now;
         MilliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
-        now = GetTimeUsec();
+        now = PerftestClock::getInstance().getTime();
 
         if (reader_listener->change_size) { // ACK change_size
             announcement_msg.entity_id = subID;
@@ -1349,7 +1368,7 @@ class LatencyListener : public IMessagingCB
         double latency_std;
         double outputCpu = 0.0;
 
-        now = perftest_cpp::GetTimeUsec();
+        now = PerftestClock::getInstance().getTime();
 
         switch (message.size)
         {
@@ -1765,7 +1784,7 @@ int perftest_cpp::RunPublisher()
             Timeout
     };
 
-    time_last_check = perftest_cpp::GetTimeUsec();
+    time_last_check = PerftestClock::getInstance().getTime();
 
     /* Minimum value for spin_sample_period will be 1 so we execute 100 times
        the control loop every second, or every sample if we want to send less
@@ -1835,7 +1854,7 @@ int perftest_cpp::RunPublisher()
            that modifies the publication rate according to -pubRate */
         if (isSetPubRate && (loop > 0) && (loop % pubRate_sample_period == 0)) {
 
-            time_now = perftest_cpp::GetTimeUsec();
+            time_now = PerftestClock::getInstance().getTime();
 
             time_delta = time_now - time_last_check;
             time_last_check = time_now;
@@ -1954,7 +1973,7 @@ int perftest_cpp::RunPublisher()
 
                 // Each time ask a different subscriber to echo back
                 pingID = num_pings % numSubscribers;
-                unsigned long long now = GetTimeUsec();
+                unsigned long long now = PerftestClock::getInstance().getTime();
                 message.timestamp_sec = (int)((now >> 32) & 0xFFFFFFFF);
                 message.timestamp_usec = (unsigned int)(now & 0xFFFFFFFF);
 
@@ -2066,21 +2085,6 @@ int perftest_cpp::RunPublisher()
 
 
     return 0;
-}
-
-/*********************************************************
- * Utility functions
- */
-
-inline unsigned long long perftest_cpp::GetTimeUsec() {
-    perftest_cpp::_Clock->getTime(
-            perftest_cpp::_Clock,
-            &perftest_cpp::_ClockTime_aux);
-    RTINtpTime_unpackToMicrosec(
-            perftest_cpp::_Clock_sec,
-            perftest_cpp::_Clock_usec,
-            perftest_cpp::_ClockTime_aux);
-    return perftest_cpp::_Clock_usec + 1000000 * perftest_cpp::_Clock_sec;
 }
 
 void *perftest_cpp::waitAndExecute(void *scheduleInfo) {

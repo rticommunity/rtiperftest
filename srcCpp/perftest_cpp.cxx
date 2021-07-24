@@ -89,6 +89,10 @@ const unsigned long long numIterDefaultLatencyTest = 10000000;
  */
 int main(int argc, char *argv[])
 {
+
+    perftest_cpp::_testCompleted = false;
+    perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
+
     try {
         perftest_cpp app;
         return app.Run(argc, argv);
@@ -724,6 +728,16 @@ void perftest_cpp::print_configuration()
     }
 
     stringStream << _MessagingImpl->print_configuration();
+
+    if (_PM.get<bool>("cpu") && !CpuMonitor::available_in_os()) {
+        fprintf(stderr,
+                "\n[Warning] CPU consumption feature is not available in this OS.\n");
+    }
+
+    if (_PM.is_set("scan")) {
+        fprintf(stderr,
+                "'-scan' is deprecated and will not be supported in future versions.\n");
+    }
 
     // We want to expose if we are using or not the unbounded type
     if (_PM.get<int>("unbounded")) {

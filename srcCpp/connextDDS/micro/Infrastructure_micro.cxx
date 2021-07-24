@@ -7,6 +7,8 @@
 
 #include "Infrastructure_common.h"
 
+#ifndef RTI_USE_CPP_11_INFRASTRUCTURE
+
 /********************************************************************/
 /* Perftest Clock class */
 
@@ -151,6 +153,8 @@ void PerftestThread_delete(struct PerftestThread* thread)
         printf("Error deleting thread");
     }
 }
+
+#endif //#ifndef RTI_USE_CPP_11_INFRASTRUCTURE
 
 /********************************************************************/
 /* Transport related functions */

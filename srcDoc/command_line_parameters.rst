@@ -5,7 +5,8 @@ Command-Line Parameters
 
 Several parameters are available; you can enter them on the command
 line. All parameters are optional and case-insensitive; partial matches
-are allowed (such as ``-h`` instead of ``-help``).
+are allowed (such as ``-h`` instead of ``-help``), except in the C# API
+implementation, where the full name has to be provided.
 
 Some parameters only make sense in the publishing or subscribing
 application. The parameters are presented in the following tables, based
@@ -94,6 +95,8 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** false
 
+   **Note:** Not supported yet in the C# API implementation.
+
 .. _FlatData:
 
 -  ``-flatData``
@@ -105,6 +108,8 @@ Test Parameters for Publishing and Subscribing Applications
    Micro* or a *RTI Connext DDS* version previous to 6.0.0.
 
    **Default:** false
+
+   **Note:** Not available in the C# API implementation.
 
 -  ``-zeroCopy``
 
@@ -120,6 +125,8 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** false
 
+   **Note:** Not available in the C# API implementation.
+
 -  ``-checkConsistency``
 
    This option is only valid when using ``-zeroCopy``. When using it, the code
@@ -128,12 +135,16 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:** false
 
+   **Note:** Not available in the C# API implementation.
+
 -  ``-preallocateFragmentedSamples``
 
    Prevent dynamic allocation of buffer used for storing received fragments.
    Useful for data bigger than 5MB to reduce latency.
 
    **Default:** false
+
+   **Note:** Not available in the C# API implementation.
 
 -  ``-durability <0|1|2|3>``
 
@@ -314,6 +325,12 @@ Test Parameters for Publishing and Subscribing Applications
    Process incoming data in groups, based on time, rather than
    individually.
 
+   Increasing this value may result in better throughput results. Decreasing
+   this value to its minimum, 0, means that there is no delay: the waitset
+   wakes up as soon as you receive the event. In practice, a 0 value typically
+   means that the receive thread processes samples individually,
+   improving latency results (decreasing latency).
+
    Only used if the ``-useReadThread`` is specified on the
    subscriber side.
 
@@ -329,6 +346,11 @@ Test Parameters for Publishing and Subscribing Applications
 
    Process incoming data in groups, based on the number of samples,
    rather than individually.
+
+   Increasing this value may result in better throughput results. Decreasing
+   this value to 1 means that events (new samples arrived in this case) are processed
+   individually rather than in batches, improving the latency results
+   (decreasing latency).
 
    Only used if ``-useReadThread`` is specified on the
    subscriber side.
@@ -477,7 +499,7 @@ Test Parameters for Publishing and Subscribing Applications
    results.
 
    This feature is only available for *RTI Connext DDS Professional 6.1.0* and
-   above.
+   above, in the Traditional C++ API implementation.
 
    | **Default:** ``MASK_NONE``
    | **Values:** ``['ZLIB','LZ4','BZIP2']``
@@ -490,7 +512,7 @@ Test Parameters for Publishing and Subscribing Applications
    compression.
 
    This feature is only available for *RTI Connext DDS Professional 6.1.0* and
-   above.
+   above, in the Traditional C++ API implementation.
 
    | **Default:** ``10``
 
@@ -502,7 +524,7 @@ Test Parameters for Publishing and Subscribing Applications
    will be compressed.
 
    This feature is only available for *RTI Connext DDS Professional 6.1.0* and
-   above.
+   above, excluding C#.
 
    | **Default:** ``0``
 
@@ -511,8 +533,8 @@ Test Parameters for Publishing and Subscribing Applications
    Enable the *RTI Connext DDS Professional* "Network Capture" feature
    during the test.
 
-   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
-   above.
+   This feature is only available for *RTI Connext DDS Professional 6.1.0*
+   and above, in the Traditional C++ API implementation.
 
    | **Default:** ``Not enabled``
 
@@ -521,8 +543,8 @@ Test Parameters for Publishing and Subscribing Applications
    Do not drop the capture file generated at the end of the test, if the
    ``-networkCapture`` feature is in use.
 
-   This feature is only available for *RTI Connext DDS Professional 6.1.0* and
-   above.
+   This feature is only available for *RTI Connext DDS Professional 6.1.0*
+   and above, in the Traditional C++ API implementation.
 
    | **Default:** Not set: *RTI Perftest* will delete the file
 
@@ -564,6 +586,8 @@ by using the transport-spececific command-line parameters.
   the name of the interface, not the IP address (which is valid when compiling
   against *RTI Connext DDS Professional*).
 
+  **Note:** Only one NIC can be specified in the C# API implementation.
+
 -  ``-transportVerbosity <level>``
 
    Verbosity of the transport plugin.
@@ -596,13 +620,24 @@ by using the transport-spececific command-line parameters.
    For TCP and TLS. Public IP address and port (WAN address and port) (separated by ‘:’)
    associated with the transport instantiation.
 
-   For WAN_UDPv4. Public address of the UDPv4_WAN transport instantiation. Format is
+   For UDPv4_WAN. Public address of the UDPv4_WAN transport instantiation. Format is
    ``<public_ip>:<public_port>``.
 
    This parameter is not available when compiling against *RTI Connext DDS
    Micro*.
 
    | **Default:** ``Not set``
+
+-  ``-transportHostPort <port>``
+
+   For UDPv4_WAN. Internal host port
+   associated with the transport instantiation.
+
+   This parameter is not available when compiling against *RTI Connext DDS
+   Micro*.
+
+   | **Default:** ``set to public port specified as part of -transportPublicAddress``
+  
 
 -  ``-transportWanServerAddress <ipaddr>``
 
@@ -766,6 +801,8 @@ Test Parameters Only For Publishing Applications
 
    **Default:** ``not set``
 
+   **Note:** Not available in the C# API implementation.
+
 -  ``-numIter <count>``
 
    Number of samples to send.
@@ -828,6 +865,11 @@ Test Parameters Only For Publishing Applications
 
 -  ``-scan <size1>:<size2>:...:<sizeN>``
 
+   .. note::
+
+      This command-line option is deprecated and will not be available in future versions
+      of *RTI Perftest*.
+
    Run test in scan mode. The list of sizes is optional and can be either in the
    [32,64900] range or the [64970,2147482620] range (Large Data cannot be tested
    in the same scan test as small data sizes). Default values to test with are
@@ -836,6 +878,8 @@ Test Parameters Only For Publishing Applications
    If ``-executionTime`` is not set, a timeout of 60 seconds will be applied.
 
    **Default:** ``false`` (no scan)
+
+   **Note:** Not available in the C# implementation.
 
 -  ``-sendQueueSize <number>``
 
@@ -896,7 +940,7 @@ Test Parameters Only For Publishing Applications
 
    Show serialization/deserialization times for the sample size(s) of the test.
    This time will be shown after the test concludes.
-   This command-line parameter is only present in the Traditional C++ API implementation.
+   This command-line parameter is only present in the traditional C++ API implementation.
 
    **Default:** ``Not enabled``
 
@@ -912,7 +956,7 @@ Test Parameters Only For Publishing Applications
 
    **Default:** ``Not enabled``
 
-This command-line option is available only in the Traditional C++ API implementation.
+   **Note:** Only available in the Tradditional C++ API implementation.
 
 -  ``-maximumAllocableBufferSize <bytes>``
 
@@ -920,6 +964,8 @@ This command-line option is available only in the Traditional C++ API implementa
    amount of memory that can be used to load the file into memory.
 
    **Default:** ``1GB``
+
+   **Note:** Not available in the C# API implementation.
 
 .. _Test Parameters Only For Subscribing Applications:
 
@@ -964,22 +1010,24 @@ Test Parameters Only For Subscribing Applications
 
 -  ``-checkConsistency``
 
-   Check the consistency of samples sent with Zero Copy transfer over shared 
+   Check the consistency of samples sent with Zero Copy transfer over shared
    memory.
 
    The Publisher may be reusing memory to send different samples before the
    original samples are processed by the subscriber, leading to inconsistent samples.
-   Unconsistent samples will be reported as lost.
+   Inconsistent samples will be reported as lost.
 
-   See more on the User manual page 870: 22.5.1.3 Checking data consistency with 
+   See more information in the User's Manual: 22.5.1.3 Checking data consistency with
    Zero Copy transfer over shared memory
 
    This parameter can only be used along with ``-zeroCopy``.
 
-   This parameter is not available when compiling against *RTI Connext DDS 
+   This parameter is not available when compiling against *RTI Connext DDS
    Micro* or a *RTI Connext DDS* version previous to 6.0.0.
 
    **Default:** ``Not set``
+
+   **Note:** Not available in the C# API implementation.
 
 .. _Test Parameters to Control RTI Connext DDS Secure Options:
 
@@ -1050,9 +1098,12 @@ Test Parameters to Control RTI Connext DDS Secure Options
 
 Raw Transport Options
 ~~~~~~~~~~~~~~~~~~~~~
+**Note:** These options are only available in the Tradditional C++ API
+implementation.
+
 -  ``-rawTransport``
 
-   Use sockets as a transport instead of DDS protocol. This option supports 
+   Use sockets as a transport instead of a DDS protocol. This option supports
    ``UDPv4`` and Shared Memory (``SHMEM``).
    Some of the *RTI Connext DDS* parameters are not supported when using
    sockets.
@@ -1227,8 +1278,8 @@ WaitSet Event Count and Delay
 
 *RTI Connext DDS*, and by extension, this performance test, gives you
 the option to either process received data in the middleware's receive
-thread, via a listener callback, or in a separate thread (See
-``-useReadThread``) via an object called a WaitSet. The latter approach
+thread, via a listener callback, or to process the data in a separate thread 
+(see ``-useReadThread``) via an object called `Waitset`. The latter approach
 can be beneficial in that it decouples the operation of your application
 from the middleware, so that your processing will not interfere with
 *Connext DDS*'s internal activities. However, it does introduce
@@ -1241,7 +1292,11 @@ To improve efficiency, the command-line parameters
 you to process incoming data in groups, based on the number of samples
 and/or time, rather than individually, reducing the number of context
 switches. Experiment with these values to optimize performance for your
-system.
+system. Increasing these values may result then in greater throughput.
+
+Nonetheless, as explained in the documentation for each of these parameters,
+in order to achieve better (smaller) latency results, an approach where we set
+``-waitsetDelayUsec 0`` and ``-waitsetEventCount 1`` is recommended.
 
 For more information, see these sections in the *RTI Connext DDS Core
 Libraries User’s Manual*: **Receive Threads (Section 19.3)** and

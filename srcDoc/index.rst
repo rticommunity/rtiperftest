@@ -58,8 +58,8 @@ Download
 
    git clone https://github.com/rticommunity/rtiperftest.git
 
-2. Download and compile from: `github.com/rticommunity/rtiperftest
-<github.com/rticommunity/rtiperftest>`_.
+2. Download and compile from: `https://github.com/rticommunity/rtiperftest
+<https://github.com/rticommunity/rtiperftest>`_.
 
 3. Download the executables for popular platforms from the binaries section in the
 **RTI Perftest** release page `here
@@ -86,13 +86,21 @@ Learn more in the :ref:`section-compilation` section.
 Compile
 +++++++
 
-For Linux, MacOS, QNX, VxWorks, Lynx, and Android, **RTI Perftest** makes use of a script in the top level directory named ``build.sh``. In order to build using ``build.sh`` you just need to invoke the script with the command-line parameters desired. 
+For Linux, MacOS, QNX, VxWorks, Lynx, and Android, **RTI Perftest** makes use of a script in the top-level directory named ``build.sh``.
+On Windows it uses an equivalent script named ``build.bat``. To build using these scripts, simply invoke them with the
+command-line parameters desired.
 
-For example, for a given architecture (x64Darwin15clang7.0) for C++ (traditional and modern) and Java the command would be
+For example, for a given architecture (``x64Darwin15clang7.0``) for C++ (traditional and modern) and Java, the command would be:
 
 .. code-block:: console
 
    ./build.sh --platform x64Darwin15clang7.0
+
+If you want to build the C# API implementation:
+
+.. code-block:: console
+
+   ./build.sh --cs-build
 
 Learn more about compilation for other platforms and examples in the :ref:`section-compilation` section.
 

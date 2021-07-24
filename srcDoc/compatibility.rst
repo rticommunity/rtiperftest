@@ -3,7 +3,7 @@
 Compatibility
 =============
 
-*RTI Perftest 3.2* is designed to be compatible with the *RTI Connext DDS*
+*RTI Perftest Master* is designed to be compatible with the *RTI Connext DDS*
 middleware. It has been compiled and tested against:
 
 - *RTI Connext DDS Professional* 6.0.0 and above. Nonetheless previous versions
@@ -29,7 +29,7 @@ repository:
 
     git checkout release/2.0 -- resource/secure
 
-*RTI Connext DDS 6.0.1 Security Plugins* changes
+*RTI Connext DDS 6.0.1 Security Plugins* Changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In order to add compatibility for *RTI Connext DDS 6.0.1* including the
@@ -68,6 +68,33 @@ releases:
    supported. You can disable this by adding the ``--skip-cs-build``
    flag.
 
+New C# Implementation .NET compatibility
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The C# implementation has been compiled and tested against RTI Perftest .NET 3.1 and above.
+
+Performance testing, feature development and performance data acquisition have been done
+using .NET 5.0.
+
+Using the Old C# Implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Starting in release 3.3, *RTI Perftest* will stop supporting
+the legacy C# implementation and adopt the new one provided in *RTI ConnextDDS 6.1.0*.
+However, the old implementation can still be tested using the existing code provided in
+the *RTI Perftest 3.2* release branch. You can easily access that code by doing:
+
+::
+
+    git clean -xdf -- srcCs
+    git checkout -b feature/3.2 -- srcCs
+    git checkout -b feature/3.2 -- build.bat
+
+For compiling:
+
+::
+
+    build.bat --platform <platform> --nddshome <ConnextDDS installation directory> --cs-build
+
+*Note:* Recall that the legacy C# implementation is only compatible with Windows.
 
 Known Issues
 ~~~~~~~~~~~~
