@@ -907,7 +907,6 @@ class ReceiverListenerBase: public dds::sub::NoOpDataReaderListener<T> {
 protected:
     TestMessage _message;
     IMessagingCB *_callback;
-    dds::sub::LoanedSamples<T> samples;
 
 public:
     ReceiverListenerBase(IMessagingCB *callback) :
@@ -926,17 +925,17 @@ public:
 
     void on_data_available(dds::sub::DataReader<T> &reader) {
 
-        this->samples = reader.take();
+        dds::sub::LoanedSamples<T> samples = reader.take();
 
-        for (unsigned int i = 0; i < this->samples.length(); ++i) {
-            if (this->samples[i].info().valid()) {
-                const T & sample = this->samples[i].data();
-                this->_message.entity_id = sample.entity_id();
-                this->_message.seq_num = sample.seq_num();
-                this->_message.timestamp_sec = sample.timestamp_sec();
-                this->_message.timestamp_usec = sample.timestamp_usec();
-                this->_message.latency_ping = sample.latency_ping();
-                this->_message.size = (int) sample.bin_data().size();
+        for (const auto &sample : samples) {
+            if (sample.info().valid()) {
+                const T &data = sample.data();
+                this->_message.entity_id = data.entity_id();
+                this->_message.seq_num = data.seq_num();
+                this->_message.timestamp_sec = data.timestamp_sec();
+                this->_message.timestamp_usec = data.timestamp_usec();
+                this->_message.latency_ping = data.latency_ping();
+                this->_message.size = (int) data.bin_data().size();
                 //this->_message.data = sample.bin_data();
                 this->_callback->process_message(this->_message);
             }
@@ -973,34 +972,34 @@ public:
           _checkConsistency(checkConsistency){
       }
 
-      /**
-       * Take a new sample and process it using FlatData API.
-       *
-       * @param reader is the reader to take samples from
-       */
-      void on_data_available(dds::sub::DataReader<T> &reader) {
-          dds::sub::LoanedSamples<T> samples = reader.take();
+    /**
+     * Take a new sample and process it using FlatData API.
+     *
+     * @param reader is the reader to take samples from
+     */
+    void on_data_available(dds::sub::DataReader<T> &reader) {
 
-          for (unsigned int i = 0; i < samples.length(); ++i) {
-              if (samples[i].info().valid()) {
-                  const T &sample = samples[i].data();
-                  ConstOffset message = sample.root();
+        dds::sub::LoanedSamples<T> samples = reader.take();
 
-                  this->_message.entity_id = message.entity_id();
-                  this->_message.seq_num = message.seq_num();
-                  this->_message.timestamp_sec = message.timestamp_sec();
-                  this->_message.timestamp_usec = message.timestamp_usec();
-                  this->_message.latency_ping = message.latency_ping();
-                  this->_message.size = message.bin_data().element_count();
-                  // bin_data should be retrieved here
+        for (const auto &sample : samples) {
+            if (sample.info().valid()) {
+                const T &data = sample.data();
+                ConstOffset message = data.root();
+                this->_message.entity_id = message.entity_id();
+                this->_message.seq_num = message.seq_num();
+                this->_message.timestamp_sec = message.timestamp_sec();
+                this->_message.timestamp_usec = message.timestamp_usec();
+                this->_message.latency_ping = message.latency_ping();
+                this->_message.size = message.bin_data().element_count();
+                // bin_data should be retrieved here
 
-                  // Check that the sample was not modified on the publisher side when using Zero Copy.
-                  if (_isZeroCopy && _checkConsistency) {
-                      if (!reader->is_data_consistent(samples[i])) continue;
-                  }
+                // Check that the sample was not modified on the publisher side when using Zero Copy.
+                if (_isZeroCopy && _checkConsistency) {
+                    if (!reader->is_data_consistent(sample)) continue;
+                }
 
-                  this->_callback->process_message(this->_message);
-              }
+                this->_callback->process_message(this->_message);
+            }
           }
       }
   };
@@ -1014,26 +1013,26 @@ public:
 
     void on_data_available(dds::sub::DataReader<DynamicData> &reader) {
 
-        this->samples = reader.take();
+        dds::sub::LoanedSamples<DynamicData> samples = reader.take();
 
-        for (unsigned int i = 0; i < this->samples.length(); ++i) {
-            if (this->samples[i].info().valid()) {
-                DynamicData& sample =
-                        const_cast<DynamicData&>(this->samples[i].data());
-                this->_message.entity_id = sample.value<int32_t>(
+        for (const auto &sample : samples) {
+            if (sample.info().valid()) {
+                const DynamicData &data =
+                        const_cast<DynamicData&>(sample.data());
+                this->_message.entity_id = data.value<int32_t>(
                         DynamicDataMembersId::GetInstance().at("entity_id"));
-                this->_message.seq_num = sample.value<uint32_t>(
+                this->_message.seq_num = data.value<uint32_t>(
                         DynamicDataMembersId::GetInstance().at("seq_num"));
-                this->_message.timestamp_sec = sample.value<int32_t>(
+                this->_message.timestamp_sec = data.value<int32_t>(
                         DynamicDataMembersId::GetInstance().at("timestamp_sec"));
-                this->_message.timestamp_usec = sample.value<uint32_t>(
+                this->_message.timestamp_usec = data.value<uint32_t>(
                         DynamicDataMembersId::GetInstance().at("timestamp_usec"));
-                this->_message.latency_ping = sample.value<int32_t>(
+                this->_message.latency_ping = data.value<int32_t>(
                         DynamicDataMembersId::GetInstance().at("latency_ping"));
-                this->_message.size = (int)(sample.get_values<uint8_t>(
+                this->_message.size = (int)(data.get_values<uint8_t>(
                         DynamicDataMembersId::GetInstance().at("bin_data")).size());
 
-                //_message.data = sample.bin_data();
+                //_message.data = data.bin_data();
                 _callback->process_message(this->_message);
             }
         }
@@ -1091,7 +1090,7 @@ public:
     }
 
     void shutdown() {
-        _reader.listener(NULL, dds::core::status::StatusMask::none());
+        _reader.close();
         if (_readerListener != NULL) {
             delete(_readerListener);
         }
@@ -1149,7 +1148,7 @@ public:
                 continue;
             }
 
-            const T& data = samples[this->_data_idx].data();
+            const T &data = samples[this->_data_idx].data();
             this->_message.entity_id = data.entity_id();
             this->_message.seq_num = data.seq_num();
             this->_message.timestamp_sec = data.timestamp_sec();
@@ -1171,16 +1170,16 @@ public:
             this->_waitset.dispatch(dds::core::Duration::infinite());
             dds::sub::LoanedSamples<T> samples = this->_reader.take();
 
-            for (unsigned int i = 0; i < samples.length(); ++i) {
-                if (samples[i].info().valid()) {
-                    const T & sample = samples[i].data();
-                    this->_message.entity_id = sample.entity_id();
-                    this->_message.seq_num = sample.seq_num();
-                    this->_message.timestamp_sec = sample.timestamp_sec();
-                    this->_message.timestamp_usec = sample.timestamp_usec();
-                    this->_message.latency_ping = sample.latency_ping();
-                    this->_message.size = (int) sample.bin_data().size();
-                    //_message.data = sample.bin_data();
+            for (const auto &sample : samples) {
+                if (sample.info().valid()) {
+                    const T &data = sample.data();
+                    this->_message.entity_id = data.entity_id();
+                    this->_message.seq_num = data.seq_num();
+                    this->_message.timestamp_sec = data.timestamp_sec();
+                    this->_message.timestamp_usec = data.timestamp_usec();
+                    this->_message.latency_ping = data.latency_ping();
+                    this->_message.size = (int) data.bin_data().size();
+                    //_message.data = data.bin_data();
 
                     listener->process_message(this->_message);
                 }
@@ -1284,30 +1283,30 @@ public:
       void ReceiveAndProccess(IMessagingCB *listener) {
           while (!listener->end_test) {
 
-              this->_waitset.dispatch(dds::core::Duration::infinite());
-              dds::sub::LoanedSamples<T> samples = this->_reader.take();
+            this->_waitset.dispatch(dds::core::Duration::infinite());
+            dds::sub::LoanedSamples<T> samples = this->_reader.take();
 
-              for (unsigned int i = 0; i < samples.length(); ++i) {
-                  if (samples[i].info().valid()) {
-                      const T &message_sample = samples[i].data();
-                      ConstOffset message = message_sample.root();
+            for (const auto &sample : samples) {
+                if (sample.info().valid()) {
+                    const T &message_sample = sample.data();
+                    ConstOffset message = message_sample.root();
 
-                      this->_message.entity_id = message.entity_id();
-                      this->_message.seq_num = message.seq_num();
-                      this->_message.timestamp_sec = message.timestamp_sec();
-                      this->_message.timestamp_usec = message.timestamp_usec();
-                      this->_message.latency_ping = message.latency_ping();
-                      this->_message.size = message.bin_data().element_count();
-                      //_message.data = message.bin_data();
+                    this->_message.entity_id = message.entity_id();
+                    this->_message.seq_num = message.seq_num();
+                    this->_message.timestamp_sec = message.timestamp_sec();
+                    this->_message.timestamp_usec = message.timestamp_usec();
+                    this->_message.latency_ping = message.latency_ping();
+                    this->_message.size = message.bin_data().element_count();
+                    //_message.data = message.bin_data();
 
-                      // Check that the sample was not modified on the publisher side when using Zero Copy.
-                      if (_isZeroCopy && _checkConsistency) {
-                          if (!this->_reader->is_data_consistent(samples[i])) continue;
-                      }
+                    // Check that the sample was not modified on the publisher side when using Zero Copy.
+                    if (_isZeroCopy && _checkConsistency) {
+                        if (!this->_reader->is_data_consistent(sample)) continue;
+                    }
 
-                      listener->process_message(this->_message);
-                  }
-              }
+                    listener->process_message(this->_message);
+                }
+            }
           }
       }
   };
@@ -1355,7 +1354,7 @@ public:
                 continue;
             }
 
-            DynamicData& sample = const_cast<DynamicData&>(
+            DynamicData &sample = const_cast<DynamicData&>(
                     samples[this->_data_idx].data());
             this->_message.entity_id = sample.value<int32_t>(
                     DynamicDataMembersId::GetInstance().at("entity_id"));
@@ -1376,35 +1375,30 @@ public:
         return NULL;
     }
 
-    void ReceiveAndProccess(IMessagingCB *listener) {
+    void ReceiveAndProccess(IMessagingCB *listener)
+    {
         while (!listener->end_test) {
-
             this->_waitset.dispatch(dds::core::Duration::infinite());
-            dds::sub::LoanedSamples<DynamicData> samples =
-                    this->_reader.take();
+            dds::sub::LoanedSamples<DynamicData> samples = this->_reader.take();
 
-            for (unsigned int i = 0; i < samples.length(); ++i) {
-                if (samples[i].info().valid()) {
-                    DynamicData& sample =
-                            const_cast<DynamicData&>(
-                                    samples[i].data());
-                    this->_message.entity_id = sample.value<int32_t>(
-                            DynamicDataMembersId::GetInstance().at(
-                                    "entity_id"));
-                    this->_message.seq_num = sample.value<uint32_t>(
-                            DynamicDataMembersId::GetInstance().at(
-                                    "seq_num"));
-                    this->_message.timestamp_sec = sample.value<int32_t>(
-                            DynamicDataMembersId::GetInstance().at(
-                                    "timestamp_sec"));
-                    this->_message.timestamp_usec = sample.value<uint32_t>(
-                            DynamicDataMembersId::GetInstance().at(
-                                    "timestamp_usec"));
-                    this->_message.latency_ping = sample.value<int32_t>(
+            for (const auto &sample : samples) {
+                if (sample.info().valid()) {
+                    const DynamicData &data =
+                            const_cast<DynamicData &>(sample.data());
+                    this->_message.entity_id = data.value<int32_t>(
+                            DynamicDataMembersId::GetInstance().at("entity_id"));
+                    this->_message.seq_num = data.value<uint32_t>(
+                            DynamicDataMembersId::GetInstance().at("seq_num"));
+                    this->_message.timestamp_sec = data.value<int32_t>(
+                            DynamicDataMembersId::GetInstance().at("timestamp_sec"));
+                    this->_message.timestamp_usec = data.value<uint32_t>(
+                            DynamicDataMembersId::GetInstance().at("timestamp_usec"));
+                    this->_message.latency_ping = data.value<int32_t>(
                             DynamicDataMembersId::GetInstance().at("latency_ping"));
-                    this->_message.size = (int)(sample.get_values<uint8_t>(
-                            DynamicDataMembersId::GetInstance().at("bin_data")).size());
-                    //_message.data = sample.bin_data();
+                    this->_message.size =
+                            (int) (data.get_values<uint8_t>(
+                                DynamicDataMembersId::GetInstance().at("bin_data")).size());
+                    //_message.data = data.bin_data();
                     listener->process_message(this->_message);
                 }
             }
@@ -1902,7 +1896,7 @@ IMessagingWriter *RTIDDSImpl<T>::create_writer(const std::string &topic_name)
                 _PM);
 
     } else {
-        const dds::core::xtypes::StructType& type =
+        const dds::core::xtypes::StructType &type =
                 rti::topic::dynamic_type<T>::get();
         dds::topic::Topic<DynamicData> topic(
                 _participant,
@@ -2075,7 +2069,7 @@ IMessagingReader *RTIDDSImpl<T>::create_reader(
                 _PM);
 
     } else {
-        const dds::core::xtypes::StructType& type =
+        const dds::core::xtypes::StructType &type =
                 rti::topic::dynamic_type<T>::get();
         dds::topic::Topic<DynamicData> topic(
                 _participant,
