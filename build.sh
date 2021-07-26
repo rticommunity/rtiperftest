@@ -28,11 +28,16 @@ BUILD_MICRO_24x_COMPATIBILITY=0
 MICRO_UNBOUNDED_SEQUENCE_SIZE=1048576
 
 
-# Default values:
+# Default values for building the different APIS:
 BUILD_CPP=1
 BUILD_CPP11=1
 BUILD_JAVA=1
 BUILD_CS=0
+
+# If this value is != 0, then it means the user specified specific APIS to be
+# built, and not everything.
+BUILD_SPECIFIC_APIS=0
+
 MAKE_EXE=make
 CMAKE_EXE=cmake
 ADDITIONAL_CMAKE_ARGS=""
@@ -82,6 +87,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m'
 INFO_TAG="${GREEN}[INFO]:${NC}"
+WARNING_TAG="${WARNING_TAG}"
 ERROR_TAG="${RED}[ERROR]:${NC}"
 
 ################################################################################
@@ -261,14 +267,14 @@ function executable_checking()
         # Is CMAKE in the path?
         if [ -z `which "${CMAKE_EXE}"` ]
         then
-            echo -e "${YELLOW}[WARNING]:${NC} ${CMAKE_EXE} executable not found, perftest_cpp will not be built."
+            echo -e "${WARNING_TAG} ${CMAKE_EXE} executable not found, perftest_cpp will not be built."
         fi
 
         # Is MAKE in the path?
         if [ "${BUILD_CPP}" -eq "1" ]; then
             if [ -z `which "${MAKE_EXE}"` ]
             then
-                echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp will not be built."
+                echo -e "${WARNING_TAG} ${MAKE_EXE} executable not found, perftest_cpp will not be built."
             fi
         fi
     else # If building pro
@@ -284,13 +290,13 @@ function executable_checking()
         if [ "${BUILD_CPP}" -eq "1" ]; then
             if [ -z `which "${MAKE_EXE}"` ]
             then
-                echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp will not be built."
+                echo -e "${WARNING_TAG} ${MAKE_EXE} executable not found, perftest_cpp will not be built."
             fi
         fi
         if [ "${BUILD_CPP11}" -eq "1" ]; then
             if [ -z `which "${MAKE_EXE}"` ]
             then
-                echo -e "${YELLOW}[WARNING]:${NC} ${MAKE_EXE} executable not found, perftest_cpp11 will not be built."
+                echo -e "${WARNING_TAG} ${MAKE_EXE} executable not found, perftest_cpp11 will not be built."
             fi
         fi
 
@@ -298,14 +304,14 @@ function executable_checking()
         if [[ "${BUILD_CPP}" -eq "1" ]] && [[ ! -z ${COMPILER_EXE} ]]; then
             if [ -z `which "${COMPILER_EXE}"` ]
             then
-                echo -e "${YELLOW}[WARNING]:${NC} ${COMPILER_EXE} executable not found, perftest_cpp will not be built."
+                echo -e "${WARNING_TAG} ${COMPILER_EXE} executable not found, perftest_cpp will not be built."
                 BUILD_CPP=0
             fi
         fi
         if [[ "${BUILD_CPP11}" -eq "1" ]] && [[ ! -z ${COMPILER_EXE} ]]; then
             if [ -z `which "${COMPILER_EXE}"` ]
             then
-                echo -e "${YELLOW}[WARNING]:${NC} ${COMPILER_EXE} executable not found, perftest_cpp11 will not be built."
+                echo -e "${WARNING_TAG} ${COMPILER_EXE} executable not found, perftest_cpp11 will not be built."
                 BUILD_CPP11=0
             fi
         fi
@@ -314,14 +320,14 @@ function executable_checking()
         if [[ "${BUILD_CPP}" -eq "1" ]] && [[ ! -z ${LINKER_EXE} ]]; then
             if [ -z `which "${LINKER_EXE}"` ]
             then
-                echo -e "${YELLOW}[WARNING]:${NC} ${LINKER_EXE} executable not found, perftest_cpp will not be built."
+                echo -e "${WARNING_TAG} ${LINKER_EXE} executable not found, perftest_cpp will not be built."
                 BUILD_CPP=0
             fi
         fi
         if [[ "${BUILD_CPP11}" -eq "1" ]] && [[ ! -z ${LINKER_EXE} ]]; then
             if [ -z `which "${LINKER_EXE}"` ]
             then
-                echo -e "${YELLOW}[WARNING]:${NC} ${LINKER_EXE} executable not found, perftest_cpp11 will not be built."
+                echo -e "${WARNING_TAG} ${LINKER_EXE} executable not found, perftest_cpp11 will not be built."
                 BUILD_CPP11=0
             fi
         fi
@@ -329,7 +335,7 @@ function executable_checking()
 
         if [ "${BUILD_CS}" -eq "1" ]; then
             if [ -z `which dotnet` ]; then
-                echo -e "${RED}[WARNING]:${NC} javac executable not found, perftest_java will not be built."
+                echo -e "${YELLOW}[WARNING]:${NC} dotnet executable not found, perftest_java will not be built."
                 BUILD_CS=0
             fi
         fi
@@ -337,15 +343,15 @@ function executable_checking()
         # Is JAVA in the path?
         if [ "${BUILD_JAVA}" -eq "1" ]; then
             if [ -z `which "${JAVAC_EXE}"` ]; then
-                echo -e "${YELLOW}[WARNING]:${NC} javac executable not found, perftest_java will not be built."
+                echo -e "${WARNING_TAG} javac executable not found, perftest_java will not be built."
                 BUILD_JAVA=0
             fi
             if [ -z `which "${JAVA_EXE}"` ]; then
-                echo -e "${YELLOW}[WARNING]:${NC} java executable not found, perftest_java will not be built."
+                echo -e "${WARNING_TAG} java executable not found, perftest_java will not be built."
                 BUILD_JAVA=0
             fi
             if [ -z `which "${JAR_EXE}"` ]; then
-                echo -e "${YELLOW}[WARNING]:${NC} jar executable not found, perftest_java will not be built."
+                echo -e "${WARNING_TAG} jar executable not found, perftest_java will not be built."
                 BUILD_JAVA=0
             fi
         fi
@@ -449,7 +455,9 @@ function additional_defines_calculation()
 
     if [ -x "$(command -v git)" ]; then
         commit_id="$(git rev-parse --short HEAD)"
+        branch_name="$(git rev-parse --abbrev-ref HEAD)"
         additional_defines=${additional_defines}" DPERFTEST_COMMIT_ID='\\\"${commit_id}\\\"'"
+        additional_defines=${additional_defines}" DPERFTEST_BRANCH_NAME='\\\"${branch_name}\\\"'"
     fi
 
     if [[ $platform == *"Darwin"* ]]; then
@@ -574,7 +582,7 @@ function generate_qos_string()
     # If PERL_EXEC is in the path, generate the qos_string.h file.
     if [ "${BUILD_CPP}" -eq "1" ] || [ "${BUILD_CPP11}" -eq "1" ]; then
         if [ -z `which "${PERL_EXEC}"` ]; then
-            echo -e "${YELLOW}[WARNING]:${NC} PERL not found, ${common_cpp_folder}/qos_string.h will not be updated."
+            echo -e "${WARNING_TAG} PERL not found, ${common_cpp_folder}/qos_string.h will not be updated."
         else
             ${PERL_EXEC} ${cStringifyFile_script} ${qos_file} PERFTEST_QOS_STRING > ${common_cpp_folder}/qos_string.h
             echo -e "${INFO_TAG} QoS String ${common_cpp_folder}/qos_string.h updated successfully"
@@ -1072,8 +1080,15 @@ function build_cpp11()
     echo -e "${INFO_TAG} Command: $rtiddsgen_command"
 
     # Executing RTIDDSGEN command here.
-    eval $rtiddsgen_command
-    if [ "$?" != 0 ]; then
+    export output_string=$(eval $rtiddsgen_command 2>&1)
+    echo -e "${output_string}"
+    echo ""
+    if [[ $output_string == *"ERROR"* ]]; then
+        if [[ $output_string == *"Options language C++11 and architecture"* ]]; then
+            echo -e "${WARNING_TAG} Skipping ${modern_cpp_lang_string} since the architecture does not support it."
+            clean_copied_files
+            return
+        fi
         echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
         clean_copied_files
         exit -1
@@ -1295,7 +1310,7 @@ function build_cs()
     ##############################################################################
     # Generate Files to compile
 
-    rtiddsgen_command="\"${rtiddsgen_executable}\" -D PERFTEST_RTI_PRO -replace -language ${cs_lang_string} -platform ${platform} -update makefiles -unboundedSupport -d \"${cs_folder}\" \"${idl_location}/perftest.idl\""
+    rtiddsgen_command="\"${rtiddsgen_executable}\" -D PERFTEST_RTI_PRO -replace -language ${cs_lang_string} -platform ${platform_cs} -update makefiles -unboundedSupport -d \"${cs_folder}\" \"${idl_location}/perftest.idl\""
 
     echo ""
     echo -e "${INFO_TAG} Generating .net solution for ${cs_lang_string}."
@@ -1423,25 +1438,37 @@ while [ "$1" != "" ]; do
             ;;
         --java-build)
             BUILD_JAVA=1
-            BUILD_CPP=0
-            BUILD_CPP11=0
+            if [ $BUILD_SPECIFIC_APIS -eq 0 ]; then
+                BUILD_SPECIFIC_APIS=1
+                BUILD_CPP=0
+                BUILD_CPP11=0
+            fi
             ;;
         --cpp-build)
-            BUILD_JAVA=0
             BUILD_CPP=1
-            BUILD_CPP11=0
+            if [ $BUILD_SPECIFIC_APIS -eq 0 ]; then
+                BUILD_SPECIFIC_APIS=1
+                BUILD_JAVA=0
+                BUILD_CPP11=0
+            fi
             ;;
         --cpp11-build)
-            BUILD_JAVA=0
-            BUILD_CPP=0
             BUILD_CPP11=1
+            if [ $BUILD_SPECIFIC_APIS -eq 0 ]; then
+                BUILD_SPECIFIC_APIS=1
+                BUILD_JAVA=0
+                BUILD_CPP=0
+            fi
             ;;
         --cs-build)
             BUILD_CS=1
-            platform="net5"
-            BUILD_JAVA=0
-            BUILD_CPP=0
-            BUILD_CPP11=0
+            platform_cs="net5"
+            if [ $BUILD_SPECIFIC_APIS -eq 0 ]; then
+                BUILD_SPECIFIC_APIS=1
+                BUILD_JAVA=0
+                BUILD_CPP=0
+                BUILD_CPP11=0
+            fi
             ;;
         --make)
             MAKE_EXE=$2

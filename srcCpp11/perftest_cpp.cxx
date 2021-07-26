@@ -73,16 +73,10 @@ class RTIAndroidBuffer : public std::streambuf {
 
 #endif
 
-PerftestClock &PerftestClock::getInstance()
-{
-    static PerftestClock instance;
-    return instance;
-}
-
 unsigned long long PerftestClock::getTime()
 {
-    clock_gettime(CLOCK_MONOTONIC, &timeStruct);
-    return (timeStruct.tv_sec * ONE_MILLION) + timeStruct.tv_nsec/1000;
+    return (unsigned long long) std::chrono::high_resolution_clock::now()
+                   .time_since_epoch().count() / 1000;
 }
 
 
@@ -317,6 +311,9 @@ void perftest_cpp::print_version()
 
   #ifdef PERFTEST_COMMIT_ID
     fprintf(stderr, " %s", PERFTEST_COMMIT_ID);
+  #endif
+  #ifdef PERFTEST_BRANCH_NAME
+    fprintf(stderr, " (%s)", PERFTEST_BRANCH_NAME);
   #endif
 
     fprintf(stderr, " (RTI Connext DDS %d.%d.%d)\n",
@@ -887,7 +884,7 @@ public:
                 _last_seq_num[i] = 0;
             }
 
-            begin_time = PerftestClock::getInstance().getTime();
+            begin_time = PerftestClock::getTime();
 
             _printer->_dataLength = message.size + perftest_cpp::OVERHEAD_BYTES;
             _printer->print_throughput_header();
@@ -918,7 +915,7 @@ public:
     void print_summary_throughput(TestMessage &message, bool endTest = false) {
 
         // store the info for this interval
-        unsigned long long now = PerftestClock::getInstance().getTime();
+        unsigned long long now = PerftestClock::getTime();
 
         if (interval_data_length != last_data_length) {
 
@@ -1116,12 +1113,12 @@ int perftest_cpp::RunSubscriber()
         reader_listener->cpu.initialize();
     }
 
-    now = PerftestClock::getInstance().getTime();
+    now = PerftestClock::getTime();
 
     while (true) {
         prev_time = now;
         MilliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
-        now = PerftestClock::getInstance().getTime();
+        now = PerftestClock::getTime();
 
         if (reader_listener->change_size) { // ACK change_size
             announcement_msg.entity_id = subID;
@@ -1367,7 +1364,7 @@ class LatencyListener : public IMessagingCB
         double latency_std;
         double outputCpu = 0.0;
 
-        now = PerftestClock::getInstance().getTime();
+        now = PerftestClock::getTime();
 
         switch (message.size)
         {
@@ -1783,7 +1780,7 @@ int perftest_cpp::RunPublisher()
             Timeout
     };
 
-    time_last_check = PerftestClock::getInstance().getTime();
+    time_last_check = PerftestClock::getTime();
 
     /* Minimum value for spin_sample_period will be 1 so we execute 100 times
        the control loop every second, or every sample if we want to send less
@@ -1853,7 +1850,7 @@ int perftest_cpp::RunPublisher()
            that modifies the publication rate according to -pubRate */
         if (isSetPubRate && (loop > 0) && (loop % pubRate_sample_period == 0)) {
 
-            time_now = PerftestClock::getInstance().getTime();
+            time_now = PerftestClock::getTime();
 
             time_delta = time_now - time_last_check;
             time_last_check = time_now;
@@ -1972,7 +1969,7 @@ int perftest_cpp::RunPublisher()
 
                 // Each time ask a different subscriber to echo back
                 pingID = num_pings % numSubscribers;
-                unsigned long long now = PerftestClock::getInstance().getTime();
+                unsigned long long now = PerftestClock::getTime();
                 message.timestamp_sec = (int)((now >> 32) & 0xFFFFFFFF);
                 message.timestamp_usec = (unsigned int)(now & 0xFFFFFFFF);
 

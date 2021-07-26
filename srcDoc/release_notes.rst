@@ -57,6 +57,19 @@ of the ones provided by *RTI Connext DDS*.
 
 This enhancement resolves the issue ``PERF-300``.
 
+Build options for the different APIs are now stackable |enhancedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+*RTI Perftest* has improved the behavior when selecting the APIs to build when using the
+the ``build.sh`` and ``build.bat`` scripts.
+
+These options are: ``--cpp-build``, ``--cpp11-build``, ``--java-build`` and ``--cs-build``.
+In the past, when providing more than one of these parameters, *RTI Perftest* would build
+just the last one provided. Now, the options are stackable, meaning that if you specify
+``--cpp-build --cs-build`` both APIs will be compiled one after the other.
+
+This enhancement resolves the issue ``PERF-313``.
+
 What's Fixed in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 

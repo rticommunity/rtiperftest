@@ -143,9 +143,6 @@ bool PerftestMutex_take(std::mutex *mutex);
 #define ONE_MILLION 1000000L     // 1 million == 1 second in us
 
 class PerftestClock {
-private:
-    timespec timeStruct;
-
 public:
     static PerftestClock &getInstance();
     unsigned long long getTime();
