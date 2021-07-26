@@ -296,6 +296,9 @@ void perftest_cpp::print_version()
   #ifdef PERFTEST_COMMIT_ID
     fprintf(stderr, " %s", PERFTEST_COMMIT_ID);
   #endif
+  #ifdef PERFTEST_BRANCH_NAME
+    fprintf(stderr, " (%s)", PERFTEST_BRANCH_NAME);
+  #endif
 
     //TODO: Change this so it uses a function from the MessagingImpl object
     fprintf(stderr, " (%s)\n", GetMiddlewareVersionString().c_str());

@@ -24,7 +24,7 @@
 #include "perftest.hpp"
 #include "ParameterManager.h"
 #include "PerftestPrinter.h"
-
+#include <chrono>
 
 #ifdef RTI_WIN32
   #include <windows.h>
@@ -55,12 +55,8 @@ struct Perftest_ProductVersion_t
 };
 
 class PerftestClock {
-private:
-    timespec timeStruct;
-
 public:
-    static PerftestClock &getInstance();
-    unsigned long long getTime();
+    static unsigned long long getTime();
 };
 
 class perftest_cpp
