@@ -24,11 +24,17 @@ set ADDITIONAL_CMAKE_ARGS=""
 set BUILD_MICRO_24x_COMPATIBILITY=0
 set MICRO_UNBOUNDED_SEQUENCE_SIZE=1048576
 
-@REM # Default values:
+@REM # Default values for building the different APIS:
 set BUILD_CPP=1
 set BUILD_CPP11=1
-set BUILD_CS=0
 set BUILD_JAVA=1
+set BUILD_CS=0
+
+@REM # If this value is != 0, then it means the user specified specific APIS to be
+@REM # built, and not everything.
+set BUILD_SPECIFIC_APIS=0
+
+
 set CMAKE_EXE=cmake
 set MSBUILD_EXE=msbuild
 set JAVAC_EXE=javac
@@ -86,45 +92,54 @@ if NOT "%1"=="" (
 			call:clean
 			exit /b 0
 		) ELSE if "%1"=="--help" (
-				call:help
-				exit /b 0
+			call:help
+			exit /b 0
 		) ELSE if "%1"=="-h" (
-				call:help
-				exit /b 0
+			call:help
+			exit /b 0
 		) ELSE if "%1"=="--micro-24x-compatibility" (
-				SET BUILD_MICRO=1
-				SET BUILD_MICRO_24x_COMPATIBILITY=1
+			SET BUILD_MICRO=1
+			SET BUILD_MICRO_24x_COMPATIBILITY=1
 		) ELSE if "%1"=="--micro" (
-				SET BUILD_MICRO=1
+			SET BUILD_MICRO=1
 		) ELSE if "%1"=="--skip-java-build" (
-				SET BUILD_JAVA=0
+			SET BUILD_JAVA=0
 		) ELSE if "%1"=="--skip-cpp-build" (
-				SET BUILD_CPP=0
+			SET BUILD_CPP=0
 		) ELSE if "%1"=="--skip-cpp11-build" (
-				SET BUILD_CPP11=0
+			SET BUILD_CPP11=0
 		) ELSE if "%1"=="--skip-cs-build" (
-				set BUILD_CS=0
+			set BUILD_CS=0
 		) ELSE if "%1"=="--java-build" (
-				SET BUILD_JAVA=1
-				SET BUILD_CPP=0
-				SET BUILD_CPP11=0
-				SET BUILD_CS=0
+			set BUILD_JAVA=1
+			if "!BUILD_SPECIFIC_APIS!"=="0" (
+				set BUILD_SPECIFIC_APIS=1
+				set BUILD_CPP=0
+				set BUILD_CPP11=0
+			)
 		) ELSE if "%1"=="--cpp-build" (
-				SET BUILD_JAVA=0
-				SET BUILD_CPP=1
-				SET BUILD_CPP11=0
-				SET BUILD_CS=0
+			set BUILD_CPP=1
+			if "!BUILD_SPECIFIC_APIS!"=="0" (
+				set BUILD_SPECIFIC_APIS=1
+				set BUILD_JAVA=0
+				set BUILD_CPP11=0
+			)
 		) ELSE if "%1"=="--cpp11-build" (
-				SET BUILD_JAVA=0
-				SET BUILD_CPP=0
-				SET BUILD_CPP11=1
-				SET BUILD_CS=0
+			set BUILD_CPP11=1
+			if "!BUILD_SPECIFIC_APIS!"=="0" (
+				set BUILD_SPECIFIC_APIS=1
+				set BUILD_CPP=0
+				set BUILD_JAVA=0
+			)
 		) ELSE if "%1"=="--cs-build" (
-				SET BUILD_JAVA=0
-				SET BUILD_CPP=0
-				SET BUILD_CPP11=0
-				SET BUILD_CS=1
-				set architecture=net5
+			set BUILD_CS=1
+			if "!BUILD_SPECIFIC_APIS!"=="0" (
+				set BUILD_SPECIFIC_APIS=1
+				set BUILD_CPP=0
+				set BUILD_CPP11=0
+				set BUILD_JAVA=0
+			)
+			set architecture_cs=net5
 		) ELSE if "%1"=="--debug" (
 				SET RELEASE_DEBUG=debug
 		) ELSE if "%1"=="--dynamic" (
@@ -418,7 +433,11 @@ if !BUILD_CPP! == 1 (
 		for /f "tokens=* USEBACKQ" %%F in (`git rev-parse --short HEAD`) do (
 			set commit_id=%%F
 		)
+		for /f "tokens=* USEBACKQ" %%F in (`git rev-parse --abbrev-ref HEAD`) do (
+			set branch_name=%%F
+		)
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! PERFTEST_COMMIT_ID=\"!commit_id!\""
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! PERFTEST_BRANCH_NAME=\"!branch_name!\""
 	)
 
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
@@ -552,7 +571,11 @@ if !BUILD_CPP11! == 1 (
 		for /f "tokens=* USEBACKQ" %%F in (`git rev-parse --short HEAD`) do (
 			set commit_id=%%F
 		)
+		for /f "tokens=* USEBACKQ" %%F in (`git name-rev --name-only HEAD`) do (
+			set branch_name=%%F
+		)
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! PERFTEST_COMMIT_ID=\"!commit_id!\""
+		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! PERFTEST_BRANCH_NAME=\"!branch_name!\""
 	)
 
 	set "additional_defines_rtiddsgen=-D "PERFTEST_RTI_PRO""
@@ -691,7 +714,7 @@ if %BUILD_CS% == 1 (
 	@REM Generate files for srcCs
 	echo[
 	echo [INFO]: Generating projects for %cs_lang_string%
-	call "%rtiddsgen_executable%" -language %cs_lang_string% -unboundedSupport -replace -platform !architecture!^
+	call "%rtiddsgen_executable%" -language %cs_lang_string% -unboundedSupport -replace -platform !architecture_cs!^
 	-update makefiles !additional_defines_rtiddsgen! -d "%cs_folder%" "%idl_location%\perftest.idl"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure generating code for %cs_lang_string%.

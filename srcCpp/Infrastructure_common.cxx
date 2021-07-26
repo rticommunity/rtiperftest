@@ -101,8 +101,8 @@ PerftestClock &PerftestClock::getInstance()
 
 unsigned long long PerftestClock::getTime()
 {
-    clock_gettime(CLOCK_MONOTONIC, &timeStruct);
-    return (timeStruct.tv_sec * ONE_MILLION) + timeStruct.tv_nsec/1000;
+    return (unsigned long long) std::chrono::high_resolution_clock::now()
+                   .time_since_epoch().count() / 1000;
 }
 
 void PerftestClock::milliSleep(unsigned int millisec)
