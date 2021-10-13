@@ -86,7 +86,11 @@ The ``build.sh`` script accepts the following list of parameters:
 |                      |           | *RTI Perftest*.                   |
 +----------------------+-----------+-----------------------------------+
 | --micro              | Optional  | Compile *RTI Perftest* against    |
-|                      |           | *RTI Connext DDS Micro*           |
+|                      |           | *RTI Connext DDS Micro* 3.x.      |
++----------------------+-----------+-----------------------------------+
+| --micro-24x          | Optional  | Compile *RTI Perftest* against    |
+| -compatibility       |           | *RTI Connext DDS Micro* 2.4.11    |
+|                      |           | and above.                        |
 +----------------------+-----------+-----------------------------------+
 | --nddshome           | Optional  | Path to the *RTI Connext DDS      |
 |                      |           | Professional* installation. If    |
@@ -410,6 +414,13 @@ The ``build.bat`` script accepts the following list of parameters:
 | --platform           | Required  | Architecture/Platform for which   |
 |                      |           | build.bat is going to compile     |
 |                      |           | *RTI Perftest*.                   |
++----------------------+-----------+-----------------------------------+
+| --micro              | Optional  | Compile *RTI Perftest* against    |
+|                      |           | *RTI Connext DDS Micro* 3.x.      |
++----------------------+-----------+-----------------------------------+
+| --micro-24x          | Optional  | Compile *RTI Perftest* against    |
+| -compatibility       |           | *RTI Connext DDS Micro* 2.4.11    |
+|                      |           | and above.                        |
 +----------------------+-----------+-----------------------------------+
 | --nddshome           | Optional  | Path to the *RTI Connext DDS*     |
 |                      |           | installation. If this parameter   |
