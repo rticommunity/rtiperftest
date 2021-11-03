@@ -3823,6 +3823,27 @@ bool RTIDDSImpl<T>::configure_reader_qos(
     }
   #endif
 
+  #ifdef PERFTEST_RTI_MICRO
+
+    if (_PM->get<bool>("multicast")) {
+
+        if (_transport.getMulticastAddr(topic_name.c_str()).empty()) {
+            fprintf(stderr,
+                    "topic name must either be %s or %s or %s.\n",
+                    THROUGHPUT_TOPIC_NAME,
+                    LATENCY_TOPIC_NAME,
+                    ANNOUNCEMENT_TOPIC_NAME);
+            return false;
+        }
+
+        std::string receive_address = "_udp://" + _transport.getMulticastAddr(topic_name.c_str());
+        DDS_StringSeq_set_maximum(&dr_qos.transport.enabled_transports, 1);
+        DDS_StringSeq_set_length(&dr_qos.transport.enabled_transports, 1);
+        *DDS_StringSeq_get_reference(&dr_qos.transport.enabled_transports, 0) =
+                DDS_String_dup(receive_address.c_str());
+
+    }
+  #endif
 
     if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {
       #ifdef PERFTEST_RTI_PRO

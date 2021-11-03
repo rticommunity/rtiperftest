@@ -278,8 +278,6 @@ bool PerftestTransport::allowsMulticast()
             && transportConfig.kind != TRANSPORT_SHMEM);
 }
 
-#ifdef PERFTEST_RTI_PRO
-
 const std::string PerftestTransport::getMulticastAddr(const char *topicName)
 {
     std::string address = multicastAddrMap[std::string(topicName)];
@@ -290,6 +288,8 @@ const std::string PerftestTransport::getMulticastAddr(const char *topicName)
 
     return address;
 }
+
+#ifdef PERFTEST_RTI_PRO
 
 bool PerftestTransport::is_multicast(std::string addr)
 {
