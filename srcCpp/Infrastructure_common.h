@@ -30,7 +30,7 @@
  * Define the units for time when using Usec or Nsec
  */
 #ifndef RTI_PERFTEST_NANO_CLOCK
-  #define PERFT_TIME_UNIT "us"
+  #define PERFT_TIME_UNIT "μs"
 #else
   #define PERFT_TIME_UNIT "ns"
 #endif

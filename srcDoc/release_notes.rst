@@ -17,6 +17,26 @@ Release Notes Develop
 What's New in Develop
 ~~~~~~~~~~~~~~~~~~~~~
 
+--
+
+What's Fixed in Develop
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Modified table output headers to improve readability and parsing |enhancedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The output headers displayed by *Perftest* during and after the test have been updated to
+show a clearer description of the content of the tables.
+
+In addition, when the `-noPrintIntervals` option is provided, the header is a single line, which
+simplifies parsing it later on.
+
+Release Notes 3.3
+--------------------
+
+What's New in 3.3
+~~~~~~~~~~~~~~~~~~~~
+
 Support for the new C# API |newTag|
 +++++++++++++++++++++++++++++++++++
 
@@ -70,7 +90,7 @@ just the last one provided. Now, the options are stackable, meaning that if you 
 
 This enhancement resolves the issue ``PERF-313``.
 
-What's Fixed in Develop
+What's Fixed in 3.3
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Compiler build option not passed correctly to ``cmake`` when compiling *Connext DDS Micro* |fixedTag|

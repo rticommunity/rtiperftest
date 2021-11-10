@@ -9,7 +9,7 @@
 #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
   #include "Infrastructure_common.h"
 #elif defined(RTI_LANGUAGE_CPP_MODERN)
-  #define PERFT_TIME_UNIT "us"
+  #define PERFT_TIME_UNIT "μs"
 #endif
 #include <iostream>
 #include <stdio.h>

@@ -42,7 +42,7 @@ void PerftestCSVPrinter::print_throughput_header()
     if (_printHeaders && _printIntervals) {
         printf("\nInterval Throughput for %d Bytes:\n", _dataLength);
         printf("Length (Bytes), Total Samples,  Samples/s,"
-                " Ave Samples/s,     Mbps,  Ave Mbps"
+                " Avg Samples/s,     Mbps,  Avg Mbps"
                 ", Lost Samples, Lost Samples (%%)");
         if (_showCPU) {
             printf(", CPU (%%)");
@@ -88,8 +88,10 @@ void PerftestCSVPrinter::print_latency_summary(
         if (!_printIntervals && _printSummaryHeaders) {
             _printSummaryHeaders = _printIntervals;
         }
-        printf("\nOne-way Latency Summary:\n");
-        printf("Length (Bytes)"
+        if (_printIntervals) {
+            printf("\nOne-way Latency Summary:\n");
+        }
+        printf("Sample Size (Bytes)"
                 ", Ave (" PERFT_TIME_UNIT
                 "), Std (" PERFT_TIME_UNIT
                 "), Min (" PERFT_TIME_UNIT
@@ -110,7 +112,7 @@ void PerftestCSVPrinter::print_latency_summary(
         }
         printf("\n");
     }
-    printf("%14d,%9.0lf,%9.1lf,%9lu,%9lu,%9lu,%9lu,%9lu,%12lu,%14lu",
+    printf("%19d,%9.0lf,%9.1lf,%9lu,%9lu,%9lu,%9lu,%9lu,%12lu,%14lu",
             totalSampleSize,
             latencyAve,
             latencyStd,
@@ -171,15 +173,17 @@ void PerftestCSVPrinter::print_throughput_summary(
         if (!_printIntervals && _printSummaryHeaders) {
             _printSummaryHeaders = _printIntervals;
         }
-        printf("\nThroughput Summary:\n");
-        printf("Length (Bytes), Total Samples, Ave Samples/s,"
-                "    Ave Mbps, Lost Samples, Lost Samples (%%)");
+        if (_printIntervals) {
+            printf("\nThroughput Summary:\n");
+        }
+        printf("Sample Size (Bytes), Total Samples, Avg Samples/s,"
+                "    Avg Mbps, Lost Samples, Lost Samples (%%)");
         if (_showCPU) {
             printf(", CPU (%%)");
         }
         printf("\n");
     }
-    printf("%14d,%14llu,%14.0llu,%12.1lf, %12llu, %16.2lf",
+    printf("%19d,%14llu,%14.0llu,%12.1lf, %12llu, %16.2lf",
             length,
             intervalPacketsReceived,
             intervalPacketsReceived * 1000000 / intervalTime,
