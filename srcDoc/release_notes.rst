@@ -31,6 +31,13 @@ show a clearer description of the content of the tables.
 In addition, when the `-noPrintIntervals` option is provided, the header is a single line, which
 simplifies parsing it later on.
 
+Fixed bug in C# API when testing with large data sizes and unbounded types |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Fixed a bug in the *RTI Perftest*'s C# API implementation that would make impossible
+to test using Large data types (`dataLen` larger than `65470` bytes) or when forcing
+the use of unbounded sequences (`-unbounded`). 
+
 Release Notes 3.3
 --------------------
 
