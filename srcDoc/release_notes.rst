@@ -22,21 +22,21 @@ What's New in Develop
 What's Fixed in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Modified table output headers to improve readability and parsing |enhancedTag|
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Unclear table output headers |enhancedTag|
+++++++++++++++++++++++++++++++++++++++++++
 
 The output headers displayed by *Perftest* during and after the test have been updated to
 show a clearer description of the content of the tables.
 
-In addition, when the `-noPrintIntervals` option is provided, the header is a single line, which
+In addition, when the `-noPrintIntervals` option is used, the header is a single line, which
 simplifies parsing it later on.
 
-Fixed bug in C# API when testing with large data sizes and unbounded types |fixedTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Bug in C# API when testing with large data sizes and unbounded types |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Fixed a bug in the *RTI Perftest*'s C# API implementation that would make impossible
-to test using Large data types (`dataLen` larger than `65470` bytes) or when forcing
-the use of unbounded sequences (`-unbounded`). 
+A bug in *Perftest*'s C# API implementation made it impossible
+to test using large data types (`dataLen` larger than `65470` bytes) or when forcing
+the use of unbounded sequences (`-unbounded`). This problem has been fixed.
 
 Release Notes 3.3
 --------------------
