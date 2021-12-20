@@ -16,7 +16,6 @@ namespace PerformanceTest
     {
         public Parameters parameters;
         private ulong dataSize = 100;
-        private readonly ulong useUnbounded = 0;
         private ulong numIter = 100000000;
         private ulong spinLoopCount = 0;
         private ulong sleepNanosec = 0;
@@ -93,7 +92,7 @@ namespace PerformanceTest
 
             ulong maxPerftestSampleSize = Math.Max(dataSize, LENGTH_CHANGED_SIZE);
 
-            if (useUnbounded > 0)
+            if (parameters.Unbounded)
             {
                 if (parameters.Keyed)
                 {
@@ -533,6 +532,7 @@ namespace PerformanceTest
                     parameters.UnboundedSize = Math.Min(
                             (ulong)MAX_BOUNDED_SEQ_SIZE.Value,
                             2 * parameters.DataLen);
+                    parameters.Unbounded = true;
                 }
             }
             else
