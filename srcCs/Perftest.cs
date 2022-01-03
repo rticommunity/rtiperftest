@@ -548,10 +548,10 @@ namespace PerformanceTest
                     Console.Error.WriteLine("unboundedSize must be >= " + Perftest.OVERHEAD_BYTES);
                     return false;
                 }
-                if (parameters.UnboundedSize > (ulong)MAX_BOUNDED_SEQ_SIZE.Value)
+                if (parameters.UnboundedSize > (ulong)MAX_PERFTEST_SAMPLE_SIZE.Value)
                 {
                     Console.Error.WriteLine("unboundedSize must be <= " +
-                            MAX_BOUNDED_SEQ_SIZE.Value);
+                            MAX_PERFTEST_SAMPLE_SIZE.Value);
                     return false;
                 }
             }
