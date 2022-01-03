@@ -719,11 +719,9 @@ namespace PerformanceTest
             * packet and avoid fragmentation.
             */
 
-            //if (propertyValue != null)
             if (qos.Property.Value.TryGetValue("dds.transport.shmem.builtin.parent.message_size_max",
                 out var propertyEntry))
             {
-                Console.Out.WriteLine("1");
                 parentMsgSizeMax = Convert.ToUInt64(propertyEntry.Value);
                 messageSizeMaxSet = true;
             }
@@ -803,7 +801,7 @@ namespace PerformanceTest
                     maxBufferSize,
                     receivedMessageCountMax * (CommendWriterMaxRtpsOverhead + fragmentSize));
 
-            if (qos.Property.Value.TryGetValue("dds.transport.shmem.builtin.received_message_count_max",
+            if (!qos.Property.Value.TryGetValue("dds.transport.shmem.builtin.received_message_count_max",
                 out propertyEntry))
             {
                 qos = qos.WithProperty(policy =>
@@ -815,7 +813,7 @@ namespace PerformanceTest
                         + "\n";
             }
 
-            if (qos.Property.Value.TryGetValue("dds.transport.shmem.builtin.receive_buffer_size",
+            if (!qos.Property.Value.TryGetValue("dds.transport.shmem.builtin.receive_buffer_size",
                 out propertyEntry))
             {
                 qos = qos.WithProperty(policy =>
