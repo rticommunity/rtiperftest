@@ -92,7 +92,7 @@ namespace PerformanceTest
 
             ulong maxPerftestSampleSize = Math.Max(dataSize, LENGTH_CHANGED_SIZE);
 
-            if (parameters.Unbounded)
+            if (parameters.UnboundedSizeSet)
             {
                 if (parameters.Keyed)
                 {
@@ -532,7 +532,6 @@ namespace PerformanceTest
                     parameters.UnboundedSize = Math.Min(
                             (ulong)MAX_BOUNDED_SEQ_SIZE.Value,
                             2 * parameters.DataLen);
-                    parameters.Unbounded = true;
                 }
             }
             else
@@ -542,26 +541,24 @@ namespace PerformanceTest
 
             dataSize = parameters.DataLen;
 
-            if (parameters.Unbounded)
+            if (parameters.UnboundedSizeSet)
             {
-                if (parameters.UnboundedSizeSet)
+                if (parameters.UnboundedSize < Perftest.OVERHEAD_BYTES)
                 {
-                    if (parameters.UnboundedSize < Perftest.OVERHEAD_BYTES)
-                    {
-                        Console.Error.WriteLine("unboundedSize must be >= " + Perftest.OVERHEAD_BYTES);
-                        return false;
-                    }
-                    if (parameters.UnboundedSize > (ulong)MAX_BOUNDED_SEQ_SIZE.Value)
-                    {
-                        Console.Error.WriteLine("unboundedSize must be <= " +
-                                MAX_BOUNDED_SEQ_SIZE.Value);
-                        return false;
-                    }
+                    Console.Error.WriteLine("unboundedSize must be >= " + Perftest.OVERHEAD_BYTES);
+                    return false;
                 }
-                else
+                if (parameters.UnboundedSize > (ulong)MAX_BOUNDED_SEQ_SIZE.Value)
                 {
-                    parameters.UnboundedSize = 2 * parameters.DataLen;
+                    Console.Error.WriteLine("unboundedSize must be <= " +
+                            MAX_BOUNDED_SEQ_SIZE.Value);
+                    return false;
                 }
+            }
+
+            if (parameters.Unbounded && !parameters.UnboundedSizeSet)
+            {
+                parameters.UnboundedSize = 2 * parameters.DataLen;
             }
 
             sleepNanosec = parameters.Sleep * 1000000;
