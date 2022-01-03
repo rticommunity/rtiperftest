@@ -348,8 +348,9 @@ namespace PerformanceTest
                     sb.Append(parameters.DataLen);
                     sb.Append(") is \n             larger than MAX_BOUNDED_SEQ_SIZE (");
                     sb.Append(MAX_BOUNDED_SEQ_SIZE.Value);
+                    sb.Append(")");
                 }
-                sb.Append(")\n");
+                sb.Append("\n");
             }
 
             return sb.ToString();
@@ -1195,6 +1196,13 @@ namespace PerformanceTest
                     dataWriterQos = dataWriterQos.WithResourceLimits(policy =>
                             policy.MaxSamples = AllocationSettings.Unlimited);
                 }
+            }
+
+            if (parameters.UnboundedSize > 0)
+            {
+                dataWriterQos = dataWriterQos.WithProperty(policy =>
+                            policy.Add("dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
+                            parameters.UnboundedSize.ToString()));
             }
 
             return dataWriterQos;
