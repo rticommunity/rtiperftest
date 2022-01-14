@@ -963,8 +963,8 @@ void ParameterManager::initialize()
     peer->set_command_line_argument("-peer", "<address>");
     peer->set_description(
             "Adds a peer to the peer host address list.\n"
-            "If -rawTransport is used, a optional ID of the subscriber could be"
-            "provied\n"
+            "If -rawTransport is used, a optional ID of the subscriber could be\n"
+            "provided.\n"
             "This argument may be repeated to indicate multiple peers");
     peer->set_type(T_VECTOR_STR);
     peer->set_extra_argument(YES);
@@ -1105,13 +1105,12 @@ void ParameterManager::initialize()
             "-transportPublicAddress", "<ip>");
     transportPublicAddress->set_description(
             "For TCP: Public IP address and port (WAN address\n"
-            "and port) (separated with ‘:’ ) related\n"
+            "and port) (separated with \':\' ) related\n"
             "to the TCP transport instantiation. This is\n"
             "required when using server mode.\n"
             #ifdef PERFTEST_CONNEXT_PRO_610
             "For UDPv4_WAN (Real-Time WAN Transport): Public address of the UDPv4_WAN\n"
-            "transport instantiation. Format:\n"
-            "<public_ip>:<public_send_port>.\n"
+            "transport instantiation. Format: <public_ip>:<public_send_port>\n"
             "Default: Not Set\n"
             #endif //PERFTEST_CONNEXT_PRO_610
             );
@@ -1145,7 +1144,7 @@ void ParameterManager::initialize()
             "-transportWanServerAddress", "<a>");
     transportWanServerAddress->set_description(
             "Address where to find the WAN Server\n"
-            "Default: Not Set (Required)\n");
+            "Default: Not Set (Required)");
     transportWanServerAddress->set_type(T_STR);
     transportWanServerAddress->set_extra_argument(YES);
     transportWanServerAddress->set_group(TRANSPORT);
@@ -1331,7 +1330,8 @@ void ParameterManager::initialize()
             "Governance file. If specified, the authentication,\n"
             "signing, and encryption arguments are ignored. The\n"
             "governance document configuration will be used instead.\n"
-            "Default: built using the secure options");
+            "Default: Perftest will choose the right governance file\n");
+            "given the rest of the security command line options provided");
     secureGovernanceFile->set_type(T_STR);
     secureGovernanceFile->set_extra_argument(YES);
     secureGovernanceFile->set_group(SECURE);
