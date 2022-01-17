@@ -38,6 +38,19 @@ A bug in *Perftest*'s C# API implementation made it impossible
 to test using large data types (`dataLen` larger than `65470` bytes) or when forcing
 the use of unbounded sequences (`-unbounded`). This problem has been fixed.
 
+Issue compiling Connext DDS Micro on Windows |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The build scripts for *Windows* (`build.bat`) failed with the following error when trying to compile *Perftest*
+against *RTI Connext DDS Micro*. The error displayed was:
+
+.. code-block:: console
+
+    CMake Error: Unknown argument --target
+    CMake Error: Run 'cmake --help' for all supported options.
+
+This problem has been fixed.
+
 Release Notes 3.3
 --------------------
 

@@ -884,7 +884,7 @@ if !BUILD_MICRO! == 1 (
 		echo [INFO]: Using NMake for the CMake generator, use --cmake-generator to specify other.
 	)
 	cd "%classic_cpp_folder%"
-	call !CMAKE_EXE! -DCMAKE_BUILD_TYPE=!RELEASE_DEBUG! --target perftest_publisher -G !CMAKE_GENERATOR! !ADDITIONAL_CMAKE_ARGS! -B./perftest_build -H. -DRTIME_TARGET_NAME=%architecture% -DPLATFORM_LIBS="netapi32.lib;advapi32.lib;user32.lib;winmm.lib;WS2_32.lib;"
+	call !CMAKE_EXE! -DCMAKE_BUILD_TYPE=!RELEASE_DEBUG! -G !CMAKE_GENERATOR! !ADDITIONAL_CMAKE_ARGS! -B./perftest_build -H. -DRTIME_TARGET_NAME=%architecture% -DPLATFORM_LIBS="netapi32.lib;advapi32.lib;user32.lib;winmm.lib;WS2_32.lib;"
 	if not !ERRORLEVEL! == 0 (
 		echo [ERROR]: Failure compiling code for %classic_cpp_lang_string%.
 		cd ..
