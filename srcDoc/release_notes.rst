@@ -38,6 +38,30 @@ A bug in *Perftest*'s C# API implementation made it impossible
 to test using large data types (`dataLen` larger than `65470` bytes) or when forcing
 the use of unbounded sequences (`-unbounded`). This problem has been fixed.
 
+Fixed warning in Modern C++ implementation |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The following warning may appear when compiling *Perftest*'s Modern C++ API implementation:
+
+.. code-block:: console
+
+    RTIDDSImpl.cxx: In instantiation of 'void RTIPublisherBase<T>::wait_for_ack(long int, long unsigned int) [with T = rti::flat::Sample<TestDataLarge_ZeroCopy_w_FlatData_tOffset>]':
+    RTIDDSImpl.cxx:595:10:   required from here
+    RTIDDSImpl.cxx:600:15: warning: catching polymorphic type 'const class dds::core::TimeoutError' by value [-Wcatch-value=]
+    600 |             } catch (const dds::core::TimeoutError) {} // Expected exception
+        |               ^~~~~
+
+This warning has been fixed.
+
+Fixed unhandled exception in Modern C++ API implementation |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+When using *Perftest*'s Modern C++ API implementation with the `-bestEffort` command-line option
+an unhandled exception might be raised if a sample wasn't answered before a certain ammount of time
+(which could happen if the sample was lost or coudn't be replied). This exception was caught at the `main()`
+level, stopping the flow of the program, however it should simply be ignored (and treat the failure as a sample lost).
+This issue has been corrected.
+
 Issue compiling Connext DDS Micro on Windows |fixedTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
