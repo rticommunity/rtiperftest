@@ -1,3 +1,20 @@
+.wy-nav-content {
+    max-width: 950px;
+}
+
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+    white-space: initial;
+}
+
 .wy-side-nav-search {
     background: #004C97;
+}
+
+.rst-content .definition-alert .admonition-title {
+   background: #ed8b00
+}
+
+.rst-content .definition-alert {
+   background: #fed8b1
 }
