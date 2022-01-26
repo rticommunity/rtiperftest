@@ -24,7 +24,7 @@ C++ and C# Executables
 
 The C++ and C# executables are in these directories:
 
-::
+.. code-block:: console
 
     <installation directory>/bin/<architecture>/release
     <installation directory>/bin/<architecture>/debug
@@ -44,19 +44,19 @@ line parameters:
 
 Traditional C++:
 
-::
+.. code-block:: console
 
     bin/<architecture>/<release or debug>/perftest_cpp <-pub|-sub(default)> [parameters]
 
 Modern C++:
 
-::
+.. code-block:: console
 
     bin/<architecture>/<release or debug>/perftest_cpp11 <-pub|-sub(default)> [parameters]
 
 C#:
 
-::
+.. code-block:: console
 
     bin/<architecture>/<release or debug>/perftest_cs <-pub|-sub(default)> [parameters]
 
@@ -70,11 +70,11 @@ If you compiled the performance test executable dynamically, add the
 -  the ``$DYLD_LIBRARY_PATH`` variable if you are on macOS systems
 -  the ``%PATH%`` variable if you are on Windows systems
 
-With RTI Security Plugins and dynamic linking
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When using *RTI Security Plugins* and using dynamic linking
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In this case, add the *OpenSSL* libraries in
-``$OPENSSLHOME/<debug or release>/lib`` to:
+In this case, add the *OpenSSL* or *wolfSSL* libraries in
+``$SSLHOME/<debug or release>/lib`` to:
 
 -  the ``$LD_LIBRARY_PATH`` variable if you are on Linux systems
 -  the  ``$DYLD_LIBRARY_PATH`` variable if you are on macOS systems
@@ -86,13 +86,17 @@ With VxWorks kernel mode
 After compiling for VxWorks (see :ref:`section-compilation`),
 the shared object needs to be loaded in the kernel:
 
-``ld 1 < bin/<architecture>/release/perftest_cpp.so``
+.. code-block:: console
+
+    ld 1 < bin/<architecture>/release/perftest_cpp.so
 
 Now, the code can be executed by calling the ``perftest_main_cpp`` function
 with a string as an argument containing all of the :ref:`section-command_line_parameters`.
 For example:
 
-``perftest_cpp_main "-pub -domain 0 -latencyCount 1 -dataLen 1000 -latencyTest -multicast"``
+.. code-block:: console
+
+    perftest_cpp_main "-pub -domain 0 -latencyCount 1 -dataLen 1000 -latencyTest -multicast"
 
 Java Executable
 ---------------
@@ -110,14 +114,14 @@ architecture as well as set your ``$NDDSHOME`` variable.
 **For example**: If you are using a Windows 32-bit architecture and the
 *Visual Studio 2012* libraries:
 
-::
+.. code-block:: console
 
     set NDDSHOME=<path to your RTI Connext DDS installation>
     set RTI_PERFTEST_ARCH=i86Win32VS2012
 
 If you are using the Linux ``i86Linux3gcc4.8.2`` architecture:
 
-::
+.. code-block:: console
 
     export NDDSHOME=<path to your RTI Connext DDS installation>
     export RTI_PERFTEST_ARCH=i86Linux3gcc4.8.2
@@ -127,7 +131,7 @@ the script.
 
 Alternatively, you can directly run the Java ``.jar`` files:
 
-::
+.. code-block:: console
 
     java -cp "<RTI Perftest path>/bin/<release or debug>/perftest_java.jar:<NDDSHOME>/lib/java/<nddsjava.jar or nddsjava.jar>" com.rti.perftest.ddsimpl.PerfTestLauncher
 
@@ -139,7 +143,7 @@ and ``$NDDSHOME/lib/java`` folders to:
 -  the ``%PATH%`` variable if you are on Windows systems
 
 **When using Java on Linux/macOS systems with RTI Security Plugins**:
-Add the *OpenSSL* libraries in ``$OPENSSLHOME/<debug or release>/lib`` to:
+Add the *OpenSSL*/*wolfSSL* libraries in ``$SSLHOME/<debug or release>/lib`` to:
 
 -  the ``$LD_LIBRARY_PATH`` variable if you are on Linux systems
 -  the  ``$DYLD_LIBRARY_PATH`` variable if you are on macOS systems
@@ -165,25 +169,25 @@ Ideally, run the test for at least 100 seconds.
 
 Starting the C++ Traditional API test:
 
-::
+.. code-block:: console
 
     bin/<architecture>/<release or debug>/perftest_cpp <-pub|-sub(default)> [parameters]
 
 Starting the C++ Modern API test:
 
-::
+.. code-block:: console
 
     bin/<architecture>/<release or debug>/perftest_cpp11 <-pub|-sub(default)> [parameters]
 
 Starting the C# API test:
 
-::
+.. code-block:: console
 
     bin/<architecture>/<release or debug>/perftest_cs <-pub|-sub(default)> [parameters]
 
 Starting the Java API test:
 
-::
+.. code-block:: console
 
     bin/<release or debug>/perftest_java <-pub|-sub(default)> [parameters]
 
@@ -203,7 +207,7 @@ test.
 
 -  Publisher:
 
-::
+.. code-block:: console
 
     > perftest_cpp -pub -noPrint -domain 27 -latencyCount 100000 -scan 32:64:256:1024:8192:32768:63000 -exec 30 -nic lo0
     RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
@@ -246,7 +250,7 @@ test.
 
 -  Subscriber
 
-::
+.. code-block:: console
 
     > perftest_cpp -noPrint -domain 27
     RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)

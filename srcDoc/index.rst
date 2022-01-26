@@ -87,8 +87,8 @@ if you downloaded the executables already compiled, you can skip these steps:
 - The ``$NDDSHOME`` environment variable should be set correctly. Or, pass
   ``$NDDSHOME`` directly to the ``build.sh`` script by using the ``--nddshome <PATH>``
   command-line option.
-- If you will compile and test using *RTI Security Plugins*, 
-  link against the OpenSSL libraries for your architecture.
+- If you intend to compile and test using *RTI Security Plugins*, you will need to
+  link against the OpenSSL/wolfSSL libraries for your architecture.
 
 Learn more in the :ref:`section-compilation` section.
 
