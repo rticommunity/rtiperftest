@@ -46,6 +46,14 @@ A bug in *Perftest*'s C# API implementation made it impossible
 to test using large data types (``dataLen`` larger than ``65470`` bytes) or when forcing
 the use of unbounded sequences (``-unbounded``). This problem has been fixed.
 
+Compilation issue when enabling security in static mode|fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+When trying to compile statically (default behavior), *Perftest*
+would try to find and link against the Openssl libraries ``cryptoz`` and
+``sslz``; however, these names are no longer used. The right names of the
+libraries are ``crypto`` and ``ssl``.
+
 Fixed warning in Modern C++ implementation |fixedTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

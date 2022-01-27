@@ -447,6 +447,7 @@ function additional_defines_calculation()
             else
                 rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"wolfssl\""
             fi
+            export ADDITIONAL_LINKER_FLAGS="$ADDITIONAL_LINKER_FLAGS -static"
             rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraryPaths \"${additional_lib_paths}\""
             echo -e "${INFO_TAG} Using the Security plugins. Linking Statically."
         fi
@@ -940,6 +941,7 @@ function build_micro_cpp()
             else
                 rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"wolfssl\""
             fi
+            export ADDITIONAL_LINKER_FLAGS="$ADDITIONAL_LINKER_FLAGS -static"
             rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraryPaths \"${RTI_CRYPTOHOME}/${RELEASE_DEBUG}/lib\""
         fi
     fi
