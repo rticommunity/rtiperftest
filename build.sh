@@ -55,7 +55,12 @@ USE_SECURE_LIBS=0
 LEGACY_DD_IMPL=0
 
 # Needed when compiling statically using security
-RTI_OPENSSLHOME=""
+RTI_CRYPTOHOME=""
+# The security libraries are here when compiling statically a staged tree
+# This variable is populated when parsing the --openssl-home and --wolfssl-home
+# arguments.
+RTI_CRYPTO_LIB_DIRECTORY=""
+USE_OPENSSL=1
 
 # Variables for customType
 custom_type_folder="${idl_location}/customType"
@@ -159,6 +164,9 @@ function usage()
     echo "    --secure                     Enable the security options for compilation.   "
     echo "                                 Default is not enabled.                        "
     echo "    --openssl-home <path>        Path to the openssl home. This will be used    "
+    echo "                                 when compiling statically and using security   "
+    echo "                                 Default is an empty string (current folder).   "
+    echo "    --wolfssl-home <path>        Path to the wolfssl home. This will be used    "
     echo "                                 when compiling statically and using security   "
     echo "                                 Default is an empty string (current folder).   "
     echo "    --customType <type>          Use the Custom type feature with your type.    "
@@ -397,6 +405,7 @@ function additional_defines_calculation()
     additional_rtiddsgen_defines="-D PERFTEST_RTI_PRO"
     additional_defines="DPERFTEST_RTI_PRO "
     additional_rti_libs=""
+    additional_lib_paths=""
 
     # Avoid optimized out variables when debugging
     if [ "${RELEASE_DEBUG}" == "release" ]; then
@@ -415,16 +424,32 @@ function additional_defines_calculation()
         additional_defines=${additional_defines}" DRTI_SECURE_PERFTEST"
         if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
             additional_defines=${additional_defines}" DRTI_PERFTEST_DYNAMIC_LINKING"
-            echo -e "${INFO_TAG} Using security plugin. Linking Dynamically."
+            echo -e "${INFO_TAG} Using Security Plugins. Linking Dynamically."
         else
-            if [ "${RTI_OPENSSLHOME}" == "" ]; then
-                echo -e "${ERROR_TAG} In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option."
+            if [ "${RTI_CRYPTOHOME}" == "" ]; then
+                echo -e "${ERROR_TAG} In order to link statically using the " \
+                    "Security Plugins you need to also provide a path to a" \
+                    "crypto library. Set either the OpenSSL home path by" \
+                    "using the --openssl-home option or the WolfSSL home path" \
+                    "by using the --wolfssl-home option"
                 exit -1
             fi
             additional_rti_libs="nddssecurity ${additional_rti_libs}"
-            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"sslz cryptoz\""
-            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraryPaths \"${RTI_OPENSSLHOME}/${RELEASE_DEBUG}/lib\""
-            echo -e "${INFO_TAG} Using security plugin. Linking Statically."
+            # If the $NDDSHOME points to a staging directory, then the security
+            # libraries will be in a folder specific to the crypto library.
+            if [ -d "${NDDSHOME}/lib/${platform}/${RTI_CRYPTO_LIB_DIRECTORY}" ]; then
+                additional_lib_paths="${NDDSHOME}/lib/${platform}/${RTI_CRYPTO_LIB_DIRECTORY} ${additional_lib_paths}"
+            fi
+            # Add the path to the crypto libraries.
+            additional_lib_paths="${RTI_CRYPTOHOME}/${RELEASE_DEBUG}/lib ${additional_lib_paths}"
+            if [ "${USE_OPENSSL}" = "1" ]; then
+                rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"ssl crypto\""
+            else
+                rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"wolfssl\""
+            fi
+            export ADDITIONAL_LINKER_FLAGS="$ADDITIONAL_LINKER_FLAGS -static"
+            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraryPaths \"${additional_lib_paths}\""
+            echo -e "${INFO_TAG} Using the Security plugins. Linking Statically."
         fi
     fi
 
@@ -512,13 +537,17 @@ function additional_defines_calculation_micro()
         additional_defines="${additional_defines} RTI_SECURE_PERFTEST"
 
         if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
-            echo -e "${INFO_TAG} Using security plugin. Linking Dynamically."
+            echo -e "${INFO_TAG} Using Security Plugins. Linking Dynamically."
         else
-            if [ "${RTI_OPENSSLHOME}" == "" ]; then
-                echo -e "${ERROR_TAG} In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option."
+            if [ "${RTI_CRYPTOHOME}" == "" ]; then
+                echo -e "${ERROR_TAG} In order to link statically using the " \
+                    "Security Plugins you need to also provide a path to a" \
+                    "crypto library. Set either the OpenSSL home path by" \
+                    "using the --openssl-home option or the WolfSSL home path" \
+                    "by using the --wolfssl-home option"
                 exit -1
             fi
-            echo -e "${INFO_TAG} Using security plugin. Linking Statically."
+            echo -e "${INFO_TAG} Using Security Plugin. Linking Statically."
         fi
     fi
 }
@@ -877,9 +906,10 @@ function build_cpp()
     fi
 
     if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
-            echo -e "${INFO_TAG} Code compiled dynamically, Add \"${NDDSHOME}/lib/${platform}\""
+            echo -e "${INFO_TAG} Code compiled dynamically." \
+                "Add \"${NDDSHOME}/lib/${platform}\""
             if [ "${USE_SECURE_LIBS}" == "1" ]; then
-                echo -e "        and <OPENSSL_HOME>/${RELEASE_DEBUG}/lib"
+                echo -e "        and <CRYPTO_HOME>/${RELEASE_DEBUG}/lib"
             fi
             echo -e "        to your LD_LIBRARY_PATH or DYLD_LIBRARY_PATH"
     fi
@@ -905,7 +935,14 @@ function build_micro_cpp()
         if [ "${USE_SECURE_LIBS}" != "1" ]; then
             rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries \"nddsmetp\""
         else
-            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries \"rti_me_netioshmem rti_me_netioshmem rti_me_seccore\" -additionalLibraries \"sslz cryptoz\" -additionalLibraryPaths \"${RTI_OPENSSLHOME}/${RELEASE_DEBUG}/lib\""
+            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalRtiLibraries \"rti_me_netioshmem rti_me_netioshmem rti_me_seccore\""
+            if [ "${USE_OPENSSL}" = "1" ]; then
+                rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"ssl crypto\""
+            else
+                rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"wolfssl\""
+            fi
+            export ADDITIONAL_LINKER_FLAGS="$ADDITIONAL_LINKER_FLAGS -static"
+            rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraryPaths \"${RTI_CRYPTOHOME}/${RELEASE_DEBUG}/lib\""
         fi
     fi
 
@@ -1193,9 +1230,10 @@ function build_cpp11()
     fi
 
     if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
-            echo -e "${INFO_TAG} Code compiled dynamically, Add \"${NDDSHOME}/lib/${platform}\""
+            echo -e "${INFO_TAG} Code compiled dynamically." \
+                "Add \"${NDDSHOME}/lib/${platform}\""
             if [ "${USE_SECURE_LIBS}" == "1" ]; then
-                echo -e "        and <OPENSSL_HOME>/${RELEASE_DEBUG}/lib"
+                echo -e "        and <CRYPTO_HOME>/${RELEASE_DEBUG}/lib"
             fi
             echo -e "        to your LD_LIBRARY_PATH or DYLD_LIBRARY_PATH"
     fi
@@ -1556,7 +1594,29 @@ while [ "$1" != "" ]; do
             exit 0
             ;;
         --openssl-home)
-            RTI_OPENSSLHOME=$2
+            if [ ! -z "${RTI_CRYPTOHOME}" ]; then
+                echo -e "${ERROR_TAG} More than one --openssl-home or" \
+                    "--wolfssl-home were passed as arguments. Choose whether" \
+                    "to compile perftest with OpenSSL or with WolfSSL."
+                usage
+                exit -1
+            fi
+            RTI_CRYPTOHOME=$2
+            RTI_CRYPTO_LIB_DIRECTORY="openssl-1.1.1"
+            USE_OPENSSL=1
+            shift
+            ;;
+        --wolfssl-home)
+            if [ ! -z "${RTI_CRYPTOHOME}" ]; then
+                echo -e "${ERROR_TAG} More than one --openssl-home or" \
+                    "--wolfssl-home were passed as arguments. Choose whether" \
+                    "to compile perftest with OpenSSL or with WolfSSL."
+                usage
+                exit -1
+            fi
+            RTI_CRYPTOHOME=$2
+            RTI_CRYPTO_LIB_DIRECTORY="wolfssl-4.7"
+            USE_OPENSSL=0
             shift
             ;;
         --flatData-max-size)

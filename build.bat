@@ -399,7 +399,7 @@ if !BUILD_CPP! == 1 (
 				exit /b 1
 			)
 			set additional_rti_libs=nddssecurity !additional_rti_libs!
-			set rtiddsgen_extra_options=-additionalLibraries "crypt32 libcryptoz libsslz"
+			set rtiddsgen_extra_options=-additionalLibraries "crypt32 libcrypto libssl"
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
 		)
@@ -560,7 +560,7 @@ if !BUILD_CPP11! == 1 (
 				exit /b 1
 			)
 			set additional_rti_libs=nddssecurity !additional_rti_libs!
-			set rtiddsgen_extra_options=-additionalLibraries "crypt32 libcryptoz libsslz"
+			set rtiddsgen_extra_options=-additionalLibraries "crypt32 libcrypto libssl"
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
 		)
