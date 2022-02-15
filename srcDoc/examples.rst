@@ -878,6 +878,9 @@ Maximum Throughput -- 2 *Routing Service*
 
     bin/<arch>/release/perftest_cpp -sub -noPrint -nic <ipaddr> -domain <ID+2> -dataLen <length>
 
+
+.. _section-using_custom_types:
+
 Using Custom Types
 ------------------
 

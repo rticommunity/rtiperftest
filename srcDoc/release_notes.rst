@@ -17,7 +17,15 @@ Release Notes Develop
 What's New in Develop
 ~~~~~~~~~~~~~~~~~~~~~
 
---
+Support for **wolfSSL** for *Linux* and *QNX* when using the *Security Plugins* |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+*Perftest* now adds support for *wolfSSL* in addition to *OpenSSL* when using
+*RTI Connext DDS Secure 6.1.1*. This support has only been added for *Linux*
+and *QNX* platforms, as these are the ones supported by *RTI Connext DDS Secure 6.1.1*.
+
+A new parameter (``--wolfSSL-home``) has been added to the compilation script in order
+to be able to specify the location of the libraries when compiling statically.
 
 What's Fixed in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,15 +36,60 @@ Unclear table output headers |enhancedTag|
 The output headers displayed by *Perftest* during and after the test have been updated to
 show a clearer description of the content of the tables.
 
-In addition, when the `-noPrintIntervals` option is used, the header is a single line, which
+In addition, when the ``-noPrintIntervals`` option is used, the header is a single line, which
 simplifies parsing it later on.
 
 Bug in C# API when testing with large data sizes and unbounded types |fixedTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 A bug in *Perftest*'s C# API implementation made it impossible
-to test using large data types (`dataLen` larger than `65470` bytes) or when forcing
-the use of unbounded sequences (`-unbounded`). This problem has been fixed.
+to test using large data types (``dataLen`` larger than ``65470`` bytes) or when forcing
+the use of unbounded sequences (``-unbounded``). This problem has been fixed.
+
+Compilation issue when enabling security in static mode|fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+When trying to compile statically (default behavior), *Perftest*
+would try to find and link against the Openssl libraries ``cryptoz`` and
+``sslz``; however, these names are no longer used. The right names of the
+libraries are ``crypto`` and ``ssl``.
+
+Fixed warning in Modern C++ implementation |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The following warning may appear when compiling *Perftest*'s Modern C++ API implementation:
+
+.. code-block:: console
+
+    RTIDDSImpl.cxx: In instantiation of 'void RTIPublisherBase<T>::wait_for_ack(long int, long unsigned int) [with T = rti::flat::Sample<TestDataLarge_ZeroCopy_w_FlatData_tOffset>]':
+    RTIDDSImpl.cxx:595:10:   required from here
+    RTIDDSImpl.cxx:600:15: warning: catching polymorphic type 'const class dds::core::TimeoutError' by value [-Wcatch-value=]
+    600 |             } catch (const dds::core::TimeoutError) {} // Expected exception
+        |               ^~~~~
+
+This warning has been fixed.
+
+Fixed unhandled exception in Modern C++ API implementation |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+When using *Perftest*'s Modern C++ API implementation with the ``-bestEffort`` command-line option 
+an unhandled exception might be raised if a sample wasn't answered before a certain ammount of time
+(which could happen if the sample was lost or coudn't be replied). This exception was caught at the ``main()``
+level, stopping the flow of the program, however it should simply be ignored (and treat the failure as a sample lost).
+This issue has been corrected.
+
+Issue compiling Connext DDS Micro on Windows |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The build scripts for *Windows* (``build.bat``) failed with the following error when trying to compile *Perftest*
+against *RTI Connext DDS Micro*. The error displayed was:
+
+.. code-block:: console
+
+    CMake Error: Unknown argument --target
+    CMake Error: Run 'cmake --help' for all supported options.
+
+This problem has been fixed.
 
 Release Notes 3.3
 --------------------

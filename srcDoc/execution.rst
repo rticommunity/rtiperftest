@@ -3,125 +3,125 @@
 Execution
 =========
 
-The test is provided in C++ (Modern and Traditional APIs), C#, and Java.
-The list below identifies how to run the executables, once you have
-built them, and how to pass configuration parameters to them. For
+The *RTI Perftest* test is provided in C++ (modern and traditional),
+C#, and Java. The sections below describe how to run the executables, once
+you have built them, and how to pass configuration parameters to them. For
 detailed descriptions of the test parameters, see :ref:`Test Parameters
 for Publishing and Subscribing Applications`. For example test
-configurations, see the *Example Command Lines* section.
+configurations, see :ref:`section-command_line_examples`.
 
 When running the test, keep in mind that a throughput test will
 necessarily place a heavy load on your network and potentially on your
-CPU(s) as well. For the most accurate results, and the fewest complaints
+CPU(s) as well. For accurate results, and the fewest complaints
 from your coworkers and IT department, run the test when and where you
 have a subnet to yourself. The test is designed to measure latency under
-loaded network conditions; it will produce those loads itself: There is
+loaded network conditions; it will produce those loads itself: there is
 no need to produce them externally (and your throughput results may not
 be meaningful if you do).
 
-C++ and C# executables
+C++ and C# Executables
 ----------------------
 
 The C++ and C# executables are in these directories:
 
-::
+.. code-block:: console
 
     <installation directory>/bin/<architecture>/release
     <installation directory>/bin/<architecture>/debug
 
-Where ``<architecture>`` depends on your architecture, such as
+The ``<architecture>`` depends on your architecture, such as
 ``i86Linux3gcc4.8.2`` or ``i86Win32VS2012``.
 
 You can differentiate the executables for the two C++ implementations
 (Traditional and Modern) by the name: the Traditional C++ API
 implementation uses ``perftest_cpp`` and the Modern C++ API
-implementation is named ``perftest_cpp11``.
+implementation uses ``perftest_cpp11``.
 
-The test uses an XML configuration file and locates this file based on
+The *RTI Perftst* test uses an XML configuration file and locates this file based on
 paths relative to the directory from which the test is run. Therefore,
 to use this configuration file without the need of adding extra command
 line parameters:
 
 Traditional C++:
 
-::
+.. code-block:: console
 
     bin/<architecture>/<release or debug>/perftest_cpp <-pub|-sub(default)> [parameters]
 
 Modern C++:
 
-::
+.. code-block:: console
 
     bin/<architecture>/<release or debug>/perftest_cpp11 <-pub|-sub(default)> [parameters]
 
 C#:
 
-::
+.. code-block:: console
 
     bin/<architecture>/<release or debug>/perftest_cs <-pub|-sub(default)> [parameters]
 
-When using dynamic linking
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+With dynamic linking
+~~~~~~~~~~~~~~~~~~~~
 
-If you compiled the performance test executable dynamically add the
+If you compiled the performance test executable dynamically, add the
 ``$NDDSHOME/lib/<architecture>`` folder to:
 
--  The ``$LD_LIBRARY_PATH`` variable if you are on Linux systems.
--  The ``$DYLD_LIBRARY_PATH`` variable if you are on OSX.
--  The ``%PATH%`` variable (if you are on Windows).
+-  the ``$LD_LIBRARY_PATH`` variable if you are on Linux systems
+-  the ``$DYLD_LIBRARY_PATH`` variable if you are on macOS systems
+-  the ``%PATH%`` variable if you are on Windows systems
 
 When using *RTI Security Plugins* and using dynamic linking
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In this case, add the *OpenSSL* libraries in
-``$OPENSSLHOME/<debug or release>/lib`` to the ``$LD_LIBRARY_PATH``,
-``$DYLD_LIBRARY_PATH`` or ``%PATH%`` variable:
+In this case, add the *OpenSSL* or *wolfSSL* libraries in
+``$SSLHOME/<debug or release>/lib`` to:
 
--  On Linux systems, add ``$OPENSSLHOME/<debug or release>/lib`` to
-   ``$LD_LIBRARY_PATH``
--  On OSX systems, add ``$OPENSSLHOME/<debug or release>/lib`` to
-   ``$DYLD_LIBRARY_PATH``
--  On Windows systems, add ``%OPENSSLHOME$/<debug or release>/bin`` to
-   ``%PATH%``
+-  the ``$LD_LIBRARY_PATH`` variable if you are on Linux systems
+-  the  ``$DYLD_LIBRARY_PATH`` variable if you are on macOS systems
+-  the  ``%PATH%`` variable if you are on Windows systems
 
-When using *RTI Perftest* in *VxWorks* kernel mode
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+With VxWorks kernel mode
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-After compiling for *VxWorks* (see Compilation :ref:`section-compilation`),
-the shared object needs to be loaded in the kernel, by doing:
+After compiling for VxWorks (see :ref:`section-compilation`),
+the shared object needs to be loaded in the kernel:
 
-``ld 1 < bin/<architecture>/release/perftest_cpp.so``
+.. code-block:: console
+
+    ld 1 < bin/<architecture>/release/perftest_cpp.so
 
 Now, the code can be executed by calling the ``perftest_main_cpp`` function
-with a string as an argument containing all the command-line parameters :ref:`section-command_line_parameters`.
-For example
+with a string as an argument containing all of the :ref:`section-command_line_parameters`.
+For example:
 
-``perftest_cpp_main "-pub -domain 0 -latencyCount 1 -dataLen 1000 -latencyTest -multicast"``
+.. code-block:: console
 
-Java executable
+    perftest_cpp_main "-pub -domain 0 -latencyCount 1 -dataLen 1000 -latencyTest -multicast"
+
+Java Executable
 ---------------
 
-*RTI Perftest* provides a *.sh* script and a *.bat* script to run the
-Java ``jar`` file. Those scripts are located in:
+*RTI Perftest* provides a ``.sh`` script and ``.bat`` script to run the
+Java ``.jar`` file. Those scripts are located in:
 
--  ``bin/<debug or release>/perftest_java.sh`` for Linux/MacOS/QNX systems.
--  ``bin/<debug or release>/perftest_java.bat`` for Windows systems.
+-  ``bin/<debug or release>/perftest_java.sh`` for Linux/macOS/QNX systems
+-  ``bin/<debug or release>/perftest_java.bat`` for Windows systems
 
 When using the *RTI Perftest* scripts, you will need to set the
 environment variable ``$RTI_PERFTEST_ARCH`` to your specific
-architecture as well as your ``$NDDSHOME``.
+architecture as well as set your ``$NDDSHOME`` variable.
 
 **For example**: If you are using a Windows 32-bit architecture and the
 *Visual Studio 2012* libraries:
 
-::
+.. code-block:: console
 
     set NDDSHOME=<path to your RTI Connext DDS installation>
     set RTI_PERFTEST_ARCH=i86Win32VS2012
 
-If you are using the Linux i86Linux3gcc4.8.2 architecture:
+If you are using the Linux ``i86Linux3gcc4.8.2`` architecture:
 
-::
+.. code-block:: console
 
     export NDDSHOME=<path to your RTI Connext DDS installation>
     export RTI_PERFTEST_ARCH=i86Linux3gcc4.8.2
@@ -129,77 +129,69 @@ If you are using the Linux i86Linux3gcc4.8.2 architecture:
 Make sure the correct ``java`` executable is in your path before running
 the script.
 
-Alternatively, you can directly run the Java ``jar`` files:
+Alternatively, you can directly run the Java ``.jar`` files:
 
-::
+.. code-block:: console
 
-    java -cp "<RTI Perftest Path>/bin/<release or debug>/perftest_java.jar:<NDDSHOME>/lib/java/<nddsjava.jar or nddsjava.jar>" com.rti.perftest.ddsimpl.PerfTestLauncher
+    java -cp "<RTI Perftest path>/bin/<release or debug>/perftest_java.jar:<NDDSHOME>/lib/java/<nddsjava.jar or nddsjava.jar>" com.rti.perftest.ddsimpl.PerfTestLauncher
 
-In such a case, add the ``$NDDSHOME/lib/<architecture>`` and the
-``$NDDSHOME/lib/java`` folders to:
+If you run the ``.jar`` files directly, add the ``$NDDSHOME/lib/<architecture>``
+and ``$NDDSHOME/lib/java`` folders to:
 
--  The ``$LD_LIBRARY_PATH`` variable if you are on Linux systems.
--  The ``$DYLD_LIBRARY_PATH`` variable if you are on OSX.
--  The ``%PATH%`` variable (if you are on Windows).
+-  the ``$LD_LIBRARY_PATH`` variable if you are on Linux systems
+-  the ``$DYLD_LIBRARY_PATH`` variable if you are on macOS systems
+-  the ``%PATH%`` variable if you are on Windows systems
 
-When using Java on Linux/MacOS systems with *RTI Security Plugins*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**When using Java on Linux/macOS systems with RTI Security Plugins**:
+Add the *OpenSSL*/*wolfSSL* libraries in ``$SSLHOME/<debug or release>/lib`` to:
 
-In this case, add the *OpenSSL* libraries in
-``$OPENSSLHOME/<debug or release>/lib`` to the ``$LD_LIBRARY_PATH`` or
-``%PATH%`` variable:
+-  the ``$LD_LIBRARY_PATH`` variable if you are on Linux systems
+-  the  ``$DYLD_LIBRARY_PATH`` variable if you are on macOS systems
+-  the  ``%PATH%`` variable if you are on Windows systems
 
--  On Linux systems, add ``$OPENSSLHOME/<debug or release>/lib`` to
-   ``$LD_LIBRARY_PATH``
--  On OSX systems, add ``$OPENSSLHOME/<debug or release>/lib`` to
-   ``$DYLD_LIBRARY_PATH``
--  On Windows systems, add ``%OPENSSLHOME$/<debug or release>/bin`` to
-   ``%PATH%``
-
-Launching the application
+Launching the Application
 -------------------------
 
-The test uses an XML configuration file. It locates this file based on
+The *RTI Perftest* test uses an XML configuration file. It locates this file based on
 its path relative to the directory from which the test is run. To use
 this configuration file, move to *RTI Perftest*'s top-level location.
 
-Start the test applications. You can start the publisher or subscribers
+Then start the test applications. You can start the publisher or subscribers
 first, the order does not matter. When selecting your optional
 parameters, choose parameters that allow the test to run for at least 15
-seconds to get any kind of meaningful results. The longer it runs, the
-more accurate the results will be.
+seconds to get any kind of meaningful results. 
 
-Ideally, you should run the test for at least 100 seconds.
+To choose the test run time, use 
+the ``-executionTime`` command-line option or set the total number of
+samples by using the ``-numIter`` command-line option.
+The longer the test runs, the more accurate the results will be.
+Ideally, run the test for at least 100 seconds.
 
-C++ Traditional API
-~~~~~~~~~~~~~~~~~~~
+Starting the C++ Traditional API test:
 
-::
+.. code-block:: console
 
     bin/<architecture>/<release or debug>/perftest_cpp <-pub|-sub(default)> [parameters]
 
-C++ Modern API
-~~~~~~~~~~~~~~
+Starting the C++ Modern API test:
 
-::
+.. code-block:: console
 
     bin/<architecture>/<release or debug>/perftest_cpp11 <-pub|-sub(default)> [parameters]
 
-C# API
-~~~~~~
+Starting the C# API test:
 
-::
+.. code-block:: console
 
     bin/<architecture>/<release or debug>/perftest_cs <-pub|-sub(default)> [parameters]
 
-Java API
-~~~~~~~~
+Starting the Java API test:
 
-::
+.. code-block:: console
 
     bin/<release or debug>/perftest_java <-pub|-sub(default)> [parameters]
 
-where ``<architecture>`` depends on your architecture, such as
+The ``<architecture>`` depends on your architecture, such as
 ``x64Linux3gcc4.8.2`` or ``i86Win32VS2012``.
 
 After the publisher recognizes that the specified number of subscribers
@@ -215,7 +207,7 @@ test.
 
 -  Publisher:
 
-::
+.. code-block:: console
 
     > perftest_cpp -pub -noPrint -domain 27 -latencyCount 100000 -scan 32:64:256:1024:8192:32768:63000 -exec 30 -nic lo0
     RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
@@ -258,7 +250,7 @@ test.
 
 -  Subscriber
 
-::
+.. code-block:: console
 
     > perftest_cpp -noPrint -domain 27
     RTI Perftest 2.3.2 (RTI Connext DDS 5.3.0)
