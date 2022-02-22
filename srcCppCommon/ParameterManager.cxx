@@ -1330,7 +1330,7 @@ void ParameterManager::initialize()
             "Governance file. If specified, the authentication,\n"
             "signing, and encryption arguments are ignored. The\n"
             "governance document configuration will be used instead.\n"
-            "Default: Perftest will choose the right governance file\n");
+            "Default: Perftest will choose the right governance file\n"
             "given the rest of the security command line options provided");
     secureGovernanceFile->set_type(T_STR);
     secureGovernanceFile->set_extra_argument(YES);
