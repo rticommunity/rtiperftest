@@ -1721,6 +1721,65 @@ public:
 
             // keep track of one-way latency
             latency /= 2;
+
+            // store value for percentile calculations
+            if (_latency_history != NULL)
+            {
+                if (count >= _num_latency)
+                {
+                    fprintf(stderr,"Too many latency pongs received."
+                    " Do you have more than 1 app with -pidMultiPubTest = 0 or"
+                    " -sidMultiSubTest 0?\n");
+                    return;
+                }
+                else
+                {
+                    _latency_history[count] = latency;
+                }
+            }
+
+            if (latency_min == perftest_cpp::LATENCY_RESET_VALUE) {
+                latency_min = latency;
+                latency_max = latency;
+            }
+            else {
+                if (latency < latency_min) {
+                    latency_min = latency;
+                } else if (latency > latency_max) {
+                    latency_max = latency;
+                }
+            }
+
+            ++count;
+            latency_sum += latency;
+            latency_sum_square += ((unsigned long long)latency * (unsigned long long)latency);
+
+            // if data sized changed, print out stats and zero counters
+            if (last_data_length != message.size)
+            {
+                last_data_length = message.size;
+                _printer->_dataLength =
+                        last_data_length + perftest_cpp::OVERHEAD_BYTES;
+                _printer->print_latency_header();
+            }
+            else {
+                if (printIntervals) {
+                    latency_ave = (double)latency_sum / (double)count;
+                    latency_std = sqrt(
+                            (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
+
+                    if (showCpu) {
+                        outputCpu = cpu.get_cpu_instant();
+                    }
+                    _printer->print_latency_interval(
+                        latency,
+                        latency_ave,
+                        latency_std,
+                        latency_min,
+                        latency_max,
+                        outputCpu);
+                }
+            }
         }
         else
         {
@@ -1730,66 +1789,6 @@ public:
                     now,
                     sentTime);
             ++clock_skew_count;
-            return;
-        }
-
-        // store value for percentile calculations
-        if (_latency_history != NULL)
-        {
-            if (count >= _num_latency)
-            {
-                fprintf(stderr,"Too many latency pongs received."
-                " Do you have more than 1 app with -pidMultiPubTest = 0 or"
-                " -sidMultiSubTest 0?\n");
-                return;
-            }
-            else
-            {
-                _latency_history[count] = latency;
-            }
-        }
-
-        if (latency_min == perftest_cpp::LATENCY_RESET_VALUE) {
-            latency_min = latency;
-            latency_max = latency;
-        }
-        else {
-            if (latency < latency_min) {
-                latency_min = latency;
-            } else if (latency > latency_max) {
-                latency_max = latency;
-            }
-        }
-
-        ++count;
-        latency_sum += latency;
-        latency_sum_square += ((unsigned long long)latency * (unsigned long long)latency);
-
-        // if data sized changed, print out stats and zero counters
-        if (last_data_length != message.size)
-        {
-            last_data_length = message.size;
-            _printer->_dataLength =
-                    last_data_length + perftest_cpp::OVERHEAD_BYTES;
-            _printer->print_latency_header();
-        }
-        else {
-            if (printIntervals) {
-                latency_ave = (double)latency_sum / (double)count;
-                latency_std = sqrt(
-                        (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
-
-                if (showCpu) {
-                    outputCpu = cpu.get_cpu_instant();
-                }
-                _printer->print_latency_interval(
-                    latency,
-                    latency_ave,
-                    latency_std,
-                    latency_min,
-                    latency_max,
-                    outputCpu);
-            }
         }
 
         if(_writer != NULL) {
