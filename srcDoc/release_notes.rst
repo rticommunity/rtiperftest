@@ -91,6 +91,12 @@ against *RTI Connext DDS Micro*. The error displayed was:
 
 This problem has been fixed.
 
+Fixed issue where clock skews could cause the publisher side to hang |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Fixed issue where clock skews could cause the publisher side to hang. This issue
+is usually seen in OSs with low resolution clocks (e.g. VxWorks).
+
 Release Notes 3.3
 --------------------
 
