@@ -401,7 +401,8 @@ Test Parameters for Publishing and Subscribing Applications
 -  ``-peer <address>|<address>[:<id>]``
 
    Adds a peer to the peer host address list. If ``-rawTransport`` is used, 
-   you can provide an optional subscriber ID. This argument may be repeated to 
+   you can provide an optional subscriber ID (<address>[:<id>]) or a range of subscriber IDs
+   for that specific address (<address>[:<first_id>-<last_id>]). This argument may be repeated to 
    indicate multiple peers. For example: -peer 1.1.1.1 -peer 2.2.2.2 -peer 3.3.3.3.
 
    **Default:**
