@@ -19,6 +19,7 @@
 class PerftestPrinter {
 
 protected:
+
     bool _showCPU;
     bool _printIntervals;
     bool _printSummaryHeaders;
@@ -27,9 +28,14 @@ protected:
 public:
     unsigned int _dataLength;
     bool _printHeaders;
+    FILE *_outputFile;
 
     PerftestPrinter() : _printSummaryHeaders(true), _dataLength(100) {};
-    virtual ~PerftestPrinter() {};
+    virtual ~PerftestPrinter() {
+        if (_outputFile != NULL) {
+            fclose(_outputFile);
+        }
+    };
 
     void initialize(ParameterManager *_PM);
 

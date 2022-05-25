@@ -27,6 +27,16 @@ and *QNX* platforms, as these are the ones supported by *RTI Connext DDS Secure 
 A new parameter (``--wolfSSL-home``) has been added to the compilation script in order
 to be able to specify the location of the libraries when compiling statically.
 
+New command-line option to output data to a file |newTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+*Perftest* adds support to a new command-line option ``-outputFile``. This option
+enables the user to output the data to a file instead of printing it on the screen.
+
+The content should be equivalent to the previous behavior when using the ``>`` or ``>>``,
+options in the command-line: The data information is sent to the specified file,
+while the summary information and errors are still printed on the screen.
+
 What's Fixed in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 

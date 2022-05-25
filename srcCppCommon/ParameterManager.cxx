@@ -394,6 +394,18 @@ void ParameterManager::initialize()
     create("doNotDropNetworkCapture", doNotDropNetworkCapture);
   #endif
 
+    Parameter<std::string> *outputFile = new Parameter<std::string>("stdout");
+    outputFile->set_command_line_argument("-outputFile", "<file>");
+    outputFile->set_description(
+            "Save the data information (but not the summary info) to a file.\n"
+            "Default: Stdout (terminal output)");
+    outputFile->set_type(T_STR);
+    outputFile->set_extra_argument(YES);
+    outputFile->set_group(GENERAL);
+    outputFile->set_supported_middleware(Middleware::ALL);
+    create("outputFile", outputFile);
+
+
   Parameter<bool> *preallocateFragmentation = new Parameter<bool>(false);
     preallocateFragmentation->set_command_line_argument("-preallocateFragmentedSamples", "");
     preallocateFragmentation->set_description(
