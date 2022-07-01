@@ -29,7 +29,8 @@
  */
 
 #ifdef PERFTEST_RTI_PRO
-  #define MESSAGE_OVERHEAD_BYTES (COMMEND_WRITER_MAX_RTPS_OVERHEAD + 48 + RTI_CDR_ENCAPSULATION_HEADER_SIZE + 3)
+  #define TMP_COMMEND_WRITER_MAX_RTPS_OVERHEAD 512
+  #define MESSAGE_OVERHEAD_BYTES (TMP_COMMEND_WRITER_MAX_RTPS_OVERHEAD + 48 + RTI_CDR_ENCAPSULATION_HEADER_SIZE + 3)
 #else
   /*
    * For micro we do not have the same variables as for pro. Therefore, for the time being we are
