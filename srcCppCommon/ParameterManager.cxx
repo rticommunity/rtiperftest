@@ -1264,6 +1264,19 @@ void ParameterManager::initialize()
     create("noBlockingSockets", noBlockingSockets);
   #endif
 
+  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_FAST_QUEUE)
+    //  This parameter is just supported in the traditional C++ language.
+    Parameter<bool> *fastQueue = new Parameter<bool>(false);
+    fastQueue->set_command_line_argument("-fastQueue", "");
+    fastQueue->set_description(
+            "Private option for measuring using FasQueue.\n");
+    fastQueue->set_type(T_BOOL);
+    fastQueue->set_extra_argument(NO);
+    fastQueue->set_group(GENERAL);
+    fastQueue->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("fastQueue", fastQueue);
+  #endif
+
     ////////////////////////////////////////////////////////////////////////////
     // SECURE PARAMETER:
   #ifdef RTI_SECURE_PERFTEST
