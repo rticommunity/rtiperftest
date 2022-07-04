@@ -37,7 +37,7 @@ public:
         }
     };
 
-    void initialize(ParameterManager *_PM);
+    bool initialize(ParameterManager *_PM);
 
     virtual void print_latency_header() = 0;
 
@@ -109,7 +109,7 @@ public:
     void print_final_output() {};
 };
 
-class PerftestCSVPrinter : public  PerftestPrinter {
+class PerftestCSVPrinter : public PerftestPrinter {
 public:
     ~PerftestCSVPrinter() {};
     void print_latency_header();
@@ -154,7 +154,7 @@ public:
             double outputCpu);
 };
 
-class PerftestJSONPrinter : public  PerftestPrinter {
+class PerftestJSONPrinter : public PerftestPrinter {
 
 private:
     bool _isJsonInitialized;
@@ -162,10 +162,11 @@ private:
 
 public:
 
-    void initialize(ParameterManager *_PM)
+    bool initialize(ParameterManager *_PM)
     {
-        PerftestPrinter::initialize(_PM);
+        bool ok = PerftestPrinter::initialize(_PM);
         _isJsonInitialized = false;
+        return ok;
     };
 
     ~PerftestJSONPrinter() {};

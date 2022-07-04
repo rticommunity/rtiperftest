@@ -6,26 +6,25 @@
 #include "PerftestPrinter.h"
 
 
-
-void PerftestPrinter::initialize(ParameterManager *_PM)
+bool PerftestPrinter::initialize(ParameterManager *_PM)
 {
     std::string outputFormat = _PM->get<std::string>("outputFormat");
     _printIntervals = !_PM->get<bool>("noPrintIntervals");
     _printHeaders = !_PM->get<bool>("noOutputHeaders");
     _printSerialization = _PM->get<bool>("serializationTime");
     _showCPU = _PM->get<bool>("cpu");
-    if (_PM->get<std::string>("outputFile") != "stdout") {
-        _outputFile = fopen(_PM->get<std::string>("outputFile").c_str(), "w");
+    if (_PM->is_set("outputFile")) {
+        _outputFile = fopen(_PM->get<std::string>("outputFile").c_str(), "a");
         if (_outputFile == NULL) {
             fprintf(stderr,
-                    "[PerftestPrinter] Error: Cannot open output file %s."
-                    " Using stdout instead.\n",
+                    "[PerftestPrinter] Error: Cannot open output file %s.\n",
                     _PM->get<std::string>("outputFile").c_str());
-            _outputFile = stdout;
+            return false;
         }
     } else {
         _outputFile = stdout;
     }
+    return true;
 }
 
 /******************************************************************************/
