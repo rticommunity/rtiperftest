@@ -530,8 +530,8 @@ bool perftest_cpp::validate_input()
         if (_PM.get<unsigned long long>("latencyCount") != 1) {
             fprintf(stderr,
                 "The -lowResolutionClock option should only be used if "
-                "latencyCount is 1. Ignoring command line option.\n");
-                _PM.set<bool>("lowResolutionClock", false);
+                "latencyCount is 1.\n");
+            return false;
         }
 
         if (_PM.is_set("sleep")
