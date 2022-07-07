@@ -247,6 +247,15 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
               <value>10000000</value>
             </element>
 
+            <!--
+              This QoS is applied when using security. Default starting in 7.0.0
+              is aes-256-gcm
+            -->
+            <element>
+              <name>com.rti.serv.secure.cryptography.encryption_algorithm</name>
+              <value>aes-128-gcm</value>
+            </element>
+
           </value>
         </property>
 
@@ -260,8 +269,8 @@ _KeepDurationUsec variable name corresponds to the command-line option -keepDura
 
       </participant_qos>
 
-      <!-- === Publisher Configuration: ================================= 
-        
+      <!-- === Publisher Configuration: =================================
+
       The base configuration of the Publisher object.
 
       This element corresponds to the PublisherQos type, which is described

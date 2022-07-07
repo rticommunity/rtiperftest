@@ -1083,6 +1083,12 @@ Test Parameters to Control Connext DDS Secure Options
   | **Default for Publisher:** ``./resource/secure/pubkey.pem`` 
   | **Default for Subscriber:** ``./resource/secure/subkey.pem``
 
+-  ``-secureEncryptionAlgorithm <file>``
+
+   Set the Security Encryption Algorithm.
+
+  | **Default:** ``aes-128-gcm``
+
 
 Raw Transport Options
 ---------------------

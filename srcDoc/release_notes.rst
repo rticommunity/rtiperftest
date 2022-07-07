@@ -27,6 +27,20 @@ and *QNX* platforms, as these are the ones supported by *RTI Connext DDS Secure 
 A new parameter (``--wolfSSL-home``) has been added to the compilation script in order
 to be able to specify the location of the libraries when compiling statically.
 
+Set default Encryption Algorithm to aes-128-gcm |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In previous versions *Perftest* would use the default value for the Encryption
+algorithm when using *RTI Connext DDS Secure*. However, starting in 7.0.0. The
+default value has been upgraded to `aes-256-gcm`. While this new value offers a
+higher level of security, `aes-128-gcm`remains being secure and slightly more
+efficient CPU/Performance wise. For that reason as well as for comparison with
+previous versions of *RTI Connext DDS Secure*, *Perftest* has adopted that new
+value.
+
+In addition, a new parameter (``-secureEncryptionAlgorithm``) has been added to support
+manually setting the desired value.
+
 What's Fixed in Develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -1420,6 +1420,19 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("secureLibrary", secureLibrary);
 
+    Parameter<std::string> *secureEncryptionAlgo = new Parameter<std::string>();
+    secureEncryptionAlgo->set_command_line_argument("-secureEncryptionAlgorithm", "<value>");
+    secureEncryptionAlgo->set_description(
+            "Set the value for the Encryption Algorithm.\n"
+            "Default: \"aes-128-gcm\"");
+    secureEncryptionAlgo->set_type(T_STR);
+    secureEncryptionAlgo->set_extra_argument(YES);
+    secureEncryptionAlgo->set_group(SECURE);
+    secureEncryptionAlgo->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
+    create("secureEncryptionAlgo", secureEncryptionAlgo);
+
     Parameter<int> *secureDebug = new Parameter<int>(1);
     secureDebug->set_command_line_argument("-secureDebug", "<level>");
     secureDebug->set_type(T_NUMERIC_D);
