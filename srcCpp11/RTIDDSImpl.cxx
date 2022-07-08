@@ -1509,6 +1509,11 @@ void RTIDDSImpl<T>::configureSecurePlugin(
         dpQosProperties["com.rti.serv.secure.logging.log_level"] =
                 string_stream_object.str();
     }
+
+    if (_PM->is_set("secureEncryptionAlgo")) {
+        dpQosProperties["com.rti.serv.secure.cryptography.encryption_algorithm"]
+                = _PM->get<std::string>("secureEncryptionAlgo");
+    }
 }
 
 template <typename T>
@@ -1634,6 +1639,12 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     if (_PM->is_set("secureDebug")) {
         stringStream << "\tDebug level: "
                      << _PM->get<int>("secureDebug")
+                     << "\n";
+    }
+
+    if (_PM->is_set("secureEncryptionAlgo")) {
+        stringStream << "\tEncryption Algorithm: "
+                     << _PM->get<std::string>("secureEncryptionAlgo")
                      << "\n";
     }
 

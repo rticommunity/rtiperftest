@@ -1198,6 +1198,16 @@ bool PerftestConfigureSecurity(
         }
     }
 
+    if (_PM->is_set("secureEncryptionAlgo")) {
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.cryptography.encryption_algorithm",
+                _PM->get<std::string>("secureEncryptionAlgo"))) {
+            return false;
+        }
+    }
+
     return true;
 }
+
 #endif
