@@ -140,7 +140,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private String _governanceFile = null;
     private String _securePermissionsFile = null;
     private String _secureLibrary = null;
-    private int _secyreDebugLevel = -1;
+    private String _secureEncryptionAlgo = null;
+    private int _secureDebugLevel = -1;
 
     private DomainParticipantFactory _factory = null;
     private DomainParticipant        _participant = null;
@@ -315,7 +316,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t-secureCertFile <file>        - Certificate file <optional>\n" +
             "\t                                Default: \"./resource/secure/sub.pem\"\n" +
             "\t-securePrivateKey <file>      - Private key file <optional>\n" +
-            "\t                                Default: \"./resource/secure/subkey.pem\"\n";
+            "\t                                Default: \"./resource/secure/subkey.pem\"\n" +
+            "\t-secureEncryptionAlgorithm s  - Set the value for the Encryption Algorithm\n" +
+            "\t                                Default: \"aes-128-gcm\"\n";
 
         System.err.print(usage_string);
     }
@@ -810,8 +813,13 @@ public final class RTIDDSImpl<T> implements IMessaging {
             secure_arguments_string += "\t plugin library: Not specified\n";
         }
 
-        if( _secyreDebugLevel != -1 ){
-            secure_arguments_string += "\t debug level: " + _secyreDebugLevel + "\n";
+
+        if (_secureEncryptionAlgo != null) {
+            secure_arguments_string += "\t Encryption Algorithm: " + _secureEncryptionAlgo + "\n";
+        }
+
+        if( _secureDebugLevel != -1 ){
+            secure_arguments_string += "\t debug level: " + _secureDebugLevel + "\n";
         }
         return secure_arguments_string;
     }
@@ -838,6 +846,13 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _secureLibrary,
                 false);
 
+        if (_secureEncryptionAlgo != null) {
+            PropertyQosPolicyHelper.add_property(
+                dpQos.property,
+                "com.rti.serv.secure.cryptography.encryption_algorithm",
+                _secureEncryptionAlgo,
+                false);
+        }
         /*
          * Below, we are using com.rti.serv.secure properties in order to be
          * backward compatible with RTI Connext DDS 5.3.0 and below. Later
@@ -918,11 +933,11 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _securePrivateKeyFile,
                 false);
 
-        if (_secyreDebugLevel != -1) {
+        if (_secureDebugLevel != -1) {
             PropertyQosPolicyHelper.add_property(
                     dpQos.property,
                     "com.rti.serv.secure.logging.log_level",
-                    (new Integer(_secyreDebugLevel)).toString(),
+                    (new Integer(_secureDebugLevel)).toString(),
                     false);
         }
     }
@@ -1656,13 +1671,19 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     return false;
                 }
                 _secureLibrary = argv[i];
+            } else if ("-secureEncryptionAlgorithm".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <value> after -secureLibrary\n");
+                    return false;
+                }
+                _secureEncryptionAlgo = argv[i];
             } else if ("-secureDebug".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
                     System.err.print("Missing <level> after -secureDebug\n");
                      return false;
                 }
                 try {
-                    _secyreDebugLevel = Integer.parseInt(argv[i]);
+                    _secureDebugLevel = Integer.parseInt(argv[i]);
                 } catch (NumberFormatException nfx) {
                     System.err.print("Bad value for -secureDebug\n");
                     return false;

@@ -392,6 +392,9 @@ namespace PerformanceTest
                 new System.CommandLine.Option<string>(
                     new string[] { "--secureLibrary", "-secureLibrary" },
                     description: ""),
+                new System.CommandLine.Option<string>(
+                    new string[] { "--secureEncryptionAlgorithm", "-secureEncryptionAlgo" },
+                    description: "Set the value for the Encryption Algorithm"),
                 new System.CommandLine.Option<int>(
                     new string[] { "--secureDebug", "-secureDebug" },
                     getDefaultValue: () => -1,

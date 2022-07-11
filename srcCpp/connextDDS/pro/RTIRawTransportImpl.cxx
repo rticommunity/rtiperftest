@@ -1183,8 +1183,8 @@ bool RTIRawTransportImpl::configure_sockets_transport()
             if (id_sub_last == 0 && id_sub_first != 0) {
                 id_sub_last = id_sub_first;
             }
-               
-            for (unsigned int index_sub = id_sub_first; index_sub <= id_sub_last; ++index_sub){
+
+            for (int index_sub = id_sub_first; index_sub <= id_sub_last; ++index_sub) {
                 id_sub = index_sub;
                 _peersMap.push_back(
                         std::pair<NDDS_Transport_Address_t, int>(addr, id_sub));

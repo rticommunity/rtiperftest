@@ -193,6 +193,12 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
                      << "\n";
     }
 
+    if (_PM->is_set("secureEncryptionAlgo")) {
+        stringStream << "\tEncryption Algorithm: "
+                     << _PM->get<std::string>("secureEncryptionAlgo")
+                     << "\n";
+    }
+
     return stringStream.str();
 }
 

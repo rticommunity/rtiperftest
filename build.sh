@@ -699,7 +699,7 @@ function check_flatData_zeroCopy_available()
     # We just need the Major value of the version.
     major=`echo $version | awk -F. '{print $1}'`
 
-    if [[ $major -ge $flatdata_ddsgen_version ]]; then
+    if [[ $major -ge $flatdata_ddsgen_version && "${FAST_QUEUE}" != "1" ]]; then
         echo -e "${INFO_TAG} FlatData is available"
         FLATDATA_AVAILABLE="1"
     fi
@@ -763,6 +763,14 @@ function build_cpp()
         Infrastructure_pro.cxx \
         PerftestPrinter.cxx \
         FileDataLoader.cxx"
+
+    if [ "${FAST_QUEUE}" == "1" ]; then
+        additional_header_files="${additional_header_files} \
+        FastMemory.h"
+        additional_source_files="${additional_source_files} \
+        FastMemory.cxx"
+        additional_defines=${additional_defines}" DPERFTEST_FAST_QUEUE"
+    fi
 
     if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
         additional_header_files="${additional_header_files} \
@@ -1631,6 +1639,9 @@ while [ "$1" != "" ]; do
         --osx-shmem-shmmax)
             darwin_shmem_size=$2
             shift
+            ;;
+        --fastQueue)
+            FAST_QUEUE=1
             ;;
         *)
             echo -e "${ERROR_TAG} unknown parameter \"$1\""

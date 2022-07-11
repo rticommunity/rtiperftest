@@ -721,6 +721,11 @@ namespace PerformanceTest
                 secureArgumentsString += "\t debug level: " + parameters.SecureDebug + "\n";
             }
 
+            if (parameters.SecureEncryptionAlgo != null)
+            {
+                secureArgumentsString += "\t Encryption Algorithm: " + parameters.SecureEncryptionAlgo + "\n";
+            }
+
             return secureArgumentsString;
         }
 
@@ -820,6 +825,13 @@ namespace PerformanceTest
                 dpQos = dpQos.WithProperty(policy =>
                     policy.Add("com.rti.serv.secure.logging.log_level",
                     parameters.SecureDebug.ToString()));
+            }
+
+            if (parameters.SecureEncryptionAlgo != null)
+            {
+                dpQos = dpQos.WithProperty(policy =>
+                    policy.Add("com.rti.serv.secure.cryptography.encryption_algorithm",
+                    parameters.SecureEncryptionAlgo));
             }
         }
 
