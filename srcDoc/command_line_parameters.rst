@@ -273,14 +273,9 @@ Test Parameters for Publishing and Subscribing Applications
 
 -  ``-outputFile <filename>``
 
-   Output the data to a file instead of printing it on the screen. This will not
-   print into the file the output summary information, that will still be displayed
-   on the console. If the file cannot be opened/created, this option will be ignored and
-   an error message will be printed out.
-
    Output the data to a file instead of printing it on the screen. Summary information
    will still be displayed in the console. If the file cannot be opened or created,
-   an error message will be printed and test will end.
+   an error message will be printed and the test will end.
 
    Default: ``stdout`` (Output is displayed on the terminal)
 
