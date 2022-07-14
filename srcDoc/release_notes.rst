@@ -30,11 +30,11 @@ to be able to specify the location of the libraries when compiling statically.
 New command-line option to output data to a file |newTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-*Perftest* adds support to a new command-line option ``-outputFile``. This option
-enables the user to output the data to a file instead of printing it on the screen.
+*Perftest* has added a new command-line parameter, ``-outputFile``. This parameter
+enables you to output data to a file instead of printing it on the screen.
 
-The content should be equivalent to the previous behavior when using the ``>`` or ``>>``,
-options in the command-line: The data information is sent to the specified file,
+The output content is the same as when using the ``>`` or ``>>``,
+options in the command-line: the data information is sent to the specified file,
 while the summary information and errors are still printed on the screen.
 
 Set default Encryption Algorithm to aes-128-gcm |newTag|

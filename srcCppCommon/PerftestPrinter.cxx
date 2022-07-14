@@ -34,7 +34,7 @@ bool PerftestPrinter::initialize(ParameterManager *_PM)
 void PerftestCSVPrinter::print_latency_header()
 {
     if (_printHeaders && _printIntervals) {
-        fprintf(_outputFile, "\nIntervals One-way Latency for %d Bytes:\n", _dataLength);
+        fprintf(_outputFile, "\nIntervals One-Way Latency for %d Bytes:\n", _dataLength);
         fprintf(_outputFile, "Length (Bytes)"
                 ", Latency (" PERFT_TIME_UNIT
                 "), Ave (" PERFT_TIME_UNIT
@@ -266,7 +266,7 @@ void PerftestJSONPrinter::print_latency_interval(
             latencyMin,
             latencyMax);
     if (_showCPU) {
-        fprintf(_outputFile, ",\n\t\t\t\t\t\"cpu\": %1.2f", outputCpu);
+        fprintf(_outputFile, ",\n\t\t\t\t\t\"CPU\": %1.2f", outputCpu);
     }
     fprintf(_outputFile, "\n\t\t\t\t}");
 }
@@ -314,7 +314,7 @@ void PerftestJSONPrinter::print_latency_summary(
                 serializeTime + deserializeTime);
     }
     if (_showCPU) {
-        fprintf(_outputFile, ",\n\t\t\t\t\"cpu\": %1.2f", outputCpu);
+        fprintf(_outputFile, ",\n\t\t\t\t\"CPU\": %1.2f", outputCpu);
     }
     fprintf(_outputFile, "\n\t\t\t}\n\t\t}");
 }
@@ -352,7 +352,7 @@ void PerftestJSONPrinter::print_throughput_interval(
             missingPackets,
             missingPacketsPercent);
     if (_showCPU) {
-        fprintf(_outputFile, ",\n\t\t\t\t\t\"cpu\": %1.2f", outputCpu);
+        fprintf(_outputFile, ",\n\t\t\t\t\t\"CPU\": %1.2f", outputCpu);
     }
     fprintf(_outputFile, "\n\t\t\t\t}");
 }
@@ -382,7 +382,7 @@ void PerftestJSONPrinter::print_throughput_summary(
             intervalMissingPackets,
             missingPacketsPercent);
     if (_showCPU) {
-        fprintf(_outputFile, ",\n\t\t\t\t\"cpu\": %1.2f", outputCpu);
+        fprintf(_outputFile, ",\n\t\t\t\t\"CPU\": %1.2f", outputCpu);
     }
     fprintf(_outputFile, "\n\t\t\t}\n\t\t}");
 }
@@ -424,7 +424,7 @@ void PerftestLegacyPrinter::print_latency_interval(
         unsigned long latencyMax,
         double outputCpu)
 {
-    fprintf(_outputFile, "One way Latency: %6lu " PERFT_TIME_UNIT
+    fprintf(_outputFile, "One-Way Latency: %6lu " PERFT_TIME_UNIT
             " Ave %6.0lf " PERFT_TIME_UNIT
             " Std %6.1lf " PERFT_TIME_UNIT
             " Min %6lu " PERFT_TIME_UNIT
