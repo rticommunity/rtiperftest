@@ -3,7 +3,13 @@
 ################################################################################
 filename=$0
 script_location=`cd "\`dirname "$filename"\`"; pwd`
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
 ERROR_TAG="${RED}[ERROR]:${NC}"
+
+export executionTime=1800
 
 while :
 do
@@ -37,7 +43,7 @@ do
           shift 2
           ;;
       -executionTime)
-          read_exec_time=$2
+          executionTime=$2
           shift 2
           ;;
       -verbosity)
@@ -150,26 +156,47 @@ export command_line_parameter="$EXECUTABLE_NAME -cfgFile $script_location/persis
 
 echo -e "\n"
 echo -e "=========================================================================="
-echo -e "         Domain: $DOMAIN_BASE"
-echo -e "           Type: $TYPE_NAME"
-echo -e "    Reliability: $RELIABILITY"
-echo -e "       Batching: $BATCHING"
+echo -e "         ${YELLOW}Domain:${NC} $DOMAIN_BASE"
+echo -e "           ${YELLOW}Type:${NC} $TYPE_NAME"
+echo -e "    ${YELLOW}Reliability:${NC} $RELIABILITY"
+echo -e "       ${YELLOW}Batching:${NC} $BATCHING"
 if [ "$BATCHING" != "0" ]; then
-    echo -e "     Batch size: $BATCH_SIZE"
+    echo -e "     ${YELLOW}Batch size:${NC} $BATCH_SIZE"
 fi
 if [ "$read_asynchronous" = "1" ]; then
-    echo -e "   Asynchronous: $read_asynchronous"
+    echo -e "   ${YELLOW}Asynchronous:${NC} $read_asynchronous"
 fi
 if [ "$read_unbounded" = "1" ]; then
-    echo -e "      Unbounded: $read_unbounded"
+    echo -e "     ${YELLOW} Unbounded:${NC} $read_unbounded"
 fi
-echo -e " sendQueue Size: $SEND_QUEUE_SIZE"
+echo -e " ${YELLOW}sendQueue Size:${NC} $SEND_QUEUE_SIZE"
 if [ "$read_exec_time" != "" ]; then
-    echo -e " Execution Time: $read_exec_time"
+    echo -e " ${YELLOW}Execution Time:${NC} $read_exec_time"
 fi
-echo -e "       NDDSHOME: $read_NDDSHOME"
+echo -e "       ${YELLOW}NDDSHOME:${NC} $NDDSHOME"
+echo -e " ${YELLOW}Execution Time:${NC} $executionTime"
 echo -e "==========================================================================\n"
-echo -e "[Running] $command_line_parameter\n"
+echo -e "${GREEN}[Running]${NC} $command_line_parameter\n"
+
+# trap ctrl-c and call ctrl_c()
+trap 'ctrl_c' SIGINT
+
+function clean() {
+    kill $pid
+    pkill $EXECUTABLE_NAME
+    rm -rf PS_*
+    sleep 10
+}
+
+function ctrl_c() {
+    echo -e " ${RED}TRAPPED CTRL-C !!!!!!!!!!! ${NC}"
+    clean
+}
+
 
 ################################################################################
-$command_line_parameter
+$command_line_parameter &
+
+export pid=$!
+sleep $executionTime
+clean
