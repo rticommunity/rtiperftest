@@ -357,9 +357,6 @@
                 <history>
                     <kind>KEEP_ALL_HISTORY_QOS</kind>
                 </history>
-                <durability>
-                    <kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind>
-                </durability>
             </datareader_qos>
 
             <datawriter_qos>
@@ -374,95 +371,59 @@
                 <history>
                     <kind>KEEP_ALL_HISTORY_QOS</kind>
                 </history>
-                <durability>
-                    <kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind>
-                </durability>
             </datawriter_qos>
         </qos_profile>
 
     </qos_library>
 
     <!-- ================================================================= -->
-    <!-- ROUTING SERVICE CONFIGURATION                                     -->
+    <!-- PERSISTENT SERVICE CONFIGURATION                                  -->
     <!-- ================================================================= -->
+    <persistence_service name="PS_PerfTest">
+        <persistent_storage>
+            <filesystem>
+                <file_prefix>PS_</file_prefix>
+            </filesystem>
+        </persistent_storage>
 
-    <routing_service name="RS_PerfTest">
+        <participant name="persistence_participant_perftest">
+            <participant_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
 
-        <domain_route name="DR">
-            <participant name="participant_1">
-                <domain_id>0</domain_id>
-                <participant_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
-            </participant>
-            <participant name="participant_2">
-                <domain_id>1</domain_id>
-                <participant_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
-            </participant>
-
-            <session name="Perftest_routing">
-                <thread_pool>
-                    <priority>THREAD_PRIORITY_HIGH</priority>
-                </thread_pool>
+            <domain_id>$(DOMAIN_BASE)</domain_id>
+            <persistence_group>
+                <filter>Throughput</filter>
+                <use_durability_service>false</use_durability_service>
+                <single_publisher>true</single_publisher>
+                <single_subscriber>true</single_subscriber>
                 <publisher_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
                 <subscriber_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
+                <datawriter_qos  base_name="PerformanceLibraries_Modified::ThroughputQos" />
+                <datareader_qos base_name="PerformanceLibraries_Modified::ThroughputQos" />
+            </persistence_group>
 
-                <!-- <wait_set>
-                    <max_event_count>
-                        1
-                    </max_event_count>
-                    <max_event_delay>
-                        <sec>DURATION_INFINITE_SEC</sec>
-                        <nanosec>DURATION_INFINITE_NSEC</nanosec>
-                    </max_event_delay>
-                </wait_set> -->
+            <persistence_group>
+                <filter>Latency</filter>
+                <use_durability_service>false</use_durability_service>
+                <single_publisher>true</single_publisher>
+                <single_subscriber>true</single_subscriber>
+                <publisher_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
+                <subscriber_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
+                <datawriter_qos  base_name="PerformanceLibraries_Modified::LatencyQos" />
+                <datareader_qos base_name="PerformanceLibraries_Modified::LatencyQos" />
+            </persistence_group>
 
-                <topic_route name="Throughput">
-                    <route_types>true</route_types>
-                    <input participant="participant_1">
-                        <creation_mode>IMMEDIATE</creation_mode>
-                        <registered_type_name>$(TYPE_NAME)</registered_type_name>
-                        <topic_name>Throughput</topic_name>
-                        <datareader_qos base_name="PerformanceLibraries_Modified::ThroughputQos"/>
-                    </input>
-                    <output participant="participant_2">
-                        <creation_mode>IMMEDIATE</creation_mode>
-                        <registered_type_name>$(TYPE_NAME)</registered_type_name>
-                        <topic_name>Throughput</topic_name>
-                        <datawriter_qos base_name="PerformanceLibraries_Modified::ThroughputQos"></datawriter_qos>
-                    </output>
-                </topic_route>
+            <persistence_group>
+                <filter>Announcement</filter>
+                <use_durability_service>false</use_durability_service>
+                <single_publisher>true</single_publisher>
+                <single_subscriber>true</single_subscriber>
+                <publisher_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
+                <subscriber_qos base_name="PerformanceLibraries_Modified::BaseProfileQos"/>
+                <datawriter_qos  base_name="PerformanceLibraries_Modified::AnnouncementQos" />
+                <datareader_qos base_name="PerformanceLibraries_Modified::AnnouncementQos" />
+            </persistence_group>
 
-                <topic_route name="Latency">
-                    <route_types>true</route_types>
-                    <input participant="participant_2">
-                        <creation_mode>IMMEDIATE</creation_mode>
-                        <registered_type_name>$(TYPE_NAME)</registered_type_name>
-                        <topic_name>Latency</topic_name>
-                        <datareader_qos base_name="PerformanceLibraries_Modified::LatencyQos"/>
-                    </input>
-                    <output participant="participant_1">
-                        <creation_mode>IMMEDIATE</creation_mode>
-                        <registered_type_name>$(TYPE_NAME)</registered_type_name>
-                        <topic_name>Latency</topic_name>
-                        <datawriter_qos base_name="PerformanceLibraries_Modified::LatencyQos"/>
-                    </output>
-                </topic_route>
+        </participant>
 
-                <topic_route name="Announcement">
-                    <route_types>true</route_types>
-                    <input participant="participant_2">
-                        <creation_mode>IMMEDIATE</creation_mode>
-                        <registered_type_name>$(TYPE_NAME)</registered_type_name>
-                        <topic_name>Announcement</topic_name>
-                        <datareader_qos base_name="PerformanceLibraries_Modified::AnnouncementQos"/>
-                    </input>
-                    <output participant="participant_1">
-                        <creation_mode>IMMEDIATE</creation_mode>
-                        <registered_type_name>$(TYPE_NAME)</registered_type_name>
-                        <topic_name>Announcement</topic_name>
-                        <datawriter_qos base_name="PerformanceLibraries_Modified::AnnouncementQos"/>
-                    </output>
-                </topic_route>
-            </session>
-        </domain_route>
-    </routing_service>
+    </persistence_service>
 </dds>
