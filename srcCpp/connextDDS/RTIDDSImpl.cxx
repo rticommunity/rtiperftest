@@ -246,8 +246,8 @@ void RTIDDSImpl<T>::shutdown()
             if (_isNetworkCapture && !_PM->get<bool>("doNotDropNetworkCapture")) {
                 std::string outputFile =
                         std::string(_networkCaptureOutputFile) + ".pcap";
-                if (RTIOsapiUtility_fileExists(outputFile.c_str())
-                        && !RTIOsapi_removeFile(outputFile.c_str())) {
+                if (PerftestFile_exists(outputFile.c_str())
+                        && !PerftestFile_remove(outputFile.c_str())) {
                     fprintf(stderr, "Unexpected error removing network capture's pcap output\n");
                 }
             }

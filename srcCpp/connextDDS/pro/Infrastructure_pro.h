@@ -135,6 +135,20 @@ struct PerftestThread* PerftestThread_new(
 
 #endif //#ifndef RTI_USE_CPP_11_INFRASTRUCTURE
 
+/*
+ * After 7.0.0 we have changed the name of some RTI utility functions. The following
+ * code is to be able to keep compatibility between 7.0.0, 6.1.X and everything
+ * that will come after. The trick is that now we have a "osapi_file_h", so we should
+ * be able to check if it was loaded or not already.
+ */
+#ifdef osapi_file_h
+  #define PerftestFile_remove RTIOsapiFile_remove
+  #define PerftestFile_exists RTIOsapiFile_exists
+#else
+  #define PerftestFile_remove RTIOsapi_removeFile
+  #define PerftestFile_exists RTIOsapiUtility_fileExists
+#endif //osapi_file_h
+
 /********************************************************************/
 /* Transport Related functions */
 
