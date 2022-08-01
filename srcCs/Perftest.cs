@@ -480,6 +480,10 @@ namespace PerformanceTest
 
             System.CommandLine.CommandExtensions.Invoke(rootCommand, args);
 
+            if (result.UnboundedSize == 0) {
+                result.UnboundedSizeSet = false;
+            }
+
             return result;
         }
 
@@ -548,13 +552,20 @@ namespace PerformanceTest
             {
                 if (parameters.UnboundedSize < Perftest.OVERHEAD_BYTES)
                 {
-                    Console.Error.WriteLine("unboundedSize must be >= " + Perftest.OVERHEAD_BYTES);
+                    Console.Error.WriteLine(
+                            "unboundedSize must be >= "
+                            + Perftest.OVERHEAD_BYTES
+                            + " and is "
+                            + parameters.UnboundedSize);
                     return false;
                 }
                 if (parameters.UnboundedSize > (ulong)MAX_PERFTEST_SAMPLE_SIZE.Value)
                 {
-                    Console.Error.WriteLine("unboundedSize must be <= " +
-                            MAX_PERFTEST_SAMPLE_SIZE.Value);
+                    Console.Error.WriteLine(
+                            "unboundedSize must be <= " +
+                            MAX_PERFTEST_SAMPLE_SIZE.Value
+                            + " and is "
+                            + parameters.UnboundedSize);
                     return false;
                 }
             }
