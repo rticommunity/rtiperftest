@@ -27,6 +27,16 @@ and *QNX* platforms, as these are the ones supported by *RTI Connext DDS Secure 
 A new parameter (``--wolfSSL-home``) has been added to the compilation script in order
 to be able to specify the location of the libraries when compiling statically.
 
+New command-line option to output data to a file |newTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+*Perftest* has added a new command-line parameter, ``-outputFile``. This parameter
+enables you to output the performance data to a file instead of printing it on the screen.
+
+The output content is the same as when using the ``>`` or ``>>``,
+options in the command-line: the performance data is sent to the specified file,
+while the summary information and errors are still printed on the screen.
+
 Set default Encryption Algorithm to aes-128-gcm |newTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

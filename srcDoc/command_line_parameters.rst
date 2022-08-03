@@ -271,6 +271,14 @@ Test Parameters for Publishing and Subscribing Applications
    application and after receiving every latency echo in the publishing
    application.
 
+-  ``-outputFile <filename>``
+
+   Output the data to a file instead of printing it on the screen. Summary information
+   will still be displayed in the console. If the file cannot be opened or created,
+   an error message will be printed and the test will end.
+
+   Default: ``stdout`` (Output is displayed on the terminal)
+
 -  ``-qosFile <filename>``
 
    Path to the XML file containing DDS QoS profiles.

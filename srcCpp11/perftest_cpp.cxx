@@ -251,7 +251,11 @@ int perftest_cpp::Run(int argc, char *argv[]) {
     } else if (outputFormat == "legacy") {
         _printer = new PerftestLegacyPrinter();
     }
-    _printer->initialize(&_PM);
+
+    if (!_printer->initialize(&_PM)) {
+        std::cerr << "[Error] Issue initializing printer class." << std::endl;
+        return -1;
+    }
 
     print_configuration();
 
