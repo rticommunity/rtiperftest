@@ -526,12 +526,22 @@ bool perftest_cpp::validate_input()
     }
 
     // Manage the lowResolutionClock parameter
-    if (_PM.get<bool>("lowResolutionClock")
-                && _PM.get<unsigned long long>("latencyCount") != 1) {
+    if (_PM.get<bool>("lowResolutionClock")) {
+        if (_PM.get<unsigned long long>("latencyCount") != 1) {
             fprintf(stderr,
-            "The -lowResolutionClock option should only be used if "
-            "latencyCount is 1. Ignoring command line option.\n");
-            _PM.set<bool>("lowResolutionClock", false);
+                "The -lowResolutionClock option should only be used if "
+                "latencyCount is 1.\n");
+            return false;
+        }
+
+        if (_PM.is_set("sleep")
+                || _PM.is_set("pubRate")
+                || _PM.is_set("spin")) {
+            fprintf(stderr,
+                "The -lowResolutionClock cannot be used with the "
+                "sleep, spin or pubRate command-line options.\n");
+            return false;
+        }
     }
 
     #ifdef RTI_FLATDATA_AVAILABLE
