@@ -36,10 +36,10 @@ Download the *RTI Perftest* bundle in one of three ways:
 
 -  Clone it from the official `GitHub <https://github.com/rticommunity/rticonnextdds-getting-started>`_ repository:
 
-   ``git clone -b master https://github.com/rticommunity/rtiperftest.git``
+   ``git clone -b release/4.0 https://github.com/rticommunity/rtiperftest.git``
 
    This command downloads the GitHub repository into a folder named
-   ``rtiperftest`` and moves the repository to the ``master`` tag.
+   ``rtiperftest`` and moves the repository to the ``release/4.0`` tag.
 
 ..
 

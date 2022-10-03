@@ -11,10 +11,10 @@ Release Notes
     Perftest even more stable, reliable and configurable.
     </strong></p>
 
-Release Notes Master
+Release Notes 4.0
 --------------------
 
-What's New in Master
+What's New in 4.0
 ~~~~~~~~~~~~~~~~~~~~
 
 Support for **wolfSSL** for *Linux* and *QNX* when using the *Security Plugins* |newTag|
@@ -51,7 +51,7 @@ value.
 In addition, a new parameter (``-secureEncryptionAlgorithm``) has been added to support
 manually setting the desired value.
 
-What's Fixed in Master
+What's Fixed in 4.0
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Unclear table output headers |enhancedTag|
@@ -123,7 +123,7 @@ seen in operating systems (such as VxWorks) with low-resolution clocks.
 
 This problem has been resolved.
 
-Deprecations in Master
+Deprecations in 4.0
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 ``-scan`` option will be removed in future versions of *RTI Perftest*

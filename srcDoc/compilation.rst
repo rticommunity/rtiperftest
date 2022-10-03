@@ -176,7 +176,7 @@ The ``build.sh`` script accepts the following list of parameters:
       - Optional
       - Path to the OpenSSL home directory. Needed when compiling using the
         ``--secure`` option and statically.
-   * - ``--wolfssl-home``
+    * - ``--wolfssl-home``
       - Optional
       - Path to the wolfSSL home directory. Needed when compiling using the
         ``--secure`` option and statically.
